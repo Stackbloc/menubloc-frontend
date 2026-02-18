@@ -1,8 +1,12 @@
+// menubloc-frontend/src/Signup.jsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
-export default function Signup({ onDone }) {
+export default function Signup() {
+  const nav = useNavigate();
+
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
@@ -24,11 +28,12 @@ export default function Signup({ onDone }) {
         credentials: "include",
         body: JSON.stringify({ email: e, password: pw }),
       });
+
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
 
-      setMsg("✅ Signup created. Check backend terminal for verification link (dev mode).");
-      onDone?.();
+      // ✅ Prototype behavior: go straight to restaurant profile
+      nav("/restaurant");
     } catch (err) {
       setMsg("❌ " + (err.message || "Signup failed"));
     } finally {
@@ -40,7 +45,7 @@ export default function Signup({ onDone }) {
     <div style={{ padding: 28, maxWidth: 520, margin: "0 auto" }}>
       <h2 style={{ marginTop: 0 }}>Create your operator account</h2>
       <p style={{ color: "#555" }}>
-        This is the login that replaces “remember your restaurant id.”
+        Prototype flow: after signup, you’ll go directly to your Restaurant Profile.
       </p>
 
       <input

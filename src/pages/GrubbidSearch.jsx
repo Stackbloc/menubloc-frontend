@@ -1,4 +1,6 @@
 import React, { useMemo } from "react";
+import SearchResultCard from "../components/SearchResultCard";
+
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function GrubbidSearch() {
@@ -14,6 +16,43 @@ export default function GrubbidSearch() {
   const health = (qp.get("health") || "").split("|").filter(Boolean);
   const ingredients = (qp.get("ingredients") || "").split("|").filter(Boolean);
   const zip = qp.get("zip") || "";
+    // TEMP: fake results so you can see the result cards now (before backend wiring)
+  const results = useMemo(() => {
+    const city = zip ? zip : "Los Angeles";
+    return [
+      {
+        id: "r1",
+        name: q ? `${q} Special` : "Chicken Sandwich",
+        price: 9.99,
+        description: "Crispy, juicy, and fast. This is placeholder text until backend results.",
+        restaurant: { name: "Example Diner", city, neighborhood: "Westwood" },
+        flags: { vegan: false, gluten_free: false, deal_active: true },
+        insights: {
+          summary: "Matches your query and filters. Deal is active at this restaurant.",
+          why_matched: q ? `Matched query: "${q}"` : "Matched default popular item",
+          highlights: ["Popular near you", "Great value under $10", "Deal available today"],
+        },
+        nutrition: { calories: 780, protein_g: 34, carbs_g: 68, fat_g: 38 },
+        pairings: { items: [{ name: "Fries", reason: "Classic pairing" }, { name: "Iced Tea", reason: "Balances the salt" }] },
+      },
+      {
+        id: "r2",
+        name: q ? `${q} Lite` : "Vegan Pancakes",
+        price: 8.5,
+        description: "Light and fluffy. Placeholder item demonstrating vegan/gluten tags.",
+        restaurant: { name: "Green Spoon", city, neighborhood: "Sawtelle" },
+        flags: { vegan: true, gluten_free: true, deal_active: false },
+        insights: {
+          summary: "Strong health match. Vegan + gluten-free flags detected.",
+          why_matched: health.length ? `Health filters: ${health.join(", ")}` : "Health-friendly option",
+          highlights: ["Vegan", "Gluten-free", "High review volume (placeholder)"],
+        },
+        nutrition: { calories: 520, protein_g: 14, carbs_g: 78, fat_g: 16 },
+        pairings: { items: [{ name: "Fruit Cup", reason: "Adds freshness" }] },
+      },
+    ];
+  }, [q, zip, health]);
+
 
   const styles = {
     page: { maxWidth: 980, margin: "40px auto", padding: "0 20px", fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Arial" },
@@ -52,9 +91,14 @@ export default function GrubbidSearch() {
         </div>
       </div>
 
-      <div style={styles.resultsBox}>
-        Results will render here once we wire your backend search endpoint.
+            <div style={{ marginTop: 16 }}>
+        {!results.length ? (
+          <div style={styles.resultsBox}>No results yet.</div>
+        ) : (
+          results.map((r) => <SearchResultCard key={r.id} result={r} />)
+        )}
       </div>
+
     </div>
   );
 }
