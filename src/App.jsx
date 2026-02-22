@@ -1,6 +1,7 @@
 // menubloc-frontend/src/App.jsx
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 
 import EasyMenuLanding from "./pages/EasyMenuLanding";
 import GrubbidHome from "./pages/GrubbidHome";
@@ -32,6 +33,7 @@ export default function App() {
         {/* Optional: simple fallback */}
         <Route path="*" element={isEasyMenu ? <EasyMenuLanding /> : <GrubbidHome />} />
       </Routes>
+      <Analytics />
     </BrowserRouter>
   );
 }
