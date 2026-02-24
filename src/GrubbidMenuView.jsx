@@ -38,6 +38,41 @@ function lower(v) {
   return safeText(v).toLowerCase();
 }
 
+// Haversine distance (miles)
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const R = 3958.7613; // Earth radius in miles
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function getLatLng(restaurant) {
+  const lat = Number(
+    restaurant?.lat ??
+      restaurant?.latitude ??
+      restaurant?.location_lat ??
+      restaurant?.location?.lat ??
+      restaurant?.geo?.lat
+  );
+  const lng = Number(
+    restaurant?.lng ??
+      restaurant?.lon ??
+      restaurant?.longitude ??
+      restaurant?.location_lng ??
+      restaurant?.location_lon ??
+      restaurant?.location?.lng ??
+      restaurant?.geo?.lng
+  );
+
+  if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
+  return null;
+}
+
 // MKS-ish ordering helpers (best effort)
 function orderVal(obj) {
   const keys = ["mks_order", "item_order", "sort_order", "order", "position", "rank", "idx"];
@@ -204,7 +239,7 @@ function getIndicatorsFromItem(item) {
     seen.add(x);
     out.push(x);
   }
-  return out.slice(0, 2); // keep it tight inline
+  return out.slice(0, 2); // tight inline
 }
 
 function indicatorMeta(code) {
@@ -227,7 +262,7 @@ function mockIndicatorForIndex(i) {
 }
 
 // -----------------------------
-// Restaurant meta (address / distance / phone order)
+// Restaurant meta helpers
 // -----------------------------
 function pickFirst(obj, keys) {
   for (const k of keys) {
@@ -251,21 +286,6 @@ function computeAddressLine(r) {
   return left || right || "";
 }
 
-function computeDistanceLabel(r) {
-  const candidates = [
-    r?.distance_miles,
-    r?.distanceMiles,
-    r?.distance,
-    r?.estimated_distance_miles,
-    r?.meta?.distance_miles,
-  ];
-  for (const v of candidates) {
-    const n = Number(v);
-    if (Number.isFinite(n) && n >= 0) return `${n.toFixed(n < 10 ? 1 : 0)} mi`;
-  }
-  return "";
-}
-
 // -----------------------------
 // Component
 // -----------------------------
@@ -282,7 +302,37 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
   const [theme, setTheme] = useState(readTheme());
   const [activePanel, setActivePanel] = useState("insights"); // default
 
+  // User geo (for distance-from-user)
+  const [userGeo, setUserGeo] = useState(null); // { lat, lng } | null
+  const [geoStatus, setGeoStatus] = useState("idle"); // idle | ok | denied | unavailable
+
   useEffect(() => writeTheme(theme), [theme]);
+
+  useEffect(() => {
+    // Only attempt if supported; we won't nag if denied.
+    if (!navigator.geolocation) {
+      setGeoStatus("unavailable");
+      return;
+    }
+    setGeoStatus("idle");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos?.coords?.latitude;
+        const lng = pos?.coords?.longitude;
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          setUserGeo({ lat, lng });
+          setGeoStatus("ok");
+        } else {
+          setGeoStatus("unavailable");
+        }
+      },
+      (err) => {
+        if (err?.code === 1) setGeoStatus("denied");
+        else setGeoStatus("unavailable");
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60 * 1000 }
+    );
+  }, []);
 
   const COLORS =
     theme === "light"
@@ -343,7 +393,7 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
     return arr;
   }, [rawCats, search, activeCat]);
 
-  // Pairings should only exist if any item has pairings data.
+  // Pairings only exists if any item has pairings data.
   const anyPairings = useMemo(() => {
     for (const g of grouped) {
       for (const it of g.items) {
@@ -353,7 +403,6 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
     return false;
   }, [grouped]);
 
-  // Panels list is conditional: Insights + Nutrition always; Pairings only if any exist.
   const PANELS = useMemo(() => {
     const base = [
       { key: "insights", label: "Insights" },
@@ -362,28 +411,40 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
     return anyPairings ? [...base, { key: "pairings", label: "Pairings" }] : base;
   }, [anyPairings]);
 
-  // If Pairings disappears, ensure we don’t stay stuck on it.
   useEffect(() => {
     if (!anyPairings && activePanel === "pairings") setActivePanel("insights");
   }, [anyPairings, activePanel]);
 
   const tabs = useMemo(() => {
     const present = new Set(grouped.map((g) => g.code));
-    return MKS_CATEGORIES.filter((c) => present.has(c.code)).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    return MKS_CATEGORIES.filter((c) => present.has(c.code)).sort(
+      (a, b) => (a.order ?? 999) - (b.order ?? 999)
+    );
   }, [grouped]);
 
-  // Restaurant meta
+  // Restaurant meta (locked order w/ placeholders)
   const restaurantName = restaurant?.name || restaurant?.restaurant_name || "Restaurant";
-  const addressLine = computeAddressLine(restaurant);
-  const distance = computeDistanceLabel(restaurant);
-  const phone = pickFirst(restaurant, ["phone", "phone_number", "tel", "telephone"]);
+  const addressLine = computeAddressLine(restaurant) || "—";
+  const phone = pickFirst(restaurant, ["phone", "phone_number", "tel", "telephone"]) || "—";
+
+  const rLatLng = getLatLng(restaurant);
+  const distanceLabel = useMemo(() => {
+    if (!userGeo || !rLatLng) return "—";
+    const miles = haversineMiles(userGeo.lat, userGeo.lng, rLatLng.lat, rLatLng.lng);
+    if (!Number.isFinite(miles)) return "—";
+    return miles < 10 ? `${miles.toFixed(1)} mi` : `${miles.toFixed(0)} mi`;
+  }, [userGeo, rLatLng]);
 
   const profileRestaurantId = safeText(restaurant?.id || restaurantId);
-  const profileLink = profileRestaurantId
-    ? `/restaurant-profile?restaurantId=${encodeURIComponent(profileRestaurantId)}`
+
+  // ✅ Link to Restaurant Public Page (slug preferred, id fallback)
+  const publicLink = restaurant?.slug
+    ? `/r/${restaurant.slug}`
+    : profileRestaurantId
+    ? `/r/${profileRestaurantId}`
     : "/";
 
-  // For mock: assign one-of-each indicator to the first N items (stable by render order).
+  // For mock: assign one-of-each indicator to first N items
   let mockIndicatorCursor = 0;
 
   return (
@@ -394,7 +455,7 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
             <div style={{ overflow: "hidden" }}>
               <Link
-                to={profileLink}
+                to={publicLink}
                 style={{
                   color: COLORS.text,
                   textDecoration: "none",
@@ -407,12 +468,12 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                   display: "inline-block",
                   maxWidth: "100%",
                 }}
-                title="Open restaurant profile"
+                title="Open restaurant public page"
               >
                 {restaurantName}
               </Link>
 
-              {/* address, distance, phone — in that order */}
+              {/* Address → Distance → Phone (always in this order) */}
               <div
                 style={{
                   marginTop: 6,
@@ -423,22 +484,15 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                   flexWrap: "wrap",
                 }}
               >
-                {addressLine ? (
-                  <span>
-                    <strong style={{ color: COLORS.text, fontWeight: 900 }}>Address:</strong> {addressLine}
-                  </span>
-                ) : null}
-                {distance ? (
-                  <span>
-                    <strong style={{ color: COLORS.text, fontWeight: 900 }}>Distance:</strong> {distance}
-                  </span>
-                ) : null}
-                {phone ? (
-                  <span>
-                    <strong style={{ color: COLORS.text, fontWeight: 900 }}>Phone:</strong> {phone}
-                  </span>
-                ) : null}
-                {!addressLine && !distance && !phone ? <span>Restaurant ID: {profileRestaurantId || "—"}</span> : null}
+                <span>
+                  <strong style={{ color: COLORS.text, fontWeight: 900 }}>Address:</strong> {addressLine}
+                </span>
+                <span title={geoStatus === "denied" ? "Enable location permission to see distance." : ""}>
+                  <strong style={{ color: COLORS.text, fontWeight: 900 }}>Distance:</strong> {distanceLabel}
+                </span>
+                <span>
+                  <strong style={{ color: COLORS.text, fontWeight: 900 }}>Phone:</strong> {phone}
+                </span>
               </div>
             </div>
 
@@ -492,7 +546,7 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
               }}
             />
 
-            {/* Panels (Pairings only appears if any item has pairings) */}
+            {/* Panels (Pairings only if any item has pairings) */}
             <div style={{ display: "flex", gap: 8, alignItems: "center", overflowX: "auto", maxWidth: "100%" }}>
               {PANELS.map((p) => (
                 <button
@@ -596,10 +650,9 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                 const panelList = getPanelPayload(item, activePanel);
 
                 // Pairings panel should not show for an item with no pairings
-                const showPanel =
-                  activePanel === "pairings" ? panelList.length > 0 : true;
+                const showPanel = activePanel === "pairings" ? panelList.length > 0 : true;
 
-                // Indicators:
+                // Indicators
                 let indicators = getIndicatorsFromItem(item);
                 if (usingMock && indicators.length === 0) {
                   indicators = [mockIndicatorForIndex(mockIndicatorCursor)];
@@ -700,7 +753,15 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                         </div>
 
                         {panelList.length ? (
-                          <ul style={{ margin: 0, paddingLeft: 18, color: COLORS.subtext, fontSize: 12.5, lineHeight: 1.35 }}>
+                          <ul
+                            style={{
+                              margin: 0,
+                              paddingLeft: 18,
+                              color: COLORS.subtext,
+                              fontSize: 12.5,
+                              lineHeight: 1.35,
+                            }}
+                          >
                             {panelList.slice(0, 6).map((x, i) => (
                               <li key={`${activePanel}-${i}`}>{x}</li>
                             ))}

@@ -321,7 +321,15 @@ export default function GrubbidDiscovery() {
       paddingBottom: 18,
       borderTop: "1px solid #eee",
     },
-    footerLink: { color: "#6b5cff", fontWeight: 800, textDecoration: "none" },
+
+    // ✅ ONLY CHANGE: consistent typography, still clearly a link
+    footerLink: {
+      color: "#111",
+      fontWeight: 700,
+      textDecoration: "underline",
+      textUnderlineOffset: "3px",
+      cursor: "pointer",
+    },
   };
 
   return (
@@ -512,7 +520,8 @@ export default function GrubbidDiscovery() {
       </div>
 
       <div style={styles.footer}>
-        <Link to="/restaurant" style={styles.footerLink}>
+        {/* ✅ FIX: point to the real onboarding route */}
+        <Link to="/signup" style={styles.footerLink}>
           Restaurant sign up
         </Link>{" "}
         · get discovered

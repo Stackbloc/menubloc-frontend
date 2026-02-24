@@ -1,33 +1,32 @@
-// menubloc-frontend/src/App.jsx
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import GrubbidDiscovery from "./pages/GrubbidDiscovery";
-import GrubbidSearchResults from "./pages/GrubbidSearchResults";
-import RestaurantProfile from "./pages/RestaurantProfile";
-import MenuItemProfile from "./pages/MenuItemProfile";
+import GrubbidDiscovery from "./pages/GrubbidDiscovery.jsx";
+import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
+import RestaurantSignup from "./pages/RestaurantSignup.jsx";
+import RestaurantPublicPage from "./pages/RestaurantPublicPage.jsx";
+import MenuPage from "./pages/MenuPage.jsx";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Primary consumer entry */}
+        {/* Home */}
         <Route path="/" element={<GrubbidDiscovery />} />
 
-        {/* Search results */}
+        {/* Search */}
         <Route path="/search" element={<GrubbidSearchResults />} />
 
-        {/* Restaurant onboarding / profile */}
-        <Route path="/restaurant" element={<RestaurantProfile />} />
-        <Route path="/restaurant/:id" element={<RestaurantProfile />} />
+        {/* ✅ Restaurant onboarding (canonical) */}
+        <Route path="/signup" element={<RestaurantSignup />} />
 
-        {/* Menu item profile */}
-        <Route path="/menu-item/:id" element={<MenuItemProfile />} />
+        {/* Public restaurant */}
+        <Route path="/r/:slug" element={<RestaurantPublicPage />} />
 
-        {/* Back-compat routes (if old links exist) */}
-        <Route path="/discover" element={<Navigate to="/" replace />} />
+        {/* Menu */}
+        <Route path="/menu/:restaurantId" element={<MenuPage />} />
 
-        {/* Catch-all */}
+        {/* Safety */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

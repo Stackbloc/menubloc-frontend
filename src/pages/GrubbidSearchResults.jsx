@@ -50,9 +50,13 @@ export default function GrubbidSearchResults() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
 
-        const next = Array.isArray(json?.rows) ? json.rows : Array.isArray(json?.restaurants) ? json.restaurants : [];
-        if (!alive) return;
+        const next = Array.isArray(json?.rows)
+          ? json.rows
+          : Array.isArray(json?.restaurants)
+          ? json.restaurants
+          : [];
 
+        if (!alive) return;
         setRows(next);
       } catch (e) {
         if (!alive) return;
@@ -73,12 +77,11 @@ export default function GrubbidSearchResults() {
   const dishRows = useMemo(() => rows.filter(isDishRow), [rows]);
   const restaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);
 
+  // ✅ CHANGE #1 — header shows ONLY search terms
   const headerText = useMemo(() => {
     if (!q) return "Search results";
-    const n = dishRows.length;
-    const dishWord = n === 1 ? "dish" : "dishes";
-    return `${n} ${dishWord} matching “${q}”`;
-  }, [q, dishRows.length]);
+    return `“${q}”`;
+  }, [q]);
 
   const styles = {
     wrap: { padding: 16, maxWidth: 980, margin: "0 auto" },
@@ -91,6 +94,11 @@ export default function GrubbidSearchResults() {
     empty: { marginTop: 12, padding: 12, border: "1px solid #eee", borderRadius: 12, background: "#fafafa" },
     section: { marginTop: 16, fontWeight: 900, color: "#333" },
   };
+
+  const userFacingError = useMemo(() => {
+    if (!err) return "";
+    return q ? `No results found for “${q}”.` : "No results found.";
+  }, [err, q]);
 
   return (
     <div style={styles.wrap}>
@@ -112,21 +120,20 @@ export default function GrubbidSearchResults() {
         </Link>
       </div>
 
-      {err ? <div style={styles.error}>Error: {err}</div> : null}
+      {err ? <div style={styles.error}>{userFacingError}</div> : null}
       {loading ? <div style={styles.empty}>Loading…</div> : null}
 
+      {/* ✅ CHANGE #2 — bottom message simplified */}
       {!loading && !err && q && dishRows.length === 0 ? (
-        <div style={styles.empty}>No dishes found for “{q}”. Try removing filters or using a shorter keyword.</div>
+        <div style={styles.empty}>No Results.</div>
       ) : null}
 
-      {/* Dish results */}
       <div style={styles.grid}>
         {dishRows.map((r) => (
           <SearchResultCard key={`${r.menu_item_id || r.id}-${r.restaurant_id || ""}`} item={r} query={q} />
         ))}
       </div>
 
-      {/* If any restaurant-only rows show up, render them at bottom (rare with your current backend, but safe) */}
       {!loading && !err && restaurantOnlyRows.length > 0 ? (
         <>
           <div style={styles.section}>Restaurants</div>
