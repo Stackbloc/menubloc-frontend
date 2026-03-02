@@ -88,14 +88,14 @@ export default function RestaurantSignup() {
     <div style={styles.wrap}>
       <div style={styles.brandRow}>
         <div style={styles.brand}>Grubbid</div>
-        <Link to="/discover" style={styles.back}>
+        <Link to="/" style={styles.back}>
           Back
         </Link>
       </div>
 
       <h1 style={styles.h1}>Upload Your Menu</h1>
       <div style={styles.p}>
-        Start with your email — we’ll take you to the menu upload flow next.
+        Start with your email — we’ll take you to your restaurant profile next.
       </div>
 
       <form onSubmit={onSubmit} style={styles.card}>
@@ -112,17 +112,13 @@ export default function RestaurantSignup() {
         <div style={styles.help}>
           We’ll use this to attach your restaurant profile and menu uploads.
         </div>
-        {touched && !emailOk ? (
-          <div style={styles.err}>Enter a valid email address.</div>
-        ) : null}
+        {touched && !emailOk ? <div style={styles.err}>Enter a valid email address.</div> : null}
 
         <button type="submit" style={styles.btn}>
           Continue
         </button>
 
-        <div style={styles.fine}>
-          Takes less than 5 minutes. No commitment required.
-        </div>
+        <div style={styles.fine}>Takes less than 5 minutes. No commitment required.</div>
       </form>
     </div>
   );

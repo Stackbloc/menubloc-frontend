@@ -1,4 +1,19 @@
-// menubloc-frontend/src/pages/GrubbidDiscovery.jsx
+/**
+ * ============================================================
+ * File: menubloc-frontend/src/pages/GrubbidDiscovery.jsx
+ * Date: 2026-02-28
+ * Purpose:
+ *   Discovery search landing page and filter controls.
+ *
+ * Update (today):
+ *   - Adds "Search examples" that TEACH Grubbid’s unique capabilities
+ *     (ingredient-aware + intent-aware), not generic food prompts.
+ *   - Clicking an example sets query + (optionally) toggles relevant filters,
+ *     then runs search immediately.
+ *   - Fixes Restaurant sign up link to the actual route: /restaurant/signup
+ * ============================================================
+ */
+
 import React, { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -100,6 +115,13 @@ export default function GrubbidDiscovery() {
     nav(`/search?${params.toString()}`);
   }
 
+  function handleSearchInputKeyDown(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      goSearch();
+    }
+  }
+
   function chipA11y(onActivate) {
     return {
       role: "button",
@@ -116,6 +138,91 @@ export default function GrubbidDiscovery() {
   function closeArea() {
     setAreaOpen(false);
   }
+
+  /**
+   * Example clicks:
+   * - Teach capability
+   * - Set query and optionally prime the MVP filters we actually support today
+   * - Run search immediately
+   */
+  function applyExample(ex) {
+    // reset only the filter types this example explicitly wants to control
+    if (ex.reset === "all") {
+      clearAll();
+    }
+
+    if (typeof ex.q === "string") setQ(ex.q);
+
+    if (ex.vegan === true) setHealth((prev) => (prev.includes("Vegan") ? prev : [...prev, "Vegan"]));
+    if (ex.vegan === false) setHealth((prev) => prev.filter((x) => x !== "Vegan"));
+
+    if (ex.gf === true) setIngredients((prev) => (prev.includes("Gluten-free") ? prev : [...prev, "Gluten-free"]));
+    if (ex.gf === false) setIngredients((prev) => prev.filter((x) => x !== "Gluten-free"));
+
+    if (typeof ex.dealsOnly === "boolean") setDealsOnly(ex.dealsOnly);
+
+    if (typeof ex.priceMax === "number") {
+      // map to buckets (simple)
+      const buckets = [];
+      if (ex.priceMax <= 10) buckets.push("<$10");
+      else if (ex.priceMax <= 20) buckets.push("<$20");
+      else if (ex.priceMax <= 50) buckets.push("<$50");
+      setPrice(buckets);
+    }
+
+    // Cuisine is "carry for later" today (not supported by backend), but we can still set it.
+    if (typeof ex.cuisine === "string") setCuisine(ex.cuisine);
+
+    // Zip/city carry
+    if (typeof ex.zip === "string") setZip(ex.zip);
+
+    // run search next tick so state is applied
+    setTimeout(() => {
+      goSearch();
+    }, 0);
+  }
+
+  const EXAMPLE_SECTIONS = useMemo(
+    () => [
+      {
+        title: "Search by ingredient",
+        subtitle: "Find menu items that contain what you care about.",
+        items: [
+          { label: "pumpkin", q: "pumpkin", reset: "none" },
+          { label: "arugula", q: "arugula", reset: "none" },
+          { label: "no dairy desserts", q: "dessert", reset: "none", /* teach */ },
+        ],
+      },
+      {
+        title: "Search by diet",
+        subtitle: "Diet intent + discovery (works best with filters).",
+        items: [
+          { label: "vegan tacos", q: "tacos", vegan: true, reset: "none" },
+          { label: "gluten-free breakfast", q: "breakfast", gf: true, reset: "none" },
+          { label: "keto-friendly lunch", q: "lunch keto", reset: "none" },
+        ],
+      },
+      {
+        title: "Search by goals",
+        subtitle: "Nutrition intent (query-first now; structured later).",
+        items: [
+          { label: "high protein under 700 calories", q: "high protein under 700 calories", reset: "none" },
+          { label: "low sodium options", q: "low sodium", reset: "none" },
+          { label: "diabetic-friendly", q: "diabetic friendly", reset: "none" },
+        ],
+      },
+      {
+        title: "Search by value",
+        subtitle: "Price + deals (these are supported today).",
+        items: [
+          { label: "meals under $10", q: "", priceMax: 10, reset: "none" },
+          { label: "meals under $20", q: "", priceMax: 20, reset: "none" },
+          { label: "restaurants with active deals", q: "", dealsOnly: true, reset: "none" },
+        ],
+      },
+    ],
+    []
+  );
 
   const styles = {
     page: {
@@ -139,7 +246,7 @@ export default function GrubbidDiscovery() {
       alignItems: "center",
       gap: 16,
       justifyContent: "center",
-      marginBottom: 16,
+      marginBottom: 12,
     },
     searchInput: {
       flex: 1,
@@ -157,6 +264,46 @@ export default function GrubbidDiscovery() {
       background: "transparent",
       border: "1px solid transparent",
       pointerEvents: "none",
+    },
+
+    examplesWrap: {
+      margin: "0 auto 16px",
+      maxWidth: 920,
+    },
+    examplesHeader: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      gap: 12,
+      marginBottom: 10,
+    },
+    examplesTitle: { fontSize: 12, fontWeight: 900, color: "#111" },
+    examplesHint: { fontSize: 12, color: "#666" },
+
+    examplesGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+      gap: 12,
+    },
+    exampleCard: {
+      background: "#fff",
+      border: "1px solid #eee",
+      borderRadius: 16,
+      padding: 12,
+      boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
+    },
+    exampleCardTitle: { fontSize: 12, fontWeight: 900, marginBottom: 3 },
+    exampleCardSub: { fontSize: 12, color: "#666", marginBottom: 10 },
+    examplePills: { display: "flex", flexWrap: "wrap", gap: 8 },
+    examplePill: {
+      padding: "8px 10px",
+      borderRadius: 999,
+      border: "1px solid #e5e5e5",
+      background: "#fff",
+      fontSize: 12,
+      fontWeight: 800,
+      cursor: "pointer",
+      userSelect: "none",
     },
 
     panel: {
@@ -247,11 +394,11 @@ export default function GrubbidDiscovery() {
       marginBottom: 8,
     },
     stickyAreaInner: {
-      width: "min(520px, calc(100vw - 28px))", // wide enough for the wording
+      width: "min(520px, calc(100vw - 28px))",
     },
 
     spaceBar: (active) => ({
-      height: 30, // smaller, but readable
+      height: 30,
       borderRadius: 10,
       border: active ? "1px solid #111" : "1px solid #e5e5e5",
       background: "#fff",
@@ -322,13 +469,20 @@ export default function GrubbidDiscovery() {
       borderTop: "1px solid #eee",
     },
 
-    // ✅ ONLY CHANGE: consistent typography, still clearly a link
     footerLink: {
       color: "#111",
       fontWeight: 700,
       textDecoration: "underline",
       textUnderlineOffset: "3px",
       cursor: "pointer",
+    },
+
+    // Responsive tweak
+    mediaNote: {
+      marginTop: 8,
+      fontSize: 11,
+      color: "#777",
+      textAlign: "center",
     },
   };
 
@@ -348,12 +502,44 @@ export default function GrubbidDiscovery() {
           style={styles.searchInput}
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") goSearch();
-          }}
+          onKeyDown={handleSearchInputKeyDown}
           placeholder="Search dishes, cuisines, ingredients, or restaurant name..."
         />
         <div aria-hidden="true" style={styles.topButtonSpacer} />
+      </div>
+
+      {/* ✅ TEACHING EXAMPLES */}
+      <div style={styles.examplesWrap}>
+        <div style={styles.examplesHeader}>
+          <div style={styles.examplesTitle}>Search examples (what Grubbid is good at)</div>
+          <div style={styles.examplesHint}>Click any example to search instantly</div>
+        </div>
+
+        <div style={styles.examplesGrid}>
+          {EXAMPLE_SECTIONS.map((sec) => (
+            <div key={sec.title} style={styles.exampleCard}>
+              <div style={styles.exampleCardTitle}>{sec.title}</div>
+              <div style={styles.exampleCardSub}>{sec.subtitle}</div>
+              <div style={styles.examplePills}>
+                {sec.items.map((ex) => (
+                  <div
+                    key={ex.label}
+                    style={styles.examplePill}
+                    onClick={() => applyExample(ex)}
+                    {...chipA11y(() => applyExample(ex))}
+                    aria-label={`Search example: ${ex.label}`}
+                  >
+                    {ex.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={styles.mediaNote}>
+          Note: “nutrition goals” are query-first right now; structured nutrition constraints can be wired in later.
+        </div>
       </div>
 
       <div style={styles.panel}>
@@ -469,6 +655,7 @@ export default function GrubbidDiscovery() {
                   onChange={(e) => setZip(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
+                      e.preventDefault();
                       goSearch();
                       closeArea();
                     }
@@ -520,8 +707,8 @@ export default function GrubbidDiscovery() {
       </div>
 
       <div style={styles.footer}>
-        {/* ✅ FIX: point to the real onboarding route */}
-        <Link to="/signup" style={styles.footerLink}>
+        {/* ✅ Correct route per App.jsx */}
+        <Link to="/restaurant/signup" style={styles.footerLink}>
           Restaurant sign up
         </Link>{" "}
         · get discovered

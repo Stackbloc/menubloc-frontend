@@ -47,10 +47,12 @@ export default function GrubbidSearchResults() {
       setErr("");
       try {
         const res = await fetch(requestUrl, { credentials: "include" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json?.ok) throw new Error(json?.error || `HTTP ${res.status}`);
 
-        const next = Array.isArray(json?.rows)
+        const next = Array.isArray(json?.results)
+          ? json.results
+          : Array.isArray(json?.rows)
           ? json.rows
           : Array.isArray(json?.restaurants)
           ? json.restaurants
@@ -77,7 +79,6 @@ export default function GrubbidSearchResults() {
   const dishRows = useMemo(() => rows.filter(isDishRow), [rows]);
   const restaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);
 
-  // ✅ CHANGE #1 — header shows ONLY search terms
   const headerText = useMemo(() => {
     if (!q) return "Search results";
     return `“${q}”`;
@@ -115,7 +116,7 @@ export default function GrubbidSearchResults() {
           </div>
         </div>
 
-        <Link to="/discover" style={styles.back}>
+        <Link to="/" style={styles.back}>
           Back
         </Link>
       </div>
@@ -123,10 +124,7 @@ export default function GrubbidSearchResults() {
       {err ? <div style={styles.error}>{userFacingError}</div> : null}
       {loading ? <div style={styles.empty}>Loading…</div> : null}
 
-      {/* ✅ CHANGE #2 — bottom message simplified */}
-      {!loading && !err && q && dishRows.length === 0 ? (
-        <div style={styles.empty}>No Results.</div>
-      ) : null}
+      {!loading && !err && q && dishRows.length === 0 ? <div style={styles.empty}>No Results.</div> : null}
 
       <div style={styles.grid}>
         {dishRows.map((r) => (
