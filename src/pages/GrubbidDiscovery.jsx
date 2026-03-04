@@ -1,29 +1,52 @@
 /**
  * ============================================================
  * File: menubloc-frontend/src/pages/GrubbidDiscovery.jsx
- * Date: 2026-02-28
+ * Date: 2026-03-03
  * Purpose:
  *   Discovery search landing page and filter controls.
  *
- * Update (today):
- *   - Adds "Search examples" that TEACH Grubbid’s unique capabilities
- *     (ingredient-aware + intent-aware), not generic food prompts.
- *   - Clicking an example sets query + (optionally) toggles relevant filters,
- *     then runs search immediately.
- *   - Fixes Restaurant sign up link to the actual route: /restaurant/signup
+ * Update (this revision):
+ *   - Search headline: "What do you want to eat?"
+ *   - Search placeholder: "Search food, ingredients, restaurants, or deals"
+ *   - Added Day/Night toggle (light/dark) for Discovery page only
+ *     - Persists to localStorage key: "grubbid_theme"
+ *     - Defaults to system preference when not set
  * ============================================================
  */
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
+const THEME_KEY = "grubbid_theme"; // "light" | "dark"
+
+function getSystemTheme() {
+  try {
+    return window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  } catch {
+    return "light";
+  }
+}
+
+function getInitialTheme() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "dark" || saved === "light") return saved;
+  } catch {
+    // ignore
+  }
+  return getSystemTheme();
+}
 
 export default function GrubbidDiscovery() {
   const nav = useNavigate();
   const areaInputRef = useRef(null);
 
-  // --- UI option sets
   const PRICE_BUCKETS = useMemo(() => ["<$10", "<$20", "<$50"], []);
   const DISTANCE = useMemo(() => ["< 3 miles"], []);
+
   const HEALTH = useMemo(
     () => [
       "Diabetic-friendly",
@@ -37,16 +60,17 @@ export default function GrubbidDiscovery() {
     ],
     []
   );
+
   const INGREDIENTS = useMemo(
     () => ["Dairy-free", "Gluten-free", "Peanut-free", "Seed-oil free"],
     []
   );
+
   const CUISINES = useMemo(
     () => ["Any", "American", "Chinese", "Indian", "Italian", "Japanese", "Korean"],
     []
   );
 
-  // --- state
   const [q, setQ] = useState("");
   const [cuisine, setCuisine] = useState("Any");
   const [price, setPrice] = useState([]);
@@ -55,8 +79,22 @@ export default function GrubbidDiscovery() {
   const [dealsOnly, setDealsOnly] = useState(false);
   const [health, setHealth] = useState([]);
   const [ingredients, setIngredients] = useState([]);
-  const [zip, setZip] = useState(""); // City/ZIP carried in URL
+  const [zip, setZip] = useState("");
   const [areaOpen, setAreaOpen] = useState(false);
+
+  const [theme, setTheme] = useState(getInitialTheme); // "light" | "dark"
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // ignore
+    }
+  }, [theme]);
+
+  function toggleTheme() {
+    setTheme((t) => (t === "dark" ? "light" : "dark"));
+  }
 
   function toggleInList(value, list, setList) {
     setList((prev) =>
@@ -90,7 +128,6 @@ export default function GrubbidDiscovery() {
   function goSearch() {
     const params = new URLSearchParams();
 
-    // Filtering MVP params (backend supports these)
     if (q.trim()) params.set("q", q.trim());
 
     const veganOn = health.includes("Vegan");
@@ -104,7 +141,6 @@ export default function GrubbidDiscovery() {
 
     if (dealsOnly) params.set("deals_only", "1");
 
-    // carry for later
     if (cuisine !== "Any") params.set("cuisine", cuisine);
     if (distance.length) params.set("distance", distance.join("|"));
     if (delivery) params.set("delivery", "1");
@@ -139,90 +175,7 @@ export default function GrubbidDiscovery() {
     setAreaOpen(false);
   }
 
-  /**
-   * Example clicks:
-   * - Teach capability
-   * - Set query and optionally prime the MVP filters we actually support today
-   * - Run search immediately
-   */
-  function applyExample(ex) {
-    // reset only the filter types this example explicitly wants to control
-    if (ex.reset === "all") {
-      clearAll();
-    }
-
-    if (typeof ex.q === "string") setQ(ex.q);
-
-    if (ex.vegan === true) setHealth((prev) => (prev.includes("Vegan") ? prev : [...prev, "Vegan"]));
-    if (ex.vegan === false) setHealth((prev) => prev.filter((x) => x !== "Vegan"));
-
-    if (ex.gf === true) setIngredients((prev) => (prev.includes("Gluten-free") ? prev : [...prev, "Gluten-free"]));
-    if (ex.gf === false) setIngredients((prev) => prev.filter((x) => x !== "Gluten-free"));
-
-    if (typeof ex.dealsOnly === "boolean") setDealsOnly(ex.dealsOnly);
-
-    if (typeof ex.priceMax === "number") {
-      // map to buckets (simple)
-      const buckets = [];
-      if (ex.priceMax <= 10) buckets.push("<$10");
-      else if (ex.priceMax <= 20) buckets.push("<$20");
-      else if (ex.priceMax <= 50) buckets.push("<$50");
-      setPrice(buckets);
-    }
-
-    // Cuisine is "carry for later" today (not supported by backend), but we can still set it.
-    if (typeof ex.cuisine === "string") setCuisine(ex.cuisine);
-
-    // Zip/city carry
-    if (typeof ex.zip === "string") setZip(ex.zip);
-
-    // run search next tick so state is applied
-    setTimeout(() => {
-      goSearch();
-    }, 0);
-  }
-
-  const EXAMPLE_SECTIONS = useMemo(
-    () => [
-      {
-        title: "Search by ingredient",
-        subtitle: "Find menu items that contain what you care about.",
-        items: [
-          { label: "pumpkin", q: "pumpkin", reset: "none" },
-          { label: "arugula", q: "arugula", reset: "none" },
-          { label: "no dairy desserts", q: "dessert", reset: "none", /* teach */ },
-        ],
-      },
-      {
-        title: "Search by diet",
-        subtitle: "Diet intent + discovery (works best with filters).",
-        items: [
-          { label: "vegan tacos", q: "tacos", vegan: true, reset: "none" },
-          { label: "gluten-free breakfast", q: "breakfast", gf: true, reset: "none" },
-          { label: "keto-friendly lunch", q: "lunch keto", reset: "none" },
-        ],
-      },
-      {
-        title: "Search by goals",
-        subtitle: "Nutrition intent (query-first now; structured later).",
-        items: [
-          { label: "high protein under 700 calories", q: "high protein under 700 calories", reset: "none" },
-          { label: "low sodium options", q: "low sodium", reset: "none" },
-          { label: "diabetic-friendly", q: "diabetic friendly", reset: "none" },
-        ],
-      },
-      {
-        title: "Search by value",
-        subtitle: "Price + deals (these are supported today).",
-        items: [
-          { label: "meals under $10", q: "", priceMax: 10, reset: "none" },
-          { label: "meals under $20", q: "", priceMax: 20, reset: "none" },
-          { label: "restaurants with active deals", q: "", dealsOnly: true, reset: "none" },
-        ],
-      },
-    ],
-    []
-  );
+  const isDark = theme === "dark";
 
   const styles = {
     page: {
@@ -231,16 +184,37 @@ export default function GrubbidDiscovery() {
       padding: "0 20px",
       fontFamily:
         'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
-      color: "#111",
+      color: isDark ? "rgba(255,255,255,0.92)" : "#111",
     },
 
-    header: { display: "flex", marginBottom: 22 },
-    brand: { fontWeight: 800, fontSize: 18 },
-    subbrand: { fontSize: 12, color: "#666" },
+    header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
+    brand: { fontWeight: 900, fontSize: 18 },
+    subbrand: { fontSize: 12, color: isDark ? "rgba(255,255,255,0.65)" : "#666" },
 
-    centerTag: { textAlign: "center", color: "#666", marginBottom: 18 },
+    themeToggle: {
+      height: 36,
+      padding: "0 12px",
+      borderRadius: 999,
+      border: isDark ? "1px solid rgba(255,255,255,0.18)" : "1px solid #e5e5e5",
+      background: isDark ? "rgba(255,255,255,0.06)" : "#fff",
+      color: isDark ? "rgba(255,255,255,0.92)" : "#111",
+      fontWeight: 800,
+      cursor: "pointer",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 8,
+    },
 
-    // Top search row
+    headline: {
+      textAlign: "center",
+      fontSize: 28,
+      fontWeight: 950,
+      letterSpacing: -0.2,
+      margin: "12px 0 6px",
+    },
+
+    centerTag: { textAlign: "center", color: isDark ? "rgba(255,255,255,0.60)" : "#666", marginBottom: 18 },
+
     searchRow: {
       display: "flex",
       alignItems: "center",
@@ -248,15 +222,19 @@ export default function GrubbidDiscovery() {
       justifyContent: "center",
       marginBottom: 12,
     },
+
     searchInput: {
       flex: 1,
       maxWidth: 720,
       height: 44,
       borderRadius: 999,
-      border: "1px solid #e5e5e5",
+      border: isDark ? "1px solid rgba(255,255,255,0.16)" : "1px solid #e5e5e5",
       padding: "0 16px",
-      background: "#fff",
+      background: isDark ? "rgba(255,255,255,0.06)" : "#fff",
+      color: isDark ? "rgba(255,255,255,0.92)" : "#111",
+      outline: "none",
     },
+
     topButtonSpacer: {
       width: 110,
       height: 44,
@@ -266,71 +244,32 @@ export default function GrubbidDiscovery() {
       pointerEvents: "none",
     },
 
-    examplesWrap: {
-      margin: "0 auto 16px",
-      maxWidth: 920,
-    },
-    examplesHeader: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "flex-end",
-      gap: 12,
-      marginBottom: 10,
-    },
-    examplesTitle: { fontSize: 12, fontWeight: 900, color: "#111" },
-    examplesHint: { fontSize: 12, color: "#666" },
-
-    examplesGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-      gap: 12,
-    },
-    exampleCard: {
-      background: "#fff",
-      border: "1px solid #eee",
-      borderRadius: 16,
-      padding: 12,
-      boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
-    },
-    exampleCardTitle: { fontSize: 12, fontWeight: 900, marginBottom: 3 },
-    exampleCardSub: { fontSize: 12, color: "#666", marginBottom: 10 },
-    examplePills: { display: "flex", flexWrap: "wrap", gap: 8 },
-    examplePill: {
-      padding: "8px 10px",
-      borderRadius: 999,
-      border: "1px solid #e5e5e5",
-      background: "#fff",
-      fontSize: 12,
-      fontWeight: 800,
-      cursor: "pointer",
-      userSelect: "none",
-    },
-
     panel: {
-      background: "#f7f7fb",
+      background: isDark ? "rgba(255,255,255,0.05)" : "#f7f7fb",
       borderRadius: 16,
       padding: 18,
       marginBottom: 16,
-      border: "1px solid #efeff6",
+      border: isDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid #efeff6",
     },
 
-    label: { fontSize: 12, fontWeight: 700, color: "#444", marginBottom: 6 },
+    label: { fontSize: 12, fontWeight: 800, color: isDark ? "rgba(255,255,255,0.78)" : "#444", marginBottom: 6 },
 
     select: {
       width: "100%",
       height: 40,
       borderRadius: 12,
-      border: "1px solid #e5e5e5",
+      border: isDark ? "1px solid rgba(255,255,255,0.14)" : "1px solid #e5e5e5",
       padding: "0 12px",
       marginBottom: 14,
-      background: "#fff",
+      background: isDark ? "rgba(0,0,0,0.25)" : "#fff",
+      color: isDark ? "rgba(255,255,255,0.92)" : "#111",
     },
 
     sectionTitle: {
       textAlign: "center",
       fontSize: 12,
-      fontWeight: 800,
-      color: "#111",
+      fontWeight: 900,
+      color: isDark ? "rgba(255,255,255,0.92)" : "#111",
       margin: "10px 0 10px",
     },
 
@@ -338,11 +277,9 @@ export default function GrubbidDiscovery() {
       display: "flex",
       flexWrap: "wrap",
       gap: 10,
-      justifyContent: "flex-start",
       marginBottom: 14,
     },
 
-    // Centered rows (you requested Convenience + Ingredients centered)
     chipRowCentered: {
       display: "flex",
       flexWrap: "wrap",
@@ -354,12 +291,23 @@ export default function GrubbidDiscovery() {
     chip: (active) => ({
       padding: "8px 12px",
       borderRadius: 999,
-      border: active ? "1px solid #111" : "1px solid #e5e5e5",
+      border: active
+        ? isDark
+          ? "1px solid rgba(255,255,255,0.75)"
+          : "1px solid #111"
+        : isDark
+        ? "1px solid rgba(255,255,255,0.16)"
+        : "1px solid #e5e5e5",
       cursor: "pointer",
       fontSize: 12,
-      fontWeight: 600,
-      background: active ? "#fff" : "transparent",
+      fontWeight: 700,
+      background: active
+        ? isDark
+          ? "rgba(255,255,255,0.10)"
+          : "#fff"
+        : "transparent",
       userSelect: "none",
+      color: isDark ? "rgba(255,255,255,0.92)" : "#111",
     }),
 
     searchBtn: {
@@ -367,9 +315,9 @@ export default function GrubbidDiscovery() {
       padding: "0 18px",
       borderRadius: 12,
       border: 0,
-      background: "#111",
-      color: "#fff",
-      fontWeight: 700,
+      background: isDark ? "#fff" : "#111",
+      color: isDark ? "#111" : "#fff",
+      fontWeight: 900,
       cursor: "pointer",
     },
 
@@ -377,88 +325,11 @@ export default function GrubbidDiscovery() {
       height: 44,
       padding: "0 18px",
       borderRadius: 12,
-      border: "1px solid #e5e5e5",
-      background: "#fff",
+      border: isDark ? "1px solid rgba(255,255,255,0.16)" : "1px solid #e5e5e5",
+      background: isDark ? "rgba(255,255,255,0.06)" : "#fff",
+      color: isDark ? "rgba(255,255,255,0.92)" : "#111",
       cursor: "pointer",
-      fontWeight: 700,
-    },
-
-    // --- Sticky “Search another area” control ABOVE footer
-    stickyAreaWrap: {
-      position: "sticky",
-      bottom: 10,
-      zIndex: 20,
-      display: "flex",
-      justifyContent: "center",
-      marginTop: 10,
-      marginBottom: 8,
-    },
-    stickyAreaInner: {
-      width: "min(520px, calc(100vw - 28px))",
-    },
-
-    spaceBar: (active) => ({
-      height: 30,
-      borderRadius: 10,
-      border: active ? "1px solid #111" : "1px solid #e5e5e5",
-      background: "#fff",
-      boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: 12,
-      fontWeight: 700,
-      color: "#222",
-      cursor: "pointer",
-      userSelect: "none",
-    }),
-    spaceBarHint: {
-      marginLeft: 8,
-      color: "#777",
-      fontSize: 11,
-      fontWeight: 600,
-    },
-
-    popover: {
-      marginBottom: 6,
-      background: "#fff",
-      border: "1px solid #eee",
-      borderRadius: 12,
-      padding: 8,
-      boxShadow: "0 4px 14px rgba(0,0,0,0.10)",
-    },
-    popoverRow: { display: "flex", gap: 8, alignItems: "center" },
-    popoverInput: {
-      flex: 1,
-      height: 32,
-      borderRadius: 10,
-      border: "1px solid #e5e5e5",
-      padding: "0 10px",
-      fontSize: 12,
-      background: "#fff",
-    },
-    miniBtn: {
-      height: 32,
-      padding: "0 10px",
-      borderRadius: 10,
-      border: "1px solid #e5e5e5",
-      background: "#fff",
-      cursor: "pointer",
-      fontWeight: 800,
-      fontSize: 11,
-      whiteSpace: "nowrap",
-    },
-    miniBtnPrimary: {
-      height: 32,
-      padding: "0 10px",
-      borderRadius: 10,
-      border: 0,
-      background: "#111",
-      color: "#fff",
-      cursor: "pointer",
-      fontWeight: 800,
-      fontSize: 11,
-      whiteSpace: "nowrap",
+      fontWeight: 900,
     },
 
     footer: {
@@ -466,23 +337,16 @@ export default function GrubbidDiscovery() {
       marginTop: 18,
       paddingTop: 18,
       paddingBottom: 18,
-      borderTop: "1px solid #eee",
+      borderTop: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #eee",
+      color: isDark ? "rgba(255,255,255,0.80)" : "#111",
     },
 
     footerLink: {
-      color: "#111",
-      fontWeight: 700,
+      color: isDark ? "rgba(255,255,255,0.92)" : "#111",
+      fontWeight: 800,
       textDecoration: "underline",
       textUnderlineOffset: "3px",
       cursor: "pointer",
-    },
-
-    // Responsive tweak
-    mediaNote: {
-      marginTop: 8,
-      fontSize: 11,
-      color: "#777",
-      textAlign: "center",
     },
   };
 
@@ -493,8 +357,14 @@ export default function GrubbidDiscovery() {
           <div style={styles.brand}>Grubbid</div>
           <div style={styles.subbrand}>Discovery</div>
         </div>
+
+        <button type="button" style={styles.themeToggle} onClick={toggleTheme} aria-label="Toggle day/night mode">
+          <span aria-hidden="true">{isDark ? "🌙" : "☀️"}</span>
+          {isDark ? "Night" : "Day"}
+        </button>
       </div>
 
+      <div style={styles.headline}>What do you want to eat?</div>
       <div style={styles.centerTag}>the food intelligence platform</div>
 
       <div style={styles.searchRow}>
@@ -503,43 +373,9 @@ export default function GrubbidDiscovery() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={handleSearchInputKeyDown}
-          placeholder="Search dishes, cuisines, ingredients, or restaurant name..."
+          placeholder="Search food, ingredients, restaurants, or deals"
         />
         <div aria-hidden="true" style={styles.topButtonSpacer} />
-      </div>
-
-      {/* ✅ TEACHING EXAMPLES */}
-      <div style={styles.examplesWrap}>
-        <div style={styles.examplesHeader}>
-          <div style={styles.examplesTitle}>Search examples (what Grubbid is good at)</div>
-          <div style={styles.examplesHint}>Click any example to search instantly</div>
-        </div>
-
-        <div style={styles.examplesGrid}>
-          {EXAMPLE_SECTIONS.map((sec) => (
-            <div key={sec.title} style={styles.exampleCard}>
-              <div style={styles.exampleCardTitle}>{sec.title}</div>
-              <div style={styles.exampleCardSub}>{sec.subtitle}</div>
-              <div style={styles.examplePills}>
-                {sec.items.map((ex) => (
-                  <div
-                    key={ex.label}
-                    style={styles.examplePill}
-                    onClick={() => applyExample(ex)}
-                    {...chipA11y(() => applyExample(ex))}
-                    aria-label={`Search example: ${ex.label}`}
-                  >
-                    {ex.label}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div style={styles.mediaNote}>
-          Note: “nutrition goals” are query-first right now; structured nutrition constraints can be wired in later.
-        </div>
       </div>
 
       <div style={styles.panel}>
@@ -562,7 +398,6 @@ export default function GrubbidDiscovery() {
               style={styles.chip(price.includes(p))}
               onClick={() => toggleInList(p, price, setPrice)}
               {...chipA11y(() => toggleInList(p, price, setPrice))}
-              aria-pressed={price.includes(p)}
             >
               {p}
             </div>
@@ -574,7 +409,6 @@ export default function GrubbidDiscovery() {
               style={styles.chip(distance.includes(d))}
               onClick={() => toggleInList(d, distance, setDistance)}
               {...chipA11y(() => toggleInList(d, distance, setDistance))}
-              aria-pressed={distance.includes(d)}
             >
               {d}
             </div>
@@ -584,7 +418,6 @@ export default function GrubbidDiscovery() {
             style={styles.chip(delivery)}
             onClick={() => setDelivery((v) => !v)}
             {...chipA11y(() => setDelivery((v) => !v))}
-            aria-pressed={delivery}
           >
             Delivery
           </div>
@@ -593,7 +426,6 @@ export default function GrubbidDiscovery() {
             style={styles.chip(dealsOnly)}
             onClick={() => setDealsOnly((v) => !v)}
             {...chipA11y(() => setDealsOnly((v) => !v))}
-            aria-pressed={dealsOnly}
           >
             Deals
           </div>
@@ -607,7 +439,6 @@ export default function GrubbidDiscovery() {
               style={styles.chip(health.includes(h))}
               onClick={() => toggleInList(h, health, setHealth)}
               {...chipA11y(() => toggleInList(h, health, setHealth))}
-              aria-pressed={health.includes(h)}
             >
               {h}
             </div>
@@ -622,7 +453,6 @@ export default function GrubbidDiscovery() {
               style={styles.chip(ingredients.includes(i))}
               onClick={() => toggleInList(i, ingredients, setIngredients)}
               {...chipA11y(() => toggleInList(i, ingredients, setIngredients))}
-              aria-pressed={ingredients.includes(i)}
             >
               {i}
             </div>
@@ -639,75 +469,7 @@ export default function GrubbidDiscovery() {
         </div>
       </div>
 
-      {/* Sticky “Search another area” selector ABOVE footer */}
-      <div style={styles.stickyAreaWrap}>
-        <div style={styles.stickyAreaInner}>
-          {areaOpen && (
-            <div style={styles.popover}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#444", marginBottom: 6 }}>
-                Search another area
-              </div>
-              <div style={styles.popoverRow}>
-                <input
-                  ref={areaInputRef}
-                  style={styles.popoverInput}
-                  value={zip}
-                  onChange={(e) => setZip(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      goSearch();
-                      closeArea();
-                    }
-                    if (e.key === "Escape") closeArea();
-                  }}
-                  placeholder="City or ZIP"
-                />
-                <button type="button" style={styles.miniBtn} onClick={() => setZip("")}>
-                  Clear
-                </button>
-                <button
-                  type="button"
-                  style={styles.miniBtnPrimary}
-                  onClick={() => {
-                    goSearch();
-                    closeArea();
-                  }}
-                >
-                  Apply
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div
-            style={styles.spaceBar(areaOpen)}
-            onClick={() => {
-              setAreaOpen((v) => !v);
-              setTimeout(() => areaInputRef.current?.focus(), 0);
-            }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setAreaOpen((v) => !v);
-                setTimeout(() => areaInputRef.current?.focus(), 0);
-              }
-              if (e.key === "Escape") closeArea();
-            }}
-            aria-pressed={areaOpen}
-          >
-            Search another area
-            <span style={styles.spaceBarHint}>
-              {zip.trim() ? `(${zip.trim()})` : "City or ZIP"}
-            </span>
-          </div>
-        </div>
-      </div>
-
       <div style={styles.footer}>
-        {/* ✅ Correct route per App.jsx */}
         <Link to="/restaurant/signup" style={styles.footerLink}>
           Restaurant sign up
         </Link>{" "}

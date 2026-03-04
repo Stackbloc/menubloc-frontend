@@ -1,33 +1,59 @@
-// menubloc-frontend/src/components/SearchResultCard.jsx
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-function asStr(v) {
-  return v === undefined || v === null ? "" : String(v);
+function asString(v) {
+  return v === undefined || v === null ? "" : String(v).trim();
+}
+
+function asNumber(v) {
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (typeof v === "string") {
+    const cleaned = v.replace(/[^\d.-]/g, "");
+    if (!cleaned) return null;
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
 }
 
 function pickFirst(obj, keys, fallback = "") {
-  for (const k of keys) {
-    const v = obj?.[k];
-    if (v !== undefined && v !== null && String(v).trim() !== "") return v;
+  for (const key of keys) {
+    const v = obj?.[key];
+    if (v !== undefined && v !== null && asString(v) !== "") return v;
   }
   return fallback;
 }
 
-function money(v) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return "";
-  return `$${n.toFixed(2).replace(/\.00$/, "")}`;
+function boolField(v) {
+  if (v === true) return true;
+  if (v === false || v === 0 || v === "0") return false;
+  if (typeof v === "string") {
+    const s = v.trim().toLowerCase();
+    return s === "true" || s === "yes" || s === "1";
+  }
+  return false;
+}
+
+function formatPrice(item) {
+  const dollars = asNumber(item?.price);
+  if (dollars !== null) return `$${dollars.toFixed(2).replace(/\.00$/, "")}`;
+
+  const minor = asNumber(item?.price_minor_units);
+  if (minor !== null) return `$${(minor / 100).toFixed(2).replace(/\.00$/, "")}`;
+
+  const cents = asNumber(item?.price_cents);
+  if (cents !== null) return `$${(cents / 100).toFixed(2).replace(/\.00$/, "")}`;
+
+  return "";
 }
 
 function escapeRegExp(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// highlight query matches inside text
 function highlight(text, query) {
-  const t = asStr(text);
-  const q = asStr(query).trim();
+  const t = asString(text);
+  const q = asString(query);
   if (!t || !q) return t;
 
   const re = new RegExp(`(${escapeRegExp(q)})`, "ig");
@@ -36,15 +62,7 @@ function highlight(text, query) {
 
   return parts.map((p, i) =>
     i % 2 === 1 ? (
-      <mark
-        key={i}
-        style={{
-          background: "#fff3a0",
-          padding: "0 2px",
-          borderRadius: 3,
-          fontWeight: 900,
-        }}
-      >
+      <mark key={i} style={{ background: "#fff3a0", borderRadius: 3, padding: "0 2px" }}>
         {p}
       </mark>
     ) : (
@@ -53,255 +71,248 @@ function highlight(text, query) {
   );
 }
 
+function renderList(items) {
+  return (
+    <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+      {items.map((entry, i) => (
+        <li key={`${entry}-${i}`} style={{ marginBottom: 4 }}>
+          {entry}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function SearchResultCard({ item, query }) {
-  const [open, setOpen] = useState(false);
-  const [panel, setPanel] = useState("insights"); // insights | nutrition | pairings
+  const [expanded, setExpanded] = useState(false);
+  const [tab, setTab] = useState("insights");
 
-  // IDs for linking
-  const restaurantId = useMemo(() => asStr(pickFirst(item, ["restaurant_id", "restaurantId"], "")), [item]);
-  const menuItemId = useMemo(() => asStr(pickFirst(item, ["menu_item_id", "menuItemId"], "")), [item]);
+  const isMenuItemRow = Boolean(item?.menu_item_id || item?.menu_item_name);
 
-  const restaurantName = useMemo(
-    () => asStr(pickFirst(item, ["restaurant_name", "restaurantName", "name", "title"], "Restaurant")),
-    [item]
+  const restaurantId = asString(pickFirst(item, ["restaurant_id", "restaurantId", "id"], ""));
+  const menuItemId = asString(pickFirst(item, ["menu_item_id", "menuItemId"], ""));
+
+  const restaurantName = asString(
+    pickFirst(item, ["restaurant_name", "restaurantName", "name", "title"], "Restaurant")
+  );
+  const menuItemName = asString(
+    pickFirst(item, ["menu_item_name", "menuItemName", "item_name", "dish"], "Menu item")
   );
 
-  const dishName = useMemo(
-    () => asStr(pickFirst(item, ["menu_item_name", "item_name", "dish", "menuItemName", "menu_item"], "")),
-    [item]
-  );
+  const city = asString(item?.city);
+  const state = asString(item?.state);
+  const postal = asString(pickFirst(item, ["postal_code", "zip", "zipcode"], ""));
 
-  const isDish = !!dishName;
+  const locationLine = useMemo(() => {
+    const parts = [city, state, postal].filter(Boolean);
+    return parts.join(" ");
+  }, [city, state, postal]);
 
-  const priceRaw = useMemo(() => pickFirst(item, ["price", "item_price", "menu_item_price"], ""), [item]);
-  const price = useMemo(() => (isDish ? money(priceRaw) : ""), [isDish, priceRaw]);
+  const price = useMemo(() => formatPrice(item), [item]);
 
-  const city = useMemo(() => asStr(pickFirst(item, ["city"], "")), [item]);
-  const state = useMemo(() => asStr(pickFirst(item, ["state"], "")), [item]);
-  const address = useMemo(() => asStr(pickFirst(item, ["address", "address_line1", "address1"], "")), [item]);
+  const hasDeal = boolField(item?.has_active_deal);
+  const isVegan = boolField(item?.is_vegan);
+  const isGlutenFree = boolField(item?.is_gluten_free);
+  const isPopular = boolField(item?.is_popular) || boolField(item?.popular);
 
-  const cuisine = useMemo(() => asStr(pickFirst(item, ["cuisine", "cuisine_type"], "")), [item]);
+  const symbols = [
+    hasDeal ? "Deal" : null,
+    isVegan ? "Vegan" : null,
+    isGlutenFree ? "Gluten-free" : null,
+    isPopular ? "Popular" : null,
+  ].filter(Boolean);
 
-  const snippet = useMemo(
-    () => asStr(pickFirst(item, ["snippet", "description", "menu_item_description", "blurb"], "")),
-    [item]
-  );
+  const chips = item?.chips || {};
 
-  const insights = useMemo(() => {
-    const vegan = !!item?.vegan || String(item?.is_vegan || item?.item_vegan || "").toLowerCase() === "true";
-    const gf =
-      !!item?.gluten_free || String(item?.is_gluten_free || item?.item_gluten_free || "").toLowerCase() === "true";
-    const tags = [];
-    if (vegan) tags.push("Vegan");
-    if (gf) tags.push("Gluten-free");
-    if (item?.deals || item?.has_deal || item?.has_active_deal) tags.push("Deal");
-    if (cuisine) tags.unshift(cuisine);
-    return tags.length ? tags.join(" · ") : "No insights yet (menu ingestion will add more).";
-  }, [item, cuisine]);
+  const insightsItems = Array.isArray(chips?.insights?.items) ? chips.insights.items.filter(Boolean).slice(0, 6) : [];
+  const insightReasons = Array.isArray(chips?.insights?.reasons) ? chips.insights.reasons.filter(Boolean) : [];
 
-  const nutrition = useMemo(() => {
-    const calories = pickFirst(item, ["calories", "kcal"], "");
-    const protein = pickFirst(item, ["protein_g", "protein"], "");
-    const sodium = pickFirst(item, ["sodium_mg", "sodium"], "");
-    return { calories, protein, sodium };
-  }, [item]);
+  const nutritionChip = chips?.nutrition_chip || {};
+  const nutritionStatus = asString(nutritionChip?.status).toLowerCase();
+  const nutritionAvailable = nutritionStatus && nutritionStatus !== "unavailable" && nutritionStatus !== "missing";
 
-  const pairings = useMemo(() => {
-    const c = String(cuisine || "").toLowerCase();
-    if (c.includes("ital")) return ["Sparkling water", "Side salad", "Garlic bread"];
-    if (c.includes("japan")) return ["Green tea", "Gyoza", "Side salad"];
-    return ["Sparkling water", "Side salad", "Fruit"];
-  }, [cuisine]);
+  const calories = pickFirst(nutritionChip, ["calories", "kcal"], "");
+  const protein = pickFirst(nutritionChip, ["protein", "protein_g"], "");
+  const sodium = pickFirst(nutritionChip, ["sodium", "sodium_mg"], "");
 
-  const chips = [
-    { id: "insights", label: "Insights" },
-    { id: "nutrition", label: "Nutrition" },
-    { id: "pairings", label: "Pairings" },
-  ];
+  const pairingSuggestions = Array.isArray(chips?.pairings_chip?.suggestions)
+    ? chips.pairings_chip.suggestions.filter(Boolean)
+    : [];
+
+  const restaurantHref = restaurantId ? `/restaurants/${restaurantId}` : null;
+  const menuItemHref = menuItemId ? `/menu-items/${menuItemId}` : null;
 
   const styles = {
     card: {
-      border: "1px solid #eee",
-      borderRadius: 16,
-      padding: 14,
+      border: "1px solid #e9e9e9",
+      borderRadius: 14,
       background: "#fff",
-      boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
-      cursor: "pointer",
+      padding: 14,
+      boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
     },
-    topRow: { display: "flex", justifyContent: "space-between", gap: 12 },
-    titleRow: { display: "flex", alignItems: "center", gap: 8, minWidth: 0 },
-    title: { fontWeight: 900, fontSize: 14, lineHeight: 1.2, minWidth: 0 },
-    sub: { fontSize: 12, color: "#666", marginTop: 4 },
-    price: { fontWeight: 900, fontSize: 13, whiteSpace: "nowrap" },
-    snippet: { marginTop: 10, fontSize: 12, color: "#333" },
-    chipRow: { display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" },
-    chip: (active) => ({
-      padding: "6px 10px",
+    header: { display: "flex", justifyContent: "space-between", gap: 12 },
+    title: { margin: 0, fontSize: 15, fontWeight: 900, lineHeight: 1.25 },
+    sub: { marginTop: 4, fontSize: 12, color: "#555" },
+    meta: { marginTop: 4, fontSize: 12, color: "#777" },
+    price: { fontSize: 14, fontWeight: 900, whiteSpace: "nowrap" },
+    symbolRow: { marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" },
+    symbol: {
+      border: "1px solid #e6e6e6",
       borderRadius: 999,
-      border: active ? "1px solid #111" : "1px solid #e5e5e5",
+      padding: "4px 8px",
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#333",
+      background: "#fafafa",
+    },
+    actions: { marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
+    link: { fontSize: 12, fontWeight: 800, color: "#1947d1", textDecoration: "none" },
+    toggle: {
+      border: "1px solid #d8d8d8",
+      background: "#fff",
+      borderRadius: 999,
+      padding: "6px 10px",
       fontSize: 12,
       fontWeight: 800,
-      background: active ? "#fff" : "transparent",
-      userSelect: "none",
-    }),
-    panel: {
-      marginTop: 10,
-      borderTop: "1px solid #f0f0f0",
-      paddingTop: 10,
-      fontSize: 12,
-      color: "#333",
+      cursor: "pointer",
     },
-    mini: { color: "#666", fontSize: 12, marginTop: 6 },
-    caret: { fontSize: 12, color: "#777", flex: "none" },
-    footer: { marginTop: 10, display: "flex", justifyContent: "space-between", gap: 10 },
-    link: { fontSize: 12, fontWeight: 900, color: "#6b5cff", textDecoration: "none" },
-    inlineLink: { fontWeight: 900, color: "#111", textDecoration: "underline" },
-    restaurantLink: { fontWeight: 800, color: "#6b5cff", textDecoration: "underline" },
+    expanded: { marginTop: 12, paddingTop: 12, borderTop: "1px solid #efefef" },
+    tabs: { display: "flex", gap: 8, flexWrap: "wrap" },
+    tabButton: (active) => ({
+      border: active ? "1px solid #111" : "1px solid #e0e0e0",
+      borderRadius: 999,
+      background: active ? "#111" : "#fff",
+      color: active ? "#fff" : "#333",
+      padding: "6px 10px",
+      fontSize: 12,
+      fontWeight: 800,
+      cursor: "pointer",
+    }),
+    panel: { marginTop: 10, fontSize: 13, color: "#333" },
+    panelTitle: { fontWeight: 900 },
+    detailLine: { marginTop: 6 },
   };
 
-  function stop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  const locationLine = [address, city && state ? `${city}, ${state}` : city || state].filter(Boolean).join(" · ");
-
-  const restaurantHref = restaurantId ? `/r/${restaurantId}` : null;
-  const itemHref = restaurantId && menuItemId && isDish ? `/r/${restaurantId}/item/${menuItemId}` : null;
-
-  const titleNode = isDish ? (
-    itemHref ? (
-      <Link to={itemHref} style={styles.inlineLink} onClick={(e) => e.stopPropagation()}>
-        {highlight(dishName, query)}
-      </Link>
-    ) : (
-      <span>{highlight(dishName, query)}</span>
-    )
-  ) : restaurantHref ? (
-    <Link to={restaurantHref} style={styles.inlineLink} onClick={(e) => e.stopPropagation()}>
-      {highlight(restaurantName, query)}
-    </Link>
-  ) : (
-    <span>{highlight(restaurantName, query)}</span>
-  );
-
-  const restaurantNode =
-    restaurantHref && restaurantName ? (
-      <Link to={restaurantHref} style={styles.restaurantLink} onClick={(e) => e.stopPropagation()}>
-        {highlight(restaurantName, query)}
-      </Link>
-    ) : (
-      <span>{highlight(restaurantName, query)}</span>
-    );
-
   return (
-    <div
-      style={styles.card}
-      role="button"
-      tabIndex={0}
-      onClick={() => setOpen((v) => !v)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          setOpen((v) => !v);
-        }
-      }}
-      aria-expanded={open}
-    >
-      <div style={styles.topRow}>
+    <article style={styles.card}>
+      <div style={styles.header}>
         <div style={{ minWidth: 0 }}>
-          <div style={styles.titleRow}>
-            <div style={styles.title}>
-              {titleNode} <span style={styles.caret}>{open ? "▲" : "▼"}</span>
-            </div>
-          </div>
+          <h3 style={styles.title}>
+            {isMenuItemRow ? highlight(menuItemName, query) : highlight(restaurantName, query)}
+          </h3>
 
-          <div style={styles.sub}>
-            {isDish
-              ? [restaurantNode, city && state ? `${city}, ${state}` : city || state].filter(Boolean).join(" · ")
-              : locationLine}
-          </div>
+          {isMenuItemRow && (
+            <div style={styles.sub}>
+              {restaurantHref ? (
+                <Link to={restaurantHref} style={styles.link}>
+                  {highlight(restaurantName, query)}
+                </Link>
+              ) : (
+                highlight(restaurantName, query)
+              )}
+            </div>
+          )}
+
+          {locationLine ? <div style={styles.meta}>{locationLine}</div> : null}
         </div>
 
-        <div style={styles.price}>{price}</div>
+        {price ? <div style={styles.price}>{price}</div> : <div />}
       </div>
 
-      {snippet ? <div style={styles.snippet}>{highlight(snippet, query)}</div> : null}
-
-      {/* Tabs */}
-      <div style={styles.chipRow} onClick={stop}>
-        {chips.map((c) => (
-          <div
-            key={c.id}
-            style={styles.chip(panel === c.id)}
-            onClick={() => setPanel(c.id)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setPanel(c.id);
-              }
-            }}
-            aria-pressed={panel === c.id}
-          >
-            {c.label}
-          </div>
-        ))}
-      </div>
-
-      {/* Expandable content */}
-      {open && (
-        <div style={styles.panel} onClick={stop}>
-          {panel === "insights" && (
-            <>
-              <div style={{ fontWeight: 900 }}>Insights</div>
-              <div style={styles.mini}>{insights}</div>
-            </>
-          )}
-
-          {panel === "nutrition" && (
-            <>
-              <div style={{ fontWeight: 900 }}>Nutrition</div>
-              <div style={styles.mini}>
-                Calories: {nutrition.calories || "—"} · Protein: {nutrition.protein || "—"} · Sodium:{" "}
-                {nutrition.sodium || "—"}
-              </div>
-              <div style={styles.mini}>Nutrition is a stub until Common Knowledge has item-level nutrition.</div>
-            </>
-          )}
-
-          {panel === "pairings" && (
-            <>
-              <div style={{ fontWeight: 900 }}>Pairings</div>
-              <div style={styles.mini}>{pairings.join(" · ")}</div>
-              <div style={styles.mini}>Pairings are heuristic for now; we’ll upgrade after menu ingestion.</div>
-            </>
-          )}
-
-          <div style={styles.footer}>
-            {restaurantHref ? (
-              <Link to={restaurantHref} style={styles.link} onClick={(e) => e.stopPropagation()}>
-                View restaurant
-              </Link>
-            ) : (
-              <a href="#" style={styles.link} onClick={stop}>
-                View restaurant
-              </a>
-            )}
-
-            {itemHref ? (
-              <Link to={itemHref} style={styles.link} onClick={(e) => e.stopPropagation()}>
-                View item
-              </Link>
-            ) : (
-              <a href="#" style={styles.link} onClick={stop}>
-                Save
-              </a>
-            )}
-          </div>
+      {symbols.length > 0 && (
+        <div style={styles.symbolRow}>
+          {symbols.map((label) => (
+            <span key={label} style={styles.symbol}>
+              {label}
+            </span>
+          ))}
         </div>
       )}
-    </div>
+
+      <div style={styles.actions}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {restaurantHref ? (
+            <Link to={restaurantHref} style={styles.link}>
+              View restaurant
+            </Link>
+          ) : null}
+
+          {isMenuItemRow && menuItemHref ? (
+            <Link to={menuItemHref} style={styles.link}>
+              View menu item
+            </Link>
+          ) : null}
+        </div>
+
+        <button
+          type="button"
+          style={styles.toggle}
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-label={expanded ? "Collapse details" : "Expand details"}
+        >
+          {expanded ? "Collapse" : "Expand"}
+        </button>
+      </div>
+
+      {expanded && (
+        <section style={styles.expanded}>
+          <div style={styles.tabs}>
+            <button type="button" style={styles.tabButton(tab === "insights")} onClick={() => setTab("insights")}>
+              Insights
+            </button>
+            <button type="button" style={styles.tabButton(tab === "nutrition")} onClick={() => setTab("nutrition")}>
+              Nutrition
+            </button>
+            <button type="button" style={styles.tabButton(tab === "pairings")} onClick={() => setTab("pairings")}>
+              Pairings
+            </button>
+          </div>
+
+          <div style={styles.panel}>
+            {tab === "insights" && (
+              <>
+                <div style={styles.panelTitle}>Insights</div>
+                {insightsItems.length > 0 && renderList(insightsItems)}
+                {insightsItems.length === 0 && insightReasons.length > 0 && renderList(insightReasons)}
+                {insightsItems.length === 0 && insightReasons.length === 0 && (
+                  <div style={styles.detailLine}>No insights yet.</div>
+                )}
+              </>
+            )}
+
+            {tab === "nutrition" && (
+              <>
+                <div style={styles.panelTitle}>Nutrition</div>
+                {nutritionAvailable ? (
+                  <div style={styles.detailLine}>
+                    {[
+                      calories !== "" ? `Calories: ${calories}` : null,
+                      protein !== "" ? `Protein: ${protein}` : null,
+                      sodium !== "" ? `Sodium: ${sodium}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" | ") || "Nutrition not available yet."}
+                  </div>
+                ) : (
+                  <div style={styles.detailLine}>Nutrition not available yet.</div>
+                )}
+              </>
+            )}
+
+            {tab === "pairings" && (
+              <>
+                <div style={styles.panelTitle}>Pairings</div>
+                {pairingSuggestions.length > 0 ? (
+                  renderList(pairingSuggestions)
+                ) : (
+                  <div style={styles.detailLine}>Pairings coming soon.</div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+      )}
+    </article>
   );
 }
