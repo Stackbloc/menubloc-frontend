@@ -1,50 +1,45 @@
-// menubloc-frontend/src/components/MenuSection.jsx
 import React from "react";
+import MenuCard from "./MenuCard";
 
-function fmtPrice(x) {
-  if (x === null || x === undefined || x === "") return "";
-  const num = Number(x);
-  if (Number.isFinite(num)) return `$${num.toFixed(2)}`;
-  return String(x);
-}
-
-export default function MenuSection({ section }) {
-  const title = section?.name || section?.title || "Section";
-  const items = section?.items || [];
+export default function MenuSection({ section, compact = false }) {
+  const title = section?.title || section?.name || "Menu";
+  const items = Array.isArray(section?.items) ? section.items : [];
 
   return (
-    <div className="menu-section">
-      <h2 className="menu-section-title">{title}</h2>
-
-      <div className="menu-items">
-        {items.map((it) => {
-          const name = it?.name || it?.title || "Item";
-          const desc = it?.description || it?.desc || "";
-          const price = fmtPrice(it?.price);
-          const tags = Array.isArray(it?.tags) ? it.tags : [];
-
-          return (
-            <div className="menu-item" key={it?.id || `${title}-${name}`}>
-              <div className="menu-item-main">
-                <div className="menu-item-name">{name}</div>
-                {desc ? <div className="menu-item-desc">{desc}</div> : null}
-
-                {tags.length ? (
-                  <div className="menu-item-tags">
-                    {tags.slice(0, 4).map((t) => (
-                      <span className="tag" key={`${name}-${t}`}>
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-
-              {price ? <div className="menu-item-price">{price}</div> : null}
-            </div>
-          );
-        })}
+    <section
+      style={{
+        border: "1px solid #dce4f2",
+        borderRadius: 16,
+        background: "#fbfdff",
+        padding: compact ? 12 : 16,
+        boxShadow: "0 4px 16px rgba(27, 47, 84, 0.06)",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+        <h3 style={{ margin: 0, fontSize: compact ? 17 : 20 }}>{title}</h3>
+        <span style={{ color: "#5a6882", fontSize: 12, fontWeight: 700 }}>{items.length} items</span>
       </div>
-    </div>
+
+      {items.length === 0 ? (
+        <div
+          style={{
+            marginTop: 10,
+            border: "1px dashed #cfdae9",
+            borderRadius: 12,
+            padding: "10px 12px",
+            color: "#6d7a93",
+            fontSize: 13,
+          }}
+        >
+          No menu items in this section.
+        </div>
+      ) : (
+        <div style={{ marginTop: 10, display: "grid", gap: compact ? 8 : 10 }}>
+          {items.map((item, idx) => (
+            <MenuCard key={`${item?.id || item?.name || "item"}-${idx}`} item={item} compact={compact} />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

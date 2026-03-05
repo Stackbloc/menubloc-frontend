@@ -1,106 +1,73 @@
-/* ============================================================
-   Global Theme + Base Styles
-   menubloc-frontend/src/index.css
-   ============================================================ */
+/**
+ * ============================================================
+ * Path: menubloc-frontend/src/index.css
+ * File: index.css
+ * Date: 2026-03-05
+ * Purpose:
+ *   Global typography + UI tokens for Grubbid.
+ *   - Proven “clean marketplace” scale (DoorDash-ish hierarchy)
+ *   - Link + focus styles so menu items look clickable
+ * ============================================================
+ */
 
-/* ---------- Theme Variables ---------- */
+/* Optional: Inter is a safe “proven default” for UI. Remove if you prefer local-only. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
 :root {
+  /* Fonts */
+  --font-ui: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+
+  /* Type scale (tight + readable) */
+  --text-0: 11px;
+  --text-1: 12px;
+  --text-2: 14px;
+  --text-3: 16px;
+  --text-4: 18px;
+  --text-5: 22px;
+  --text-6: 30px;
+
+  /* Colors */
+  --ink: #0f1720;
+  --muted: #5b6675;
+  --muted-2: #93a0b2;
+  --link: #124ba3;
+
   --bg: #ffffff;
-  --text: #111111;
-  --muted: #666666;
   --card: #ffffff;
-  --border: #e5e5e5;
-  --pill-bg: #f5f5f5;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
+  --border: #e4e9f0;
 
-/* Dark Mode */
-body[data-theme="dark"] {
-  --bg: #0b0b0b;
-  --text: #f2f2f2;
-  --muted: #9c9c9c;
-  --card: #151515;
-  --border: #262626;
-  --pill-bg: #1f1f1f;
-  --shadow: none;
-}
+  /* Shadows */
+  --shadow-1: 0 6px 18px rgba(16, 24, 40, 0.06);
 
-/* ---------- Base Reset ---------- */
-
-* {
-  box-sizing: border-box;
+  /* Focus */
+  --focus: rgba(18, 75, 163, 0.35);
 }
 
 html,
-body,
-#root {
-  height: 100%;
-}
-
 body {
-  margin: 0;
   background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ---------- Typography ---------- */
-
-h1,
-h2,
-h3,
-h4 {
-  margin: 0;
-  font-weight: 900;
-}
-
-p {
-  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-ui);
 }
 
 a {
-  color: inherit;
+  color: var(--link);
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* Make “clickable text” feel clickable */
+.grubbid-linkish {
+  color: var(--ink);
   text-decoration: none;
 }
 
-a:hover {
+.grubbid-linkish:hover {
   text-decoration: underline;
-}
-
-/* ---------- Buttons ---------- */
-
-button {
-  font-family: inherit;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border 0.15s ease;
-}
-
-button:focus {
-  outline: none;
-}
-
-/* ---------- Utility Classes (optional future use) ---------- */
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-}
-
-.pill {
-  background: var(--pill-bg);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.muted {
-  color: var(--muted);
+  text-underline-offset: 3px;
 }

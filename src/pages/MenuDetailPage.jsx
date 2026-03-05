@@ -1,19 +1,6 @@
-/**
- * ============================================================
- * Path: menubloc-frontend/src/pages/MenuDetailPage.jsx
- * File: MenuDetailPage.jsx
- * Updated: 2026-03-03
- * Purpose:
- *   Menu detail page with two modes:
- *     - Menu Cards (from /menus/:id/mks-preview sections)
- *     - Raw Text (from /menus/:id menu_text)
- *   Fixes "Failed to fetch" UX and uses the correct backend field
- *   (menu.menu_text instead of menu.raw_text).
- * ============================================================
- */
-
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import MenuSection from "../components/MenuSection";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -24,12 +11,6 @@ function formatDate(value) {
   return d.toLocaleString();
 }
 
-function formatMoneyFromCents(priceCents) {
-  const n = Number(priceCents);
-  if (!Number.isFinite(n)) return "-";
-  return `$${(n / 100).toFixed(2)}`;
-}
-
 export default function MenuDetailPage() {
   const { id } = useParams();
   const menuId = useMemo(() => String(id ?? "").trim(), [id]);
@@ -38,18 +19,17 @@ export default function MenuDetailPage() {
   const [error, setError] = useState("");
   const [menu, setMenu] = useState(null);
 
-  const [view, setView] = useState("cards"); // "cards" | "raw"
+  const [view, setView] = useState("cards");
   const [compact, setCompact] = useState(false);
 
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState("");
   const [preview, setPreview] = useState(null);
 
-  // Load base menu
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
+    async function loadMenu() {
       setLoading(true);
       setError("");
       setMenu(null);
@@ -68,31 +48,25 @@ export default function MenuDetailPage() {
         const data = await res.json().catch(() => null);
 
         if (!res.ok) {
-          const msg = data?.error || `Failed to fetch menu (${res.status})`;
-          throw new Error(msg);
+          throw new Error(data?.error || `Failed to fetch menu (${res.status})`);
         }
 
         if (!cancelled) {
           setMenu(data?.menu || null);
         }
       } catch (e) {
-        if (!cancelled) {
-          setError(e?.message || "Failed to fetch menu");
-        }
+        if (!cancelled) setError(e?.message || "Failed to fetch menu");
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
-    load();
+    loadMenu();
     return () => {
       cancelled = true;
     };
   }, [menuId]);
 
-  // Load cards preview on demand
   useEffect(() => {
     let cancelled = false;
 
@@ -107,21 +81,14 @@ export default function MenuDetailPage() {
         const data = await res.json().catch(() => null);
 
         if (!res.ok) {
-          const msg = data?.error || `Failed to fetch menu cards (${res.status})`;
-          throw new Error(msg);
+          throw new Error(data?.error || `Failed to fetch menu cards (${res.status})`);
         }
 
-        if (!cancelled) {
-          setPreview(data || null);
-        }
+        if (!cancelled) setPreview(data || null);
       } catch (e) {
-        if (!cancelled) {
-          setPreviewError(e?.message || "Failed to fetch menu cards");
-        }
+        if (!cancelled) setPreviewError(e?.message || "Failed to fetch menu cards");
       } finally {
-        if (!cancelled) {
-          setPreviewLoading(false);
-        }
+        if (!cancelled) setPreviewLoading(false);
       }
     }
 
@@ -131,14 +98,9 @@ export default function MenuDetailPage() {
     };
   }, [view, menuId, preview, previewLoading]);
 
-  const titleText =
-    menu?.restaurant_name ||
-    preview?.restaurant_name ||
-    menu?.name ||
-    preview?.name ||
-    "Menu Detail";
-
+  const titleText = menu?.restaurant_name || preview?.restaurant_name || menu?.name || preview?.name || "Menu Detail";
   const createdAt = menu?.created_at || preview?.created_at || null;
+  const sections = Array.isArray(preview?.sections) ? preview.sections : [];
 
   if (loading) {
     return <div style={{ padding: 20 }}>Loading menu detail…</div>;
@@ -153,8 +115,6 @@ export default function MenuDetailPage() {
       </div>
     );
   }
-
-  const sections = Array.isArray(preview?.sections) ? preview.sections : [];
 
   return (
     <div style={{ padding: 22, maxWidth: 980, margin: "0 auto" }}>
@@ -246,14 +206,7 @@ export default function MenuDetailPage() {
       ) : (
         <div style={{ marginTop: 14 }}>
           {previewLoading && (
-            <div
-              style={{
-                padding: 14,
-                border: "1px solid #eee",
-                borderRadius: 12,
-                background: "#fafafa",
-              }}
-            >
+            <div style={{ padding: 14, border: "1px solid #eee", borderRadius: 12, background: "#fafafa" }}>
               Loading menu cards…
             </div>
           )}
@@ -270,21 +223,11 @@ export default function MenuDetailPage() {
               }}
             >
               {previewError}
-              <div style={{ marginTop: 8, color: "#555", fontWeight: 400 }}>
-                If this is a CORS/port issue, your backend must allow your current Vite port.
-              </div>
             </div>
           )}
 
           {!previewLoading && !previewError && sections.length === 0 && (
-            <div
-              style={{
-                padding: 14,
-                border: "1px solid #eee",
-                borderRadius: 12,
-                background: "#fafafa",
-              }}
-            >
+            <div style={{ padding: 14, border: "1px solid #eee", borderRadius: 12, background: "#fafafa" }}>
               No cards yet. (No sections/items returned.)
             </div>
           )}
@@ -298,54 +241,11 @@ export default function MenuDetailPage() {
               }}
             >
               {sections.map((section, sectionIdx) => (
-                <div
-                  key={`${section?.title || "section"}-${sectionIdx}`}
-                  style={{
-                    border: "1px solid #eee",
-                    borderRadius: 14,
-                    background: "#fff",
-                    padding: compact ? 12 : 16,
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "baseline" }}>
-                    <h3 style={{ margin: 0, fontSize: compact ? 16 : 18 }}>
-                      {section?.title || "Menu"}
-                    </h3>
-                    <div style={{ fontSize: 12, color: "#666" }}>
-                      {Array.isArray(section?.items) ? section.items.length : 0} items
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: 10 }}>
-                    {Array.isArray(section?.items) &&
-                      section.items.map((item, itemIdx) => {
-                        const price =
-                          item?.price ||
-                          (typeof item?.price_cents === "number" ? formatMoneyFromCents(item.price_cents) : "-");
-
-                        return (
-                          <div
-                            key={`${item?.id || item?.name || "item"}-${itemIdx}`}
-                            style={{
-                              padding: compact ? "8px 0" : "10px 0",
-                              borderTop: itemIdx === 0 ? "none" : "1px solid #f1f1f1",
-                            }}
-                          >
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                              <div style={{ fontWeight: 650 }}>{item?.name || "-"}</div>
-                              <div style={{ fontWeight: 750 }}>{price}</div>
-                            </div>
-                            {item?.notes ? (
-                              <div style={{ marginTop: 4, fontSize: 13, color: "#555", lineHeight: 1.3 }}>
-                                {item.notes}
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
+                <MenuSection
+                  key={`${section?.title || section?.name || "section"}-${sectionIdx}`}
+                  section={section}
+                  compact={compact}
+                />
               ))}
             </div>
           )}
