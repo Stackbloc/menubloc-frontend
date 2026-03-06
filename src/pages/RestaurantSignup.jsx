@@ -268,7 +268,7 @@ export default function RestaurantSignup() {
       <div style={styles.header}>
         <div style={styles.brand}>Grubbid</div>
         <div style={styles.subbrand}>for Restaurants</div>
-        <div style={styles.pageTitle}>Create your restaurant account</div>
+        <div style={styles.pageTitle}>Upload your menu</div>
         <div style={styles.pageSubtitle}>
           Get discovered by food-conscious diners in your area.
         </div>
@@ -368,8 +368,16 @@ export default function RestaurantSignup() {
               name="website"
               type="url"
               autoComplete="url"
+              placeholder="yourrestaurant.com"
               value={form.website}
               onChange={handleChange}
+              onBlur={() => {
+                const raw = form.website.trim();
+                if (!raw) return;
+                if (!/^https?:\/\//i.test(raw)) {
+                  setForm((prev) => ({ ...prev, website: "https://" + raw }));
+                }
+              }}
               style={styles.input}
             />
           </div>
@@ -458,6 +466,85 @@ export default function RestaurantSignup() {
         <div style={styles.section}>
           <div style={styles.sectionTitle}>Menu Upload Method</div>
 
+          {/* PDF */}
+          <div
+            style={ingestionOptionStyle(ingestionMethod === "pdf")}
+            onClick={() => selectIngestion("pdf")}
+            role="radio"
+            aria-checked={ingestionMethod === "pdf"}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                selectIngestion("pdf");
+              }
+            }}
+          >
+            <div style={styles.ingestionTitle}>
+              Upload Menu PDF{" "}
+              <span style={{ fontWeight: 400, color: "#444" }}>(Free)</span>
+            </div>
+            <div style={styles.ingestionDesc}>
+              Upload your menu as a PDF and we will parse it automatically.
+            </div>
+          </div>
+
+          {/* Spreadsheet */}
+          <div
+            style={ingestionOptionStyle(ingestionMethod === "spreadsheet")}
+            onClick={() => selectIngestion("spreadsheet")}
+            role="radio"
+            aria-checked={ingestionMethod === "spreadsheet"}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                selectIngestion("spreadsheet");
+              }
+            }}
+          >
+            <div style={styles.ingestionTitle}>
+              Upload Menu via Spreadsheet{" "}
+              <span style={{ fontWeight: 400, color: "#444" }}>(Free)</span>
+            </div>
+            <div style={styles.ingestionDesc}>
+              Fill in the menu upload template and upload it here.{" "}
+              <a
+                href="/menu-upload-template.xlsx"
+                download="Menu Upload Template.xlsx"
+                style={{ color: "#111", fontWeight: 700 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                Download the menu upload template
+              </a>
+            </div>
+            {ingestionMethod === "spreadsheet" && (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: "12px 14px",
+                  background: "#f4f4f8",
+                  borderRadius: 10,
+                  fontSize: 12,
+                  color: "#444",
+                  lineHeight: 1.6,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Spreadsheet instructions</div>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  <li>Download the Menu Upload Template above</li>
+                  <li>Fill in your menu items using the provided columns</li>
+                  <li>Do not rename the column headers</li>
+                  <li>Add as many rows as needed for your menu items</li>
+                  <li>Prices should be entered in dollars (example: 12.99)</li>
+                  <li>Boolean fields should use TRUE or FALSE</li>
+                  <li>Save the spreadsheet and upload it on this page</li>
+                </ul>
+              </div>
+            )}
+          </div>
+
           {/* OCR */}
           <div
             style={ingestionOptionStyle(ingestionMethod === "ocr")}
@@ -473,8 +560,8 @@ export default function RestaurantSignup() {
             }}
           >
             <div style={styles.ingestionTitle}>
-              AI OCR Upload{" "}
-              <span style={styles.ingestionPrice}>— $9.99</span>
+              Upload Photo or Scan via OCR{" "}
+              <span style={styles.ingestionPrice}>($9.99)</span>
             </div>
             <div style={styles.ingestionDesc}>
               Upload photos or scans of your menu. AI extracts and structures
@@ -498,52 +585,10 @@ export default function RestaurantSignup() {
                   }}
                 />
                 <label htmlFor="ocr-fee" style={styles.checkLabel}>
-                  I agree to the $9.99 OCR ingestion fee
+                  I agree to the $9.99 OCR processing fee
                 </label>
               </div>
             )}
-          </div>
-
-          {/* PDF */}
-          <div
-            style={ingestionOptionStyle(ingestionMethod === "pdf")}
-            onClick={() => selectIngestion("pdf")}
-            role="radio"
-            aria-checked={ingestionMethod === "pdf"}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                selectIngestion("pdf");
-              }
-            }}
-          >
-            <div style={styles.ingestionTitle}>Upload PDF</div>
-            <div style={styles.ingestionDesc}>
-              Upload your menu PDF and we will parse it.
-            </div>
-          </div>
-
-          {/* Spreadsheet */}
-          <div
-            style={ingestionOptionStyle(ingestionMethod === "spreadsheet")}
-            onClick={() => selectIngestion("spreadsheet")}
-            role="radio"
-            aria-checked={ingestionMethod === "spreadsheet"}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                selectIngestion("spreadsheet");
-              }
-            }}
-          >
-            <div style={styles.ingestionTitle}>
-              Upload Spreadsheet (MKS 3.0 Template)
-            </div>
-            <div style={styles.ingestionDesc}>
-              Upload our structured spreadsheet template.
-            </div>
           </div>
 
           {fieldErrors.ingestionMethod && (
@@ -559,7 +604,7 @@ export default function RestaurantSignup() {
           style={submitBtnStyle(submitDisabled)}
           disabled={submitDisabled}
         >
-          {submitting ? "Creating account\u2026" : "Create account"}
+          {submitting ? "Creating account\u2026" : "Upload My Menu"}
         </button>
       </form>
     </div>

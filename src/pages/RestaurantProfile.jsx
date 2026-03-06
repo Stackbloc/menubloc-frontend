@@ -77,6 +77,7 @@ export default function RestaurantProfile() {
       const id = r.id ? String(r.id) : null;
       if (!id) throw new Error("Saved, but no restaurant id returned.");
       setRestaurantId(id);
+      nav("/restaurant/subscription");
     } catch (err) {
       setRestaurantId(null);
       setSaveErr(err?.message || "Failed to save restaurant.");
@@ -306,6 +307,14 @@ export default function RestaurantProfile() {
               <b>Error:</b> {saveErr}
             </div>
           ) : null}
+
+          <div style={{ marginTop: 16, fontSize: 12, color: "#888" }}>
+            By saving your restaurant profile you agree to the{" "}
+            <Link to="/terms" style={{ color: "#555", textDecoration: "underline" }}>
+              Terms of Service
+            </Link>
+            .
+          </div>
         </form>
       </div>
 

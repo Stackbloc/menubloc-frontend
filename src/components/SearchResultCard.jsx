@@ -1,15 +1,21 @@
 /**
  * ============================================================
- * File: menubloc-frontend/src/components/SearchResultCard.jsx
+ * File: SearchResultCard.jsx
+ * Path: menubloc-frontend/src/components/SearchResultCard.jsx
  * Date: 2026-03-05
  * Purpose:
- *   Search result card UI.
- *   - Grouped by restaurant (restaurant header first)
- *   - Menu items under restaurant
- *   - No separate Expand button
- *   - Insights/Nutrition/Pairings/Popular chips always shown under each menu item
- *   - Clicking a chip opens/closes the detail panel for that item+tab
- *   - Only one panel open at a time per item
+ *   Search result card UI — food-first, scan-optimized.
+ *   - Grouped by restaurant (restaurant header, muted)
+ *   - Menu items as primary content
+ *   - Badges inline after item name: Popular → Deal → GF → Vegan
+ *   - Price: whole dollars only, right-aligned, minWidth 64
+ *   - Cards in order: Nutrition → Insights → Pairings
+ *   - Insights: renders backend-computed phrases only (no badge duplication)
+ *   - Footer CTA: "View Menu" → /public/restaurants/:id/menu
+ *
+ *   Fix (today):
+ *   - Grouped cards were reading restaurant?.id but API returns restaurant_id.
+ *     That produced /public/restaurants//menu and routed back to Discovery.
  * ============================================================
  */
 
@@ -51,13 +57,14 @@ function asBool(v) {
   return false;
 }
 
+/* Whole dollars only — no cents on search cards */
 function fmtPrice(row) {
   const d = asNum(row?.price);
-  if (d !== null) return "$" + d.toFixed(2).replace(/\.00$/, "");
+  if (d !== null) return "$" + Math.round(d);
   const m = asNum(row?.price_minor_units);
-  if (m !== null) return "$" + (m / 100).toFixed(2).replace(/\.00$/, "");
+  if (m !== null) return "$" + Math.round(m / 100);
   const c = asNum(row?.price_cents);
-  if (c !== null) return "$" + (c / 100).toFixed(2).replace(/\.00$/, "");
+  if (c !== null) return "$" + Math.round(c / 100);
   return "";
 }
 
@@ -74,7 +81,11 @@ function hl(text, query) {
   if (parts.length <= 1) return t;
   return parts.map((p, i) =>
     i % 2 === 1
-      ? React.createElement("mark", { key: i, style: { background: "#fff3a0", borderRadius: 4, padding: "0 3px" } }, p)
+      ? React.createElement(
+          "mark",
+          { key: i, style: { background: "#fff3a0", borderRadius: 4, padding: "0 3px" } },
+          p
+        )
       : React.createElement("span", { key: i }, p)
   );
 }
@@ -83,16 +94,26 @@ function renderUL(arr) {
   return (
     <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
       {arr.map((e, i) => (
-        <li key={i} style={{ marginBottom: 3 }}>{e}</li>
+        <li key={i} style={{ marginBottom: 3 }}>
+          {e}
+        </li>
       ))}
     </ul>
   );
 }
 
-function getItemId(row) { return asStr(pick(row, ["menu_item_id", "menuItemId", "id"])); }
-function getRestId(row) { return asStr(pick(row, ["restaurant_id", "restaurantId", "id"])); }
-function getRestName(row) { return asStr(pick(row, ["restaurant_name", "restaurantName", "name", "title"], "Restaurant")); }
-function getItemName(row) { return asStr(pick(row, ["menu_item_name", "menuItemName", "item_name", "dish", "name"], "Menu item")); }
+function getItemId(row) {
+  return asStr(pick(row, ["menu_item_id", "menuItemId", "id"]));
+}
+function getRestId(row) {
+  return asStr(pick(row, ["restaurant_id", "restaurantId", "id"]));
+}
+function getRestName(row) {
+  return asStr(pick(row, ["restaurant_name", "restaurantName", "name", "title"], "Restaurant"));
+}
+function getItemName(row) {
+  return asStr(pick(row, ["menu_item_name", "menuItemName", "item_name", "dish", "name"], "Menu item"));
+}
 
 function getPopular(row) {
   const score = asNum(row?.score);
@@ -108,7 +129,6 @@ function getPopular(row) {
 /* ---- Chip button ---- */
 
 function Chip({ label, active, available, onClick }) {
-  const on = active;
   return (
     <button
       type="button"
@@ -122,21 +142,13 @@ function Chip({ label, active, available, onClick }) {
         fontWeight: 700,
         lineHeight: 1,
         cursor: "pointer",
-        border: on
+        border: active
           ? "1px solid var(--link, #124ba3)"
           : available
           ? "1px solid #b9d4fb"
           : "1px solid var(--border, #e4e9f0)",
-        background: on
-          ? "var(--link, #124ba3)"
-          : available
-          ? "#eef4ff"
-          : "#f7f9fc",
-        color: on
-          ? "#fff"
-          : available
-          ? "#1447a8"
-          : "var(--muted-2, #93a0b2)",
+        background: active ? "var(--link, #124ba3)" : available ? "#eef4ff" : "#f7f9fc",
+        color: active ? "#fff" : available ? "#1447a8" : "var(--muted-2, #93a0b2)",
       }}
     >
       {label}
@@ -149,20 +161,20 @@ function Chip({ label, active, available, onClick }) {
 function DetailPanel({ tab, row }) {
   const chips = row?.chips || {};
 
-  const insItems = Array.isArray(chips?.insights?.items)
-    ? chips.insights.items.filter(Boolean).slice(0, 6)
-    : [];
-  const insReasons = Array.isArray(chips?.insights?.reasons)
-    ? chips.insights.reasons.filter(Boolean)
-    : [];
-
+  /* Nutrition */
   const nutChip = chips?.nutrition_chip || {};
-  const nutStatus = asStr(nutChip?.status).toLowerCase();
-  const nutOk = nutStatus && nutStatus !== "unavailable" && nutStatus !== "missing";
-  const cal = pick(nutChip, ["calories", "kcal"]);
-  const pro = pick(nutChip, ["protein", "protein_g"]);
-  const sod = pick(nutChip, ["sodium", "sodium_mg"]);
+  const nutOk = asStr(nutChip?.status).toLowerCase() === "available";
 
+  const cal = nutChip.calories_kcal ?? null;
+  const pro = nutChip.protein_g ?? null;
+  const fat = nutChip.fat_g ?? null;
+  const sod = nutChip.sodium_mg ?? null;
+  const sug = nutChip.sugar_g ?? null;
+  const calPctW = nutChip.calories_pct_women ?? null;
+  const calPctM = nutChip.calories_pct_men ?? null;
+  const proPct = nutChip.protein_pct_daily ?? null;
+
+  /* Pairings */
   const pairs = Array.isArray(chips?.pairings_chip?.suggestions)
     ? chips.pairings_chip.suggestions.filter(Boolean)
     : [];
@@ -177,31 +189,71 @@ function DetailPanel({ tab, row }) {
     lineHeight: 1.5,
   };
 
-  if (tab === "insights") {
-    return (
-      <div style={wrap}>
-        {insItems.length > 0 && renderUL(insItems)}
-        {insItems.length === 0 && insReasons.length > 0 && renderUL(insReasons)}
-        {insItems.length === 0 && insReasons.length === 0 && (
-          <span style={muted}>No insights yet.</span>
-        )}
-      </div>
-    );
-  }
-
+  /* 1 — Nutrition */
   if (tab === "nutrition") {
+    const rowStyle = {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "baseline",
+      gap: 12,
+      padding: "2px 0",
+    };
+    const subStyle = {
+      fontSize: "var(--text-1, 12px)",
+      color: "var(--muted-2, #93a0b2)",
+      marginBottom: 4,
+    };
+    const valStyle = { fontWeight: 700, whiteSpace: "nowrap" };
+
     return (
       <div style={wrap}>
         {nutOk ? (
-          <span>
-            {[
-              cal !== "" ? "Calories: " + cal : null,
-              pro !== "" ? "Protein: " + pro : null,
-              sod !== "" ? "Sodium: " + sod : null,
-            ]
-              .filter(Boolean)
-              .join(" · ") || "Nutrition not available yet."}
-          </span>
+          <>
+            {cal !== null && (
+              <>
+                <div style={rowStyle}>
+                  <span>Calories</span>
+                  <span style={valStyle}>{cal}</span>
+                </div>
+                {(calPctW !== null || calPctM !== null) && (
+                  <div style={subStyle}>
+                    {calPctW !== null ? `${calPctW}% Daily (W)` : ""}
+                    {calPctW !== null && calPctM !== null ? " · " : ""}
+                    {calPctM !== null ? `${calPctM}% (M)` : ""}
+                  </div>
+                )}
+              </>
+            )}
+            {pro !== null && (
+              <div style={rowStyle}>
+                <span>Protein</span>
+                <span style={valStyle}>
+                  {pro}g{proPct !== null ? ` (${proPct}%)` : ""}
+                </span>
+              </div>
+            )}
+            {fat !== null && (
+              <div style={rowStyle}>
+                <span>Fat</span>
+                <span style={valStyle}>{fat}g</span>
+              </div>
+            )}
+            {sod !== null && (
+              <div style={rowStyle}>
+                <span>Sodium</span>
+                <span style={valStyle}>{sod}mg</span>
+              </div>
+            )}
+            {sug !== null && (
+              <div style={rowStyle}>
+                <span>Sugar</span>
+                <span style={valStyle}>{sug}g</span>
+              </div>
+            )}
+            {cal === null && pro === null && fat === null && sod === null && (
+              <span style={muted}>Nutrition not available yet.</span>
+            )}
+          </>
         ) : (
           <span style={muted}>Nutrition not available yet.</span>
         )}
@@ -209,6 +261,13 @@ function DetailPanel({ tab, row }) {
     );
   }
 
+  /* 2 — Insights: render backend-computed phrases; items kept on row for inspection */
+  if (tab === "insights") {
+    const phrases = Array.isArray(chips?.insights?.phrases) ? chips.insights.phrases.filter(Boolean) : [];
+    return <div style={wrap}>{phrases.length > 0 ? renderUL(phrases) : <span style={muted}>No insights yet.</span>}</div>;
+  }
+
+  /* 3 — Pairings */
   if (tab === "pairings") {
     return (
       <div style={wrap}>
@@ -235,45 +294,21 @@ function ItemRow({ row, query }) {
   const isGF = asBool(row?.is_gluten_free);
 
   const chips = row?.chips || {};
-  const hasIns =
-    (Array.isArray(chips?.insights?.items) && chips.insights.items.filter(Boolean).length > 0) ||
-    (Array.isArray(chips?.insights?.reasons) && chips.insights.reasons.filter(Boolean).length > 0);
-  const nutStatus = asStr(chips?.nutrition_chip?.status).toLowerCase();
-  const hasNut = nutStatus && nutStatus !== "unavailable" && nutStatus !== "missing";
+  const hasNut = asStr(chips?.nutrition_chip?.status).toLowerCase() === "available";
+  const hasIns = Array.isArray(chips?.insights?.phrases) && chips.insights.phrases.filter(Boolean).length > 0;
   const hasPair =
-    Array.isArray(chips?.pairings_chip?.suggestions) &&
-    chips.pairings_chip.suggestions.filter(Boolean).length > 0;
+    Array.isArray(chips?.pairings_chip?.suggestions) && chips.pairings_chip.suggestions.filter(Boolean).length > 0;
 
   function toggle(tab) {
     setOpenTab((prev) => (prev === tab ? null : tab));
   }
 
   return (
-    <div
-      style={{
-        paddingTop: 10,
-        paddingBottom: 10,
-        borderBottom: "1px solid var(--border, #e4e9f0)",
-      }}
-    >
-      {/* Name + inline Deal/Popular badges + price */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 10,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 6,
-            minWidth: 0,
-          }}
-        >
+    <div style={{ paddingTop: 10, paddingBottom: 10, borderBottom: "1px solid var(--border, #e4e9f0)" }}>
+      {/* Name + badges + price */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+        {/* Left: name + badges */}
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, flex: 1, minWidth: 0 }}>
           <span
             style={{
               fontSize: "var(--text-4, 18px)",
@@ -293,13 +328,6 @@ function ItemRow({ row, query }) {
                 onMouseLeave={(e) => {
                   e.currentTarget.style.textDecoration = "none";
                 }}
-                onFocus={(e) => {
-                  e.currentTarget.style.outline = "3px solid rgba(18,75,163,0.35)";
-                  e.currentTarget.style.borderRadius = "4px";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.outline = "none";
-                }}
               >
                 {hl(name, query)}
               </Link>
@@ -307,12 +335,15 @@ function ItemRow({ row, query }) {
               hl(name, query)
             )}
           </span>
-          {hasDeal && <DietBadge label="🏷 Deal" tone="deal" />}
+
+          {/* Badge order: Popular → Deal → GF → Vegan */}
           {popular && <DietBadge label="★ Popular" tone="popular" />}
-          {isVegan && <DietBadge label="🌿 Vegan" tone="vegan" />}
+          {hasDeal && <DietBadge label="🏷 Deal" tone="deal" />}
           {isGF && <DietBadge label="GF" tone="gf" />}
+          {isVegan && <DietBadge label="🌿 Vegan" tone="vegan" />}
         </div>
 
+        {/* Right: price — fixed width for vertical alignment across rows */}
         {price ? (
           <span
             style={{
@@ -321,6 +352,8 @@ function ItemRow({ row, query }) {
               whiteSpace: "nowrap",
               color: "var(--ink, #0f1720)",
               flexShrink: 0,
+              minWidth: 64,
+              textAlign: "right",
             }}
           >
             {price}
@@ -328,20 +361,15 @@ function ItemRow({ row, query }) {
         ) : null}
       </div>
 
-      {/* Chips row — always visible */}
+      {/* Chips row — order: Nutrition → Insights → Pairings */}
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <Chip
-          label="Insights"
-          active={openTab === "insights"}
-          available={hasIns}
-          onClick={() => toggle("insights")}
-        />
         <Chip
           label={hasNut ? "Nutrition" : "Nutrition soon"}
           active={openTab === "nutrition"}
           available={hasNut}
           onClick={() => toggle("nutrition")}
         />
+        <Chip label="Insights" active={openTab === "insights"} available={hasIns} onClick={() => toggle("insights")} />
         <Chip
           label={hasPair ? "Pairings" : "Pairings soon"}
           active={openTab === "pairings"}
@@ -350,7 +378,7 @@ function ItemRow({ row, query }) {
         />
       </div>
 
-      {/* Detail panel — opens below chips when a chip is active */}
+      {/* Detail panel */}
       {openTab && <DetailPanel tab={openTab} row={row} />}
     </div>
   );
@@ -404,13 +432,18 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
   const grouped = Array.isArray(items) && items.length > 0;
 
   if (grouped) {
-    const restId = asStr(restaurant?.id);
-    const restName = asStr(restaurant?.name) || getRestName(items[0]);
+    // ✅ IMPORTANT: API uses restaurant_id / restaurant_name (not always id / name)
+    const restId = asStr(restaurant?.restaurant_id || restaurant?.id);
+    const restName =
+      asStr(restaurant?.restaurant_name || restaurant?.name) ||
+      getRestName(items[0]);
+
     const restHref = restId ? "/restaurants/" + restId : null;
+    const menuHref = restId ? "/public/restaurants/" + restId + "/menu" : null;
 
     return (
       <article style={cardStyle}>
-        {/* Restaurant anchor */}
+        {/* Restaurant anchor — muted, small */}
         <div style={{ marginBottom: 2 }}>
           {restHref ? (
             <Link
@@ -421,19 +454,17 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
                 color: "var(--muted, #5b6675)",
                 textDecoration: "none",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.textDecoration = "underline";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.textDecoration = "none";
+              }}
             >
               {restName}
             </Link>
           ) : (
-            <span
-              style={{
-                fontSize: "var(--text-2, 14px)",
-                fontWeight: 700,
-                color: "var(--muted, #5b6675)",
-              }}
-            >
+            <span style={{ fontSize: "var(--text-2, 14px)", fontWeight: 700, color: "var(--muted, #5b6675)" }}>
               {restName}
             </span>
           )}
@@ -443,26 +474,30 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
         <div>
           {items.map((row) => {
             const mid = getItemId(row);
-            const name = getItemName(row);
-            return <ItemRow key={mid || name} row={row} query={query} />;
+            const nm = getItemName(row);
+            return <ItemRow key={mid || nm} row={row} query={query} />;
           })}
         </div>
 
-        {/* Footer */}
-        {restHref && (
+        {/* Footer: View Menu */}
+        {menuHref && (
           <div style={{ marginTop: 10 }}>
             <Link
-              to={restHref}
+              to={menuHref}
               style={{
                 fontSize: "var(--text-1, 12px)",
                 fontWeight: 700,
                 color: "var(--link, #124ba3)",
                 textDecoration: "none",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.textDecoration = "underline";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.textDecoration = "none";
+              }}
             >
-              View restaurant →
+              View Menu →
             </Link>
           </div>
         )}
@@ -475,6 +510,7 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
   const restIdS = getRestId(item);
   const restNameS = getRestName(item);
   const restHrefS = restIdS ? "/restaurants/" + restIdS : null;
+  const menuHrefS = restIdS ? "/public/restaurants/" + restIdS + "/menu" : null;
 
   if (isItemRow) {
     return (
@@ -489,14 +525,39 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
                 color: "var(--muted, #5b6675)",
                 textDecoration: "none",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.textDecoration = "underline";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.textDecoration = "none";
+              }}
             >
               {restNameS}
             </Link>
           </div>
         )}
         <ItemRow row={item} query={query} />
+        {menuHrefS && (
+          <div style={{ marginTop: 10 }}>
+            <Link
+              to={menuHrefS}
+              style={{
+                fontSize: "var(--text-1, 12px)",
+                fontWeight: 700,
+                color: "var(--link, #124ba3)",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.textDecoration = "underline";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.textDecoration = "none";
+              }}
+            >
+              View Menu →
+            </Link>
+          </div>
+        )}
       </article>
     );
   }
@@ -509,8 +570,12 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
           <Link
             to={restHrefS}
             style={{ color: "var(--link, #124ba3)", textDecoration: "none" }}
-            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.textDecoration = "underline";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.textDecoration = "none";
+            }}
           >
             {hl(restNameS, query)}
           </Link>
@@ -518,20 +583,24 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
           hl(restNameS, query)
         )}
       </div>
-      {restHrefS && (
+      {menuHrefS && (
         <div style={{ marginTop: 8 }}>
           <Link
-            to={restHrefS}
+            to={menuHrefS}
             style={{
               fontSize: "var(--text-1, 12px)",
               fontWeight: 700,
               color: "var(--link, #124ba3)",
               textDecoration: "none",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.textDecoration = "underline";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.textDecoration = "none";
+            }}
           >
-            View restaurant →
+            View Menu →
           </Link>
         </div>
       )}

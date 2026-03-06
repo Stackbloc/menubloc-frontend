@@ -1,6 +1,5 @@
 // menubloc-frontend/src/pages/EasyMenuLanding.jsx
 import React from "react";
-import { Link } from "react-router-dom";
 
 export default function EasyMenuLanding() {
   return (
@@ -48,27 +47,28 @@ export default function EasyMenuLanding() {
 
       <p style={{ marginTop: "30px" }}>We handle the structure. You keep control.</p>
 
-      {/* ✅ Internal route to RestaurantSignup.jsx */}
-      <Link
-        to="/signup"
-        style={{
-          display: "inline-block",
-          marginTop: "40px",
-          padding: "18px 36px",
-          backgroundColor: "black",
-          color: "white",
-          textDecoration: "none",
-          borderRadius: "8px",
-          fontSize: "18px",
-          fontWeight: "bold",
-        }}
-      >
-        Upload My Menu Free
-      </Link>
-
-      <p style={{ marginTop: "25px", fontSize: "14px", color: "#555" }}>
-        Takes less than 5 minutes. No commitment required.
-      </p>
+      {/* CTA — plain <a> so it works regardless of client-side routing */}
+      <div style={{ marginTop: "40px" }}>
+        <a
+          href="/signup"
+          style={{
+            display: "inline-block",
+            padding: "18px 48px",
+            backgroundColor: "black",
+            color: "white",
+            textDecoration: "none",
+            borderRadius: "8px",
+            fontSize: "18px",
+            fontWeight: "bold",
+            cursor: "pointer",
+          }}
+        >
+          Upload My Menu
+        </a>
+        <p style={{ marginTop: "16px", fontSize: "14px", color: "#555" }}>
+          Takes less than 5 minutes. No commitment required.
+        </p>
+      </div>
     </div>
   );
 }

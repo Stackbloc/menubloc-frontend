@@ -26,11 +26,14 @@ import RestaurantPublicPage from "./pages/RestaurantPublicPage.jsx"; // public r
 import MenuPage from "./pages/MenuPage.jsx";
 import MenuDetailPage from "./pages/MenuDetailPage.jsx";
 import MenuItemDetailPage from "./pages/MenuItemDetailPage.jsx";
+import PublicMenuPage from "./pages/PublicMenuPage.jsx";
 
 import DealsPage from "./pages/DealsPage.jsx";
 
 import ClaimVerify from "./pages/ClaimVerify.jsx";
 import EasyMenuLanding from "./pages/EasyMenuLanding.jsx";
+import SubscriptionSelect from "./pages/SubscriptionSelect.jsx";
+import Terms from "./pages/Terms.jsx";
 
 function isEasyMenuHost() {
   const host = (window?.location?.hostname || "").toLowerCase();
@@ -70,12 +73,20 @@ export default function App() {
         {/* Private/owner profile screen */}
         <Route path="/restaurant-profile/:id" element={<RestaurantProfile />} />
 
-        {/* Restaurant signup */}
+        {/* Restaurant signup — canonical + short alias */}
         <Route path="/restaurant/signup" element={<RestaurantSignup />} />
+        <Route path="/signup" element={<RestaurantSignup />} />
+
+        {/* Subscription selection (step after restaurant detail) */}
+        <Route path="/restaurant/subscription" element={<SubscriptionSelect />} />
+
+        {/* Terms of Service */}
+        <Route path="/terms" element={<Terms />} />
 
         {/* Menus */}
         <Route path="/menus" element={<MenuPage />} />
         <Route path="/menus/:id" element={<MenuDetailPage />} />
+        <Route path="/public/restaurants/:id/menu" element={<PublicMenuPage />} />
         <Route path="/menu-items/:id" element={<MenuItemDetailPage />} />
 
         {/* Claim verify */}

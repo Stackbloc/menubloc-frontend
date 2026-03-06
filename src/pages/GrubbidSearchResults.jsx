@@ -1,16 +1,16 @@
 /**
  * ============================================================
- * File: menubloc-frontend/src/pages/GrubbidSearchResults.jsx
+ * File: GrubbidSearchResults.jsx
+ * Path: menubloc-frontend/src/pages/GrubbidSearchResults.jsx
  * Date: 2026-03-05
  * Purpose:
  *   Search results page for Grubbid.
  *   - Reads query params from URL
  *   - Calls backend /search endpoint
- *   - Displays results
- *   - Groups menu-item results by restaurant so each restaurant appears once
- *   - Dedupes menu items per restaurant (best score, then lower price tie-break)
- *   UI tweaks:
- *     - Only show active filters (no "off" labels)
+ *   - Groups menu-item results by restaurant
+ *   - Dedupes menu items per restaurant (best score, then lower price)
+ *   - Interactive filter bar (vegan, gluten-free, deals, price max)
+ *   - Location line from search params
  * ============================================================
  */
 
@@ -60,15 +60,6 @@ function normalizeRows(json) {
   return [];
 }
 
-function firstNonEmpty(...vals) {
-  for (const v of vals) {
-    if (v == null) continue;
-    const s = String(v).trim();
-    if (s !== "") return s;
-  }
-  return "";
-}
-
 function asString(v) {
   return v === undefined || v === null ? "" : String(v).trim();
 }
@@ -103,32 +94,26 @@ function getScore(row) {
 function getPriceMinor(row) {
   const minor = asNumber(row?.price_minor_units);
   if (minor !== null) return Math.round(minor);
-
   const cents = asNumber(row?.price_cents);
   if (cents !== null) return Math.round(cents);
-
   const dollars = asNumber(row?.price);
   if (dollars !== null) return Math.round(dollars * 100);
-
   return null;
 }
 
 function isBetterRow(nextRow, currentRow) {
   const nextScore = getScore(nextRow);
   const currentScore = getScore(currentRow);
-
   if (nextScore !== null && currentScore !== null && nextScore !== currentScore) {
     return nextScore > currentScore;
   }
   if (nextScore !== null && currentScore === null) return true;
   if (nextScore === null && currentScore !== null) return false;
-
   const nextPrice = getPriceMinor(nextRow);
   const currentPrice = getPriceMinor(currentRow);
   if (nextPrice !== null && currentPrice !== null && nextPrice !== currentPrice) {
     return nextPrice < currentPrice;
   }
-
   return false;
 }
 
@@ -180,7 +165,6 @@ function buildRestaurantGroups(dishRows) {
       if (pa !== null && pb !== null && pa !== pb) return pa - pb;
       return 0;
     });
-
     groups.push({
       restaurant_id: g.restaurant_id,
       restaurant_name: g.restaurant_name,
@@ -192,6 +176,63 @@ function buildRestaurantGroups(dishRows) {
   return groups;
 }
 
+/* ---- Filter helpers ---- */
+
+function applyFilter(params, navigate, key, value) {
+  const next = new URLSearchParams(params.toString());
+  if (next.get(key) === value) {
+    next.delete(key);
+  } else {
+    next.set(key, value);
+  }
+  navigate("?" + next.toString(), { replace: true });
+}
+
+function setFilter(params, navigate, key, value) {
+  const next = new URLSearchParams(params.toString());
+  if (!value) {
+    next.delete(key);
+  } else {
+    next.set(key, value);
+  }
+  navigate("?" + next.toString(), { replace: true });
+}
+
+/* ---- Filter toggle button ---- */
+
+function FilterToggle({ label, active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        borderRadius: 999,
+        padding: "5px 13px",
+        fontSize: "var(--text-2, 14px)",
+        fontWeight: 700,
+        lineHeight: 1,
+        cursor: "pointer",
+        border: active ? "1.5px solid var(--link, #124ba3)" : "1px solid var(--border, #e3e8ef)",
+        background: active ? "var(--link, #124ba3)" : "#fff",
+        color: active ? "#fff" : "var(--ink, #0f1720)",
+        transition: "background 0.1s, color 0.1s",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+const PRICE_OPTIONS = [
+  { label: "Any price", value: "" },
+  { label: "Under $10", value: "10" },
+  { label: "Under $15", value: "15" },
+  { label: "Under $20", value: "20" },
+  { label: "Under $25", value: "25" },
+];
+
 export default function GrubbidSearchResults() {
   const params = useQueryParams();
   const navigate = useNavigate();
@@ -201,7 +242,9 @@ export default function GrubbidSearchResults() {
   const gluten_free = params.get("gluten_free") === "1";
   const deals_only = params.get("deals_only") === "1";
   const zip = String(params.get("zip") || "").trim();
-  const maxPrice = firstNonEmpty(params.get("max_price"), params.get("price_max"));
+  const city = String(params.get("city") || "").trim();
+  const near = String(params.get("near") || "").trim();
+  const maxPrice = String(params.get("max_price") || params.get("price_max") || "").trim();
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -214,9 +257,11 @@ export default function GrubbidSearchResults() {
     if (gluten_free) u.searchParams.set("gluten_free", "1");
     if (deals_only) u.searchParams.set("deals_only", "1");
     if (zip) u.searchParams.set("zip", zip);
+    if (city) u.searchParams.set("city", city);
+    if (near) u.searchParams.set("near", near);
     if (maxPrice) u.searchParams.set("max_price", maxPrice);
     return u.toString();
-  }, [q, vegan, gluten_free, deals_only, zip, maxPrice]);
+  }, [q, vegan, gluten_free, deals_only, zip, city, near, maxPrice]);
 
   useEffect(() => {
     let alive = true;
@@ -246,16 +291,16 @@ export default function GrubbidSearchResults() {
     }
 
     run();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [requestUrl]);
 
   const dishRows = useMemo(() => rows.filter(isDishRow), [rows]);
   const restaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);
-
   const restaurantGroups = useMemo(() => buildRestaurantGroups(dishRows), [dishRows]);
   const hasMenuMatches = restaurantGroups.length > 0;
+
+  /* Location label — from search params only, not from result rows */
+  const locationLabel = city || near || (zip ? zip : "");
 
   const styles = {
     wrap: {
@@ -265,14 +310,11 @@ export default function GrubbidSearchResults() {
       fontFamily: "var(--font-ui, Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif)",
       color: "var(--ink, #0f1720)",
     },
-
     topRow: {
       display: "flex",
       alignItems: "center",
-      justifyContent: "space-between",
       gap: 12,
     },
-
     backBtn: {
       display: "inline-flex",
       alignItems: "center",
@@ -286,7 +328,6 @@ export default function GrubbidSearchResults() {
       fontSize: "var(--text-2, 14px)",
       cursor: "pointer",
     },
-
     title: {
       margin: "14px 0 0",
       fontSize: "var(--text-6, 28px)",
@@ -295,46 +336,47 @@ export default function GrubbidSearchResults() {
       letterSpacing: "-0.015em",
       color: "var(--ink, #0f1720)",
     },
-
     titleQuery: {
       color: "var(--link, #1b4da1)",
       fontWeight: 850,
     },
-
+    locationLine: {
+      marginTop: 4,
+      color: "var(--muted, #5d6674)",
+      fontSize: "var(--text-2, 14px)",
+      fontWeight: 600,
+    },
     meta: {
-      marginTop: 8,
+      marginTop: 6,
       color: "var(--muted, #5d6674)",
       fontSize: "var(--text-2, 14px)",
       fontWeight: 650,
     },
-
-    chipsLine: {
-      marginTop: 10,
+    filterBar: {
+      marginTop: 12,
       display: "flex",
       gap: 8,
       flexWrap: "wrap",
       alignItems: "center",
-      color: "var(--muted, #5d6674)",
-      fontSize: "var(--text-2, 14px)",
-      fontWeight: 650,
     },
-
-    chip: {
+    priceSelect: {
       border: "1px solid var(--border, #e3e8ef)",
       borderRadius: 999,
-      padding: "4px 10px",
-      background: "#fff",
-      color: "var(--ink, #0f1720)",
-      fontWeight: 700,
+      padding: "5px 10px",
       fontSize: "var(--text-2, 14px)",
+      fontWeight: 700,
+      background: maxPrice ? "var(--link, #124ba3)" : "#fff",
+      color: maxPrice ? "#fff" : "var(--ink, #0f1720)",
+      cursor: "pointer",
+      outline: "none",
+      appearance: "none",
+      WebkitAppearance: "none",
     },
-
     grid: {
       display: "grid",
       gap: 12,
       marginTop: 16,
     },
-
     error: {
       marginTop: 12,
       padding: 12,
@@ -345,7 +387,6 @@ export default function GrubbidSearchResults() {
       fontWeight: 700,
       whiteSpace: "pre-wrap",
     },
-
     empty: {
       marginTop: 12,
       padding: 12,
@@ -355,7 +396,6 @@ export default function GrubbidSearchResults() {
       color: "#3c4757",
       fontWeight: 600,
     },
-
     section: {
       marginTop: 18,
       fontWeight: 800,
@@ -365,20 +405,7 @@ export default function GrubbidSearchResults() {
     },
   };
 
-  const emptyMessage = useMemo(() => {
-    if (!q) return "No results.";
-    return `No results for "${q}".`;
-  }, [q]);
-
-  const activeFilters = useMemo(() => {
-    const out = [];
-    if (vegan) out.push("Vegan");
-    if (gluten_free) out.push("Gluten-free");
-    if (deals_only) out.push("Deals only");
-    if (zip) out.push(`Zip: ${zip}`);
-    if (maxPrice) out.push(`Max: $${maxPrice}`);
-    return out;
-  }, [vegan, gluten_free, deals_only, zip, maxPrice]);
+  const emptyMessage = q ? `No results for "${q}".` : "No results.";
 
   return (
     <div style={styles.wrap}>
@@ -407,24 +434,47 @@ export default function GrubbidSearchResults() {
         )}
       </h1>
 
+      {locationLabel && (
+        <div style={styles.locationLine}>Near {locationLabel}</div>
+      )}
+
       <div style={styles.meta}>
         {hasMenuMatches
           ? `${restaurantGroups.length} restaurant${restaurantGroups.length === 1 ? "" : "s"} with menu matches`
           : restaurantOnlyRows.length
             ? `${restaurantOnlyRows.length} restaurant suggestion${restaurantOnlyRows.length === 1 ? "" : "s"}`
-            : "No matches yet."}
+            : loading
+              ? ""
+              : "No matches yet."}
       </div>
 
-      <div style={styles.chipsLine}>
-        {activeFilters.length ? (
-          activeFilters.map((f) => (
-            <span key={f} style={styles.chip}>
-              {f}
-            </span>
-          ))
-        ) : (
-          <span style={{ fontWeight: 700 }}>No filters</span>
-        )}
+      {/* Interactive filter bar */}
+      <div style={styles.filterBar}>
+        <FilterToggle
+          label="Vegan"
+          active={vegan}
+          onClick={() => applyFilter(params, navigate, "vegan", "1")}
+        />
+        <FilterToggle
+          label="Gluten-free"
+          active={gluten_free}
+          onClick={() => applyFilter(params, navigate, "gluten_free", "1")}
+        />
+        <FilterToggle
+          label="Deals"
+          active={deals_only}
+          onClick={() => applyFilter(params, navigate, "deals_only", "1")}
+        />
+        <select
+          value={maxPrice}
+          onChange={(e) => setFilter(params, navigate, "max_price", e.target.value)}
+          style={styles.priceSelect}
+          aria-label="Price filter"
+        >
+          {PRICE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
       </div>
 
       {err && <div style={styles.error}>Error: {err}</div>}
