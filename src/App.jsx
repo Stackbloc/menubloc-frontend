@@ -1,20 +1,25 @@
-// menubloc-frontend/src/App.jsx
-/**
- * ============================================================
- * File: menubloc-frontend/src/App.jsx
- * Purpose:
- *   Domain-aware routing:
- *     - easymenuupload.com -> EasyMenuLanding on "/"
- *     - grubbid.com (and everything else) -> GrubbidDiscovery on "/"
- *
- * Routing cleanup:
- *   - Canonical restaurant public page: /restaurants/:id
- *   - Back-compat redirect: /restaurant/:id -> /restaurants/:id
- * ============================================================
- */
+// ============================================================
+// Path: menubloc-frontend/src/App.jsx
+// File: App.jsx
+// Date: 2026-03-06
+// Purpose:
+//   Domain-aware routing:
+//     - easymenuupload.com -> EasyMenuLanding on "/"
+//     - grubbid.com (and everything else) -> GrubbidDiscovery on "/"
+//
+//   Routing cleanup:
+//   - Canonical restaurant public page: /restaurants/:id
+//   - Back-compat redirect: /restaurant/:id -> /restaurants/:id
+//
+//   QR admin route added 2026-03-06:
+//   - /restaurants/:id/qr-codes -> QrCodesPage (admin/owner surface)
+//
+//   Analytics route tracking:
+//   - Sends GA4 page_path updates on client-side route changes
+// ============================================================
 
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
+import React, { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 
 import GrubbidDiscovery from "./pages/GrubbidDiscovery.jsx";
 import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
@@ -35,6 +40,8 @@ import EasyMenuLanding from "./pages/EasyMenuLanding.jsx";
 import SubscriptionSelect from "./pages/SubscriptionSelect.jsx";
 import Terms from "./pages/Terms.jsx";
 
+import QrCodesPage from "./pages/QrCodesPage.jsx";
+
 function isEasyMenuHost() {
   const host = (window?.location?.hostname || "").toLowerCase();
   return host === "easymenuupload.com" || host === "www.easymenuupload.com";
@@ -49,11 +56,34 @@ function RestaurantSingularRedirect() {
   return <Navigate to={id ? `/restaurants/${id}` : "/restaurants"} replace />;
 }
 
+/**
+ * GA4 client-side route tracking for the React SPA.
+ * Safe no-op if gtag has not been loaded yet.
+ */
+function AnalyticsTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (typeof window.gtag !== "function") return;
+
+    const page_path = `${location.pathname}${location.search || ""}${location.hash || ""}`;
+
+    window.gtag("config", "G-KLLBC4W5XH", {
+      page_path,
+    });
+  }, [location]);
+
+  return null;
+}
+
 export default function App() {
   const easyMenu = isEasyMenuHost();
 
   return (
     <BrowserRouter>
+      <AnalyticsTracker />
+
       <Routes>
         {/* Root route depends on domain */}
         <Route path="/" element={easyMenu ? <EasyMenuLanding /> : <GrubbidDiscovery />} />
@@ -64,7 +94,10 @@ export default function App() {
         {/* Deals */}
         <Route path="/deals" element={<DealsPage />} />
 
-        {/* Restaurant public page (CANONICAL) ✅ FIXED */}
+        {/* QR admin — must come before /restaurants/:id to match correctly */}
+        <Route path="/restaurants/:id/qr-codes" element={<QrCodesPage />} />
+
+        {/* Restaurant public page (CANONICAL) */}
         <Route path="/restaurants/:id" element={<RestaurantPublicPage />} />
 
         {/* Back-compat: singular -> plural */}

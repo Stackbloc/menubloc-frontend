@@ -247,6 +247,7 @@ export default function GrubbidSearchResults() {
   const maxPrice = String(params.get("max_price") || params.get("price_max") || "").trim();
 
   const [rows, setRows] = useState([]);
+  const [searchMeta, setSearchMeta] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
@@ -280,10 +281,12 @@ export default function GrubbidSearchResults() {
         if (!alive) return;
 
         setRows(normalizeRows(json));
+        setSearchMeta(json?.search_meta || null);
       } catch (e) {
         if (!alive) return;
         setErr(String(e?.message || e));
         setRows([]);
+        setSearchMeta(null);
       } finally {
         if (!alive) return;
         setLoading(false);
@@ -298,6 +301,29 @@ export default function GrubbidSearchResults() {
   const restaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);
   const restaurantGroups = useMemo(() => buildRestaurantGroups(dishRows), [dishRows]);
   const hasMenuMatches = restaurantGroups.length > 0;
+  const restaurantIntent = !!(
+    searchMeta?.restaurant_oriented ||
+    searchMeta?.restaurant_first ||
+    searchMeta?.direct_restaurant_name
+  );
+
+  const restaurantGroupsById = useMemo(() => {
+    const s = new Set();
+    for (const g of restaurantGroups) {
+      const id = asString(g.restaurant_id);
+      if (id) s.add(id);
+    }
+    return s;
+  }, [restaurantGroups]);
+
+  const restaurantOnlyVisible = useMemo(() => {
+    if (!restaurantOnlyRows.length) return [];
+    return restaurantOnlyRows.filter((r) => {
+      const id = asString(pickFirst(r, ["restaurant_id", "id"], ""));
+      if (!id) return true;
+      return !restaurantGroupsById.has(id);
+    });
+  }, [restaurantOnlyRows, restaurantGroupsById]);
 
   /* Location label — from search params only, not from result rows */
   const locationLabel = city || near || (zip ? zip : "");
@@ -441,8 +467,8 @@ export default function GrubbidSearchResults() {
       <div style={styles.meta}>
         {hasMenuMatches
           ? `${restaurantGroups.length} restaurant${restaurantGroups.length === 1 ? "" : "s"} with menu matches`
-          : restaurantOnlyRows.length
-            ? `${restaurantOnlyRows.length} restaurant suggestion${restaurantOnlyRows.length === 1 ? "" : "s"}`
+          : restaurantOnlyVisible.length
+            ? `${restaurantOnlyVisible.length} restaurant suggestion${restaurantOnlyVisible.length === 1 ? "" : "s"}`
             : loading
               ? ""
               : "No matches yet."}
@@ -480,33 +506,47 @@ export default function GrubbidSearchResults() {
       {err && <div style={styles.error}>Error: {err}</div>}
       {loading && <div style={styles.empty}>Loading...</div>}
 
-      {!loading && !err && q && !hasMenuMatches && restaurantOnlyRows.length === 0 && (
+      {!loading && !err && q && !hasMenuMatches && restaurantOnlyVisible.length === 0 && (
         <div style={styles.empty}>{emptyMessage}</div>
       )}
 
-      <div style={styles.grid}>
-        {restaurantGroups.map((g) => (
-          <SearchResultCard
-            key={`rg-${g.restaurant_id || g.restaurant_name}`}
-            restaurant={{
-              id: g.restaurant_id,
-              name: g.restaurant_name,
-              raw: g._first,
-            }}
-            items={g.items}
-            query={q}
-          />
-        ))}
-      </div>
-
-      {!loading && !err && !hasMenuMatches && restaurantOnlyRows.length > 0 && (
+      {!loading && !err && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
         <>
-          <div style={styles.section}>Suggested restaurants</div>
+          <div style={styles.section}>Restaurants</div>
           <div style={styles.grid}>
-            {restaurantOnlyRows.map((r) => (
+            {restaurantOnlyVisible.map((r) => (
               <SearchResultCard
                 key={`r-${asString(pickFirst(r, ["restaurant_id", "id"], "")) || asString(r?.name)}`}
                 item={r}
+                query={q}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {!loading && !err && hasMenuMatches && (
+        <>
+          <div style={styles.section}>{restaurantIntent ? "Dishes" : "Results"}</div>
+          <div style={styles.grid}>
+            {restaurantGroups.map((g) => (
+              <SearchResultCard
+                key={`rg-${g.restaurant_id || g.restaurant_name}`}
+                restaurant={{
+                  id: g.restaurant_id,
+                  name: g.restaurant_name,
+                  cuisine: g._first?.cuisine || g._first?.restaurant_cuisine || null,
+                  category: g._first?.category || g._first?.restaurant_category || null,
+                  phone: g._first?.phone || g._first?.restaurant_phone || null,
+                  distance_miles:
+                    g._first?.distance_miles ?? g._first?.restaurant_distance_miles ?? null,
+                  profile_tier:
+                    g._first?.profile_tier || g._first?.restaurant_profile_tier || null,
+                  listing_status:
+                    g._first?.listing_status || g._first?.restaurant_listing_status || null,
+                  raw: g._first,
+                }}
+                items={g.items}
                 query={q}
               />
             ))}

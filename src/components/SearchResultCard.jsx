@@ -115,6 +115,31 @@ function getItemName(row) {
   return asStr(pick(row, ["menu_item_name", "menuItemName", "item_name", "dish", "name"], "Menu item"));
 }
 
+function normalizeTier(raw) {
+  const s = asStr(raw).toLowerCase();
+  if (!s) return "";
+  if (s.includes("pro")) return "pro";
+  if (s.includes("verified")) return "verified";
+  return "";
+}
+
+function getCuisineLike(x) {
+  return asStr(pick(x, ["cuisine", "category", "restaurant_cuisine", "restaurant_category"], ""));
+}
+
+function getPhoneLike(x) {
+  return asStr(pick(x, ["phone", "restaurant_phone"], ""));
+}
+
+function getDistanceMilesLike(x) {
+  const n = asNum(pick(x, ["distance_miles", "restaurant_distance_miles"], null));
+  return n === null ? null : n;
+}
+
+function getProfileTierLike(x) {
+  return normalizeTier(pick(x, ["profile_tier", "restaurant_profile_tier", "listing_status", "restaurant_listing_status"], ""));
+}
+
 function getPopular(row) {
   const score = asNum(row?.score);
   const dups = asNum(row?.__dupCount);
@@ -369,7 +394,9 @@ function ItemRow({ row, query }) {
           available={hasNut}
           onClick={() => toggle("nutrition")}
         />
-        <Chip label="Insights" active={openTab === "insights"} available={hasIns} onClick={() => toggle("insights")} />
+        {hasIns && (
+          <Chip label="Insights" active={openTab === "insights"} available={hasIns} onClick={() => toggle("insights")} />
+        )}
         <Chip
           label={hasPair ? "Pairings" : "Pairings soon"}
           active={openTab === "pairings"}
@@ -426,6 +453,44 @@ const cardStyle = {
   fontFamily: "var(--font-ui)",
 };
 
+function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier }) {
+  const pieces = [];
+  if (cuisine) pieces.push(cuisine);
+  if (distanceMiles !== null) pieces.push(`${distanceMiles.toFixed(1)} mi`);
+  if (phone) pieces.push(phone);
+
+  const tierLabel = profileTier === "pro" ? "Pro" : profileTier === "verified" ? "Verified" : "";
+  const tierStyle =
+    profileTier === "pro"
+      ? { background: "#eef7ff", border: "1px solid #b9d6fb", color: "#1a4f95" }
+      : profileTier === "verified"
+      ? { background: "#ecfff4", border: "1px solid #b9e7c9", color: "#1f6a3c" }
+      : null;
+
+  return (
+    <div style={{ marginBottom: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+      {tierLabel ? (
+        <span
+          style={{
+            fontSize: "var(--text-1, 12px)",
+            fontWeight: 800,
+            borderRadius: 999,
+            padding: "2px 8px",
+            ...tierStyle,
+          }}
+        >
+          {tierLabel}
+        </span>
+      ) : null}
+      {pieces.length > 0 ? (
+        <span style={{ fontSize: "var(--text-1, 12px)", color: "var(--muted, #5b6675)", fontWeight: 600 }}>
+          {pieces.join(" • ")}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 /* ---- Main export ---- */
 
 export default function SearchResultCard({ restaurant, items, item, query }) {
@@ -437,6 +502,10 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
     const restName =
       asStr(restaurant?.restaurant_name || restaurant?.name) ||
       getRestName(items[0]);
+    const cuisine = getCuisineLike(restaurant) || getCuisineLike(items[0]);
+    const phone = getPhoneLike(restaurant) || getPhoneLike(items[0]);
+    const distanceMiles = getDistanceMilesLike(restaurant) ?? getDistanceMilesLike(items[0]);
+    const profileTier = getProfileTierLike(restaurant) || getProfileTierLike(items[0]);
 
     const restHref = restId ? "/restaurants/" + restId : null;
     const menuHref = restId ? "/public/restaurants/" + restId + "/menu" : null;
@@ -469,6 +538,13 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
             </span>
           )}
         </div>
+
+        <RestaurantMeta
+          cuisine={cuisine}
+          phone={phone}
+          distanceMiles={distanceMiles}
+          profileTier={profileTier}
+        />
 
         {/* Item rows */}
         <div>
@@ -509,6 +585,10 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
   const isItemRow = Boolean(item?.menu_item_id || item?.menu_item_name);
   const restIdS = getRestId(item);
   const restNameS = getRestName(item);
+  const cuisineS = getCuisineLike(item);
+  const phoneS = getPhoneLike(item);
+  const distanceMilesS = getDistanceMilesLike(item);
+  const profileTierS = getProfileTierLike(item);
   const restHrefS = restIdS ? "/restaurants/" + restIdS : null;
   const menuHrefS = restIdS ? "/public/restaurants/" + restIdS + "/menu" : null;
 
@@ -536,6 +616,12 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
             </Link>
           </div>
         )}
+        <RestaurantMeta
+          cuisine={cuisineS}
+          phone={phoneS}
+          distanceMiles={distanceMilesS}
+          profileTier={profileTierS}
+        />
         <ItemRow row={item} query={query} />
         {menuHrefS && (
           <div style={{ marginTop: 10 }}>
@@ -583,6 +669,12 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
           hl(restNameS, query)
         )}
       </div>
+      <RestaurantMeta
+        cuisine={cuisineS}
+        phone={phoneS}
+        distanceMiles={distanceMilesS}
+        profileTier={profileTierS}
+      />
       {menuHrefS && (
         <div style={{ marginTop: 8 }}>
           <Link
