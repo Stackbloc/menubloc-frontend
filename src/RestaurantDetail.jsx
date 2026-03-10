@@ -238,11 +238,11 @@ function pickFirst(obj, keys) {
 }
 
 function computeAddressLine(r) {
-  const line1 = pickFirst(r, ["address", "address_line1", "street", "street_address"]);
-  const line2 = pickFirst(r, ["address2", "address_line2", "suite", "unit"]);
+  const line1 = pickFirst(r, ["address_line1", "address", "street", "street_address"]);
+  const line2 = pickFirst(r, ["address_line2", "address2", "suite", "unit"]);
   const city = pickFirst(r, ["city", "location_city"]);
   const state = pickFirst(r, ["state", "region", "location_state"]);
-  const zip = pickFirst(r, ["zip", "postal_code", "zipcode"]);
+  const zip = pickFirst(r, ["postal_code", "zip", "zipcode"]);
 
   const left = [line1, line2].filter(Boolean).join(" ");
   const right = [city, state, zip].filter(Boolean).join(", ").replace(", ,", ",").trim();

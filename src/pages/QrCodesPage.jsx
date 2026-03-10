@@ -17,7 +17,8 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { BackButton } from "../components/NavButton.jsx";
 import { apiGet, apiPost, apiPatch } from "../lib/api.js";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -299,9 +300,7 @@ export default function QrCodesPage() {
 
       <div style={S.wrap}>
         <div style={S.topBar}>
-          <Link to={`/restaurants/${restaurantId}`} style={S.back}>
-            ← Back to Restaurant
-          </Link>
+          <BackButton />
           <h1 style={S.h1}>QR Codes — Restaurant #{restaurantId}</h1>
         </div>
 

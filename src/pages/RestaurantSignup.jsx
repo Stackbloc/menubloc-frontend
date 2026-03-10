@@ -2,22 +2,24 @@
  * ============================================================
  * File: menubloc-frontend/src/pages/RestaurantSignup.jsx
  * Purpose:
- *   Restaurant owner signup page.
+ *   Restaurant owner signup — Step 1 of onboarding.
  *   Collects account info, restaurant info, and menu
- *   ingestion method, then POSTs to /restaurants/signup.
+ *   ingestion method.
+ *
+ *   On submit: calls POST /owner/profile to create the
+ *   operator account + restaurant profile in the system.
+ *   Returns { restaurant, owner_token }.
+ *   Then navigates to /profilesearch so the owner can
+ *   search for and claim an existing profile, or confirm
+ *   the one just created.
  * ============================================================
  */
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const INGESTION_REDIRECT = {
-  ocr: "/restaurant/ocr-upload",
-  pdf: "/restaurant/pdf-upload",
-  spreadsheet: "/restaurant/spreadsheet-upload",
-};
-
-const FALLBACK_REDIRECT = "/restaurant/dashboard";
+const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const PROFILE_SEARCH_ROUTE = "/profilesearch";
 
 const styles = {
   page: {
@@ -162,12 +164,12 @@ export default function RestaurantSignup() {
     password: "",
     confirmPassword: "",
     restaurant_name: "",
-    website: "",
+    website_url: "",
     phone: "",
-    address: "",
+    address_line1: "",
     city: "",
     state: "",
-    zip: "",
+    postal_code: "",
   });
 
   const [ingestionMethod, setIngestionMethod] = useState("");
@@ -225,43 +227,59 @@ export default function RestaurantSignup() {
 
     setSubmitting(true);
 
-    const payload = {
-      restaurant_name: form.restaurant_name,
-      email: form.email,
-      password: form.password,
-      website: form.website,
-      phone: form.phone,
-      address: form.address,
-      city: form.city,
-      state: form.state,
-      zip: form.zip,
-      ingestion_method: ingestionMethod,
-      ocr_fee_acknowledged: ingestionMethod === "ocr" ? ocrAcknowledged : false,
-    };
-
     try {
-      const res = await fetch("/restaurants/signup", {
-        method: "POST",
+      // Create the operator account + restaurant profile in the system.
+      // POST /owner/profile upserts by email, sets claim_status='claimed',
+      // and returns { restaurant, owner_token }.
+      const res = await fetch(`${API}/owner/profile`, {
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          email:          form.email.trim(),
+          restaurant_name: form.restaurant_name.trim(),
+          phone:          form.phone.trim() || null,
+          website_url:    form.website_url.trim() || null,
+          address_line1:  form.address_line1.trim() || null,
+          city:           form.city.trim() || null,
+          state:          form.state.trim() || null,
+          postal_code:    form.postal_code.trim() || null,
+        }),
       });
 
-      if (!res.ok) {
-        setServerError("Signup failed. Please try again.");
-        setSubmitting(false);
-        return;
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || `Signup failed (${res.status})`);
       }
 
-      const redirect = INGESTION_REDIRECT[ingestionMethod] ?? FALLBACK_REDIRECT;
-      nav(redirect);
-    } catch {
-      setServerError("Signup failed. Please try again.");
+      const { restaurant, owner_token } = data;
+
+      // Account created. Navigate to profile search so the owner can
+      // confirm this profile or find/claim an existing one.
+      nav(PROFILE_SEARCH_ROUTE, {
+        state: {
+          restaurant_id:        restaurant.id,
+          email:                form.email.trim(),
+          owner_token,
+          restaurant_name:      form.restaurant_name.trim(),
+          website_url:          form.website_url.trim(),
+          phone:                form.phone.trim(),
+          address_line1:        form.address_line1.trim(),
+          city:                 form.city.trim(),
+          state:                form.state.trim(),
+          postal_code:          form.postal_code.trim(),
+          ingestion_method:     ingestionMethod,
+          ocr_fee_acknowledged: ingestionMethod === "ocr" ? ocrAcknowledged : false,
+        },
+      });
+    } catch (err) {
+      setServerError(err.message || "Signup failed. Please try again.");
+    } finally {
       setSubmitting(false);
     }
   }
 
-  const submitDisabled =
-    submitting || (ingestionMethod === "ocr" && !ocrAcknowledged);
+  const submitDisabled = submitting || (ingestionMethod === "ocr" && !ocrAcknowledged);
 
   return (
     <div style={styles.page}>
@@ -360,22 +378,22 @@ export default function RestaurantSignup() {
           </div>
 
           <div style={styles.fieldGroup}>
-            <label htmlFor="website" style={styles.label}>
+            <label htmlFor="website_url" style={styles.label}>
               Website
             </label>
             <input
-              id="website"
-              name="website"
+              id="website_url"
+              name="website_url"
               type="url"
               autoComplete="url"
               placeholder="yourrestaurant.com"
-              value={form.website}
+              value={form.website_url}
               onChange={handleChange}
               onBlur={() => {
-                const raw = form.website.trim();
+                const raw = form.website_url.trim();
                 if (!raw) return;
                 if (!/^https?:\/\//i.test(raw)) {
-                  setForm((prev) => ({ ...prev, website: "https://" + raw }));
+                  setForm((prev) => ({ ...prev, website_url: "https://" + raw }));
                 }
               }}
               style={styles.input}
@@ -398,15 +416,15 @@ export default function RestaurantSignup() {
           </div>
 
           <div style={styles.fieldGroup}>
-            <label htmlFor="address" style={styles.label}>
+            <label htmlFor="address_line1" style={styles.label}>
               Address
             </label>
             <input
-              id="address"
-              name="address"
+              id="address_line1"
+              name="address_line1"
               type="text"
               autoComplete="street-address"
-              value={form.address}
+              value={form.address_line1}
               onChange={handleChange}
               style={styles.input}
             />
@@ -445,16 +463,16 @@ export default function RestaurantSignup() {
             </div>
 
             <div style={{ flex: "0 0 110px", marginBottom: 14 }}>
-              <label htmlFor="zip" style={styles.label}>
+              <label htmlFor="postal_code" style={styles.label}>
                 ZIP
               </label>
               <input
-                id="zip"
-                name="zip"
+                id="postal_code"
+                name="postal_code"
                 type="text"
                 autoComplete="postal-code"
                 maxLength={10}
-                value={form.zip}
+                value={form.postal_code}
                 onChange={handleChange}
                 style={styles.input}
               />
@@ -510,10 +528,20 @@ export default function RestaurantSignup() {
             <div style={styles.ingestionDesc}>
               Fill in the menu upload template and upload it here.{" "}
               <a
-                href="/menu-upload-template.xlsx"
-                download="Menu Upload Template.xlsx"
+                href="#"
                 style={{ color: "#111", fontWeight: 700 }}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const csv  = "Name,Description,Section,Price,IsVegan,IsGlutenFree\n\"Margherita Pizza\",\"Fresh mozzarella and basil\",\"Pizzas\",\"14.99\",\"TRUE\",\"FALSE\"";
+                  const blob = new Blob([csv], { type: "text/csv" });
+                  const url  = URL.createObjectURL(blob);
+                  const a    = document.createElement("a");
+                  a.href     = url;
+                  a.download = "Grubbid Menu Upload Template.csv";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
               >
                 Download the menu upload template
               </a>
@@ -604,7 +632,7 @@ export default function RestaurantSignup() {
           style={submitBtnStyle(submitDisabled)}
           disabled={submitDisabled}
         >
-          {submitting ? "Creating account\u2026" : "Upload My Menu"}
+          {submitting ? "Creating account…" : "Continue →"}
         </button>
       </form>
     </div>

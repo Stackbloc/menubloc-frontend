@@ -70,10 +70,20 @@ export async function getRestaurantMenu(restaurantId) {
   return apiGet(`/public/restaurants/${encodeURIComponent(String(restaurantId))}/menu`);
 }
 
+export async function getBrowseMenus(params = {}) {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === null || value === undefined || value === "") return;
+    search.set(key, String(value));
+  });
+  return apiGet(`/menus/browse?${search.toString()}`);
+}
+
 export default {
   apiGet,
   apiPost,
   apiPatch,
   searchPublicMenu,
   getRestaurantMenu,
+  getBrowseMenus,
 };

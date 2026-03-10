@@ -1,6 +1,6 @@
 // menubloc-frontend/src/pages/Terms.jsx
 import React from "react";
-import { Link } from "react-router-dom";
+import { BackButton } from "../components/NavButton.jsx";
 
 const s = {
   page: {
@@ -25,9 +25,7 @@ export default function Terms() {
   return (
     <div style={s.page}>
       <div style={s.brand}>Grubbid</div>
-      <Link to="/restaurant-profile" style={s.back}>
-        &larr; Back
-      </Link>
+      <BackButton />
 
       <h1 style={s.h1}>Grubbid Restaurant Upload and Listing Terms</h1>
       <div style={s.effective}>Effective Date: 2026-03-05</div>

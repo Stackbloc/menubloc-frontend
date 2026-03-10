@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { MOCK_MENU } from "./mockMenu.js";
 import { MKS_CATEGORIES, mapRawCategoryToMks } from "./mks/mksCategories.js";
+import MenuItemInsightsPanel from "./components/MenuItemInsightsPanel.jsx";
 
 // -----------------------------
 // Helpers
@@ -36,6 +37,10 @@ function safeText(v) {
 
 function lower(v) {
   return safeText(v).toLowerCase();
+}
+
+function pendingBannerText(menuData) {
+  return safeText(menuData?.menu_banner || menuData?.pending_banner || "");
 }
 
 // Haversine distance (miles)
@@ -190,26 +195,6 @@ function normalizeToCategories(raw) {
 }
 
 // -----------------------------
-// Panels (Insights, Nutrition; Pairings conditional)
-// -----------------------------
-function getPanelPayload(item, key) {
-  const obj = item?.signals && typeof item.signals === "object" ? item.signals : null;
-
-  const direct =
-    key === "insights"
-      ? item?.insights ?? item?.signal_insights
-      : key === "nutrition"
-      ? item?.nutrition ?? item?.signal_nutrition
-      : item?.pairings ?? item?.signal_pairings;
-
-  const v = (obj && obj[key] !== undefined ? obj[key] : undefined) ?? direct;
-
-  if (Array.isArray(v)) return v.map((x) => safeText(x)).filter(Boolean);
-  if (typeof v === "string") return safeText(v) ? [safeText(v)] : [];
-  return [];
-}
-
-// -----------------------------
 // Indicators (locked approved list)
 // NOTE: NO "trending".
 // -----------------------------
@@ -273,11 +258,11 @@ function pickFirst(obj, keys) {
 }
 
 function computeAddressLine(r) {
-  const line1 = pickFirst(r, ["address", "address_line1", "street", "street_address"]);
-  const line2 = pickFirst(r, ["address2", "address_line2", "suite", "unit"]);
+  const line1 = pickFirst(r, ["address_line1", "address", "street", "street_address"]);
+  const line2 = pickFirst(r, ["address_line2", "address2", "suite", "unit"]);
   const city = pickFirst(r, ["city", "location_city"]);
   const state = pickFirst(r, ["state", "region", "location_state"]);
-  const zip = pickFirst(r, ["zip", "postal_code", "zipcode"]);
+  const zip = pickFirst(r, ["postal_code", "zip", "zipcode"]);
 
   const left = [line1, line2].filter(Boolean).join(" ");
   const right = [city, state, zip].filter(Boolean).join(", ").replace(", ,", ",").trim();
@@ -300,7 +285,6 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState("ALL");
   const [theme, setTheme] = useState(readTheme());
-  const [activePanel, setActivePanel] = useState("insights"); // default
 
   // User geo (for distance-from-user)
   const [userGeo, setUserGeo] = useState(null); // { lat, lng } | null
@@ -393,28 +377,6 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
     return arr;
   }, [rawCats, search, activeCat]);
 
-  // Pairings only exists if any item has pairings data.
-  const anyPairings = useMemo(() => {
-    for (const g of grouped) {
-      for (const it of g.items) {
-        if (getPanelPayload(it, "pairings").length > 0) return true;
-      }
-    }
-    return false;
-  }, [grouped]);
-
-  const PANELS = useMemo(() => {
-    const base = [
-      { key: "insights", label: "Insights" },
-      { key: "nutrition", label: "Nutrition" },
-    ];
-    return anyPairings ? [...base, { key: "pairings", label: "Pairings" }] : base;
-  }, [anyPairings]);
-
-  useEffect(() => {
-    if (!anyPairings && activePanel === "pairings") setActivePanel("insights");
-  }, [anyPairings, activePanel]);
-
   const tabs = useMemo(() => {
     const present = new Set(grouped.map((g) => g.code));
     return MKS_CATEGORIES.filter((c) => present.has(c.code)).sort(
@@ -436,6 +398,7 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
   }, [userGeo, rLatLng]);
 
   const profileRestaurantId = safeText(restaurant?.id || restaurantId);
+  const bannerText = pendingBannerText(raw);
 
   // ✅ Link to Restaurant Public Page (slug preferred, id fallback)
   const publicLink = restaurant?.slug
@@ -514,6 +477,25 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
               {theme === "dark" ? "Light mode" : "Dark mode"}
             </button>
           </div>
+          {bannerText ? (
+            <div
+              style={{
+                marginTop: 10,
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "8px 12px",
+                borderRadius: 10,
+                background: "#fff3cd",
+                color: "#7c2d12",
+                border: "1px solid #facc15",
+                fontSize: 12,
+                fontWeight: 900,
+                letterSpacing: 0.2,
+              }}
+            >
+              {bannerText}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -545,30 +527,6 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                 color: COLORS.text,
               }}
             />
-
-            {/* Panels (Pairings only if any item has pairings) */}
-            <div style={{ display: "flex", gap: 8, alignItems: "center", overflowX: "auto", maxWidth: "100%" }}>
-              {PANELS.map((p) => (
-                <button
-                  key={p.key}
-                  onClick={() => setActivePanel(p.key)}
-                  style={{
-                    height: 40,
-                    padding: "0 12px",
-                    borderRadius: 999,
-                    border: `1px solid ${COLORS.border2}`,
-                    background: activePanel === p.key ? COLORS.chipActiveBg : COLORS.chipBg,
-                    color: COLORS.text,
-                    cursor: "pointer",
-                    fontWeight: 900,
-                    fontSize: 13,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Category tabs */}
@@ -646,11 +604,6 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
               {cat.items.map((item) => {
                 const name = item?.name || item?.title || "Menu item";
                 const desc = item?.description || item?.desc || "";
-
-                const panelList = getPanelPayload(item, activePanel);
-
-                // Pairings panel should not show for an item with no pairings
-                const showPanel = activePanel === "pairings" ? panelList.length > 0 : true;
 
                 // Indicators
                 let indicators = getIndicatorsFromItem(item);
@@ -737,40 +690,8 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                       </div>
                     ) : null}
 
-                    {/* Panels */}
-                    {showPanel ? (
-                      <div
-                        style={{
-                          marginTop: 10,
-                          borderRadius: 14,
-                          border: `1px solid ${COLORS.border}`,
-                          background: COLORS.chipBg,
-                          padding: "10px 12px",
-                        }}
-                      >
-                        <div style={{ fontSize: 12, fontWeight: 900, color: COLORS.text, marginBottom: 6 }}>
-                          {PANELS.find((p) => p.key === activePanel)?.label || "Insights"}
-                        </div>
-
-                        {panelList.length ? (
-                          <ul
-                            style={{
-                              margin: 0,
-                              paddingLeft: 18,
-                              color: COLORS.subtext,
-                              fontSize: 12.5,
-                              lineHeight: 1.35,
-                            }}
-                          >
-                            {panelList.slice(0, 6).map((x, i) => (
-                              <li key={`${activePanel}-${i}`}>{x}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <div style={{ fontSize: 12.5, color: COLORS.subtext }}>No data for this item.</div>
-                        )}
-                      </div>
-                    ) : null}
+                    {/* Intelligence panel — always visible if real data exists */}
+                    <MenuItemInsightsPanel item={item} colors={COLORS} />
                   </div>
                 );
               })}

@@ -2,25 +2,27 @@
  * ============================================================
  * File: SearchResultCard.jsx
  * Path: menubloc-frontend/src/components/SearchResultCard.jsx
- * Date: 2026-03-05
+ * Date: 2026-03-10
  * Purpose:
  *   Search result card UI — food-first, scan-optimized.
  *   - Grouped by restaurant (restaurant header, muted)
  *   - Menu items as primary content
  *   - Badges inline after item name: Popular → Deal → GF → Vegan
  *   - Price: whole dollars only, right-aligned, minWidth 64
- *   - Cards in order: Nutrition → Insights → Pairings
- *   - Insights: renders backend-computed phrases only (no badge duplication)
+ *   - Chips in order: Nutrition → Insights → Show Similar
+ *   - Insights chip toggles InsightCardDeck (real chip-driven data only)
+ *     Data derived entirely from existing row payload — no new fetches.
  *   - Footer CTA: "View Menu" → /public/restaurants/:id/menu
  *
- *   Fix (today):
- *   - Grouped cards were reading restaurant?.id but API returns restaurant_id.
- *     That produced /public/restaurants//menu and routed back to Discovery.
+ *   2026-03-10 update:
+ *   - Public restaurant profile links now prefer /restaurants/:slugOrId
+ *   - Menu links remain /public/restaurants/:id/menu
  * ============================================================
  */
 
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
 
 /* ---- Helpers ---- */
 
@@ -59,11 +61,11 @@ function asBool(v) {
 
 /* Whole dollars only — no cents on search cards */
 function fmtPrice(row) {
-  const d = asNum(row?.price);
+  const d = asNum(row?.price) ?? asNum(row?.item?.price);
   if (d !== null) return "$" + Math.round(d);
-  const m = asNum(row?.price_minor_units);
+  const m = asNum(row?.price_minor_units) ?? asNum(row?.item?.price_minor_units);
   if (m !== null) return "$" + Math.round(m / 100);
-  const c = asNum(row?.price_cents);
+  const c = asNum(row?.price_cents) ?? asNum(row?.item?.price_cents);
   if (c !== null) return "$" + Math.round(c / 100);
   return "";
 }
@@ -108,11 +110,20 @@ function getItemId(row) {
 function getRestId(row) {
   return asStr(pick(row, ["restaurant_id", "restaurantId", "id"]));
 }
+function getRestSlug(row) {
+  return asStr(pick(row, ["restaurant_slug", "restaurantSlug", "slug"]));
+}
 function getRestName(row) {
   return asStr(pick(row, ["restaurant_name", "restaurantName", "name", "title"], "Restaurant"));
 }
 function getItemName(row) {
   return asStr(pick(row, ["menu_item_name", "menuItemName", "item_name", "dish", "name"], "Menu item"));
+}
+
+function getRestaurantProfileTarget(x) {
+  const slug = asStr(pick(x, ["restaurant_slug", "restaurantSlug", "slug"]));
+  if (slug) return slug;
+  return asStr(pick(x, ["restaurant_id", "restaurantId", "id"]));
 }
 
 function normalizeTier(raw) {
@@ -137,7 +148,13 @@ function getDistanceMilesLike(x) {
 }
 
 function getProfileTierLike(x) {
-  return normalizeTier(pick(x, ["profile_tier", "restaurant_profile_tier", "listing_status", "restaurant_listing_status"], ""));
+  return normalizeTier(
+    pick(
+      x,
+      ["profile_tier", "restaurant_profile_tier", "listing_status", "restaurant_listing_status"],
+      ""
+    )
+  );
 }
 
 function getPopular(row) {
@@ -149,6 +166,25 @@ function getPopular(row) {
     (score !== null && score >= 18) ||
     (dups !== null && dups >= 2)
   );
+}
+
+/*
+ * resolveChips / resolveItemFlag
+ *
+ * The search API returns rows as { item: { chips, is_vegan, ... }, restaurant: {...} }.
+ * normalizeRows spreads the outer object, so chips and item-level flags live at
+ * row.item.chips / row.item.is_vegan — NOT at row.chips / row.is_vegan.
+ * These helpers check the top-level first (for any legacy flat shapes) and fall
+ * back to the nested item object.
+ */
+function resolveChips(row) {
+  return row?.chips || row?.item?.chips || {};
+}
+
+function resolveItemFlag(row, key) {
+  const top = row?.[key];
+  if (top != null) return top;
+  return row?.item?.[key] ?? null;
 }
 
 /* ---- Chip button ---- */
@@ -183,13 +219,11 @@ function Chip({ label, active, available, onClick }) {
 
 /* ---- Detail panel content ---- */
 
-function DetailPanel({ tab, row }) {
-  const chips = row?.chips || {};
+function DetailPanel({ tab, row, similarItems }) {
+  const chips = resolveChips(row);
 
   /* Nutrition */
   const nutChip = chips?.nutrition_chip || {};
-  const nutOk = asStr(nutChip?.status).toLowerCase() === "available";
-
   const cal = nutChip.calories_kcal ?? null;
   const pro = nutChip.protein_g ?? null;
   const fat = nutChip.fat_g ?? null;
@@ -198,11 +232,13 @@ function DetailPanel({ tab, row }) {
   const calPctW = nutChip.calories_pct_women ?? null;
   const calPctM = nutChip.calories_pct_men ?? null;
   const proPct = nutChip.protein_pct_daily ?? null;
-
-  /* Pairings */
-  const pairs = Array.isArray(chips?.pairings_chip?.suggestions)
-    ? chips.pairings_chip.suggestions.filter(Boolean)
-    : [];
+  const nutOk =
+    asStr(nutChip?.status).toLowerCase() === "available" ||
+    asNum(cal) !== null ||
+    asNum(pro) !== null ||
+    asNum(fat) !== null ||
+    asNum(sod) !== null ||
+    asNum(sug) !== null;
 
   const muted = { color: "var(--muted-2, #93a0b2)" };
   const wrap = {
@@ -214,7 +250,6 @@ function DetailPanel({ tab, row }) {
     lineHeight: 1.5,
   };
 
-  /* 1 — Nutrition */
   if (tab === "nutrition") {
     const rowStyle = {
       display: "flex",
@@ -276,27 +311,106 @@ function DetailPanel({ tab, row }) {
               </div>
             )}
             {cal === null && pro === null && fat === null && sod === null && (
-              <span style={muted}>Nutrition not available yet.</span>
+              <span style={muted}>Calculated nutrition values are not available for this item yet.</span>
             )}
           </>
         ) : (
-          <span style={muted}>Nutrition not available yet.</span>
+          <span style={muted}>Calculated nutrition values are not available for this item yet.</span>
         )}
       </div>
     );
   }
 
-  /* 2 — Insights: render backend-computed phrases; items kept on row for inspection */
   if (tab === "insights") {
-    const phrases = Array.isArray(chips?.insights?.phrases) ? chips.insights.phrases.filter(Boolean) : [];
-    return <div style={wrap}>{phrases.length > 0 ? renderUL(phrases) : <span style={muted}>No insights yet.</span>}</div>;
-  }
-
-  /* 3 — Pairings */
-  if (tab === "pairings") {
     return (
       <div style={wrap}>
-        {pairs.length > 0 ? renderUL(pairs) : <span style={muted}>Pairings coming soon.</span>}
+        <InsightCardDeck item={row} />
+      </div>
+    );
+  }
+
+  if (tab === "similar") {
+    const groups = Array.isArray(similarItems) ? similarItems : [];
+    return (
+      <div style={wrap}>
+        {groups.length > 0 ? (
+          <div style={{ display: "grid", gap: 14 }}>
+            {groups.map(({ restaurant_id, restaurant_name, items: siItems }) => (
+              <div key={restaurant_id || restaurant_name}>
+                <div
+                  style={{
+                    fontSize: "var(--text-1, 12px)",
+                    color: "var(--muted, #5b6675)",
+                    fontWeight: 700,
+                    marginBottom: 6,
+                  }}
+                >
+                  {restaurant_name}
+                </div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  {(Array.isArray(siItems) ? siItems : []).map((si) => {
+                    const siName = getItemName(si);
+                    const siPrice = fmtPrice(si);
+                    const siId = getItemId(si);
+                    const siHref = siId ? "/menu-items/" + siId : null;
+                    return (
+                      <div
+                        key={siId || siName}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "baseline",
+                          gap: 10,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "var(--text-2, 14px)",
+                            fontWeight: 600,
+                            color: "var(--ink, #0f1720)",
+                            minWidth: 0,
+                          }}
+                        >
+                          {siHref ? (
+                            <Link
+                              to={siHref}
+                              style={{ color: "var(--link, #124ba3)", textDecoration: "none" }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.textDecoration = "underline";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.textDecoration = "none";
+                              }}
+                            >
+                              {siName}
+                            </Link>
+                          ) : (
+                            siName
+                          )}
+                        </div>
+                        {siPrice ? (
+                          <span
+                            style={{
+                              fontSize: "var(--text-2, 14px)",
+                              fontWeight: 800,
+                              whiteSpace: "nowrap",
+                              color: "var(--ink, #0f1720)",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {siPrice}
+                          </span>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span style={muted}>No similar items found nearby.</span>
+        )}
       </div>
     );
   }
@@ -306,7 +420,7 @@ function DetailPanel({ tab, row }) {
 
 /* ---- Single item row ---- */
 
-function ItemRow({ row, query }) {
+function ItemRow({ row, query, similarItems }) {
   const [openTab, setOpenTab] = useState(null);
 
   const mid = getItemId(row);
@@ -314,26 +428,45 @@ function ItemRow({ row, query }) {
   const href = mid ? "/menu-items/" + mid : null;
   const price = fmtPrice(row);
   const popular = getPopular(row);
-  const hasDeal = asBool(row?.has_active_deal);
-  const isVegan = asBool(row?.is_vegan);
-  const isGF = asBool(row?.is_gluten_free);
+  const hasDeal = asBool(resolveItemFlag(row, "has_active_deal"));
+  const isVegan = asBool(resolveItemFlag(row, "is_vegan"));
+  const isGF = asBool(resolveItemFlag(row, "is_gluten_free"));
 
-  const chips = row?.chips || {};
-  const hasNut = asStr(chips?.nutrition_chip?.status).toLowerCase() === "available";
-  const hasIns = Array.isArray(chips?.insights?.phrases) && chips.insights.phrases.filter(Boolean).length > 0;
-  const hasPair =
-    Array.isArray(chips?.pairings_chip?.suggestions) && chips.pairings_chip.suggestions.filter(Boolean).length > 0;
+  const chips = resolveChips(row);
+  const nutChip = chips?.nutrition_chip || {};
+  const hasNut =
+    asStr(nutChip?.status).toLowerCase() === "available" ||
+    asNum(nutChip.calories_kcal) !== null ||
+    asNum(nutChip.protein_g) !== null ||
+    asNum(nutChip.fat_g) !== null ||
+    asNum(nutChip.sodium_mg) !== null ||
+    asNum(nutChip.sugar_g) !== null;
+  const hasIns = buildInsightCards(row).length > 0;
+  const hasSimilar = Array.isArray(similarItems) && similarItems.length > 0;
 
   function toggle(tab) {
     setOpenTab((prev) => (prev === tab ? null : tab));
   }
 
   return (
-    <div style={{ paddingTop: 10, paddingBottom: 10, borderBottom: "1px solid var(--border, #e4e9f0)" }}>
-      {/* Name + badges + price */}
+    <div
+      style={{
+        paddingTop: 10,
+        paddingBottom: 10,
+        borderBottom: "1px solid var(--border, #e4e9f0)",
+      }}
+    >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-        {/* Left: name + badges */}
-        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 6,
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
           <span
             style={{
               fontSize: "var(--text-4, 18px)",
@@ -361,14 +494,12 @@ function ItemRow({ row, query }) {
             )}
           </span>
 
-          {/* Badge order: Popular → Deal → GF → Vegan */}
           {popular && <DietBadge label="★ Popular" tone="popular" />}
           {hasDeal && <DietBadge label="🏷 Deal" tone="deal" />}
           {isGF && <DietBadge label="GF" tone="gf" />}
           {isVegan && <DietBadge label="🌿 Vegan" tone="vegan" />}
         </div>
 
-        {/* Right: price — fixed width for vertical alignment across rows */}
         {price ? (
           <span
             style={{
@@ -386,27 +517,32 @@ function ItemRow({ row, query }) {
         ) : null}
       </div>
 
-      {/* Chips row — order: Nutrition → Insights → Pairings */}
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
         <Chip
-          label={hasNut ? "Nutrition" : "Nutrition soon"}
+          label="Nutrition"
           active={openTab === "nutrition"}
           available={hasNut}
           onClick={() => toggle("nutrition")}
         />
         {hasIns && (
-          <Chip label="Insights" active={openTab === "insights"} available={hasIns} onClick={() => toggle("insights")} />
+          <Chip
+            label="Insights"
+            active={openTab === "insights"}
+            available={true}
+            onClick={() => toggle("insights")}
+          />
         )}
-        <Chip
-          label={hasPair ? "Pairings" : "Pairings soon"}
-          active={openTab === "pairings"}
-          available={hasPair}
-          onClick={() => toggle("pairings")}
-        />
+        {hasSimilar && (
+          <Chip
+            label="Show Similar"
+            active={openTab === "similar"}
+            available={true}
+            onClick={() => toggle("similar")}
+          />
+        )}
       </div>
 
-      {/* Detail panel */}
-      {openTab && <DetailPanel tab={openTab} row={row} />}
+      {openTab && <DetailPanel tab={openTab} row={row} similarItems={similarItems} />}
     </div>
   );
 }
@@ -468,7 +604,15 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier }) {
       : null;
 
   return (
-    <div style={{ marginBottom: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+    <div
+      style={{
+        marginBottom: 8,
+        display: "flex",
+        gap: 8,
+        alignItems: "center",
+        flexWrap: "wrap",
+      }}
+    >
       {tierLabel ? (
         <span
           style={{
@@ -483,7 +627,13 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier }) {
         </span>
       ) : null}
       {pieces.length > 0 ? (
-        <span style={{ fontSize: "var(--text-1, 12px)", color: "var(--muted, #5b6675)", fontWeight: 600 }}>
+        <span
+          style={{
+            fontSize: "var(--text-1, 12px)",
+            color: "var(--muted, #5b6675)",
+            fontWeight: 600,
+          }}
+        >
           {pieces.join(" • ")}
         </span>
       ) : null}
@@ -493,26 +643,29 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier }) {
 
 /* ---- Main export ---- */
 
-export default function SearchResultCard({ restaurant, items, item, query }) {
+export default function SearchResultCard({ restaurant, items, item, query, crossRestaurantItems }) {
   const grouped = Array.isArray(items) && items.length > 0;
 
   if (grouped) {
-    // ✅ IMPORTANT: API uses restaurant_id / restaurant_name (not always id / name)
     const restId = asStr(restaurant?.restaurant_id || restaurant?.id);
+    const restSlug = asStr(restaurant?.restaurant_slug || restaurant?.slug);
     const restName =
-      asStr(restaurant?.restaurant_name || restaurant?.name) ||
-      getRestName(items[0]);
+      asStr(restaurant?.restaurant_name || restaurant?.name) || getRestName(items[0]);
     const cuisine = getCuisineLike(restaurant) || getCuisineLike(items[0]);
     const phone = getPhoneLike(restaurant) || getPhoneLike(items[0]);
     const distanceMiles = getDistanceMilesLike(restaurant) ?? getDistanceMilesLike(items[0]);
     const profileTier = getProfileTierLike(restaurant) || getProfileTierLike(items[0]);
 
-    const restHref = restId ? "/restaurants/" + restId : null;
+    const restProfileTarget = restSlug || restId;
+    const restHref = restProfileTarget ? "/restaurants/" + restProfileTarget : null;
     const menuHref = restId ? "/public/restaurants/" + restId + "/menu" : null;
+
+    const similarItems = Array.isArray(crossRestaurantItems)
+      ? crossRestaurantItems.filter((x) => asStr(x.restaurant_id) !== restId)
+      : [];
 
     return (
       <article style={cardStyle}>
-        {/* Restaurant anchor — muted, small */}
         <div style={{ marginBottom: 2 }}>
           {restHref ? (
             <Link
@@ -533,7 +686,13 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
               {restName}
             </Link>
           ) : (
-            <span style={{ fontSize: "var(--text-2, 14px)", fontWeight: 700, color: "var(--muted, #5b6675)" }}>
+            <span
+              style={{
+                fontSize: "var(--text-2, 14px)",
+                fontWeight: 700,
+                color: "var(--muted, #5b6675)",
+              }}
+            >
               {restName}
             </span>
           )}
@@ -546,16 +705,14 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
           profileTier={profileTier}
         />
 
-        {/* Item rows */}
         <div>
           {items.map((row) => {
             const mid = getItemId(row);
             const nm = getItemName(row);
-            return <ItemRow key={mid || nm} row={row} query={query} />;
+            return <ItemRow key={mid || nm} row={row} query={query} similarItems={similarItems} />;
           })}
         </div>
 
-        {/* Footer: View Menu */}
         {menuHref && (
           <div style={{ marginTop: 10 }}>
             <Link
@@ -581,16 +738,20 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
     );
   }
 
-  /* ---- Legacy single row ---- */
   const isItemRow = Boolean(item?.menu_item_id || item?.menu_item_name);
   const restIdS = getRestId(item);
+  const restSlugS = getRestSlug(item);
   const restNameS = getRestName(item);
   const cuisineS = getCuisineLike(item);
   const phoneS = getPhoneLike(item);
   const distanceMilesS = getDistanceMilesLike(item);
   const profileTierS = getProfileTierLike(item);
-  const restHrefS = restIdS ? "/restaurants/" + restIdS : null;
+  const restProfileTargetS = restSlugS || restIdS;
+  const restHrefS = restProfileTargetS ? "/restaurants/" + restProfileTargetS : null;
   const menuHrefS = restIdS ? "/public/restaurants/" + restIdS + "/menu" : null;
+  const similarItemsS = Array.isArray(crossRestaurantItems)
+    ? crossRestaurantItems.filter((x) => asStr(x.restaurant_id) !== restIdS)
+    : [];
 
   if (isItemRow) {
     return (
@@ -622,7 +783,7 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
           distanceMiles={distanceMilesS}
           profileTier={profileTierS}
         />
-        <ItemRow row={item} query={query} />
+        <ItemRow row={item} query={query} similarItems={similarItemsS} />
         {menuHrefS && (
           <div style={{ marginTop: 10 }}>
             <Link
@@ -648,10 +809,15 @@ export default function SearchResultCard({ restaurant, items, item, query }) {
     );
   }
 
-  /* ---- Restaurant-only row ---- */
   return (
     <article style={cardStyle}>
-      <div style={{ fontSize: "var(--text-3, 16px)", fontWeight: 700, color: "var(--ink, #0f1720)" }}>
+      <div
+        style={{
+          fontSize: "var(--text-3, 16px)",
+          fontWeight: 700,
+          color: "var(--ink, #0f1720)",
+        }}
+      >
         {restHrefS ? (
           <Link
             to={restHrefS}

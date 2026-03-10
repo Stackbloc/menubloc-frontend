@@ -1,6 +1,7 @@
 // menubloc-frontend/src/pages/MenuPage.jsx
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { HomeButton } from "../components/NavButton.jsx";
 import GrubbidMenuView from "../GrubbidMenuView.jsx";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -63,7 +64,7 @@ export default function MenuPage() {
         <div style={{ fontWeight: 900 }}>Menu unavailable</div>
         <div style={{ marginTop: 8, color: "#666" }}>{err}</div>
         <div style={{ marginTop: 16 }}>
-          <Link to="/">Back home</Link>
+          <HomeButton />
         </div>
       </div>
     );

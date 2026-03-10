@@ -1,6 +1,7 @@
 // menubloc-frontend/src/pages/RestaurantProfile.jsx
 import React, { useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { HomeButton } from "../components/NavButton.jsx";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -173,11 +174,9 @@ export default function RestaurantProfile() {
 
   return (
     <div style={styles.wrap}>
-      <div style={styles.topRow}>
-        <div style={styles.brand}>Grubbid · Restaurant Setup</div>
-        <Link to="/" style={styles.back}>
-          Back
-        </Link>
+      <div style={{ marginBottom: 18 }}>
+        <HomeButton />
+        <div style={{ ...styles.brand, marginTop: 14 }}>Grubbid · Restaurant Setup</div>
       </div>
 
       <div style={styles.card}>

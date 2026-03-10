@@ -2,23 +2,75 @@
  * ============================================================
  * File: GrubbidSearchResults.jsx
  * Path: menubloc-frontend/src/pages/GrubbidSearchResults.jsx
- * Date: 2026-03-05
+ * Date: 2026-03-10
  * Purpose:
  *   Search results page for Grubbid.
  *   - Reads query params from URL
- *   - Calls backend /search endpoint
+ *   - Calls backend /search endpoint (with lat/lng when available)
  *   - Groups menu-item results by restaurant
  *   - Dedupes menu items per restaurant (best score, then lower price)
  *   - Interactive filter bar (vegan, gluten-free, deals, price max)
- *   - Location line from search params
+ *   - Geo-proximity: browser geolocation is requested on mount.
+ *       When granted, lat/lng are passed to /search and results are
+ *       sorted by distance (closest first, within text relevance).
+ *       When denied or unavailable, search falls back to text-based
+ *       location params (city/near/zip) with no disruption.
+ *       Location status never blocks the initial result fetch.
+ *
+ *   2026-03-10 update:
+ *   - Carries restaurant_slug through row normalization and grouping
+ *   - Passes slug into SearchResultCard so public profile links can
+ *     prefer /restaurants/:slugOrId instead of id-only routing
  * ============================================================
  */
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
+import { BackButton } from "../components/NavButton.jsx";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+
+/* ---- Geolocation hook ---- */
+
+/**
+ * Requests browser geolocation once on mount.
+ * Returns { status, lat, lng } where status is one of:
+ *   "pending"     — waiting for browser response
+ *   "granted"     — location available; lat/lng are floats
+ *   "denied"      — user denied or browser blocked
+ *   "unavailable" — geolocation API not supported
+ *
+ * Graceful in all cases: search always works without location.
+ */
+function useGeolocation() {
+  const [geo, setGeo] = useState({ status: "pending", lat: null, lng: null });
+
+  useEffect(() => {
+    if (!navigator?.geolocation) {
+      setGeo({ status: "unavailable", lat: null, lng: null });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeo({
+          status: "granted",
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      () => {
+        setGeo({ status: "denied", lat: null, lng: null });
+      },
+      { timeout: 8000, maximumAge: 300000 }
+    );
+  }, []);
+
+  return geo;
+}
+
+/* ---- Row normalization ---- */
 
 function useQueryParams() {
   const { search } = useLocation();
@@ -41,7 +93,9 @@ function normalizeRows(json) {
           menu_item_id: r.item.id ?? r.item.menu_item_id ?? null,
           menu_item_name: r.item.name ?? r.item.menu_item_name ?? null,
           restaurant_id: r.restaurant.id ?? r.restaurant.restaurant_id ?? null,
-          restaurant_name: r.restaurant.name ?? r.restaurant.restaurant_name ?? r.restaurant.title ?? null,
+          restaurant_slug: r.restaurant.slug ?? r.restaurant.restaurant_slug ?? null,
+          restaurant_name:
+            r.restaurant.name ?? r.restaurant.restaurant_name ?? r.restaurant.title ?? null,
           price_cents: r.item.price_cents ?? r.item.priceMinor ?? r.item.price_minor ?? null,
           item: r.item,
           restaurant: r.restaurant,
@@ -122,12 +176,16 @@ function buildRestaurantGroups(dishRows) {
 
   for (const row of dishRows) {
     const restaurantId = asString(pickFirst(row, ["restaurant_id", "restaurantId"], ""));
-    const restaurantName = asString(pickFirst(row, ["restaurant_name", "restaurantName"], "Restaurant"));
+    const restaurantSlug = asString(pickFirst(row, ["restaurant_slug", "restaurantSlug"], ""));
+    const restaurantName = asString(
+      pickFirst(row, ["restaurant_name", "restaurantName"], "Restaurant")
+    );
     const restaurantKey = restaurantId ? `id:${restaurantId}` : `name:${normalizeKey(restaurantName)}`;
 
     if (!restaurantMap.has(restaurantKey)) {
       restaurantMap.set(restaurantKey, {
         restaurant_id: restaurantId,
+        restaurant_slug: restaurantSlug,
         restaurant_name: restaurantName || "Restaurant",
         _first: row,
         _itemMap: new Map(),
@@ -135,6 +193,11 @@ function buildRestaurantGroups(dishRows) {
     }
 
     const group = restaurantMap.get(restaurantKey);
+
+    if (!group.restaurant_slug && restaurantSlug) {
+      group.restaurant_slug = restaurantSlug;
+    }
+
     const menuItemId = asString(pickFirst(row, ["menu_item_id", "menuItemId"], ""));
     const nameKey = normalizeKey(pickFirst(row, ["menu_item_name", "menuItemName", "name"], ""));
     const sectionKey = normalizeKey(pickFirst(row, ["section", "section_name", "menu_section"], ""));
@@ -165,8 +228,10 @@ function buildRestaurantGroups(dishRows) {
       if (pa !== null && pb !== null && pa !== pb) return pa - pb;
       return 0;
     });
+
     groups.push({
       restaurant_id: g.restaurant_id,
+      restaurant_slug: g.restaurant_slug,
       restaurant_name: g.restaurant_name,
       _first: g._first,
       items,
@@ -236,6 +301,7 @@ const PRICE_OPTIONS = [
 export default function GrubbidSearchResults() {
   const params = useQueryParams();
   const navigate = useNavigate();
+  const geo = useGeolocation();
 
   const q = String(params.get("q") || "").trim();
   const vegan = params.get("vegan") === "1";
@@ -261,8 +327,13 @@ export default function GrubbidSearchResults() {
     if (city) u.searchParams.set("city", city);
     if (near) u.searchParams.set("near", near);
     if (maxPrice) u.searchParams.set("max_price", maxPrice);
+
+    if (geo.lat != null && geo.lng != null) {
+      u.searchParams.set("lat", String(geo.lat));
+      u.searchParams.set("lng", String(geo.lng));
+    }
     return u.toString();
-  }, [q, vegan, gluten_free, deals_only, zip, city, near, maxPrice]);
+  }, [q, vegan, gluten_free, deals_only, zip, city, near, maxPrice, geo.lat, geo.lng]);
 
   useEffect(() => {
     let alive = true;
@@ -294,12 +365,25 @@ export default function GrubbidSearchResults() {
     }
 
     run();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [requestUrl]);
 
   const dishRows = useMemo(() => rows.filter(isDishRow), [rows]);
   const restaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);
   const restaurantGroups = useMemo(() => buildRestaurantGroups(dishRows), [dishRows]);
+
+  const crossRestaurantItems = useMemo(() => {
+    return restaurantGroups
+      .filter((g) => g.items.length > 0)
+      .map((g) => ({
+        restaurant_id: asString(g.restaurant_id),
+        restaurant_name: g.restaurant_name,
+        items: g.items,
+      }));
+  }, [restaurantGroups]);
+
   const hasMenuMatches = restaurantGroups.length > 0;
   const restaurantIntent = !!(
     searchMeta?.restaurant_oriented ||
@@ -325,34 +409,26 @@ export default function GrubbidSearchResults() {
     });
   }, [restaurantOnlyRows, restaurantGroupsById]);
 
-  /* Location label — from search params only, not from result rows */
-  const locationLabel = city || near || (zip ? zip : "");
+  const locationLabel = useMemo(() => {
+    if (city || near) return city || near;
+    if (zip) return zip;
+    if (geo.status === "granted") return "you";
+    return "";
+  }, [city, near, zip, geo.status]);
 
   const styles = {
     wrap: {
       padding: 18,
       maxWidth: 980,
       margin: "0 auto",
-      fontFamily: "var(--font-ui, Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif)",
+      fontFamily:
+        "var(--font-ui, Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif)",
       color: "var(--ink, #0f1720)",
     },
     topRow: {
       display: "flex",
       alignItems: "center",
       gap: 12,
-    },
-    backBtn: {
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 8,
-      border: "1px solid var(--border, #d6dde7)",
-      borderRadius: 999,
-      padding: "8px 12px",
-      background: "#fff",
-      color: "var(--ink, #0f1720)",
-      fontWeight: 700,
-      fontSize: "var(--text-2, 14px)",
-      cursor: "pointer",
     },
     title: {
       margin: "14px 0 0",
@@ -436,18 +512,7 @@ export default function GrubbidSearchResults() {
   return (
     <div style={styles.wrap}>
       <div style={styles.topRow}>
-        <button
-          type="button"
-          style={styles.backBtn}
-          onClick={() => {
-            if (window.history.length > 1) navigate(-1);
-            else navigate("/");
-          }}
-          aria-label="Go back"
-        >
-          <span aria-hidden="true">←</span>
-          <span>Back</span>
-        </button>
+        <BackButton />
       </div>
 
       <h1 style={styles.title}>
@@ -460,21 +525,18 @@ export default function GrubbidSearchResults() {
         )}
       </h1>
 
-      {locationLabel && (
-        <div style={styles.locationLine}>Near {locationLabel}</div>
-      )}
+      {locationLabel && <div style={styles.locationLine}>Near {locationLabel}</div>}
 
       <div style={styles.meta}>
         {hasMenuMatches
           ? `${restaurantGroups.length} restaurant${restaurantGroups.length === 1 ? "" : "s"} with menu matches`
           : restaurantOnlyVisible.length
-            ? `${restaurantOnlyVisible.length} restaurant suggestion${restaurantOnlyVisible.length === 1 ? "" : "s"}`
-            : loading
-              ? ""
-              : "No matches yet."}
+          ? `${restaurantOnlyVisible.length} restaurant suggestion${restaurantOnlyVisible.length === 1 ? "" : "s"}`
+          : loading
+          ? ""
+          : "No matches yet."}
       </div>
 
-      {/* Interactive filter bar */}
       <div style={styles.filterBar}>
         <FilterToggle
           label="Vegan"
@@ -498,7 +560,9 @@ export default function GrubbidSearchResults() {
           aria-label="Price filter"
         >
           {PRICE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
       </div>
@@ -519,6 +583,7 @@ export default function GrubbidSearchResults() {
                 key={`r-${asString(pickFirst(r, ["restaurant_id", "id"], "")) || asString(r?.name)}`}
                 item={r}
                 query={q}
+                crossRestaurantItems={crossRestaurantItems}
               />
             ))}
           </div>
@@ -534,6 +599,7 @@ export default function GrubbidSearchResults() {
                 key={`rg-${g.restaurant_id || g.restaurant_name}`}
                 restaurant={{
                   id: g.restaurant_id,
+                  slug: g.restaurant_slug || g._first?.restaurant_slug || g._first?.slug || null,
                   name: g.restaurant_name,
                   cuisine: g._first?.cuisine || g._first?.restaurant_cuisine || null,
                   category: g._first?.category || g._first?.restaurant_category || null,
@@ -548,6 +614,7 @@ export default function GrubbidSearchResults() {
                 }}
                 items={g.items}
                 query={q}
+                crossRestaurantItems={crossRestaurantItems}
               />
             ))}
           </div>

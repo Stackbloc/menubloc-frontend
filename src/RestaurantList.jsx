@@ -68,7 +68,7 @@ export default function RestaurantList({ onSelectRestaurant }) {
         cuisine: cuisine.trim() || null,
         city: city.trim() || null,
         state: state.trim() || null,
-        zip: zip.trim() || null,
+        postal_code: zip.trim() || null,
       };
 
       const res = await fetch(`${API_BASE}/restaurants`, {
@@ -178,7 +178,7 @@ export default function RestaurantList({ onSelectRestaurant }) {
                 <div style={{ fontWeight: 700 }}>{r.name}</div>
                 <div style={{ opacity: 0.8, fontSize: 14 }}>
                   {r.category || "—"} · {r.cuisine || "—"} ·{" "}
-                  {[r.city, r.state, r.zip].filter(Boolean).join(", ") || "—"}
+                  {[r.city, r.state, r.postal_code].filter(Boolean).join(", ") || "—"}
                 </div>
               </div>
 

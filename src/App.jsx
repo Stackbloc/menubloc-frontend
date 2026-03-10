@@ -1,18 +1,21 @@
 // ============================================================
-// Path: menubloc-frontend/src/App.jsx
-// File: App.jsx
-// Date: 2026-03-06
+// File:    App.jsx
+// Path:    menubloc-frontend/src/App.jsx
+// Date:    2026-03-10
 // Purpose:
 //   Domain-aware routing:
 //     - easymenuupload.com -> EasyMenuLanding on "/"
 //     - grubbid.com (and everything else) -> GrubbidDiscovery on "/"
 //
 //   Routing cleanup:
-//   - Canonical restaurant public page: /restaurants/:id
-//   - Back-compat redirect: /restaurant/:id -> /restaurants/:id
+//   - Canonical restaurant public page: /restaurants/:slugOrId
+//   - Back-compat redirect: /restaurant/:slugOrId -> /restaurants/:slugOrId
 //
 //   QR admin route added 2026-03-06:
 //   - /restaurants/:id/qr-codes -> QrCodesPage (admin/owner surface)
+//
+//   Design upgrade route added 2026-03-09:
+//   - /restaurant/design-select -> MenuDesignSelectPage (onboarding step 4)
 //
 //   Analytics route tracking:
 //   - Sends GA4 page_path updates on client-side route changes
@@ -25,22 +28,27 @@ import GrubbidDiscovery from "./pages/GrubbidDiscovery.jsx";
 import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
 
 import RestaurantSignup from "./pages/RestaurantSignup.jsx";
-import RestaurantProfile from "./pages/RestaurantProfile.jsx"; // owner/admin profile (private)
-import RestaurantPublicPage from "./pages/RestaurantPublicPage.jsx"; // public restaurant page
+import ProfileSearchPage from "./pages/ProfileSearchPage.jsx";
+import RestaurantProfile from "./pages/RestaurantProfile.jsx";
+import RestaurantPublicPage from "./pages/RestaurantPublicPage.jsx";
 
 import MenuPage from "./pages/MenuPage.jsx";
 import MenuDetailPage from "./pages/MenuDetailPage.jsx";
 import MenuItemDetailPage from "./pages/MenuItemDetailPage.jsx";
 import PublicMenuPage from "./pages/PublicMenuPage.jsx";
+import BrowseMenus from "./pages/BrowseMenus.jsx";
 
 import DealsPage from "./pages/DealsPage.jsx";
 
 import ClaimVerify from "./pages/ClaimVerify.jsx";
 import EasyMenuLanding from "./pages/EasyMenuLanding.jsx";
 import SubscriptionSelect from "./pages/SubscriptionSelect.jsx";
+import MenuDesignSelectPage from "./pages/MenuDesignSelectPage.jsx";
 import Terms from "./pages/Terms.jsx";
 
 import QrCodesPage from "./pages/QrCodesPage.jsx";
+import PdfUploadPage from "./pages/PdfUploadPage.jsx";
+import SpreadsheetUploadPage from "./pages/SpreadsheetUploadPage.jsx";
 
 function isEasyMenuHost() {
   const host = (window?.location?.hostname || "").toLowerCase();
@@ -49,11 +57,11 @@ function isEasyMenuHost() {
 
 /**
  * Back-compat redirect for old singular route.
- * /restaurant/:id  ->  /restaurants/:id
+ * /restaurant/:slugOrId  ->  /restaurants/:slugOrId
  */
 function RestaurantSingularRedirect() {
-  const { id } = useParams();
-  return <Navigate to={id ? `/restaurants/${id}` : "/restaurants"} replace />;
+  const { slugOrId } = useParams();
+  return <Navigate to={slugOrId ? `/restaurants/${slugOrId}` : "/restaurants"} replace />;
 }
 
 /**
@@ -90,18 +98,19 @@ export default function App() {
 
         {/* Search */}
         <Route path="/search" element={<GrubbidSearchResults />} />
+        <Route path="/browse-menus" element={<BrowseMenus />} />
 
         {/* Deals */}
         <Route path="/deals" element={<DealsPage />} />
 
-        {/* QR admin — must come before /restaurants/:id to match correctly */}
+        {/* QR admin — keep id-based and before public restaurant route */}
         <Route path="/restaurants/:id/qr-codes" element={<QrCodesPage />} />
 
         {/* Restaurant public page (CANONICAL) */}
-        <Route path="/restaurants/:id" element={<RestaurantPublicPage />} />
+        <Route path="/restaurants/:slugOrId" element={<RestaurantPublicPage />} />
 
         {/* Back-compat: singular -> plural */}
-        <Route path="/restaurant/:id" element={<RestaurantSingularRedirect />} />
+        <Route path="/restaurant/:slugOrId" element={<RestaurantSingularRedirect />} />
 
         {/* Private/owner profile screen */}
         <Route path="/restaurant-profile/:id" element={<RestaurantProfile />} />
@@ -110,11 +119,21 @@ export default function App() {
         <Route path="/restaurant/signup" element={<RestaurantSignup />} />
         <Route path="/signup" element={<RestaurantSignup />} />
 
-        {/* Subscription selection (step after restaurant detail) */}
+        {/* Onboarding step 2: find existing listing or create new */}
+        <Route path="/profilesearch" element={<ProfileSearchPage />} />
+
+        {/* Onboarding step 3: subscription / plan selection */}
         <Route path="/restaurant/subscription" element={<SubscriptionSelect />} />
+
+        {/* Onboarding step 4: design style selection (Adobe integration ready) */}
+        <Route path="/restaurant/design-select" element={<MenuDesignSelectPage />} />
 
         {/* Terms of Service */}
         <Route path="/terms" element={<Terms />} />
+
+        {/* Menu upload (onboarding step 5) */}
+        <Route path="/restaurant/pdf-upload" element={<PdfUploadPage />} />
+        <Route path="/restaurant/spreadsheet-upload" element={<SpreadsheetUploadPage />} />
 
         {/* Menus */}
         <Route path="/menus" element={<MenuPage />} />

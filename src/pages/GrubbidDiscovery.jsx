@@ -83,14 +83,15 @@ export default function GrubbidDiscovery() {
 
   // ✅ Ensures the *entire screen* switches to black in night mode
   useEffect(() => {
-    const prevBg = document.body.style.backgroundColor;
+    const prevBg = document.body.style.background;
     const prevColor = document.body.style.color;
 
-    document.body.style.backgroundColor = isDark ? "#000" : "#fff";
-    document.body.style.color = isDark ? "rgba(255,255,255,0.92)" : "#111";
+    // Dark mode: solid black. Light mode: clear inline style so CSS gradient shows through.
+    document.body.style.background = isDark ? "#000" : "";
+    document.body.style.color = isDark ? "rgba(255,255,255,0.92)" : "";
 
     return () => {
-      document.body.style.backgroundColor = prevBg;
+      document.body.style.background = prevBg;
       document.body.style.color = prevColor;
     };
   }, [isDark]);
@@ -218,12 +219,23 @@ export default function GrubbidDiscovery() {
       color: isDark ? "rgba(255,255,255,0.92)" : "#111",
       outline: "none",
     },
-    topButtonSpacer: {
-      width: 110,
+    browseBtn: {
+      minWidth: 148,
       height: 44,
-      borderRadius: 12,
-      background: "transparent",
-      pointerEvents: "none",
+      padding: "0 18px",
+      borderRadius: 14,
+      border: isDark ? "1px solid rgba(255,255,255,0.18)" : "1px solid #d9dfeb",
+      background: isDark
+        ? "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))"
+        : "linear-gradient(135deg, #fff7e5, #eef7f0)",
+      color: isDark ? "rgba(255,255,255,0.96)" : "#111",
+      textDecoration: "none",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: 800,
+      letterSpacing: 0.2,
+      boxShadow: isDark ? "0 10px 24px rgba(0,0,0,0.28)" : "0 10px 24px rgba(15,23,42,0.08)",
     },
 
     panel: {
@@ -439,7 +451,10 @@ export default function GrubbidDiscovery() {
           onKeyDown={handleSearchInputKeyDown}
           placeholder="What do you want to eat? Search food, ingredients, restaurants, or deals"
         />
-        <div aria-hidden="true" style={styles.topButtonSpacer} />
+        <Link to="/browse-menus" style={{ ...styles.browseBtn, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+          <span>Browse Menus</span>
+          <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.65 }}>(Local)</span>
+        </Link>
       </div>
 
       <div style={styles.panel}>

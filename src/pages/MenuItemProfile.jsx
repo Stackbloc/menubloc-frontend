@@ -25,7 +25,7 @@ export default function MenuItemProfile() {
       </div>
 
       <div style={{ marginTop: 16, padding: 14, borderRadius: 12, border: "1px solid #eee", background: "#fafafa" }}>
-        This is a placeholder page. Next step is to add backend endpoint: <b>/public/menu-items/:id</b>.
+        This is a placeholder page. Next step is to add backend endpoint: <b>GET /menu-items/:id</b>.
       </div>
     </div>
   );

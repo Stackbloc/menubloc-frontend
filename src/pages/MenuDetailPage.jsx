@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { HomeButton } from "../components/NavButton.jsx";
 import MenuSection from "../components/MenuSection";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -111,13 +112,16 @@ export default function MenuDetailPage() {
       <div style={{ padding: 20 }}>
         <h1 style={{ marginTop: 0 }}>Menu Detail</h1>
         <p style={{ color: "#b00020" }}>{error}</p>
-        <Link to="/">Back home</Link>
+        <HomeButton />
       </div>
     );
   }
 
   return (
     <div style={{ padding: 22, maxWidth: 980, margin: "0 auto" }}>
+      <div style={{ marginBottom: 14 }}>
+        <HomeButton />
+      </div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
         <div>
           <h1 style={{ margin: "0 0 6px 0", fontSize: 40, lineHeight: 1.05 }}>{titleText}</h1>
@@ -131,27 +135,21 @@ export default function MenuDetailPage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <button
-            type="button"
-            onClick={() => setCompact((v) => !v)}
-            style={{
-              padding: "8px 12px",
-              borderRadius: 10,
-              border: "1px solid #ddd",
-              background: compact ? "#111" : "#fff",
-              color: compact ? "#fff" : "#111",
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            {compact ? "Comfort" : "Compact"}
-          </button>
-
-          <Link to="/" style={{ textDecoration: "none", fontWeight: 600 }}>
-            Back
-          </Link>
-        </div>
+        <button
+          type="button"
+          onClick={() => setCompact((v) => !v)}
+          style={{
+            padding: "8px 12px",
+            borderRadius: 10,
+            border: "1px solid #ddd",
+            background: compact ? "#111" : "#fff",
+            color: compact ? "#fff" : "#111",
+            cursor: "pointer",
+            fontWeight: 600,
+          }}
+        >
+          {compact ? "Comfort" : "Compact"}
+        </button>
       </div>
 
       <div style={{ display: "flex", gap: 10, marginTop: 16 }}>

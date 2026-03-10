@@ -36,6 +36,7 @@ export default function EasyMenuLanding() {
             alignItems: "center",
             gap: 16,
             padding: "10px 0 22px",
+            flexWrap: "wrap",
           }}
         >
           <div style={{ fontWeight: 800, fontSize: 20 }}>EasyMenuUpload</div>
@@ -383,4 +384,234 @@ export default function EasyMenuLanding() {
               </div>
               <h3 style={{ margin: "0 0 8px", fontSize: 20 }}>Go Live on Grubbid</h3>
               <p style={{ color: "#5b6675", margin: 0 }}>
-                Your restaurant profile and menu can be published, updated,
+                Your restaurant profile and menu can be published, updated, and
+                discovered on Grubbid.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing */}
+        <section id="pricing" style={{ marginBottom: 28 }}>
+          <h2 style={{ fontSize: 32, lineHeight: 1.1, margin: "0 0 10px" }}>Simple Pricing</h2>
+          <p style={{ color: "#5b6675", margin: "0 0 22px", maxWidth: 760 }}>
+            Choose the menu submission method that works best for your restaurant.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gap: 18,
+            }}
+          >
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e4e9f0",
+                borderRadius: 18,
+                padding: 24,
+                boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#124ba3", marginBottom: 8 }}>
+                DIY Upload
+              </div>
+              <h3 style={{ margin: "0 0 8px", fontSize: 24 }}>Free</h3>
+              <p style={{ color: "#5b6675", margin: "0 0 18px" }}>
+                Good for restaurants that want to send files and handle onboarding steps online.
+              </p>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                <li style={{ marginBottom: 8 }}>Upload menu files</li>
+                <li style={{ marginBottom: 8 }}>Start your digital menu setup</li>
+                <li style={{ marginBottom: 8 }}>Ideal for simple submissions</li>
+              </ul>
+            </div>
+
+            <div
+              style={{
+                background: "#ffffff",
+                border: "2px solid #124ba3",
+                borderRadius: 18,
+                padding: 24,
+                boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+                position: "relative",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: -12,
+                  right: 18,
+                  background: "#124ba3",
+                  color: "#ffffff",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  padding: "6px 10px",
+                  borderRadius: 999,
+                }}
+              >
+                Popular
+              </div>
+
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#124ba3", marginBottom: 8 }}>
+                AI OCR Ingestion
+              </div>
+              <h3 style={{ margin: "0 0 8px", fontSize: 24 }}>$9.99</h3>
+              <p style={{ color: "#5b6675", margin: "0 0 18px" }}>
+                Best for restaurants that want a faster path from printed menu to structured menu.
+              </p>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                <li style={{ marginBottom: 8 }}>Upload photo or PDF</li>
+                <li style={{ marginBottom: 8 }}>AI-assisted extraction and structuring</li>
+                <li style={{ marginBottom: 8 }}>Built for speed and convenience</li>
+              </ul>
+            </div>
+
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e4e9f0",
+                borderRadius: 18,
+                padding: 24,
+                boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#124ba3", marginBottom: 8 }}>
+                Email Submission
+              </div>
+              <h3 style={{ margin: "0 0 8px", fontSize: 24 }}>Manual Intake</h3>
+              <p style={{ color: "#5b6675", margin: "0 0 18px" }}>
+                Send your menu directly by email when that is easiest for your team.
+              </p>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                <li style={{ marginBottom: 8 }}>Attach PDF, photo, or spreadsheet</li>
+                <li style={{ marginBottom: 8 }}>Good for owners on the go</li>
+                <li style={{ marginBottom: 8 }}>Simple fallback option</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Example */}
+        <section id="example" style={{ marginBottom: 28 }}>
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e4e9f0",
+              borderRadius: 18,
+              padding: 28,
+              boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+            }}
+          >
+            <h2 style={{ fontSize: 32, lineHeight: 1.1, margin: "0 0 10px" }}>
+              Example Workflow
+            </h2>
+            <p style={{ color: "#5b6675", margin: "0 0 22px", maxWidth: 760 }}>
+              A restaurant uploads a printed menu PDF. EasyMenuUpload helps convert it into
+              a structured digital menu that can later be updated without changing the QR code.
+            </p>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 18,
+              }}
+            >
+              <div
+                style={{
+                  border: "1px solid #e4e9f0",
+                  borderRadius: 16,
+                  padding: 20,
+                  background: "#fbfdff",
+                }}
+              >
+                <div style={{ fontWeight: 800, marginBottom: 10 }}>Before</div>
+                <div style={{ color: "#5b6675" }}>
+                  Static PDF menu, hard to search, hard to update, and disconnected from
+                  restaurant discovery.
+                </div>
+              </div>
+
+              <div
+                style={{
+                  border: "1px solid #e4e9f0",
+                  borderRadius: 16,
+                  padding: 20,
+                  background: "#fbfdff",
+                }}
+              >
+                <div style={{ fontWeight: 800, marginBottom: 10 }}>After</div>
+                <div style={{ color: "#5b6675" }}>
+                  Searchable digital menu, easier updates, better presentation, and ready for
+                  Grubbid profile publishing.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section
+          style={{
+            background: "#124ba3",
+            color: "#ffffff",
+            borderRadius: 22,
+            padding: "30px 24px",
+            boxShadow: "0 10px 30px rgba(16,24,40,0.12)",
+          }}
+        >
+          <h2 style={{ margin: "0 0 10px", fontSize: 32, lineHeight: 1.1 }}>
+            Ready to Upload Your Menu?
+          </h2>
+          <p style={{ margin: "0 0 18px", maxWidth: 700, color: "rgba(255,255,255,0.88)" }}>
+            Start with a file, a photo, an email, or a menu link. We built this to make menu
+            onboarding easier, not harder.
+          </p>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+            <a
+              href="/signup"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 46,
+                padding: "0 18px",
+                borderRadius: 12,
+                fontWeight: 800,
+                fontSize: 15,
+                background: "#ffffff",
+                color: "#124ba3",
+                textDecoration: "none",
+              }}
+            >
+              Upload Your Menu
+            </a>
+
+            <a
+              href="mailto:menus@grubbid.com"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 46,
+                padding: "0 18px",
+                borderRadius: 12,
+                fontWeight: 800,
+                fontSize: 15,
+                border: "1px solid rgba(255,255,255,0.35)",
+                background: "transparent",
+                color: "#ffffff",
+                textDecoration: "none",
+              }}
+            >
+              Email menus@grubbid.com
+            </a>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
