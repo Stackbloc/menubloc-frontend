@@ -1,16 +1,15 @@
 /**
  * ============================================================
  * File: menubloc-frontend/src/pages/GrubbidDiscovery.jsx
- * Date: 2026-03-03
+ * Date: 2026-03-12
  * Purpose:
  *   Discovery search landing page and filter controls.
- *
- * Update (this revision):
- *   - Search headline: "What do you want to eat?"
- *   - Search placeholder: "Search food, ingredients, restaurants, or deals"
- *   - Added Day/Night toggle (light/dark) for Discovery page only
- *     - Persists to localStorage key: "grubbid_theme"
- *     - Defaults to system preference when not set
+ *   Restores the intended simple Discovery page with:
+ *   - "What do you want to eat?"
+ *   - Search input
+ *   - Browse Menus (Local) button on the right
+ *   - Day/Night toggle
+ *   - Restaurant sign up footer
  * ============================================================
  */
 
@@ -18,6 +17,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const THEME_KEY = "grubbid_theme"; // "light" | "dark"
+const BROWSE_MENUS_PATH = "/browse-menus";
 
 function getSystemTheme() {
   try {
@@ -81,8 +81,7 @@ export default function GrubbidDiscovery() {
   const [ingredients, setIngredients] = useState([]);
   const [zip, setZip] = useState("");
   const [areaOpen, setAreaOpen] = useState(false);
-
-  const [theme, setTheme] = useState(getInitialTheme); // "light" | "dark"
+  const [theme, setTheme] = useState(getInitialTheme);
 
   useEffect(() => {
     try {
@@ -113,6 +112,7 @@ export default function GrubbidDiscovery() {
     setIngredients([]);
     setZip("");
     setAreaOpen(false);
+    if (areaInputRef.current) areaInputRef.current.focus();
   }
 
   function priceBucketsToMax(buckets) {
@@ -140,7 +140,6 @@ export default function GrubbidDiscovery() {
     if (priceMax != null) params.set("price_max", String(priceMax));
 
     if (dealsOnly) params.set("deals_only", "1");
-
     if (cuisine !== "Any") params.set("cuisine", cuisine);
     if (distance.length) params.set("distance", distance.join("|"));
     if (delivery) params.set("delivery", "1");
@@ -149,6 +148,10 @@ export default function GrubbidDiscovery() {
     if (zip.trim()) params.set("zip", zip.trim());
 
     nav(`/search?${params.toString()}`);
+  }
+
+  function goBrowseMenus() {
+    nav(BROWSE_MENUS_PATH);
   }
 
   function handleSearchInputKeyDown(e) {
@@ -171,10 +174,6 @@ export default function GrubbidDiscovery() {
     };
   }
 
-  function closeArea() {
-    setAreaOpen(false);
-  }
-
   const isDark = theme === "dark";
 
   const styles = {
@@ -183,19 +182,35 @@ export default function GrubbidDiscovery() {
       margin: "40px auto",
       padding: "0 20px",
       fontFamily:
-        'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
+        "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
       color: isDark ? "rgba(255,255,255,0.92)" : "#111",
     },
 
-    header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
-    brand: { fontWeight: 900, fontSize: 18 },
-    subbrand: { fontSize: 12, color: isDark ? "rgba(255,255,255,0.65)" : "#666" },
+    header: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 18,
+      gap: 16,
+    },
+
+    brand: {
+      fontWeight: 900,
+      fontSize: 18,
+    },
+
+    subbrand: {
+      fontSize: 12,
+      color: isDark ? "rgba(255,255,255,0.65)" : "#666",
+    },
 
     themeToggle: {
       height: 36,
       padding: "0 12px",
       borderRadius: 999,
-      border: isDark ? "1px solid rgba(255,255,255,0.18)" : "1px solid #e5e5e5",
+      border: isDark
+        ? "1px solid rgba(255,255,255,0.18)"
+        : "1px solid #e5e5e5",
       background: isDark ? "rgba(255,255,255,0.06)" : "#fff",
       color: isDark ? "rgba(255,255,255,0.92)" : "#111",
       fontWeight: 800,
@@ -213,35 +228,63 @@ export default function GrubbidDiscovery() {
       margin: "12px 0 6px",
     },
 
-    centerTag: { textAlign: "center", color: isDark ? "rgba(255,255,255,0.60)" : "#666", marginBottom: 18 },
+    centerTag: {
+      textAlign: "center",
+      color: isDark ? "rgba(255,255,255,0.60)" : "#666",
+      marginBottom: 18,
+    },
 
     searchRow: {
-      display: "flex",
+      display: "grid",
+      gridTemplateColumns: "minmax(0, 1fr) auto",
       alignItems: "center",
-      gap: 16,
-      justifyContent: "center",
+      gap: 14,
       marginBottom: 12,
     },
 
     searchInput: {
-      flex: 1,
-      maxWidth: 720,
+      width: "100%",
       height: 44,
       borderRadius: 999,
-      border: isDark ? "1px solid rgba(255,255,255,0.16)" : "1px solid #e5e5e5",
+      border: isDark
+        ? "1px solid rgba(255,255,255,0.16)"
+        : "1px solid #e5e5e5",
       padding: "0 16px",
       background: isDark ? "rgba(255,255,255,0.06)" : "#fff",
       color: isDark ? "rgba(255,255,255,0.92)" : "#111",
       outline: "none",
+      fontSize: 14,
     },
 
-    topButtonSpacer: {
-      width: 110,
+    browseMenusBtn: {
+      minWidth: 166,
       height: 44,
-      borderRadius: 12,
-      background: "transparent",
-      border: "1px solid transparent",
-      pointerEvents: "none",
+      padding: "0 18px",
+      borderRadius: 14,
+      border: isDark
+        ? "1px solid rgba(255,255,255,0.18)"
+        : "1px solid #d9dece",
+      background: isDark ? "rgba(255,255,255,0.08)" : "#f3f6ea",
+      color: isDark ? "rgba(255,255,255,0.94)" : "#111",
+      fontWeight: 900,
+      cursor: "pointer",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      lineHeight: 1.05,
+    },
+
+    browseMenusMain: {
+      fontSize: 14,
+      fontWeight: 900,
+    },
+
+    browseMenusSub: {
+      marginTop: 2,
+      fontSize: 11,
+      fontWeight: 700,
+      opacity: 0.78,
     },
 
     panel: {
@@ -249,20 +292,30 @@ export default function GrubbidDiscovery() {
       borderRadius: 16,
       padding: 18,
       marginBottom: 16,
-      border: isDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid #efeff6",
+      border: isDark
+        ? "1px solid rgba(255,255,255,0.10)"
+        : "1px solid #efeff6",
     },
 
-    label: { fontSize: 12, fontWeight: 800, color: isDark ? "rgba(255,255,255,0.78)" : "#444", marginBottom: 6 },
+    label: {
+      fontSize: 12,
+      fontWeight: 800,
+      color: isDark ? "rgba(255,255,255,0.78)" : "#444",
+      marginBottom: 6,
+    },
 
     select: {
       width: "100%",
       height: 40,
       borderRadius: 12,
-      border: isDark ? "1px solid rgba(255,255,255,0.14)" : "1px solid #e5e5e5",
+      border: isDark
+        ? "1px solid rgba(255,255,255,0.14)"
+        : "1px solid #e5e5e5",
       padding: "0 12px",
       marginBottom: 14,
       background: isDark ? "rgba(0,0,0,0.25)" : "#fff",
       color: isDark ? "rgba(255,255,255,0.92)" : "#111",
+      fontSize: 14,
     },
 
     sectionTitle: {
@@ -310,6 +363,13 @@ export default function GrubbidDiscovery() {
       color: isDark ? "rgba(255,255,255,0.92)" : "#111",
     }),
 
+    actionRow: {
+      display: "flex",
+      gap: 10,
+      justifyContent: "flex-end",
+      flexWrap: "wrap",
+    },
+
     searchBtn: {
       height: 44,
       padding: "0 18px",
@@ -325,7 +385,9 @@ export default function GrubbidDiscovery() {
       height: 44,
       padding: "0 18px",
       borderRadius: 12,
-      border: isDark ? "1px solid rgba(255,255,255,0.16)" : "1px solid #e5e5e5",
+      border: isDark
+        ? "1px solid rgba(255,255,255,0.16)"
+        : "1px solid #e5e5e5",
       background: isDark ? "rgba(255,255,255,0.06)" : "#fff",
       color: isDark ? "rgba(255,255,255,0.92)" : "#111",
       cursor: "pointer",
@@ -337,7 +399,9 @@ export default function GrubbidDiscovery() {
       marginTop: 18,
       paddingTop: 18,
       paddingBottom: 18,
-      borderTop: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #eee",
+      borderTop: isDark
+        ? "1px solid rgba(255,255,255,0.12)"
+        : "1px solid #eee",
       color: isDark ? "rgba(255,255,255,0.80)" : "#111",
     },
 
@@ -358,7 +422,12 @@ export default function GrubbidDiscovery() {
           <div style={styles.subbrand}>Discovery</div>
         </div>
 
-        <button type="button" style={styles.themeToggle} onClick={toggleTheme} aria-label="Toggle day/night mode">
+        <button
+          type="button"
+          style={styles.themeToggle}
+          onClick={toggleTheme}
+          aria-label="Toggle day/night mode"
+        >
           <span aria-hidden="true">{isDark ? "🌙" : "☀️"}</span>
           {isDark ? "Night" : "Day"}
         </button>
@@ -369,13 +438,23 @@ export default function GrubbidDiscovery() {
 
       <div style={styles.searchRow}>
         <input
+          ref={areaInputRef}
           style={styles.searchInput}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={handleSearchInputKeyDown}
           placeholder="Search food, ingredients, restaurants, or deals"
         />
-        <div aria-hidden="true" style={styles.topButtonSpacer} />
+
+        <button
+          type="button"
+          style={styles.browseMenusBtn}
+          onClick={goBrowseMenus}
+          aria-label="Browse local menus"
+        >
+          <span style={styles.browseMenusMain}>Browse Menus</span>
+          <span style={styles.browseMenusSub}>(Local)</span>
+        </button>
       </div>
 
       <div style={styles.panel}>
@@ -459,7 +538,7 @@ export default function GrubbidDiscovery() {
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+        <div style={styles.actionRow}>
           <button type="button" style={styles.clearBtnBig} onClick={clearAll}>
             Clear
           </button>
