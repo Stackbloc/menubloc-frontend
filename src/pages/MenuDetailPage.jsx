@@ -1,3 +1,19 @@
+/**
+ * ============================================================
+ * File: MenuDetailPage.jsx
+ * Path: menubloc-frontend/src/pages/MenuDetailPage.jsx
+ * Date: 2026-03-13
+ * Purpose:
+ *   Menu detail page showing parsed menu cards or raw menu text.
+ *
+ *   Mobile-safe revision:
+ *   - header stacks on mobile
+ *   - grid becomes single column on phones
+ *   - larger tap targets
+ *   - prevents horizontal overflow
+ * ============================================================
+ */
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
@@ -12,8 +28,29 @@ function formatDate(value) {
   return d.toLocaleString();
 }
 
+function useIsMobile(breakpoint = 768) {
+  const [mobile, setMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= breakpoint;
+  });
+
+  useEffect(() => {
+    function onResize() {
+      setMobile(window.innerWidth <= breakpoint);
+    }
+
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [breakpoint]);
+
+  return mobile;
+}
+
 export default function MenuDetailPage() {
   const { id } = useParams();
+  const isMobile = useIsMobile();
+
   const menuId = useMemo(() => String(id ?? "").trim(), [id]);
 
   const [loading, setLoading] = useState(true);
@@ -99,7 +136,13 @@ export default function MenuDetailPage() {
     };
   }, [view, menuId, preview, previewLoading]);
 
-  const titleText = menu?.restaurant_name || preview?.restaurant_name || menu?.name || preview?.name || "Menu Detail";
+  const titleText =
+    menu?.restaurant_name ||
+    preview?.restaurant_name ||
+    menu?.name ||
+    preview?.name ||
+    "Menu Detail";
+
   const createdAt = menu?.created_at || preview?.created_at || null;
   const sections = Array.isArray(preview?.sections) ? preview.sections : [];
 
@@ -118,13 +161,39 @@ export default function MenuDetailPage() {
   }
 
   return (
-    <div style={{ padding: 22, maxWidth: 980, margin: "0 auto" }}>
+    <div
+      style={{
+        padding: isMobile ? 16 : 22,
+        maxWidth: 980,
+        margin: "0 auto",
+        overflowX: "hidden",
+      }}
+    >
       <div style={{ marginBottom: 14 }}>
         <HomeButton />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: "space-between",
+          gap: 14,
+          alignItems: isMobile ? "flex-start" : "center",
+        }}
+      >
         <div>
-          <h1 style={{ margin: "0 0 6px 0", fontSize: 40, lineHeight: 1.05 }}>{titleText}</h1>
+          <h1
+            style={{
+              margin: "0 0 6px 0",
+              fontSize: isMobile ? 28 : 40,
+              lineHeight: 1.1,
+              wordBreak: "break-word",
+            }}
+          >
+            {titleText}
+          </h1>
+
           <div style={{ color: "#444", fontSize: 14 }}>
             <span style={{ marginRight: 10 }}>
               <strong>Menu ID:</strong> {menuId || "-"}
@@ -139,7 +208,7 @@ export default function MenuDetailPage() {
           type="button"
           onClick={() => setCompact((v) => !v)}
           style={{
-            padding: "8px 12px",
+            padding: "10px 14px",
             borderRadius: 10,
             border: "1px solid #ddd",
             background: compact ? "#111" : "#fff",
@@ -152,12 +221,19 @@ export default function MenuDetailPage() {
         </button>
       </div>
 
-      <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 10,
+          marginTop: 16,
+        }}
+      >
         <button
           type="button"
           onClick={() => setView("cards")}
           style={{
-            padding: "8px 12px",
+            padding: "10px 14px",
             borderRadius: 10,
             border: "1px solid #ddd",
             background: view === "cards" ? "#111" : "#fff",
@@ -168,11 +244,12 @@ export default function MenuDetailPage() {
         >
           Menu Cards
         </button>
+
         <button
           type="button"
           onClick={() => setView("raw")}
           style={{
-            padding: "8px 12px",
+            padding: "10px 14px",
             borderRadius: 10,
             border: "1px solid #ddd",
             background: view === "raw" ? "#111" : "#fff",
@@ -194,6 +271,7 @@ export default function MenuDetailPage() {
             borderRadius: 12,
             background: "#fafafa",
             whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
             lineHeight: 1.35,
             maxHeight: "65vh",
             overflow: "auto",
@@ -234,7 +312,7 @@ export default function MenuDetailPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: compact ? "1fr" : "repeat(2, minmax(0, 1fr))",
+                gridTemplateColumns: isMobile || compact ? "1fr" : "repeat(2, minmax(0, 1fr))",
                 gap: compact ? 10 : 14,
               }}
             >

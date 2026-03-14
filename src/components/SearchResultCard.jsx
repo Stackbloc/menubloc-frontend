@@ -584,9 +584,13 @@ const cardStyle = {
   border: "1px solid var(--border, #e4e9f0)",
   borderRadius: 14,
   background: "#fff",
-  padding: "14px 16px",
+  padding: "12px 14px",
   boxShadow: "var(--shadow-1, 0 6px 18px rgba(16,24,40,0.06))",
   fontFamily: "var(--font-ui)",
+  width: "100%",
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  overflow: "hidden",
 };
 
 function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier }) {

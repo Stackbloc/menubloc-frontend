@@ -2,7 +2,7 @@
  * ============================================================
  * File: GrubbidSearchResults.jsx
  * Path: menubloc-frontend/src/pages/GrubbidSearchResults.jsx
- * Date: 2026-03-10
+ * Date: 2026-03-13
  * Purpose:
  *   Search results page for Grubbid.
  *   - Reads query params from URL
@@ -11,16 +11,12 @@
  *   - Dedupes menu items per restaurant (best score, then lower price)
  *   - Interactive filter bar (vegan, gluten-free, deals, price max)
  *   - Geo-proximity: browser geolocation is requested on mount.
- *       When granted, lat/lng are passed to /search and results are
- *       sorted by distance (closest first, within text relevance).
- *       When denied or unavailable, search falls back to text-based
- *       location params (city/near/zip) with no disruption.
- *       Location status never blocks the initial result fetch.
  *
- *   2026-03-10 update:
- *   - Carries restaurant_slug through row normalization and grouping
- *   - Passes slug into SearchResultCard so public profile links can
- *     prefer /restaurants/:slugOrId instead of id-only routing
+ *   Mobile-safe revision:
+ *   - tighter spacing and typography on phones
+ *   - filter controls wrap cleanly
+ *   - no horizontal overflow
+ *   - cards remain one-column and readable on small screens
  * ============================================================
  */
 
@@ -31,18 +27,31 @@ import { BackButton } from "../components/NavButton.jsx";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
+/* ---- Mobile hook ---- */
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= breakpoint;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    function handleResize() {
+      setIsMobile(window.innerWidth <= breakpoint);
+    }
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [breakpoint]);
+
+  return isMobile;
+}
+
 /* ---- Geolocation hook ---- */
 
-/**
- * Requests browser geolocation once on mount.
- * Returns { status, lat, lng } where status is one of:
- *   "pending"     — waiting for browser response
- *   "granted"     — location available; lat/lng are floats
- *   "denied"      — user denied or browser blocked
- *   "unavailable" — geolocation API not supported
- *
- * Graceful in all cases: search always works without location.
- */
 function useGeolocation() {
   const [geo, setGeo] = useState({ status: "pending", lat: null, lng: null });
 
@@ -163,6 +172,7 @@ function isBetterRow(nextRow, currentRow) {
   }
   if (nextScore !== null && currentScore === null) return true;
   if (nextScore === null && currentScore !== null) return false;
+
   const nextPrice = getPriceMinor(nextRow);
   const currentPrice = getPriceMinor(currentRow);
   if (nextPrice !== null && currentPrice !== null && nextPrice !== currentPrice) {
@@ -180,7 +190,9 @@ function buildRestaurantGroups(dishRows) {
     const restaurantName = asString(
       pickFirst(row, ["restaurant_name", "restaurantName"], "Restaurant")
     );
-    const restaurantKey = restaurantId ? `id:${restaurantId}` : `name:${normalizeKey(restaurantName)}`;
+    const restaurantKey = restaurantId
+      ? `id:${restaurantId}`
+      : `name:${normalizeKey(restaurantName)}`;
 
     if (!restaurantMap.has(restaurantKey)) {
       restaurantMap.set(restaurantKey, {
@@ -199,8 +211,12 @@ function buildRestaurantGroups(dishRows) {
     }
 
     const menuItemId = asString(pickFirst(row, ["menu_item_id", "menuItemId"], ""));
-    const nameKey = normalizeKey(pickFirst(row, ["menu_item_name", "menuItemName", "name"], ""));
-    const sectionKey = normalizeKey(pickFirst(row, ["section", "section_name", "menu_section"], ""));
+    const nameKey = normalizeKey(
+      pickFirst(row, ["menu_item_name", "menuItemName", "name"], "")
+    );
+    const sectionKey = normalizeKey(
+      pickFirst(row, ["section", "section_name", "menu_section"], "")
+    );
     const itemKey = menuItemId ? `id:${menuItemId}` : `ns:${nameKey}::${sectionKey}`;
 
     const existing = group._itemMap.get(itemKey);
@@ -265,7 +281,7 @@ function setFilter(params, navigate, key, value) {
 
 /* ---- Filter toggle button ---- */
 
-function FilterToggle({ label, active, onClick }) {
+function FilterToggle({ label, active, onClick, isMobile }) {
   return (
     <button
       type="button"
@@ -273,8 +289,10 @@ function FilterToggle({ label, active, onClick }) {
       style={{
         display: "inline-flex",
         alignItems: "center",
+        justifyContent: "center",
         borderRadius: 999,
-        padding: "5px 13px",
+        padding: isMobile ? "8px 13px" : "5px 13px",
+        minHeight: isMobile ? 36 : "auto",
         fontSize: "var(--text-2, 14px)",
         fontWeight: 700,
         lineHeight: 1,
@@ -283,6 +301,7 @@ function FilterToggle({ label, active, onClick }) {
         background: active ? "var(--link, #124ba3)" : "#fff",
         color: active ? "#fff" : "var(--ink, #0f1720)",
         transition: "background 0.1s, color 0.1s",
+        whiteSpace: "nowrap",
       }}
     >
       {label}
@@ -302,6 +321,7 @@ export default function GrubbidSearchResults() {
   const params = useQueryParams();
   const navigate = useNavigate();
   const geo = useGeolocation();
+  const isMobile = useIsMobile();
 
   const q = String(params.get("q") || "").trim();
   const vegan = params.get("vegan") === "1";
@@ -418,9 +438,11 @@ export default function GrubbidSearchResults() {
 
   const styles = {
     wrap: {
-      padding: 18,
+      padding: isMobile ? 14 : 18,
       maxWidth: 980,
       margin: "0 auto",
+      boxSizing: "border-box",
+      overflowX: "hidden",
       fontFamily:
         "var(--font-ui, Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif)",
       color: "var(--ink, #0f1720)",
@@ -432,11 +454,12 @@ export default function GrubbidSearchResults() {
     },
     title: {
       margin: "14px 0 0",
-      fontSize: "var(--text-6, 28px)",
-      lineHeight: 1.12,
+      fontSize: isMobile ? 24 : "var(--text-6, 28px)",
+      lineHeight: 1.15,
       fontWeight: 800,
       letterSpacing: "-0.015em",
       color: "var(--ink, #0f1720)",
+      wordBreak: "break-word",
     },
     titleQuery: {
       color: "var(--link, #1b4da1)",
@@ -445,14 +468,16 @@ export default function GrubbidSearchResults() {
     locationLine: {
       marginTop: 4,
       color: "var(--muted, #5d6674)",
-      fontSize: "var(--text-2, 14px)",
+      fontSize: isMobile ? 13 : "var(--text-2, 14px)",
       fontWeight: 600,
+      lineHeight: 1.4,
     },
     meta: {
       marginTop: 6,
       color: "var(--muted, #5d6674)",
-      fontSize: "var(--text-2, 14px)",
+      fontSize: isMobile ? 13 : "var(--text-2, 14px)",
       fontWeight: 650,
+      lineHeight: 1.4,
     },
     filterBar: {
       marginTop: 12,
@@ -464,7 +489,8 @@ export default function GrubbidSearchResults() {
     priceSelect: {
       border: "1px solid var(--border, #e3e8ef)",
       borderRadius: 999,
-      padding: "5px 10px",
+      padding: isMobile ? "8px 12px" : "5px 10px",
+      minHeight: isMobile ? 36 : "auto",
       fontSize: "var(--text-2, 14px)",
       fontWeight: 700,
       background: maxPrice ? "var(--link, #124ba3)" : "#fff",
@@ -473,11 +499,13 @@ export default function GrubbidSearchResults() {
       outline: "none",
       appearance: "none",
       WebkitAppearance: "none",
+      maxWidth: "100%",
     },
     grid: {
       display: "grid",
       gap: 12,
       marginTop: 16,
+      minWidth: 0,
     },
     error: {
       marginTop: 12,
@@ -488,6 +516,8 @@ export default function GrubbidSearchResults() {
       color: "#7a1b1b",
       fontWeight: 700,
       whiteSpace: "pre-wrap",
+      wordBreak: "break-word",
+      lineHeight: 1.4,
     },
     empty: {
       marginTop: 12,
@@ -497,12 +527,14 @@ export default function GrubbidSearchResults() {
       background: "#fafbfc",
       color: "#3c4757",
       fontWeight: 600,
+      lineHeight: 1.4,
+      wordBreak: "break-word",
     },
     section: {
       marginTop: 18,
       fontWeight: 800,
       color: "var(--ink, #0f1720)",
-      fontSize: "var(--text-3, 16px)",
+      fontSize: isMobile ? 15 : "var(--text-3, 16px)",
       letterSpacing: "-0.01em",
     },
   };
@@ -541,16 +573,19 @@ export default function GrubbidSearchResults() {
         <FilterToggle
           label="Vegan"
           active={vegan}
+          isMobile={isMobile}
           onClick={() => applyFilter(params, navigate, "vegan", "1")}
         />
         <FilterToggle
           label="Gluten-free"
           active={gluten_free}
+          isMobile={isMobile}
           onClick={() => applyFilter(params, navigate, "gluten_free", "1")}
         />
         <FilterToggle
           label="Deals"
           active={deals_only}
+          isMobile={isMobile}
           onClick={() => applyFilter(params, navigate, "deals_only", "1")}
         />
         <select
@@ -580,7 +615,9 @@ export default function GrubbidSearchResults() {
           <div style={styles.grid}>
             {restaurantOnlyVisible.map((r) => (
               <SearchResultCard
-                key={`r-${asString(pickFirst(r, ["restaurant_id", "id"], "")) || asString(r?.name)}`}
+                key={`r-${
+                  asString(pickFirst(r, ["restaurant_id", "id"], "")) || asString(r?.name)
+                }`}
                 item={r}
                 query={q}
                 crossRestaurantItems={crossRestaurantItems}

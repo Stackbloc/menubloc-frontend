@@ -22,8 +22,13 @@
  *     instead of directly to the upload page.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext.jsx";
+
+// ── PayPal Plan IDs — replace with real IDs from developer.paypal.com ──
+const PLAN_ID_PRO_MONTHLY = "YOUR_PLAN_ID_PRO_MONTHLY";
+const PLAN_ID_PRO_ANNUAL  = "YOUR_PLAN_ID_PRO_ANNUAL";
 
 const s = {
   page: {
@@ -184,6 +189,9 @@ const TEASER_SWATCHES = [
 export default function SubscriptionSelect() {
   const nav      = useNavigate();
   const location = useLocation();
+  const { addToCart, openCart } = useCart();
+
+  const [proInterval, setProInterval] = useState("monthly"); // "monthly" | "annual"
 
   const {
     restaurant_id,
@@ -193,11 +201,25 @@ export default function SubscriptionSelect() {
     ingestion_method,
   } = location.state || {};
 
-  function choose(plan) {
-    // Step 4 is now design selection — always route there first.
+  function chooseVerified() {
+    // Free plan — no payment, continue onboarding
     nav("/restaurant/design-select", {
-      state: { restaurant_id, restaurant_name, email, owner_token, plan, ingestion_method },
+      state: { restaurant_id, restaurant_name, email, owner_token, plan: "verified", ingestion_method },
     });
+  }
+
+  function choosePro() {
+    const isAnnual = proInterval === "annual";
+    addToCart({
+      id:           isAnnual ? "pro_annual" : "pro_monthly",
+      name:         isAnnual ? "Grubbid Pro — Annual" : "Grubbid Pro — Monthly",
+      description:  isAnnual ? "Best value · Save $209/year" : "Billed monthly, cancel anytime",
+      price:        isAnnual ? 499 : 59,
+      type:         "subscription",
+      interval:     isAnnual ? "year" : "month",
+      paypalPlanId: isAnnual ? PLAN_ID_PRO_ANNUAL : PLAN_ID_PRO_MONTHLY,
+    });
+    openCart();
   }
 
   return (
@@ -229,10 +251,13 @@ export default function SubscriptionSelect() {
         <div style={s.card(false)}>
           <div style={s.planName}>Verified</div>
           <div style={s.planTagline}>Verified Profile</div>
-          <div style={s.planDesc}>
+          <div style={{ ...s.planDesc, marginBottom: 4 }}>
             Claim and verify your restaurant on Grubbid so customers know your menu and
             restaurant information are accurate. Verified restaurants receive a verified
             badge and can manage their menu directly.
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: "#111", marginBottom: 18 }}>
+            Free
           </div>
 
           <div style={s.divider} />
@@ -252,8 +277,8 @@ export default function SubscriptionSelect() {
             Restaurants that want an accurate, verified presence on Grubbid.
           </div>
 
-          <button style={s.btn(false)} onClick={() => choose("verified")}>
-            Choose Verified
+          <button style={s.btn(false)} onClick={chooseVerified}>
+            Get Started Free
           </button>
         </div>
 
@@ -262,10 +287,45 @@ export default function SubscriptionSelect() {
           <div style={s.badge}>Pro</div>
           <div style={s.planName}>Pro</div>
           <div style={s.planTagline}>Pro Profile</div>
-          <div style={s.planDesc}>
+          <div style={{ ...s.planDesc, marginBottom: 8 }}>
             Unlock the full power of the Grubbid food intelligence platform. The Pro plan
             enhances your menu with intelligent insights and helps your dishes stand out
             in discovery results.
+          </div>
+
+          {/* Billing interval toggle */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            {["monthly", "annual"].map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setProInterval(opt)}
+                style={{
+                  flex: 1, height: 34, borderRadius: 8, cursor: "pointer",
+                  fontSize: 12, fontWeight: 700,
+                  border: proInterval === opt ? "2px solid #111" : "1.5px solid #ddd",
+                  background: proInterval === opt ? "#111" : "#fff",
+                  color: proInterval === opt ? "#fff" : "#555",
+                  fontFamily: "ui-sans-serif, system-ui, sans-serif",
+                }}
+              >
+                {opt === "monthly" ? "Monthly" : "Annual"}
+              </button>
+            ))}
+          </div>
+
+          {/* Price display */}
+          <div style={{ marginBottom: 18 }}>
+            <span style={{ fontSize: 28, fontWeight: 900, color: "#111" }}>
+              {proInterval === "annual" ? "$499" : "$59"}
+            </span>
+            <span style={{ fontSize: 13, color: "#666", marginLeft: 4 }}>
+              {proInterval === "annual" ? "/ year" : "/ month"}
+            </span>
+            {proInterval === "annual" ? (
+              <div style={{ fontSize: 11, color: "#16a34a", fontWeight: 700, marginTop: 2 }}>
+                Save $209 vs monthly
+              </div>
+            ) : null}
           </div>
 
           <div style={s.divider} />
@@ -285,8 +345,8 @@ export default function SubscriptionSelect() {
             Restaurants that want maximum discoverability and menu intelligence.
           </div>
 
-          <button style={s.btn(true)} onClick={() => choose("pro")}>
-            Choose Pro
+          <button style={s.btn(true)} onClick={choosePro}>
+            Choose Pro →
           </button>
         </div>
       </div>

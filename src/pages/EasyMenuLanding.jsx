@@ -1,16 +1,50 @@
-// ============================================================
-// Path: menubloc-frontend/src/pages/EasyMenuLanding.jsx
-// File: EasyMenuLanding.jsx
-// Date: 2026-03-06
-// Purpose:
-//   Simple HTML-first marketing / onboarding landing page for
-//   easymenuupload.com. Kept intentionally low-complexity to
-//   avoid build issues and improve clarity.
-// ============================================================
+/**
+ * ============================================================
+ * Path: menubloc-frontend/src/pages/EasyMenuLanding.jsx
+ * File: EasyMenuLanding.jsx
+ * Date: 2026-03-13
+ * Purpose:
+ *   Simple HTML-first marketing / onboarding landing page for
+ *   easymenuupload.com. Kept intentionally low-complexity to
+ *   avoid build issues and improve clarity.
+ *
+ *   Mobile-safe revision:
+ *   - all major grid sections collapse to one column on phones
+ *   - tighter spacing and responsive headline sizes
+ *   - CTA buttons remain easy to tap on mobile
+ *   - preserves low-complexity HTML-first structure
+ * ============================================================
+ */
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= breakpoint;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    function handleResize() {
+      setIsMobile(window.innerWidth <= breakpoint);
+    }
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [breakpoint]);
+
+  return isMobile;
+}
 
 export default function EasyMenuLanding() {
+  const isMobile = useIsMobile();
+
+  const cardShadow = "0 10px 30px rgba(16,24,40,0.08)";
+  const cardBorder = "1px solid #e4e9f0";
+
   return (
     <main
       style={{
@@ -19,13 +53,15 @@ export default function EasyMenuLanding() {
         color: "#0f1720",
         fontFamily: "Arial, Helvetica, sans-serif",
         lineHeight: 1.5,
+        overflowX: "hidden",
       }}
     >
       <div
         style={{
           maxWidth: "1100px",
           margin: "0 auto",
-          padding: "20px 16px 60px",
+          padding: isMobile ? "16px 14px 40px" : "20px 16px 60px",
+          boxSizing: "border-box",
         }}
       >
         {/* Top bar */}
@@ -33,18 +69,20 @@ export default function EasyMenuLanding() {
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: isMobile ? "flex-start" : "center",
             gap: 16,
-            padding: "10px 0 22px",
+            padding: isMobile ? "6px 0 18px" : "10px 0 22px",
             flexWrap: "wrap",
           }}
         >
-          <div style={{ fontWeight: 800, fontSize: 20 }}>EasyMenuUpload</div>
+          <div style={{ fontWeight: 800, fontSize: isMobile ? 18 : 20 }}>
+            EasyMenuUpload
+          </div>
 
           <nav
             style={{
               display: "flex",
-              gap: 16,
+              gap: isMobile ? 12 : 16,
               flexWrap: "wrap",
               fontSize: 14,
               fontWeight: 700,
@@ -66,18 +104,18 @@ export default function EasyMenuLanding() {
         <section
           style={{
             display: "grid",
-            gridTemplateColumns: "1.2fr 0.95fr",
-            gap: 24,
-            marginBottom: 28,
+            gridTemplateColumns: isMobile ? "1fr" : "1.2fr 0.95fr",
+            gap: isMobile ? 16 : 24,
+            marginBottom: isMobile ? 20 : 28,
           }}
         >
           <div
             style={{
               background: "#ffffff",
-              border: "1px solid #e4e9f0",
+              border: cardBorder,
               borderRadius: 18,
-              padding: 32,
-              boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+              padding: isMobile ? 20 : 32,
+              boxShadow: cardShadow,
             }}
           >
             <div
@@ -98,9 +136,10 @@ export default function EasyMenuLanding() {
             <h1
               style={{
                 margin: "0 0 14px",
-                fontSize: 42,
+                fontSize: isMobile ? 32 : 42,
                 lineHeight: 1.05,
                 letterSpacing: "-0.03em",
+                wordBreak: "break-word",
               }}
             >
               Turn Your Restaurant Menu Into a Digital Menu in Minutes
@@ -108,7 +147,7 @@ export default function EasyMenuLanding() {
 
             <p
               style={{
-                fontSize: 18,
+                fontSize: isMobile ? 16 : 18,
                 color: "#5b6675",
                 margin: "0 0 20px",
                 maxWidth: 720,
@@ -138,7 +177,7 @@ export default function EasyMenuLanding() {
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  minHeight: 46,
+                  minHeight: 48,
                   padding: "0 18px",
                   borderRadius: 12,
                   fontWeight: 800,
@@ -157,12 +196,12 @@ export default function EasyMenuLanding() {
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  minHeight: 46,
+                  minHeight: 48,
                   padding: "0 18px",
                   borderRadius: 12,
                   fontWeight: 800,
                   fontSize: 15,
-                  border: "1px solid #e4e9f0",
+                  border: cardBorder,
                   background: "#ffffff",
                   color: "#0f1720",
                   textDecoration: "none",
@@ -172,7 +211,7 @@ export default function EasyMenuLanding() {
               </a>
             </div>
 
-            <div style={{ fontSize: 14, color: "#5b6675" }}>
+            <div style={{ fontSize: 14, color: "#5b6675", wordBreak: "break-word" }}>
               Prefer email? Send your menu to <strong>menus@grubbid.com</strong>.
             </div>
           </div>
@@ -180,10 +219,10 @@ export default function EasyMenuLanding() {
           <aside
             style={{
               background: "#ffffff",
-              border: "1px solid #e4e9f0",
+              border: cardBorder,
               borderRadius: 18,
-              padding: 24,
-              boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+              padding: isMobile ? 18 : 24,
+              boxShadow: cardShadow,
             }}
           >
             <div
@@ -191,12 +230,14 @@ export default function EasyMenuLanding() {
                 border: "2px dashed #c9d7ee",
                 borderRadius: 16,
                 background: "#fbfdff",
-                padding: "28px 18px",
+                padding: isMobile ? "22px 14px" : "28px 18px",
                 textAlign: "center",
                 marginBottom: 18,
               }}
             >
-              <h2 style={{ margin: "0 0 8px", fontSize: 22 }}>Upload Your Menu</h2>
+              <h2 style={{ margin: "0 0 8px", fontSize: isMobile ? 20 : 22 }}>
+                Upload Your Menu
+              </h2>
               <p style={{ margin: "0 0 18px", color: "#5b6675" }}>
                 PDF, photo, spreadsheet, or menu link.
               </p>
@@ -207,7 +248,7 @@ export default function EasyMenuLanding() {
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  minHeight: 46,
+                  minHeight: 48,
                   padding: "0 18px",
                   borderRadius: 12,
                   fontWeight: 800,
@@ -224,7 +265,7 @@ export default function EasyMenuLanding() {
             <div style={{ display: "grid", gap: 10 }}>
               <div
                 style={{
-                  border: "1px solid #e4e9f0",
+                  border: cardBorder,
                   borderRadius: 12,
                   padding: "12px 14px",
                   background: "#ffffff",
@@ -238,7 +279,7 @@ export default function EasyMenuLanding() {
 
               <div
                 style={{
-                  border: "1px solid #e4e9f0",
+                  border: cardBorder,
                   borderRadius: 12,
                   padding: "12px 14px",
                   background: "#ffffff",
@@ -252,21 +293,21 @@ export default function EasyMenuLanding() {
 
               <div
                 style={{
-                  border: "1px solid #e4e9f0",
+                  border: cardBorder,
                   borderRadius: 12,
                   padding: "12px 14px",
                   background: "#ffffff",
                 }}
               >
                 <strong>Email your menu</strong>
-                <div style={{ color: "#5b6675" }}>
+                <div style={{ color: "#5b6675", wordBreak: "break-word" }}>
                   Send attachments directly to <strong>menus@grubbid.com</strong>.
                 </div>
               </div>
 
               <div
                 style={{
-                  border: "1px solid #e4e9f0",
+                  border: cardBorder,
                   borderRadius: 12,
                   padding: "12px 14px",
                   background: "#ffffff",
@@ -280,8 +321,10 @@ export default function EasyMenuLanding() {
         </section>
 
         {/* How it works */}
-        <section id="how-it-works" style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 32, lineHeight: 1.1, margin: "0 0 10px" }}>How It Works</h2>
+        <section id="how-it-works" style={{ marginBottom: isMobile ? 20 : 28 }}>
+          <h2 style={{ fontSize: isMobile ? 28 : 32, lineHeight: 1.1, margin: "0 0 10px" }}>
+            How It Works
+          </h2>
           <p style={{ color: "#5b6675", margin: "0 0 22px", maxWidth: 760 }}>
             EasyMenuUpload is designed to get your menu online fast, without forcing you
             to rebuild everything by hand.
@@ -290,17 +333,17 @@ export default function EasyMenuLanding() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
               gap: 18,
             }}
           >
             <div
               style={{
                 background: "#ffffff",
-                border: "1px solid #e4e9f0",
+                border: cardBorder,
                 borderRadius: 18,
-                padding: 22,
-                boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+                padding: isMobile ? 18 : 22,
+                boxShadow: cardShadow,
               }}
             >
               <div
@@ -319,7 +362,7 @@ export default function EasyMenuLanding() {
               >
                 1
               </div>
-              <h3 style={{ margin: "0 0 8px", fontSize: 20 }}>Send Your Menu</h3>
+              <h3 style={{ margin: "0 0 8px", fontSize: isMobile ? 18 : 20 }}>Send Your Menu</h3>
               <p style={{ color: "#5b6675", margin: 0 }}>
                 Upload a PDF or photo, email your menu, or paste a menu link.
               </p>
@@ -328,10 +371,10 @@ export default function EasyMenuLanding() {
             <div
               style={{
                 background: "#ffffff",
-                border: "1px solid #e4e9f0",
+                border: cardBorder,
                 borderRadius: 18,
-                padding: 22,
-                boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+                padding: isMobile ? 18 : 22,
+                boxShadow: cardShadow,
               }}
             >
               <div
@@ -350,7 +393,7 @@ export default function EasyMenuLanding() {
               >
                 2
               </div>
-              <h3 style={{ margin: "0 0 8px", fontSize: 20 }}>We Structure It</h3>
+              <h3 style={{ margin: "0 0 8px", fontSize: isMobile ? 18 : 20 }}>We Structure It</h3>
               <p style={{ color: "#5b6675", margin: 0 }}>
                 Your menu is converted into a structured digital menu with sections,
                 items, prices, and descriptions.
@@ -360,10 +403,10 @@ export default function EasyMenuLanding() {
             <div
               style={{
                 background: "#ffffff",
-                border: "1px solid #e4e9f0",
+                border: cardBorder,
                 borderRadius: 18,
-                padding: 22,
-                boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+                padding: isMobile ? 18 : 22,
+                boxShadow: cardShadow,
               }}
             >
               <div
@@ -382,7 +425,7 @@ export default function EasyMenuLanding() {
               >
                 3
               </div>
-              <h3 style={{ margin: "0 0 8px", fontSize: 20 }}>Go Live on Grubbid</h3>
+              <h3 style={{ margin: "0 0 8px", fontSize: isMobile ? 18 : 20 }}>Go Live on Grubbid</h3>
               <p style={{ color: "#5b6675", margin: 0 }}>
                 Your restaurant profile and menu can be published, updated, and
                 discovered on Grubbid.
@@ -392,8 +435,10 @@ export default function EasyMenuLanding() {
         </section>
 
         {/* Pricing */}
-        <section id="pricing" style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 32, lineHeight: 1.1, margin: "0 0 10px" }}>Simple Pricing</h2>
+        <section id="pricing" style={{ marginBottom: isMobile ? 20 : 28 }}>
+          <h2 style={{ fontSize: isMobile ? 28 : 32, lineHeight: 1.1, margin: "0 0 10px" }}>
+            Simple Pricing
+          </h2>
           <p style={{ color: "#5b6675", margin: "0 0 22px", maxWidth: 760 }}>
             Choose the menu submission method that works best for your restaurant.
           </p>
@@ -401,23 +446,23 @@ export default function EasyMenuLanding() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
               gap: 18,
             }}
           >
             <div
               style={{
                 background: "#ffffff",
-                border: "1px solid #e4e9f0",
+                border: cardBorder,
                 borderRadius: 18,
-                padding: 24,
-                boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+                padding: isMobile ? 18 : 24,
+                boxShadow: cardShadow,
               }}
             >
               <div style={{ fontSize: 14, fontWeight: 800, color: "#124ba3", marginBottom: 8 }}>
                 DIY Upload
               </div>
-              <h3 style={{ margin: "0 0 8px", fontSize: 24 }}>Free</h3>
+              <h3 style={{ margin: "0 0 8px", fontSize: isMobile ? 22 : 24 }}>Free</h3>
               <p style={{ color: "#5b6675", margin: "0 0 18px" }}>
                 Good for restaurants that want to send files and handle onboarding steps online.
               </p>
@@ -433,8 +478,8 @@ export default function EasyMenuLanding() {
                 background: "#ffffff",
                 border: "2px solid #124ba3",
                 borderRadius: 18,
-                padding: 24,
-                boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+                padding: isMobile ? 18 : 24,
+                boxShadow: cardShadow,
                 position: "relative",
               }}
             >
@@ -457,7 +502,7 @@ export default function EasyMenuLanding() {
               <div style={{ fontSize: 14, fontWeight: 800, color: "#124ba3", marginBottom: 8 }}>
                 AI OCR Ingestion
               </div>
-              <h3 style={{ margin: "0 0 8px", fontSize: 24 }}>$9.99</h3>
+              <h3 style={{ margin: "0 0 8px", fontSize: isMobile ? 22 : 24 }}>$9.99</h3>
               <p style={{ color: "#5b6675", margin: "0 0 18px" }}>
                 Best for restaurants that want a faster path from printed menu to structured menu.
               </p>
@@ -471,16 +516,16 @@ export default function EasyMenuLanding() {
             <div
               style={{
                 background: "#ffffff",
-                border: "1px solid #e4e9f0",
+                border: cardBorder,
                 borderRadius: 18,
-                padding: 24,
-                boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+                padding: isMobile ? 18 : 24,
+                boxShadow: cardShadow,
               }}
             >
               <div style={{ fontSize: 14, fontWeight: 800, color: "#124ba3", marginBottom: 8 }}>
                 Email Submission
               </div>
-              <h3 style={{ margin: "0 0 8px", fontSize: 24 }}>Manual Intake</h3>
+              <h3 style={{ margin: "0 0 8px", fontSize: isMobile ? 22 : 24 }}>Manual Intake</h3>
               <p style={{ color: "#5b6675", margin: "0 0 18px" }}>
                 Send your menu directly by email when that is easiest for your team.
               </p>
@@ -494,17 +539,17 @@ export default function EasyMenuLanding() {
         </section>
 
         {/* Example */}
-        <section id="example" style={{ marginBottom: 28 }}>
+        <section id="example" style={{ marginBottom: isMobile ? 20 : 28 }}>
           <div
             style={{
               background: "#ffffff",
-              border: "1px solid #e4e9f0",
+              border: cardBorder,
               borderRadius: 18,
-              padding: 28,
-              boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
+              padding: isMobile ? 20 : 28,
+              boxShadow: cardShadow,
             }}
           >
-            <h2 style={{ fontSize: 32, lineHeight: 1.1, margin: "0 0 10px" }}>
+            <h2 style={{ fontSize: isMobile ? 28 : 32, lineHeight: 1.1, margin: "0 0 10px" }}>
               Example Workflow
             </h2>
             <p style={{ color: "#5b6675", margin: "0 0 22px", maxWidth: 760 }}>
@@ -515,15 +560,15 @@ export default function EasyMenuLanding() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
                 gap: 18,
               }}
             >
               <div
                 style={{
-                  border: "1px solid #e4e9f0",
+                  border: cardBorder,
                   borderRadius: 16,
-                  padding: 20,
+                  padding: isMobile ? 16 : 20,
                   background: "#fbfdff",
                 }}
               >
@@ -536,9 +581,9 @@ export default function EasyMenuLanding() {
 
               <div
                 style={{
-                  border: "1px solid #e4e9f0",
+                  border: cardBorder,
                   borderRadius: 16,
-                  padding: 20,
+                  padding: isMobile ? 16 : 20,
                   background: "#fbfdff",
                 }}
               >
@@ -558,11 +603,11 @@ export default function EasyMenuLanding() {
             background: "#124ba3",
             color: "#ffffff",
             borderRadius: 22,
-            padding: "30px 24px",
+            padding: isMobile ? "24px 18px" : "30px 24px",
             boxShadow: "0 10px 30px rgba(16,24,40,0.12)",
           }}
         >
-          <h2 style={{ margin: "0 0 10px", fontSize: 32, lineHeight: 1.1 }}>
+          <h2 style={{ margin: "0 0 10px", fontSize: isMobile ? 28 : 32, lineHeight: 1.1 }}>
             Ready to Upload Your Menu?
           </h2>
           <p style={{ margin: "0 0 18px", maxWidth: 700, color: "rgba(255,255,255,0.88)" }}>
@@ -577,7 +622,7 @@ export default function EasyMenuLanding() {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                minHeight: 46,
+                minHeight: 48,
                 padding: "0 18px",
                 borderRadius: 12,
                 fontWeight: 800,
@@ -596,7 +641,7 @@ export default function EasyMenuLanding() {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                minHeight: 46,
+                minHeight: 48,
                 padding: "0 18px",
                 borderRadius: 12,
                 fontWeight: 800,

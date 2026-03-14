@@ -23,6 +23,8 @@
 
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
+import { CartProvider } from "./context/CartContext.jsx";
+import CartDrawer from "./components/CartDrawer.jsx";
 
 import GrubbidDiscovery from "./pages/GrubbidDiscovery.jsx";
 import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
@@ -49,6 +51,9 @@ import Terms from "./pages/Terms.jsx";
 import QrCodesPage from "./pages/QrCodesPage.jsx";
 import PdfUploadPage from "./pages/PdfUploadPage.jsx";
 import SpreadsheetUploadPage from "./pages/SpreadsheetUploadPage.jsx";
+import FoodTruckPage from "./pages/FoodTruckPage.jsx";
+import FoodTruckSchedulePage from "./pages/FoodTruckSchedulePage.jsx";
+import FoodTruckSignup from "./pages/FoodTruckSignup.jsx";
 
 function isEasyMenuHost() {
   const host = (window?.location?.hostname || "").toLowerCase();
@@ -62,6 +67,15 @@ function isEasyMenuHost() {
 function RestaurantSingularRedirect() {
   const { slugOrId } = useParams();
   return <Navigate to={slugOrId ? `/restaurants/${slugOrId}` : "/restaurants"} replace />;
+}
+
+/**
+ * Back-compat redirect for renamed food truck route.
+ * /trucks/:slugOrId  ->  /foodtrucks/:slugOrId
+ */
+function TruckRedirect() {
+  const { slugOrId } = useParams();
+  return <Navigate to={slugOrId ? `/foodtrucks/${slugOrId}` : "/"} replace />;
 }
 
 /**
@@ -89,8 +103,10 @@ export default function App() {
   const easyMenu = isEasyMenuHost();
 
   return (
+    <CartProvider>
     <BrowserRouter>
       <AnalyticsTracker />
+      <CartDrawer />
 
       <Routes>
         {/* Root route depends on domain */}
@@ -105,6 +121,16 @@ export default function App() {
 
         {/* QR admin — keep id-based and before public restaurant route */}
         <Route path="/restaurants/:id/qr-codes" element={<QrCodesPage />} />
+
+        {/* Food truck signup */}
+        <Route path="/foodtruck/signup" element={<FoodTruckSignup />} />
+
+        {/* Food truck public pages */}
+        <Route path="/foodtrucks/:slugOrId/schedule" element={<FoodTruckSchedulePage />} />
+        <Route path="/foodtrucks/:slugOrId" element={<FoodTruckPage />} />
+
+        {/* Back-compat: old /trucks/:slugOrId -> /foodtrucks/:slugOrId */}
+        <Route path="/trucks/:slugOrId" element={<TruckRedirect />} />
 
         {/* Restaurant public page (CANONICAL) */}
         <Route path="/restaurants/:slugOrId" element={<RestaurantPublicPage />} />
@@ -148,5 +174,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
+    </CartProvider>
   );
 }

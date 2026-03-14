@@ -2,6 +2,7 @@
  * ============================================================
  * File: MenuItemInsightsPanel.jsx
  * Path: menubloc-frontend/src/components/MenuItemInsightsPanel.jsx
+ * Date: 2026-03-12
  * Purpose:
  *   Render real existing Insights / Nutrition data inside
  *   the menu item card on the menu view page.
@@ -27,6 +28,7 @@ import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
 // Utility
 // ---------------------
 function asNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }

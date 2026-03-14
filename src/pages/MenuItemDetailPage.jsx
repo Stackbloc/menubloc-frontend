@@ -2,7 +2,7 @@
  * ============================================================
  * File: MenuItemDetailPage.jsx
  * Path: menubloc-frontend/src/pages/MenuItemDetailPage.jsx
- * Date: 2026-03-08
+ * Date: 2026-03-13
  * Purpose:
  *   Full-page detail view for a single menu item.
  *
@@ -10,22 +10,22 @@
  *     GET /menu-items/:id         — item detail (name, badges, price, etc.)
  *     GET /menu-items/:id/similar — Find Similar Nearby results
  *
- *   Tab structure (no new tabs added):
- *     Insights    — InsightsRolodex (7-card, full mode, derived from
- *                   existing payload only) + FindSimilar section below
- *     Nutrition   — raw nutrition field if present
- *     Pairings    — raw pairings field if present
- *     Ingredients — ingredient list if present
+ *   Product rule:
+ *     - Grubbid intelligence belongs on the item detail page
+ *     - Restaurant-owned menu pages stay restaurant-first by default
  *
- *   FindSimilar renders silently when results are empty or the
- *   fetch fails. No layout changes to any other tab or section.
+ *   This revision:
+ *     - removes InsightsRolodex from the item detail page
+ *     - restores card-based insights via MenuItemInsightsPanel
+ *     - keeps Find Similar on the item detail page only
+ *     - preserves existing tabs for Nutrition / Pairings / Ingredients
  * ============================================================
  */
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { BackButton, HomeButton } from "../components/NavButton.jsx";
-import InsightsRolodex from "../components/InsightsRolodex";
+import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 
 const BACKEND_BASE = import.meta?.env?.VITE_BACKEND_URL || "http://localhost:3001";
 
@@ -48,8 +48,31 @@ function moneyFromFloat(price) {
 }
 
 function pickFirstDefined(...vals) {
-  for (const v of vals) if (v !== undefined && v !== null) return v;
+  for (const v of vals) {
+    if (v !== undefined && v !== null) return v;
+  }
   return null;
+}
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= breakpoint;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    function handleResize() {
+      setIsMobile(window.innerWidth <= breakpoint);
+    }
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [breakpoint]);
+
+  return isMobile;
 }
 
 /* ---- Item normalizer ---- */
@@ -69,10 +92,11 @@ function normalizeResultItem(raw) {
     null;
 
   const priceMinor = pickFirstDefined(raw?.price_minor, raw?.priceMinor, null);
-  const price      = pickFirstDefined(raw?.price, raw?.price_float, raw?.priceFloat, null);
+  const price = pickFirstDefined(raw?.price, raw?.price_float, raw?.priceFloat, null);
 
   const vegan =
     Boolean(raw?.badges?.vegan) ||
+    Boolean(raw?.badges?.is_vegan) ||
     Boolean(raw?.is_vegan) ||
     Boolean(raw?.isVegan) ||
     Boolean(raw?.vegan);
@@ -92,91 +116,33 @@ function normalizeResultItem(raw) {
     Boolean(raw?.is_deal) ||
     Boolean(raw?.isDeal);
 
-  const reasons =
-    raw?.insight?.reasons ||
-    raw?.match_reasons ||
-    raw?.reasons ||
-    raw?.why ||
-    [];
-
-  const confidence = pickFirstDefined(
-    raw?.insight?.confidence,
-    raw?.confidence,
-    raw?.match_confidence,
-    null
-  );
-
   return {
     id: raw?.menu_item_id || raw?.id || null,
     name: raw?.name || raw?.item_name || raw?.title || "Untitled Item",
     description: raw?.description || raw?.notes || raw?.snippet || "",
     restaurant: {
-      id:   restaurantId,
+      id: restaurantId,
       name: restaurantName || "Unknown Restaurant",
       slug: raw?.restaurant_slug || raw?.slug || null,
     },
     priceMinor,
     price,
     badges: { vegan, glutenFree, deal },
-    insight: {
-      reasons:    Array.isArray(reasons) ? reasons : [String(reasons)],
-      confidence: confidence == null ? null : Number(confidence),
-    },
-    nutrition:   raw?.nutrition   || null,
-    pairings:    raw?.pairings    || null,
+    nutrition: raw?.nutrition || raw?.signal_nutrition || raw?.signals?.nutrition || null,
+    pairings: raw?.pairings || null,
     ingredients: raw?.ingredients || raw?.ingredient_list || null,
+    chips: raw?.chips || null,
+    signals: raw?.signals || null,
+    signal_nutrition: raw?.signal_nutrition || null,
   };
-}
-
-/* ---- InsightsRolodex data builder ---- */
-/*
- * Builds a partial intelligence payload from data already present in
- * the item detail response. InsightsRolodex renders what it can and
- * shows "Insufficient data" for cards whose source fields are absent.
- * No new endpoint is called.
- */
-function buildIntelFromRaw(raw, item) {
-  if (!raw && !item) return null;
-
-  const diet_flags = {
-    vegan:       item?.badges?.vegan      ?? Boolean(raw?.is_vegan),
-    gluten_free: item?.badges?.glutenFree ?? Boolean(raw?.is_gluten_free) ?? undefined,
-    dairy_free:  raw?.is_dairy_free  != null ? Boolean(raw.is_dairy_free)  : undefined,
-    vegetarian:  raw?.is_vegetarian  != null ? Boolean(raw.is_vegetarian)  : undefined,
-  };
-
-  const nutRaw =
-    typeof raw?.nutrition === "object" && raw?.nutrition !== null ? raw.nutrition : {};
-
-  const nutrition_estimates = {
-    calories_est:  nutRaw?.calories  ?? nutRaw?.calories_kcal ?? null,
-    protein_g_est: nutRaw?.protein   ?? nutRaw?.protein_g     ?? null,
-    fat_g_est:     nutRaw?.fat       ?? nutRaw?.fat_g         ?? null,
-    fiber_g_est:   nutRaw?.fiber     ?? nutRaw?.fiber_g       ?? null,
-  };
-
-  return { diet_flags, nutrition_estimates };
 }
 
 /* ============================================================
    FindSimilar
-   Fetches GET /menu-items/:id/similar and renders a compact
-   "Find Similar Nearby" section inside the Insights tab.
-
-   Behavior:
-   - Renders nothing while loading (silent)
-   - Renders nothing on fetch failure (silent)
-   - Renders nothing when results are empty (silent)
-   - Renders the list when 1–5 results are returned
-
-   Navigation flow:
-     Menu → Item → Insights → Find Similar Nearby → another item
-
-   No new tabs are added. This section is Insights-tab-only.
    ============================================================ */
-function FindSimilar({ itemId }) {
-  const [similar, setSimilar] = useState(null); // null = not yet loaded
-  const [failed,  setFailed]  = useState(false);
+function FindSimilar({ itemId, isMobile }) {
+  const [similar, setSimilar] = useState(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!itemId) return;
@@ -187,12 +153,15 @@ function FindSimilar({ itemId }) {
       .then((json) => {
         if (!cancelled) setSimilar(Array.isArray(json?.similar) ? json.similar : []);
       })
-      .catch(() => { if (!cancelled) setFailed(true); });
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [itemId]);
 
-  // Silent in all non-result states
   if (failed || similar === null || similar.length === 0) return null;
 
   return (
@@ -203,7 +172,6 @@ function FindSimilar({ itemId }) {
         borderTop: "1px solid rgba(0,0,0,0.07)",
       }}
     >
-      {/* Label matches the "Grubbid Insights" label style from InsightsRolodex */}
       <div
         style={{
           fontSize: 10,
@@ -222,9 +190,10 @@ function FindSimilar({ itemId }) {
           <li
             key={s.id ?? i}
             style={{
-              display:      "flex",
-              alignItems:   "baseline",
-              gap:          6,
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "flex-start" : "baseline",
+              gap: isMobile ? 4 : 6,
               paddingBottom: 9,
               marginBottom: 9,
               borderBottom:
@@ -233,32 +202,31 @@ function FindSimilar({ itemId }) {
                   : "none",
             }}
           >
-            {/* Item name — clickable, routes to that item's detail page */}
             <Link
               to={`/menu-items/${s.id}`}
               style={{
-                fontSize:   13,
+                fontSize: 13,
                 fontWeight: 700,
-                color:      "#124ba3",
+                color: "#124ba3",
                 textDecoration: "none",
-                flexShrink: 0,
+                wordBreak: "break-word",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.textDecoration = "underline";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.textDecoration = "none";
+              }}
             >
               {s.name}
             </Link>
 
-            {/* Restaurant name — plain text for MVP.
-                FUTURE: wrap in <Link to={`/restaurants/${s.restaurant_id}`}> */}
             {s.restaurant_name && (
               <span
                 style={{
-                  fontSize:     12,
-                  color:        "#5b6675",
-                  overflow:     "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace:   "nowrap",
+                  fontSize: 12,
+                  color: "#5b6675",
+                  wordBreak: "break-word",
                 }}
               >
                 — {s.restaurant_name}
@@ -277,13 +245,13 @@ function Chip({ children }) {
   return (
     <span
       style={{
-        display:    "inline-flex",
+        display: "inline-flex",
         alignItems: "center",
-        gap:        6,
-        border:     "1px solid rgba(0,0,0,0.12)",
+        gap: 6,
+        border: "1px solid rgba(0,0,0,0.12)",
         borderRadius: 999,
-        padding:    "4px 10px",
-        fontSize:   12,
+        padding: "4px 10px",
+        fontSize: 12,
         lineHeight: "16px",
         background: "rgba(0,0,0,0.03)",
         userSelect: "none",
@@ -300,12 +268,12 @@ function TabButton({ active, onClick, children }) {
       type="button"
       onClick={onClick}
       style={{
-        border:       "1px solid rgba(0,0,0,0.14)",
-        background:   active ? "rgba(0,0,0,0.08)" : "white",
+        border: "1px solid rgba(0,0,0,0.14)",
+        background: active ? "rgba(0,0,0,0.08)" : "white",
         borderRadius: 999,
-        padding:      "6px 10px",
-        fontSize:     12,
-        cursor:       "pointer",
+        padding: "8px 12px",
+        fontSize: 12,
+        cursor: "pointer",
       }}
     >
       {children}
@@ -317,12 +285,12 @@ function TabButton({ active, onClick, children }) {
 
 export default function MenuItemDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const [loading, setLoading] = useState(true);
-  const [err,     setErr]     = useState("");
+  const [err, setErr] = useState("");
   const [rawItem, setRawItem] = useState(null);
-  const [tab,     setTab]     = useState("insights");
+  const [tab, setTab] = useState("insights");
 
   const item = useMemo(
     () => (rawItem ? normalizeResultItem(rawItem) : null),
@@ -374,7 +342,9 @@ export default function MenuItemDetailPage() {
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (loading) {
@@ -388,18 +358,20 @@ export default function MenuItemDetailPage() {
   if (err) {
     return (
       <div style={{ maxWidth: 980, margin: "0 auto", padding: 16 }}>
-        <div style={{ marginBottom: 12 }}><BackButton /></div>
+        <div style={{ marginBottom: 12 }}>
+          <BackButton />
+        </div>
 
         <div
           style={{
-            padding:      12,
+            padding: 12,
             borderRadius: 12,
-            background:   "rgba(255,0,0,0.06)",
-            border:       "1px solid rgba(255,0,0,0.18)",
+            background: "rgba(255,0,0,0.06)",
+            border: "1px solid rgba(255,0,0,0.18)",
           }}
         >
           <div style={{ fontWeight: 800, marginBottom: 6 }}>Item detail not available yet</div>
-          <div style={{ fontSize: 13, opacity: 0.9 }}>{err}</div>
+          <div style={{ fontSize: 13, opacity: 0.9, wordBreak: "break-word" }}>{err}</div>
         </div>
       </div>
     );
@@ -409,18 +381,44 @@ export default function MenuItemDetailPage() {
     item?.priceMinor != null
       ? moneyFromMinor(item.priceMinor)
       : item?.price != null
-      ? moneyFromFloat(item.price)
-      : null;
+        ? moneyFromFloat(item.price)
+        : null;
 
-  const intelData = buildIntelFromRaw(rawItem, item);
+  const insightsItem = rawItem
+    ? {
+        ...rawItem,
+        id: rawItem?.id ?? item?.id ?? null,
+        name: rawItem?.name ?? item?.name ?? "Untitled Item",
+        description: rawItem?.description ?? item?.description ?? "",
+        price: rawItem?.price ?? item?.price ?? null,
+        price_minor: rawItem?.price_minor ?? item?.priceMinor ?? null,
+        nutrition:
+          rawItem?.nutrition ??
+          rawItem?.signal_nutrition ??
+          rawItem?.signals?.nutrition ??
+          null,
+        pairings: rawItem?.pairings ?? null,
+        chips: rawItem?.chips ?? null,
+        signals: rawItem?.signals ?? null,
+        signal_nutrition: rawItem?.signal_nutrition ?? null,
+      }
+    : null;
 
   return (
-    <div style={{ maxWidth: 980, margin: "0 auto", padding: 16 }}>
+    <div
+      style={{
+        maxWidth: 980,
+        margin: "0 auto",
+        padding: isMobile ? 14 : 16,
+        overflowX: "hidden",
+      }}
+    >
       <div
         style={{
-          display:      "flex",
-          gap:          10,
-          alignItems:   "center",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 10,
+          alignItems: "center",
           marginBottom: 12,
         }}
       >
@@ -428,68 +426,107 @@ export default function MenuItemDetailPage() {
         <HomeButton />
       </div>
 
-      {/* Item detail card */}
       <div
         style={{
-          border:       "1px solid rgba(0,0,0,0.12)",
+          border: "1px solid rgba(0,0,0,0.12)",
           borderRadius: 16,
-          padding:      16,
-          background:   "white",
-          boxShadow:    "0 1px 0 rgba(0,0,0,0.03)",
+          padding: isMobile ? 14 : 16,
+          background: "white",
+          boxShadow: "0 1px 0 rgba(0,0,0,0.03)",
         }}
       >
         <div
           style={{
-            display:        "flex",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
             justifyContent: "space-between",
-            gap:            12,
-            alignItems:     "flex-start",
+            gap: 12,
+            alignItems: "flex-start",
           }}
         >
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>{item.name}</div>
-            <div style={{ fontSize: 14, opacity: 0.75 }}>{item.restaurant.name}</div>
+          <div style={{ minWidth: 0, width: isMobile ? "100%" : "auto" }}>
+            <div
+              style={{
+                fontSize: isMobile ? 20 : 22,
+                fontWeight: 900,
+                marginBottom: 4,
+                lineHeight: 1.15,
+                wordBreak: "break-word",
+              }}
+            >
+              {item.name}
+            </div>
+
+            <div style={{ fontSize: 14, opacity: 0.75, wordBreak: "break-word" }}>
+              {item.restaurant.name}
+            </div>
           </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 18, fontWeight: 900 }}>{priceLabel || "—"}</div>
+
+          <div
+            style={{
+              textAlign: isMobile ? "left" : "right",
+              width: isMobile ? "100%" : "auto",
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 900 }}>
+              {priceLabel || "—"}
+            </div>
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-          {item.badges.vegan      && <Chip>Vegan</Chip>}
+          {item.badges.vegan && <Chip>Vegan</Chip>}
           {item.badges.glutenFree && <Chip>Gluten-Free</Chip>}
-          {item.badges.deal       && <Chip>Deal</Chip>}
+          {item.badges.deal && <Chip>Deal</Chip>}
         </div>
 
         {item.description && (
-          <div style={{ marginTop: 12, fontSize: 14, opacity: 0.9 }}>{item.description}</div>
+          <div
+            style={{
+              marginTop: 12,
+              fontSize: 14,
+              opacity: 0.9,
+              wordBreak: "break-word",
+            }}
+          >
+            {item.description}
+          </div>
         )}
 
         <div style={{ marginTop: 14, borderTop: "1px solid rgba(0,0,0,0.08)", paddingTop: 12 }}>
-          {/* Tab buttons — unchanged set, no new tabs */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-            <TabButton active={tab === "insights"}    onClick={() => setTab("insights")}>Insights</TabButton>
-            <TabButton active={tab === "nutrition"}   onClick={() => setTab("nutrition")}>Nutrition</TabButton>
-            <TabButton active={tab === "pairings"}    onClick={() => setTab("pairings")}>Pairings</TabButton>
-            <TabButton active={tab === "ingredients"} onClick={() => setTab("ingredients")}>Ingredients</TabButton>
+            <TabButton active={tab === "insights"} onClick={() => setTab("insights")}>
+              Insights
+            </TabButton>
+            <TabButton active={tab === "nutrition"} onClick={() => setTab("nutrition")}>
+              Nutrition
+            </TabButton>
+            <TabButton active={tab === "pairings"} onClick={() => setTab("pairings")}>
+              Pairings
+            </TabButton>
+            <TabButton active={tab === "ingredients"} onClick={() => setTab("ingredients")}>
+              Ingredients
+            </TabButton>
           </div>
 
-          {/* Insights tab — InsightsRolodex + FindSimilar (Insights-tab-only) */}
           {tab === "insights" && (
             <>
-              <InsightsRolodex
-                data={intelData}
-                compact={false}
-                itemName={item.name}
-              />
-              <FindSimilar itemId={item?.id} />
+              <MenuItemInsightsPanel item={insightsItem} />
+              <FindSimilar itemId={item?.id} isMobile={isMobile} />
             </>
           )}
 
           {tab === "nutrition" && (
             <div style={{ fontSize: 14, opacity: 0.9 }}>
               {item.nutrition ? (
-                <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+                <pre
+                  style={{
+                    margin: 0,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                    overflowX: "auto",
+                  }}
+                >
                   {JSON.stringify(item.nutrition, null, 2)}
                 </pre>
               ) : (
@@ -501,7 +538,14 @@ export default function MenuItemDetailPage() {
           {tab === "pairings" && (
             <div style={{ fontSize: 14, opacity: 0.9 }}>
               {item.pairings ? (
-                <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+                <pre
+                  style={{
+                    margin: 0,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                    overflowX: "auto",
+                  }}
+                >
                   {JSON.stringify(item.pairings, null, 2)}
                 </pre>
               ) : (
@@ -516,15 +560,17 @@ export default function MenuItemDetailPage() {
                 Array.isArray(item.ingredients) ? (
                   <ul style={{ margin: 0, paddingLeft: 18 }}>
                     {item.ingredients.map((ing, idx) => (
-                      <li key={idx} style={{ marginBottom: 6 }}>{String(ing)}</li>
+                      <li key={idx} style={{ marginBottom: 6, wordBreak: "break-word" }}>
+                        {typeof ing === "object" && ing !== null ? String(ing.name || "") : String(ing)}
+                      </li>
                     ))}
                   </ul>
                 ) : (
-                  <div>{String(item.ingredients)}</div>
+                  <div style={{ wordBreak: "break-word" }}>{String(item.ingredients)}</div>
                 )
               ) : (
                 <div style={{ opacity: 0.75 }}>
-                  Ingredients coming soon (this will be powered by your ingredient-aware layer).
+                  Ingredients coming soon.
                 </div>
               )}
             </div>
@@ -536,12 +582,12 @@ export default function MenuItemDetailPage() {
             type="button"
             onClick={() => alert("TODO: Save/bookmark")}
             style={{
-              border:       "1px solid rgba(0,0,0,0.14)",
-              background:   "white",
+              border: "1px solid rgba(0,0,0,0.14)",
+              background: "white",
               borderRadius: 10,
-              padding:      "10px 12px",
-              fontSize:     13,
-              cursor:       "pointer",
+              padding: "10px 12px",
+              fontSize: 13,
+              cursor: "pointer",
             }}
           >
             Save
@@ -551,12 +597,12 @@ export default function MenuItemDetailPage() {
             type="button"
             onClick={() => alert("TODO: Route to restaurant profile")}
             style={{
-              border:       "1px solid rgba(0,0,0,0.14)",
-              background:   "white",
+              border: "1px solid rgba(0,0,0,0.14)",
+              background: "white",
               borderRadius: 10,
-              padding:      "10px 12px",
-              fontSize:     13,
-              cursor:       "pointer",
+              padding: "10px 12px",
+              fontSize: 13,
+              cursor: "pointer",
             }}
           >
             View Restaurant
