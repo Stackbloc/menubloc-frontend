@@ -1,0 +1,35 @@
+import { useEffect, useState } from "react";
+
+export default function App() {
+  const [menus, setMenus] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("http://localhost:3001/menus") // your Express backend
+      .then(res => res.json())
+      .then(data => {
+        setMenus(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
+
+  return (
+    <div style={{ padding: 30 }}>
+      <h1>Menubloc 🍽️</h1>
+
+      {loading && <p>Loading menus...</p>}
+
+      {!loading && menus.length === 0 && <p>No menus found.</p>}
+
+      <ul>
+        {menus.map((m) => (
+          <li key={m.id}>{m.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
