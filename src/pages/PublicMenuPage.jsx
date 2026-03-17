@@ -22,6 +22,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { PageNav } from "../components/NavButton.jsx";
+import { loadDietPrefs, hasActiveDietPrefs, activePrefLabels, itemPassesDietFilter, clearDietPrefs } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -105,6 +106,15 @@ export default function PublicMenuPage() {
     data: null,
     error: null,
   });
+
+  const [dietPrefs, setDietPrefs] = useState(() => loadDietPrefs());
+  const filtersActive = hasActiveDietPrefs(dietPrefs);
+  const filterLabels = activePrefLabels(dietPrefs);
+
+  function handleClearFilters() {
+    clearDietPrefs();
+    setDietPrefs(loadDietPrefs());
+  }
 
   const apiUrl = useMemo(() => {
     const rid = encodeURIComponent(asStr(id).trim());
@@ -235,16 +245,75 @@ export default function PublicMenuPage() {
 
       <PendingBanner text={menuBanner} />
 
+      {/* Active dietary filter banner */}
+      {filtersActive && (
+        <div style={{
+          marginTop: 14,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "9px 14px",
+          borderRadius: 12,
+          background: "#f0fdf4",
+          border: "1px solid #bbf7d0",
+          fontSize: 13,
+          fontWeight: 600,
+          color: "#166534",
+          flexWrap: "wrap",
+        }}>
+          <span style={{ fontWeight: 800 }}>Filtering:</span>
+          {filterLabels.map((l) => (
+            <span key={l} style={{
+              padding: "2px 9px",
+              borderRadius: 999,
+              background: "#dcfce7",
+              border: "1px solid #bbf7d0",
+              fontSize: 11,
+              fontWeight: 800,
+              color: "#15803d",
+            }}>{l}</span>
+          ))}
+          <button
+            onClick={handleClearFilters}
+            style={{
+              marginLeft: "auto",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 700,
+              color: "#166534",
+              padding: "2px 6px",
+              borderRadius: 6,
+              textDecoration: "underline",
+            }}
+          >Clear filters</button>
+        </div>
+      )}
+
       {/* Sections */}
       <div style={{ marginTop: 18 }}>
         {sections.length === 0 ? (
           <div style={{ fontSize: 14, color: "var(--muted, #5b6675)" }}>
             No menu sections yet.
           </div>
+        ) : filtersActive && sections.every((sec) => (Array.isArray(sec?.items) ? sec.items : []).filter((it) => itemPassesDietFilter(it, dietPrefs)).length === 0) ? (
+          <div style={{ fontSize: 14, color: "var(--muted, #5b6675)", padding: "24px 0" }}>
+            No items match your dietary filters.{" "}
+            <button onClick={handleClearFilters} style={{ background: "none", border: "none", cursor: "pointer", color: "#2d6a4f", fontWeight: 700, fontSize: 14, padding: 0, textDecoration: "underline" }}>
+              Clear filters
+            </button>
+          </div>
         ) : (
           sections.map((sec, sIdx) => {
             const title = asStr(sec?.title || "Menu").trim();
-            const items = Array.isArray(sec?.items) ? sec.items : [];
+            const allItems = Array.isArray(sec?.items) ? sec.items : [];
+            const items = filtersActive
+              ? allItems.filter((it) => itemPassesDietFilter(it, dietPrefs))
+              : allItems;
+
+            // Skip sections where all items were filtered out
+            if (filtersActive && items.length === 0) return null;
 
             return (
               <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 24 }}>

@@ -9,6 +9,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { loadDietPrefs, saveDietPrefs } from "../hooks/useDietPreferences";
 import { Link, useNavigate } from "react-router-dom";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
@@ -181,15 +182,10 @@ export default function GrubbidDiscovery() {
     return String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim();
   });
   const [suggestedSearches] = useState(CANDIDATE_SUGGESTED_SEARCHES);
-  const [filters, setFilters] = useState({
-    dairy_free: false,
-    diabetic_friendly: false,
-    gluten_free: false,
-    keto: false,
-    low_sodium: false,
-    vegan: false,
-    vegetarian: false,
-  });
+  const [filters, setFilters] = useState(() => loadDietPrefs());
+
+  // Persist dietary prefs whenever they change so other pages see them
+  useEffect(() => { saveDietPrefs(filters); }, [filters]);
 
   const resolvedLocationLabel = useMemo(() => {
     if (appliedLocation) return appliedLocation;

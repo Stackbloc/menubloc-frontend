@@ -31,6 +31,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import MenuPreviewCard from "../components/browse/MenuPreviewCard.jsx";
 import { PageNav } from "../components/NavButton.jsx";
 import { getBrowseMenus, getBrowseItems, toConsumerErrorMessage } from "../lib/api.js";
+import { loadDietPrefs, saveDietPrefs } from "../hooks/useDietPreferences";
 
 
 function useIsMobile(breakpoint = 900) {
@@ -211,20 +212,19 @@ export default function BrowseMenus() {
     const parts = [urlCity, urlState].filter(Boolean);
     return parts.join(", ");
   });
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState(() => ({
     cuisine: "",
     category: "",
     deals: false,
-    dairy_free: false,
-    diabetic_friendly: false,
-    gluten_free: false,
-    vegan: false,
-    vegetarian: false,
-  });
+    ...loadDietPrefs(),
+  }));
   const [alphaGroup, setAlphaGroup] = useState(null);
 
   const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
-    filters.dairy_free || filters.diabetic_friendly || filters.deals;
+    filters.dairy_free || filters.diabetic_friendly || filters.keto || filters.low_sodium || filters.deals;
+
+  // Persist diet prefs whenever they change
+  useEffect(() => { saveDietPrefs(filters); }, [filters]);
 
   useEffect(() => {
     let cancelled = false;
@@ -248,6 +248,8 @@ export default function BrowseMenus() {
             vegan: filters.vegan ? 1 : "",
             vegetarian: filters.vegetarian ? 1 : "",
             gluten_free: filters.gluten_free ? 1 : "",
+            keto: filters.keto ? 1 : "",
+            low_sodium: filters.low_sodium ? 1 : "",
             dairy_free: filters.dairy_free ? 1 : "",
             diabetic_friendly: filters.diabetic_friendly ? 1 : "",
           };
@@ -265,6 +267,8 @@ export default function BrowseMenus() {
             vegan: filters.vegan ? 1 : "",
             vegetarian: filters.vegetarian ? 1 : "",
             gluten_free: filters.gluten_free ? 1 : "",
+            keto: filters.keto ? 1 : "",
+            low_sodium: filters.low_sodium ? 1 : "",
             dairy_free: filters.dairy_free ? 1 : "",
             diabetic_friendly: filters.diabetic_friendly ? 1 : "",
           };
@@ -522,6 +526,18 @@ export default function BrowseMenus() {
                       isMobile={isMobile}
                       active={filters.gluten_free}
                       onClick={() => setFilters((prev) => ({ ...prev, gluten_free: !prev.gluten_free }))}
+                    />
+                    <FilterChip
+                      label="Keto"
+                      isMobile={isMobile}
+                      active={filters.keto}
+                      onClick={() => setFilters((prev) => ({ ...prev, keto: !prev.keto }))}
+                    />
+                    <FilterChip
+                      label="Low Sodium"
+                      isMobile={isMobile}
+                      active={filters.low_sodium}
+                      onClick={() => setFilters((prev) => ({ ...prev, low_sodium: !prev.low_sodium }))}
                     />
                     <FilterChip
                       label="Vegan"
