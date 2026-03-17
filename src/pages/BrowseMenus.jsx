@@ -686,29 +686,6 @@ export default function BrowseMenus() {
                   ))}
                 </div>
               ) : null}
-
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-                          {item.price ? (
-                            <div style={{ fontSize: 13, fontWeight: 900, color: "#11211a" }}>{item.price}</div>
-                          ) : null}
-                          <div style={{ display: "flex", gap: 4 }}>
-                            {item.is_vegan ? (
-                              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}>Vegan</span>
-                            ) : null}
-                            {item.is_gluten_free ? (
-                              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, background: "#fffbeb", color: "#92400e", border: "1px solid #fde68a" }}>GF</span>
-                            ) : null}
-                            {item.has_deal ? (
-                              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, background: "#dcfce7", color: "#15803d", border: "1px solid #bbf7d0" }}>Deal</span>
-                            ) : null}
-                          </div>
-                        </div>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              ) : null}
             </div>
           </main>
         </div>
