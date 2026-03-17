@@ -895,7 +895,7 @@ export default function GrubbidSearchResults() {
       <div style={styles.searchContext}>
         <h1 style={styles.title}>
           {q ? (
-            <>Results for <span style={styles.titleQuery}>&quot;{q}&quot;</span></>
+            <>Searching for <span style={styles.titleQuery}>&quot;{q}&quot;</span></>
           ) : (
             "Search results"
           )}
@@ -903,12 +903,12 @@ export default function GrubbidSearchResults() {
         <div style={styles.subtitle}>
           {[
             locationLabel && locationLabel !== "your current location"
-              ? locationLabel
+              ? `near ${locationLabel}`
               : locationLabel === "your current location"
               ? "near you"
               : null,
             !loading && (hasMenuMatches
-              ? `${restaurantGroups.length} restaurant${restaurantGroups.length === 1 ? "" : "s"}`
+              ? `${restaurantGroups.length} restaurant${restaurantGroups.length === 1 ? "" : "s"} found`
               : restaurantOnlyVisible.length
               ? `${restaurantOnlyVisible.length} suggestion${restaurantOnlyVisible.length === 1 ? "" : "s"}`
               : null),

@@ -13,6 +13,7 @@ import { loadDietPrefs, saveDietPrefs } from "../hooks/useDietPreferences";
 import { Link, useNavigate } from "react-router-dom";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
+const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const LOCAL_RADIUS_MILES = 8;
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const CANDIDATE_SUGGESTED_SEARCHES = [
@@ -171,6 +172,7 @@ export default function GrubbidDiscovery() {
 
   const [query, setQuery] = useState("");
   const [inlineError, setInlineError] = useState("");
+  const [searching, setSearching] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showLocationEditor, setShowLocationEditor] = useState(false);
   const [locationInput, setLocationInput] = useState(() => {
@@ -228,12 +230,41 @@ export default function GrubbidDiscovery() {
     return params;
   }
 
-  function runSearch(queryValue = query) {
+  async function runSearch(queryValue = query) {
     const params = buildSearchParams(queryValue, {
       locationOverride: getEffectiveSearchLocation(),
     });
     setInlineError("");
-    navigate(`/search?${params.toString()}`);
+
+    // Need a query term to check results
+    const qTerm = String(queryValue || "").trim();
+    if (!qTerm) {
+      navigate(`/search?${params.toString()}`);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const url = `${API}/search?${params.toString()}&limit=1`;
+      const res = await fetch(url, { credentials: "include" });
+      const json = await res.json().catch(() => ({}));
+      const count = (json?.menu_items?.length || 0) + (json?.buckets?.restaurants?.length || 0);
+
+      if (count === 0) {
+        // Build a readable location label for the error message
+        const loc = getEffectiveSearchLocation() || "";
+        const parsed = loc.match(/^\d{5}/) ? loc : loc;
+        const nearText = parsed ? ` near ${parsed}` : "";
+        setInlineError(`No results found for "${qTerm}"${nearText}`);
+      } else {
+        navigate(`/search?${params.toString()}`);
+      }
+    } catch {
+      // On network error just navigate anyway
+      navigate(`/search?${params.toString()}`);
+    } finally {
+      setSearching(false);
+    }
   }
 
   function handleSearchKeyDown(event) {
@@ -359,21 +390,23 @@ export default function GrubbidDiscovery() {
             <button
               type="button"
               onClick={() => runSearch(query)}
+              disabled={searching}
               style={{
                 flexShrink: 0,
                 width: isMobile ? "100%" : 120,
                 height: isMobile ? 56 : 64,
                 borderRadius: 16,
                 border: "none",
-                background: "#101828",
+                background: searching ? "#344054" : "#101828",
                 color: "#fff",
                 fontSize: 16,
                 fontWeight: 900,
-                cursor: "pointer",
+                cursor: searching ? "default" : "pointer",
                 letterSpacing: 0.2,
+                transition: "background 160ms ease",
               }}
             >
-              Search
+              {searching ? "…" : "Search"}
             </button>
           </div>
 
@@ -561,16 +594,20 @@ export default function GrubbidDiscovery() {
           {inlineError ? (
             <div
               style={{
-                marginTop: 16,
-                padding: "12px 14px",
-                borderRadius: 14,
+                marginTop: 20,
+                padding: "16px 20px",
+                borderRadius: 16,
                 border: "1px solid rgba(18,34,28,0.08)",
                 background: "#fff",
-                color: "#475467",
-                fontWeight: 700,
+                boxShadow: "0 4px 14px rgba(15,23,42,0.05)",
               }}
             >
-              {inlineError}
+              <div style={{ fontSize: 16, fontWeight: 900, color: "#11211a", marginBottom: 4 }}>
+                {inlineError}
+              </div>
+              <div style={{ fontSize: 13, color: "#667085", fontWeight: 500 }}>
+                Try a different search term or location.
+              </div>
             </div>
           ) : null}
 
