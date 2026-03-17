@@ -24,7 +24,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import InsightCardDeck from "../components/InsightCardDeck.jsx";
+import { buildInsightCards } from "../components/InsightCardDeck.jsx";
 
 const BACKEND_BASE = import.meta?.env?.VITE_BACKEND_URL || "http://localhost:3001";
 
@@ -287,127 +287,95 @@ function toSlug(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-/* ---- Collapsible Nutrition Card ---- */
+/* ---- Shared bar row ---- */
 
-function CollapsibleNutritionCard({ chip }) {
-  const [open, setOpen] = useState(false);
+function BarRow({ label, pct, valueLabel, color }) {
+  const fill = Math.max(0, Math.min(100, pct));
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 0", maxWidth: 300 }}>
+      <div style={{ width: 88, fontSize: 11, color: "#93a0b2", flexShrink: 0 }}>
+        {label}
+      </div>
+      <div style={{ width: 100, height: 4, background: "rgba(0,0,0,0.06)", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}>
+        <div style={{ width: `${fill}%`, height: "100%", background: color, opacity: 0.7, borderRadius: 2 }} />
+      </div>
+      <div style={{ width: 44, fontSize: 11, color: "#475467", textAlign: "right", flexShrink: 0 }}>
+        {valueLabel}
+      </div>
+    </div>
+  );
+}
 
-  const cal = chip?.calories_kcal != null ? Math.round(Number(chip.calories_kcal)) : null;
-  const pro = chip?.protein_g != null ? Math.round(Number(chip.protein_g)) : null;
-  const fat = chip?.fat_g != null ? Math.round(Number(chip.fat_g)) : null;
-  const sod = chip?.sodium_mg != null ? Math.round(Number(chip.sodium_mg)) : null;
-  const sug = chip?.sugar_g != null ? Math.round(Number(chip.sugar_g)) : null;
+/* ---- Nutrition bar panel ---- */
 
-  const summary = [
-    cal !== null ? `${cal} cal` : null,
-    pro !== null ? `${pro}g protein` : null,
-    fat !== null ? `${fat}g fat` : null,
-  ].filter(Boolean).join(" · ");
+function NutritionBarPanel({ chip }) {
+  const n = (v) => (v != null && Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
+  const cal = chip ? n(chip.calories_kcal) : null;
+  const pro = chip ? n(chip.protein_g) : null;
+  const fat = chip ? n(chip.fat_g) : null;
+  const sod = chip ? n(chip.sodium_mg) : null;
+  const sug = chip ? n(chip.sugar_g) : null;
 
-  if (!summary && !chip?.allergen_alert) {
-    return <div style={{ fontSize: 14, opacity: 0.65 }}>Nutrition info not available for this item yet.</div>;
-  }
+  const rows = [
+    cal !== null && { label: "Calories", pct: Math.min(100, (cal / 2000) * 100), value: String(cal), color: "#e07b39" },
+    pro !== null && { label: "Protein",  pct: Math.min(100, (pro / 50)   * 100), value: `${pro}g`,   color: "#1a9a4a" },
+    fat !== null && { label: "Fat",      pct: Math.min(100, (fat / 65)   * 100), value: `${fat}g`,   color: "#b87a00" },
+    sod !== null && { label: "Sodium",   pct: Math.min(100, (sod / 2300) * 100), value: `${sod}mg`,  color: "#c0392b" },
+    sug !== null && { label: "Sugar",    pct: Math.min(100, (sug / 50)   * 100), value: `${sug}g`,   color: "#8b5cf6" },
+  ].filter(Boolean);
+
+  if (!rows.length) return <div style={{ fontSize: 12, opacity: 0.55 }}>Not available yet.</div>;
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          width: "100%",
-          background: "rgba(0,0,0,0.03)",
-          border: "1px solid rgba(0,0,0,0.10)",
-          borderRadius: open ? "12px 12px 0 0" : 12,
-          padding: "10px 14px",
-          cursor: "pointer",
-          textAlign: "left",
-          gap: 12,
-        }}
-      >
-        <span style={{ fontSize: 14, fontWeight: 700, color: "#0f1720" }}>
-          {summary || "Allergen info available"}
-        </span>
-        <span style={{ fontSize: 12, color: "#5b6675", flexShrink: 0 }}>
-          {open ? "Hide ▲" : "Details ▼"}
-        </span>
-      </button>
-
-      {open && (
-        <div
-          style={{
-            border: "1px solid rgba(0,0,0,0.10)",
-            borderTop: "none",
-            borderRadius: "0 0 12px 12px",
-            padding: "12px 14px",
-            background: "white",
-          }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))",
-              gap: 8,
-              marginBottom: 10,
-            }}
-          >
-            {[
-              cal !== null && { label: "Calories", value: String(cal) },
-              pro !== null && { label: "Protein", value: `${pro}g` },
-              fat !== null && { label: "Fat", value: `${fat}g` },
-              sod !== null && { label: "Sodium", value: `${sod}mg` },
-              sug !== null && { label: "Sugar", value: `${sug}g` },
-            ].filter(Boolean).map((row) => (
-              <div
-                key={row.label}
-                style={{
-                  background: "#f4f7fb",
-                  border: "1px solid #e4e9f0",
-                  borderRadius: 10,
-                  padding: "8px 10px",
-                }}
-              >
-                <div style={{ fontSize: 11, color: "#5b6675", marginBottom: 3 }}>{row.label}</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#0f1720" }}>{row.value}</div>
-              </div>
-            ))}
-          </div>
-
-          {chip?.calories_pct_women != null && (
-            <div style={{ fontSize: 11.5, color: "#5b6675", lineHeight: 1.5, marginBottom: 6 }}>
-              Approx. {Math.round(Number(chip.calories_pct_women))}% of a 2,000 cal diet
-              {chip?.calories_pct_men != null ? ` · ${Math.round(Number(chip.calories_pct_men))}% of a 2,500 cal diet` : ""}.
-            </div>
-          )}
-
-          {chip?.allergen_alert && (
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "baseline",
-                flexWrap: "wrap",
-                gap: 6,
-                padding: "4px 8px",
-                background: "rgba(230,130,0,0.10)",
-                border: "1px solid rgba(230,130,0,0.22)",
-                borderRadius: 999,
-                marginTop: 4,
-              }}
-            >
-              <span style={{ fontSize: 10, fontWeight: 900, color: "#b36000" }}>⚠ Allergen Alert</span>
-              <span style={{ fontSize: 11.5, color: "#0f1720", lineHeight: 1.35 }}>{chip.allergen_alert}</span>
-            </div>
-          )}
-
-          {chip?.disclosure && (
-            <div style={{ marginTop: 8, fontSize: 11, color: "#93a0b2", fontStyle: "italic", lineHeight: 1.45 }}>
-              {chip.disclosure}
-            </div>
-          )}
+    <div style={{ paddingTop: 4 }}>
+      {rows.map((r) => <BarRow key={r.label} label={r.label} pct={r.pct} valueLabel={r.value} color={r.color} />)}
+      {chip?.allergen_alert && (
+        <div style={{ marginTop: 8, fontSize: 11.5, color: "#b36000", fontWeight: 600 }}>
+          ⚠ {chip.allergen_alert}
         </div>
       )}
+      {chip?.disclosure && (
+        <div style={{ marginTop: 4, fontSize: 11, color: "#93a0b2", fontStyle: "italic", lineHeight: 1.4 }}>
+          {chip.disclosure}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- Insights bar panel ---- */
+
+const SCORE_NORMALIZE = {
+  protein_strength: { max: 1,    color: "#8b5cf6" },
+  glycemic_impact:  { max: 150,  color: "#c0392b" },
+  sodium_risk:      { max: 2300, color: "#e07b39" },
+  lasting_energy:   { max: 200,  color: "#1a9a4a" },
+};
+
+const SCORE_LABELS = {
+  protein_strength: "Protein Strength",
+  glycemic_impact:  "Glycemic Impact",
+  sodium_risk:      "Sodium Risk",
+  lasting_energy:   "Lasting Energy",
+};
+
+function InsightBarPanel({ item }) {
+  const chips = item?.chips || {};
+  const scores = chips?.insights?.scores || {};
+  const rows = [];
+
+  for (const [key, meta] of Object.entries(SCORE_NORMALIZE)) {
+    const s = scores[key];
+    if (!s || s.score == null || !Number.isFinite(Number(s.score))) continue;
+    const pct = Math.min(100, (Number(s.score) / meta.max) * 100);
+    rows.push({ key, label: SCORE_LABELS[key], pct, valueLabel: s.level || "", color: meta.color });
+  }
+
+  if (!rows.length) return <div style={{ fontSize: 12, opacity: 0.55 }}>No insight data yet.</div>;
+
+  return (
+    <div style={{ paddingTop: 4 }}>
+      {rows.map((r) => <BarRow key={r.key} label={r.label} pct={r.pct} valueLabel={r.valueLabel} color={r.color} />)}
     </div>
   );
 }
@@ -422,7 +390,7 @@ export default function MenuItemDetailPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [rawItem, setRawItem] = useState(null);
-  const [tab, setTab] = useState("insights");
+  const [tab, setTab] = useState(null);
 
   const item = useMemo(
     () => (rawItem ? normalizeResultItem(rawItem) : null),
@@ -629,47 +597,20 @@ export default function MenuItemDetailPage() {
 
         <div style={{ marginTop: 14, borderTop: "1px solid rgba(0,0,0,0.08)", paddingTop: 12 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-            <TabButton active={tab === "insights"} onClick={() => setTab("insights")}>
+            <TabButton active={tab === "insights"} onClick={() => setTab(t => t === "insights" ? null : "insights")}>
               Insights
             </TabButton>
-            <TabButton active={tab === "nutrition"} onClick={() => setTab("nutrition")}>
+            <TabButton active={tab === "nutrition"} onClick={() => setTab(t => t === "nutrition" ? null : "nutrition")}>
               Nutrition
             </TabButton>
-            <TabButton active={tab === "ingredients"} onClick={() => setTab("ingredients")}>
-              Ingredients
+            <TabButton active={tab === "similar"} onClick={() => setTab(t => t === "similar" ? null : "similar")}>
+              Similar
             </TabButton>
           </div>
 
-          {tab === "insights" && (
-            <>
-              <InsightCardDeck item={insightsItem} />
-              <FindSimilar itemId={item?.id} isMobile={isMobile} />
-            </>
-          )}
-
-          {tab === "nutrition" && (
-            <CollapsibleNutritionCard chip={insightsItem?.chips?.nutrition_chip || null} />
-          )}
-
-          {tab === "ingredients" && (
-            <div style={{ fontSize: 14, opacity: 0.9 }}>
-              {item.ingredients ? (
-                Array.isArray(item.ingredients) ? (
-                  <ul style={{ margin: 0, paddingLeft: 18 }}>
-                    {item.ingredients.map((ing, idx) => (
-                      <li key={idx} style={{ marginBottom: 6, wordBreak: "break-word" }}>
-                        {typeof ing === "object" && ing !== null ? String(ing.name || "") : String(ing)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div style={{ wordBreak: "break-word" }}>{String(item.ingredients)}</div>
-                )
-              ) : (
-                <div style={{ opacity: 0.75 }}>Ingredients coming soon.</div>
-              )}
-            </div>
-          )}
+          {tab === "insights" && <InsightBarPanel item={insightsItem} />}
+          {tab === "nutrition" && <NutritionBarPanel chip={insightsItem?.chips?.nutrition_chip || null} />}
+          {tab === "similar" && <FindSimilar itemId={item?.id} isMobile={isMobile} />}
         </div>
       </div>
     </div>

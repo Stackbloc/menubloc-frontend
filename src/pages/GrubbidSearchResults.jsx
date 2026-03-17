@@ -21,9 +21,8 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
-import { BackButton } from "../components/NavButton.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -767,18 +766,37 @@ export default function GrubbidSearchResults() {
     topRow: {
       display: "flex",
       alignItems: "center",
-      gap: 12,
-      marginBottom: isMobile ? 20 : 28,
+      justifyContent: "space-between",
+      marginBottom: isMobile ? 16 : 22,
     },
     wordmark: {
-      fontSize: isMobile ? 16 : 18,
-      fontWeight: 800,
+      fontSize: isMobile ? 17 : 19,
+      fontWeight: 900,
       color: "#11211a",
+      textDecoration: "none",
+      letterSpacing: "-0.02em",
+    },
+    backBtn: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 5,
+      fontSize: 13,
+      fontWeight: 600,
+      color: "#475467",
+      background: "rgba(0,0,0,0.04)",
+      border: "1px solid rgba(0,0,0,0.09)",
+      borderRadius: 999,
+      padding: "5px 12px",
+      cursor: "pointer",
+      textDecoration: "none",
+    },
+    searchContext: {
+      marginBottom: isMobile ? 14 : 18,
     },
     title: {
-      margin: "14px 0 0",
-      fontSize: isMobile ? 22 : 28,
-      lineHeight: 1.15,
+      margin: 0,
+      fontSize: isMobile ? 20 : 24,
+      lineHeight: 1.2,
       fontWeight: 900,
       letterSpacing: "-0.02em",
       color: "#11211a",
@@ -787,22 +805,15 @@ export default function GrubbidSearchResults() {
     titleQuery: {
       color: "#11211a",
     },
-    locationLine: {
+    subtitle: {
       marginTop: 4,
       color: "#667085",
       fontSize: isMobile ? 13 : 14,
-      fontWeight: 700,
-      lineHeight: 1.4,
-    },
-    meta: {
-      marginTop: 6,
-      color: "#667085",
-      fontSize: isMobile ? 13 : 14,
-      fontWeight: 600,
+      fontWeight: 500,
       lineHeight: 1.4,
     },
     filterBar: {
-      marginTop: 14,
+      marginTop: 12,
       display: "flex",
       gap: 8,
       flexWrap: "wrap",
@@ -853,37 +864,41 @@ export default function GrubbidSearchResults() {
   return (
     <div style={styles.page}>
     <div style={styles.wrap}>
+      {/* Nav bar */}
       <div style={styles.topRow}>
-        <div style={styles.wordmark}>Grubbid</div>
-        <BackButton />
+        <Link to="/" style={styles.wordmark}>Grubbid</Link>
+        <a
+          role="button"
+          onClick={() => navigate(-1)}
+          style={styles.backBtn}
+        >
+          ← Back
+        </a>
       </div>
 
-      <h1 style={styles.title}>
-        {q ? (
-          <>
-            Results for <span style={styles.titleQuery}>&quot;{q}&quot;</span>
-          </>
-        ) : (
-          "Search results"
-        )}
-      </h1>
-
-      {locationLabel && (
-        <div style={styles.locationLine}>
-          {locationLabel === "your current location"
-            ? "Showing results near your current location"
-            : `Showing results near ${locationLabel}`}
+      {/* Search context */}
+      <div style={styles.searchContext}>
+        <h1 style={styles.title}>
+          {q ? (
+            <>Results for <span style={styles.titleQuery}>&quot;{q}&quot;</span></>
+          ) : (
+            "Search results"
+          )}
+        </h1>
+        <div style={styles.subtitle}>
+          {[
+            locationLabel && locationLabel !== "your current location"
+              ? locationLabel
+              : locationLabel === "your current location"
+              ? "near you"
+              : null,
+            !loading && (hasMenuMatches
+              ? `${restaurantGroups.length} restaurant${restaurantGroups.length === 1 ? "" : "s"}`
+              : restaurantOnlyVisible.length
+              ? `${restaurantOnlyVisible.length} suggestion${restaurantOnlyVisible.length === 1 ? "" : "s"}`
+              : null),
+          ].filter(Boolean).join(" · ")}
         </div>
-      )}
-
-      <div style={styles.meta}>
-        {hasMenuMatches
-          ? `${restaurantGroups.length} restaurant${restaurantGroups.length === 1 ? "" : "s"} with menu matches`
-          : restaurantOnlyVisible.length
-          ? `${restaurantOnlyVisible.length} restaurant suggestion${restaurantOnlyVisible.length === 1 ? "" : "s"}`
-          : loading
-          ? ""
-          : "No matches yet."}
       </div>
 
       <div style={styles.filterBar}>

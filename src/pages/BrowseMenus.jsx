@@ -580,26 +580,16 @@ export default function BrowseMenus() {
               {loading ? (
                 <div
                   style={{
-                    display: "flex",
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
                     gap: 14,
-                    overflowX: "auto",
                     padding: "2px 4px 6px",
-                    scrollSnapType: "x proximity",
-                    WebkitOverflowScrolling: "touch",
                   }}
                 >
                   {[0, 1, 2, 3, 4, 5].map((card) => (
                     <div
                       key={card}
-                      style={{
-                        flex: "0 0 auto",
-                        width: isMobile ? "100%" : 260,
-                        minWidth: isMobile ? "100%" : 260,
-                        height: 148,
-                        borderRadius: 16,
-                        background: "rgba(0,0,0,0.06)",
-                        scrollSnapAlign: "start",
-                      }}
+                      style={{ height: 148, borderRadius: 16, background: "rgba(0,0,0,0.06)" }}
                     />
                   ))}
                 </div>
@@ -643,26 +633,19 @@ export default function BrowseMenus() {
               {!loading && !error && !hasDietaryFilter && menus.length > 0 ? (
                 <div
                   style={{
-                    display: "flex",
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
                     gap: 14,
-                    overflowX: "auto",
                     padding: "2px 4px 8px",
-                    scrollSnapType: "x proximity",
-                    WebkitOverflowScrolling: "touch",
                   }}
                 >
                   {visibleMenus.map((menu, index) => (
-                    <div
+                    <MenuPreviewCard
                       key={String(menu?.menu_id ?? menu?.restaurant_id ?? index)}
-                      style={{
-                        flex: "0 0 auto",
-                        width: isMobile ? "100%" : 260,
-                        minWidth: isMobile ? "100%" : 260,
-                        scrollSnapAlign: "start",
-                      }}
-                    >
-                      <MenuPreviewCard menu={menu} index={index} isMobile={isMobile} />
-                    </div>
+                      menu={menu}
+                      index={index}
+                      isMobile={isMobile}
+                    />
                   ))}
                 </div>
               ) : null}
