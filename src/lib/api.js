@@ -99,6 +99,15 @@ export async function getBrowseMenus(params = {}) {
   return apiGet(`/menus/browse?${search.toString()}`);
 }
 
+export async function getBrowseItems(params = {}) {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === null || value === undefined || value === "") return;
+    search.set(key, String(value));
+  });
+  return apiGet(`/menus/browse-items?${search.toString()}`);
+}
+
 export default {
   apiGet,
   apiPost,
@@ -106,5 +115,6 @@ export default {
   searchPublicMenu,
   getRestaurantMenu,
   getBrowseMenus,
+  getBrowseItems,
   toConsumerErrorMessage,
 };

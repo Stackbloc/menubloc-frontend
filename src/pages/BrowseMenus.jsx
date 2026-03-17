@@ -30,7 +30,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MenuPreviewCard from "../components/browse/MenuPreviewCard.jsx";
 import { PageNav } from "../components/NavButton.jsx";
-import { getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
+import { getBrowseMenus, getBrowseItems, toConsumerErrorMessage } from "../lib/api.js";
 
 
 function useIsMobile(breakpoint = 900) {
@@ -205,6 +205,7 @@ export default function BrowseMenus() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [menus, setMenus] = useState([]);
+  const [items, setItems] = useState([]);
   // Seed from URL so a shared/bookmarked link shows the label immediately
   const [locationLabel, setLocationLabel] = useState(() => {
     const parts = [urlCity, urlState].filter(Boolean);
@@ -234,9 +235,7 @@ export default function BrowseMenus() {
 
         if (hasCityStateParams) {
           // ── Mode 1: explicit city/state from URL ─────────────────
-          // Geolocation is NOT called. Send city+state to backend.
           setLocationLabel([urlCity, urlState].filter(Boolean).join(", "));
-
           apiParams = {
             city: urlCity,
             state: urlState,
@@ -245,14 +244,14 @@ export default function BrowseMenus() {
             deals: filters.deals ? 1 : "",
             vegan: filters.vegan ? 1 : "",
             vegetarian: filters.vegetarian ? 1 : "",
+            gluten_free: filters.gluten_free ? 1 : "",
+            dairy_free: filters.dairy_free ? 1 : "",
+            diabetic_friendly: filters.diabetic_friendly ? 1 : "",
           };
-
-          console.log("[BrowseMenus] mode: city_state", apiParams);
         } else {
           // ── Mode 2: browser geolocation ───────────────────────────
           const coords = await getUserCoords();
           if (cancelled) return;
-
           apiParams = {
             lat: coords.lat,
             lng: coords.lng,
@@ -262,43 +261,47 @@ export default function BrowseMenus() {
             deals: filters.deals ? 1 : "",
             vegan: filters.vegan ? 1 : "",
             vegetarian: filters.vegetarian ? 1 : "",
+            gluten_free: filters.gluten_free ? 1 : "",
+            dairy_free: filters.dairy_free ? 1 : "",
+            diabetic_friendly: filters.diabetic_friendly ? 1 : "",
           };
-
-          console.log("[BrowseMenus] mode:", coords.source, apiParams);
         }
 
-        const response = await getBrowseMenus(apiParams);
-        if (cancelled) return;
+        if (hasDietaryFilter) {
+          // ── Item-level view ───────────────────────────────────────
+          const response = await getBrowseItems(apiParams);
+          if (cancelled) return;
+          setItems(Array.isArray(response?.items) ? response.items : []);
+          setMenus([]);
+        } else {
+          // ── Restaurant card view ──────────────────────────────────
+          const response = await getBrowseMenus(apiParams);
+          if (cancelled) return;
 
-        const extractedMenus = extractMenus(response);
-        console.log(
-          "[BrowseMenus] received",
-          extractedMenus.length,
-          "menus, ids:",
-          extractedMenus.map((m) => m.restaurant_id)
-        );
-        const sorted = [...extractedMenus].sort((a, b) => {
-          const nameA = (a.restaurant_name || a.name || "").toLowerCase();
-          const nameB = (b.restaurant_name || b.name || "").toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-        setMenus(sorted);
+          const extractedMenus = extractMenus(response);
+          const sorted = [...extractedMenus].sort((a, b) => {
+            const nameA = (a.restaurant_name || a.name || "").toLowerCase();
+            const nameB = (b.restaurant_name || b.name || "").toLowerCase();
+            return nameA.localeCompare(nameB);
+          });
+          setMenus(sorted);
+          setItems([]);
 
-        // In city/state mode the URL is already authoritative — don't overwrite it.
-        // In geo mode, derive city/state from first result and push to URL.
-        if (!hasCityStateParams) {
-          const first = extractedMenus[0];
-          if (first?.city || first?.state) {
-            const city = first.city || "";
-            const state = first.state || "";
-            const label = [city, state].filter(Boolean).join(", ");
-            setLocationLabel(label);
-
-            if (city !== urlCity || state !== urlState) {
-              const next = new URLSearchParams(search);
-              if (city) next.set("city", city); else next.delete("city");
-              if (state) next.set("state", state); else next.delete("state");
-              navigate("?" + next.toString(), { replace: true });
+          // In city/state mode the URL is already authoritative.
+          // In geo mode, derive city/state from first result and push to URL.
+          if (!hasCityStateParams) {
+            const first = extractedMenus[0];
+            if (first?.city || first?.state) {
+              const city = first.city || "";
+              const state = first.state || "";
+              const label = [city, state].filter(Boolean).join(", ");
+              setLocationLabel(label);
+              if (city !== urlCity || state !== urlState) {
+                const next = new URLSearchParams(search);
+                if (city) next.set("city", city); else next.delete("city");
+                if (state) next.set("state", state); else next.delete("state");
+                navigate("?" + next.toString(), { replace: true });
+              }
             }
           }
         }
@@ -317,9 +320,12 @@ export default function BrowseMenus() {
     };
   // Re-run when the URL location or filters change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlCity, urlState, filters]);
+  }, [urlCity, urlState, filters, hasDietaryFilter]);
 
-  const showEmptyState = !loading && !error && menus.length === 0;
+  const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
+    filters.dairy_free || filters.diabetic_friendly || filters.deals;
+
+  const showEmptyState = !loading && !error && (hasDietaryFilter ? items.length === 0 : menus.length === 0);
 
   // ── Alpha range computation ────────────────────────────────────
   // Derive the unique first letters present in loaded menus, then
@@ -564,7 +570,10 @@ export default function BrowseMenus() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {visibleMenus.length} {visibleMenus.length === 1 ? "menu" : "menus"}
+                  {hasDietaryFilter
+                    ? `${items.length} ${items.length === 1 ? "item" : "items"}`
+                    : `${visibleMenus.length} ${visibleMenus.length === 1 ? "menu" : "menus"}`
+                  }
                 </div>
               </div>
 
@@ -630,7 +639,8 @@ export default function BrowseMenus() {
                 </section>
               ) : null}
 
-              {!loading && !error && menus.length > 0 ? (
+              {/* ── Restaurant card view (no dietary filter active) ── */}
+              {!loading && !error && !hasDietaryFilter && menus.length > 0 ? (
                 <div
                   style={{
                     display: "flex",
@@ -653,6 +663,59 @@ export default function BrowseMenus() {
                     >
                       <MenuPreviewCard menu={menu} index={index} isMobile={isMobile} />
                     </div>
+                  ))}
+                </div>
+              ) : null}
+
+              {/* ── Item-level view (dietary filter active) ── */}
+              {!loading && !error && hasDietaryFilter && items.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {items.map((item, idx) => (
+                    <a
+                      key={item.item_id ?? idx}
+                      href={`/public/restaurants/${item.restaurant_id}/menu`}
+                      style={{
+                        display: "block",
+                        textDecoration: "none",
+                        color: "inherit",
+                        padding: "12px 16px",
+                        borderRadius: 16,
+                        border: "1px solid rgba(18,34,28,0.08)",
+                        background: "#f7f6f1",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontSize: 14, fontWeight: 900, color: "#11211a", lineHeight: 1.2 }}>
+                            {item.name || "—"}
+                          </div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#667085", marginTop: 2 }}>
+                            {item.restaurant_name}
+                          </div>
+                          {item.description ? (
+                            <div style={{ fontSize: 12, color: "#475467", marginTop: 4, lineHeight: 1.45 }}>
+                              {item.description}
+                            </div>
+                          ) : null}
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                          {item.price ? (
+                            <div style={{ fontSize: 13, fontWeight: 900, color: "#11211a" }}>{item.price}</div>
+                          ) : null}
+                          <div style={{ display: "flex", gap: 4 }}>
+                            {item.is_vegan ? (
+                              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}>Vegan</span>
+                            ) : null}
+                            {item.is_gluten_free ? (
+                              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, background: "#fffbeb", color: "#92400e", border: "1px solid #fde68a" }}>GF</span>
+                            ) : null}
+                            {item.has_deal ? (
+                              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 999, background: "#dcfce7", color: "#15803d", border: "1px solid #bbf7d0" }}>Deal</span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    </a>
                   ))}
                 </div>
               ) : null}

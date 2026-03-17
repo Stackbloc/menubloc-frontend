@@ -22,7 +22,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { PageNav } from "../components/NavButton.jsx";
-import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -68,15 +67,6 @@ function PendingBanner({ text }) {
     </div>
   );
 }
-
-/* ---- Light-mode colors passed to MenuItemInsightsPanel ---- */
-const LIGHT_COLORS = {
-  panel2:  "#f6f6f7",
-  border:  "rgba(0,0,0,0.08)",
-  text:    "rgba(0,0,0,0.92)",
-  subtext: "rgba(0,0,0,0.55)",
-  chipBg:  "rgba(0,0,0,0.04)",
-};
 
 /* ---- Badge ---- */
 
@@ -312,25 +302,30 @@ export default function PublicMenuPage() {
                           ) : null}
                         </div>
 
-                        {/* Expanded panel area — always open */}
-                        <div
-                          style={{
-                            marginTop: 12,
-                            paddingTop: 12,
-                            borderTop: "1px solid rgba(18,34,28,0.07)",
-                          }}
-                        >
-                          <div
-                            style={{
-                              border: "1px solid rgba(18,34,28,0.07)",
-                              borderRadius: 14,
-                              background: "#f7f6f1",
-                              padding: "10px 12px",
-                            }}
-                          >
-                            <MenuItemInsightsPanel item={it} colors={LIGHT_COLORS} />
+                        {/* Allergen alert — shown when inferred from item name/description */}
+                        {it?.chips?.nutrition_chip?.allergen_alert && (
+                          <div style={{ marginTop: 8 }}>
+                            <div
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                                padding: "3px 10px",
+                                background: "rgba(230,130,0,0.07)",
+                                border: "1px solid rgba(230,130,0,0.2)",
+                                borderRadius: 999,
+                                fontSize: 12,
+                              }}
+                            >
+                              <span style={{ fontSize: 10, fontWeight: 900, color: "#b36000" }}>
+                                ⚠ Allergens
+                              </span>
+                              <span style={{ color: "#7c4a00", fontWeight: 600 }}>
+                                {it.chips.nutrition_chip.allergen_alert}
+                              </span>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     );
                   })}

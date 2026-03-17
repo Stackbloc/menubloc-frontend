@@ -2,7 +2,7 @@
  * ============================================================
  * File: GrubbidDiscovery.jsx
  * Path: menubloc-frontend/src/pages/GrubbidDiscovery.jsx
- * Date: 2026-03-15
+ * Date: 2026-03-17
  * Purpose:
  *   Search-first discovery page with automatic location detection.
  * ============================================================
@@ -11,7 +11,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const BROWSE_MENUS_PATH = "/browse-menus";
 const LOCAL_RADIUS_MILES = 8;
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
@@ -24,19 +23,6 @@ const CANDIDATE_SUGGESTED_SEARCHES = [
   "salad",
   "breakfast",
 ];
-
-function normalizeRows(json) {
-  if (!json) return [];
-  if (Array.isArray(json.results)) return json.results;
-  if (Array.isArray(json.rows)) return json.rows;
-  if (Array.isArray(json.menu_items)) return json.menu_items;
-  if (Array.isArray(json.restaurants)) return json.restaurants;
-  return [];
-}
-
-function hasSearchResults(json) {
-  return normalizeRows(json).length > 0;
-}
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(() => {
@@ -68,16 +54,17 @@ const US_STATE_ABBREVS = new Set([
 
 function parseLocation(rawValue) {
   const raw = String(rawValue || "").trim();
-  if (!raw) return { zip: "", city: "", near: "", label: "" };
+  if (!raw) return { zip: "", city: "", state: "", near: "", label: "" };
   if (/^\d{5}(?:-\d{4})?$/.test(raw)) {
-    return { zip: raw, city: "", near: "", label: raw };
+    return { zip: raw, city: "", state: "", near: "", label: raw };
   }
 
   // Handle "City, ST" format (with comma)
   const parts = raw.split(",");
   if (parts.length >= 2) {
     const city = String(parts[0] || "").trim();
-    return { zip: "", city, near: "", label: raw };
+    const state = String(parts[1] || "").trim().toUpperCase();
+    return { zip: "", city, state, near: "", label: raw };
   }
 
   // Handle "City ST" format (no comma) — strip trailing 2-letter state abbreviation
@@ -85,10 +72,10 @@ function parseLocation(rawValue) {
   const last = tokens[tokens.length - 1].toLowerCase();
   if (tokens.length >= 2 && US_STATE_ABBREVS.has(last)) {
     const city = tokens.slice(0, -1).join(" ");
-    return { zip: "", city, near: "", label: raw };
+    return { zip: "", city, state: last.toUpperCase(), near: "", label: raw };
   }
 
-  return { zip: "", city: raw, near: "", label: raw };
+  return { zip: "", city: raw, state: "", near: "", label: raw };
 }
 
 function FilterChip({ label, active, onClick }) {
@@ -193,7 +180,7 @@ export default function GrubbidDiscovery() {
     if (typeof window === "undefined") return "";
     return String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim();
   });
-  const [suggestedSearches, setSuggestedSearches] = useState([]);
+  const [suggestedSearches] = useState(CANDIDATE_SUGGESTED_SEARCHES);
   const [filters, setFilters] = useState({
     dairy_free: false,
     diabetic_friendly: false,
@@ -227,6 +214,7 @@ export default function GrubbidDiscovery() {
     const explicitLocation = parseLocation(explicitLocationValue);
     if (explicitLocation.zip) params.set("zip", explicitLocation.zip);
     if (explicitLocation.city) params.set("city", explicitLocation.city);
+    if (explicitLocation.state) params.set("state", explicitLocation.state);
     if (explicitLocation.near) params.set("near", explicitLocation.near);
     if (explicitLocation.label) params.set("location_label", explicitLocation.label);
 
@@ -239,39 +227,6 @@ export default function GrubbidDiscovery() {
 
     return params;
   }
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadSuggestedSearches() {
-      const verified = [];
-
-      for (const candidate of CANDIDATE_SUGGESTED_SEARCHES) {
-        try {
-          const params = buildSearchParams(candidate, { includeFilters: false });
-          params.set("limit", "1");
-
-          const res = await fetch(`${API}/search?${params.toString()}`, {
-            credentials: "include",
-          });
-          const json = await res.json().catch(() => ({}));
-
-          if (!cancelled && res.ok && json?.ok && hasSearchResults(json)) {
-            verified.push(candidate);
-          }
-        } catch {}
-
-        if (verified.length >= 4) break;
-      }
-
-      if (!cancelled) setSuggestedSearches(verified);
-    }
-
-    loadSuggestedSearches();
-    return () => {
-      cancelled = true;
-    };
-  }, [appliedLocation, autoLocation.lat, autoLocation.lng]);
 
   function runSearch(queryValue = query) {
     const params = buildSearchParams(queryValue, {

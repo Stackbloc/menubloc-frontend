@@ -1,27 +1,31 @@
 /**
  * InsightCardDeck.jsx
  * Path: menubloc-frontend/src/components/InsightCardDeck.jsx
+ * Date: 2026-03-17
  *
  * Compact, navigable insight card deck.
  *
- * Real data sources only:
- *   chips.insights.phrases  — contextual labels computed by the backend
- *                             (High Protein, Best Value, Low Calorie)
- *   chips.insights.items    — raw insight records from v_menu_item_insights_summary
- *                             (only surfaced when they carry a title + descriptive text)
- *   chips.nutrition_chip    — numeric context backing phrase cards
+ * Real data sources only — two card categories:
+ *
+ *   1. Phrase cards (contextual/comparative, section-relative)
+ *      Source: chips.insights.phrases  → ["High Protein", "Best Value", "Low Calorie"]
+ *      Numeric backing: chips.nutrition_chip
+ *
+ *   2. Score cards (absolute, computed from nutrition macros)
+ *      Source: chips.insights.scores   → { protein_strength, glycemic_impact,
+ *                                          sodium_risk, lasting_energy }
+ *      Each score is { score: number|null, level: "low"|"moderate"|"high"|null }
+ *
+ *   3. Insight item cards (from v_menu_item_insights_summary when populated)
+ *      Source: chips.insights.items    → [{ title, reason/description }]
  *
  * Returns null when no real cards can be built.
  * No fake data. No placeholder text. No invented metrics.
- *
- * Works on:
- *   - Restaurant Menu Page  (receives colors prop from parent)
- *   - Search Results Page   (omit colors; falls back to CSS variables)
  */
 
 import { useState } from "react";
 
-/* ---- Chip resolver (handles top-level or nested item shape) ---- */
+/* ---- Chip resolver ---- */
 
 function resolveChips(item) {
   return item?.chips || item?.item?.chips || {};
@@ -33,13 +37,7 @@ function asN(v) {
 }
 
 /* ---- Phrase-card metadata ---- */
-/*
- * Each known phrase maps to:
- *   accent     — colored stripe + headline tint
- *   bg         — semi-transparent card face (works in dark + light)
- *   statsFrom  — derives numeric stat from nutrition_chip (or null)
- *   fallback   — shown when no numeric backing exists
- */
+
 const PHRASE_META = {
   "High Protein": {
     accent: "#1a9a4a",
@@ -79,6 +77,82 @@ const PHRASE_META = {
   },
 };
 
+/* ---- Score-card metadata ---- */
+/*
+ * Each score key maps to:
+ *   label       — display name
+ *   accent(lvl) — color function keyed on level ("low"|"moderate"|"high")
+ *   bg(lvl)     — semi-transparent card bg
+ *   format(s)   — formats the raw score value for display
+ *   valueLabel  — unit / short description shown beside the number
+ *   subLine(s)  — secondary line (can use level)
+ */
+
+const LEVEL_COLORS = {
+  protein_strength: {
+    low:      { accent: "#8b5cf6", bg: "rgba(139,92,246,0.1)" },
+    moderate: { accent: "#6d28d9", bg: "rgba(109,40,217,0.1)" },
+    high:     { accent: "#4c1d95", bg: "rgba(76,29,149,0.1)" },
+  },
+  glycemic_impact: {
+    low:      { accent: "#0e8a7a", bg: "rgba(14,138,122,0.1)" },
+    moderate: { accent: "#b87a00", bg: "rgba(184,122,0,0.1)"  },
+    high:     { accent: "#c0392b", bg: "rgba(192,57,43,0.1)"  },
+  },
+  sodium_risk: {
+    low:      { accent: "#0e8a7a", bg: "rgba(14,138,122,0.1)" },
+    moderate: { accent: "#b87a00", bg: "rgba(184,122,0,0.1)"  },
+    high:     { accent: "#c0392b", bg: "rgba(192,57,43,0.1)"  },
+  },
+  lasting_energy: {
+    low:      { accent: "#8b5cf6", bg: "rgba(139,92,246,0.1)" },
+    moderate: { accent: "#1d6fc2", bg: "rgba(29,111,194,0.1)" },
+    high:     { accent: "#1a9a4a", bg: "rgba(26,154,74,0.1)"  },
+  },
+};
+
+const SCORE_META = {
+  protein_strength: {
+    label: "Protein Strength",
+    format: (s) => `${(s.score * 100).toFixed(1)}%`,
+    valueLabel: "protein efficiency",
+    subLine: (s) => {
+      const map = { low: "Low protein relative to calories", moderate: "Moderate protein density", high: "High protein density" };
+      return map[s.level] || null;
+    },
+  },
+  glycemic_impact: {
+    label: "Glycemic Impact",
+    format: (s) => String(Math.round(s.score)),
+    valueLabel: "impact score",
+    subLine: (s) => {
+      const map = { low: "Low blood-sugar impact", moderate: "Moderate blood-sugar impact", high: "High blood-sugar impact" };
+      return map[s.level] || null;
+    },
+  },
+  sodium_risk: {
+    label: "Sodium",
+    format: (s) => `${s.score}mg`,
+    valueLabel: "per serving",
+    subLine: (s) => {
+      const map = { low: "Low sodium", moderate: "Moderate sodium", high: "High sodium — over 960mg" };
+      return map[s.level] || null;
+    },
+  },
+  lasting_energy: {
+    label: "Lasting Energy",
+    format: (s) => String(s.score),
+    valueLabel: "satiety score",
+    subLine: (s) => {
+      const map = { low: "Low satiety potential", moderate: "Moderate satiety", high: "High satiety — keeps you full" };
+      return map[s.level] || null;
+    },
+  },
+};
+
+// Ordered as the user wants to see them
+const SCORE_ORDER = ["protein_strength", "glycemic_impact", "sodium_risk", "lasting_energy"];
+
 const FALLBACK_META = { accent: "#4e6a8f", bg: "rgba(78,106,143,0.1)" };
 
 /* ---- Card builder ---- */
@@ -107,7 +181,29 @@ export function buildInsightCards(item) {
     });
   }
 
-  // 2. Insight item cards — only when they carry a real title AND descriptive text
+  // 2. Score cards — absolute values computed from nutrition macros
+  const scores = insights.scores || {};
+  for (const key of SCORE_ORDER) {
+    const s = scores[key];
+    if (!s || s.score === null || !Number.isFinite(s.score)) continue;
+
+    const meta = SCORE_META[key];
+    const levelColors = (LEVEL_COLORS[key] || {})[s.level] || FALLBACK_META;
+
+    cards.push({
+      id: `score-${key}`,
+      headline: meta.label,
+      accent: levelColors.accent,
+      bg: levelColors.bg,
+      stats: {
+        value: meta.format(s),
+        label: meta.valueLabel,
+        sub: meta.subLine(s),
+      },
+    });
+  }
+
+  // 3. Insight item cards — only when they carry a real title AND descriptive text
   const items = Array.isArray(insights.items) ? insights.items.filter(Boolean) : [];
   for (const it of items) {
     const title = String(it?.title || it?.label || "").trim();
@@ -189,7 +285,7 @@ export default function InsightCardDeck({ item, colors }) {
           {card.headline}
         </div>
 
-        {/* Numeric stat (phrase cards with real backing) */}
+        {/* Numeric stat */}
         {card.stats && (
           <>
             <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
@@ -217,7 +313,7 @@ export default function InsightCardDeck({ item, colors }) {
           </div>
         )}
 
-        {/* Detail text (insight item cards with real description) */}
+        {/* Detail text (insight item cards) */}
         {card.detail && (
           <div style={{ fontSize: 12.5, color: C.subtext, lineHeight: 1.4 }}>
             {card.detail}

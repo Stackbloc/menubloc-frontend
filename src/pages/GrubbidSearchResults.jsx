@@ -20,7 +20,7 @@
  * ============================================================
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
 import { BackButton } from "../components/NavButton.jsx";
@@ -28,6 +28,7 @@ import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
+const SEARCH_SESSION_KEY = "grubbid.search.session_id";
 
 /* ---- Mobile hook ---- */
 
@@ -97,16 +98,17 @@ const US_STATE_ABBREVS = new Set([
 
 function parseLocation(rawValue) {
   const raw = String(rawValue || "").trim();
-  if (!raw) return { zip: "", city: "", near: "", label: "" };
+  if (!raw) return { zip: "", city: "", state: "", near: "", label: "" };
   if (/^\d{5}(?:-\d{4})?$/.test(raw)) {
-    return { zip: raw, city: "", near: "", label: raw };
+    return { zip: raw, city: "", state: "", near: "", label: raw };
   }
 
   // Handle "City, ST" format (with comma)
   const parts = raw.split(",");
   if (parts.length >= 2) {
     const city = String(parts[0] || "").trim();
-    return { zip: "", city, near: "", label: raw };
+    const state = String(parts[1] || "").trim().toUpperCase();
+    return { zip: "", city, state, near: "", label: raw };
   }
 
   // Handle "City ST" format (no comma) — strip trailing 2-letter state abbreviation
@@ -114,10 +116,63 @@ function parseLocation(rawValue) {
   const last = tokens[tokens.length - 1].toLowerCase();
   if (tokens.length >= 2 && US_STATE_ABBREVS.has(last)) {
     const city = tokens.slice(0, -1).join(" ");
-    return { zip: "", city, near: "", label: raw };
+    return { zip: "", city, state: last.toUpperCase(), near: "", label: raw };
   }
 
-  return { zip: "", city: raw, near: "", label: raw };
+  return { zip: "", city: raw, state: "", near: "", label: raw };
+}
+
+function getOrCreateSearchSessionId() {
+  if (typeof window === "undefined") return "";
+
+  const existing = String(window.sessionStorage.getItem(SEARCH_SESSION_KEY) || "").trim();
+  if (existing) return existing;
+
+  const created =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `search-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  window.sessionStorage.setItem(SEARCH_SESSION_KEY, created);
+  return created;
+}
+
+function compactObject(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map(compactObject)
+      .filter((item) => item !== undefined);
+  }
+
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const [key, nextValue] of Object.entries(value)) {
+      const compacted = compactObject(nextValue);
+      if (compacted !== undefined) out[key] = compacted;
+    }
+    return Object.keys(out).length ? out : undefined;
+  }
+
+  if (value === undefined || value === null || value === "") return undefined;
+  return value;
+}
+
+function buildVisibleResultSignature(json) {
+  const rows = normalizeRows(json);
+  return rows
+    .slice(0, 50)
+    .map((row) => {
+      const menuItemId = asString(pickFirst(row, ["menu_item_id", "menuItemId", "id"], ""));
+      const restaurantId = asString(
+        pickFirst(row, ["restaurant_id", "restaurantId"], "")
+      );
+      const name = asString(
+        pickFirst(row, ["menu_item_name", "menuItemName", "restaurant_name", "name"], "")
+      ).toLowerCase();
+
+      return [menuItemId, restaurantId, name].join(":");
+    })
+    .join("|");
 }
 
 function isDishRow(x) {
@@ -359,27 +414,34 @@ export default function GrubbidSearchResults() {
   const deals_only = params.get("deals_only") === "1";
   const routeZip = String(params.get("zip") || "").trim();
   const routeCity = String(params.get("city") || "").trim();
+  const routeState = String(params.get("state") || "").trim();
   const routeNear = String(params.get("near") || "").trim();
   const routeLocationLabel = String(params.get("location_label") || "").trim();
   const routeLat = params.get("lat");
   const routeLng = params.get("lng");
   const routeRadiusMiles = params.get("radius_miles");
+  const routeMetroId = String(params.get("metro_id") || "").trim();
   const vegetarian = params.get("vegetarian") === "1";
   const fallbackLocation = useMemo(() => {
-    if (routeZip || routeCity || routeNear || routeLocationLabel) {
+    if (routeZip || routeCity || routeState || routeNear || routeLocationLabel) {
       return {
         zip: routeZip,
         city: routeCity,
+        state: routeState,
         near: routeNear,
         label: routeLocationLabel,
       };
     }
     return parseLocation(sessionLocation);
-  }, [routeZip, routeCity, routeNear, routeLocationLabel, sessionLocation]);
+  }, [routeZip, routeCity, routeState, routeNear, routeLocationLabel, sessionLocation]);
   const zip = fallbackLocation.zip;
   const city = fallbackLocation.city;
+  const state = fallbackLocation.state;
   const near = fallbackLocation.near;
   const explicitLocationLabel = fallbackLocation.label;
+  const sessionId = useMemo(() => getOrCreateSearchSessionId(), []);
+  const trackedEventKeysRef = useRef(new Set());
+  const sortMode = String(params.get("sort") || "default_relevance").trim() || "default_relevance";
 
   const [rows, setRows] = useState([]);
   const [searchMeta, setSearchMeta] = useState(null);
@@ -397,6 +459,7 @@ export default function GrubbidSearchResults() {
     if (vegetarian) u.searchParams.set("vegetarian", "1");
     if (zip) u.searchParams.set("zip", zip);
     if (city) u.searchParams.set("city", city);
+    if (state) u.searchParams.set("state", state);
     if (near) u.searchParams.set("near", near);
 
     // Save the base URL (no geo) for fallback use
@@ -429,6 +492,7 @@ export default function GrubbidSearchResults() {
     vegetarian,
     zip,
     city,
+    state,
     near,
     routeLat,
     routeLng,
@@ -442,11 +506,121 @@ export default function GrubbidSearchResults() {
   useEffect(() => {
     let alive = true;
 
+    const startedAt = new Date().toISOString();
+
     async function fetchSearch(url) {
       const res = await fetch(url, { credentials: "include" });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.ok) throw new Error(json?.error || `HTTP ${res.status}`);
       return json;
+    }
+
+    async function trackSearchEvent(resultJson, fallbackUsed) {
+      if (!q) return;
+
+      const routeLatNum = routeLat != null ? Number(routeLat) : null;
+      const routeLngNum = routeLng != null ? Number(routeLng) : null;
+      const routeRadiusNum = routeRadiusMiles != null ? Number(routeRadiusMiles) : null;
+      const hasExplicitTarget = Boolean(zip || city || near);
+
+      const targetLat =
+        !hasExplicitTarget && Number.isFinite(routeLatNum)
+          ? routeLatNum
+          : !hasExplicitTarget && Number.isFinite(geo.lat)
+          ? geo.lat
+          : null;
+      const targetLng =
+        !hasExplicitTarget && Number.isFinite(routeLngNum)
+          ? routeLngNum
+          : !hasExplicitTarget && Number.isFinite(geo.lng)
+          ? geo.lng
+          : null;
+      const targetRadiusMiles =
+        !hasExplicitTarget && Number.isFinite(routeRadiusNum) && routeRadiusNum > 0
+          ? routeRadiusNum
+          : !hasExplicitTarget && targetLat !== null && targetLng !== null
+          ? 8
+          : null;
+
+      const originLat =
+        Number.isFinite(geo.lat)
+          ? geo.lat
+          : Number.isFinite(routeLatNum)
+          ? routeLatNum
+          : null;
+      const originLng =
+        Number.isFinite(geo.lng)
+          ? geo.lng
+          : Number.isFinite(routeLngNum)
+          ? routeLngNum
+          : null;
+
+      const originFallback = parseLocation(
+        routeLocationLabel || explicitLocationLabel || sessionLocation || ""
+      );
+
+      const targetCity = city || near || originFallback.city || "";
+      const targetState = state || originFallback.state || "";
+
+      const payload = compactObject({
+        searchOrigin: {
+          lat: originLat,
+          lng: originLng,
+          city: originFallback.city || null,
+          state: originFallback.state || null,
+        },
+        searchTarget: {
+          city: targetCity || null,
+          state: targetState || null,
+          metroId: routeMetroId || null,
+          lat: targetLat,
+          lng: targetLng,
+          radiusMiles: targetRadiusMiles,
+        },
+        filters: {
+          vegan,
+          vegetarian,
+          gluten_free,
+          deals_only,
+        },
+        sortMode,
+        resultCount: normalizeRows(resultJson).length,
+        geoFallbackUsed: fallbackUsed === true,
+      });
+
+      if (!payload) return;
+
+      const eventKey = JSON.stringify({
+        q,
+        sessionId,
+        sortMode,
+        fallbackUsed: fallbackUsed === true,
+        searchOrigin: payload.searchOrigin || null,
+        searchTarget: payload.searchTarget || null,
+        filters: payload.filters || null,
+        resultCount: payload.resultCount ?? 0,
+        visibleResults: buildVisibleResultSignature(resultJson),
+      });
+
+      if (trackedEventKeysRef.current.has(eventKey)) return;
+      trackedEventKeysRef.current.add(eventKey);
+
+      try {
+        await fetch(`${API}/search/track`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query_text: q,
+            occurred_at: startedAt,
+            session_id: sessionId || null,
+            metro_id: routeMetroId || null,
+            event_payload_json: payload,
+          }),
+        });
+      } catch (trackingError) {
+        console.error("search tracking failed:", trackingError);
+      }
     }
 
     async function run() {
@@ -456,16 +630,19 @@ export default function GrubbidSearchResults() {
 
       try {
         let json = await fetchSearch(primaryUrl);
+        let usedFallback = false;
 
         // If geo filter produced 0 results, retry without geo
         if (hasGeoFilter && fallbackUrl !== primaryUrl && normalizeRows(json).length === 0) {
           json = await fetchSearch(fallbackUrl);
+          usedFallback = true;
           if (alive) setGeoFallbackUsed(true);
         }
 
         if (!alive) return;
         setRows(normalizeRows(json));
         setSearchMeta(json?.search_meta || null);
+        void trackSearchEvent(json, usedFallback);
       } catch (e) {
         if (!alive) return;
         setErr(
@@ -485,7 +662,31 @@ export default function GrubbidSearchResults() {
     return () => {
       alive = false;
     };
-  }, [primaryUrl, fallbackUrl, hasGeoFilter]);
+  }, [
+    primaryUrl,
+    fallbackUrl,
+    hasGeoFilter,
+    q,
+    zip,
+    city,
+    state,
+    near,
+    routeLat,
+    routeLng,
+    routeRadiusMiles,
+    routeLocationLabel,
+    routeMetroId,
+    vegan,
+    vegetarian,
+    gluten_free,
+    deals_only,
+    geo.lat,
+    geo.lng,
+    explicitLocationLabel,
+    sessionLocation,
+    sessionId,
+    sortMode,
+  ]);
 
   const dishRows = useMemo(() => rows.filter(isDishRow), [rows]);
   const restaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);

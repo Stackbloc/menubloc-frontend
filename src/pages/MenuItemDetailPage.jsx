@@ -26,6 +26,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { BackButton, HomeButton } from "../components/NavButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
+import NutritionCard from "../components/NutritionCard.jsx";
 
 const BACKEND_BASE = import.meta?.env?.VITE_BACKEND_URL || "http://localhost:3001";
 
@@ -517,20 +518,13 @@ export default function MenuItemDetailPage() {
           )}
 
           {tab === "nutrition" && (
-            <div style={{ fontSize: 14, opacity: 0.9 }}>
-              {item.nutrition ? (
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                    overflowX: "auto",
-                  }}
-                >
-                  {JSON.stringify(item.nutrition, null, 2)}
-                </pre>
+            <div>
+              {insightsItem?.chips?.nutrition_chip ? (
+                <NutritionCard chip={insightsItem.chips.nutrition_chip} />
               ) : (
-                <div style={{ opacity: 0.75 }}>Nutrition coming soon.</div>
+                <div style={{ fontSize: 14, opacity: 0.75 }}>
+                  Nutrition info not available for this item yet.
+                </div>
               )}
             </div>
           )}
