@@ -21,8 +21,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+
+function useIsMobile(breakpoint = 900) {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth <= breakpoint : false
+  );
+  useEffect(() => {
+    function onResize() { setIsMobile(window.innerWidth <= breakpoint); }
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [breakpoint]);
+  return isMobile;
+}
 import { PageNav } from "../components/NavButton.jsx";
-import { loadDietPrefs, hasActiveDietPrefs, activePrefLabels, itemPassesDietFilter, clearDietPrefs } from "../hooks/useDietPreferences";
+import { loadDietPrefs, saveDietPrefs, hasActiveDietPrefs, activePrefLabels, itemPassesDietFilter, clearDietPrefs } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -83,6 +95,43 @@ function UnverifiedBanner({ show, onClaim }) {
   );
 }
 
+/* ---- Filter chip ---- */
+
+function FilterChip({ label, active, onClick, fullWidth }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        height: 40,
+        width: fullWidth ? "100%" : "auto",
+        padding: "0 16px",
+        borderRadius: 999,
+        border: active ? "1px solid #11211a" : "1px solid rgba(18,34,28,0.12)",
+        background: active ? "#11211a" : "#fff",
+        color: active ? "#f7f6f1" : "#667085",
+        fontSize: 13,
+        fontWeight: 800,
+        cursor: "pointer",
+        textAlign: "left",
+        boxSizing: "border-box",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+const DIET_CHIPS = [
+  { key: "dairy_free",        label: "Dairy Free" },
+  { key: "diabetic_friendly", label: "Diabetic Friendly" },
+  { key: "gluten_free",       label: "Gluten Free" },
+  { key: "keto",              label: "Keto" },
+  { key: "low_sodium",        label: "Low Sodium" },
+  { key: "vegan",             label: "Vegan" },
+  { key: "vegetarian",        label: "Vegetarian" },
+];
+
 /* ---- Badge ---- */
 
 function Badge({ label, bg, color, border }) {
@@ -115,6 +164,7 @@ function Badge({ label, bg, color, border }) {
 export default function PublicMenuPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const [pageState, setPageState] = useState({
     status: "loading", // loading | ok | error
@@ -124,7 +174,14 @@ export default function PublicMenuPage() {
 
   const [dietPrefs, setDietPrefs] = useState(() => loadDietPrefs());
   const filtersActive = hasActiveDietPrefs(dietPrefs);
-  const filterLabels = activePrefLabels(dietPrefs);
+
+  function handleTogglePref(key) {
+    setDietPrefs((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      saveDietPrefs(next);
+      return next;
+    });
+  }
 
   function handleClearFilters() {
     clearDietPrefs();
@@ -186,26 +243,15 @@ export default function PublicMenuPage() {
     return m;
   }, [pageState.data]);
 
-  /* ---- Shared wrapper styles ---- */
-
   const pageBg = { minHeight: "100vh", background: "#f7f6f1" };
-
-  const wrap = {
-    maxWidth: 820,
-    margin: "0 auto",
-    padding: "28px 18px 72px",
-    color: "#101828",
-  };
 
   /* ---- Loading ---- */
 
   if (pageState.status === "loading") {
     return (
       <div style={pageBg}>
-        <div style={wrap}>
-          <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>
-            Loading menu…
-          </div>
+        <div style={{ maxWidth: 1450, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
+          <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
         </div>
       </div>
     );
@@ -216,18 +262,12 @@ export default function PublicMenuPage() {
   if (pageState.status === "error") {
     return (
       <div style={pageBg}>
-      <div style={wrap}>
-        <PageNav back />
-        <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>
-          Couldn't load menu
+        <div style={{ maxWidth: 1450, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
+          <PageNav back />
+          <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>Couldn't load menu</div>
+          <div style={{ color: "var(--muted, #5b6675)", fontSize: 14 }}>{pageState.error}</div>
+          <div style={{ marginTop: 14, fontSize: 12, color: "var(--muted-2, #93a0b2)" }}>Endpoint: {apiUrl}</div>
         </div>
-        <div style={{ color: "var(--muted, #5b6675)", fontSize: 14 }}>
-          {pageState.error}
-        </div>
-        <div style={{ marginTop: 14, fontSize: 12, color: "var(--muted-2, #93a0b2)" }}>
-          Endpoint: {apiUrl}
-        </div>
-      </div>
       </div>
     );
   }
@@ -243,184 +283,180 @@ export default function PublicMenuPage() {
 
   return (
     <div style={pageBg}>
-    <div style={wrap}>
-      <PageNav back />
+      <div style={{
+        maxWidth: 1450,
+        margin: "0 auto",
+        padding: isMobile ? "16px 12px 56px" : "28px 20px 56px",
+        color: "#101828",
+      }}>
+        <PageNav back />
 
-      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", color: "#667085", marginBottom: 8 }}>
-        Grubbid
-      </div>
-      <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a" }}>
-        {restaurantName}
-      </div>
-
-      {addressLine ? (
-        <div style={{ marginTop: 6, fontSize: 14, color: "#667085", fontWeight: 600 }}>
-          {addressLine}
-        </div>
-      ) : null}
-
-      <UnverifiedBanner show={isUnverified} onClaim={() => navigate("/signup")} />
-
-      {/* Active dietary filter banner */}
-      {filtersActive && (
+        {/* Two-column layout: sidebar + menu content */}
         <div style={{
-          marginTop: 14,
           display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "9px 14px",
-          borderRadius: 12,
-          background: "#f0fdf4",
-          border: "1px solid #bbf7d0",
-          fontSize: 13,
-          fontWeight: 600,
-          color: "#166534",
-          flexWrap: "wrap",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: "flex-start",
+          gap: isMobile ? 16 : 24,
         }}>
-          <span style={{ fontWeight: 800 }}>Filtering:</span>
-          {filterLabels.map((l) => (
-            <span key={l} style={{
-              padding: "2px 9px",
-              borderRadius: 999,
-              background: "#dcfce7",
-              border: "1px solid #bbf7d0",
-              fontSize: 11,
-              fontWeight: 800,
-              color: "#15803d",
-            }}>{l}</span>
-          ))}
-          <button
-            onClick={handleClearFilters}
-            style={{
-              marginLeft: "auto",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: 700,
-              color: "#166534",
-              padding: "2px 6px",
-              borderRadius: 6,
-              textDecoration: "underline",
-            }}
-          >Clear preferences</button>
-        </div>
-      )}
 
-      {/* Sections */}
-      <div style={{ marginTop: 18 }}>
-        {sections.length === 0 ? (
-          <div style={{ fontSize: 14, color: "var(--muted, #5b6675)" }}>
-            No menu sections yet.
-          </div>
-        ) : filtersActive && sections.every((sec) => (Array.isArray(sec?.items) ? sec.items : []).filter((it) => itemPassesDietFilter(it, dietPrefs)).length === 0) ? (
-          <div style={{ fontSize: 14, color: "var(--muted, #5b6675)", padding: "24px 0" }}>
-            No items match your dietary preferences.{" "}
-            <button onClick={handleClearFilters} style={{ background: "none", border: "none", cursor: "pointer", color: "#2d6a4f", fontWeight: 700, fontSize: 14, padding: 0, textDecoration: "underline" }}>
-              Clear preferences
-            </button>
-          </div>
-        ) : (
-          sections.map((sec, sIdx) => {
-            const title = asStr(sec?.title || "Menu").trim();
-            const allItems = Array.isArray(sec?.items) ? sec.items : [];
-            const items = filtersActive
-              ? allItems.filter((it) => itemPassesDietFilter(it, dietPrefs))
-              : allItems;
-
-            // Skip sections where all items were filtered out
-            if (filtersActive && items.length === 0) return null;
-
-            return (
-              <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", color: "#667085", marginBottom: 10 }}>
-                  {title}
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {items.map((it, iIdx) => {
-                    const itemKey = String(it?.id ?? `${sIdx}-${iIdx}`);
-                    const name    = asStr(it?.name || "Item").trim();
-                    const desc    = asStr(it?.description || it?.notes || "").trim();
-                    const price   = fmtMoney(it?.price);
-                    const deal    = it?.id != null ? dealMap.get(it.id) : undefined;
-                    const hasDeal = !!deal;
-
-                    return (
-                      <div
-                        key={itemKey}
-                        style={{
-                          border: "1px solid rgba(18,34,28,0.08)",
-                          borderRadius: 20,
-                          background: "#fff",
-                          padding: "14px 18px",
-                          boxShadow: "0 4px 14px rgba(15,23,42,0.05)",
-                        }}
-                      >
-                        {/* Name + price row */}
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                              <span style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.2, color: "#11211a" }}>
-                                {name}
-                              </span>
-                              {hasDeal ? (
-                                <Badge label="Deal" bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" />
-                              ) : null}
-                              {it?.is_vegan ? (
-                                <Badge label="Vegan" bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" />
-                              ) : null}
-                              {it?.is_gluten_free ? (
-                                <Badge label="GF" bg="#fffbeb" color="#92400e" border="1px solid #fde68a" />
-                              ) : null}
-                            </div>
-                            {desc ? (
-                              <div style={{ marginTop: 4, fontSize: 13, color: "#475467", lineHeight: 1.5 }}>
-                                {desc}
-                              </div>
-                            ) : null}
-                          </div>
-                          {price ? (
-                            <div style={{ fontSize: 14, fontWeight: 900, whiteSpace: "nowrap", flexShrink: 0 }}>
-                              {price}
-                            </div>
-                          ) : null}
-                        </div>
-
-                        {/* Allergen alert — shown when inferred from item name/description */}
-                        {it?.chips?.nutrition_chip?.allergen_alert && (
-                          <div style={{ marginTop: 8 }}>
-                            <div
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 5,
-                                padding: "3px 10px",
-                                background: "rgba(230,130,0,0.07)",
-                                border: "1px solid rgba(230,130,0,0.2)",
-                                borderRadius: 999,
-                                fontSize: 12,
-                              }}
-                            >
-                              <span style={{ fontSize: 10, fontWeight: 900, color: "#b36000" }}>
-                                ⚠ Allergens
-                              </span>
-                              <span style={{ color: "#7c4a00", fontWeight: 600 }}>
-                                {it.chips.nutrition_chip.allergen_alert}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+          {/* ── Filter sidebar ── */}
+          <aside style={{
+            flex: isMobile ? "1 1 auto" : "0 0 260px",
+            width: isMobile ? "100%" : 260,
+            position: isMobile ? "static" : "sticky",
+            top: 18,
+            alignSelf: "flex-start",
+            minWidth: 0,
+          }}>
+            <div style={{
+              borderRadius: 24,
+              padding: isMobile ? 14 : 18,
+              background: "#fff",
+              border: "1px solid rgba(18,34,28,0.08)",
+              boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
+              boxSizing: "border-box",
+            }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color: "#11211a", marginBottom: 14 }}>
+                Dietary
               </div>
-            );
-          })
-        )}
+              <div style={{ display: "grid", gap: 10 }}>
+                {DIET_CHIPS.map(({ key, label }) => (
+                  <FilterChip
+                    key={key}
+                    label={label}
+                    active={dietPrefs[key]}
+                    onClick={() => handleTogglePref(key)}
+                    fullWidth
+                  />
+                ))}
+              </div>
+              {filtersActive && (
+                <button
+                  onClick={handleClearFilters}
+                  style={{
+                    marginTop: 12,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#667085",
+                    padding: 0,
+                    textDecoration: "underline",
+                  }}
+                >Clear all</button>
+              )}
+            </div>
+          </aside>
+
+          {/* ── Menu content ── */}
+          <main style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
+            {/* Restaurant header — sits above menu sections in the right column */}
+            <div style={{ marginBottom: isMobile ? 18 : 22 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", color: "#667085", marginBottom: 6 }}>
+                Grubbid
+              </div>
+              <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a" }}>
+                {restaurantName}
+              </div>
+              {addressLine ? (
+                <div style={{ marginTop: 6, fontSize: 14, color: "#667085", fontWeight: 600 }}>{addressLine}</div>
+              ) : null}
+            </div>
+
+            {sections.length === 0 ? (
+              <div style={{ fontSize: 14, color: "var(--muted, #5b6675)" }}>No menu sections yet.</div>
+            ) : filtersActive && sections.every((sec) => (Array.isArray(sec?.items) ? sec.items : []).filter((it) => itemPassesDietFilter(it, dietPrefs)).length === 0) ? (
+              <div style={{ fontSize: 14, color: "var(--muted, #5b6675)", padding: "24px 0" }}>
+                No items match your dietary preferences.{" "}
+                <button onClick={handleClearFilters} style={{ background: "none", border: "none", cursor: "pointer", color: "#2d6a4f", fontWeight: 700, fontSize: 14, padding: 0, textDecoration: "underline" }}>
+                  Clear preferences
+                </button>
+              </div>
+            ) : (
+              sections.map((sec, sIdx) => {
+                const title = asStr(sec?.title || "Menu").trim();
+                const allItems = Array.isArray(sec?.items) ? sec.items : [];
+                const items = filtersActive
+                  ? allItems.filter((it) => itemPassesDietFilter(it, dietPrefs))
+                  : allItems;
+
+                if (filtersActive && items.length === 0) return null;
+
+                return (
+                  <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 24 }}>
+                    <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", color: "#667085", marginBottom: 10 }}>
+                      {title}
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {items.map((it, iIdx) => {
+                        const itemKey = String(it?.id ?? `${sIdx}-${iIdx}`);
+                        const name    = asStr(it?.name || "Item").trim();
+                        const desc    = asStr(it?.description || it?.notes || "").trim();
+                        const price   = fmtMoney(it?.price);
+                        const deal    = it?.id != null ? dealMap.get(it.id) : undefined;
+                        const hasDeal = !!deal;
+
+                        return (
+                          <div
+                            key={itemKey}
+                            style={{
+                              border: "1px solid rgba(18,34,28,0.08)",
+                              borderRadius: 20,
+                              background: "#fff",
+                              padding: "14px 18px",
+                              boxShadow: "0 4px 14px rgba(15,23,42,0.05)",
+                            }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                  <span style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.2, color: "#11211a" }}>
+                                    {name}
+                                  </span>
+                                  {hasDeal ? <Badge label="Deal" bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" /> : null}
+                                  {it?.is_vegan ? <Badge label="Vegan" bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" /> : null}
+                                  {it?.is_gluten_free ? <Badge label="GF" bg="#fffbeb" color="#92400e" border="1px solid #fde68a" /> : null}
+                                </div>
+                                {desc ? (
+                                  <div style={{ marginTop: 4, fontSize: 13, color: "#475467", lineHeight: 1.5 }}>{desc}</div>
+                                ) : null}
+                              </div>
+                              {price ? (
+                                <div style={{ fontSize: 14, fontWeight: 900, whiteSpace: "nowrap", flexShrink: 0 }}>{price}</div>
+                              ) : null}
+                            </div>
+
+                            {it?.chips?.nutrition_chip?.allergen_alert && (
+                              <div style={{ marginTop: 8 }}>
+                                <div style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                  padding: "3px 10px",
+                                  background: "rgba(230,130,0,0.07)",
+                                  border: "1px solid rgba(230,130,0,0.2)",
+                                  borderRadius: 999,
+                                  fontSize: 12,
+                                }}>
+                                  <span style={{ fontSize: 10, fontWeight: 900, color: "#b36000" }}>⚠ Allergens</span>
+                                  <span style={{ color: "#7c4a00", fontWeight: 600 }}>{it.chips.nutrition_chip.allergen_alert}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </main>
+
+        </div>
       </div>
-    </div>
     </div>
   );
 }

@@ -128,6 +128,9 @@ export function itemPassesDietFilter(item, prefs) {
       if (sodium > 600) return false;
     }
   }
+  if (prefs.diabetic_friendly) {
+    if (item?.is_diabetic_friendly !== true) return false;
+  }
 
   return true;
 }
