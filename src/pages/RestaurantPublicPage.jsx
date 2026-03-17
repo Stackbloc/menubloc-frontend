@@ -268,7 +268,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
       <div
         style={{
           maxWidth: 860,
-          margin: "0 auto 18px",
+          margin: "0 auto 20px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -657,7 +657,7 @@ export default function RestaurantPublicPage() {
       <div
         style={{
           maxWidth: 680,
-          margin: "0 auto 18px",
+          margin: "0 auto 20px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",

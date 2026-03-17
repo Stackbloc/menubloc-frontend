@@ -21,7 +21,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { HomeButton } from "../components/NavButton.jsx";
+import { PageNav } from "../components/NavButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
@@ -173,14 +173,13 @@ export default function PublicMenuPage() {
 
   /* ---- Shared wrapper styles ---- */
 
-  const pageBg = { minHeight: "100vh" };
+  const pageBg = { minHeight: "100vh", background: "#f7f6f1" };
 
   const wrap = {
-    maxWidth: 980,
+    maxWidth: 820,
     margin: "0 auto",
-    padding: "22px 16px 60px",
-    fontFamily: "var(--font-ui)",
-    color: "var(--ink, #0f1720)",
+    padding: "28px 18px 72px",
+    color: "#101828",
   };
 
   /* ---- Loading ---- */
@@ -189,7 +188,7 @@ export default function PublicMenuPage() {
     return (
       <div style={pageBg}>
         <div style={wrap}>
-          <div style={{ fontSize: 14, color: "var(--muted, #5b6675)" }}>
+          <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>
             Loading menu…
           </div>
         </div>
@@ -203,9 +202,7 @@ export default function PublicMenuPage() {
     return (
       <div style={pageBg}>
       <div style={wrap}>
-        <div style={{ marginBottom: 10 }}>
-          <HomeButton />
-        </div>
+        <PageNav />
         <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>
           Couldn't load menu
         </div>
@@ -231,16 +228,17 @@ export default function PublicMenuPage() {
   return (
     <div style={pageBg}>
     <div style={wrap}>
-      <div style={{ marginBottom: 14 }}>
-        <HomeButton />
-      </div>
+      <PageNav />
 
-      <div style={{ fontSize: 28, fontWeight: 950, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", color: "#667085", marginBottom: 8 }}>
+        Grubbid
+      </div>
+      <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a" }}>
         {restaurantName}
       </div>
 
       {addressLine ? (
-        <div style={{ marginTop: 6, fontSize: 14, color: "var(--muted, #5b6675)" }}>
+        <div style={{ marginTop: 6, fontSize: 14, color: "#667085", fontWeight: 600 }}>
           {addressLine}
         </div>
       ) : null}
@@ -260,7 +258,7 @@ export default function PublicMenuPage() {
 
             return (
               <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 24 }}>
-                <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", color: "#667085", marginBottom: 10 }}>
                   {title}
                 </div>
 
@@ -277,17 +275,18 @@ export default function PublicMenuPage() {
                       <div
                         key={itemKey}
                         style={{
-                          border: "1px solid var(--border, #e4e9f0)",
-                          borderRadius: 14,
+                          border: "1px solid rgba(18,34,28,0.08)",
+                          borderRadius: 20,
                           background: "#fff",
-                          padding: "12px 14px",
+                          padding: "14px 18px",
+                          boxShadow: "0 4px 14px rgba(15,23,42,0.05)",
                         }}
                       >
                         {/* Name + price row */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                              <span style={{ fontSize: 15, fontWeight: 850, lineHeight: 1.2 }}>
+                              <span style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.2, color: "#11211a" }}>
                                 {name}
                               </span>
                               {hasDeal ? (
@@ -301,7 +300,7 @@ export default function PublicMenuPage() {
                               ) : null}
                             </div>
                             {desc ? (
-                              <div style={{ marginTop: 4, fontSize: 13, color: "var(--muted, #5b6675)", lineHeight: 1.35 }}>
+                              <div style={{ marginTop: 4, fontSize: 13, color: "#475467", lineHeight: 1.5 }}>
                                 {desc}
                               </div>
                             ) : null}
@@ -318,14 +317,14 @@ export default function PublicMenuPage() {
                           style={{
                             marginTop: 12,
                             paddingTop: 12,
-                            borderTop: "1px solid var(--border, #e4e9f0)",
+                            borderTop: "1px solid rgba(18,34,28,0.07)",
                           }}
                         >
                           <div
                             style={{
-                              border: "1px solid #dce4f2",
-                              borderRadius: 12,
-                              background: "#f8fbff",
+                              border: "1px solid rgba(18,34,28,0.07)",
+                              borderRadius: 14,
+                              background: "#f7f6f1",
                               padding: "10px 12px",
                             }}
                           >

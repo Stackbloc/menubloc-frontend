@@ -2,25 +2,34 @@
  * ============================================================
  * File: BrowseMenus.jsx
  * Path: menubloc-frontend/src/pages/BrowseMenus.jsx
- * Date: 2026-03-14
+ * Date: 2026-03-16
  * Purpose:
- *   Restore the Browse Menus / Netflix-style browser page so it
- *   works against the current backend requirement for lat/lng.
+ *   Browse Menus / Netflix-style browser page.
  *
- *   This revision:
- *   - Requests browser geolocation on load
- *   - Sends lat/lng to GET /menus/browse
- *   - Falls back to a local dev coordinate when location is unavailable
- *   - Keeps the Netflix-style horizontal browse rail
- *   - Keeps filter UI visible but disabled
- *   - Improves the empty-state message when no nearby menus are found
+ *   Search mode priority (explicit beats implicit):
+ *   1. If ?city= and ?state= are in the URL → city/state mode.
+ *      Geolocation is NOT called. Backend receives city+state params.
+ *      Subtitle: "Showing menus near Dothan, AL"
+ *   2. Otherwise → browser geolocation mode.
+ *      Backend receives lat/lng. Subtitle varies by result.
+ *
+ *   Fix 2026-03-16:
+ *     - Previously, geolocation always ran even when city/state were
+ *       in the URL. Geolocation result was non-deterministic (success
+ *       → CA coords → 2 results; timeout → null → 5 results).
+ *     - city/state params were parsed but never forwarded to the API.
+ *     - Fix: city+state in URL → skip geolocation entirely, send
+ *       city+state to backend. Backend now accepts these params and
+ *       filters deterministically with ILIKE.
+ *     - useEffect now depends on urlCity, urlState, and filters so
+ *       URL-driven navigation correctly re-fetches.
  * ============================================================
  */
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MenuPreviewCard from "../components/browse/MenuPreviewCard.jsx";
-import { HomeButton } from "../components/NavButton.jsx";
+import { PageNav } from "../components/NavButton.jsx";
 import { getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
 
 
@@ -48,7 +57,7 @@ function useIsMobile(breakpoint = 900) {
 function readErrorMessage(error) {
   return toConsumerErrorMessage(
     error,
-    "We couldn’t load nearby menus right now. Please try again in a moment."
+    "We couldn't load nearby menus right now. Please try again in a moment."
   );
 }
 
@@ -69,8 +78,8 @@ function FilterChip({ label, isMobile, active, onClick }) {
         padding: "0 16px",
         borderRadius: 999,
         border: active ? "1px solid #11211a" : "1px solid rgba(18,34,28,0.12)",
-        background: active ? "#11211a" : "rgba(255,255,255,0.70)",
-        color: active ? "#f7f6f1" : "#5a7064",
+        background: active ? "#11211a" : "#fff",
+        color: active ? "#f7f6f1" : "#667085",
         fontSize: 13,
         fontWeight: 800,
         cursor: "pointer",
@@ -92,7 +101,7 @@ function FilterSelect({ label, options, value, onChange }) {
           fontWeight: 900,
           letterSpacing: 0.9,
           textTransform: "uppercase",
-          color: "#5a7064",
+          color: "#667085",
         }}
       >
         {label}
@@ -106,9 +115,9 @@ function FilterSelect({ label, options, value, onChange }) {
           width: "100%",
           borderRadius: 14,
           border: "1px solid rgba(18,34,28,0.10)",
-          background: "rgba(255,255,255,0.70)",
+          background: "#fff",
           padding: "0 14px",
-          color: "#5a7064",
+          color: "#667085",
           fontSize: 14,
           fontWeight: 700,
           outline: "none",
@@ -190,10 +199,12 @@ export default function BrowseMenus() {
   const urlCity = urlParams.get("city") || "";
   const urlState = urlParams.get("state") || "";
 
+  // True when the URL explicitly specifies the location — geolocation must not run.
+  const hasCityStateParams = Boolean(urlCity && urlState);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [menus, setMenus] = useState([]);
-  const [locationSource, setLocationSource] = useState("loading");
   // Seed from URL so a shared/bookmarked link shows the label immediately
   const [locationLabel, setLocationLabel] = useState(() => {
     const parts = [urlCity, urlState].filter(Boolean);
@@ -203,9 +214,13 @@ export default function BrowseMenus() {
     cuisine: "",
     category: "",
     deals: false,
+    dairy_free: false,
+    diabetic_friendly: false,
+    gluten_free: false,
     vegan: false,
     vegetarian: false,
   });
+  const [alphaGroup, setAlphaGroup] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -215,40 +230,76 @@ export default function BrowseMenus() {
       setError("");
 
       try {
-        const coords = await getUserCoords();
+        let apiParams;
+
+        if (hasCityStateParams) {
+          // ── Mode 1: explicit city/state from URL ─────────────────
+          // Geolocation is NOT called. Send city+state to backend.
+          setLocationLabel([urlCity, urlState].filter(Boolean).join(", "));
+
+          apiParams = {
+            city: urlCity,
+            state: urlState,
+            cuisine: filters.cuisine,
+            category: filters.category,
+            deals: filters.deals ? 1 : "",
+            vegan: filters.vegan ? 1 : "",
+            vegetarian: filters.vegetarian ? 1 : "",
+          };
+
+          console.log("[BrowseMenus] mode: city_state", apiParams);
+        } else {
+          // ── Mode 2: browser geolocation ───────────────────────────
+          const coords = await getUserCoords();
+          if (cancelled) return;
+
+          apiParams = {
+            lat: coords.lat,
+            lng: coords.lng,
+            radius: 6,
+            cuisine: filters.cuisine,
+            category: filters.category,
+            deals: filters.deals ? 1 : "",
+            vegan: filters.vegan ? 1 : "",
+            vegetarian: filters.vegetarian ? 1 : "",
+          };
+
+          console.log("[BrowseMenus] mode:", coords.source, apiParams);
+        }
+
+        const response = await getBrowseMenus(apiParams);
         if (cancelled) return;
 
-        setLocationSource(coords.source);
-
-        const response = await getBrowseMenus({
-          lat: coords.lat,
-          lng: coords.lng,
-          radius: 6,
-          cuisine: filters.cuisine,
-          category: filters.category,
-          deals: filters.deals ? 1 : "",
-          vegan: filters.vegan ? 1 : "",
-          vegetarian: filters.vegetarian ? 1 : "",
-        });
-
-        if (cancelled) return;
         const extractedMenus = extractMenus(response);
-        setMenus(extractedMenus);
+        console.log(
+          "[BrowseMenus] received",
+          extractedMenus.length,
+          "menus, ids:",
+          extractedMenus.map((m) => m.restaurant_id)
+        );
+        const sorted = [...extractedMenus].sort((a, b) => {
+          const nameA = (a.restaurant_name || a.name || "").toLowerCase();
+          const nameB = (b.restaurant_name || b.name || "").toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+        setMenus(sorted);
 
-        // Derive city/state from first returned menu and push to URL
-        const first = extractedMenus[0];
-        if (first?.city || first?.state) {
-          const city = first.city || "";
-          const state = first.state || "";
-          const label = [city, state].filter(Boolean).join(", ");
-          setLocationLabel(label);
+        // In city/state mode the URL is already authoritative — don't overwrite it.
+        // In geo mode, derive city/state from first result and push to URL.
+        if (!hasCityStateParams) {
+          const first = extractedMenus[0];
+          if (first?.city || first?.state) {
+            const city = first.city || "";
+            const state = first.state || "";
+            const label = [city, state].filter(Boolean).join(", ");
+            setLocationLabel(label);
 
-          // Update URL if city/state aren't already there
-          if (city !== urlCity || state !== urlState) {
-            const next = new URLSearchParams(search);
-            if (city) next.set("city", city); else next.delete("city");
-            if (state) next.set("state", state); else next.delete("state");
-            navigate("?" + next.toString(), { replace: true });
+            if (city !== urlCity || state !== urlState) {
+              const next = new URLSearchParams(search);
+              if (city) next.set("city", city); else next.delete("city");
+              if (state) next.set("state", state); else next.delete("state");
+              navigate("?" + next.toString(), { replace: true });
+            }
           }
         }
       } catch (fetchError) {
@@ -264,14 +315,33 @@ export default function BrowseMenus() {
     return () => {
       cancelled = true;
     };
-  }, [filters]);
+  // Re-run when the URL location or filters change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlCity, urlState, filters]);
 
   const showEmptyState = !loading && !error && menus.length === 0;
+
+  // ── Alpha range computation ────────────────────────────────────
+  // Derive the unique first letters present in loaded menus, then
+  // split them into 3 equal-ish groups to form range chips.
+  const alphaRanges = [
+    { label: "A – I", letters: new Set("ABCDEFGHI".split("")) },
+    { label: "J – R", letters: new Set("JKLMNOPQR".split("")) },
+    { label: "S – Z", letters: new Set("STUVWXYZ".split("")) },
+  ];
+
+  const visibleMenus = alphaGroup
+    ? menus.filter((m) => {
+        const first = (m.restaurant_name || m.name || "").trim()[0]?.toUpperCase();
+        return alphaGroup.letters.has(first);
+      })
+    : menus;
 
   return (
     <div
       style={{
         minHeight: "100vh",
+        background: "#f7f6f1",
         color: "#11211a",
         overflowX: "hidden",
       }}
@@ -286,9 +356,7 @@ export default function BrowseMenus() {
         }}
       >
         <div style={{ marginBottom: isMobile ? 18 : 26 }}>
-          <div style={{ marginBottom: 14 }}>
-            <HomeButton />
-          </div>
+          <PageNav />
 
           <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a" }}>
             Grubbid
@@ -306,20 +374,6 @@ export default function BrowseMenus() {
             Browse All Menus
           </h1>
 
-          <div
-            style={{
-              fontSize: isMobile ? 13 : 14,
-              color: "#5a7064",
-              fontWeight: 600,
-              lineHeight: 1.4,
-            }}
-          >
-            {locationSource === "browser"
-              ? "Showing menus near your current location"
-              : locationSource === "unavailable"
-              ? "Showing all available menus"
-              : "Loading nearby menus"}
-          </div>
         </div>
 
         <div
@@ -345,27 +399,56 @@ export default function BrowseMenus() {
               style={{
                 borderRadius: 24,
                 padding: isMobile ? 14 : 18,
-                background: "rgba(255,255,255,0.68)",
+                background: "#fff",
                 border: "1px solid rgba(18,34,28,0.08)",
-                boxShadow: "0 18px 40px rgba(30,41,59,0.08)",
-                backdropFilter: "blur(10px)",
+                boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
                 boxSizing: "border-box",
               }}
             >
               <div
                 style={{
-                  fontSize: 12,
+                  fontSize: 16,
                   fontWeight: 900,
-                  letterSpacing: 0.9,
-                  textTransform: "uppercase",
-                  color: "#5a7064",
+                  color: "#11211a",
                   marginBottom: 14,
                 }}
               >
-                Filters
+                View By
               </div>
 
               <div style={{ display: "grid", gap: 14 }}>
+                {alphaRanges.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 900,
+                        letterSpacing: 0.9,
+                        textTransform: "uppercase",
+                        color: "#667085",
+                      }}
+                    >
+                      Alphabetically
+                    </span>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      <FilterChip
+                        label="All"
+                        isMobile={isMobile}
+                        active={alphaGroup === null}
+                        onClick={() => setAlphaGroup(null)}
+                      />
+                      {alphaRanges.map((range) => (
+                        <FilterChip
+                          key={range.label}
+                          label={range.label}
+                          isMobile={isMobile}
+                          active={alphaGroup?.label === range.label}
+                          onClick={() => setAlphaGroup(alphaGroup?.label === range.label ? null : range)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 <FilterSelect
                   label="Cuisine"
                   options={CUISINE_OPTIONS}
@@ -386,7 +469,7 @@ export default function BrowseMenus() {
                       fontWeight: 900,
                       letterSpacing: 0.9,
                       textTransform: "uppercase",
-                      color: "#5a7064",
+                      color: "#667085",
                     }}
                   >
                     Offers
@@ -409,13 +492,31 @@ export default function BrowseMenus() {
                       fontWeight: 900,
                       letterSpacing: 0.9,
                       textTransform: "uppercase",
-                      color: "#5a7064",
+                      color: "#667085",
                     }}
                   >
                     Dietary
                   </span>
 
                   <div style={{ display: "grid", gap: 10 }}>
+                    <FilterChip
+                      label="Dairy Free"
+                      isMobile={isMobile}
+                      active={filters.dairy_free}
+                      onClick={() => setFilters((prev) => ({ ...prev, dairy_free: !prev.dairy_free }))}
+                    />
+                    <FilterChip
+                      label="Diabetic Friendly"
+                      isMobile={isMobile}
+                      active={filters.diabetic_friendly}
+                      onClick={() => setFilters((prev) => ({ ...prev, diabetic_friendly: !prev.diabetic_friendly }))}
+                    />
+                    <FilterChip
+                      label="Gluten Free"
+                      isMobile={isMobile}
+                      active={filters.gluten_free}
+                      onClick={() => setFilters((prev) => ({ ...prev, gluten_free: !prev.gluten_free }))}
+                    />
                     <FilterChip
                       label="Vegan"
                       isMobile={isMobile}
@@ -426,9 +527,7 @@ export default function BrowseMenus() {
                       label="Vegetarian"
                       isMobile={isMobile}
                       active={filters.vegetarian}
-                      onClick={() =>
-                        setFilters((prev) => ({ ...prev, vegetarian: !prev.vegetarian }))
-                      }
+                      onClick={() => setFilters((prev) => ({ ...prev, vegetarian: !prev.vegetarian }))}
                     />
                   </div>
                 </div>
@@ -439,11 +538,11 @@ export default function BrowseMenus() {
           <main style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
             <div
               style={{
-                borderRadius: 28,
+                borderRadius: 24,
                 padding: isMobile ? "14px 14px 18px" : "18px 18px 22px",
-                background: "rgba(255,255,255,0.50)",
+                background: "#fff",
                 border: "1px solid rgba(18,34,28,0.08)",
-                boxShadow: "0 18px 40px rgba(30,41,59,0.07)",
+                boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
                 boxSizing: "border-box",
               }}
             >
@@ -457,45 +556,26 @@ export default function BrowseMenus() {
                   padding: "4px 4px 18px",
                 }}
               >
-                <div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 900,
-                      letterSpacing: 0.9,
-                      textTransform: "uppercase",
-                      color: "#5a7064",
-                    }}
-                  >
-                    Menus
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: isMobile ? 15 : 16,
-                      fontWeight: 800,
-                      color: "#11211a",
-                      marginTop: 4,
-                      lineHeight: 1.35,
-                    }}
-                  >
-                    {locationLabel
-                      ? `Menus Near ${locationLabel}`
-                      : locationSource === "browser"
-                      ? "Menus Near You"
-                      : "All Available Menus"}
-                  </div>
+                <div
+                  style={{
+                    fontSize: isMobile ? 15 : 16,
+                    fontWeight: 800,
+                    color: "#11211a",
+                    lineHeight: 1.35,
+                  }}
+                >
+                  {locationLabel ? `Menus near ${locationLabel}` : "Browse Menus"}
                 </div>
 
                 <div
                   style={{
                     fontSize: 13,
                     fontWeight: 800,
-                    color: "#5a7064",
+                    color: "#667085",
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {menus.length} menus
+                  {visibleMenus.length} {visibleMenus.length === 1 ? "menu" : "menus"}
                 </div>
               </div>
 
@@ -527,30 +607,14 @@ export default function BrowseMenus() {
                 </div>
               ) : null}
 
-              {error ? (
-                <div
-                  style={{
-                    padding: 18,
-                    borderRadius: 18,
-                    background: "#fff1f2",
-                    color: "#9f1239",
-                    border: "1px solid rgba(225,29,72,0.18)",
-                    fontWeight: 700,
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {error}
-                </div>
-              ) : null}
-
-              {showEmptyState ? (
+              {(error || showEmptyState) ? (
                 <section
                   style={{
                     padding: isMobile ? "28px 16px" : "44px 24px",
                     borderRadius: 24,
-                    background: "rgba(255,255,255,0.64)",
+                    background: "#f7f6f1",
                     textAlign: "center",
-                    color: "#5a7064",
+                    color: "#667085",
                   }}
                 >
                   <div
@@ -561,7 +625,7 @@ export default function BrowseMenus() {
                       marginBottom: 10,
                     }}
                   >
-                    No nearby menus found yet
+                    No local menus available in this area
                   </div>
 
                   <div
@@ -572,8 +636,7 @@ export default function BrowseMenus() {
                       lineHeight: 1.45,
                     }}
                   >
-                    Grubbid is still building its menu database in this area. Check back soon or
-                    try another search.
+                    We are constantly adding menus. Please check back soon.
                   </div>
                 </section>
               ) : null}
@@ -589,7 +652,7 @@ export default function BrowseMenus() {
                     WebkitOverflowScrolling: "touch",
                   }}
                 >
-                  {menus.map((menu, index) => (
+                  {visibleMenus.map((menu, index) => (
                     <div
                       key={String(menu?.menu_id ?? menu?.restaurant_id ?? index)}
                       style={{

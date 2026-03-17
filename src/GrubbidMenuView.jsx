@@ -321,15 +321,16 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
   const COLORS =
     theme === "light"
       ? {
-          bg: "#ffffff",
+          bg: "#f7f6f1",
           panel: "#ffffff",
-          panel2: "#f6f6f7",
-          border: "rgba(0,0,0,0.08)",
-          border2: "rgba(0,0,0,0.14)",
-          text: "rgba(0,0,0,0.92)",
-          subtext: "rgba(0,0,0,0.62)",
-          chipBg: "rgba(0,0,0,0.05)",
-          chipActiveBg: "rgba(0,0,0,0.12)",
+          panel2: "#f7f6f1",
+          border: "rgba(18,34,28,0.08)",
+          border2: "rgba(18,34,28,0.14)",
+          text: "#11211a",
+          subtext: "#475467",
+          chipBg: "rgba(18,34,28,0.05)",
+          chipActiveBg: "#11211a",
+          chipActiveText: "#ffffff",
         }
       : {
           bg: "#0b0b0c",
@@ -540,7 +541,7 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                   borderRadius: 999,
                   border: `1px solid ${COLORS.border2}`,
                   background: activeCat === "ALL" ? COLORS.chipActiveBg : COLORS.chipBg,
-                  color: COLORS.text,
+                  color: activeCat === "ALL" ? (COLORS.chipActiveText || COLORS.text) : COLORS.text,
                   cursor: "pointer",
                   fontWeight: 800,
                   fontSize: 13,
@@ -560,7 +561,7 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                     borderRadius: 999,
                     border: `1px solid ${COLORS.border2}`,
                     background: activeCat === c.code ? COLORS.chipActiveBg : COLORS.chipBg,
-                    color: COLORS.text,
+                    color: activeCat === c.code ? (COLORS.chipActiveText || COLORS.text) : COLORS.text,
                     cursor: "pointer",
                     fontWeight: 800,
                     fontSize: 13,
@@ -594,7 +595,7 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
         {grouped.map((cat, idx) => (
           <div key={cat.code} style={{ marginTop: idx === 0 ? 0 : 22 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
-              <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0.3, color: COLORS.text }}>
+              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.0, textTransform: "uppercase", color: COLORS.subtext }}>
                 {cat.label}
               </div>
               <div style={{ height: 1, background: COLORS.border }} />
@@ -636,7 +637,7 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                         <div
                           style={{
                             fontSize: 15,
-                            fontWeight: 500,
+                            fontWeight: 800,
                             color: COLORS.text,
                             lineHeight: 1.2,
                             overflow: "hidden",

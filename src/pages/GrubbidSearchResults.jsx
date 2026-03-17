@@ -331,9 +331,9 @@ function FilterToggle({ label, active, onClick, isMobile }) {
         fontWeight: 700,
         lineHeight: 1,
         cursor: "pointer",
-        border: active ? "1.5px solid var(--link, #124ba3)" : "1px solid var(--border, #e3e8ef)",
-        background: active ? "var(--link, #124ba3)" : "#fff",
-        color: active ? "#fff" : "var(--ink, #0f1720)",
+        border: active ? "1.5px solid #11211a" : "1px solid rgba(18,34,28,0.12)",
+        background: active ? "#11211a" : "#fff",
+        color: active ? "#fff" : "#11211a",
         transition: "background 0.1s, color 0.1s",
         whiteSpace: "nowrap",
       }}
@@ -551,50 +551,57 @@ export default function GrubbidSearchResults() {
   }, [locationLabel]);
 
   const styles = {
+    page: {
+      minHeight: "100vh",
+      background: "#f7f6f1",
+    },
     wrap: {
-      padding: isMobile ? 14 : 18,
-      maxWidth: 980,
+      padding: isMobile ? "20px 14px 48px" : "36px 24px 72px",
+      maxWidth: 820,
       margin: "0 auto",
       boxSizing: "border-box",
       overflowX: "hidden",
-      fontFamily:
-        "var(--font-ui, Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif)",
-      color: "var(--ink, #0f1720)",
+      color: "#101828",
     },
     topRow: {
       display: "flex",
       alignItems: "center",
       gap: 12,
+      marginBottom: isMobile ? 20 : 28,
+    },
+    wordmark: {
+      fontSize: isMobile ? 16 : 18,
+      fontWeight: 800,
+      color: "#11211a",
     },
     title: {
       margin: "14px 0 0",
-      fontSize: isMobile ? 20 : "var(--text-5, 23px)",
+      fontSize: isMobile ? 22 : 28,
       lineHeight: 1.15,
-      fontWeight: 800,
-      letterSpacing: "-0.015em",
-      color: "var(--ink, #0f1720)",
+      fontWeight: 900,
+      letterSpacing: "-0.02em",
+      color: "#11211a",
       wordBreak: "break-word",
     },
     titleQuery: {
-      color: "var(--link, #1b4da1)",
-      fontWeight: 850,
+      color: "#11211a",
     },
     locationLine: {
       marginTop: 4,
-      color: "var(--muted, #5d6674)",
-      fontSize: isMobile ? 13 : "var(--text-2, 14px)",
+      color: "#667085",
+      fontSize: isMobile ? 13 : 14,
       fontWeight: 700,
       lineHeight: 1.4,
     },
     meta: {
       marginTop: 6,
-      color: "var(--muted, #5d6674)",
-      fontSize: isMobile ? 13 : "var(--text-2, 14px)",
-      fontWeight: 650,
+      color: "#667085",
+      fontSize: isMobile ? 13 : 14,
+      fontWeight: 600,
       lineHeight: 1.4,
     },
     filterBar: {
-      marginTop: 12,
+      marginTop: 14,
       display: "flex",
       gap: 8,
       flexWrap: "wrap",
@@ -608,32 +615,32 @@ export default function GrubbidSearchResults() {
     },
     error: {
       marginTop: 12,
-      padding: 12,
-      border: "1px solid #ffd2d2",
-      borderRadius: 12,
-      background: "#fff5f5",
-      color: "#7a1b1b",
+      padding: "14px 16px",
+      border: "1px solid rgba(18,34,28,0.08)",
+      borderRadius: 16,
+      background: "#fff",
+      color: "#475467",
       fontWeight: 700,
-      whiteSpace: "pre-wrap",
       wordBreak: "break-word",
-      lineHeight: 1.4,
+      lineHeight: 1.5,
     },
     empty: {
       marginTop: 12,
-      padding: 12,
-      border: "1px solid #e8ebef",
-      borderRadius: 12,
-      background: "#fafbfc",
-      color: "#3c4757",
+      padding: "14px 16px",
+      border: "1px solid rgba(18,34,28,0.08)",
+      borderRadius: 16,
+      background: "#fff",
+      color: "#475467",
       fontWeight: 600,
       lineHeight: 1.4,
       wordBreak: "break-word",
     },
     section: {
-      marginTop: 18,
-      fontWeight: 800,
-      color: "var(--ink, #0f1720)",
-      fontSize: isMobile ? 15 : "var(--text-3, 16px)",
+      marginTop: 24,
+      marginBottom: 4,
+      fontWeight: 900,
+      color: "#11211a",
+      fontSize: isMobile ? 15 : 16,
       letterSpacing: "-0.01em",
     },
   };
@@ -643,9 +650,11 @@ export default function GrubbidSearchResults() {
     : `No results${locationPhrase ? ` ${locationPhrase}` : ""}.`;
 
   return (
+    <div style={styles.page}>
     <div style={styles.wrap}>
       <div style={styles.topRow}>
         <BackButton />
+        <div style={styles.wordmark}>Grubbid</div>
       </div>
 
       <h1 style={styles.title}>
@@ -775,6 +784,7 @@ export default function GrubbidSearchResults() {
           </div>
         </>
       )}
+    </div>
     </div>
   );
 }

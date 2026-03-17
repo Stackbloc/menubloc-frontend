@@ -125,8 +125,10 @@ async function reverseGeocode(lat, lng) {
     String(json?.city || json?.locality || json?.principalSubdivision || "").trim();
   const locality =
     String(json?.city || json?.locality || json?.localityInfo?.administrative?.[2]?.name || "").trim();
-  const state =
+  const rawState =
     String(json?.principalSubdivisionCode || json?.principalSubdivision || "").trim();
+  // principalSubdivisionCode returns "US-CA" format — strip country prefix
+  const state = rawState.includes("-") ? rawState.split("-").pop() : rawState;
 
   const cityLike = locality || city;
   return [cityLike, state].filter(Boolean).join(", ");
@@ -286,8 +288,28 @@ export default function GrubbidDiscovery() {
     }
   }
 
+  function normalizeLocationLabel(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) return trimmed;
+    // Use parseLocation to handle both "City, ST" and "City ST" formats
+    const parsed = parseLocation(trimmed);
+    const city = parsed.city.replace(/\b\w/g, (c) => c.toUpperCase());
+    if (parsed.zip) return parsed.zip;
+    // Reconstruct state from label if parseLocation didn't extract it
+    const labelParts = trimmed.split(",");
+    const rawState = labelParts.length >= 2
+      ? labelParts[1].trim()
+      : (() => {
+          const tokens = trimmed.split(/\s+/);
+          const last = tokens[tokens.length - 1];
+          return US_STATE_ABBREVS.has(last.toLowerCase()) ? last : "";
+        })();
+    const state = rawState.toUpperCase();
+    return state ? `${city}, ${state}` : city;
+  }
+
   function applyLocationChange() {
-    const nextLocation = locationInput.trim();
+    const nextLocation = normalizeLocationLabel(locationInput.trim());
     setAppliedLocation(nextLocation);
     if (typeof window !== "undefined") {
       if (nextLocation) {
@@ -311,7 +333,7 @@ export default function GrubbidDiscovery() {
         style={{
           maxWidth: 1100,
           margin: "0 auto",
-          padding: isMobile ? "28px 16px 40px" : "52px 24px 56px",
+          padding: isMobile ? "36px 20px 56px" : "72px 32px 80px",
           boxSizing: "border-box",
         }}
       >
@@ -325,17 +347,35 @@ export default function GrubbidDiscovery() {
           `}
         </style>
 
-        <div style={{ marginBottom: isMobile ? 32 : 48, fontSize: isMobile ? 22 : 28, fontWeight: 900 }}>
-          Grubbid
+        <div style={{ marginBottom: isMobile ? 44 : 64 }}>
+          <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a" }}>
+            Grubbid
+          </div>
+          <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#667085", letterSpacing: 1.2, textTransform: "uppercase", marginTop: 2 }}>
+            Discovery
+          </div>
         </div>
 
         <div style={{ maxWidth: 920 }}>
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 1fr) auto",
-              gap: 12,
-              alignItems: "stretch",
+              fontSize: isMobile ? 15 : 17,
+              fontWeight: 800,
+              color: "#667085",
+              letterSpacing: 0.3,
+              marginBottom: isMobile ? 20 : 24,
+              paddingLeft: 14,
+            }}
+          >
+            the food intelligence platform
+          </div>
+
+          {/* Search row — input and button are the same height */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              gap: 10,
             }}
           >
             <input
@@ -344,19 +384,20 @@ export default function GrubbidDiscovery() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={handleSearchKeyDown}
-              placeholder="What do you want to eat today? Search food, ingredients, restaurants, or deals"
+              placeholder="Search food, ingredients, restaurants, or deals"
               style={{
-                height: isMobile ? 64 : 72,
-                width: "100%",
-                borderRadius: 22,
+                flex: 1,
+                height: isMobile ? 56 : 64,
+                borderRadius: 16,
                 border: "1px solid #d7dce5",
-                padding: isMobile ? "0 18px" : "0 22px",
-                fontSize: isMobile ? 17 : 19,
+                padding: isMobile ? "0 16px" : "0 20px",
+                fontSize: isMobile ? 16 : 18,
                 fontWeight: 600,
                 boxSizing: "border-box",
                 background: "#fff",
                 color: "#101828",
-                boxShadow: "0 18px 40px rgba(15,23,42,0.08)",
+                boxShadow: "0 8px 24px rgba(15,23,42,0.07)",
+                outline: "none",
               }}
             />
 
@@ -364,24 +405,26 @@ export default function GrubbidDiscovery() {
               type="button"
               onClick={() => runSearch(query)}
               style={{
-                minWidth: isMobile ? "100%" : 132,
-                height: isMobile ? 48 : 58,
+                flexShrink: 0,
+                width: isMobile ? "100%" : 120,
+                height: isMobile ? 56 : 64,
                 borderRadius: 16,
                 border: "none",
                 background: "#101828",
                 color: "#fff",
-                fontSize: isMobile ? 15 : 16,
+                fontSize: 16,
                 fontWeight: 900,
                 cursor: "pointer",
-                padding: "0 18px",
+                letterSpacing: 0.2,
               }}
             >
               Search
             </button>
           </div>
 
+          {/* Suggested searches */}
           {suggestedSearches.length > 0 ? (
-            <div style={{ marginTop: 14, fontSize: isMobile ? 14 : 15, color: "#475467", lineHeight: 1.5 }}>
+            <div style={{ marginTop: 20, fontSize: isMobile ? 13 : 14, color: "#475467", lineHeight: 1.6 }}>
               <span style={{ fontWeight: 800 }}>Try:</span>{" "}
               {suggestedSearches.map((term, index) => (
                 <React.Fragment key={term}>
@@ -395,67 +438,88 @@ export default function GrubbidDiscovery() {
                       border: "none",
                       background: "transparent",
                       padding: 0,
-                      color: "#124ba3",
+                      color: "#11211a",
                       fontWeight: 700,
                       cursor: "pointer",
+                      fontSize: "inherit",
                     }}
                   >
                     {term}
                   </button>
-                  {index < suggestedSearches.length - 1 ? " • " : ""}
+                  {index < suggestedSearches.length - 1 ? " · " : ""}
                 </React.Fragment>
               ))}
             </div>
           ) : null}
 
+          {/* OR divider */}
           <div
             style={{
-              marginTop: 12,
               display: "flex",
-              flexDirection: "column",
               alignItems: "center",
-              gap: 10,
-              width: isMobile ? "100%" : 132,
-              marginLeft: isMobile ? 0 : "auto",
+              gap: 12,
+              marginTop: isMobile ? 32 : 40,
             }}
           >
+            <div style={{ flex: 1, height: 1, background: "#e4e7ec" }} />
             <div
               style={{
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: 900,
-                color: "#667085",
-                letterSpacing: 0.5,
+                color: "#9ca3af",
+                letterSpacing: 1.2,
               }}
             >
               OR
             </div>
+            <div style={{ flex: 1, height: 1, background: "#e4e7ec" }} />
+          </div>
 
+          {/* Browse Menus — centered space-bar style button */}
+          <div style={{ display: "flex", justifyContent: "center", marginTop: isMobile ? 20 : 24 }}>
             <button
               type="button"
-              onClick={() => navigate(BROWSE_MENUS_PATH)}
+              onClick={() => {
+                if (resolvedLocationLabel) {
+                  const loc = parseLocation(resolvedLocationLabel);
+                  const p = new URLSearchParams();
+                  if (loc.city) p.set("city", loc.city);
+                  // Extract state from label (parseLocation doesn't return it directly)
+                  const labelParts = resolvedLocationLabel.split(",");
+                  const stateRaw = labelParts.length >= 2 ? labelParts[1].trim() : "";
+                  if (stateRaw) p.set("state", stateRaw.toUpperCase());
+                  navigate(`${BROWSE_MENUS_PATH}?${p.toString()}`);
+                } else {
+                  navigate(BROWSE_MENUS_PATH);
+                }
+              }}
               style={{
-                width: "100%",
-                height: isMobile ? 48 : 58,
-                borderRadius: 16,
-                border: "1px solid #101828",
+                height: isMobile ? 46 : 52,
+                padding: "0 52px",
+                borderRadius: 14,
+                border: "1px solid #d7dce5",
                 background: "#fff",
                 color: "#101828",
-                fontSize: isMobile ? 15 : 16,
-                fontWeight: 900,
+                fontSize: 15,
+                fontWeight: 800,
                 cursor: "pointer",
-                padding: "0 18px",
+                letterSpacing: 0.1,
+                whiteSpace: "nowrap",
               }}
             >
-              Browse Menus
+              <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                <span>Browse Menus</span>
+                <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.6 }}>(Local)</span>
+              </span>
             </button>
           </div>
 
           <div
             style={{
-              marginTop: 14,
+              marginTop: 28,
               display: "flex",
               flexDirection: "column",
-              gap: 6,
+              gap: 8,
               alignItems: "flex-start",
             }}
           >
@@ -481,7 +545,7 @@ export default function GrubbidDiscovery() {
                 style={{
                   border: "none",
                   background: "transparent",
-                  color: "#124ba3",
+                  color: "#11211a",
                   fontSize: 14,
                   fontWeight: 800,
                   cursor: "pointer",
@@ -528,7 +592,7 @@ export default function GrubbidDiscovery() {
                     borderRadius: 12,
                     border: "1px solid #cbd5e1",
                     background: "#fff",
-                    color: "#111827",
+                    color: "#11211a",
                     fontWeight: 900,
                     cursor: "pointer",
                   }}
@@ -545,9 +609,9 @@ export default function GrubbidDiscovery() {
                 marginTop: 16,
                 padding: "12px 14px",
                 borderRadius: 14,
-                border: "1px solid #f4c7c7",
-                background: "#fff1f1",
-                color: "#8b1e1e",
+                border: "1px solid rgba(18,34,28,0.08)",
+                background: "#fff",
+                color: "#475467",
                 fontWeight: 700,
               }}
             >
@@ -555,14 +619,14 @@ export default function GrubbidDiscovery() {
             </div>
           ) : null}
 
-          <div style={{ marginTop: 22 }}>
+          <div style={{ marginTop: 40 }}>
             <button
               type="button"
               onClick={() => setShowFilters((prev) => !prev)}
               style={{
                 border: "none",
                 background: "transparent",
-                color: "#111827",
+                color: "#11211a",
                 fontSize: 15,
                 fontWeight: 900,
                 cursor: "pointer",
@@ -623,22 +687,56 @@ export default function GrubbidDiscovery() {
 
           <div
             style={{
-              marginTop: 26,
+              marginTop: isMobile ? 72 : 100,
+              paddingTop: isMobile ? 32 : 40,
+              borderTop: "1px solid #e4e7ec",
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: isMobile ? "flex-start" : "center",
-              gap: 14,
               flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "flex-start" : "center",
+              justifyContent: "space-between",
+              gap: isMobile ? 12 : 0,
             }}
           >
             <div style={{ fontSize: 14, color: "#667085" }}>
-              <Link to="/restaurant/signup" style={{ color: "#124ba3", fontWeight: 800 }}>
-                Restaurant sign up
-              </Link>{" "}
-              to get discovered
+              <Link to="/restaurant/signup" style={{ color: "#11211a", fontWeight: 800 }}>
+                Restaurant Sign Up
+              </Link>
             </div>
 
-            <div />
+            <div
+              style={{
+                display: "flex",
+                gap: 20,
+                fontSize: 13,
+                color: "#667085",
+                alignItems: "flex-start",
+              }}
+            >
+              <Link
+                to={(() => {
+                  if (!resolvedLocationLabel) return "/top5/healthiest";
+                  const parts = resolvedLocationLabel.split(",").map((s) => s.trim());
+                  const p = new URLSearchParams();
+                  if (parts[0]) p.set("city", parts[0]);
+                  if (parts[1]) p.set("state", parts[1]);
+                  return `/top5/healthiest?${p.toString()}`;
+                })()}
+                style={{ color: "#667085", textDecoration: "none", fontWeight: 600, lineHeight: 1.4, display: "inline-block" }}
+              >
+                <span style={{ display: "block", marginLeft: -12 }}>Top 5 Healthiest Dishes</span>
+                {resolvedLocationLabel ? (
+                  <span style={{ display: "block" }}>
+                    in {resolvedLocationLabel}
+                  </span>
+                ) : null}
+              </Link>
+              <Link to="/terms" style={{ color: "#667085", textDecoration: "none", fontWeight: 600 }}>
+                Terms of Use
+              </Link>
+              <Link to="/contact" style={{ color: "#667085", textDecoration: "none", fontWeight: 600 }}>
+                Contact Us
+              </Link>
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 // menubloc-frontend/src/pages/Terms.jsx
 import React from "react";
-import { BackButton } from "../components/NavButton.jsx";
+import { PageNav } from "../components/NavButton.jsx";
 
 const s = {
   page: {
@@ -25,17 +25,51 @@ export default function Terms() {
   return (
     <div style={s.page}>
       <div style={s.brand}>Grubbid</div>
-      <BackButton />
+      <PageNav back />
 
-      <h1 style={s.h1}>Grubbid Restaurant Upload and Listing Terms</h1>
-      <div style={s.effective}>Effective Date: 2026-03-05</div>
+      <h1 style={s.h1}>Grubbid Terms of Use</h1>
+      <div style={s.effective}>Effective Date: 2026-03-16</div>
 
       <p style={s.p}>
-        These Terms of Service govern a restaurant&rsquo;s use of Grubbid&rsquo;s restaurant
-        signup, menu upload, listing, and related services.
+        These Terms of Use govern all use of Grubbid, including use of the Grubbid Discovery
+        platform by consumers and use of restaurant signup, menu upload, and listing services
+        by restaurants. By using Grubbid you agree to these terms.
+      </p>
+
+      <h2 style={s.h2}>Not medical advice</h2>
+      <p style={s.p}>
+        Grubbid is a food discovery and menu intelligence platform. Nothing on Grubbid —
+        including nutrition estimates, ingredient information, dietary labels, health scores,
+        or any other content — constitutes medical advice, dietary advice, or any other form
+        of professional health guidance.
       </p>
       <p style={s.p}>
-        By creating an account or uploading menu data you agree to these terms.
+        You agree that you will not rely on any information provided by Grubbid for medical,
+        dietary, or health-related decisions. Always seek the advice of a qualified physician,
+        registered dietitian, or other licensed health professional with any questions you may
+        have regarding a medical condition, dietary restriction, food allergy, or nutritional need.
+      </p>
+
+      <h2 style={s.h2}>Estimated nutrition data</h2>
+      <p style={s.p}>
+        Nutrition information, calorie counts, macronutrient values, ingredient inferences,
+        and any related health or insight data displayed on Grubbid are <strong>estimates only</strong>.
+        They are generated using automated tools and may not be accurate, complete, or
+        up to date. Actual values will vary based on preparation method, portion size,
+        ingredient sourcing, and other factors.
+      </p>
+      <p style={s.p}>
+        Grubbid makes no warranty, expressed or implied, regarding the accuracy or
+        completeness of any nutrition or health-related data on the platform. You use
+        this information at your own risk.
+      </p>
+
+      <h2 style={{ ...s.h2, marginTop: 40, paddingTop: 32, borderTop: "1px solid #e4e7ec" }}>
+        Restaurant terms
+      </h2>
+      <p style={s.p}>
+        The following terms apply to restaurants using Grubbid&rsquo;s signup, menu upload,
+        and listing services.
       </p>
 
       <h2 style={s.h2}>Authorized users</h2>

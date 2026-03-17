@@ -16,7 +16,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { HomeButton } from "../components/NavButton.jsx";
+import { PageNav } from "../components/NavButton.jsx";
 import MenuSection from "../components/MenuSection";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -155,7 +155,7 @@ export default function MenuDetailPage() {
       <div style={{ padding: 20 }}>
         <h1 style={{ marginTop: 0 }}>Menu Detail</h1>
         <p style={{ color: "#b00020" }}>{error}</p>
-        <HomeButton />
+        <PageNav />
       </div>
     );
   }
@@ -169,9 +169,7 @@ export default function MenuDetailPage() {
         overflowX: "hidden",
       }}
     >
-      <div style={{ marginBottom: 14 }}>
-        <HomeButton />
-      </div>
+      <PageNav />
 
       <div
         style={{

@@ -1,7 +1,6 @@
-import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-const style = {
+const btnStyle = {
   display: "inline-flex",
   alignItems: "center",
   gap: 6,
@@ -21,7 +20,7 @@ const style = {
 /** Goes to "/" */
 export function HomeButton() {
   return (
-    <Link to="/" style={style}>
+    <Link to="/" style={btnStyle}>
       ← Home
     </Link>
   );
@@ -31,8 +30,25 @@ export function HomeButton() {
 export function BackButton() {
   const navigate = useNavigate();
   return (
-    <button type="button" onClick={() => navigate(-1)} style={style}>
+    <button type="button" onClick={() => navigate(-1)} style={btnStyle}>
       ← Back
     </button>
+  );
+}
+
+/**
+ * Standard page-level nav wrapper.
+ * Provides consistent marginBottom: 20 on every page so the button
+ * sits the same distance above the page content everywhere.
+ *
+ * Usage:
+ *   <PageNav />       → HomeButton (links to /)
+ *   <PageNav back />  → BackButton (browser history -1)
+ */
+export function PageNav({ back = false }) {
+  return (
+    <div style={{ marginBottom: 20 }}>
+      {back ? <BackButton /> : <HomeButton />}
+    </div>
   );
 }
