@@ -17,11 +17,11 @@ const btnStyle = {
   lineHeight: 1,
 };
 
-/** Goes to "/" */
+/** Goes to "/" (Discovery) */
 export function HomeButton() {
   return (
     <Link to="/" style={btnStyle}>
-      ← Home
+      ← Discovery
     </Link>
   );
 }

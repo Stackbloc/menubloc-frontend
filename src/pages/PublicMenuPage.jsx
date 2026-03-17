@@ -217,7 +217,7 @@ export default function PublicMenuPage() {
     return (
       <div style={pageBg}>
       <div style={wrap}>
-        <PageNav />
+        <PageNav back />
         <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>
           Couldn't load menu
         </div>
@@ -244,7 +244,7 @@ export default function PublicMenuPage() {
   return (
     <div style={pageBg}>
     <div style={wrap}>
-      <PageNav />
+      <PageNav back />
 
       <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", color: "#667085", marginBottom: 8 }}>
         Grubbid
