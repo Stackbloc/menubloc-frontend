@@ -303,7 +303,7 @@ export default function PublicMenuPage() {
               borderRadius: 6,
               textDecoration: "underline",
             }}
-          >Clear filters</button>
+          >Clear preferences</button>
         </div>
       )}
 
@@ -315,9 +315,9 @@ export default function PublicMenuPage() {
           </div>
         ) : filtersActive && sections.every((sec) => (Array.isArray(sec?.items) ? sec.items : []).filter((it) => itemPassesDietFilter(it, dietPrefs)).length === 0) ? (
           <div style={{ fontSize: 14, color: "var(--muted, #5b6675)", padding: "24px 0" }}>
-            No items match your dietary filters.{" "}
+            No items match your dietary preferences.{" "}
             <button onClick={handleClearFilters} style={{ background: "none", border: "none", cursor: "pointer", color: "#2d6a4f", fontWeight: 700, fontSize: 14, padding: 0, textDecoration: "underline" }}>
-              Clear filters
+              Clear preferences
             </button>
           </div>
         ) : (
