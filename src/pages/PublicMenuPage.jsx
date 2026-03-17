@@ -56,27 +56,28 @@ function UnverifiedBanner({ show, onClaim }) {
         display: "inline-flex",
         alignItems: "center",
         gap: 8,
-        padding: "9px 16px",
+        padding: "9px 18px",
         borderRadius: 10,
-        background: "#fffbeb",
-        color: "#92400e",
-        border: "1px solid #fde68a",
+        background: "#11211a",
+        color: "#fff",
+        border: "none",
         fontSize: 12,
         fontWeight: 800,
-        letterSpacing: 0.2,
+        letterSpacing: 0.3,
         cursor: "pointer",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
         transition: "background 160ms ease, box-shadow 160ms ease",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = "#fef3c7";
-        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.10)";
+        e.currentTarget.style.background = "#2d6a4f";
+        e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.22)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = "#fffbeb";
-        e.currentTarget.style.boxShadow = "none";
+        e.currentTarget.style.background = "#11211a";
+        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.18)";
       }}
     >
-      <span style={{ fontSize: 13 }}>⚠</span>
+      <span style={{ fontSize: 11, opacity: 0.7 }}>●</span>
       Unverified Menu — Click to Claim Profile
     </button>
   );
