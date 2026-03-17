@@ -71,16 +71,17 @@ export function activePrefLabels(prefs) {
  * Client-side filter for a single menu item using the data returned
  * by the public menu API. Returns true if the item passes all active filters.
  *
- * Filtering rules:
- *   vegan        → item.is_vegan === true
- *   gluten_free  → item.is_gluten_free === true
- *   keto         → net_carbs (carbs_g - fiber_g) ≤ 18 AND sugar_g ≤ 8
- *   low_sodium   → sodium_mg ≤ 600
- *   vegetarian / dairy_free / diabetic_friendly → not filterable from menu
- *                  data alone; skip (don't hide items we can't evaluate)
+ * Preference → item field used:
+ *   vegan        → item.is_vegan
+ *   vegetarian   → item.is_vegetarian  (or is_vegan implies vegetarian)
+ *   gluten_free  → item.is_gluten_free
+ *   dairy_free   → item.is_dairy_free
+ *   keto         → item.is_keto (preferred) OR nutrition chip data
+ *   low_sodium   → item.is_low_sodium (preferred) OR nutrition chip data
+ *   diabetic_friendly → no reliable signal yet; items pass through
  *
- * Items that lack the required data for a nutritional filter are hidden
- * because we can't confirm compliance.
+ * Items where the required flag is null/undefined are hidden —
+ * we can't confirm compliance.
  */
 export function itemPassesDietFilter(item, prefs) {
   if (!hasActiveDietPrefs(prefs)) return true;
@@ -90,21 +91,42 @@ export function itemPassesDietFilter(item, prefs) {
   if (prefs.vegan) {
     if (item?.is_vegan !== true) return false;
   }
+  if (prefs.vegetarian) {
+    // is_vegan implies vegetarian
+    if (item?.is_vegetarian !== true && item?.is_vegan !== true) return false;
+  }
   if (prefs.gluten_free) {
     if (item?.is_gluten_free !== true) return false;
   }
+  if (prefs.dairy_free) {
+    if (item?.is_dairy_free !== true) return false;
+  }
   if (prefs.keto) {
-    const carbs = n.carbs_g ?? null;
-    const fiber = n.fiber_g ?? 0;
-    const sugar = n.sugar_g ?? null;
-    if (carbs === null || sugar === null) return false; // no data → hide
-    const netCarbs = Math.max(0, carbs - fiber);
-    if (netCarbs > 18 || sugar > 8) return false;
+    // Prefer the DB-computed flag; fall back to nutrition chip if available
+    if (item?.is_keto === true) {
+      // passes
+    } else if (item?.is_keto === false) {
+      return false;
+    } else {
+      // is_keto is null/undefined — try nutrition chip
+      const carbs = n.carbs_g ?? null;
+      const fiber = n.fiber_g ?? 0;
+      const sugar = n.sugar_g ?? null;
+      if (carbs === null || sugar === null) return false; // no data → hide
+      if (Math.max(0, carbs - fiber) > 18 || sugar > 8) return false;
+    }
   }
   if (prefs.low_sodium) {
-    const sodium = n.sodium_mg ?? null;
-    if (sodium === null) return false; // no data → hide
-    if (sodium > 600) return false;
+    // Prefer the DB-computed flag; fall back to nutrition chip if available
+    if (item?.is_low_sodium === true) {
+      // passes
+    } else if (item?.is_low_sodium === false) {
+      return false;
+    } else {
+      const sodium = n.sodium_mg ?? null;
+      if (sodium === null) return false; // no data → hide
+      if (sodium > 600) return false;
+    }
   }
 
   return true;
