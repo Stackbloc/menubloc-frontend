@@ -92,7 +92,7 @@ function hl(text, query) {
     i % 2 === 1
       ? React.createElement(
           "mark",
-          { key: i, style: { background: "#fff3a0", borderRadius: 4, padding: "0 3px" } },
+          { key: i, style: {} },
           p
         )
       : React.createElement("span", { key: i }, p)
@@ -235,12 +235,12 @@ function Chip({ label, active, available, onClick }) {
         lineHeight: 1,
         cursor: "pointer",
         border: active
-          ? "1px solid var(--link, #124ba3)"
+          ? "1px solid #11211a"
           : available
-          ? "1px solid #b9d4fb"
+          ? "1px solid #d0d5dd"
           : "1px solid var(--border, #e4e9f0)",
-        background: active ? "var(--link, #124ba3)" : available ? "#eef4ff" : "#f7f9fc",
-        color: active ? "#fff" : available ? "#1447a8" : "var(--muted-2, #93a0b2)",
+        background: active ? "#11211a" : available ? "#f2f4f7" : "#f7f9fc",
+        color: active ? "#fff" : available ? "#344054" : "var(--muted-2, #93a0b2)",
       }}
     >
       {label}
@@ -325,7 +325,7 @@ function DetailPanel({ tab, row, similarItems }) {
                           {siHref ? (
                             <Link
                               to={siHref}
-                              style={{ color: "var(--link, #124ba3)", textDecoration: "none" }}
+                              style={{ color: "var(--link, #11211a)", textDecoration: "none" }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.textDecoration = "underline";
                               }}
@@ -436,7 +436,7 @@ function ItemRow({ row, query, similarItems }) {
             {href ? (
               <Link
                 to={href}
-                style={{ color: "var(--link, #124ba3)", textDecoration: "none" }}
+                style={{ color: "var(--link, #11211a)", textDecoration: "none" }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.textDecoration = "underline";
                   e.currentTarget.style.textUnderlineOffset = "3px";
@@ -512,7 +512,7 @@ function DietBadge({ label, tone }) {
   const tones = {
     deal: { background: "#fff8e8", borderColor: "#e8cf9c", color: "#7a5600" },
     vegan: { background: "#eefcf2", borderColor: "#b9e2c3", color: "#27643a" },
-    gf: { background: "#eef4ff", borderColor: "#c4d6fb", color: "#21408a" },
+    gf: { background: "#f2f4f7", borderColor: "#d0d5dd", color: "#344054" },
     popular: { background: "#fff1f1", borderColor: "#f1c0c0", color: "#8a2f2f" },
   };
   const t = tones[tone] || {};
@@ -561,7 +561,7 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier }) {
   const tierLabel = profileTier === "pro" ? "Pro" : profileTier === "verified" ? "Verified" : "";
   const tierStyle =
     profileTier === "pro"
-      ? { background: "#eef7ff", border: "1px solid #b9d6fb", color: "#1a4f95" }
+      ? { background: "#f2f4f7", border: "1px solid #d0d5dd", color: "#344054" }
       : profileTier === "verified"
       ? { background: "#ecfff4", border: "1px solid #b9e7c9", color: "#1f6a3c" }
       : null;
@@ -683,7 +683,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
               style={{
                 fontSize: "var(--text-3, 15px)",
                 fontWeight: 800,
-                color: "var(--link, #124ba3)",
+                color: "var(--link, #11211a)",
                 textDecoration: "none",
               }}
               onMouseEnter={(e) => {
@@ -754,7 +754,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
               style={{
                 fontSize: "var(--text-3, 15px)",
                 fontWeight: 800,
-                color: "var(--link, #124ba3)",
+                color: "var(--link, #11211a)",
                 textDecoration: "none",
               }}
               onMouseEnter={(e) => {
@@ -784,7 +784,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
         {restHrefS ? (
           <Link
             to={restHrefS}
-            style={{ color: "var(--link, #124ba3)", textDecoration: "none" }}
+            style={{ color: "var(--link, #11211a)", textDecoration: "none" }}
             onMouseEnter={(e) => {
               e.currentTarget.style.textDecoration = "underline";
             }}
@@ -811,7 +811,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
             style={{
               fontSize: "var(--text-1, 12px)",
               fontWeight: 700,
-              color: "var(--link, #124ba3)",
+              color: "var(--link, #11211a)",
               textDecoration: "none",
             }}
             onMouseEnter={(e) => {

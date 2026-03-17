@@ -421,6 +421,8 @@ export default function GrubbidSearchResults() {
   const routeRadiusMiles = params.get("radius_miles");
   const routeMetroId = String(params.get("metro_id") || "").trim();
   const vegetarian = params.get("vegetarian") === "1";
+  const keto = params.get("keto") === "1";
+  const low_sodium = params.get("low_sodium") === "1";
   const fallbackLocation = useMemo(() => {
     if (routeZip || routeCity || routeState || routeNear || routeLocationLabel) {
       return {
@@ -456,6 +458,8 @@ export default function GrubbidSearchResults() {
     if (gluten_free) u.searchParams.set("gluten_free", "1");
     if (deals_only) u.searchParams.set("deals_only", "1");
     if (vegetarian) u.searchParams.set("vegetarian", "1");
+    if (keto) u.searchParams.set("keto", "1");
+    if (low_sodium) u.searchParams.set("low_sodium", "1");
     if (zip) u.searchParams.set("zip", zip);
     if (city) u.searchParams.set("city", city);
     if (state) u.searchParams.set("state", state);
@@ -489,6 +493,8 @@ export default function GrubbidSearchResults() {
     gluten_free,
     deals_only,
     vegetarian,
+    keto,
+    low_sodium,
     zip,
     city,
     state,
@@ -925,6 +931,18 @@ export default function GrubbidSearchResults() {
           active={vegetarian}
           isMobile={isMobile}
           onClick={() => applyFilter(params, navigate, "vegetarian", "1")}
+        />
+        <FilterToggle
+          label="Keto"
+          active={keto}
+          isMobile={isMobile}
+          onClick={() => applyFilter(params, navigate, "keto", "1")}
+        />
+        <FilterToggle
+          label="Low Sodium"
+          active={low_sodium}
+          isMobile={isMobile}
+          onClick={() => applyFilter(params, navigate, "low_sodium", "1")}
         />
       </div>
 

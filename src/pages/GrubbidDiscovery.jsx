@@ -185,6 +185,8 @@ export default function GrubbidDiscovery() {
     dairy_free: false,
     diabetic_friendly: false,
     gluten_free: false,
+    keto: false,
+    low_sodium: false,
     vegan: false,
     vegetarian: false,
   });
@@ -205,6 +207,8 @@ export default function GrubbidDiscovery() {
 
     if (includeFilters) {
       if (filters.gluten_free) params.set("gluten_free", "1");
+      if (filters.keto) params.set("keto", "1");
+      if (filters.low_sodium) params.set("low_sodium", "1");
       if (filters.vegan) params.set("vegan", "1");
       if (filters.vegetarian) params.set("vegetarian", "1");
       if (filters.diabetic_friendly) params.set("health", "diabetic-friendly");
@@ -622,6 +626,16 @@ export default function GrubbidDiscovery() {
                     label="Gluten Free"
                     active={filters.gluten_free}
                     onClick={() => setFilters((prev) => ({ ...prev, gluten_free: !prev.gluten_free }))}
+                  />
+                  <FilterChip
+                    label="Keto"
+                    active={filters.keto}
+                    onClick={() => setFilters((prev) => ({ ...prev, keto: !prev.keto }))}
+                  />
+                  <FilterChip
+                    label="Low Sodium"
+                    active={filters.low_sodium}
+                    onClick={() => setFilters((prev) => ({ ...prev, low_sodium: !prev.low_sodium }))}
                   />
                   <FilterChip
                     label="Vegan"

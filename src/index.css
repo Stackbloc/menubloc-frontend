@@ -30,7 +30,7 @@
   --ink: #0f1720;
   --muted: #5b6675;
   --muted-2: #93a0b2;
-  --link: #124ba3;
+  --link: #11211a;
 
   --bg: #ffffff;
   --card: #ffffff;
@@ -40,7 +40,7 @@
   --shadow-1: 0 6px 18px rgba(16, 24, 40, 0.06);
 
   /* Focus */
-  --focus: rgba(18, 75, 163, 0.35);
+  --focus: rgba(17, 33, 26, 0.25);
 }
 
 html,
