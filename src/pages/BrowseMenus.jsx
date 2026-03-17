@@ -223,6 +223,9 @@ export default function BrowseMenus() {
   });
   const [alphaGroup, setAlphaGroup] = useState(null);
 
+  const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
+    filters.dairy_free || filters.diabetic_friendly || filters.deals;
+
   useEffect(() => {
     let cancelled = false;
 
@@ -321,9 +324,6 @@ export default function BrowseMenus() {
   // Re-run when the URL location or filters change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlCity, urlState, filters, hasDietaryFilter]);
-
-  const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
-    filters.dairy_free || filters.diabetic_friendly || filters.deals;
 
   const showEmptyState = !loading && !error && (hasDietaryFilter ? items.length === 0 : menus.length === 0);
 
