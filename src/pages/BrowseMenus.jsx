@@ -371,7 +371,7 @@ export default function BrowseMenus() {
               letterSpacing: -0.5,
             }}
           >
-            Browse All Menus
+            {locationLabel ? `Browsing Menus Near ${locationLabel}` : "Browsing Menus"}
           </h1>
 
         </div>
@@ -556,17 +556,6 @@ export default function BrowseMenus() {
                   padding: "4px 4px 18px",
                 }}
               >
-                <div
-                  style={{
-                    fontSize: isMobile ? 15 : 16,
-                    fontWeight: 800,
-                    color: "#11211a",
-                    lineHeight: 1.35,
-                  }}
-                >
-                  {locationLabel ? `Menus near ${locationLabel}` : "Browse Menus"}
-                </div>
-
                 <div
                   style={{
                     fontSize: 13,
