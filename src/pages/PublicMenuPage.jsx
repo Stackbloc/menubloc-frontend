@@ -20,7 +20,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { PageNav } from "../components/NavButton.jsx";
 import { loadDietPrefs, hasActiveDietPrefs, activePrefLabels, itemPassesDietFilter, clearDietPrefs } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
@@ -45,27 +45,40 @@ function normalizeSections(data) {
   return [];
 }
 
-function PendingBanner({ text }) {
-  if (!text) return null;
+function UnverifiedBanner({ show, onClaim }) {
+  if (!show) return null;
 
   return (
-    <div
+    <button
+      onClick={onClaim}
       style={{
         marginTop: 12,
         display: "inline-flex",
         alignItems: "center",
-        padding: "8px 12px",
+        gap: 8,
+        padding: "9px 16px",
         borderRadius: 10,
-        background: "#fff3cd",
-        color: "#7c2d12",
-        border: "1px solid #facc15",
+        background: "#fffbeb",
+        color: "#92400e",
+        border: "1px solid #fde68a",
         fontSize: 12,
-        fontWeight: 900,
+        fontWeight: 800,
         letterSpacing: 0.2,
+        cursor: "pointer",
+        transition: "background 160ms ease, box-shadow 160ms ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "#fef3c7";
+        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.10)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "#fffbeb";
+        e.currentTarget.style.boxShadow = "none";
       }}
     >
-      {text}
-    </div>
+      <span style={{ fontSize: 13 }}>⚠</span>
+      Unverified Menu — Click to Claim Profile
+    </button>
   );
 }
 
@@ -100,6 +113,7 @@ function Badge({ label, bg, color, border }) {
 
 export default function PublicMenuPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [pageState, setPageState] = useState({
     status: "loading", // loading | ok | error
@@ -224,6 +238,7 @@ export default function PublicMenuPage() {
   const addressLine    = asStr(data?.address_line).trim();
   const sections       = normalizeSections(data);
   const menuBanner     = asStr(data?.menu_banner).trim();
+  const isUnverified   = data?.is_authoritative === false || !!menuBanner;
 
   return (
     <div style={pageBg}>
@@ -243,7 +258,7 @@ export default function PublicMenuPage() {
         </div>
       ) : null}
 
-      <PendingBanner text={menuBanner} />
+      <UnverifiedBanner show={isUnverified} onClaim={() => navigate("/signup")} />
 
       {/* Active dietary filter banner */}
       {filtersActive && (
