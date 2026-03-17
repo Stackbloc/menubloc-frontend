@@ -23,10 +23,8 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { BackButton, HomeButton } from "../components/NavButton.jsx";
-import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
-import NutritionCard from "../components/NutritionCard.jsx";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import InsightCardDeck from "../components/InsightCardDeck.jsx";
 
 const BACKEND_BASE = import.meta?.env?.VITE_BACKEND_URL || "http://localhost:3001";
 
@@ -282,10 +280,143 @@ function TabButton({ active, onClick, children }) {
   );
 }
 
+/* ---- Slug helper ---- */
+
+function toSlug(str) {
+  if (!str) return null;
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+/* ---- Collapsible Nutrition Card ---- */
+
+function CollapsibleNutritionCard({ chip }) {
+  const [open, setOpen] = useState(false);
+
+  const cal = chip?.calories_kcal != null ? Math.round(Number(chip.calories_kcal)) : null;
+  const pro = chip?.protein_g != null ? Math.round(Number(chip.protein_g)) : null;
+  const fat = chip?.fat_g != null ? Math.round(Number(chip.fat_g)) : null;
+  const sod = chip?.sodium_mg != null ? Math.round(Number(chip.sodium_mg)) : null;
+  const sug = chip?.sugar_g != null ? Math.round(Number(chip.sugar_g)) : null;
+
+  const summary = [
+    cal !== null ? `${cal} cal` : null,
+    pro !== null ? `${pro}g protein` : null,
+    fat !== null ? `${fat}g fat` : null,
+  ].filter(Boolean).join(" · ");
+
+  if (!summary && !chip?.allergen_alert) {
+    return <div style={{ fontSize: 14, opacity: 0.65 }}>Nutrition info not available for this item yet.</div>;
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          background: "rgba(0,0,0,0.03)",
+          border: "1px solid rgba(0,0,0,0.10)",
+          borderRadius: open ? "12px 12px 0 0" : 12,
+          padding: "10px 14px",
+          cursor: "pointer",
+          textAlign: "left",
+          gap: 12,
+        }}
+      >
+        <span style={{ fontSize: 14, fontWeight: 700, color: "#0f1720" }}>
+          {summary || "Allergen info available"}
+        </span>
+        <span style={{ fontSize: 12, color: "#5b6675", flexShrink: 0 }}>
+          {open ? "Hide ▲" : "Details ▼"}
+        </span>
+      </button>
+
+      {open && (
+        <div
+          style={{
+            border: "1px solid rgba(0,0,0,0.10)",
+            borderTop: "none",
+            borderRadius: "0 0 12px 12px",
+            padding: "12px 14px",
+            background: "white",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))",
+              gap: 8,
+              marginBottom: 10,
+            }}
+          >
+            {[
+              cal !== null && { label: "Calories", value: String(cal) },
+              pro !== null && { label: "Protein", value: `${pro}g` },
+              fat !== null && { label: "Fat", value: `${fat}g` },
+              sod !== null && { label: "Sodium", value: `${sod}mg` },
+              sug !== null && { label: "Sugar", value: `${sug}g` },
+            ].filter(Boolean).map((row) => (
+              <div
+                key={row.label}
+                style={{
+                  background: "#f4f7fb",
+                  border: "1px solid #e4e9f0",
+                  borderRadius: 10,
+                  padding: "8px 10px",
+                }}
+              >
+                <div style={{ fontSize: 11, color: "#5b6675", marginBottom: 3 }}>{row.label}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#0f1720" }}>{row.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {chip?.calories_pct_women != null && (
+            <div style={{ fontSize: 11.5, color: "#5b6675", lineHeight: 1.5, marginBottom: 6 }}>
+              Approx. {Math.round(Number(chip.calories_pct_women))}% of a 2,000 cal diet
+              {chip?.calories_pct_men != null ? ` · ${Math.round(Number(chip.calories_pct_men))}% of a 2,500 cal diet` : ""}.
+            </div>
+          )}
+
+          {chip?.allergen_alert && (
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "baseline",
+                flexWrap: "wrap",
+                gap: 6,
+                padding: "4px 8px",
+                background: "rgba(230,130,0,0.10)",
+                border: "1px solid rgba(230,130,0,0.22)",
+                borderRadius: 999,
+                marginTop: 4,
+              }}
+            >
+              <span style={{ fontSize: 10, fontWeight: 900, color: "#b36000" }}>⚠ Allergen Alert</span>
+              <span style={{ fontSize: 11.5, color: "#0f1720", lineHeight: 1.35 }}>{chip.allergen_alert}</span>
+            </div>
+          )}
+
+          {chip?.disclosure && (
+            <div style={{ marginTop: 8, fontSize: 11, color: "#93a0b2", fontStyle: "italic", lineHeight: 1.45 }}>
+              {chip.disclosure}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---- Page component ---- */
 
 export default function MenuItemDetailPage() {
-  const { id } = useParams();
+  const { id, restaurantSlug } = useParams();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
 
   const [loading, setLoading] = useState(true);
@@ -334,7 +465,19 @@ export default function MenuItemDetailPage() {
           );
         }
 
-        if (!cancelled) setRawItem(found);
+        if (!cancelled) {
+          setRawItem(found);
+          // Redirect to slug URL if we're on the bare /menu-items/:id route
+          if (!restaurantSlug) {
+            const slug =
+              found?.restaurant_slug ||
+              found?.restaurant?.slug ||
+              toSlug(found?.restaurant_name || found?.restaurant?.name || found?.restaurant);
+            if (slug) {
+              navigate(`/restaurants/${slug}/menu-items/${id}`, { replace: true });
+            }
+          }
+        }
       } catch (e) {
         if (!cancelled) setErr(String(e?.message || e));
       } finally {
@@ -359,10 +502,6 @@ export default function MenuItemDetailPage() {
   if (err) {
     return (
       <div style={{ maxWidth: 980, margin: "0 auto", padding: 16 }}>
-        <div style={{ marginBottom: 12 }}>
-          <BackButton />
-        </div>
-
         <div
           style={{
             padding: 12,
@@ -416,19 +555,6 @@ export default function MenuItemDetailPage() {
     >
       <div
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 10,
-          alignItems: "center",
-          marginBottom: 12,
-        }}
-      >
-        <BackButton />
-        <HomeButton />
-      </div>
-
-      <div
-        style={{
           border: "1px solid rgba(0,0,0,0.12)",
           borderRadius: 16,
           padding: isMobile ? 14 : 16,
@@ -459,7 +585,14 @@ export default function MenuItemDetailPage() {
             </div>
 
             <div style={{ fontSize: 14, opacity: 0.75, wordBreak: "break-word" }}>
-              {item.restaurant.name}
+              <Link
+                to={`/restaurants/${item.restaurant.slug || item.restaurant.id}`}
+                style={{ color: "inherit", textDecoration: "none" }}
+                onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+              >
+                {item.restaurant.name}
+              </Link>
             </div>
           </div>
 
@@ -502,9 +635,6 @@ export default function MenuItemDetailPage() {
             <TabButton active={tab === "nutrition"} onClick={() => setTab("nutrition")}>
               Nutrition
             </TabButton>
-            <TabButton active={tab === "pairings"} onClick={() => setTab("pairings")}>
-              Pairings
-            </TabButton>
             <TabButton active={tab === "ingredients"} onClick={() => setTab("ingredients")}>
               Ingredients
             </TabButton>
@@ -512,40 +642,13 @@ export default function MenuItemDetailPage() {
 
           {tab === "insights" && (
             <>
-              <MenuItemInsightsPanel item={insightsItem} />
+              <InsightCardDeck item={insightsItem} />
               <FindSimilar itemId={item?.id} isMobile={isMobile} />
             </>
           )}
 
           {tab === "nutrition" && (
-            <div>
-              {insightsItem?.chips?.nutrition_chip ? (
-                <NutritionCard chip={insightsItem.chips.nutrition_chip} />
-              ) : (
-                <div style={{ fontSize: 14, opacity: 0.75 }}>
-                  Nutrition info not available for this item yet.
-                </div>
-              )}
-            </div>
-          )}
-
-          {tab === "pairings" && (
-            <div style={{ fontSize: 14, opacity: 0.9 }}>
-              {item.pairings ? (
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                    overflowX: "auto",
-                  }}
-                >
-                  {JSON.stringify(item.pairings, null, 2)}
-                </pre>
-              ) : (
-                <div style={{ opacity: 0.75 }}>Pairings coming soon.</div>
-              )}
-            </div>
+            <CollapsibleNutritionCard chip={insightsItem?.chips?.nutrition_chip || null} />
           )}
 
           {tab === "ingredients" && (
@@ -563,44 +666,10 @@ export default function MenuItemDetailPage() {
                   <div style={{ wordBreak: "break-word" }}>{String(item.ingredients)}</div>
                 )
               ) : (
-                <div style={{ opacity: 0.75 }}>
-                  Ingredients coming soon.
-                </div>
+                <div style={{ opacity: 0.75 }}>Ingredients coming soon.</div>
               )}
             </div>
           )}
-        </div>
-
-        <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-          <button
-            type="button"
-            onClick={() => alert("TODO: Save/bookmark")}
-            style={{
-              border: "1px solid rgba(0,0,0,0.14)",
-              background: "white",
-              borderRadius: 10,
-              padding: "10px 12px",
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            Save
-          </button>
-
-          <button
-            type="button"
-            onClick={() => alert("TODO: Route to restaurant profile")}
-            style={{
-              border: "1px solid rgba(0,0,0,0.14)",
-              background: "white",
-              borderRadius: 10,
-              padding: "10px 12px",
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            View Restaurant
-          </button>
         </div>
       </div>
     </div>

@@ -854,8 +854,8 @@ export default function GrubbidSearchResults() {
     <div style={styles.page}>
     <div style={styles.wrap}>
       <div style={styles.topRow}>
-        <BackButton />
         <div style={styles.wordmark}>Grubbid</div>
+        <BackButton />
       </div>
 
       <h1 style={styles.title}>

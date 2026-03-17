@@ -167,6 +167,7 @@ export default function App() {
         <Route path="/menus" element={<MenuPage />} />
         <Route path="/menus/:id" element={<MenuDetailPage />} />
         <Route path="/public/restaurants/:id/menu" element={<PublicMenuPage />} />
+        <Route path="/restaurants/:restaurantSlug/menu-items/:id" element={<MenuItemDetailPage />} />
         <Route path="/menu-items/:id" element={<MenuItemDetailPage />} />
 
         {/* Claim verify */}
