@@ -186,6 +186,11 @@ export default function GrubbidDiscovery() {
   const [suggestedSearches, setSuggestedSearches] = useState([]);
   const [filters, setFilters] = useState(() => loadDietPrefs());
 
+  const resolvedLocationLabel = useMemo(() => {
+    if (appliedLocation) return appliedLocation;
+    return autoLocation.label;
+  }, [appliedLocation, autoLocation.label]);
+
   // Persist dietary prefs whenever they change so other pages see them
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
 
@@ -233,11 +238,6 @@ export default function GrubbidDiscovery() {
     validate();
     return () => { alive = false; };
   }, [resolvedLocationLabel, autoLocation.lat, autoLocation.lng, appliedLocation]);
-
-  const resolvedLocationLabel = useMemo(() => {
-    if (appliedLocation) return appliedLocation;
-    return autoLocation.label;
-  }, [appliedLocation, autoLocation.label]);
 
   function buildSearchParams(queryValue, options = {}) {
     const includeFilters = options.includeFilters !== false;
