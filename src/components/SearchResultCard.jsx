@@ -177,6 +177,22 @@ function getPhoneLike(x) {
   return asStr(pick(x, ["phone", "restaurant_phone"], ""));
 }
 
+function getAddressLine1Like(x) {
+  return asStr(pick(x, ["address_line1", "restaurant_address_line1"], ""));
+}
+
+function getCityLike(x) {
+  return asStr(pick(x, ["city", "restaurant_city"], ""));
+}
+
+function getStateLike(x) {
+  return asStr(pick(x, ["state", "restaurant_state"], ""));
+}
+
+function getPostalCodeLike(x) {
+  return asStr(pick(x, ["postal_code", "restaurant_postal_code"], ""));
+}
+
 function getDistanceMilesLike(x) {
   const n = asNum(pick(x, ["distance_miles", "restaurant_distance_miles"], null));
   return n === null ? null : n;
@@ -698,6 +714,10 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
   const restNameS = getRestName(item);
   const cuisineS = getCuisineLike(item);
   const phoneS = getPhoneLike(item);
+  const addressLine1S = getAddressLine1Like(item);
+  const cityS = getCityLike(item);
+  const stateS = getStateLike(item);
+  const postalS = getPostalCodeLike(item);
   const distanceMilesS = getDistanceMilesLike(item);
   const profileTierS = getProfileTierLike(item);
   const restProfileTargetS = restSlugS || restIdS;
@@ -763,25 +783,25 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
     );
   }
 
+  const cityStateLine = [cityS, stateS ? (postalS ? `${stateS} ${postalS}` : stateS) : postalS]
+    .filter(Boolean)
+    .join(", ");
+  const addressLine = [addressLine1S, cityStateLine].filter(Boolean).join(", ");
+  const detailPieces = [
+    distanceMilesS !== null ? `${distanceMilesS.toFixed(1)} mi away` : null,
+    phoneS || null,
+  ].filter(Boolean);
+
   return (
     <article style={cardStyle}>
-      <div
-        style={{
-          fontSize: "var(--text-3, 16px)",
-          fontWeight: 700,
-          color: "var(--ink, #0f1720)",
-        }}
-      >
+      {/* Restaurant name */}
+      <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.01em", color: "#11211a" }}>
         {restHrefS ? (
           <Link
             to={restHrefS}
-            style={{ color: "var(--link, #11211a)", textDecoration: "none" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.textDecoration = "underline";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.textDecoration = "none";
-            }}
+            style={{ color: "#11211a", textDecoration: "none" }}
+            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; e.currentTarget.style.textUnderlineOffset = "3px"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
           >
             {hl(restNameS, query)}
           </Link>
@@ -789,28 +809,35 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
           hl(restNameS, query)
         )}
       </div>
-      <RestaurantMeta
-        cuisine={cuisineS}
-        phone={phoneS}
-        distanceMiles={distanceMilesS}
-        profileTier={profileTierS}
-      />
+
+      {/* Cuisine tag */}
+      {cuisineS && (
+        <div style={{ marginTop: 4, fontSize: 13, fontWeight: 600, color: "#667085" }}>
+          {cuisineS}
+        </div>
+      )}
+
+      {/* Address */}
+      {addressLine && (
+        <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "#475467" }}>
+          {addressLine}
+        </div>
+      )}
+
+      {/* Distance · Phone */}
+      {detailPieces.length > 0 && (
+        <div style={{ marginTop: 4, fontSize: 14, fontWeight: 500, color: "#667085" }}>
+          {detailPieces.join(" · ")}
+        </div>
+      )}
+
       {menuHrefS && (
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: 12 }}>
           <Link
             to={menuHrefS}
-            style={{
-              fontSize: "var(--text-1, 12px)",
-              fontWeight: 700,
-              color: "var(--link, #11211a)",
-              textDecoration: "none",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.textDecoration = "underline";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.textDecoration = "none";
-            }}
+            style={{ fontSize: 15, fontWeight: 800, color: "#11211a", textDecoration: "none" }}
+            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
           >
             View Menu →
           </Link>

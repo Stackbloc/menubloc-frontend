@@ -135,9 +135,61 @@ function getCuisineEmoji(restaurantName, cuisine) {
   return "🍽️";
 }
 
+function ConfirmDialog({ message, onConfirm, onCancel }) {
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: "absolute", inset: 0, zIndex: 20,
+        background: "rgba(0,0,0,0.72)",
+        backdropFilter: "blur(6px)",
+        borderRadius: 20,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px 18px",
+        gap: 14,
+      }}
+    >
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", textAlign: "center", lineHeight: 1.4 }}>
+        {message}
+      </div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <button
+          type="button"
+          onClick={onConfirm}
+          style={{
+            padding: "8px 22px", borderRadius: 999,
+            background: "#fff", color: "#11211a",
+            fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer",
+          }}
+        >
+          Yes
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          style={{
+            padding: "8px 22px", borderRadius: 999,
+            background: "rgba(255,255,255,0.15)", color: "#fff",
+            fontSize: 13, fontWeight: 800,
+            border: "1px solid rgba(255,255,255,0.35)", cursor: "pointer",
+          }}
+        >
+          No
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function MenuPreviewCard({ menu, index = 0 }) {
   const [hover, setHover] = useState(false);
+  const [confirm, setConfirm] = useState(null); // null | "phone" | "order"
   const href = `/public/restaurants/${menu?.restaurant_id}/menu`;
+  const phone = menu?.phone || null;
+  const websiteUrl = menu?.website_url || null;
   const theme = CARD_THEMES[index % CARD_THEMES.length];
   const isVerified = menu?.menu_status === "published";
   const distance = formatDistance(menu?.distance_miles);
@@ -200,32 +252,20 @@ export default function MenuPreviewCard({ menu, index = 0 }) {
           }} />
         )}
 
-        {/* Bottom scrim — dark for readability */}
+        {/* Dark overlay — full card for readability */}
         <div aria-hidden="true" style={{
           position: "absolute", inset: 0,
           background: hover
-            ? "linear-gradient(to top, rgba(0,0,0,0.76) 0%, rgba(0,0,0,0.42) 48%, rgba(0,0,0,0.0) 100%)"
-            : "linear-gradient(to top, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.22) 46%, rgba(0,0,0,0.0) 100%)",
+            ? "rgba(0,0,0,0.38)"
+            : "rgba(0,0,0,0.28)",
           transition: "background 240ms ease",
           pointerEvents: "none",
         }} />
 
-        {/* Emoji — top left, larger with glow */}
-        <div style={{
-          position: "absolute", top: 14, left: 16,
-          fontSize: 36,
-          filter: "drop-shadow(0 3px 10px rgba(0,0,0,0.40))",
-          lineHeight: 1,
-          transform: hover ? "scale(1.15)" : "scale(1)",
-          transition: "transform 240ms cubic-bezier(.22,.68,0,1.2)",
-        }}>
-          {emoji}
-        </div>
-
         {/* Verified badge — top right */}
         {isVerified && (
           <div style={{
-            position: "absolute", top: 12, right: 12,
+            position: "absolute", top: 12, right: 12, zIndex: 4,
             display: "inline-flex", alignItems: "center", gap: 4,
             padding: "3px 9px",
             borderRadius: 999,
@@ -241,56 +281,136 @@ export default function MenuPreviewCard({ menu, index = 0 }) {
           </div>
         )}
 
-        {/* Bottom content */}
+        {/* Center content — emoji + name + meta */}
         <div style={{
-          position: "absolute", bottom: 0, left: 0, right: 0,
-          zIndex: 2,
-          padding: "0 16px 15px",
+          position: "absolute", top: 0, left: 0, right: 0,
+          bottom: (phone || websiteUrl) ? 64 : 0,
+          zIndex: 3,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "0 18px",
+          textAlign: "center",
+          gap: 0,
         }}>
+          {/* Emoji */}
+          <div style={{
+            fontSize: 42,
+            lineHeight: 1,
+            filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.5))",
+            transform: hover ? "scale(1.12)" : "scale(1)",
+            transition: "transform 240ms cubic-bezier(.22,.68,0,1.2)",
+            marginBottom: 10,
+          }}>
+            {emoji}
+          </div>
+
           {/* Restaurant name */}
           <div style={{
-            fontSize: 17,
+            fontSize: 19,
             fontWeight: 900,
             lineHeight: 1.15,
             letterSpacing: -0.4,
-            textShadow: "0 1px 8px rgba(0,0,0,0.55)",
-            marginBottom: 4,
+            textShadow: "0 2px 12px rgba(0,0,0,0.6)",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
+            maxWidth: "100%",
             color: "#fff",
+            marginBottom: 6,
           }}>
             {menu?.restaurant_name || "Restaurant"}
           </div>
 
-          {/* Meta row */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 6,
-          }}>
-            {/* Accent dot */}
-            <span style={{
-              width: 6, height: 6, borderRadius: "50%",
-              background: theme.dot,
-              flexShrink: 0,
-              boxShadow: `0 0 6px ${theme.dot}`,
-            }} />
+          {/* Meta pill */}
+          {(cuisine || distance || itemCount > 0) && (
             <div style={{
-              fontSize: 11, fontWeight: 600,
-              color: "rgba(255,255,255,0.80)",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              display: "inline-flex", alignItems: "center", gap: 5,
+              padding: "3px 10px",
+              borderRadius: 999,
+              background: "rgba(0,0,0,0.28)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.18)",
             }}>
-              {[cuisine, distance, itemCount > 0 ? `${itemCount} items` : null].filter(Boolean).join(" · ")}
+              <span style={{
+                width: 5, height: 5, borderRadius: "50%",
+                background: theme.dot,
+                flexShrink: 0,
+                boxShadow: `0 0 5px ${theme.dot}`,
+              }} />
+              <span style={{
+                fontSize: 11, fontWeight: 600,
+                color: "rgba(255,255,255,0.88)",
+                whiteSpace: "nowrap",
+              }}>
+                {[cuisine, distance, itemCount > 0 ? `${itemCount} items` : null].filter(Boolean).join(" · ")}
+              </span>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Hover: "View Menu" cta shimmer */}
+        {/* Action buttons — bottom center */}
+        {!confirm && (
+          <div
+            onClick={(e) => e.preventDefault()}
+            style={{
+              position: "absolute", bottom: 14, left: 0, right: 0,
+              display: "flex", justifyContent: "space-between", zIndex: 10,
+              padding: "0 16px",
+            }}
+          >
+            {phone && (
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirm("phone"); }}
+                style={{
+                  height: 36, borderRadius: 999, padding: "0 16px",
+                  background: "rgba(255,255,255,0.18)",
+                  backdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255,255,255,0.40)",
+                  color: "#fff", fontSize: 12, fontWeight: 800,
+                  display: "flex", alignItems: "center", gap: 6,
+                  cursor: "pointer", whiteSpace: "nowrap",
+                  letterSpacing: 0.3,
+                  textShadow: "0 1px 4px rgba(0,0,0,0.4)",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+                }}
+              >
+                📞 Call
+              </button>
+            )}
+            {websiteUrl && (
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirm("order"); }}
+                style={{
+                  height: 36, borderRadius: 999, padding: "0 16px",
+                  background: "rgba(255,255,255,0.18)",
+                  backdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255,255,255,0.40)",
+                  color: "#fff", fontSize: 12, fontWeight: 800,
+                  display: "flex", alignItems: "center", gap: 6,
+                  cursor: "pointer", whiteSpace: "nowrap",
+                  letterSpacing: 0.3,
+                  textShadow: "0 1px 4px rgba(0,0,0,0.4)",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+                }}
+              >
+                Order →
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Hover: "View Menu" shimmer */}
         <div style={{
           position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
           pointerEvents: "none",
-          opacity: hover ? 1 : 0,
+          opacity: hover && !confirm ? 1 : 0,
           transition: "opacity 220ms ease",
+          zIndex: 5,
         }}>
           <div style={{
             padding: "7px 20px",
@@ -306,6 +426,22 @@ export default function MenuPreviewCard({ menu, index = 0 }) {
             View Menu →
           </div>
         </div>
+
+        {/* Confirm overlays */}
+        {confirm === "phone" && (
+          <ConfirmDialog
+            message={`Call ${menu?.restaurant_name || "this restaurant"}?`}
+            onConfirm={() => { setConfirm(null); window.location.href = `tel:${phone}`; }}
+            onCancel={() => setConfirm(null)}
+          />
+        )}
+        {confirm === "order" && (
+          <ConfirmDialog
+            message={`Go to ${menu?.restaurant_name || "this restaurant"}'s website to order?`}
+            onConfirm={() => { setConfirm(null); window.open(websiteUrl, "_blank", "noopener,noreferrer"); }}
+            onCancel={() => setConfirm(null)}
+          />
+        )}
       </article>
     </Link>
   );
