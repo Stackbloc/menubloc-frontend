@@ -581,7 +581,7 @@ function ItemRow({ row, query, similarItems }) {
       }}
     >
       {/* Name + price — left-anchored, not pushed apart */}
-      <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 8px" }}>
+      <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 20px" }}>
         <span
           style={{
             fontSize: "20px",
