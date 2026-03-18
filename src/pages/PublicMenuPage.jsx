@@ -291,6 +291,19 @@ export default function PublicMenuPage() {
       }}>
         <PageNav back />
 
+        {/* Restaurant header — above the two-column layout */}
+        <div style={{ marginBottom: isMobile ? 18 : 22 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", color: "#667085", marginBottom: 6 }}>
+            Grubbid
+          </div>
+          <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a" }}>
+            {restaurantName}
+          </div>
+          {addressLine ? (
+            <div style={{ marginTop: 6, fontSize: 14, color: "#667085", fontWeight: 600 }}>{addressLine}</div>
+          ) : null}
+        </div>
+
         {/* Two-column layout: sidebar + menu content */}
         <div style={{
           display: "flex",
@@ -351,19 +364,6 @@ export default function PublicMenuPage() {
 
           {/* ── Menu content ── */}
           <main style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
-
-            {/* Restaurant header — directly above menu box */}
-            <div style={{ marginBottom: isMobile ? 18 : 22 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", color: "#667085", marginBottom: 6 }}>
-                Grubbid
-              </div>
-              <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a" }}>
-                {restaurantName}
-              </div>
-              {addressLine ? (
-                <div style={{ marginTop: 6, fontSize: 14, color: "#667085", fontWeight: 600 }}>{addressLine}</div>
-              ) : null}
-            </div>
 
             {sections.length === 0 ? (
               <div style={{ fontSize: 14, color: "var(--muted, #5b6675)" }}>No menu sections yet.</div>

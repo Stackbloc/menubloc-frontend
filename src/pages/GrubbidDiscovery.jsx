@@ -745,8 +745,8 @@ export default function GrubbidDiscovery() {
               gap: isMobile ? 16 : 0,
             }}
           >
-            <div style={{ fontSize: 13, color: "#667085" }}>
-              <Link to="/restaurant/signup" style={{ color: "#11211a", fontWeight: 900, textDecoration: "none" }}>
+            <div style={{ fontSize: 13 }}>
+              <Link to="/restaurant/signup" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
                 Restaurant Sign Up
               </Link>
             </div>
@@ -757,7 +757,6 @@ export default function GrubbidDiscovery() {
                 flexWrap: "wrap",
                 gap: isMobile ? 16 : 28,
                 fontSize: 13,
-                color: "#667085",
                 alignItems: "center",
               }}
             >
@@ -770,7 +769,7 @@ export default function GrubbidDiscovery() {
                   if (parts[1]) p.set("state", parts[1]);
                   return `/deals?${p.toString()}`;
                 })()}
-                style={{ color: "#11211a", textDecoration: "none", fontWeight: 900 }}
+                style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}
               >
                 Restaurant Deals
               </Link>
@@ -783,14 +782,14 @@ export default function GrubbidDiscovery() {
                   if (parts[1]) p.set("state", parts[1]);
                   return `/top5/healthiest?${p.toString()}`;
                 })()}
-                style={{ color: "#667085", textDecoration: "none", fontWeight: 900 }}
+                style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}
               >
                 Top 5 Healthiest Dishes
               </Link>
-              <Link to="/terms" style={{ color: "#667085", textDecoration: "none", fontWeight: 900 }}>
+              <Link to="/terms" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
                 Terms of Use
               </Link>
-              <Link to="/contact" style={{ color: "#667085", textDecoration: "none", fontWeight: 900 }}>
+              <Link to="/contact" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
                 Contact Us
               </Link>
             </div>

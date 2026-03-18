@@ -29,7 +29,12 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
-import NutritionCard from "./NutritionCard.jsx";
+import {
+  toNum,
+  getQualitativeLabel,
+  getNutritionSummary,
+  computeInsights,
+} from "../lib/nutritionInsights.js";
 
 /* ---- Helpers ---- */
 
@@ -234,6 +239,145 @@ function resolveItemFlag(row, key) {
   return row?.item?.[key] ?? null;
 }
 
+/* ---- Nutrition + Insights bar panels ---- */
+
+function BarRow({ label, pct, valueLabel, qualLabel, color, indent }) {
+  const fill = Math.max(0, Math.min(100, Number(pct) || 0));
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: indent ? "2px 0" : "4px 0", paddingLeft: indent ? 12 : 0 }}>
+      <div style={{ width: indent ? 56 : 68, fontSize: indent ? 12 : 13, color: indent ? "#9ca3af" : "#667085", flexShrink: 0 }}>
+        {indent && <span style={{ marginRight: 4, opacity: 0.5 }}>·</span>}{label}
+      </div>
+      <div style={{ flex: 1, height: indent ? 4 : 6, background: "rgba(0,0,0,0.07)", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ width: `${fill}%`, height: "100%", background: color, opacity: indent ? 0.55 : 0.75, borderRadius: 3 }} />
+      </div>
+      <div style={{ minWidth: 48, fontSize: indent ? 12 : 13, fontWeight: 700, color: "#344054", textAlign: "right", flexShrink: 0 }}>
+        {valueLabel}
+        {qualLabel && (
+          <span style={{ marginLeft: 4, fontWeight: 500, color: "#9ca3af", fontSize: 11 }}>
+            ({qualLabel})
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NutritionPanel({ chip }) {
+  const r = (v) => (v != null && Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
+  const cal   = r(chip?.calories_kcal);
+  const pro   = r(chip?.protein_g);
+  const carbs = r(chip?.carbs_g);
+  const fiber = r(chip?.fiber_g);
+  const sug   = r(chip?.sugar_g);
+  const fat   = r(chip?.fat_g);
+  const sod   = r(chip?.sodium_mg);
+
+  const hasValues = cal !== null || pro !== null || fat !== null || sod !== null;
+  if (!hasValues) {
+    return <div style={{ fontSize: 14, color: "#9ca3af" }}>Nutrition info unavailable for this item yet.</div>;
+  }
+
+  const summary = getNutritionSummary(chip);
+
+  return (
+    <div>
+      {cal   !== null && <BarRow label="Calories" pct={(cal   / 2000) * 100} valueLabel={String(cal)}   qualLabel={getQualitativeLabel("calories", cal)} color="#e07b39" />}
+      {pro   !== null && <BarRow label="Protein"  pct={(pro   / 50)   * 100} valueLabel={`${pro}g`}    qualLabel={getQualitativeLabel("protein", pro)}  color="#1a9a4a" />}
+      {carbs !== null && <BarRow label="Carbs"    pct={(carbs / 275)  * 100} valueLabel={`${carbs}g`}  qualLabel={getQualitativeLabel("carbs", carbs)}  color="#b87a00" />}
+      {fiber !== null && <BarRow label="Fiber"    pct={(fiber / 28)   * 100} valueLabel={`${fiber}g`}  qualLabel={getQualitativeLabel("fiber", fiber)}  color="#6b7280" indent />}
+      {sug   !== null && <BarRow label="Sugar"    pct={(sug   / 50)   * 100} valueLabel={`${sug}g`}    qualLabel={getQualitativeLabel("sugar", sug)}    color="#8b5cf6" indent />}
+      {fat   !== null && <BarRow label="Fat"      pct={(fat   / 65)   * 100} valueLabel={`${fat}g`}    qualLabel={getQualitativeLabel("fat", fat)}      color="#b87a00" />}
+      {sod   !== null && <BarRow label="Sodium"   pct={(sod   / 2300) * 100} valueLabel={`${sod}mg`}   qualLabel={getQualitativeLabel("sodium", sod)}   color="#c0392b" />}
+
+      {chip?.allergen_alert && (
+        <div style={{ marginTop: 10, fontSize: 13, color: "#b36000", fontWeight: 600 }}>
+          ⚠ {chip.allergen_alert}
+        </div>
+      )}
+      {summary && (
+        <div style={{ marginTop: 10, fontSize: 13, color: "#344054", fontWeight: 600, lineHeight: 1.4 }}>
+          {summary}
+        </div>
+      )}
+      {chip?.disclosure && (
+        <div style={{ marginTop: 4, fontSize: 12, color: "#93a0b2", fontStyle: "italic", lineHeight: 1.4 }}>
+          {chip.disclosure}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- Insights panel ---- */
+
+const INSIGHT_ROWS = [
+  { key: "proteinStrength", label: "Protein Strength", color: "#1a9a4a", hint: "Higher is better"  },
+  { key: "glycemicImpact",  label: "Glycemic Impact",  color: "#c0392b", hint: "Lower is better"   },
+  { key: "sodiumRisk",      label: "Sodium Risk",      color: "#e07b39", hint: "Lower is better"   },
+  { key: "lastingEnergy",   label: "Lasting Energy",   color: "#3b82f6", hint: "Higher is better"  },
+];
+
+function InsightsPanel({ chip, onFindSimilar }) {
+  const scores  = computeInsights(chip);
+  const summary = getNutritionSummary(chip);
+  const hasAny  = INSIGHT_ROWS.some(({ key }) => scores[key] !== null);
+
+  if (!hasAny) {
+    return <div style={{ fontSize: 14, color: "#9ca3af" }}>Not enough data to compute insights.</div>;
+  }
+
+  return (
+    <div>
+      {INSIGHT_ROWS.map(({ key, label, color, hint }) => {
+        const score = scores[key];
+        if (score === null) return null;
+        return (
+          <div key={key} style={{ padding: "3px 0" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 118, fontSize: 13, fontWeight: 600, color: "#344054", flexShrink: 0 }}>{label}</div>
+              <div style={{ flex: 1, height: 6, background: "rgba(0,0,0,0.07)", borderRadius: 3, overflow: "hidden" }}>
+                <div style={{ width: `${score * 10}%`, height: "100%", background: color, opacity: 0.75, borderRadius: 3 }} />
+              </div>
+              <div style={{ width: 40, fontSize: 13, fontWeight: 700, color: "#344054", textAlign: "right", flexShrink: 0 }}>
+                {score}/10
+              </div>
+            </div>
+            <div style={{ paddingLeft: 126, fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{hint}</div>
+          </div>
+        );
+      })}
+
+      {summary && (
+        <div style={{ marginTop: 10, fontSize: 13, color: "#344054", fontWeight: 600, lineHeight: 1.4 }}>
+          {summary}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={onFindSimilar}
+        style={{
+          marginTop: 14,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          padding: "6px 14px",
+          borderRadius: 999,
+          border: "1px solid #d0d5dd",
+          background: "#f2f4f7",
+          color: "#344054",
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        Find Similar →
+      </button>
+    </div>
+  );
+}
+
 /* ---- Chip button ---- */
 
 function Chip({ label, active, available, onClick }) {
@@ -266,7 +410,7 @@ function Chip({ label, active, available, onClick }) {
 
 /* ---- Detail panel content ---- */
 
-function DetailPanel({ tab, row, similarItems }) {
+function DetailPanel({ tab, row, similarItems, onFindSimilar }) {
   const chips = resolveChips(row);
   const nutChip = chips?.nutrition_chip || {};
 
@@ -284,7 +428,7 @@ function DetailPanel({ tab, row, similarItems }) {
   if (tab === "nutrition") {
     return (
       <div style={wrap}>
-        <NutritionCard chip={nutChip} />
+        <NutritionPanel chip={nutChip} />
       </div>
     );
   }
@@ -292,7 +436,7 @@ function DetailPanel({ tab, row, similarItems }) {
   if (tab === "insights") {
     return (
       <div style={wrap}>
-        <InsightCardDeck item={row} />
+        <InsightsPanel chip={nutChip} onFindSimilar={onFindSimilar} />
       </div>
     );
   }
@@ -416,7 +560,12 @@ function ItemRow({ row, query, similarItems }) {
     (Array.isArray(nutChip.allergens) && nutChip.allergens.length > 0) ||
     String(nutChip.allergen_alert || "").trim().length > 0;
 
-  const hasIns = buildInsightCards(row).length > 0;
+  const insightScores = computeInsights(nutChip);
+  const hasIns =
+    buildInsightCards(row).length > 0 ||
+    insightScores.proteinStrength !== null ||
+    insightScores.glycemicImpact  !== null ||
+    insightScores.sodiumRisk      !== null;
   const hasSimilar = Array.isArray(similarItems) && similarItems.length > 0;
 
   function toggle(tab) {
@@ -509,7 +658,7 @@ function ItemRow({ row, query, similarItems }) {
         )}
       </div>
 
-      {openTab && <DetailPanel tab={openTab} row={row} similarItems={similarItems} />}
+      {openTab && <DetailPanel tab={openTab} row={row} similarItems={similarItems} onFindSimilar={() => toggle("similar")} />}
     </div>
   );
 }
