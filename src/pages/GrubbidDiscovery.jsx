@@ -183,11 +183,56 @@ export default function GrubbidDiscovery() {
     if (typeof window === "undefined") return "";
     return String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim();
   });
-  const [suggestedSearches] = useState(CANDIDATE_SUGGESTED_SEARCHES);
+  const [suggestedSearches, setSuggestedSearches] = useState([]);
   const [filters, setFilters] = useState(() => loadDietPrefs());
 
   // Persist dietary prefs whenever they change so other pages see them
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
+
+  // Validate suggested searches — only show terms that return at least 1 result
+  useEffect(() => {
+    const hasLocation = resolvedLocationLabel || autoLocation.lat != null;
+    if (!hasLocation) return;
+
+    let alive = true;
+    setSuggestedSearches([]);
+
+    async function validate() {
+      const results = await Promise.all(
+        CANDIDATE_SUGGESTED_SEARCHES.map(async (term) => {
+          try {
+            const p = new URLSearchParams();
+            p.set("q", term);
+            p.set("limit", "1");
+            const loc = parseLocation(appliedLocation);
+            if (loc.city)  p.set("city",  loc.city);
+            if (loc.state) p.set("state", loc.state);
+            if (loc.zip)   p.set("zip",   loc.zip);
+            if (!loc.label && autoLocation.lat != null) {
+              p.set("lat", String(autoLocation.lat));
+              p.set("lng", String(autoLocation.lng));
+              p.set("radius_miles", String(LOCAL_RADIUS_MILES));
+            }
+            const res = await fetch(`${API}/search?${p.toString()}`, { credentials: "include" });
+            const json = await res.json().catch(() => ({}));
+            const count =
+              (Array.isArray(json?.results)     ? json.results.length     : 0) +
+              (Array.isArray(json?.menu_items)  ? json.menu_items.length  : 0) +
+              (Array.isArray(json?.restaurants) ? json.restaurants.length : 0);
+            return count > 0 ? term : null;
+          } catch {
+            return null;
+          }
+        })
+      );
+      if (alive) {
+        setSuggestedSearches(results.filter(Boolean));
+      }
+    }
+
+    validate();
+    return () => { alive = false; };
+  }, [resolvedLocationLabel, autoLocation.lat, autoLocation.lng, appliedLocation]);
 
   const resolvedLocationLabel = useMemo(() => {
     if (appliedLocation) return appliedLocation;
