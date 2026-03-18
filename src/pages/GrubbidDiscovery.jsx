@@ -370,7 +370,7 @@ export default function GrubbidDiscovery() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={handleSearchKeyDown}
-              placeholder="Search food, ingredients, restaurants, or deals"
+              placeholder="What do you want to eat? Search food, ingredients, restaurants, or deals"
               style={{
                 flex: 1,
                 height: isMobile ? 56 : 64,
@@ -693,14 +693,15 @@ export default function GrubbidDiscovery() {
               paddingTop: isMobile ? 32 : 40,
               borderTop: "1px solid #e4e7ec",
               display: "flex",
+              flexWrap: "wrap",
               flexDirection: isMobile ? "column" : "row",
               alignItems: isMobile ? "flex-start" : "center",
-              justifyContent: "space-between",
-              gap: isMobile ? 12 : 0,
+              justifyContent: isMobile ? "flex-start" : "space-between",
+              gap: isMobile ? 16 : 0,
             }}
           >
-            <div style={{ fontSize: 14, color: "#667085" }}>
-              <Link to="/restaurant/signup" style={{ color: "#11211a", fontWeight: 800 }}>
+            <div style={{ fontSize: 13, color: "#667085" }}>
+              <Link to="/restaurant/signup" style={{ color: "#11211a", fontWeight: 900, textDecoration: "none" }}>
                 Restaurant Sign Up
               </Link>
             </div>
@@ -708,12 +709,26 @@ export default function GrubbidDiscovery() {
             <div
               style={{
                 display: "flex",
-                gap: 20,
+                flexWrap: "wrap",
+                gap: isMobile ? 16 : 28,
                 fontSize: 13,
                 color: "#667085",
-                alignItems: "flex-start",
+                alignItems: "center",
               }}
             >
+              <Link
+                to={(() => {
+                  if (!resolvedLocationLabel) return "/deals";
+                  const parts = resolvedLocationLabel.split(",").map((s) => s.trim());
+                  const p = new URLSearchParams();
+                  if (parts[0]) p.set("city", parts[0]);
+                  if (parts[1]) p.set("state", parts[1]);
+                  return `/deals?${p.toString()}`;
+                })()}
+                style={{ color: "#11211a", textDecoration: "none", fontWeight: 900 }}
+              >
+                Restaurant Deals
+              </Link>
               <Link
                 to={(() => {
                   if (!resolvedLocationLabel) return "/top5/healthiest";
@@ -723,19 +738,14 @@ export default function GrubbidDiscovery() {
                   if (parts[1]) p.set("state", parts[1]);
                   return `/top5/healthiest?${p.toString()}`;
                 })()}
-                style={{ color: "#667085", textDecoration: "none", fontWeight: 600, lineHeight: 1.4, display: "inline-block" }}
+                style={{ color: "#667085", textDecoration: "none", fontWeight: 900 }}
               >
-                <span style={{ display: "block", marginLeft: -12 }}>Top 5 Healthiest Dishes</span>
-                {resolvedLocationLabel ? (
-                  <span style={{ display: "block" }}>
-                    in {resolvedLocationLabel}
-                  </span>
-                ) : null}
+                Top 5 Healthiest Dishes
               </Link>
-              <Link to="/terms" style={{ color: "#667085", textDecoration: "none", fontWeight: 600 }}>
+              <Link to="/terms" style={{ color: "#667085", textDecoration: "none", fontWeight: 900 }}>
                 Terms of Use
               </Link>
-              <Link to="/contact" style={{ color: "#667085", textDecoration: "none", fontWeight: 600 }}>
+              <Link to="/contact" style={{ color: "#667085", textDecoration: "none", fontWeight: 900 }}>
                 Contact Us
               </Link>
             </div>

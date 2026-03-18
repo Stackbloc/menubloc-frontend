@@ -351,7 +351,8 @@ export default function PublicMenuPage() {
 
           {/* ── Menu content ── */}
           <main style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
-            {/* Restaurant header — sits above menu sections in the right column */}
+
+            {/* Restaurant header — directly above menu box */}
             <div style={{ marginBottom: isMobile ? 18 : 22 }}>
               <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase", color: "#667085", marginBottom: 6 }}>
                 Grubbid

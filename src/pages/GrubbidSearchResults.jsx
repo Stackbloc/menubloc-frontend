@@ -907,52 +907,18 @@ export default function GrubbidSearchResults() {
               : locationLabel === "your current location"
               ? "near you"
               : null,
-            !loading && (hasMenuMatches
-              ? `${restaurantGroups.length} restaurant${restaurantGroups.length === 1 ? "" : "s"} found`
-              : restaurantOnlyVisible.length
-              ? `${restaurantOnlyVisible.length} suggestion${restaurantOnlyVisible.length === 1 ? "" : "s"}`
-              : null),
+            !loading && (() => {
+              if (hasMenuMatches) {
+                const totalDishes = restaurantGroups.reduce((acc, g) => acc + g.items.length, 0);
+                return `${totalDishes} ${totalDishes === 1 ? "dish" : "dishes"} found`;
+              }
+              if (restaurantOnlyVisible.length) {
+                return `${restaurantOnlyVisible.length} restaurant${restaurantOnlyVisible.length === 1 ? "" : "s"} found`;
+              }
+              return null;
+            })(),
           ].filter(Boolean).join(" · ")}
         </div>
-      </div>
-
-      <div style={styles.filterBar}>
-        <FilterToggle
-          label="Deals"
-          active={deals_only}
-          isMobile={isMobile}
-          onClick={() => applyFilter(params, navigate, "deals_only", "1")}
-        />
-        <FilterToggle
-          label="Gluten-free"
-          active={gluten_free}
-          isMobile={isMobile}
-          onClick={() => applyFilter(params, navigate, "gluten_free", "1")}
-        />
-        <FilterToggle
-          label="Vegan"
-          active={vegan}
-          isMobile={isMobile}
-          onClick={() => applyFilter(params, navigate, "vegan", "1")}
-        />
-        <FilterToggle
-          label="Vegetarian"
-          active={vegetarian}
-          isMobile={isMobile}
-          onClick={() => applyFilter(params, navigate, "vegetarian", "1")}
-        />
-        <FilterToggle
-          label="Keto"
-          active={keto}
-          isMobile={isMobile}
-          onClick={() => applyFilter(params, navigate, "keto", "1")}
-        />
-        <FilterToggle
-          label="Low Sodium"
-          active={low_sodium}
-          isMobile={isMobile}
-          onClick={() => applyFilter(params, navigate, "low_sodium", "1")}
-        />
       </div>
 
       {geoFallbackUsed && (

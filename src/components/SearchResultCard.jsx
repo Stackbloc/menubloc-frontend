@@ -91,8 +91,8 @@ function hl(text, query) {
   return parts.map((p, i) =>
     i % 2 === 1
       ? React.createElement(
-          "mark",
-          { key: i, style: {} },
+          "span",
+          { key: i, style: { fontWeight: 900 } },
           p
         )
       : React.createElement("span", { key: i }, p)
@@ -230,7 +230,7 @@ function Chip({ label, active, available, onClick }) {
         alignItems: "center",
         borderRadius: 999,
         padding: "4px 10px",
-        fontSize: "var(--text-1, 12px)",
+        fontSize: "12px",
         fontWeight: 700,
         lineHeight: 1,
         cursor: "pointer",
@@ -238,9 +238,9 @@ function Chip({ label, active, available, onClick }) {
           ? "1px solid #11211a"
           : available
           ? "1px solid #d0d5dd"
-          : "1px solid var(--border, #e4e9f0)",
+          : "1px solid #e4e7ec",
         background: active ? "#11211a" : available ? "#f2f4f7" : "#f7f9fc",
-        color: active ? "#fff" : available ? "#344054" : "var(--muted-2, #93a0b2)",
+        color: active ? "#fff" : available ? "#344054" : "#9ca3af",
       }}
     >
       {label}
@@ -254,14 +254,15 @@ function DetailPanel({ tab, row, similarItems }) {
   const chips = resolveChips(row);
   const nutChip = chips?.nutrition_chip || {};
 
-  const muted = { color: "var(--muted-2, #93a0b2)" };
+  const muted = { color: "#9ca3af" };
   const wrap = {
     marginTop: 10,
     paddingTop: 10,
-    borderTop: "1px solid var(--border, #e4e9f0)",
-    fontSize: "var(--text-2, 14px)",
-    color: "var(--ink, #0f1720)",
+    borderTop: "1px solid #e4e7ec",
+    fontSize: "14px",
+    color: "#11211a",
     lineHeight: 1.5,
+    maxWidth: 560,
   };
 
   if (tab === "nutrition") {
@@ -290,8 +291,8 @@ function DetailPanel({ tab, row, similarItems }) {
               <div key={restaurant_id || restaurant_name}>
                 <div
                   style={{
-                    fontSize: "var(--text-1, 12px)",
-                    color: "var(--muted, #5b6675)",
+                    fontSize: "12px",
+                    color: "#667085",
                     fontWeight: 700,
                     marginBottom: 6,
                   }}
@@ -316,16 +317,16 @@ function DetailPanel({ tab, row, similarItems }) {
                       >
                         <div
                           style={{
-                            fontSize: "var(--text-2, 14px)",
+                            fontSize: "14px",
                             fontWeight: 600,
-                            color: "var(--ink, #0f1720)",
+                            color: "#11211a",
                             minWidth: 0,
                           }}
                         >
                           {siHref ? (
                             <Link
                               to={siHref}
-                              style={{ color: "var(--link, #11211a)", textDecoration: "none" }}
+                              style={{ color: "#11211a", textDecoration: "none" }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.textDecoration = "underline";
                               }}
@@ -342,10 +343,10 @@ function DetailPanel({ tab, row, similarItems }) {
                         {siPrice ? (
                           <span
                             style={{
-                              fontSize: "var(--text-2, 14px)",
+                              fontSize: "14px",
                               fontWeight: 800,
                               whiteSpace: "nowrap",
-                              color: "var(--ink, #0f1720)",
+                              color: "#11211a",
                               flexShrink: 0,
                             }}
                           >
@@ -411,70 +412,61 @@ function ItemRow({ row, query, similarItems }) {
       style={{
         paddingTop: 10,
         paddingBottom: 10,
-        borderBottom: "1px solid var(--border, #e4e9f0)",
+        borderBottom: "1px solid #e4e7ec",
       }}
     >
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-        <div
+      {/* Name + price — left-anchored, not pushed apart */}
+      <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 8px" }}>
+        <span
           style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 6,
-            flex: 1,
-            minWidth: 0,
+            fontSize: "20px",
+            fontWeight: 800,
+            lineHeight: 1.25,
+            letterSpacing: "-0.01em",
           }}
         >
-          <span
-            style={{
-              fontSize: "var(--text-5, 20px)",
-              fontWeight: 800,
-              lineHeight: 1.25,
-              letterSpacing: "-0.01em",
-            }}
-          >
-            {href ? (
-              <Link
-                to={href}
-                style={{ color: "var(--link, #11211a)", textDecoration: "none" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.textDecoration = "underline";
-                  e.currentTarget.style.textUnderlineOffset = "3px";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.textDecoration = "none";
-                }}
-              >
-                {hl(name, query)}
-              </Link>
-            ) : (
-              hl(name, query)
-            )}
-          </span>
-
-          {popular && <DietBadge label="★ Popular" tone="popular" />}
-          {hasDeal && <DietBadge label="🏷 Deal" tone="deal" />}
-          {isGF && <DietBadge label="GF" tone="gf" />}
-          {isVegan && <DietBadge label="🌿 Vegan" tone="vegan" />}
-        </div>
+          {href ? (
+            <Link
+              to={href}
+              style={{ color: "#11211a", textDecoration: "none" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.textDecoration = "underline";
+                e.currentTarget.style.textUnderlineOffset = "3px";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.textDecoration = "none";
+              }}
+            >
+              {hl(name, query)}
+            </Link>
+          ) : (
+            hl(name, query)
+          )}
+        </span>
 
         {price ? (
           <span
             style={{
-              fontSize: "var(--text-3, 16px)",
+              fontSize: "16px",
               fontWeight: 800,
               whiteSpace: "nowrap",
-              color: "var(--ink, #0f1720)",
-              flexShrink: 0,
-              minWidth: 46,
-              textAlign: "left",
-              marginTop: 2,
+              color: "#667085",
             }}
           >
             {price}
           </span>
         ) : null}
       </div>
+
+      {/* Badges */}
+      {(popular || hasDeal || isGF || isVegan) && (
+        <div style={{ marginTop: 4, display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {popular && <DietBadge label="★ Popular" tone="popular" />}
+          {hasDeal && <DietBadge label="🏷 Deal" tone="deal" />}
+          {isGF && <DietBadge label="GF" tone="gf" />}
+          {isVegan && <DietBadge label="🌿 Vegan" tone="vegan" />}
+        </div>
+      )}
 
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
         <Chip
@@ -523,12 +515,12 @@ function DietBadge({ label, tone }) {
         alignItems: "center",
         borderRadius: 999,
         padding: "3px 8px",
-        fontSize: "var(--text-1, 12px)",
+        fontSize: "12px",
         fontWeight: 700,
         lineHeight: 1,
-        border: "1px solid " + (t.borderColor || "var(--border, #e4e9f0)"),
+        border: "1px solid " + (t.borderColor || "#e4e7ec"),
         background: t.background || "#f7f9fc",
-        color: t.color || "var(--muted, #5b6675)",
+        color: t.color || "#667085",
         userSelect: "none",
       }}
     >
@@ -540,12 +532,11 @@ function DietBadge({ label, tone }) {
 /* ---- Card shell ---- */
 
 const cardStyle = {
-  border: "1px solid var(--border, #e4e9f0)",
-  borderRadius: 14,
+  border: "1px solid rgba(18,34,28,0.08)",
+  borderRadius: 24,
   background: "#fff",
   padding: "12px 14px",
-  boxShadow: "var(--shadow-1, 0 6px 18px rgba(16,24,40,0.06))",
-  fontFamily: "var(--font-ui)",
+  boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
   width: "100%",
   maxWidth: "100%",
   boxSizing: "border-box",
