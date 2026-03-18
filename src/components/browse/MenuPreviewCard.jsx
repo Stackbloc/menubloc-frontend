@@ -397,7 +397,7 @@ export default function MenuPreviewCard({ menu, index = 0 }) {
                   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
                 }}
               >
-                Order →
+                Order
               </button>
             )}
           </div>
@@ -423,7 +423,7 @@ export default function MenuPreviewCard({ menu, index = 0 }) {
             letterSpacing: 0.6,
             textShadow: "0 1px 4px rgba(0,0,0,0.3)",
           }}>
-            View Menu →
+            View Menu
           </div>
         </div>
 
