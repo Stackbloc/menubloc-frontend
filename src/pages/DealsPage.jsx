@@ -294,11 +294,11 @@ export default function DealsPage() {
                 >
                   <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 900, color: "#11211a", marginBottom: 10 }}>
                     {locationLabel
-                      ? `There are currently no restaurant deals near ${locationLabel}.`
-                      : "There are currently no restaurant deals in this area."}
+                      ? `Currently, there are not any deals near ${locationLabel}.`
+                      : "Currently, there are not any deals in this area."}
                   </div>
                   <div style={{ fontSize: isMobile ? 14 : 15, maxWidth: 520, margin: "0 auto", lineHeight: 1.45 }}>
-                    Check back later.
+                    Check back soon. We are still growing.
                   </div>
                 </div>
               ) : (
