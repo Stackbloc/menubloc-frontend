@@ -2,18 +2,19 @@
  * ============================================================
  * File: Top5HealthiestPage.jsx
  * Path: menubloc-frontend/src/pages/Top5HealthiestPage.jsx
- * Date: 2026-03-16
  * Purpose:
- *   Editorial page: "Top 5 Healthiest Dishes in [City, ST]"
- *   Currently uses placeholder data. When real intelligence data
- *   is available this page should fetch scored menu items from
- *   the backend filtered by city/state and ranked by nutrition score.
+ *   "Top Health Score Dishes in [City, ST]"
+ *   Fetches live data from GET /health/top?city=
  * ============================================================
  */
 
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { PageNav } from "../components/NavButton.jsx";
+
+const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+
+const ACCENT_COLORS = ["#2d6a4f", "#1d4e89", "#7b2d8b", "#b5451b", "#5c4813"];
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(() => {
@@ -33,63 +34,6 @@ function useIsMobile(breakpoint = 768) {
 
   return isMobile;
 }
-
-// ── Placeholder data ─────────────────────────────────────────
-// Replace with a real API fetch when nutrition scoring is live.
-const PLACEHOLDER_DISHES = [
-  {
-    rank: 1,
-    name: "Garden Harvest Salad",
-    restaurant: "Fresh Market Café",
-    description:
-      "Mixed baby greens, cherry tomatoes, shaved cucumber, roasted carrot, sliced avocado, and pepitas, tossed in a bright lemon-herb vinaigrette. Simple, clean, and nutrient-dense.",
-    calories: 320,
-    badges: ["Low Calorie", "High Fiber", "Vegan"],
-    accent: "#2d6a4f",
-  },
-  {
-    rank: 2,
-    name: "Grilled Salmon Power Bowl",
-    restaurant: "Harbor Grille",
-    description:
-      "Atlantic salmon fillet over brown rice with roasted broccoli, shelled edamame, shredded purple cabbage, and a citrus-ginger drizzle. High protein, omega-rich, and deeply satisfying.",
-    calories: 490,
-    badges: ["High Protein", "Omega-3 Rich", "Gluten-Free"],
-    accent: "#1d4e89",
-  },
-  {
-    rank: 3,
-    name: "Mediterranean Quinoa Bowl",
-    restaurant: "The Olive Branch",
-    description:
-      "Fluffy quinoa tossed with roasted chickpeas, diced cucumber, kalamata olives, roasted red pepper, and crumbled feta, finished with a lemon-herb tahini dressing.",
-    calories: 410,
-    badges: ["High Fiber", "Plant-Based", "Low Sugar"],
-    accent: "#7b2d8b",
-  },
-  {
-    rank: 4,
-    name: "Asian Chicken Lettuce Wraps",
-    restaurant: "Golden Bowl Kitchen",
-    description:
-      "Grilled chicken, water chestnuts, green onion, and shredded carrot served in crisp butter lettuce cups with a light ginger-soy glaze on the side. Low carb, lean, and fresh.",
-    calories: 280,
-    badges: ["Low Carb", "High Protein", "Low Calorie"],
-    accent: "#b5451b",
-  },
-  {
-    rank: 5,
-    name: "Roasted Veggie & Lentil Bowl",
-    restaurant: "Harvest Table",
-    description:
-      "French lentils, roasted sweet potato cubes, wilted kale, toasted pumpkin seeds, and a warm lemon-turmeric vinaigrette. A complete plant-based meal packed with iron and fiber.",
-    calories: 375,
-    badges: ["High Fiber", "Iron-Rich", "Vegan"],
-    accent: "#5c4813",
-  },
-];
-
-// ── Badge chip ────────────────────────────────────────────────
 
 function Badge({ label }) {
   return (
@@ -111,9 +55,9 @@ function Badge({ label }) {
   );
 }
 
-// ── Dish card ─────────────────────────────────────────────────
+function DishCard({ dish, rank, isMobile }) {
+  const accent = ACCENT_COLORS[(rank - 1) % ACCENT_COLORS.length];
 
-function DishCard({ dish, isMobile }) {
   return (
     <div
       style={{
@@ -135,7 +79,7 @@ function DishCard({ dish, isMobile }) {
           width: isMobile ? 40 : 56,
           height: isMobile ? 40 : 56,
           borderRadius: "50%",
-          background: dish.accent,
+          background: accent,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -145,7 +89,7 @@ function DishCard({ dish, isMobile }) {
           lineHeight: 1,
         }}
       >
-        {dish.rank}
+        {rank}
       </div>
 
       {/* Content */}
@@ -175,43 +119,30 @@ function DishCard({ dish, isMobile }) {
 
         <div
           style={{
-            fontSize: isMobile ? 13 : 14,
-            color: "#475467",
-            lineHeight: 1.6,
-            marginBottom: 14,
-          }}
-        >
-          {dish.description}
-        </div>
-
-        <div
-          style={{
             display: "flex",
             flexWrap: "wrap",
             gap: 6,
             alignItems: "center",
           }}
         >
-          {dish.badges.map((b) => (
-            <Badge key={b} label={b} />
+          {(dish.reasons || []).map((r) => (
+            <Badge key={r} label={r} />
           ))}
           <span
             style={{
-              marginLeft: 6,
+              marginLeft: 4,
               fontSize: 12,
               fontWeight: 800,
               color: "#667085",
             }}
           >
-            ~{dish.calories} cal
+            Score: {dish.health_score}
           </span>
         </div>
       </div>
     </div>
   );
 }
-
-// ── Page ──────────────────────────────────────────────────────
 
 export default function Top5HealthiestPage() {
   const isMobile = useIsMobile();
@@ -223,7 +154,36 @@ export default function Top5HealthiestPage() {
 
   const locationLabel = [city, state].filter(Boolean).join(", ");
 
-  // Build link back to search for healthy dishes in this city
+  const [dishes, setDishes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!city) return;
+    let alive = true;
+    setLoading(true);
+    setError("");
+
+    fetch(`${API}/health/top?city=${encodeURIComponent(city)}`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (!alive) return;
+        if (json?.ok && Array.isArray(json.dishes)) {
+          setDishes(json.dishes);
+        } else {
+          setError("Could not load results.");
+        }
+      })
+      .catch(() => {
+        if (alive) setError("Could not load results.");
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+
+    return () => { alive = false; };
+  }, [city]);
+
   const searchParams = new URLSearchParams();
   searchParams.set("q", "healthy");
   if (city)  searchParams.set("city",  city);
@@ -272,7 +232,7 @@ export default function Top5HealthiestPage() {
               color: "#11211a",
             }}
           >
-            Top 5 Healthiest Dishes
+            Top Health Score Dishes
           </h1>
 
           {locationLabel ? (
@@ -297,18 +257,37 @@ export default function Top5HealthiestPage() {
               maxWidth: 560,
             }}
           >
-            These dishes were selected based on calorie density, protein content, fiber, and
-            low added sugar — across restaurants{locationLabel ? ` in ${locationLabel}` : " near you"}.
-            Placeholder data shown — live rankings coming soon.
+            Ranked by protein content, fiber, glycemic impact, sodium, and preparation quality
+            across restaurants{locationLabel ? ` in ${locationLabel}` : " near you"}.
           </p>
         </div>
 
+        {/* States */}
+        {loading && (
+          <div style={{ color: "#667085", fontWeight: 600, fontSize: 14 }}>Loading…</div>
+        )}
+        {error && (
+          <div style={{ color: "#b91c1c", fontWeight: 600, fontSize: 14 }}>{error}</div>
+        )}
+        {!loading && !error && dishes.length === 0 && city && (
+          <div style={{ color: "#667085", fontWeight: 600, fontSize: 14 }}>
+            No scored dishes found in {locationLabel || city} yet.
+          </div>
+        )}
+        {!city && (
+          <div style={{ color: "#667085", fontWeight: 600, fontSize: 14 }}>
+            No city specified. Try navigating here from the discovery page.
+          </div>
+        )}
+
         {/* Dish list */}
-        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 14 : 18 }}>
-          {PLACEHOLDER_DISHES.map((dish) => (
-            <DishCard key={dish.rank} dish={dish} isMobile={isMobile} />
-          ))}
-        </div>
+        {dishes.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 14 : 18 }}>
+            {dishes.map((dish, i) => (
+              <DishCard key={dish.id} dish={dish} rank={i + 1} isMobile={isMobile} />
+            ))}
+          </div>
+        )}
 
         {/* Footer CTA */}
         <div
@@ -323,25 +302,23 @@ export default function Top5HealthiestPage() {
             gap: 14,
           }}
         >
-          <div>
-            <button
-              type="button"
-              onClick={() => navigate(`/search?${searchParams.toString()}`)}
-              style={{
-                height: 44,
-                padding: "0 20px",
-                borderRadius: 12,
-                border: "1px solid #101828",
-                background: "#101828",
-                color: "#fff",
-                fontSize: 14,
-                fontWeight: 800,
-                cursor: "pointer",
-              }}
-            >
-              Search healthy dishes near you
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate(`/search?${searchParams.toString()}`)}
+            style={{
+              height: 44,
+              padding: "0 20px",
+              borderRadius: 12,
+              border: "1px solid #101828",
+              background: "#101828",
+              color: "#fff",
+              fontSize: 14,
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            Search healthy dishes near you
+          </button>
 
           <div style={{ display: "flex", gap: 20, fontSize: 13, color: "#667085" }}>
             <Link to="/terms"   style={{ color: "#667085", textDecoration: "none", fontWeight: 600 }}>Terms of Use</Link>
