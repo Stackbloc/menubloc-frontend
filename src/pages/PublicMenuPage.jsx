@@ -430,20 +430,22 @@ export default function PublicMenuPage() {
                             </div>
 
                             {it?.chips?.nutrition_chip?.allergen_alert && (
-                              <div style={{ marginTop: 8 }}>
-                                <div style={{
+                              <div style={{ marginTop: 4 }}>
+                                <span style={{
                                   display: "inline-flex",
                                   alignItems: "center",
-                                  gap: 5,
-                                  padding: "3px 10px",
-                                  background: "rgba(230,130,0,0.07)",
-                                  border: "1px solid rgba(230,130,0,0.2)",
-                                  borderRadius: 999,
-                                  fontSize: 12,
+                                  gap: 3,
+                                  padding: "1px 6px",
+                                  background: "rgba(230,130,0,0.06)",
+                                  border: "1px solid rgba(230,130,0,0.15)",
+                                  borderRadius: 4,
+                                  fontSize: 10,
+                                  color: "#7c4a00",
+                                  fontWeight: 500,
                                 }}>
-                                  <span style={{ fontSize: 10, fontWeight: 900, color: "#b36000" }}>⚠ Allergens</span>
-                                  <span style={{ color: "#7c4a00", fontWeight: 600 }}>{it.chips.nutrition_chip.allergen_alert}</span>
-                                </div>
+                                  <span style={{ opacity: 0.7 }}>⚠</span>
+                                  {it.chips.nutrition_chip.allergen_alert}
+                                </span>
                               </div>
                             )}
                           </div>
