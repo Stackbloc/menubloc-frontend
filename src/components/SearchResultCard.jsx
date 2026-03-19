@@ -984,10 +984,11 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
         </div>
       )}
 
-      {/* Address */}
-      {addressLine && (
-        <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "#475467" }}>
-          {addressLine}
+      {/* Address — line 1: street, line 2: City, ST ZIP */}
+      {(addressLine1S || cityStateLine) && (
+        <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "#475467", lineHeight: 1.5 }}>
+          {addressLine1S && <div>{addressLine1S}</div>}
+          {cityStateLine && <div>{cityStateLine}</div>}
         </div>
       )}
 
