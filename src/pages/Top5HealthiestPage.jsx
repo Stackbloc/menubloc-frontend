@@ -94,17 +94,20 @@ function DishCard({ dish, rank, isMobile }) {
 
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div
+        <Link
+          to={`/menu-items/${dish.id}`}
           style={{
             fontSize: isMobile ? 18 : 21,
             fontWeight: 900,
             color: "#11211a",
             lineHeight: 1.2,
             marginBottom: 3,
+            display: "block",
+            textDecoration: "none",
           }}
         >
           {dish.name}
-        </div>
+        </Link>
 
         <div
           style={{
