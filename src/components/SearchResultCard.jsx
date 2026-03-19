@@ -248,7 +248,7 @@ function BarRow({ label, pct, valueLabel, qualLabel, color, indent }) {
       <div style={{ width: indent ? 56 : 68, fontSize: indent ? 12 : 13, color: indent ? "#9ca3af" : "#667085", flexShrink: 0 }}>
         {indent && <span style={{ marginRight: 4, opacity: 0.5 }}>·</span>}{label}
       </div>
-      <div style={{ flex: 1, height: indent ? 4 : 6, background: "rgba(0,0,0,0.07)", borderRadius: 3, overflow: "hidden" }}>
+      <div style={{ flex: 1, maxWidth: 160, height: indent ? 4 : 6, background: "rgba(0,0,0,0.07)", borderRadius: 3, overflow: "hidden" }}>
         <div style={{ width: `${fill}%`, height: "100%", background: color, opacity: indent ? 0.55 : 0.75, borderRadius: 3 }} />
       </div>
       <div style={{ minWidth: 48, fontSize: indent ? 12 : 13, fontWeight: 700, color: "#344054", textAlign: "right", flexShrink: 0 }}>
@@ -311,48 +311,66 @@ function NutritionPanel({ chip }) {
 
 /* ---- Insights panel ---- */
 
-const INSIGHT_ROWS = [
-  { key: "proteinStrength", label: "Protein Strength", color: "#1a9a4a", hint: "Higher is better"  },
-  { key: "glycemicImpact",  label: "Glycemic Impact",  color: "#c0392b", hint: "Lower is better"   },
-  { key: "sodiumRisk",      label: "Sodium Risk",      color: "#e07b39", hint: "Lower is better"   },
-  { key: "lastingEnergy",   label: "Lasting Energy",   color: "#3b82f6", hint: "Higher is better"  },
+// Backend score key → display metadata
+const INSIGHT_DEFS = [
+  { backendKey: "protein_strength", clientKey: "proteinStrength", label: "High Protein",       accent: "#1a9a4a", positive: true  },
+  { backendKey: "protein_quality",  clientKey: null,               label: "Protein Quality",    accent: "#1d6fc2", positive: true  },
+  { backendKey: "glycemic_impact",  clientKey: "glycemicImpact",  label: "Blood Sugar Impact",  accent: "#c0392b", positive: false },
+  { backendKey: "sodium_risk",      clientKey: "sodiumRisk",       label: "Sodium Load",         accent: "#e07b39", positive: false },
+  { backendKey: "lasting_energy",   clientKey: "lastingEnergy",    label: "Lasting Energy",      accent: "#3b82f6", positive: true  },
 ];
 
-function InsightsPanel({ chip, onFindSimilar }) {
-  const scores  = computeInsights(chip);
-  const summary = getNutritionSummary(chip);
-  const hasAny  = INSIGHT_ROWS.some(({ key }) => scores[key] !== null);
+function positiveLevel(s) {
+  if (s >= 8) return "Excellent";
+  if (s >= 6) return "Good";
+  if (s >= 4) return "Moderate";
+  return "Low";
+}
+function cautionLevel(s) {
+  if (s >= 8) return "Very High";
+  if (s >= 6) return "High";
+  if (s >= 4) return "Moderate";
+  return "Low";
+}
 
-  if (!hasAny) {
+function InsightsPanel({ chips, onFindSimilar }) {
+  const nutChip      = chips?.nutrition_chip || {};
+  const backendScores = chips?.insights?.scores;
+  const clientScores  = computeInsights(nutChip);
+
+  const rows = INSIGHT_DEFS.map(({ backendKey, clientKey, label, accent, positive }) => {
+    // Prefer backend score (includes prep-aware explanation)
+    const bs = backendScores?.[backendKey];
+    if (bs && bs.score !== null && Number.isFinite(bs.score)) {
+      return { label, accent, score: bs.score, level: bs.level, explanation: bs.explanation || null };
+    }
+    // Client fallback — no explanation available
+    const cs = clientScores[clientKey];
+    if (cs === null || cs === undefined) return null;
+    const level = positive ? positiveLevel(cs) : cautionLevel(cs);
+    return { label, accent, score: Math.round(cs), level, explanation: null };
+  }).filter(Boolean);
+
+  if (!rows.length) {
     return <div style={{ fontSize: 14, color: "#9ca3af" }}>Not enough data to compute insights.</div>;
   }
 
   return (
     <div>
-      {INSIGHT_ROWS.map(({ key, label, color, hint }) => {
-        const score = scores[key];
-        if (score === null) return null;
-        return (
-          <div key={key} style={{ padding: "3px 0" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 118, fontSize: 13, fontWeight: 600, color: "#344054", flexShrink: 0 }}>{label}</div>
-              <div style={{ flex: 1, height: 6, background: "rgba(0,0,0,0.07)", borderRadius: 3, overflow: "hidden" }}>
-                <div style={{ width: `${score * 10}%`, height: "100%", background: color, opacity: 0.75, borderRadius: 3 }} />
-              </div>
-              <div style={{ width: 40, fontSize: 13, fontWeight: 700, color: "#344054", textAlign: "right", flexShrink: 0 }}>
-                {score}/10
-              </div>
-            </div>
-            <div style={{ paddingLeft: 126, fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{hint}</div>
+      {rows.map(({ label, accent, score, level, explanation }) => (
+        <div key={label} style={{ padding: "6px 0", borderBottom: "1px solid #f0f2f5" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#344054" }}>{label}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: accent }}>{level}</span>
+            <span style={{ fontSize: 12, color: "#9ca3af" }}>({score}/10)</span>
           </div>
-        );
-      })}
-
-      {summary && (
-        <div style={{ marginTop: 10, fontSize: 13, color: "#344054", fontWeight: 600, lineHeight: 1.4 }}>
-          {summary}
+          {explanation && (
+            <div style={{ fontSize: 12, color: "#667085", marginTop: 2 }}>
+              {"\u2192"} {explanation}
+            </div>
+          )}
         </div>
-      )}
+      ))}
 
       <button
         type="button"
@@ -436,7 +454,7 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar }) {
   if (tab === "insights") {
     return (
       <div style={wrap}>
-        <InsightsPanel chip={nutChip} onFindSimilar={onFindSimilar} />
+        <InsightsPanel chips={chips} onFindSimilar={onFindSimilar} />
       </div>
     );
   }

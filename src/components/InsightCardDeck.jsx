@@ -88,70 +88,52 @@ const PHRASE_META = {
  *   subLine(s)  — secondary line (can use level)
  */
 
+// Keyed by lowercase level string. Positive metrics use green for top,
+// caution metrics use red for top. "Very High" maps to "very_high".
 const LEVEL_COLORS = {
   protein_strength: {
-    low:      { accent: "#8b5cf6", bg: "rgba(139,92,246,0.1)" },
-    moderate: { accent: "#6d28d9", bg: "rgba(109,40,217,0.1)" },
-    high:     { accent: "#4c1d95", bg: "rgba(76,29,149,0.1)" },
+    low:       { accent: "#9ca3af", bg: "rgba(156,163,175,0.1)" },
+    moderate:  { accent: "#6d28d9", bg: "rgba(109,40,217,0.1)"  },
+    good:      { accent: "#1d6fc2", bg: "rgba(29,111,194,0.1)"  },
+    excellent: { accent: "#1a9a4a", bg: "rgba(26,154,74,0.1)"   },
+  },
+  protein_quality: {
+    poor:      { accent: "#9ca3af", bg: "rgba(156,163,175,0.1)" },
+    low:       { accent: "#e07b39", bg: "rgba(224,123,57,0.1)"  },
+    moderate:  { accent: "#6d28d9", bg: "rgba(109,40,217,0.1)"  },
+    good:      { accent: "#1d6fc2", bg: "rgba(29,111,194,0.1)"  },
+    excellent: { accent: "#1a9a4a", bg: "rgba(26,154,74,0.1)"   },
   },
   glycemic_impact: {
-    low:      { accent: "#0e8a7a", bg: "rgba(14,138,122,0.1)" },
-    moderate: { accent: "#b87a00", bg: "rgba(184,122,0,0.1)"  },
-    high:     { accent: "#c0392b", bg: "rgba(192,57,43,0.1)"  },
+    low:       { accent: "#0e8a7a", bg: "rgba(14,138,122,0.1)"  },
+    moderate:  { accent: "#b87a00", bg: "rgba(184,122,0,0.1)"   },
+    high:      { accent: "#c0392b", bg: "rgba(192,57,43,0.1)"   },
+    very_high: { accent: "#7f1d1d", bg: "rgba(127,29,29,0.1)"   },
   },
   sodium_risk: {
-    low:      { accent: "#0e8a7a", bg: "rgba(14,138,122,0.1)" },
-    moderate: { accent: "#b87a00", bg: "rgba(184,122,0,0.1)"  },
-    high:     { accent: "#c0392b", bg: "rgba(192,57,43,0.1)"  },
+    low:       { accent: "#0e8a7a", bg: "rgba(14,138,122,0.1)"  },
+    moderate:  { accent: "#b87a00", bg: "rgba(184,122,0,0.1)"   },
+    high:      { accent: "#c0392b", bg: "rgba(192,57,43,0.1)"   },
+    very_high: { accent: "#7f1d1d", bg: "rgba(127,29,29,0.1)"   },
   },
   lasting_energy: {
-    low:      { accent: "#8b5cf6", bg: "rgba(139,92,246,0.1)" },
-    moderate: { accent: "#1d6fc2", bg: "rgba(29,111,194,0.1)" },
-    high:     { accent: "#1a9a4a", bg: "rgba(26,154,74,0.1)"  },
+    low:       { accent: "#9ca3af", bg: "rgba(156,163,175,0.1)" },
+    moderate:  { accent: "#6d28d9", bg: "rgba(109,40,217,0.1)"  },
+    good:      { accent: "#1d6fc2", bg: "rgba(29,111,194,0.1)"  },
+    excellent: { accent: "#1a9a4a", bg: "rgba(26,154,74,0.1)"   },
   },
 };
 
 const SCORE_META = {
-  protein_strength: {
-    label: "Protein Strength",
-    format: (s) => `${(s.score * 100).toFixed(1)}%`,
-    valueLabel: "protein efficiency",
-    subLine: (s) => {
-      const map = { low: "Low protein relative to calories", moderate: "Moderate protein density", high: "High protein density" };
-      return map[s.level] || null;
-    },
-  },
-  glycemic_impact: {
-    label: "Glycemic Impact",
-    format: (s) => String(Math.round(s.score)),
-    valueLabel: "impact score",
-    subLine: (s) => {
-      const map = { low: "Low blood-sugar impact", moderate: "Moderate blood-sugar impact", high: "High blood-sugar impact" };
-      return map[s.level] || null;
-    },
-  },
-  sodium_risk: {
-    label: "Sodium",
-    format: (s) => `${s.score}mg`,
-    valueLabel: "per serving",
-    subLine: (s) => {
-      const map = { low: "Low sodium", moderate: "Moderate sodium", high: "High sodium — over 960mg" };
-      return map[s.level] || null;
-    },
-  },
-  lasting_energy: {
-    label: "Lasting Energy",
-    format: (s) => String(s.score),
-    valueLabel: "satiety score",
-    subLine: (s) => {
-      const map = { low: "Low satiety potential", moderate: "Moderate satiety", high: "High satiety — keeps you full" };
-      return map[s.level] || null;
-    },
-  },
+  protein_strength: { label: "High Protein" },
+  protein_quality:  { label: "Protein Quality" },
+  glycemic_impact:  { label: "Blood Sugar Impact" },
+  sodium_risk:      { label: "Sodium Load" },
+  lasting_energy:   { label: "Lasting Energy" },
 };
 
 // Ordered as the user wants to see them
-const SCORE_ORDER = ["protein_strength", "glycemic_impact", "sodium_risk", "lasting_energy"];
+const SCORE_ORDER = ["protein_strength", "protein_quality", "glycemic_impact", "sodium_risk", "lasting_energy"];
 
 const FALLBACK_META = { accent: "#4e6a8f", bg: "rgba(78,106,143,0.1)" };
 
@@ -181,25 +163,24 @@ export function buildInsightCards(item) {
     });
   }
 
-  // 2. Score cards — absolute values computed from nutrition macros
+  // 2. Score cards — 1–10 scores with level label and short explanation
   const scores = insights.scores || {};
   for (const key of SCORE_ORDER) {
     const s = scores[key];
     if (!s || s.score === null || !Number.isFinite(s.score)) continue;
 
     const meta = SCORE_META[key];
-    const levelColors = (LEVEL_COLORS[key] || {})[s.level] || FALLBACK_META;
+    // Normalize human-readable level to color map key (e.g. "Very High" → "very_high")
+    const levelKey = s.level ? s.level.toLowerCase().replace(/\s+/g, "_") : null;
+    const levelColors = (LEVEL_COLORS[key] || {})[levelKey] || FALLBACK_META;
 
     cards.push({
       id: `score-${key}`,
       headline: meta.label,
       accent: levelColors.accent,
       bg: levelColors.bg,
-      stats: {
-        value: meta.format(s),
-        label: meta.valueLabel,
-        sub: meta.subLine(s),
-      },
+      levelLine: `${s.level} (${s.score}/10)`,
+      explanation: s.explanation || null,
     });
   }
 
@@ -279,13 +260,27 @@ export default function InsightCardDeck({ item, colors }) {
             letterSpacing: 0.5,
             textTransform: "uppercase",
             color: card.accent,
-            marginBottom: card.stats || card.desc || card.detail ? 5 : 0,
+            marginBottom: card.stats || card.desc || card.detail || card.levelLine ? 5 : 0,
           }}
         >
           {card.headline}
         </div>
 
-        {/* Numeric stat */}
+        {/* Score card: level + score + explanation */}
+        {card.levelLine && (
+          <>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>
+              {card.levelLine}
+            </div>
+            {card.explanation && (
+              <div style={{ fontSize: 12, color: C.subtext, marginTop: 4, lineHeight: 1.4 }}>
+                {"\u2192"} {card.explanation}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Phrase card stats (numeric backing) */}
         {card.stats && (
           <>
             <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
@@ -307,7 +302,7 @@ export default function InsightCardDeck({ item, colors }) {
         )}
 
         {/* Fallback description (phrase without numeric backing) */}
-        {!card.stats && card.desc && (
+        {!card.stats && !card.levelLine && card.desc && (
           <div style={{ fontSize: 12.5, color: C.subtext, lineHeight: 1.4 }}>
             {card.desc}
           </div>

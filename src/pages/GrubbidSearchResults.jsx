@@ -777,6 +777,7 @@ export default function GrubbidSearchResults() {
       boxSizing: "border-box",
       overflowX: "hidden",
       color: "#101828",
+      fontFamily: "var(--font-ui, Inter, system-ui, sans-serif)",
     },
     topRow: {
       display: "flex",
@@ -992,6 +993,33 @@ export default function GrubbidSearchResults() {
             ))}
           </div>
         </>
+      )}
+      {/* Top 5 Healthiest link — shown when we have a city context */}
+      {!loading && !err && city && (
+        <div
+          style={{
+            marginTop: isMobile ? 32 : 44,
+            paddingTop: isMobile ? 16 : 20,
+            borderTop: "1px solid rgba(18,34,28,0.08)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: isMobile ? 13 : 14,
+            color: "#667085",
+          }}
+        >
+          <span style={{ fontWeight: 500 }}>Looking for something healthier?</span>
+          <Link
+            to={`/top5/healthiest?city=${encodeURIComponent(city)}${state ? `&state=${encodeURIComponent(state)}` : ""}`}
+            style={{
+              color: "#2d6a4f",
+              fontWeight: 700,
+              textDecoration: "none",
+            }}
+          >
+            Top 5 Health Score Dishes in {city} →
+          </Link>
+        </div>
       )}
     </div>
     </div>

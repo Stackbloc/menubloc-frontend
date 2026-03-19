@@ -773,19 +773,24 @@ export default function GrubbidDiscovery() {
               >
                 Restaurant Deals
               </Link>
-              <Link
-                to={(() => {
-                  if (!resolvedLocationLabel) return "/top5/healthiest";
-                  const parts = resolvedLocationLabel.split(",").map((s) => s.trim());
-                  const p = new URLSearchParams();
-                  if (parts[0]) p.set("city", parts[0]);
-                  if (parts[1]) p.set("state", parts[1]);
-                  return `/top5/healthiest?${p.toString()}`;
-                })()}
-                style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}
-              >
-                Top 5 Healthiest Dishes
-              </Link>
+              {resolvedLocationLabel ? (
+                <Link
+                  to={(() => {
+                    const parts = resolvedLocationLabel.split(",").map((s) => s.trim());
+                    const p = new URLSearchParams();
+                    if (parts[0]) p.set("city", parts[0]);
+                    if (parts[1]) p.set("state", parts[1]);
+                    return `/top5/healthiest?${p.toString()}`;
+                  })()}
+                  style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}
+                >
+                  Top 5 Healthiest Dishes
+                </Link>
+              ) : (
+                <span style={{ color: "#9ca3af", fontWeight: 700, cursor: "default" }}>
+                  Top 5 Healthiest Dishes
+                </span>
+              )}
               <Link to="/terms" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
                 Terms of Use
               </Link>
