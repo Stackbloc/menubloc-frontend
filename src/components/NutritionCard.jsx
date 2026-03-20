@@ -165,18 +165,24 @@ export default function NutritionCard({ chip, colors }) {
   // Extract nutrition values
   const cal    = asN(chip?.calories_kcal);
   const pro    = asN(chip?.protein_g);
+  const carbs  = asN(chip?.carbs_g);
+  const fib    = asN(chip?.fiber_g);
   const fat    = asN(chip?.fat_g);
   const sod    = asN(chip?.sodium_mg);
   const sug    = asN(chip?.sugar_g);
   const calPctW = asN(chip?.calories_pct_women);
   const calPctM = asN(chip?.calories_pct_men);
   const proPct  = asN(chip?.protein_pct_daily);
+  const satiety = asN(chip?.satiety_score);
+  const satietyLabel = chip?.satiety_label || null;
+  const glycemic = asN(chip?.glycemic_score);
+  const glycemicLabel = chip?.glycemic_label || null;
 
   // Extract allergen fields
   const allergenAlert = String(chip?.allergen_alert || "").trim();
   const disclosure    = String(chip?.disclosure || "").trim();
 
-  const hasValues    = cal !== null || pro !== null || fat !== null || sod !== null || sug !== null;
+  const hasValues    = cal !== null || pro !== null || carbs !== null || fib !== null || fat !== null || sod !== null || sug !== null;
   const hasAllergens = allergenAlert.length > 0;
 
   /* ------------------------------------------------------------------ */
@@ -186,10 +192,13 @@ export default function NutritionCard({ chip, colors }) {
     const metricRows = [
       cal  !== null ? { label: "Calories", value: String(Math.round(cal)) }              : null,
       pro  !== null ? { label: "Protein",  value: `${Math.round(pro)}g` }                : null,
-      fat  !== null ? { label: "Fat",       value: `${Math.round(fat)}g` }               : null,
-      sug  !== null ? { label: "Sugar",     value: `${Math.round(sug)}g` }               : null,
-      sod  !== null ? { label: "Sodium",    value: `${Math.round(sod)}mg` }              : null,
-      proPct !== null ? { label: "Protein DV", value: `${Math.round(proPct)}%` }        : null,
+      carbs !== null ? { label: "Carbs",   value: `${Math.round(carbs)}g` }             : null,
+      fib  !== null ? { label: "Fiber",    value: `${Math.round(fib)}g` }               : null,
+      sug  !== null ? { label: "Sugar",    value: `${Math.round(sug)}g` }               : null,
+      fat  !== null ? { label: "Fat",      value: `${Math.round(fat)}g` }               : null,
+      sod  !== null ? { label: "Sodium",   value: `${Math.round(sod)}mg` }              : null,
+      satiety  !== null ? { label: "Satiety",  value: `${satiety}/10${satietyLabel ? ` · ${satietyLabel}` : ""}` }  : null,
+      glycemic !== null ? { label: "Glycemic", value: `${glycemic}/10${glycemicLabel ? ` · ${glycemicLabel}` : ""}` } : null,
     ].filter(Boolean);
 
     return (
@@ -293,9 +302,23 @@ export default function NutritionCard({ chip, colors }) {
               value={`${Math.round(pro)}g${proPct !== null ? ` (${Math.round(proPct)}%)` : ""}`}
             />
           )}
-          {fat !== null && <NutritionRow label="Fat"    value={`${Math.round(fat)}g`}  />}
-          {sod !== null && <NutritionRow label="Sodium" value={`${Math.round(sod)}mg`} />}
-          {sug !== null && <NutritionRow label="Sugar"  value={`${Math.round(sug)}g`}  />}
+          {carbs !== null && <NutritionRow label="Carbs"  value={`${Math.round(carbs)}g`} />}
+          {fib   !== null && <NutritionRow label="Fiber"  value={`${Math.round(fib)}g`}   />}
+          {sug   !== null && <NutritionRow label="Sugar"  value={`${Math.round(sug)}g`}   />}
+          {fat   !== null && <NutritionRow label="Fat"    value={`${Math.round(fat)}g`}   />}
+          {sod   !== null && <NutritionRow label="Sodium" value={`${Math.round(sod)}mg`}  />}
+          {satiety !== null && (
+            <NutritionRow
+              label="Satiety"
+              value={`${satiety}/10${satietyLabel ? ` · ${satietyLabel}` : ""}`}
+            />
+          )}
+          {glycemic !== null && (
+            <NutritionRow
+              label="Glycemic"
+              value={`${glycemic}/10${glycemicLabel ? ` · ${glycemicLabel}` : ""}`}
+            />
+          )}
         </>
       ) : (
         <span style={muted}>
