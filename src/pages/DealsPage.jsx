@@ -180,18 +180,6 @@ export default function DealsPage() {
           <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a" }}>
             Grubbid
           </div>
-
-          <h1
-            style={{
-              margin: "6px 0 4px",
-              fontSize: isMobile ? 18 : 20,
-              lineHeight: 1.2,
-              fontWeight: 800,
-              letterSpacing: -0.2,
-            }}
-          >
-            {locationLabel ? `Restaurant Deals Near ${locationLabel}` : "Restaurant Deals"}
-          </h1>
         </div>
 
         <div
@@ -248,6 +236,19 @@ export default function DealsPage() {
 
           {/* Main content */}
           <main style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
+            <h1
+              style={{
+                margin: "0 0 14px",
+                fontSize: isMobile ? 18 : 20,
+                lineHeight: 1.2,
+                fontWeight: 800,
+                letterSpacing: -0.2,
+                color: "#11211a",
+              }}
+            >
+              {locationLabel ? `Restaurant Deals Near ${locationLabel}` : "Restaurant Deals"}
+            </h1>
+
             <div
               style={{
                 borderRadius: 24,
