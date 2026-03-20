@@ -26,7 +26,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { buildInsightCards } from "../components/InsightCardDeck.jsx";
 
-const BACKEND_BASE = import.meta?.env?.VITE_BACKEND_URL || "http://localhost:3001";
+const BACKEND_BASE = (import.meta?.env?.VITE_API_URL || import.meta?.env?.VITE_BACKEND_URL || "http://localhost:3001").replace(/\/$/, "");
 
 /* ---- Formatting helpers ---- */
 
