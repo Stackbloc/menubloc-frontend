@@ -361,19 +361,6 @@ export default function BrowseMenus() {
           <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a" }}>
             Grubbid
           </div>
-
-          <h1
-            style={{
-              margin: "6px 0 4px",
-              fontSize: isMobile ? 24 : 28,
-              lineHeight: 1.1,
-              fontWeight: 800,
-              letterSpacing: -0.5,
-            }}
-          >
-            {locationLabel ? `Browsing Menus Near ${locationLabel}` : "Browsing Menus"}
-          </h1>
-
         </div>
 
         <div
@@ -548,6 +535,18 @@ export default function BrowseMenus() {
           </aside>
 
           <main style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
+            <h1
+              style={{
+                margin: isMobile ? "0 0 14px" : "0 0 18px",
+                fontSize: isMobile ? 24 : 28,
+                lineHeight: 1.1,
+                fontWeight: 800,
+                letterSpacing: -0.5,
+                color: "#11211a",
+              }}
+            >
+              {locationLabel ? `Browsing Menus Near ${locationLabel}` : "Browsing Menus"}
+            </h1>
             <div
               style={{
                 borderRadius: 24,
