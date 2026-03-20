@@ -265,13 +265,17 @@ function BarRow({ label, pct, valueLabel, qualLabel, color, indent }) {
 
 function NutritionPanel({ chip }) {
   const r = (v) => (v != null && Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
-  const cal   = r(chip?.calories_kcal);
-  const pro   = r(chip?.protein_g);
-  const carbs = r(chip?.carbs_g);
-  const fiber = r(chip?.fiber_g);
-  const sug   = r(chip?.sugar_g);
-  const fat   = r(chip?.fat_g);
-  const sod   = r(chip?.sodium_mg);
+  const cal         = r(chip?.calories_kcal);
+  const pro         = r(chip?.protein_g);
+  const carbs       = r(chip?.carbs_g);
+  const fiber       = r(chip?.fiber_g);
+  const sug         = r(chip?.sugar_g);
+  const fat         = r(chip?.fat_g);
+  const sod         = r(chip?.sodium_mg);
+  const satiety     = r(chip?.satiety_score);
+  const satietyLbl  = chip?.satiety_label || null;
+  const glycemic    = r(chip?.glycemic_score);
+  const glycemicLbl = chip?.glycemic_label || null;
 
   const hasValues = cal !== null || pro !== null || fat !== null || sod !== null;
   if (!hasValues) {
@@ -289,6 +293,24 @@ function NutritionPanel({ chip }) {
       {sug   !== null && <BarRow label="Sugar"    pct={(sug   / 50)   * 100} valueLabel={`${sug}g`}    qualLabel={getQualitativeLabel("sugar", sug)}    color="#8b5cf6" indent />}
       {fat   !== null && <BarRow label="Fat"      pct={(fat   / 65)   * 100} valueLabel={`${fat}g`}    qualLabel={getQualitativeLabel("fat", fat)}      color="#b87a00" />}
       {sod   !== null && <BarRow label="Sodium"   pct={(sod   / 2300) * 100} valueLabel={`${sod}mg`}   qualLabel={getQualitativeLabel("sodium", sod)}   color="#c0392b" />}
+      {(satiety !== null || glycemic !== null) && (
+        <div style={{ marginTop: 8, display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {satiety !== null && (
+            <div style={{ fontSize: 13, color: "#344054" }}>
+              <span style={{ color: "#667085" }}>Satiety </span>
+              <span style={{ fontWeight: 700 }}>{satiety}/10</span>
+              {satietyLbl && <span style={{ color: "#9ca3af", marginLeft: 4 }}>· {satietyLbl}</span>}
+            </div>
+          )}
+          {glycemic !== null && (
+            <div style={{ fontSize: 13, color: "#344054" }}>
+              <span style={{ color: "#667085" }}>Glycemic </span>
+              <span style={{ fontWeight: 700 }}>{glycemic}/10</span>
+              {glycemicLbl && <span style={{ color: "#9ca3af", marginLeft: 4 }}>· {glycemicLbl}</span>}
+            </div>
+          )}
+        </div>
+      )}
 
       {chip?.allergen_alert && (
         <div style={{ marginTop: 10, fontSize: 13, color: "#b36000", fontWeight: 600 }}>
