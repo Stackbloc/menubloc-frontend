@@ -423,6 +423,7 @@ export default function GrubbidDiscovery() {
               display: "flex",
               flexDirection: isMobile ? "column" : "row",
               gap: 10,
+              width: "100%",
             }}
           >
             <input
@@ -434,6 +435,7 @@ export default function GrubbidDiscovery() {
               placeholder="What do you want to eat? Search food, ingredients, restaurants, or deals"
               style={{
                 flex: 1,
+                width: isMobile ? "100%" : undefined,
                 height: isMobile ? 56 : 64,
                 borderRadius: 16,
                 border: "1px solid #d7dce5",
@@ -857,15 +859,15 @@ export default function GrubbidDiscovery() {
                     const p = new URLSearchParams();
                     if (parts[0]) p.set("city", parts[0]);
                     if (parts[1]) p.set("state", parts[1]);
-                    return `/top5/healthiest?${p.toString()}`;
+                    return `/top-picks?${p.toString()}`;
                   })()}
                   style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}
                 >
-                  Top 5 Healthiest Dishes
+                  Top Picks in {resolvedLocationLabel.split(",")[0].trim()}
                 </Link>
               ) : (
                 <span style={{ color: "#9ca3af", fontWeight: 700, cursor: "default" }}>
-                  Top 5 Healthiest Dishes
+                  Top Picks Near You
                 </span>
               )}
               <Link to="/terms" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>

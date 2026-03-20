@@ -1025,14 +1025,14 @@ export default function GrubbidSearchResults() {
         >
           <span style={{ fontWeight: 500 }}>Looking for something healthier?</span>
           <Link
-            to={`/top5/healthiest?city=${encodeURIComponent(city)}${state ? `&state=${encodeURIComponent(state)}` : ""}`}
+            to={`/top-picks?city=${encodeURIComponent(city)}${state ? `&state=${encodeURIComponent(state)}` : ""}`}
             style={{
               color: "#2d6a4f",
               fontWeight: 700,
               textDecoration: "none",
             }}
           >
-            Top 5 Health Score Dishes in {city} →
+            Top Picks in {city} →
           </Link>
         </div>
       )}

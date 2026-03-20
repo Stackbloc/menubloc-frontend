@@ -38,6 +38,18 @@ const ST = {
   },
   brand:    { fontWeight: 800, fontSize: 18 },
   subbrand: { fontSize: 12, color: "#666", marginBottom: 28 },
+  backBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    background: "none",
+    border: "none",
+    padding: 0,
+    fontSize: 13,
+    color: "#666",
+    cursor: "pointer",
+    marginBottom: 20,
+  },
 
   /* Step trail */
   steps: {
@@ -479,6 +491,11 @@ export default function ProfileSearchPage() {
       {/* Brand */}
       <div style={ST.brand}>Grubbid</div>
       <div style={ST.subbrand}>for Restaurants</div>
+
+      {/* Back */}
+      <button style={ST.backBtn} onClick={() => nav(-1)}>
+        ← Back
+      </button>
 
       {/* Step trail */}
       <div style={ST.steps}>

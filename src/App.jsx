@@ -40,6 +40,7 @@ import MenuItemDetailPage from "./pages/MenuItemDetailPage.jsx";
 import PublicMenuPage from "./pages/PublicMenuPage.jsx";
 import BrowseMenus from "./pages/BrowseMenus.jsx";
 import Top5HealthiestPage from "./pages/Top5HealthiestPage.jsx";
+import TopPicksPage from "./pages/TopPicksPage.jsx";
 
 import DealsPage from "./pages/DealsPage.jsx";
 
@@ -116,7 +117,8 @@ export default function App() {
         {/* Search */}
         <Route path="/search" element={<GrubbidSearchResults />} />
         <Route path="/browse-menus" element={<BrowseMenus />} />
-        <Route path="/top5/healthiest" element={<Top5HealthiestPage />} />
+        <Route path="/top-picks" element={<TopPicksPage />} />
+        <Route path="/top5/healthiest" element={<TopPicksPage />} />
 
         {/* Deals */}
         <Route path="/deals" element={<DealsPage />} />

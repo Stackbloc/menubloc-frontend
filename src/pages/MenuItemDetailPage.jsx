@@ -163,6 +163,19 @@ function FindSimilar({ itemId, isMobile }) {
 
   if (failed || similar === null || similar.length === 0) return null;
 
+  // Group items by restaurant so each restaurant appears once
+  const groups = [];
+  const seenRest = new Map(); // restaurant key → group index
+  for (const s of similar) {
+    const key = String(s.restaurant_id ?? s.restaurant_name ?? "");
+    if (seenRest.has(key)) {
+      groups[seenRest.get(key)].items.push(s);
+    } else {
+      seenRest.set(key, groups.length);
+      groups.push({ restaurant_name: s.restaurant_name, items: [s] });
+    }
+  }
+
   return (
     <div
       style={{
@@ -184,56 +197,56 @@ function FindSimilar({ itemId, isMobile }) {
         Find Similar Nearby
       </div>
 
-      <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-        {similar.map((s, i) => (
-          <li
-            key={s.id ?? i}
+      <div style={{ display: "grid", gap: 14 }}>
+        {groups.map((g, gi) => (
+          <div
+            key={g.restaurant_name ?? gi}
             style={{
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              alignItems: isMobile ? "flex-start" : "baseline",
-              gap: isMobile ? 4 : 6,
-              paddingBottom: 9,
-              marginBottom: 9,
-              borderBottom:
-                i < similar.length - 1
-                  ? "1px solid rgba(0,0,0,0.05)"
-                  : "none",
+              paddingBottom: gi < groups.length - 1 ? 14 : 0,
+              borderBottom: gi < groups.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none",
             }}
           >
-            <Link
-              to={`/menu-items/${s.id}`}
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: "#124ba3",
-                textDecoration: "none",
-                wordBreak: "break-word",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.textDecoration = "underline";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.textDecoration = "none";
-              }}
-            >
-              {s.name}
-            </Link>
-
-            {s.restaurant_name && (
-              <span
+            {g.restaurant_name && (
+              <div
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
+                  fontWeight: 700,
                   color: "#5b6675",
-                  wordBreak: "break-word",
+                  marginBottom: 6,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
                 }}
               >
-                — {s.restaurant_name}
-              </span>
+                {g.restaurant_name}
+              </div>
             )}
-          </li>
+            <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+              {g.items.map((s) => (
+                <li key={s.id} style={{ marginBottom: 4 }}>
+                  <Link
+                    to={`/menu-items/${s.id}`}
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: "#124ba3",
+                      textDecoration: "none",
+                      wordBreak: "break-word",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.textDecoration = "underline";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.textDecoration = "none";
+                    }}
+                  >
+                    {s.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
@@ -459,27 +472,80 @@ export default function MenuItemDetailPage() {
     };
   }, [id]);
 
+  const pageStyle = {
+    minHeight: "100vh",
+  };
+  const wrapStyle = {
+    maxWidth: 820,
+    margin: "0 auto",
+    padding: isMobile ? "20px 14px 48px" : "36px 24px 72px",
+    boxSizing: "border-box",
+    fontFamily: "var(--font-ui, Inter, system-ui, sans-serif)",
+    color: "#101828",
+  };
+  const topRowStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: isMobile ? 16 : 22,
+  };
+  const wordmarkStyle = {
+    fontSize: isMobile ? 17 : 19,
+    fontWeight: 900,
+    color: "#11211a",
+    textDecoration: "none",
+    letterSpacing: "-0.02em",
+  };
+  const backBtnStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#475467",
+    background: "rgba(0,0,0,0.04)",
+    border: "1px solid rgba(0,0,0,0.09)",
+    borderRadius: 999,
+    padding: "5px 12px",
+    cursor: "pointer",
+    textDecoration: "none",
+  };
+
   if (loading) {
     return (
-      <div style={{ maxWidth: 980, margin: "0 auto", padding: 16 }}>
-        <div style={{ fontSize: 14, opacity: 0.75 }}>Loading item…</div>
+      <div style={pageStyle}>
+        <div style={wrapStyle}>
+          <div style={topRowStyle}>
+            <Link to="/" style={wordmarkStyle}>Grubbid</Link>
+            <button onClick={() => navigate(-1)} style={backBtnStyle}>← Back</button>
+          </div>
+          <div style={{ fontSize: 14, color: "#667085" }}>Loading item…</div>
+        </div>
       </div>
     );
   }
 
   if (err) {
     return (
-      <div style={{ maxWidth: 980, margin: "0 auto", padding: 16 }}>
-        <div
-          style={{
-            padding: 12,
-            borderRadius: 12,
-            background: "rgba(255,0,0,0.06)",
-            border: "1px solid rgba(255,0,0,0.18)",
-          }}
-        >
-          <div style={{ fontWeight: 800, marginBottom: 6 }}>Item detail not available yet</div>
-          <div style={{ fontSize: 13, opacity: 0.9, wordBreak: "break-word" }}>{err}</div>
+      <div style={pageStyle}>
+        <div style={wrapStyle}>
+          <div style={topRowStyle}>
+            <Link to="/" style={wordmarkStyle}>Grubbid</Link>
+            <button onClick={() => navigate(-1)} style={backBtnStyle}>← Back</button>
+          </div>
+          <div
+            style={{
+              padding: "14px 16px",
+              borderRadius: 16,
+              background: "#fff",
+              border: "1px solid rgba(18,34,28,0.08)",
+              color: "#475467",
+              fontWeight: 600,
+            }}
+          >
+            <div style={{ fontWeight: 800, marginBottom: 4, color: "#11211a" }}>Item not available</div>
+            <div style={{ fontSize: 13, wordBreak: "break-word" }}>{err}</div>
+          </div>
         </div>
       </div>
     );
@@ -513,105 +579,101 @@ export default function MenuItemDetailPage() {
     : null;
 
   return (
-    <div
-      style={{
-        maxWidth: 980,
-        margin: "0 auto",
-        padding: isMobile ? 14 : 16,
-        overflowX: "hidden",
-      }}
-    >
-      <div
-        style={{
-          border: "1px solid rgba(0,0,0,0.12)",
-          borderRadius: 16,
-          padding: isMobile ? 14 : 16,
-          background: "white",
-          boxShadow: "0 1px 0 rgba(0,0,0,0.03)",
-        }}
-      >
+    <div style={pageStyle}>
+      <div style={wrapStyle}>
+
+        {/* Nav bar */}
+        <div style={topRowStyle}>
+          <Link to="/" style={wordmarkStyle}>Grubbid</Link>
+          <button onClick={() => navigate(-1)} style={backBtnStyle}>← Back</button>
+        </div>
+
+        {/* Item card */}
         <div
           style={{
-            display: "flex",
-            flexDirection: isMobile ? "column" : "row",
-            justifyContent: "space-between",
-            gap: 12,
-            alignItems: "flex-start",
+            border: "1px solid var(--border, #e4e9f0)",
+            borderRadius: 16,
+            padding: isMobile ? "12px 14px" : "16px 20px",
+            background: "#fff",
+            boxShadow: "var(--shadow-1, 0 6px 18px rgba(16,24,40,0.06))",
           }}
         >
-          <div style={{ minWidth: 0, width: isMobile ? "100%" : "auto" }}>
-            <div
+          {/* Name + price inline */}
+          <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 16px" }}>
+            <span
               style={{
-                fontSize: isMobile ? 20 : 22,
-                fontWeight: 900,
-                marginBottom: 4,
-                lineHeight: 1.15,
+                fontSize: isMobile ? 18 : 20,
+                fontWeight: 800,
+                lineHeight: 1.25,
+                letterSpacing: "-0.01em",
+                color: "#11211a",
                 wordBreak: "break-word",
               }}
             >
               {item.name}
-            </div>
-
-            <div style={{ fontSize: 14, opacity: 0.75, wordBreak: "break-word" }}>
-              <Link
-                to={`/restaurants/${item.restaurant.slug || item.restaurant.id}`}
-                style={{ color: "inherit", textDecoration: "none" }}
-                onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+            </span>
+            {priceLabel && (
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 800,
+                  whiteSpace: "nowrap",
+                  color: "#667085",
+                }}
               >
-                {item.restaurant.name}
-              </Link>
+                {priceLabel}
+              </span>
+            )}
+          </div>
+
+          {/* Restaurant link */}
+          <div style={{ marginTop: 4, fontSize: 13, fontWeight: 600, color: "#667085" }}>
+            <Link
+              to={`/restaurants/${item.restaurant.slug || item.restaurant.id}`}
+              style={{ color: "#667085", textDecoration: "none" }}
+              onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; e.currentTarget.style.textUnderlineOffset = "3px"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+            >
+              {item.restaurant.name}
+            </Link>
+          </div>
+
+          {/* Badges */}
+          {(item.badges.vegan || item.badges.glutenFree || item.badges.deal) && (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+              {item.badges.vegan      && <Chip>🌿 Vegan</Chip>}
+              {item.badges.glutenFree && <Chip>GF</Chip>}
+              {item.badges.deal       && <Chip>🏷 Deal</Chip>}
             </div>
-          </div>
+          )}
 
-          <div
-            style={{
-              textAlign: isMobile ? "left" : "right",
-              width: isMobile ? "100%" : "auto",
-            }}
-          >
-            <div style={{ fontSize: 18, fontWeight: 900 }}>
-              {priceLabel || "—"}
+          {/* Description */}
+          {item.description && (
+            <div style={{ marginTop: 10, fontSize: 14, color: "#475467", lineHeight: 1.5, wordBreak: "break-word" }}>
+              {item.description}
             </div>
+          )}
+
+          {/* Tabs */}
+          <div style={{ marginTop: 16, borderTop: "1px solid #e4e7ec", paddingTop: 12 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+              <TabButton active={tab === "insights"} onClick={() => setTab(t => t === "insights" ? null : "insights")}>
+                Insights
+              </TabButton>
+              <TabButton active={tab === "nutrition"} onClick={() => setTab(t => t === "nutrition" ? null : "nutrition")}>
+                Nutrition
+              </TabButton>
+              <TabButton active={tab === "similar"} onClick={() => setTab(t => t === "similar" ? null : "similar")}>
+                Similar
+              </TabButton>
+            </div>
+
+            {tab === "insights"  && <InsightBarPanel item={insightsItem} />}
+            {tab === "nutrition" && <NutritionBarPanel chip={insightsItem?.chips?.nutrition_chip || null} />}
+            {tab === "similar"   && <FindSimilar itemId={item?.id} isMobile={isMobile} />}
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-          {item.badges.vegan && <Chip>Vegan</Chip>}
-          {item.badges.glutenFree && <Chip>Gluten-Free</Chip>}
-          {item.badges.deal && <Chip>Deal</Chip>}
-        </div>
-
-        {item.description && (
-          <div
-            style={{
-              marginTop: 12,
-              fontSize: 14,
-              opacity: 0.9,
-              wordBreak: "break-word",
-            }}
-          >
-            {item.description}
-          </div>
-        )}
-
-        <div style={{ marginTop: 14, borderTop: "1px solid rgba(0,0,0,0.08)", paddingTop: 12 }}>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-            <TabButton active={tab === "insights"} onClick={() => setTab(t => t === "insights" ? null : "insights")}>
-              Insights
-            </TabButton>
-            <TabButton active={tab === "nutrition"} onClick={() => setTab(t => t === "nutrition" ? null : "nutrition")}>
-              Nutrition
-            </TabButton>
-            <TabButton active={tab === "similar"} onClick={() => setTab(t => t === "similar" ? null : "similar")}>
-              Similar
-            </TabButton>
-          </div>
-
-          {tab === "insights" && <InsightBarPanel item={insightsItem} />}
-          {tab === "nutrition" && <NutritionBarPanel chip={insightsItem?.chips?.nutrition_chip || null} />}
-          {tab === "similar" && <FindSimilar itemId={item?.id} isMobile={isMobile} />}
-        </div>
       </div>
     </div>
   );
