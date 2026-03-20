@@ -16,6 +16,38 @@ const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const LOCAL_RADIUS_MILES = 8;
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
+const RECENT_LOCATIONS_KEY = "grubbid.recent.locations";
+const MAX_RECENT_LOCATIONS = 3;
+
+function loadRecentLocations() {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(window.localStorage.getItem(RECENT_LOCATIONS_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentLocation(label) {
+  if (typeof window === "undefined" || !label) return;
+  try {
+    const existing = loadRecentLocations().filter((l) => l !== label);
+    const updated = [label, ...existing].slice(0, MAX_RECENT_LOCATIONS);
+    window.localStorage.setItem(RECENT_LOCATIONS_KEY, JSON.stringify(updated));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function removeRecentLocation(label) {
+  if (typeof window === "undefined") return;
+  try {
+    const updated = loadRecentLocations().filter((l) => l !== label);
+    window.localStorage.setItem(RECENT_LOCATIONS_KEY, JSON.stringify(updated));
+  } catch {
+    // ignore storage errors
+  }
+}
 const CANDIDATE_SUGGESTED_SEARCHES = [
   "chicken sandwich",
   "tacos",
@@ -183,7 +215,7 @@ export default function GrubbidDiscovery() {
     if (typeof window === "undefined") return "";
     return String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim();
   });
-  const [suggestedSearches, setSuggestedSearches] = useState([]);
+  const [recentLocations, setRecentLocations] = useState(() => loadRecentLocations());
   const [filters, setFilters] = useState(() => loadDietPrefs());
 
   const resolvedLocationLabel = useMemo(() => {
@@ -194,50 +226,18 @@ export default function GrubbidDiscovery() {
   // Persist dietary prefs whenever they change so other pages see them
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
 
-  // Validate suggested searches — only show terms that return at least 1 result
+  // Seed recent locations from the session location on first load
   useEffect(() => {
-    const hasLocation = resolvedLocationLabel || autoLocation.lat != null;
-    if (!hasLocation) return;
-
-    let alive = true;
-    setSuggestedSearches([]);
-
-    async function validate() {
-      const results = await Promise.all(
-        CANDIDATE_SUGGESTED_SEARCHES.map(async (term) => {
-          try {
-            const p = new URLSearchParams();
-            p.set("q", term);
-            p.set("limit", "1");
-            const loc = parseLocation(appliedLocation);
-            if (loc.city)  p.set("city",  loc.city);
-            if (loc.state) p.set("state", loc.state);
-            if (loc.zip)   p.set("zip",   loc.zip);
-            if (!loc.label && autoLocation.lat != null) {
-              p.set("lat", String(autoLocation.lat));
-              p.set("lng", String(autoLocation.lng));
-              p.set("radius_miles", String(LOCAL_RADIUS_MILES));
-            }
-            const res = await fetch(`${API}/search?${p.toString()}`, { credentials: "include" });
-            const json = await res.json().catch(() => ({}));
-            const count =
-              (Array.isArray(json?.results)     ? json.results.length     : 0) +
-              (Array.isArray(json?.menu_items)  ? json.menu_items.length  : 0) +
-              (Array.isArray(json?.restaurants) ? json.restaurants.length : 0);
-            return count > 0 ? term : null;
-          } catch {
-            return null;
-          }
-        })
-      );
-      if (alive) {
-        setSuggestedSearches(results.filter(Boolean));
-      }
+    const sessionLoc = typeof window !== "undefined"
+      ? String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim()
+      : "";
+    if (sessionLoc) {
+      saveRecentLocation(sessionLoc);
+      setRecentLocations(loadRecentLocations());
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    validate();
-    return () => { alive = false; };
-  }, [resolvedLocationLabel, autoLocation.lat, autoLocation.lng, appliedLocation]);
 
   function buildSearchParams(queryValue, options = {}) {
     const includeFilters = options.includeFilters !== false;
@@ -302,10 +302,22 @@ export default function GrubbidDiscovery() {
         const nearText = parsed ? ` near ${parsed}` : "";
         setInlineError(`No results found for "${qTerm}"${nearText}`);
       } else {
+        const locationLabel = resolvedLocationLabel || "";
+        if (locationLabel) {
+          saveRecentLocation(locationLabel);
+          setRecentLocations(loadRecentLocations());
+          // Persist so returning to this page keeps the same location pre-filled,
+          // even when the location was auto-detected (not manually applied).
+          try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, locationLabel); } catch { /* ignore */ }
+        }
         navigate(`/search?${params.toString()}`);
       }
     } catch {
-      // On network error just navigate anyway
+      // On network error just navigate anyway — still persist location
+      const locationLabel = resolvedLocationLabel || "";
+      if (locationLabel) {
+        try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, locationLabel); } catch { /* ignore */ }
+      }
       navigate(`/search?${params.toString()}`);
     } finally {
       setSearching(false);
@@ -339,8 +351,8 @@ export default function GrubbidDiscovery() {
     return state ? `${city}, ${state}` : city;
   }
 
-  function applyLocationChange() {
-    const nextLocation = normalizeLocationLabel(locationInput.trim());
+  function applyLocationChange(rawValue) {
+    const nextLocation = normalizeLocationLabel((rawValue ?? locationInput).trim());
     setAppliedLocation(nextLocation);
     if (typeof window !== "undefined") {
       if (nextLocation) {
@@ -348,6 +360,10 @@ export default function GrubbidDiscovery() {
       } else {
         window.sessionStorage.removeItem(SESSION_LOCATION_KEY);
       }
+    }
+    if (nextLocation) {
+      saveRecentLocation(nextLocation);
+      setRecentLocations(loadRecentLocations());
     }
     setShowLocationEditor(false);
   }
@@ -456,10 +472,10 @@ export default function GrubbidDiscovery() {
           </div>
 
           {/* Suggested searches */}
-          {suggestedSearches.length > 0 ? (
+          {CANDIDATE_SUGGESTED_SEARCHES.length > 0 ? (
             <div style={{ marginTop: 20, fontSize: isMobile ? 13 : 14, color: "#475467", lineHeight: 1.6 }}>
               <span style={{ fontWeight: 800 }}>Try:</span>{" "}
-              {suggestedSearches.map((term, index) => (
+              {CANDIDATE_SUGGESTED_SEARCHES.map((term, index) => (
                 <React.Fragment key={term}>
                   <button
                     type="button"
@@ -479,7 +495,7 @@ export default function GrubbidDiscovery() {
                   >
                     {term}
                   </button>
-                  {index < suggestedSearches.length - 1 ? " · " : ""}
+                  {index < CANDIDATE_SUGGESTED_SEARCHES.length - 1 ? " · " : ""}
                 </React.Fragment>
               ))}
             </div>
@@ -602,10 +618,71 @@ export default function GrubbidDiscovery() {
               <div style={{ fontSize: 13, fontWeight: 800, color: "#344054" }}>
                 City, State or Zip Code
               </div>
+
+              {/* Recent locations — click to select */}
+              {recentLocations.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {recentLocations.map((label) => (
+                    <div
+                      key={label}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "8px 12px",
+                        borderRadius: 10,
+                        border: "1px solid #e4e7ec",
+                        background: locationInput === label ? "#f0faf4" : "#fafafa",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => { setLocationInput(label); applyLocationChange(label); }}
+                        style={{
+                          border: "none",
+                          background: "transparent",
+                          padding: 0,
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: "#11211a",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          flex: 1,
+                        }}
+                      >
+                        {label}
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${label}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeRecentLocation(label);
+                          setRecentLocations(loadRecentLocations());
+                          if (locationInput === label) setLocationInput("");
+                        }}
+                        style={{
+                          border: "none",
+                          background: "transparent",
+                          padding: "0 0 0 8px",
+                          color: "#9ca3af",
+                          fontSize: 16,
+                          lineHeight: 1,
+                          cursor: "pointer",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
               <input
                 value={locationInput}
                 onChange={(event) => setLocationInput(event.target.value)}
-                placeholder="City, State or Zip"
+                placeholder="Or type a city, state or zip"
                 style={{
                   height: 42,
                   borderRadius: 12,

@@ -449,6 +449,21 @@ export default function GrubbidSearchResults() {
   const state = fallbackLocation.state;
   const near = fallbackLocation.near;
   const explicitLocationLabel = fallbackLocation.label;
+
+  // Persist the resolved location back to sessionStorage so that returning to
+  // the Discovery page pre-fills the same location the user already searched with.
+  // Only write when we have an explicit, actionable location from the URL —
+  // geo-only (lat/lng) searches are intentionally excluded since we can't
+  // reverse-geocode here without an extra API call.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const label = city && state
+      ? `${city}, ${state}`
+      : city || zip || near || "";
+    if (label) {
+      window.sessionStorage.setItem(SESSION_LOCATION_KEY, label);
+    }
+  }, [city, state, zip, near]);
   const sessionId = useMemo(() => getOrCreateSearchSessionId(), []);
   const trackedEventKeysRef = useRef(new Set());
   const sortMode = String(params.get("sort") || "default_relevance").trim() || "default_relevance";

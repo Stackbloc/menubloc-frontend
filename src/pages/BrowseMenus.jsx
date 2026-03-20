@@ -317,7 +317,7 @@ export default function BrowseMenus() {
     };
   // Re-run when the URL location or filters change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlCity, urlState, filters, hasDietaryFilter]);
+  }, [urlCity, urlState, filters]);
 
   const showEmptyState = !loading && !error && menus.length === 0;
 

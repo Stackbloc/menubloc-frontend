@@ -815,6 +815,21 @@ export default function RestaurantPublicPage() {
                     <a
                       href={`tel:${String(phone).replace(/[^\d+]/g, "")}`}
                       style={{ color: linkColor, textDecoration: "none", fontWeight: 500 }}
+                      onClick={() => {
+                        try {
+                          fetch(`${API}/api/track-call`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              restaurant_id: data?.id ?? null,
+                              phone: String(phone),
+                              source: "public_profile",
+                            }),
+                          }).catch(() => {/* swallow — never block dialing */});
+                        } catch {
+                          /* swallow */
+                        }
+                      }}
                     >
                       {phone}
                     </a>
