@@ -184,7 +184,7 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
   );
 }
 
-export default function MenuPreviewCard({ menu, index = 0 }) {
+export default function MenuPreviewCard({ menu, index = 0, hideItemCount = false }) {
   const [hover, setHover] = useState(false);
   const [confirm, setConfirm] = useState(null); // null | "phone" | "order"
   const href = `/public/restaurants/${menu?.restaurant_id}/menu`;
@@ -344,7 +344,7 @@ export default function MenuPreviewCard({ menu, index = 0 }) {
                 color: "rgba(255,255,255,0.88)",
                 whiteSpace: "nowrap",
               }}>
-                {[cuisine, distance, itemCount > 0 ? `${itemCount} items` : null].filter(Boolean).join(" · ")}
+                {[cuisine, distance, (!hideItemCount && itemCount > 0) ? `${itemCount} items` : null].filter(Boolean).join(" · ")}
               </span>
             </div>
           )}
