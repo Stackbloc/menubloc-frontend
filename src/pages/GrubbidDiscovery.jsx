@@ -219,6 +219,8 @@ export default function GrubbidDiscovery() {
   const [filters, setFilters] = useState(() => loadDietPrefs());
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [metaCategories, setMetaCategories] = useState([]);
+  const [metaCuisines, setMetaCuisines] = useState([]);
 
   const resolvedLocationLabel = useMemo(() => {
     if (appliedLocation) return appliedLocation;
@@ -227,6 +229,18 @@ export default function GrubbidDiscovery() {
 
   // Persist dietary prefs whenever they change so other pages see them
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
+
+  // Load category and cuisine options from the meta API
+  useEffect(() => {
+    fetch(`${API}/api/meta/categories`)
+      .then((r) => r.json())
+      .then((json) => { if (json?.categories) setMetaCategories(json.categories); })
+      .catch(() => {});
+    fetch(`${API}/api/meta/cuisines`)
+      .then((r) => r.json())
+      .then((json) => { if (json?.cuisines) setMetaCuisines(json.cuisines); })
+      .catch(() => {});
+  }, []);
 
   // Seed recent locations from the session location on first load
   useEffect(() => {
@@ -859,8 +873,8 @@ export default function GrubbidDiscovery() {
                       }}
                     >
                       <option value="">All Cuisines</option>
-                      {["American", "BBQ", "Chinese", "Indian", "Italian", "Japanese", "Mediterranean", "Mexican", "Seafood", "Thai"].map((c) => (
-                        <option key={c} value={c}>{c}</option>
+                      {metaCuisines.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
                       ))}
                     </select>
                   </div>
@@ -886,8 +900,8 @@ export default function GrubbidDiscovery() {
                       }}
                     >
                       <option value="">All Categories</option>
-                      {["Breakfast", "Burgers", "Pizza", "Salads", "Sandwiches", "Seafood", "Steaks", "Sushi", "Tacos", "Wings"].map((c) => (
-                        <option key={c} value={c}>{c}</option>
+                      {metaCategories.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
                       ))}
                     </select>
                   </div>
