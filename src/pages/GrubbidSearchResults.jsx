@@ -24,7 +24,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
 import { toConsumerErrorMessage } from "../lib/api.js";
-import { saveDietPrefs } from "../hooks/useDietPreferences";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
@@ -427,11 +426,6 @@ export default function GrubbidSearchResults() {
   const dairy_free = params.get("dairy_free") === "1";
   const diabetic_friendly = params.get("diabetic_friendly") === "1";
 
-  // Keep localStorage in sync with whatever diet filters are active in the URL
-  // so navigating away and coming back (or going to a menu page) keeps them active
-  useEffect(() => {
-    saveDietPrefs({ vegan, vegetarian, gluten_free, keto, low_sodium, dairy_free, diabetic_friendly });
-  }, [vegan, vegetarian, gluten_free, keto, low_sodium, dairy_free, diabetic_friendly]);
 
   const fallbackLocation = useMemo(() => {
     if (routeZip || routeCity || routeState || routeNear || routeLocationLabel) {

@@ -20,7 +20,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(() =>
@@ -34,7 +34,7 @@ function useIsMobile(breakpoint = 900) {
   return isMobile;
 }
 import { PageNav } from "../components/NavButton.jsx";
-import { loadDietPrefs, saveDietPrefs, hasActiveDietPrefs, activePrefLabels, itemPassesDietFilter, clearDietPrefs } from "../hooks/useDietPreferences";
+import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
@@ -189,6 +189,7 @@ export default function PublicMenuPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [pageState, setPageState] = useState({
     status: "loading", // loading | ok | error
@@ -196,20 +197,30 @@ export default function PublicMenuPage() {
     error: null,
   });
 
-  const [dietPrefs, setDietPrefs] = useState(() => loadDietPrefs());
-  const filtersActive = hasActiveDietPrefs(dietPrefs);
+  // URL is the single source of truth for filter state on this page.
+  // No localStorage reads/writes — avoids cross-page state corruption.
+  const dietPrefs = {
+    dairy_free:        searchParams.get("dairy_free")        === "1",
+    diabetic_friendly: searchParams.get("diabetic_friendly") === "1",
+    gluten_free:       searchParams.get("gluten_free")       === "1",
+    keto:              searchParams.get("keto")              === "1",
+    low_sodium:        searchParams.get("low_sodium")        === "1",
+    vegan:             searchParams.get("vegan")             === "1",
+    vegetarian:        searchParams.get("vegetarian")        === "1",
+  };
+  const filtersActive = Object.values(dietPrefs).some(Boolean);
 
   function handleTogglePref(key) {
-    setDietPrefs((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      saveDietPrefs(next);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (next.get(key) === "1") next.delete(key);
+      else next.set(key, "1");
       return next;
     });
   }
 
   function handleClearFilters() {
-    clearDietPrefs();
-    setDietPrefs(loadDietPrefs());
+    setSearchParams({});
   }
 
   const apiUrl = useMemo(() => {
