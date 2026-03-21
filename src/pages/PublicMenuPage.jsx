@@ -37,7 +37,7 @@ import { PageNav } from "../components/NavButton.jsx";
 import { loadDietPrefs, saveDietPrefs, hasActiveDietPrefs, activePrefLabels, itemPassesDietFilter, clearDietPrefs } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
 
 /* ---- Utilities ---- */
 
@@ -92,6 +92,30 @@ function UnverifiedBanner({ show, onClaim }) {
       <span style={{ fontSize: 11, opacity: 0.7 }}>●</span>
       Unverified Menu — Click to Claim Profile
     </button>
+  );
+}
+
+function IntakePreviewBanner({ show }) {
+  if (!show) return null;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px 16px",
+        borderRadius: 12,
+        background: "#fffbeb",
+        border: "1px solid #fde68a",
+        color: "#92400e",
+        fontSize: 13,
+        fontWeight: 700,
+        marginBottom: 16,
+      }}
+    >
+      <span style={{ fontSize: 16 }}>📋</span>
+      Menu preview — recently captured and may await restaurant confirmation
+    </div>
   );
 }
 
@@ -275,11 +299,12 @@ export default function PublicMenuPage() {
   /* ---- OK ---- */
 
   const data = pageState.data;
-  const restaurantName = asStr(data?.restaurant_name || data?.name || `Restaurant ${id}`).trim();
-  const addressLine    = asStr(data?.address_line).trim();
-  const sections       = normalizeSections(data);
-  const menuBanner     = asStr(data?.menu_banner).trim();
-  const isUnverified   = data?.is_authoritative === false || !!menuBanner;
+  const restaurantName  = asStr(data?.restaurant_name || data?.name || `Restaurant ${id}`).trim();
+  const addressLine     = asStr(data?.address_line).trim();
+  const sections        = normalizeSections(data);
+  const menuBanner      = asStr(data?.menu_banner).trim();
+  const isUnverified    = data?.is_authoritative === false || !!menuBanner;
+  const isIntakePreview = data?.menu_source === "intake";
 
   return (
     <div style={pageBg}>
@@ -366,6 +391,8 @@ export default function PublicMenuPage() {
 
           {/* ── Menu content ── */}
           <main style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
+
+            <IntakePreviewBanner show={isIntakePreview} />
 
             {sections.length === 0 ? (
               <div style={{ fontSize: 14, color: "var(--muted, #5b6675)" }}>No menu sections yet.</div>

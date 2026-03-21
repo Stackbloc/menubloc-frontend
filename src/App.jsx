@@ -56,6 +56,7 @@ import SpreadsheetUploadPage from "./pages/SpreadsheetUploadPage.jsx";
 import FoodTruckPage from "./pages/FoodTruckPage.jsx";
 import FoodTruckSchedulePage from "./pages/FoodTruckSchedulePage.jsx";
 import FoodTruckSignup from "./pages/FoodTruckSignup.jsx";
+import OperatorIntakePage from "./pages/menulibrarian_mobile.jsx";
 
 function isEasyMenuHost() {
   const host = (window?.location?.hostname || "").toLowerCase();
@@ -171,6 +172,9 @@ export default function App() {
         <Route path="/public/restaurants/:id/menu" element={<PublicMenuPage />} />
         <Route path="/restaurants/:restaurantSlug/menu-items/:id" element={<MenuItemDetailPage />} />
         <Route path="/menu-items/:id" element={<MenuItemDetailPage />} />
+
+        {/* Operator intake — MenuLibrarianBot (smartphone paste flow) */}
+        <Route path="/field/intake" element={<OperatorIntakePage />} />
 
         {/* Claim verify */}
         <Route path="/claim/verify" element={<ClaimVerify />} />

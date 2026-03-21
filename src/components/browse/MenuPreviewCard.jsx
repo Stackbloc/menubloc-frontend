@@ -365,7 +365,7 @@ export default function MenuPreviewCard({ menu, index = 0 }) {
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirm("phone"); }}
                 style={{
-                  height: 36, borderRadius: 999, padding: "0 16px",
+                  height: 36, borderRadius: 8, padding: "0 16px",
                   background: "rgba(255,255,255,0.18)",
                   backdropFilter: "blur(12px)",
                   border: "1px solid rgba(255,255,255,0.40)",
@@ -385,7 +385,7 @@ export default function MenuPreviewCard({ menu, index = 0 }) {
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirm("order"); }}
                 style={{
-                  height: 36, borderRadius: 999, padding: "0 16px",
+                  height: 36, borderRadius: 8, padding: "0 16px",
                   background: "rgba(255,255,255,0.18)",
                   backdropFilter: "blur(12px)",
                   border: "1px solid rgba(255,255,255,0.40)",

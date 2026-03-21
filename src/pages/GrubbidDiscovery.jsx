@@ -697,7 +697,7 @@ export default function GrubbidDiscovery() {
               <div>
                 <button
                   type="button"
-                  onClick={applyLocationChange}
+                  onClick={() => applyLocationChange()}
                   style={{
                     height: 42,
                     padding: "0 16px",

@@ -8,7 +8,12 @@
 //   Added apiPatch for QR code activate/deactivate support.
 // ============================================================
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+// VITE_API_BASE_URL must be set in Vercel env vars for production.
+// In local dev it falls back to localhost:3001 automatically.
+const API_BASE = (
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? "http://localhost:3001" : "")
+).replace(/\/$/, "");
 
 async function safeJson(res) {
   const text = await res.text();
