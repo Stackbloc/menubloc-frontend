@@ -63,10 +63,10 @@ function PlanColumn({ plan, isCurrent, onUpgrade, upgrading }) {
       <div style={{ padding: "18px 16px 14px" }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: "#0f1720", marginBottom: 4 }}>{plan.name}</div>
         <div style={{ fontSize: 22, fontWeight: 800, color: "#1F4E3D", lineHeight: 1 }}>
-          {plan.monthly_price_cents === 0 ? "Free" : `$${(plan.monthly_price_cents / 100).toFixed(0)}`}
-          {plan.monthly_price_cents > 0 && <span style={{ fontSize: 12, color: "#8a9ab0", fontWeight: 500 }}>/mo</span>}
+          {isEnterprise ? "Custom" : plan.monthly_price_cents === 0 ? "Free" : `$${(plan.monthly_price_cents / 100).toFixed(0)}`}
+          {!isEnterprise && plan.monthly_price_cents > 0 && <span style={{ fontSize: 12, color: "#8a9ab0", fontWeight: 500 }}>/mo</span>}
         </div>
-        {plan.annual_price_cents > 0 && (
+        {!isEnterprise && plan.annual_price_cents > 0 && (
           <div style={{ fontSize: 11, color: "#8a9ab0", marginTop: 3 }}>
             ${(plan.annual_price_cents / 100).toFixed(0)}/yr (save {Math.round(100 - (plan.annual_price_cents / (plan.monthly_price_cents * 12)) * 100)}%)
           </div>
@@ -156,7 +156,8 @@ export default function OperatorSubscription() {
     ])
       .then(([sub, plansData]) => {
         setSubscription(sub);
-        setPlans(plansData.plans || []);
+        const HIDDEN = ["public", "free"];
+        setPlans((plansData.plans || []).filter(p => !HIDDEN.includes(p.slug)));
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
