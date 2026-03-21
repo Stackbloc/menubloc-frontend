@@ -201,7 +201,8 @@ export default function BrowseMenus() {
   const urlState = urlParams.get("state") || "";
 
   // True when the URL explicitly specifies the location — geolocation must not run.
-  const hasCityStateParams = Boolean(urlCity && urlState);
+  // City alone is sufficient; state is optional and used as an additional filter when present.
+  const hasCityStateParams = Boolean(urlCity);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
