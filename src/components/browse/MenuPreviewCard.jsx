@@ -263,7 +263,7 @@ export default function MenuPreviewCard({ menu, index = 0, hideItemCount = false
         }} />
 
         {/* Verified badge — top right */}
-        {isVerified && (
+        {isVerified ? (
           <div style={{
             position: "absolute", top: 12, right: 12, zIndex: 4,
             display: "inline-flex", alignItems: "center", gap: 4,
@@ -278,6 +278,21 @@ export default function MenuPreviewCard({ menu, index = 0, hideItemCount = false
           }}>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80", flexShrink: 0, boxShadow: "0 0 5px #4ade80" }} />
             LIVE MENU
+          </div>
+        ) : (
+          <div style={{
+            position: "absolute", top: 12, right: 12, zIndex: 4,
+            display: "inline-flex", alignItems: "center", gap: 4,
+            padding: "3px 9px",
+            borderRadius: 999,
+            fontSize: 9, fontWeight: 800, letterSpacing: 0.8,
+            background: "rgba(0,0,0,0.30)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            color: "rgba(255,255,255,0.75)",
+          }}>
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#facc15", flexShrink: 0 }} />
+            UNVERIFIED
           </div>
         )}
 
