@@ -112,15 +112,15 @@ function parseLocation(rawValue) {
   return { zip: "", city: raw, state: "", near: "", label: raw };
 }
 
-function FilterChip({ label, active, onClick }) {
+function FilterChip({ label, active, onClick, accentColor = "#111827" }) {
   return (
     <button
       type="button"
       onClick={onClick}
       style={{
         borderRadius: 999,
-        border: active ? "1px solid #111827" : "1px solid #d8dee8",
-        background: active ? "#111827" : "#fff",
+        border: active ? `1px solid ${accentColor}` : "1px solid #d8dee8",
+        background: active ? accentColor : "#fff",
         color: active ? "#fff" : "#1f2937",
         padding: "8px 12px",
         fontSize: 13,
@@ -217,6 +217,8 @@ export default function GrubbidDiscovery() {
   });
   const [recentLocations, setRecentLocations] = useState(() => loadRecentLocations());
   const [filters, setFilters] = useState(() => loadDietPrefs());
+  const [selectedCuisine, setSelectedCuisine] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
 
   const resolvedLocationLabel = useMemo(() => {
     if (appliedLocation) return appliedLocation;
@@ -246,7 +248,14 @@ export default function GrubbidDiscovery() {
     const explicitLocationValue = String(
       options.locationOverride ?? appliedLocation ?? ""
     ).trim();
-    if (q) params.set("q", q);
+
+    // Append selected cuisine/category to the query so the backend text-matches them
+    let effectiveQ = q;
+    if (includeFilters) {
+      if (selectedCuisine) effectiveQ = effectiveQ ? `${effectiveQ} ${selectedCuisine}` : selectedCuisine;
+      if (selectedCategory) effectiveQ = effectiveQ ? `${effectiveQ} ${selectedCategory}` : selectedCategory;
+    }
+    if (effectiveQ) params.set("q", effectiveQ);
 
     if (includeFilters) {
       if (filters.gluten_free) params.set("gluten_free", "1");
@@ -749,63 +758,112 @@ export default function GrubbidDiscovery() {
                 padding: 0,
               }}
             >
-              Dietary Preferences {showFilters ? "▴" : "▾"}
+              Search Preferences {showFilters ? "▴" : "▾"}
             </button>
 
             {showFilters ? (
               <div
                 style={{
                   marginTop: 14,
-                  padding: "16px 18px",
-                  background: "#fff",
                   borderRadius: 18,
                   border: "1px solid #e4e7ec",
                   boxShadow: "0 12px 30px rgba(15,23,42,0.06)",
+                  overflow: "hidden",
                 }}
               >
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  <FilterChip
-                    label="Dairy Free"
-                    active={filters.dairy_free}
-                    onClick={() => setFilters((prev) => ({ ...prev, dairy_free: !prev.dairy_free }))}
-                  />
-                  <FilterChip
-                    label="Diabetic Friendly"
-                    active={filters.diabetic_friendly}
-                    onClick={() =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        diabetic_friendly: !prev.diabetic_friendly,
-                      }))
-                    }
-                  />
-                  <FilterChip
-                    label="Gluten Free"
-                    active={filters.gluten_free}
-                    onClick={() => setFilters((prev) => ({ ...prev, gluten_free: !prev.gluten_free }))}
-                  />
-                  <FilterChip
-                    label="Keto"
-                    active={filters.keto}
-                    onClick={() => setFilters((prev) => ({ ...prev, keto: !prev.keto }))}
-                  />
-                  <FilterChip
-                    label="Low Sodium"
-                    active={filters.low_sodium}
-                    onClick={() => setFilters((prev) => ({ ...prev, low_sodium: !prev.low_sodium }))}
-                  />
-                  <FilterChip
-                    label="Vegan"
-                    active={filters.vegan}
-                    onClick={() => setFilters((prev) => ({ ...prev, vegan: !prev.vegan }))}
-                  />
-                  <FilterChip
-                    label="Vegetarian"
-                    active={filters.vegetarian}
-                    onClick={() =>
-                      setFilters((prev) => ({ ...prev, vegetarian: !prev.vegetarian }))
-                    }
-                  />
+                {/* Dietary filters */}
+                <div
+                  style={{
+                    padding: "14px 18px",
+                    background: "#fff",
+                    borderBottom: "1px solid #e4e7ec",
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 900, color: "#9ca3af", letterSpacing: 1.1, textTransform: "uppercase", marginBottom: 10 }}>
+                    Dietary
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    <FilterChip
+                      label="Dairy Free"
+                      active={filters.dairy_free}
+                      onClick={() => setFilters((prev) => ({ ...prev, dairy_free: !prev.dairy_free }))}
+                    />
+                    <FilterChip
+                      label="Diabetic Friendly"
+                      active={filters.diabetic_friendly}
+                      onClick={() =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          diabetic_friendly: !prev.diabetic_friendly,
+                        }))
+                      }
+                    />
+                    <FilterChip
+                      label="Gluten Free"
+                      active={filters.gluten_free}
+                      onClick={() => setFilters((prev) => ({ ...prev, gluten_free: !prev.gluten_free }))}
+                    />
+                    <FilterChip
+                      label="Keto"
+                      active={filters.keto}
+                      onClick={() => setFilters((prev) => ({ ...prev, keto: !prev.keto }))}
+                    />
+                    <FilterChip
+                      label="Low Sodium"
+                      active={filters.low_sodium}
+                      onClick={() => setFilters((prev) => ({ ...prev, low_sodium: !prev.low_sodium }))}
+                    />
+                    <FilterChip
+                      label="Vegan"
+                      active={filters.vegan}
+                      onClick={() => setFilters((prev) => ({ ...prev, vegan: !prev.vegan }))}
+                    />
+                    <FilterChip
+                      label="Vegetarian"
+                      active={filters.vegetarian}
+                      onClick={() =>
+                        setFilters((prev) => ({ ...prev, vegetarian: !prev.vegetarian }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Cuisine & Category filters */}
+                <div
+                  style={{
+                    padding: "14px 18px",
+                    background: "#f0faf4",
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 900, color: "#065f46", letterSpacing: 1.1, textTransform: "uppercase", marginBottom: 10 }}>
+                    Cuisine
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+                    {["American", "BBQ", "Chinese", "Indian", "Italian", "Japanese", "Mediterranean", "Mexican", "Seafood", "Thai"].map((c) => (
+                      <FilterChip
+                        key={c}
+                        label={c}
+                        active={selectedCuisine === c}
+                        accentColor="#065f46"
+                        onClick={() => setSelectedCuisine((prev) => (prev === c ? "" : c))}
+                      />
+                    ))}
+                  </div>
+
+                  <div style={{ fontSize: 11, fontWeight: 900, color: "#065f46", letterSpacing: 1.1, textTransform: "uppercase", marginBottom: 10 }}>
+                    Category
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {["Breakfast", "Burgers", "Pizza", "Salads", "Sandwiches", "Seafood", "Steaks", "Sushi", "Tacos", "Wings"].map((c) => (
+                      <FilterChip
+                        key={c}
+                        label={c}
+                        active={selectedCategory === c}
+                        accentColor="#065f46"
+                        onClick={() => setSelectedCategory((prev) => (prev === c ? "" : c))}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : null}
