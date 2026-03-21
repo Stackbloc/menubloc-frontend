@@ -1,0 +1,383 @@
+/**
+ * src/pages/operator/OperatorProfileEditor.jsx
+ *
+ * Route: /operator/profile
+ *
+ * Sections (visibility controlled by plan benefits):
+ *   • Core fields — always visible (profile_edit)
+ *   • About Us    — benefit: about_us
+ *   • Logo        — benefit: logo_upload  (URL input for MVP; file input ready)
+ *   • Featured dish — benefit: featured_dish
+ *
+ * Pattern: edits go to draft → Publish makes them live.
+ * Locked fields show an upgrade notice instead of the input.
+ */
+
+import React, { useState, useEffect, useCallback } from "react";
+import OperatorLayout from "./OperatorLayout.jsx";
+import { useOperator } from "../../context/OperatorContext.jsx";
+import * as api from "../../lib/operatorApi.js";
+
+const INPUT = {
+  width: "100%",
+  padding: "10px 13px",
+  fontSize: 13,
+  border: "1.5px solid #e4e9f0",
+  borderRadius: 9,
+  outline: "none",
+  color: "#0f1720",
+  background: "#fff",
+  fontFamily: "inherit",
+  boxSizing: "border-box",
+};
+
+const TEXTAREA = { ...INPUT, resize: "vertical", minHeight: 90 };
+
+function Label({ children, required }) {
+  return (
+    <label style={{ fontSize: 11, fontWeight: 700, color: "#5b6675", display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+      {children}{required && <span style={{ color: "#b91c1c", marginLeft: 3 }}>*</span>}
+    </label>
+  );
+}
+
+function LockedField({ benefitName }) {
+  return (
+    <div style={{
+      padding: "12px 14px",
+      background: "#f8f7f4",
+      border: "1.5px dashed #d7deea",
+      borderRadius: 9,
+      fontSize: 12,
+      color: "#8a9ab0",
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+    }}>
+      <span style={{ fontSize: 14 }}>🔒</span>
+      <span>
+        <strong>{benefitName}</strong> is not included in your current plan.{" "}
+        <a href="/operator/subscription" style={{ color: "#1F4E3D", fontWeight: 700 }}>Upgrade →</a>
+      </span>
+    </div>
+  );
+}
+
+function Section({ title, sub, children }) {
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 16 }}>
+        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f1720" }}>{title}</h2>
+        {sub && <p style={{ margin: "4px 0 0", fontSize: 12, color: "#8a9ab0" }}>{sub}</p>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+export default function OperatorProfileEditor() {
+  const { selectedRestaurant } = useOperator();
+  const rid = selectedRestaurant?.id;
+
+  const [profile, setProfile]   = useState(null);
+  const [benefits, setBenefits] = useState({});
+  const [allItems, setAllItems] = useState([]); // for featured dish picker
+  const [form, setForm]         = useState({});
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [saved, setSaved]       = useState(false);
+  const [published, setPublished] = useState(false);
+  const [error, setError]       = useState("");
+
+  const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  useEffect(() => {
+    if (!rid) return;
+    setLoading(true);
+    Promise.all([
+      api.getProfile(rid),
+      api.getMenus(rid).then(async d => {
+        const menus = d.menus || [];
+        const allItemArrays = await Promise.all(
+          menus.map(m => api.getMenuItems(rid, m.id).then(r => r.items || []).catch(() => []))
+        );
+        return allItemArrays.flat();
+      }).catch(() => []),
+    ])
+      .then(([profileData, items]) => {
+        const p = profileData.profile || {};
+        setProfile(p);
+        setBenefits(profileData.benefits || {});
+        setAllItems(items);
+        // Initialise form from live values (not draft)
+        setForm({
+          restaurant_name: p.restaurant_name || "",
+          cuisine:         p.cuisine || "",
+          category:        p.category || "",
+          phone:           p.phone || "",
+          website_url:     p.website_url || "",
+          instagram:       p.instagram || "",
+          bio:             p.bio || "",
+          about_us:        p.about_us || "",
+          logo_url:        p.logo_url || "",
+          featured_menu_item_id: p.featured_menu_item_id || "",
+        });
+      })
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [rid]);
+
+  const hasBenefit = (key) => benefits[key]?.is_enabled === true;
+
+  async function handleSave() {
+    setSaving(true);
+    setSaved(false);
+    setError("");
+    try {
+      const payload = {
+        restaurant_name: form.restaurant_name,
+        cuisine:         form.cuisine,
+        category:        form.category,
+        phone:           form.phone,
+        website_url:     form.website_url,
+        instagram:       form.instagram,
+        bio:             form.bio,
+      };
+      if (hasBenefit("about_us")) payload.about_us = form.about_us;
+      await api.updateProfile(rid, payload);
+
+      // Logo URL change (direct update, not draft)
+      if (hasBenefit("logo_upload") && form.logo_url !== profile.logo_url) {
+        const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+        await fetch(`${API}/operator/restaurants/${rid}/profile/logo`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ logo_url: form.logo_url }),
+        });
+      }
+
+      // Featured dish (direct update)
+      if (hasBenefit("featured_dish")) {
+        const itemId = form.featured_menu_item_id || null;
+        await api.setFeaturedDish(rid, itemId);
+      }
+
+      setSaved(true);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePublish() {
+    setPublishing(true);
+    setPublished(false);
+    setError("");
+    try {
+      await handleSave(); // save to draft first
+      await api.publishProfile(rid);
+      setPublished(true);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  if (!rid) {
+    return <OperatorLayout title="Profile"><p style={{ color: "#8a9ab0" }}>Select a restaurant to edit its profile.</p></OperatorLayout>;
+  }
+
+  if (loading) {
+    return <OperatorLayout title="Profile"><p style={{ color: "#8a9ab0" }}>Loading…</p></OperatorLayout>;
+  }
+
+  return (
+    <OperatorLayout title="Profile">
+      <div style={{ maxWidth: 680 }}>
+
+        {/* Error */}
+        {error && (
+          <div style={{
+            background: "#fef2f2", border: "1px solid #fecaca",
+            borderRadius: 10, padding: "10px 14px",
+            color: "#b91c1c", fontSize: 13, marginBottom: 20,
+            display: "flex", justifyContent: "space-between",
+          }}>
+            {error}
+            <button onClick={() => setError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#b91c1c", fontWeight: 700 }}>✕</button>
+          </div>
+        )}
+
+        {/* Status banners */}
+        {saved && !published && (
+          <div style={{ background: "#fefce8", border: "1px solid #fde047", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#854d0e", marginBottom: 20 }}>
+            Draft saved. Click <strong>Publish</strong> to make changes live.
+          </div>
+        )}
+        {published && (
+          <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#16a34a", marginBottom: 20 }}>
+            Profile published — changes are now live.
+          </div>
+        )}
+
+        {/* ── Core Info ──────────────────────────────────────────────── */}
+        <Section title="Restaurant info" sub="Basic details shown on your public listing.">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <Label>Restaurant name</Label>
+              <input style={INPUT} value={form.restaurant_name} onChange={f("restaurant_name")} />
+            </div>
+            <div>
+              <Label>Cuisine</Label>
+              <input style={INPUT} value={form.cuisine} onChange={f("cuisine")} placeholder="e.g. American, Italian" />
+            </div>
+            <div>
+              <Label>Category</Label>
+              <input style={INPUT} value={form.category} onChange={f("category")} placeholder="e.g. Casual Dining, Fast Casual" />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <input style={INPUT} value={form.phone} onChange={f("phone")} placeholder="(555) 555-5555" />
+            </div>
+            <div>
+              <Label>Website</Label>
+              <input style={INPUT} value={form.website_url} onChange={f("website_url")} placeholder="https://…" />
+            </div>
+            <div>
+              <Label>Instagram</Label>
+              <input style={INPUT} value={form.instagram} onChange={f("instagram")} placeholder="@handle" />
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <Label>Short bio</Label>
+              <textarea style={TEXTAREA} value={form.bio} onChange={f("bio")} placeholder="One or two sentences about your restaurant." />
+            </div>
+          </div>
+        </Section>
+
+        {/* ── About Us ────────────────────────────────────────────────── */}
+        <Section title="About Us" sub="A richer description shown on your menu page (Starter plan and above).">
+          {hasBenefit("about_us") ? (
+            <textarea
+              style={{ ...TEXTAREA, minHeight: 130 }}
+              value={form.about_us}
+              onChange={f("about_us")}
+              placeholder="Tell your story — where you started, what makes you different, what guests love most."
+            />
+          ) : (
+            <LockedField benefitName="About Us section" />
+          )}
+        </Section>
+
+        {/* ── Logo ───────────────────────────────────────────────────── */}
+        <Section title="Logo" sub="Square image recommended. 512×512px minimum.">
+          {hasBenefit("logo_upload") ? (
+            <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+              {form.logo_url && (
+                <img
+                  src={form.logo_url}
+                  alt="logo preview"
+                  style={{ width: 72, height: 72, borderRadius: 12, objectFit: "cover", border: "1px solid #e4e9f0", flexShrink: 0 }}
+                  onError={e => { e.target.style.display = "none"; }}
+                />
+              )}
+              <div style={{ flex: 1 }}>
+                <Label>Logo URL</Label>
+                <input
+                  style={INPUT}
+                  value={form.logo_url}
+                  onChange={f("logo_url")}
+                  placeholder="https://your-cdn.com/logo.png"
+                />
+                <div style={{ fontSize: 11, color: "#b0bbc8", marginTop: 5 }}>
+                  Paste a public image URL. File upload coming soon.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <LockedField benefitName="Logo upload" />
+          )}
+        </Section>
+
+        {/* ── Featured Dish ───────────────────────────────────────────── */}
+        <Section title="Featured dish" sub="One item pinned at the top of your listing. Pick your best seller.">
+          {hasBenefit("featured_dish") ? (
+            allItems.length === 0 ? (
+              <div style={{ fontSize: 13, color: "#8a9ab0" }}>
+                Add menu items first, then come back to pin a featured dish.
+              </div>
+            ) : (
+              <select
+                style={{ ...INPUT, cursor: "pointer" }}
+                value={form.featured_menu_item_id || ""}
+                onChange={f("featured_menu_item_id")}
+              >
+                <option value="">— None —</option>
+                {allItems.map(i => (
+                  <option key={i.id} value={i.id}>
+                    {i.name}{i.price != null ? ` · $${Number(i.price).toFixed(2)}` : ""}
+                  </option>
+                ))}
+              </select>
+            )
+          ) : (
+            <LockedField benefitName="Featured dish" />
+          )}
+        </Section>
+
+        {/* ── Action bar ─────────────────────────────────────────────── */}
+        <div style={{
+          display: "flex",
+          gap: 12,
+          paddingTop: 24,
+          borderTop: "1px solid #e4e9f0",
+        }}>
+          <button
+            onClick={handleSave}
+            disabled={saving || publishing}
+            style={{
+              background: "#f4f3ef", color: "#0f1720",
+              border: "none", borderRadius: 10,
+              padding: "11px 24px", fontSize: 14, fontWeight: 600,
+              cursor: saving ? "not-allowed" : "pointer",
+              opacity: saving ? 0.6 : 1,
+              fontFamily: "inherit",
+            }}
+          >
+            {saving ? "Saving…" : "Save draft"}
+          </button>
+          <button
+            onClick={handlePublish}
+            disabled={saving || publishing}
+            style={{
+              background: "#1F4E3D", color: "#fff",
+              border: "none", borderRadius: 10,
+              padding: "11px 28px", fontSize: 14, fontWeight: 700,
+              cursor: publishing ? "not-allowed" : "pointer",
+              opacity: publishing ? 0.6 : 1,
+              fontFamily: "inherit",
+            }}
+          >
+            {publishing ? "Publishing…" : "Publish changes"}
+          </button>
+          <a
+            href={`/public/restaurants/${rid}/menu`}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              marginLeft: "auto",
+              display: "flex", alignItems: "center",
+              fontSize: 13, color: "#1F4E3D", fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            Preview public menu ↗
+          </a>
+        </div>
+      </div>
+    </OperatorLayout>
+  );
+}
