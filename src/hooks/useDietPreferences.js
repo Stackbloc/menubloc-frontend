@@ -112,20 +112,22 @@ export function itemPassesDietFilter(item, prefs) {
     else if (item?.is_dairy_free !== true) return false;
   }
 
-  // Soft filters — only confirmed fail is hidden; unknown passes through
+  // Soft filters — only confirmed fail is hidden; unknown/no-data passes through
   if (prefs.keto) {
     const r = df.low_carb?.result; // keto maps to low_carb evaluator
     if (r === "fail") return false;
     else if (!r) {
-      // no evaluator data — fall back to DB flag / nutrition chip
-      if (item?.is_keto === true) { /* ok */ }
-      else if (item?.is_keto === false) return false;
-      else {
+      // No evaluator data: use DB flag or nutrition math if available;
+      // if neither, show rather than hide
+      if (item?.is_keto === false) return false;
+      else if (item?.is_keto == null) {
         const carbs = n.carbs_g ?? null;
         const fiber = n.fiber_g ?? 0;
         const sugar = n.sugar_g ?? null;
-        if (carbs === null || sugar === null) return false;
-        if (Math.max(0, carbs - fiber) > 18 || sugar > 8) return false;
+        if (carbs !== null && sugar !== null) {
+          if (Math.max(0, carbs - fiber) > 18 || sugar > 8) return false;
+        }
+        // no nutrition data → show (can't confirm but can't deny)
       }
     }
   }
@@ -133,19 +135,18 @@ export function itemPassesDietFilter(item, prefs) {
     const r = df.low_sodium?.result;
     if (r === "fail") return false;
     else if (!r) {
-      if (item?.is_low_sodium === true) { /* ok */ }
-      else if (item?.is_low_sodium === false) return false;
-      else {
+      if (item?.is_low_sodium === false) return false;
+      else if (item?.is_low_sodium == null) {
         const sodium = n.sodium_mg ?? null;
-        if (sodium === null) return false;
-        if (sodium > 600) return false;
+        if (sodium !== null && sodium > 600) return false;
+        // no sodium data → show
       }
     }
   }
   if (prefs.diabetic_friendly) {
     const r = df.diabetic_friendly?.result;
     if (r === "fail") return false;
-    else if (!r && item?.is_diabetic_friendly !== true) return false;
+    // pass, unknown, or no evaluator data → show
   }
 
   return true;
