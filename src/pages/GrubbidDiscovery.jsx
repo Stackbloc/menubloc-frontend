@@ -833,36 +833,63 @@ export default function GrubbidDiscovery() {
                   style={{
                     padding: "14px 18px",
                     background: "#f0faf4",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 16,
                   }}
                 >
-                  <div style={{ fontSize: 11, fontWeight: 900, color: "#065f46", letterSpacing: 1.1, textTransform: "uppercase", marginBottom: 10 }}>
-                    Cuisine
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-                    {["American", "BBQ", "Chinese", "Indian", "Italian", "Japanese", "Mediterranean", "Mexican", "Seafood", "Thai"].map((c) => (
-                      <FilterChip
-                        key={c}
-                        label={c}
-                        active={selectedCuisine === c}
-                        accentColor="#065f46"
-                        onClick={() => setSelectedCuisine((prev) => (prev === c ? "" : c))}
-                      />
-                    ))}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <label style={{ fontSize: 11, fontWeight: 900, color: "#065f46", letterSpacing: 1.1, textTransform: "uppercase" }}>
+                      Cuisine
+                    </label>
+                    <select
+                      value={selectedCuisine}
+                      onChange={(e) => setSelectedCuisine(e.target.value)}
+                      style={{
+                        height: 36,
+                        borderRadius: 8,
+                        border: "1px solid #a7f3d0",
+                        background: "#fff",
+                        color: "#065f46",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        padding: "0 10px",
+                        cursor: "pointer",
+                        minWidth: 160,
+                      }}
+                    >
+                      <option value="">All Cuisines</option>
+                      {["American", "BBQ", "Chinese", "Indian", "Italian", "Japanese", "Mediterranean", "Mexican", "Seafood", "Thai"].map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div style={{ fontSize: 11, fontWeight: 900, color: "#065f46", letterSpacing: 1.1, textTransform: "uppercase", marginBottom: 10 }}>
-                    Category
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {["Breakfast", "Burgers", "Pizza", "Salads", "Sandwiches", "Seafood", "Steaks", "Sushi", "Tacos", "Wings"].map((c) => (
-                      <FilterChip
-                        key={c}
-                        label={c}
-                        active={selectedCategory === c}
-                        accentColor="#065f46"
-                        onClick={() => setSelectedCategory((prev) => (prev === c ? "" : c))}
-                      />
-                    ))}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <label style={{ fontSize: 11, fontWeight: 900, color: "#065f46", letterSpacing: 1.1, textTransform: "uppercase" }}>
+                      Category
+                    </label>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      style={{
+                        height: 36,
+                        borderRadius: 8,
+                        border: "1px solid #a7f3d0",
+                        background: "#fff",
+                        color: "#065f46",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        padding: "0 10px",
+                        cursor: "pointer",
+                        minWidth: 160,
+                      }}
+                    >
+                      <option value="">All Categories</option>
+                      {["Breakfast", "Burgers", "Pizza", "Salads", "Sandwiches", "Seafood", "Steaks", "Sushi", "Tacos", "Wings"].map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
