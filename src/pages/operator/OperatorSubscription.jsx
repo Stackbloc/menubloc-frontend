@@ -50,17 +50,17 @@ function PlanColumn({ plan, isCurrent, onUpgrade, upgrading }) {
         position: "relative",
       }}
     >
-      {isCurrent && (
-        <div style={{
-          background: "#1F4E3D", color: "#fff",
-          fontSize: 10, fontWeight: 800, textTransform: "uppercase",
-          letterSpacing: "0.8px", textAlign: "center", padding: "4px 0",
-        }}>
-          Current Plan
-        </div>
-      )}
+      <div style={{
+        background: isCurrent ? "#1F4E3D" : "transparent",
+        color: "#fff",
+        fontSize: 10, fontWeight: 800, textTransform: "uppercase",
+        letterSpacing: "0.8px", textAlign: "center",
+        height: 22, display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {isCurrent ? "Current Plan" : ""}
+      </div>
 
-      <div style={{ padding: "18px 16px 14px" }}>
+      <div style={{ padding: "18px 16px 14px", height: 100, boxSizing: "border-box", overflow: "hidden" }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: "#0f1720", marginBottom: 4 }}>{plan.name}</div>
         <div style={{ fontSize: 22, fontWeight: 800, color: "#1F4E3D", lineHeight: 1 }}>
           {isEnterprise ? "Custom" : plan.monthly_price_cents === 0 ? "Free" : `$${(plan.monthly_price_cents / 100).toFixed(0)}`}
@@ -83,12 +83,15 @@ function PlanColumn({ plan, isCurrent, onUpgrade, upgrading }) {
             <div
               key={row.key}
               style={{
-                padding: "8px 16px",
+                padding: "0 16px",
+                height: 40,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 borderBottom: i < FEATURE_ROWS.length - 1 ? "1px solid #f0f0ec" : "none",
                 fontSize: 12,
                 fontWeight: positive ? 600 : 400,
                 color: val === "✗" || val === "—" ? "#c8d0da" : positive ? "#1F4E3D" : "#5b6675",
-                textAlign: "center",
               }}
             >
               {val}
@@ -246,7 +249,7 @@ export default function OperatorSubscription() {
           <div style={{ display: "flex", gap: 0 }}>
             {/* Row labels */}
             <div style={{ width: 180, flexShrink: 0, border: "1.5px solid #e4e9f0", borderRadius: 14, overflow: "hidden", background: "#f8f7f4" }}>
-              <div style={{ padding: "18px 16px 68px" }}>
+              <div style={{ height: 100, boxSizing: "border-box" }}>
                 {/* Spacer aligns with plan header */}
               </div>
               <div style={{ borderTop: "1px solid #e8ecf2" }}>
@@ -254,7 +257,10 @@ export default function OperatorSubscription() {
                   <div
                     key={row.key}
                     style={{
-                      padding: "8px 16px",
+                      padding: "0 16px",
+                      height: 40,
+                      display: "flex",
+                      alignItems: "center",
                       borderBottom: i < FEATURE_ROWS.length - 1 ? "1px solid #f0f0ec" : "none",
                       fontSize: 12,
                       fontWeight: 600,
