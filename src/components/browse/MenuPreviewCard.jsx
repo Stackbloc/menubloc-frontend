@@ -358,8 +358,11 @@ export default function MenuPreviewCard({ menu, index = 0, hideItemCount = false
                 fontSize: 11, fontWeight: 600,
                 color: "rgba(255,255,255,0.88)",
                 whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxWidth: 200,
               }}>
-                {[cuisine, distance, (!hideItemCount && itemCount > 0) ? `${itemCount} items` : null].filter(Boolean).join(" · ")}
+                {[distance, (!hideItemCount && itemCount > 0) ? `${itemCount} items` : null, cuisine].filter(Boolean).join(" · ")}
               </span>
             </div>
           )}
