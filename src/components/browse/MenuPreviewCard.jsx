@@ -184,7 +184,7 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
   );
 }
 
-export default function MenuPreviewCard({ menu, index = 0, hideItemCount = false }) {
+export default function MenuPreviewCard({ menu, index = 0 }) {
   const [hover, setHover] = useState(false);
   const [confirm, setConfirm] = useState(null); // null | "phone" | "order"
   const href = `/public/restaurants/${menu?.restaurant_id}/menu`;
@@ -362,7 +362,7 @@ export default function MenuPreviewCard({ menu, index = 0, hideItemCount = false
                 textOverflow: "ellipsis",
                 maxWidth: 200,
               }}>
-                {[distance, (!hideItemCount && itemCount > 0) ? `${itemCount} items` : null, cuisine].filter(Boolean).join(" · ")}
+                {[distance, itemCount > 0 ? `${itemCount} items` : null, cuisine].filter(Boolean).join(" · ")}
               </span>
             </div>
           )}

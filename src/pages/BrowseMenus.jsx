@@ -682,7 +682,6 @@ export default function BrowseMenus() {
                       menu={menu}
                       index={index}
                       isMobile={isMobile}
-                      hideItemCount={hasDietaryFilter}
                     />
                   ))}
                 </div>
