@@ -358,19 +358,27 @@ function NutritionBarPanel({ chip }) {
 
 /* ---- Insights bar panel ---- */
 
+// Scores are all 1–10; color reflects metric direction (high=good vs high=bad)
 const SCORE_NORMALIZE = {
-  protein_strength: { max: 1,    color: "#8b5cf6" },
-  glycemic_impact:  { max: 150,  color: "#c0392b" },
-  sodium_risk:      { max: 2300, color: "#e07b39" },
-  lasting_energy:   { max: 200,  color: "#1a9a4a" },
+  protein_strength: { color: "#1a9a4a", label: "Protein Strength", positive: true  },
+  protein_quality:  { color: "#2d7dd2", label: "Protein Quality",  positive: true  },
+  glycemic_impact:  { color: "#c0392b", label: "Glycemic Impact",  positive: false },
+  sodium_risk:      { color: "#e07b39", label: "Sodium Risk",      positive: false },
+  lasting_energy:   { color: "#3b82f6", label: "Lasting Energy",   positive: true  },
 };
 
-const SCORE_LABELS = {
-  protein_strength: "Protein Strength",
-  glycemic_impact:  "Glycemic Impact",
-  sodium_risk:      "Sodium Risk",
-  lasting_energy:   "Lasting Energy",
-};
+function formatInsightLevel(positive, level) {
+  if (!level) return "";
+  const key = level.toLowerCase();
+  if (positive) {
+    if (key === "excellent" || key === "good" || key === "high") return `${level} ✅`;
+    if (key === "low") return `${level} ⚠️`;
+  } else {
+    if (key === "very high" || key === "high") return `${level} ⚠️`;
+    if (key === "low") return `${level} ✅`;
+  }
+  return level;
+}
 
 function InsightBarPanel({ item }) {
   const chips = item?.chips || {};
@@ -380,8 +388,8 @@ function InsightBarPanel({ item }) {
   for (const [key, meta] of Object.entries(SCORE_NORMALIZE)) {
     const s = scores[key];
     if (!s || s.score == null || !Number.isFinite(Number(s.score))) continue;
-    const pct = Math.min(100, (Number(s.score) / meta.max) * 100);
-    rows.push({ key, label: SCORE_LABELS[key], pct, valueLabel: s.level || "", color: meta.color });
+    const pct = Math.min(100, (Number(s.score) / 10) * 100);
+    rows.push({ key, label: meta.label, pct, valueLabel: formatInsightLevel(meta.positive, s.level), color: meta.color });
   }
 
   if (!rows.length) return <div style={{ fontSize: 12, opacity: 0.55 }}>No insight data yet.</div>;

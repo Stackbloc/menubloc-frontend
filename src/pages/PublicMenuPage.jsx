@@ -428,15 +428,22 @@ export default function PublicMenuPage() {
                         const deal    = it?.id != null ? dealMap.get(it.id) : undefined;
                         const hasDeal = !!deal;
 
+                        const canNavigate = it?.id != null;
+
                         return (
                           <div
                             key={itemKey}
+                            onClick={canNavigate ? () => navigate(`/menu-items/${it.id}`) : undefined}
+                            onMouseEnter={canNavigate ? (e) => { e.currentTarget.style.boxShadow = "0 6px 22px rgba(15,23,42,0.10)"; e.currentTarget.style.borderColor = "rgba(18,34,28,0.18)"; } : undefined}
+                            onMouseLeave={canNavigate ? (e) => { e.currentTarget.style.boxShadow = "0 4px 14px rgba(15,23,42,0.05)"; e.currentTarget.style.borderColor = "rgba(18,34,28,0.08)"; } : undefined}
                             style={{
                               border: "1px solid rgba(18,34,28,0.08)",
                               borderRadius: 20,
                               background: "#fff",
                               padding: "14px 18px",
                               boxShadow: "0 4px 14px rgba(15,23,42,0.05)",
+                              cursor: canNavigate ? "pointer" : "default",
+                              transition: "box-shadow 150ms ease, border-color 150ms ease",
                             }}
                           >
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
@@ -453,9 +460,16 @@ export default function PublicMenuPage() {
                                   <div style={{ marginTop: 4, fontSize: 13, color: "#475467", lineHeight: 1.5 }}>{desc}</div>
                                 ) : null}
                               </div>
-                              {price ? (
-                                <div style={{ fontSize: 14, fontWeight: 900, whiteSpace: "nowrap", flexShrink: 0 }}>{price}</div>
-                              ) : null}
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                                {price ? (
+                                  <div style={{ fontSize: 14, fontWeight: 900, whiteSpace: "nowrap" }}>{price}</div>
+                                ) : null}
+                                {canNavigate && (
+                                  <span style={{ fontSize: 11, color: "#2d6a4f", fontWeight: 700, whiteSpace: "nowrap" }}>
+                                    Nutrition &amp; insights →
+                                  </span>
+                                )}
+                              </div>
                             </div>
 
                             {it?.chips?.nutrition_chip?.allergen_alert && (

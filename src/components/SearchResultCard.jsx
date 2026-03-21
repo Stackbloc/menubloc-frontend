@@ -335,50 +335,117 @@ function NutritionPanel({ chip }) {
 
 // Backend score key → display metadata
 const INSIGHT_DEFS = [
-  { backendKey: "protein_strength", clientKey: "proteinStrength", label: "High Protein",       accent: "#1a9a4a", positive: true  },
-  { backendKey: "protein_quality",  clientKey: null,               label: "Protein Quality",    accent: "#1d6fc2", positive: true  },
-  { backendKey: "glycemic_impact",  clientKey: "glycemicImpact",  label: "Blood Sugar Impact",  accent: "#c0392b", positive: false },
-  { backendKey: "sodium_risk",      clientKey: "sodiumRisk",       label: "Sodium Load",         accent: "#e07b39", positive: false },
-  { backendKey: "lasting_energy",   clientKey: "lastingEnergy",    label: "Lasting Energy",      accent: "#3b82f6", positive: true  },
+  { backendKey: "protein_strength", clientKey: "proteinStrength", label: "High Protein",       positive: true  },
+  { backendKey: "protein_quality",  clientKey: null,               label: "Protein Quality",    positive: true  },
+  { backendKey: "glycemic_impact",  clientKey: "glycemicImpact",   label: "Blood Sugar Impact", positive: false, levelOverrides: { "high": "High Spike", "very high": "Very High Spike" } },
+  { backendKey: "sodium_risk",      clientKey: "sodiumRisk",        label: "Sodium Load",        positive: false },
+  { backendKey: "lasting_energy",   clientKey: "lastingEnergy",     label: "Lasting Energy",     positive: true  },
 ];
 
-function positiveLevel(s) {
-  if (s >= 8) return "Excellent";
-  if (s >= 6) return "Good";
-  if (s >= 4) return "Moderate";
-  return "Low";
+// Dynamic accent: green=good end, red=bad end for each metric direction
+function levelAccent(positive, score) {
+  if (positive) {
+    if (score >= 8) return "#1a9a4a";
+    if (score >= 6) return "#2d7dd2";
+    if (score >= 4) return "#9ca3af";
+    return "#e05252";
+  } else {
+    if (score >= 8) return "#c0392b";
+    if (score >= 6) return "#e07b39";
+    if (score >= 4) return "#9ca3af";
+    return "#1a9a4a";
+  }
 }
-function cautionLevel(s) {
-  if (s >= 8) return "Very High";
-  if (s >= 6) return "High";
-  if (s >= 4) return "Moderate";
-  return "Low";
+
+// Add directional emoji marker and optional level-name override
+function formatLevel(positive, level, levelOverrides) {
+  if (!level) return level;
+  const key = level.toLowerCase();
+  const raw = levelOverrides?.[key] ?? level;
+  if (positive) {
+    if (key === "excellent" || key === "good" || key === "high") return `${raw} ✅`;
+    if (key === "low") return `${raw} ⚠️`;
+  } else {
+    if (key === "very high" || key === "high") return `${raw} ⚠️`;
+    if (key === "low") return `${raw} ✅`;
+  }
+  return raw;
+}
+
+// Convert numeric score to raw level string for client-side path
+function scoreToLevel(positive, score) {
+  if (positive) {
+    if (score >= 8) return "excellent";
+    if (score >= 6) return "good";
+    if (score >= 4) return "moderate";
+    return "low";
+  } else {
+    if (score >= 8) return "very high";
+    if (score >= 6) return "high";
+    if (score >= 4) return "moderate";
+    return "low";
+  }
+}
+
+function buildSummary(rows) {
+  const clean = (l) => (l || "").replace(/[✅⚠️]/g, "").trim().toLowerCase();
+  const goods = rows
+    .filter((r) => r.positive && ["excellent", "good", "high"].includes(clean(r.level)))
+    .map((r) => r.label.toLowerCase());
+  const bads = rows
+    .filter((r) => !r.positive && ["high", "very high", "high spike", "very high spike"].some((k) => clean(r.level).startsWith(k)))
+    .map((r) => r.label.toLowerCase());
+  if (!goods.length && !bads.length) return null;
+  if (goods.length && bads.length)
+    return `⚖️ Strong on ${goods.join(" & ")} — watch ${bads.join(" & ")}`;
+  if (goods.length) return `✅ Strong on ${goods.join(" & ")}`;
+  return `⚠️ Watch: high ${bads.join(" & ")}`;
 }
 
 function InsightsPanel({ chips, onFindSimilar }) {
-  const nutChip      = chips?.nutrition_chip || {};
+  const nutChip       = chips?.nutrition_chip || {};
   const backendScores = chips?.insights?.scores;
   const clientScores  = computeInsights(nutChip);
 
-  const rows = INSIGHT_DEFS.map(({ backendKey, clientKey, label, accent, positive }) => {
+  const rows = INSIGHT_DEFS.map(({ backendKey, clientKey, label, positive, levelOverrides }) => {
     // Prefer backend score (includes prep-aware explanation)
     const bs = backendScores?.[backendKey];
     if (bs && bs.score !== null && Number.isFinite(bs.score)) {
-      return { label, accent, score: bs.score, level: bs.level, explanation: bs.explanation || null };
+      const rawLevel = bs.level || scoreToLevel(positive, bs.score);
+      return {
+        label, positive,
+        accent: levelAccent(positive, bs.score),
+        score: bs.score,
+        level: formatLevel(positive, rawLevel, levelOverrides),
+        explanation: bs.explanation || null,
+      };
     }
     // Client fallback — no explanation available
     const cs = clientScores[clientKey];
     if (cs === null || cs === undefined) return null;
-    const level = positive ? positiveLevel(cs) : cautionLevel(cs);
-    return { label, accent, score: Math.round(cs), level, explanation: null };
+    const rawLevel = scoreToLevel(positive, Math.round(cs));
+    return {
+      label, positive,
+      accent: levelAccent(positive, Math.round(cs)),
+      score: Math.round(cs),
+      level: formatLevel(positive, rawLevel, levelOverrides),
+      explanation: null,
+    };
   }).filter(Boolean);
 
   if (!rows.length) {
     return <div style={{ fontSize: 14, color: "#9ca3af" }}>Not enough data to compute insights.</div>;
   }
 
+  const summary = buildSummary(rows);
+
   return (
     <div>
+      {summary && (
+        <div style={{ fontSize: 12, color: "#667085", marginBottom: 10, fontStyle: "italic" }}>
+          {summary}
+        </div>
+      )}
       {rows.map(({ label, accent, score, level, explanation }) => (
         <div key={label} style={{ padding: "6px 0", borderBottom: "1px solid #f0f2f5" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>

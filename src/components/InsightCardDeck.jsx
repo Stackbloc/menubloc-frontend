@@ -125,12 +125,50 @@ const LEVEL_COLORS = {
 };
 
 const SCORE_META = {
-  protein_strength: { label: "High Protein" },
-  protein_quality:  { label: "Protein Quality" },
-  glycemic_impact:  { label: "Blood Sugar Impact" },
-  sodium_risk:      { label: "Sodium Load" },
-  lasting_energy:   { label: "Lasting Energy" },
+  protein_strength: { label: "High Protein",       positive: true  },
+  protein_quality:  { label: "Protein Quality",    positive: true  },
+  glycemic_impact:  { label: "Blood Sugar Impact", positive: false, levelOverrides: { "high": "High Spike", "very high": "Very High Spike" } },
+  sodium_risk:      { label: "Sodium Load",         positive: false },
+  lasting_energy:   { label: "Lasting Energy",     positive: true  },
 };
+
+function formatLevel(positive, level, levelOverrides) {
+  if (!level) return level;
+  const key = level.toLowerCase();
+  const raw = levelOverrides?.[key] ?? level;
+  if (positive) {
+    if (key === "excellent" || key === "good" || key === "high") return `${raw} ✅`;
+    if (key === "low") return `${raw} ⚠️`;
+  } else {
+    if (key === "very high" || key === "high") return `${raw} ⚠️`;
+    if (key === "low") return `${raw} ✅`;
+  }
+  return raw;
+}
+
+function buildTradeoffSummary(cards) {
+  const clean = (l) => (l || "").replace(/[✅⚠️]/g, "").trim().toLowerCase();
+  const scorecards = cards.filter((c) => c.id?.startsWith("score-"));
+  const goods = scorecards
+    .filter((c) => {
+      const meta = SCORE_META[c.id.replace("score-", "")];
+      const lv = clean(c.levelLine?.split("(")[0] || "");
+      return meta?.positive && ["excellent", "good", "high"].includes(lv.trimEnd());
+    })
+    .map((c) => SCORE_META[c.id.replace("score-", "")]?.label?.toLowerCase() || "");
+  const bads = scorecards
+    .filter((c) => {
+      const meta = SCORE_META[c.id.replace("score-", "")];
+      const lv = clean(c.levelLine?.split("(")[0] || "");
+      return !meta?.positive && ["high", "very high", "high spike", "very high spike"].some((k) => lv.trimEnd().startsWith(k));
+    })
+    .map((c) => SCORE_META[c.id.replace("score-", "")]?.label?.toLowerCase() || "");
+  if (!goods.length && !bads.length) return null;
+  if (goods.length && bads.length)
+    return `⚖️ Strong on ${goods.join(" & ")} — watch ${bads.join(" & ")}`;
+  if (goods.length) return `✅ Strong on ${goods.join(" & ")}`;
+  return `⚠️ Watch: high ${bads.join(" & ")}`;
+}
 
 // Ordered as the user wants to see them
 const SCORE_ORDER = ["protein_strength", "protein_quality", "glycemic_impact", "sodium_risk", "lasting_energy"];
@@ -174,12 +212,13 @@ export function buildInsightCards(item) {
     const levelKey = s.level ? s.level.toLowerCase().replace(/\s+/g, "_") : null;
     const levelColors = (LEVEL_COLORS[key] || {})[levelKey] || FALLBACK_META;
 
+    const dirLevel = formatLevel(meta.positive, s.level, meta.levelOverrides);
     cards.push({
       id: `score-${key}`,
       headline: meta.label,
       accent: levelColors.accent,
       bg: levelColors.bg,
-      levelLine: `${s.level} (${s.score}/10)`,
+      levelLine: `${dirLevel} (${s.score}/10)`,
       explanation: s.explanation || null,
     });
   }
@@ -226,8 +265,15 @@ export default function InsightCardDeck({ item, colors }) {
   const card = cards[safeIdx];
   const hasNav = cards.length > 1;
 
+  const summary = buildTradeoffSummary(cards);
+
   return (
     <div>
+      {summary && (
+        <div style={{ fontSize: 12, color: C.subtext, marginBottom: 8, fontStyle: "italic" }}>
+          {summary}
+        </div>
+      )}
       {/* Card face */}
       <div
         style={{
