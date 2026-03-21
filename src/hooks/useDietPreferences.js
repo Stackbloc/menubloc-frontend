@@ -71,65 +71,81 @@ export function activePrefLabels(prefs) {
  * Client-side filter for a single menu item using the data returned
  * by the public menu API. Returns true if the item passes all active filters.
  *
- * Preference → item field used:
- *   vegan        → item.is_vegan
- *   vegetarian   → item.is_vegetarian  (or is_vegan implies vegetarian)
- *   gluten_free  → item.is_gluten_free
- *   dairy_free   → item.is_dairy_free
- *   keto         → item.is_keto (preferred) OR nutrition chip data
- *   low_sodium   → item.is_low_sodium (preferred) OR nutrition chip data
- *   diabetic_friendly → no reliable signal yet; items pass through
+ * Primary source: item.chips.dietary_filters (backend tri-state evaluator).
+ * Fallback: DB boolean flags and raw nutrition chip values.
  *
- * Items where the required flag is null/undefined are hidden —
- * we can't confirm compliance.
+ * Hard filters (vegan, vegetarian, gluten_free, dairy_free):
+ *   pass → show | fail/unknown → hide  (err on the side of caution)
+ *
+ * Soft filters (keto, low_sodium, diabetic_friendly):
+ *   pass/unknown → show | fail → hide  (err on the side of showing more)
  */
 export function itemPassesDietFilter(item, prefs) {
   if (!hasActiveDietPrefs(prefs)) return true;
 
-  const n = item?.chips?.nutrition_chip || {};
+  const n  = item?.chips?.nutrition_chip  || {};
+  const df = item?.chips?.dietary_filters || {};
 
+  // Hard filters — only confirmed pass allowed through
   if (prefs.vegan) {
-    if (item?.is_vegan !== true) return false;
+    const r = df.vegan?.result;
+    if (r === "pass") { /* ok */ }
+    else if (r === "fail" || r === "unknown") return false;
+    else if (item?.is_vegan !== true) return false;
   }
   if (prefs.vegetarian) {
-    // is_vegan implies vegetarian
-    if (item?.is_vegetarian !== true && item?.is_vegan !== true) return false;
+    const r = df.vegetarian?.result;
+    if (r === "pass") { /* ok */ }
+    else if (r === "fail" || r === "unknown") return false;
+    else if (item?.is_vegetarian !== true && item?.is_vegan !== true) return false;
   }
   if (prefs.gluten_free) {
-    if (item?.is_gluten_free !== true) return false;
+    const r = df.gluten_free?.result;
+    if (r === "pass") { /* ok */ }
+    else if (r === "fail" || r === "unknown") return false;
+    else if (item?.is_gluten_free !== true) return false;
   }
   if (prefs.dairy_free) {
-    if (item?.is_dairy_free !== true) return false;
+    const r = df.dairy_free?.result;
+    if (r === "pass") { /* ok */ }
+    else if (r === "fail" || r === "unknown") return false;
+    else if (item?.is_dairy_free !== true) return false;
   }
+
+  // Soft filters — only confirmed fail is hidden; unknown passes through
   if (prefs.keto) {
-    // Prefer the DB-computed flag; fall back to nutrition chip if available
-    if (item?.is_keto === true) {
-      // passes
-    } else if (item?.is_keto === false) {
-      return false;
-    } else {
-      // is_keto is null/undefined — try nutrition chip
-      const carbs = n.carbs_g ?? null;
-      const fiber = n.fiber_g ?? 0;
-      const sugar = n.sugar_g ?? null;
-      if (carbs === null || sugar === null) return false; // no data → hide
-      if (Math.max(0, carbs - fiber) > 18 || sugar > 8) return false;
+    const r = df.low_carb?.result; // keto maps to low_carb evaluator
+    if (r === "fail") return false;
+    else if (!r) {
+      // no evaluator data — fall back to DB flag / nutrition chip
+      if (item?.is_keto === true) { /* ok */ }
+      else if (item?.is_keto === false) return false;
+      else {
+        const carbs = n.carbs_g ?? null;
+        const fiber = n.fiber_g ?? 0;
+        const sugar = n.sugar_g ?? null;
+        if (carbs === null || sugar === null) return false;
+        if (Math.max(0, carbs - fiber) > 18 || sugar > 8) return false;
+      }
     }
   }
   if (prefs.low_sodium) {
-    // Prefer the DB-computed flag; fall back to nutrition chip if available
-    if (item?.is_low_sodium === true) {
-      // passes
-    } else if (item?.is_low_sodium === false) {
-      return false;
-    } else {
-      const sodium = n.sodium_mg ?? null;
-      if (sodium === null) return false; // no data → hide
-      if (sodium > 600) return false;
+    const r = df.low_sodium?.result;
+    if (r === "fail") return false;
+    else if (!r) {
+      if (item?.is_low_sodium === true) { /* ok */ }
+      else if (item?.is_low_sodium === false) return false;
+      else {
+        const sodium = n.sodium_mg ?? null;
+        if (sodium === null) return false;
+        if (sodium > 600) return false;
+      }
     }
   }
   if (prefs.diabetic_friendly) {
-    if (item?.is_diabetic_friendly !== true) return false;
+    const r = df.diabetic_friendly?.result;
+    if (r === "fail") return false;
+    else if (!r && item?.is_diabetic_friendly !== true) return false;
   }
 
   return true;
