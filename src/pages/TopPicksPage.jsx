@@ -29,7 +29,7 @@ function useIsMobile(breakpoint = 768) {
 const CATEGORIES = [
   {
     emoji: "🥗",
-    title: "Healthiest Dishes",
+    title: "Smart Health Picks",
     description: "Ranked by protein, fiber, glycemic impact, and sodium.",
     query: "healthy",
   },
