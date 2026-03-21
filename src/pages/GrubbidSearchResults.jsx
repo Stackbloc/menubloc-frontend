@@ -424,13 +424,14 @@ export default function GrubbidSearchResults() {
   const vegetarian = params.get("vegetarian") === "1";
   const keto = params.get("keto") === "1";
   const low_sodium = params.get("low_sodium") === "1";
+  const dairy_free = params.get("dairy_free") === "1";
+  const diabetic_friendly = params.get("diabetic_friendly") === "1";
 
   // Keep localStorage in sync with whatever diet filters are active in the URL
   // so navigating away and coming back (or going to a menu page) keeps them active
   useEffect(() => {
-    saveDietPrefs({ vegan, vegetarian, gluten_free, keto, low_sodium,
-      dairy_free: false, diabetic_friendly: false });
-  }, [vegan, vegetarian, gluten_free, keto, low_sodium]);
+    saveDietPrefs({ vegan, vegetarian, gluten_free, keto, low_sodium, dairy_free, diabetic_friendly });
+  }, [vegan, vegetarian, gluten_free, keto, low_sodium, dairy_free, diabetic_friendly]);
 
   const fallbackLocation = useMemo(() => {
     if (routeZip || routeCity || routeState || routeNear || routeLocationLabel) {
