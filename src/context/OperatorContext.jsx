@@ -1,49 +1,71 @@
 /**
- * src/context/OperatorContext.jsx
- *
- * Operator session state. Restores from the backend session cookie on mount.
- * Provides: operator, restaurants, selectedRestaurant, isAuthenticated, loading
- * Actions:  login, logout, register, setSelectedRestaurant, refreshRestaurants
- *
- * login() and register() return { operator, restaurants } so callers can
- * immediately decide where to redirect (claim flow vs dashboard).
+ * ============================================================
+ * Path: menubloc-frontend/src/context/OperatorContext.jsx
+ * File: OperatorContext.jsx
+ * Date: 2026-03-23
+ * Purpose:
+ *   Operator session state for the operator portal.
+ *   Restores from the backend session cookie on mount and keeps
+ *   login / logout / reset flows on one shared API client.
+ * ============================================================
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-
-async function apiFetch(path, opts = {}) {
-  const res = await fetch(`${API}${path}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
-    ...opts,
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`);
-  return json;
-}
+import {
+  getOperatorSession,
+  loginOperator,
+  logoutOperator,
+  registerOperator,
+} from "../lib/operatorApi.js";
 
 const OperatorContext = createContext(null);
 
 export function OperatorProvider({ children }) {
-  const [operator, setOperator]                     = useState(null);
-  const [restaurants, setRestaurants]               = useState([]);
+  const [operator, setOperator] = useState(null);
+  const [subscription, setSubscription] = useState(null);
+  const [restaurants, setRestaurants] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
-  const [loading, setLoading]                       = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  async function loadMe() {
-    const me = await apiFetch("/operator/auth/me");
-    setOperator(me.operator);
-    setRestaurants(me.restaurants || []);
-    if (me.restaurants?.length) setSelectedRestaurant(me.restaurants[0]);
+  const applySession = useCallback((me) => {
+    setOperator(me?.operator || null);
+    setSubscription(me?.subscription || null);
+    setRestaurants(me?.restaurants || []);
+    setSelectedRestaurant((current) => {
+      if (!me?.restaurants?.length) return null;
+      if (current) {
+        const stillSelected = me.restaurants.find((restaurant) => restaurant.id === current.id);
+        if (stillSelected) return stillSelected;
+      }
+      return me.restaurants[0];
+    });
     return me;
-  }
-
-  // Restore session on mount
-  useEffect(() => {
-    loadMe().catch(() => {}).finally(() => setLoading(false));
   }, []);
+
+  const clearSession = useCallback(() => {
+    setOperator(null);
+    setSubscription(null);
+    setRestaurants([]);
+    setSelectedRestaurant(null);
+  }, []);
+
+  const loadMe = useCallback(async () => {
+    try {
+      const me = await getOperatorSession();
+      return applySession(me);
+    } catch (error) {
+      if (error?.status === 401) {
+        clearSession();
+      }
+      throw error;
+    }
+  }, [applySession, clearSession]);
+
+  useEffect(() => {
+    loadMe()
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [loadMe]);
 
   const refreshRestaurants = useCallback(async () => {
     try {
@@ -52,35 +74,32 @@ export function OperatorProvider({ children }) {
     } catch {
       return [];
     }
-  }, []);
+  }, [loadMe]);
 
   const login = useCallback(async (email, password) => {
-    await apiFetch("/operator/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
+    await loginOperator(email, password);
     const me = await loadMe();
     return { operator: me.operator, restaurants: me.restaurants || [] };
-  }, []);
+  }, [loadMe]);
 
   const register = useCallback(async (email, password, full_name) => {
-    await apiFetch("/operator/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ email, password, full_name }),
-    });
+    await registerOperator(email, password, full_name);
     const me = await loadMe();
     return { operator: me.operator, restaurants: me.restaurants || [] };
-  }, []);
+  }, [loadMe]);
 
   const logout = useCallback(async () => {
-    await apiFetch("/operator/auth/logout", { method: "POST" }).catch(() => {});
-    setOperator(null);
-    setRestaurants([]);
-    setSelectedRestaurant(null);
-  }, []);
+    await logoutOperator().catch(() => {});
+    clearSession();
+  }, [clearSession]);
+
+  const hasBenefit = useCallback((key) => {
+    return subscription?.benefits?.[key]?.is_enabled === true;
+  }, [subscription]);
 
   const value = {
     operator,
+    subscription,
     restaurants,
     selectedRestaurant,
     setSelectedRestaurant,
@@ -90,6 +109,8 @@ export function OperatorProvider({ children }) {
     logout,
     register,
     refreshRestaurants,
+    refreshSession: loadMe,
+    hasBenefit,
   };
 
   return <OperatorContext.Provider value={value}>{children}</OperatorContext.Provider>;

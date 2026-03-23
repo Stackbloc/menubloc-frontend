@@ -27,6 +27,8 @@ import { CartProvider } from "./context/CartContext.jsx";
 import CartDrawer from "./components/CartDrawer.jsx";
 import { OperatorProvider, useOperator } from "./context/OperatorContext.jsx";
 import OperatorLogin from "./pages/operator/OperatorLogin.jsx";
+import OperatorRecovery from "./pages/operator/OperatorRecovery.jsx";
+import OperatorResetPassword from "./pages/operator/OperatorResetPassword.jsx";
 import OperatorDashboard from "./pages/operator/OperatorDashboard.jsx";
 import OperatorMenuEditor from "./pages/operator/OperatorMenuEditor.jsx";
 import OperatorDealsEditor from "./pages/operator/OperatorDealsEditor.jsx";
@@ -34,6 +36,7 @@ import OperatorClaimSearch from "./pages/operator/OperatorClaimSearch.jsx";
 import OperatorProfileEditor from "./pages/operator/OperatorProfileEditor.jsx";
 import OperatorHoursEditor from "./pages/operator/OperatorHoursEditor.jsx";
 import OperatorSubscription from "./pages/operator/OperatorSubscription.jsx";
+import OperatorAdobeStudio from "./pages/operator/OperatorAdobeStudio.jsx";
 
 import GrubbidDiscovery from "./pages/GrubbidDiscovery.jsx";
 import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
@@ -202,10 +205,13 @@ export default function App() {
 
         {/* ── Operator backend portal ────────────────────────────── */}
         <Route path="/operator/login"        element={<OperatorLogin />} />
+        <Route path="/operator/recover"      element={<OperatorRecovery />} />
+        <Route path="/operator/reset-password" element={<OperatorResetPassword />} />
         <Route path="/operator/claim"        element={<OperatorRoute><OperatorClaimSearch /></OperatorRoute>} />
         <Route path="/operator"              element={<OperatorRoute><OperatorDashboard /></OperatorRoute>} />
         <Route path="/operator/profile"      element={<OperatorRoute><OperatorProfileEditor /></OperatorRoute>} />
         <Route path="/operator/menu"         element={<OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
+        <Route path="/operator/design"       element={<OperatorRoute><OperatorAdobeStudio /></OperatorRoute>} />
         <Route path="/operator/deals"        element={<OperatorRoute><OperatorDealsEditor /></OperatorRoute>} />
         <Route path="/operator/hours"        element={<OperatorRoute><OperatorHoursEditor /></OperatorRoute>} />
         <Route path="/operator/subscription" element={<OperatorRoute><OperatorSubscription /></OperatorRoute>} />

@@ -1,12 +1,16 @@
 /**
- * src/pages/operator/OperatorLogin.jsx
- *
- * Sign in / Create account screen.
- * On success: redirect to /operator/dashboard
+ * ============================================================
+ * Path: menubloc-frontend/src/pages/operator/OperatorLogin.jsx
+ * File: OperatorLogin.jsx
+ * Date: 2026-03-23
+ * Purpose:
+ *   Operator sign in / account creation screen.
+ *   Includes account recovery entry point for forgotten username/password.
+ * ============================================================
  */
 
 import React, { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
 
 const INPUT_STYLE = {
@@ -42,18 +46,24 @@ const BTN_DISABLED = {
   cursor: "not-allowed",
 };
 
+const LINK_STYLE = {
+  color: "#1F4E3D",
+  fontSize: 13,
+  fontWeight: 600,
+  textDecoration: "none",
+};
+
 export default function OperatorLogin() {
   const { login, register, isAuthenticated, loading } = useOperator();
   const navigate = useNavigate();
 
-  const [mode, setMode]         = useState("login"); // "login" | "register"
-  const [email, setEmail]       = useState("");
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [busy, setBusy]         = useState(false);
-  const [error, setError]       = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
-  // Already logged in
   if (!loading && isAuthenticated) {
     return <Navigate to="/operator" replace />;
   }
@@ -66,7 +76,6 @@ export default function OperatorLogin() {
       const result = mode === "login"
         ? await login(email.trim(), password)
         : await register(email.trim(), password, fullName.trim() || undefined);
-      // New operators with no restaurant go to claim flow; returning operators go to dashboard
       const dest = result.restaurants.length === 0 ? "/operator/claim" : "/operator";
       navigate(dest, { replace: true });
     } catch (err) {
@@ -94,7 +103,6 @@ export default function OperatorLogin() {
         boxShadow: "0 4px 32px rgba(0,0,0,0.08)",
         padding: "36px 32px",
       }}>
-        {/* Wordmark */}
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{ fontWeight: 800, fontSize: 26, color: "#1F4E3D", letterSpacing: "-0.8px" }}>
             grubbid
@@ -104,7 +112,6 @@ export default function OperatorLogin() {
           </div>
         </div>
 
-        {/* Mode tabs */}
         <div style={{
           display: "flex",
           background: "#f4f3ef",
@@ -112,10 +119,10 @@ export default function OperatorLogin() {
           padding: 3,
           marginBottom: 24,
         }}>
-          {["login", "register"].map(m => (
+          {["login", "register"].map((tab) => (
             <button
-              key={m}
-              onClick={() => { setMode(m); setError(""); }}
+              key={tab}
+              onClick={() => { setMode(tab); setError(""); }}
               style={{
                 flex: 1,
                 padding: "8px 0",
@@ -124,14 +131,14 @@ export default function OperatorLogin() {
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
-                background: mode === m ? "#fff" : "transparent",
-                color: mode === m ? "#0f1720" : "#8a9ab0",
-                boxShadow: mode === m ? "0 1px 6px rgba(0,0,0,0.08)" : "none",
+                background: mode === tab ? "#fff" : "transparent",
+                color: mode === tab ? "#0f1720" : "#8a9ab0",
+                boxShadow: mode === tab ? "0 1px 6px rgba(0,0,0,0.08)" : "none",
                 fontFamily: "inherit",
                 transition: "background 0.15s",
               }}
             >
-              {m === "login" ? "Sign in" : "Create account"}
+              {tab === "login" ? "Sign in" : "Create account"}
             </button>
           ))}
         </div>
@@ -146,7 +153,7 @@ export default function OperatorLogin() {
                 type="text"
                 placeholder="Jane Smith"
                 value={fullName}
-                onChange={e => setFullName(e.target.value)}
+                onChange={(e) => setFullName(e.target.value)}
                 style={INPUT_STYLE}
                 autoComplete="name"
               />
@@ -161,7 +168,7 @@ export default function OperatorLogin() {
               type="email"
               placeholder="you@restaurant.com"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               required
               style={INPUT_STYLE}
               autoComplete="email"
@@ -177,13 +184,21 @@ export default function OperatorLogin() {
               type="password"
               placeholder={mode === "register" ? "At least 8 characters" : ""}
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               required
               minLength={mode === "register" ? 8 : undefined}
               style={INPUT_STYLE}
               autoComplete={mode === "login" ? "current-password" : "new-password"}
             />
           </div>
+
+          {mode === "login" && (
+            <div style={{ marginTop: -4 }}>
+              <Link to="/operator/recover" style={LINK_STYLE}>
+                Forgot username/password?
+              </Link>
+            </div>
+          )}
 
           {error && (
             <div style={{
@@ -203,7 +218,7 @@ export default function OperatorLogin() {
             disabled={busy}
             style={busy ? BTN_DISABLED : BTN_PRIMARY}
           >
-            {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+            {busy ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
           </button>
         </form>
       </div>
