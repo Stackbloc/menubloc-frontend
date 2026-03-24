@@ -34,7 +34,7 @@ function useIsMobile(breakpoint = 900) {
   return isMobile;
 }
 import { PageNav } from "../components/NavButton.jsx";
-import { itemPassesDietFilter } from "../hooks/useDietPreferences";
+import { itemPassesDietFilter, activePrefLabels } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
@@ -208,7 +208,8 @@ export default function PublicMenuPage() {
     vegan:             searchParams.get("vegan")             === "1",
     vegetarian:        searchParams.get("vegetarian")        === "1",
   };
-  const filtersActive = Object.values(dietPrefs).some(Boolean);
+  const dealsFilter = searchParams.get("deals") === "1";
+  const filtersActive = Object.values(dietPrefs).some(Boolean) || dealsFilter;
 
   function handleTogglePref(key) {
     setSearchParams((prev) => {
@@ -380,6 +381,12 @@ export default function PublicMenuPage() {
                     fullWidth
                   />
                 ))}
+                <FilterChip
+                  label="Deals"
+                  active={dealsFilter}
+                  onClick={() => handleTogglePref("deals")}
+                  fullWidth
+                />
               </div>
               {filtersActive && (
                 <button
@@ -405,13 +412,47 @@ export default function PublicMenuPage() {
 
             <IntakePreviewBanner show={isIntakePreview} />
 
+            {filtersActive && (
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 8,
+                padding: "10px 16px",
+                marginBottom: 16,
+                borderRadius: 12,
+                background: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#166534",
+              }}>
+                <span>
+                  <span style={{ fontWeight: 800 }}>Filter applied: </span>
+                  {[...activePrefLabels(dietPrefs), ...(dealsFilter ? ["Deals"] : [])].join(", ")}
+                  <span style={{ fontWeight: 400, color: "#475467" }}> — only matching items shown</span>
+                </span>
+                <button
+                  onClick={handleClearFilters}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: 12, fontWeight: 700, color: "#667085",
+                    padding: 0, textDecoration: "underline", whiteSpace: "nowrap",
+                  }}
+                >
+                  Show full menu
+                </button>
+              </div>
+            )}
+
             {sections.length === 0 ? (
               <div style={{ fontSize: 14, color: "var(--muted, #5b6675)" }}>No menu sections yet.</div>
-            ) : filtersActive && sections.every((sec) => (Array.isArray(sec?.items) ? sec.items : []).filter((it) => itemPassesDietFilter(it, dietPrefs)).length === 0) ? (
+            ) : filtersActive && sections.every((sec) => (Array.isArray(sec?.items) ? sec.items : []).filter((it) => itemPassesDietFilter(it, dietPrefs) && (!dealsFilter || dealMap.get(it?.id) != null)).length === 0) ? (
               <div style={{ fontSize: 14, color: "var(--muted, #5b6675)", padding: "24px 0" }}>
-                No items match your dietary preferences.{" "}
+                No items match your active filters.{" "}
                 <button onClick={handleClearFilters} style={{ background: "none", border: "none", cursor: "pointer", color: "#2d6a4f", fontWeight: 700, fontSize: 14, padding: 0, textDecoration: "underline" }}>
-                  Clear preferences
+                  Clear filters
                 </button>
               </div>
             ) : (
@@ -419,7 +460,7 @@ export default function PublicMenuPage() {
                 const title = asStr(sec?.title || "Menu").trim();
                 const allItems = Array.isArray(sec?.items) ? sec.items : [];
                 const items = filtersActive
-                  ? allItems.filter((it) => itemPassesDietFilter(it, dietPrefs))
+                  ? allItems.filter((it) => itemPassesDietFilter(it, dietPrefs) && (!dealsFilter || dealMap.get(it?.id) != null))
                   : allItems;
 
                 if (filtersActive && items.length === 0) return null;

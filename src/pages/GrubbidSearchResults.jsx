@@ -479,6 +479,8 @@ export default function GrubbidSearchResults() {
     if (vegetarian) u.searchParams.set("vegetarian", "1");
     if (keto) u.searchParams.set("keto", "1");
     if (low_sodium) u.searchParams.set("low_sodium", "1");
+    if (dairy_free) u.searchParams.set("dairy_free", "1");
+    if (diabetic_friendly) u.searchParams.set("diabetic_friendly", "1");
     if (zip) u.searchParams.set("zip", zip);
     if (city) u.searchParams.set("city", city);
     if (state) u.searchParams.set("state", state);
@@ -514,6 +516,8 @@ export default function GrubbidSearchResults() {
     vegetarian,
     keto,
     low_sodium,
+    dairy_free,
+    diabetic_friendly,
     zip,
     city,
     state,
@@ -704,6 +708,10 @@ export default function GrubbidSearchResults() {
     vegetarian,
     gluten_free,
     deals_only,
+    keto,
+    low_sodium,
+    dairy_free,
+    diabetic_friendly,
     geo.lat,
     geo.lng,
     explicitLocationLabel,
@@ -715,6 +723,19 @@ export default function GrubbidSearchResults() {
   const dishRows = useMemo(() => rows.filter(isDishRow), [rows]);
   const restaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);
   const restaurantGroups = useMemo(() => buildRestaurantGroups(dishRows), [dishRows]);
+
+  const activeDietFilterLabels = useMemo(() => {
+    const labels = [];
+    if (vegan) labels.push("Vegan");
+    if (vegetarian) labels.push("Vegetarian");
+    if (gluten_free) labels.push("Gluten-Free");
+    if (keto) labels.push("Keto");
+    if (low_sodium) labels.push("Low-Sodium");
+    if (dairy_free) labels.push("Dairy-Free");
+    if (diabetic_friendly) labels.push("Diabetic-Friendly");
+    return labels;
+  }, [vegan, vegetarian, gluten_free, keto, low_sodium, dairy_free, diabetic_friendly]);
+  const hasDietFilter = activeDietFilterLabels.length > 0;
 
   const crossRestaurantItems = useMemo(() => {
     return restaurantGroups
@@ -923,7 +944,7 @@ export default function GrubbidSearchResults() {
                 const totalDishes = restaurantGroups.reduce((acc, g) => acc + g.items.length, 0);
                 return `${totalDishes} ${totalDishes === 1 ? "dish" : "dishes"} found`;
               }
-              if (restaurantOnlyVisible.length) {
+              if (!hasDietFilter && restaurantOnlyVisible.length) {
                 return `${restaurantOnlyVisible.length} restaurant${restaurantOnlyVisible.length === 1 ? "" : "s"} found`;
               }
               return null;
@@ -952,11 +973,17 @@ export default function GrubbidSearchResults() {
       {err && <div style={styles.error}>Error: {err}</div>}
       {loading && <div style={styles.empty}>Loading...</div>}
 
-      {!loading && !err && q && !hasMenuMatches && restaurantOnlyVisible.length === 0 && (
+      {!loading && !err && !hasMenuMatches && hasDietFilter && (
+        <div style={styles.empty}>
+          {`No menu items meet your preference for ${activeDietFilterLabels.join(", ")}.`}
+        </div>
+      )}
+
+      {!loading && !err && q && !hasMenuMatches && !hasDietFilter && restaurantOnlyVisible.length === 0 && (
         <div style={styles.empty}>{emptyMessage}</div>
       )}
 
-      {!loading && !err && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
+      {!loading && !err && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
         <>
           <div style={styles.section}>Restaurants</div>
           <div style={styles.grid}>

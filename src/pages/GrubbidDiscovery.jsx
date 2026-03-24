@@ -277,8 +277,8 @@ export default function GrubbidDiscovery() {
       if (filters.low_sodium) params.set("low_sodium", "1");
       if (filters.vegan) params.set("vegan", "1");
       if (filters.vegetarian) params.set("vegetarian", "1");
-      if (filters.diabetic_friendly) params.set("health", "diabetic-friendly");
-      if (filters.dairy_free) params.set("ingredients", "Dairy-free");
+      if (filters.diabetic_friendly) params.set("diabetic_friendly", "1");
+      if (filters.dairy_free) params.set("dairy_free", "1");
     }
 
     const explicitLocation = parseLocation(explicitLocationValue);

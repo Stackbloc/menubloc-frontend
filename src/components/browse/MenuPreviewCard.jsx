@@ -184,10 +184,11 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
   );
 }
 
-export default function MenuPreviewCard({ menu, index = 0 }) {
+export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = null, activeFilterParams = "" }) {
   const [hover, setHover] = useState(false);
   const [confirm, setConfirm] = useState(null); // null | "phone" | "order"
-  const href = `/public/restaurants/${menu?.restaurant_id}/menu`;
+  const baseHref = `/public/restaurants/${menu?.restaurant_id}/menu`;
+  const href = activeFilterParams ? `${baseHref}?${activeFilterParams}` : baseHref;
   const phone = menu?.phone || null;
   const websiteUrl = menu?.website_url || null;
   const theme = CARD_THEMES[index % CARD_THEMES.length];
@@ -198,6 +199,11 @@ export default function MenuPreviewCard({ menu, index = 0 }) {
     : null;
   const emoji = getCuisineEmoji(menu?.restaurant_name, menu?.cuisine || menu?.category);
   const itemCount = menu?.menu_item_count || 0;
+  const itemCountLabel = itemCount > 0
+    ? activeFilterLabel
+      ? `${itemCount} ${activeFilterLabel} ${itemCount === 1 ? "item" : "items"}`
+      : `${itemCount} ${itemCount === 1 ? "item" : "items"}`
+    : null;
 
   return (
     <Link
@@ -362,7 +368,7 @@ export default function MenuPreviewCard({ menu, index = 0 }) {
                 textOverflow: "ellipsis",
                 maxWidth: 200,
               }}>
-                {[distance, itemCount > 0 ? `${itemCount} items` : null, cuisine].filter(Boolean).join(" · ")}
+                {[distance, itemCountLabel, cuisine].filter(Boolean).join(" · ")}
               </span>
             </div>
           )}

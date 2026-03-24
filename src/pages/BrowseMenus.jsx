@@ -223,6 +223,31 @@ export default function BrowseMenus() {
   const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
     filters.dairy_free || filters.diabetic_friendly || filters.keto || filters.low_sodium || filters.deals;
 
+  const activeFilterLabel = (() => {
+    if (filters.vegan) return "vegan";
+    if (filters.vegetarian) return "vegetarian";
+    if (filters.diabetic_friendly) return "diabetic-friendly";
+    if (filters.dairy_free) return "dairy-free";
+    if (filters.gluten_free) return "gluten-free";
+    if (filters.keto) return "keto";
+    if (filters.low_sodium) return "low-sodium";
+    if (filters.deals) return "deal";
+    return null;
+  })();
+
+  const activeFilterParams = (() => {
+    const p = new URLSearchParams();
+    if (filters.vegan)             p.set("vegan", "1");
+    if (filters.vegetarian)        p.set("vegetarian", "1");
+    if (filters.gluten_free)       p.set("gluten_free", "1");
+    if (filters.dairy_free)        p.set("dairy_free", "1");
+    if (filters.diabetic_friendly) p.set("diabetic_friendly", "1");
+    if (filters.keto)              p.set("keto", "1");
+    if (filters.low_sodium)        p.set("low_sodium", "1");
+    if (filters.deals)             p.set("deals", "1");
+    return p.toString();
+  })();
+
   // Persist diet prefs whenever they change
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
 
@@ -682,6 +707,8 @@ export default function BrowseMenus() {
                       menu={menu}
                       index={index}
                       isMobile={isMobile}
+                      activeFilterLabel={activeFilterLabel}
+                      activeFilterParams={activeFilterParams}
                     />
                   ))}
                 </div>
