@@ -10,6 +10,32 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 
+function CopyLinkButton({ url }) {
+  const [label, setLabel] = useState("Copy Display Link");
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setLabel("Copied!");
+    } catch (_) {
+      setLabel("Copy failed");
+    }
+    setTimeout(() => setLabel("Copy Display Link"), 2500);
+  }
+  return (
+    <button
+      onClick={handleCopy}
+      style={{
+        background: "#f4f3ef", color: "#0f1720",
+        border: "1px solid #e4e9f0", borderRadius: 9,
+        padding: "8px 16px", fontSize: 13, fontWeight: 600,
+        cursor: "pointer", fontFamily: "inherit",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 function StatCard({ label, value, sub }) {
   return (
     <div style={{
@@ -54,7 +80,7 @@ function ActionCard({ icon, title, description, onClick }) {
 }
 
 export default function OperatorDashboard() {
-  const { selectedRestaurant, restaurants } = useOperator();
+  const { selectedRestaurant, restaurants, hasBenefit } = useOperator();
   const navigate = useNavigate();
 
   const [menus, setMenus]     = useState([]);
@@ -153,9 +179,15 @@ export default function OperatorDashboard() {
               onClick={() => navigate("/operator/deals")}
             />
             <ActionCard
+              icon="▣"
+              title="Order QR Code Kit"
+              description="Get door, counter, and table QR prints fulfilled through the new order flow."
+              onClick={() => navigate("/operator/qr-kits/order")}
+            />
+            <ActionCard
               icon="↗"
               title="Public Menu"
-              description="See how your menu looks to customers."
+              description="Share your menu across Instagram, Google, your website, and direct customers to ordering."
               onClick={() => {
                 if (selectedRestaurant) {
                   window.open(`/public/restaurants/${selectedRestaurant.id}/menu`, "_blank");
@@ -163,6 +195,61 @@ export default function OperatorDashboard() {
               }}
             />
           </div>
+
+          {/* TV Menu Board */}
+          {hasBenefit("tv_menu_board") && selectedRestaurant && (
+            <div style={{ marginTop: 40 }}>
+              <h2 style={{ fontSize: 14, fontWeight: 700, color: "#5b6675", textTransform: "uppercase", letterSpacing: "0.6px", margin: "0 0 14px" }}>
+                TV Menu Board
+              </h2>
+              <div style={{
+                background: "#fff",
+                border: "1px solid #e4e9f0",
+                borderRadius: 14,
+                padding: "20px 22px",
+                maxWidth: 520,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 16,
+                flexWrap: "wrap",
+              }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720", marginBottom: 4 }}>
+                    Live Digital Menu Board
+                  </div>
+                  <div style={{ fontSize: 13, color: "#5b6675", lineHeight: 1.5 }}>
+                    Display your live menu on any TV or in-store screen. Updates automatically.
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+                  <button
+                    onClick={() => window.open(`/public/restaurants/${selectedRestaurant.id}/display`, "_blank")}
+                    style={{
+                      background: "#1F4E3D", color: "#fff",
+                      border: "none", borderRadius: 9,
+                      padding: "9px 18px", fontSize: 13, fontWeight: 700,
+                      cursor: "pointer", fontFamily: "inherit",
+                    }}
+                  >
+                    Open Display
+                  </button>
+                  <CopyLinkButton url={`${window.location.origin}/public/restaurants/${selectedRestaurant.id}/display`} />
+                  <button
+                    onClick={() => navigate("/operator/display-settings")}
+                    style={{
+                      background: "#f4f3ef", color: "#0f1720",
+                      border: "1px solid #e4e9f0", borderRadius: 9,
+                      padding: "9px 16px", fontSize: 13, fontWeight: 600,
+                      cursor: "pointer", fontFamily: "inherit",
+                    }}
+                  >
+                    Settings
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Recent menus summary */}
           {menus.length > 0 && (

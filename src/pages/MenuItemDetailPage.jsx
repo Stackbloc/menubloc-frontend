@@ -2,7 +2,7 @@
  * ============================================================
  * File: MenuItemDetailPage.jsx
  * Path: menubloc-frontend/src/pages/MenuItemDetailPage.jsx
- * Date: 2026-03-13
+ * Date: 2026-03-22
  * Purpose:
  *   Full-page detail view for a single menu item.
  *
@@ -77,6 +77,21 @@ function useIsMobile(breakpoint = 768) {
 /* ---- Item normalizer ---- */
 
 function normalizeResultItem(raw) {
+  const exactPriceMinor = pickFirstDefined(
+    raw?.exact_price_minor,
+    raw?.price_minor,
+    raw?.priceMinor,
+    raw?.price_minor_units,
+    raw?.price_cents,
+    null
+  );
+  const exactPrice = pickFirstDefined(
+    raw?.exact_price,
+    raw?.price,
+    raw?.price_float,
+    raw?.priceFloat,
+    null
+  );
   const restaurantName =
     raw?.restaurant_name ||
     raw?.restaurant?.name ||
@@ -90,8 +105,24 @@ function normalizeResultItem(raw) {
     raw?.restaurantId ||
     null;
 
-  const priceMinor = pickFirstDefined(raw?.price_minor, raw?.priceMinor, null);
-  const price = pickFirstDefined(raw?.price, raw?.price_float, raw?.priceFloat, null);
+  const restaurantLogoUrl =
+    raw?.restaurant_logo_url ||
+    raw?.restaurant?.logo_url ||
+    raw?.restaurant?.logoUrl ||
+    raw?.logo_url ||
+    null;
+
+  const restaurantSubscription =
+    raw?.restaurant?.subscription ||
+    raw?.subscription ||
+    null;
+
+  const itemPhotoUrl =
+    raw?.item_photo_url ||
+    raw?.itemPhotoUrl ||
+    raw?.photo_url ||
+    raw?.image_url ||
+    null;
 
   const vegan =
     Boolean(raw?.badges?.vegan) ||
@@ -123,9 +154,18 @@ function normalizeResultItem(raw) {
       id: restaurantId,
       name: restaurantName || "Unknown Restaurant",
       slug: raw?.restaurant_slug || raw?.slug || null,
+      logoUrl: restaurantLogoUrl,
+      subscription: restaurantSubscription,
+      isPro:
+        raw?.restaurant?.is_pro === true ||
+        raw?.restaurant?.isPro === true ||
+        restaurantSubscription?.is_pro === true ||
+        restaurantSubscription?.isPro === true ||
+        false,
     },
-    priceMinor,
-    price,
+    priceMinor: exactPriceMinor,
+    price: exactPrice,
+    itemPhotoUrl,
     badges: { vegan, glutenFree, deal },
     nutrition: raw?.nutrition || raw?.signal_nutrition || raw?.signals?.nutrition || null,
     pairings: raw?.pairings || null,
@@ -298,6 +338,12 @@ function TabButton({ active, onClick, children }) {
 function toSlug(str) {
   if (!str) return null;
   return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function hasRenderableImage(url) {
+  const value = String(url || "").trim();
+  if (!value) return false;
+  return /^(https?:)?\/\//i.test(value) || value.startsWith("/");
 }
 
 /* ---- Shared bar row ---- */
@@ -574,6 +620,7 @@ export default function MenuItemDetailPage() {
         description: rawItem?.description ?? item?.description ?? "",
         price: rawItem?.price ?? item?.price ?? null,
         price_minor: rawItem?.price_minor ?? item?.priceMinor ?? null,
+        item_photo_url: rawItem?.item_photo_url ?? item?.itemPhotoUrl ?? null,
         nutrition:
           rawItem?.nutrition ??
           rawItem?.signal_nutrition ??
@@ -586,6 +633,11 @@ export default function MenuItemDetailPage() {
       }
     : null;
 
+  const restaurantLogoUrl = item?.restaurant?.logoUrl || rawItem?.restaurant?.logo_url || null;
+  const showRestaurantLogo = hasRenderableImage(restaurantLogoUrl);
+  const itemPhotoUrl = item?.itemPhotoUrl || rawItem?.item_photo_url || null;
+  const showItemPhoto = item?.restaurant?.isPro === true && hasRenderableImage(itemPhotoUrl);
+
   return (
     <div style={pageStyle}>
       <div style={wrapStyle}>
@@ -594,6 +646,48 @@ export default function MenuItemDetailPage() {
         <div style={topRowStyle}>
           <Link to="/" style={wordmarkStyle}>Grubbid</Link>
           <button onClick={() => navigate(-1)} style={backBtnStyle}>← Back</button>
+        </div>
+
+        {showRestaurantLogo && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: 14,
+            }}
+          >
+            <img
+              src={restaurantLogoUrl}
+              alt={`${item?.restaurant?.name || "Restaurant"} logo`}
+              style={{
+                display: "block",
+                maxWidth: isMobile ? 180 : 220,
+                maxHeight: isMobile ? 90 : 110,
+                width: "auto",
+                height: "auto",
+                objectFit: "contain",
+              }}
+            />
+          </div>
+        )}
+
+        <div
+          style={{
+            marginBottom: 14,
+            textAlign: showRestaurantLogo ? "center" : "left",
+          }}
+        >
+          <h1
+            style={{
+              margin: 0,
+              fontSize: isMobile ? 24 : 28,
+              lineHeight: 1.1,
+              letterSpacing: "-0.02em",
+              color: "#11211a",
+            }}
+          >
+            Menu Item Detail
+          </h1>
         </div>
 
         {/* Item card */}
@@ -681,6 +775,31 @@ export default function MenuItemDetailPage() {
             {tab === "similar"   && <FindSimilar itemId={item?.id} isMobile={isMobile} />}
           </div>
         </div>
+
+        {showItemPhoto && (
+          <div
+            style={{
+              marginTop: 20,
+              border: "1px solid var(--border, #e4e9f0)",
+              borderRadius: 16,
+              background: "#fff",
+              boxShadow: "var(--shadow-1, 0 6px 18px rgba(16,24,40,0.06))",
+              overflow: "hidden",
+            }}
+          >
+            <img
+              src={itemPhotoUrl}
+              alt={`${item?.name || "Menu item"} photo`}
+              style={{
+                display: "block",
+                width: "100%",
+                height: "auto",
+                maxHeight: isMobile ? 320 : 460,
+                objectFit: "cover",
+              }}
+            />
+          </div>
+        )}
 
       </div>
     </div>

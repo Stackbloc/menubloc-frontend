@@ -137,12 +137,28 @@ export const publishDeal = (rid, did) => post(`/operator/restaurants/${rid}/deal
 export const pauseDeal = (rid, did) => post(`/operator/restaurants/${rid}/deals/${did}/pause`, {});
 export const deleteDeal = (rid, did) => del(`/operator/restaurants/${rid}/deals/${did}`);
 
+// ── Restaurant: QR Kit Orders ─────────────────────────────────────────────
+export const getQrKitPreviewUrl = (rid, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return `${API}/operator/restaurants/${rid}/qr-kit-orders/preview${qs ? `?${qs}` : ""}`;
+};
+export const createQrKitOrder = (rid, body) => post(`/operator/restaurants/${rid}/qr-kit-orders`, body);
+export const getQrKitOrder = (rid, orderId) => get(`/operator/restaurants/${rid}/qr-kit-orders/${orderId}`);
+
 // ── Restaurant: Hours ─────────────────────────────────────────────────────
 export const getHours = (rid) => get(`/operator/restaurants/${rid}/hours`);
 export const updateHours = (rid, schedule) => put(`/operator/restaurants/${rid}/hours`, { schedule });
 export const getExceptions = (rid) => get(`/operator/restaurants/${rid}/hours/exceptions`);
 export const upsertException = (rid, body) => post(`/operator/restaurants/${rid}/hours/exceptions`, body);
 export const deleteException = (rid, eid) => del(`/operator/restaurants/${rid}/hours/exceptions/${eid}`);
+
+// ── Restaurant: Display Settings (TV Menu Board) ──────────────────────────
+export const getDisplaySettings = (rid) =>
+  get(`/operator/restaurants/${rid}/display-settings`);
+export const updateDisplaySettings = (rid, body) =>
+  patch(`/operator/restaurants/${rid}/display-settings`, body);
 
 // ── Support ───────────────────────────────────────────────────────────────
 export const getTickets = () => get("/operator/support/tickets");

@@ -37,6 +37,8 @@ import OperatorProfileEditor from "./pages/operator/OperatorProfileEditor.jsx";
 import OperatorHoursEditor from "./pages/operator/OperatorHoursEditor.jsx";
 import OperatorSubscription from "./pages/operator/OperatorSubscription.jsx";
 import OperatorAdobeStudio from "./pages/operator/OperatorAdobeStudio.jsx";
+import OperatorQrKitOrder from "./pages/operator/OperatorQrKitOrder.jsx";
+import OperatorDisplaySettings from "./pages/operator/OperatorDisplaySettings.jsx";
 
 import GrubbidDiscovery from "./pages/GrubbidDiscovery.jsx";
 import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
@@ -50,6 +52,7 @@ import MenuPage from "./pages/MenuPage.jsx";
 import MenuDetailPage from "./pages/MenuDetailPage.jsx";
 import MenuItemDetailPage from "./pages/MenuItemDetailPage.jsx";
 import PublicMenuPage from "./pages/PublicMenuPage.jsx";
+import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
 import BrowseMenus from "./pages/BrowseMenus.jsx";
 import Top5HealthiestPage from "./pages/Top5HealthiestPage.jsx";
 import TopPicksPage from "./pages/TopPicksPage.jsx";
@@ -194,6 +197,7 @@ export default function App() {
         <Route path="/menus" element={<MenuPage />} />
         <Route path="/menus/:id" element={<MenuDetailPage />} />
         <Route path="/public/restaurants/:id/menu" element={<PublicMenuPage />} />
+        <Route path="/public/restaurants/:id/display" element={<PublicMenuDisplayPage />} />
         <Route path="/restaurants/:restaurantSlug/menu-items/:id" element={<MenuItemDetailPage />} />
         <Route path="/menu-items/:id" element={<MenuItemDetailPage />} />
 
@@ -214,7 +218,9 @@ export default function App() {
         <Route path="/operator/design"       element={<OperatorRoute><OperatorAdobeStudio /></OperatorRoute>} />
         <Route path="/operator/deals"        element={<OperatorRoute><OperatorDealsEditor /></OperatorRoute>} />
         <Route path="/operator/hours"        element={<OperatorRoute><OperatorHoursEditor /></OperatorRoute>} />
+        <Route path="/operator/qr-kits/order" element={<OperatorRoute><OperatorQrKitOrder /></OperatorRoute>} />
         <Route path="/operator/subscription" element={<OperatorRoute><OperatorSubscription /></OperatorRoute>} />
+        <Route path="/operator/display-settings" element={<OperatorRoute><OperatorDisplaySettings /></OperatorRoute>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -18,14 +18,17 @@ const NAV = [
   { to: "/operator/menu",         label: "Menu Editor",  icon: "☰" },
   { to: "/operator/deals",        label: "Deals",        icon: "⊹" },
   { to: "/operator/hours",        label: "Hours",        icon: "⏰" },
-  { to: "/operator/subscription", label: "Subscription", icon: "◈" },
+  { to: "/operator/design",            label: "Adobe Studio",  icon: "▣", benefitKey: "design_exports" },
+  { to: "/operator/display-settings", label: "Display Board",  icon: "⊡", benefitKey: "tv_menu_board" },
+  { to: "/operator/subscription",     label: "Subscription",   icon: "◈" },
 ];
 
 const SIDEBAR_W = 220;
 
 export default function OperatorLayout({ title, children }) {
-  const { operator, selectedRestaurant, restaurants, setSelectedRestaurant, logout } = useOperator();
+  const { operator, selectedRestaurant, restaurants, setSelectedRestaurant, logout, hasBenefit } = useOperator();
   const navigate = useNavigate();
+  const visibleNav = NAV.filter((item) => !item.benefitKey || hasBenefit(item.benefitKey));
 
   async function handleLogout() {
     await logout();
@@ -102,7 +105,7 @@ export default function OperatorLayout({ title, children }) {
 
         {/* Nav links */}
         <nav style={{ flex: 1, padding: "8px 0" }}>
-          {NAV.map(({ to, label, icon }) => (
+          {visibleNav.map(({ to, label, icon }) => (
             <NavLink
               key={to}
               to={to}

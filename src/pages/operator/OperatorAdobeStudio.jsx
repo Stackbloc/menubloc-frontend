@@ -2,7 +2,7 @@
  * ============================================================
  * Path: menubloc-frontend/src/pages/operator/OperatorAdobeStudio.jsx
  * File: OperatorAdobeStudio.jsx
- * Date: 2026-03-22
+ * Date: 2026-03-23
  * Purpose:
  *   Pro-only Adobe design/export workspace for operator-managed restaurants.
  *
@@ -310,8 +310,9 @@ export default function OperatorAdobeStudio() {
               Structured menu data into Adobe design, document, and PDF exports
             </h2>
             <p style={{ margin: 0, color: "#566273", lineHeight: 1.6 }}>
-              Grubbid menu JSON remains the source of truth. Restaurants choose a preset, pick a variant, and export
-              without rebuilding the menu inside Adobe.
+              Share your menu anywhere, including Instagram, Google, and your website, and send customers directly to
+              your ordering system. Grubbid menu JSON remains the source of truth, so restaurants can choose a preset,
+              pick a variant, and export without rebuilding the menu inside Adobe.
             </p>
           </div>
 
