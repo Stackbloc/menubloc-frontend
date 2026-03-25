@@ -2,7 +2,7 @@
  * ============================================================
  * File: BrowseMenus.jsx
  * Path: menubloc-frontend/src/pages/BrowseMenus.jsx
- * Date: 2026-03-16
+ * Date: 2026-03-25
  * Purpose:
  *   Browse Menus / Netflix-style browser page.
  *
@@ -10,19 +10,21 @@
  *   1. If ?city= and ?state= are in the URL → city/state mode.
  *      Geolocation is NOT called. Backend receives city+state params.
  *      Subtitle: "Showing menus near Dothan, AL"
+ *      Distance filter is hidden — no lat/lng to compute from.
  *   2. Otherwise → browser geolocation mode.
- *      Backend receives lat/lng. Subtitle varies by result.
+ *      Backend receives lat/lng + radius. Results sorted nearest-first.
+ *      Distance filter is visible; user can change radius.
  *
  *   Fix 2026-03-16:
- *     - Previously, geolocation always ran even when city/state were
- *       in the URL. Geolocation result was non-deterministic (success
- *       → CA coords → 2 results; timeout → null → 5 results).
- *     - city/state params were parsed but never forwarded to the API.
- *     - Fix: city+state in URL → skip geolocation entirely, send
- *       city+state to backend. Backend now accepts these params and
- *       filters deterministically with ILIKE.
- *     - useEffect now depends on urlCity, urlState, and filters so
- *       URL-driven navigation correctly re-fetches.
+ *     city+state in URL → skip geolocation, send city+state to backend.
+ *
+ *   Fix 2026-03-25 (Distance filter):
+ *     Added Distance filter UI to sidebar (geo mode only). User can
+ *     select a radius: 1, 3, 5, 10, 25 miles. Default 10 miles.
+ *     radiusMiles state is added to useEffect dependency array so a
+ *     change triggers a re-fetch. In city/state mode the distance
+ *     section is hidden because the backend has no user coordinates to
+ *     compute from.
  * ============================================================
  */
 
@@ -137,6 +139,17 @@ function FilterSelect({ label, options, value, onChange }) {
   );
 }
 
+// Distance radius options for geo mode. null = no radius cap (backend defaults to 4000mi).
+// Displayed only when the page is in geolocation mode (!hasCityStateParams).
+// Backend clamps radius to 4000 miles maximum via clampBrowseRadiusMiles().
+const DISTANCE_RADIUS_OPTIONS = [
+  { label: "Within 1 mile",   value: 1  },
+  { label: "Within 3 miles",  value: 3  },
+  { label: "Within 5 miles",  value: 5  },
+  { label: "Within 10 miles", value: 10 },
+  { label: "Within 25 miles", value: 25 },
+];
+
 const RESTAURANT_TYPE_OPTIONS = [
   "Bar / Pub",
   "Buffet",
@@ -218,6 +231,10 @@ export default function BrowseMenus() {
     deals: false,
     ...loadDietPrefs(),
   }));
+  // radiusMiles controls the geo-mode search radius. Default 10 miles.
+  // Only sent to the API when in geo mode (!hasCityStateParams).
+  // City/state mode has no user coordinates so distance is unavailable.
+  const [radiusMiles, setRadiusMiles] = useState(10);
   const [alphaGroup, setAlphaGroup] = useState(null);
 
   const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
@@ -285,7 +302,9 @@ export default function BrowseMenus() {
           apiParams = {
             lat: coords.lat,
             lng: coords.lng,
-            radius: 6,
+            // radiusMiles is user-controlled. Falls back to 10 if geolocation
+            // is unavailable (backend will receive null lat/lng and ignore radius).
+            radius: radiusMiles,
             cuisine: filters.cuisine,
             category: filters.category,
             deals: filters.deals ? 1 : "",
@@ -341,9 +360,10 @@ export default function BrowseMenus() {
     return () => {
       cancelled = true;
     };
-  // Re-run when the URL location or filters change.
+  // Re-run when the URL location, filters, or radius changes.
+  // radiusMiles only affects geo mode — city/state mode ignores it.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlCity, urlState, filters]);
+  }, [urlCity, urlState, filters, radiusMiles]);
 
   const showEmptyState = !loading && !error && menus.length === 0;
 
@@ -474,6 +494,36 @@ export default function BrowseMenus() {
                   value={filters.category}
                   onChange={(value) => setFilters((prev) => ({ ...prev, category: value }))}
                 />
+
+                {/* Distance filter — geo mode only. Hidden in city/state mode
+                    because the backend has no user coordinates to compute
+                    distance from when city+state params are provided. */}
+                {!hasCityStateParams && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 900,
+                        letterSpacing: 0.9,
+                        textTransform: "uppercase",
+                        color: "#667085",
+                      }}
+                    >
+                      Distance
+                    </span>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {DISTANCE_RADIUS_OPTIONS.map((opt) => (
+                        <FilterChip
+                          key={opt.value}
+                          label={opt.label}
+                          isMobile={isMobile}
+                          active={radiusMiles === opt.value}
+                          onClick={() => setRadiusMiles(opt.value)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <span

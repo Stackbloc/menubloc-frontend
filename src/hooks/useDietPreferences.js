@@ -71,22 +71,25 @@ export function activePrefLabels(prefs) {
  * Client-side filter for a single menu item using the data returned
  * by the public menu API. Returns true if the item passes all active filters.
  *
- * Primary source: item.chips.dietary_filters (backend tri-state evaluator).
- * Fallback: DB boolean flags and raw nutrition chip values.
+ * Source: item.chips.dietary_filters (backend tri-state evaluator).
+ *
+ * All filters — strict mode:
+ *   pass → show | fail/unknown → hide
  *
  * Hard filters (vegan, vegetarian, gluten_free, dairy_free):
- *   pass → show | fail/unknown → hide  (err on the side of caution)
+ *   Fall back to DB boolean flag when no evaluator result (items without
+ *   nutrition estimates may not have been evaluated).
  *
  * Soft filters (keto, low_sodium, diabetic_friendly):
- *   pass/unknown → show | fail → hide  (err on the side of showing more)
+ *   Evaluator result only. No DB flag fallback, no nutrition math fallback.
+ *   unknown = not confirmed pass = hidden.
  */
 export function itemPassesDietFilter(item, prefs) {
   if (!hasActiveDietPrefs(prefs)) return true;
 
-  const n  = item?.chips?.nutrition_chip  || {};
   const df = item?.chips?.dietary_filters || {};
 
-  // Hard filters — only confirmed pass allowed through
+  // Hard filters — only confirmed pass allowed through; fall back to DB flag
   if (prefs.vegan) {
     const r = df.vegan?.result;
     if (r === "pass") { /* ok */ }
@@ -112,49 +115,15 @@ export function itemPassesDietFilter(item, prefs) {
     else if (item?.is_dairy_free !== true) return false;
   }
 
-  // Soft filters — only confirmed fail is hidden; unknown/no-data passes through
+  // Soft filters — strict: only evaluator "pass" is shown; unknown = hidden
   if (prefs.keto) {
-    const r = df.low_carb?.result; // keto maps to low_carb evaluator
-    if (r === "fail") return false;
-    else if (r === "pass") { /* ok */ }
-    else {
-      // No evaluator result — fall back to DB flag, then nutrition math
-      if (item?.is_keto === true) { /* ok */ }
-      else if (item?.is_keto === false) return false;
-      else {
-        const carbs = n.carbs_g ?? null;
-        const fiber = n.fiber_g ?? 0;
-        const sugar = n.sugar_g ?? null;
-        if (carbs !== null && sugar !== null) {
-          if (Math.max(0, carbs - fiber) > 18 || sugar > 8) return false;
-        }
-        // no nutrition data and no DB flag → hide (filter was explicitly requested)
-        else if (item?.is_keto == null) return false;
-      }
-    }
+    if (df.low_carb?.result !== "pass") return false; // keto maps to low_carb evaluator
   }
   if (prefs.low_sodium) {
-    const r = df.low_sodium?.result;
-    if (r === "fail") return false;
-    else if (r === "pass") { /* ok */ }
-    else {
-      if (item?.is_low_sodium === true) { /* ok */ }
-      else if (item?.is_low_sodium === false) return false;
-      else {
-        const sodium = n.sodium_mg ?? null;
-        if (sodium !== null && sodium > 600) return false;
-        else if (item?.is_low_sodium == null) return false;
-      }
-    }
+    if (df.low_sodium?.result !== "pass") return false;
   }
   if (prefs.diabetic_friendly) {
-    const r = df.diabetic_friendly?.result;
-    if (r === "fail") return false;
-    else if (r === "pass") { /* ok */ }
-    else {
-      // No evaluator result — fall back to DB flag
-      if (item?.is_diabetic_friendly !== true) return false;
-    }
+    if (df.diabetic_friendly?.result !== "pass") return false;
   }
 
   return true;
