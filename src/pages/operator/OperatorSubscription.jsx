@@ -206,10 +206,12 @@ function ComparisonCell({ value, highlight = false }) {
 
 export default function OperatorSubscription() {
   const navigate = useNavigate();
-  const { refreshSession } = useOperator();
+  const { refreshSession, selectedRestaurant } = useOperator();
   const [subscription, setSubscription] = useState(null);
+  const [billingOverview, setBillingOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
+  const [provider, setProvider] = useState("stripe");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -220,27 +222,44 @@ export default function OperatorSubscription() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!selectedRestaurant?.id) return;
+    api.getBillingOverview(selectedRestaurant.id)
+      .then(setBillingOverview)
+      .catch((err) => setError(err.message || "Unable to load billing overview."));
+  }, [selectedRestaurant?.id]);
+
   const currentPlanSlug = useMemo(() => normalizeCurrentPlanSlug(subscription), [subscription]);
 
   async function handleUpgradeToPro() {
+    if (!selectedRestaurant?.id) {
+      setError("Select a restaurant before starting billing.");
+      return;
+    }
     setUpgrading(true);
     setError("");
     setSuccess("");
 
     try {
-      const res = await fetch(`${API_BASE}/operator/subscription/upgrade`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan_slug: "pro", billing_cycle: "monthly" }),
+      const json = await api.startBillingCheckout(selectedRestaurant.id, {
+        plan_slug: "pro",
+        billing_cycle: "monthly",
+        provider,
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || "Upgrade failed");
+
+      if (json.checkout_url) {
+        window.location.href = json.checkout_url;
+        return;
+      }
 
       const updated = await api.getSubscription().catch(() => null);
+      const overview = await api.getBillingOverview(selectedRestaurant.id).catch(() => null);
       setSubscription(updated);
+      setBillingOverview(overview);
       await refreshSession().catch(() => null);
-      setSuccess("Pro is active. Your restaurant can now unlock stronger branding, direct customer action, and premium menu tools.");
+      setSuccess(provider === "paypal"
+        ? "Billing record created. Send or complete the PayPal invoice/subscription flow next."
+        : "Checkout started. Finish the Stripe flow to activate the subscription.");
     } catch (err) {
       setError(err.message || "Upgrade failed");
     } finally {
@@ -342,6 +361,22 @@ export default function OperatorSubscription() {
         ) : null}
 
         <section style={{ marginTop: 28 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
+            <div style={{ fontSize: 13, color: "#475467", fontWeight: 600 }}>
+              Billing restaurant: <strong style={{ color: "#0f1720" }}>{selectedRestaurant?.restaurant_name || "None selected"}</strong>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <label style={{ fontSize: 13, color: "#475467", fontWeight: 600 }}>Provider</label>
+              <select
+                value={provider}
+                onChange={(e) => setProvider(e.target.value)}
+                style={{ border: "1px solid #d0d5dd", borderRadius: 12, padding: "9px 12px", background: "#fff", fontSize: 14 }}
+              >
+                <option value="stripe">Stripe</option>
+                <option value="paypal">PayPal</option>
+              </select>
+            </div>
+          </div>
           <div style={{ display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
             <PriceCard
               title="Free"
@@ -393,6 +428,71 @@ export default function OperatorSubscription() {
                 No more outdated PDFs or reprinting menus — update once and it&apos;s live everywhere.
               </p>
             </PriceCard>
+          </div>
+        </section>
+
+        <section style={{ marginTop: 28, display: "grid", gap: 18, gridTemplateColumns: "1fr 1fr" }}>
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid #eaecf0",
+              borderRadius: 24,
+              padding: "22px 20px",
+              boxShadow: "0 18px 40px rgba(15, 23, 32, 0.04)",
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: 22, color: "#0f1720", letterSpacing: "-0.04em" }}>Billing Overview</h3>
+            <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
+              {[
+                ["Current Plan", billingOverview?.subscription?.plan_name || subscription?.plan?.name || "Free"],
+                ["Billing Provider", billingOverview?.subscription?.provider || "Not set"],
+                ["Billing Cycle", billingOverview?.subscription?.billing_cycle || "monthly"],
+                ["Status", billingOverview?.subscription?.status || "not_started"],
+                ["Next Billing Date", billingOverview?.subscription?.next_billing_at ? new Date(billingOverview.subscription.next_billing_at).toLocaleDateString() : "N/A"],
+                ["Current Usage", billingOverview?.adobe_usage ? `${((billingOverview.adobe_usage.totals?.estimated_total_value_cents || 0) / 100).toFixed(2)} estimated Adobe value` : "No tracked usage"],
+                ["Estimated Overage", billingOverview?.adobe_usage ? `$${((billingOverview.adobe_usage.totals?.overage_value_cents || 0) / 100).toFixed(2)}` : "$0.00"],
+              ].map(([label, value]) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: 12, borderTop: "1px solid #eaecf0", paddingTop: 12 }}>
+                  <span style={{ fontSize: 13, color: "#475467", fontWeight: 600 }}>{label}</span>
+                  <span style={{ fontSize: 13, color: "#0f1720", fontWeight: 700, textAlign: "right" }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid #eaecf0",
+              borderRadius: 24,
+              padding: "22px 20px",
+              boxShadow: "0 18px 40px rgba(15, 23, 32, 0.04)",
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: 22, color: "#0f1720", letterSpacing: "-0.04em" }}>Invoices and Payments</h3>
+            <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
+              {(billingOverview?.invoices || []).slice(0, 5).map((invoice) => (
+                <div key={invoice.id} style={{ border: "1px solid #eaecf0", borderRadius: 16, padding: 14 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <strong style={{ color: "#0f1720" }}>{invoice.invoice_type || "invoice"}</strong>
+                    <span style={{ fontSize: 12, color: "#475467", fontWeight: 700 }}>{invoice.status}</span>
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 13, color: "#475467" }}>
+                    ${(Number(invoice.total_cents || 0) / 100).toFixed(2)} • {invoice.provider}
+                  </div>
+                  {invoice.hosted_invoice_url ? (
+                    <a href={invoice.hosted_invoice_url} target="_blank" rel="noreferrer" style={{ display: "inline-block", marginTop: 8, fontSize: 13, color: "#1F4E3D", fontWeight: 700 }}>
+                      Open invoice
+                    </a>
+                  ) : null}
+                </div>
+              ))}
+              {!billingOverview?.invoices?.length ? (
+                <div style={{ fontSize: 14, color: "#667085" }}>
+                  No invoices yet. Billing history will appear here after provider checkout, invoice sync, or usage invoicing.
+                </div>
+              ) : null}
+            </div>
           </div>
         </section>
 

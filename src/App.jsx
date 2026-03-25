@@ -26,6 +26,7 @@ import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "
 import { CartProvider } from "./context/CartContext.jsx";
 import CartDrawer from "./components/CartDrawer.jsx";
 import { OperatorProvider, useOperator } from "./context/OperatorContext.jsx";
+import { OwnerProvider, useOwner } from "./context/OwnerContext.jsx";
 import OperatorLogin from "./pages/operator/OperatorLogin.jsx";
 import OperatorRecovery from "./pages/operator/OperatorRecovery.jsx";
 import OperatorResetPassword from "./pages/operator/OperatorResetPassword.jsx";
@@ -39,6 +40,16 @@ import OperatorSubscription from "./pages/operator/OperatorSubscription.jsx";
 import OperatorAdobeStudio from "./pages/operator/OperatorAdobeStudio.jsx";
 import OperatorQrKitOrder from "./pages/operator/OperatorQrKitOrder.jsx";
 import OperatorDisplaySettings from "./pages/operator/OperatorDisplaySettings.jsx";
+import OwnerLogin from "./pages/owner/OwnerLogin.jsx";
+import OwnerDashboard from "./pages/owner/OwnerDashboard.jsx";
+import OwnerSiteAnalytics from "./pages/owner/OwnerSiteAnalytics.jsx";
+import OwnerSearchAnalytics from "./pages/owner/OwnerSearchAnalytics.jsx";
+import OwnerRestaurants from "./pages/owner/OwnerRestaurants.jsx";
+import OwnerRevenue from "./pages/owner/OwnerRevenue.jsx";
+import OwnerSupportTickets from "./pages/owner/OwnerSupportTickets.jsx";
+import OwnerTicketDetail from "./pages/owner/OwnerTicketDetail.jsx";
+import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
+import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
 
 import GrubbidDiscovery from "./pages/GrubbidDiscovery.jsx";
 import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
@@ -84,6 +95,13 @@ function OperatorRoute({ children }) {
   return children;
 }
 
+function OwnerRoute({ children }) {
+  const { isAuthenticated, loading } = useOwner();
+  if (loading) return null;
+  if (!isAuthenticated) return <Navigate to="/owner/login" replace />;
+  return children;
+}
+
 function isEasyMenuHost() {
   const host = (window?.location?.hostname || "").toLowerCase();
   return host === "easymenuupload.com" || host === "www.easymenuupload.com";
@@ -113,17 +131,50 @@ function TruckRedirect() {
  */
 function AnalyticsTracker() {
   const location = useLocation();
+  const { operator } = useOperator();
+  const { owner } = useOwner();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (typeof window.gtag !== "function") return;
 
     const page_path = `${location.pathname}${location.search || ""}${location.hash || ""}`;
 
-    window.gtag("config", "G-KLLBC4W5XH", {
-      page_path,
-    });
-  }, [location]);
+    if (typeof window.gtag === "function") {
+      window.gtag("config", "G-KLLBC4W5XH", { page_path });
+    }
+
+    const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+    const key = "grubbid.analytics.session_id";
+    let sessionId = "";
+    try {
+      sessionId = String(window.sessionStorage.getItem(key) || "");
+      if (!sessionId) {
+        sessionId = typeof window.crypto?.randomUUID === "function"
+          ? window.crypto.randomUUID()
+          : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        window.sessionStorage.setItem(key, sessionId);
+      }
+    } catch {
+      sessionId = "";
+    }
+
+    fetch(`${API}/api/analytics/page-visit`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        path: page_path,
+        session_id: sessionId || null,
+        user_id: owner?.id || operator?.id || null,
+        referrer: typeof document !== "undefined" ? document.referrer || null : null,
+        device_type: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
+        metadata: {
+          title: typeof document !== "undefined" ? document.title || null : null,
+        },
+      }),
+    }).catch(() => {});
+  }, [location, operator?.id, owner?.id]);
 
   return null;
 }
@@ -132,6 +183,7 @@ export default function App() {
   const easyMenu = isEasyMenuHost();
 
   return (
+    <OwnerProvider>
     <OperatorProvider>
     <CartProvider>
     <BrowserRouter>
@@ -222,11 +274,23 @@ export default function App() {
         <Route path="/operator/subscription" element={<OperatorRoute><OperatorSubscription /></OperatorRoute>} />
         <Route path="/operator/display-settings" element={<OperatorRoute><OperatorDisplaySettings /></OperatorRoute>} />
 
+        <Route path="/owner/login" element={<OwnerLogin />} />
+        <Route path="/owner" element={<OwnerRoute><OwnerDashboard /></OwnerRoute>} />
+        <Route path="/owner/analytics" element={<OwnerRoute><OwnerSiteAnalytics /></OwnerRoute>} />
+        <Route path="/owner/search-analytics" element={<OwnerRoute><OwnerSearchAnalytics /></OwnerRoute>} />
+        <Route path="/owner/restaurants" element={<OwnerRoute><OwnerRestaurants /></OwnerRoute>} />
+        <Route path="/owner/revenue" element={<OwnerRoute><OwnerRevenue /></OwnerRoute>} />
+        <Route path="/owner/support" element={<OwnerRoute><OwnerSupportTickets /></OwnerRoute>} />
+        <Route path="/owner/support/:ticketId" element={<OwnerRoute><OwnerTicketDetail /></OwnerRoute>} />
+        <Route path="/operator/menu-studio"      element={<OperatorRoute><OperatorMenuStudio /></OperatorRoute>} />
+        <Route path="/operator/brand"            element={<OperatorRoute><OperatorBrandSettings /></OperatorRoute>} />
+
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
     </CartProvider>
     </OperatorProvider>
+    </OwnerProvider>
   );
 }

@@ -51,6 +51,11 @@ export const resetOperatorPassword = (token, password) =>
 // ── Subscription ──────────────────────────────────────────────────────────
 export const getSubscription = () => get("/operator/subscription");
 export const getPlans = () => get("/operator/subscription/plans");
+export const getBillingOverview = (rid) => get(`/operator/restaurants/${rid}/billing/overview`);
+export const startBillingCheckout = (rid, body) => post(`/operator/restaurants/${rid}/billing/checkout`, body);
+export const syncAdobeUsageCharge = (rid) => post(`/operator/restaurants/${rid}/billing/usage/adobe/sync`, {});
+export const createUsageInvoice = (rid, usageChargeId) =>
+  post(`/operator/restaurants/${rid}/billing/usage/${usageChargeId}/invoice`, {});
 
 // ── Restaurant: Adobe Design / Export ─────────────────────────────────────
 export const getAdobeDesignConfig = (rid) =>
@@ -159,6 +164,50 @@ export const getDisplaySettings = (rid) =>
   get(`/operator/restaurants/${rid}/display-settings`);
 export const updateDisplaySettings = (rid, body) =>
   patch(`/operator/restaurants/${rid}/display-settings`, body);
+
+// ── Restaurant: Menu Studio — Schedules (Pro) ─────────────────────────────
+export const duplicateMenu = (rid, mid) =>
+  post(`/operator/restaurants/${rid}/menus/${mid}/duplicate`, {});
+export const getMenuSchedules = (rid, mid) =>
+  get(`/operator/restaurants/${rid}/menus/${mid}/schedules`);
+export const createMenuSchedule = (rid, mid, body) =>
+  post(`/operator/restaurants/${rid}/menus/${mid}/schedules`, body);
+export const updateMenuSchedule = (rid, mid, sid, body) =>
+  req(`/operator/restaurants/${rid}/menus/${mid}/schedules/${sid}`, { method: "PATCH", body: JSON.stringify(body) });
+export const deleteMenuSchedule = (rid, mid, sid) =>
+  del(`/operator/restaurants/${rid}/menus/${mid}/schedules/${sid}`);
+export const activateMenuNow = (rid, mid) =>
+  post(`/operator/restaurants/${rid}/menus/${mid}/activate-now`, {});
+export const clearMenuOverride = (rid) =>
+  del(`/operator/restaurants/${rid}/menus/override`);
+export const getActiveMenu = (rid) =>
+  get(`/operator/restaurants/${rid}/menus/active-menu`);
+
+// ── Restaurant: Menu Studio — Outputs (Pro) ───────────────────────────────
+export const getMenuOutputs = (rid) =>
+  get(`/operator/restaurants/${rid}/outputs`);
+export const createMenuOutput = (rid, body) =>
+  post(`/operator/restaurants/${rid}/outputs`, body);
+export const getMenuOutput = (rid, oid) =>
+  get(`/operator/restaurants/${rid}/outputs/${oid}`);
+export const triggerMenuOutputExport = (rid, oid) =>
+  post(`/operator/restaurants/${rid}/outputs/${oid}/export`, {});
+export const deleteMenuOutput = (rid, oid) =>
+  del(`/operator/restaurants/${rid}/outputs/${oid}`);
+
+// ── Restaurant: Menu Studio — Brand (Pro) ─────────────────────────────────
+export const getBrandProfile = (rid) =>
+  get(`/operator/restaurants/${rid}/brand`);
+export const updateBrandProfile = (rid, body) =>
+  patch(`/operator/restaurants/${rid}/brand`, body);
+export const uploadBrandLogo = (rid, body) =>
+  post(`/operator/restaurants/${rid}/brand/logo`, body);
+export const removeBrandLogo = (rid) =>
+  del(`/operator/restaurants/${rid}/brand/logo`);
+
+// ── Restaurant: Adobe Usage (Pro) ─────────────────────────────────────────
+export const getAdobeUsageSummary = (rid) =>
+  get(`/operator/restaurants/${rid}/adobe-usage`);
 
 // ── Support ───────────────────────────────────────────────────────────────
 export const getTickets = () => get("/operator/support/tickets");
