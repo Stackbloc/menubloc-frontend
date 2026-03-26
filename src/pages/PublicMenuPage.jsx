@@ -64,6 +64,26 @@ function normalizeSections(data) {
   return [];
 }
 
+function isDisplayableMenuItem(item) {
+  return asStr(item?.name).trim().length > 0;
+}
+
+function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap) {
+  return (Array.isArray(sections) ? sections : [])
+    .map((sec) => {
+      const title = asStr(sec?.title || "Menu").trim() || "Menu";
+      const rawItems = Array.isArray(sec?.items) ? sec.items : [];
+      const items = rawItems.filter((it) => {
+        if (!isDisplayableMenuItem(it)) return false;
+        if (!itemPassesDietFilter(it, dietPrefs)) return false;
+        if (dealsFilter && dealMap.get(it?.id) == null) return false;
+        return true;
+      });
+      return { ...sec, title, items };
+    })
+    .filter((sec) => sec.items.length > 0);
+}
+
 function UnverifiedBanner({ show, onClaim }) {
   if (!show) return null;
 
@@ -356,6 +376,11 @@ export default function PublicMenuPage() {
   const phoneHref       = phoneNumber ? `tel:${phoneNumber.replace(/[^\d+]/g, "")}` : "";
   const orderHref       = normalizeExternalUrl(data?.website_url || data?.website);
   const sections        = normalizeSections(data);
+  const displaySections = getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap);
+  const displayableItemCount = displaySections.reduce(
+    (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
+    0
+  );
   const menuBanner      = asStr(data?.menu_banner).trim();
   const isUnverified    = data?.is_authoritative === false || !!menuBanner;
   const isIntakePreview = data?.menu_source === "intake";
@@ -498,24 +523,23 @@ export default function PublicMenuPage() {
               </div>
             )}
 
-            {sections.length === 0 ? (
-              <div style={{ fontSize: 14, color: "var(--muted, #5b6675)" }}>No menu sections yet.</div>
-            ) : filtersActive && sections.every((sec) => (Array.isArray(sec?.items) ? sec.items : []).filter((it) => itemPassesDietFilter(it, dietPrefs) && (!dealsFilter || dealMap.get(it?.id) != null)).length === 0) ? (
+            {displayableItemCount === 0 ? (
               <div style={{ fontSize: 14, color: "var(--muted, #5b6675)", padding: "24px 0" }}>
-                No items match your active filters.{" "}
-                <button onClick={handleClearFilters} style={{ background: "none", border: "none", cursor: "pointer", color: "#2d6a4f", fontWeight: 700, fontSize: 14, padding: 0, textDecoration: "underline" }}>
-                  Clear filters
-                </button>
+                {filtersActive ? (
+                  <>
+                    This restaurant has no displayable menu items after your active filters.{" "}
+                    <button onClick={handleClearFilters} style={{ background: "none", border: "none", cursor: "pointer", color: "#2d6a4f", fontWeight: 700, fontSize: 14, padding: 0, textDecoration: "underline" }}>
+                      Clear filters
+                    </button>
+                  </>
+                ) : (
+                  "This restaurant does not currently have any displayable menu items."
+                )}
               </div>
             ) : (
-              sections.map((sec, sIdx) => {
+              displaySections.map((sec, sIdx) => {
                 const title = asStr(sec?.title || "Menu").trim();
-                const allItems = Array.isArray(sec?.items) ? sec.items : [];
-                const items = filtersActive
-                  ? allItems.filter((it) => itemPassesDietFilter(it, dietPrefs) && (!dealsFilter || dealMap.get(it?.id) != null))
-                  : allItems;
-
-                if (filtersActive && items.length === 0) return null;
+                const items = Array.isArray(sec?.items) ? sec.items : [];
 
                 return (
                   <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 24 }}>
