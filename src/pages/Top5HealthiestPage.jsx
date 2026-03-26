@@ -203,12 +203,7 @@ export default function Top5HealthiestPage() {
         }}
       >
         {/* Nav */}
-        <div style={{ marginBottom: isMobile ? 24 : 32 }}>
-          <PageNav />
-          <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a" }}>
-            Grubbid
-          </div>
-        </div>
+        <PageNav />
 
         {/* Hero */}
         <div style={{ marginBottom: isMobile ? 28 : 40 }}>

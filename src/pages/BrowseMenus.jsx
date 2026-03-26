@@ -412,12 +412,7 @@ export default function BrowseMenus() {
           padding: isMobile ? "16px 12px 32px" : "28px 20px 56px",
         }}
       >
-        <div style={{ marginBottom: isMobile ? 18 : 26 }}>
-          <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a", marginBottom: 12 }}>
-            Grubbid
-          </div>
-          <PageNav />
-        </div>
+        <PageNav />
 
         <div
           style={{

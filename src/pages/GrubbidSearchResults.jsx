@@ -23,6 +23,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
+import { PageNav } from "../components/NavButton";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -912,16 +913,7 @@ export default function GrubbidSearchResults() {
     <div style={styles.page}>
     <div style={styles.wrap}>
       {/* Nav bar */}
-      <div style={styles.topRow}>
-        <Link to="/" style={styles.wordmark}>Grubbid</Link>
-        <a
-          role="button"
-          onClick={() => navigate(-1)}
-          style={styles.backBtn}
-        >
-          ← Back
-        </a>
-      </div>
+      <PageNav back />
 
       {/* Search context */}
       <div style={styles.searchContext}>

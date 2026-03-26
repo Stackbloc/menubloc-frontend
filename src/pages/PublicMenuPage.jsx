@@ -50,6 +50,13 @@ function fmtMoney(price) {
   return s;
 }
 
+function normalizeExternalUrl(value) {
+  const raw = asStr(value).trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `https://${raw}`;
+}
+
 function normalizeSections(data) {
   if (Array.isArray(data?.sections)) return data.sections;
   if (Array.isArray(data?.menu_sections)) return data.menu_sections;
@@ -179,6 +186,38 @@ function Badge({ label, bg, color, border }) {
     >
       {label}
     </span>
+  );
+}
+
+function HeaderActionButton({ href, label, icon, external = false }) {
+  if (!href) return null;
+
+  return (
+    <a
+      href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
+      aria-label={label}
+      title={label}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 38,
+        height: 38,
+        borderRadius: 999,
+        border: "1px solid rgba(18,34,28,0.12)",
+        background: "#fff",
+        color: "#11211a",
+        textDecoration: "none",
+        boxShadow: "0 4px 14px rgba(15,23,42,0.06)",
+        flexShrink: 0,
+      }}
+    >
+      <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1 }}>
+        {icon}
+      </span>
+    </a>
   );
 }
 
@@ -313,6 +352,9 @@ export default function PublicMenuPage() {
   const data = pageState.data;
   const restaurantName  = asStr(data?.restaurant_name || data?.name || `Restaurant ${id}`).trim();
   const addressLine     = asStr(data?.address_line).trim();
+  const phoneNumber     = asStr(data?.phone).trim();
+  const phoneHref       = phoneNumber ? `tel:${phoneNumber.replace(/[^\d+]/g, "")}` : "";
+  const orderHref       = normalizeExternalUrl(data?.website_url || data?.website);
   const sections        = normalizeSections(data);
   const menuBanner      = asStr(data?.menu_banner).trim();
   const isUnverified    = data?.is_authoritative === false || !!menuBanner;
@@ -330,12 +372,22 @@ export default function PublicMenuPage() {
 
         {/* Restaurant header — above the two-column layout */}
         <div style={{ marginBottom: isMobile ? 18 : 22 }}>
-          <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a", marginBottom: 6 }}>
-            Grubbid
-          </div>
           <div style={{ paddingLeft: isMobile ? 0 : 284 }}>
-            <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a" }}>
-              {restaurantName}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a" }}>
+                {restaurantName}
+              </div>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <HeaderActionButton href={phoneHref} label={`Call ${restaurantName}`} icon="📞" />
+                <HeaderActionButton href={orderHref} label={`Order from ${restaurantName}`} icon="🍴" external />
+              </div>
             </div>
             {addressLine ? (
               <div style={{ marginTop: 6, fontSize: 14, color: "#667085", fontWeight: 600 }}>{addressLine}</div>

@@ -422,7 +422,7 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
                   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
                 }}
               >
-                Order
+                🍴 Order
               </button>
             )}
           </div>

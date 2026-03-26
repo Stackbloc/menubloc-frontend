@@ -4,7 +4,6 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 const CATEGORY_OPTIONS = [
   { value: "qsr", label: "QSR" },
-  { value: "fast_casual", label: "Fast Casual" },
   { value: "casual_dining", label: "Casual Dining" },
   { value: "fine_dining", label: "Fine Dining" },
   { value: "cafe", label: "Cafe" },

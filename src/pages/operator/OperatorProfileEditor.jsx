@@ -237,7 +237,7 @@ export default function OperatorProfileEditor() {
             </div>
             <div>
               <Label>Category</Label>
-              <input style={INPUT} value={form.category} onChange={f("category")} placeholder="e.g. Casual Dining, Fast Casual" />
+              <input style={INPUT} value={form.category} onChange={f("category")} placeholder="e.g. Casual Dining, Fast Food" />
             </div>
             <div>
               <Label>Phone</Label>

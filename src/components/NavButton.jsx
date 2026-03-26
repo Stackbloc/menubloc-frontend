@@ -47,8 +47,13 @@ export function BackButton() {
  */
 export function PageNav({ back = false }) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      {back ? <BackButton /> : <HomeButton />}
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 18, fontWeight: 800, color: "#11211a", marginBottom: 10 }}>
+        Grubbid
+      </div>
+      <div>
+        {back ? <BackButton /> : <HomeButton />}
+      </div>
     </div>
   );
 }

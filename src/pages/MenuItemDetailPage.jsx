@@ -16,6 +16,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { PageNav } from "../components/NavButton";
 
 const BACKEND_BASE = (import.meta?.env?.VITE_API_URL || import.meta?.env?.VITE_BACKEND_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -208,44 +209,7 @@ function PageShell({ children, isMobile, navigate }) {
           fontFamily: 'var(--font-ui, "Avenir Next", "Segoe UI", sans-serif)',
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: isMobile ? 16 : 22,
-          }}
-        >
-          <Link
-            to="/"
-            style={{
-              textDecoration: "none",
-              color: "#163426",
-              fontWeight: 900,
-              letterSpacing: "-0.03em",
-              fontSize: isMobile ? 20 : 24,
-            }}
-          >
-            Grubbid
-          </Link>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            style={{
-              border: "1px solid rgba(22,52,38,0.12)",
-              background: "rgba(255,255,255,0.72)",
-              color: "#163426",
-              borderRadius: 999,
-              padding: "9px 14px",
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-              boxShadow: "0 8px 20px rgba(20,33,27,0.06)",
-            }}
-          >
-            Back
-          </button>
-        </div>
+        <PageNav back />
         {children}
       </div>
     </div>
