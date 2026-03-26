@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
 function formatDistance(value) {
+  if (value == null) return null;
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
   return `${n.toFixed(1)} mi`;
@@ -113,7 +114,7 @@ const CUISINE_EMOJI = {
   japanese: "🍱", thai: "🍜", indian: "🍛", french: "🥐",
   mediterranean: "🫒", greek: "🥗", korean: "🍲", vietnamese: "🍜",
   pizza: "🍕", seafood: "🦞", bbq: "🔥", cafe: "☕",
-  "fast food": "🍟", "fast casual": "🌯", "fine dining": "🍽️",
+  "fast food": "🍟", "fine dining": "🍽️",
   bar: "🍺", sushi: "🍣", burger: "🍔", sandwich: "🥪",
   breakfast: "🥞", brunch: "🥞", steakhouse: "🥩", american: "🍽️",
 };

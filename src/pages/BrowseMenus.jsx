@@ -294,18 +294,20 @@ export default function BrowseMenus() {
 
         if (hasCityStateParams) {
           // ── Mode 1: explicit city/state from URL ─────────────────
-          // If the user has selected a distance radius, also get their
-          // geolocation so the backend can apply a haversine WHERE clause.
+          // Always get geolocation so the backend can compute distance_miles
+          // for display on each card. If a radius was selected, also send it
+          // so the backend adds a haversine WHERE clause.
           setLocationLabel([urlCity, urlState].filter(Boolean).join(", "));
-          let geoExtras = {};
-          if (radiusMiles !== null) {
-            const coords = await getUserCoords();
-            if (cancelled) return;
-            if (coords.lat !== null && coords.lng !== null) {
-              geoExtras = { lat: coords.lat, lng: coords.lng, radius: radiusMiles };
-            }
-          }
-          apiParams = { city: urlCity, state: urlState, ...geoExtras, ...dietaryParams };
+          const coords = await getUserCoords();
+          if (cancelled) return;
+          const hasCoords = coords.lat !== null && coords.lng !== null;
+          apiParams = {
+            city: urlCity,
+            state: urlState,
+            ...(hasCoords ? { lat: coords.lat, lng: coords.lng } : {}),
+            ...(hasCoords && radiusMiles !== null ? { radius: radiusMiles } : {}),
+            ...dietaryParams,
+          };
         } else {
           // ── Mode 2: browser geolocation ───────────────────────────
           const coords = await getUserCoords();
@@ -313,8 +315,9 @@ export default function BrowseMenus() {
           apiParams = {
             lat: coords.lat,
             lng: coords.lng,
-            // null radius = any distance; send a large cap so backend ignores it.
-            radius: radiusMiles !== null ? radiusMiles : 4000,
+            // Only send radius when user has selected a specific limit.
+            // null = any distance; omit so backend skips haversine WHERE clause.
+            ...(radiusMiles !== null ? { radius: radiusMiles } : {}),
             ...dietaryParams,
           };
         }
