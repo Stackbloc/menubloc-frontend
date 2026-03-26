@@ -402,11 +402,10 @@ export default function BrowseMenus() {
         }}
       >
         <div style={{ marginBottom: isMobile ? 18 : 26 }}>
-          <PageNav />
-
-          <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a" }}>
+          <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a", marginBottom: 12 }}>
             Grubbid
           </div>
+          <PageNav />
         </div>
 
         <div
