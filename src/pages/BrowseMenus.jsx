@@ -32,7 +32,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MenuPreviewCard from "../components/browse/MenuPreviewCard.jsx";
 import { PageNav } from "../components/NavButton.jsx";
-import { getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
+import { apiGet, getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
 import { loadDietPrefs, saveDietPrefs, activePrefLabels, hasActiveDietPrefs } from "../hooks/useDietPreferences";
 
 
@@ -70,6 +70,55 @@ function extractMenus(response) {
   return Array.isArray(firstRow?.menus) ? firstRow.menus : [];
 }
 
+function normalizeCuisineValue(rawCuisine, canonicalCuisineSet) {
+  const cuisine = String(rawCuisine || "").trim().toLowerCase();
+  if (!cuisine) return null;
+  if (canonicalCuisineSet.has(cuisine)) return cuisine;
+
+  const remapToAmerican = new Set([
+    "southern",
+    "seafood",
+    "steakhouse",
+    "diner",
+    "breakfast",
+    "wings",
+    "burger",
+    "chicken",
+    "sandwich",
+    "salad",
+  ]);
+
+  if (cuisine === "pizza") {
+    if (canonicalCuisineSet.has("italian-american")) return "italian-american";
+    if (canonicalCuisineSet.has("italian")) return "italian";
+    return null;
+  }
+
+  if (remapToAmerican.has(cuisine) && canonicalCuisineSet.has("american")) {
+    return "american";
+  }
+
+  return null;
+}
+
+function normalizeBrowseMenus(menus, canonicalCuisineOptions) {
+  const cuisineLabelByValue = new Map(
+    (Array.isArray(canonicalCuisineOptions) ? canonicalCuisineOptions : []).map((option) => [
+      String(option?.value || "").trim().toLowerCase(),
+      option?.label || option?.value || "",
+    ])
+  );
+  const canonicalCuisineSet = new Set(cuisineLabelByValue.keys());
+
+  return (Array.isArray(menus) ? menus : []).map((menu) => {
+    const normalizedCuisine = normalizeCuisineValue(menu?.cuisine, canonicalCuisineSet);
+    return {
+      ...menu,
+      cuisine: normalizedCuisine ? cuisineLabelByValue.get(normalizedCuisine) || normalizedCuisine : null,
+    };
+  });
+}
+
 function FilterChip({ label, isMobile, active, onClick }) {
   return (
     <button
@@ -96,6 +145,12 @@ function FilterChip({ label, isMobile, active, onClick }) {
 }
 
 function FilterSelect({ label, options, value, onChange }) {
+  const normalizedOptions = (Array.isArray(options) ? options : []).map((option) =>
+    typeof option === "string"
+      ? { value: option, label: option }
+      : { value: option?.value || "", label: option?.label || option?.value || "" }
+  );
+
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <span
@@ -129,9 +184,9 @@ function FilterSelect({ label, options, value, onChange }) {
         }}
       >
         <option value="">All</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
+        {normalizedOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
           </option>
         ))}
       </select>
@@ -161,18 +216,6 @@ const RESTAURANT_TYPE_OPTIONS = [
   "Fine Dining",
   "Food Truck",
   "QSR",
-];
-
-const CUISINE_OPTIONS = [
-  "American",
-  "Chinese",
-  "Indian",
-  "Italian",
-  "Japanese",
-  "Korean",
-  "Mexican",
-  "Thai",
-  "Vietnamese",
 ];
 
 function getUserCoords() {
@@ -233,6 +276,7 @@ export default function BrowseMenus() {
   // localFilters are applied client-side to the already-fetched restaurant list.
   // Changing them does NOT trigger a re-fetch — filtering is instant.
   const [localFilters, setLocalFilters] = useState({ cuisine: "", category: "" });
+  const [cuisineOptions, setCuisineOptions] = useState([]);
   // radiusMiles: null = any distance (no radius cap).
   // In geo mode default to 10 miles. In city/state mode default to null (any).
   // When a non-null radius is selected in city/state mode, geolocation is requested
@@ -242,6 +286,24 @@ export default function BrowseMenus() {
 
   const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
     filters.dairy_free || filters.diabetic_friendly || filters.keto || filters.low_sodium || filters.deals;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    apiGet("/api/meta/cuisines")
+      .then((json) => {
+        if (cancelled) return;
+        setCuisineOptions(Array.isArray(json?.cuisines) ? json.cuisines : []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCuisineOptions([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const activeFilterLabel = (() => {
     if (filters.vegan) return "vegan";
@@ -326,7 +388,7 @@ export default function BrowseMenus() {
         const response = await getBrowseMenus(apiParams);
         if (cancelled) return;
 
-        const extractedMenus = extractMenus(response);
+        const extractedMenus = normalizeBrowseMenus(extractMenus(response), cuisineOptions);
         const sorted = [...extractedMenus].sort((a, b) => {
           const nameA = (a.restaurant_name || a.name || "").toLowerCase();
           const nameB = (b.restaurant_name || b.name || "").toLowerCase();
@@ -367,7 +429,7 @@ export default function BrowseMenus() {
   // Re-run when the URL location, filters, or radius changes.
   // radiusMiles only affects geo mode — city/state mode ignores it.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlCity, urlState, filters, radiusMiles]);
+  }, [urlCity, urlState, filters, radiusMiles, cuisineOptions]);
 
   const showEmptyState = !loading && !error && menus.length === 0;
 
@@ -489,7 +551,7 @@ export default function BrowseMenus() {
                 ) : null}
                 <FilterSelect
                   label="Cuisine"
-                  options={CUISINE_OPTIONS}
+                  options={cuisineOptions}
                   value={localFilters.cuisine}
                   onChange={(value) => setLocalFilters((prev) => ({ ...prev, cuisine: value }))}
                 />
