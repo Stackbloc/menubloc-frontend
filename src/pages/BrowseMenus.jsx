@@ -139,15 +139,17 @@ function FilterSelect({ label, options, value, onChange }) {
   );
 }
 
-// Distance radius options for geo mode. null = no radius cap (backend defaults to 4000mi).
-// Displayed only when the page is in geolocation mode (!hasCityStateParams).
+// Distance radius options. "Any Distance" (null) = no radius cap.
+// In city/state mode, selecting a specific radius triggers geolocation so the
+// backend can apply a haversine WHERE clause from the user's actual position.
 // Backend clamps radius to 4000 miles maximum via clampBrowseRadiusMiles().
 const DISTANCE_RADIUS_OPTIONS = [
-  { label: "Within 1 mile",   value: 1  },
-  { label: "Within 3 miles",  value: 3  },
-  { label: "Within 5 miles",  value: 5  },
-  { label: "Within 10 miles", value: 10 },
-  { label: "Within 25 miles", value: 25 },
+  { label: "Any Distance",    value: null },
+  { label: "Within 1 mile",   value: 1    },
+  { label: "Within 3 miles",  value: 3    },
+  { label: "Within 5 miles",  value: 5    },
+  { label: "Within 10 miles", value: 10   },
+  { label: "Within 25 miles", value: 25   },
 ];
 
 const RESTAURANT_TYPE_OPTIONS = [
@@ -155,7 +157,6 @@ const RESTAURANT_TYPE_OPTIONS = [
   "Buffet",
   "Cafe",
   "Casual Dining",
-  "Fast Casual",
   "Fast Food",
   "Fine Dining",
   "Food Truck",
@@ -226,15 +227,17 @@ export default function BrowseMenus() {
     return parts.join(", ");
   });
   const [filters, setFilters] = useState(() => ({
-    cuisine: "",
-    category: "",
     deals: false,
     ...loadDietPrefs(),
   }));
-  // radiusMiles controls the geo-mode search radius. Default 10 miles.
-  // Only sent to the API when in geo mode (!hasCityStateParams).
-  // City/state mode has no user coordinates so distance is unavailable.
-  const [radiusMiles, setRadiusMiles] = useState(10);
+  // localFilters are applied client-side to the already-fetched restaurant list.
+  // Changing them does NOT trigger a re-fetch — filtering is instant.
+  const [localFilters, setLocalFilters] = useState({ cuisine: "", category: "" });
+  // radiusMiles: null = any distance (no radius cap).
+  // In geo mode default to 10 miles. In city/state mode default to null (any).
+  // When a non-null radius is selected in city/state mode, geolocation is requested
+  // so the backend can filter by actual distance from the user's position.
+  const [radiusMiles, setRadiusMiles] = useState(() => hasCityStateParams ? null : 10);
   const [alphaGroup, setAlphaGroup] = useState(null);
 
   const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
@@ -278,23 +281,31 @@ export default function BrowseMenus() {
       try {
         let apiParams;
 
+        const dietaryParams = {
+          deals: filters.deals ? 1 : "",
+          vegan: filters.vegan ? 1 : "",
+          vegetarian: filters.vegetarian ? 1 : "",
+          gluten_free: filters.gluten_free ? 1 : "",
+          keto: filters.keto ? 1 : "",
+          low_sodium: filters.low_sodium ? 1 : "",
+          dairy_free: filters.dairy_free ? 1 : "",
+          diabetic_friendly: filters.diabetic_friendly ? 1 : "",
+        };
+
         if (hasCityStateParams) {
           // ── Mode 1: explicit city/state from URL ─────────────────
+          // If the user has selected a distance radius, also get their
+          // geolocation so the backend can apply a haversine WHERE clause.
           setLocationLabel([urlCity, urlState].filter(Boolean).join(", "));
-          apiParams = {
-            city: urlCity,
-            state: urlState,
-            cuisine: filters.cuisine,
-            category: filters.category,
-            deals: filters.deals ? 1 : "",
-            vegan: filters.vegan ? 1 : "",
-            vegetarian: filters.vegetarian ? 1 : "",
-            gluten_free: filters.gluten_free ? 1 : "",
-            keto: filters.keto ? 1 : "",
-            low_sodium: filters.low_sodium ? 1 : "",
-            dairy_free: filters.dairy_free ? 1 : "",
-            diabetic_friendly: filters.diabetic_friendly ? 1 : "",
-          };
+          let geoExtras = {};
+          if (radiusMiles !== null) {
+            const coords = await getUserCoords();
+            if (cancelled) return;
+            if (coords.lat !== null && coords.lng !== null) {
+              geoExtras = { lat: coords.lat, lng: coords.lng, radius: radiusMiles };
+            }
+          }
+          apiParams = { city: urlCity, state: urlState, ...geoExtras, ...dietaryParams };
         } else {
           // ── Mode 2: browser geolocation ───────────────────────────
           const coords = await getUserCoords();
@@ -302,19 +313,9 @@ export default function BrowseMenus() {
           apiParams = {
             lat: coords.lat,
             lng: coords.lng,
-            // radiusMiles is user-controlled. Falls back to 10 if geolocation
-            // is unavailable (backend will receive null lat/lng and ignore radius).
-            radius: radiusMiles,
-            cuisine: filters.cuisine,
-            category: filters.category,
-            deals: filters.deals ? 1 : "",
-            vegan: filters.vegan ? 1 : "",
-            vegetarian: filters.vegetarian ? 1 : "",
-            gluten_free: filters.gluten_free ? 1 : "",
-            keto: filters.keto ? 1 : "",
-            low_sodium: filters.low_sodium ? 1 : "",
-            dairy_free: filters.dairy_free ? 1 : "",
-            diabetic_friendly: filters.diabetic_friendly ? 1 : "",
+            // null radius = any distance; send a large cap so backend ignores it.
+            radius: radiusMiles !== null ? radiusMiles : 4000,
+            ...dietaryParams,
           };
         }
 
@@ -376,12 +377,19 @@ export default function BrowseMenus() {
     { label: "S – Z", letters: new Set("STUVWXYZ".split("")) },
   ];
 
-  const visibleMenus = alphaGroup
-    ? menus.filter((m) => {
-        const first = (m.restaurant_name || m.name || "").trim()[0]?.toUpperCase();
-        return alphaGroup.letters.has(first);
-      })
-    : menus;
+  const visibleMenus = menus.filter((m) => {
+    if (alphaGroup) {
+      const first = (m.restaurant_name || m.name || "").trim()[0]?.toUpperCase();
+      if (!alphaGroup.letters.has(first)) return false;
+    }
+    if (localFilters.cuisine) {
+      if ((m.cuisine || "").toLowerCase() !== localFilters.cuisine.toLowerCase()) return false;
+    }
+    if (localFilters.category) {
+      if ((m.category || "").toLowerCase() !== localFilters.category.toLowerCase()) return false;
+    }
+    return true;
+  });
 
   return (
     <div
@@ -484,45 +492,40 @@ export default function BrowseMenus() {
                 <FilterSelect
                   label="Cuisine"
                   options={CUISINE_OPTIONS}
-                  value={filters.cuisine}
-                  onChange={(value) => setFilters((prev) => ({ ...prev, cuisine: value }))}
+                  value={localFilters.cuisine}
+                  onChange={(value) => setLocalFilters((prev) => ({ ...prev, cuisine: value }))}
                 />
                 <FilterSelect
                   label="Category"
                   options={RESTAURANT_TYPE_OPTIONS}
-                  value={filters.category}
-                  onChange={(value) => setFilters((prev) => ({ ...prev, category: value }))}
+                  value={localFilters.category}
+                  onChange={(value) => setLocalFilters((prev) => ({ ...prev, category: value }))}
                 />
 
-                {/* Distance filter — geo mode only. Hidden in city/state mode
-                    because the backend has no user coordinates to compute
-                    distance from when city+state params are provided. */}
-                {!hasCityStateParams && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 900,
-                        letterSpacing: 0.9,
-                        textTransform: "uppercase",
-                        color: "#667085",
-                      }}
-                    >
-                      Distance
-                    </span>
-                    <div style={{ display: "grid", gap: 8 }}>
-                      {DISTANCE_RADIUS_OPTIONS.map((opt) => (
-                        <FilterChip
-                          key={opt.value}
-                          label={opt.label}
-                          isMobile={isMobile}
-                          active={radiusMiles === opt.value}
-                          onClick={() => setRadiusMiles(opt.value)}
-                        />
-                      ))}
-                    </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 900,
+                      letterSpacing: 0.9,
+                      textTransform: "uppercase",
+                      color: "#667085",
+                    }}
+                  >
+                    Distance
+                  </span>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {DISTANCE_RADIUS_OPTIONS.map((opt) => (
+                      <FilterChip
+                        key={String(opt.value)}
+                        label={opt.label}
+                        isMobile={isMobile}
+                        active={radiusMiles === opt.value}
+                        onClick={() => setRadiusMiles(opt.value)}
+                      />
+                    ))}
                   </div>
-                )}
+                </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <span
