@@ -24,6 +24,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
 import { PageNav } from "../components/NavButton";
+import { PageHero, PageShell, SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -167,7 +169,11 @@ function buildVisibleResultSignature(json) {
         pickFirst(row, ["restaurant_id", "restaurantId"], "")
       );
       const name = asString(
-        pickFirst(row, ["menu_item_name", "menuItemName", "restaurant_name", "name"], "")
+        pickFirst(
+          row,
+          ["search_display_name", "menu_item_name", "menuItemName", "restaurant_name", "name"],
+          ""
+        )
       ).toLowerCase();
 
       return [menuItemId, restaurantId, name].join(":");
@@ -190,6 +196,8 @@ function normalizeRows(json) {
           ...r,
           menu_item_id: r.item.id ?? r.item.menu_item_id ?? null,
           menu_item_name: r.item.name ?? r.item.menu_item_name ?? null,
+          search_display_name:
+            r.item.search_display_name ?? r.search_display_name ?? r.item.name ?? r.item.menu_item_name ?? null,
           restaurant_id: r.restaurant.id ?? r.restaurant.restaurant_id ?? null,
           restaurant_slug: r.restaurant.slug ?? r.restaurant.restaurant_slug ?? null,
           restaurant_name:
@@ -228,6 +236,17 @@ function normalizeKey(v) {
   return asString(v).toLowerCase().replace(/\s+/g, " ").trim();
 }
 
+function canonicalizeMenuItemName(v) {
+  return normalizeKey(v)
+    .replace(/\((?:\s*\d+\s*(?:pc|pcs|piece|pieces|count|ct)\s*)\)/g, " ")
+    .replace(/\b\d+\s*(?:pc|pcs|piece|pieces|count|ct)\b/g, " ")
+    .replace(/\b(?:small|medium|large|regular)\b/g, " ")
+    .replace(/\b\d+(?:\.\d+)?\s*(?:oz|ounce|ounces|lb|lbs)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function asNumber(v) {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   if (typeof v === "string") {
@@ -253,6 +272,26 @@ function getPriceMinor(row) {
   return null;
 }
 
+function getDistanceMiles(row) {
+  const distance = asNumber(
+    pickFirst(row, ["distance_miles", "restaurant_distance_miles"], null)
+  );
+  return distance !== null ? distance : null;
+}
+
+function isBetterRestaurantRepresentative(nextRow, currentRow) {
+  const nextDistance = getDistanceMiles(nextRow);
+  const currentDistance = getDistanceMiles(currentRow);
+
+  if (nextDistance !== null && currentDistance !== null && nextDistance !== currentDistance) {
+    return nextDistance < currentDistance;
+  }
+  if (nextDistance !== null && currentDistance === null) return true;
+  if (nextDistance === null && currentDistance !== null) return false;
+
+  return isBetterRow(nextRow, currentRow);
+}
+
 function isBetterRow(nextRow, currentRow) {
   const nextScore = getScore(nextRow);
   const currentScore = getScore(currentRow);
@@ -274,14 +313,20 @@ function buildRestaurantGroups(dishRows) {
   const restaurantMap = new Map();
 
   for (const row of dishRows) {
+    const chainId = asString(pickFirst(row, ["chain_id", "restaurant_chain_id"], ""));
     const restaurantId = asString(pickFirst(row, ["restaurant_id", "restaurantId"], ""));
     const restaurantSlug = asString(pickFirst(row, ["restaurant_slug", "restaurantSlug"], ""));
     const restaurantName = asString(
       pickFirst(row, ["restaurant_name", "restaurantName"], "Restaurant")
     );
-    const restaurantKey = restaurantId
+    const normalizedBrand = normalizeKey(restaurantName);
+    const restaurantKey = chainId
+      ? `chain:${chainId}`
+      : normalizedBrand
+      ? `brand:${normalizedBrand}`
+      : restaurantId
       ? `id:${restaurantId}`
-      : `name:${normalizeKey(restaurantName)}`;
+      : `name:${normalizedBrand}`;
 
     if (!restaurantMap.has(restaurantKey)) {
       restaurantMap.set(restaurantKey, {
@@ -295,18 +340,24 @@ function buildRestaurantGroups(dishRows) {
 
     const group = restaurantMap.get(restaurantKey);
 
+    if (isBetterRestaurantRepresentative(row, group._first)) {
+      group.restaurant_id = restaurantId || group.restaurant_id;
+      group.restaurant_slug = restaurantSlug || group.restaurant_slug;
+      group.restaurant_name = restaurantName || group.restaurant_name;
+      group._first = row;
+    }
+
     if (!group.restaurant_slug && restaurantSlug) {
       group.restaurant_slug = restaurantSlug;
     }
 
-    const menuItemId = asString(pickFirst(row, ["menu_item_id", "menuItemId"], ""));
-    const nameKey = normalizeKey(
-      pickFirst(row, ["menu_item_name", "menuItemName", "name"], "")
+    const nameKey = canonicalizeMenuItemName(
+      pickFirst(row, ["search_display_name", "menu_item_name", "menuItemName", "name"], "")
     );
     const sectionKey = normalizeKey(
       pickFirst(row, ["section", "section_name", "menu_section"], "")
     );
-    const itemKey = menuItemId ? `id:${menuItemId}` : `ns:${nameKey}::${sectionKey}`;
+    const itemKey = `ns:${nameKey}::${sectionKey}`;
 
     const existing = group._itemMap.get(itemKey);
     if (!existing) {
@@ -399,6 +450,7 @@ function FilterToggle({ label, active, onClick, isMobile }) {
 }
 
 export default function GrubbidSearchResults() {
+  const { t } = useLanguage();
   const params = useQueryParams();
   const navigate = useNavigate();
   const geo = useGeolocation();
@@ -467,7 +519,12 @@ export default function GrubbidSearchResults() {
   const [rows, setRows] = useState([]);
   const [searchMeta, setSearchMeta] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
+  const [searchOffset, setSearchOffset] = useState(0);
+  const [searchHasMore, setSearchHasMore] = useState(false);
+  const [searchTotalCount, setSearchTotalCount] = useState(0);
+  const SEARCH_LIMIT = 24;
 
   const { primaryUrl, fallbackUrl, hasGeoFilter } = useMemo(() => {
     const u = new URL(`${API}/search`);
@@ -486,6 +543,7 @@ export default function GrubbidSearchResults() {
     if (city) u.searchParams.set("city", city);
     if (state) u.searchParams.set("state", state);
     if (near) u.searchParams.set("near", near);
+    u.searchParams.set("limit", String(SEARCH_LIMIT));
 
     // Save the base URL (no geo) for fallback use
     const baseUrl = u.toString();
@@ -656,6 +714,8 @@ export default function GrubbidSearchResults() {
       setLoading(true);
       setErr("");
       setGeoFallbackUsed(false);
+      setSearchOffset(0);
+      setSearchHasMore(false);
 
       try {
         let json = await fetchSearch(primaryUrl);
@@ -669,8 +729,18 @@ export default function GrubbidSearchResults() {
         }
 
         if (!alive) return;
-        setRows(normalizeRows(json));
+
+        const resultRows = normalizeRows(json);
+        const pagination = json?.pagination || {};
+        const total = pagination.total_count ?? resultRows.length;
+        const returned = pagination.returned_count ?? resultRows.length;
+        const pageOffset = pagination.offset ?? 0;
+
+        setRows(resultRows);
         setSearchMeta(json?.search_meta || null);
+        setSearchTotalCount(total);
+        setSearchOffset(pageOffset + returned);
+        setSearchHasMore(pageOffset + returned < total);
         void trackSearchEvent(json, usedFallback);
       } catch (e) {
         if (!alive) return;
@@ -798,186 +868,80 @@ export default function GrubbidSearchResults() {
   }, [locationLabel]);
 
   const styles = {
-    page: {
-      minHeight: "100vh",
-      background: "#f7f6f1",
-    },
-    wrap: {
-      padding: isMobile ? "20px 14px 48px" : "36px 24px 72px",
-      maxWidth: 820,
-      margin: "0 auto",
-      boxSizing: "border-box",
-      overflowX: "hidden",
-      color: "#101828",
-      fontFamily: "var(--font-ui, Inter, system-ui, sans-serif)",
-    },
-    topRow: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: isMobile ? 16 : 22,
-    },
-    wordmark: {
-      fontSize: isMobile ? 17 : 19,
-      fontWeight: 900,
-      color: "#11211a",
-      textDecoration: "none",
-      letterSpacing: "-0.02em",
-    },
-    backBtn: {
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 5,
-      fontSize: 13,
-      fontWeight: 600,
-      color: "#475467",
-      background: "rgba(0,0,0,0.04)",
-      border: "1px solid rgba(0,0,0,0.09)",
-      borderRadius: 999,
-      padding: "5px 12px",
-      cursor: "pointer",
-      textDecoration: "none",
-    },
-    searchContext: {
-      marginBottom: isMobile ? 14 : 18,
-    },
-    title: {
-      margin: 0,
-      fontSize: isMobile ? 20 : 24,
-      lineHeight: 1.2,
-      fontWeight: 900,
-      letterSpacing: "-0.02em",
-      color: "#11211a",
-      wordBreak: "break-word",
-    },
-    titleQuery: {
-      color: "#11211a",
-    },
-    subtitle: {
-      marginTop: 4,
-      color: "#667085",
-      fontSize: isMobile ? 13 : 14,
-      fontWeight: 500,
-      lineHeight: 1.4,
-    },
-    filterBar: {
-      marginTop: 12,
-      display: "flex",
-      gap: 8,
-      flexWrap: "wrap",
-      alignItems: "center",
-    },
     grid: {
       display: "grid",
       gap: 12,
       marginTop: 16,
       minWidth: 0,
     },
-    error: {
-      marginTop: 12,
-      padding: "14px 16px",
-      border: "1px solid rgba(18,34,28,0.08)",
-      borderRadius: 16,
-      background: "#fff",
-      color: "#475467",
-      fontWeight: 700,
-      wordBreak: "break-word",
-      lineHeight: 1.5,
-    },
-    empty: {
-      marginTop: 12,
-      padding: "14px 16px",
-      border: "1px solid rgba(18,34,28,0.08)",
-      borderRadius: 16,
-      background: "#fff",
-      color: "#475467",
-      fontWeight: 600,
-      lineHeight: 1.4,
-      wordBreak: "break-word",
-    },
-    section: {
-      marginTop: 24,
-      marginBottom: 4,
-      fontWeight: 900,
-      color: "#11211a",
-      fontSize: isMobile ? 15 : 16,
-      letterSpacing: "-0.01em",
-    },
   };
 
   const emptyMessage = q
-    ? `No results for "${q}"${locationPhrase ? ` ${locationPhrase}` : ""}.`
-    : `No results${locationPhrase ? ` ${locationPhrase}` : ""}.`;
+    ? t("search.noResultsFor", `No results for "${q}"${locationPhrase ? ` ${locationPhrase}` : ""}.`, {
+        query: q,
+        location: locationPhrase ? ` ${locationPhrase}` : "",
+      })
+    : t("search.noResultsGeneric", `No results${locationPhrase ? ` ${locationPhrase}` : ""}.`, {
+        location: locationPhrase ? ` ${locationPhrase}` : "",
+      });
+
+  const subtitleParts = [
+    locationLabel && locationLabel !== "your current location"
+      ? t("search.near", `near ${locationLabel}`, { location: locationLabel })
+      : locationLabel === "your current location"
+      ? t("search.nearYou", "near you")
+      : null,
+    !loading && (() => {
+      if (hasMenuMatches) {
+        const totalDishes = restaurantGroups.reduce((acc, g) => acc + g.items.length, 0);
+        return totalDishes === 1
+          ? t("search.foundDish", "1 dish found", { count: totalDishes })
+          : t("search.foundDishes", `${totalDishes} dishes found`, { count: totalDishes });
+      }
+      if (!hasDietFilter && restaurantOnlyVisible.length) {
+        return restaurantOnlyVisible.length === 1
+          ? t("search.foundRestaurant", "1 restaurant found", { count: restaurantOnlyVisible.length })
+          : t("search.foundRestaurants", `${restaurantOnlyVisible.length} restaurants found`, { count: restaurantOnlyVisible.length });
+      }
+      return null;
+    })(),
+  ].filter(Boolean).join(" · ");
 
   return (
-    <div style={styles.page}>
-    <div style={styles.wrap}>
+    <PageShell>
       {/* Nav bar */}
       <PageNav back />
 
       {/* Search context */}
-      <div style={styles.searchContext}>
-        <h1 style={styles.title}>
-          {q ? (
-            <>Searching for <span style={styles.titleQuery}>&quot;{q}&quot;</span></>
-          ) : (
-            "Search results"
-          )}
-        </h1>
-        <div style={styles.subtitle}>
-          {[
-            locationLabel && locationLabel !== "your current location"
-              ? `near ${locationLabel}`
-              : locationLabel === "your current location"
-              ? "near you"
-              : null,
-            !loading && (() => {
-              if (hasMenuMatches) {
-                const totalDishes = restaurantGroups.reduce((acc, g) => acc + g.items.length, 0);
-                return `${totalDishes} ${totalDishes === 1 ? "dish" : "dishes"} found`;
-              }
-              if (!hasDietFilter && restaurantOnlyVisible.length) {
-                return `${restaurantOnlyVisible.length} restaurant${restaurantOnlyVisible.length === 1 ? "" : "s"} found`;
-              }
-              return null;
-            })(),
-          ].filter(Boolean).join(" · ")}
-        </div>
-      </div>
+      <PageHero
+        title={q ? `${t("search.searchingFor", "Searching for")} "${q}"` : t("search.title")}
+        description={subtitleParts || "Search results now inherit the canonical Grubbid discovery typography and card system."}
+      />
 
       {geoFallbackUsed && (
-        <div
-          style={{
-            marginTop: 10,
-            padding: "8px 12px",
-            borderRadius: 10,
-            background: "#fffbeb",
-            border: "1px solid #fcd34d",
-            color: "#92400e",
-            fontSize: isMobile ? 12 : 13,
-            fontWeight: 700,
-          }}
-        >
-          No results found near your location — showing all matching results instead.
-        </div>
+        <StatusMessage tone="warning">
+          {t("search.geoFallback", "No results found near your location — showing all matching results instead.")}
+        </StatusMessage>
       )}
 
-      {err && <div style={styles.error}>Error: {err}</div>}
-      {loading && <div style={styles.empty}>Loading...</div>}
+      {err && <StatusMessage>Error: {err}</StatusMessage>}
+      {loading && <StatusMessage tone="muted">{t("common.loading")}</StatusMessage>}
 
       {!loading && !err && !hasMenuMatches && hasDietFilter && (
-        <div style={styles.empty}>
-          {`No menu items meet your preference for ${activeDietFilterLabels.join(", ")}.`}
-        </div>
+        <StatusMessage tone="muted">
+          {t("search.noDietaryResults", `No menu items meet your preference for ${activeDietFilterLabels.join(", ")}.`, {
+            filters: activeDietFilterLabels.join(", "),
+          })}
+        </StatusMessage>
       )}
 
       {!loading && !err && q && !hasMenuMatches && !hasDietFilter && restaurantOnlyVisible.length === 0 && (
-        <div style={styles.empty}>{emptyMessage}</div>
+        <StatusMessage tone="muted">{emptyMessage}</StatusMessage>
       )}
 
       {!loading && !err && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
         <>
-          <div style={styles.section}>Restaurants</div>
+          <SectionTitle>{t("search.restaurants", "Restaurants")}</SectionTitle>
           <div style={styles.grid}>
             {restaurantOnlyVisible.map((r) => (
               <SearchResultCard
@@ -995,7 +959,7 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && hasMenuMatches && (
         <>
-          <div style={styles.section}>{restaurantIntent ? "Dishes" : "Results"}</div>
+          <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>
           <div style={styles.grid}>
             {restaurantGroups.map((g) => (
               <SearchResultCard
@@ -1018,11 +982,52 @@ export default function GrubbidSearchResults() {
                 items={g.items}
                 query={q}
                 crossRestaurantItems={crossRestaurantItems}
+                geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
               />
             ))}
           </div>
         </>
       )}
+      {/* Load More — search pagination */}
+      {!loading && !err && searchHasMore && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
+          <button
+            type="button"
+            disabled={loadingMore}
+            className={`gb-pill-button ${loadingMore ? "gb-pill-button--secondary" : "gb-pill-button--primary"}`}
+            onClick={async () => {
+              setLoadingMore(true);
+              setErr("");
+              try {
+                const u = new URL(primaryUrl);
+                u.searchParams.set("limit", String(SEARCH_LIMIT));
+                u.searchParams.set("offset", String(searchOffset));
+                const res = await fetch(u.toString(), { credentials: "include" });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok || !json?.ok) throw new Error(json?.error || `HTTP ${res.status}`);
+                const moreRows = normalizeRows(json);
+                const pagination = json?.pagination || {};
+                const total = pagination.total_count ?? (searchOffset + moreRows.length);
+                const returned = pagination.returned_count ?? moreRows.length;
+                const pageOffset = pagination.offset ?? searchOffset;
+                setRows((prev) => [...prev, ...moreRows]);
+                setSearchTotalCount(total);
+                setSearchOffset(pageOffset + returned);
+                setSearchHasMore(pageOffset + returned < total);
+              } catch (e) {
+                setErr(toConsumerErrorMessage(e, "Couldn't load more results. Please try again."));
+              } finally {
+                setLoadingMore(false);
+              }
+            }}
+          >
+            {loadingMore
+              ? "Loading…"
+              : `Load More (${searchTotalCount - rows.length} remaining)`}
+          </button>
+        </div>
+      )}
+
       {/* Top 5 Healthiest link — shown when we have a city context */}
       {!loading && !err && city && (
         <div
@@ -1050,7 +1055,6 @@ export default function GrubbidSearchResults() {
           </Link>
         </div>
       )}
-    </div>
-    </div>
+    </PageShell>
   );
 }

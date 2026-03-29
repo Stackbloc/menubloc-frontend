@@ -32,6 +32,16 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MenuPreviewCard from "../components/browse/MenuPreviewCard.jsx";
 import { PageNav } from "../components/NavButton.jsx";
+import {
+  Card,
+  FilterChip as GrubbidFilterChip,
+  PageHero,
+  PageShell,
+  PageSplit,
+  SelectField,
+  StatusMessage,
+} from "../components/grubbid/GrubbidPrimitives.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { apiGet, getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
 import { loadDietPrefs, saveDietPrefs, activePrefLabels, hasActiveDietPrefs } from "../hooks/useDietPreferences";
 
@@ -119,32 +129,36 @@ function normalizeBrowseMenus(menus, canonicalCuisineOptions) {
   });
 }
 
-function FilterChip({ label, isMobile, active, onClick }) {
+function toTranslationSuffix(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[\/\s-]+/g, "_")
+    .replace(/[^a-z0-9_]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function localizeCanonicalOption(option, prefix, t) {
+  const rawValue = typeof option === "string" ? option : option?.value || option?.label || "";
+  const rawLabel = typeof option === "string" ? option : option?.label || option?.value || "";
+  const key = `${prefix}.${toTranslationSuffix(rawValue)}`;
+  return {
+    value: typeof option === "string" ? option : option?.value || "",
+    label: t(key, rawLabel),
+  };
+}
+
+function FilterChip({ label, active, onClick }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        height: 40,
-        width: isMobile ? "100%" : "auto",
-        padding: "0 16px",
-        borderRadius: 999,
-        border: active ? "1px solid #11211a" : "1px solid rgba(18,34,28,0.12)",
-        background: active ? "#11211a" : "#fff",
-        color: active ? "#f7f6f1" : "#667085",
-        fontSize: 13,
-        fontWeight: 800,
-        cursor: "pointer",
-        textAlign: "left",
-        boxSizing: "border-box",
-      }}
-    >
+    <GrubbidFilterChip active={active} onClick={onClick}>
       {label}
-    </button>
+    </GrubbidFilterChip>
   );
 }
 
-function FilterSelect({ label, options, value, onChange }) {
+function FilterSelect({ label, options, value, onChange, allLabel = "All" }) {
   const normalizedOptions = (Array.isArray(options) ? options : []).map((option) =>
     typeof option === "string"
       ? { value: option, label: option }
@@ -152,45 +166,14 @@ function FilterSelect({ label, options, value, onChange }) {
   );
 
   return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <span
-        style={{
-          fontSize: 11,
-          fontWeight: 900,
-          letterSpacing: 0.9,
-          textTransform: "uppercase",
-          color: "#667085",
-        }}
-      >
-        {label}
-      </span>
-
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{
-          height: 44,
-          width: "100%",
-          borderRadius: 14,
-          border: "1px solid rgba(18,34,28,0.10)",
-          background: "#fff",
-          padding: "0 14px",
-          color: "#667085",
-          fontSize: 14,
-          fontWeight: 700,
-          outline: "none",
-          cursor: "pointer",
-          boxSizing: "border-box",
-        }}
-      >
-        <option value="">All</option>
+    <SelectField label={label} value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">{allLabel}</option>
         {normalizedOptions.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
-      </select>
-    </label>
+      </SelectField>
   );
 }
 
@@ -250,6 +233,7 @@ function getUserCoords() {
 }
 
 export default function BrowseMenus() {
+  const { t } = useLanguage();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { search } = useLocation();
@@ -262,8 +246,13 @@ export default function BrowseMenus() {
   const hasCityStateParams = Boolean(urlCity);
 
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
   const [menus, setMenus] = useState([]);
+  const [browseOffset, setBrowseOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const BROWSE_LIMIT = 8;
   // Seed from URL so a shared/bookmarked link shows the label immediately
   const [locationLabel, setLocationLabel] = useState(() => {
     const parts = [urlCity, urlState].filter(Boolean);
@@ -283,6 +272,23 @@ export default function BrowseMenus() {
   // so the backend can filter by actual distance from the user's position.
   const [radiusMiles, setRadiusMiles] = useState(() => hasCityStateParams ? null : 10);
   const [alphaGroup, setAlphaGroup] = useState(null);
+  const localizedDistanceOptions = DISTANCE_RADIUS_OPTIONS.map((opt) => {
+    if (opt.value == null) {
+      return { ...opt, label: t("browse.anyDistance") };
+    }
+    return {
+      ...opt,
+      label: opt.value === 1
+        ? t("browse.withinMile", opt.label, { count: opt.value })
+        : t("browse.withinMiles", opt.label, { count: opt.value }),
+    };
+  });
+  const localizedCuisineOptions = cuisineOptions.map((option) =>
+    localizeCanonicalOption(option, "cuisine", t)
+  );
+  const localizedRestaurantTypeOptions = RESTAURANT_TYPE_OPTIONS.map((option) =>
+    localizeCanonicalOption(option, "category", t)
+  );
 
   const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
     filters.dairy_free || filters.diabetic_friendly || filters.keto || filters.low_sodium || filters.deals;
@@ -336,8 +342,14 @@ export default function BrowseMenus() {
   useEffect(() => {
     let cancelled = false;
 
-    async function run() {
-      setLoading(true);
+    async function run(loadMoreOffset = 0) {
+      if (loadMoreOffset === 0) {
+        setLoading(true);
+        setBrowseOffset(0);
+        setHasMore(false);
+      } else {
+        setLoadingMore(true);
+      }
       setError("");
 
       try {
@@ -356,9 +368,6 @@ export default function BrowseMenus() {
 
         if (hasCityStateParams) {
           // ── Mode 1: explicit city/state from URL ─────────────────
-          // Always get geolocation so the backend can compute distance_miles
-          // for display on each card. If a radius was selected, also send it
-          // so the backend adds a haversine WHERE clause.
           setLocationLabel([urlCity, urlState].filter(Boolean).join(", "));
           const coords = await getUserCoords();
           if (cancelled) return;
@@ -368,18 +377,24 @@ export default function BrowseMenus() {
             state: urlState,
             ...(hasCoords ? { lat: coords.lat, lng: coords.lng } : {}),
             ...(hasCoords && radiusMiles !== null ? { radius: radiusMiles } : {}),
+            limit: BROWSE_LIMIT,
+            offset: loadMoreOffset,
             ...dietaryParams,
           };
         } else {
           // ── Mode 2: browser geolocation ───────────────────────────
           const coords = await getUserCoords();
           if (cancelled) return;
+          const hasCoords = coords.lat !== null && coords.lng !== null;
+          if (!hasCoords && radiusMiles !== null) {
+            setRadiusMiles(null);
+          }
           apiParams = {
             lat: coords.lat,
             lng: coords.lng,
-            // Only send radius when user has selected a specific limit.
-            // null = any distance; omit so backend skips haversine WHERE clause.
-            ...(radiusMiles !== null ? { radius: radiusMiles } : {}),
+            ...(hasCoords && radiusMiles !== null ? { radius: radiusMiles } : {}),
+            limit: BROWSE_LIMIT,
+            offset: loadMoreOffset,
             ...dietaryParams,
           };
         }
@@ -389,12 +404,21 @@ export default function BrowseMenus() {
         if (cancelled) return;
 
         const extractedMenus = normalizeBrowseMenus(extractMenus(response), cuisineOptions);
-        const sorted = [...extractedMenus].sort((a, b) => {
-          const nameA = (a.restaurant_name || a.name || "").toLowerCase();
-          const nameB = (b.restaurant_name || b.name || "").toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-        setMenus(sorted);
+        // Backend already returns results nearest-first (or alphabetical when no distance).
+        // No client-side resort needed — preserve server order.
+
+        const newTotal = response?.total_count ?? extractedMenus.length;
+        const newOffset = response?.pagination?.next_offset ?? (loadMoreOffset + extractedMenus.length);
+
+        if (loadMoreOffset === 0) {
+          setMenus(extractedMenus);
+        } else {
+          setMenus((prev) => [...prev, ...extractedMenus]);
+        }
+
+        setTotalCount(newTotal);
+        setBrowseOffset(newOffset);
+        setHasMore(response?.pagination?.has_more ?? (newOffset < newTotal));
 
         // In city/state mode the URL is already authoritative.
         // In geo mode, derive city/state from first result and push to URL.
@@ -417,11 +441,14 @@ export default function BrowseMenus() {
         if (cancelled) return;
         setError(readErrorMessage(fetchError));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
       }
     }
 
-    run();
+    run(0);
 
     return () => {
       cancelled = true;
@@ -457,378 +484,239 @@ export default function BrowseMenus() {
   });
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f7f6f1",
-        color: "#11211a",
-        overflowX: "hidden",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 1450,
-          margin: "0 auto",
-          width: "100%",
-          boxSizing: "border-box",
-          padding: isMobile ? "16px 12px 32px" : "28px 20px 56px",
-        }}
-      >
-        <PageNav />
+    <PageShell width="wide">
+      <PageNav />
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: isMobile ? "column" : "row",
-            flexWrap: "nowrap",
-            alignItems: "flex-start",
-            gap: isMobile ? 16 : 24,
-          }}
-        >
-          <aside
-            style={{
-              flex: isMobile ? "1 1 auto" : "0 0 260px",
-              width: isMobile ? "100%" : 260,
-              position: isMobile ? "static" : "sticky",
-              top: isMobile ? "auto" : 18,
-              alignSelf: "flex-start",
-              minWidth: 0,
-            }}
-          >
-            <div
-              style={{
-                borderRadius: 24,
-                padding: isMobile ? 14 : 18,
-                background: "#fff",
-                border: "1px solid rgba(18,34,28,0.08)",
-                boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
-                boxSizing: "border-box",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 16,
-                  fontWeight: 900,
-                  color: "#11211a",
-                  marginBottom: 14,
-                }}
-              >
-                View By
-              </div>
+      <PageSplit
+        mobileStack={isMobile}
+        aside={(
+          <Card>
+            <div style={{ marginBottom: 14, color: "var(--gb-color-ink-strong)", fontSize: 16, fontWeight: 900 }}>
+              {t("browse.viewBy", "View By")}
+            </div>
 
-              <div style={{ display: "grid", gap: 14 }}>
-                {alphaRanges.length > 0 ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 900,
-                        letterSpacing: 0.9,
-                        textTransform: "uppercase",
-                        color: "#667085",
-                      }}
-                    >
-                      Alphabetically
-                    </span>
-                    <div style={{ display: "grid", gap: 8 }}>
-                      <FilterChip
-                        label="All"
-                        isMobile={isMobile}
-                        active={alphaGroup === null}
-                        onClick={() => setAlphaGroup(null)}
-                      />
-                      {alphaRanges.map((range) => (
-                        <FilterChip
-                          key={range.label}
-                          label={range.label}
-                          isMobile={isMobile}
-                          active={alphaGroup?.label === range.label}
-                          onClick={() => setAlphaGroup(alphaGroup?.label === range.label ? null : range)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-                <FilterSelect
-                  label="Cuisine"
-                  options={cuisineOptions}
-                  value={localFilters.cuisine}
-                  onChange={(value) => setLocalFilters((prev) => ({ ...prev, cuisine: value }))}
-                />
-                <FilterSelect
-                  label="Category"
-                  options={RESTAURANT_TYPE_OPTIONS}
-                  value={localFilters.category}
-                  onChange={(value) => setLocalFilters((prev) => ({ ...prev, category: value }))}
-                />
-
+            <div style={{ display: "grid", gap: 14 }}>
+              {alphaRanges.length > 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 900,
-                      letterSpacing: 0.9,
-                      textTransform: "uppercase",
-                      color: "#667085",
-                    }}
-                  >
-                    Distance
-                  </span>
+                  <span className="gb-field-label">{t("browse.alphabetically", "Alphabetically")}</span>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {DISTANCE_RADIUS_OPTIONS.map((opt) => (
+                    <FilterChip
+                      label={t("common.all")}
+                      active={alphaGroup === null}
+                      onClick={() => setAlphaGroup(null)}
+                    />
+                    {alphaRanges.map((range) => (
                       <FilterChip
-                        key={String(opt.value)}
-                        label={opt.label}
-                        isMobile={isMobile}
-                        active={radiusMiles === opt.value}
-                        onClick={() => setRadiusMiles(opt.value)}
+                        key={range.label}
+                        label={range.label}
+                        active={alphaGroup?.label === range.label}
+                        onClick={() => setAlphaGroup(alphaGroup?.label === range.label ? null : range)}
                       />
                     ))}
                   </div>
                 </div>
+              ) : null}
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 900,
-                      letterSpacing: 0.9,
-                      textTransform: "uppercase",
-                      color: "#667085",
-                    }}
-                  >
-                    Offers
-                  </span>
+              <FilterSelect
+                label={t("browse.cuisine")}
+                options={localizedCuisineOptions}
+                value={localFilters.cuisine}
+                allLabel={t("common.all")}
+                onChange={(value) => setLocalFilters((prev) => ({ ...prev, cuisine: value }))}
+              />
+              <FilterSelect
+                label={t("browse.category")}
+                options={localizedRestaurantTypeOptions}
+                value={localFilters.category}
+                allLabel={t("common.all")}
+                onChange={(value) => setLocalFilters((prev) => ({ ...prev, category: value }))}
+              />
 
-                  <div style={{ display: "grid", gap: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <span className="gb-field-label">{t("browse.distance")}</span>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {localizedDistanceOptions.map((opt) => (
                     <FilterChip
-                      label="Deals"
-                      isMobile={isMobile}
-                      active={filters.deals}
-                      onClick={() => setFilters((prev) => ({ ...prev, deals: !prev.deals }))}
+                      key={String(opt.value)}
+                      label={opt.label}
+                      active={radiusMiles === opt.value}
+                      onClick={() => setRadiusMiles(opt.value)}
                     />
-                  </div>
+                  ))}
                 </div>
+              </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 900,
-                      letterSpacing: 0.9,
-                      textTransform: "uppercase",
-                      color: "#667085",
-                    }}
-                  >
-                    Dietary
-                  </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <span className="gb-field-label">{t("browse.offers", "Offers")}</span>
+                <div style={{ display: "grid", gap: 10 }}>
+                  <FilterChip
+                    label={t("common.deals", "Deals")}
+                    active={filters.deals}
+                    onClick={() => setFilters((prev) => ({ ...prev, deals: !prev.deals }))}
+                  />
+                </div>
+              </div>
 
-                  <div style={{ display: "grid", gap: 10 }}>
-                    <FilterChip
-                      label="Dairy Free"
-                      isMobile={isMobile}
-                      active={filters.dairy_free}
-                      onClick={() => setFilters((prev) => ({ ...prev, dairy_free: !prev.dairy_free }))}
-                    />
-                    <FilterChip
-                      label="Diabetic Friendly"
-                      isMobile={isMobile}
-                      active={filters.diabetic_friendly}
-                      onClick={() => setFilters((prev) => ({ ...prev, diabetic_friendly: !prev.diabetic_friendly }))}
-                    />
-                    <FilterChip
-                      label="Gluten Free"
-                      isMobile={isMobile}
-                      active={filters.gluten_free}
-                      onClick={() => setFilters((prev) => ({ ...prev, gluten_free: !prev.gluten_free }))}
-                    />
-                    <FilterChip
-                      label="Keto"
-                      isMobile={isMobile}
-                      active={filters.keto}
-                      onClick={() => setFilters((prev) => ({ ...prev, keto: !prev.keto }))}
-                    />
-                    <FilterChip
-                      label="Low Sodium"
-                      isMobile={isMobile}
-                      active={filters.low_sodium}
-                      onClick={() => setFilters((prev) => ({ ...prev, low_sodium: !prev.low_sodium }))}
-                    />
-                    <FilterChip
-                      label="Vegan"
-                      isMobile={isMobile}
-                      active={filters.vegan}
-                      onClick={() => setFilters((prev) => ({ ...prev, vegan: !prev.vegan }))}
-                    />
-                    <FilterChip
-                      label="Vegetarian"
-                      isMobile={isMobile}
-                      active={filters.vegetarian}
-                      onClick={() => setFilters((prev) => ({ ...prev, vegetarian: !prev.vegetarian }))}
-                    />
-                  </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <span className="gb-field-label">{t("discovery.dietary")}</span>
+                <div style={{ display: "grid", gap: 10 }}>
+                  <FilterChip label={t("diet.dairy_free")} active={filters.dairy_free} onClick={() => setFilters((prev) => ({ ...prev, dairy_free: !prev.dairy_free }))} />
+                  <FilterChip label={t("diet.diabetic_friendly")} active={filters.diabetic_friendly} onClick={() => setFilters((prev) => ({ ...prev, diabetic_friendly: !prev.diabetic_friendly }))} />
+                  <FilterChip label={t("diet.gluten_free")} active={filters.gluten_free} onClick={() => setFilters((prev) => ({ ...prev, gluten_free: !prev.gluten_free }))} />
+                  <FilterChip label={t("diet.keto")} active={filters.keto} onClick={() => setFilters((prev) => ({ ...prev, keto: !prev.keto }))} />
+                  <FilterChip label={t("diet.low_sodium")} active={filters.low_sodium} onClick={() => setFilters((prev) => ({ ...prev, low_sodium: !prev.low_sodium }))} />
+                  <FilterChip label={t("diet.vegan")} active={filters.vegan} onClick={() => setFilters((prev) => ({ ...prev, vegan: !prev.vegan }))} />
+                  <FilterChip label={t("diet.vegetarian")} active={filters.vegetarian} onClick={() => setFilters((prev) => ({ ...prev, vegetarian: !prev.vegetarian }))} />
                 </div>
               </div>
             </div>
-          </aside>
+          </Card>
+        )}
+      >
+        <PageHero
+          title={locationLabel ? t("browse.nearTitle", `Browsing Menus Near ${locationLabel}`, { location: locationLabel }) : t("browse.title")}
+          description="Browse menus inherits the same shell, typography, filters, and surface tokens as the rest of Grubbid discovery."
+        />
 
-          <main style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
-            <h1
-              style={{
-                margin: isMobile ? "0 0 14px" : "0 0 18px",
-                fontSize: isMobile ? 24 : 28,
-                lineHeight: 1.1,
-                fontWeight: 800,
-                letterSpacing: -0.5,
-                color: "#11211a",
-              }}
-            >
-              {locationLabel ? `Browsing Menus Near ${locationLabel}` : "Browsing Menus"}
-            </h1>
+        <Card>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "flex-start" : "center",
+              justifyContent: "space-between",
+              gap: 8,
+              padding: "4px 4px 18px",
+            }}
+          >
+            <div className="gb-count-label" style={{ whiteSpace: "nowrap" }}>
+              {visibleMenus.length === 1
+                ? t("browse.menuCountSingle", "1 menu", { count: visibleMenus.length })
+                : t("browse.menuCountPlural", `${visibleMenus.length} menus`, { count: visibleMenus.length })}
+            </div>
+          </div>
+
+          {hasActiveDietPrefs(filters) && (
+            <StatusMessage tone="success" className="gb-status-message--success" style={{ marginBottom: 10 }}>
+              <span style={{ fontWeight: 800 }}>{t("browse.dietaryFiltersActive", "Dietary filters active:")}</span>{" "}
+              {activePrefLabels(filters).join(", ")}
+              <span style={{ color: "var(--gb-color-ink-soft)", fontWeight: 500, fontSize: 11 }}>
+                {` ${t("browse.dietaryFiltersNote", "— will filter items inside each restaurant's menu")}`}
+              </span>
+            </StatusMessage>
+          )}
+
+          {loading ? (
             <div
               style={{
-                borderRadius: 24,
-                padding: isMobile ? "14px 14px 18px" : "18px 18px 22px",
-                background: "#fff",
-                border: "1px solid rgba(18,34,28,0.08)",
-                boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
-                boxSizing: "border-box",
+                display: "grid",
+                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
+                gap: 14,
+                padding: "2px 4px 6px",
               }}
             >
+              {[0, 1, 2, 3, 4, 5].map((card) => (
+                <div
+                  key={card}
+                  style={{ height: 148, borderRadius: 16, background: "rgba(0,0,0,0.06)" }}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          {(error || showEmptyState) ? (
+            <StatusMessage tone="muted">
+              <strong style={{ display: "block", marginBottom: 8, color: "var(--gb-color-ink-strong)" }}>
+                {t("browse.emptyTitle", "No local menus available in this area")}
+              </strong>
+              {error || t("browse.emptyBody", "We are constantly adding menus. Please check back soon.")}
+            </StatusMessage>
+          ) : null}
+
+          {!loading && !error && menus.length > 0 ? (
+            <>
               <div
                 style={{
-                  display: "flex",
-                  flexDirection: isMobile ? "column" : "row",
-                  alignItems: isMobile ? "flex-start" : "center",
-                  justifyContent: "space-between",
-                  gap: 8,
-                  padding: "4px 4px 18px",
+                  display: "grid",
+                  gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
+                  gap: 14,
+                  padding: "2px 4px 8px",
                 }}
               >
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 800,
-                    color: "#667085",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {`${visibleMenus.length} ${visibleMenus.length === 1 ? "menu" : "menus"}`}
-                </div>
+                {visibleMenus.map((menu, index) => (
+                  <MenuPreviewCard
+                    key={String(menu?.menu_id ?? menu?.restaurant_id ?? index)}
+                    menu={menu}
+                    index={index}
+                    isMobile={isMobile}
+                    activeFilterLabel={activeFilterLabel}
+                    activeFilterParams={activeFilterParams}
+                  />
+                ))}
               </div>
 
-              {/* Active dietary filter notice */}
-              {hasActiveDietPrefs(filters) && (
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 6,
-                  padding: "8px 14px",
-                  borderRadius: 10,
-                  background: "#f0fdf4",
-                  border: "1px solid #bbf7d0",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "#166534",
-                  marginBottom: 6,
-                }}>
-                  <span style={{ fontWeight: 800 }}>Dietary filters active:</span>
-                  {activePrefLabels(filters).map((l) => (
-                    <span key={l} style={{
-                      padding: "1px 8px",
-                      borderRadius: 999,
-                      background: "#dcfce7",
-                      border: "1px solid #bbf7d0",
-                      fontSize: 11,
-                      fontWeight: 800,
-                      color: "#15803d",
-                    }}>{l}</span>
-                  ))}
-                  <span style={{ color: "#475467", fontWeight: 500, fontSize: 11 }}>
-                    — will filter items inside each restaurant's menu
-                  </span>
+              {hasMore && (
+                <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
+                  <button
+                    type="button"
+                    disabled={loadingMore}
+                    className={`gb-pill-button ${loadingMore ? "gb-pill-button--secondary" : "gb-pill-button--primary"}`}
+                    onClick={() => {
+                      (async () => {
+                        setLoadingMore(true);
+                        setError("");
+                        try {
+                          const dietaryParams = {
+                            deals: filters.deals ? 1 : "",
+                            vegan: filters.vegan ? 1 : "",
+                            vegetarian: filters.vegetarian ? 1 : "",
+                            gluten_free: filters.gluten_free ? 1 : "",
+                            keto: filters.keto ? 1 : "",
+                            low_sodium: filters.low_sodium ? 1 : "",
+                            dairy_free: filters.dairy_free ? 1 : "",
+                            diabetic_friendly: filters.diabetic_friendly ? 1 : "",
+                          };
+                          let coords = { lat: null, lng: null };
+                          try { coords = await getUserCoords(); } catch (_) {}
+                          const hasCoords = coords.lat !== null && coords.lng !== null;
+                          const apiParams = hasCityStateParams
+                            ? {
+                                city: urlCity, state: urlState,
+                                ...(hasCoords ? { lat: coords.lat, lng: coords.lng } : {}),
+                                ...(hasCoords && radiusMiles !== null ? { radius: radiusMiles } : {}),
+                                limit: BROWSE_LIMIT, offset: browseOffset,
+                                ...dietaryParams,
+                              }
+                            : {
+                                lat: coords.lat, lng: coords.lng,
+                                ...(hasCoords && radiusMiles !== null ? { radius: radiusMiles } : {}),
+                                limit: BROWSE_LIMIT, offset: browseOffset,
+                                ...dietaryParams,
+                              };
+                          const response = await getBrowseMenus(apiParams);
+                          const more = normalizeBrowseMenus(extractMenus(response), cuisineOptions);
+                          const newTotal = response?.total_count ?? (browseOffset + more.length);
+                          const newOffset = response?.pagination?.next_offset ?? (browseOffset + more.length);
+                          setMenus((prev) => [...prev, ...more]);
+                          setTotalCount(newTotal);
+                          setBrowseOffset(newOffset);
+                          setHasMore(response?.pagination?.has_more ?? (newOffset < newTotal));
+                        } catch (e) {
+                          setError(readErrorMessage(e));
+                        } finally {
+                          setLoadingMore(false);
+                        }
+                      })();
+                    }}
+                  >
+                    {loadingMore ? "Loading…" : `Load More (${totalCount - menus.length} remaining)`}
+                  </button>
                 </div>
               )}
-
-              {loading ? (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
-                    gap: 14,
-                    padding: "2px 4px 6px",
-                  }}
-                >
-                  {[0, 1, 2, 3, 4, 5].map((card) => (
-                    <div
-                      key={card}
-                      style={{ height: 148, borderRadius: 16, background: "rgba(0,0,0,0.06)" }}
-                    />
-                  ))}
-                </div>
-              ) : null}
-
-              {(error || showEmptyState) ? (
-                <section
-                  style={{
-                    padding: isMobile ? "28px 16px" : "44px 24px",
-                    borderRadius: 24,
-                    background: "#f7f6f1",
-                    textAlign: "center",
-                    color: "#667085",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: isMobile ? 20 : 24,
-                      fontWeight: 900,
-                      color: "#11211a",
-                      marginBottom: 10,
-                    }}
-                  >
-                    No local menus available in this area
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: isMobile ? 14 : 15,
-                      maxWidth: 520,
-                      margin: "0 auto",
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    We are constantly adding menus. Please check back soon.
-                  </div>
-                </section>
-              ) : null}
-
-              {/* ── Restaurant card view ── */}
-              {!loading && !error && menus.length > 0 ? (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
-                    gap: 14,
-                    padding: "2px 4px 8px",
-                  }}
-                >
-                  {visibleMenus.map((menu, index) => (
-                    <MenuPreviewCard
-                      key={String(menu?.menu_id ?? menu?.restaurant_id ?? index)}
-                      menu={menu}
-                      index={index}
-                      isMobile={isMobile}
-                      activeFilterLabel={activeFilterLabel}
-                      activeFilterParams={activeFilterParams}
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </main>
-        </div>
-      </div>
-    </div>
+            </>
+          ) : null}
+        </Card>
+      </PageSplit>
+    </PageShell>
   );
 }

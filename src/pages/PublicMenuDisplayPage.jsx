@@ -139,12 +139,29 @@ function formatTime(date) {
 }
 
 function formatPrice(raw) {
-  if (raw == null || raw === "") return "";
+  if (raw == null || raw === "") return null;
   const s = String(raw).trim();
+  if (!s) return null;
+  if (s === "$0" || s === "$0.00" || s === "0" || s === "0.00") return null;
   if (s.startsWith("$")) return s;
   const n = Number(s);
-  if (Number.isFinite(n)) return `$${n.toFixed(2)}`;
-  return s;
+  if (Number.isFinite(n)) {
+    if (n <= 0) return null;
+    return `$${n.toFixed(2)}`;
+  }
+  return s || null;
+}
+
+function getMenuTierLabel(menuData) {
+  const status = String(
+    menuData?.menu_status ||
+    menuData?.status ||
+    ""
+  ).trim().toLowerCase();
+
+  if (status === "verified") return "Verified Menu";
+  if (status === "pro") return "Pro Menu";
+  return "Unverified Menu";
 }
 
 // ── Data fetching ──────────────────────────────────────────────────────────
@@ -261,6 +278,7 @@ export default function PublicMenuDisplayPage() {
 function MenuBoard({ menuData, pages, dealItems, dealIdSet, settings, accent, clock }) {
   const { page, fading } = usePageRotation(pages.length);
   const currentSections  = pages[page] || [];
+  const menuTierLabel = getMenuTierLabel(menuData);
 
   return (
     <div style={{
@@ -334,7 +352,7 @@ function MenuBoard({ menuData, pages, dealItems, dealIdSet, settings, accent, cl
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 7, height: 7, borderRadius: "50%", background: accent, animation: "livePulse 2.5s ease-in-out infinite" }} />
-          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>Live menu — updates automatically</span>
+          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>{menuTierLabel}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           {pages.length > 1 && <PageIndicator total={pages.length} current={page} accent={accent} />}
@@ -407,6 +425,7 @@ function ListSection({ section, dealIdSet, settings, accent }) {
 
 function ListItem({ item, isDeal, settings, accent }) {
   const showDeal = isDeal && settings.highlight_deals;
+  const priceText = formatPrice(item.price);
   return (
     <div style={{
       display: "flex",
@@ -431,11 +450,9 @@ function ListItem({ item, isDeal, settings, accent }) {
           </div>
         )}
       </div>
-      {item.price && (
-        <div style={{ fontSize: 28, fontWeight: 700, color: showDeal ? "#f59e0b" : accent, whiteSpace: "nowrap", flexShrink: 0 }}>
-          {formatPrice(item.price)}
-        </div>
-      )}
+      <div style={{ fontSize: 28, fontWeight: 700, color: priceText ? (showDeal ? "#f59e0b" : accent) : "#60a5fa", whiteSpace: "nowrap", flexShrink: 0 }}>
+        {priceText || "Price unavailable"}
+      </div>
     </div>
   );
 }
@@ -477,6 +494,7 @@ function GridSection({ section, dealIdSet, settings, accent }) {
 
 function GridItem({ item, isDeal, settings, accent }) {
   const showDeal = isDeal && settings.highlight_deals;
+  const priceText = formatPrice(item.price);
   return (
     <div style={{
       display: "flex",
@@ -492,11 +510,9 @@ function GridItem({ item, isDeal, settings, accent }) {
           {truncate(item.name, MAX_NAME_CHARS)}
         </span>
       </div>
-      {item.price && (
-        <span style={{ fontSize: 24, fontWeight: 700, color: showDeal ? "#f59e0b" : accent, marginLeft: 16, whiteSpace: "nowrap", flexShrink: 0 }}>
-          {formatPrice(item.price)}
-        </span>
-      )}
+      <span style={{ fontSize: 24, fontWeight: 700, color: priceText ? (showDeal ? "#f59e0b" : accent) : "#60a5fa", marginLeft: 16, whiteSpace: "nowrap", flexShrink: 0 }}>
+        {priceText || "Price unavailable"}
+      </span>
     </div>
   );
 }
@@ -560,11 +576,9 @@ function DealsBanner({ dealItems }) {
             <span style={{ fontSize: 22, fontWeight: 600, color: "#f0f0f0" }}>
               {truncate(item.name, 28)}
             </span>
-            {item.price && (
-              <span style={{ fontSize: 22, fontWeight: 700, color: "#f59e0b" }}>
-                {formatPrice(item.price)}
-              </span>
-            )}
+            <span style={{ fontSize: 22, fontWeight: 700, color: formatPrice(item.price) ? "#f59e0b" : "#60a5fa" }}>
+              {formatPrice(item.price) || "Price unavailable"}
+            </span>
           </div>
         ))}
       </div>

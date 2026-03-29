@@ -1,56 +1,61 @@
 /**
- * Global design tokens for Grubbid / Menubloc.
- * Import this wherever you need consistent colors, spacing, or radius.
+ * ============================================================
+ * Grubbid Canonical Design System Lock
+ * This file is a thin JavaScript mirror of the canonical CSS
+ * variables in src/index.css for inline-style consumers that
+ * still need semantic token names.
  *
- * Usage:
- *   import { theme } from "../styles/theme";
- *   style={{ background: theme.colors.background }}
+ * Do not introduce literal font families or parallel token sets
+ * here without explicit approval from Andre.
+ * ============================================================
  */
 
 export const theme = {
   colors: {
-    background:    "#F5F4EF",
-    surface:       "#FFFFFF",
-    surfaceMuted:  "rgba(255,255,255,0.68)",
-    primary:       "#1F4E3D",
-    primaryDark:   "#11211a",
-    accent:        "#CDAA7D",
-    textPrimary:   "#111111",
-    textSecondary: "#5F5F5F",
-    textMuted:     "#5a7064",
-    border:        "#E5E5E5",
-    borderSubtle:  "rgba(18,34,28,0.08)",
-    error:         "#9f1239",
-    errorBg:       "#fff1f2",
+    background: "var(--gb-color-page)",
+    surface: "var(--gb-color-surface-strong)",
+    surfaceMuted: "var(--gb-color-surface-muted)",
+    primary: "var(--gb-color-accent)",
+    primaryDark: "var(--gb-color-ink-strong)",
+    accent: "var(--gb-color-accent)",
+    textPrimary: "var(--gb-color-ink)",
+    textSecondary: "var(--gb-color-ink-soft)",
+    textMuted: "var(--gb-color-ink-muted)",
+    border: "var(--gb-color-border)",
+    borderStrong: "var(--gb-color-border-strong)",
+    successBg: "var(--gb-color-success-bg)",
+    successBorder: "var(--gb-color-success-border)",
+    warningBg: "var(--gb-color-warning-bg)",
+    warningBorder: "var(--gb-color-warning-border)",
   },
 
   radius: {
-    card:   "16px",
-    panel:  "24px",
-    button: "999px",
-    input:  "14px",
+    card: "var(--gb-radius-card)",
+    cardTight: "var(--gb-radius-card-tight)",
+    button: "var(--gb-radius-pill)",
+    input: "var(--gb-radius-input)",
   },
 
   spacing: {
-    pagePadding: "28px 20px 56px",
-    cardPad:     "18px",
+    pageDesktop: "var(--gb-space-page-desktop)",
+    pageMobile: "var(--gb-space-page-mobile)",
+    cardPad: "18px",
   },
 
   font: {
-    family: "Inter, system-ui, -apple-system, sans-serif",
+    family: "var(--gb-font-ui)",
     sizes: {
-      h1:   "44px",
-      h2:   "28px",
-      h3:   "20px",
-      body: "16px",
-      meta: "13px",
-      tiny: "11px",
+      eyebrow: "12px",
+      body: "var(--gb-text-3)",
+      meta: "var(--gb-text-1)",
+      h2: "var(--gb-text-5)",
+      h1: "var(--gb-text-6)",
     },
     weights: {
       regular: 400,
-      medium:  600,
-      bold:    700,
-      black:   900,
+      medium: 600,
+      bold: 700,
+      black: 900,
     },
   },
 };

@@ -31,9 +31,11 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
+import { getLocalizedField } from "../utils/getLocalizedField.js";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -64,6 +66,12 @@ function normalizeUrl(url) {
   return /^https?:\/\//i.test(s) ? s : `https://${s}`;
 }
 
+function buildGoogleMapsDirectionsUrl(destination) {
+  const s = String(destination || "").trim();
+  if (!s) return "";
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s)}`;
+}
+
 function normalizeTier(profileTier, listingStatus) {
   for (const v of [profileTier, listingStatus]) {
     const s = String(v || "").toLowerCase();
@@ -92,7 +100,12 @@ function firstNonEmpty(...values) {
 function humanizeLabel(value) {
   const s = String(value || "").trim();
   if (!s) return "";
-  return s
+  const normalized = s.toLowerCase().replace(/\s+/g, " ");
+  const corrected = new Map([
+    ["jamacian", "jamaican"],
+  ]).get(normalized) || s;
+
+  return corrected
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -549,6 +562,8 @@ function Skel({ w = 160, h = 14, isDark }) {
 }
 
 export default function RestaurantPublicPage() {
+  const { language, t: translateUi } = useLanguage();
+  const location = useLocation();
   const { slugOrId } = useParams();
 
   const [theme, setTheme] = useState(readTheme);
@@ -603,11 +618,19 @@ export default function RestaurantPublicPage() {
   const isPro = tier === "pro";
   const isVerified = tier === "verified";
 
-  const name = data?.restaurant_name || data?.name || `Restaurant ${slugOrId}`;
+  const name =
+    getLocalizedField(data, "restaurant_name", language) ||
+    getLocalizedField(data, "name", language) ||
+    data?.restaurant_name ||
+    data?.name ||
+    `Restaurant ${slugOrId}`;
   const streetAddr = data?.address || data?.address_line1 || "";
   const city = data?.city || "";
   const stateVal = data?.state || data?.region || "";
   const zipVal = data?.zip || data?.postal_code || data?.postcode || "";
+  const streetDirectionsUrl = buildGoogleMapsDirectionsUrl(
+    [streetAddr, city, stateVal, zipVal].filter(Boolean).join(", ")
+  );
   const cityLine = [city, stateVal].filter(Boolean).join(", ") + (zipVal ? ` ${zipVal}` : "");
   const phone = data?.phone || "";
   const websiteRaw = data?.website || data?.website_url || "";
@@ -620,9 +643,23 @@ export default function RestaurantPublicPage() {
   const category = humanizeLabel(data?.category || "");
   const cuisineLine = [category, cuisine].filter(Boolean).join(" • ");
 
-  const bio = data?.bio || "";
-  const landmarks = data?.landmarks || "";
-  const featuredItem = data?.featured_item || null;
+  const bio = getLocalizedField(data, "bio", language) || data?.bio || "";
+  const landmarks = getLocalizedField(data, "landmarks", language) || data?.landmarks || "";
+  const rawFeaturedItem = data?.featured_item || null;
+  const featuredItem = rawFeaturedItem
+    ? {
+        ...rawFeaturedItem,
+        name:
+          getLocalizedField(rawFeaturedItem, "name", language) ||
+          getLocalizedField(rawFeaturedItem, "menu_item_name", language) ||
+          rawFeaturedItem.name ||
+          "",
+        description:
+          getLocalizedField(rawFeaturedItem, "description", language) ||
+          rawFeaturedItem.description ||
+          "",
+      }
+    : null;
   const dealItems = Array.isArray(data?.deal_items) ? data.deal_items : [];
 
   const showLogo = isPro && !!logoUrl;
@@ -680,9 +717,9 @@ export default function RestaurantPublicPage() {
             cursor: "pointer",
             letterSpacing: 0.2,
           }}
-          aria-label="Toggle theme"
+          aria-label={translateUi("common.toggleTheme", "Toggle theme")}
         >
-          {isDark ? "Light" : "Dark"}
+          {isDark ? translateUi("common.light", "Light") : translateUi("common.dark", "Dark")}
         </button>
       </div>
 
@@ -807,7 +844,28 @@ export default function RestaurantPublicPage() {
               </div>
             ) : (
               <>
-                {streetAddr ? <div>{streetAddr}</div> : null}
+                {streetAddr ? (
+                  <div>
+                    {streetDirectionsUrl ? (
+                      <a
+                        href={streetDirectionsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Get directions to ${name}`}
+                        title="Open Google Maps directions"
+                        style={{
+                          color: "inherit",
+                          textDecoration: "underline",
+                          textUnderlineOffset: 2,
+                        }}
+                      >
+                        {streetAddr}
+                      </a>
+                    ) : (
+                      streetAddr
+                    )}
+                  </div>
+                ) : null}
                 {cityLine ? <div>{cityLine}</div> : null}
 
                 {phone ? (
@@ -1080,7 +1138,10 @@ export default function RestaurantPublicPage() {
             <>
               <Divider isDark={isDark} />
               <Link
-                to={`/public/restaurants/${data.id}/menu`}
+                to={{
+                  pathname: `/public/restaurants/${data.id}/menu`,
+                  search: location.search || "",
+                }}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -1103,7 +1164,7 @@ export default function RestaurantPublicPage() {
                   e.currentTarget.style.opacity = "1";
                 }}
               >
-                View Menu →
+                {translateUi("common.viewMenu")}
               </Link>
             </>
           ) : null}

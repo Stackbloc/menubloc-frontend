@@ -12,19 +12,20 @@
       function gtag(){dataLayer.push(arguments);}
 
       gtag('consent', 'default', {
-        analytics_storage: 'denied',
+        analytics_storage: 'granted',
         ad_storage: 'denied',
         ad_user_data: 'denied',
-        ad_personalization: 'denied',
-        wait_for_update: 500
+        ad_personalization: 'denied'
       });
     </script>
 
     <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KLLBC4W5XH"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_GA_MEASUREMENT_ID%"></script>
     <script>
       gtag('js', new Date());
-      gtag('config', 'G-KLLBC4W5XH');
+      // send_page_view: false — AnalyticsTracker in App.jsx owns all pageview events
+      // including the initial load, so we don't double-count the first hit.
+      gtag('config', '%VITE_GA_MEASUREMENT_ID%', { send_page_view: false });
     </script>
   </head>
 

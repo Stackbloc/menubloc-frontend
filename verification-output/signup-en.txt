@@ -1,0 +1,33 @@
+Your Cart
+✕
+Your cart is empty.
+Payments are processed securely by PayPal.
+Grubbid
+for Restaurants
+Upload your menu
+Get discovered by food-conscious diners in your area.
+ACCOUNT INFORMATION
+Email*
+Password
+Confirm Password
+RESTAURANT INFORMATION
+Restaurant Name*
+Website
+Phone
+Address
+City
+State
+ZIP
+MENU UPLOAD METHOD
+Upload Menu PDF (Free)
+Upload your menu as a PDF and we will parse it automatically.
+Upload Menu via Spreadsheet (Free)
+Fill in the menu upload template and upload it here. Download the menu upload template
+Upload Photo or Scan via OCR ($9.99)
+Upload photos or scans of your menu. AI extracts and structures the menu automatically.
+Continue →
+Food intelligence for real menus.
+🌐
+English
+Español
+中文

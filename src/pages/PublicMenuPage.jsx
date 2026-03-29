@@ -20,7 +20,9 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext.jsx";
+import { getLocalizedField } from "../utils/getLocalizedField.js";
 
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(() =>
@@ -57,6 +59,29 @@ function normalizeExternalUrl(value) {
   return `https://${raw}`;
 }
 
+function buildGoogleMapsDirectionsUrl(destination) {
+  const raw = asStr(destination).trim();
+  if (!raw) return "";
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(raw)}`;
+}
+
+function buildAddressLocalityLine(city, state, zip) {
+  const locality = [asStr(city).trim(), asStr(state).trim()].filter(Boolean).join(", ");
+  const postal = asStr(zip).trim();
+  if (locality && postal) return `${locality} ${postal}`;
+  return locality || postal;
+}
+
+function asFiniteNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function isFoodTruckCategory(value) {
+  const normalized = asStr(value).trim().toLowerCase();
+  return normalized === "food truck" || normalized === "food_truck" || normalized === "foodtruck";
+}
+
 function normalizeSections(data) {
   if (Array.isArray(data?.sections)) return data.sections;
   if (Array.isArray(data?.menu_sections)) return data.menu_sections;
@@ -85,6 +110,7 @@ function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap) {
 }
 
 function UnverifiedBanner({ show, onClaim }) {
+  const { t } = useLanguage();
   if (!show) return null;
 
   return (
@@ -117,12 +143,13 @@ function UnverifiedBanner({ show, onClaim }) {
       }}
     >
       <span style={{ fontSize: 11, opacity: 0.7 }}>●</span>
-      Unverified Menu — Click to Claim Profile
+      {t("publicMenu.unverified")}
     </button>
   );
 }
 
 function IntakePreviewBanner({ show }) {
+  const { t } = useLanguage();
   if (!show) return null;
   return (
     <div
@@ -141,7 +168,112 @@ function IntakePreviewBanner({ show }) {
       }}
     >
       <span style={{ fontSize: 16 }}>📋</span>
-      Menu preview — recently captured and may await restaurant confirmation
+      {t("publicMenu.preview")}
+    </div>
+  );
+}
+
+function FranchiseBanner({ group, onPrevious, onNext }) {
+  const { t } = useLanguage();
+  const totalLocations = Number(group?.total_locations || 0);
+  const currentLocation = group?.current_location || null;
+  const currentIndex = Number.isFinite(Number(group?.current_index)) ? Number(group.current_index) : 0;
+  const locations = Array.isArray(group?.locations) ? group.locations : [];
+  const previousLocation = currentIndex > 0 ? locations[currentIndex - 1] : null;
+  const nextLocation = currentIndex + 1 < locations.length ? locations[currentIndex + 1] : null;
+  const currentLabel = asStr(currentLocation?.label || currentLocation?.restaurant_name).trim();
+  const brandName = asStr(group?.brand_name || currentLocation?.restaurant_name).trim();
+
+  if (totalLocations <= 1 || !currentLabel) return null;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        flexWrap: "wrap",
+        marginTop: 12,
+        padding: "12px 14px",
+        borderRadius: 16,
+        background: "#eef6ff",
+        border: "1px solid rgba(37, 99, 235, 0.18)",
+        color: "#1e3a8a",
+      }}
+    >
+      <div style={{ fontSize: 13, lineHeight: 1.45, fontWeight: 700 }}>
+        {t("publicMenu.closest", `Showing ${brandName} (${totalLocations} locations). Closest: ${currentLabel}.`, {
+          brand: brandName,
+          count: totalLocations,
+          location: currentLabel,
+        })}
+        {previousLocation || nextLocation
+          ? ` ${t("publicMenu.navigateClosest", "", {
+              arrows: `${nextLocation ? "→" : ""}${nextLocation && previousLocation ? " / " : ""}${previousLocation ? "←" : ""}`,
+              direction: nextLocation && previousLocation
+                ? t("publicMenu.next") + " / " + t("publicMenu.previous")
+                : nextLocation
+                ? t("publicMenu.next")
+                : t("publicMenu.previous"),
+              brand: brandName,
+            })}`
+          : null}
+      </div>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+        {previousLocation ? (
+          <button
+            type="button"
+            onClick={onPrevious}
+            aria-label={`Show previous closest ${brandName}`}
+            title={`Show previous closest ${brandName}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 38,
+              height: 38,
+              borderRadius: 999,
+              border: "1px solid rgba(30, 58, 138, 0.18)",
+              background: "#fff",
+              color: "#1d4ed8",
+              cursor: "pointer",
+              flexShrink: 0,
+              fontSize: 18,
+              fontWeight: 900,
+              boxShadow: "0 4px 14px rgba(37,99,235,0.10)",
+            }}
+          >
+            ←
+          </button>
+        ) : null}
+        {nextLocation ? (
+          <button
+            type="button"
+            onClick={onNext}
+            aria-label={`Show next closest ${brandName}`}
+            title={`Show next closest ${brandName}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 38,
+              height: 38,
+              borderRadius: 999,
+              border: "1px solid rgba(30, 58, 138, 0.18)",
+              background: "#fff",
+              color: "#1d4ed8",
+              cursor: "pointer",
+              flexShrink: 0,
+              fontSize: 18,
+              fontWeight: 900,
+              boxShadow: "0 4px 14px rgba(37,99,235,0.10)",
+            }}
+          >
+            →
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -245,6 +377,7 @@ function HeaderActionButton({ href, label, icon, external = false }) {
 /* ---- Main component ---- */
 
 export default function PublicMenuPage() {
+  const { language, t } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -269,6 +402,12 @@ export default function PublicMenuPage() {
   };
   const dealsFilter = searchParams.get("deals") === "1";
   const filtersActive = Object.values(dietPrefs).some(Boolean) || dealsFilter;
+  const proximityLat = asFiniteNumber(searchParams.get("lat"));
+  const proximityLng = asFiniteNumber(searchParams.get("lng"));
+  // Propagate city/state context from search page URL so the backend can
+  // resolve the correct franchise market (e.g. LA McDonald's vs Dothan McDonald's).
+  const contextCity  = searchParams.get("city")  || null;
+  const contextState = searchParams.get("state") || null;
 
   function handleTogglePref(key) {
     setSearchParams((prev) => {
@@ -285,8 +424,44 @@ export default function PublicMenuPage() {
 
   const apiUrl = useMemo(() => {
     const rid = encodeURIComponent(asStr(id).trim());
-    return `${API}/public/restaurants/${rid}/menu`;
-  }, [id]);
+    const params = new URLSearchParams();
+    if (proximityLat != null && proximityLng != null) {
+      params.set("lat", String(proximityLat));
+      params.set("lng", String(proximityLng));
+    }
+    // Pass city/state so backend can swap to the correct market franchise location.
+    // These are present in the URL when the user arrived from the search page.
+    if (contextCity)  params.set("city",  contextCity);
+    if (contextState) params.set("state", contextState);
+    const qs = params.toString();
+    return `${API}/public/restaurants/${rid}/menu${qs ? `?${qs}` : ""}`;
+  }, [id, proximityLat, proximityLng, contextCity, contextState]);
+
+  useEffect(() => {
+    if (proximityLat != null && proximityLng != null) return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+
+    let cancelled = false;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (cancelled) return;
+        const lat = Number(position.coords?.latitude);
+        const lng = Number(position.coords?.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.set("lat", String(lat));
+          next.set("lng", String(lng));
+          return next;
+        }, { replace: true });
+      },
+      () => {},
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
+    );
+
+    return () => { cancelled = true; };
+  }, [proximityLat, proximityLng, setSearchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -359,7 +534,7 @@ export default function PublicMenuPage() {
       <div style={pageBg}>
         <div style={{ maxWidth: 1450, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
           <PageNav back />
-          <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>Couldn't load menu</div>
+          <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{t("publicMenu.loadError", "Couldn't load menu")}</div>
           <div style={{ color: "var(--muted, #5b6675)", fontSize: 14 }}>{pageState.error}</div>
           <div style={{ marginTop: 14, fontSize: 12, color: "var(--muted-2, #93a0b2)" }}>Endpoint: {apiUrl}</div>
         </div>
@@ -370,8 +545,25 @@ export default function PublicMenuPage() {
   /* ---- OK ---- */
 
   const data = pageState.data;
-  const restaurantName  = asStr(data?.restaurant_name || data?.name || `Restaurant ${id}`).trim();
-  const addressLine     = asStr(data?.address_line).trim();
+  const restaurantName  =
+    getLocalizedField(data, "restaurant_name", language) ||
+    getLocalizedField(data, "name", language) ||
+    asStr(data?.restaurant_name || data?.name || `Restaurant ${id}`).trim();
+  const isFoodTruck =
+    isFoodTruckCategory(data?.category) ||
+    isFoodTruckCategory(data?.restaurant_category) ||
+    isFoodTruckCategory(data?.type);
+  const restaurantProfileTarget = asStr(data?.slug || data?.restaurant_id || id).trim();
+  const restaurantProfileHref = restaurantProfileTarget
+    ? {
+        pathname: `${isFoodTruck ? "/foodtrucks" : "/restaurants"}/${encodeURIComponent(restaurantProfileTarget)}`,
+        search: searchParams.toString() ? `?${searchParams.toString()}` : "",
+      }
+    : null;
+  const addressLine1    = asStr(data?.address_line1 || data?.address).trim();
+  const addressLine2    = buildAddressLocalityLine(data?.city, data?.state, data?.zip);
+  const addressLine     = asStr(data?.address_line).trim() || [addressLine1, addressLine2].filter(Boolean).join(", ");
+  const directionsHref  = buildGoogleMapsDirectionsUrl(addressLine);
   const phoneNumber     = asStr(data?.phone).trim();
   const phoneHref       = phoneNumber ? `tel:${phoneNumber.replace(/[^\d+]/g, "")}` : "";
   const orderHref       = normalizeExternalUrl(data?.website_url || data?.website);
@@ -384,6 +576,30 @@ export default function PublicMenuPage() {
   const menuBanner      = asStr(data?.menu_banner).trim();
   const isUnverified    = data?.is_authoritative === false || !!menuBanner;
   const isIntakePreview = data?.menu_source === "intake";
+  const franchiseGroup  = data?.franchise_group || null;
+
+  function navigateToFranchiseLocation(restaurantId) {
+    if (!restaurantId) return;
+    navigate({
+      pathname: `/public/restaurants/${restaurantId}/menu`,
+      search: searchParams.toString() ? `?${searchParams.toString()}` : "",
+    });
+  }
+
+  function handlePreviousClosestLocation() {
+    const currentIndex = Number.isFinite(Number(franchiseGroup?.current_index))
+      ? Number(franchiseGroup.current_index)
+      : 0;
+    const locations = Array.isArray(franchiseGroup?.locations) ? franchiseGroup.locations : [];
+    const previousRestaurantId =
+      currentIndex > 0 ? locations[currentIndex - 1]?.restaurant_id : null;
+    navigateToFranchiseLocation(previousRestaurantId);
+  }
+
+  function handleNextClosestLocation() {
+    const nextRestaurantId = franchiseGroup?.next_location?.restaurant_id;
+    navigateToFranchiseLocation(nextRestaurantId);
+  }
 
   return (
     <div style={pageBg}>
@@ -406,17 +622,65 @@ export default function PublicMenuPage() {
                 flexWrap: "wrap",
               }}
             >
-              <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a" }}>
-                {restaurantName}
-              </div>
+              {restaurantProfileHref ? (
+                <Link
+                  to={restaurantProfileHref}
+                  title={`Open ${restaurantName} profile`}
+                  style={{
+                    fontSize: isMobile ? 22 : 28,
+                    fontWeight: 900,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.1,
+                    color: "#11211a",
+                    textDecoration: "none",
+                  }}
+                >
+                  {restaurantName}
+                </Link>
+              ) : (
+                <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a" }}>
+                  {restaurantName}
+                </div>
+              )}
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                 <HeaderActionButton href={phoneHref} label={`Call ${restaurantName}`} icon="📞" />
                 <HeaderActionButton href={orderHref} label={`Order from ${restaurantName}`} icon="🍴" external />
               </div>
             </div>
             {addressLine ? (
-              <div style={{ marginTop: 6, fontSize: 14, color: "#667085", fontWeight: 600 }}>{addressLine}</div>
+              <div style={{ marginTop: 6, fontSize: 14, color: "#667085", fontWeight: 600 }}>
+                {directionsHref ? (
+                  <a
+                    href={directionsHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Get directions to ${restaurantName}`}
+                    title="Open Google Maps directions"
+                    style={{
+                      color: "inherit",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      gap: 2,
+                    }}
+                  >
+                    {addressLine1 ? <span>{addressLine1}</span> : null}
+                    {addressLine2 ? <span>{addressLine2}</span> : null}
+                  </a>
+                ) : (
+                  <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
+                    {addressLine1 ? <span>{addressLine1}</span> : null}
+                    {addressLine2 ? <span>{addressLine2}</span> : null}
+                  </span>
+                )}
+              </div>
             ) : null}
+            <FranchiseBanner
+              group={franchiseGroup}
+              onPrevious={handlePreviousClosestLocation}
+              onNext={handleNextClosestLocation}
+            />
           </div>
         </div>
 
@@ -446,20 +710,20 @@ export default function PublicMenuPage() {
               boxSizing: "border-box",
             }}>
               <div style={{ fontSize: 16, fontWeight: 900, color: "#11211a", marginBottom: 14 }}>
-                Dietary
+                {t("discovery.dietary")}
               </div>
               <div style={{ display: "grid", gap: 10 }}>
                 {DIET_CHIPS.map(({ key, label }) => (
                   <FilterChip
                     key={key}
-                    label={label}
+                    label={t(`diet.${key}`, label)}
                     active={dietPrefs[key]}
                     onClick={() => handleTogglePref(key)}
                     fullWidth
                   />
                 ))}
                 <FilterChip
-                  label="Deals"
+                  label={t("common.deals", "Deals")}
                   active={dealsFilter}
                   onClick={() => handleTogglePref("deals")}
                   fullWidth
@@ -479,7 +743,7 @@ export default function PublicMenuPage() {
                     padding: 0,
                     textDecoration: "underline",
                   }}
-                >Clear all</button>
+                >{t("common.clearAll", "Clear all")}</button>
               )}
             </div>
           </aside>
@@ -506,9 +770,9 @@ export default function PublicMenuPage() {
                 color: "#166534",
               }}>
                 <span>
-                  <span style={{ fontWeight: 800 }}>Filter applied: </span>
-                  {[...activePrefLabels(dietPrefs), ...(dealsFilter ? ["Deals"] : [])].join(", ")}
-                  <span style={{ fontWeight: 400, color: "#475467" }}> — only matching items shown</span>
+                  <span style={{ fontWeight: 800 }}>{t("common.filterApplied", "Filter applied: ")}</span>
+                  {[...activePrefLabels(dietPrefs), ...(dealsFilter ? [t("common.deals", "Deals")] : [])].join(", ")}
+                  <span style={{ fontWeight: 400, color: "#475467" }}>{t("common.matchingItemsOnly", " — only matching items shown")}</span>
                 </span>
                 <button
                   onClick={handleClearFilters}
@@ -518,7 +782,7 @@ export default function PublicMenuPage() {
                     padding: 0, textDecoration: "underline", whiteSpace: "nowrap",
                   }}
                 >
-                  Show full menu
+                  {t("common.showFullMenu", "Show full menu")}
                 </button>
               </div>
             )}
@@ -527,18 +791,18 @@ export default function PublicMenuPage() {
               <div style={{ fontSize: 14, color: "var(--muted, #5b6675)", padding: "24px 0" }}>
                 {filtersActive ? (
                   <>
-                    This restaurant has no displayable menu items after your active filters.{" "}
+                    {t("publicMenu.noItemsAfterFilters", "This restaurant has no displayable menu items after your active filters.")}{" "}
                     <button onClick={handleClearFilters} style={{ background: "none", border: "none", cursor: "pointer", color: "#2d6a4f", fontWeight: 700, fontSize: 14, padding: 0, textDecoration: "underline" }}>
-                      Clear filters
+                      {t("common.clearFilters", "Clear filters")}
                     </button>
                   </>
                 ) : (
-                  "This restaurant does not currently have any displayable menu items."
+                  t("publicMenu.noItems", "This restaurant does not currently have any displayable menu items.")
                 )}
               </div>
             ) : (
               displaySections.map((sec, sIdx) => {
-                const title = asStr(sec?.title || "Menu").trim();
+                const title = asStr(getLocalizedField(sec, "title", language) || sec?.title || t("publicMenu.menu")).trim();
                 const items = Array.isArray(sec?.items) ? sec.items : [];
 
                 return (
@@ -550,8 +814,19 @@ export default function PublicMenuPage() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {items.map((it, iIdx) => {
                         const itemKey = String(it?.id ?? `${sIdx}-${iIdx}`);
-                        const name    = asStr(it?.name || "Item").trim();
-                        const desc    = asStr(it?.description || it?.notes || "").trim();
+                        const name    = asStr(
+                          getLocalizedField(it, "name", language) ||
+                          getLocalizedField(it, "menu_item_name", language) ||
+                          it?.name ||
+                          "Item"
+                        ).trim();
+                        const desc    = asStr(
+                          getLocalizedField(it, "description", language) ||
+                          getLocalizedField(it, "notes", language) ||
+                          it?.description ||
+                          it?.notes ||
+                          ""
+                        ).trim();
                         const price   = fmtMoney(it?.price);
                         const deal    = it?.id != null ? dealMap.get(it.id) : undefined;
                         const hasDeal = !!deal;
@@ -580,8 +855,8 @@ export default function PublicMenuPage() {
                                   <span style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.2, color: "#11211a" }}>
                                     {name}
                                   </span>
-                                  {hasDeal ? <Badge label="Deal" bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" /> : null}
-                                  {it?.is_vegan ? <Badge label="Vegan" bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" /> : null}
+                                  {hasDeal ? <Badge label={t("common.deals", "Deals")} bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" /> : null}
+                                  {it?.is_vegan ? <Badge label={t("diet.vegan", "Vegan")} bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" /> : null}
                                   {it?.is_gluten_free ? <Badge label="GF" bg="#fffbeb" color="#92400e" border="1px solid #fde68a" /> : null}
                                 </div>
                                 {desc ? (
@@ -594,7 +869,7 @@ export default function PublicMenuPage() {
                                 ) : null}
                                 {canNavigate && (
                                   <span style={{ fontSize: 11, color: "#2d6a4f", fontWeight: 700, whiteSpace: "nowrap" }}>
-                                    Nutrition &amp; insights →
+                                    {t("common.nutritionInsights", "Nutrition & insights →")}
                                   </span>
                                 )}
                               </div>

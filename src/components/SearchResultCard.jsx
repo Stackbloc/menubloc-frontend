@@ -23,14 +23,19 @@
  *   - Nutrition chip expanded to use NutritionCard component.
  *   - hasNut check includes allergen presence so chip lights up
  *     when allergens are inferred even without calorie data.
+ *
+ *   Design lock:
+ *   Shared search-result typography and card styling must inherit
+ *   from the Grubbid canonical design system.
  * ============================================================
  */
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
+import { getLocalizedField } from "../utils/getLocalizedField.js";
 import {
-  toNum,
   getQualitativeLabel,
   getNutritionSummary,
   computeInsights,
@@ -69,6 +74,98 @@ function asBool(v) {
     return s === "true" || s === "yes" || s === "1";
   }
   return false;
+}
+
+function normalizeAllergenList(rawAllergens) {
+  if (!Array.isArray(rawAllergens)) return [];
+  return rawAllergens
+    .map((value) =>
+      asStr(value)
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+    )
+    .filter(Boolean)
+    .map((value) => value.charAt(0).toUpperCase() + value.slice(1));
+}
+
+function normalizeAllergenSource(source) {
+  const normalized = asStr(source).toLowerCase();
+  if (normalized === "chain_official") return "chain_official";
+  if (normalized === "reference_dataset") return "reference_dataset";
+  return normalized || "";
+}
+
+function getAllergenTone(source) {
+  const normalized = normalizeAllergenSource(source);
+  if (normalized === "chain_official") {
+    return {
+      background: "rgba(188, 37, 37, 0.10)",
+      border: "1px solid rgba(188, 37, 37, 0.24)",
+      color: "#9f2323",
+      badgeBackground: "#b91c1c",
+      badgeColor: "#fff7f7",
+    };
+  }
+
+  return {
+    background: "rgba(202, 138, 4, 0.10)",
+    border: "1px solid rgba(107, 114, 128, 0.18)",
+    color: "#8a5b00",
+    badgeBackground: "rgba(107, 114, 128, 0.14)",
+    badgeColor: "#5b6472",
+  };
+}
+
+function AllergenIndicator({ chip, compact = false, containsLabel = "Contains", estimatedLabel = "estimated" }) {
+  const allergens = normalizeAllergenList(chip?.allergens);
+  if (!allergens.length) return null;
+
+  const source = normalizeAllergenSource(chip?.source);
+  const tone = getAllergenTone(source);
+  const isEstimated = source === "reference_dataset";
+
+  return (
+    <div
+      style={{
+        marginTop: compact ? 8 : 10,
+        padding: compact ? "8px 10px" : "9px 12px",
+        borderRadius: compact ? 12 : 14,
+        background: tone.background,
+        border: tone.border,
+        color: tone.color,
+        display: "inline-flex",
+        alignSelf: "flex-start",
+        alignItems: "center",
+        gap: 10,
+        flexWrap: "wrap",
+        maxWidth: "100%",
+      }}
+    >
+      <div style={{ fontSize: compact ? 12 : 13, lineHeight: 1.35, fontWeight: 700 }}>
+        {`⚠️ ${containsLabel}: ${allergens.join(", ")}`}
+      </div>
+      {isEstimated ? (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            borderRadius: 999,
+            padding: "4px 8px",
+            background: tone.badgeBackground,
+            color: tone.badgeColor,
+            fontSize: 11,
+            lineHeight: 1,
+            fontWeight: 900,
+            letterSpacing: "0.03em",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {estimatedLabel}
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 /* Whole dollars only — no cents on search cards */
@@ -113,17 +210,29 @@ function getRestId(row) {
 function getRestSlug(row) {
   return asStr(pick(row, ["restaurant_slug", "restaurantSlug", "slug"]));
 }
-function getRestName(row) {
-  return asStr(pick(row, ["restaurant_name", "restaurantName", "name", "title"], "Restaurant"));
+function getRestName(row, language = "en") {
+  const record = row?.restaurant && typeof row.restaurant === "object" ? row.restaurant : row;
+  return (
+    getLocalizedField(record, "restaurant_name", language) ||
+    getLocalizedField(record, "name", language) ||
+    asStr(pick(row, ["restaurant_name", "restaurantName", "name", "title"], "Restaurant"))
+  );
 }
-function getItemName(row) {
-  return asStr(pick(row, ["menu_item_name", "menuItemName", "item_name", "dish", "name"], "Menu item"));
-}
-
-function getRestaurantProfileTarget(x) {
-  const slug = asStr(pick(x, ["restaurant_slug", "restaurantSlug", "slug"]));
-  if (slug) return slug;
-  return asStr(pick(x, ["restaurant_id", "restaurantId", "id"]));
+function getItemName(row, language = "en") {
+  const record = row?.item && typeof row.item === "object" ? row.item : row;
+  return (
+    getLocalizedField(record, "search_display_name", language) ||
+    getLocalizedField(record, "menu_item_name", language) ||
+    getLocalizedField(record, "item_name", language) ||
+    getLocalizedField(record, "name", language) ||
+    asStr(
+      pick(
+        row,
+        ["search_display_name", "menu_item_name", "menuItemName", "item_name", "dish", "name"],
+        "Menu item"
+      )
+    )
+  );
 }
 
 function normalizeTier(raw) {
@@ -312,11 +421,7 @@ function NutritionPanel({ chip }) {
         </div>
       )}
 
-      {chip?.allergen_alert && (
-        <div style={{ marginTop: 10, fontSize: 13, color: "#b36000", fontWeight: 600 }}>
-          ⚠ {chip.allergen_alert}
-        </div>
-      )}
+      <AllergenIndicator chip={chip} />
       {summary && (
         <div style={{ marginTop: 10, fontSize: 13, color: "#344054", fontWeight: 600, lineHeight: 1.4 }}>
           {summary}
@@ -388,7 +493,12 @@ function scoreToLevel(positive, score) {
 }
 
 function buildSummary(rows) {
-  const clean = (l) => (l || "").replace(/[✅⚠️]/g, "").trim().toLowerCase();
+  const clean = (l) =>
+    String(l || "")
+      .replaceAll("✅", "")
+      .replaceAll("⚠️", "")
+      .trim()
+      .toLowerCase();
   const goods = rows
     .filter((r) => r.positive && ["excellent", "good", "high"].includes(clean(r.level)))
     .map((r) => r.label.toLowerCase());
@@ -517,7 +627,7 @@ function Chip({ label, active, available, onClick }) {
 
 /* ---- Detail panel content ---- */
 
-function DetailPanel({ tab, row, similarItems, onFindSimilar }) {
+function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
   const chips = resolveChips(row);
   const nutChip = chips?.nutrition_chip || {};
 
@@ -628,7 +738,7 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar }) {
             ))}
           </div>
         ) : (
-          <span style={muted}>No similar items found nearby.</span>
+          <span style={muted}>{labels.noSimilar}</span>
         )}
       </div>
     );
@@ -639,12 +749,15 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar }) {
 
 /* ---- Single item row ---- */
 
-function ItemRow({ row, query, similarItems }) {
+function ItemRow({ row, query, similarItems, labels, language, geo }) {
   const [openTab, setOpenTab] = useState(null);
 
   const mid = getItemId(row);
-  const name = getItemName(row);
-  const href = mid ? "/menu-items/" + mid : null;
+  const name = getItemName(row, language);
+  const hrefBase = mid ? "/menu-items/" + mid : null;
+  const href = hrefBase && geo?.lat != null && geo?.lng != null
+    ? `${hrefBase}?lat=${geo.lat}&lng=${geo.lng}`
+    : hrefBase;
   const price = fmtPrice(row);
   const popular = getPopular(row);
   const hasDeal = asBool(resolveItemFlag(row, "has_active_deal"));
@@ -740,16 +853,18 @@ function ItemRow({ row, query, similarItems }) {
         </div>
       )}
 
+      <AllergenIndicator chip={nutChip} compact containsLabel={labels.contains} estimatedLabel={labels.estimated} />
+
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <Chip
-          label="Nutrition"
+          <Chip
+          label={labels.nutrition}
           active={openTab === "nutrition"}
           available={hasNut}
           onClick={() => toggle("nutrition")}
         />
         {hasIns && (
           <Chip
-            label="Insights"
+            label={labels.insights}
             active={openTab === "insights"}
             available={true}
             onClick={() => toggle("insights")}
@@ -757,7 +872,7 @@ function ItemRow({ row, query, similarItems }) {
         )}
         {hasSimilar && (
           <Chip
-            label="Show Similar"
+            label={labels.showSimilar}
             active={openTab === "similar"}
             available={true}
             onClick={() => toggle("similar")}
@@ -765,7 +880,15 @@ function ItemRow({ row, query, similarItems }) {
         )}
       </div>
 
-      {openTab && <DetailPanel tab={openTab} row={row} similarItems={similarItems} onFindSimilar={() => toggle("similar")} />}
+      {openTab && (
+        <DetailPanel
+          tab={openTab}
+          row={row}
+          similarItems={similarItems}
+          onFindSimilar={() => toggle("similar")}
+          labels={labels}
+        />
+      )}
     </div>
   );
 }
@@ -804,11 +927,11 @@ function DietBadge({ label, tone }) {
 /* ---- Card shell ---- */
 
 const cardStyle = {
-  border: "1px solid rgba(18,34,28,0.08)",
-  borderRadius: 24,
-  background: "#fff",
+  border: "1px solid var(--gb-color-border)",
+  borderRadius: "var(--gb-radius-card)",
+  background: "var(--gb-color-surface-strong)",
   padding: "12px 14px",
-  boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
+  boxShadow: "var(--gb-shadow-card)",
   width: "100%",
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -893,14 +1016,29 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier }) {
 
 /* ---- Main export ---- */
 
-export default function SearchResultCard({ restaurant, items, item, query, crossRestaurantItems }) {
+export default function SearchResultCard({ restaurant, items, item, query, crossRestaurantItems, geo }) {
+  const location = useLocation();
+  const { language, t } = useLanguage();
+  const contextSearch = location.search || "";
+  const labels = {
+    contains: t("common.allergensContains", "Contains"),
+    estimated: t("common.estimated"),
+    nutrition: t("common.nutrition", "Nutrition"),
+    insights: t("common.insights", "Insights"),
+    showSimilar: t("common.showSimilar", "Show Similar"),
+    noSimilar: t("common.noSimilarNearby", "No similar items found nearby."),
+    viewMenu: t("common.viewMenu"),
+  };
   const grouped = Array.isArray(items) && items.length > 0;
 
   if (grouped) {
     const restId = asStr(restaurant?.restaurant_id || restaurant?.id);
     const restSlug = asStr(restaurant?.restaurant_slug || restaurant?.slug);
     const restName =
-      asStr(restaurant?.restaurant_name || restaurant?.name) || getRestName(items[0]);
+      getLocalizedField(restaurant, "restaurant_name", language) ||
+      getLocalizedField(restaurant, "name", language) ||
+      asStr(restaurant?.restaurant_name || restaurant?.name) ||
+      getRestName(items[0], language);
     const cuisine = getCuisineLike(restaurant) || getCuisineLike(items[0]);
     const phone = getPhoneLike(restaurant) || getPhoneLike(items[0]);
     const distanceMiles = getDistanceMilesLike(restaurant) ?? getDistanceMilesLike(items[0]);
@@ -908,14 +1046,16 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
 
     const restProfileTarget = restSlug || restId;
     const restHref = restProfileTarget ? "/restaurants/" + restProfileTarget : null;
-    const menuHref = restId ? "/public/restaurants/" + restId + "/menu" : null;
+    const menuHref = restId
+      ? "/public/restaurants/" + restId + "/menu" + contextSearch
+      : null;
 
     const similarItems = Array.isArray(crossRestaurantItems)
       ? crossRestaurantItems.filter((x) => asStr(x.restaurant_id) !== restId)
       : [];
 
     return (
-      <article style={cardStyle}>
+      <article className="gb-card" style={cardStyle}>
         <div style={{ marginBottom: 2 }}>
           {restHref ? (
             <Link
@@ -958,8 +1098,8 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
         <div>
           {items.map((row) => {
             const mid = getItemId(row);
-            const nm = getItemName(row);
-            return <ItemRow key={mid || nm} row={row} query={query} similarItems={similarItems} />;
+            const nm = getItemName(row, language);
+            return <ItemRow key={mid || nm} row={row} query={query} similarItems={similarItems} labels={labels} language={language} geo={geo} />;
           })}
         </div>
 
@@ -980,7 +1120,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
                 e.currentTarget.style.textDecoration = "none";
               }}
             >
-              View Menu →
+              {labels.viewMenu}
             </Link>
           </div>
         )}
@@ -991,7 +1131,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
   const isItemRow = Boolean(item?.menu_item_id || item?.menu_item_name);
   const restIdS = getRestId(item);
   const restSlugS = getRestSlug(item);
-  const restNameS = getRestName(item);
+  const restNameS = getRestName(item, language);
   const cuisineS = getCuisineLike(item);
   const phoneS = getPhoneLike(item);
   const addressLine1S = getAddressLine1Like(item);
@@ -1002,14 +1142,16 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
   const profileTierS = getProfileTierLike(item);
   const restProfileTargetS = restSlugS || restIdS;
   const restHrefS = restProfileTargetS ? "/restaurants/" + restProfileTargetS : null;
-  const menuHrefS = restIdS ? "/public/restaurants/" + restIdS + "/menu" : null;
+  const menuHrefS = restIdS
+    ? "/public/restaurants/" + restIdS + "/menu" + contextSearch
+    : null;
   const similarItemsS = Array.isArray(crossRestaurantItems)
     ? crossRestaurantItems.filter((x) => asStr(x.restaurant_id) !== restIdS)
     : [];
 
   if (isItemRow) {
     return (
-      <article style={cardStyle}>
+      <article className="gb-card" style={cardStyle}>
         {restHrefS && (
           <div style={{ marginBottom: 2 }}>
             <Link
@@ -1037,7 +1179,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
           distanceMiles={distanceMilesS}
           profileTier={profileTierS}
         />
-        <ItemRow row={item} query={query} similarItems={similarItemsS} />
+        <ItemRow row={item} query={query} similarItems={similarItemsS} labels={labels} language={language} geo={geo} />
         {menuHrefS && (
           <div style={{ marginTop: 10 }}>
             <Link
@@ -1055,7 +1197,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
                 e.currentTarget.style.textDecoration = "none";
               }}
             >
-              View Menu →
+              {labels.viewMenu}
             </Link>
           </div>
         )}
@@ -1066,14 +1208,13 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
   const cityStateLine = [cityS, stateS ? (postalS ? `${stateS} ${postalS}` : stateS) : postalS]
     .filter(Boolean)
     .join(", ");
-  const addressLine = [addressLine1S, cityStateLine].filter(Boolean).join(", ");
   const detailPieces = [
     distanceMilesS !== null ? `${distanceMilesS.toFixed(1)} mi away` : null,
     phoneS || null,
   ].filter(Boolean);
 
   return (
-    <article style={cardStyle}>
+    <article className="gb-card" style={cardStyle}>
       {/* Restaurant name */}
       <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.01em", color: "#11211a" }}>
         {restHrefS ? (
@@ -1120,7 +1261,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
             onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
             onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
           >
-            View Menu →
+            {labels.viewMenu}
           </Link>
         </div>
       )}

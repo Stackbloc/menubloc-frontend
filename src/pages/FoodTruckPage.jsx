@@ -129,7 +129,13 @@ function normalizeSections(data) {
 }
 
 function humanizeLabel(s) {
-  return asStr(s)
+  const raw = asStr(s).trim();
+  const normalized = raw.toLowerCase().replace(/\s+/g, " ");
+  const corrected = new Map([
+    ["jamacian", "jamaican"],
+  ]).get(normalized) || raw;
+
+  return corrected
     .trim()
     .replace(/_/g, " ")
     .replace(/\s+/g, " ")

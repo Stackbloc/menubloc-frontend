@@ -1,12 +1,24 @@
+/* ============================================================
+   Grubbid Canonical Design System Lock
+   Shared public-facing card styling must inherit from the Grubbid
+   design system. Do not introduce local typography or surface
+   overrides here without explicit approval from Andre.
+   ============================================================ */
+
 import React from "react";
 
 function formatPrice(value) {
-  if (value === null || value === undefined || value === "") return "";
-  if (typeof value === "string") return value;
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed === "$0" || trimmed === "$0.00" || trimmed === "0" || trimmed === "0.00") return null;
+    return trimmed;
+  }
 
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "";
-  return `$${n.toFixed(2)}`;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return null;
+  return `$${numeric.toFixed(2)}`;
 }
 
 function Chip({ label, value }) {
@@ -16,12 +28,12 @@ function Chip({ label, value }) {
     <span
       style={{
         padding: "4px 8px",
-        borderRadius: 999,
-        border: "1px solid #d7deea",
-        fontSize: 12,
+        borderRadius: "var(--gb-radius-pill)",
+        border: "1px solid var(--gb-color-border)",
+        fontSize: "12px",
         fontWeight: 700,
-        color: hasValue ? "#164a9e" : "#73809a",
-        background: hasValue ? "#eef4ff" : "#f7f9fc",
+        color: hasValue ? "var(--gb-color-accent)" : "var(--gb-color-ink-muted)",
+        background: hasValue ? "var(--gb-color-accent-soft)" : "var(--gb-color-surface-muted)",
         whiteSpace: "nowrap",
       }}
     >
@@ -37,20 +49,47 @@ export default function MenuCard({ item, compact = false }) {
 
   return (
     <article
+      className="gb-card"
       style={{
-        border: "1px solid #e3e8f2",
-        borderRadius: 14,
-        background: "#ffffff",
-        padding: compact ? 10 : 12,
+        padding: compact ? 12 : 16,
+        borderRadius: "var(--gb-radius-card-tight)",
+        boxShadow: "var(--gb-shadow-soft)",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-        <h4 style={{ margin: 0, fontSize: compact ? 15 : 16, lineHeight: 1.2 }}>{name}</h4>
-        <div style={{ fontSize: compact ? 14 : 15, fontWeight: 800 }}>{price || "-"}</div>
+        <h4
+          style={{
+            margin: 0,
+            color: "var(--gb-color-ink-strong)",
+            fontSize: compact ? 15 : 16,
+            lineHeight: 1.2,
+            fontWeight: 800,
+          }}
+        >
+          {name}
+        </h4>
+        <div
+          style={{
+            color: price ? "var(--gb-color-ink-strong)" : "var(--gb-color-accent)",
+            fontSize: compact ? 14 : 15,
+            fontWeight: 800,
+          }}
+        >
+          {price || "Price unavailable"}
+        </div>
       </div>
 
       {notes ? (
-        <p style={{ margin: "8px 0 0 0", color: "#44516b", fontSize: 13, lineHeight: 1.35 }}>{notes}</p>
+        <p
+          style={{
+            margin: "8px 0 0",
+            color: "var(--gb-color-ink-soft)",
+            fontSize: 13,
+            lineHeight: 1.45,
+          }}
+        >
+          {notes}
+        </p>
       ) : null}
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: notes ? 10 : 8 }}>

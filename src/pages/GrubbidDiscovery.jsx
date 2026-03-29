@@ -11,6 +11,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { loadDietPrefs, saveDietPrefs } from "../hooks/useDietPreferences";
 import { Link, useNavigate } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -49,13 +50,13 @@ function removeRecentLocation(label) {
   }
 }
 const CANDIDATE_SUGGESTED_SEARCHES = [
-  "chicken sandwich",
-  "tacos",
-  "vegan breakfast",
-  "gluten-free pizza",
-  "burger",
-  "salad",
-  "breakfast",
+  { value: "chicken sandwich", labelKey: "suggested.chickenSandwich" },
+  { value: "tacos", labelKey: "suggested.tacos" },
+  { value: "vegan breakfast", labelKey: "suggested.veganBreakfast" },
+  { value: "gluten-free pizza", labelKey: "suggested.glutenFreePizza" },
+  { value: "burger", labelKey: "suggested.burger" },
+  { value: "salad", labelKey: "suggested.salad" },
+  { value: "breakfast", labelKey: "suggested.breakfast" },
 ];
 
 function useIsMobile(breakpoint = 768) {
@@ -197,6 +198,7 @@ function useAutoLocation() {
 }
 
 export default function GrubbidDiscovery() {
+  const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const inputRef = useRef(null);
   const isMobile = useIsMobile();
@@ -221,6 +223,10 @@ export default function GrubbidDiscovery() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [metaCategories, setMetaCategories] = useState([]);
   const [metaCuisines, setMetaCuisines] = useState([]);
+  const suggestedSearches = CANDIDATE_SUGGESTED_SEARCHES.map((entry) => ({
+    ...entry,
+    label: t(entry.labelKey, entry.value),
+  }));
 
   const resolvedLocationLabel = useMemo(() => {
     if (appliedLocation) return appliedLocation;
@@ -323,7 +329,12 @@ export default function GrubbidDiscovery() {
         const loc = getEffectiveSearchLocation() || "";
         const parsed = loc.match(/^\d{5}/) ? loc : loc;
         const nearText = parsed ? ` near ${parsed}` : "";
-        setInlineError(`No results found for "${qTerm}"${nearText}`);
+        setInlineError(
+          t("discovery.noResultsFoundFor", `No results found for "${qTerm}"${nearText}`, {
+            query: qTerm,
+            nearText,
+          })
+        );
       } else {
         const locationLabel = resolvedLocationLabel || "";
         if (locationLabel) {
@@ -397,6 +408,14 @@ export default function GrubbidDiscovery() {
     return appliedLocation;
   }
 
+  function buildTopPicksHref() {
+    const params = buildSearchParams("", {
+      includeFilters: false,
+      locationOverride: getEffectiveSearchLocation(),
+    });
+    return `/top-picks?${params.toString()}`;
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
       <div
@@ -422,7 +441,7 @@ export default function GrubbidDiscovery() {
             Grubbid
           </div>
           <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#667085", letterSpacing: 1.2, textTransform: "uppercase", marginTop: 2 }}>
-            Discovery
+            {t("nav.discovery")}
           </div>
         </div>
 
@@ -437,7 +456,7 @@ export default function GrubbidDiscovery() {
               paddingLeft: 14,
             }}
           >
-            the food intelligence platform
+            {t("discovery.tagline")}
           </div>
 
           {/* Search row — input and button are the same height */}
@@ -455,7 +474,7 @@ export default function GrubbidDiscovery() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={handleSearchKeyDown}
-              placeholder="What do you want to eat? Search food, ingredients, restaurants, or deals"
+              placeholder={t("discovery.searchPlaceholder")}
               style={{
                 flex: 1,
                 width: isMobile ? "100%" : undefined,
@@ -492,39 +511,14 @@ export default function GrubbidDiscovery() {
                 transition: "background 160ms ease",
               }}
             >
-              {searching ? "…" : "Search"}
+              {searching ? "…" : t("common.search")}
             </button>
           </div>
 
           {/* Suggested searches */}
-          {CANDIDATE_SUGGESTED_SEARCHES.length > 0 ? (
-            <div style={{ marginTop: 20, fontSize: isMobile ? 13 : 14, color: "#475467", lineHeight: 1.6 }}>
-              <span style={{ fontWeight: 800 }}>Try:</span>{" "}
-              {CANDIDATE_SUGGESTED_SEARCHES.map((term, index) => (
-                <React.Fragment key={term}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQuery(term);
-                      runSearch(term);
-                    }}
-                    style={{
-                      border: "none",
-                      background: "transparent",
-                      padding: 0,
-                      color: "#11211a",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      fontSize: "inherit",
-                    }}
-                  >
-                    {term}
-                  </button>
-                  {index < CANDIDATE_SUGGESTED_SEARCHES.length - 1 ? " · " : ""}
-                </React.Fragment>
-              ))}
-            </div>
-          ) : null}
+          <div style={{ marginTop: 20, fontSize: isMobile ? 13 : 14, color: "#475467", lineHeight: 1.6 }}>
+            {t("discovery.tryLine")}
+          </div>
 
           {/* OR divider */}
           <div
@@ -544,7 +538,7 @@ export default function GrubbidDiscovery() {
                 letterSpacing: 1.2,
               }}
             >
-              OR
+              {t("discovery.or")}
             </div>
             <div style={{ flex: 1, height: 1, background: "#e4e7ec" }} />
           </div>
@@ -582,8 +576,8 @@ export default function GrubbidDiscovery() {
               }}
             >
               <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                <span>Browse Menus</span>
-                <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.6 }}>(Local)</span>
+                <span>{t("discovery.browseMenus")}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.6 }}>{t("discovery.local")}</span>
               </span>
             </button>
           </div>
@@ -607,10 +601,10 @@ export default function GrubbidDiscovery() {
             >
               <div style={{ fontSize: 14, color: "#475467", fontWeight: 700 }}>
               {resolvedLocationLabel
-                ? `Searching near ${resolvedLocationLabel}`
+                ? t("discovery.searchingNear", `Searching near ${resolvedLocationLabel}`, { location: resolvedLocationLabel })
                 : autoLocation.status === "locating"
-                ? "Determining your location"
-                : "Searching near your location"}
+                ? t("discovery.determiningLocation")
+                : t("discovery.searchingNearYou")}
               </div>
 
               <button
@@ -626,7 +620,7 @@ export default function GrubbidDiscovery() {
                   padding: 0,
                 }}
               >
-                Change location
+                {t("discovery.changeLocation")}
               </button>
             </div>
           </div>
@@ -641,7 +635,7 @@ export default function GrubbidDiscovery() {
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 800, color: "#344054" }}>
-                City, State or Zip Code
+                {t("discovery.locationInputLabel")}
               </div>
 
               {/* Recent locations — click to select */}
@@ -707,7 +701,7 @@ export default function GrubbidDiscovery() {
               <input
                 value={locationInput}
                 onChange={(event) => setLocationInput(event.target.value)}
-                placeholder="Or type a city, state or zip"
+                placeholder={t("discovery.locationInputPlaceholder")}
                 style={{
                   height: 42,
                   borderRadius: 12,
@@ -732,7 +726,7 @@ export default function GrubbidDiscovery() {
                     cursor: "pointer",
                   }}
                 >
-                  Apply
+                  {t("common.apply")}
                 </button>
               </div>
             </div>
@@ -753,7 +747,7 @@ export default function GrubbidDiscovery() {
                 {inlineError}
               </div>
               <div style={{ fontSize: 13, color: "#667085", fontWeight: 500 }}>
-                Try a different search term or location.
+                {t("discovery.tryDifferent")}
               </div>
             </div>
           ) : null}
@@ -772,7 +766,7 @@ export default function GrubbidDiscovery() {
                 padding: 0,
               }}
             >
-              Search Preferences {showFilters ? "▴" : "▾"}
+              {`${t("discovery.preferences")} ${showFilters ? "▴" : "▾"}`}
             </button>
 
             {showFilters ? (
@@ -794,16 +788,16 @@ export default function GrubbidDiscovery() {
                   }}
                 >
                   <div style={{ fontSize: 11, fontWeight: 900, color: "#9ca3af", letterSpacing: 1.1, textTransform: "uppercase", marginBottom: 10 }}>
-                    Dietary
+                    {t("discovery.dietary")}
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     <FilterChip
-                      label="Dairy Free"
+                      label={t("diet.dairy_free")}
                       active={filters.dairy_free}
                       onClick={() => setFilters((prev) => ({ ...prev, dairy_free: !prev.dairy_free }))}
                     />
                     <FilterChip
-                      label="Diabetic Friendly"
+                      label={t("diet.diabetic_friendly")}
                       active={filters.diabetic_friendly}
                       onClick={() =>
                         setFilters((prev) => ({
@@ -813,27 +807,27 @@ export default function GrubbidDiscovery() {
                       }
                     />
                     <FilterChip
-                      label="Gluten Free"
+                      label={t("diet.gluten_free")}
                       active={filters.gluten_free}
                       onClick={() => setFilters((prev) => ({ ...prev, gluten_free: !prev.gluten_free }))}
                     />
                     <FilterChip
-                      label="Keto"
+                      label={t("diet.keto")}
                       active={filters.keto}
                       onClick={() => setFilters((prev) => ({ ...prev, keto: !prev.keto }))}
                     />
                     <FilterChip
-                      label="Low Sodium"
+                      label={t("diet.low_sodium")}
                       active={filters.low_sodium}
                       onClick={() => setFilters((prev) => ({ ...prev, low_sodium: !prev.low_sodium }))}
                     />
                     <FilterChip
-                      label="Vegan"
+                      label={t("diet.vegan")}
                       active={filters.vegan}
                       onClick={() => setFilters((prev) => ({ ...prev, vegan: !prev.vegan }))}
                     />
                     <FilterChip
-                      label="Vegetarian"
+                      label={t("diet.vegetarian")}
                       active={filters.vegetarian}
                       onClick={() =>
                         setFilters((prev) => ({ ...prev, vegetarian: !prev.vegetarian }))
@@ -854,7 +848,7 @@ export default function GrubbidDiscovery() {
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     <label style={{ fontSize: 11, fontWeight: 900, color: "#065f46", letterSpacing: 1.1, textTransform: "uppercase" }}>
-                      Cuisine
+                      {t("browse.cuisine")}
                     </label>
                     <select
                       value={selectedCuisine}
@@ -872,7 +866,7 @@ export default function GrubbidDiscovery() {
                         minWidth: 160,
                       }}
                     >
-                      <option value="">All Cuisines</option>
+                      <option value="">{t("discovery.allCuisines")}</option>
                       {metaCuisines.map((c) => (
                         <option key={c.value} value={c.value}>{c.label}</option>
                       ))}
@@ -881,7 +875,7 @@ export default function GrubbidDiscovery() {
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     <label style={{ fontSize: 11, fontWeight: 900, color: "#065f46", letterSpacing: 1.1, textTransform: "uppercase" }}>
-                      Category
+                      {t("browse.category")}
                     </label>
                     <select
                       value={selectedCategory}
@@ -899,7 +893,7 @@ export default function GrubbidDiscovery() {
                         minWidth: 160,
                       }}
                     >
-                      <option value="">All Categories</option>
+                      <option value="">{t("discovery.allCategories")}</option>
                       {metaCategories.map((c) => (
                         <option key={c.value} value={c.value}>{c.label}</option>
                       ))}
@@ -920,15 +914,9 @@ export default function GrubbidDiscovery() {
               flexDirection: isMobile ? "column" : "row",
               alignItems: isMobile ? "flex-start" : "center",
               justifyContent: isMobile ? "flex-start" : "space-between",
-              gap: isMobile ? 16 : 0,
+              gap: isMobile ? 16 : 20,
             }}
           >
-            <div style={{ fontSize: 13 }}>
-              <Link to="/restaurant/signup" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
-                Restaurant Sign Up
-              </Link>
-            </div>
-
             <div
               style={{
                 display: "flex",
@@ -936,8 +924,12 @@ export default function GrubbidDiscovery() {
                 gap: isMobile ? 16 : 28,
                 fontSize: 13,
                 alignItems: "center",
+                flex: isMobile ? "0 0 auto" : "1 1 auto",
               }}
             >
+              <Link to="/restaurant/signup" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+                {t("discovery.footer.signup")}
+              </Link>
               <Link
                 to={(() => {
                   if (!resolvedLocationLabel) return "/deals";
@@ -949,32 +941,63 @@ export default function GrubbidDiscovery() {
                 })()}
                 style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}
               >
-                Restaurant Deals
+                {t("discovery.footer.deals")}
               </Link>
-              {resolvedLocationLabel ? (
+              {(resolvedLocationLabel || (autoLocation.lat != null && autoLocation.lng != null)) ? (
                 <Link
-                  to={(() => {
-                    const parts = resolvedLocationLabel.split(",").map((s) => s.trim());
-                    const p = new URLSearchParams();
-                    if (parts[0]) p.set("city", parts[0]);
-                    if (parts[1]) p.set("state", parts[1]);
-                    return `/top-picks?${p.toString()}`;
-                  })()}
+                  to={buildTopPicksHref()}
                   style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}
                 >
-                  Top Picks in {resolvedLocationLabel.split(",")[0].trim()}
+                  {resolvedLocationLabel
+                    ? t("discovery.footer.topPicksIn", `Top Picks in ${resolvedLocationLabel.split(",")[0].trim()}`, {
+                        city: resolvedLocationLabel.split(",")[0].trim(),
+                      })
+                    : t("discovery.footer.topPicksNearYou")}
                 </Link>
               ) : (
                 <span style={{ color: "#9ca3af", fontWeight: 700, cursor: "default" }}>
-                  Top Picks Near You
+                  {t("discovery.footer.topPicksNearYou")}
                 </span>
               )}
               <Link to="/terms" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
-                Terms of Use
+                {t("discovery.footer.terms")}
               </Link>
               <Link to="/contact" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
-                Contact Us
+                {t("discovery.footer.contact")}
               </Link>
+            </div>
+
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                marginLeft: isMobile ? 0 : "auto",
+              }}
+            >
+              <span style={{ color: "#667085", fontWeight: 800 }} aria-hidden="true">
+                🌐
+              </span>
+              <select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+                aria-label={t("footer.language")}
+                style={{
+                  height: 32,
+                  borderRadius: 10,
+                  border: "1px solid rgba(18,34,28,0.12)",
+                  background: "#fff",
+                  color: "#11211a",
+                  padding: "0 10px",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                <option value="en">{t("language.english")}</option>
+                <option value="es">{t("language.spanish")}</option>
+                <option value="zh">{t("language.chinese")}</option>
+              </select>
             </div>
           </div>
         </div>

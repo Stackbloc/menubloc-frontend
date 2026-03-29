@@ -1,0 +1,86 @@
+Your Cart
+✕
+Your cart is empty.
+Payments are processed securely by PayPal.
+Grubbid
+← Back
+MENU ITEM INTELLIGENCE
+Pizza Hut
+Dothan · Pizza
+Stuffed Crust Large Cheese Pizza
+$18.99
+14" pizza with cheese baked into the crust
+ALLERGEN ALERT
+⚠️ Contains: Dairy, Wheat
+Confidence: Low
+Source: Grubbid Inference
+Allergen information is inferred from menu text and dish patterns. Always confirm with the restaurant for allergy safety.
+QUICK VERDICT
+FAIR FIT DEPENDING ON YOUR PRIORITIES
+Better value options may exist if price is your main priority.
+FAIR FIT DEPENDING ON YOUR PRIORITIES
+DECISION TAGS
+Lower Value
+Likely Dairy
+DECISION DATA
+Nutrition
+CALORIES
+472
+PROTEIN
+19g
+CARBS
+48g
+FAT
+23g
+FIBER
+6g
+SUGAR
+4g
+SODIUM
+955mg
+Low
+Low impact
+High confidence
+Use this as a quick nutrition check, not the whole decision.
+WHY IT EATS HEAVIER OR LIGHTER
+Preparation Details
+Cooking method
+Baked
+Coating
+Unbreaded
+Sauce style
+Dry seasoning
+Impact: Baked — generally a lighter preparation style.
+SENSITIVITY INTELLIGENCE
+Allergen Alert
+Likely contains dairy and wheat.
+Likely Dairy
+Likely Gluten
+Why it matters: Likely contains dairy and gluten if you are sensitive.
+Allergen information is inferred from menu text and dish patterns. Always confirm with the restaurant for allergy safety.
+WORTH THE PRICE?
+Value / Pricing Intelligence
+Lower value for the price
+More expensive relative to the nutrition or portion signals.
+$18.99
+SCORE
+33
+weak protein value
+lighter portion for the price
+WHAT TO TRUST
+Confidence / Trust Notes
+Nutrition looks well-supported by current menu intelligence.
+Preparation details are inferred from menu text and known dish patterns.
+Allergen signals are directional only and should be confirmed with the restaurant for allergy safety.
+Ingredient-level sections appear only when ingredient evidence is available.
+KEEP EXPLORING
+Something Similar
+WAFFLE HOUSE
+Cheese Omelette
+MCDONALD'S
+Quarter Pounder with Cheese
+Food intelligence for real menus.
+🌐
+English
+Español
+中文

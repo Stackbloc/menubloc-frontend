@@ -18,6 +18,7 @@ import {
   PayPalButtons,
 } from "@paypal/react-paypal-js";
 import { useCart } from "../context/CartContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 // ── Replace with your real sandbox Client ID from developer.paypal.com ──
 const PAYPAL_CLIENT_ID = "YOUR_SANDBOX_CLIENT_ID";
@@ -29,7 +30,7 @@ function fmtPrice(price, interval) {
   return formatted;
 }
 
-function LineItem({ item, onRemove }) {
+function LineItem({ item, onRemove, t }) {
   return (
     <div style={{
       display: "flex", alignItems: "flex-start", justifyContent: "space-between",
@@ -50,7 +51,7 @@ function LineItem({ item, onRemove }) {
           fontSize: 10, fontWeight: 800, letterSpacing: 0.4,
           textTransform: "uppercase", color: "#94a3b8",
         }}>
-          {item.type === "subscription" ? "Subscription" : "One-time"}
+          {item.type === "subscription" ? t("cart.subscription") : t("cart.oneTime")}
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
@@ -65,14 +66,14 @@ function LineItem({ item, onRemove }) {
             cursor: "pointer", letterSpacing: 0.2,
           }}
         >
-          Remove
+          {t("cart.remove")}
         </button>
       </div>
     </div>
   );
 }
 
-function CheckoutButtons({ cart, onSuccess }) {
+function CheckoutButtons({ cart, onSuccess, t }) {
   const subscriptionItem = cart.find((i) => i.type === "subscription");
   const oneTimeItems     = cart.filter((i) => i.type === "one_time");
   const oneTimeTotal     = oneTimeItems.reduce((s, i) => s + i.price, 0);
@@ -107,7 +108,7 @@ function CheckoutButtons({ cart, onSuccess }) {
               fontSize: 11, fontWeight: 700, color: "#64748b",
               marginBottom: 8, letterSpacing: 0.3,
             }}>
-              One-time purchase
+              {t("cart.oneTimePurchase")}
             </div>
           ) : null}
           <PayPalButtons
@@ -136,6 +137,7 @@ function CheckoutButtons({ cart, onSuccess }) {
 
 export default function CartDrawer() {
   const { cart, removeFromCart, clearCart, isOpen, closeCart, total } = useCart();
+  const { t } = useLanguage();
   const overlayRef = useRef(null);
 
   // Close on Escape
@@ -156,8 +158,8 @@ export default function CartDrawer() {
     clearCart();
     closeCart();
     alert(type === "subscription"
-      ? "Subscription activated! Welcome to Pro."
-      : "Purchase complete! Thank you."
+      ? t("cart.subscriptionActivated")
+      : t("cart.purchaseComplete")
     );
   }
 
@@ -188,7 +190,7 @@ export default function CartDrawer() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Cart"
+        aria-label={t("cart.aria")}
         style={{
           position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 1000,
           width: "min(420px, 100vw)",
@@ -208,19 +210,23 @@ export default function CartDrawer() {
           flexShrink: 0,
         }}>
           <div style={{ fontSize: 18, fontWeight: 900, color: "#0f172a", letterSpacing: "-0.02em" }}>
-            Your Cart
+            {t("cart.title")}
             {cart.length > 0 ? (
               <span style={{
                 marginLeft: 8, fontSize: 12, fontWeight: 700,
                 color: "#94a3b8", verticalAlign: "middle",
               }}>
-                {cart.length} item{cart.length !== 1 ? "s" : ""}
+                {t(
+                  cart.length === 1 ? "cart.itemCountSingle" : "cart.itemCountPlural",
+                  "",
+                  { count: cart.length },
+                )}
               </span>
             ) : null}
           </div>
           <button
             onClick={closeCart}
-            aria-label="Close cart"
+            aria-label={t("cart.close")}
             style={{
               width: 32, height: 32, borderRadius: 999,
               border: "1px solid #e2e8f0", background: "transparent",
@@ -239,14 +245,14 @@ export default function CartDrawer() {
               paddingTop: 60, textAlign: "center",
               fontSize: 14, color: "#94a3b8", fontStyle: "italic",
             }}>
-              Your cart is empty.
+              {t("cart.empty")}
             </div>
           ) : (
             <>
               {/* Line items */}
               <div style={{ marginBottom: 4 }}>
                 {cart.map((item) => (
-                  <LineItem key={item.id} item={item} onRemove={removeFromCart} />
+                  <LineItem key={item.id} item={item} onRemove={removeFromCart} t={t} />
                 ))}
               </div>
 
@@ -256,7 +262,7 @@ export default function CartDrawer() {
                 padding: "14px 0 20px",
                 borderBottom: "1px solid #f1f5f9",
               }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#64748b" }}>Total due today</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#64748b" }}>{t("cart.totalDueToday")}</span>
                 <span style={{ fontSize: 18, fontWeight: 900, color: "#0f172a" }}>
                   ${total.toFixed(2)}
                 </span>
@@ -264,7 +270,7 @@ export default function CartDrawer() {
 
               {/* PayPal buttons */}
               <div style={{ paddingTop: 20 }}>
-                <CheckoutButtons cart={cart} onSuccess={handleSuccess} />
+                <CheckoutButtons cart={cart} onSuccess={handleSuccess} t={t} />
               </div>
             </>
           )}
@@ -277,7 +283,7 @@ export default function CartDrawer() {
           flexShrink: 0,
           fontSize: 11, color: "#94a3b8", textAlign: "center", lineHeight: 1.5,
         }}>
-          Payments are processed securely by PayPal.
+          {t("cart.paypalSecure")}
           {hasItems ? (
             <button
               onClick={clearCart}
@@ -288,7 +294,7 @@ export default function CartDrawer() {
                 textDecoration: "underline",
               }}
             >
-              Clear cart
+              {t("cart.clear")}
             </button>
           ) : null}
         </div>

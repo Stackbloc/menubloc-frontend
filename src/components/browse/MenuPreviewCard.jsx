@@ -1,11 +1,82 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext.jsx";
+import { getLocalizedField } from "../../utils/getLocalizedField.js";
+
+function buildMergedSearch(search, extraParams) {
+  const params = new URLSearchParams(search || "");
+  const extra = new URLSearchParams(extraParams || "");
+
+  for (const [key, value] of extra.entries()) {
+    params.set(key, value);
+  }
+
+  const out = params.toString();
+  return out ? `?${out}` : "";
+}
 
 function formatDistance(value) {
   if (value == null) return null;
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
   return `${n.toFixed(1)} mi`;
+}
+
+function toTranslationSuffix(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[-/\s]+/g, "_")
+    .replace(/[^a-z0-9_]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function localizeCanonicalLabel(value, prefix, t) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  return t(`${prefix}.${toTranslationSuffix(raw)}`, raw);
+}
+
+function normalizeAllergenList(rawAllergens) {
+  if (!Array.isArray(rawAllergens)) return [];
+  return rawAllergens
+    .map((value) =>
+      String(value || "")
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+    )
+    .filter(Boolean)
+    .map((value) => value.charAt(0).toUpperCase() + value.slice(1));
+}
+
+function normalizeAllergenSource(source) {
+  const normalized = String(source || "").trim().toLowerCase();
+  if (normalized === "chain_official") return "chain_official";
+  if (normalized === "reference_dataset") return "reference_dataset";
+  return normalized;
+}
+
+function getAllergenTone(source) {
+  if (normalizeAllergenSource(source) === "chain_official") {
+    return {
+      background: "rgba(153, 27, 27, 0.90)",
+      border: "1px solid rgba(254, 202, 202, 0.34)",
+      color: "#fff6f6",
+      tagBackground: "rgba(255,255,255,0.16)",
+      tagColor: "#fff6f6",
+    };
+  }
+
+  return {
+    background: "rgba(66, 66, 66, 0.42)",
+    border: "1px solid rgba(255, 244, 163, 0.28)",
+    color: "#fff6d1",
+    tagBackground: "rgba(255,255,255,0.12)",
+    tagColor: "#fff3bf",
+  };
 }
 
 const CARD_THEMES = [
@@ -188,23 +259,38 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
 export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = null, activeFilterParams = "" }) {
   const [hover, setHover] = useState(false);
   const [confirm, setConfirm] = useState(null); // null | "phone" | "order"
+  const { language, t } = useLanguage();
+  const location = useLocation();
   const baseHref = `/public/restaurants/${menu?.restaurant_id}/menu`;
-  const href = activeFilterParams ? `${baseHref}?${activeFilterParams}` : baseHref;
+  const href = `${baseHref}${buildMergedSearch(location.search, activeFilterParams)}`;
   const phone = menu?.phone || null;
   const websiteUrl = menu?.website_url || null;
   const theme = CARD_THEMES[index % CARD_THEMES.length];
   const isVerified = menu?.menu_status === "published";
   const distance = formatDistance(menu?.distance_miles);
-  const cuisine = menu?.cuisine
-    ? menu.cuisine.charAt(0).toUpperCase() + menu.cuisine.slice(1)
-    : null;
-  const emoji = getCuisineEmoji(menu?.restaurant_name, menu?.cuisine || menu?.category);
+  const restaurantName =
+    getLocalizedField(menu, "restaurant_name", language) ||
+    getLocalizedField(menu, "name", language) ||
+    menu?.restaurant_name ||
+    "Restaurant";
+  const cuisine = localizeCanonicalLabel(menu?.cuisine, "cuisine", t) || null;
+  const emoji = getCuisineEmoji(restaurantName, menu?.cuisine || menu?.category);
   const itemCount = menu?.menu_item_count || 0;
+  const allergens = normalizeAllergenList(
+    menu?.allergens || menu?.preview_allergens || menu?.chips?.nutrition_chip?.allergens
+  );
+  const allergenSource = normalizeAllergenSource(
+    menu?.source || menu?.allergen_source || menu?.chips?.nutrition_chip?.source
+  );
+  const allergenTone = getAllergenTone(allergenSource);
+  const isEstimatedAllergen = allergenSource === "reference_dataset";
   const itemCountLabel = itemCount > 0
     ? activeFilterLabel
-      ? `${itemCount} ${activeFilterLabel} ${itemCount === 1 ? "item" : "items"}`
-      : `${itemCount} ${itemCount === 1 ? "item" : "items"}`
+      ? `${itemCount} ${activeFilterLabel} ${t(itemCount === 1 ? "common.itemSingular" : "common.itemPlural")}`
+      : `${itemCount} ${t(itemCount === 1 ? "common.itemSingular" : "common.itemPlural")}`
     : null;
+  const locationCount = menu?.location_count || 1;
+  const locationLabel = locationCount > 1 ? `${locationCount} locations` : null;
 
   return (
     <Link
@@ -284,7 +370,7 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
             textShadow: "0 1px 3px rgba(0,0,0,0.3)",
           }}>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80", flexShrink: 0, boxShadow: "0 0 5px #4ade80" }} />
-            LIVE MENU
+            {t("browse.liveMenu")}
           </div>
         ) : (
           <div style={{
@@ -299,9 +385,60 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
             color: "rgba(255,255,255,0.75)",
           }}>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#facc15", flexShrink: 0 }} />
-            UNVERIFIED
+            {t("browse.unverified")}
           </div>
         )}
+
+        {allergens.length ? (
+          <div
+            style={{
+              position: "absolute",
+              top: isVerified ? 44 : 12,
+              left: 12,
+              zIndex: 4,
+              maxWidth: "calc(100% - 24px)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              padding: "8px 10px",
+              borderRadius: 14,
+              background: allergenTone.background,
+              border: allergenTone.border,
+              backdropFilter: "blur(12px)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                lineHeight: 1.35,
+                fontWeight: 800,
+                color: allergenTone.color,
+                textShadow: "0 1px 3px rgba(0,0,0,0.25)",
+              }}
+            >
+              {`⚠️ ${t("common.allergensContains", "Contains")}: ${allergens.join(", ")}`}
+            </div>
+            {isEstimatedAllergen ? (
+              <div
+                style={{
+                  alignSelf: "flex-start",
+                  borderRadius: 999,
+                  padding: "3px 7px",
+                  background: allergenTone.tagBackground,
+                  color: allergenTone.tagColor,
+                  fontSize: 10,
+                  lineHeight: 1,
+                  fontWeight: 900,
+                  letterSpacing: 0.4,
+                  textTransform: "uppercase",
+                }}
+              >
+                {t("common.estimated")}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Center content — emoji + name + meta */}
         <div style={{
@@ -342,8 +479,25 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
             color: "#fff",
             marginBottom: 6,
           }}>
-            {menu?.restaurant_name || "Restaurant"}
+            {restaurantName}
           </div>
+
+          {/* Multi-location badge */}
+          {locationLabel && (
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              padding: "2px 9px",
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.18)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.30)",
+              marginBottom: 6,
+            }}>
+              <span style={{ fontSize: 10, fontWeight: 800, color: "#fff", letterSpacing: 0.3 }}>
+                📍 {locationLabel}
+              </span>
+            </div>
+          )}
 
           {/* Meta pill */}
           {(cuisine || distance || itemCount > 0) && (
@@ -402,7 +556,7 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
                   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
                 }}
               >
-                📞 Call
+                {`📞 ${t("common.call")}`}
               </button>
             )}
             {websiteUrl && (
@@ -422,7 +576,7 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
                   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
                 }}
               >
-                🍴 Order
+                {`🍴 ${t("common.order", "Order")}`}
               </button>
             )}
           </div>
@@ -448,21 +602,25 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
             letterSpacing: 0.6,
             textShadow: "0 1px 4px rgba(0,0,0,0.3)",
           }}>
-            View Menu
+            {t("common.viewMenuShort", "View Menu")}
           </div>
         </div>
 
         {/* Confirm overlays */}
         {confirm === "phone" && (
           <ConfirmDialog
-            message={`Call ${menu?.restaurant_name || "this restaurant"}?`}
+            message={t("browse.confirmCall", `Call ${restaurantName || "this restaurant"}?`, {
+              restaurant: restaurantName || t("common.thisRestaurant"),
+            })}
             onConfirm={() => { setConfirm(null); window.location.href = `tel:${phone}`; }}
             onCancel={() => setConfirm(null)}
           />
         )}
         {confirm === "order" && (
           <ConfirmDialog
-            message={`Go to ${menu?.restaurant_name || "this restaurant"}'s website to order?`}
+            message={t("browse.confirmOrder", `Go to ${restaurantName || "this restaurant"}'s website to order?`, {
+              restaurant: restaurantName || t("common.thisRestaurant"),
+            })}
             onConfirm={() => { setConfirm(null); window.open(websiteUrl, "_blank", "noopener,noreferrer"); }}
             onCancel={() => setConfirm(null)}
           />

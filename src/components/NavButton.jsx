@@ -1,57 +1,42 @@
+/* ============================================================
+   Grubbid Canonical Design System Lock
+   Public-page navigation styling must inherit from the canonical
+   design system. Do not restyle these controls locally without
+   explicit approval from Andre.
+   ============================================================ */
+
 import { Link, useNavigate } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext.jsx";
+import { PillButton } from "./grubbid/GrubbidPrimitives.jsx";
 
-const btnStyle = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  padding: "8px 16px",
-  borderRadius: 999,
-  border: "1px solid rgba(18,34,28,0.14)",
-  background: "rgba(255,255,255,0.76)",
-  backdropFilter: "blur(10px)",
-  color: "#11211a",
-  fontSize: 14,
-  fontWeight: 700,
-  textDecoration: "none",
-  cursor: "pointer",
-  lineHeight: 1,
-};
-
-/** Goes to "/" (Discovery) */
 export function HomeButton() {
+  const { t } = useLanguage();
   return (
-    <Link to="/" style={btnStyle}>
-      ← Discovery
-    </Link>
+    <PillButton as={Link} to="/" tone="secondary">
+      {`← ${t("nav.discovery")}`}
+    </PillButton>
   );
 }
 
-/** Goes back one step in browser history */
 export function BackButton() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   return (
-    <button type="button" onClick={() => navigate(-1)} style={btnStyle}>
-      ← Back
-    </button>
+    <PillButton onClick={() => navigate(-1)} tone="secondary">
+      {`← ${t("nav.back")}`}
+    </PillButton>
   );
 }
 
-/**
- * Standard page-level nav wrapper.
- * Provides consistent marginBottom: 20 on every page so the button
- * sits the same distance above the page content everywhere.
- *
- * Usage:
- *   <PageNav />       → HomeButton (links to /)
- *   <PageNav back />  → BackButton (browser history -1)
- */
 export function PageNav({ back = false }) {
+  const { t } = useLanguage();
+
   return (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ fontSize: 18, fontWeight: 800, color: "#11211a", marginBottom: 10 }}>
+    <div className="gb-page-nav">
+      <Link to="/" aria-label={t("nav.brandAria")} className="gb-page-nav__brand">
         Grubbid
-      </div>
-      <div>
+      </Link>
+      <div className="gb-page-nav__actions">
         {back ? <BackButton /> : <HomeButton />}
       </div>
     </div>

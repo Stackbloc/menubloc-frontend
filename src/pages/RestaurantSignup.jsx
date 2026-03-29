@@ -17,6 +17,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const PROFILE_SEARCH_ROUTE = "/profilesearch";
@@ -158,6 +159,7 @@ function ingestionOptionStyle(selected) {
 
 export default function RestaurantSignup() {
   const nav = useNavigate();
+  const { t } = useLanguage();
 
   const [form, setForm] = useState({
     email: "",
@@ -197,19 +199,19 @@ export default function RestaurantSignup() {
     const errors = {};
 
     if (!form.restaurant_name.trim()) {
-      errors.restaurant_name = "Restaurant name is required.";
+      errors.restaurant_name = t("signup.error.restaurantNameRequired");
     }
     if (!form.email.trim()) {
-      errors.email = "Email is required.";
+      errors.email = t("signup.error.emailRequired");
     }
     if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
-      errors.confirmPassword = "Passwords do not match.";
+      errors.confirmPassword = t("signup.error.passwordsDoNotMatch");
     }
     if (!ingestionMethod) {
-      errors.ingestionMethod = "Please select a menu upload method.";
+      errors.ingestionMethod = t("signup.error.ingestionRequired");
     }
     if (ingestionMethod === "ocr" && !ocrAcknowledged) {
-      errors.ocrFee = "You must acknowledge the $9.99 OCR fee to continue.";
+      errors.ocrFee = t("signup.error.ocrFeeRequired");
     }
 
     return errors;
@@ -273,7 +275,7 @@ export default function RestaurantSignup() {
         },
       });
     } catch (err) {
-      setServerError(err.message || "Signup failed. Please try again.");
+      setServerError(err.message || t("signup.error.signupFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -285,10 +287,10 @@ export default function RestaurantSignup() {
     <div style={styles.page}>
       <div style={styles.header}>
         <div style={styles.brand}>Grubbid</div>
-        <div style={styles.subbrand}>for Restaurants</div>
-        <div style={styles.pageTitle}>Upload your menu</div>
+        <div style={styles.subbrand}>{t("signup.forRestaurants")}</div>
+        <div style={styles.pageTitle}>{t("signup.title")}</div>
         <div style={styles.pageSubtitle}>
-          Get discovered by food-conscious diners in your area.
+          {t("signup.subtitle")}
         </div>
       </div>
 
@@ -297,11 +299,11 @@ export default function RestaurantSignup() {
       <form onSubmit={handleSubmit} noValidate>
         {/* Account Information */}
         <div style={styles.section}>
-          <div style={styles.sectionTitle}>Account Information</div>
+          <div style={styles.sectionTitle}>{t("signup.accountInformation")}</div>
 
           <div style={styles.fieldGroup}>
             <label htmlFor="email" style={styles.label}>
-              Email<span style={styles.required}>*</span>
+              {t("signup.email")}<span style={styles.required}>*</span>
             </label>
             <input
               id="email"
@@ -319,7 +321,7 @@ export default function RestaurantSignup() {
 
           <div style={styles.fieldGroup}>
             <label htmlFor="password" style={styles.label}>
-              Password
+              {t("signup.password")}
             </label>
             <input
               id="password"
@@ -334,7 +336,7 @@ export default function RestaurantSignup() {
 
           <div style={styles.fieldGroup}>
             <label htmlFor="confirmPassword" style={styles.label}>
-              Confirm Password
+              {t("signup.confirmPassword")}
             </label>
             <input
               id="confirmPassword"
@@ -355,11 +357,11 @@ export default function RestaurantSignup() {
 
         {/* Restaurant Information */}
         <div style={styles.section}>
-          <div style={styles.sectionTitle}>Restaurant Information</div>
+          <div style={styles.sectionTitle}>{t("signup.restaurantInformation")}</div>
 
           <div style={styles.fieldGroup}>
             <label htmlFor="restaurant_name" style={styles.label}>
-              Restaurant Name<span style={styles.required}>*</span>
+              {t("signup.restaurantName")}<span style={styles.required}>*</span>
             </label>
             <input
               id="restaurant_name"
@@ -379,14 +381,14 @@ export default function RestaurantSignup() {
 
           <div style={styles.fieldGroup}>
             <label htmlFor="website_url" style={styles.label}>
-              Website
+              {t("signup.website")}
             </label>
             <input
               id="website_url"
               name="website_url"
               type="url"
               autoComplete="url"
-              placeholder="yourrestaurant.com"
+              placeholder={t("signup.websitePlaceholder")}
               value={form.website_url}
               onChange={handleChange}
               onBlur={() => {
@@ -402,7 +404,7 @@ export default function RestaurantSignup() {
 
           <div style={styles.fieldGroup}>
             <label htmlFor="phone" style={styles.label}>
-              Phone
+              {t("signup.phone")}
             </label>
             <input
               id="phone"
@@ -417,7 +419,7 @@ export default function RestaurantSignup() {
 
           <div style={styles.fieldGroup}>
             <label htmlFor="address_line1" style={styles.label}>
-              Address
+              {t("signup.address")}
             </label>
             <input
               id="address_line1"
@@ -433,7 +435,7 @@ export default function RestaurantSignup() {
           <div style={styles.row2}>
             <div style={styles.halfField}>
               <label htmlFor="city" style={styles.label}>
-                City
+                {t("signup.city")}
               </label>
               <input
                 id="city"
@@ -448,7 +450,7 @@ export default function RestaurantSignup() {
 
             <div style={{ flex: "0 0 80px", marginBottom: 14 }}>
               <label htmlFor="state" style={styles.label}>
-                State
+                {t("signup.state")}
               </label>
               <input
                 id="state"
@@ -464,7 +466,7 @@ export default function RestaurantSignup() {
 
             <div style={{ flex: "0 0 110px", marginBottom: 14 }}>
               <label htmlFor="postal_code" style={styles.label}>
-                ZIP
+                {t("signup.zip")}
               </label>
               <input
                 id="postal_code"
@@ -482,7 +484,7 @@ export default function RestaurantSignup() {
 
         {/* Menu Ingestion Method */}
         <div style={styles.section}>
-          <div style={styles.sectionTitle}>Menu Upload Method</div>
+          <div style={styles.sectionTitle}>{t("signup.menuUploadMethod")}</div>
 
           {/* PDF */}
           <div
@@ -499,11 +501,11 @@ export default function RestaurantSignup() {
             }}
           >
             <div style={styles.ingestionTitle}>
-              Upload Menu PDF{" "}
-              <span style={{ fontWeight: 400, color: "#444" }}>(Free)</span>
+              {t("signup.uploadMenuPdf")}{" "}
+              <span style={{ fontWeight: 400, color: "#444" }}>{t("signup.free")}</span>
             </div>
             <div style={styles.ingestionDesc}>
-              Upload your menu as a PDF and we will parse it automatically.
+              {t("signup.uploadMenuPdfDescription")}
             </div>
           </div>
 
@@ -522,11 +524,11 @@ export default function RestaurantSignup() {
             }}
           >
             <div style={styles.ingestionTitle}>
-              Upload Menu via Spreadsheet{" "}
-              <span style={{ fontWeight: 400, color: "#444" }}>(Free)</span>
+              {t("signup.uploadMenuSpreadsheet")}{" "}
+              <span style={{ fontWeight: 400, color: "#444" }}>{t("signup.free")}</span>
             </div>
             <div style={styles.ingestionDesc}>
-              Fill in the menu upload template and upload it here.{" "}
+              {t("signup.uploadMenuSpreadsheetDescription")}{" "}
               <a
                 href="#"
                 style={{ color: "#111", fontWeight: 700 }}
@@ -538,12 +540,12 @@ export default function RestaurantSignup() {
                   const url  = URL.createObjectURL(blob);
                   const a    = document.createElement("a");
                   a.href     = url;
-                  a.download = "Grubbid Menu Upload Template.csv";
+                  a.download = t("signup.templateFileName");
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
               >
-                Download the menu upload template
+                {t("signup.downloadTemplate")}
               </a>
             </div>
             {ingestionMethod === "spreadsheet" && (
@@ -559,15 +561,15 @@ export default function RestaurantSignup() {
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Spreadsheet instructions</div>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>{t("signup.spreadsheetInstructions")}</div>
                 <ul style={{ margin: 0, paddingLeft: 18 }}>
-                  <li>Download the Menu Upload Template above</li>
-                  <li>Fill in your menu items using the provided columns</li>
-                  <li>Do not rename the column headers</li>
-                  <li>Add as many rows as needed for your menu items</li>
-                  <li>Prices should be entered in dollars (example: 12.99)</li>
-                  <li>Boolean fields should use TRUE or FALSE</li>
-                  <li>Save the spreadsheet and upload it on this page</li>
+                  <li>{t("signup.spreadsheetStep1")}</li>
+                  <li>{t("signup.spreadsheetStep2")}</li>
+                  <li>{t("signup.spreadsheetStep3")}</li>
+                  <li>{t("signup.spreadsheetStep4")}</li>
+                  <li>{t("signup.spreadsheetStep5")}</li>
+                  <li>{t("signup.spreadsheetStep6")}</li>
+                  <li>{t("signup.spreadsheetStep7")}</li>
                 </ul>
               </div>
             )}
@@ -588,12 +590,11 @@ export default function RestaurantSignup() {
             }}
           >
             <div style={styles.ingestionTitle}>
-              Upload Photo or Scan via OCR{" "}
+              {t("signup.uploadPhotoOcr")}{" "}
               <span style={styles.ingestionPrice}>($9.99)</span>
             </div>
             <div style={styles.ingestionDesc}>
-              Upload photos or scans of your menu. AI extracts and structures
-              the menu automatically.
+              {t("signup.uploadPhotoOcrDescription")}
             </div>
 
             {ingestionMethod === "ocr" && (
@@ -613,7 +614,7 @@ export default function RestaurantSignup() {
                   }}
                 />
                 <label htmlFor="ocr-fee" style={styles.checkLabel}>
-                  I agree to the $9.99 OCR processing fee
+                  {t("signup.ocrFeeAcknowledge")}
                 </label>
               </div>
             )}
@@ -632,7 +633,7 @@ export default function RestaurantSignup() {
           style={submitBtnStyle(submitDisabled)}
           disabled={submitDisabled}
         >
-          {submitting ? "Creating account…" : "Continue →"}
+          {submitting ? t("signup.creatingAccount") : t("signup.continue")}
         </button>
       </form>
     </div>

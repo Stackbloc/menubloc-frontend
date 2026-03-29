@@ -5,6 +5,7 @@
 // Purpose:
 //   Domain-aware routing:
 //     - easymenuupload.com -> EasyMenuLanding on "/"
+//     - crm.grubbid.com -> internal CRM shell
 //     - grubbid.com (and everything else) -> GrubbidDiscovery on "/"
 //
 //   Routing cleanup:
@@ -24,9 +25,12 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { CartProvider } from "./context/CartContext.jsx";
+import { LanguageProvider } from "./context/LanguageContext.jsx";
 import CartDrawer from "./components/CartDrawer.jsx";
+import SiteFooter from "./components/SiteFooter.jsx";
 import { OperatorProvider, useOperator } from "./context/OperatorContext.jsx";
 import { OwnerProvider, useOwner } from "./context/OwnerContext.jsx";
+import { CrmProvider, useCrm } from "./context/CrmContext.jsx";
 import OperatorLogin from "./pages/operator/OperatorLogin.jsx";
 import OperatorRecovery from "./pages/operator/OperatorRecovery.jsx";
 import OperatorResetPassword from "./pages/operator/OperatorResetPassword.jsx";
@@ -83,6 +87,12 @@ import FoodTruckPage from "./pages/FoodTruckPage.jsx";
 import FoodTruckSchedulePage from "./pages/FoodTruckSchedulePage.jsx";
 import FoodTruckSignup from "./pages/FoodTruckSignup.jsx";
 import OperatorIntakePage from "./pages/menulibrarian_mobile.jsx";
+import CrmDashboard from "./pages/crm/CrmDashboard.jsx";
+import CrmLeadList from "./pages/crm/CrmLeadList.jsx";
+import CrmLeadDetail from "./pages/crm/CrmLeadDetail.jsx";
+import CrmTasks from "./pages/crm/CrmTasks.jsx";
+import CrmReports from "./pages/crm/CrmReports.jsx";
+import CrmLogin from "./pages/crm/CrmLogin.jsx";
 
 /**
  * Protect operator routes — redirect to /operator/login if not authenticated.
@@ -95,6 +105,19 @@ function OperatorRoute({ children }) {
   return children;
 }
 
+function CrmRoute({ children }) {
+  const { isAuthenticated, loading } = useCrm();
+  if (loading) return null;
+  if (!isAuthenticated) return <Navigate to="/crm/login" replace />;
+  return children;
+}
+
+function CrmLegacyRedirect() {
+  const location = useLocation();
+  const nextPath = location.pathname.replace(/^\/admin\/crm/, "/crm") || "/crm";
+  return <Navigate to={`${nextPath}${location.search || ""}${location.hash || ""}`} replace />;
+}
+
 function OwnerRoute({ children }) {
   const { isAuthenticated, loading } = useOwner();
   if (loading) return null;
@@ -105,6 +128,21 @@ function OwnerRoute({ children }) {
 function isEasyMenuHost() {
   const host = (window?.location?.hostname || "").toLowerCase();
   return host === "easymenuupload.com" || host === "www.easymenuupload.com";
+}
+
+function isCrmHost() {
+  const host = (window?.location?.hostname || "").toLowerCase();
+  return host === "crm.grubbid.com";
+}
+
+function CrmHostRoot() {
+  const { isAuthenticated, loading } = useCrm();
+  if (loading) return null;
+  return <Navigate to={isAuthenticated ? "/crm" : "/crm/login"} replace />;
+}
+
+function HostRouteRedirect({ to }) {
+  return <Navigate to={to} replace />;
 }
 
 /**
@@ -125,6 +163,8 @@ function TruckRedirect() {
   return <Navigate to={slugOrId ? `/foodtrucks/${slugOrId}` : "/"} replace />;
 }
 
+const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
+
 /**
  * GA4 client-side route tracking for the React SPA.
  * Safe no-op if gtag has not been loaded yet.
@@ -139,8 +179,8 @@ function AnalyticsTracker() {
 
     const page_path = `${location.pathname}${location.search || ""}${location.hash || ""}`;
 
-    if (typeof window.gtag === "function") {
-      window.gtag("config", "G-KLLBC4W5XH", { page_path });
+    if (GA_ID && typeof window.gtag === "function") {
+      window.gtag("config", GA_ID, { page_path });
     }
 
     const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -179,118 +219,144 @@ function AnalyticsTracker() {
   return null;
 }
 
-export default function App() {
-  const easyMenu = isEasyMenuHost();
-
+function AppShell({ easyMenu, crmHost }) {
   return (
-    <OwnerProvider>
-    <OperatorProvider>
-    <CartProvider>
-    <BrowserRouter>
+    <>
       <AnalyticsTracker />
-      <CartDrawer />
+      {crmHost ? null : <CartDrawer />}
 
       <Routes>
         {/* Root route depends on domain */}
-        <Route path="/" element={easyMenu ? <EasyMenuLanding /> : <GrubbidDiscovery />} />
+        <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <GrubbidDiscovery />} />
 
         {/* Search */}
-        <Route path="/search" element={<GrubbidSearchResults />} />
-        <Route path="/browse-menus" element={<BrowseMenus />} />
-        <Route path="/top-picks" element={<TopPicksPage />} />
-        <Route path="/top5/healthiest" element={<TopPicksPage />} />
+        <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
+        <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />
+        <Route path="/top-picks" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TopPicksPage />} />
+        <Route path="/top5/healthiest" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TopPicksPage />} />
 
         {/* Deals */}
-        <Route path="/deals" element={<DealsPage />} />
+        <Route path="/deals" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealsPage />} />
 
         {/* QR admin — keep id-based and before public restaurant route */}
-        <Route path="/restaurants/:id/qr-codes" element={<QrCodesPage />} />
+        <Route path="/restaurants/:id/qr-codes" element={crmHost ? <HostRouteRedirect to="/crm" /> : <QrCodesPage />} />
 
         {/* Food truck signup */}
-        <Route path="/foodtruck/signup" element={<FoodTruckSignup />} />
+        <Route path="/foodtruck/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTruckSignup />} />
 
         {/* Food truck public pages */}
-        <Route path="/foodtrucks/:slugOrId/schedule" element={<FoodTruckSchedulePage />} />
-        <Route path="/foodtrucks/:slugOrId" element={<FoodTruckPage />} />
+        <Route path="/foodtrucks/:slugOrId/schedule" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTruckSchedulePage />} />
+        <Route path="/foodtrucks/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodTruckPage />} />
 
         {/* Back-compat: old /trucks/:slugOrId -> /foodtrucks/:slugOrId */}
-        <Route path="/trucks/:slugOrId" element={<TruckRedirect />} />
+        <Route path="/trucks/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TruckRedirect />} />
 
         {/* Restaurant public page (CANONICAL) */}
-        <Route path="/restaurants/:slugOrId" element={<RestaurantPublicPage />} />
+        <Route path="/restaurants/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantPublicPage />} />
 
         {/* Back-compat: singular -> plural */}
-        <Route path="/restaurant/:slugOrId" element={<RestaurantSingularRedirect />} />
+        <Route path="/restaurant/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSingularRedirect />} />
 
         {/* Private/owner profile screen */}
-        <Route path="/restaurant-profile/:id" element={<RestaurantProfile />} />
+        <Route path="/restaurant-profile/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantProfile />} />
 
         {/* Restaurant signup — canonical + short alias */}
-        <Route path="/restaurant/signup" element={<RestaurantSignup />} />
-        <Route path="/signup" element={<RestaurantSignup />} />
+        <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
+        <Route path="/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
 
         {/* Onboarding step 2: find existing listing or create new */}
-        <Route path="/profilesearch" element={<ProfileSearchPage />} />
+        <Route path="/profilesearch" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProfileSearchPage />} />
 
         {/* Onboarding step 3: subscription / plan selection */}
-        <Route path="/restaurant/subscription" element={<SubscriptionSelect />} />
+        <Route path="/restaurant/subscription" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
 
         {/* Onboarding step 4: design style selection (Adobe integration ready) */}
-        <Route path="/restaurant/design-select" element={<MenuDesignSelectPage />} />
+        <Route path="/restaurant/design-select" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuDesignSelectPage />} />
 
         {/* Terms of Service */}
-        <Route path="/terms" element={<Terms />} />
+        <Route path="/terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Terms />} />
 
         {/* Menu upload (onboarding step 5) */}
-        <Route path="/restaurant/pdf-upload" element={<PdfUploadPage />} />
-        <Route path="/restaurant/spreadsheet-upload" element={<SpreadsheetUploadPage />} />
+        <Route path="/restaurant/pdf-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PdfUploadPage />} />
+        <Route path="/restaurant/spreadsheet-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SpreadsheetUploadPage />} />
 
         {/* Menus */}
-        <Route path="/menus" element={<MenuPage />} />
-        <Route path="/menus/:id" element={<MenuDetailPage />} />
-        <Route path="/public/restaurants/:id/menu" element={<PublicMenuPage />} />
-        <Route path="/public/restaurants/:id/display" element={<PublicMenuDisplayPage />} />
-        <Route path="/restaurants/:restaurantSlug/menu-items/:id" element={<MenuItemDetailPage />} />
-        <Route path="/menu-items/:id" element={<MenuItemDetailPage />} />
+        <Route path="/menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuPage />} />
+        <Route path="/menus/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuDetailPage />} />
+        <Route path="/public/restaurants/:id/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
+        <Route path="/public/restaurants/:id/display" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuDisplayPage />} />
+        <Route path="/restaurants/:restaurantSlug/menu-items/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemDetailPage />} />
+        <Route path="/menu-items/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemDetailPage />} />
 
         {/* Operator intake — MenuLibrarianBot (smartphone paste flow) */}
-        <Route path="/field/intake" element={<OperatorIntakePage />} />
+        <Route path="/field/intake" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorIntakePage />} />
 
         {/* Claim verify */}
-        <Route path="/claim/verify" element={<ClaimVerify />} />
+        <Route path="/claim/verify" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClaimVerify />} />
 
         {/* ── Operator backend portal ────────────────────────────── */}
-        <Route path="/operator/login"        element={<OperatorLogin />} />
-        <Route path="/operator/recover"      element={<OperatorRecovery />} />
-        <Route path="/operator/reset-password" element={<OperatorResetPassword />} />
-        <Route path="/operator/claim"        element={<OperatorRoute><OperatorClaimSearch /></OperatorRoute>} />
-        <Route path="/operator"              element={<OperatorRoute><OperatorDashboard /></OperatorRoute>} />
-        <Route path="/operator/profile"      element={<OperatorRoute><OperatorProfileEditor /></OperatorRoute>} />
-        <Route path="/operator/menu"         element={<OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
-        <Route path="/operator/design"       element={<OperatorRoute><OperatorAdobeStudio /></OperatorRoute>} />
-        <Route path="/operator/deals"        element={<OperatorRoute><OperatorDealsEditor /></OperatorRoute>} />
-        <Route path="/operator/hours"        element={<OperatorRoute><OperatorHoursEditor /></OperatorRoute>} />
-        <Route path="/operator/qr-kits/order" element={<OperatorRoute><OperatorQrKitOrder /></OperatorRoute>} />
-        <Route path="/operator/subscription" element={<OperatorRoute><OperatorSubscription /></OperatorRoute>} />
-        <Route path="/operator/display-settings" element={<OperatorRoute><OperatorDisplaySettings /></OperatorRoute>} />
+        <Route path="/operator/login"        element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorLogin />} />
+        <Route path="/operator/recover"      element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorRecovery />} />
+        <Route path="/operator/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorResetPassword />} />
+        <Route path="/operator/claim"        element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorClaimSearch /></OperatorRoute>} />
+        <Route path="/operator"              element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDashboard /></OperatorRoute>} />
+        <Route path="/operator/profile"      element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorProfileEditor /></OperatorRoute>} />
+        <Route path="/operator/menu"         element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
+        <Route path="/operator/design"       element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorAdobeStudio /></OperatorRoute>} />
+        <Route path="/operator/deals"        element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDealsEditor /></OperatorRoute>} />
+        <Route path="/operator/hours"        element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorHoursEditor /></OperatorRoute>} />
+        <Route path="/operator/qr-kits/order" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorQrKitOrder /></OperatorRoute>} />
+        <Route path="/operator/subscription" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorSubscription /></OperatorRoute>} />
+        <Route path="/operator/display-settings" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDisplaySettings /></OperatorRoute>} />
 
-        <Route path="/owner/login" element={<OwnerLogin />} />
-        <Route path="/owner" element={<OwnerRoute><OwnerDashboard /></OwnerRoute>} />
-        <Route path="/owner/analytics" element={<OwnerRoute><OwnerSiteAnalytics /></OwnerRoute>} />
-        <Route path="/owner/search-analytics" element={<OwnerRoute><OwnerSearchAnalytics /></OwnerRoute>} />
-        <Route path="/owner/restaurants" element={<OwnerRoute><OwnerRestaurants /></OwnerRoute>} />
-        <Route path="/owner/revenue" element={<OwnerRoute><OwnerRevenue /></OwnerRoute>} />
-        <Route path="/owner/support" element={<OwnerRoute><OwnerSupportTickets /></OwnerRoute>} />
-        <Route path="/owner/support/:ticketId" element={<OwnerRoute><OwnerTicketDetail /></OwnerRoute>} />
-        <Route path="/operator/menu-studio"      element={<OperatorRoute><OperatorMenuStudio /></OperatorRoute>} />
-        <Route path="/operator/brand"            element={<OperatorRoute><OperatorBrandSettings /></OperatorRoute>} />
+        <Route path="/owner/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerLogin />} />
+        <Route path="/owner" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerDashboard /></OwnerRoute>} />
+        <Route path="/owner/analytics" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSiteAnalytics /></OwnerRoute>} />
+        <Route path="/owner/search-analytics" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSearchAnalytics /></OwnerRoute>} />
+        <Route path="/owner/restaurants" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRestaurants /></OwnerRoute>} />
+        <Route path="/owner/revenue" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRevenue /></OwnerRoute>} />
+        <Route path="/owner/support" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSupportTickets /></OwnerRoute>} />
+        <Route path="/owner/support/:ticketId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTicketDetail /></OwnerRoute>} />
+        <Route path="/operator/menu-studio"      element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuStudio /></OperatorRoute>} />
+        <Route path="/operator/brand"            element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorBrandSettings /></OperatorRoute>} />
+        <Route path="/crm/login" element={<CrmLogin />} />
+        <Route path="/crm" element={<CrmRoute><CrmDashboard /></CrmRoute>} />
+        <Route path="/crm/leads" element={<CrmRoute><CrmLeadList /></CrmRoute>} />
+        <Route path="/crm/leads/:id" element={<CrmRoute><CrmLeadDetail /></CrmRoute>} />
+        <Route path="/crm/tasks" element={<CrmRoute><CrmTasks /></CrmRoute>} />
+        <Route path="/crm/reports" element={<CrmRoute><CrmReports /></CrmRoute>} />
+        <Route path="/admin/crm" element={<CrmLegacyRedirect />} />
+        <Route path="/admin/crm/leads" element={<CrmLegacyRedirect />} />
+        <Route path="/admin/crm/leads/:id" element={<CrmLegacyRedirect />} />
+        <Route path="/admin/crm/tasks" element={<CrmLegacyRedirect />} />
+        <Route path="/admin/crm/reports" element={<CrmLegacyRedirect />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {crmHost ? null : <SiteFooter />}
+    </>
+  );
+}
+
+export default function App() {
+  const easyMenu = isEasyMenuHost();
+  const crmHost = isCrmHost();
+
+  return (
+    <OwnerProvider>
+    <CrmProvider>
+    <OperatorProvider>
+    <CartProvider>
+    <LanguageProvider>
+    <BrowserRouter>
+      <AppShell easyMenu={easyMenu} crmHost={crmHost} />
     </BrowserRouter>
+    </LanguageProvider>
     </CartProvider>
     </OperatorProvider>
+    </CrmProvider>
     </OwnerProvider>
   );
 }

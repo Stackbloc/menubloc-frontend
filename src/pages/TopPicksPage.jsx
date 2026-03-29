@@ -3,28 +3,15 @@
  * File: TopPicksPage.jsx
  * Path: menubloc-frontend/src/pages/TopPicksPage.jsx
  * Purpose:
- *   "Top Picks in [City]" — curated search category hub.
- *   Each category card links to a predefined search query.
+ *   Canonical public reference page for Grubbid discovery styling.
+ *   This page must consume the shared Grubbid design system rather
+ *   than define its own typography or surface styling.
  * ============================================================
  */
 
-import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-
-function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth <= breakpoint;
-  });
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    function handleResize() { setIsMobile(window.innerWidth <= breakpoint); }
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [breakpoint]);
-  return isMobile;
-}
+import { Link, useLocation } from "react-router-dom";
+import { PageNav } from "../components/NavButton.jsx";
+import { Card, PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
 
 const CATEGORIES = [
   {
@@ -84,208 +71,102 @@ const CATEGORIES = [
 ];
 
 export default function TopPicksPage() {
-  const isMobile = useIsMobile();
-  const navigate  = useNavigate();
   const { search } = useLocation();
   const urlParams = new URLSearchParams(search);
-  const city  = urlParams.get("city")  || "";
+  const city = urlParams.get("city") || "";
   const state = urlParams.get("state") || "";
-  const locationLabel = [city, state].filter(Boolean).join(", ");
+  const locationLabel =
+    urlParams.get("location_label") ||
+    [city, state].filter(Boolean).join(", ");
 
   function searchHref(query) {
-    const p = new URLSearchParams({ q: query });
-    if (city)  p.set("city",  city);
-    if (state) p.set("state", state);
-    return `/search?${p.toString()}`;
+    const params = new URLSearchParams(search);
+    params.set("q", query);
+    return `/search?${params.toString()}`;
   }
 
-  const topRowStyle = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: isMobile ? 24 : 32,
-  };
-
   return (
-    <div style={{ minHeight: "100vh" }}>
+    <PageShell>
+      <PageNav back />
+
+      <PageHero
+        eyebrow="Curated by Grubbid Intelligence"
+        title="Top Picks"
+        accent={locationLabel ? ` in ${locationLabel}` : ""}
+        description="Browse curated categories powered by the same Grubbid discovery system used across search and browse."
+      />
+
       <div
         style={{
-          maxWidth: 820,
-          margin: "0 auto",
-          padding: isMobile ? "20px 14px 56px" : "36px 24px 80px",
-          boxSizing: "border-box",
-          fontFamily: "var(--font-ui, Inter, system-ui, sans-serif)",
-          color: "#101828",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: 14,
         }}
       >
-        {/* Nav */}
-        <div style={topRowStyle}>
+        {CATEGORIES.map((category) => (
           <Link
-            to="/"
-            style={{
-              fontSize: isMobile ? 17 : 19,
-              fontWeight: 900,
-              color: "#11211a",
-              textDecoration: "none",
-              letterSpacing: "-0.02em",
-            }}
+            key={category.query}
+            to={searchHref(category.query)}
+            style={{ color: "inherit", textDecoration: "none" }}
           >
-            Grubbid
-          </Link>
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#475467",
-              background: "rgba(0,0,0,0.04)",
-              border: "1px solid rgba(0,0,0,0.09)",
-              borderRadius: 999,
-              padding: "5px 12px",
-              cursor: "pointer",
-            }}
-          >
-            ← Back
-          </button>
-        </div>
-
-        {/* Hero */}
-        <div style={{ marginBottom: isMobile ? 28 : 40 }}>
-          <div
-            style={{
-              fontSize: isMobile ? 11 : 12,
-              fontWeight: 800,
-              letterSpacing: 1.4,
-              textTransform: "uppercase",
-              color: "#667085",
-              marginBottom: 8,
-            }}
-          >
-            Curated by Grubbid Intelligence
-          </div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: isMobile ? 26 : 34,
-              fontWeight: 900,
-              letterSpacing: "-0.03em",
-              lineHeight: 1.1,
-              color: "#11211a",
-            }}
-          >
-            Top Picks
-            {locationLabel ? (
-              <span style={{ color: "#2d6a4f" }}> in {locationLabel}</span>
-            ) : null}
-          </h1>
-          <p
-            style={{
-              margin: "12px 0 0",
-              fontSize: isMobile ? 14 : 15,
-              color: "#475467",
-              lineHeight: 1.6,
-              maxWidth: 520,
-            }}
-          >
-            Browse curated categories — each one powered by Grubbid's food
-            intelligence engine.
-          </p>
-        </div>
-
-        {/* Category grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-            gap: isMobile ? 10 : 14,
-          }}
-        >
-          {CATEGORIES.map((cat) => (
-            <Link
-              key={cat.query}
-              to={searchHref(cat.query)}
-              style={{ textDecoration: "none" }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 14,
-                  padding: isMobile ? "14px 16px" : "18px 20px",
-                  background: "#fff",
-                  border: "1px solid var(--border, #e4e9f0)",
-                  borderRadius: 16,
-                  boxShadow: "var(--shadow-1, 0 6px 18px rgba(16,24,40,0.06))",
-                  cursor: "pointer",
-                  transition: "box-shadow 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = "0 8px 28px rgba(16,24,40,0.11)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = "var(--shadow-1, 0 6px 18px rgba(16,24,40,0.06))";
-                }}
-              >
-                <span style={{ fontSize: isMobile ? 28 : 32, lineHeight: 1, flexShrink: 0 }}>
-                  {cat.emoji}
-                </span>
-                <div style={{ minWidth: 0 }}>
+            <Card interactive style={{ height: "100%" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 14, minHeight: "100%" }}>
+                <span style={{ fontSize: 30, lineHeight: 1, flexShrink: 0 }}>{category.emoji}</span>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <div
                     style={{
-                      fontSize: isMobile ? 14 : 15,
+                      marginBottom: 4,
+                      color: "var(--gb-color-ink-strong)",
+                      fontSize: "15px",
                       fontWeight: 800,
-                      color: "#11211a",
                       letterSpacing: "-0.01em",
-                      marginBottom: 3,
                     }}
                   >
-                    {cat.title}
+                    {category.title}
                   </div>
                   <div
                     style={{
-                      fontSize: 13,
-                      color: "#667085",
-                      lineHeight: 1.4,
+                      color: "var(--gb-color-ink-muted)",
+                      fontSize: "13px",
+                      lineHeight: 1.45,
                     }}
                   >
-                    {cat.description}
+                    {category.description}
                   </div>
                 </div>
                 <span
+                  aria-hidden="true"
                   style={{
-                    marginLeft: "auto",
-                    flexShrink: 0,
-                    fontSize: 16,
-                    color: "#b0bac8",
                     alignSelf: "center",
+                    color: "var(--gb-color-ink-muted)",
+                    fontSize: 16,
+                    flexShrink: 0,
                   }}
                 >
                   →
                 </span>
               </div>
-            </Link>
-          ))}
-        </div>
-
-        {/* Footer */}
-        <div
-          style={{
-            marginTop: isMobile ? 40 : 56,
-            paddingTop: isMobile ? 20 : 28,
-            borderTop: "1px solid #e4e7ec",
-            display: "flex",
-            gap: 20,
-            fontSize: 13,
-            color: "#667085",
-          }}
-        >
-          <Link to="/terms"   style={{ color: "#667085", textDecoration: "none", fontWeight: 600 }}>Terms of Use</Link>
-          <Link to="/contact" style={{ color: "#667085", textDecoration: "none", fontWeight: 600 }}>Contact Us</Link>
-        </div>
+            </Card>
+          </Link>
+        ))}
       </div>
-    </div>
+
+      <div
+        style={{
+          marginTop: 48,
+          paddingTop: 24,
+          borderTop: "1px solid var(--gb-color-border)",
+          display: "flex",
+          gap: 20,
+          flexWrap: "wrap",
+          color: "var(--gb-color-ink-muted)",
+          fontSize: "13px",
+          fontWeight: 600,
+        }}
+      >
+        <Link to="/terms" className="gb-linkish">Terms of Use</Link>
+        <Link to="/contact" className="gb-linkish">Contact Us</Link>
+      </div>
+    </PageShell>
   );
 }
