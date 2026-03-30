@@ -173,14 +173,20 @@ function IntakePreviewBanner({ show }) {
   );
 }
 
-function FranchiseBanner({ group, onPrevious, onNext }) {
+function FranchiseBanner({ group, currentRestaurantId, onPrevious, onNext }) {
   const { t } = useLanguage();
-  const totalLocations = Number(group?.total_locations || 0);
-  const currentLocation = group?.current_location || null;
-  const currentIndex = Number.isFinite(Number(group?.current_index)) ? Number(group.current_index) : 0;
-  const locations = Array.isArray(group?.locations) ? group.locations : [];
-  const previousLocation = currentIndex > 0 ? locations[currentIndex - 1] : null;
-  const nextLocation = currentIndex + 1 < locations.length ? locations[currentIndex + 1] : null;
+  const locations = (Array.isArray(group?.locations) ? group.locations : []).filter(
+    (location) => location?.is_displayable !== false && location?.restaurant_id
+  );
+  const totalLocations = locations.length;
+  const derivedIndex = locations.findIndex((location) => Number(location.restaurant_id) === Number(currentRestaurantId));
+  const fallbackIndex = Number.isFinite(Number(group?.current_index)) ? Number(group.current_index) : 0;
+  const currentIndex = derivedIndex >= 0 ? derivedIndex : fallbackIndex;
+  const currentLocation = locations[currentIndex] || group?.current_location || null;
+  const hasPrevious = currentIndex > 0 && currentIndex < locations.length;
+  const hasNext = currentIndex >= 0 && currentIndex < locations.length - 1;
+  const previousLocation = hasPrevious ? locations[currentIndex - 1] : null;
+  const nextLocation = hasNext ? locations[currentIndex + 1] : null;
   const currentLabel = asStr(currentLocation?.label || currentLocation?.restaurant_name).trim();
   const brandName = asStr(group?.brand_name || currentLocation?.restaurant_name).trim();
 
@@ -221,7 +227,7 @@ function FranchiseBanner({ group, onPrevious, onNext }) {
           : null}
       </div>
       <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-        {previousLocation ? (
+        {hasPrevious ? (
           <button
             type="button"
             onClick={onPrevious}
@@ -247,7 +253,7 @@ function FranchiseBanner({ group, onPrevious, onNext }) {
             ←
           </button>
         ) : null}
-        {nextLocation ? (
+        {hasNext ? (
           <button
             type="button"
             onClick={onNext}
@@ -587,17 +593,22 @@ export default function PublicMenuPage() {
   }
 
   function handlePreviousClosestLocation() {
-    const currentIndex = Number.isFinite(Number(franchiseGroup?.current_index))
-      ? Number(franchiseGroup.current_index)
-      : 0;
-    const locations = Array.isArray(franchiseGroup?.locations) ? franchiseGroup.locations : [];
+    const locations = (Array.isArray(franchiseGroup?.locations) ? franchiseGroup.locations : []).filter(
+      (location) => location?.is_displayable !== false && location?.restaurant_id
+    );
+    const currentIndex = locations.findIndex((location) => Number(location.restaurant_id) === Number(id));
     const previousRestaurantId =
       currentIndex > 0 ? locations[currentIndex - 1]?.restaurant_id : null;
     navigateToFranchiseLocation(previousRestaurantId);
   }
 
   function handleNextClosestLocation() {
-    const nextRestaurantId = franchiseGroup?.next_location?.restaurant_id;
+    const locations = (Array.isArray(franchiseGroup?.locations) ? franchiseGroup.locations : []).filter(
+      (location) => location?.is_displayable !== false && location?.restaurant_id
+    );
+    const currentIndex = locations.findIndex((location) => Number(location.restaurant_id) === Number(id));
+    const nextRestaurantId =
+      currentIndex >= 0 && currentIndex + 1 < locations.length ? locations[currentIndex + 1]?.restaurant_id : null;
     navigateToFranchiseLocation(nextRestaurantId);
   }
 
@@ -678,6 +689,7 @@ export default function PublicMenuPage() {
             ) : null}
             <FranchiseBanner
               group={franchiseGroup}
+              currentRestaurantId={id}
               onPrevious={handlePreviousClosestLocation}
               onNext={handleNextClosestLocation}
             />

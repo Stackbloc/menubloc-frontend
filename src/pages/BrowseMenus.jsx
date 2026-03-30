@@ -252,7 +252,7 @@ export default function BrowseMenus() {
   const [browseOffset, setBrowseOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
-  const BROWSE_LIMIT = 8;
+  const BROWSE_LIMIT = 24;
   // Seed from URL so a shared/bookmarked link shows the label immediately
   const [locationLabel, setLocationLabel] = useState(() => {
     const parts = [urlCity, urlState].filter(Boolean);
