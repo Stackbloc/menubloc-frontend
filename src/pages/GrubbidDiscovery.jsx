@@ -422,16 +422,31 @@ export default function GrubbidDiscovery() {
         style={{
           maxWidth: 1100,
           margin: "0 auto",
-          padding: isMobile ? "36px 20px 56px" : "72px 32px 80px",
+          padding: isMobile ? "36px 14px 56px" : "72px 32px 80px",
           boxSizing: "border-box",
         }}
       >
         <style>
           {`
+            .grubbid-discovery-search-row {
+              width: 100%;
+            }
+
             .grubbid-discovery-search::placeholder {
               font-size: 14px;
               font-weight: 400;
               color: #667085;
+            }
+
+            @media (max-width: 768px) {
+              .grubbid-discovery-search-row {
+                width: calc(100% + 12px);
+                margin-left: -6px;
+              }
+
+              .grubbid-discovery-search::placeholder {
+                font-size: 13px;
+              }
             }
           `}
         </style>
@@ -461,11 +476,11 @@ export default function GrubbidDiscovery() {
 
           {/* Search row — input and button are the same height */}
           <div
+            className="grubbid-discovery-search-row"
             style={{
               display: "flex",
               flexDirection: isMobile ? "column" : "row",
               gap: 10,
-              width: "100%",
             }}
           >
             <input
