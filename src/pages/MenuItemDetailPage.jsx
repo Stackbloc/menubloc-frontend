@@ -329,6 +329,8 @@ function VerdictBlock({ detailSystem, isMobile, t }) {
 function NutritionCard({ detailSystem, t }) {
   const nutrition = detailSystem?.nutrition || {};
   const perOz = nutrition?.per_oz || null;
+  const portionOz = nutrition?.portion_oz;
+  const portionLabel = portionOz == null ? "Not available" : formatMacro(portionOz, "oz");
   const pairs = [
     { label: t("menuItemDetail.metric.calories", "Calories"), value: formatMacro(nutrition.calories) },
     { label: t("menuItemDetail.metric.protein", "Protein"), value: formatMacro(nutrition.protein_g, "g") },
@@ -360,6 +362,17 @@ function NutritionCard({ detailSystem, t }) {
             </div>
           </div>
         ))}
+      </div>
+      <div style={{ marginTop: 16, borderRadius: 18, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: "14px 16px" }}>
+        <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f" }}>
+          Portion Assumption
+        </div>
+        <div style={{ marginTop: 8, fontSize: 16, fontWeight: 900, color: "#15241d" }}>
+          {`Estimated portion: ${portionLabel}`}
+        </div>
+        <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1.45, color: "#617167" }}>
+          Total nutrition above is based on this assumed portion size.
+        </div>
       </div>
       {perOzRows.length ? (
         <div style={{ marginTop: 16 }}>
