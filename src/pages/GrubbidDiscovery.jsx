@@ -12,6 +12,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { loadDietPrefs, saveDietPrefs } from "../hooks/useDietPreferences";
 import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { useConsumer } from "../context/ConsumerContext.jsx";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -199,6 +200,7 @@ function useAutoLocation() {
 
 export default function GrubbidDiscovery() {
   const { language, setLanguage, t } = useLanguage();
+  const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
   const navigate = useNavigate();
   const inputRef = useRef(null);
   const isMobile = useIsMobile();
@@ -451,13 +453,33 @@ export default function GrubbidDiscovery() {
           `}
         </style>
 
-        <div style={{ marginBottom: isMobile ? 44 : 64 }}>
-          <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a" }}>
-            Grubbid
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: isMobile ? 44 : 64 }}>
+          <div>
+            <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a" }}>
+              Grubbid
+            </div>
+            <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#667085", letterSpacing: 1.2, textTransform: "uppercase", marginTop: 2 }}>
+              {t("nav.discovery")}
+            </div>
           </div>
-          <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#667085", letterSpacing: 1.2, textTransform: "uppercase", marginTop: 2 }}>
-            {t("nav.discovery")}
-          </div>
+          {!consumerLoading && (
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              {consumerLoggedIn ? (
+                <Link to="/account" style={{ fontSize: 14, fontWeight: 700, color: "#1F4E3D", textDecoration: "none" }}>
+                  Account
+                </Link>
+              ) : (
+                <>
+                  <Link to="/account/login" style={{ fontSize: 14, fontWeight: 600, color: "#1F4E3D", textDecoration: "none" }}>
+                    Log In
+                  </Link>
+                  <Link to="/account/signup" style={{ fontSize: 14, fontWeight: 700, color: "#fff", background: "#1F4E3D", padding: "6px 14px", borderRadius: 8, textDecoration: "none" }}>
+                    Sign Up
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div style={{ maxWidth: 920 }}>

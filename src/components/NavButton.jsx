@@ -8,6 +8,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { PillButton } from "./grubbid/GrubbidPrimitives.jsx";
+import { useConsumer } from "../context/ConsumerContext.jsx";
 
 export function HomeButton() {
   const { t } = useLanguage();
@@ -28,6 +29,36 @@ export function BackButton() {
   );
 }
 
+/**
+ * Consumer auth links shown in the site nav.
+ * When logged out: Log In + Sign Up
+ * When logged in:  Account
+ */
+function ConsumerNavLinks() {
+  const { isAuthenticated, loading } = useConsumer();
+
+  if (loading) return null;
+
+  if (isAuthenticated) {
+    return (
+      <Link to="/account" style={navLinkStyle}>
+        Account
+      </Link>
+    );
+  }
+
+  return (
+    <span style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+      <Link to="/account/login" style={navLinkStyle}>
+        Log In
+      </Link>
+      <Link to="/account/signup" style={{ ...navLinkStyle, ...navSignupStyle }}>
+        Sign Up
+      </Link>
+    </span>
+  );
+}
+
 export function PageNav({ back = false }) {
   const { t } = useLanguage();
 
@@ -36,9 +67,26 @@ export function PageNav({ back = false }) {
       <Link to="/" aria-label={t("nav.brandAria")} className="gb-page-nav__brand">
         Grubbid
       </Link>
-      <div className="gb-page-nav__actions">
+      <div className="gb-page-nav__actions" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+        <ConsumerNavLinks />
         {back ? <BackButton /> : <HomeButton />}
       </div>
     </div>
   );
 }
+
+const navLinkStyle = {
+  fontSize: "14px",
+  fontWeight: 600,
+  color: "#1F4E3D",
+  textDecoration: "none",
+  padding: "6px 10px",
+  borderRadius: "8px",
+  transition: "background 0.15s",
+};
+
+const navSignupStyle = {
+  background: "#1F4E3D",
+  color: "#ffffff",
+  padding: "6px 14px",
+};

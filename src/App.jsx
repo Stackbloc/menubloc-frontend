@@ -33,6 +33,12 @@ import SiteFooter from "./components/SiteFooter.jsx";
 import { OperatorProvider, useOperator } from "./context/OperatorContext.jsx";
 import { OwnerProvider, useOwner } from "./context/OwnerContext.jsx";
 import { CrmProvider, useCrm } from "./context/CrmContext.jsx";
+import { ConsumerProvider } from "./context/ConsumerContext.jsx";
+import ConsumerSignup from "./pages/consumer/ConsumerSignup.jsx";
+import ConsumerLogin from "./pages/consumer/ConsumerLogin.jsx";
+import ConsumerForgotPassword from "./pages/consumer/ConsumerForgotPassword.jsx";
+import ConsumerResetPassword from "./pages/consumer/ConsumerResetPassword.jsx";
+import ConsumerProfile from "./pages/consumer/ConsumerProfile.jsx";
 import OperatorLogin from "./pages/operator/OperatorLogin.jsx";
 import OperatorRecovery from "./pages/operator/OperatorRecovery.jsx";
 import OperatorResetPassword from "./pages/operator/OperatorResetPassword.jsx";
@@ -306,6 +312,13 @@ function AppShell({ easyMenu, crmHost }) {
         {/* Claim verify */}
         <Route path="/claim/verify" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClaimVerify />} />
 
+        {/* ── Consumer account ───────────────────────────────────── */}
+        <Route path="/account/signup"          element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerSignup />} />
+        <Route path="/account/login"           element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerLogin />} />
+        <Route path="/account/forgot-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerForgotPassword />} />
+        <Route path="/account/reset-password"  element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerResetPassword />} />
+        <Route path="/account"                 element={crmHost ? <HostRouteRedirect to="/crm" />      : <ConsumerProfile />} />
+
         {/* ── Operator backend portal ────────────────────────────── */}
         <Route path="/operator/login"        element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorLogin />} />
         <Route path="/operator/recover"      element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorRecovery />} />
@@ -362,6 +375,7 @@ export default function App() {
   const crmHost = isCrmHost();
 
   return (
+    <ConsumerProvider>
     <OwnerProvider>
     <CrmProvider>
     <OperatorProvider>
@@ -377,5 +391,6 @@ export default function App() {
     </OperatorProvider>
     </CrmProvider>
     </OwnerProvider>
+    </ConsumerProvider>
   );
 }
