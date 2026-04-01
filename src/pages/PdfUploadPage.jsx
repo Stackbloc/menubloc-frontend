@@ -28,7 +28,7 @@ import React, { useRef, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024; // 20 MB
 

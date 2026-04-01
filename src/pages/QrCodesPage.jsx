@@ -21,7 +21,7 @@ import { useParams } from "react-router-dom";
 import { BackButton } from "../components/NavButton.jsx";
 import { apiGet, apiPost, apiPatch } from "../lib/api.js";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 const CODE_TYPES = ["primary", "page", "campaign", "flyer", "window", "table", "print", "social"];
 

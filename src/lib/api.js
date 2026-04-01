@@ -113,6 +113,18 @@ export async function getBrowseItems(params = {}) {
   return apiGet(`/menus/browse-items?${search.toString()}`);
 }
 
+export async function previewOrder(body) {
+  return apiPost("/api/orders/preview", body);
+}
+
+export async function createOrderPaymentIntent(body) {
+  return apiPost("/api/orders/create-payment-intent", body);
+}
+
+export async function getOrder(orderId) {
+  return apiGet(`/api/orders/${encodeURIComponent(String(orderId))}`);
+}
+
 export default {
   apiGet,
   apiPost,
@@ -121,5 +133,8 @@ export default {
   getRestaurantMenu,
   getBrowseMenus,
   getBrowseItems,
+  previewOrder,
+  createOrderPaymentIntent,
+  getOrder,
   toConsumerErrorMessage,
 };

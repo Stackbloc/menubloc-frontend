@@ -26,7 +26,7 @@ import { HomeButton } from "../components/NavButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
 const SCHEDULE_PREVIEW = 3;
 

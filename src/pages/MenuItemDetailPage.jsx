@@ -25,11 +25,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { PageNav } from "../components/NavButton";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
-const BACKEND_BASE = (
-  import.meta?.env?.VITE_API_URL ||
-  import.meta?.env?.VITE_BACKEND_URL ||
-  "http://localhost:3001"
-).replace(/\/$/, "");
+const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 // ── Utility ─────────────────────────────────────────────────
 

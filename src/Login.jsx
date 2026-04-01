@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState("");

@@ -37,7 +37,7 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
 
 /* ---- Theme persistence ---- */

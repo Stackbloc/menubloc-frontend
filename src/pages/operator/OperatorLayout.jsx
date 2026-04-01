@@ -14,6 +14,8 @@ import { useOperator } from "../../context/OperatorContext.jsx";
 
 const NAV = [
   { to: "/operator",              label: "Dashboard",    icon: "⊞" },
+  { to: "/operator/orders",       label: "Orders",       icon: "☷" },
+  { to: "/operator/delivery",     label: "Delivery",     icon: "⇄" },
   { to: "/operator/profile",      label: "Profile",      icon: "◷" },
   { to: "/operator/menu",         label: "Menu Editor",  icon: "☰" },
   { to: "/operator/deals",        label: "Deals",        icon: "⊹" },

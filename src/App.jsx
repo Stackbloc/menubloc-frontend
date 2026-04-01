@@ -25,8 +25,10 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { CartProvider } from "./context/CartContext.jsx";
+import { OrderCartProvider } from "./context/OrderCartContext.jsx";
 import { LanguageProvider } from "./context/LanguageContext.jsx";
 import CartDrawer from "./components/CartDrawer.jsx";
+import OrderCartDrawer from "./components/OrderCartDrawer.jsx";
 import SiteFooter from "./components/SiteFooter.jsx";
 import { OperatorProvider, useOperator } from "./context/OperatorContext.jsx";
 import { OwnerProvider, useOwner } from "./context/OwnerContext.jsx";
@@ -35,6 +37,9 @@ import OperatorLogin from "./pages/operator/OperatorLogin.jsx";
 import OperatorRecovery from "./pages/operator/OperatorRecovery.jsx";
 import OperatorResetPassword from "./pages/operator/OperatorResetPassword.jsx";
 import OperatorDashboard from "./pages/operator/OperatorDashboard.jsx";
+import OperatorDeliveryPage from "./pages/operator/OperatorDeliveryPage.jsx";
+import RestaurantOrdersPage from "./pages/operator/RestaurantOrdersPage.jsx";
+import RestaurantOrderDetailPage from "./pages/operator/RestaurantOrderDetailPage.jsx";
 import OperatorMenuEditor from "./pages/operator/OperatorMenuEditor.jsx";
 import OperatorDealsEditor from "./pages/operator/OperatorDealsEditor.jsx";
 import OperatorClaimSearch from "./pages/operator/OperatorClaimSearch.jsx";
@@ -68,6 +73,8 @@ import MenuDetailPage from "./pages/MenuDetailPage.jsx";
 import MenuItemDetailPage from "./pages/MenuItemDetailPage.jsx";
 import PublicMenuPage from "./pages/PublicMenuPage.jsx";
 import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
+import CheckoutPage from "./pages/CheckoutPage.jsx";
+import OrderConfirmationPage from "./pages/OrderConfirmationPage.jsx";
 import BrowseMenus from "./pages/BrowseMenus.jsx";
 import Top5HealthiestPage from "./pages/Top5HealthiestPage.jsx";
 import TopPicksPage from "./pages/TopPicksPage.jsx";
@@ -88,6 +95,8 @@ import FoodTruckSchedulePage from "./pages/FoodTruckSchedulePage.jsx";
 import FoodTruckSignup from "./pages/FoodTruckSignup.jsx";
 import OperatorIntakePage from "./pages/menulibrarian_mobile.jsx";
 import CrmDashboard from "./pages/crm/CrmDashboard.jsx";
+import AdminOrdersPage from "./pages/crm/AdminOrdersPage.jsx";
+import AdminOrderDetailPage from "./pages/crm/AdminOrderDetailPage.jsx";
 import CrmLeadList from "./pages/crm/CrmLeadList.jsx";
 import CrmLeadDetail from "./pages/crm/CrmLeadDetail.jsx";
 import CrmTasks from "./pages/crm/CrmTasks.jsx";
@@ -224,6 +233,7 @@ function AppShell({ easyMenu, crmHost }) {
     <>
       <AnalyticsTracker />
       {crmHost ? null : <CartDrawer />}
+      {crmHost ? null : <OrderCartDrawer />}
 
       <Routes>
         {/* Root route depends on domain */}
@@ -285,6 +295,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/menus/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuDetailPage />} />
         <Route path="/public/restaurants/:id/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/public/restaurants/:id/display" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuDisplayPage />} />
+        <Route path="/checkout" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CheckoutPage />} />
+        <Route path="/orders/:orderId/confirmation" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OrderConfirmationPage />} />
         <Route path="/restaurants/:restaurantSlug/menu-items/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemDetailPage />} />
         <Route path="/menu-items/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemDetailPage />} />
 
@@ -300,6 +312,9 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorResetPassword />} />
         <Route path="/operator/claim"        element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorClaimSearch /></OperatorRoute>} />
         <Route path="/operator"              element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDashboard /></OperatorRoute>} />
+        <Route path="/operator/orders"       element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantOrdersPage /></OperatorRoute>} />
+        <Route path="/operator/orders/:orderId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantOrderDetailPage /></OperatorRoute>} />
+        <Route path="/operator/delivery"     element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDeliveryPage /></OperatorRoute>} />
         <Route path="/operator/profile"      element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorProfileEditor /></OperatorRoute>} />
         <Route path="/operator/menu"         element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
         <Route path="/operator/design"       element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorAdobeStudio /></OperatorRoute>} />
@@ -321,6 +336,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/brand"            element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorBrandSettings /></OperatorRoute>} />
         <Route path="/crm/login" element={<CrmLogin />} />
         <Route path="/crm" element={<CrmRoute><CrmDashboard /></CrmRoute>} />
+        <Route path="/crm/orders" element={<CrmRoute><AdminOrdersPage /></CrmRoute>} />
+        <Route path="/crm/orders/:orderId" element={<CrmRoute><AdminOrderDetailPage /></CrmRoute>} />
         <Route path="/crm/leads" element={<CrmRoute><CrmLeadList /></CrmRoute>} />
         <Route path="/crm/leads/:id" element={<CrmRoute><CrmLeadDetail /></CrmRoute>} />
         <Route path="/crm/tasks" element={<CrmRoute><CrmTasks /></CrmRoute>} />
@@ -349,11 +366,13 @@ export default function App() {
     <CrmProvider>
     <OperatorProvider>
     <CartProvider>
+    <OrderCartProvider>
     <LanguageProvider>
     <BrowserRouter>
       <AppShell easyMenu={easyMenu} crmHost={crmHost} />
     </BrowserRouter>
     </LanguageProvider>
+    </OrderCartProvider>
     </CartProvider>
     </OperatorProvider>
     </CrmProvider>

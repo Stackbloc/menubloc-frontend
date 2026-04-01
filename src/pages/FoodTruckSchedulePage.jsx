@@ -20,7 +20,7 @@ import { useParams, Link } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
 
 function readTheme() {

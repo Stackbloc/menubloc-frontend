@@ -19,7 +19,7 @@ import { useParams } from "react-router-dom";
 import { PageNav } from "../components/NavButton.jsx";
 import MenuSection from "../components/MenuSection";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 function formatDate(value) {
   if (!value) return "-";

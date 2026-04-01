@@ -52,3 +52,10 @@ export const getCrmPipelineReport = () => get("/api/crm/reports/pipeline");
 export const getCrmSourcesReport = () => get("/api/crm/reports/sources");
 export const getCrmConversionsReport = () => get("/api/crm/reports/conversions");
 export const getCrmFollowupsReport = () => get("/api/crm/reports/followups");
+export const getCrmOrders = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/orders/admin${qs ? `?${qs}` : ""}`);
+};
+export const getCrmOrderDetail = (orderId) => get(`/api/orders/${orderId}/detail`);

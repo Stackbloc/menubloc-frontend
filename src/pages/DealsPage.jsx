@@ -17,7 +17,7 @@ import {
   StatusMessage,
 } from "../components/grubbid/GrubbidPrimitives.jsx";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 const CUISINE_OPTIONS = [
   "American",

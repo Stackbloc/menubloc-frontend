@@ -18,7 +18,7 @@ import { useParams } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 import GrubbidMenuView from "../GrubbidMenuView.jsx";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 function safeText(v) {
   return String(v ?? "").trim();

@@ -14,7 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const LOCAL_RADIUS_MILES = 8;
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const RECENT_LOCATIONS_KEY = "grubbid.recent.locations";

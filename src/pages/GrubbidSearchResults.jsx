@@ -28,7 +28,7 @@ import { PageHero, PageShell, SectionTitle, StatusMessage } from "../components/
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const SEARCH_SESSION_KEY = "grubbid.search.session_id";
 

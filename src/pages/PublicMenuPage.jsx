@@ -22,6 +22,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 
 function useIsMobile(breakpoint = 900) {
@@ -386,6 +387,7 @@ export default function PublicMenuPage() {
   const { language, t } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
+  const { addMenuItem, openCart } = useOrderCart();
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -583,6 +585,18 @@ export default function PublicMenuPage() {
   const isUnverified    = data?.is_authoritative === false || !!menuBanner;
   const isIntakePreview = data?.menu_source === "intake";
   const franchiseGroup  = data?.franchise_group || null;
+  const cartRestaurant = {
+    restaurantId: data?.restaurant_id || id,
+    restaurantName,
+    deliveryEnabled: data?.delivery_enabled === true,
+    defaultDeliveryProvider: data?.default_delivery_provider || null,
+    activeDeliveryProviders: Array.isArray(data?.active_delivery_providers)
+      ? data.active_delivery_providers
+      : [],
+    availableFulfillmentTypes: Array.isArray(data?.available_fulfillment_types)
+      ? data.available_fulfillment_types
+      : ["pickup"],
+  };
 
   function navigateToFranchiseLocation(restaurantId) {
     if (!restaurantId) return;
@@ -610,6 +624,24 @@ export default function PublicMenuPage() {
     const nextRestaurantId =
       currentIndex >= 0 && currentIndex + 1 < locations.length ? locations[currentIndex + 1]?.restaurant_id : null;
     navigateToFranchiseLocation(nextRestaurantId);
+  }
+
+  function handleAddToOrder(event, item, itemName, itemDescription) {
+    event.stopPropagation();
+
+    const result = addMenuItem({
+      restaurant: cartRestaurant,
+      item: {
+        menuItemId: item?.id,
+        name: itemName,
+        description: itemDescription,
+        priceCents: Number(item?.price_cents || 0),
+      },
+    });
+
+    if (result?.ok) {
+      openCart();
+    }
   }
 
   return (
@@ -878,6 +910,25 @@ export default function PublicMenuPage() {
                               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
                                 {price ? (
                                   <div style={{ fontSize: 14, fontWeight: 900, whiteSpace: "nowrap" }}>{price}</div>
+                                ) : null}
+                                {Number.isFinite(Number(it?.price_cents)) && Number(it.price_cents) > 0 ? (
+                                  <button
+                                    type="button"
+                                    onClick={(event) => handleAddToOrder(event, it, name, desc)}
+                                    style={{
+                                      border: "none",
+                                      borderRadius: 999,
+                                      background: "#11211a",
+                                      color: "#f8fafc",
+                                      padding: "8px 12px",
+                                      fontSize: 12,
+                                      fontWeight: 800,
+                                      whiteSpace: "nowrap",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    Add to cart
+                                  </button>
                                 ) : null}
                                 {canNavigate && (
                                   <span style={{ fontSize: 11, color: "#2d6a4f", fontWeight: 700, whiteSpace: "nowrap" }}>

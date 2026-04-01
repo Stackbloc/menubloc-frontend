@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { PageNav } from "../components/NavButton.jsx";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 const ACCENT_COLORS = ["#2d6a4f", "#1d4e89", "#7b2d8b", "#b5451b", "#5c4813"];
 

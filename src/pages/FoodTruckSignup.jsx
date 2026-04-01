@@ -22,7 +22,7 @@
 import { useState } from "react";
 import { useCart } from "../context/CartContext.jsx";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 // ── Replace with real sandbox Plan ID from developer.paypal.com ──
 const PLAN_ID_FOODTRUCK_VERIFIED = "YOUR_PLAN_ID_FOODTRUCK_VERIFIED";

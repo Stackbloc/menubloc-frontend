@@ -165,6 +165,31 @@ export const getDisplaySettings = (rid) =>
 export const updateDisplaySettings = (rid, body) =>
   patch(`/operator/restaurants/${rid}/display-settings`, body);
 
+// ── Restaurant: Delivery Accounts ─────────────────────────────────────────
+export const getDeliverySettings = (rid) =>
+  get(`/operator/restaurants/${rid}/delivery`);
+export const updateDeliverySettings = (rid, body) =>
+  patch(`/operator/restaurants/${rid}/delivery/settings`, body);
+export const saveDeliveryProviderAccount = (rid, provider, body) =>
+  req(`/operator/restaurants/${rid}/delivery/providers/${provider}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+export const disconnectDeliveryProviderAccount = (rid, provider) =>
+  del(`/operator/restaurants/${rid}/delivery/providers/${provider}`);
+
+// ── Restaurant: Orders ────────────────────────────────────────────────────
+export const getRestaurantOrders = (rid, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/orders/restaurant/${rid}${qs ? `?${qs}` : ""}`);
+};
+export const getRestaurantOrderDetail = (orderId) =>
+  get(`/api/orders/${orderId}/detail`);
+export const updateRestaurantOrderStatus = (orderId, orderStatus) =>
+  patch(`/api/orders/${orderId}/status`, { orderStatus });
+
 // ── Restaurant: Menu Studio — Schedules (Pro) ─────────────────────────────
 export const duplicateMenu = (rid, mid) =>
   post(`/operator/restaurants/${rid}/menus/${mid}/duplicate`, {});
