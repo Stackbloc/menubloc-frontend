@@ -440,8 +440,8 @@ export default function GrubbidDiscovery() {
 
             @media (max-width: 768px) {
               .grubbid-discovery-search-row {
-                width: calc(100% + 12px);
-                margin-left: -6px;
+                width: calc(100% + 28px);
+                margin-left: -14px;
               }
 
               .grubbid-discovery-search::placeholder {
