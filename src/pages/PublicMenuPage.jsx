@@ -24,6 +24,10 @@ import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom"
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
+import BasketSummaryBar from "../components/basket/BasketSummaryBar.jsx";
+import ModifierSheet from "../components/basket/ModifierSheet.jsx";
+import { itemHasRequiredModifiers } from "../components/basket/modifierModel.js";
+import OrderCartToast from "../components/basket/OrderCartToast.jsx";
 
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(() =>
@@ -387,9 +391,18 @@ export default function PublicMenuPage() {
   const { language, t } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addMenuItem, openCart } = useOrderCart();
+  const {
+    addMenuItem,
+    openCart,
+    restaurant: cartRestaurantState,
+    itemCount,
+    subtotalCents,
+    notice,
+    clearNotice,
+  } = useOrderCart();
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [modifierItem, setModifierItem] = useState(null);
 
   const [pageState, setPageState] = useState({
     status: "loading", // loading | ok | error
@@ -597,6 +610,9 @@ export default function PublicMenuPage() {
       ? data.available_fulfillment_types
       : ["pickup"],
   };
+  const showBasketSummary =
+    itemCount > 0 &&
+    Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
 
   function navigateToFranchiseLocation(restaurantId) {
     if (!restaurantId) return;
@@ -626,22 +642,32 @@ export default function PublicMenuPage() {
     navigateToFranchiseLocation(nextRestaurantId);
   }
 
-  function handleAddToOrder(event, item, itemName, itemDescription) {
-    event.stopPropagation();
-
-    const result = addMenuItem({
+  function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = []) {
+    return addMenuItem({
       restaurant: cartRestaurant,
       item: {
         menuItemId: item?.id,
         name: itemName,
         description: itemDescription,
-        priceCents: Number(item?.price_cents || 0),
+        basePriceCents: Number(item?.price_cents || 0),
+        modifiers,
       },
     });
+  }
 
-    if (result?.ok) {
-      openCart();
+  function handleAddToOrder(event, item, itemName, itemDescription) {
+    event.stopPropagation();
+
+    if (itemHasRequiredModifiers(item)) {
+      setModifierItem({
+        ...item,
+        name: itemName,
+        description: itemDescription,
+      });
+      return;
     }
+
+    commitMenuItemToBasket(item, itemName, itemDescription);
   }
 
   return (
@@ -969,6 +995,33 @@ export default function PublicMenuPage() {
 
         </div>
       </div>
+      <ModifierSheet
+        open={!!modifierItem}
+        item={modifierItem}
+        onClose={() => setModifierItem(null)}
+        onConfirm={(modifiers) => {
+          if (!modifierItem) return;
+          commitMenuItemToBasket(
+            modifierItem,
+            modifierItem.name,
+            modifierItem.description,
+            modifiers
+          );
+          setModifierItem(null);
+        }}
+      />
+      <OrderCartToast
+        notice={notice}
+        onDismiss={clearNotice}
+        bottomOffset={showBasketSummary ? 94 : 18}
+      />
+      {showBasketSummary ? (
+        <BasketSummaryBar
+          itemCount={itemCount}
+          subtotal={subtotalCents}
+          onOpenBasket={openCart}
+        />
+      ) : null}
     </div>
   );
 }

@@ -1,0 +1,260 @@
+function toInteger(value, fallback = 0) {
+  const normalized = Number(value);
+  return Number.isInteger(normalized) ? normalized : fallback;
+}
+
+function toPositiveInteger(value, fallback = 1) {
+  const normalized = toInteger(value, fallback);
+  return normalized > 0 ? normalized : fallback;
+}
+
+function normalizeModifier(modifier, index = 0) {
+  const groupId = String(
+    modifier?.groupId ??
+      modifier?.group_id ??
+      modifier?.modifierGroupId ??
+      modifier?.modifier_group_id ??
+      "default"
+  ).trim();
+  const optionId = String(
+    modifier?.optionId ??
+      modifier?.option_id ??
+      modifier?.id ??
+      `${groupId}-${index}`
+  ).trim();
+  const name = String(modifier?.name ?? modifier?.label ?? modifier?.title ?? "Selection").trim();
+  const priceDeltaCents = toInteger(
+    modifier?.priceDeltaCents ??
+      modifier?.price_delta_cents ??
+      modifier?.priceCents ??
+      modifier?.price_cents ??
+      0,
+    0
+  );
+
+  return {
+    groupId,
+    optionId,
+    name,
+    priceDeltaCents,
+  };
+}
+
+export function computeLineTotals(line) {
+  const quantity = toPositiveInteger(line?.quantity, 1);
+  const basePriceCents = toInteger(
+    line?.basePriceCents ?? line?.base_price_cents ?? line?.priceCents ?? line?.price_cents,
+    0
+  );
+  const modifiers = Array.isArray(line?.modifiers) ? line.modifiers.map(normalizeModifier) : [];
+  const modifierTotalCents = modifiers.reduce(
+    (sum, modifier) => sum + toInteger(modifier?.priceDeltaCents, 0),
+    0
+  );
+  const unitPriceCents = basePriceCents + modifierTotalCents;
+  const lineTotalCents = unitPriceCents * quantity;
+
+  return {
+    ...line,
+    quantity,
+    basePriceCents,
+    modifiers,
+    unitPriceCents,
+    lineTotalCents,
+  };
+}
+
+export function normalizeCartLine(line) {
+  return computeLineTotals({
+    lineId:
+      String(
+        line?.lineId ??
+          line?.line_id ??
+          (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : `line-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+      ).trim(),
+    restaurantId: toInteger(line?.restaurantId ?? line?.restaurant_id, 0),
+    menuItemId: toInteger(line?.menuItemId ?? line?.menu_item_id, 0),
+    name: String(line?.name ?? "").trim(),
+    description: String(line?.description ?? "").trim(),
+    quantity: toPositiveInteger(line?.quantity, 1),
+    modifiers: Array.isArray(line?.modifiers) ? line.modifiers : [],
+    specialInstructions: line?.specialInstructions ?? line?.special_instructions ?? null,
+    basePriceCents: toInteger(
+      line?.basePriceCents ?? line?.base_price_cents ?? line?.priceCents ?? line?.price_cents,
+      0
+    ),
+  });
+}
+
+export function normalizeStoredCart(raw) {
+  const restaurant = raw?.restaurant
+    ? {
+        ...raw.restaurant,
+        restaurantId: toInteger(raw.restaurant.restaurantId ?? raw.restaurant.restaurant_id, 0),
+        restaurantName: String(
+          raw.restaurant.restaurantName ?? raw.restaurant.restaurant_name ?? ""
+        ).trim(),
+      }
+    : null;
+  const items = Array.isArray(raw?.items) ? raw.items.map(normalizeCartLine) : [];
+
+  return {
+    restaurant: items.length > 0 ? restaurant : null,
+    items,
+  };
+}
+
+export function buildModifierIdentity(modifiers = []) {
+  return [...modifiers]
+    .map((modifier) => normalizeModifier(modifier))
+    .sort((a, b) => {
+      const left = `${a.groupId}:${a.optionId}`;
+      const right = `${b.groupId}:${b.optionId}`;
+      return left.localeCompare(right);
+    })
+    .map((modifier) => `${modifier.groupId}:${modifier.optionId}`)
+    .join("|");
+}
+
+export function buildLineIdentity(line) {
+  return [
+    toInteger(line?.menuItemId, 0),
+    buildModifierIdentity(line?.modifiers),
+    String(line?.specialInstructions ?? "").trim(),
+  ].join("::");
+}
+
+export function createCartLine({ restaurant, item }) {
+  const normalizedRestaurantId = toInteger(
+    restaurant?.restaurantId ?? restaurant?.restaurant_id,
+    0
+  );
+  const basePriceCents = toInteger(
+    item?.basePriceCents ?? item?.base_price_cents ?? item?.priceCents ?? item?.price_cents,
+    0
+  );
+
+  return normalizeCartLine({
+    lineId:
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    restaurantId: normalizedRestaurantId,
+    menuItemId: item?.menuItemId,
+    name: item?.name,
+    description: item?.description,
+    basePriceCents,
+    quantity: item?.quantity,
+    modifiers: item?.modifiers,
+    specialInstructions: item?.specialInstructions ?? null,
+  });
+}
+
+export function addItemToCart(cartState, payload) {
+  const current = normalizeStoredCart(cartState);
+  const nextRestaurant = payload?.restaurant
+    ? {
+        ...payload.restaurant,
+        restaurantId: toInteger(payload.restaurant.restaurantId ?? payload.restaurant.restaurant_id, 0),
+        restaurantName: String(
+          payload.restaurant.restaurantName ?? payload.restaurant.restaurant_name ?? ""
+        ).trim(),
+      }
+    : null;
+  const nextLine = createCartLine(payload || {});
+
+  if (!nextRestaurant?.restaurantId || !nextLine.menuItemId) {
+    return {
+      ok: false,
+      cart: current,
+      message: "Cart item is missing restaurant or menu item context.",
+    };
+  }
+
+  if (
+    current.restaurant?.restaurantId &&
+    current.restaurant.restaurantId !== nextRestaurant.restaurantId
+  ) {
+    return {
+      ok: false,
+      cart: current,
+      message: `Your cart already has items from ${current.restaurant.restaurantName}. Clear it before ordering from another restaurant.`,
+    };
+  }
+
+  const nextIdentity = buildLineIdentity(nextLine);
+  const existingIndex = current.items.findIndex((item) => buildLineIdentity(item) === nextIdentity);
+
+  const items =
+    existingIndex >= 0
+      ? current.items.map((item, index) =>
+          index === existingIndex
+            ? computeLineTotals({ ...item, quantity: item.quantity + nextLine.quantity })
+            : item
+        )
+      : [...current.items, nextLine];
+
+  return {
+    ok: true,
+    cart: {
+      restaurant: current.restaurant || nextRestaurant,
+      items,
+    },
+    addedLine: existingIndex >= 0 ? items[existingIndex] : nextLine,
+  };
+}
+
+export function updateCartLineQuantity(cartState, lineId, quantity) {
+  const current = normalizeStoredCart(cartState);
+  const normalizedLineId = String(lineId || "").trim();
+  const nextItems = current.items
+    .map((item) =>
+      item.lineId === normalizedLineId
+        ? computeLineTotals({ ...item, quantity: toInteger(quantity, item.quantity) })
+        : item
+    )
+    .filter((item) => item.quantity > 0);
+
+  return {
+    restaurant: nextItems.length > 0 ? current.restaurant : null,
+    items: nextItems,
+  };
+}
+
+export function removeCartLine(cartState, lineId) {
+  const current = normalizeStoredCart(cartState);
+  const normalizedLineId = String(lineId || "").trim();
+  const nextItems = current.items.filter((item) => item.lineId !== normalizedLineId);
+
+  return {
+    restaurant: nextItems.length > 0 ? current.restaurant : null,
+    items: nextItems,
+  };
+}
+
+export function getCartSummary(cartState) {
+  const current = normalizeStoredCart(cartState);
+  return {
+    restaurant: current.restaurant,
+    itemCount: current.items.reduce((sum, item) => sum + item.quantity, 0),
+    subtotalCents: current.items.reduce((sum, item) => sum + item.lineTotalCents, 0),
+  };
+}
+
+export function buildCheckoutItems(cartItems) {
+  const quantities = new Map();
+
+  for (const item of Array.isArray(cartItems) ? cartItems : []) {
+    const menuItemId = toInteger(item?.menuItemId, 0);
+    const quantity = toPositiveInteger(item?.quantity, 1);
+    if (!menuItemId) continue;
+    quantities.set(menuItemId, (quantities.get(menuItemId) || 0) + quantity);
+  }
+
+  return Array.from(quantities.entries()).map(([menuItemId, quantity]) => ({
+    menuItemId,
+    quantity,
+  }));
+}

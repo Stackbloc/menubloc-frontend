@@ -1,4 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  addItemToCart,
+  getCartSummary,
+  normalizeStoredCart,
+  removeCartLine,
+  updateCartLineQuantity,
+} from "./orderCartModel.js";
 
 const STORAGE_KEY = "grubbid.order-cart.v1";
 const OrderCartContext = createContext(null);
@@ -10,11 +17,7 @@ function readStoredCart() {
       return { restaurant: null, items: [] };
     }
 
-    const parsed = JSON.parse(raw);
-    return {
-      restaurant: parsed?.restaurant || null,
-      items: Array.isArray(parsed?.items) ? parsed.items : [],
-    };
+    return normalizeStoredCart(JSON.parse(raw));
   } catch {
     return { restaurant: null, items: [] };
   }
@@ -23,7 +26,7 @@ function readStoredCart() {
 export function OrderCartProvider({ children }) {
   const [{ restaurant, items }, setCartState] = useState(readStoredCart);
   const [isOpen, setIsOpen] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(null);
   const stateRef = useRef({ restaurant, items });
 
   useEffect(() => {
@@ -35,104 +38,56 @@ export function OrderCartProvider({ children }) {
     }
   }, [restaurant, items]);
 
+  useEffect(() => {
+    if (!notice?.message) return undefined;
+    const timeoutId = window.setTimeout(() => {
+      setNotice(null);
+    }, 2400);
+    return () => window.clearTimeout(timeoutId);
+  }, [notice]);
+
   const openCart = useCallback(() => setIsOpen(true), []);
   const closeCart = useCallback(() => setIsOpen(false), []);
-  const clearNotice = useCallback(() => setNotice(""), []);
+  const clearNotice = useCallback(() => setNotice(null), []);
 
   const clearCart = useCallback(() => {
     setCartState({ restaurant: null, items: [] });
-    setNotice("");
+    setNotice(null);
   }, []);
 
   const addMenuItem = useCallback(({ restaurant: nextRestaurant, item }) => {
-    const current = stateRef.current;
+    const result = addItemToCart(stateRef.current, {
+      restaurant: nextRestaurant,
+      item,
+    });
 
-    if (!nextRestaurant?.restaurantId || !item?.menuItemId) {
-      return { ok: false, message: "Cart item is missing restaurant or menu item context." };
+    if (!result.ok) {
+      setNotice({
+        tone: "warning",
+        message: result.message,
+      });
+      return result;
     }
 
-    if (
-      current.restaurant &&
-      Number(current.restaurant.restaurantId) !== Number(nextRestaurant.restaurantId)
-    ) {
-      const message = `Your cart already has items from ${current.restaurant.restaurantName}. Clear it before ordering from another restaurant.`;
-      setNotice(message);
-      return { ok: false, message };
-    }
-
-    setCartState((prev) => {
-      const existingIndex = prev.items.findIndex(
-        (entry) => Number(entry.menuItemId) === Number(item.menuItemId)
-      );
-
-      if (existingIndex >= 0) {
-        const nextItems = [...prev.items];
-        nextItems[existingIndex] = {
-          ...nextItems[existingIndex],
-          quantity: nextItems[existingIndex].quantity + 1,
-        };
-
-        return {
-          restaurant: prev.restaurant || nextRestaurant,
-          items: nextItems,
-        };
-      }
-
-      return {
-        restaurant: prev.restaurant || nextRestaurant,
-        items: [
-          ...prev.items,
-          {
-            ...item,
-            quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1,
-          },
-        ],
-      };
+    setCartState(result.cart);
+    setNotice({
+      tone: "success",
+      message: `Added ${result.addedLine?.name || item?.name || "item"}`,
     });
-
-    setNotice(`${item.name} added to your cart.`);
-    return { ok: true };
+    return result;
   }, []);
 
-  const updateQuantity = useCallback((menuItemId, quantity) => {
-    setCartState((prev) => {
-      const normalizedQuantity = Number(quantity);
-      const nextItems = prev.items
-        .map((item) =>
-          Number(item.menuItemId) === Number(menuItemId)
-            ? { ...item, quantity: normalizedQuantity }
-            : item
-        )
-        .filter((item) => item.quantity > 0);
-
-      return {
-        restaurant: nextItems.length > 0 ? prev.restaurant : null,
-        items: nextItems,
-      };
-    });
+  const updateQuantity = useCallback((lineId, quantity) => {
+    setCartState((prev) => updateCartLineQuantity(prev, lineId, quantity));
   }, []);
 
-  const removeItem = useCallback((menuItemId) => {
-    setCartState((prev) => {
-      const nextItems = prev.items.filter(
-        (item) => Number(item.menuItemId) !== Number(menuItemId)
-      );
-
-      return {
-        restaurant: nextItems.length > 0 ? prev.restaurant : null,
-        items: nextItems,
-      };
-    });
+  const removeItem = useCallback((lineId) => {
+    setCartState((prev) => removeCartLine(prev, lineId));
   }, []);
 
-  const subtotalCents = useMemo(
-    () => items.reduce((sum, item) => sum + item.priceCents * item.quantity, 0),
-    [items]
-  );
-
-  const itemCount = useMemo(
-    () => items.reduce((sum, item) => sum + item.quantity, 0),
-    [items]
+  const { subtotalCents, itemCount } = useMemo(
+    () => getCartSummary({ restaurant, items }),
+    [restaurant, items]
   );
 
   const value = useMemo(

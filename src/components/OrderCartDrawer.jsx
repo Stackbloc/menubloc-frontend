@@ -14,8 +14,6 @@ export default function OrderCartDrawer() {
     isOpen,
     notice,
     subtotalCents,
-    itemCount,
-    openCart,
     closeCart,
     clearCart,
     clearNotice,
@@ -43,31 +41,6 @@ export default function OrderCartDrawer() {
 
   return (
     <>
-      {itemCount > 0 ? (
-        <button
-          type="button"
-          onClick={openCart}
-          style={{
-            position: "fixed",
-            right: 20,
-            bottom: 20,
-            zIndex: 1100,
-            border: "none",
-            borderRadius: 999,
-            background: "#11211a",
-            color: "#f8fafc",
-            padding: "14px 18px",
-            fontSize: 14,
-            fontWeight: 800,
-            letterSpacing: 0.2,
-            boxShadow: "0 16px 40px rgba(15,23,42,0.20)",
-            cursor: "pointer",
-          }}
-        >
-          Cart ({itemCount}) • {formatMoney(subtotalCents)}
-        </button>
-      ) : null}
-
       <div
         onClick={closeCart}
         aria-hidden="true"
@@ -115,8 +88,16 @@ export default function OrderCartDrawer() {
             }}
           >
             <div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: 0.6 }}>
-                Order Cart
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: "#667085",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.6,
+                }}
+              >
+                Basket
               </div>
               <div style={{ fontSize: 22, fontWeight: 900, color: "#11211a", marginTop: 4 }}>
                 {restaurant?.restaurantName || "Your order"}
@@ -138,14 +119,14 @@ export default function OrderCartDrawer() {
               ×
             </button>
           </div>
-          {notice ? (
+          {notice?.message ? (
             <div
               style={{
                 marginTop: 12,
                 padding: "10px 12px",
                 borderRadius: 12,
-                background: "#fef3c7",
-                color: "#92400e",
+                background: notice.tone === "warning" ? "#fef3c7" : "#dcfce7",
+                color: notice.tone === "warning" ? "#92400e" : "#166534",
                 fontSize: 12,
                 fontWeight: 700,
                 display: "flex",
@@ -153,7 +134,7 @@ export default function OrderCartDrawer() {
                 gap: 12,
               }}
             >
-              <span>{notice}</span>
+              <span>{notice.message}</span>
               <button
                 type="button"
                 onClick={clearNotice}
@@ -181,7 +162,7 @@ export default function OrderCartDrawer() {
             <div style={{ display: "grid", gap: 12 }}>
               {items.map((item) => (
                 <div
-                  key={item.menuItemId}
+                  key={item.lineId}
                   style={{
                     border: "1px solid rgba(17,33,26,0.08)",
                     borderRadius: 18,
@@ -207,9 +188,22 @@ export default function OrderCartDrawer() {
                           {item.description}
                         </div>
                       ) : null}
+                      {item.modifiers?.length ? (
+                        <div style={{ marginTop: 6, display: "grid", gap: 4 }}>
+                          {item.modifiers.map((modifier) => (
+                            <div
+                              key={`${item.lineId}-${modifier.groupId}-${modifier.optionId}`}
+                              style={{ fontSize: 12, color: "#475467" }}
+                            >
+                              {modifier.name}
+                              {modifier.priceDeltaCents > 0 ? ` (+${formatMoney(modifier.priceDeltaCents)})` : ""}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 900, color: "#11211a", whiteSpace: "nowrap" }}>
-                      {formatMoney(item.priceCents * item.quantity)}
+                      {formatMoney(item.lineTotalCents)}
                     </div>
                   </div>
                   <div
@@ -233,7 +227,7 @@ export default function OrderCartDrawer() {
                     >
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.menuItemId, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.lineId, item.quantity - 1)}
                         style={{
                           border: "none",
                           background: "#fff",
@@ -252,7 +246,7 @@ export default function OrderCartDrawer() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.menuItemId, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.lineId, item.quantity + 1)}
                         style={{
                           border: "none",
                           background: "#fff",
@@ -270,7 +264,7 @@ export default function OrderCartDrawer() {
 
                     <button
                       type="button"
-                      onClick={() => removeItem(item.menuItemId)}
+                      onClick={() => removeItem(item.lineId)}
                       style={{
                         border: "none",
                         background: "transparent",

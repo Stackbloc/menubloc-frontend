@@ -4,20 +4,14 @@ import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-
 import { loadStripe } from "@stripe/stripe-js";
 import { PageNav } from "../components/NavButton.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
-import { apiGet, apiPost, toConsumerErrorMessage } from "../lib/api.js";
+import { buildCheckoutItems } from "../context/orderCartModel.js";
+import { apiPost, toConsumerErrorMessage } from "../lib/api.js";
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 function formatMoney(cents) {
   return `$${(Number(cents || 0) / 100).toFixed(2)}`;
-}
-
-function buildApiItems(items) {
-  return items.map((item) => ({
-    menuItemId: item.menuItemId,
-    quantity: item.quantity,
-  }));
 }
 
 function normalizeDeliveryAddress(address) {
@@ -145,7 +139,7 @@ export default function CheckoutPage() {
   const [submitError, setSubmitError] = useState("");
   const [creatingIntent, setCreatingIntent] = useState(false);
 
-  const apiItems = useMemo(() => buildApiItems(items), [items]);
+  const apiItems = useMemo(() => buildCheckoutItems(items), [items]);
   const normalizedDeliveryAddress = useMemo(
     () => normalizeDeliveryAddress(deliveryAddress),
     [deliveryAddress]
@@ -512,7 +506,7 @@ export default function CheckoutPage() {
             <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
               {items.map((item) => (
                 <div
-                  key={item.menuItemId}
+                  key={item.lineId}
                   style={{
                     border: "1px solid rgba(17,33,26,0.08)",
                     borderRadius: 18,
@@ -526,9 +520,22 @@ export default function CheckoutPage() {
                       <div style={{ fontSize: 12, color: "#667085", marginTop: 4 }}>
                         Qty {item.quantity}
                       </div>
+                      {item.modifiers?.length ? (
+                        <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
+                          {item.modifiers.map((modifier) => (
+                            <div
+                              key={`${item.lineId}-${modifier.groupId}-${modifier.optionId}`}
+                              style={{ fontSize: 12, color: "#475467" }}
+                            >
+                              {modifier.name}
+                              {modifier.priceDeltaCents > 0 ? ` (+${formatMoney(modifier.priceDeltaCents)})` : ""}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 900 }}>
-                      {formatMoney(item.priceCents * item.quantity)}
+                      {formatMoney(item.lineTotalCents)}
                     </div>
                   </div>
                 </div>
