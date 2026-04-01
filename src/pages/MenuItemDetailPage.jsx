@@ -511,10 +511,32 @@ function ExploreSimilarDishes({ itemId, t }) {
           <div key={entry.id} style={{ borderRadius: 18, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f", marginBottom: 10 }}>
               {entry.restaurant_name}
+              {entry.distance_miles != null && (
+                <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>
+              )}
             </div>
             <Link to={`/menu-items/${entry.id}`} style={{ textDecoration: "none", color: "#124ba3", fontWeight: 800, fontSize: 15, lineHeight: 1.35 }}>
               {entry.name}
             </Link>
+            {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                {entry.profile_differences.map((phrase) => (
+                  <span
+                    key={phrase}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#3a5a44",
+                      background: "rgba(40,100,60,0.08)",
+                      borderRadius: 20,
+                      padding: "3px 10px",
+                    }}
+                  >
+                    {phrase}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
