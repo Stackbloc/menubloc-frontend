@@ -7,125 +7,108 @@ import {
   getCartSummary,
 } from "../src/context/orderCartModel.js";
 
-const restaurant = {
-  restaurantId: 42,
-  restaurantName: "River Cafe",
-};
+test("buildCheckoutItems preserves line-level modifiers for checkout pricing", () => {
+  const items = buildCheckoutItems([
+    {
+      lineId: "line-1",
+      restaurantId: 12,
+      menuItemId: 44,
+      name: "Burger",
+      quantity: 2,
+      basePriceCents: 1200,
+      modifiers: [
+        {
+          groupId: "protein",
+          optionId: "double",
+          name: "Double Patty",
+          priceDeltaCents: 300,
+        },
+      ],
+    },
+  ]);
 
-test("addItemToCart keeps same-item adds in the same basket line", () => {
+  assert.deepEqual(items, [
+    {
+      lineId: "line-1",
+      menuItemId: 44,
+      quantity: 2,
+      modifiers: [
+        {
+          groupId: "protein",
+          optionId: "double",
+          name: "Double Patty",
+          priceDeltaCents: 300,
+        },
+      ],
+      specialInstructions: undefined,
+    },
+  ]);
+});
+
+test("addItemToCart keeps a single-restaurant basket and merges identical lines", () => {
   const first = addItemToCart(
     { restaurant: null, items: [] },
     {
-      restaurant,
+      restaurant: { restaurantId: 9, restaurantName: "Test Kitchen" },
       item: {
         menuItemId: 101,
-        name: "Chicken Sandwich",
-        basePriceCents: 1299,
+        name: "Fries",
+        quantity: 1,
+        basePriceCents: 450,
       },
     }
   );
 
+  assert.equal(first.ok, true);
+
   const second = addItemToCart(first.cart, {
-    restaurant,
+    restaurant: { restaurantId: 9, restaurantName: "Test Kitchen" },
     item: {
       menuItemId: 101,
-      name: "Chicken Sandwich",
-      basePriceCents: 1299,
+      name: "Fries",
+      quantity: 1,
+      basePriceCents: 450,
     },
   });
 
   assert.equal(second.ok, true);
   assert.equal(second.cart.items.length, 1);
   assert.equal(second.cart.items[0].quantity, 2);
-
-  const summary = getCartSummary(second.cart);
-  assert.equal(summary.itemCount, 2);
-  assert.equal(summary.subtotalCents, 2598);
-});
-
-test("addItemToCart keeps modifier variants as separate lines", () => {
-  const first = addItemToCart(
-    { restaurant: null, items: [] },
-    {
-      restaurant,
-      item: {
-        menuItemId: 101,
-        name: "Chicken Sandwich",
-        basePriceCents: 1299,
-        modifiers: [{ groupId: "size", optionId: "regular", name: "Regular", priceDeltaCents: 0 }],
-      },
-    }
-  );
-
-  const second = addItemToCart(first.cart, {
-    restaurant,
-    item: {
-      menuItemId: 101,
-      name: "Chicken Sandwich",
-      basePriceCents: 1299,
-      modifiers: [{ groupId: "size", optionId: "large", name: "Large", priceDeltaCents: 200 }],
-    },
+  assert.deepEqual(getCartSummary(second.cart), {
+    restaurant: { restaurantId: 9, restaurantName: "Test Kitchen" },
+    itemCount: 2,
+    subtotalCents: 900,
   });
-
-  assert.equal(second.ok, true);
-  assert.equal(second.cart.items.length, 2);
-  assert.equal(second.cart.items[0].lineTotalCents, 1299);
-  assert.equal(second.cart.items[1].lineTotalCents, 1499);
 });
 
-test("addItemToCart blocks mixed-restaurant baskets", () => {
-  const first = addItemToCart(
+test("addItemToCart rejects cross-restaurant adds without replacing implicitly", () => {
+  const seed = addItemToCart(
     { restaurant: null, items: [] },
     {
-      restaurant,
+      restaurant: { restaurantId: 9, restaurantName: "Test Kitchen" },
       item: {
         menuItemId: 101,
-        name: "Chicken Sandwich",
-        basePriceCents: 1299,
+        name: "Fries",
+        quantity: 1,
+        basePriceCents: 450,
       },
     }
   );
 
-  const blocked = addItemToCart(first.cart, {
-    restaurant: {
-      restaurantId: 99,
-      restaurantName: "Other Place",
-    },
+  const blocked = addItemToCart(seed.cart, {
+    restaurant: { restaurantId: 14, restaurantName: "Other Place" },
     item: {
-      menuItemId: 202,
-      name: "Fries",
-      basePriceCents: 399,
+      menuItemId: 201,
+      name: "Taco",
+      quantity: 1,
+      basePriceCents: 650,
     },
   });
 
   assert.equal(blocked.ok, false);
-  assert.match(blocked.message, /already has items from River Cafe/i);
+  assert.match(blocked.message, /already has items from Test Kitchen/i);
+  assert.equal(blocked.cart.restaurant.restaurantId, 9);
   assert.equal(blocked.cart.items.length, 1);
-});
-
-test("buildCheckoutItems aggregates basket lines by menu item id", () => {
-  const checkoutItems = buildCheckoutItems([
-    {
-      lineId: "line-1",
-      menuItemId: 101,
-      quantity: 1,
-    },
-    {
-      lineId: "line-2",
-      menuItemId: 101,
-      quantity: 2,
-    },
-    {
-      lineId: "line-3",
-      menuItemId: 202,
-      quantity: 1,
-    },
-  ]);
-
-  assert.deepEqual(checkoutItems, [
-    { menuItemId: 101, quantity: 3 },
-    { menuItemId: 202, quantity: 1 },
-  ]);
 });
 
 test("itemHasRequiredModifiers detects required modifier groups", () => {

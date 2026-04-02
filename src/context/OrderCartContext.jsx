@@ -27,6 +27,7 @@ export function OrderCartProvider({ children }) {
   const [{ restaurant, items }, setCartState] = useState(readStoredCart);
   const [isOpen, setIsOpen] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [pendingReplacement, setPendingReplacement] = useState(null);
   const stateRef = useRef({ restaurant, items });
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export function OrderCartProvider({ children }) {
 
   useEffect(() => {
     if (!notice?.message) return undefined;
+    if (Array.isArray(notice.actions) && notice.actions.length > 0) return undefined;
     const timeoutId = window.setTimeout(() => {
       setNotice(null);
     }, 2400);
@@ -48,11 +50,34 @@ export function OrderCartProvider({ children }) {
 
   const openCart = useCallback(() => setIsOpen(true), []);
   const closeCart = useCallback(() => setIsOpen(false), []);
-  const clearNotice = useCallback(() => setNotice(null), []);
+  const clearNotice = useCallback(() => {
+    setNotice(null);
+    setPendingReplacement(null);
+  }, []);
 
   const clearCart = useCallback(() => {
     setCartState({ restaurant: null, items: [] });
     setNotice(null);
+    setPendingReplacement(null);
+  }, []);
+
+  const commitReplacement = useCallback((payload) => {
+    const result = addItemToCart({ restaurant: null, items: [] }, payload);
+    if (!result.ok) {
+      setNotice({
+        tone: "warning",
+        message: result.message,
+      });
+      return result;
+    }
+
+    setCartState(result.cart);
+    setPendingReplacement(null);
+    setNotice({
+      tone: "success",
+      message: `Started a new basket with ${result.addedLine?.name || payload?.item?.name || "item"}.`,
+    });
+    return result;
   }, []);
 
   const addMenuItem = useCallback(({ restaurant: nextRestaurant, item }) => {
@@ -62,6 +87,21 @@ export function OrderCartProvider({ children }) {
     });
 
     if (!result.ok) {
+      const currentRestaurantName =
+        stateRef.current.restaurant?.restaurantName || "your current restaurant";
+      if (/already has items from/i.test(result.message || "")) {
+        setPendingReplacement({ restaurant: nextRestaurant, item });
+        setNotice({
+          tone: "warning",
+          message: `Your basket has items from ${currentRestaurantName}. Replace it to start ordering from ${nextRestaurant?.restaurantName || "this restaurant"}.`,
+          actions: [
+            { id: "replace-cart", label: "Replace basket" },
+            { id: "dismiss", label: "Keep current basket" },
+          ],
+        });
+        return result;
+      }
+
       setNotice({
         tone: "warning",
         message: result.message,
@@ -85,6 +125,15 @@ export function OrderCartProvider({ children }) {
     setCartState((prev) => removeCartLine(prev, lineId));
   }, []);
 
+  const handleNoticeAction = useCallback((actionId) => {
+    if (actionId === "replace-cart" && pendingReplacement) {
+      commitReplacement(pendingReplacement);
+      return;
+    }
+
+    clearNotice();
+  }, [clearNotice, commitReplacement, pendingReplacement]);
+
   const { subtotalCents, itemCount } = useMemo(
     () => getCartSummary({ restaurant, items }),
     [restaurant, items]
@@ -105,6 +154,7 @@ export function OrderCartProvider({ children }) {
       addMenuItem,
       updateQuantity,
       removeItem,
+      handleNoticeAction,
     }),
     [
       restaurant,
@@ -120,6 +170,7 @@ export function OrderCartProvider({ children }) {
       addMenuItem,
       updateQuantity,
       removeItem,
+      handleNoticeAction,
     ]
   );
 

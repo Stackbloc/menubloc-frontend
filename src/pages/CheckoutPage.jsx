@@ -104,7 +104,7 @@ function PaymentStep({ orderId, onSuccess }) {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { restaurant, items, clearCart } = useOrderCart();
+  const { restaurant, items, clearCart, updateQuantity, removeItem } = useOrderCart();
   const availableFulfillmentTypes = useMemo(() => {
     if (Array.isArray(restaurant?.availableFulfillmentTypes) && restaurant.availableFulfillmentTypes.length > 0) {
       return restaurant.availableFulfillmentTypes;
@@ -138,6 +138,10 @@ export default function CheckoutPage() {
   const [paymentSession, setPaymentSession] = useState(null);
   const [submitError, setSubmitError] = useState("");
   const [creatingIntent, setCreatingIntent] = useState(false);
+
+  const menuPath = restaurant?.restaurantId
+    ? `/public/restaurants/${encodeURIComponent(String(restaurant.restaurantId))}/menu`
+    : "/";
 
   const apiItems = useMemo(() => buildCheckoutItems(items), [items]);
   const normalizedDeliveryAddress = useMemo(
@@ -303,6 +307,26 @@ export default function CheckoutPage() {
             <p style={{ margin: 0, color: "#667085", lineHeight: 1.6 }}>
               Prices and totals are recalculated on the server before payment. The restaurant receives the direct charge on its connected Stripe account.
             </p>
+            <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 10 }}>
+              <Link
+                to={menuPath}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "10px 14px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(17,33,26,0.10)",
+                  color: "#11211a",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  textDecoration: "none",
+                  background: "#fffef8",
+                }}
+              >
+                Add more items
+              </Link>
+            </div>
 
             <form onSubmit={handleCreatePaymentIntent} style={{ marginTop: 24, display: "grid", gap: 16 }}>
               <div>
@@ -537,6 +561,79 @@ export default function CheckoutPage() {
                     <div style={{ fontSize: 14, fontWeight: 900 }}>
                       {formatMoney(item.lineTotalCents)}
                     </div>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 12,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 10,
+                        border: "1px solid rgba(17,33,26,0.10)",
+                        borderRadius: 999,
+                        padding: "4px 6px",
+                        background: "#f8fafc",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.lineId, item.quantity - 1)}
+                        style={{
+                          border: "none",
+                          background: "#fff",
+                          width: 30,
+                          height: 30,
+                          borderRadius: 999,
+                          cursor: "pointer",
+                          fontSize: 16,
+                          fontWeight: 900,
+                        }}
+                      >
+                        −
+                      </button>
+                      <span style={{ minWidth: 18, textAlign: "center", fontSize: 14, fontWeight: 800 }}>
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.lineId, item.quantity + 1)}
+                        style={{
+                          border: "none",
+                          background: "#fff",
+                          width: 30,
+                          height: 30,
+                          borderRadius: 999,
+                          cursor: "pointer",
+                          fontSize: 16,
+                          fontWeight: 900,
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.lineId)}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "#991b1b",
+                        fontSize: 12,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      Remove
+                    </button>
                   </div>
                 </div>
               ))}

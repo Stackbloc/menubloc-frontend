@@ -57,13 +57,6 @@ function fmtMoney(price) {
   return s;
 }
 
-function normalizeExternalUrl(value) {
-  const raw = asStr(value).trim();
-  if (!raw) return "";
-  if (/^https?:\/\//i.test(raw)) return raw;
-  return `https://${raw}`;
-}
-
 function buildGoogleMapsDirectionsUrl(destination) {
   const raw = asStr(destination).trim();
   if (!raw) return "";
@@ -352,39 +345,6 @@ function Badge({ label, bg, color, border }) {
   );
 }
 
-function HeaderActionButton({ href, label, icon, external = false }) {
-  if (!href) return null;
-
-  return (
-    <a
-      href={href}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noopener noreferrer" : undefined}
-      aria-label={label}
-      title={label}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 38,
-        height: 38,
-        borderRadius: 999,
-        border: "1px solid rgba(18,34,28,0.12)",
-        background: "#fff",
-        color: "#11211a",
-        textDecoration: "none",
-        boxShadow: "0 4px 14px rgba(15,23,42,0.06)",
-        flexShrink: 0,
-      }}
-    >
-      <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1 }}>
-        {icon}
-      </span>
-    </a>
-  );
-}
-
-
 /* ---- Main component ---- */
 
 export default function PublicMenuPage() {
@@ -393,12 +353,12 @@ export default function PublicMenuPage() {
   const navigate = useNavigate();
   const {
     addMenuItem,
-    openCart,
     restaurant: cartRestaurantState,
     itemCount,
     subtotalCents,
     notice,
     clearNotice,
+    handleNoticeAction,
   } = useOrderCart();
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -585,9 +545,6 @@ export default function PublicMenuPage() {
   const addressLine2    = buildAddressLocalityLine(data?.city, data?.state, data?.zip);
   const addressLine     = asStr(data?.address_line).trim() || [addressLine1, addressLine2].filter(Boolean).join(", ");
   const directionsHref  = buildGoogleMapsDirectionsUrl(addressLine);
-  const phoneNumber     = asStr(data?.phone).trim();
-  const phoneHref       = phoneNumber ? `tel:${phoneNumber.replace(/[^\d+]/g, "")}` : "";
-  const orderHref       = normalizeExternalUrl(data?.website_url || data?.website);
   const sections        = normalizeSections(data);
   const displaySections = getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap);
   const displayableItemCount = displaySections.reduce(
@@ -610,8 +567,8 @@ export default function PublicMenuPage() {
       ? data.available_fulfillment_types
       : ["pickup"],
   };
-  const showBasketSummary =
-    itemCount > 0 &&
+  const hasBasketItems = itemCount > 0;
+  const basketMatchesCurrentRestaurant =
     Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
 
   function navigateToFranchiseLocation(restaurantId) {
@@ -711,10 +668,6 @@ export default function PublicMenuPage() {
                   {restaurantName}
                 </div>
               )}
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <HeaderActionButton href={phoneHref} label={`Call ${restaurantName}`} icon="📞" />
-                <HeaderActionButton href={orderHref} label={`Order from ${restaurantName}`} icon="🍴" external />
-              </div>
             </div>
             {addressLine ? (
               <div style={{ marginTop: 6, fontSize: 14, color: "#667085", fontWeight: 600 }}>
@@ -1013,13 +966,16 @@ export default function PublicMenuPage() {
       <OrderCartToast
         notice={notice}
         onDismiss={clearNotice}
-        bottomOffset={showBasketSummary ? 94 : 18}
+        onAction={handleNoticeAction}
+        bottomOffset={hasBasketItems ? 94 : 18}
       />
-      {showBasketSummary ? (
+      {hasBasketItems ? (
         <BasketSummaryBar
           itemCount={itemCount}
           subtotal={subtotalCents}
-          onOpenBasket={openCart}
+          restaurantName={cartRestaurantState?.restaurantName}
+          isCurrentRestaurant={basketMatchesCurrentRestaurant}
+          onOpenBasket={() => navigate("/checkout")}
         />
       ) : null}
     </div>

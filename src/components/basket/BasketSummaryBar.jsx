@@ -6,10 +6,18 @@ export default function BasketSummaryBar({
   itemCount,
   subtotal,
   onOpenBasket,
+  restaurantName,
+  isCurrentRestaurant = true,
 }) {
   if (!itemCount) return null;
 
   const itemLabel = itemCount === 1 ? "1 item" : `${itemCount} items`;
+  const heading = isCurrentRestaurant
+    ? "Basket"
+    : `Basket from ${restaurantName || "another restaurant"}`;
+  const subcopy = isCurrentRestaurant
+    ? `${itemLabel} • ${formatMoney(subtotal)}`
+    : `${itemLabel} already selected • ${formatMoney(subtotal)}`;
 
   return (
     <button
@@ -29,6 +37,8 @@ export default function BasketSummaryBar({
         padding: "14px 18px",
         boxShadow: "0 18px 44px rgba(15,23,42,0.22)",
         cursor: "pointer",
+        maxWidth: 540,
+        margin: "0 auto",
       }}
     >
       <div
@@ -42,10 +52,10 @@ export default function BasketSummaryBar({
       >
         <div style={{ display: "grid", gap: 2, textAlign: "left" }}>
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.7, textTransform: "uppercase", color: "rgba(248,250,252,0.74)" }}>
-            Basket
+            {heading}
           </div>
           <div style={{ fontSize: 15, fontWeight: 900 }}>
-            {itemLabel} • {formatMoney(subtotal)}
+            {subcopy}
           </div>
         </div>
         <div
@@ -58,7 +68,7 @@ export default function BasketSummaryBar({
             whiteSpace: "nowrap",
           }}
         >
-          View Basket
+          View Cart
           <span aria-hidden="true">→</span>
         </div>
       </div>

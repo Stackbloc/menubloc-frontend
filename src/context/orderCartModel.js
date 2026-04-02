@@ -244,17 +244,19 @@ export function getCartSummary(cartState) {
 }
 
 export function buildCheckoutItems(cartItems) {
-  const quantities = new Map();
-
-  for (const item of Array.isArray(cartItems) ? cartItems : []) {
-    const menuItemId = toInteger(item?.menuItemId, 0);
-    const quantity = toPositiveInteger(item?.quantity, 1);
-    if (!menuItemId) continue;
-    quantities.set(menuItemId, (quantities.get(menuItemId) || 0) + quantity);
-  }
-
-  return Array.from(quantities.entries()).map(([menuItemId, quantity]) => ({
-    menuItemId,
-    quantity,
-  }));
+  return (Array.isArray(cartItems) ? cartItems : [])
+    .map((item) => normalizeCartLine(item))
+    .filter((item) => item.menuItemId > 0 && item.quantity > 0)
+    .map((item) => ({
+      lineId: item.lineId,
+      menuItemId: item.menuItemId,
+      quantity: item.quantity,
+      modifiers: item.modifiers.map((modifier) => ({
+        groupId: modifier.groupId,
+        optionId: modifier.optionId,
+        name: modifier.name,
+        priceDeltaCents: modifier.priceDeltaCents,
+      })),
+      specialInstructions: item.specialInstructions || undefined,
+    }));
 }

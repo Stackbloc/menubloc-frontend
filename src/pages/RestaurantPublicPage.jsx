@@ -17,7 +17,7 @@
  *     - Food trucks receive food-truck-aware unclaimed copy/labels
  *
  *   Tier-aware layout for claimed restaurants:
- *     Verified — name + "✓ Verified", address, phone, category/cuisine,
+ *     Verified — name + "✓ Verified", address, category/cuisine,
  *                distance, active deals, View Menu
  *     Pro      — everything above + logo (left of name), bio, featured
  *                dish, landmarks
@@ -246,7 +246,6 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
   const city = firstNonEmpty(data?.city);
   const stateVal = firstNonEmpty(data?.state, data?.region);
   const postalCode = firstNonEmpty(data?.zip, data?.postal_code, data?.postcode);
-  const phone = firstNonEmpty(data?.phone);
   const websiteRaw = firstNonEmpty(data?.website, data?.website_url);
   const website = normalizeUrl(websiteRaw);
   const cuisine = humanizeLabel(firstNonEmpty(data?.cuisine));
@@ -373,7 +372,6 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
               isDark={isDark}
             />
 
-            <FieldRow label="Phone" value={phone} placeholder={verifiedMessage} isDark={isDark} />
             <FieldRow label="Website" value={websiteRaw || website} placeholder={verifiedMessage} isDark={isDark} />
             <FieldRow label="Cuisine" value={cuisine} placeholder={verifiedMessage} isDark={isDark} />
             <FieldRow
@@ -632,7 +630,6 @@ export default function RestaurantPublicPage() {
     [streetAddr, city, stateVal, zipVal].filter(Boolean).join(", ")
   );
   const cityLine = [city, stateVal].filter(Boolean).join(", ") + (zipVal ? ` ${zipVal}` : "");
-  const phone = data?.phone || "";
   const websiteRaw = data?.website || data?.website_url || "";
   const website = normalizeUrl(websiteRaw);
   const logoUrl = data?.logo_url || "";
@@ -867,47 +864,6 @@ export default function RestaurantPublicPage() {
                   </div>
                 ) : null}
                 {cityLine ? <div>{cityLine}</div> : null}
-
-                {phone ? (
-                  <div>
-                    <a
-                      href={`tel:${String(phone).replace(/[^\d+]/g, "")}`}
-                      title={phone}
-                      aria-label={`Call ${phone}`}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        background: t.chipBg || "#f2f4f7",
-                        border: `1px solid ${t.border || "#d0d5dd"}`,
-                        color: linkColor,
-                        textDecoration: "none",
-                      }}
-                      onClick={() => {
-                        try {
-                          fetch(`${API}/api/track-call`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              restaurant_id: data?.id ?? null,
-                              phone: String(phone),
-                              source: "public_profile",
-                            }),
-                          }).catch(() => {/* swallow — never block dialing */});
-                        } catch {
-                          /* swallow */
-                        }
-                      }}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-                      </svg>
-                    </a>
-                  </div>
-                ) : null}
 
                 {cuisineLine ? (
                   <div style={{ color: t.metaColor, fontWeight: 500 }}>{cuisineLine}</div>
