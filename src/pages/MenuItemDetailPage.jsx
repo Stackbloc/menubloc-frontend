@@ -482,23 +482,46 @@ function MissingNutritionState() {
 
 // ── Explore Similar Dishes ───────────────────────────────────
 
-function ExploreSimilarDishes({ itemId, t }) {
+function buildSimilarItemsLabel(meta) {
+  if (!meta) return null;
+  if (meta.used_broad_fallback) {
+    return "Showing broader matches because nearby similar dishes were limited";
+  }
+  if (meta.radius_used_miles != null && Number(meta.radius_used_miles) > 25) {
+    return "Expanded nearby search";
+  }
+  return null;
+}
+
+function ExploreSimilarDishes({ itemId, geoLat, geoLng, t }) {
   const [similar, setSimilar] = useState(null);
+  const [similarMeta, setSimilarMeta] = useState(null);
   const [failed, setFailed]   = useState(false);
 
   useEffect(() => {
     if (!itemId) return undefined;
     let cancelled = false;
-    fetch(`${BACKEND_BASE}/menu-items/${encodeURIComponent(itemId)}/similar`)
+    const params = new URLSearchParams();
+    if (geoLat && geoLng) {
+      params.set("lat", geoLat);
+      params.set("lng", geoLng);
+    }
+    const suffix = params.toString() ? `?${params.toString()}` : "";
+    fetch(`${BACKEND_BASE}/menu-items/${encodeURIComponent(itemId)}/similar${suffix}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((json) => {
-        if (!cancelled) setSimilar(Array.isArray(json?.similar) ? json.similar : []);
+        if (!cancelled) {
+          setSimilar(Array.isArray(json?.similar) ? json.similar : []);
+          setSimilarMeta(json?.meta || null);
+        }
       })
       .catch(() => { if (!cancelled) setFailed(true); });
     return () => { cancelled = true; };
-  }, [itemId]);
+  }, [geoLat, geoLng, itemId]);
 
   if (failed || similar === null || similar.length === 0) return null;
+
+  const helperLabel = buildSimilarItemsLabel(similarMeta);
 
   return (
     <SectionCard
@@ -507,6 +530,21 @@ function ExploreSimilarDishes({ itemId, t }) {
       style={{ marginTop: 24 }}
     >
       <div style={{ display: "grid", gap: 14 }}>
+        {helperLabel && (
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: "#4c5c53",
+              background: "rgba(20,33,27,0.05)",
+              border: "1px solid rgba(20,33,27,0.08)",
+              borderRadius: 12,
+              padding: "10px 12px",
+            }}
+          >
+            {helperLabel}
+          </div>
+        )}
         {similar.map((entry) => (
           <div key={entry.id} style={{ borderRadius: 18, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f", marginBottom: 10 }}>
@@ -752,7 +790,7 @@ export default function MenuItemDetailPage() {
       ) : null}
 
       {/* ── 7. Explore Similar Dishes ── */}
-      <ExploreSimilarDishes itemId={item.id} t={t} />
+      <ExploreSimilarDishes itemId={item.id} geoLat={geoLat} geoLng={geoLng} t={t} />
 
     </PageShell>
   );
