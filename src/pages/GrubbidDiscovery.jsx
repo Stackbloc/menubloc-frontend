@@ -999,6 +999,9 @@ export default function GrubbidDiscovery() {
               <Link to="/terms" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
                 {t("discovery.footer.terms")}
               </Link>
+              <Link to="/about" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+                About Grubbid
+              </Link>
               <Link to="/contact" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
                 {t("discovery.footer.contact")}
               </Link>

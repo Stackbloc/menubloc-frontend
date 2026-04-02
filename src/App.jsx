@@ -93,6 +93,7 @@ import EasyMenuLanding from "./pages/EasyMenuLanding.jsx";
 import SubscriptionSelect from "./pages/SubscriptionSelect.jsx";
 import MenuDesignSelectPage from "./pages/MenuDesignSelectPage.jsx";
 import Terms from "./pages/Terms.jsx";
+import AboutGrubbid from "./pages/AboutGrubbid.jsx";
 
 import QrCodesPage from "./pages/QrCodesPage.jsx";
 import PdfUploadPage from "./pages/PdfUploadPage.jsx";
@@ -344,6 +345,7 @@ function AppShell({ easyMenu, crmHost }) {
 
         {/* Terms of Service */}
         <Route path="/terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Terms />} />
+        <Route path="/about" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AboutGrubbid />} />
 
         {/* Menu upload (onboarding step 5) */}
         <Route path="/restaurant/pdf-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PdfUploadPage />} />
