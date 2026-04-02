@@ -36,6 +36,8 @@ const del  = (path)        => req(path, { method: "DELETE" });
 export const getConsumerSession    = ()                    => get("/api/consumer-auth/me");
 export const signupConsumer        = (body)                => post("/api/consumer-auth/signup", body);
 export const loginConsumer         = (email, password)     => post("/api/consumer-auth/login", { email, password });
+export const loginConsumerWithGoogle = (credential)        => post("/api/consumer-auth/google", { credential });
+export const loginConsumerWithApple  = (body)              => post("/api/consumer-auth/apple", body);
 export const logoutConsumer        = ()                    => post("/api/consumer-auth/logout", {});
 export const forgotPassword        = (email)               => post("/api/consumer-auth/forgot-password", { email });
 export const validateResetToken    = (token)               => get(`/api/consumer-auth/reset-password?token=${encodeURIComponent(token)}`);

@@ -36,6 +36,7 @@ import { CrmProvider, useCrm } from "./context/CrmContext.jsx";
 import { ConsumerProvider } from "./context/ConsumerContext.jsx";
 import ConsumerSignup from "./pages/consumer/ConsumerSignup.jsx";
 import ConsumerLogin from "./pages/consumer/ConsumerLogin.jsx";
+import AppleAuthCallback from "./pages/consumer/AppleAuthCallback.jsx";
 import ConsumerForgotPassword from "./pages/consumer/ConsumerForgotPassword.jsx";
 import ConsumerResetPassword from "./pages/consumer/ConsumerResetPassword.jsx";
 import ConsumerProfile from "./pages/consumer/ConsumerProfile.jsx";
@@ -179,6 +180,49 @@ function TruckRedirect() {
 }
 
 const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
+const GA_SCRIPT_ID = "grubbid-ga4-script";
+
+function isPublicGrubbidHost() {
+  const host = (window?.location?.hostname || "").toLowerCase();
+  if (!host) return false;
+  if (host === "grubbid.com" || host === "www.grubbid.com") return true;
+  if (host === "localhost" || host === "127.0.0.1") return true;
+  return false;
+}
+
+function ensureGoogleAnalyticsLoaded() {
+  if (typeof window === "undefined" || typeof document === "undefined") return false;
+  if (!GA_ID || !isPublicGrubbidHost()) return false;
+  if (window.__grubbidGaInitialized) return true;
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function gtag() {
+    window.dataLayer.push(arguments);
+  };
+
+  window.gtag("consent", "default", {
+    analytics_storage: "granted",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+  });
+
+  if (!document.getElementById(GA_SCRIPT_ID)) {
+    const script = document.createElement("script");
+    script.id = GA_SCRIPT_ID;
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`;
+    document.head.appendChild(script);
+  }
+
+  window.gtag("js", new Date());
+  window.gtag("config", GA_ID, {
+    send_page_view: false,
+    cookie_domain: "auto",
+  });
+  window.__grubbidGaInitialized = true;
+  return true;
+}
 
 /**
  * GA4 client-side route tracking for the React SPA.
@@ -192,10 +236,17 @@ function AnalyticsTracker() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const gaReady = ensureGoogleAnalyticsLoaded();
     const page_path = `${location.pathname}${location.search || ""}${location.hash || ""}`;
+    const page_title = typeof document !== "undefined" ? document.title || "Grubbid" : "Grubbid";
+    const page_location = window.location.href;
 
-    if (GA_ID && typeof window.gtag === "function") {
-      window.gtag("config", GA_ID, { page_path });
+    if (gaReady && typeof window.gtag === "function") {
+      window.gtag("event", "page_view", {
+        page_title,
+        page_path,
+        page_location,
+      });
     }
 
     const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -225,7 +276,9 @@ function AnalyticsTracker() {
         referrer: typeof document !== "undefined" ? document.referrer || null : null,
         device_type: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
         metadata: {
-          title: typeof document !== "undefined" ? document.title || null : null,
+          title: page_title,
+          ga_enabled: gaReady,
+          ga_measurement_id: gaReady ? GA_ID : null,
         },
       }),
     }).catch(() => {});
@@ -315,6 +368,7 @@ function AppShell({ easyMenu, crmHost }) {
         {/* ── Consumer account ───────────────────────────────────── */}
         <Route path="/account/signup"          element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerSignup />} />
         <Route path="/account/login"           element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerLogin />} />
+        <Route path="/auth/apple/callback"     element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <AppleAuthCallback />} />
         <Route path="/account/forgot-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerForgotPassword />} />
         <Route path="/account/reset-password"  element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerResetPassword />} />
         <Route path="/account"                 element={crmHost ? <HostRouteRedirect to="/crm" />      : <ConsumerProfile />} />

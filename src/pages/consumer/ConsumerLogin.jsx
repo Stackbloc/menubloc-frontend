@@ -1,179 +1,151 @@
-/**
- * ============================================================
- * Path: menubloc-frontend/src/pages/consumer/ConsumerLogin.jsx
- * Purpose:  Consumer login page.
- * ============================================================
- */
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
+import {
+  AuthPageFrame,
+  FormError,
+  PasswordField,
+  SocialAuthSection,
+  styles,
+} from "../../components/consumer/ConsumerAuthShared.jsx";
 
 export default function ConsumerLogin() {
-  const { login } = useConsumer();
+  const { login, loginWithGoogle, loginWithApple } = useConsumer();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [formError, setFormError] = useState("");
+  const [socialError, setSocialError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
 
-    if (!email.trim() || !password) {
-      setError("Email and password are required");
+    const nextErrors = {};
+    if (!email.trim()) nextErrors.email = "Email is required";
+    if (!password) nextErrors.password = "Password is required";
+
+    setFieldErrors(nextErrors);
+    setFormError("");
+    setSocialError("");
+
+    if (Object.values(nextErrors).some(Boolean)) {
+      setFormError("Email and password are required.");
       return;
     }
 
-    setError(null);
     setLoading(true);
 
     try {
       await login(email.trim(), password);
       navigate("/account", { replace: true });
-    } catch (err) {
-      setError(err.message || "Login failed. Please try again.");
+    } catch (error) {
+      setFormError(error.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogle(credential) {
+    setLoading(true);
+    setFormError("");
+    setSocialError("");
+    try {
+      await loginWithGoogle(credential);
+      navigate("/account", { replace: true });
+    } catch (error) {
+      setSocialError(error.message || "Google sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleApple(payload) {
+    setLoading(true);
+    setFormError("");
+    setSocialError("");
+    try {
+      await loginWithApple(payload);
+      navigate("/account", { replace: true });
+    } catch (error) {
+      setSocialError(error.message || "Apple sign-in failed. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <Link to="/" style={styles.brand}>Grubbid</Link>
-        <h1 style={styles.heading}>Log in</h1>
+    <AuthPageFrame
+      title="Log in"
+      subtitle="Use your Grubbid account, Google, or Apple."
+      footer={(
+        <>
+          <p style={styles.footer}>
+            <Link to="/account/forgot-password" style={styles.link}>Forgot password?</Link>
+          </p>
+          <p style={{ ...styles.footer, marginTop: "12px" }}>
+            New to Grubbid?{" "}
+            <Link to="/account/signup" style={styles.link}>Create account</Link>
+          </p>
+        </>
+      )}
+    >
+      <form onSubmit={handleSubmit} noValidate style={styles.form}>
+        <div style={styles.fieldGroup}>
+          <label htmlFor="consumer-login-email" style={styles.label}>Email</label>
+          <input
+            id="consumer-login-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setFieldErrors((current) => ({ ...current, email: undefined }));
+            }}
+            style={{ ...styles.input, ...(fieldErrors.email ? styles.inputError : null) }}
+            placeholder="you@example.com"
+            aria-invalid={fieldErrors.email ? "true" : "false"}
+            aria-describedby={fieldErrors.email ? "consumer-login-email-error" : undefined}
+            required
+          />
+          {fieldErrors.email ? <div id="consumer-login-email-error" style={styles.fieldError}>{fieldErrors.email}</div> : null}
+        </div>
 
-        <form onSubmit={handleSubmit} noValidate style={styles.form}>
-          <label style={styles.label}>
-            Email
-            <input
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={styles.input}
-              placeholder="you@example.com"
-              required
-            />
-          </label>
+        <PasswordField
+          id="consumer-login-password"
+          label="Password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(event) => {
+            setPassword(event.target.value);
+            setFieldErrors((current) => ({ ...current, password: undefined }));
+          }}
+          placeholder="Your password"
+          error={fieldErrors.password}
+          describedBy={fieldErrors.password ? "consumer-login-password-error" : undefined}
+        />
 
-          <label style={styles.label}>
-            Password
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={styles.input}
-              placeholder="Your password"
-              required
-            />
-          </label>
+        <FormError error={formError} />
 
-          {error && <p style={styles.error}>{error}</p>}
+        <button
+          type="submit"
+          disabled={loading}
+          style={{ ...styles.submitButton, ...(loading ? styles.submitButtonDisabled : null) }}
+        >
+          {loading ? "Logging in..." : "Log in"}
+        </button>
+      </form>
 
-          <button type="submit" disabled={loading} style={styles.btn}>
-            {loading ? "Logging in…" : "Log in"}
-          </button>
-        </form>
-
-        <p style={styles.footer}>
-          <Link to="/account/forgot-password" style={styles.link}>Forgot password?</Link>
-        </p>
-        <p style={styles.footer}>
-          New to Grubbid?{" "}
-          <Link to="/account/signup" style={styles.link}>Create account</Link>
-        </p>
-      </div>
-    </div>
+      <SocialAuthSection
+        mode="login"
+        disabled={loading}
+        error={socialError}
+        onError={setSocialError}
+        onGoogleCredential={handleGoogle}
+        onApplePayload={handleApple}
+      />
+    </AuthPageFrame>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#f6f6f3",
-    padding: "24px 16px",
-    fontFamily: "Inter, Arial, sans-serif",
-  },
-  card: {
-    background: "#ffffff",
-    borderRadius: "16px",
-    padding: "40px 36px",
-    width: "100%",
-    maxWidth: "420px",
-    boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
-  },
-  brand: {
-    display: "block",
-    fontSize: "20px",
-    fontWeight: 800,
-    color: "#1F4E3D",
-    textDecoration: "none",
-    marginBottom: "24px",
-  },
-  heading: {
-    fontSize: "24px",
-    fontWeight: 700,
-    color: "#0f1720",
-    margin: "0 0 28px",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "18px",
-  },
-  label: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-    fontSize: "14px",
-    fontWeight: 600,
-    color: "#0f1720",
-  },
-  input: {
-    padding: "10px 14px",
-    borderRadius: "8px",
-    border: "1.5px solid #ddd",
-    fontSize: "15px",
-    outline: "none",
-    fontFamily: "inherit",
-  },
-  error: {
-    background: "#fff3f3",
-    border: "1px solid #f5c6c6",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    fontSize: "14px",
-    color: "#c0392b",
-    margin: 0,
-  },
-  btn: {
-    padding: "12px 20px",
-    borderRadius: "10px",
-    background: "#1F4E3D",
-    color: "#ffffff",
-    fontSize: "15px",
-    fontWeight: 700,
-    border: "none",
-    cursor: "pointer",
-    fontFamily: "inherit",
-    marginTop: "4px",
-  },
-  footer: {
-    textAlign: "center",
-    marginTop: "14px",
-    fontSize: "14px",
-    color: "#666",
-  },
-  link: {
-    color: "#1F4E3D",
-    fontWeight: 600,
-    textDecoration: "none",
-  },
-};

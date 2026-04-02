@@ -6,27 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Grubbid</title>
 
-    <!-- Google Consent Mode v2 -->
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-
-      gtag('consent', 'default', {
-        analytics_storage: 'granted',
-        ad_storage: 'denied',
-        ad_user_data: 'denied',
-        ad_personalization: 'denied'
-      });
-    </script>
-
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_GA_MEASUREMENT_ID%"></script>
-    <script>
-      gtag('js', new Date());
-      // send_page_view: false — AnalyticsTracker in App.jsx owns all pageview events
-      // including the initial load, so we don't double-count the first hit.
-      gtag('config', '%VITE_GA_MEASUREMENT_ID%', { send_page_view: false });
-    </script>
   </head>
 
   <body>

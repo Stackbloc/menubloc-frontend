@@ -12,6 +12,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import {
   getConsumerSession,
   loginConsumer,
+  loginConsumerWithApple,
+  loginConsumerWithGoogle,
   signupConsumer,
   logoutConsumer,
 } from "../lib/consumerApi.js";
@@ -56,6 +58,18 @@ export function ConsumerProvider({ children }) {
     return data;
   }, [loadMe]);
 
+  const loginWithGoogle = useCallback(async (credential) => {
+    await loginConsumerWithGoogle(credential);
+    const data = await loadMe();
+    return data;
+  }, [loadMe]);
+
+  const loginWithApple = useCallback(async (payload) => {
+    await loginConsumerWithApple(payload);
+    const data = await loadMe();
+    return data;
+  }, [loadMe]);
+
   const signup = useCallback(async (signupData) => {
     await signupConsumer(signupData);
     const data = await loadMe();
@@ -73,6 +87,8 @@ export function ConsumerProvider({ children }) {
     isAuthenticated: !!consumer,
     loading,
     login,
+    loginWithGoogle,
+    loginWithApple,
     signup,
     logout,
     refreshSession: loadMe,
