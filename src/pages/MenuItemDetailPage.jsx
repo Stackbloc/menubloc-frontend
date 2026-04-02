@@ -493,10 +493,21 @@ function buildSimilarItemsLabel(meta) {
   return null;
 }
 
-function ExploreSimilarDishes({ itemId, geoLat, geoLng, t }) {
+const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
+  "vegan",
+  "vegetarian",
+  "gluten_free",
+  "dairy_free",
+  "diabetic_friendly",
+  "low_sodium",
+  "keto",
+]);
+
+function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t }) {
   const [similar, setSimilar] = useState(null);
   const [similarMeta, setSimilarMeta] = useState(null);
   const [failed, setFailed]   = useState(false);
+  const searchSuffix = activeSearchParams?.toString() ? `?${activeSearchParams.toString()}` : "";
 
   useEffect(() => {
     if (!itemId) return undefined;
@@ -505,6 +516,11 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, t }) {
     if (geoLat && geoLng) {
       params.set("lat", geoLat);
       params.set("lng", geoLng);
+    }
+    for (const key of SIMILAR_DIET_FILTER_KEYS) {
+      if (activeSearchParams?.get(key) === "1") {
+        params.set(key, "1");
+      }
     }
     const suffix = params.toString() ? `?${params.toString()}` : "";
     fetch(`${BACKEND_BASE}/menu-items/${encodeURIComponent(itemId)}/similar${suffix}`)
@@ -517,7 +533,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, t }) {
       })
       .catch(() => { if (!cancelled) setFailed(true); });
     return () => { cancelled = true; };
-  }, [geoLat, geoLng, itemId]);
+  }, [activeSearchParams, geoLat, geoLng, itemId]);
 
   if (failed || similar === null || similar.length === 0) return null;
 
@@ -553,7 +569,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, t }) {
                 <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>
               )}
             </div>
-            <Link to={`/menu-items/${entry.id}`} style={{ textDecoration: "none", color: "#124ba3", fontWeight: 800, fontSize: 15, lineHeight: 1.35 }}>
+            <Link to={`/menu-items/${entry.id}${searchSuffix}`} style={{ textDecoration: "none", color: "#124ba3", fontWeight: 800, fontSize: 15, lineHeight: 1.35 }}>
               {entry.name}
             </Link>
             {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
@@ -790,7 +806,7 @@ export default function MenuItemDetailPage() {
       ) : null}
 
       {/* ── 7. Explore Similar Dishes ── */}
-      <ExploreSimilarDishes itemId={item.id} geoLat={geoLat} geoLng={geoLng} t={t} />
+      <ExploreSimilarDishes itemId={item.id} geoLat={geoLat} geoLng={geoLng} activeSearchParams={searchParams} t={t} />
 
     </PageShell>
   );
