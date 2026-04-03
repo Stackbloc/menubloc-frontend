@@ -94,6 +94,7 @@ import SubscriptionSelect from "./pages/SubscriptionSelect.jsx";
 import MenuDesignSelectPage from "./pages/MenuDesignSelectPage.jsx";
 import Terms from "./pages/Terms.jsx";
 import AboutGrubbid from "./pages/AboutGrubbid.jsx";
+import Contact from "./pages/Contact.jsx";
 
 import QrCodesPage from "./pages/QrCodesPage.jsx";
 import PdfUploadPage from "./pages/PdfUploadPage.jsx";
@@ -346,6 +347,7 @@ function AppShell({ easyMenu, crmHost }) {
         {/* Terms of Service */}
         <Route path="/terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Terms />} />
         <Route path="/about" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AboutGrubbid />} />
+        <Route path="/contact" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Contact />} />
 
         {/* Menu upload (onboarding step 5) */}
         <Route path="/restaurant/pdf-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PdfUploadPage />} />
@@ -368,6 +370,9 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/claim/verify" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClaimVerify />} />
 
         {/* ── Consumer account ───────────────────────────────────── */}
+        <Route path="/login"                   element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <Navigate to="/account/login" replace />} />
+        <Route path="/forgot-password"         element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <Navigate to="/account/forgot-password" replace />} />
+        <Route path="/reset-password"          element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <Navigate to="/account/reset-password" replace />} />
         <Route path="/account/signup"          element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerSignup />} />
         <Route path="/account/login"           element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerLogin />} />
         <Route path="/auth/apple/callback"     element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <AppleAuthCallback />} />
