@@ -246,10 +246,24 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
   const city = firstNonEmpty(data?.city);
   const stateVal = firstNonEmpty(data?.state, data?.region);
   const postalCode = firstNonEmpty(data?.zip, data?.postal_code, data?.postcode);
+  const phone = firstNonEmpty(data?.phone, data?.phone_number, data?.contact_phone);
   const websiteRaw = firstNonEmpty(data?.website, data?.website_url);
   const website = normalizeUrl(websiteRaw);
   const cuisine = humanizeLabel(firstNonEmpty(data?.cuisine));
   const category = humanizeLabel(firstNonEmpty(data?.category));
+  const claimPrefillState = {
+    restaurant_name: name,
+    address_line1: addressLine1,
+    city,
+    state: stateVal,
+    postal_code: postalCode,
+    phone,
+    website_url: websiteRaw || website,
+    category,
+    cuisine,
+    claim_source: "public_restaurant_page",
+    public_restaurant_slug_or_id: slugOrId,
+  };
 
   const pageBg = isDark ? "#0b0b0f" : "transparent";
   const pageColor = isDark ? "#e2e8f0" : "#0f172a";
@@ -492,6 +506,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
 
             <Link
               to="/profilesearch"
+              state={claimPrefillState}
               style={{
                 display: "inline-flex",
                 alignItems: "center",

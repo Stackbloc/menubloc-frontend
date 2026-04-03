@@ -31,6 +31,23 @@ const CUISINE_OPTIONS = [
   "Vietnamese",
 ];
 
+function formatDealBadge(deal) {
+  const raw = String(deal?.discount_value || "").trim();
+  if (!raw) return "";
+  if (deal?.deal_type === "fixed_price" && /^\$\d+(?:\.\d{1,2})?$/i.test(raw)) {
+    return `Only ${raw}`;
+  }
+  if (deal?.deal_type === "amount_off" && /^\$\d+(?:\.\d{1,2})?$/i.test(raw)) {
+    return `${raw} off`;
+  }
+  if (deal?.deal_type === "percent_off" && /^\d+(?:\.\d+)?%$/i.test(raw)) {
+    return `${raw} off`;
+  }
+  if (/^\d+(?:\.\d+)?%$/i.test(raw)) return `${raw} off`;
+  if (/^\$\d+(?:\.\d{1,2})?$/i.test(raw)) return `${raw} off`;
+  return raw;
+}
+
 export default function DealsPage() {
   const { search } = useLocation();
   const urlParams = new URLSearchParams(search);
@@ -185,7 +202,7 @@ export default function DealsPage() {
                           fontWeight: 800,
                         }}
                       >
-                        {deal.discount_value}
+                        {formatDealBadge(deal)}
                       </div>
                     ) : null}
 
