@@ -788,30 +788,64 @@ export default function MenuItemDetailPage() {
             </div>
 
             <div>
-              <h1 style={{ margin: 0, fontSize: isMobile ? 34 : 46, lineHeight: 0.96, letterSpacing: "-0.05em", color: "#15241d", maxWidth: 760 }}>
-                {item.name}
-              </h1>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  flexWrap: "wrap",
+                }}
+              >
+                <h1
+                  style={{
+                    margin: 0,
+                    fontSize: isMobile ? 34 : 46,
+                    lineHeight: 0.96,
+                    letterSpacing: "-0.05em",
+                    color: "#15241d",
+                    maxWidth: 760,
+                    minWidth: 0,
+                    flex: "1 1 320px",
+                  }}
+                >
+                  {item.name}
+                </h1>
+                {shareData ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 6,
+                      flex: "0 0 auto",
+                    }}
+                  >
+                    <ShareButton
+                      variant="dish"
+                      label="Share Dish"
+                      modalTitle={`Share ${item.name}`}
+                      shareData={shareData}
+                      analyticsContext={{
+                        restaurantId: item.restaurant.id,
+                        restaurantSlug: item.restaurant.slug || null,
+                        menuItemId: item.id,
+                        menuItemName: item.name,
+                        pageType: "menu_item_detail",
+                        shareTarget: "dish",
+                      }}
+                    />
+                    <div style={{ fontSize: 11, lineHeight: 1.3, color: "#617167", fontWeight: 400 }}>
+                      share this menu item
+                    </div>
+                  </div>
+                ) : null}
+              </div>
               <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 {priceLabel ? (
                   <div style={{ fontSize: isMobile ? 24 : 28, fontWeight: 900, letterSpacing: "-0.04em", color: "#7a5b20" }}>
                     {priceLabel}
                   </div>
-                ) : null}
-                {shareData ? (
-                  <ShareButton
-                    variant="dish"
-                    label="Share Dish"
-                    modalTitle={`Share ${item.name}`}
-                    shareData={shareData}
-                    analyticsContext={{
-                      restaurantId: item.restaurant.id,
-                      restaurantSlug: item.restaurant.slug || null,
-                      menuItemId: item.id,
-                      menuItemName: item.name,
-                      pageType: "menu_item_detail",
-                      shareTarget: "dish",
-                    }}
-                  />
                 ) : null}
               </div>
             </div>
