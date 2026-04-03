@@ -5,7 +5,6 @@
  * Date: 2026-04-03
  * Purpose:
  *   Search-first discovery page with automatic location detection.
- *   Includes footer contact routing for Grubbid mailbox aliases.
  * ============================================================
  */
 
@@ -185,20 +184,6 @@ export default function GrubbidDiscovery() {
     ...entry,
     label: t(entry.labelKey, entry.value),
   }));
-  const contactRows = [
-    {
-      label: "Menu submissions",
-      email: "menus@grubbid.com",
-    },
-    {
-      label: "Support related issues",
-      email: "support@grubbid.com",
-    },
-    {
-      label: "All other inquiries",
-      email: "inquiries@grubbid.com",
-    },
-  ];
 
   const resolvedLocationLabel = useMemo(() => {
     if (appliedLocation) return appliedLocation;
@@ -1059,49 +1044,8 @@ export default function GrubbidDiscovery() {
               <Link to="/about" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
                 About Grubbid
               </Link>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                minWidth: isMobile ? "100%" : 280,
-                maxWidth: isMobile ? "100%" : 360,
-                marginLeft: isMobile ? 0 : "auto",
-              }}
-            >
-              <div style={{ color: "#344054", fontWeight: 800, fontSize: 14 }}>
+              <Link to="/contact" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
                 {t("discovery.footer.contact")}
-              </div>
-              {contactRows.map((row) => (
-                <div
-                  key={row.email}
-                  style={{
-                    display: "flex",
-                    flexDirection: isMobile ? "column" : "row",
-                    alignItems: isMobile ? "flex-start" : "baseline",
-                    gap: isMobile ? 2 : 8,
-                    fontSize: 13,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  <span style={{ color: "#667085", fontWeight: 700 }}>
-                    {row.label}:
-                  </span>
-                  <a
-                    href={`mailto:${row.email}`}
-                    style={{
-                      color: "#344054",
-                      fontWeight: 700,
-                      textDecoration: "none",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {row.email}
-                  </a>
-                </div>
-              ))}
             </div>
 
             <div
@@ -1109,6 +1053,7 @@ export default function GrubbidDiscovery() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 10,
+                marginLeft: isMobile ? 0 : "auto",
               }}
             >
               <span style={{ color: "#667085", fontWeight: 800 }} aria-hidden="true">
