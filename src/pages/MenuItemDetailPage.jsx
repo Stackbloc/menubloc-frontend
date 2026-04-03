@@ -836,7 +836,7 @@ export default function MenuItemDetailPage() {
                       }}
                     />
                     <div style={{ fontSize: 11, lineHeight: 1.3, color: "#617167", fontWeight: 400 }}>
-                      share this menu item
+                      share this item
                     </div>
                   </div>
                 ) : null}

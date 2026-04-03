@@ -587,6 +587,32 @@ export default function PublicMenuPage() {
 
   const pageBg = { minHeight: "100vh", background: "#f7f6f1" };
 
+  useEffect(() => {
+    if (routeState.status !== "ok" || pageState.status !== "ok" || !pageState.data) {
+      return undefined;
+    }
+
+    const liveData = pageState.data;
+    const liveRestaurantName =
+      getLocalizedField(liveData, "restaurant_name", language) ||
+      getLocalizedField(liveData, "name", language) ||
+      asStr(liveData?.restaurant_name || liveData?.name || `Restaurant ${routeState.restaurantId}`).trim();
+    const liveRestaurantId = liveData?.restaurant_id || routeState.restaurantId;
+    const liveShareData = buildMenuShareMetadata({
+      restaurantName: liveRestaurantName,
+      restaurantSlug: liveData?.slug,
+      restaurantId: liveRestaurantId,
+      logoUrl: liveData?.logo_url,
+    });
+
+    return applyDocumentSocialMetadata({
+      title: liveShareData.title,
+      description: liveShareData.text,
+      url: liveShareData.url,
+      image: liveShareData.image,
+    });
+  }, [language, pageState.data, pageState.status, routeState.restaurantId, routeState.status]);
+
   /* ---- Loading ---- */
 
   if (routeState.status === "loading" || pageState.status === "loading") {
@@ -675,13 +701,6 @@ export default function PublicMenuPage() {
   const basketMatchesCurrentRestaurant =
     Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
 
-  useEffect(() => applyDocumentSocialMetadata({
-    title: shareData.title,
-    description: shareData.text,
-    url: shareData.url,
-    image: shareData.image,
-  }), [shareData.image, shareData.text, shareData.title, shareData.url]);
-
   function navigateToFranchiseLocation(restaurantId, restaurantSlug = null) {
     if (!restaurantId) return;
     navigate({
@@ -761,31 +780,54 @@ export default function PublicMenuPage() {
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
-                gap: 10,
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: 14,
                 flexWrap: "wrap",
               }}
             >
-              {restaurantProfileHref ? (
-                <Link
-                  to={restaurantProfileHref}
-                  title={`Open ${restaurantName} profile`}
-                  style={{
-                    fontSize: isMobile ? 22 : 28,
-                    fontWeight: 900,
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1.1,
-                    color: "#11211a",
-                    textDecoration: "none",
-                  }}
-                >
-                  {restaurantName}
-                </Link>
-              ) : (
-                <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a" }}>
-                  {restaurantName}
+              <div style={{ minWidth: 0, flex: "1 1 320px" }}>
+                {restaurantProfileHref ? (
+                  <Link
+                    to={restaurantProfileHref}
+                    title={`Open ${restaurantName} profile`}
+                    style={{
+                      fontSize: isMobile ? 22 : 28,
+                      fontWeight: 900,
+                      letterSpacing: "-0.02em",
+                      lineHeight: 1.1,
+                      color: "#11211a",
+                      textDecoration: "none",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {restaurantName}
+                  </Link>
+                ) : (
+                  <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word" }}>
+                    {restaurantName}
+                  </div>
+                )}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 6,
+                  flex: "0 0 auto",
+                }}
+              >
+                <ShareButton
+                  label="Share Menu"
+                  modalTitle={`Share ${restaurantName}`}
+                  shareData={shareData}
+                  analyticsContext={shareAnalyticsContext}
+                />
+                <div style={{ fontSize: 11, lineHeight: 1.3, color: "#667085", fontWeight: 400 }}>
+                  share this menu
                 </div>
-              )}
+              </div>
             </div>
             {addressLine ? (
               <div style={{ marginTop: 6, fontSize: 14, color: "#667085", fontWeight: 600 }}>
@@ -816,22 +858,6 @@ export default function PublicMenuPage() {
                 )}
               </div>
             ) : null}
-            <div
-              style={{
-                marginTop: 14,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                flexWrap: "wrap",
-              }}
-            >
-              <ShareButton
-                label="Share Menu"
-                modalTitle={`Share ${restaurantName}`}
-                shareData={shareData}
-                analyticsContext={shareAnalyticsContext}
-              />
-            </div>
             <FranchiseBanner
               group={franchiseGroup}
               currentRestaurantId={currentRestaurantId}
