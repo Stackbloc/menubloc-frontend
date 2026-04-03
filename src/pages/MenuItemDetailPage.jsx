@@ -127,7 +127,6 @@ function normalizeResultItem(raw) {
     priceMinor: exactPriceMinor,
     price: exactPrice,
     itemPhotoUrl,
-    intelligence: raw?.intelligence || null,
     detailSystem: raw?.detail_system || null,
     nutritionChip: resolveNutritionChip(raw),
     insightScores: raw?.chips?.insights?.scores || null,
@@ -199,10 +198,6 @@ function localizeCanonicalLabel(t, prefix, value) {
 function translateAllergenValue(t, value) {
   const normalized = normalizeLabel(value);
   return localizeCanonicalLabel(t, "menuItemDetail.allergen", normalized) || normalized;
-}
-
-function getDetailSystem(item) {
-  return item?.detailSystem || null;
 }
 
 function hasAnyNutritionData(detailSystem) {
@@ -662,10 +657,7 @@ export default function MenuItemDetailPage() {
 
       try {
         const geoSuffix = geoLat && geoLng ? `?lat=${geoLat}&lng=${geoLng}` : "";
-        const tryUrls = [
-          `${BACKEND_BASE}/menu-items/${encodeURIComponent(id)}${geoSuffix}`,
-          `${BACKEND_BASE}/public/items/${encodeURIComponent(id)}`,
-        ];
+        const tryUrls = [`${BACKEND_BASE}/menu-items/${encodeURIComponent(id)}${geoSuffix}`];
 
         let found = null;
         for (const url of tryUrls) {
@@ -737,8 +729,7 @@ export default function MenuItemDetailPage() {
     );
   }
 
-  const intelligence = item.intelligence || {};
-  const detailSystem = getDetailSystem(item);
+  const detailSystem = item.detailSystem || null;
   const hasNutritionData = hasAnyNutritionData(detailSystem);
   const integrity = rawItem?.integrity || null;
   const isBrokenFranchiseLink = integrity?.status === "broken_franchise_link";
@@ -894,7 +885,7 @@ export default function MenuItemDetailPage() {
             )}
 
             {/* ── 2. Compact Allergen Alert (inside hero) ── */}
-            {hasNutritionData ? <CompactAllergenAlert section={intelligence.allergen_alerts} t={t} /> : null}
+            {hasNutritionData ? <CompactAllergenAlert section={detailSystem?.allergen_alerts} t={t} /> : null}
           </div>
 
           {showItemPhoto ? (
