@@ -463,7 +463,7 @@ export default function GrubbidDiscovery() {
               alt="Grubbid"
               style={{
                 display: "block",
-                height: isMobile ? 48 : 58,
+                height: isMobile ? 108 : 148,
                 width: "auto",
                 objectFit: "contain",
               }}
