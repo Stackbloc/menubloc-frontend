@@ -469,7 +469,8 @@ export default function GrubbidDiscovery() {
             subtitleStyle={{
               fontSize: isMobile ? 9 : 10,
               letterSpacing: isMobile ? 1.1 : 1.25,
-              marginTop: -2,
+              lineHeight: 1,
+              marginTop: -8,
             }}
           />
           {!consumerLoading && (
