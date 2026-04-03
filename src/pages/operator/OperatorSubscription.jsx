@@ -1,271 +1,157 @@
-/**
- * ============================================================
- * Path: menubloc-frontend/src/pages/operator/OperatorSubscription.jsx
- * File: OperatorSubscription.jsx
- * Date: 2026-03-23
- * Purpose:
- *   Operator subscription page redesigned as a two-plan,
- *   restaurant-friendly pricing comparison focused on Free vs Pro.
- * ============================================================
- */
-
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+import StripeElementsProvider from "../../components/payments/StripeElementsProvider.jsx";
+import SubscriptionCheckoutForm from "../../components/payments/SubscriptionCheckoutForm.jsx";
+import {
+  formatMoney,
+  getSubscriptionPlanLabel,
+  getSubscriptionStatusLabel,
+  hasStripePublishableKey,
+} from "../../components/payments/paymentHelpers.js";
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-
-const COMPARISON_ROWS = [
-  { label: "Unlimited menu items", free: "Yes", pro: "Yes" },
-  { label: "Number of menus", free: "1 menu", pro: "Unlimited" },
-  { label: "Seasonal menus", free: "—", pro: "Yes" },
-  { label: "Deals", free: "—", pro: "Yes" },
-  { label: "Logo on profile/menu", free: "—", pro: "Yes" },
-  { label: "About Us section", free: "—", pro: "Yes" },
-  { label: "Featured dish", free: "—", pro: "Yes" },
-  { label: "Product photo", free: "—", pro: "Yes" },
-  { label: "QR codes", free: "Yes", pro: "Yes" },
-  { label: "Phone dialer / web ordering", free: "—", pro: "Yes" },
-  { label: "Design and print your own menus (powered by Adobe)", free: "—", pro: "Yes" },
+const PLAN_OPTIONS = [
+  {
+    code: "pro_monthly",
+    title: "Pro Monthly",
+    priceCents: 2999,
+    billing: "/month",
+    description:
+      "Flexible monthly billing for restaurants that want direct ordering, stronger branding, and Stripe-backed billing without annual commitment.",
+  },
+  {
+    code: "pro_annual",
+    title: "Pro Annual",
+    priceCents: 19900,
+    billing: "/year",
+    description:
+      "Lower annual effective rate for restaurants ready to lock in Grubbid Pro for the year.",
+  },
 ];
 
-const PRO_FEATURES = [
-  "Unlimited menus",
-  "Seasonal menus",
-  "Deals",
-  "Include logo on profile & menu",
-  "About Us section",
-  "Featured dish",
-  "Phone dialer / web ordering",
-  "Design and print your own menus (powered by Adobe)",
-  "Product photo",
-];
-
-const FREE_FEATURES = [
-  "Unlimited menu items",
-  "1 menu",
-  "QR codes",
-];
-
-function normalizeCurrentPlanSlug(subscription) {
-  const slug = String(subscription?.slug || "").toLowerCase();
-  if (slug === "pro") return "pro";
-  return "free";
+function cardStyle(active) {
+  return {
+    background: active ? "linear-gradient(180deg, #fff7ed 0%, #ffffff 100%)" : "#fff",
+    border: active ? "2px solid #fb923c" : "1px solid #eaecf0",
+    borderRadius: 24,
+    padding: 22,
+    boxShadow: "0 18px 40px rgba(15, 23, 32, 0.05)",
+    display: "grid",
+    gap: 14,
+  };
 }
 
-function PriceCard({
-  title,
-  price,
-  billing,
-  description,
-  eyebrow,
-  accent,
-  background,
-  border,
-  features,
-  current,
-  ctaLabel,
-  onCta,
-  ctaDisabled,
-  supportingLine,
-  children,
-}) {
+function StatusRow({ label, value }) {
   return (
-    <section
+    <div
       style={{
-        background,
-        border,
-        borderRadius: 24,
-        padding: 24,
-        boxShadow: title === "Pro" ? "0 24px 60px rgba(153, 27, 27, 0.12)" : "0 18px 40px rgba(15, 23, 32, 0.06)",
         display: "flex",
-        flexDirection: "column",
-        gap: 18,
-      }}
-    >
-      <div>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "7px 11px",
-            borderRadius: 999,
-            background: title === "Pro" ? "#fff1f1" : "#eef4ff",
-            color: accent,
-            fontSize: 11,
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-            marginBottom: 14,
-          }}
-        >
-          {eyebrow}
-        </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-          <h2 style={{ margin: 0, fontSize: 30, lineHeight: 1, color: "#0f1720", letterSpacing: "-0.04em" }}>
-            {title}
-          </h2>
-          {current && (
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "5px 10px",
-                borderRadius: 999,
-                background: "#f0fdf4",
-                color: "#166534",
-                fontSize: 11,
-                fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-              }}
-            >
-              Current Plan
-            </span>
-          )}
-        </div>
-        <div style={{ marginTop: 14, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-          <div style={{ fontSize: 38, fontWeight: 800, color: accent, letterSpacing: "-0.05em" }}>{price}</div>
-          {billing ? <div style={{ fontSize: 15, color: "#475467", fontWeight: 600 }}>{billing}</div> : null}
-        </div>
-        <p style={{ margin: "14px 0 0", fontSize: 15, lineHeight: 1.65, color: "#475467" }}>{description}</p>
-        {supportingLine ? (
-          <p style={{ margin: "12px 0 0", fontSize: 14, lineHeight: 1.55, color: "#1f2937", fontWeight: 600 }}>
-            {supportingLine}
-          </p>
-        ) : null}
-        {children}
-      </div>
-
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 18,
-          border: "1px solid rgba(15, 23, 32, 0.08)",
-          padding: 18,
-        }}
-      >
-        <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#667085", marginBottom: 12 }}>
-          Included
-        </div>
-        <div style={{ display: "grid", gap: 10 }}>
-          {features.map((feature) => (
-            <div key={feature} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-              <span style={{ color: accent, fontSize: 16, lineHeight: 1 }}>✓</span>
-              <span style={{ fontSize: 14, lineHeight: 1.45, color: "#0f1720", fontWeight: 600 }}>{feature}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <button
-        onClick={onCta}
-        disabled={ctaDisabled}
-        style={{
-          width: "100%",
-          border: "none",
-          borderRadius: 14,
-          padding: "14px 16px",
-          background: ctaDisabled ? "#d0d5dd" : accent,
-          color: "#fff",
-          fontSize: 15,
-          fontWeight: 800,
-          cursor: ctaDisabled ? "not-allowed" : "pointer",
-          fontFamily: "inherit",
-          boxShadow: ctaDisabled ? "none" : "0 12px 24px rgba(15, 23, 32, 0.12)",
-        }}
-      >
-        {ctaLabel}
-      </button>
-    </section>
-  );
-}
-
-function ComparisonCell({ value, highlight = false }) {
-  const positive = value === "Yes";
-  return (
-    <td
-      style={{
-        padding: "16px 14px",
+        justifyContent: "space-between",
+        gap: 12,
+        paddingTop: 12,
         borderTop: "1px solid #eaecf0",
-        textAlign: "center",
-        fontSize: 14,
-        fontWeight: positive ? 800 : 600,
-        color: value === "—" ? "#98a2b3" : highlight && positive ? "#c62828" : "#0f1720",
-        background: highlight ? "#fff8f8" : "#fff",
-        whiteSpace: "nowrap",
       }}
     >
-      {positive ? "✓" : value}
-    </td>
+      <span style={{ fontSize: 13, color: "#475467", fontWeight: 600 }}>{label}</span>
+      <span style={{ fontSize: 13, color: "#0f1720", fontWeight: 700, textAlign: "right" }}>{value}</span>
+    </div>
   );
 }
 
 export default function OperatorSubscription() {
-  const navigate = useNavigate();
-  const { refreshSession, selectedRestaurant } = useOperator();
+  const { selectedRestaurant } = useOperator();
   const [subscription, setSubscription] = useState(null);
-  const [billingOverview, setBillingOverview] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [upgrading, setUpgrading] = useState(false);
-  const [provider, setProvider] = useState("stripe");
+  const [selectedPlanCode, setSelectedPlanCode] = useState("pro_monthly");
+  const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [checkoutSession, setCheckoutSession] = useState(null);
 
-  useEffect(() => {
-    api.getSubscription()
-      .then((data) => setSubscription(data))
-      .catch((err) => setError(err.message || "Unable to load subscription."))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (!selectedRestaurant?.id) return;
-    api.getBillingOverview(selectedRestaurant.id)
-      .then(setBillingOverview)
-      .catch((err) => setError(err.message || "Unable to load billing overview."));
-  }, [selectedRestaurant?.id]);
-
-  const currentPlanSlug = useMemo(() => normalizeCurrentPlanSlug(subscription), [subscription]);
-
-  async function handleUpgradeToPro() {
+  async function refreshSubscription() {
     if (!selectedRestaurant?.id) {
-      setError("Select a restaurant before starting billing.");
+      setSubscription(null);
       return;
     }
-    setUpgrading(true);
+
+    setLoading(true);
     setError("");
-    setSuccess("");
 
     try {
-      const json = await api.startBillingCheckout(selectedRestaurant.id, {
-        plan_slug: "pro",
-        billing_cycle: "monthly",
-        provider,
-      });
-
-      if (json.checkout_url) {
-        window.location.href = json.checkout_url;
-        return;
-      }
-
-      const updated = await api.getSubscription().catch(() => null);
-      const overview = await api.getBillingOverview(selectedRestaurant.id).catch(() => null);
-      setSubscription(updated);
-      setBillingOverview(overview);
-      await refreshSession().catch(() => null);
-      setSuccess(provider === "paypal"
-        ? "Billing record created. Send or complete the PayPal invoice/subscription flow next."
-        : "Checkout started. Finish the Stripe flow to activate the subscription.");
+      const response = await api.getPlatformSubscriptionStatus(selectedRestaurant.id);
+      setSubscription(response);
     } catch (err) {
-      setError(err.message || "Upgrade failed");
+      setError(err.message || "Unable to load restaurant subscription.");
     } finally {
-      setUpgrading(false);
+      setLoading(false);
     }
   }
+
+  useEffect(() => {
+    refreshSubscription();
+  }, [selectedRestaurant?.id]);
+
+  async function handleStartCheckout() {
+    if (!selectedRestaurant?.id) {
+      setError("Select a restaurant before starting a subscription.");
+      return;
+    }
+
+    setCreating(true);
+    setError("");
+    setMessage("");
+    setCheckoutSession(null);
+
+    try {
+      const response = await api.createPlatformSubscription({
+        restaurantId: selectedRestaurant.id,
+        planCode: selectedPlanCode,
+      });
+
+      setCheckoutSession(response);
+
+      if (response.already_active) {
+        setMessage("This restaurant already has an active subscription for that plan.");
+        await refreshSubscription();
+      } else if (!response.client_secret) {
+        setMessage("Subscription record created. Refreshing backend status.");
+        await refreshSubscription();
+      }
+    } catch (err) {
+      setError(err.message || "Unable to start subscription checkout.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleCancelSubscription() {
+    if (!selectedRestaurant?.id) {
+      setError("Select a restaurant before cancelling a subscription.");
+      return;
+    }
+
+    setError("");
+    setMessage("");
+
+    try {
+      await api.cancelPlatformSubscription({
+        restaurantId: selectedRestaurant.id,
+        atPeriodEnd: true,
+      });
+      setMessage("Subscription will cancel at period end.");
+      setCheckoutSession(null);
+      await refreshSubscription();
+    } catch (err) {
+      setError(err.message || "Unable to cancel subscription.");
+    }
+  }
+
+  const currentPlanCode = subscription?.plan_code || null;
+  const currentStatus = getSubscriptionStatusLabel(subscription?.status);
+  const currentPeriodEnd = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString()
+    : "N/A";
 
   return (
     <OperatorLayout title="Subscription">
@@ -286,7 +172,6 @@ export default function OperatorSubscription() {
               padding: "7px 12px",
               borderRadius: 999,
               background: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.15)",
               fontSize: 11,
               fontWeight: 800,
               textTransform: "uppercase",
@@ -294,361 +179,167 @@ export default function OperatorSubscription() {
               marginBottom: 16,
             }}
           >
-            Restaurant Growth
+            Stripe Billing
           </div>
-          <h1 style={{ margin: 0, fontSize: "clamp(34px, 5vw, 60px)", lineHeight: 0.95, letterSpacing: "-0.06em", maxWidth: 760 }}>
-            Turn Your Menu Into a Customer Engine
+          <h1 style={{ margin: 0, fontSize: "clamp(34px, 5vw, 58px)", lineHeight: 0.95, letterSpacing: "-0.06em" }}>
+            Restaurant Pro Subscriptions
           </h1>
-          <p style={{ margin: "16px 0 0", maxWidth: 760, fontSize: 17, lineHeight: 1.7, color: "rgba(255,255,255,0.88)" }}>
-            Get your menu online for free. Upgrade when you&apos;re ready to send customers directly to your own ordering system, avoid third-party fees, instantly update your menu, and share it everywhere.
+          <p style={{ margin: "14px 0 0", maxWidth: 760, fontSize: 17, lineHeight: 1.7, color: "rgba(255,255,255,0.88)" }}>
+            The selected restaurant is billed as a platform customer through Stripe Billing. Payment confirmation uses Stripe Elements, and subscription state is finalized from webhook-backed backend status.
           </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }}>
-            {[
-              "Send customers directly to your own ordering system",
-              "Avoid third-party fees by sending orders directly to your website",
-              "Share your menu anywhere, including Instagram, Google, and your website",
-              "No more outdated PDFs or reprinting menus",
-            ].map((item) => (
-              <div
-                key={item}
+        </section>
+
+        <section style={{ marginTop: 24, display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
+          {PLAN_OPTIONS.map((plan) => {
+            const active = selectedPlanCode === plan.code;
+            const current = currentPlanCode === plan.code;
+
+            return (
+              <button
+                key={plan.code}
+                type="button"
+                onClick={() => setSelectedPlanCode(plan.code)}
                 style={{
-                  padding: "9px 12px",
-                  borderRadius: 999,
-                  background: "rgba(255,255,255,0.1)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  fontSize: 12,
-                  fontWeight: 700,
+                  ...cardStyle(active),
+                  textAlign: "left",
+                  cursor: "pointer",
                 }}
               >
-                {item}
-              </div>
-            ))}
-          </div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#475467", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      {plan.code === "pro_annual" ? "Annual" : "Monthly"}
+                    </div>
+                    <h2 style={{ margin: "8px 0 0", fontSize: 28, color: "#0f1720", letterSpacing: "-0.05em" }}>
+                      {plan.title}
+                    </h2>
+                  </div>
+                  {current ? (
+                    <span
+                      style={{
+                        padding: "5px 10px",
+                        borderRadius: 999,
+                        background: "#f0fdf4",
+                        color: "#166534",
+                        fontSize: 11,
+                        fontWeight: 800,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                      }}
+                    >
+                      Current
+                    </span>
+                  ) : null}
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                  <div style={{ fontSize: 38, fontWeight: 800, color: "#b45309", letterSpacing: "-0.05em" }}>
+                    {formatMoney(plan.priceCents)}
+                  </div>
+                  <div style={{ fontSize: 15, color: "#475467", fontWeight: 600 }}>{plan.billing}</div>
+                </div>
+                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.65, color: "#475467" }}>{plan.description}</p>
+              </button>
+            );
+          })}
         </section>
 
         {error ? (
-          <div
-            style={{
-              marginTop: 20,
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              color: "#b42318",
-              borderRadius: 16,
-              padding: "14px 16px",
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
+          <div style={{ marginTop: 20, background: "#fef2f2", border: "1px solid #fecaca", color: "#b42318", borderRadius: 16, padding: "14px 16px", fontSize: 14, fontWeight: 600 }}>
             {error}
           </div>
         ) : null}
 
-        {success ? (
-          <div
-            style={{
-              marginTop: 20,
-              background: "#f0fdf4",
-              border: "1px solid #86efac",
-              color: "#166534",
-              borderRadius: 16,
-              padding: "14px 16px",
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            {success}
+        {message ? (
+          <div style={{ marginTop: 20, background: "#f0fdf4", border: "1px solid #86efac", color: "#166534", borderRadius: 16, padding: "14px 16px", fontSize: 14, fontWeight: 600 }}>
+            {message}
           </div>
         ) : null}
 
-        <section style={{ marginTop: 28 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
-            <div style={{ fontSize: 13, color: "#475467", fontWeight: 600 }}>
-              Billing restaurant: <strong style={{ color: "#0f1720" }}>{selectedRestaurant?.restaurant_name || "None selected"}</strong>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <label style={{ fontSize: 13, color: "#475467", fontWeight: 600 }}>Provider</label>
-              <select
-                value={provider}
-                onChange={(e) => setProvider(e.target.value)}
-                style={{ border: "1px solid #d0d5dd", borderRadius: 12, padding: "9px 12px", background: "#fff", fontSize: 14 }}
-              >
-                <option value="stripe">Stripe</option>
-                <option value="paypal">PayPal</option>
-              </select>
-            </div>
-          </div>
-          <div style={{ display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
-            <PriceCard
-              title="Free"
-              price="$0"
-              billing=""
-              description="Best for getting your restaurant listed and menu live."
-              eyebrow="Get Online Fast"
-              accent="#1d4ed8"
-              background="#f8fbff"
-              border="1px solid #dbe7ff"
-              features={FREE_FEATURES}
-              current={currentPlanSlug === "free"}
-              ctaLabel={currentPlanSlug === "free" ? "Current Plan" : "Get Started Free"}
-              onCta={() => navigate("/operator")}
-              ctaDisabled={currentPlanSlug === "free"}
-            />
-
-            <PriceCard
-              title="Pro"
-              price="$39.99"
-              billing="/month"
-              description="Best for restaurants that want stronger branding, direct customer action, instant menu updates, and better menu presentation."
-              eyebrow="Built To Convert"
-              accent="#b42318"
-              background="linear-gradient(180deg, #fff8f7 0%, #ffffff 100%)"
-              border="2px solid #f5b5ae"
-              features={PRO_FEATURES}
-              current={currentPlanSlug === "pro"}
-              ctaLabel={currentPlanSlug === "pro" ? "Current Plan" : upgrading ? "Upgrading…" : "Upgrade to Pro"}
-              onCta={handleUpgradeToPro}
-              ctaDisabled={currentPlanSlug === "pro" || upgrading || loading}
-              supportingLine="Avoid third-party fees by sending orders directly to your website."
-            >
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: "12px 14px",
-                  borderRadius: 14,
-                  background: "#fff1f1",
-                  border: "1px solid #f5d2d2",
-                }}
-              >
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#b42318" }}>$399/year</div>
-                <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1.55, color: "#7a271a", fontWeight: 600 }}>
-                  Early Access Pricing — Early Partners Lock in this rate as Grubbid continues growing.
-                </div>
-              </div>
-              <p style={{ margin: "12px 0 0", fontSize: 13, lineHeight: 1.6, color: "#475467" }}>
-                No more outdated PDFs or reprinting menus — update once and it&apos;s live everywhere.
-              </p>
-            </PriceCard>
-          </div>
-        </section>
-
-        <section style={{ marginTop: 28, display: "grid", gap: 18, gridTemplateColumns: "1fr 1fr" }}>
-          <div
-            style={{
-              background: "#fff",
-              border: "1px solid #eaecf0",
-              borderRadius: 24,
-              padding: "22px 20px",
-              boxShadow: "0 18px 40px rgba(15, 23, 32, 0.04)",
-            }}
-          >
-            <h3 style={{ margin: 0, fontSize: 22, color: "#0f1720", letterSpacing: "-0.04em" }}>Billing Overview</h3>
-            <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
-              {[
-                ["Current Plan", billingOverview?.subscription?.plan_name || subscription?.plan?.name || "Free"],
-                ["Billing Provider", billingOverview?.subscription?.provider || "Not set"],
-                ["Billing Cycle", billingOverview?.subscription?.billing_cycle || "monthly"],
-                ["Status", billingOverview?.subscription?.status || "not_started"],
-                ["Next Billing Date", billingOverview?.subscription?.next_billing_at ? new Date(billingOverview.subscription.next_billing_at).toLocaleDateString() : "N/A"],
-                ["Current Usage", billingOverview?.adobe_usage ? `${((billingOverview.adobe_usage.totals?.estimated_total_value_cents || 0) / 100).toFixed(2)} estimated Adobe value` : "No tracked usage"],
-                ["Estimated Overage", billingOverview?.adobe_usage ? `$${((billingOverview.adobe_usage.totals?.overage_value_cents || 0) / 100).toFixed(2)}` : "$0.00"],
-              ].map(([label, value]) => (
-                <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: 12, borderTop: "1px solid #eaecf0", paddingTop: 12 }}>
-                  <span style={{ fontSize: 13, color: "#475467", fontWeight: 600 }}>{label}</span>
-                  <span style={{ fontSize: 13, color: "#0f1720", fontWeight: 700, textAlign: "right" }}>{value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div
-            style={{
-              background: "#fff",
-              border: "1px solid #eaecf0",
-              borderRadius: 24,
-              padding: "22px 20px",
-              boxShadow: "0 18px 40px rgba(15, 23, 32, 0.04)",
-            }}
-          >
-            <h3 style={{ margin: 0, fontSize: 22, color: "#0f1720", letterSpacing: "-0.04em" }}>Invoices and Payments</h3>
-            <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
-              {(billingOverview?.invoices || []).slice(0, 5).map((invoice) => (
-                <div key={invoice.id} style={{ border: "1px solid #eaecf0", borderRadius: 16, padding: 14 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <strong style={{ color: "#0f1720" }}>{invoice.invoice_type || "invoice"}</strong>
-                    <span style={{ fontSize: 12, color: "#475467", fontWeight: 700 }}>{invoice.status}</span>
-                  </div>
-                  <div style={{ marginTop: 6, fontSize: 13, color: "#475467" }}>
-                    ${(Number(invoice.total_cents || 0) / 100).toFixed(2)} • {invoice.provider}
-                  </div>
-                  {invoice.hosted_invoice_url ? (
-                    <a href={invoice.hosted_invoice_url} target="_blank" rel="noreferrer" style={{ display: "inline-block", marginTop: 8, fontSize: 13, color: "#1F4E3D", fontWeight: 700 }}>
-                      Open invoice
-                    </a>
-                  ) : null}
-                </div>
-              ))}
-              {!billingOverview?.invoices?.length ? (
-                <div style={{ fontSize: 14, color: "#667085" }}>
-                  No invoices yet. Billing history will appear here after provider checkout, invoice sync, or usage invoicing.
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </section>
-
-        <section style={{ marginTop: 34 }}>
-          <div style={{ maxWidth: 760 }}>
-            <h2 style={{ margin: 0, fontSize: 28, color: "#0f1720", letterSpacing: "-0.04em" }}>What changes when you upgrade</h2>
-            <p style={{ margin: "12px 0 0", fontSize: 15, lineHeight: 1.7, color: "#475467" }}>
-              Pro is built for restaurants that want to control how customers act after they find the menu. Make your menu instantly scannable and accessible, send customers directly to your own website, instantly update prices and products on the menu, and present a stronger Restaurant Profile Screen with About Us and Featured Dish.
+        <section style={{ marginTop: 24, display: "grid", gap: 20, gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 0.9fr)" }}>
+          <div style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 24, padding: 22, boxShadow: "0 18px 40px rgba(15, 23, 32, 0.04)" }}>
+            <h3 style={{ margin: 0, fontSize: 24, color: "#0f1720", letterSpacing: "-0.04em" }}>Checkout</h3>
+            <p style={{ margin: "10px 0 0", fontSize: 15, lineHeight: 1.7, color: "#475467" }}>
+              {selectedRestaurant?.restaurant_name
+                ? `Billing restaurant: ${selectedRestaurant.restaurant_name}`
+                : "Select a restaurant before starting a subscription."}
             </p>
-          </div>
-        </section>
 
-        <section
-          style={{
-            marginTop: 18,
-            background: "#fff",
-            border: "1px solid #eaecf0",
-            borderRadius: 22,
-            padding: "22px 20px",
-            boxShadow: "0 18px 40px rgba(15, 23, 32, 0.04)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-            <div
+            {!hasStripePublishableKey() ? (
+              <div style={{ marginTop: 18, padding: "12px 14px", borderRadius: 14, background: "#fff7ed", color: "#9a3412", fontSize: 14, fontWeight: 700 }}>
+                VITE_STRIPE_PUBLISHABLE_KEY is not configured in the frontend environment.
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={handleStartCheckout}
+              disabled={!selectedRestaurant?.id || creating || loading || !hasStripePublishableKey()}
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 14,
-                background: "#fff1f1",
-                color: "#b42318",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 20,
-                fontWeight: 800,
-                flexShrink: 0,
+                marginTop: 18,
+                width: "100%",
+                border: "none",
+                borderRadius: 16,
+                background: creating ? "#94a3b8" : "#11211a",
+                color: "#fff",
+                padding: "14px 16px",
+                fontSize: 15,
+                fontWeight: 900,
+                cursor: creating ? "wait" : "pointer",
               }}
             >
-              ◎
-            </div>
-            <div style={{ maxWidth: 760 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#b42318", marginBottom: 6 }}>
-                Pro Feature
+              {creating ? "Preparing checkout..." : `Start ${getSubscriptionPlanLabel(selectedPlanCode)}`}
+            </button>
+
+            {checkoutSession?.client_secret ? (
+              <div style={{ marginTop: 22 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#667085", marginBottom: 10 }}>
+                  Confirm first invoice payment
+                </div>
+                <StripeElementsProvider clientSecret={checkoutSession.client_secret}>
+                  <SubscriptionCheckoutForm
+                    returnUrl={`${window.location.origin}/operator/subscription`}
+                    onConfirmed={async () => {
+                      setMessage("Payment submitted. Refreshing subscription status from the backend.");
+                      setCheckoutSession(null);
+                      await refreshSubscription();
+                    }}
+                  />
+                </StripeElementsProvider>
               </div>
-              <h3 style={{ margin: 0, fontSize: 24, color: "#0f1720", letterSpacing: "-0.04em" }}>Smart Menu Insights</h3>
-              <p style={{ margin: "10px 0 0", fontSize: 15, lineHeight: 1.7, color: "#475467" }}>
-                Help customers understand what to order — not just read the menu.
-              </p>
-              <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.65, color: "#0f1720", fontWeight: 700 }}>
-                Customers don&apos;t just see your menu — they understand it.
-              </p>
-              <p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.6, color: "#667085" }}>
-                When customers understand what to order, they&apos;re more likely to order.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section
-          style={{
-            marginTop: 24,
-            background: "#fff",
-            border: "1px solid #eaecf0",
-            borderRadius: 24,
-            padding: "22px 20px 20px",
-            boxShadow: "0 18px 40px rgba(15, 23, 32, 0.05)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-end", flexWrap: "wrap", marginBottom: 16 }}>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#667085", marginBottom: 6 }}>
-                Plan Comparison
-              </div>
-              <h3 style={{ margin: 0, fontSize: 24, color: "#0f1720", letterSpacing: "-0.04em" }}>Free vs Pro</h3>
-            </div>
-            <div style={{ fontSize: 13, color: "#475467", maxWidth: 420, lineHeight: 1.55 }}>
-              Capture the customers you already have from Instagram, Google, your website, and QR codes.
-            </div>
+            ) : null}
           </div>
 
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", minWidth: 700, borderCollapse: "separate", borderSpacing: 0 }}>
-              <thead>
-                <tr>
-                  <th
-                    style={{
-                      textAlign: "left",
-                      padding: "14px 16px",
-                      background: "#f8fafc",
-                      color: "#475467",
-                      fontSize: 12,
-                      fontWeight: 800,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                      borderTopLeftRadius: 16,
-                    }}
-                  >
-                    Features
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "center",
-                      padding: "14px 16px",
-                      background: "#f8fbff",
-                      color: "#1d4ed8",
-                      fontSize: 12,
-                      fontWeight: 800,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                    }}
-                  >
-                    Free
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "center",
-                      padding: "14px 16px",
-                      background: "#fff1f1",
-                      color: "#b42318",
-                      fontSize: 12,
-                      fontWeight: 800,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                      borderTopRightRadius: 16,
-                    }}
-                  >
-                    Pro
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {COMPARISON_ROWS.map((row) => (
-                  <tr key={row.label}>
-                    <td
-                      style={{
-                        padding: "16px 14px",
-                        borderTop: "1px solid #eaecf0",
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: "#0f1720",
-                        background: "#fff",
-                      }}
-                    >
-                      {row.label}
-                    </td>
-                    <ComparisonCell value={row.free} />
-                    <ComparisonCell value={row.pro} highlight />
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <div style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 24, padding: 22, boxShadow: "0 18px 40px rgba(15, 23, 32, 0.04)" }}>
+            <h3 style={{ margin: 0, fontSize: 24, color: "#0f1720", letterSpacing: "-0.04em" }}>Current Status</h3>
+            <div style={{ marginTop: 14, display: "grid", gap: 2 }}>
+              <StatusRow label="Plan" value={getSubscriptionPlanLabel(currentPlanCode)} />
+              <StatusRow label="Status" value={loading ? "Loading..." : currentStatus} />
+              <StatusRow label="Current Period End" value={loading ? "Loading..." : currentPeriodEnd} />
+              <StatusRow label="Cancel At Period End" value={subscription?.cancel_at_period_end ? "Yes" : "No"} />
+              <StatusRow label="Stripe Customer" value={subscription?.stripe_customer_id || "Not created"} />
+              <StatusRow label="Stripe Subscription" value={subscription?.stripe_subscription_id || "Not created"} />
+            </div>
 
-          <p style={{ margin: "18px 2px 0", fontSize: 14, lineHeight: 1.65, color: "#475467", fontWeight: 600 }}>
-            Pro helps restaurants send customers directly to their own website, avoid third-party fees, and keep menus current everywhere customers find them.
-          </p>
+            <button
+              type="button"
+              onClick={handleCancelSubscription}
+              disabled={!subscription?.stripe_subscription_id || subscription?.cancel_at_period_end === true}
+              style={{
+                marginTop: 18,
+                width: "100%",
+                borderRadius: 16,
+                border: "1px solid #fecaca",
+                background: subscription?.cancel_at_period_end ? "#f8fafc" : "#fff5f5",
+                color: "#b42318",
+                padding: "13px 16px",
+                fontSize: 14,
+                fontWeight: 800,
+                cursor: subscription?.cancel_at_period_end ? "not-allowed" : "pointer",
+              }}
+            >
+              {subscription?.cancel_at_period_end ? "Cancellation already scheduled" : "Cancel At Period End"}
+            </button>
+          </div>
         </section>
       </div>
     </OperatorLayout>

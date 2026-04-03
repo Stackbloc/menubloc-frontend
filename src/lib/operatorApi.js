@@ -152,6 +152,16 @@ export const getQrKitPreviewUrl = (rid, params = {}) => {
 export const createQrKitOrder = (rid, body) => post(`/operator/restaurants/${rid}/qr-kit-orders`, body);
 export const getQrKitOrder = (rid, orderId) => get(`/operator/restaurants/${rid}/qr-kit-orders/${orderId}`);
 
+// ── Stripe Platform Billing ───────────────────────────────────────────────
+export const createPlatformPaymentIntent = (body) =>
+  post("/api/stripe/platform/payment-intents", body);
+export const createPlatformSubscription = (body) =>
+  post("/api/stripe/platform/subscriptions", body);
+export const cancelPlatformSubscription = (body) =>
+  post("/api/stripe/platform/subscriptions/cancel", body);
+export const getPlatformSubscriptionStatus = (restaurantId) =>
+  get(`/api/stripe/platform/subscriptions/${restaurantId}`);
+
 // ── Restaurant: Hours ─────────────────────────────────────────────────────
 export const getHours = (rid) => get(`/operator/restaurants/${rid}/hours`);
 export const updateHours = (rid, schedule) => put(`/operator/restaurants/${rid}/hours`, { schedule });
