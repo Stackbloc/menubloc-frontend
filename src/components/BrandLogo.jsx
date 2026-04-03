@@ -21,7 +21,39 @@ export function BrandLogo({
   imageStyle,
   linkStyle,
   ariaLabel = "Go to Grubbid home",
+  clickable = true,
 }) {
+  const content = (
+    <span
+      style={{
+        display: "inline-flex",
+        width,
+        height,
+        overflow: "hidden",
+        borderRadius: radius,
+        background: pageColor,
+        lineHeight: 0,
+      }}
+    >
+      <img
+        src="/grubbid-logo-plain.png"
+        alt="Grubbid"
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          objectPosition: "center",
+          mixBlendMode: "multiply",
+          opacity: 0.96,
+          ...imageStyle,
+        }}
+      />
+    </span>
+  );
+
+  if (!clickable) return content;
+
   return (
     <Link
       to={to}
@@ -33,31 +65,7 @@ export function BrandLogo({
         ...linkStyle,
       }}
     >
-      <span
-        style={{
-          display: "inline-flex",
-          width,
-          height,
-          overflow: "hidden",
-          borderRadius: radius,
-          background: pageColor,
-          lineHeight: 0,
-        }}
-      >
-        <img
-          src="/grubbid-logo-plain.jpg"
-          alt="Grubbid"
-          style={{
-            display: "block",
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center",
-            filter: "saturate(0.92) contrast(0.96)",
-            ...imageStyle,
-          }}
-        />
-      </span>
+      {content}
     </Link>
   );
 }
@@ -67,26 +75,39 @@ export function BrandLockup({
   subtitleStyle,
   wrapperStyle,
   logoProps,
+  to = "/",
+  ariaLabel = "Go to Grubbid home",
 }) {
   return (
-    <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", ...wrapperStyle }}>
-      <BrandLogo {...logoProps} />
+    <Link
+      to={to}
+      aria-label={ariaLabel}
+      style={{
+        display: "inline-flex",
+        flexDirection: "column",
+        alignItems: "center",
+        textDecoration: "none",
+        cursor: "pointer",
+        ...wrapperStyle,
+      }}
+    >
+      <BrandLogo {...logoProps} clickable={false} />
       {subtitle ? (
         <div
           style={{
             fontSize: 11,
             fontWeight: 800,
-            color: "#667085",
-            letterSpacing: 1.4,
-            textTransform: "uppercase",
-            marginTop: 6,
-            textAlign: "center",
-            ...subtitleStyle,
-          }}
+          color: "#667085",
+          letterSpacing: 1.4,
+          textTransform: "uppercase",
+          marginTop: 0,
+          textAlign: "center",
+          ...subtitleStyle,
+        }}
         >
           {subtitle}
         </div>
       ) : null}
-    </div>
+    </Link>
   );
 }

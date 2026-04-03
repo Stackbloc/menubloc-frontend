@@ -463,13 +463,13 @@ export default function GrubbidDiscovery() {
             logoProps={{
               width: isMobile ? 98 : 138,
               height: isMobile ? 64 : 90,
-              radius: isMobile ? 18 : 22,
-              pageColor: "#f7f6f1",
+              radius: 0,
+              pageColor: "transparent",
             }}
             subtitleStyle={{
               fontSize: isMobile ? 9 : 10,
               letterSpacing: isMobile ? 1.1 : 1.25,
-              marginTop: 8,
+              marginTop: -2,
             }}
           />
           {!consumerLoading && (
