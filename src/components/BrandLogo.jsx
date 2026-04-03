@@ -18,6 +18,7 @@ export function BrandLogo({
   height = 112,
   radius = 24,
   pageColor = "#f7f6f1",
+  imageStyle,
   linkStyle,
   ariaLabel = "Go to Grubbid home",
 }) {
@@ -52,6 +53,8 @@ export function BrandLogo({
             height: "100%",
             objectFit: "cover",
             objectPosition: "center",
+            filter: "saturate(0.92) contrast(0.96)",
+            ...imageStyle,
           }}
         />
       </span>
@@ -66,7 +69,7 @@ export function BrandLockup({
   logoProps,
 }) {
   return (
-    <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", ...wrapperStyle }}>
+    <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", ...wrapperStyle }}>
       <BrandLogo {...logoProps} />
       {subtitle ? (
         <div
@@ -77,7 +80,7 @@ export function BrandLockup({
             letterSpacing: 1.4,
             textTransform: "uppercase",
             marginTop: 6,
-            paddingLeft: 4,
+            textAlign: "center",
             ...subtitleStyle,
           }}
         >

@@ -461,12 +461,16 @@ export default function GrubbidDiscovery() {
           <BrandLockup
             subtitle={t("nav.discovery")}
             logoProps={{
-              width: isMobile ? 190 : 270,
-              height: isMobile ? 124 : 172,
-              radius: isMobile ? 28 : 36,
+              width: isMobile ? 98 : 138,
+              height: isMobile ? 64 : 90,
+              radius: isMobile ? 18 : 22,
               pageColor: "#f7f6f1",
             }}
-            subtitleStyle={{ fontSize: isMobile ? 10 : 11 }}
+            subtitleStyle={{
+              fontSize: isMobile ? 9 : 10,
+              letterSpacing: isMobile ? 1.1 : 1.25,
+              marginTop: 8,
+            }}
           />
           {!consumerLoading && (
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
