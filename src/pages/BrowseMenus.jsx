@@ -46,6 +46,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { apiGet, getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
 import { loadDietPrefs, saveDietPrefs, activePrefLabels, hasActiveDietPrefs } from "../hooks/useDietPreferences";
+import { reverseGeocode } from "../lib/locationUtils.js";
 
 
 function useIsMobile(breakpoint = 900) {
@@ -393,6 +394,16 @@ export default function BrowseMenus() {
           if (!hasCoords && radiusMiles !== null) {
             setRadiusMiles(null);
           }
+          // Set display label from reverse-geocoded user position (precise city/state),
+          // not from the first restaurant result. Restaurants nearby may have a different
+          // city in their address than the user's actual location.
+          if (hasCoords) {
+            reverseGeocode(coords.lat, coords.lng)
+              .then((geo) => {
+                if (!cancelled && geo.label) setLocationLabel(geo.label);
+              })
+              .catch(() => {});
+          }
           apiParams = {
             lat: coords.lat,
             lng: coords.lng,
@@ -426,21 +437,13 @@ export default function BrowseMenus() {
         setHasMore(response?.pagination?.has_more ?? (newOffset < newTotal));
 
         // In city/state mode the URL is already authoritative.
-        // In geo mode, derive city/state from first result and push to URL.
+        // In geo mode the display label is set by reverseGeocode above (user's precise
+        // city). We do NOT derive the display label from restaurant data — a restaurant
+        // in an adjacent city would produce a misleading label (e.g. "Los Angeles" when
+        // the user is in Pasadena). The URL stays lat/lng-based in geo mode.
         if (!hasCityStateParams) {
-          const first = extractedMenus[0];
-          if (first?.city || first?.state) {
-            const city = first.city || "";
-            const state = first.state || "";
-            const label = [city, state].filter(Boolean).join(", ");
-            setLocationLabel(label);
-            if (city !== urlCity || state !== urlState) {
-              const next = new URLSearchParams(search);
-              if (city) next.set("city", city); else next.delete("city");
-              if (state) next.set("state", state); else next.delete("state");
-              navigate("?" + next.toString(), { replace: true });
-            }
-          }
+          // intentionally left blank — display label set from reverseGeocode above
+          void 0;
         }
       } catch (fetchError) {
         if (cancelled) return;
