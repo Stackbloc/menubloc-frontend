@@ -571,9 +571,9 @@ export default function SpreadsheetUploadPage() {
       <div style={s.steps}>
         <div style={s.step(false, true)}>1. Account</div>
         <div style={s.stepDivider} />
-        <div style={s.step(false, true)}>2. Find your profile</div>
+        <div style={s.step(false, true)}>2. Choose plan</div>
         <div style={s.stepDivider} />
-        <div style={s.step(false, true)}>3. Choose plan</div>
+        <div style={s.step(false, true)}>3. Design</div>
         <div style={s.stepDivider} />
         <div style={s.step(true, false)}>4. Upload menu</div>
       </div>

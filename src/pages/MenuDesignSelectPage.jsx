@@ -12,7 +12,7 @@
  *     email            — owner email
  *     owner_token      — HMAC auth token
  *     plan             — "verified" | "pro"
- *     ingestion_method — "pdf" | "spreadsheet" | "ocr"
+ *     ingestion_method — "pdf" | "later" | "spreadsheet" | "ocr"
  *
  *   On style selection: navigates to the upload page (keyed by ingestion_method)
  *   and passes design_style in router state.
@@ -34,6 +34,7 @@ import { DESIGN_STYLES } from "../services/designEngine.js";
 
 const UPLOAD_ROUTES = {
   pdf:         "/restaurant/pdf-upload",
+  later:       "/restaurant/menu-upload-choice",
   spreadsheet: "/restaurant/spreadsheet-upload",
   ocr:         "/restaurant/ocr-upload",
 };
@@ -323,6 +324,7 @@ function StylePreview({ preview }) {
 export default function MenuDesignSelectPage() {
   const nav      = useNavigate();
   const location = useLocation();
+  const flowState = location.state || {};
 
   const {
     restaurant_id,
@@ -331,7 +333,7 @@ export default function MenuDesignSelectPage() {
     owner_token     = "",
     plan            = "verified",
     ingestion_method,
-  } = location.state || {};
+  } = flowState;
 
   const [selectedStyle, setSelectedStyle] = useState(null);
 
@@ -341,11 +343,7 @@ export default function MenuDesignSelectPage() {
     const uploadRoute = UPLOAD_ROUTES[ingestion_method] || "/restaurant/signup-complete";
     nav(uploadRoute, {
       state: {
-        restaurant_id,
-        restaurant_name,
-        email,
-        owner_token,
-        plan,
+        ...flowState,
         design_style: designStyle,
       },
     });
@@ -387,13 +385,11 @@ export default function MenuDesignSelectPage() {
       <div style={s.steps}>
         <div style={s.step(false, true)}>1. Account</div>
         <div style={s.stepDivider} />
-        <div style={s.step(false, true)}>2. Find your profile</div>
+        <div style={s.step(false, true)}>2. Choose plan</div>
         <div style={s.stepDivider} />
-        <div style={s.step(false, true)}>3. Choose plan</div>
+        <div style={s.step(true,  false)}>3. Design</div>
         <div style={s.stepDivider} />
-        <div style={s.step(true,  false)}>4. Design</div>
-        <div style={s.stepDivider} />
-        <div style={s.step(false, false)}>5. Upload menu</div>
+        <div style={s.step(false, false)}>4. Upload menu</div>
       </div>
 
       {/* Page header */}

@@ -3,8 +3,8 @@
  * Path:    menubloc-frontend/src/pages/SubscriptionSelect.jsx
  * Date:    2026-03-09
  * Purpose:
- *   Onboarding step 3 — choose a profile plan (Verified or Pro).
- *   Reached from ProfileSearchPage after restaurant is found/created/claimed.
+ *   Onboarding step 2 — choose a profile plan (Verified or Pro).
+ *   Reached after the simplified restaurant signup step.
  *
  *   Router state expected:
  *     restaurant_id    — numeric restaurant ID
@@ -23,7 +23,7 @@
  */
 
 import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 
 // ── PayPal Plan IDs — replace with real IDs from developer.paypal.com ──
@@ -65,6 +65,19 @@ const s = {
 
   heading:    { fontSize: 24, fontWeight: 800, marginBottom: 6 },
   subheading: { fontSize: 15, color: "#555", marginBottom: 32 },
+  summaryCard: {
+    border: "1px solid #e5e5e5",
+    borderRadius: 14,
+    padding: "14px 16px",
+    marginBottom: 24,
+    background: "#fafafa",
+    display: "flex",
+    gap: 14,
+    flexWrap: "wrap",
+    fontSize: 13,
+    color: "#444",
+  },
+  summaryLabel: { fontWeight: 800, color: "#111", marginRight: 4 },
 
   // Plan cards
   grid: { display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 48 },
@@ -103,6 +116,15 @@ const s = {
   checkmark:   { color: "#111", fontWeight: 900, marginTop: 1, flexShrink: 0 },
   bestFor:     { fontSize: 12, color: "#888", marginTop: 12, lineHeight: 1.5, marginBottom: 20 },
   bestForLabel:{ fontWeight: 700, color: "#555" },
+  topLink: {
+    display: "inline-flex",
+    alignItems: "center",
+    marginBottom: 20,
+    color: "#555",
+    fontSize: 13,
+    fontWeight: 700,
+    textDecoration: "none",
+  },
   btn: (primary) => ({
     width: "100%",
     height: 46,
@@ -199,16 +221,31 @@ export default function SubscriptionSelect() {
     email,
     owner_token,
     ingestion_method,
+    city,
+    state,
+    phone,
+    menu_choice,
   } = location.state || {};
+  const hasOnboardingContext = Boolean(restaurant_id && owner_token);
 
   function chooseVerified() {
+    if (!hasOnboardingContext) {
+      nav("/restaurant/signup");
+      return;
+    }
+
     // Free plan — no payment, continue onboarding
     nav("/restaurant/design-select", {
-      state: { restaurant_id, restaurant_name, email, owner_token, plan: "verified", ingestion_method },
+      state: { restaurant_id, restaurant_name, email, owner_token, city, state, phone, menu_choice, plan: "verified", ingestion_method },
     });
   }
 
   function choosePro() {
+    if (!hasOnboardingContext) {
+      nav("/restaurant/signup");
+      return;
+    }
+
     const isAnnual = proInterval === "annual";
     addToCart({
       id:           isAnnual ? "pro_annual" : "pro_monthly",
@@ -224,26 +261,44 @@ export default function SubscriptionSelect() {
 
   return (
     <div style={s.page}>
+      <Link to="/restaurant/signup" style={s.topLink}>
+        Back to restaurant signup
+      </Link>
+
       {/* Brand */}
       <div style={s.brand}>Grubbid</div>
       <div style={s.subbrand}>for Restaurants</div>
 
       {/* Step trail */}
-      <div style={s.steps}>
-        <div style={s.step(false, true)}>1. Account</div>
-        <div style={s.stepDivider} />
-        <div style={s.step(false, true)}>2. Find your profile</div>
-        <div style={s.stepDivider} />
-        <div style={s.step(true,  false)}>3. Choose plan</div>
-        <div style={s.stepDivider} />
-        <div style={s.step(false, false)}>4. Design</div>
-        <div style={s.stepDivider} />
-        <div style={s.step(false, false)}>5. Upload menu</div>
-      </div>
+      {hasOnboardingContext ? (
+        <div style={s.steps}>
+          <div style={s.step(false, true)}>1. Account</div>
+          <div style={s.stepDivider} />
+          <div style={s.step(true,  false)}>2. Choose plan</div>
+          <div style={s.stepDivider} />
+          <div style={s.step(false, false)}>3. Design</div>
+          <div style={s.stepDivider} />
+          <div style={s.step(false, false)}>4. Upload menu</div>
+        </div>
+      ) : null}
 
       {/* Heading */}
       <div style={s.heading}>Choose your profile plan</div>
-      <div style={s.subheading}>Select the plan that fits your restaurant.</div>
+      <div style={s.subheading}>
+        {hasOnboardingContext
+          ? "Select the plan that fits your restaurant."
+          : "Compare Grubbid restaurant plans before you start onboarding."}
+      </div>
+
+      {hasOnboardingContext ? (
+        <div style={s.summaryCard}>
+          <div><span style={s.summaryLabel}>Restaurant:</span>{restaurant_name}</div>
+          {city || state ? <div><span style={s.summaryLabel}>Location:</span>{[city, state].filter(Boolean).join(", ")}</div> : null}
+          {phone ? <div><span style={s.summaryLabel}>Phone:</span>{phone}</div> : null}
+          {email ? <div><span style={s.summaryLabel}>Email:</span>{email}</div> : null}
+          {menu_choice ? <div><span style={s.summaryLabel}>Menu:</span>{menu_choice === "pdf_now" ? "Upload PDF now" : "Upload later"}</div> : null}
+        </div>
+      ) : null}
 
       {/* Plan cards */}
       <div style={s.grid}>
@@ -278,7 +333,7 @@ export default function SubscriptionSelect() {
           </div>
 
           <button style={s.btn(false)} onClick={chooseVerified}>
-            Get Started Free
+            {hasOnboardingContext ? "Get Started Free" : "Start Restaurant Signup"}
           </button>
         </div>
 
@@ -346,7 +401,7 @@ export default function SubscriptionSelect() {
           </div>
 
           <button style={s.btn(true)} onClick={choosePro}>
-            Choose Pro →
+            {hasOnboardingContext ? "Choose Pro →" : "Start Restaurant Signup"}
           </button>
         </div>
       </div>
@@ -354,13 +409,14 @@ export default function SubscriptionSelect() {
       {/* Design upgrade teaser */}
       <div style={s.designTeaser}>
         <div style={s.teaserLeft}>
-          <div style={s.teaserEyebrow}>Up next — step 4</div>
+          <div style={s.teaserEyebrow}>{hasOnboardingContext ? "Up next — step 4" : "What happens next"}</div>
           <div style={s.teaserHeading}>
-            Make your menu look beautiful
+            {hasOnboardingContext ? "Make your menu look beautiful" : "Continue into restaurant onboarding"}
           </div>
           <div style={s.teaserDesc}>
-            After choosing your plan, you will pick a design style for your digital menu.
-            It takes under a minute, and no design skills are needed.
+            {hasOnboardingContext
+              ? "After choosing your plan, you will pick a design style for your digital menu. It takes under a minute, and no design skills are needed."
+              : "After signup, you can confirm your restaurant profile, choose a plan, pick a design style, and upload your menu."}
           </div>
         </div>
         <div style={s.teaserRight}>

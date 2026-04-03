@@ -283,6 +283,7 @@ export default function PdfUploadPage() {
     owner_token     = "",
     plan            = "",
     design_style    = null,
+    ingestion_method = "pdf",
   } = state;
 
   const fileInputRef = useRef(null);
@@ -456,23 +457,22 @@ export default function PdfUploadPage() {
       <div style={s.brand}>Grubbid</div>
       <div style={s.subbrand}>for Restaurants</div>
 
-      {/* Step trail — 5 steps */}
+      {/* Step trail */}
       <div style={s.steps}>
         <div style={s.step(false, true)}>1. Account</div>
         <div style={s.stepDivider} />
-        <div style={s.step(false, true)}>2. Find your profile</div>
+        <div style={s.step(false, true)}>2. Choose plan</div>
         <div style={s.stepDivider} />
-        <div style={s.step(false, true)}>3. Choose plan</div>
+        <div style={s.step(false, true)}>3. Design</div>
         <div style={s.stepDivider} />
-        <div style={s.step(false, true)}>4. Design</div>
-        <div style={s.stepDivider} />
-        <div style={s.step(true,  false)}>5. Upload menu</div>
+        <div style={s.step(true, false)}>4. Upload menu</div>
       </div>
 
-      <div style={s.heading}>Upload your menu PDF</div>
+      <div style={s.heading}>{ingestion_method === "ocr" ? "Upload your scanned menu for OCR" : "Upload your menu PDF"}</div>
       <div style={s.subheading}>
-        Upload a PDF of your menu and we will extract and structure it automatically.
-        Text-based PDFs work best. Scanned image PDFs may have limited results.
+        {ingestion_method === "ocr"
+          ? "Upload a scanned PDF of your menu and we will run it through the OCR-oriented ingestion path. PDF files work best for this flow."
+          : "Upload a PDF of your menu and we will extract and structure it automatically. Text-based PDFs work best. Scanned image PDFs may have limited results."}
       </div>
 
       {/* Context: restaurant + plan + design style */}
@@ -557,7 +557,7 @@ export default function PdfUploadPage() {
           style={s.submitBtn(submitDisabled)}
           disabled={submitDisabled}
         >
-          {uploading ? "Uploading…" : "Upload menu PDF"}
+          {uploading ? "Uploading…" : ingestion_method === "ocr" ? "Upload scanned menu" : "Upload menu PDF"}
         </button>
       </form>
     </div>

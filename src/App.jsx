@@ -92,6 +92,7 @@ import ClaimVerify from "./pages/ClaimVerify.jsx";
 import EasyMenuLanding from "./pages/EasyMenuLanding.jsx";
 import SubscriptionSelect from "./pages/SubscriptionSelect.jsx";
 import MenuDesignSelectPage from "./pages/MenuDesignSelectPage.jsx";
+import MenuUploadChoicePage from "./pages/MenuUploadChoicePage.jsx";
 import Terms from "./pages/Terms.jsx";
 import AboutGrubbid from "./pages/AboutGrubbid.jsx";
 import Contact from "./pages/Contact.jsx";
@@ -334,6 +335,7 @@ function AppShell({ easyMenu, crmHost }) {
         {/* Restaurant signup — canonical + short alias */}
         <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
         <Route path="/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
+        <Route path="/pricing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
 
         {/* Onboarding step 2: find existing listing or create new */}
         <Route path="/profilesearch" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProfileSearchPage />} />
@@ -343,6 +345,7 @@ function AppShell({ easyMenu, crmHost }) {
 
         {/* Onboarding step 4: design style selection (Adobe integration ready) */}
         <Route path="/restaurant/design-select" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuDesignSelectPage />} />
+        <Route path="/restaurant/menu-upload-choice" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuUploadChoicePage />} />
 
         {/* Terms of Service */}
         <Route path="/terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Terms />} />
@@ -351,6 +354,7 @@ function AppShell({ easyMenu, crmHost }) {
 
         {/* Menu upload (onboarding step 5) */}
         <Route path="/restaurant/pdf-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PdfUploadPage />} />
+        <Route path="/restaurant/ocr-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PdfUploadPage />} />
         <Route path="/restaurant/spreadsheet-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SpreadsheetUploadPage />} />
 
         {/* Menus */}
