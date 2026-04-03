@@ -13,6 +13,7 @@ import { loadDietPrefs, saveDietPrefs } from "../hooks/useDietPreferences";
 import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
+import { addLocation, getLocations, updateLocation } from "../lib/consumerApi.js";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -211,6 +212,7 @@ export default function GrubbidDiscovery() {
   const [searching, setSearching] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showLocationEditor, setShowLocationEditor] = useState(false);
+  const [locationSaveState, setLocationSaveState] = useState("idle");
   const [locationInput, setLocationInput] = useState(() => {
     if (typeof window === "undefined") return "";
     return String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim();
@@ -387,7 +389,45 @@ export default function GrubbidDiscovery() {
     return state ? `${city}, ${state}` : city;
   }
 
-  function applyLocationChange(rawValue) {
+  async function persistDefaultLocation(rawLabel, sourceOverride = null) {
+    if (!consumerLoggedIn) return;
+
+    const normalizedLabel = normalizeLocationLabel(String(rawLabel || ""));
+    if (!normalizedLabel) return;
+
+    const parsed = parseLocation(normalizedLabel);
+    const useAutoCoords = autoLocation.label && normalizeLocationLabel(autoLocation.label) === normalizedLabel;
+    const lat = useAutoCoords ? autoLocation.lat : null;
+    const lng = useAutoCoords ? autoLocation.lng : null;
+    const source = sourceOverride || (useAutoCoords ? "autodetect" : "manual");
+
+    setLocationSaveState("saving");
+    try {
+      const locationsResponse = await getLocations();
+      const locations = Array.isArray(locationsResponse?.locations) ? locationsResponse.locations : [];
+      const existingDefault = locations.find((location) => location.is_default);
+      const payload = {
+        label: normalizedLabel,
+        city: parsed.city || null,
+        state: parsed.state || null,
+        lat,
+        lng,
+        source,
+        is_default: true,
+      };
+
+      if (existingDefault?.id) {
+        await updateLocation(existingDefault.id, payload);
+      } else {
+        await addLocation(payload);
+      }
+      setLocationSaveState("saved");
+    } catch {
+      setLocationSaveState("error");
+    }
+  }
+
+  async function applyLocationChange(rawValue, options = {}) {
     const nextLocation = normalizeLocationLabel((rawValue ?? locationInput).trim());
     setAppliedLocation(nextLocation);
     if (typeof window !== "undefined") {
@@ -402,6 +442,9 @@ export default function GrubbidDiscovery() {
       setRecentLocations(loadRecentLocations());
     }
     setShowLocationEditor(false);
+    if (nextLocation) {
+      await persistDefaultLocation(nextLocation, options.source || null);
+    }
   }
 
   function getEffectiveSearchLocation() {
@@ -749,22 +792,60 @@ export default function GrubbidDiscovery() {
                 }}
               />
               <div>
-                <button
-                  type="button"
-                  onClick={() => applyLocationChange()}
-                  style={{
-                    height: 42,
-                    padding: "0 16px",
-                    borderRadius: 12,
-                    border: "1px solid #cbd5e1",
-                    background: "#fff",
-                    color: "#11211a",
-                    fontWeight: 900,
-                    cursor: "pointer",
-                  }}
-                >
-                  {t("common.apply")}
-                </button>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={() => applyLocationChange()}
+                    style={{
+                      height: 42,
+                      padding: "0 16px",
+                      borderRadius: 12,
+                      border: "1px solid #cbd5e1",
+                      background: "#fff",
+                      color: "#11211a",
+                      fontWeight: 900,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {t("common.apply")}
+                  </button>
+                  {autoLocation.label ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLocationInput(autoLocation.label);
+                        void applyLocationChange(autoLocation.label, { source: "autodetect" });
+                      }}
+                      style={{
+                        height: 42,
+                        padding: "0 16px",
+                        borderRadius: 12,
+                        border: "1px solid #cbd5e1",
+                        background: "#fff",
+                        color: "#11211a",
+                        fontWeight: 900,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Use Current Location
+                    </button>
+                  ) : null}
+                </div>
+                {consumerLoggedIn ? (
+                  <div style={{ marginTop: 8, fontSize: 12, color: locationSaveState === "error" ? "#b42318" : "#667085", fontWeight: 600 }}>
+                    {locationSaveState === "saving"
+                      ? "Saving as your default location..."
+                      : locationSaveState === "saved"
+                      ? "Default location updated for your account."
+                      : locationSaveState === "error"
+                      ? "Location changed here, but account default could not be updated."
+                      : "Location changes here also update your default search location."}
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 8, fontSize: 12, color: "#667085", fontWeight: 600 }}>
+                    Sign in to save this as your default search location.
+                  </div>
+                )}
               </div>
             </div>
           ) : null}

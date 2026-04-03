@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
   AuthPageFrame,
@@ -12,6 +12,11 @@ import {
 export default function ConsumerLogin() {
   const { login, loginWithGoogle, loginWithApple } = useConsumer();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = useMemo(() => {
+    const next = location.state?.redirectTo;
+    return typeof next === "string" && next.trim() ? next : "/";
+  }, [location.state]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,7 +45,7 @@ export default function ConsumerLogin() {
 
     try {
       await login(email.trim(), password);
-      navigate("/account", { replace: true });
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       setFormError(error.message || "Login failed. Please try again.");
     } finally {
@@ -54,7 +59,7 @@ export default function ConsumerLogin() {
     setSocialError("");
     try {
       await loginWithGoogle(credential);
-      navigate("/account", { replace: true });
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       setSocialError(error.message || "Google sign-in failed. Please try again.");
     } finally {
@@ -68,7 +73,7 @@ export default function ConsumerLogin() {
     setSocialError("");
     try {
       await loginWithApple(payload);
-      navigate("/account", { replace: true });
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       setSocialError(error.message || "Apple sign-in failed. Please try again.");
     } finally {

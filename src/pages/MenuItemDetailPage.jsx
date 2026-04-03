@@ -23,6 +23,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { PageNav } from "../components/NavButton";
+import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
+import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -503,7 +505,7 @@ const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
   "keto",
 ]);
 
-function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t }) {
+function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, allergenFilter }) {
   const [similar, setSimilar] = useState(null);
   const [similarMeta, setSimilarMeta] = useState(null);
   const [failed, setFailed]   = useState(false);
@@ -523,7 +525,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t })
       }
     }
     const suffix = params.toString() ? `?${params.toString()}` : "";
-    fetch(`${BACKEND_BASE}/menu-items/${encodeURIComponent(itemId)}/similar${suffix}`)
+    fetch(`${BACKEND_BASE}/menu-items/${encodeURIComponent(itemId)}/similar${suffix}`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((json) => {
         if (!cancelled) {
@@ -546,6 +548,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t })
       style={{ marginTop: 24 }}
     >
       <div style={{ display: "grid", gap: 14 }}>
+        {allergenFilter ? <AllergenFilterStatusBanner allergenFilter={allergenFilter} compact /> : null}
         {helperLabel && (
           <div
             style={{
@@ -606,6 +609,7 @@ export default function MenuItemDetailPage() {
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const { t } = useLanguage();
+  const { isAuthenticated, allergenFilter } = useConsumer();
 
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
@@ -699,9 +703,14 @@ export default function MenuItemDetailPage() {
   const showRestaurantLogo = hasRenderableImage(item.restaurant.logoUrl);
   const showItemPhoto = item.restaurant.isPro === true && hasRenderableImage(item.itemPhotoUrl);
   const heroGridColumns = isMobile ? "1fr" : showItemPhoto ? "minmax(0, 1.4fr) minmax(280px, 0.95fr)" : "1fr";
+  const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
 
   return (
     <PageShell isMobile={isMobile}>
+
+      {effectiveAllergenFilter ? (
+        <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 18 }} />
+      ) : null}
 
       {/* ── 1. Hero / Item Identity ── */}
       <Surface style={{ padding: isMobile ? 18 : 24 }}>
@@ -806,7 +815,14 @@ export default function MenuItemDetailPage() {
       ) : null}
 
       {/* ── 7. Explore Similar Dishes ── */}
-      <ExploreSimilarDishes itemId={item.id} geoLat={geoLat} geoLng={geoLng} activeSearchParams={searchParams} t={t} />
+      <ExploreSimilarDishes
+        itemId={item.id}
+        geoLat={geoLat}
+        geoLng={geoLng}
+        activeSearchParams={searchParams}
+        t={t}
+        allergenFilter={effectiveAllergenFilter}
+      />
 
     </PageShell>
   );

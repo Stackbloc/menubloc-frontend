@@ -25,6 +25,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
 import { PageNav } from "../components/NavButton";
 import { PageHero, PageShell, SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
+import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
+import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
@@ -451,6 +453,7 @@ function FilterToggle({ label, active, onClick, isMobile }) {
 
 export default function GrubbidSearchResults() {
   const { t } = useLanguage();
+  const { isAuthenticated, allergenFilter: consumerAllergenFilter } = useConsumer();
   const params = useQueryParams();
   const navigate = useNavigate();
   const geo = useGeolocation();
@@ -518,6 +521,7 @@ export default function GrubbidSearchResults() {
 
   const [rows, setRows] = useState([]);
   const [searchMeta, setSearchMeta] = useState(null);
+  const [responseAllergenFilter, setResponseAllergenFilter] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
@@ -738,6 +742,7 @@ export default function GrubbidSearchResults() {
 
         setRows(resultRows);
         setSearchMeta(json?.search_meta || null);
+        setResponseAllergenFilter(json?.allergen_filter || null);
         setSearchTotalCount(total);
         setSearchOffset(pageOffset + returned);
         setSearchHasMore(pageOffset + returned < total);
@@ -752,6 +757,7 @@ export default function GrubbidSearchResults() {
         );
         setRows([]);
         setSearchMeta(null);
+        setResponseAllergenFilter(null);
       } finally {
         if (alive) setLoading(false);
       }
@@ -906,6 +912,9 @@ export default function GrubbidSearchResults() {
       return null;
     })(),
   ].filter(Boolean).join(" · ");
+  const effectiveAllergenFilter = isAuthenticated
+    ? (responseAllergenFilter || consumerAllergenFilter || null)
+    : null;
 
   return (
     <PageShell>
@@ -917,6 +926,10 @@ export default function GrubbidSearchResults() {
         title={q ? `${t("search.searchingFor", "Searching for")} "${q}"` : t("search.title")}
         description={subtitleParts || "Search results now inherit the canonical Grubbid discovery typography and card system."}
       />
+
+      {effectiveAllergenFilter ? (
+        <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 14 }} />
+      ) : null}
 
       {geoFallbackUsed && (
         <StatusMessage tone="warning">
@@ -1011,6 +1024,7 @@ export default function GrubbidSearchResults() {
                 const returned = pagination.returned_count ?? moreRows.length;
                 const pageOffset = pagination.offset ?? searchOffset;
                 setRows((prev) => [...prev, ...moreRows]);
+                setResponseAllergenFilter((prev) => json?.allergen_filter || prev);
                 setSearchTotalCount(total);
                 setSearchOffset(pageOffset + returned);
                 setSearchHasMore(pageOffset + returned < total);

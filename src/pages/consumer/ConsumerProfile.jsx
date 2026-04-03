@@ -3,8 +3,7 @@
  * Path: menubloc-frontend/src/pages/consumer/ConsumerProfile.jsx
  * Purpose:
  *   Consumer account settings page.
- *   Sections: Account info, Food Preferences, Allergen Exclusions, Location.
- *   Supports manual location entry and browser geolocation auto-detect.
+ *   Single-save profile/preferences workflow.
  * ============================================================
  */
 
@@ -15,43 +14,37 @@ import {
   getConsumerProfile,
   updateConsumerProfile,
   updatePreferences,
-  addLocation,
-  updateLocation,
-  deleteLocation,
 } from "../../lib/consumerApi.js";
 
-// ── Dietary preference options ────────────────────────────────────────────
 const DIETARY_OPTIONS = [
-  { key: "vegetarian",       label: "Vegetarian" },
-  { key: "vegan",            label: "Vegan" },
-  { key: "gluten_free",      label: "Gluten-free" },
-  { key: "dairy_free",       label: "Dairy-free" },
-  { key: "low_carb",         label: "Low-carb" },
-  { key: "high_protein",     label: "High protein" },
-  { key: "low_sodium",       label: "Low sodium" },
-  { key: "diabetic_friendly",label: "Diabetic-friendly" },
-  { key: "nut_free",         label: "Nut-free" },
-  { key: "halal",            label: "Halal" },
-  { key: "kosher",           label: "Kosher" },
-  { key: "paleo",            label: "Paleo" },
-  { key: "keto",             label: "Keto" },
+  { key: "vegetarian", label: "Vegetarian" },
+  { key: "vegan", label: "Vegan" },
+  { key: "gluten_free", label: "Gluten-free" },
+  { key: "dairy_free", label: "Dairy-free" },
+  { key: "low_carb", label: "Low-carb" },
+  { key: "high_protein", label: "High protein" },
+  { key: "low_sodium", label: "Low sodium" },
+  { key: "diabetic_friendly", label: "Diabetic-friendly" },
+  { key: "nut_free", label: "Nut-free" },
+  { key: "halal", label: "Halal" },
+  { key: "kosher", label: "Kosher" },
+  { key: "paleo", label: "Paleo" },
+  { key: "keto", label: "Keto" },
 ];
 
-// ── Allergen options ──────────────────────────────────────────────────────
 const ALLERGEN_OPTIONS = [
-  { key: "peanuts",    label: "Peanuts" },
-  { key: "tree_nuts",  label: "Tree nuts" },
-  { key: "dairy",      label: "Dairy" },
-  { key: "gluten",     label: "Gluten" },
-  { key: "shellfish",  label: "Shellfish" },
-  { key: "soy",        label: "Soy" },
-  { key: "eggs",       label: "Eggs" },
-  { key: "fish",       label: "Fish" },
-  { key: "sesame",     label: "Sesame" },
-  { key: "wheat",      label: "Wheat" },
+  { key: "peanuts", label: "Peanuts" },
+  { key: "tree_nuts", label: "Tree nuts" },
+  { key: "dairy", label: "Dairy" },
+  { key: "gluten", label: "Gluten" },
+  { key: "shellfish", label: "Shellfish" },
+  { key: "soy", label: "Soy" },
+  { key: "eggs", label: "Eggs" },
+  { key: "fish", label: "Fish" },
+  { key: "sesame", label: "Sesame" },
+  { key: "wheat", label: "Wheat" },
 ];
 
-// ── Checkbox toggle component ─────────────────────────────────────────────
 function PreferenceToggle({ label, checked, onChange }) {
   return (
     <label style={styles.prefToggle}>
@@ -66,20 +59,17 @@ function PreferenceToggle({ label, checked, onChange }) {
   );
 }
 
-// ── Section wrapper ───────────────────────────────────────────────────────
-function Section({ title, children }) {
+function Section({ title, children, id }) {
   return (
-    <div style={styles.section}>
+    <div id={id} style={styles.section}>
       <h2 style={styles.sectionTitle}>{title}</h2>
       {children}
     </div>
   );
 }
 
-// ── Save status indicator ─────────────────────────────────────────────────
-function SaveStatus({ status }) {
+function SaveStatus({ status, isError = false }) {
   if (!status) return null;
-  const isError = status.startsWith("Error");
   return (
     <span style={{ ...styles.saveStatus, color: isError ? "#c0392b" : "#1F4E3D" }}>
       {status}
@@ -88,43 +78,28 @@ function SaveStatus({ status }) {
 }
 
 export default function ConsumerProfile() {
-  const { consumer, logout, isAuthenticated, loading: authLoading } = useConsumer();
+  const { consumer, logout, isAuthenticated, loading: authLoading, refreshSession } = useConsumer();
   const navigate = useNavigate();
 
-  // ── Page data state ────────────────────────────────────────────────────
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
 
-  // ── Account/profile fields ─────────────────────────────────────────────
   const [displayName, setDisplayName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
-  const [profileSaveStatus, setProfileSaveStatus] = useState(null);
 
-  // ── Dietary preferences ────────────────────────────────────────────────
   const [dietPrefs, setDietPrefs] = useState({});
-  const [dietSaveStatus, setDietSaveStatus] = useState(null);
-
-  // ── Allergen preferences ───────────────────────────────────────────────
   const [allergenPrefs, setAllergenPrefs] = useState({});
-  const [allergenSaveStatus, setAllergenSaveStatus] = useState(null);
-
-  // ── Location ───────────────────────────────────────────────────────────
   const [savedLocations, setSavedLocations] = useState([]);
-  const [locationLabel, setLocationLabel] = useState("");
-  const [locationCity, setLocationCity] = useState("");
-  const [locationState, setLocationState] = useState("");
-  const [locationLat, setLocationLat] = useState(null);
-  const [locationLng, setLocationLng] = useState(null);
-  const [locationSource, setLocationSource] = useState("manual");
-  const [autoDetectEnabled, setAutoDetectEnabled] = useState(false);
-  const [geoStatus, setGeoStatus] = useState(null); // null | loading | denied | error | success
-  const [locationSaveStatus, setLocationSaveStatus] = useState(null);
 
-  // ── Load data on mount ─────────────────────────────────────────────────
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
+
   const loadProfile = useCallback(async () => {
     try {
+      setPageError(null);
       const data = await getConsumerProfile();
       const { profile, dietary_preferences, allergen_preferences, saved_locations } = data;
 
@@ -132,33 +107,20 @@ export default function ConsumerProfile() {
       setFirstName(profile.first_name || "");
       setLastName(profile.last_name || "");
       setPhone(profile.phone || "");
-      setAutoDetectEnabled(profile.auto_detect_location_enabled ?? false);
 
-      // Build preference maps for quick toggle lookup
       const dietMap = {};
-      for (const p of dietary_preferences) {
-        dietMap[p.preference_key] = p.is_enabled;
+      for (const pref of dietary_preferences || []) {
+        dietMap[pref.preference_key] = pref.is_enabled;
       }
       setDietPrefs(dietMap);
 
       const allergenMap = {};
-      for (const p of allergen_preferences) {
-        allergenMap[p.allergen_key] = p.is_enabled;
+      for (const pref of allergen_preferences || []) {
+        allergenMap[pref.allergen_key] = pref.is_enabled;
       }
       setAllergenPrefs(allergenMap);
 
       setSavedLocations(saved_locations || []);
-
-      // Pre-fill location form from current default
-      const defaultLoc = (saved_locations || []).find((l) => l.is_default);
-      if (defaultLoc) {
-        setLocationLabel(defaultLoc.label || "");
-        setLocationCity(defaultLoc.city || "");
-        setLocationState(defaultLoc.state || "");
-        setLocationLat(defaultLoc.lat ?? null);
-        setLocationLng(defaultLoc.lng ?? null);
-        setLocationSource(defaultLoc.source || "manual");
-      }
     } catch (err) {
       setPageError(err.message || "Failed to load profile");
     } finally {
@@ -176,161 +138,48 @@ export default function ConsumerProfile() {
     }
   }, [authLoading, isAuthenticated, navigate, loadProfile]);
 
-  // ── Save profile ───────────────────────────────────────────────────────
-  async function saveProfile() {
-    setProfileSaveStatus(null);
-    try {
-      await updateConsumerProfile({
-        display_name: displayName.trim() || null,
-        first_name: firstName.trim() || null,
-        last_name: lastName.trim() || null,
-        phone: phone.trim() || null,
-        auto_detect_location_enabled: autoDetectEnabled,
-      });
-      setProfileSaveStatus("Saved");
-      setTimeout(() => setProfileSaveStatus(null), 2500);
-    } catch (err) {
-      setProfileSaveStatus(`Error: ${err.message}`);
-    }
-  }
-
-  // ── Toggle dietary preference ──────────────────────────────────────────
   function toggleDiet(key, value) {
     setDietPrefs((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function saveDietPrefs() {
-    setDietSaveStatus(null);
+  function toggleAllergen(key, value) {
+    setAllergenPrefs((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function saveProfilePreferences() {
+    setSaving(true);
+    setSaveMessage("");
+    setSaveError("");
+
     try {
       const dietary_preferences = DIETARY_OPTIONS.map(({ key }) => ({
         key,
         is_enabled: Boolean(dietPrefs[key]),
       }));
-      await updatePreferences({ dietary_preferences });
-      setDietSaveStatus("Saved");
-      setTimeout(() => setDietSaveStatus(null), 2500);
-    } catch (err) {
-      setDietSaveStatus(`Error: ${err.message}`);
-    }
-  }
-
-  // ── Toggle allergen preference ─────────────────────────────────────────
-  function toggleAllergen(key, value) {
-    setAllergenPrefs((prev) => ({ ...prev, [key]: value }));
-  }
-
-  async function saveAllergenPrefs() {
-    setAllergenSaveStatus(null);
-    try {
       const allergen_preferences = ALLERGEN_OPTIONS.map(({ key }) => ({
         key,
         is_enabled: Boolean(allergenPrefs[key]),
       }));
-      await updatePreferences({ allergen_preferences });
-      setAllergenSaveStatus("Saved");
-      setTimeout(() => setAllergenSaveStatus(null), 2500);
+
+      await Promise.all([
+        updateConsumerProfile({
+          display_name: displayName.trim() || null,
+          first_name: firstName.trim() || null,
+          last_name: lastName.trim() || null,
+          phone: phone.trim() || null,
+        }),
+        updatePreferences({
+          dietary_preferences,
+          allergen_preferences,
+        }),
+      ]);
+
+      await refreshSession().catch(() => {});
+      setSaveMessage("Profile preferences saved.");
     } catch (err) {
-      setAllergenSaveStatus(`Error: ${err.message}`);
-    }
-  }
-
-  // ── Auto-detect location ───────────────────────────────────────────────
-  function detectLocation() {
-    if (!navigator.geolocation) {
-      setGeoStatus("error");
-      return;
-    }
-
-    setGeoStatus("loading");
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setLocationLat(latitude);
-        setLocationLng(longitude);
-        setLocationSource("autodetect");
-        setGeoStatus("success");
-        if (!locationLabel) {
-          setLocationLabel("Current location");
-        }
-      },
-      (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
-          setGeoStatus("denied");
-        } else {
-          setGeoStatus("error");
-        }
-      },
-      { timeout: 10000, maximumAge: 60000 }
-    );
-  }
-
-  // ── Save default location ──────────────────────────────────────────────
-  async function saveDefaultLocation() {
-    setLocationSaveStatus(null);
-
-    if (!locationLabel.trim()) {
-      setLocationSaveStatus("Error: Location label is required");
-      return;
-    }
-
-    try {
-      // Find existing default location to update, or create new
-      const existing = savedLocations.find((l) => l.is_default);
-
-      if (existing) {
-        const updated = await updateLocation(existing.id, {
-          label: locationLabel.trim(),
-          lat: locationLat ?? null,
-          lng: locationLng ?? null,
-          city: locationCity.trim() || null,
-          state: locationState.trim() || null,
-          source: locationSource,
-          is_default: true,
-        });
-        setSavedLocations((prev) =>
-          prev.map((l) => (l.id === existing.id ? updated.location : l))
-        );
-      } else {
-        const created = await addLocation({
-          label: locationLabel.trim(),
-          lat: locationLat ?? null,
-          lng: locationLng ?? null,
-          city: locationCity.trim() || null,
-          state: locationState.trim() || null,
-          source: locationSource,
-          is_default: true,
-        });
-        setSavedLocations((prev) => [...prev, created.location]);
-      }
-
-      // Also persist auto_detect_location_enabled preference
-      await updateConsumerProfile({ auto_detect_location_enabled: autoDetectEnabled });
-
-      setLocationSaveStatus("Saved");
-      setTimeout(() => setLocationSaveStatus(null), 2500);
-    } catch (err) {
-      setLocationSaveStatus(`Error: ${err.message}`);
-    }
-  }
-
-  async function handleRemoveLocation(id) {
-    try {
-      await deleteLocation(id);
-      setSavedLocations((prev) => prev.filter((l) => l.id !== id));
-      // Clear form if removed was the default
-      const removed = savedLocations.find((l) => l.id === id);
-      if (removed?.is_default) {
-        setLocationLabel("");
-        setLocationCity("");
-        setLocationState("");
-        setLocationLat(null);
-        setLocationLng(null);
-        setLocationSource("manual");
-        setGeoStatus(null);
-      }
-    } catch (err) {
-      setLocationSaveStatus(`Error: ${err.message}`);
+      setSaveError(err.message || "Could not save profile preferences.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -339,7 +188,6 @@ export default function ConsumerProfile() {
     navigate("/", { replace: true });
   }
 
-  // ── Loading / error guards ─────────────────────────────────────────────
   if (authLoading || pageLoading) {
     return (
       <div style={styles.page}>
@@ -357,18 +205,23 @@ export default function ConsumerProfile() {
         <div style={styles.card}>
           <Link to="/" style={styles.brand}>Grubbid</Link>
           <p style={styles.errorBlock}>{pageError}</p>
-          <button onClick={loadProfile} style={styles.btn}>Retry</button>
+          <button onClick={loadProfile} style={styles.retryBtn}>Retry</button>
         </div>
       </div>
     );
   }
 
-  const defaultLoc = savedLocations.find((l) => l.is_default);
+  const defaultLoc = savedLocations.find((location) => location.is_default);
+  const locationSummary = defaultLoc
+    ? [
+        defaultLoc.label || "",
+        [defaultLoc.city, defaultLoc.state].filter(Boolean).join(", "),
+      ].filter(Boolean).join(" — ")
+    : "";
 
   return (
     <div style={styles.page}>
       <div style={styles.pageInner}>
-        {/* Top nav */}
         <div style={styles.topNav}>
           <Link to="/" style={styles.brand}>Grubbid</Link>
           <button onClick={handleLogout} style={styles.logoutBtn}>Log out</button>
@@ -376,7 +229,6 @@ export default function ConsumerProfile() {
 
         <h1 style={styles.pageTitle}>Account Settings</h1>
 
-        {/* ── Account ── */}
         <Section title="Account">
           <div style={styles.field}>
             <label style={styles.fieldLabel}>Email</label>
@@ -427,17 +279,11 @@ export default function ConsumerProfile() {
               placeholder="+1 (555) 000-0000"
             />
           </div>
-
-          <div style={styles.saveRow}>
-            <button onClick={saveProfile} style={styles.saveBtn}>Save account info</button>
-            <SaveStatus status={profileSaveStatus} />
-          </div>
         </Section>
 
-        {/* ── Food Preferences ── */}
         <Section title="Food Preferences">
           <p style={styles.sectionDesc}>
-            Select your dietary preferences. These help personalize your search results.
+            Select your dietary preferences. These personalize discovery without needing a separate save step.
           </p>
           <div style={styles.prefGrid}>
             {DIETARY_OPTIONS.map(({ key, label }) => (
@@ -445,20 +291,15 @@ export default function ConsumerProfile() {
                 key={key}
                 label={label}
                 checked={Boolean(dietPrefs[key])}
-                onChange={(v) => toggleDiet(key, v)}
+                onChange={(value) => toggleDiet(key, value)}
               />
             ))}
           </div>
-          <div style={styles.saveRow}>
-            <button onClick={saveDietPrefs} style={styles.saveBtn}>Save food preferences</button>
-            <SaveStatus status={dietSaveStatus} />
-          </div>
         </Section>
 
-        {/* ── Allergen Exclusions ── */}
-        <Section title="Allergen Exclusions">
+        <Section title="Allergen Exclusions" id="allergen-preferences">
           <p style={styles.sectionDesc}>
-            Select allergens you want to avoid. Checked items will be flagged in your experience.
+            Select allergens you want to avoid. These settings control the allergen filter status shown across discovery.
           </p>
           <div style={styles.prefGrid}>
             {ALLERGEN_OPTIONS.map(({ key, label }) => (
@@ -466,159 +307,58 @@ export default function ConsumerProfile() {
                 key={key}
                 label={label}
                 checked={Boolean(allergenPrefs[key])}
-                onChange={(v) => toggleAllergen(key, v)}
+                onChange={(value) => toggleAllergen(key, value)}
               />
             ))}
           </div>
-          <div style={styles.saveRow}>
-            <button onClick={saveAllergenPrefs} style={styles.saveBtn}>Save allergen settings</button>
-            <SaveStatus status={allergenSaveStatus} />
-          </div>
         </Section>
 
-        {/* ── Location ── */}
         <Section title="Default Location">
-          <p style={styles.sectionDesc}>
-            Your default location is used to improve search results.
-          </p>
-
-          {defaultLoc && (
+          {locationSummary ? (
             <div style={styles.currentLocation}>
               <span style={styles.locationIcon}>📍</span>
               <div>
-                <strong>{defaultLoc.label}</strong>
-                {(defaultLoc.city || defaultLoc.state) && (
-                  <span style={styles.locationDetail}>
-                    {" — "}{[defaultLoc.city, defaultLoc.state].filter(Boolean).join(", ")}
-                  </span>
-                )}
-                <span style={styles.sourceTag}>
-                  {defaultLoc.source === "autodetect" ? "Auto-detected" : "Manual"}
-                </span>
+                <strong>{locationSummary}</strong>
+                <div style={styles.locationHint}>
+                  Change your default search location from Discovery.
+                </div>
               </div>
             </div>
-          )}
-
-          <div style={styles.field}>
-            <label style={styles.fieldLabel}>Location label</label>
-            <input
-              type="text"
-              value={locationLabel}
-              onChange={(e) => setLocationLabel(e.target.value)}
-              style={styles.input}
-              placeholder="e.g. Home, Work, Los Angeles, CA"
-            />
-          </div>
-
-          <div style={styles.row}>
-            <div style={styles.field}>
-              <label style={styles.fieldLabel}>City</label>
-              <input
-                type="text"
-                value={locationCity}
-                onChange={(e) => setLocationCity(e.target.value)}
-                style={styles.input}
-                placeholder="City"
-              />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.fieldLabel}>State</label>
-              <input
-                type="text"
-                value={locationState}
-                onChange={(e) => setLocationState(e.target.value)}
-                style={styles.input}
-                placeholder="State"
-              />
-            </div>
-          </div>
-
-          {locationLat && locationLng && (
-            <p style={styles.coordsNote}>
-              Coordinates: {locationLat.toFixed(5)}, {locationLng.toFixed(5)}
-              {" "}<span style={styles.sourceTag}>{locationSource === "autodetect" ? "Auto-detected" : "Manual"}</span>
+          ) : (
+            <p style={styles.sectionDesc}>
+              Default search location can be set or changed from the Discovery screen.
             </p>
           )}
+        </Section>
 
-          {/* Auto-detect button */}
-          <button
-            type="button"
-            onClick={detectLocation}
-            disabled={geoStatus === "loading"}
-            style={styles.geoBtn}
-          >
-            {geoStatus === "loading" ? "Detecting…" : "Use My Current Location"}
-          </button>
-
-          {/* Geolocation status messages */}
-          {geoStatus === "denied" && (
-            <p style={styles.geoError}>
-              Location permission was denied. Enable it in your browser settings, or enter your location manually above.
-            </p>
-          )}
-          {geoStatus === "error" && (
-            <p style={styles.geoError}>
-              Could not detect your location. Please enter it manually above.
-            </p>
-          )}
-          {geoStatus === "success" && (
-            <p style={styles.geoSuccess}>
-              Location detected. Add a label and save to use it as your default.
-            </p>
-          )}
-
-          {/* Auto-detect toggle */}
-          <label style={styles.autoDetectToggle}>
-            <input
-              type="checkbox"
-              checked={autoDetectEnabled}
-              onChange={(e) => setAutoDetectEnabled(e.target.checked)}
-              style={styles.checkbox}
-            />
-            <span style={styles.prefLabel}>Auto-detect my location when possible</span>
-          </label>
-
+        <Section title="Save">
+          <p style={styles.sectionDesc}>
+            Save all profile preferences in one action.
+          </p>
           <div style={styles.saveRow}>
-            <button onClick={saveDefaultLocation} style={styles.saveBtn}>Save default location</button>
-            <SaveStatus status={locationSaveStatus} />
+            <button
+              type="button"
+              onClick={saveProfilePreferences}
+              style={{ ...styles.saveBtn, ...(saving ? styles.saveBtnDisabled : null) }}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Profile Preferences"}
+            </button>
+            <SaveStatus status={saveError || saveMessage} isError={Boolean(saveError)} />
           </div>
-
-          {/* All saved locations list */}
-          {savedLocations.length > 0 && (
-            <div style={styles.locationList}>
-              <p style={styles.locationListTitle}>Saved locations</p>
-              {savedLocations.map((loc) => (
-                <div key={loc.id} style={styles.locationRow}>
-                  <div style={styles.locationRowInfo}>
-                    <strong>{loc.label}</strong>
-                    {loc.is_default && <span style={styles.defaultBadge}>Default</span>}
-                    <span style={styles.sourceTag}>
-                      {loc.source === "autodetect" ? "Auto-detected" : "Manual"}
-                    </span>
-                    {(loc.city || loc.state) && (
-                      <span style={styles.locationDetail}>
-                        {[loc.city, loc.state].filter(Boolean).join(", ")}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleRemoveLocation(loc.id)}
-                    style={styles.removeBtn}
-                    aria-label={`Remove ${loc.label}`}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
+          {saveMessage ? (
+            <div style={styles.discoveryCtaRow}>
+              <button type="button" onClick={() => navigate("/")} style={styles.discoveryBtn}>
+                Go to Discovery
+              </button>
             </div>
-          )}
+          ) : null}
         </Section>
       </div>
     </div>
   );
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────
 const styles = {
   page: {
     minHeight: "100vh",
@@ -740,6 +480,10 @@ const styles = {
     cursor: "pointer",
     fontFamily: "inherit",
   },
+  saveBtnDisabled: {
+    opacity: 0.72,
+    cursor: "default",
+  },
   saveStatus: {
     fontSize: "13px",
     fontWeight: 600,
@@ -748,7 +492,6 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
     gap: "10px",
-    marginBottom: "18px",
   },
   prefToggle: {
     display: "flex",
@@ -760,172 +503,75 @@ const styles = {
     width: "16px",
     height: "16px",
     accentColor: "#1F4E3D",
-    cursor: "pointer",
     flexShrink: 0,
   },
   prefLabel: {
     fontSize: "14px",
     color: "#0f1720",
-    lineHeight: 1.4,
   },
   currentLocation: {
     display: "flex",
     alignItems: "flex-start",
     gap: "10px",
-    background: "#f0f7f4",
-    border: "1px solid #c3dfd5",
+    padding: "14px 16px",
+    background: "#f6f6f3",
     borderRadius: "10px",
-    padding: "12px 16px",
-    marginBottom: "18px",
-    fontSize: "14px",
-    color: "#0f1720",
   },
   locationIcon: {
     fontSize: "18px",
-    flexShrink: 0,
-    marginTop: "1px",
+    lineHeight: 1,
   },
-  locationDetail: {
-    color: "#666",
-    marginLeft: "4px",
-  },
-  sourceTag: {
-    display: "inline-block",
-    background: "#e8f5f0",
-    color: "#1F4E3D",
-    fontSize: "11px",
-    fontWeight: 600,
-    padding: "2px 7px",
-    borderRadius: "4px",
-    marginLeft: "8px",
-    verticalAlign: "middle",
-  },
-  coordsNote: {
+  locationHint: {
+    marginTop: "6px",
     fontSize: "13px",
-    color: "#666",
-    margin: "0 0 14px",
+    color: "#667085",
+    fontWeight: 500,
   },
-  geoBtn: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-    padding: "9px 16px",
-    borderRadius: "8px",
-    background: "#fff",
-    border: "1.5px solid #1F4E3D",
-    color: "#1F4E3D",
-    fontSize: "14px",
-    fontWeight: 700,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    marginBottom: "12px",
-  },
-  geoError: {
-    fontSize: "13px",
-    color: "#c0392b",
-    background: "#fff3f3",
-    border: "1px solid #f5c6c6",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    margin: "0 0 14px",
-    lineHeight: 1.5,
-  },
-  geoSuccess: {
-    fontSize: "13px",
-    color: "#1F4E3D",
-    background: "#f0f7f4",
-    border: "1px solid #c3dfd5",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    margin: "0 0 14px",
-  },
-  autoDetectToggle: {
+  discoveryCtaRow: {
+    marginTop: "14px",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    cursor: "pointer",
-    marginBottom: "20px",
   },
-  locationList: {
-    marginTop: "24px",
-    borderTop: "1px solid #e8e8e4",
-    paddingTop: "16px",
-  },
-  locationListTitle: {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#666",
-    margin: "0 0 12px",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  locationRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "10px 0",
-    borderBottom: "1px solid #f0f0ec",
-    gap: "12px",
-  },
-  locationRowInfo: {
-    fontSize: "14px",
-    color: "#0f1720",
-    display: "flex",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "6px",
-  },
-  defaultBadge: {
-    background: "#1F4E3D",
-    color: "#fff",
-    fontSize: "11px",
-    fontWeight: 700,
-    padding: "2px 7px",
-    borderRadius: "4px",
-  },
-  removeBtn: {
-    background: "none",
-    border: "none",
-    color: "#c0392b",
-    fontSize: "13px",
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    padding: "4px 8px",
-    flexShrink: 0,
-  },
-  errorBlock: {
-    background: "#fff3f3",
-    border: "1px solid #f5c6c6",
-    borderRadius: "8px",
-    padding: "12px 16px",
-    fontSize: "14px",
-    color: "#c0392b",
-    margin: "0 0 20px",
-  },
-  btn: {
-    padding: "10px 20px",
+  discoveryBtn: {
+    padding: "10px 16px",
     borderRadius: "10px",
-    background: "#1F4E3D",
-    color: "#fff",
+    border: "1px solid #cfd8d3",
+    background: "#fff",
+    color: "#11211a",
     fontSize: "14px",
-    fontWeight: 700,
-    border: "none",
+    fontWeight: 800,
     cursor: "pointer",
     fontFamily: "inherit",
   },
   card: {
-    background: "#ffffff",
-    borderRadius: "16px",
-    padding: "40px 36px",
-    width: "100%",
-    maxWidth: "420px",
-    boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
-    margin: "80px auto",
+    maxWidth: "520px",
+    margin: "80px auto 0",
+    padding: "28px",
+    background: "#fff",
+    borderRadius: "14px",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
   },
   subheading: {
     fontSize: "15px",
-    color: "#666",
-    margin: 0,
+    color: "#555",
+    marginTop: "14px",
+  },
+  errorBlock: {
+    fontSize: "15px",
+    color: "#c0392b",
+    marginTop: "14px",
+    lineHeight: 1.6,
+  },
+  retryBtn: {
+    marginTop: "16px",
+    padding: "10px 16px",
+    borderRadius: "10px",
+    border: "none",
+    background: "#1F4E3D",
+    color: "#fff",
+    fontSize: "14px",
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
 };

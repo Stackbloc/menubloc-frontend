@@ -31,6 +31,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MenuPreviewCard from "../components/browse/MenuPreviewCard.jsx";
+import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
 import { PageNav } from "../components/NavButton.jsx";
 import {
   Card,
@@ -41,6 +42,7 @@ import {
   SelectField,
   StatusMessage,
 } from "../components/grubbid/GrubbidPrimitives.jsx";
+import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { apiGet, getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
 import { loadDietPrefs, saveDietPrefs, activePrefLabels, hasActiveDietPrefs } from "../hooks/useDietPreferences";
@@ -234,6 +236,7 @@ function getUserCoords() {
 
 export default function BrowseMenus() {
   const { t } = useLanguage();
+  const { isAuthenticated, allergenFilter: consumerAllergenFilter } = useConsumer();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { search } = useLocation();
@@ -252,6 +255,7 @@ export default function BrowseMenus() {
   const [browseOffset, setBrowseOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [responseAllergenFilter, setResponseAllergenFilter] = useState(null);
   const BROWSE_LIMIT = 24;
   // Seed from URL so a shared/bookmarked link shows the label immediately
   const [locationLabel, setLocationLabel] = useState(() => {
@@ -415,6 +419,7 @@ export default function BrowseMenus() {
         } else {
           setMenus((prev) => [...prev, ...extractedMenus]);
         }
+        setResponseAllergenFilter(response?.allergen_filter || null);
 
         setTotalCount(newTotal);
         setBrowseOffset(newOffset);
@@ -459,6 +464,9 @@ export default function BrowseMenus() {
   }, [urlCity, urlState, filters, radiusMiles, cuisineOptions]);
 
   const showEmptyState = !loading && !error && menus.length === 0;
+  const effectiveAllergenFilter = isAuthenticated
+    ? (responseAllergenFilter || consumerAllergenFilter || null)
+    : null;
 
   // ── Alpha range computation ────────────────────────────────────
   // Derive the unique first letters present in loaded menus, then
@@ -577,6 +585,10 @@ export default function BrowseMenus() {
           title={locationLabel ? t("browse.nearTitle", `Browsing Menus Near ${locationLabel}`, { location: locationLabel }) : t("browse.title")}
           description="Browse menus inherits the same shell, typography, filters, and surface tokens as the rest of Grubbid discovery."
         />
+
+        {effectiveAllergenFilter ? (
+          <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 14 }} />
+        ) : null}
 
         <Card>
           <div
@@ -698,6 +710,7 @@ export default function BrowseMenus() {
                           const newTotal = response?.total_count ?? (browseOffset + more.length);
                           const newOffset = response?.pagination?.next_offset ?? (browseOffset + more.length);
                           setMenus((prev) => [...prev, ...more]);
+                          setResponseAllergenFilter((prev) => response?.allergen_filter || prev);
                           setTotalCount(newTotal);
                           setBrowseOffset(newOffset);
                           setHasMore(response?.pagination?.has_more ?? (newOffset < newTotal));

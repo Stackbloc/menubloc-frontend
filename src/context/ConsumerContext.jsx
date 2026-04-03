@@ -23,16 +23,19 @@ const ConsumerContext = createContext(null);
 export function ConsumerProvider({ children }) {
   const [consumer, setConsumer] = useState(null);   // { id, email, email_verified }
   const [profile, setProfile] = useState(null);     // { display_name, first_name, ... }
+  const [allergenFilter, setAllergenFilter] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const applySession = useCallback((data) => {
     setConsumer(data?.consumer || null);
     setProfile(data?.profile || null);
+    setAllergenFilter(data?.allergen_filter || null);
   }, []);
 
   const clearSession = useCallback(() => {
     setConsumer(null);
     setProfile(null);
+    setAllergenFilter(null);
   }, []);
 
   const loadMe = useCallback(async () => {
@@ -84,6 +87,7 @@ export function ConsumerProvider({ children }) {
   const value = {
     consumer,
     profile,
+    allergenFilter,
     isAuthenticated: !!consumer,
     loading,
     login,
