@@ -435,7 +435,12 @@ export default function PublicMenuPage() {
 
         if (cancelled) return;
 
-        const resolvedRestaurantId = asFiniteNumber(json?.id || json?.restaurant_id);
+        const resolvedRestaurantId = asFiniteNumber(
+          json?.id ||
+          json?.restaurant_id ||
+          json?.restaurant?.id ||
+          json?.restaurant?.restaurant_id
+        );
         if (!res.ok || resolvedRestaurantId == null) {
           setRouteState({
             status: "error",
@@ -787,45 +792,46 @@ export default function PublicMenuPage() {
               }}
             >
               <div style={{ minWidth: 0, flex: "1 1 320px" }}>
-                {restaurantProfileHref ? (
-                  <Link
-                    to={restaurantProfileHref}
-                    title={`Open ${restaurantName} profile`}
-                    style={{
-                      fontSize: isMobile ? 22 : 28,
-                      fontWeight: 900,
-                      letterSpacing: "-0.02em",
-                      lineHeight: 1.1,
-                      color: "#11211a",
-                      textDecoration: "none",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {restaurantName}
-                  </Link>
-                ) : (
-                  <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word" }}>
-                    {restaurantName}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: "1 1 260px" }}>
+                    {restaurantProfileHref ? (
+                      <Link
+                        to={restaurantProfileHref}
+                        title={`Open ${restaurantName} profile`}
+                        style={{
+                          fontSize: isMobile ? 22 : 28,
+                          fontWeight: 900,
+                          letterSpacing: "-0.02em",
+                          lineHeight: 1.1,
+                          color: "#11211a",
+                          textDecoration: "none",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {restaurantName}
+                      </Link>
+                    ) : (
+                      <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word" }}>
+                        {restaurantName}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 6,
-                  flex: "0 0 auto",
-                }}
-              >
-                <ShareButton
-                  label="Share Menu"
-                  modalTitle={`Share ${restaurantName}`}
-                  shareData={shareData}
-                  analyticsContext={shareAnalyticsContext}
-                />
-                <div style={{ fontSize: 11, lineHeight: 1.3, color: "#667085", fontWeight: 400 }}>
-                  share this menu
+                  <div style={{ flex: "0 0 auto" }}>
+                    <ShareButton
+                      label="Share Menu"
+                      modalTitle={`Share ${restaurantName}`}
+                      shareData={shareData}
+                      analyticsContext={shareAnalyticsContext}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

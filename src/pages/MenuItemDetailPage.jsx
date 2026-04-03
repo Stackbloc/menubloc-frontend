@@ -220,8 +220,7 @@ const VERDICT_THEMES = {
   "Compatible with a health-conscious diet": { bg: "linear-gradient(135deg, rgba(22,105,62,0.97), rgba(34,132,78,0.93))", label: "rgba(186,248,204,0.97)", eye: "rgba(186,248,204,0.60)" },
   "Suitable for regular consumption": { bg: "linear-gradient(135deg, rgba(16,50,118,0.97), rgba(32,68,140,0.93))", label: "rgba(180,212,255,0.97)", eye: "rgba(180,212,255,0.60)" },
   "Best in moderation": { bg: "linear-gradient(135deg, rgba(138,70,0,0.97), rgba(176,100,0,0.92))", label: "rgba(255,218,148,0.97)", eye: "rgba(255,218,148,0.60)" },
-  "Better suited for occasional consumption": { bg: "linear-gradient(135deg, rgba(140,52,0,0.98), rgba(188,88,0,0.94))", label: "rgba(255,214,160,0.97)", eye: "rgba(255,214,160,0.60)" },
-  "Not ideal for frequent consumption": { bg: "linear-gradient(135deg, rgba(98,18,8,0.99), rgba(158,38,18,0.95))", label: "rgba(255,188,168,0.97)", eye: "rgba(255,188,168,0.58)" },
+  "Best suited for occasional consumption": { bg: "linear-gradient(135deg, rgba(98,18,8,0.99), rgba(158,38,18,0.95))", label: "rgba(255,188,168,0.97)", eye: "rgba(255,188,168,0.58)" },
 };
 
 const SIGNAL_CHIP_COLORS = {
@@ -458,6 +457,54 @@ function InsightsCard({ detailSystem, t }) {
             </div>
           );
         })}
+      </div>
+    </SectionCard>
+  );
+}
+
+function PreparationCard({ detailSystem, t }) {
+  const preparation = detailSystem?.preparation;
+  if (!preparation) return null;
+
+  const rows = [
+    { label: t("menuItemDetail.preparationMethod", "Cooking Method"), value: preparation.cooking_method },
+    { label: t("menuItemDetail.preparationCoating", "Coating"), value: preparation.coating },
+    { label: t("menuItemDetail.preparationSauce", "Sauce Style"), value: preparation.sauce_style },
+  ].filter((entry) => String(entry.value || "").trim());
+
+  if (!rows.length && !preparation.impact_line && !preparation.why_it_matters) return null;
+
+  return (
+    <SectionCard
+      title={t("menuItemDetail.preparationTitle", "Preparation")}
+      eyebrow={t("menuItemDetail.preparationTitle", "Preparation")}
+      style={{ marginTop: 18 }}
+    >
+      <div style={{ display: "grid", gap: 10 }}>
+        {rows.length ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
+            {rows.map((row) => (
+              <div key={row.label} style={{ borderRadius: 16, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: "12px 14px" }}>
+                <div style={{ fontSize: 11, color: "#617167", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  {row.label}
+                </div>
+                <div style={{ marginTop: 6, fontSize: 17, fontWeight: 900, color: "#15241d" }}>
+                  {row.value}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {preparation.impact_line ? (
+          <div style={{ fontSize: 15, lineHeight: 1.5, color: "#23352d", fontWeight: 800 }}>
+            {preparation.impact_line}
+          </div>
+        ) : null}
+        {preparation.why_it_matters ? (
+          <div style={{ fontSize: 13.5, lineHeight: 1.55, color: "#617167" }}>
+            {preparation.why_it_matters}
+          </div>
+        ) : null}
       </div>
     </SectionCard>
   );
@@ -924,6 +971,8 @@ export default function MenuItemDetailPage() {
       ) : (
         <MissingNutritionState />
       )}
+
+      <PreparationCard detailSystem={detailSystem} t={t} />
 
       {/* ── 6. Confidence — single line only ── */}
       {detailSystem?.confidence?.level ? (
