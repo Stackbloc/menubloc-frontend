@@ -21,6 +21,7 @@
 
 import { useState } from "react";
 import { useCart } from "../context/CartContext.jsx";
+import { BrandLockup } from "../components/BrandLogo.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -231,8 +232,10 @@ export default function FoodTruckSignup() {
   return (
     <div style={st.page}>
       {/* Brand */}
-      <div style={st.brand}>Grubbid</div>
-      <div style={st.subbrand}>for Food Trucks</div>
+      <BrandLockup
+        subtitle="for Food Trucks"
+        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+      />
       <div style={st.pageTitle}>List your food truck</div>
       <div style={st.pageSubtitle}>
         Get discovered by customers looking for food trucks in your area.

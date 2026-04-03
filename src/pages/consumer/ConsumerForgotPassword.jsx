@@ -8,6 +8,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "../../lib/consumerApi.js";
+import { BrandLogo } from "../../components/BrandLogo.jsx";
 
 export default function ConsumerForgotPassword() {
   const [email, setEmail] = useState("");
@@ -44,7 +45,13 @@ export default function ConsumerForgotPassword() {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <Link to="/" style={styles.brand}>Grubbid</Link>
+        <BrandLogo
+          width={132}
+          height={84}
+          radius={20}
+          pageColor="#ffffff"
+          linkStyle={{ marginBottom: 24 }}
+        />
         <h1 style={styles.heading}>Reset password</h1>
 
         {submitted ? (

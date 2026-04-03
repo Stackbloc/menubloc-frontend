@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { BrandLockup } from "../components/BrandLogo.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const PLAN_SELECTION_ROUTE = "/restaurant/subscription";
@@ -258,8 +259,11 @@ export default function RestaurantSignup() {
   return (
     <div style={styles.page}>
       <div style={styles.header}>
-        <div style={styles.brand}>Grubbid</div>
-        <div style={styles.subbrand}>{t("signup.forRestaurants")}</div>
+        <BrandLockup
+          subtitle={t("signup.forRestaurants")}
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+          wrapperStyle={{ marginBottom: 6 }}
+        />
         <div style={styles.pageTitle}>Create your restaurant account</div>
         <div style={styles.pageSubtitle}>
           Start with the basics. You will choose between Verified and Pro on the next step.

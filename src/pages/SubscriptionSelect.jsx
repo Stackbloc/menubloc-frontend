@@ -25,6 +25,7 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
+import { BrandLockup } from "../components/BrandLogo.jsx";
 
 // ── PayPal Plan IDs — replace with real IDs from developer.paypal.com ──
 const PLAN_ID_PRO_MONTHLY = "YOUR_PLAN_ID_PRO_MONTHLY";
@@ -267,8 +268,10 @@ export default function SubscriptionSelect() {
       </Link>
 
       {/* Brand */}
-      <div style={s.brand}>Grubbid</div>
-      <div style={s.subbrand}>for Restaurants</div>
+      <BrandLockup
+        subtitle="for Restaurants"
+        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+      />
 
       {/* Step trail */}
       {hasOnboardingContext ? (

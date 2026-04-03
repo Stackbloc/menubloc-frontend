@@ -14,6 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { addLocation, getLocations, updateLocation } from "../lib/consumerApi.js";
+import { BrandLockup } from "../components/BrandLogo.jsx";
 import { parseLocation, reverseGeocode, US_STATE_ABBREVS } from "../lib/locationUtils.js";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
@@ -457,37 +458,16 @@ export default function GrubbidDiscovery() {
         </style>
 
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: isMobile ? 44 : 64 }}>
-          <div>
-            <Link
-              to="/"
-              aria-label="Go to Grubbid home"
-              style={{
-                display: "block",
-                width: isMobile ? 190 : 270,
-                height: isMobile ? 124 : 172,
-                overflow: "hidden",
-                borderRadius: isMobile ? 28 : 36,
-                background: "#f7f6f1",
-                textDecoration: "none",
-                cursor: "pointer",
-              }}
-            >
-              <img
-                src="/grubbid-logo-orange.jpg"
-                alt="Grubbid"
-                style={{
-                  display: "block",
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  objectPosition: "center",
-                }}
-              />
-            </Link>
-            <div style={{ fontSize: isMobile ? 10 : 11, fontWeight: 800, color: "#667085", letterSpacing: 1.4, textTransform: "uppercase", marginTop: 6, paddingLeft: 4 }}>
-              {t("nav.discovery")}
-            </div>
-          </div>
+          <BrandLockup
+            subtitle={t("nav.discovery")}
+            logoProps={{
+              width: isMobile ? 190 : 270,
+              height: isMobile ? 124 : 172,
+              radius: isMobile ? 28 : 36,
+              pageColor: "#f7f6f1",
+            }}
+            subtitleStyle={{ fontSize: isMobile ? 10 : 11 }}
+          />
           {!consumerLoading && (
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               {consumerLoggedIn ? (

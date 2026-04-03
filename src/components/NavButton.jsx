@@ -9,6 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { PillButton } from "./grubbid/GrubbidPrimitives.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
+import { BrandLogo } from "./BrandLogo.jsx";
 
 export function HomeButton() {
   const { t } = useLanguage();
@@ -64,9 +65,14 @@ export function PageNav({ back = false }) {
 
   return (
     <div className="gb-page-nav">
-      <Link to="/" aria-label={t("nav.brandAria")} className="gb-page-nav__brand">
-        Grubbid
-      </Link>
+      <BrandLogo
+        width={96}
+        height={62}
+        radius={16}
+        pageColor="#f7f6f1"
+        linkStyle={{ flexShrink: 0 }}
+        ariaLabel={t("nav.brandAria")}
+      />
       <div className="gb-page-nav__actions" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
         <ConsumerNavLinks />
         {back ? <BackButton /> : <HomeButton />}

@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
+import { BrandLogo } from "../../components/BrandLogo.jsx";
 import {
   getConsumerProfile,
   updateConsumerProfile,
@@ -192,7 +193,7 @@ export default function ConsumerProfile() {
     return (
       <div style={styles.page}>
         <div style={styles.card}>
-          <Link to="/" style={styles.brand}>Grubbid</Link>
+          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <p style={styles.subheading}>Loading your account…</p>
         </div>
       </div>
@@ -203,7 +204,7 @@ export default function ConsumerProfile() {
     return (
       <div style={styles.page}>
         <div style={styles.card}>
-          <Link to="/" style={styles.brand}>Grubbid</Link>
+          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <p style={styles.errorBlock}>{pageError}</p>
           <button onClick={loadProfile} style={styles.retryBtn}>Retry</button>
         </div>
@@ -223,7 +224,7 @@ export default function ConsumerProfile() {
     <div style={styles.page}>
       <div style={styles.pageInner}>
         <div style={styles.topNav}>
-          <Link to="/" style={styles.brand}>Grubbid</Link>
+          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <button onClick={handleLogout} style={styles.logoutBtn}>Log out</button>
         </div>
 

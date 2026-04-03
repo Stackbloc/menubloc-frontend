@@ -23,6 +23,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { BrandLockup } from "../components/BrandLogo.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -489,8 +490,10 @@ export default function ProfileSearchPage() {
   return (
     <div style={ST.page}>
       {/* Brand */}
-      <div style={ST.brand}>Grubbid</div>
-      <div style={ST.subbrand}>for Restaurants</div>
+      <BrandLockup
+        subtitle="for Restaurants"
+        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f7f6f1" }}
+      />
 
       {/* Back */}
       <button style={ST.backBtn} onClick={() => nav(-1)}>

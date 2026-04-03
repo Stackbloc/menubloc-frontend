@@ -27,6 +27,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
+import { BrandLockup } from "../components/BrandLogo.jsx";
 
 // ─────────────────────────────────────────────────────────────
 // Constants
@@ -361,8 +362,10 @@ export default function MenuDesignSelectPage() {
   if (missingState) {
     return (
       <div style={s.page}>
-        <div style={s.brand}>Grubbid</div>
-        <div style={s.subbrand}>for Restaurants</div>
+        <BrandLockup
+          subtitle="for Restaurants"
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+        />
         <div style={s.error}>
           <strong>Missing session data.</strong> Please complete the signup flow to reach this
           page.{" "}
@@ -378,8 +381,10 @@ export default function MenuDesignSelectPage() {
   return (
     <div style={s.page}>
       {/* Brand */}
-      <div style={s.brand}>Grubbid</div>
-      <div style={s.subbrand}>for Restaurants</div>
+      <BrandLockup
+        subtitle="for Restaurants"
+        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+      />
 
       {/* Step trail */}
       <div style={s.steps}>

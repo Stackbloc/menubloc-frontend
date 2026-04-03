@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { BrandLogo } from "../BrandLogo.jsx";
 
 const GOOGLE_SCRIPT = "https://accounts.google.com/gsi/client";
 const APPLE_SCRIPT = "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
@@ -48,7 +49,13 @@ export function AuthPageFrame({ title, subtitle, children, footer }) {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <Link to="/" style={styles.brand}>Grubbid</Link>
+        <BrandLogo
+          width={132}
+          height={84}
+          radius={20}
+          pageColor="#ffffff"
+          linkStyle={{ marginBottom: 18 }}
+        />
         <h1 style={styles.heading}>{title}</h1>
         {subtitle ? <p style={styles.subheading}>{subtitle}</p> : null}
         {children}

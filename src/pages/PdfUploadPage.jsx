@@ -27,6 +27,7 @@
 import React, { useRef, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
+import { BrandLockup } from "../components/BrandLogo.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -372,8 +373,10 @@ export default function PdfUploadPage() {
   if (missingState) {
     return (
       <div style={s.page}>
-        <div style={s.brand}>Grubbid</div>
-        <div style={s.subbrand}>for Restaurants</div>
+        <BrandLockup
+          subtitle="for Restaurants"
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+        />
         <div style={{ ...s.error, marginTop: 24 }}>
           <strong>Missing session data.</strong> Please complete the signup flow to reach this
           page.{" "}
@@ -387,8 +390,10 @@ export default function PdfUploadPage() {
   if (result) {
     return (
       <div style={s.page}>
-        <div style={s.brand}>Grubbid</div>
-        <div style={s.subbrand}>for Restaurants</div>
+        <BrandLockup
+          subtitle="for Restaurants"
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+        />
 
         <div style={s.successBox}>
           <div style={s.successIcon}>✓</div>
@@ -454,8 +459,10 @@ export default function PdfUploadPage() {
 
   return (
     <div style={s.page}>
-      <div style={s.brand}>Grubbid</div>
-      <div style={s.subbrand}>for Restaurants</div>
+      <BrandLockup
+        subtitle="for Restaurants"
+        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+      />
 
       {/* Step trail */}
       <div style={s.steps}>

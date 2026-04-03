@@ -11,6 +11,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { validateResetToken, resetPassword } from "../../lib/consumerApi.js";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
+import { BrandLogo } from "../../components/BrandLogo.jsx";
 
 export default function ConsumerResetPassword() {
   const navigate = useNavigate();
@@ -78,7 +79,7 @@ export default function ConsumerResetPassword() {
     return (
       <div style={styles.page}>
         <div style={styles.card}>
-          <Link to="/" style={styles.brand}>Grubbid</Link>
+          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <p style={styles.subheading}>Validating reset link…</p>
         </div>
       </div>
@@ -89,7 +90,7 @@ export default function ConsumerResetPassword() {
     return (
       <div style={styles.page}>
         <div style={styles.card}>
-          <Link to="/" style={styles.brand}>Grubbid</Link>
+          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <h1 style={styles.heading}>Link expired</h1>
           <p style={styles.subheading}>
             This reset link is invalid or has expired. Request a new one.
@@ -106,7 +107,7 @@ export default function ConsumerResetPassword() {
     return (
       <div style={styles.page}>
         <div style={styles.card}>
-          <Link to="/" style={styles.brand}>Grubbid</Link>
+          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <p style={styles.successMsg}>Password reset. Redirecting to your account…</p>
         </div>
       </div>
@@ -116,7 +117,7 @@ export default function ConsumerResetPassword() {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <Link to="/" style={styles.brand}>Grubbid</Link>
+        <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
         <h1 style={styles.heading}>Set new password</h1>
         {tokenEmail && (
           <p style={styles.subheading}>For account: {tokenEmail}</p>

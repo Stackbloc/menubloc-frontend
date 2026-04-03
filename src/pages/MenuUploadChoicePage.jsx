@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { BrandLockup } from "../components/BrandLogo.jsx";
 
 const ROUTES = {
   pdf: "/restaurant/pdf-upload",
@@ -112,8 +113,10 @@ export default function MenuUploadChoicePage() {
   if (missingState) {
     return (
       <div style={styles.page}>
-        <div style={styles.brand}>Grubbid</div>
-        <div style={styles.subbrand}>for Restaurants</div>
+        <BrandLockup
+          subtitle="for Restaurants"
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#ffffff" }}
+        />
         <div style={styles.error}>
           <strong>Missing signup session data.</strong> Please restart restaurant signup to continue.
         </div>
@@ -123,8 +126,10 @@ export default function MenuUploadChoicePage() {
 
   return (
     <div style={styles.page}>
-      <div style={styles.brand}>Grubbid</div>
-      <div style={styles.subbrand}>for Restaurants</div>
+      <BrandLockup
+        subtitle="for Restaurants"
+        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#ffffff" }}
+      />
 
       <div style={styles.steps}>
         <div style={styles.step(false, true)}>1. Account</div>
