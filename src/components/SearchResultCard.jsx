@@ -13,16 +13,19 @@
  *   - Nutrition chip now uses NutritionCard (includes Allergen Alert)
  *   - Insights chip toggles InsightCardDeck (real chip-driven data only)
  *     Data derived entirely from existing row payload — no new fetches.
- *   - Footer CTA: "View Menu" → /public/restaurants/:id/menu
+ *   - Footer CTA: "View Menu" → canonical /restaurants/:slugOrId/menu
  *
  *   2026-03-10 update:
  *   - Public restaurant profile links now prefer /restaurants/:slugOrId
- *   - Menu links remain /public/restaurants/:id/menu
+ *   - Menu links now prefer canonical /restaurants/:slugOrId/menu
  *
  *   2026-03-14 update:
  *   - Nutrition chip expanded to use NutritionCard component.
  *   - hasNut check includes allergen presence so chip lights up
  *     when allergens are inferred even without calorie data.
+ *
+ *   2026-04-03 update:
+ *   - compact dish share controls added to item rows
  *
  *   Design lock:
  *   Shared search-result typography and card styling must inherit
@@ -32,8 +35,14 @@
 
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import ShareButton from "./share/ShareButton.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
+import {
+  buildCanonicalMenuPath,
+  buildDishShareData,
+  getCanonicalMenuItemPath,
+} from "./share/shareUtils.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import {
   getQualitativeLabel,
@@ -754,11 +763,31 @@ function ItemRow({ row, query, similarItems, labels, language, geo }) {
 
   const mid = getItemId(row);
   const name = getItemName(row, language);
-  const hrefBase = mid ? "/menu-items/" + mid : null;
+  const hrefBase = mid ? getCanonicalMenuItemPath({
+    restaurant: {
+      slug: getRestSlug(row),
+      id: getRestId(row),
+    },
+    menuItem: { id: mid },
+  }) : null;
   const href = hrefBase && geo?.lat != null && geo?.lng != null
     ? `${hrefBase}?lat=${geo.lat}&lng=${geo.lng}`
     : hrefBase;
   const price = fmtPrice(row);
+  const dishShareData = mid ? buildDishShareData({
+    restaurant: {
+      id: getRestId(row),
+      slug: getRestSlug(row),
+      name: getRestName(row, language),
+      logoUrl: pick(row, ["restaurant_logo_url", "logo_url"], row?.restaurant?.logo_url || row?.restaurant?.logoUrl || null),
+    },
+    menuItem: {
+      id: mid,
+      name,
+      item_photo_url: pick(row, ["item_photo_url", "itemPhotoUrl", "photo_url", "image_url"], row?.item?.item_photo_url || row?.item?.photo_url || row?.item?.image_url || null),
+      restaurant_logo_url: pick(row, ["restaurant_logo_url", "logo_url"], row?.restaurant?.logo_url || row?.restaurant?.logoUrl || null),
+    },
+  }) : null;
   const popular = getPopular(row);
   const hasDeal = asBool(resolveItemFlag(row, "has_active_deal"));
   const isVegan = asBool(resolveItemFlag(row, "is_vegan"));
@@ -829,18 +858,36 @@ function ItemRow({ row, query, similarItems, labels, language, geo }) {
           )}
         </span>
 
-        {price ? (
-          <span
+	        {price ? (
+	          <span
             style={{
               fontSize: "16px",
               fontWeight: 800,
               whiteSpace: "nowrap",
               color: "#667085",
             }}
-          >
-            {price}
-          </span>
-        ) : null}
+	          >
+	            {price}
+	          </span>
+	        ) : null}
+          {dishShareData ? (
+            <ShareButton
+              variant="dish"
+              label="Share Dish"
+              modalTitle={`Share ${name}`}
+              shareData={dishShareData}
+              analyticsContext={{
+                restaurantId: getRestId(row),
+                restaurantSlug: getRestSlug(row) || null,
+                menuItemId: mid,
+                menuItemName: name,
+                pageType: "search_results",
+                shareTarget: "dish",
+              }}
+              iconOnly
+              stopPropagation
+            />
+          ) : null}
       </div>
 
       {/* Badges */}
@@ -1047,7 +1094,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
     const restProfileTarget = restSlug || restId;
     const restHref = restProfileTarget ? "/restaurants/" + restProfileTarget : null;
     const menuHref = restId
-      ? "/public/restaurants/" + restId + "/menu" + contextSearch
+      ? buildCanonicalMenuPath({ restaurantSlug: restSlug, restaurantId: restId }) + contextSearch
       : null;
 
     const similarItems = Array.isArray(crossRestaurantItems)
@@ -1143,7 +1190,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
   const restProfileTargetS = restSlugS || restIdS;
   const restHrefS = restProfileTargetS ? "/restaurants/" + restProfileTargetS : null;
   const menuHrefS = restIdS
-    ? "/public/restaurants/" + restIdS + "/menu" + contextSearch
+    ? buildCanonicalMenuPath({ restaurantSlug: restSlugS, restaurantId: restIdS }) + contextSearch
     : null;
   const similarItemsS = Array.isArray(crossRestaurantItems)
     ? crossRestaurantItems.filter((x) => asStr(x.restaurant_id) !== restIdS)

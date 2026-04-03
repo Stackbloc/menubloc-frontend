@@ -17,6 +17,11 @@
  *
  * Confidence rule: appears EXACTLY ONCE — CompactConfidence below preparation.
  * Not in VerdictBlock. Not in NutritionCard. Not anywhere else.
+ *
+ * 2026-04-03 update:
+ *   - canonical dish sharing support
+ *   - dynamic Open Graph / Twitter card metadata for dish pages
+ *   - standalone public landing-page polish for shared dish URLs
  * ============================================================
  */
 
@@ -24,6 +29,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { PageNav } from "../components/NavButton";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
+import ShareButton from "../components/share/ShareButton.jsx";
+import {
+  applyDocumentSocialMetadata,
+  buildDishShareData,
+  buildCanonicalMenuPath,
+  getCanonicalMenuItemPath,
+} from "../components/share/shareUtils.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
@@ -572,7 +584,16 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
                 <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>
               )}
             </div>
-            <Link to={`/menu-items/${entry.id}${searchSuffix}`} style={{ textDecoration: "none", color: "#124ba3", fontWeight: 800, fontSize: 15, lineHeight: 1.35 }}>
+            <Link
+              to={`${getCanonicalMenuItemPath({
+                restaurant: {
+                  slug: entry.restaurant_slug || null,
+                  id: entry.restaurant_id || null,
+                },
+                menuItem: { id: entry.id },
+              })}${searchSuffix}`}
+              style={{ textDecoration: "none", color: "#124ba3", fontWeight: 800, fontSize: 15, lineHeight: 1.35 }}
+            >
               {entry.name}
             </Link>
             {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
@@ -619,6 +640,17 @@ export default function MenuItemDetailPage() {
   const [rawItem,  setRawItem]  = useState(null);
 
   const item = useMemo(() => (rawItem ? normalizeResultItem(rawItem) : null), [rawItem]);
+  const shareData = useMemo(() => {
+    if (!item) return null;
+    return buildDishShareData({
+      restaurant: item.restaurant,
+      menuItem: {
+        ...item,
+        id: item.id,
+        name: item.name,
+      },
+    });
+  }, [item]);
 
   useEffect(() => {
     let cancelled = false;
@@ -670,6 +702,16 @@ export default function MenuItemDetailPage() {
     return () => { cancelled = true; };
   }, [id, navigate, restaurantSlug]);
 
+  useEffect(() => {
+    if (!shareData) return undefined;
+    return applyDocumentSocialMetadata({
+      title: shareData.title,
+      description: shareData.text,
+      url: shareData.url,
+      image: shareData.image,
+    });
+  }, [shareData]);
+
   const priceLabel =
     item?.priceMinor != null ? moneyFromMinor(item.priceMinor) :
     item?.price      != null ? moneyFromFloat(item.price) : null;
@@ -701,9 +743,13 @@ export default function MenuItemDetailPage() {
   const integrity = rawItem?.integrity || null;
   const isBrokenFranchiseLink = integrity?.status === "broken_franchise_link";
   const showRestaurantLogo = hasRenderableImage(item.restaurant.logoUrl);
-  const showItemPhoto = item.restaurant.isPro === true && hasRenderableImage(item.itemPhotoUrl);
+  const showItemPhoto = hasRenderableImage(item.itemPhotoUrl);
   const heroGridColumns = isMobile ? "1fr" : showItemPhoto ? "minmax(0, 1.4fr) minmax(280px, 0.95fr)" : "1fr";
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
+  const fullMenuHref = buildCanonicalMenuPath({
+    restaurantSlug: item.restaurant.slug || null,
+    restaurantId: item.restaurant.id || null,
+  });
 
   return (
     <PageShell isMobile={isMobile}>
@@ -745,11 +791,29 @@ export default function MenuItemDetailPage() {
               <h1 style={{ margin: 0, fontSize: isMobile ? 34 : 46, lineHeight: 0.96, letterSpacing: "-0.05em", color: "#15241d", maxWidth: 760 }}>
                 {item.name}
               </h1>
-              {priceLabel ? (
-                <div style={{ marginTop: 10, fontSize: isMobile ? 24 : 28, fontWeight: 900, letterSpacing: "-0.04em", color: "#7a5b20" }}>
-                  {priceLabel}
-                </div>
-              ) : null}
+              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                {priceLabel ? (
+                  <div style={{ fontSize: isMobile ? 24 : 28, fontWeight: 900, letterSpacing: "-0.04em", color: "#7a5b20" }}>
+                    {priceLabel}
+                  </div>
+                ) : null}
+                {shareData ? (
+                  <ShareButton
+                    variant="dish"
+                    label="Share Dish"
+                    modalTitle={`Share ${item.name}`}
+                    shareData={shareData}
+                    analyticsContext={{
+                      restaurantId: item.restaurant.id,
+                      restaurantSlug: item.restaurant.slug || null,
+                      menuItemId: item.id,
+                      menuItemName: item.name,
+                      pageType: "menu_item_detail",
+                      shareTarget: "dish",
+                    }}
+                  />
+                ) : null}
+              </div>
             </div>
 
             {item.description ? (
@@ -757,6 +821,35 @@ export default function MenuItemDetailPage() {
                 {item.description}
               </div>
             ) : null}
+
+            <div style={{ fontSize: 13, lineHeight: 1.5, color: "#617167", fontWeight: 700, maxWidth: 760 }}>
+              See nutrition, insights, and similar dishes on Grubbid.
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <Link
+                to={fullMenuHref}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minHeight: 44,
+                  padding: "0 18px",
+                  borderRadius: 999,
+                  background: "#11211a",
+                  color: "#f8fafc",
+                  textDecoration: "none",
+                  fontSize: 14,
+                  fontWeight: 800,
+                  boxShadow: "0 10px 24px rgba(15, 23, 42, 0.10)",
+                }}
+              >
+                {`View Full Menu at ${item.restaurant.name}`}
+              </Link>
+              <div style={{ fontSize: 13, color: "#617167", fontWeight: 700 }}>
+                Explore this dish on Grubbid
+              </div>
+            </div>
 
             {(item.badges.vegan || item.badges.glutenFree || item.badges.deal) && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>

@@ -2,10 +2,11 @@
  * ============================================================
  * Path: menubloc-frontend/src/pages/PublicMenuPage.jsx
  * File: PublicMenuPage.jsx
- * Date: 2026-03-06
+ * Date: 2026-04-03
  * Purpose:
  *   Renders the public menu for a restaurant.
- *   React route: /public/restaurants/:id/menu
+ *   React route: /restaurants/:slugOrId/menu
+ *   Back-compat redirect: /public/restaurants/:id/menu
  *   Data source: GET /public/restaurants/:id/menu
  *
  *   Default layout is visually identical to the previous version.
@@ -16,6 +17,11 @@
  *   Expanded sections render only when the API provides the relevant
  *   data for that item. Deal Details cross-references deal_items
  *   from the same API response (no additional network requests).
+ *
+ *   Share system added 2026-04-03:
+ *   - canonical Grubbid menu URLs
+ *   - native share with modal fallback
+ *   - dynamic OG / Twitter metadata for public menu pages
  * ============================================================
  */
 
@@ -28,6 +34,14 @@ import BasketSummaryBar from "../components/basket/BasketSummaryBar.jsx";
 import ModifierSheet from "../components/basket/ModifierSheet.jsx";
 import { itemHasRequiredModifiers } from "../components/basket/modifierModel.js";
 import OrderCartToast from "../components/basket/OrderCartToast.jsx";
+import ShareButton from "../components/share/ShareButton.jsx";
+import {
+  applyDocumentSocialMetadata,
+  buildDishShareData,
+  buildCanonicalMenuPath,
+  buildMenuShareMetadata,
+  getCanonicalMenuItemPath,
+} from "../components/share/shareUtils.js";
 
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(() =>
@@ -349,8 +363,10 @@ function Badge({ label, bg, color, border }) {
 
 export default function PublicMenuPage() {
   const { language, t } = useLanguage();
-  const { id } = useParams();
+  const { id, slugOrId } = useParams();
   const navigate = useNavigate();
+  const routeRestaurantParam = asStr(slugOrId || id).trim();
+  const numericRouteRestaurantId = asFiniteNumber(routeRestaurantParam);
   const {
     addMenuItem,
     restaurant: cartRestaurantState,
@@ -363,6 +379,11 @@ export default function PublicMenuPage() {
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
   const [modifierItem, setModifierItem] = useState(null);
+  const [routeState, setRouteState] = useState({
+    status: numericRouteRestaurantId != null ? "ok" : "loading",
+    restaurantId: numericRouteRestaurantId != null ? String(numericRouteRestaurantId) : "",
+    error: null,
+  });
 
   const [pageState, setPageState] = useState({
     status: "loading", // loading | ok | error
@@ -390,6 +411,74 @@ export default function PublicMenuPage() {
   const contextCity  = searchParams.get("city")  || null;
   const contextState = searchParams.get("state") || null;
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (numericRouteRestaurantId != null) {
+      setRouteState({
+        status: "ok",
+        restaurantId: String(numericRouteRestaurantId),
+        error: null,
+      });
+      return undefined;
+    }
+
+    async function resolveRouteRestaurant() {
+      try {
+        setRouteState({ status: "loading", restaurantId: "", error: null });
+
+        const res = await fetch(
+          `${API}/public/restaurants/${encodeURIComponent(routeRestaurantParam)}`,
+          { credentials: "include" }
+        );
+        const json = await res.json().catch(() => null);
+
+        if (cancelled) return;
+
+        const resolvedRestaurantId = asFiniteNumber(json?.id || json?.restaurant_id);
+        if (!res.ok || resolvedRestaurantId == null) {
+          setRouteState({
+            status: "error",
+            restaurantId: "",
+            error: toConsumerErrorMessage(
+              json?.detail || json?.error || "We couldn’t resolve this menu link.",
+              "We couldn’t resolve this menu link right now."
+            ),
+          });
+          return;
+        }
+
+        setRouteState({
+          status: "ok",
+          restaurantId: String(resolvedRestaurantId),
+          error: null,
+        });
+      } catch (error) {
+        if (cancelled) return;
+        setRouteState({
+          status: "error",
+          restaurantId: "",
+          error: toConsumerErrorMessage(
+            error,
+            "We couldn’t resolve this menu link right now."
+          ),
+        });
+      }
+    }
+
+    if (!routeRestaurantParam) {
+      setRouteState({
+        status: "error",
+        restaurantId: "",
+        error: "Missing restaurant identifier.",
+      });
+      return undefined;
+    }
+
+    resolveRouteRestaurant();
+    return () => { cancelled = true; };
+  }, [numericRouteRestaurantId, routeRestaurantParam]);
+
   function handleTogglePref(key) {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -404,7 +493,7 @@ export default function PublicMenuPage() {
   }
 
   const apiUrl = useMemo(() => {
-    const rid = encodeURIComponent(asStr(id).trim());
+    const rid = encodeURIComponent(asStr(routeState.restaurantId).trim());
     const params = new URLSearchParams();
     if (proximityLat != null && proximityLng != null) {
       params.set("lat", String(proximityLat));
@@ -416,7 +505,7 @@ export default function PublicMenuPage() {
     if (contextState) params.set("state", contextState);
     const qs = params.toString();
     return `${API}/public/restaurants/${rid}/menu${qs ? `?${qs}` : ""}`;
-  }, [id, proximityLat, proximityLng, contextCity, contextState]);
+  }, [routeState.restaurantId, proximityLat, proximityLng, contextCity, contextState]);
 
   useEffect(() => {
     if (proximityLat != null && proximityLng != null) return;
@@ -446,6 +535,8 @@ export default function PublicMenuPage() {
 
   useEffect(() => {
     let cancelled = false;
+
+    if (routeState.status !== "ok" || !routeState.restaurantId) return undefined;
 
     async function run() {
       try {
@@ -481,7 +572,7 @@ export default function PublicMenuPage() {
 
     run();
     return () => { cancelled = true; };
-  }, [apiUrl]);
+  }, [apiUrl, routeState.restaurantId, routeState.status]);
 
   /* ---- Deal lookup from API response ---- */
 
@@ -498,7 +589,7 @@ export default function PublicMenuPage() {
 
   /* ---- Loading ---- */
 
-  if (pageState.status === "loading") {
+  if (routeState.status === "loading" || pageState.status === "loading") {
     return (
       <div style={pageBg}>
         <div style={{ maxWidth: 1450, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
@@ -510,13 +601,13 @@ export default function PublicMenuPage() {
 
   /* ---- Error ---- */
 
-  if (pageState.status === "error") {
+  if (routeState.status === "error" || pageState.status === "error") {
     return (
       <div style={pageBg}>
         <div style={{ maxWidth: 1450, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
           <PageNav back />
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{t("publicMenu.loadError", "Couldn't load menu")}</div>
-          <div style={{ color: "var(--muted, #5b6675)", fontSize: 14 }}>{pageState.error}</div>
+          <div style={{ color: "var(--muted, #5b6675)", fontSize: 14 }}>{routeState.error || pageState.error}</div>
           <div style={{ marginTop: 14, fontSize: 12, color: "var(--muted-2, #93a0b2)" }}>Endpoint: {apiUrl}</div>
         </div>
       </div>
@@ -534,7 +625,7 @@ export default function PublicMenuPage() {
     isFoodTruckCategory(data?.category) ||
     isFoodTruckCategory(data?.restaurant_category) ||
     isFoodTruckCategory(data?.type);
-  const restaurantProfileTarget = asStr(data?.slug || data?.restaurant_id || id).trim();
+  const restaurantProfileTarget = asStr(data?.slug || data?.restaurant_id || routeState.restaurantId).trim();
   const restaurantProfileHref = restaurantProfileTarget
     ? {
         pathname: `${isFoodTruck ? "/foodtrucks" : "/restaurants"}/${encodeURIComponent(restaurantProfileTarget)}`,
@@ -555,8 +646,21 @@ export default function PublicMenuPage() {
   const isUnverified    = data?.is_authoritative === false || !!menuBanner;
   const isIntakePreview = data?.menu_source === "intake";
   const franchiseGroup  = data?.franchise_group || null;
+  const currentRestaurantId = data?.restaurant_id || routeState.restaurantId;
+  const shareData = buildMenuShareMetadata({
+    restaurantName,
+    restaurantSlug: data?.slug,
+    restaurantId: currentRestaurantId,
+    logoUrl: data?.logo_url,
+  });
+  const shareAnalyticsContext = {
+    restaurantId: currentRestaurantId,
+    restaurantSlug: data?.slug || null,
+    pageType: "public_menu",
+    shareTarget: "menu",
+  };
   const cartRestaurant = {
-    restaurantId: data?.restaurant_id || id,
+    restaurantId: currentRestaurantId,
     restaurantName,
     deliveryEnabled: data?.delivery_enabled === true,
     defaultDeliveryProvider: data?.default_delivery_provider || null,
@@ -571,10 +675,20 @@ export default function PublicMenuPage() {
   const basketMatchesCurrentRestaurant =
     Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
 
-  function navigateToFranchiseLocation(restaurantId) {
+  useEffect(() => applyDocumentSocialMetadata({
+    title: shareData.title,
+    description: shareData.text,
+    url: shareData.url,
+    image: shareData.image,
+  }), [shareData.image, shareData.text, shareData.title, shareData.url]);
+
+  function navigateToFranchiseLocation(restaurantId, restaurantSlug = null) {
     if (!restaurantId) return;
     navigate({
-      pathname: `/public/restaurants/${restaurantId}/menu`,
+      pathname: buildCanonicalMenuPath({
+        restaurantSlug,
+        restaurantId,
+      }),
       search: searchParams.toString() ? `?${searchParams.toString()}` : "",
     });
   }
@@ -583,20 +697,24 @@ export default function PublicMenuPage() {
     const locations = (Array.isArray(franchiseGroup?.locations) ? franchiseGroup.locations : []).filter(
       (location) => location?.is_displayable !== false && location?.restaurant_id
     );
-    const currentIndex = locations.findIndex((location) => Number(location.restaurant_id) === Number(id));
+    const currentIndex = locations.findIndex((location) => Number(location.restaurant_id) === Number(currentRestaurantId));
     const previousRestaurantId =
       currentIndex > 0 ? locations[currentIndex - 1]?.restaurant_id : null;
-    navigateToFranchiseLocation(previousRestaurantId);
+    const previousRestaurantSlug =
+      currentIndex > 0 ? locations[currentIndex - 1]?.slug : null;
+    navigateToFranchiseLocation(previousRestaurantId, previousRestaurantSlug);
   }
 
   function handleNextClosestLocation() {
     const locations = (Array.isArray(franchiseGroup?.locations) ? franchiseGroup.locations : []).filter(
       (location) => location?.is_displayable !== false && location?.restaurant_id
     );
-    const currentIndex = locations.findIndex((location) => Number(location.restaurant_id) === Number(id));
+    const currentIndex = locations.findIndex((location) => Number(location.restaurant_id) === Number(currentRestaurantId));
     const nextRestaurantId =
       currentIndex >= 0 && currentIndex + 1 < locations.length ? locations[currentIndex + 1]?.restaurant_id : null;
-    navigateToFranchiseLocation(nextRestaurantId);
+    const nextRestaurantSlug =
+      currentIndex >= 0 && currentIndex + 1 < locations.length ? locations[currentIndex + 1]?.slug : null;
+    navigateToFranchiseLocation(nextRestaurantId, nextRestaurantSlug);
   }
 
   function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = []) {
@@ -698,9 +816,25 @@ export default function PublicMenuPage() {
                 )}
               </div>
             ) : null}
+            <div
+              style={{
+                marginTop: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              <ShareButton
+                label="Share Menu"
+                modalTitle={`Share ${restaurantName}`}
+                shareData={shareData}
+                analyticsContext={shareAnalyticsContext}
+              />
+            </div>
             <FranchiseBanner
               group={franchiseGroup}
-              currentRestaurantId={id}
+              currentRestaurantId={currentRestaurantId}
               onPrevious={handlePreviousClosestLocation}
               onNext={handleNextClosestLocation}
             />
@@ -855,11 +989,27 @@ export default function PublicMenuPage() {
                         const hasDeal = !!deal;
 
                         const canNavigate = it?.id != null;
+                        const dishShareData = canNavigate ? buildDishShareData({
+                          restaurant: {
+                            id: currentRestaurantId,
+                            slug: data?.slug || null,
+                            name: restaurantName,
+                            logoUrl: data?.logo_url || null,
+                          },
+                          menuItem: {
+                            ...it,
+                            id: it.id,
+                            name,
+                          },
+                        }) : null;
 
                         return (
                           <div
                             key={itemKey}
-                            onClick={canNavigate ? () => navigate(`/menu-items/${it.id}`) : undefined}
+                            onClick={canNavigate ? () => navigate(getCanonicalMenuItemPath({
+                              restaurant: { slug: data?.slug || null, id: currentRestaurantId },
+                              menuItem: { id: it.id },
+                            })) : undefined}
                             onMouseEnter={canNavigate ? (e) => { e.currentTarget.style.boxShadow = "0 6px 22px rgba(15,23,42,0.10)"; e.currentTarget.style.borderColor = "rgba(18,34,28,0.18)"; } : undefined}
                             onMouseLeave={canNavigate ? (e) => { e.currentTarget.style.boxShadow = "0 4px 14px rgba(15,23,42,0.05)"; e.currentTarget.style.borderColor = "rgba(18,34,28,0.08)"; } : undefined}
                             style={{
@@ -887,6 +1037,24 @@ export default function PublicMenuPage() {
                                 ) : null}
                               </div>
                               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                                {dishShareData ? (
+                                  <ShareButton
+                                    variant="dish"
+                                    label="Share Dish"
+                                    modalTitle={`Share ${name}`}
+                                    shareData={dishShareData}
+                                    analyticsContext={{
+                                      restaurantId: currentRestaurantId,
+                                      restaurantSlug: data?.slug || null,
+                                      menuItemId: it.id,
+                                      menuItemName: name,
+                                      pageType: "public_menu",
+                                      shareTarget: "dish",
+                                    }}
+                                    iconOnly
+                                    stopPropagation
+                                  />
+                                ) : null}
                                 {price ? (
                                   <div style={{ fontSize: 14, fontWeight: 900, whiteSpace: "nowrap" }}>{price}</div>
                                 ) : null}

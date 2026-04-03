@@ -182,6 +182,13 @@ function TruckRedirect() {
   return <Navigate to={slugOrId ? `/foodtrucks/${slugOrId}` : "/"} replace />;
 }
 
+function PublicMenuLegacyRedirect() {
+  const { id } = useParams();
+  const location = useLocation();
+  const targetPath = id ? `/restaurants/${id}/menu` : "/menus";
+  return <Navigate to={`${targetPath}${location.search || ""}${location.hash || ""}`} replace />;
+}
+
 const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 const GA_SCRIPT_ID = "grubbid-ga4-script";
 
@@ -360,7 +367,8 @@ function AppShell({ easyMenu, crmHost }) {
         {/* Menus */}
         <Route path="/menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuPage />} />
         <Route path="/menus/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuDetailPage />} />
-        <Route path="/public/restaurants/:id/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
+        <Route path="/restaurants/:slugOrId/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
+        <Route path="/public/restaurants/:id/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuLegacyRedirect />} />
         <Route path="/public/restaurants/:id/display" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuDisplayPage />} />
         <Route path="/checkout" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CheckoutPage />} />
         <Route path="/orders/:orderId/confirmation" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OrderConfirmationPage />} />

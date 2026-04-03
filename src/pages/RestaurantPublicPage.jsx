@@ -23,7 +23,7 @@
  *                dish, landmarks
  *
  *   Full menu is NOT shown here.
- *   "View Menu →" links to /public/restaurants/:id/menu (PublicMenuPage).
+ *   "View Menu →" links to /restaurants/:slugOrId/menu (PublicMenuPage).
  *
  *   Profile tier values coded against: "pro" | "verified"
  *   Data source: GET /public/restaurants/:slugOrId
@@ -1095,7 +1095,7 @@ export default function RestaurantPublicPage() {
               <Divider isDark={isDark} />
               <Link
                 to={{
-                  pathname: `/public/restaurants/${data.id}/menu`,
+                  pathname: `/restaurants/${encodeURIComponent(String(data.slug || data.id))}/menu`,
                   search: location.search || "",
                 }}
                 style={{
