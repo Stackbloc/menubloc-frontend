@@ -458,17 +458,33 @@ export default function GrubbidDiscovery() {
 
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: isMobile ? 44 : 64 }}>
           <div>
-            <img
-              src="/grubbid-logo-orange.jpg"
-              alt="Grubbid"
+            <Link
+              to="/"
+              aria-label="Go to Grubbid home"
               style={{
                 display: "block",
-                height: isMobile ? 108 : 148,
-                width: "auto",
-                objectFit: "contain",
+                width: isMobile ? 190 : 270,
+                height: isMobile ? 124 : 172,
+                overflow: "hidden",
+                borderRadius: isMobile ? 28 : 36,
+                background: "#f7f6f1",
+                textDecoration: "none",
+                cursor: "pointer",
               }}
-            />
-            <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#667085", letterSpacing: 1.2, textTransform: "uppercase", marginTop: 2 }}>
+            >
+              <img
+                src="/grubbid-logo-orange.jpg"
+                alt="Grubbid"
+                style={{
+                  display: "block",
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  objectPosition: "center",
+                }}
+              />
+            </Link>
+            <div style={{ fontSize: isMobile ? 10 : 11, fontWeight: 800, color: "#667085", letterSpacing: 1.4, textTransform: "uppercase", marginTop: 6, paddingLeft: 4 }}>
               {t("nav.discovery")}
             </div>
           </div>
