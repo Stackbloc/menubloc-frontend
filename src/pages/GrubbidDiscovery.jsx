@@ -2,9 +2,10 @@
  * ============================================================
  * File: GrubbidDiscovery.jsx
  * Path: menubloc-frontend/src/pages/GrubbidDiscovery.jsx
- * Date: 2026-03-17
+ * Date: 2026-04-03
  * Purpose:
  *   Search-first discovery page with automatic location detection.
+ *   Includes footer contact routing for Grubbid mailbox aliases.
  * ============================================================
  */
 
@@ -14,6 +15,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { addLocation, getLocations, updateLocation } from "../lib/consumerApi.js";
+import { parseLocation, reverseGeocode, US_STATE_ABBREVS } from "../lib/locationUtils.js";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -82,38 +84,7 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
-const US_STATE_ABBREVS = new Set([
-  "al","ak","az","ar","ca","co","ct","de","fl","ga","hi","id","il","in","ia",
-  "ks","ky","la","me","md","ma","mi","mn","ms","mo","mt","ne","nv","nh","nj",
-  "nm","ny","nc","nd","oh","ok","or","pa","ri","sc","sd","tn","tx","ut","vt",
-  "va","wa","wv","wi","wy","dc",
-]);
-
-function parseLocation(rawValue) {
-  const raw = String(rawValue || "").trim();
-  if (!raw) return { zip: "", city: "", state: "", near: "", label: "" };
-  if (/^\d{5}(?:-\d{4})?$/.test(raw)) {
-    return { zip: raw, city: "", state: "", near: "", label: raw };
-  }
-
-  // Handle "City, ST" format (with comma)
-  const parts = raw.split(",");
-  if (parts.length >= 2) {
-    const city = String(parts[0] || "").trim();
-    const state = String(parts[1] || "").trim().toUpperCase();
-    return { zip: "", city, state, near: "", label: raw };
-  }
-
-  // Handle "City ST" format (no comma) — strip trailing 2-letter state abbreviation
-  const tokens = raw.split(/\s+/);
-  const last = tokens[tokens.length - 1].toLowerCase();
-  if (tokens.length >= 2 && US_STATE_ABBREVS.has(last)) {
-    const city = tokens.slice(0, -1).join(" ");
-    return { zip: "", city, state: last.toUpperCase(), near: "", label: raw };
-  }
-
-  return { zip: "", city: raw, state: "", near: "", label: raw };
-}
+// parseLocation and US_STATE_ABBREVS imported from ../lib/locationUtils.js
 
 function FilterChip({ label, active, onClick, accentColor = "#111827" }) {
   return (
@@ -136,39 +107,22 @@ function FilterChip({ label, active, onClick, accentColor = "#111827" }) {
   );
 }
 
-async function reverseGeocode(lat, lng) {
-  const url = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
-  url.searchParams.set("latitude", String(lat));
-  url.searchParams.set("longitude", String(lng));
-  url.searchParams.set("localityLanguage", "en");
-
-  const res = await fetch(url.toString());
-  const json = await res.json().catch(() => ({}));
-
-  const city =
-    String(json?.city || json?.locality || json?.principalSubdivision || "").trim();
-  const locality =
-    String(json?.city || json?.locality || json?.localityInfo?.administrative?.[2]?.name || "").trim();
-  const rawState =
-    String(json?.principalSubdivisionCode || json?.principalSubdivision || "").trim();
-  // principalSubdivisionCode returns "US-CA" format — strip country prefix
-  const state = rawState.includes("-") ? rawState.split("-").pop() : rawState;
-
-  const cityLike = locality || city;
-  return [cityLike, state].filter(Boolean).join(", ");
-}
+// reverseGeocode imported from ../lib/locationUtils.js
 
 function useAutoLocation() {
   const [state, setState] = useState({
     status: "locating",
     label: "",
+    city: "",
+    state: "",
+    confidence: "low",
     lat: null,
     lng: null,
   });
 
   useEffect(() => {
     if (!navigator?.geolocation) {
-      setState({ status: "unavailable", label: "", lat: null, lng: null });
+      setState({ status: "unavailable", label: "", city: "", state: "", confidence: "low", lat: null, lng: null });
       return;
     }
 
@@ -178,19 +132,19 @@ function useAutoLocation() {
         const lng = Number(position?.coords?.longitude);
 
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-          setState({ status: "unavailable", label: "", lat: null, lng: null });
+          setState({ status: "unavailable", label: "", city: "", state: "", confidence: "low", lat: null, lng: null });
           return;
         }
 
         try {
-          const label = await reverseGeocode(lat, lng);
-          setState({ status: "ready", label, lat, lng });
+          const geo = await reverseGeocode(lat, lng);
+          setState({ status: "ready", label: geo.label, city: geo.city, state: geo.state, confidence: geo.confidence, lat, lng });
         } catch {
-          setState({ status: "ready", label: "", lat, lng });
+          setState({ status: "ready", label: "", city: "", state: "", confidence: "low", lat, lng });
         }
       },
       () => {
-        setState({ status: "denied", label: "", lat: null, lng: null });
+        setState({ status: "denied", label: "", city: "", state: "", confidence: "low", lat: null, lng: null });
       },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
     );
@@ -231,6 +185,20 @@ export default function GrubbidDiscovery() {
     ...entry,
     label: t(entry.labelKey, entry.value),
   }));
+  const contactRows = [
+    {
+      label: "Menu submissions",
+      email: "menus@grubbid.com",
+    },
+    {
+      label: "Support related issues",
+      email: "support@grubbid.com",
+    },
+    {
+      label: "All other inquiries",
+      email: "inquiries@grubbid.com",
+    },
+  ];
 
   const resolvedLocationLabel = useMemo(() => {
     if (appliedLocation) return appliedLocation;
@@ -302,6 +270,10 @@ export default function GrubbidDiscovery() {
       params.set("lat", String(autoLocation.lat));
       params.set("lng", String(autoLocation.lng));
       params.set("radius_miles", String(LOCAL_RADIUS_MILES));
+      // Pass city/state separately so Search Results can display the precise label
+      // even when search is performed by lat/lng radius.
+      if (autoLocation.city) params.set("city", autoLocation.city);
+      if (autoLocation.state) params.set("state", autoLocation.state);
       if (autoLocation.label) params.set("location_label", autoLocation.label);
     }
 
@@ -400,6 +372,9 @@ export default function GrubbidDiscovery() {
     const lat = useAutoCoords ? autoLocation.lat : null;
     const lng = useAutoCoords ? autoLocation.lng : null;
     const source = sourceOverride || (useAutoCoords ? "autodetect" : "manual");
+    // When we know the autodetected city/state precisely, prefer them over the parsed label
+    if (useAutoCoords && autoLocation.city) parsed.city = autoLocation.city;
+    if (useAutoCoords && autoLocation.state) parsed.state = autoLocation.state;
 
     setLocationSaveState("saving");
     try {
@@ -628,18 +603,19 @@ export default function GrubbidDiscovery() {
             <button
               type="button"
               onClick={() => {
-                if (resolvedLocationLabel) {
-                  const loc = parseLocation(resolvedLocationLabel);
-                  const p = new URLSearchParams();
+                const p = new URLSearchParams();
+                if (appliedLocation) {
+                  // User set a manual location — parse city/state from it
+                  const loc = parseLocation(appliedLocation);
                   if (loc.city) p.set("city", loc.city);
-                  // Extract state from label (parseLocation doesn't return it directly)
-                  const labelParts = resolvedLocationLabel.split(",");
-                  const stateRaw = labelParts.length >= 2 ? labelParts[1].trim() : "";
-                  if (stateRaw) p.set("state", stateRaw.toUpperCase());
-                  navigate(`${BROWSE_MENUS_PATH}?${p.toString()}`);
-                } else {
-                  navigate(BROWSE_MENUS_PATH);
+                  if (loc.state) p.set("state", loc.state);
+                } else if (autoLocation.city || autoLocation.state) {
+                  // Auto-detected location — city/state already extracted precisely
+                  if (autoLocation.city) p.set("city", autoLocation.city);
+                  if (autoLocation.state) p.set("state", autoLocation.state);
                 }
+                const qs = p.toString();
+                navigate(qs ? `${BROWSE_MENUS_PATH}?${qs}` : BROWSE_MENUS_PATH);
               }}
               style={{
                 height: isMobile ? 46 : 52,
@@ -1083,9 +1059,49 @@ export default function GrubbidDiscovery() {
               <Link to="/about" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
                 About Grubbid
               </Link>
-              <Link to="/contact" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                minWidth: isMobile ? "100%" : 280,
+                maxWidth: isMobile ? "100%" : 360,
+                marginLeft: isMobile ? 0 : "auto",
+              }}
+            >
+              <div style={{ color: "#344054", fontWeight: 800, fontSize: 14 }}>
                 {t("discovery.footer.contact")}
-              </Link>
+              </div>
+              {contactRows.map((row) => (
+                <div
+                  key={row.email}
+                  style={{
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    alignItems: isMobile ? "flex-start" : "baseline",
+                    gap: isMobile ? 2 : 8,
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <span style={{ color: "#667085", fontWeight: 700 }}>
+                    {row.label}:
+                  </span>
+                  <a
+                    href={`mailto:${row.email}`}
+                    style={{
+                      color: "#344054",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {row.email}
+                  </a>
+                </div>
+              ))}
             </div>
 
             <div
@@ -1093,7 +1109,6 @@ export default function GrubbidDiscovery() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 10,
-                marginLeft: isMobile ? 0 : "auto",
               }}
             >
               <span style={{ color: "#667085", fontWeight: 800 }} aria-hidden="true">
