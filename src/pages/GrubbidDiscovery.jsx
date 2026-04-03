@@ -458,9 +458,16 @@ export default function GrubbidDiscovery() {
 
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: isMobile ? 44 : 64 }}>
           <div>
-            <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: "#11211a" }}>
-              Grubbid
-            </div>
+            <img
+              src="/grubbid-logo-orange.jpg"
+              alt="Grubbid"
+              style={{
+                display: "block",
+                height: isMobile ? 48 : 58,
+                width: "auto",
+                objectFit: "contain",
+              }}
+            />
             <div style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#667085", letterSpacing: 1.2, textTransform: "uppercase", marginTop: 2 }}>
               {t("nav.discovery")}
             </div>
