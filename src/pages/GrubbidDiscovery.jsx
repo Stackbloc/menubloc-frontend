@@ -1046,6 +1046,7 @@ export default function GrubbidDiscovery() {
               </Link>
               <Link to="/contact" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
                 {t("discovery.footer.contact")}
+              </Link>
             </div>
 
             <div
