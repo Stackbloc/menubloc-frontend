@@ -36,7 +36,7 @@ export function BrandLogo({
       }}
     >
       <img
-        src="/grubbid-logo-plain.png"
+        src="/grubbid-logo-2.1.svg"
         alt="Grubbid"
         style={{
           display: "block",
@@ -44,8 +44,6 @@ export function BrandLogo({
           height: "100%",
           objectFit: "cover",
           objectPosition: "center",
-          mixBlendMode: "multiply",
-          opacity: 0.96,
           ...imageStyle,
         }}
       />
