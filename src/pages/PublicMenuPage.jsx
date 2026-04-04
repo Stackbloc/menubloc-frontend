@@ -430,6 +430,7 @@ export default function PublicMenuPage() {
   };
   const dealsFilter = searchParams.get("deals") === "1";
   const filtersActive = Object.values(dietPrefs).some(Boolean) || dealsFilter;
+  const activeFilterLabels = [...activePrefLabels(dietPrefs), ...(dealsFilter ? [t("common.deals", "Deals")] : [])];
   const proximityLat = asFiniteNumber(searchParams.get("lat"));
   const proximityLng = asFiniteNumber(searchParams.get("lng"));
   // Propagate city/state context from search page URL so the backend can
@@ -1045,65 +1046,123 @@ export default function PublicMenuPage() {
         }}>
 
           {/* ── Filter sidebar ── */}
-          <aside style={{
-            flex: isMobile ? "1 1 auto" : "0 0 260px",
-            width: isMobile ? "100%" : 260,
-            position: isMobile ? "static" : "sticky",
-            top: 18,
-            alignSelf: "flex-start",
-            minWidth: 0,
-          }}>
-            <div style={{
-              borderRadius: 24,
-              padding: isMobile ? 14 : 18,
-              background: "#fff",
-              border: "1px solid rgba(18,34,28,0.08)",
-              boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
-              boxSizing: "border-box",
+          {!orderMode ? (
+            <aside style={{
+              flex: isMobile ? "1 1 auto" : "0 0 260px",
+              width: isMobile ? "100%" : 260,
+              position: isMobile ? "static" : "sticky",
+              top: 18,
+              alignSelf: "flex-start",
+              minWidth: 0,
             }}>
-              <div style={{ fontSize: 16, fontWeight: 900, color: "#11211a", marginBottom: 14 }}>
-                {t("discovery.dietary")}
-              </div>
-              <div style={{ display: "grid", gap: 10 }}>
-                {DIET_CHIPS.map(({ key, label }) => (
+              <div style={{
+                borderRadius: 24,
+                padding: isMobile ? 14 : 18,
+                background: "#fff",
+                border: "1px solid rgba(18,34,28,0.08)",
+                boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
+                boxSizing: "border-box",
+              }}>
+                <div style={{ fontSize: 16, fontWeight: 900, color: "#11211a", marginBottom: 14 }}>
+                  {t("discovery.dietary")}
+                </div>
+                <div style={{ display: "grid", gap: 10 }}>
+                  {DIET_CHIPS.map(({ key, label }) => (
+                    <FilterChip
+                      key={key}
+                      label={t(`diet.${key}`, label)}
+                      active={dietPrefs[key]}
+                      onClick={() => handleTogglePref(key)}
+                      fullWidth
+                    />
+                  ))}
                   <FilterChip
-                    key={key}
-                    label={t(`diet.${key}`, label)}
-                    active={dietPrefs[key]}
-                    onClick={() => handleTogglePref(key)}
+                    label={t("common.deals", "Deals")}
+                    active={dealsFilter}
+                    onClick={() => handleTogglePref("deals")}
                     fullWidth
                   />
-                ))}
-                <FilterChip
-                  label={t("common.deals", "Deals")}
-                  active={dealsFilter}
-                  onClick={() => handleTogglePref("deals")}
-                  fullWidth
-                />
+                </div>
+                {filtersActive && (
+                  <button
+                    onClick={handleClearFilters}
+                    style={{
+                      marginTop: 12,
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#667085",
+                      padding: 0,
+                      textDecoration: "underline",
+                    }}
+                  >{t("common.clearAll", "Clear all")}</button>
+                )}
               </div>
-              {filtersActive && (
-                <button
-                  onClick={handleClearFilters}
-                  style={{
-                    marginTop: 12,
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#667085",
-                    padding: 0,
-                    textDecoration: "underline",
-                  }}
-                >{t("common.clearAll", "Clear all")}</button>
-              )}
-            </div>
-          </aside>
+            </aside>
+          ) : null}
 
           {/* ── Menu content ── */}
           <main style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
 
             <IntakePreviewBanner show={isIntakePreview} />
+
+            {orderMode ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  flexWrap: "wrap",
+                  padding: "12px 16px",
+                  marginBottom: 16,
+                  borderRadius: 16,
+                  background: filtersActive ? "#f0fdf4" : "#ffffff",
+                  border: filtersActive
+                    ? "1px solid rgba(34,197,94,0.24)"
+                    : "1px solid rgba(17,33,26,0.08)",
+                  boxShadow: "0 8px 22px rgba(15,23,42,0.05)",
+                }}
+              >
+                <div style={{ minWidth: 0, flex: "1 1 320px" }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 900,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.6,
+                      color: filtersActive ? "#166534" : "#667085",
+                    }}
+                  >
+                    Filters in effect
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 14, color: "#11211a", fontWeight: 700, lineHeight: 1.5 }}>
+                    {filtersActive ? activeFilterLabels.join(", ") : "No filters applied"}
+                  </div>
+                </div>
+                {filtersActive ? (
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    style={{
+                      border: "1px solid rgba(17,33,26,0.10)",
+                      borderRadius: 999,
+                      background: "#fff",
+                      color: "#11211a",
+                      padding: "10px 14px",
+                      fontSize: 13,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Clear all filters
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
 
             {filtersActive && (
               <div style={{
