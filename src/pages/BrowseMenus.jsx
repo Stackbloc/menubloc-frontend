@@ -610,7 +610,6 @@ export default function BrowseMenus() {
       >
         <PageHero
           title={locationLabel ? t("browse.nearTitle", `Browsing Menus Near ${locationLabel}`, { location: locationLabel }) : t("browse.title")}
-          description="Browse menus inherits the same shell, typography, filters, and surface tokens as the rest of Grubbid discovery."
         />
 
         {effectiveAllergenFilter ? (
