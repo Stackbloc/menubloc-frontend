@@ -16,6 +16,7 @@
 
 import React, { useState } from "react";
 import ShareModal from "./ShareModal.jsx";
+import ShareIcon from "./ShareIcon.jsx";
 import { trackShareEvent } from "./shareUtils.js";
 
 function canUseNativeShare(shareData) {
@@ -104,7 +105,7 @@ export default function ShareButton({
           whiteSpace: "nowrap",
         }}
       >
-        <span aria-hidden="true">↗</span>
+        <ShareIcon size={16} />
         {iconOnly ? (
           <span style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>
             {resolvedLabel}

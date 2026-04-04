@@ -24,6 +24,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
+import ShareIcon from "../components/share/ShareIcon.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -555,6 +556,9 @@ function ProfileHeaderCard({ profile, slug, isDark, c, isMobile }) {
             type="button"
             onClick={handleShare}
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
               height: 28,
               padding: "0 12px",
               borderRadius: 999,
@@ -567,6 +571,7 @@ function ProfileHeaderCard({ profile, slug, isDark, c, isMobile }) {
               flexShrink: 0,
             }}
           >
+            <ShareIcon size={13} />
             {shared ? "Copied!" : "Share"}
           </button>
         </div>

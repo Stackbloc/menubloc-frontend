@@ -310,10 +310,29 @@ function getVerdictTheme(label) {
   return VERDICT_THEMES[label] || VERDICT_THEMES["Best in moderation"];
 }
 
+function toShortVerdictBasis(reason) {
+  const raw = String(reason || "").trim();
+  if (!raw) return null;
+
+  const simplified = raw
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/\s*\b\d+(?:\.\d+)?\s*(?:mg|g|kcal|calories?)\b/gi, "")
+    .split(/\b(?:which|so|and it|making it|that)\b/i)[0]
+    .trim()
+    .replace(/[.,;:!?-]+$/g, "")
+    .replace(/\s+/g, " ");
+
+  if (!simplified) return null;
+
+  return simplified.charAt(0).toLowerCase() + simplified.slice(1);
+}
+
 function VerdictBlock({ detailSystem, isMobile, t }) {
   const verdict = detailSystem?.verdict || {};
   const label = verdict.label;
-  const reasons = Array.isArray(verdict.reasons) ? verdict.reasons.filter(Boolean).slice(0, 4) : [];
+  const basis = Array.isArray(verdict.reasons)
+    ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 2)
+    : [];
 
   if (!label) return null;
 
@@ -327,25 +346,17 @@ function VerdictBlock({ detailSystem, isMobile, t }) {
       <div style={{ fontSize: isMobile ? 34 : 46, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em", color: theme.label }}>
         {label}
       </div>
-      {reasons.length ? (
-        <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {reasons.map((reason) => (
-            <div
-              key={reason}
-              style={{
-                padding: isMobile ? "7px 10px" : "8px 12px",
-                borderRadius: 999,
-                background: "rgba(255,255,255,0.10)",
-                border: `1px solid ${theme.eye}`,
-                color: "#fff8ee",
-                fontSize: isMobile ? 12 : 13,
-                fontWeight: 700,
-                lineHeight: 1.2,
-              }}
-            >
-              {reason}
-            </div>
-          ))}
+      {basis.length ? (
+        <div
+          style={{
+            marginTop: 12,
+            color: "#fff8ee",
+            fontSize: isMobile ? 13 : 14,
+            fontWeight: 700,
+            lineHeight: 1.35,
+          }}
+        >
+          {basis.join(", ")}
         </div>
       ) : null}
     </Surface>

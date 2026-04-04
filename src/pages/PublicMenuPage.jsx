@@ -830,7 +830,7 @@ export default function PublicMenuPage() {
               style={{
                 display: "flex",
                 alignItems: "flex-start",
-                justifyContent: "space-between",
+                justifyContent: "flex-start",
                 gap: 14,
                 flexWrap: "wrap",
               }}
@@ -839,13 +839,13 @@ export default function PublicMenuPage() {
                 <div
                   style={{
                     display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
+                    alignItems: isMobile ? "flex-start" : "center",
+                    justifyContent: "flex-start",
                     gap: 12,
                     flexWrap: "wrap",
                   }}
                 >
-                  <div style={{ minWidth: 0, flex: "1 1 260px" }}>
+                  <div style={{ minWidth: 0, flex: "0 1 auto" }}>
                     {restaurantProfileHref ? (
                       <Link
                         to={restaurantProfileHref}
@@ -868,7 +868,7 @@ export default function PublicMenuPage() {
                       </div>
                     )}
                   </div>
-                  <div style={{ flex: "0 0 auto" }}>
+                  <div style={{ flex: "0 0 auto", paddingTop: isMobile ? 2 : 0 }}>
                     <ShareButton
                       label="Share Menu"
                       modalTitle={`Share ${restaurantName}`}
@@ -917,133 +917,108 @@ export default function PublicMenuPage() {
             <div
               style={{
                 marginTop: 18,
-                padding: isMobile ? "16px 16px" : "18px 20px",
-                borderRadius: 24,
-                background: orderMode
-                  ? "linear-gradient(135deg, rgba(240,253,244,0.98), rgba(236,253,245,0.92))"
-                  : "linear-gradient(135deg, rgba(255,255,255,0.98), rgba(247,246,241,0.98))",
-                border: orderMode
-                  ? "1px solid rgba(34,197,94,0.24)"
-                  : "1px solid rgba(17,33,26,0.08)",
-                boxShadow: orderMode
-                  ? "0 14px 34px rgba(34,197,94,0.10)"
-                  : "0 12px 28px rgba(15,23,42,0.06)",
+                display: "flex",
+                alignItems: isMobile ? "stretch" : "center",
+                justifyContent: "space-between",
+                gap: 12,
+                flexWrap: "wrap",
               }}
             >
               <div
                 style={{
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 16,
-                  flexWrap: "wrap",
+                  gap: 8,
+                  padding: "7px 12px",
+                  borderRadius: 999,
+                  background: orderMode ? "#dcfce7" : "#f5f5f4",
+                  color: orderMode ? "#166534" : "#475467",
+                  fontSize: 12,
+                  fontWeight: 900,
+                  letterSpacing: 0.4,
+                  textTransform: "uppercase",
                 }}
               >
-                <div style={{ minWidth: 0, flex: "1 1 320px" }}>
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "6px 12px",
-                      borderRadius: 999,
-                      background: orderMode ? "#dcfce7" : "#f5f5f4",
-                      color: orderMode ? "#166534" : "#475467",
-                      fontSize: 12,
-                      fontWeight: 900,
-                      letterSpacing: 0.4,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {orderMode ? "Ordering mode" : "Menu mode"}
-                  </div>
-                  <div style={{ marginTop: 10, fontSize: isMobile ? 22 : 26, fontWeight: 900, color: "#11211a", lineHeight: 1.1 }}>
-                    {orderMode ? `Ordering from ${restaurantName}` : `Discover ${restaurantName}`}
-                  </div>
-                  <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.6, color: "#475467", maxWidth: 760 }}>
-                    {orderMode
-                      ? "Tap any item tile to add it. Selected items stay highlighted, quantities update inline, and the existing review and payment flow remains available from the sticky basket."
-                      : "Browse the menu first. Item details, nutrition signals, deal pricing, and Grubbid insights remain the focus until you explicitly choose to build an order."}
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  {orderMode ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={openCheckout}
-                        style={{
-                          border: "none",
-                          borderRadius: 999,
-                          background: "#11211a",
-                          color: "#fff",
-                          padding: "12px 18px",
-                          fontSize: 14,
-                          fontWeight: 900,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Review Order
-                      </button>
-                      <button
-                        type="button"
-                        onClick={exitOrderMode}
-                        style={{
-                          border: "1px solid rgba(17,33,26,0.12)",
-                          borderRadius: 999,
-                          background: "#fff",
-                          color: "#11211a",
-                          padding: "12px 18px",
-                          fontSize: 14,
-                          fontWeight: 800,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Back to Menu View
-                      </button>
-                    </>
-                  ) : (
+                {orderMode ? "Ordering mode" : "Menu mode"}
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, flexWrap: "wrap", flex: "1 1 320px" }}>
+                {orderMode ? (
+                  <>
                     <button
                       type="button"
-                      onClick={enterOrderMode}
+                      onClick={openCheckout}
                       style={{
                         border: "none",
                         borderRadius: 999,
-                        background: "#14532d",
+                        background: "#11211a",
                         color: "#fff",
-                        padding: "14px 22px",
-                        fontSize: 15,
+                        padding: "12px 18px",
+                        fontSize: 14,
                         fontWeight: 900,
                         cursor: "pointer",
-                        boxShadow: "0 14px 34px rgba(20,83,45,0.22)",
                       }}
                     >
-                      {`Order from ${restaurantName}`}
+                      Review Order
                     </button>
-                  )}
-                </div>
+                    <button
+                      type="button"
+                      onClick={exitOrderMode}
+                      style={{
+                        border: "1px solid rgba(17,33,26,0.12)",
+                        borderRadius: 999,
+                        background: "#fff",
+                        color: "#11211a",
+                        padding: "12px 18px",
+                        fontSize: 14,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Back to Menu View
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={enterOrderMode}
+                    style={{
+                      border: "none",
+                      borderRadius: 999,
+                      background: "#14532d",
+                      color: "#fff",
+                      padding: "14px 22px",
+                      fontSize: 15,
+                      fontWeight: 900,
+                      cursor: "pointer",
+                      boxShadow: "0 14px 34px rgba(20,83,45,0.22)",
+                    }}
+                  >
+                    {`Order from ${restaurantName}`}
+                  </button>
+                )}
               </div>
-              {orderMode && hasBasketItems && basketMatchesCurrentRestaurant ? (
-                <div
-                  style={{
-                    marginTop: 14,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 10,
-                    borderRadius: 999,
-                    background: "#ffffff",
-                    border: "1px solid rgba(20,83,45,0.14)",
-                    padding: "9px 14px",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    color: "#166534",
-                  }}
-                >
-                  <span aria-hidden="true">✓</span>
-                  {`${itemCount} ${itemCount === 1 ? "item" : "items"} selected • ${formatMoneyFromCents(subtotalCents)}`}
-                </div>
-              ) : null}
             </div>
+            {orderMode && hasBasketItems && basketMatchesCurrentRestaurant ? (
+              <div
+                style={{
+                  marginTop: 14,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 10,
+                  borderRadius: 999,
+                  background: "#ffffff",
+                  border: "1px solid rgba(20,83,45,0.14)",
+                  padding: "9px 14px",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: "#166534",
+                }}
+              >
+                <span aria-hidden="true">✓</span>
+                {`${itemCount} ${itemCount === 1 ? "item" : "items"} selected • ${formatMoneyFromCents(subtotalCents)}`}
+              </div>
+            ) : null}
           </div>
         </div>
 
