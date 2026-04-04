@@ -423,7 +423,7 @@ export default function PublicMenuPage() {
     dairy_free:        searchParams.get("dairy_free")        === "1",
     diabetic_friendly: searchParams.get("diabetic_friendly") === "1",
     gluten_free:       searchParams.get("gluten_free")       === "1",
-    keto:              searchParams.get("keto")              === "1",
+    keto:              searchParams.get("keto")              === "1" || searchParams.get("low_carb") === "1",
     low_sodium:        searchParams.get("low_sodium")        === "1",
     vegan:             searchParams.get("vegan")             === "1",
     vegetarian:        searchParams.get("vegetarian")        === "1",
@@ -517,8 +517,18 @@ export default function PublicMenuPage() {
   function handleTogglePref(key) {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      if (next.get(key) === "1") next.delete(key);
-      else next.set(key, "1");
+      const isKeto = key === "keto";
+      const isActive = isKeto
+        ? next.get("keto") === "1" || next.get("low_carb") === "1"
+        : next.get(key) === "1";
+
+      if (isActive) {
+        next.delete(key);
+        if (isKeto) next.delete("low_carb");
+      } else {
+        next.set(key, "1");
+        if (isKeto) next.set("low_carb", "1");
+      }
       return next;
     });
   }

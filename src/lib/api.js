@@ -10,9 +10,11 @@
 
 // VITE_API_BASE_URL must be set in Vercel env vars for production.
 // In local dev it falls back to localhost:3001 automatically.
+const VITE_ENV = import.meta.env || {};
+
 const API_BASE = (
-  import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? "http://localhost:3001" : "")
+  VITE_ENV.VITE_API_BASE_URL ||
+  (VITE_ENV.DEV ? "http://localhost:3001" : "")
 ).replace(/\/$/, "");
 
 async function safeJson(res) {
@@ -46,7 +48,10 @@ export function toConsumerErrorMessage(error, fallbackMessage) {
 
 export async function apiGet(path) {
   const url = `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
-  const res = await fetch(url, { method: "GET" });
+  const res = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+  });
   const data = await safeJson(res);
   if (!res.ok) {
     const msg = (data && (data.error || data.message)) || `GET ${url} failed (${res.status})`;
@@ -59,6 +64,7 @@ export async function apiPost(path, body) {
   const url = `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
   const res = await fetch(url, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body ?? {}),
   });
@@ -74,6 +80,7 @@ export async function apiPatch(path, body) {
   const url = `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
   const res = await fetch(url, {
     method: "PATCH",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body ?? {}),
   });

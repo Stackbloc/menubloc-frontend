@@ -14,6 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { addLocation, getLocations, updateLocation } from "../lib/consumerApi.js";
+import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { parseLocation, reverseGeocode, US_STATE_ABBREVS } from "../lib/locationUtils.js";
 
@@ -236,13 +237,10 @@ export default function GrubbidDiscovery() {
     if (effectiveQ) params.set("q", effectiveQ);
 
     if (includeFilters) {
-      if (filters.gluten_free) params.set("gluten_free", "1");
-      if (filters.keto) params.set("keto", "1");
-      if (filters.low_sodium) params.set("low_sodium", "1");
-      if (filters.vegan) params.set("vegan", "1");
-      if (filters.vegetarian) params.set("vegetarian", "1");
-      if (filters.diabetic_friendly) params.set("diabetic_friendly", "1");
-      if (filters.dairy_free) params.set("dairy_free", "1");
+      const dietaryParams = buildDietaryQueryParams(filters);
+      for (const [key, value] of Object.entries(dietaryParams)) {
+        if (value) params.set(key, String(value));
+      }
     }
 
     const explicitLocation = parseLocation(explicitLocationValue);

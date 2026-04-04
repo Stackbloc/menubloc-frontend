@@ -45,6 +45,7 @@ import {
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { apiGet, getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
+import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { loadDietPrefs, saveDietPrefs, activePrefLabels, hasActiveDietPrefs } from "../hooks/useDietPreferences";
 import { reverseGeocode } from "../lib/locationUtils.js";
 
@@ -330,13 +331,9 @@ export default function BrowseMenus() {
 
   const activeFilterParams = (() => {
     const p = new URLSearchParams();
-    if (filters.vegan)             p.set("vegan", "1");
-    if (filters.vegetarian)        p.set("vegetarian", "1");
-    if (filters.gluten_free)       p.set("gluten_free", "1");
-    if (filters.dairy_free)        p.set("dairy_free", "1");
-    if (filters.diabetic_friendly) p.set("diabetic_friendly", "1");
-    if (filters.keto)              p.set("keto", "1");
-    if (filters.low_sodium)        p.set("low_sodium", "1");
+    for (const [key, value] of Object.entries(buildDietaryQueryParams(filters))) {
+      if (value) p.set(key, String(value));
+    }
     if (filters.deals)             p.set("deals", "1");
     return p.toString();
   })();
@@ -362,13 +359,7 @@ export default function BrowseMenus() {
 
         const dietaryParams = {
           deals: filters.deals ? 1 : "",
-          vegan: filters.vegan ? 1 : "",
-          vegetarian: filters.vegetarian ? 1 : "",
-          gluten_free: filters.gluten_free ? 1 : "",
-          keto: filters.keto ? 1 : "",
-          low_sodium: filters.low_sodium ? 1 : "",
-          dairy_free: filters.dairy_free ? 1 : "",
-          diabetic_friendly: filters.diabetic_friendly ? 1 : "",
+          ...buildDietaryQueryParams(filters),
         };
 
         if (hasCityStateParams) {
@@ -683,13 +674,7 @@ export default function BrowseMenus() {
                         try {
                           const dietaryParams = {
                             deals: filters.deals ? 1 : "",
-                            vegan: filters.vegan ? 1 : "",
-                            vegetarian: filters.vegetarian ? 1 : "",
-                            gluten_free: filters.gluten_free ? 1 : "",
-                            keto: filters.keto ? 1 : "",
-                            low_sodium: filters.low_sodium ? 1 : "",
-                            dairy_free: filters.dairy_free ? 1 : "",
-                            diabetic_friendly: filters.diabetic_friendly ? 1 : "",
+                            ...buildDietaryQueryParams(filters),
                           };
                           let coords = { lat: null, lng: null };
                           try { coords = await getUserCoords(); } catch (_) {}

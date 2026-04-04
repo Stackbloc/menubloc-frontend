@@ -28,6 +28,7 @@ import { PageHero, PageShell, SectionTitle, StatusMessage } from "../components/
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -477,7 +478,7 @@ export default function GrubbidSearchResults() {
   const routeRadiusMiles = params.get("radius_miles");
   const routeMetroId = String(params.get("metro_id") || "").trim();
   const vegetarian = params.get("vegetarian") === "1";
-  const keto = params.get("keto") === "1";
+  const keto = params.get("keto") === "1" || params.get("low_carb") === "1";
   const low_sodium = params.get("low_sodium") === "1";
   const dairy_free = params.get("dairy_free") === "1";
   const diabetic_friendly = params.get("diabetic_friendly") === "1";
@@ -535,14 +536,19 @@ export default function GrubbidSearchResults() {
     // "explicit" means we have an actionable city/zip/near filter — not just a display label
     const hasExplicitLocation = Boolean(zip || city || near);
     if (q) u.searchParams.set("q", q);
-    if (vegan) u.searchParams.set("vegan", "1");
-    if (gluten_free) u.searchParams.set("gluten_free", "1");
+    const dietaryParams = buildDietaryQueryParams({
+      vegan,
+      vegetarian,
+      gluten_free,
+      dairy_free,
+      diabetic_friendly,
+      keto,
+      low_sodium,
+    });
+    for (const [key, value] of Object.entries(dietaryParams)) {
+      if (value) u.searchParams.set(key, String(value));
+    }
     if (deals_only) u.searchParams.set("deals_only", "1");
-    if (vegetarian) u.searchParams.set("vegetarian", "1");
-    if (keto) u.searchParams.set("keto", "1");
-    if (low_sodium) u.searchParams.set("low_sodium", "1");
-    if (dairy_free) u.searchParams.set("dairy_free", "1");
-    if (diabetic_friendly) u.searchParams.set("diabetic_friendly", "1");
     if (zip) u.searchParams.set("zip", zip);
     if (city) u.searchParams.set("city", city);
     if (state) u.searchParams.set("state", state);
