@@ -218,7 +218,7 @@ function hasAnyNutritionData(detailSystem) {
 
 const VERDICT_THEMES = {
   "Compatible with a health-conscious diet": { bg: "linear-gradient(135deg, rgba(22,105,62,0.97), rgba(34,132,78,0.93))", label: "rgba(186,248,204,0.97)", eye: "rgba(186,248,204,0.60)" },
-  "Suitable for regular consumption": { bg: "linear-gradient(135deg, rgba(16,50,118,0.97), rgba(32,68,140,0.93))", label: "rgba(180,212,255,0.97)", eye: "rgba(180,212,255,0.60)" },
+  "Suitable for frequent/regular consumption": { bg: "linear-gradient(135deg, rgba(16,50,118,0.97), rgba(32,68,140,0.93))", label: "rgba(180,212,255,0.97)", eye: "rgba(180,212,255,0.60)" },
   "Best in moderation": { bg: "linear-gradient(135deg, rgba(138,70,0,0.97), rgba(176,100,0,0.92))", label: "rgba(255,218,148,0.97)", eye: "rgba(255,218,148,0.60)" },
   "Best suited for occasional consumption": { bg: "linear-gradient(135deg, rgba(98,18,8,0.99), rgba(158,38,18,0.95))", label: "rgba(255,188,168,0.97)", eye: "rgba(255,188,168,0.58)" },
 };
@@ -313,6 +313,7 @@ function getVerdictTheme(label) {
 function VerdictBlock({ detailSystem, isMobile, t }) {
   const verdict = detailSystem?.verdict || {};
   const label = verdict.label;
+  const reasons = Array.isArray(verdict.reasons) ? verdict.reasons.filter(Boolean).slice(0, 4) : [];
 
   if (!label) return null;
 
@@ -326,6 +327,27 @@ function VerdictBlock({ detailSystem, isMobile, t }) {
       <div style={{ fontSize: isMobile ? 34 : 46, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em", color: theme.label }}>
         {label}
       </div>
+      {reasons.length ? (
+        <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {reasons.map((reason) => (
+            <div
+              key={reason}
+              style={{
+                padding: isMobile ? "7px 10px" : "8px 12px",
+                borderRadius: 999,
+                background: "rgba(255,255,255,0.10)",
+                border: `1px solid ${theme.eye}`,
+                color: "#fff8ee",
+                fontSize: isMobile ? 12 : 13,
+                fontWeight: 700,
+                lineHeight: 1.2,
+              }}
+            >
+              {reason}
+            </div>
+          ))}
+        </div>
+      ) : null}
     </Surface>
   );
 }

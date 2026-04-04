@@ -12,6 +12,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+export const GRUBBID_LOGO_SRC = "/grubbid-logo-2.1.svg";
+
 export function BrandLogo({
   to = "/",
   width = 180,
@@ -36,7 +38,7 @@ export function BrandLogo({
       }}
     >
       <img
-        src="/grubbid-logo-2.1.svg"
+        src={GRUBBID_LOGO_SRC}
         alt="Grubbid"
         style={{
           display: "block",
