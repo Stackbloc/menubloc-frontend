@@ -19,6 +19,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext.jsx";
+import { getLocalizedField } from "../utils/getLocalizedField.js";
 
 // ── TV Scaling ─────────────────────────────────────────────────────────────
 // Everything is designed at 1920×1080. CSS transform scales to fill any screen.
@@ -58,6 +60,10 @@ function truncate(str, max) {
 
 function capSection(section) {
   return { ...section, items: (section.items || []).slice(0, MAX_ITEMS_PER_SECTION) };
+}
+
+function getTranslatedField(record, field, language, fallback = "") {
+  return getLocalizedField(record, field, language, fallback) || fallback;
 }
 
 // ── Page splitting ─────────────────────────────────────────────────────────
@@ -217,6 +223,7 @@ function ScaledScreen({ scale, children }) {
 
 export default function PublicMenuDisplayPage() {
   const { id } = useParams();
+  const { language } = useLanguage();
   const clock  = useClock();
   const scale  = useScaleToViewport();
 
@@ -250,7 +257,14 @@ export default function PublicMenuDisplayPage() {
   if (loading)   return <ScaledScreen scale={scale}><LoadingScreen /></ScaledScreen>;
   if (loadError) return <ScaledScreen scale={scale}><ErrorScreen message={loadError} /></ScaledScreen>;
 
-  if (!tvActive) return <ScaledScreen scale={scale}><UpgradeGate name={menuData?.restaurant_name} /></ScaledScreen>;
+  const localizedRestaurantName =
+    getTranslatedField(menuData, "restaurant_name", language) ||
+    getTranslatedField(menuData, "name", language) ||
+    menuData?.restaurant_name ||
+    menuData?.name ||
+    "";
+
+  if (!tvActive) return <ScaledScreen scale={scale}><UpgradeGate name={localizedRestaurantName} /></ScaledScreen>;
 
   const rawSections = menuData?.sections   || [];
   const dealItems   = menuData?.deal_items || [];
@@ -268,6 +282,8 @@ export default function PublicMenuDisplayPage() {
         settings={settings}
         accent={accent}
         clock={clock}
+        language={language}
+        restaurantName={localizedRestaurantName}
       />
     </ScaledScreen>
   );
@@ -275,10 +291,14 @@ export default function PublicMenuDisplayPage() {
 
 // ── MenuBoard ──────────────────────────────────────────────────────────────
 
-function MenuBoard({ menuData, pages, dealItems, dealIdSet, settings, accent, clock }) {
+function MenuBoard({ menuData, pages, dealItems, dealIdSet, settings, accent, clock, language, restaurantName }) {
   const { page, fading } = usePageRotation(pages.length);
   const currentSections  = pages[page] || [];
   const menuTierLabel = getMenuTierLabel(menuData);
+  const localizedCuisine =
+    getTranslatedField(menuData, "cuisine", language) ||
+    menuData?.cuisine ||
+    "";
 
   return (
     <div style={{
@@ -303,11 +323,11 @@ function MenuBoard({ menuData, pages, dealItems, dealIdSet, settings, accent, cl
       }}>
         <div>
           <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: "-1.5px", lineHeight: 1, color: "#fff" }}>
-            {menuData.restaurant_name}
+            {restaurantName}
           </div>
-          {menuData.cuisine && (
+          {localizedCuisine && (
             <div style={{ fontSize: 16, color: accent, marginTop: 7, fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase" }}>
-              {menuData.cuisine}
+              {localizedCuisine}
             </div>
           )}
         </div>
@@ -319,7 +339,7 @@ function MenuBoard({ menuData, pages, dealItems, dealIdSet, settings, accent, cl
       {/* ── Deals banner — always visible, outside page rotation ────── */}
       {settings.highlight_deals && dealItems.length > 0 && (
         <div style={{ padding: "12px 52px 0", flexShrink: 0 }}>
-          <DealsBanner dealItems={dealItems} />
+          <DealsBanner dealItems={dealItems} language={language} />
         </div>
       )}
 
@@ -335,9 +355,9 @@ function MenuBoard({ menuData, pages, dealItems, dealIdSet, settings, accent, cl
         }}
       >
         {settings.layout_preset === "grid" ? (
-          <GridLayout sections={currentSections} dealIdSet={dealIdSet} settings={settings} accent={accent} />
+          <GridLayout sections={currentSections} dealIdSet={dealIdSet} settings={settings} accent={accent} language={language} />
         ) : (
-          <ListLayout sections={currentSections} dealIdSet={dealIdSet} settings={settings} accent={accent} />
+          <ListLayout sections={currentSections} dealIdSet={dealIdSet} settings={settings} accent={accent} language={language} />
         )}
       </div>
 
@@ -391,7 +411,7 @@ function PageIndicator({ total, current, accent }) {
 // ── List layout ────────────────────────────────────────────────────────────
 // Auto-balances sections into 1 or 2 columns based on count.
 
-function ListLayout({ sections, dealIdSet, settings, accent }) {
+function ListLayout({ sections, dealIdSet, settings, accent, language }) {
   if (!sections.length) {
     return <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 20, paddingTop: 40 }}>No menu items.</div>;
   }
@@ -404,7 +424,7 @@ function ListLayout({ sections, dealIdSet, settings, accent }) {
       {balanced.map((col, ci) => (
         <div key={ci}>
           {col.map(section => (
-            <ListSection key={section.title} section={section} dealIdSet={dealIdSet} settings={settings} accent={accent} />
+            <ListSection key={section.id || section.title} section={section} dealIdSet={dealIdSet} settings={settings} accent={accent} language={language} />
           ))}
         </div>
       ))}
@@ -412,20 +432,31 @@ function ListLayout({ sections, dealIdSet, settings, accent }) {
   );
 }
 
-function ListSection({ section, dealIdSet, settings, accent }) {
+function ListSection({ section, dealIdSet, settings, accent, language }) {
+  const title = getTranslatedField(section, "title", language, section.title || "");
   return (
     <div style={{ marginBottom: 8 }}>
-      <SectionHeader title={section.title} accent={accent} />
+      <SectionHeader title={title} accent={accent} />
       {section.items.map((item, i) => (
-        <ListItem key={item.id || i} item={item} isDeal={dealIdSet.has(item.id) || !!item.has_active_deal} settings={settings} accent={accent} />
+        <ListItem key={item.id || i} item={item} isDeal={dealIdSet.has(item.id) || !!item.has_active_deal} settings={settings} accent={accent} language={language} />
       ))}
     </div>
   );
 }
 
-function ListItem({ item, isDeal, settings, accent }) {
+function ListItem({ item, isDeal, settings, accent, language }) {
   const showDeal = isDeal && settings.highlight_deals;
   const priceText = formatPrice(item.price);
+  const itemName =
+    getTranslatedField(item, "name", language) ||
+    getTranslatedField(item, "menu_item_name", language) ||
+    item?.name ||
+    "";
+  const itemDescription =
+    getTranslatedField(item, "description", language) ||
+    getTranslatedField(item, "notes", language) ||
+    item?.description ||
+    "";
   return (
     <div style={{
       display: "flex",
@@ -441,12 +472,12 @@ function ListItem({ item, isDeal, settings, accent }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           {showDeal && <DealBadge />}
           <span style={{ fontSize: 28, fontWeight: 600, color: "#f0f0f0", lineHeight: 1.2 }}>
-            {truncate(item.name, MAX_NAME_CHARS)}
+            {truncate(itemName, MAX_NAME_CHARS)}
           </span>
         </div>
-        {settings.show_descriptions && item.description && (
+        {settings.show_descriptions && itemDescription && (
           <div style={{ fontSize: 16, color: "rgba(255,255,255,0.38)", marginTop: 4, lineHeight: 1.4 }}>
-            {truncate(item.description, MAX_DESC_CHARS)}
+            {truncate(itemDescription, MAX_DESC_CHARS)}
           </div>
         )}
       </div>
@@ -460,7 +491,7 @@ function ListItem({ item, isDeal, settings, accent }) {
 // ── Grid layout ────────────────────────────────────────────────────────────
 // Balances sections across columns by item count.
 
-function GridLayout({ sections, dealIdSet, settings, accent }) {
+function GridLayout({ sections, dealIdSet, settings, accent, language }) {
   if (!sections.length) {
     return <div style={{ color: "rgba(255,255,255,0.25)", fontSize: 20, paddingTop: 40 }}>No menu items.</div>;
   }
@@ -473,7 +504,7 @@ function GridLayout({ sections, dealIdSet, settings, accent }) {
       {balanced.map((col, ci) => (
         <div key={ci}>
           {col.map(section => (
-            <GridSection key={section.title} section={section} dealIdSet={dealIdSet} settings={settings} accent={accent} />
+            <GridSection key={section.id || section.title} section={section} dealIdSet={dealIdSet} settings={settings} accent={accent} language={language} />
           ))}
         </div>
       ))}
@@ -481,20 +512,26 @@ function GridLayout({ sections, dealIdSet, settings, accent }) {
   );
 }
 
-function GridSection({ section, dealIdSet, settings, accent }) {
+function GridSection({ section, dealIdSet, settings, accent, language }) {
+  const title = getTranslatedField(section, "title", language, section.title || "");
   return (
     <div style={{ marginBottom: 8 }}>
-      <SectionHeader title={section.title} accent={accent} />
+      <SectionHeader title={title} accent={accent} />
       {section.items.map((item, i) => (
-        <GridItem key={item.id || i} item={item} isDeal={dealIdSet.has(item.id) || !!item.has_active_deal} settings={settings} accent={accent} />
+        <GridItem key={item.id || i} item={item} isDeal={dealIdSet.has(item.id) || !!item.has_active_deal} settings={settings} accent={accent} language={language} />
       ))}
     </div>
   );
 }
 
-function GridItem({ item, isDeal, settings, accent }) {
+function GridItem({ item, isDeal, settings, accent, language }) {
   const showDeal = isDeal && settings.highlight_deals;
   const priceText = formatPrice(item.price);
+  const itemName =
+    getTranslatedField(item, "name", language) ||
+    getTranslatedField(item, "menu_item_name", language) ||
+    item?.name ||
+    "";
   return (
     <div style={{
       display: "flex",
@@ -507,7 +544,7 @@ function GridItem({ item, isDeal, settings, accent }) {
       <div style={{ flex: 1, display: "flex", alignItems: "baseline", gap: 6, overflow: "hidden" }}>
         {showDeal && <DealBadge small />}
         <span style={{ fontSize: 24, fontWeight: 600, color: "#efefef", lineHeight: 1.3 }}>
-          {truncate(item.name, MAX_NAME_CHARS)}
+          {truncate(itemName, MAX_NAME_CHARS)}
         </span>
       </div>
       <span style={{ fontSize: 24, fontWeight: 700, color: priceText ? (showDeal ? "#f59e0b" : accent) : "#60a5fa", marginLeft: 16, whiteSpace: "nowrap", flexShrink: 0 }}>
@@ -555,7 +592,7 @@ function DealBadge({ small }) {
   );
 }
 
-function DealsBanner({ dealItems }) {
+function DealsBanner({ dealItems, language }) {
   return (
     <div style={{
       background: "rgba(245,158,11,0.09)",
@@ -574,7 +611,13 @@ function DealsBanner({ dealItems }) {
         {dealItems.slice(0, 6).map((item, i) => (
           <div key={item.id || i} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
             <span style={{ fontSize: 22, fontWeight: 600, color: "#f0f0f0" }}>
-              {truncate(item.name, 28)}
+              {truncate(
+                getTranslatedField(item, "name", language) ||
+                  getTranslatedField(item, "menu_item_name", language) ||
+                  item?.name ||
+                  "",
+                28
+              )}
             </span>
             <span style={{ fontSize: 22, fontWeight: 700, color: formatPrice(item.price) ? "#f59e0b" : "#60a5fa" }}>
               {formatPrice(item.price) || "Price unavailable"}
