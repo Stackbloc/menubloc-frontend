@@ -71,6 +71,10 @@ function fmtMoney(price) {
   return s;
 }
 
+function formatMoneyFromCents(cents) {
+  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
+}
+
 function buildGoogleMapsDirectionsUrl(destination) {
   const raw = asStr(destination).trim();
   if (!raw) return "";
@@ -103,6 +107,24 @@ function normalizeSections(data) {
 
 function isDisplayableMenuItem(item) {
   return asStr(item?.name).trim().length > 0;
+}
+
+function getCartItemState(cartItems, menuItemId) {
+  const matchingLines = (Array.isArray(cartItems) ? cartItems : []).filter(
+    (line) => Number(line?.menuItemId) === Number(menuItemId)
+  );
+  const simpleLine = matchingLines.find(
+    (line) =>
+      (!Array.isArray(line?.modifiers) || line.modifiers.length === 0) &&
+      !asStr(line?.specialInstructions).trim()
+  ) || null;
+
+  return {
+    matchingLines,
+    simpleLine,
+    totalQuantity: matchingLines.reduce((sum, line) => sum + Number(line?.quantity || 0), 0),
+    simpleQuantity: simpleLine ? Number(simpleLine.quantity || 0) : 0,
+  };
 }
 
 function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap) {
@@ -370,18 +392,22 @@ export default function PublicMenuPage() {
   const {
     addMenuItem,
     restaurant: cartRestaurantState,
+    items: cartItems,
     itemCount,
     subtotalCents,
     notice,
     clearNotice,
     handleNoticeAction,
+    updateQuantity,
+    removeItem,
   } = useOrderCart();
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
   const [modifierItem, setModifierItem] = useState(null);
-  const [routeState, setRouteState] = useState({
-    status: numericRouteRestaurantId != null ? "ok" : "loading",
-    restaurantId: numericRouteRestaurantId != null ? String(numericRouteRestaurantId) : "",
+  const [orderMode, setOrderMode] = useState(false);
+  const [resolvedRouteState, setResolvedRouteState] = useState({
+    status: "loading",
+    restaurantId: "",
     error: null,
   });
 
@@ -415,17 +441,12 @@ export default function PublicMenuPage() {
     let cancelled = false;
 
     if (numericRouteRestaurantId != null) {
-      setRouteState({
-        status: "ok",
-        restaurantId: String(numericRouteRestaurantId),
-        error: null,
-      });
       return undefined;
     }
 
     async function resolveRouteRestaurant() {
       try {
-        setRouteState({ status: "loading", restaurantId: "", error: null });
+        setResolvedRouteState({ status: "loading", restaurantId: "", error: null });
 
         const res = await fetch(
           `${API}/public/restaurants/${encodeURIComponent(routeRestaurantParam)}`,
@@ -442,7 +463,7 @@ export default function PublicMenuPage() {
           json?.restaurant?.restaurant_id
         );
         if (!res.ok || resolvedRestaurantId == null) {
-          setRouteState({
+          setResolvedRouteState({
             status: "error",
             restaurantId: "",
             error: toConsumerErrorMessage(
@@ -453,14 +474,14 @@ export default function PublicMenuPage() {
           return;
         }
 
-        setRouteState({
+        setResolvedRouteState({
           status: "ok",
           restaurantId: String(resolvedRestaurantId),
           error: null,
         });
       } catch (error) {
         if (cancelled) return;
-        setRouteState({
+        setResolvedRouteState({
           status: "error",
           restaurantId: "",
           error: toConsumerErrorMessage(
@@ -471,18 +492,26 @@ export default function PublicMenuPage() {
       }
     }
 
-    if (!routeRestaurantParam) {
-      setRouteState({
-        status: "error",
-        restaurantId: "",
-        error: "Missing restaurant identifier.",
-      });
-      return undefined;
-    }
+    if (!routeRestaurantParam) return undefined;
 
     resolveRouteRestaurant();
     return () => { cancelled = true; };
   }, [numericRouteRestaurantId, routeRestaurantParam]);
+
+  const routeState =
+    !routeRestaurantParam
+      ? {
+          status: "error",
+          restaurantId: "",
+          error: "Missing restaurant identifier.",
+        }
+      : numericRouteRestaurantId != null
+      ? {
+          status: "ok",
+          restaurantId: String(numericRouteRestaurantId),
+          error: null,
+        }
+      : resolvedRouteState;
 
   function handleTogglePref(key) {
     setSearchParams((prev) => {
@@ -673,8 +702,6 @@ export default function PublicMenuPage() {
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
     0
   );
-  const menuBanner      = asStr(data?.menu_banner).trim();
-  const isUnverified    = data?.is_authoritative === false || !!menuBanner;
   const isIntakePreview = data?.menu_source === "intake";
   const franchiseGroup  = data?.franchise_group || null;
   const currentRestaurantId = data?.restaurant_id || routeState.restaurantId;
@@ -705,6 +732,7 @@ export default function PublicMenuPage() {
   const hasBasketItems = itemCount > 0;
   const basketMatchesCurrentRestaurant =
     Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
+  const activeCartItems = basketMatchesCurrentRestaurant ? cartItems || [] : [];
 
   function navigateToFranchiseLocation(restaurantId, restaurantSlug = null) {
     if (!restaurantId) return;
@@ -754,19 +782,24 @@ export default function PublicMenuPage() {
     });
   }
 
-  function handleAddToOrder(event, item, itemName, itemDescription) {
-    event.stopPropagation();
+  function enterOrderMode() {
+    setOrderMode(true);
+  }
 
-    if (itemHasRequiredModifiers(item)) {
-      setModifierItem({
-        ...item,
-        name: itemName,
-        description: itemDescription,
-      });
-      return;
-    }
+  function exitOrderMode() {
+    setOrderMode(false);
+  }
 
-    commitMenuItemToBasket(item, itemName, itemDescription);
+  function openCheckout() {
+    navigate("/checkout");
+  }
+
+  function openModifierFlow(item, itemName, itemDescription) {
+    setModifierItem({
+      ...item,
+      name: itemName,
+      description: itemDescription,
+    });
   }
 
   return (
@@ -870,6 +903,136 @@ export default function PublicMenuPage() {
               onPrevious={handlePreviousClosestLocation}
               onNext={handleNextClosestLocation}
             />
+            <div
+              style={{
+                marginTop: 18,
+                padding: isMobile ? "16px 16px" : "18px 20px",
+                borderRadius: 24,
+                background: orderMode
+                  ? "linear-gradient(135deg, rgba(240,253,244,0.98), rgba(236,253,245,0.92))"
+                  : "linear-gradient(135deg, rgba(255,255,255,0.98), rgba(247,246,241,0.98))",
+                border: orderMode
+                  ? "1px solid rgba(34,197,94,0.24)"
+                  : "1px solid rgba(17,33,26,0.08)",
+                boxShadow: orderMode
+                  ? "0 14px 34px rgba(34,197,94,0.10)"
+                  : "0 12px 28px rgba(15,23,42,0.06)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ minWidth: 0, flex: "1 1 320px" }}>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "6px 12px",
+                      borderRadius: 999,
+                      background: orderMode ? "#dcfce7" : "#f5f5f4",
+                      color: orderMode ? "#166534" : "#475467",
+                      fontSize: 12,
+                      fontWeight: 900,
+                      letterSpacing: 0.4,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {orderMode ? "Ordering mode" : "Menu mode"}
+                  </div>
+                  <div style={{ marginTop: 10, fontSize: isMobile ? 22 : 26, fontWeight: 900, color: "#11211a", lineHeight: 1.1 }}>
+                    {orderMode ? `Ordering from ${restaurantName}` : `Discover ${restaurantName}`}
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.6, color: "#475467", maxWidth: 760 }}>
+                    {orderMode
+                      ? "Tap any item tile to add it. Selected items stay highlighted, quantities update inline, and the existing review and payment flow remains available from the sticky basket."
+                      : "Browse the menu first. Item details, nutrition signals, deal pricing, and Grubbid insights remain the focus until you explicitly choose to build an order."}
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  {orderMode ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={openCheckout}
+                        style={{
+                          border: "none",
+                          borderRadius: 999,
+                          background: "#11211a",
+                          color: "#fff",
+                          padding: "12px 18px",
+                          fontSize: 14,
+                          fontWeight: 900,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Review Order
+                      </button>
+                      <button
+                        type="button"
+                        onClick={exitOrderMode}
+                        style={{
+                          border: "1px solid rgba(17,33,26,0.12)",
+                          borderRadius: 999,
+                          background: "#fff",
+                          color: "#11211a",
+                          padding: "12px 18px",
+                          fontSize: 14,
+                          fontWeight: 800,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Back to Menu View
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={enterOrderMode}
+                      style={{
+                        border: "none",
+                        borderRadius: 999,
+                        background: "#14532d",
+                        color: "#fff",
+                        padding: "14px 22px",
+                        fontSize: 15,
+                        fontWeight: 900,
+                        cursor: "pointer",
+                        boxShadow: "0 14px 34px rgba(20,83,45,0.22)",
+                      }}
+                    >
+                      {`Order from ${restaurantName}`}
+                    </button>
+                  )}
+                </div>
+              </div>
+              {orderMode && hasBasketItems && basketMatchesCurrentRestaurant ? (
+                <div
+                  style={{
+                    marginTop: 14,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 10,
+                    borderRadius: 999,
+                    background: "#ffffff",
+                    border: "1px solid rgba(20,83,45,0.14)",
+                    padding: "9px 14px",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: "#166534",
+                  }}
+                >
+                  <span aria-hidden="true">✓</span>
+                  {`${itemCount} ${itemCount === 1 ? "item" : "items"} selected • ${formatMoneyFromCents(subtotalCents)}`}
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 
@@ -1019,6 +1182,14 @@ export default function PublicMenuPage() {
                         const price   = fmtMoney(it?.price);
                         const deal    = it?.id != null ? dealMap.get(it.id) : undefined;
                         const hasDeal = !!deal;
+                        const cartState = getCartItemState(activeCartItems, it?.id);
+                        const hasRequiredOptions = itemHasRequiredModifiers(it);
+                        const hasSelectedQuantity = hasRequiredOptions
+                          ? cartState.totalQuantity > 0
+                          : cartState.simpleQuantity > 0;
+                        const selectedQuantity = hasRequiredOptions
+                          ? cartState.totalQuantity
+                          : cartState.simpleQuantity;
 
                         const canNavigate = it?.id != null;
                         const dishShareData = canNavigate ? buildDishShareData({
@@ -1036,107 +1207,357 @@ export default function PublicMenuPage() {
                         }) : null;
 
                         return (
-                          <div
-                            key={itemKey}
-                            onClick={canNavigate ? () => navigate(getCanonicalMenuItemPath({
-                              restaurant: { slug: data?.slug || null, id: currentRestaurantId },
-                              menuItem: { id: it.id },
-                            })) : undefined}
-                            onMouseEnter={canNavigate ? (e) => { e.currentTarget.style.boxShadow = "0 6px 22px rgba(15,23,42,0.10)"; e.currentTarget.style.borderColor = "rgba(18,34,28,0.18)"; } : undefined}
-                            onMouseLeave={canNavigate ? (e) => { e.currentTarget.style.boxShadow = "0 4px 14px rgba(15,23,42,0.05)"; e.currentTarget.style.borderColor = "rgba(18,34,28,0.08)"; } : undefined}
-                            style={{
-                              border: "1px solid rgba(18,34,28,0.08)",
-                              borderRadius: 20,
-                              background: "#fff",
-                              padding: "14px 18px",
-                              boxShadow: "0 4px 14px rgba(15,23,42,0.05)",
-                              cursor: canNavigate ? "pointer" : "default",
-                              transition: "box-shadow 150ms ease, border-color 150ms ease",
-                            }}
-                          >
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                              <div style={{ minWidth: 0, flex: 1 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                                  <span style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.2, color: "#11211a" }}>
-                                    {name}
-                                  </span>
-                                  {hasDeal ? <Badge label={t("common.deals", "Deals")} bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" /> : null}
-                                  {it?.is_vegan ? <Badge label={t("diet.vegan", "Vegan")} bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" /> : null}
-                                  {it?.is_gluten_free ? <Badge label="GF" bg="#fffbeb" color="#92400e" border="1px solid #fde68a" /> : null}
+                          orderMode ? (
+                            <div
+                              key={itemKey}
+                              style={{
+                                border: hasSelectedQuantity
+                                  ? "1px solid rgba(34,197,94,0.38)"
+                                  : "1px solid rgba(18,34,28,0.10)",
+                                borderRadius: 22,
+                                background: hasSelectedQuantity ? "#f0fdf4" : "#fff",
+                                boxShadow: hasSelectedQuantity
+                                  ? "0 12px 28px rgba(34,197,94,0.08)"
+                                  : "0 8px 22px rgba(15,23,42,0.05)",
+                                overflow: "hidden",
+                              }}
+                            >
+                              <button
+                                type="button"
+                                aria-pressed={hasSelectedQuantity}
+                                onClick={() => {
+                                  if (hasRequiredOptions) {
+                                    openModifierFlow(it, name, desc);
+                                    return;
+                                  }
+                                  commitMenuItemToBasket(it, name, desc);
+                                }}
+                                style={{
+                                  width: "100%",
+                                  border: "none",
+                                  background: "transparent",
+                                  padding: "16px 18px 14px",
+                                  cursor: "pointer",
+                                  textAlign: "left",
+                                }}
+                              >
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14 }}>
+                                  <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                      <span style={{ fontSize: 16, fontWeight: 900, lineHeight: 1.2, color: "#11211a" }}>
+                                        {name}
+                                      </span>
+                                      {hasSelectedQuantity ? (
+                                        <Badge label="Selected" bg="#dcfce7" color="#166534" border="1px solid #86efac" />
+                                      ) : null}
+                                      {hasDeal ? <Badge label={t("common.deals", "Deals")} bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" /> : null}
+                                      {it?.is_vegan ? <Badge label={t("diet.vegan", "Vegan")} bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" /> : null}
+                                      {it?.is_gluten_free ? <Badge label="GF" bg="#fffbeb" color="#92400e" border="1px solid #fde68a" /> : null}
+                                    </div>
+                                    {desc ? (
+                                      <div style={{ marginTop: 6, fontSize: 13, color: "#475467", lineHeight: 1.55 }}>{desc}</div>
+                                    ) : null}
+                                    {it?.chips?.nutrition_chip?.allergen_alert ? (
+                                      <div style={{ marginTop: 8 }}>
+                                        <span style={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          gap: 4,
+                                          padding: "2px 8px",
+                                          background: "rgba(230,130,0,0.06)",
+                                          border: "1px solid rgba(230,130,0,0.15)",
+                                          borderRadius: 999,
+                                          fontSize: 10,
+                                          color: "#7c4a00",
+                                          fontWeight: 700,
+                                        }}>
+                                          <span aria-hidden="true">⚠</span>
+                                          {it.chips.nutrition_chip.allergen_alert}
+                                        </span>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                  <div style={{ display: "grid", justifyItems: "end", gap: 8, flexShrink: 0 }}>
+                                    {dishShareData ? (
+                                      <ShareButton
+                                        variant="dish"
+                                        label="Share Dish"
+                                        modalTitle={`Share ${name}`}
+                                        shareData={dishShareData}
+                                        analyticsContext={{
+                                          restaurantId: currentRestaurantId,
+                                          restaurantSlug: data?.slug || null,
+                                          menuItemId: it.id,
+                                          menuItemName: name,
+                                          pageType: "public_menu",
+                                          shareTarget: "dish",
+                                        }}
+                                        iconOnly
+                                        stopPropagation
+                                      />
+                                    ) : null}
+                                    {price ? (
+                                      <div style={{ fontSize: 15, fontWeight: 900, whiteSpace: "nowrap", color: "#11211a" }}>{price}</div>
+                                    ) : null}
+                                    <div
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                        borderRadius: 999,
+                                        background: hasSelectedQuantity ? "#dcfce7" : "#f8fafc",
+                                        color: hasSelectedQuantity ? "#166534" : "#475467",
+                                        padding: "6px 10px",
+                                        fontSize: 12,
+                                        fontWeight: 800,
+                                      }}
+                                    >
+                                      <span aria-hidden="true">{hasSelectedQuantity ? "✓" : "+"}</span>
+                                      {hasRequiredOptions
+                                        ? hasSelectedQuantity
+                                          ? `${selectedQuantity} selected`
+                                          : "Customize to add"
+                                        : hasSelectedQuantity
+                                        ? `${selectedQuantity} in basket`
+                                        : "Tap to add"}
+                                    </div>
+                                  </div>
                                 </div>
-                                {desc ? (
-                                  <div style={{ marginTop: 4, fontSize: 13, color: "#475467", lineHeight: 1.5 }}>{desc}</div>
+                              </button>
+
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  gap: 12,
+                                  flexWrap: "wrap",
+                                  padding: "0 18px 16px",
+                                }}
+                              >
+                                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                                  {hasRequiredOptions ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => openModifierFlow(it, name, desc)}
+                                      style={{
+                                        border: "1px solid rgba(17,33,26,0.10)",
+                                        borderRadius: 999,
+                                        background: "#fff",
+                                        color: "#11211a",
+                                        padding: "10px 14px",
+                                        fontSize: 13,
+                                        fontWeight: 800,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      {hasSelectedQuantity ? "Add another customized item" : "Customize item"}
+                                    </button>
+                                  ) : hasSelectedQuantity ? (
+                                    <div
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 10,
+                                        border: "1px solid rgba(20,83,45,0.14)",
+                                        borderRadius: 999,
+                                        padding: "5px 6px",
+                                        background: "#ffffff",
+                                      }}
+                                    >
+                                      <button
+                                        type="button"
+                                        aria-label={`Decrease quantity for ${name}`}
+                                        onClick={() => {
+                                          if (!cartState.simpleLine) return;
+                                          const nextQuantity = Number(cartState.simpleLine.quantity || 0) - 1;
+                                          if (nextQuantity <= 0) {
+                                            removeItem(cartState.simpleLine.lineId);
+                                            return;
+                                          }
+                                          updateQuantity(cartState.simpleLine.lineId, nextQuantity);
+                                        }}
+                                        style={{
+                                          border: "none",
+                                          background: "#f8fafc",
+                                          width: 34,
+                                          height: 34,
+                                          borderRadius: 999,
+                                          cursor: "pointer",
+                                          fontSize: 18,
+                                          fontWeight: 900,
+                                          color: "#11211a",
+                                        }}
+                                      >
+                                        −
+                                      </button>
+                                      <span
+                                        aria-live="polite"
+                                        style={{
+                                          minWidth: 20,
+                                          textAlign: "center",
+                                          fontSize: 14,
+                                          fontWeight: 900,
+                                          color: "#11211a",
+                                        }}
+                                      >
+                                        {selectedQuantity}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        aria-label={`Increase quantity for ${name}`}
+                                        onClick={() => {
+                                          if (!cartState.simpleLine) return;
+                                          updateQuantity(
+                                            cartState.simpleLine.lineId,
+                                            Number(cartState.simpleLine.quantity || 0) + 1
+                                          );
+                                        }}
+                                        style={{
+                                          border: "none",
+                                          background: "#dcfce7",
+                                          width: 34,
+                                          height: 34,
+                                          borderRadius: 999,
+                                          cursor: "pointer",
+                                          fontSize: 18,
+                                          fontWeight: 900,
+                                          color: "#166534",
+                                        }}
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => commitMenuItemToBasket(it, name, desc)}
+                                      style={{
+                                        border: "1px solid rgba(17,33,26,0.10)",
+                                        borderRadius: 999,
+                                        background: "#fff",
+                                        color: "#11211a",
+                                        padding: "10px 14px",
+                                        fontSize: 13,
+                                        fontWeight: 800,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      Add item
+                                    </button>
+                                  )}
+                                  {canNavigate ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => navigate(getCanonicalMenuItemPath({
+                                        restaurant: { slug: data?.slug || null, id: currentRestaurantId },
+                                        menuItem: { id: it.id },
+                                      }))}
+                                      style={{
+                                        border: "none",
+                                        background: "transparent",
+                                        color: "#166534",
+                                        padding: 0,
+                                        fontSize: 13,
+                                        fontWeight: 800,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      {t("common.nutritionInsights", "Nutrition & insights →")}
+                                    </button>
+                                  ) : null}
+                                </div>
+                                {hasRequiredOptions && hasSelectedQuantity ? (
+                                  <div style={{ fontSize: 12, color: "#166534", fontWeight: 800 }}>
+                                    {`${selectedQuantity} ${selectedQuantity === 1 ? "custom item" : "custom items"} in basket`}
+                                  </div>
                                 ) : null}
-                              </div>
-                              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-                                {dishShareData ? (
-                                  <ShareButton
-                                    variant="dish"
-                                    label="Share Dish"
-                                    modalTitle={`Share ${name}`}
-                                    shareData={dishShareData}
-                                    analyticsContext={{
-                                      restaurantId: currentRestaurantId,
-                                      restaurantSlug: data?.slug || null,
-                                      menuItemId: it.id,
-                                      menuItemName: name,
-                                      pageType: "public_menu",
-                                      shareTarget: "dish",
-                                    }}
-                                    iconOnly
-                                    stopPropagation
-                                  />
-                                ) : null}
-                                {price ? (
-                                  <div style={{ fontSize: 14, fontWeight: 900, whiteSpace: "nowrap" }}>{price}</div>
-                                ) : null}
-                                {Number.isFinite(Number(it?.price_cents)) && Number(it.price_cents) > 0 ? (
-                                  <button
-                                    type="button"
-                                    onClick={(event) => handleAddToOrder(event, it, name, desc)}
-                                    style={{
-                                      border: "none",
-                                      borderRadius: 999,
-                                      background: "#11211a",
-                                      color: "#f8fafc",
-                                      padding: "8px 12px",
-                                      fontSize: 12,
-                                      fontWeight: 800,
-                                      whiteSpace: "nowrap",
-                                      cursor: "pointer",
-                                    }}
-                                  >
-                                    Add to cart
-                                  </button>
-                                ) : null}
-                                {canNavigate && (
-                                  <span style={{ fontSize: 11, color: "#2d6a4f", fontWeight: 700, whiteSpace: "nowrap" }}>
-                                    {t("common.nutritionInsights", "Nutrition & insights →")}
-                                  </span>
-                                )}
                               </div>
                             </div>
-
-                            {it?.chips?.nutrition_chip?.allergen_alert && (
-                              <div style={{ marginTop: 4 }}>
-                                <span style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 3,
-                                  padding: "1px 6px",
-                                  background: "rgba(230,130,0,0.06)",
-                                  border: "1px solid rgba(230,130,0,0.15)",
-                                  borderRadius: 4,
-                                  fontSize: 10,
-                                  color: "#7c4a00",
-                                  fontWeight: 500,
-                                }}>
-                                  <span style={{ opacity: 0.7 }}>⚠</span>
-                                  {it.chips.nutrition_chip.allergen_alert}
-                                </span>
+                          ) : (
+                            <div
+                              key={itemKey}
+                              onClick={canNavigate ? () => navigate(getCanonicalMenuItemPath({
+                                restaurant: { slug: data?.slug || null, id: currentRestaurantId },
+                                menuItem: { id: it.id },
+                              })) : undefined}
+                              onMouseEnter={canNavigate ? (e) => { e.currentTarget.style.boxShadow = "0 6px 22px rgba(15,23,42,0.10)"; e.currentTarget.style.borderColor = "rgba(18,34,28,0.18)"; } : undefined}
+                              onMouseLeave={canNavigate ? (e) => { e.currentTarget.style.boxShadow = "0 4px 14px rgba(15,23,42,0.05)"; e.currentTarget.style.borderColor = "rgba(18,34,28,0.08)"; } : undefined}
+                              style={{
+                                border: "1px solid rgba(18,34,28,0.08)",
+                                borderRadius: 20,
+                                background: "#fff",
+                                padding: "16px 18px",
+                                boxShadow: "0 4px 14px rgba(15,23,42,0.05)",
+                                cursor: canNavigate ? "pointer" : "default",
+                                transition: "box-shadow 150ms ease, border-color 150ms ease",
+                              }}
+                            >
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                    <span style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.2, color: "#11211a" }}>
+                                      {name}
+                                    </span>
+                                    {hasDeal ? <Badge label={t("common.deals", "Deals")} bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" /> : null}
+                                    {it?.is_vegan ? <Badge label={t("diet.vegan", "Vegan")} bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" /> : null}
+                                    {it?.is_gluten_free ? <Badge label="GF" bg="#fffbeb" color="#92400e" border="1px solid #fde68a" /> : null}
+                                  </div>
+                                  {desc ? (
+                                    <div style={{ marginTop: 4, fontSize: 13, color: "#475467", lineHeight: 1.5 }}>{desc}</div>
+                                  ) : null}
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                                  {dishShareData ? (
+                                    <ShareButton
+                                      variant="dish"
+                                      label="Share Dish"
+                                      modalTitle={`Share ${name}`}
+                                      shareData={dishShareData}
+                                      analyticsContext={{
+                                        restaurantId: currentRestaurantId,
+                                        restaurantSlug: data?.slug || null,
+                                        menuItemId: it.id,
+                                        menuItemName: name,
+                                        pageType: "public_menu",
+                                        shareTarget: "dish",
+                                      }}
+                                      iconOnly
+                                      stopPropagation
+                                    />
+                                  ) : null}
+                                  {price ? (
+                                    <div style={{ fontSize: 14, fontWeight: 900, whiteSpace: "nowrap" }}>{price}</div>
+                                  ) : null}
+                                  {canNavigate && (
+                                    <span style={{ fontSize: 11, color: "#2d6a4f", fontWeight: 700, whiteSpace: "nowrap" }}>
+                                      {t("common.nutritionInsights", "Nutrition & insights →")}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                          </div>
+
+                              {it?.chips?.nutrition_chip?.allergen_alert && (
+                                <div style={{ marginTop: 8 }}>
+                                  <span style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 3,
+                                    padding: "1px 6px",
+                                    background: "rgba(230,130,0,0.06)",
+                                    border: "1px solid rgba(230,130,0,0.15)",
+                                    borderRadius: 4,
+                                    fontSize: 10,
+                                    color: "#7c4a00",
+                                    fontWeight: 500,
+                                  }}>
+                                    <span style={{ opacity: 0.7 }}>⚠</span>
+                                    {it.chips.nutrition_chip.allergen_alert}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )
                         );
                       })}
                     </div>
@@ -1167,14 +1588,17 @@ export default function PublicMenuPage() {
         notice={notice}
         onDismiss={clearNotice}
         onAction={handleNoticeAction}
-        bottomOffset={hasBasketItems ? 94 : 18}
+        bottomOffset={orderMode && hasBasketItems ? 94 : 18}
       />
-      {hasBasketItems ? (
+      {orderMode && hasBasketItems ? (
         <BasketSummaryBar
           itemCount={itemCount}
           subtotal={subtotalCents}
           restaurantName={cartRestaurantState?.restaurantName}
           isCurrentRestaurant={basketMatchesCurrentRestaurant}
+          headingLabel={orderMode ? "Basket summary" : undefined}
+          summaryLabel={orderMode ? `${itemCount} ${itemCount === 1 ? "item" : "items"} • ${formatMoneyFromCents(subtotalCents)}` : undefined}
+          ctaLabel={orderMode ? "Review Order" : "View Cart"}
           onOpenBasket={() => navigate("/checkout")}
         />
       ) : null}

@@ -8,16 +8,19 @@ export default function BasketSummaryBar({
   onOpenBasket,
   restaurantName,
   isCurrentRestaurant = true,
+  headingLabel,
+  summaryLabel,
+  ctaLabel = "View Cart",
 }) {
   if (!itemCount) return null;
 
   const itemLabel = itemCount === 1 ? "1 item" : `${itemCount} items`;
-  const heading = isCurrentRestaurant
+  const heading = headingLabel || (isCurrentRestaurant
     ? "Basket"
-    : `Basket from ${restaurantName || "another restaurant"}`;
-  const subcopy = isCurrentRestaurant
+    : `Basket from ${restaurantName || "another restaurant"}`);
+  const subcopy = summaryLabel || (isCurrentRestaurant
     ? `${itemLabel} • ${formatMoney(subtotal)}`
-    : `${itemLabel} already selected • ${formatMoney(subtotal)}`;
+    : `${itemLabel} already selected • ${formatMoney(subtotal)}`);
 
   return (
     <button
@@ -68,7 +71,7 @@ export default function BasketSummaryBar({
             whiteSpace: "nowrap",
           }}
         >
-          View Cart
+          {ctaLabel}
           <span aria-hidden="true">→</span>
         </div>
       </div>
