@@ -10,6 +10,34 @@ import { apiPost, toConsumerErrorMessage } from "../lib/api.js";
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
+function useIsMobile(breakpoint = 900) {
+  const getMatches = () => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.matchMedia(`(max-width: ${breakpoint}px)`).matches;
+  };
+
+  const [isMobile, setIsMobile] = useState(getMatches);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    const handleChange = (event) => setIsMobile(event.matches);
+
+    setIsMobile(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [breakpoint]);
+
+  return isMobile;
+}
+
 function formatMoney(cents) {
   return `$${(Number(cents || 0) / 100).toFixed(2)}`;
 }
@@ -105,6 +133,7 @@ function PaymentStep({ orderId, onSuccess }) {
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { restaurant, items, clearCart, updateQuantity, removeItem } = useOrderCart();
+  const isMobile = useIsMobile();
   const availableFulfillmentTypes = useMemo(() => {
     if (Array.isArray(restaurant?.availableFulfillmentTypes) && restaurant.availableFulfillmentTypes.length > 0) {
       return restaurant.availableFulfillmentTypes;
@@ -147,6 +176,28 @@ export default function CheckoutPage() {
   const normalizedDeliveryAddress = useMemo(
     () => normalizeDeliveryAddress(deliveryAddress),
     [deliveryAddress]
+  );
+  const inputStyle = useMemo(
+    () => ({
+      width: "100%",
+      boxSizing: "border-box",
+      borderRadius: 14,
+      border: "1px solid #d0d5dd",
+      padding: "12px 14px",
+      fontSize: 16,
+      background: "#fff",
+    }),
+    []
+  );
+  const sectionCardStyle = useMemo(
+    () => ({
+      borderRadius: 24,
+      background: "#fff",
+      border: "1px solid rgba(17,33,26,0.08)",
+      padding: isMobile ? "20px 16px" : "24px 22px",
+      boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
+    }),
+    [isMobile]
   );
 
   useEffect(() => {
@@ -290,20 +341,19 @@ export default function CheckoutPage() {
       <div style={{ maxWidth: 1120, margin: "0 auto", padding: "24px 18px 60px" }}>
         <PageNav back />
 
-        <div style={{ marginTop: 24, display: "grid", gap: 22, gridTemplateColumns: "minmax(0, 1.2fr) minmax(320px, 0.8fr)" }}>
-          <section
-            style={{
-              borderRadius: 24,
-              background: "#fff",
-              border: "1px solid rgba(17,33,26,0.08)",
-              padding: "24px 22px",
-              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-            }}
-          >
+        <div
+          style={{
+            marginTop: 24,
+            display: "grid",
+            gap: 22,
+            gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "minmax(0, 1.2fr) minmax(320px, 0.8fr)",
+          }}
+        >
+          <section style={sectionCardStyle}>
             <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7, color: "#667085" }}>
               Checkout
             </div>
-            <h1 style={{ fontSize: 32, margin: "8px 0 6px" }}>{restaurant.restaurantName}</h1>
+            <h1 style={{ fontSize: isMobile ? 28 : 32, margin: "8px 0 6px" }}>{restaurant.restaurantName}</h1>
             <p style={{ margin: 0, color: "#667085", lineHeight: 1.6 }}>
               Prices and totals are recalculated on the server before payment. The restaurant receives the direct charge on its connected Stripe account.
             </p>
@@ -334,17 +384,17 @@ export default function CheckoutPage() {
                 <input
                   value={customerName}
                   onChange={(event) => setCustomerName(event.target.value)}
-                  style={{ width: "100%", borderRadius: 14, border: "1px solid #d0d5dd", padding: "12px 14px", fontSize: 14 }}
+                  style={inputStyle}
                 />
               </div>
 
-              <div style={{ display: "grid", gap: 14, gridTemplateColumns: "1fr 1fr" }}>
+              <div style={{ display: "grid", gap: 14, gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
                 <div>
                   <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Phone</label>
                   <input
                     value={customerPhone}
                     onChange={(event) => setCustomerPhone(event.target.value)}
-                    style={{ width: "100%", borderRadius: 14, border: "1px solid #d0d5dd", padding: "12px 14px", fontSize: 14 }}
+                    style={inputStyle}
                   />
                 </div>
                 <div>
@@ -352,7 +402,7 @@ export default function CheckoutPage() {
                   <input
                     value={customerEmail}
                     onChange={(event) => setCustomerEmail(event.target.value)}
-                    style={{ width: "100%", borderRadius: 14, border: "1px solid #d0d5dd", padding: "12px 14px", fontSize: 14 }}
+                    style={inputStyle}
                   />
                 </div>
               </div>
@@ -388,13 +438,13 @@ export default function CheckoutPage() {
               </div>
 
               {fulfillmentType === "delivery" ? (
-                <div style={{ display: "grid", gap: 14, gridTemplateColumns: "1fr 1fr" }}>
+                <div style={{ display: "grid", gap: 14, gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Delivery name</label>
                     <input
                       value={deliveryAddress.name}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, name: event.target.value }))}
-                      style={{ width: "100%", borderRadius: 14, border: "1px solid #d0d5dd", padding: "12px 14px", fontSize: 14 }}
+                      style={inputStyle}
                     />
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
@@ -402,7 +452,7 @@ export default function CheckoutPage() {
                     <input
                       value={deliveryAddress.line1}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, line1: event.target.value }))}
-                      style={{ width: "100%", borderRadius: 14, border: "1px solid #d0d5dd", padding: "12px 14px", fontSize: 14 }}
+                      style={inputStyle}
                     />
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
@@ -410,7 +460,7 @@ export default function CheckoutPage() {
                     <input
                       value={deliveryAddress.line2}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, line2: event.target.value }))}
-                      style={{ width: "100%", borderRadius: 14, border: "1px solid #d0d5dd", padding: "12px 14px", fontSize: 14 }}
+                      style={inputStyle}
                     />
                   </div>
                   <div>
@@ -418,7 +468,7 @@ export default function CheckoutPage() {
                     <input
                       value={deliveryAddress.city}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, city: event.target.value }))}
-                      style={{ width: "100%", borderRadius: 14, border: "1px solid #d0d5dd", padding: "12px 14px", fontSize: 14 }}
+                      style={inputStyle}
                     />
                   </div>
                   <div>
@@ -426,7 +476,7 @@ export default function CheckoutPage() {
                     <input
                       value={deliveryAddress.state}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, state: event.target.value }))}
-                      style={{ width: "100%", borderRadius: 14, border: "1px solid #d0d5dd", padding: "12px 14px", fontSize: 14 }}
+                      style={inputStyle}
                     />
                   </div>
                   <div>
@@ -434,7 +484,7 @@ export default function CheckoutPage() {
                     <input
                       value={deliveryAddress.postalCode}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, postalCode: event.target.value }))}
-                      style={{ width: "100%", borderRadius: 14, border: "1px solid #d0d5dd", padding: "12px 14px", fontSize: 14 }}
+                      style={inputStyle}
                     />
                   </div>
                   <div>
@@ -442,7 +492,7 @@ export default function CheckoutPage() {
                     <input
                       value={deliveryAddress.instructions}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, instructions: event.target.value }))}
-                      style={{ width: "100%", borderRadius: 14, border: "1px solid #d0d5dd", padding: "12px 14px", fontSize: 14 }}
+                      style={inputStyle}
                     />
                   </div>
                 </div>
@@ -454,7 +504,7 @@ export default function CheckoutPage() {
                   value={notes}
                   onChange={(event) => setNotes(event.target.value)}
                   rows={4}
-                  style={{ width: "100%", borderRadius: 14, border: "1px solid #d0d5dd", padding: "12px 14px", fontSize: 14, resize: "vertical" }}
+                  style={{ ...inputStyle, resize: "vertical" }}
                 />
               </div>
 
@@ -516,12 +566,10 @@ export default function CheckoutPage() {
 
           <aside
             style={{
-              borderRadius: 24,
-              background: "#fff",
-              border: "1px solid rgba(17,33,26,0.08)",
-              padding: "24px 22px",
-              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
+              ...sectionCardStyle,
               alignSelf: "start",
+              position: isMobile ? "static" : "sticky",
+              top: isMobile ? "auto" : 24,
             }}
           >
             <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7, color: "#667085" }}>
