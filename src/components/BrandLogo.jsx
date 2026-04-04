@@ -20,6 +20,7 @@ export function BrandLogo({
   height = 112,
   radius = 24,
   pageColor = "#f7f6f1",
+  matchPageBackground = true,
   imageStyle,
   linkStyle,
   ariaLabel = "Go to Grubbid home",
@@ -33,7 +34,7 @@ export function BrandLogo({
         height,
         overflow: "hidden",
         borderRadius: radius,
-        background: pageColor,
+        background: matchPageBackground ? "transparent" : pageColor,
         lineHeight: 0,
       }}
     >
