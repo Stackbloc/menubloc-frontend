@@ -15,6 +15,7 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { addLocation, getLocations, updateLocation } from "../lib/consumerApi.js";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
+import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { parseLocation, reverseGeocode, US_STATE_ABBREVS } from "../lib/locationUtils.js";
 
@@ -228,18 +229,19 @@ export default function GrubbidDiscovery() {
       options.locationOverride ?? appliedLocation ?? ""
     ).trim();
 
-    // Append selected cuisine/category to the query so the backend text-matches them
-    let effectiveQ = q;
-    if (includeFilters) {
-      if (selectedCuisine) effectiveQ = effectiveQ ? `${effectiveQ} ${selectedCuisine}` : selectedCuisine;
-      if (selectedCategory) effectiveQ = effectiveQ ? `${effectiveQ} ${selectedCategory}` : selectedCategory;
-    }
-    if (effectiveQ) params.set("q", effectiveQ);
+    if (q) params.set("q", q);
 
     if (includeFilters) {
       const dietaryParams = buildDietaryQueryParams(filters);
       for (const [key, value] of Object.entries(dietaryParams)) {
         if (value) params.set(key, String(value));
+      }
+      const restaurantParams = buildRestaurantFilterQueryParams({
+        cuisine: selectedCuisine,
+        category: selectedCategory,
+      });
+      for (const [key, value] of Object.entries(restaurantParams)) {
+        if (value) params.set(key, value);
       }
     }
 

@@ -29,6 +29,7 @@ import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterSta
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
+import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -477,6 +478,8 @@ export default function GrubbidSearchResults() {
   const routeLng = params.get("lng");
   const routeRadiusMiles = params.get("radius_miles");
   const routeMetroId = String(params.get("metro_id") || "").trim();
+  const routeCuisine = String(params.get("cuisine") || "").trim();
+  const routeCategory = String(params.get("category") || "").trim();
   const vegetarian = params.get("vegetarian") === "1";
   const keto = params.get("keto") === "1" || params.get("low_carb") === "1";
   const low_sodium = params.get("low_sodium") === "1";
@@ -548,6 +551,13 @@ export default function GrubbidSearchResults() {
     for (const [key, value] of Object.entries(dietaryParams)) {
       if (value) u.searchParams.set(key, String(value));
     }
+    const restaurantParams = buildRestaurantFilterQueryParams({
+      cuisine: routeCuisine,
+      category: routeCategory,
+    });
+    for (const [key, value] of Object.entries(restaurantParams)) {
+      if (value) u.searchParams.set(key, value);
+    }
     if (deals_only) u.searchParams.set("deals_only", "1");
     if (zip) u.searchParams.set("zip", zip);
     if (city) u.searchParams.set("city", city);
@@ -596,6 +606,8 @@ export default function GrubbidSearchResults() {
     routeRadiusMiles,
     geo.lat,
     geo.lng,
+    routeCuisine,
+    routeCategory,
   ]);
 
   const [geoFallbackUsed, setGeoFallbackUsed] = useState(false);

@@ -46,6 +46,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { apiGet, getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
+import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
 import { loadDietPrefs, saveDietPrefs, activePrefLabels, hasActiveDietPrefs } from "../hooks/useDietPreferences";
 import { reverseGeocode } from "../lib/locationUtils.js";
 
@@ -245,6 +246,8 @@ export default function BrowseMenus() {
   const urlParams = new URLSearchParams(search);
   const urlCity = urlParams.get("city") || "";
   const urlState = urlParams.get("state") || "";
+  const urlCuisine = urlParams.get("cuisine") || "";
+  const urlCategory = urlParams.get("category") || "";
 
   // True when the URL explicitly specifies the location — geolocation must not run.
   // City alone is sufficient; state is optional and used as an additional filter when present.
@@ -268,9 +271,10 @@ export default function BrowseMenus() {
     deals: false,
     ...loadDietPrefs(),
   }));
-  // localFilters are applied client-side to the already-fetched restaurant list.
-  // Changing them does NOT trigger a re-fetch — filtering is instant.
-  const [localFilters, setLocalFilters] = useState({ cuisine: "", category: "" });
+  const [localFilters, setLocalFilters] = useState(() => ({
+    cuisine: urlCuisine,
+    category: urlCategory,
+  }));
   const [cuisineOptions, setCuisineOptions] = useState([]);
   // radiusMiles: null = any distance (no radius cap).
   // In geo mode default to 10 miles. In city/state mode default to null (any).
@@ -317,6 +321,13 @@ export default function BrowseMenus() {
     };
   }, []);
 
+  useEffect(() => {
+    setLocalFilters({
+      cuisine: urlCuisine,
+      category: urlCategory,
+    });
+  }, [urlCuisine, urlCategory]);
+
   const activeFilterLabel = (() => {
     if (filters.vegan) return "vegan";
     if (filters.vegetarian) return "vegetarian";
@@ -334,9 +345,22 @@ export default function BrowseMenus() {
     for (const [key, value] of Object.entries(buildDietaryQueryParams(filters))) {
       if (value) p.set(key, String(value));
     }
+    for (const [key, value] of Object.entries(buildRestaurantFilterQueryParams(localFilters))) {
+      if (value) p.set(key, value);
+    }
     if (filters.deals)             p.set("deals", "1");
     return p.toString();
   })();
+
+  function updateBrowseQuery(nextLocalFilters) {
+    const next = new URLSearchParams(search);
+    const restaurantParams = buildRestaurantFilterQueryParams(nextLocalFilters);
+    if (restaurantParams.cuisine) next.set("cuisine", restaurantParams.cuisine);
+    else next.delete("cuisine");
+    if (restaurantParams.category) next.set("category", restaurantParams.category);
+    else next.delete("category");
+    navigate({ search: next.toString() ? `?${next.toString()}` : "" }, { replace: true });
+  }
 
   // Persist diet prefs whenever they change
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
@@ -360,6 +384,7 @@ export default function BrowseMenus() {
         const dietaryParams = {
           deals: filters.deals ? 1 : "",
           ...buildDietaryQueryParams(filters),
+          ...buildRestaurantFilterQueryParams(localFilters),
         };
 
         if (hasCityStateParams) {
@@ -455,7 +480,7 @@ export default function BrowseMenus() {
   // Re-run when the URL location, filters, or radius changes.
   // radiusMiles only affects geo mode — city/state mode ignores it.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlCity, urlState, filters, radiusMiles, cuisineOptions]);
+  }, [urlCity, urlState, filters, radiusMiles, cuisineOptions, localFilters]);
 
   const showEmptyState = !loading && !error && menus.length === 0;
   const effectiveAllergenFilter = isAuthenticated
@@ -524,14 +549,22 @@ export default function BrowseMenus() {
                 options={localizedCuisineOptions}
                 value={localFilters.cuisine}
                 allLabel={t("common.all")}
-                onChange={(value) => setLocalFilters((prev) => ({ ...prev, cuisine: value }))}
+                onChange={(value) => {
+                  const nextLocalFilters = { ...localFilters, cuisine: value };
+                  setLocalFilters(nextLocalFilters);
+                  updateBrowseQuery(nextLocalFilters);
+                }}
               />
               <FilterSelect
                 label={t("browse.category")}
                 options={localizedRestaurantTypeOptions}
                 value={localFilters.category}
                 allLabel={t("common.all")}
-                onChange={(value) => setLocalFilters((prev) => ({ ...prev, category: value }))}
+                onChange={(value) => {
+                  const nextLocalFilters = { ...localFilters, category: value };
+                  setLocalFilters(nextLocalFilters);
+                  updateBrowseQuery(nextLocalFilters);
+                }}
               />
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -675,6 +708,7 @@ export default function BrowseMenus() {
                           const dietaryParams = {
                             deals: filters.deals ? 1 : "",
                             ...buildDietaryQueryParams(filters),
+                            ...buildRestaurantFilterQueryParams(localFilters),
                           };
                           let coords = { lat: null, lng: null };
                           try { coords = await getUserCoords(); } catch (_) {}
