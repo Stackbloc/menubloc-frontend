@@ -484,6 +484,139 @@ function InsightsCard({ detailSystem, t }) {
   );
 }
 
+function IngredientFlagsCard({ detailSystem, t }) {
+  const processing = detailSystem?.ingredients_processing || null;
+  const europe = detailSystem?.europe_standards || null;
+
+  const additiveFlags = [
+    ...(Array.isArray(processing?.artificial_additives) ? processing.artificial_additives : []),
+    ...(Array.isArray(processing?.artificial_colors) ? processing.artificial_colors : []),
+    ...(Array.isArray(processing?.preservatives) ? processing.preservatives : []),
+    ...(Array.isArray(processing?.flavor_enhancers) ? processing.flavor_enhancers : []),
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  const uniqueAdditives = [...new Set(additiveFlags)];
+  const restricted = [...new Set((Array.isArray(europe?.restricted_ingredients) ? europe.restricted_ingredients : []).map((value) => String(value || "").trim()).filter(Boolean))];
+  const scrutiny = [...new Set((Array.isArray(europe?.scrutiny_ingredients) ? europe.scrutiny_ingredients : []).map((value) => String(value || "").trim()).filter(Boolean))];
+
+  const hasContent =
+    uniqueAdditives.length ||
+    restricted.length ||
+    scrutiny.length ||
+    processing?.processing_level ||
+    processing?.user_impact ||
+    europe?.headline;
+
+  if (!hasContent) return null;
+
+  return (
+    <SectionCard
+      title={t("menuItemDetail.ingredientFlags", "Ingredient Flags")}
+      eyebrow={t("menuItemDetail.ingredientFlags", "Ingredient Flags")}
+      style={{ marginTop: 14 }}
+    >
+      <div style={{ display: "grid", gap: 12 }}>
+        {processing?.processing_level ? (
+          <div style={{ borderRadius: 16, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: "14px 16px" }}>
+            <div style={{ fontSize: 11, color: "#617167", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              {t("menuItemDetail.processingLevel", "Processing Level")}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 18, fontWeight: 900, color: "#15241d" }}>
+              {processing.processing_level}
+            </div>
+            {processing.user_impact ? (
+              <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#53635a" }}>
+                {processing.user_impact}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {europe?.headline ? (
+          <div style={{ borderRadius: 16, border: "1px solid rgba(176,96,0,0.14)", background: "rgba(255,248,236,0.88)", padding: "14px 16px" }}>
+            <div style={{ fontSize: 11, color: "#9b5c00", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              {t("menuItemDetail.euStandards", "EU Standards")}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 16, fontWeight: 900, color: "#5f3c00", lineHeight: 1.35 }}>
+              {europe.headline}
+            </div>
+            {europe.note ? (
+              <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#7b6233" }}>
+                {europe.note}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div style={{ display: "grid", gap: 10 }}>
+          {uniqueAdditives.length ? (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f", marginBottom: 8 }}>
+                {t("menuItemDetail.artificialAndAdditiveSignals", "Artificial & Additive Signals")}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {uniqueAdditives.map((entry) => (
+                  <BadgePill key={entry} tone="caution">{entry}</BadgePill>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {restricted.length ? (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8a0a00", marginBottom: 8 }}>
+                {t("menuItemDetail.restrictedInEurope", "Restricted In Parts of Europe")}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {restricted.map((entry) => (
+                  <BadgePill key={entry} tone="caution">{entry}</BadgePill>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {scrutiny.length ? (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9b5c00", marginBottom: 8 }}>
+                {t("menuItemDetail.underEuropeanScrutiny", "Under European Scrutiny")}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {scrutiny.map((entry) => (
+                  <BadgePill key={entry} tone="accent">{entry}</BadgePill>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+function NutritionInsightsCluster({ detailSystem, isMobile, t }) {
+  return (
+    <Surface style={{ marginTop: 22, padding: isMobile ? 18 : 22 }}>
+      <Eyebrow>{t("menuItemDetail.nutritionAndInsights", "Nutrition & Insights")}</Eyebrow>
+      <div style={{ display: "grid", gap: 18 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 1.1fr) minmax(0, 0.9fr)",
+            gap: 18,
+            alignItems: "start",
+          }}
+        >
+          <NutritionCard detailSystem={detailSystem} t={t} />
+          <InsightsCard detailSystem={detailSystem} t={t} />
+        </div>
+        <IngredientFlagsCard detailSystem={detailSystem} t={t} />
+      </div>
+    </Surface>
+  );
+}
+
 function PreparationCard({ detailSystem, t }) {
   const preparation = detailSystem?.preparation;
   if (!preparation) return null;
@@ -978,17 +1111,7 @@ export default function MenuItemDetailPage() {
       {hasNutritionData ? (
         <>
           <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} />
-
-          {/* ── 4 + 5. Nutrition left, Insights right ── */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 1fr) minmax(0, 1fr)",
-            gap: 18,
-            marginTop: 22,
-          }}>
-            <NutritionCard detailSystem={detailSystem} t={t} />
-            <InsightsCard detailSystem={detailSystem} t={t} />
-          </div>
+          <NutritionInsightsCluster detailSystem={detailSystem} isMobile={isMobile} t={t} />
         </>
       ) : (
         <MissingNutritionState />
