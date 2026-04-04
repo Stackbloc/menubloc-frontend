@@ -1624,6 +1624,62 @@ export default function PublicMenuPage() {
                 );
               })
             )}
+
+            {!orderMode && displayableItemCount > 0 ? (
+              <div
+                style={{
+                  marginTop: 28,
+                  padding: isMobile ? "18px 16px" : "22px 24px",
+                  borderRadius: 24,
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.98), rgba(240,253,244,0.82))",
+                  border: "1px solid rgba(17,33,26,0.08)",
+                  boxShadow: "0 12px 28px rgba(15,23,42,0.06)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ minWidth: 0, flex: "1 1 320px" }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 900,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.6,
+                      color: "#667085",
+                    }}
+                  >
+                    Ready to order?
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 16, fontWeight: 900, color: "#11211a" }}>
+                    Switch this page into ordering mode.
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 14, lineHeight: 1.6, color: "#475467" }}>
+                    Your current filters and menu context will carry into the order screen.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={enterOrderMode}
+                  style={{
+                    border: "none",
+                    borderRadius: 999,
+                    background: "#14532d",
+                    color: "#fff",
+                    padding: "14px 22px",
+                    fontSize: 15,
+                    fontWeight: 900,
+                    cursor: "pointer",
+                    boxShadow: "0 14px 34px rgba(20,83,45,0.22)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {`Order from ${restaurantName}`}
+                </button>
+              </div>
+            ) : null}
           </main>
 
         </div>
