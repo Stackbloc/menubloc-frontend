@@ -498,7 +498,7 @@ export default function BrowseMenus() {
 
   const visibleMenus = menus.filter((m) => {
     if (alphaGroup) {
-      const first = (m.restaurant_name || m.name || "").trim()[0]?.toUpperCase();
+      const first = (m.restaurant_name || m.name || "").trim().replace(/^[Tt]he\s+/, "")[0]?.toUpperCase();
       if (!alphaGroup.letters.has(first)) return false;
     }
     if (localFilters.cuisine) {

@@ -919,85 +919,65 @@ export default function PublicMenuPage() {
                 marginTop: 18,
                 display: "flex",
                 alignItems: isMobile ? "stretch" : "center",
-                justifyContent: "space-between",
-                gap: 12,
+                justifyContent: "flex-start",
+                gap: 10,
                 flexWrap: "wrap",
               }}
             >
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "7px 12px",
-                  borderRadius: 999,
-                  background: orderMode ? "#dcfce7" : "#f5f5f4",
-                  color: orderMode ? "#166534" : "#475467",
-                  fontSize: 12,
-                  fontWeight: 900,
-                  letterSpacing: 0.4,
-                  textTransform: "uppercase",
-                }}
-              >
-                {orderMode ? "Ordering mode" : "Menu mode"}
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, flexWrap: "wrap", flex: "1 1 320px" }}>
-                {orderMode ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={openCheckout}
-                      style={{
-                        border: "none",
-                        borderRadius: 999,
-                        background: "#11211a",
-                        color: "#fff",
-                        padding: "12px 18px",
-                        fontSize: 14,
-                        fontWeight: 900,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Review Order
-                    </button>
-                    <button
-                      type="button"
-                      onClick={exitOrderMode}
-                      style={{
-                        border: "1px solid rgba(17,33,26,0.12)",
-                        borderRadius: 999,
-                        background: "#fff",
-                        color: "#11211a",
-                        padding: "12px 18px",
-                        fontSize: 14,
-                        fontWeight: 800,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Back to Menu View
-                    </button>
-                  </>
-                ) : (
+              {orderMode ? (
+                <>
                   <button
                     type="button"
-                    onClick={enterOrderMode}
+                    onClick={openCheckout}
                     style={{
                       border: "none",
                       borderRadius: 999,
-                      background: "#14532d",
+                      background: "#11211a",
                       color: "#fff",
-                      padding: "14px 22px",
-                      fontSize: 15,
+                      padding: "12px 18px",
+                      fontSize: 14,
                       fontWeight: 900,
                       cursor: "pointer",
-                      boxShadow: "0 14px 34px rgba(20,83,45,0.22)",
                     }}
                   >
-                    {`Order from ${restaurantName}`}
+                    Review Order
                   </button>
-                )}
-              </div>
+                  <button
+                    type="button"
+                    onClick={exitOrderMode}
+                    style={{
+                      border: "1px solid rgba(17,33,26,0.12)",
+                      borderRadius: 999,
+                      background: "#fff",
+                      color: "#11211a",
+                      padding: "12px 18px",
+                      fontSize: 14,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Back to Menu View
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={enterOrderMode}
+                  style={{
+                    border: "none",
+                    borderRadius: 999,
+                    background: "#14532d",
+                    color: "#fff",
+                    padding: "14px 22px",
+                    fontSize: 15,
+                    fontWeight: 900,
+                    cursor: "pointer",
+                    boxShadow: "0 14px 34px rgba(20,83,45,0.22)",
+                  }}
+                >
+                  Order
+                </button>
+              )}
             </div>
             {orderMode && hasBasketItems && basketMatchesCurrentRestaurant ? (
               <div

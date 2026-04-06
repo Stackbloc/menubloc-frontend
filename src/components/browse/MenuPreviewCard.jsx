@@ -268,11 +268,12 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
   const theme = CARD_THEMES[index % CARD_THEMES.length];
   const isVerified = menu?.menu_status === "published";
   const distance = formatDistance(menu?.distance_miles);
-  const restaurantName =
+  const restaurantName = (
     getLocalizedField(menu, "restaurant_name", language) ||
     getLocalizedField(menu, "name", language) ||
     menu?.restaurant_name ||
-    "Restaurant";
+    "Restaurant"
+  ).replace(/^The\s+/i, "");
   const cuisine = localizeCanonicalLabel(menu?.cuisine, "cuisine", t) || null;
   const emoji = getCuisineEmoji(restaurantName, menu?.cuisine || menu?.category);
   const itemCount = menu?.menu_item_count || 0;
