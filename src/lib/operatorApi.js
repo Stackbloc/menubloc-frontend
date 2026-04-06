@@ -169,6 +169,17 @@ export const getExceptions = (rid) => get(`/operator/restaurants/${rid}/hours/ex
 export const upsertException = (rid, body) => post(`/operator/restaurants/${rid}/hours/exceptions`, body);
 export const deleteException = (rid, eid) => del(`/operator/restaurants/${rid}/hours/exceptions/${eid}`);
 
+// ── Restaurant: Bid-Free Bidding™ ─────────────────────────────────────────
+export const getCartNegotiationSettings = (rid) =>
+  get(`/operator/restaurants/${rid}/cart-negotiation`);
+export const updateCartNegotiationSettings = (rid, body) =>
+  patch(`/operator/restaurants/${rid}/cart-negotiation`, body);
+
+export const getUnlockSavingsSettings = (rid) =>
+  get(`/operator/restaurants/${rid}/unlock-savings`);
+export const updateUnlockSavingsSettings = (rid, body) =>
+  patch(`/operator/restaurants/${rid}/unlock-savings`, body);
+
 // ── Restaurant: Display Settings (TV Menu Board) ──────────────────────────
 export const getDisplaySettings = (rid) =>
   get(`/operator/restaurants/${rid}/display-settings`);

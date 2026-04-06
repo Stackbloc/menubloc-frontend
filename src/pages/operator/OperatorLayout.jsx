@@ -20,6 +20,7 @@ const NAV = [
   { to: "/operator/menu",         label: "Menu Editor",  icon: "☰" },
   { to: "/operator/deals",        label: "Deals",        icon: "⊹" },
   { to: "/operator/hours",        label: "Hours",        icon: "⏰" },
+  { to: "/operator/bid-free-bidding", label: "Bid-Free Bidding™", icon: "◇" },
   { to: "/operator/design",            label: "Adobe Studio",  icon: "▣", benefitKey: "design_exports" },
   { to: "/operator/display-settings", label: "Display Board",  icon: "⊡", benefitKey: "tv_menu_board" },
   { to: "/operator/menu-studio",      label: "Menu Studio",    icon: "✦", benefitKey: "menu_outputs" },

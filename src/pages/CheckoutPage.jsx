@@ -1,3 +1,14 @@
+/**
+ * ============================================================
+ * Path: menubloc-frontend/src/pages/CheckoutPage.jsx
+ * File: CheckoutPage.jsx
+ * Date: 2026-04-06
+ * Purpose:
+ *   Consumer checkout screen for server-priced orders, including
+ *   Bid-Free Bidding™ savings display when applied.
+ * ============================================================
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
@@ -698,6 +709,58 @@ export default function CheckoutPage() {
                     <span style={{ color: "#667085" }}>Subtotal</span>
                     <strong>{formatMoney(previewState.data.subtotal_cents)}</strong>
                   </div>
+                  {previewState.data.unlock_savings?.user_message ? (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        borderRadius: 12,
+                        background: "#f3f2ff",
+                        border: "1px solid #c7d2fe",
+                        padding: "10px 12px",
+                        fontSize: 13,
+                        color: "#312e81",
+                      }}
+                    >
+                      {previewState.data.unlock_savings.user_message}
+                    </div>
+                  ) : null}
+                  {previewState.data.unlock_savings?.applied ? (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        borderRadius: 14,
+                        background: "#ecfdf3",
+                        border: "1px solid #bbf7d0",
+                        padding: "10px 12px",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 800, color: "#0f7048" }}>
+                        <span>Unlock savings applied</span>
+                        <strong>
+                          -{formatMoney(Math.round((previewState.data.unlock_savings?.discount_amount || 0) * 100))}
+                        </strong>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#46703d", marginTop: 4 }}>Unlocked by GrubBid</div>
+                    </div>
+                  ) : null}
+                  {previewState.data.cart_negotiation?.applied ? (
+                    <div
+                      style={{
+                        borderRadius: 14,
+                        background: "#eef8f2",
+                        border: "1px solid #cce7d7",
+                        padding: "10px 12px",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, gap: 12 }}>
+                        <span style={{ color: "#124734", fontWeight: 800 }}>Private savings applied</span>
+                        <strong style={{ color: "#124734" }}>
+                          -{formatMoney(Math.round(Number(previewState.data.cart_negotiation.discount_amount || 0) * 100))}
+                        </strong>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#667085", marginTop: 4 }}>Unlocked by GrubBid</div>
+                    </div>
+                  ) : null}
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
                     <span style={{ color: "#667085" }}>Tax</span>
                     <strong>{formatMoney(previewState.data.tax_cents)}</strong>
