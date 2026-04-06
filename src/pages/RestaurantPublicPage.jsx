@@ -32,7 +32,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { HomeButton } from "../components/NavButton.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
@@ -300,7 +300,14 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
           justifyContent: "space-between",
         }}
       >
-        <HomeButton />
+        <BrandLogo
+          to="/"
+          width={96}
+          height={62}
+          radius={16}
+          pageColor={isDark ? "#0b0b0f" : "#ffffff"}
+          ariaLabel="Go to discovery"
+        />
       </div>
 
       <div
@@ -688,6 +695,16 @@ export default function RestaurantPublicPage() {
   const landmarkLines = landmarks
     ? landmarks.split(/\n/).map((l) => l.trim()).filter(Boolean)
     : [];
+  const discoveryLogo = (
+    <BrandLogo
+      to="/"
+      width={96}
+      height={62}
+      radius={16}
+      pageColor={isDark ? "#0b0b0f" : "#ffffff"}
+      ariaLabel={translateUi("nav.brandAria", "Go to Grubbid home")}
+    />
+  );
 
   if (!loading && !err && data && !isClaimedRestaurant(data)) {
     return <UnclaimedRestaurantPage data={data} isDark={isDark} slugOrId={slugOrId} />;
@@ -712,7 +729,7 @@ export default function RestaurantPublicPage() {
           justifyContent: "space-between",
         }}
       >
-        <HomeButton />
+        {discoveryLogo}
 
         <button
           type="button"

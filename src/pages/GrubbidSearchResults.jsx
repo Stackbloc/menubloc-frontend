@@ -524,6 +524,7 @@ export default function GrubbidSearchResults() {
   const sortMode = String(params.get("sort") || "default_relevance").trim() || "default_relevance";
 
   const [rows, setRows] = useState([]);
+  const [restaurantMetaMap, setRestaurantMetaMap] = useState(new Map());
   const [searchMeta, setSearchMeta] = useState(null);
   const [responseAllergenFilter, setResponseAllergenFilter] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -738,6 +739,7 @@ export default function GrubbidSearchResults() {
       setGeoFallbackUsed(false);
       setSearchOffset(0);
       setSearchHasMore(false);
+      setRestaurantMetaMap(new Map());
 
       try {
         let json = await fetchSearch(primaryUrl);
@@ -758,7 +760,16 @@ export default function GrubbidSearchResults() {
         const returned = pagination.returned_count ?? resultRows.length;
         const pageOffset = pagination.offset ?? 0;
 
+        // Build restaurant meta lookup (location_count for franchise groups)
+        const rMeta = new Map();
+        if (Array.isArray(json?.restaurants)) {
+          for (const r of json.restaurants) {
+            const id = asString(pickFirst(r, ["restaurant_id", "id"], ""));
+            if (id) rMeta.set(id, r);
+          }
+        }
         setRows(resultRows);
+        setRestaurantMetaMap(rMeta);
         setSearchMeta(json?.search_meta || null);
         setResponseAllergenFilter(json?.allergen_filter || null);
         setSearchTotalCount(total);
@@ -955,6 +966,12 @@ export default function GrubbidSearchResults() {
         </StatusMessage>
       )}
 
+      {!loading && !err && searchMeta?.result_mode === "fallback" && searchMeta?.fallback_explanation && (
+        <StatusMessage tone="warning">
+          {searchMeta.fallback_explanation}
+        </StatusMessage>
+      )}
+
       {err && <StatusMessage>Error: {err}</StatusMessage>}
       {loading && <StatusMessage tone="muted">{t("common.loading")}</StatusMessage>}
 
@@ -992,7 +1009,9 @@ export default function GrubbidSearchResults() {
         <>
           <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>
           <div style={styles.grid}>
-            {restaurantGroups.map((g) => (
+            {restaurantGroups.map((g) => {
+              const rMeta = restaurantMetaMap.get(asString(g.restaurant_id));
+              return (
               <SearchResultCard
                 key={`rg-${g.restaurant_id || g.restaurant_name}`}
                 restaurant={{
@@ -1008,6 +1027,7 @@ export default function GrubbidSearchResults() {
                     g._first?.profile_tier || g._first?.restaurant_profile_tier || null,
                   listing_status:
                     g._first?.listing_status || g._first?.restaurant_listing_status || null,
+                  location_count: rMeta?.location_count ?? null,
                   raw: g._first,
                 }}
                 items={g.items}
@@ -1015,7 +1035,8 @@ export default function GrubbidSearchResults() {
                 crossRestaurantItems={crossRestaurantItems}
                 geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
               />
-            ))}
+            );
+          })}
           </div>
         </>
       )}
@@ -1041,6 +1062,16 @@ export default function GrubbidSearchResults() {
                 const total = pagination.total_count ?? (searchOffset + moreRows.length);
                 const returned = pagination.returned_count ?? moreRows.length;
                 const pageOffset = pagination.offset ?? searchOffset;
+                if (Array.isArray(json?.restaurants)) {
+                  setRestaurantMetaMap((prev) => {
+                    const next = new Map(prev);
+                    for (const r of json.restaurants) {
+                      const id = asString(pickFirst(r, ["restaurant_id", "id"], ""));
+                      if (id) next.set(id, r);
+                    }
+                    return next;
+                  });
+                }
                 setRows((prev) => [...prev, ...moreRows]);
                 setResponseAllergenFilter((prev) => json?.allergen_filter || prev);
                 setSearchTotalCount(total);

@@ -383,17 +383,28 @@ function BarRow({ label, pct, valueLabel, qualLabel, color, indent }) {
 
 function NutritionPanel({ chip }) {
   const r = (v) => (v != null && Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
+  const r1 = (v) => (v != null && Number.isFinite(Number(v)) ? Math.round(Number(v) * 10) / 10 : null);
   const cal         = r(chip?.calories_kcal);
   const pro         = r(chip?.protein_g);
   const carbs       = r(chip?.carbs_g);
-  const fiber       = r(chip?.fiber_g);
-  const sug         = r(chip?.sugar_g);
+  const netCarbs    = r1(chip?.net_carbs);
+  const fiber       = r1(chip?.fiber_g);
+  const sug         = r1(chip?.sugar_g);
   const fat         = r(chip?.fat_g);
   const sod         = r(chip?.sodium_mg);
   const satiety     = r(chip?.satiety_score);
   const satietyLbl  = chip?.satiety_label || null;
   const glycemic    = r(chip?.glycemic_score);
   const glycemicLbl = chip?.glycemic_label || null;
+
+  // Per-ounce — only present when chain official serving size was available
+  const servingOz    = r1(chip?.serving_weight_oz);
+  const proPerOz     = r1(chip?.protein_per_oz);
+  const carbsPerOz   = r1(chip?.carbs_per_oz);
+  const netCarbsPerOz = r1(chip?.net_carbs_per_oz);
+  const sodPerOz     = r(chip?.sodium_per_oz);
+  const fiberPerOz   = r1(chip?.fiber_per_oz);
+  const hasPerOz = servingOz !== null;
 
   const hasValues = cal !== null || pro !== null || fat !== null || sod !== null;
   if (!hasValues) {
@@ -407,10 +418,29 @@ function NutritionPanel({ chip }) {
       {cal   !== null && <BarRow label="Calories" pct={(cal   / 2000) * 100} valueLabel={String(cal)}   qualLabel={getQualitativeLabel("calories", cal)} color="#e07b39" />}
       {pro   !== null && <BarRow label="Protein"  pct={(pro   / 50)   * 100} valueLabel={`${pro}g`}    qualLabel={getQualitativeLabel("protein", pro)}  color="#1a9a4a" />}
       {carbs !== null && <BarRow label="Carbs"    pct={(carbs / 275)  * 100} valueLabel={`${carbs}g`}  qualLabel={getQualitativeLabel("carbs", carbs)}  color="#b87a00" />}
+      {netCarbs !== null && (
+        <BarRow label="Net carbs" pct={(netCarbs / 150) * 100} valueLabel={`${netCarbs}g`} qualLabel={null} color="#b87a00" indent />
+      )}
       {fiber !== null && <BarRow label="Fiber"    pct={(fiber / 28)   * 100} valueLabel={`${fiber}g`}  qualLabel={getQualitativeLabel("fiber", fiber)}  color="#6b7280" indent />}
       {sug   !== null && <BarRow label="Sugar"    pct={(sug   / 50)   * 100} valueLabel={`${sug}g`}    qualLabel={getQualitativeLabel("sugar", sug)}    color="#8b5cf6" indent />}
       {fat   !== null && <BarRow label="Fat"      pct={(fat   / 65)   * 100} valueLabel={`${fat}g`}    qualLabel={getQualitativeLabel("fat", fat)}      color="#b87a00" />}
       {sod   !== null && <BarRow label="Sodium"   pct={(sod   / 2300) * 100} valueLabel={`${sod}mg`}   qualLabel={getQualitativeLabel("sodium", sod)}   color="#c0392b" />}
+
+      {hasPerOz && (
+        <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(18,34,28,0.04)", border: "1px solid rgba(18,34,28,0.08)" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#667085", letterSpacing: "0.04em", marginBottom: 5, textTransform: "uppercase" }}>
+            Per oz · {servingOz} oz serving
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
+            {proPerOz !== null && <span style={{ fontSize: 12, color: "#344054" }}><span style={{ fontWeight: 700 }}>{proPerOz}g</span> protein/oz</span>}
+            {carbsPerOz !== null && netCarbsPerOz !== null && <span style={{ fontSize: 12, color: "#344054" }}><span style={{ fontWeight: 700 }}>{netCarbsPerOz}g</span> net carbs/oz</span>}
+            {carbsPerOz !== null && netCarbsPerOz === null && <span style={{ fontSize: 12, color: "#344054" }}><span style={{ fontWeight: 700 }}>{carbsPerOz}g</span> carbs/oz</span>}
+            {sodPerOz !== null && <span style={{ fontSize: 12, color: "#344054" }}><span style={{ fontWeight: 700 }}>{sodPerOz}mg</span> sodium/oz</span>}
+            {fiberPerOz !== null && <span style={{ fontSize: 12, color: "#344054" }}><span style={{ fontWeight: 700 }}>{fiberPerOz}g</span> fiber/oz</span>}
+          </div>
+        </div>
+      )}
+
       {(satiety !== null || glycemic !== null) && (
         <div style={{ marginTop: 8, display: "flex", gap: 12, flexWrap: "wrap" }}>
           {satiety !== null && (
@@ -600,6 +630,27 @@ function InsightsPanel({ chips, onFindSimilar }) {
       >
         Find Similar →
       </button>
+    </div>
+  );
+}
+
+/* ---- Query-specific precision explanation line ---- */
+
+function PrecisionLine({ chip }) {
+  const line = chip?.precision_line;
+  if (!line) return null;
+  return (
+    <div
+      style={{
+        marginTop: 5,
+        fontSize: 12,
+        fontWeight: 700,
+        color: "#2d6a4f",
+        letterSpacing: "0.01em",
+        lineHeight: 1.4,
+      }}
+    >
+      {line}
     </div>
   );
 }
@@ -901,6 +952,7 @@ function ItemRow({ row, query, similarItems, labels, language, geo }) {
       )}
 
       <AllergenIndicator chip={nutChip} compact containsLabel={labels.contains} estimatedLabel={labels.estimated} />
+      <PrecisionLine chip={nutChip} />
 
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
           <Chip
@@ -985,7 +1037,7 @@ const cardStyle = {
   overflow: "hidden",
 };
 
-function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier }) {
+function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCount }) {
   const pieces = [];
   if (cuisine) pieces.push(cuisine);
   if (distanceMiles !== null) pieces.push(`${distanceMiles.toFixed(1)} mi`);
@@ -1030,6 +1082,22 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier }) {
           }}
         >
           {pieces.join(" • ")}
+        </span>
+      ) : null}
+      {locationCount > 1 ? (
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 800,
+            borderRadius: 999,
+            padding: "2px 7px",
+            background: "rgba(45,106,79,0.08)",
+            border: "1px solid rgba(45,106,79,0.2)",
+            color: "#2d6a4f",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {locationCount} nearby locations
         </span>
       ) : null}
       {phone ? (
@@ -1090,6 +1158,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
     const phone = getPhoneLike(restaurant) || getPhoneLike(items[0]);
     const distanceMiles = getDistanceMilesLike(restaurant) ?? getDistanceMilesLike(items[0]);
     const profileTier = getProfileTierLike(restaurant) || getProfileTierLike(items[0]);
+    const locationCount = asNum(restaurant?.location_count) ?? asNum(restaurant?.raw?.location_count) ?? null;
 
     const restProfileTarget = restSlug || restId;
     const restHref = restProfileTarget ? "/restaurants/" + restProfileTarget : null;
@@ -1140,6 +1209,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
           phone={phone}
           distanceMiles={distanceMiles}
           profileTier={profileTier}
+          locationCount={locationCount}
         />
 
         <div>
