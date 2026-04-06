@@ -1084,7 +1084,7 @@ export default function MenuItemDetailPage() {
                   boxShadow: "0 10px 24px rgba(15, 23, 42, 0.10)",
                 }}
               >
-                {`View Full Menu at ${item.restaurant.name}`}
+                View Full Menu
               </Link>
               <div style={{ fontSize: 13, color: "#617167", fontWeight: 700 }}>
                 Explore this dish on Grubbid
