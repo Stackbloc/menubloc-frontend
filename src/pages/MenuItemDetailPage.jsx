@@ -38,6 +38,7 @@ import {
 } from "../components/share/shareUtils.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { getLocalizedField } from "../utils/getLocalizedField.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -124,6 +125,7 @@ function normalizeResultItem(raw) {
     id: raw?.menu_item_id || raw?.id || null,
     name: raw?.name || raw?.item_name || raw?.title || "Untitled Item",
     description: raw?.description || raw?.notes || raw?.snippet || "",
+    translations: raw?.translations || null,
     priceMinor: exactPriceMinor,
     price: exactPrice,
     itemPhotoUrl,
@@ -837,7 +839,7 @@ export default function MenuItemDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { isAuthenticated, allergenFilter } = useConsumer();
 
   const geoLat = searchParams.get("lat");
@@ -1013,7 +1015,7 @@ export default function MenuItemDetailPage() {
                     flex: "1 1 320px",
                   }}
                 >
-                  {item.name}
+                  {getLocalizedField(item, "name", language) || item.name}
                 </h1>
                 {shareData ? (
                   <div
@@ -1028,13 +1030,13 @@ export default function MenuItemDetailPage() {
                     <ShareButton
                       variant="dish"
                       label="Share Dish"
-                      modalTitle={`Share ${item.name}`}
+                      modalTitle={`Share ${getLocalizedField(item, "name", language) || item.name}`}
                       shareData={shareData}
                       analyticsContext={{
                         restaurantId: item.restaurant.id,
                         restaurantSlug: item.restaurant.slug || null,
                         menuItemId: item.id,
-                        menuItemName: item.name,
+                        menuItemName: getLocalizedField(item, "name", language) || item.name,
                         pageType: "menu_item_detail",
                         shareTarget: "dish",
                       }}
@@ -1054,9 +1056,9 @@ export default function MenuItemDetailPage() {
               </div>
             </div>
 
-            {item.description ? (
+            {(getLocalizedField(item, "description", language) || item.description) ? (
               <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#405048", maxWidth: 760 }}>
-                {item.description}
+                {getLocalizedField(item, "description", language) || item.description}
               </div>
             ) : null}
 
