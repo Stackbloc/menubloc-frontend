@@ -219,10 +219,11 @@ function hasAnyNutritionData(detailSystem) {
 // ── Design Tokens ────────────────────────────────────────────
 
 const VERDICT_THEMES = {
-  "Compatible with a health-conscious diet": { bg: "linear-gradient(135deg, rgba(22,105,62,0.97), rgba(34,132,78,0.93))", label: "rgba(186,248,204,0.97)", eye: "rgba(186,248,204,0.60)" },
-  "Suitable for frequent/regular consumption": { bg: "linear-gradient(135deg, rgba(16,50,118,0.97), rgba(32,68,140,0.93))", label: "rgba(180,212,255,0.97)", eye: "rgba(180,212,255,0.60)" },
-  "Best in moderation": { bg: "linear-gradient(135deg, rgba(138,70,0,0.97), rgba(176,100,0,0.92))", label: "rgba(255,218,148,0.97)", eye: "rgba(255,218,148,0.60)" },
-  "Best suited for occasional consumption": { bg: "linear-gradient(135deg, rgba(98,18,8,0.99), rgba(158,38,18,0.95))", label: "rgba(255,188,168,0.97)", eye: "rgba(255,188,168,0.58)" },
+  "Compatible with a health-conscious diet":      { bg: "linear-gradient(135deg, rgba(22,105,62,0.97), rgba(34,132,78,0.93))",    label: "rgba(186,248,204,0.97)", eye: "rgba(186,248,204,0.60)" },
+  "Suitable for frequent/regular consumption":    { bg: "linear-gradient(135deg, rgba(16,50,118,0.97), rgba(32,68,140,0.93))",    label: "rgba(180,212,255,0.97)", eye: "rgba(180,212,255,0.60)" },
+  "Solid nutritional profile — one consideration":{ bg: "linear-gradient(135deg, rgba(14,90,105,0.97), rgba(20,120,138,0.93))",   label: "rgba(178,238,248,0.97)", eye: "rgba(178,238,248,0.60)" },
+  "Best in moderation":                           { bg: "linear-gradient(135deg, rgba(138,70,0,0.97), rgba(176,100,0,0.92))",     label: "rgba(255,218,148,0.97)", eye: "rgba(255,218,148,0.60)" },
+  "Best suited for occasional consumption":       { bg: "linear-gradient(135deg, rgba(98,18,8,0.99), rgba(158,38,18,0.95))",     label: "rgba(255,188,168,0.97)", eye: "rgba(255,188,168,0.58)" },
 };
 
 const SIGNAL_CHIP_COLORS = {
