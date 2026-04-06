@@ -1601,30 +1601,11 @@ export default function PublicMenuPage() {
                   boxShadow: "0 12px 28px rgba(15,23,42,0.06)",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "space-between",
+                  justifyContent: "flex-start",
                   gap: 16,
                   flexWrap: "wrap",
                 }}
               >
-                <div style={{ minWidth: 0, flex: "1 1 320px" }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 900,
-                      textTransform: "uppercase",
-                      letterSpacing: 0.6,
-                      color: "#667085",
-                    }}
-                  >
-                    Ready to order?
-                  </div>
-                  <div style={{ marginTop: 6, fontSize: 16, fontWeight: 900, color: "#11211a" }}>
-                    Switch this page into ordering mode.
-                  </div>
-                  <div style={{ marginTop: 6, fontSize: 14, lineHeight: 1.6, color: "#475467" }}>
-                    Your current filters and menu context will carry into the order screen.
-                  </div>
-                </div>
                 <button
                   type="button"
                   onClick={enterOrderMode}
@@ -1641,8 +1622,16 @@ export default function PublicMenuPage() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {`Order from ${restaurantName}`}
+                  Order
                 </button>
+                <div style={{ minWidth: 0, flex: "1 1 220px" }}>
+                  <div style={{ marginTop: 6, fontSize: 16, fontWeight: 900, color: "#11211a" }}>
+                    Switch this page into ordering mode.
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 14, lineHeight: 1.6, color: "#475467" }}>
+                    Your current filters and menu context will carry into the order screen.
+                  </div>
+                </div>
               </div>
             ) : null}
           </main>
