@@ -170,6 +170,8 @@ function TruckRedirect() {
 
 const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 const GA_SCRIPT_ID = "grubbid-ga4-script";
+const GA_DEBUG_QUERY_PARAM = "ga_debug";
+const GA_DEBUG_STORAGE_KEY = "grubbid.analytics.debug";
 
 function isPublicGrubbidHost() {
   const host = (window?.location?.hostname || "").toLowerCase();
@@ -179,10 +181,91 @@ function isPublicGrubbidHost() {
   return false;
 }
 
+function isAnalyticsDebugEnabled() {
+  if (typeof window === "undefined") return false;
+
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    const queryValue = params.get(GA_DEBUG_QUERY_PARAM);
+    if (queryValue === "1" || queryValue === "true") {
+      window.localStorage?.setItem(GA_DEBUG_STORAGE_KEY, "1");
+      return true;
+    }
+    if (queryValue === "0" || queryValue === "false") {
+      window.localStorage?.removeItem(GA_DEBUG_STORAGE_KEY);
+      return false;
+    }
+  } catch {
+    // Ignore query parsing/localStorage failures and fall back.
+  }
+
+  try {
+    return window.localStorage?.getItem(GA_DEBUG_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function setAnalyticsDebugState(patch) {
+  if (typeof window === "undefined") return;
+
+  const previous = window.__grubbidAnalyticsDebug && typeof window.__grubbidAnalyticsDebug === "object"
+    ? window.__grubbidAnalyticsDebug
+    : {};
+
+  window.__grubbidAnalyticsDebug = {
+    ...previous,
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (window.__grubbidAnalyticsDebug.enabled && typeof console !== "undefined") {
+    console.info("[analytics]", window.__grubbidAnalyticsDebug);
+  }
+}
+
 function ensureGoogleAnalyticsLoaded() {
   if (typeof window === "undefined" || typeof document === "undefined") return false;
-  if (!GA_ID || !isPublicGrubbidHost()) return false;
-  if (window.__grubbidGaInitialized) return true;
+  const host = (window.location.hostname || "").toLowerCase();
+  const publicHost = isPublicGrubbidHost();
+  const debugEnabled = isAnalyticsDebugEnabled();
+  const gaIdPresent = Boolean(GA_ID);
+
+  setAnalyticsDebugState({
+    enabled: debugEnabled,
+    host,
+    measurementId: GA_ID || null,
+    gaIdPresent,
+    publicHost,
+  });
+
+  if (!gaIdPresent) {
+    setAnalyticsDebugState({
+      initialized: false,
+      ready: false,
+      reason: "missing_measurement_id",
+    });
+    return false;
+  }
+
+  if (!publicHost) {
+    setAnalyticsDebugState({
+      initialized: false,
+      ready: false,
+      reason: "host_not_allowed",
+    });
+    return false;
+  }
+
+  if (window.__grubbidGaInitialized) {
+    setAnalyticsDebugState({
+      initialized: true,
+      ready: true,
+      reason: null,
+      scriptPresent: Boolean(document.getElementById(GA_SCRIPT_ID)),
+    });
+    return true;
+  }
 
   window.dataLayer = window.dataLayer || [];
   window.gtag = window.gtag || function gtag() {
@@ -200,7 +283,23 @@ function ensureGoogleAnalyticsLoaded() {
     const script = document.createElement("script");
     script.id = GA_SCRIPT_ID;
     script.async = true;
+    script.dataset.loaded = "false";
     script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`;
+    script.onload = () => {
+      script.dataset.loaded = "true";
+      setAnalyticsDebugState({
+        scriptLoaded: true,
+        scriptLoadError: false,
+      });
+    };
+    script.onerror = () => {
+      script.dataset.loaded = "false";
+      setAnalyticsDebugState({
+        scriptLoaded: false,
+        scriptLoadError: true,
+        reason: "script_load_failed",
+      });
+    };
     document.head.appendChild(script);
   }
 
@@ -210,6 +309,13 @@ function ensureGoogleAnalyticsLoaded() {
     cookie_domain: "auto",
   });
   window.__grubbidGaInitialized = true;
+  setAnalyticsDebugState({
+    initialized: true,
+    ready: true,
+    reason: null,
+    scriptPresent: true,
+    scriptLoaded: document.getElementById(GA_SCRIPT_ID)?.dataset?.loaded === "true",
+  });
   return true;
 }
 
@@ -231,6 +337,15 @@ function AnalyticsTracker() {
         page_title: pageTitle,
         page_path: pagePath,
         page_location: pageLocation,
+      });
+
+      setAnalyticsDebugState({
+        lastPageView: {
+          page_title: pageTitle,
+          page_path: pagePath,
+          page_location: pageLocation,
+          sentAt: new Date().toISOString(),
+        },
       });
     }
 
@@ -266,7 +381,20 @@ function AnalyticsTracker() {
           ga_measurement_id: gaReady ? GA_ID : null,
         },
       }),
-    }).catch(() => {});
+    })
+      .then((response) => {
+        setAnalyticsDebugState({
+          backendVisitStatus: response.ok ? "ok" : "error",
+          backendVisitHttpStatus: response.status,
+          lastBackendVisitAt: new Date().toISOString(),
+        });
+      })
+      .catch(() => {
+        setAnalyticsDebugState({
+          backendVisitStatus: "network_error",
+          lastBackendVisitAt: new Date().toISOString(),
+        });
+      });
   }, [location, operator?.id, owner?.id]);
 
   return null;
