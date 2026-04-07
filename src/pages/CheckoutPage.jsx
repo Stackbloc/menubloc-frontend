@@ -178,6 +178,11 @@ export default function CheckoutPage() {
   const [paymentSession, setPaymentSession] = useState(null);
   const [submitError, setSubmitError] = useState("");
   const [creatingIntent, setCreatingIntent] = useState(false);
+  const [applyCoins, setApplyCoins] = useState(false);
+  const [userBidAttempted, setUserBidAttempted] = useState(false);
+  const [userBidAttemptedAt, setUserBidAttemptedAt] = useState(null);
+  const [userBidLoading, setUserBidLoading] = useState(false);
+  const [userBidError, setUserBidError] = useState("");
 
   const menuPath = restaurant?.restaurantId
     ? `/public/restaurants/${encodeURIComponent(String(restaurant.restaurantId))}/menu`
@@ -211,6 +216,22 @@ export default function CheckoutPage() {
     [isMobile]
   );
 
+  const currentPreviewData = previewState.data;
+  const eligibleHybridItemCount = currentPreviewData?.hybrid_eligibility?.eligible_item_count || 0;
+  const hybridNegotiationEnabled =
+    currentPreviewData?.hybrid_eligibility?.negotiation_enabled ??
+    currentPreviewData?.restaurant?.negotiation_enabled;
+  const canShowUserBidButton =
+    previewState.status === "ready" &&
+    currentPreviewData &&
+    hybridNegotiationEnabled &&
+    eligibleHybridItemCount > 0 &&
+    (currentPreviewData?.subtotal_cents || 0) >= 3500 &&
+    currentPreviewData?.user_bid?.attempted !== true &&
+    currentPreviewData?.cart_negotiation?.applied !== true &&
+    currentPreviewData?.auto_optimization?.applied !== true;
+  const userBidMessageText = currentPreviewData?.user_bid?.message || "";
+
   useEffect(() => {
     if (!availableFulfillmentTypes.includes(fulfillmentType)) {
       setFulfillmentType(availableFulfillmentTypes[0] || "pickup");
@@ -219,7 +240,13 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setPaymentSession(null);
-  }, [apiItems, fulfillmentType, normalizedDeliveryAddress]);
+  }, [apiItems, fulfillmentType, normalizedDeliveryAddress, applyCoins]);
+
+  useEffect(() => {
+    const bid = previewState.data?.user_bid;
+    setUserBidAttempted(bid?.attempted === true);
+    setUserBidAttemptedAt(bid?.attempted_at || null);
+  }, [previewState.data?.user_bid?.attempted, previewState.data?.user_bid?.attempted_at]);
 
   useEffect(() => {
     let cancelled = false;
@@ -238,6 +265,9 @@ export default function CheckoutPage() {
           items: apiItems,
           fulfillmentType,
           deliveryAddress: fulfillmentType === "delivery" ? normalizedDeliveryAddress : undefined,
+          applyCoins,
+          userBidAttempted,
+          userBidAttemptedAt,
         });
 
         if (cancelled) return;
@@ -259,7 +289,45 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, [restaurant?.restaurantId, items.length, apiItems, fulfillmentType, normalizedDeliveryAddress]);
+  }, [
+      restaurant?.restaurantId,
+      items.length,
+      apiItems,
+      fulfillmentType,
+      normalizedDeliveryAddress,
+      applyCoins,
+      userBidAttempted,
+      userBidAttemptedAt,
+    ]);
+
+  async function handleUserBid() {
+    if (userBidLoading || userBidAttempted) return;
+    if (!restaurant?.restaurantId || items.length === 0) return;
+
+    setUserBidLoading(true);
+    setUserBidError("");
+
+    try {
+      const response = await apiPost("/api/orders/preview", {
+        restaurantId: restaurant.restaurantId,
+        items: apiItems,
+        fulfillmentType,
+        userBidAttempted: false,
+        userBidAttemptedAt: null,
+        triggerUserBid: true,
+        applyCoins,
+        deliveryAddress: fulfillmentType === "delivery" ? normalizedDeliveryAddress : undefined,
+      });
+
+      setPreviewState({ status: "ready", data: response, error: "" });
+    } catch (error) {
+      setUserBidError(
+        toConsumerErrorMessage(error, "Unable to check for a better price right now.")
+      );
+    } finally {
+      setUserBidLoading(false);
+    }
+  }
 
   if (!restaurant || items.length === 0) {
     return (
@@ -332,6 +400,9 @@ export default function CheckoutPage() {
         fulfillmentType,
         deliveryAddress: fulfillmentType === "delivery" ? normalizedDeliveryAddress : undefined,
         notes,
+        applyCoins,
+        userBidAttempted,
+        userBidAttemptedAt,
       });
 
       setPaymentSession({
@@ -518,6 +589,52 @@ export default function CheckoutPage() {
                   style={{ ...inputStyle, resize: "vertical" }}
                 />
               </div>
+
+              {previewState.data?.coins?.enabled ? (
+                <div
+                  style={{
+                    borderRadius: 16,
+                    border: "1px solid rgba(17,33,26,0.10)",
+                    background: "#fffef8",
+                    padding: "14px 16px",
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 900, color: "#11211a" }}>
+                    You have {formatMoney(previewState.data.coins.available_balance_cents)} in GrubBid Coins
+                  </div>
+                  <label
+                    style={{
+                      marginTop: 10,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      fontSize: 14,
+                      color: "#11211a",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={applyCoins}
+                      onChange={(event) => setApplyCoins(event.target.checked)}
+                      disabled={
+                        previewState.status !== "ready" ||
+                        previewState.data?.coins?.enabled !== true ||
+                        (
+                          previewState.data?.coins?.can_redeem !== true &&
+                          previewState.data?.coins?.applied !== true
+                        )
+                      }
+                    />
+                    <span>Apply GrubBid Coins</span>
+                  </label>
+                  {!previewState.data?.coins?.can_redeem && !previewState.data?.coins?.applied && previewState.data?.coins?.user_message ? (
+                    <div style={{ marginTop: 8, fontSize: 12, color: "#667085" }}>
+                      {previewState.data.coins.user_message}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
               {submitError ? (
                 <div
@@ -761,10 +878,94 @@ export default function CheckoutPage() {
                       <div style={{ fontSize: 12, color: "#667085", marginTop: 4 }}>Unlocked by GrubBid</div>
                     </div>
                   ) : null}
+                  {currentPreviewData?.auto_optimization?.applied && currentPreviewData?.auto_optimization?.message ? (
+                    <div
+                      style={{
+                        marginTop: 12,
+                        borderRadius: 12,
+                        background: "#f0f5ff",
+                        border: "1px solid #c3d5fa",
+                        padding: "10px 12px",
+                        fontSize: 13,
+                        color: "#1e2a50",
+                      }}
+                    >
+                      {currentPreviewData.auto_optimization.message}
+                    </div>
+                  ) : null}
+                  {canShowUserBidButton ? (
+                    <button
+                      type="button"
+                      onClick={handleUserBid}
+                      disabled={userBidLoading || previewState.status !== "ready"}
+                      style={{
+                        marginTop: 14,
+                        width: "100%",
+                        borderRadius: 16,
+                        border: "1px solid #0f172a",
+                        background: userBidLoading ? "#94a3b8" : "#0f172a",
+                        color: "#fff",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        padding: "12px 16px",
+                        cursor: userBidLoading ? "wait" : "pointer",
+                      }}
+                    >
+                      {userBidLoading ? "Checking for a better price…" : "Try for a better price"}
+                    </button>
+                  ) : userBidMessageText ? (
+                    <div
+                      style={{
+                        marginTop: 14,
+                        borderRadius: 14,
+                        border: "1px solid rgba(15,23,42,0.12)",
+                        padding: "12px 14px",
+                        background: "#fff",
+                        fontSize: 13,
+                        color: "#0f172a",
+                      }}
+                    >
+                      {userBidMessageText}
+                    </div>
+                  ) : null}
+                  {userBidError ? (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        padding: "10px 12px",
+                        borderRadius: 12,
+                        background: "#fee2e2",
+                        color: "#991b1b",
+                        fontSize: 13,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {userBidError}
+                    </div>
+                  ) : null}
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
                     <span style={{ color: "#667085" }}>Tax</span>
                     <strong>{formatMoney(previewState.data.tax_cents)}</strong>
                   </div>
+                  {previewState.data.coins?.applied ? (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: 14,
+                        color: "#124734",
+                        fontWeight: 800,
+                      }}
+                    >
+                      <span>GrubBid Coins</span>
+                      <strong>-{formatMoney(previewState.data.coins.redeemed_cents)}</strong>
+                    </div>
+                  ) : null}
+                  {previewState.data.coins?.enabled && !previewState.data.coins?.applied && previewState.data.coins?.can_redeem ? (
+                    <div style={{ fontSize: 12, color: "#667085" }}>
+                      Up to {formatMoney(previewState.data.coins.max_redeemable_cents)} available this order.
+                    </div>
+                  ) : null}
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18 }}>
                     <span style={{ color: "#11211a", fontWeight: 900 }}>Total</span>
                     <strong>{formatMoney(previewState.data.total_cents)}</strong>

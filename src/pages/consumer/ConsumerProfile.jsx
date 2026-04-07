@@ -78,6 +78,10 @@ function SaveStatus({ status, isError = false }) {
   );
 }
 
+function formatMoney(cents) {
+  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
+}
+
 export default function ConsumerProfile() {
   const { consumer, logout, isAuthenticated, loading: authLoading, refreshSession } = useConsumer();
   const navigate = useNavigate();
@@ -93,6 +97,11 @@ export default function ConsumerProfile() {
   const [dietPrefs, setDietPrefs] = useState({});
   const [allergenPrefs, setAllergenPrefs] = useState({});
   const [savedLocations, setSavedLocations] = useState([]);
+  const [coinsWallet, setCoinsWallet] = useState({
+    balance_cents: 0,
+    lifetime_earned_cents: 0,
+    lifetime_redeemed_cents: 0,
+  });
 
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -102,7 +111,7 @@ export default function ConsumerProfile() {
     try {
       setPageError(null);
       const data = await getConsumerProfile();
-      const { profile, dietary_preferences, allergen_preferences, saved_locations } = data;
+      const { profile, dietary_preferences, allergen_preferences, saved_locations, coins_wallet } = data;
 
       setDisplayName(profile.display_name || "");
       setFirstName(profile.first_name || "");
@@ -122,6 +131,11 @@ export default function ConsumerProfile() {
       setAllergenPrefs(allergenMap);
 
       setSavedLocations(saved_locations || []);
+      setCoinsWallet({
+        balance_cents: Number(coins_wallet?.balance_cents || 0),
+        lifetime_earned_cents: Number(coins_wallet?.lifetime_earned_cents || 0),
+        lifetime_redeemed_cents: Number(coins_wallet?.lifetime_redeemed_cents || 0),
+      });
     } catch (err) {
       setPageError(err.message || "Failed to load profile");
     } finally {
@@ -332,6 +346,26 @@ export default function ConsumerProfile() {
           )}
         </Section>
 
+        <Section title="GrubBid Coins">
+          <p style={styles.sectionDesc}>
+            Platform-funded loyalty credit for future qualifying GrubBid Checkout orders.
+          </p>
+          <div style={styles.coinsGrid}>
+            <div style={styles.coinTile}>
+              <span style={styles.coinLabel}>Available balance</span>
+              <strong style={styles.coinValue}>{formatMoney(coinsWallet.balance_cents)}</strong>
+            </div>
+            <div style={styles.coinTile}>
+              <span style={styles.coinLabel}>Lifetime earned</span>
+              <strong style={styles.coinValue}>{formatMoney(coinsWallet.lifetime_earned_cents)}</strong>
+            </div>
+            <div style={styles.coinTile}>
+              <span style={styles.coinLabel}>Lifetime redeemed</span>
+              <strong style={styles.coinValue}>{formatMoney(coinsWallet.lifetime_redeemed_cents)}</strong>
+            </div>
+          </div>
+        </Section>
+
         <Section title="Save">
           <p style={styles.sectionDesc}>
             Save all profile preferences in one action.
@@ -509,6 +543,30 @@ const styles = {
   prefLabel: {
     fontSize: "14px",
     color: "#0f1720",
+  },
+  coinsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+    gap: "12px",
+  },
+  coinTile: {
+    borderRadius: "12px",
+    border: "1px solid #e8e8e4",
+    background: "#f9faf7",
+    padding: "14px 16px",
+    display: "grid",
+    gap: "6px",
+  },
+  coinLabel: {
+    fontSize: "12px",
+    fontWeight: 700,
+    color: "#667085",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+  },
+  coinValue: {
+    fontSize: "22px",
+    color: "#11211a",
   },
   currentLocation: {
     display: "flex",

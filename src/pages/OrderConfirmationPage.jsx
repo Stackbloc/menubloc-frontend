@@ -128,6 +128,28 @@ export default function OrderConfirmationPage() {
                   <span style={{ color: "#667085", fontWeight: 700 }}>Total</span>
                   <strong>{formatMoney(state.order.total_cents)}</strong>
                 </div>
+                {Number(state.order.coins_redeemed_cents || 0) > 0 ? (
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <span style={{ color: "#667085", fontWeight: 700 }}>GrubBid Coins redeemed</span>
+                    <strong>-{formatMoney(state.order.coins_redeemed_cents)}</strong>
+                  </div>
+                ) : null}
+                {state.order.payment_status === "succeeded" && Number(state.order.coins_earned_cents || 0) > 0 ? (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      borderRadius: 14,
+                      background: "#ecfdf3",
+                      border: "1px solid #bbf7d0",
+                      padding: "12px 14px",
+                      color: "#0f7048",
+                      fontSize: 14,
+                      fontWeight: 800,
+                    }}
+                  >
+                    You earned {formatMoney(state.order.coins_earned_cents)} in GrubBid Coins
+                  </div>
+                ) : null}
               </div>
 
               <div style={{ marginTop: 24 }}>
