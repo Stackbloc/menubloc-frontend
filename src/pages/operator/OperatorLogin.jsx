@@ -1,68 +1,29 @@
 /**
  * ============================================================
  * Path: menubloc-frontend/src/pages/operator/OperatorLogin.jsx
- * File: OperatorLogin.jsx
- * Date: 2026-03-23
- * Purpose:
- *   Operator sign in / account creation screen.
- *   Includes account recovery entry point for forgotten username/password.
+ * Updated: 2026-04-07
  * ============================================================
  */
 
 import React, { useState } from "react";
-import { useNavigate, Navigate, Link } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
-
-const INPUT_STYLE = {
-  width: "100%",
-  padding: "11px 14px",
-  fontSize: 14,
-  border: "1.5px solid #e4e9f0",
-  borderRadius: 10,
-  outline: "none",
-  color: "#0f1720",
-  background: "#fff",
-  boxSizing: "border-box",
-  fontFamily: "inherit",
-};
-
-const BTN_PRIMARY = {
-  width: "100%",
-  padding: "12px 0",
-  background: "#1F4E3D",
-  color: "#fff",
-  border: "none",
-  borderRadius: 10,
-  fontSize: 15,
-  fontWeight: 700,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  letterSpacing: "-0.2px",
-};
-
-const BTN_DISABLED = {
-  ...BTN_PRIMARY,
-  opacity: 0.55,
-  cursor: "not-allowed",
-};
-
-const LINK_STYLE = {
-  color: "#1F4E3D",
-  fontSize: 13,
-  fontWeight: 600,
-  textDecoration: "none",
-};
+import {
+  AuthPageFrame,
+  FormError,
+  PasswordField,
+  styles,
+} from "../../components/consumer/ConsumerAuthShared.jsx";
 
 export default function OperatorLogin() {
-  const { login, register, isAuthenticated, loading } = useOperator();
+  const { login, isAuthenticated, loading } = useOperator();
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
 
   if (!loading && isAuthenticated) {
     return <Navigate to="/operator" replace />;
@@ -70,158 +31,90 @@ export default function OperatorLogin() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError("");
+
+    const nextErrors = {};
+    if (!email.trim()) nextErrors.email = "Email is required";
+    if (!password) nextErrors.password = "Password is required";
+    setFieldErrors(nextErrors);
+    setFormError("");
+
+    if (Object.values(nextErrors).some(Boolean)) {
+      setFormError("Email and password are required.");
+      return;
+    }
+
     setBusy(true);
     try {
-      const result = mode === "login"
-        ? await login(email.trim(), password)
-        : await register(email.trim(), password, fullName.trim() || undefined);
-      const dest = result.restaurants.length === 0 ? "/operator/claim" : "/operator";
+      const result = await login(email.trim(), password);
+      const dest = result.restaurants?.length === 0 ? "/operator/claim" : "/operator";
       navigate(dest, { replace: true });
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      setFormError(err.message || "Sign in failed. Please try again.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "linear-gradient(135deg, #f4f3ef 0%, #eef5f2 100%)",
-      fontFamily: "Inter, system-ui, sans-serif",
-      padding: 20,
-    }}>
-      <div style={{
-        width: "100%",
-        maxWidth: 400,
-        background: "#fff",
-        borderRadius: 18,
-        boxShadow: "0 4px 32px rgba(0,0,0,0.08)",
-        padding: "36px 32px",
-      }}>
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{ fontWeight: 800, fontSize: 26, color: "#1F4E3D", letterSpacing: "-0.8px" }}>
-            grubbid
-          </div>
-          <div style={{ fontSize: 13, color: "#8a9ab0", marginTop: 4 }}>
-            Operator Portal
-          </div>
+    <AuthPageFrame
+      title="Operator sign in"
+      subtitle="Manage your restaurant on Grubbid."
+      footer={(
+        <>
+          <p style={styles.footer}>
+            <Link to="/operator/recover" style={styles.link}>Forgot password?</Link>
+          </p>
+          <p style={{ ...styles.footer, marginTop: "12px" }}>
+            New to Grubbid?{" "}
+            <Link to="/operator/signup" style={styles.link}>Create operator account</Link>
+          </p>
+        </>
+      )}
+    >
+      <form onSubmit={handleSubmit} noValidate style={styles.form}>
+        <div style={styles.fieldGroup}>
+          <label htmlFor="operator-login-email" style={styles.label}>Email</label>
+          <input
+            id="operator-login-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setFieldErrors((cur) => ({ ...cur, email: undefined }));
+            }}
+            style={{ ...styles.input, ...(fieldErrors.email ? styles.inputError : null) }}
+            placeholder="you@restaurant.com"
+            aria-invalid={fieldErrors.email ? "true" : "false"}
+            required
+            autoFocus
+          />
+          {fieldErrors.email ? <div style={styles.fieldError}>{fieldErrors.email}</div> : null}
         </div>
 
-        <div style={{
-          display: "flex",
-          background: "#f4f3ef",
-          borderRadius: 10,
-          padding: 3,
-          marginBottom: 24,
-        }}>
-          {["login", "register"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => { setMode(tab); setError(""); }}
-              style={{
-                flex: 1,
-                padding: "8px 0",
-                border: "none",
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                background: mode === tab ? "#fff" : "transparent",
-                color: mode === tab ? "#0f1720" : "#8a9ab0",
-                boxShadow: mode === tab ? "0 1px 6px rgba(0,0,0,0.08)" : "none",
-                fontFamily: "inherit",
-                transition: "background 0.15s",
-              }}
-            >
-              {tab === "login" ? "Sign in" : "Create account"}
-            </button>
-          ))}
-        </div>
+        <PasswordField
+          id="operator-login-password"
+          label="Password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setFieldErrors((cur) => ({ ...cur, password: undefined }));
+          }}
+          placeholder="Your password"
+          error={fieldErrors.password}
+        />
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {mode === "register" && (
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 5 }}>
-                Full name
-              </label>
-              <input
-                type="text"
-                placeholder="Jane Smith"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                style={INPUT_STYLE}
-                autoComplete="name"
-              />
-            </div>
-          )}
+        <FormError error={formError} />
 
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 5 }}>
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="you@restaurant.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={INPUT_STYLE}
-              autoComplete="email"
-              autoFocus
-            />
-          </div>
-
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 5 }}>
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder={mode === "register" ? "At least 8 characters" : ""}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={mode === "register" ? 8 : undefined}
-              style={INPUT_STYLE}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-            />
-          </div>
-
-          {mode === "login" && (
-            <div style={{ marginTop: -4 }}>
-              <Link to="/operator/recover" style={LINK_STYLE}>
-                Forgot username/password?
-              </Link>
-            </div>
-          )}
-
-          {error && (
-            <div style={{
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: 8,
-              padding: "10px 12px",
-              fontSize: 13,
-              color: "#b91c1c",
-            }}>
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={busy}
-            style={busy ? BTN_DISABLED : BTN_PRIMARY}
-          >
-            {busy ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
-          </button>
-        </form>
-      </div>
-    </div>
+        <button
+          type="submit"
+          disabled={busy}
+          style={{ ...styles.submitButton, ...(busy ? styles.submitButtonDisabled : null) }}
+        >
+          {busy ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
+    </AuthPageFrame>
   );
 }

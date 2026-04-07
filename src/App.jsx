@@ -39,6 +39,7 @@ import ConsumerForgotPassword from "./pages/consumer/ConsumerForgotPassword.jsx"
 import ConsumerResetPassword from "./pages/consumer/ConsumerResetPassword.jsx";
 import ConsumerProfile from "./pages/consumer/ConsumerProfile.jsx";
 import OperatorLogin from "./pages/operator/OperatorLogin.jsx";
+import OperatorSignup from "./pages/operator/OperatorSignup.jsx";
 import OperatorRecovery from "./pages/operator/OperatorRecovery.jsx";
 import OperatorResetPassword from "./pages/operator/OperatorResetPassword.jsx";
 import OperatorDashboard from "./pages/operator/OperatorDashboard.jsx";
@@ -469,6 +470,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerProfile />} />
 
         <Route path="/operator/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorLogin />} />
+        <Route path="/operator/signup" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorSignup />} />
         <Route path="/operator/recover" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorRecovery />} />
         <Route path="/operator/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorResetPassword />} />
         <Route path="/operator/claim" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorClaimSearch /></OperatorRoute>} />
