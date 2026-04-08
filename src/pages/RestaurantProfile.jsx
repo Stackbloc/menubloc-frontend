@@ -63,6 +63,13 @@ export default function RestaurantProfile() {
     setForm((p) => ({ ...p, [k]: v }));
   }
 
+  function formatPhone(raw) {
+    const digits = raw.replace(/\D/g, "").slice(0, 10);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
   const canSave = useMemo(() => {
     return safeText(form.restaurant_name) && safeText(form.category);
   }, [form]);
@@ -260,7 +267,13 @@ export default function RestaurantProfile() {
 
             <div>
               <div style={styles.label}>Phone</div>
-              <input style={styles.input} value={form.phone} onChange={(e) => setField("phone", e.target.value)} />
+              <input
+                style={styles.input}
+                type="tel"
+                placeholder="(555) 555-5555"
+                value={form.phone}
+                onChange={(e) => setField("phone", formatPhone(e.target.value))}
+              />
             </div>
 
             <div>
