@@ -1,6 +1,6 @@
 // menubloc-frontend/src/pages/RestaurantProfile.jsx
 import React, { useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
