@@ -1,8 +1,9 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
 const FOOTER_LINK_PATH_PREFIXES = ["/operator", "/owner"];
+const FOOTER_HIDDEN_PATHS = new Set(["/", "/checkout"]);
 
 function isPublicPath(pathname) {
   const path = String(pathname || "");
@@ -14,7 +15,7 @@ export default function SiteFooter() {
   const { language, setLanguage, t } = useLanguage();
 
   if (!isPublicPath(location.pathname)) return null;
-  if (location.pathname === "/") return null;
+  if (FOOTER_HIDDEN_PATHS.has(location.pathname)) return null;
 
   return (
     <footer
@@ -37,8 +38,37 @@ export default function SiteFooter() {
           boxSizing: "border-box",
         }}
       >
-        <div style={{ fontSize: 13, color: "#667085", fontWeight: 600 }}>
-          {t("footer.powered")}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 18,
+            alignItems: "center",
+            fontSize: 13,
+            flex: "1 1 560px",
+          }}
+        >
+          <div style={{ fontSize: 13, color: "#667085", fontWeight: 600 }}>
+            {t("footer.powered")}
+          </div>
+          <Link to="/restaurant/signup" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+            {t("discovery.footer.signup")}
+          </Link>
+          <Link to="/deals" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+            {t("discovery.footer.deals")}
+          </Link>
+          <Link to="/top-picks" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+            {t("discovery.footer.topPicksNearYou")}
+          </Link>
+          <Link to="/terms" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+            {t("discovery.footer.terms")}
+          </Link>
+          <Link to="/about" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+            About Grubbid
+          </Link>
+          <Link to="/contact" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+            {t("discovery.footer.contact")}
+          </Link>
         </div>
 
         <div

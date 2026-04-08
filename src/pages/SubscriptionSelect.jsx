@@ -932,7 +932,7 @@ export default function SubscriptionSelect() {
                 <tr>
                   <th style={s.th(false)}>Feature</th>
                   <th style={s.th(false)}>Verified</th>
-                  <th style={s.th(true)}>Pro</th>
+                  <th style={s.th(true)}>{`Pro ${proPricing.amount}`}</th>
                 </tr>
               </thead>
               <tbody>
@@ -984,7 +984,9 @@ export default function SubscriptionSelect() {
             <article style={s.planCard(true)}>
               <div style={s.planBadge}>Most Popular</div>
               <div style={s.planEyebrow}>Pro</div>
-              <div style={s.planName}>Pro</div>
+              <div style={s.planName}>
+                {proInterval === "annual" ? 'Pro Annual "$199.99"' : "Pro Monthly $39.99"}
+              </div>
               <div style={s.planDesc}>
                 Everything you need to grow, promote, and sell.
               </div>
