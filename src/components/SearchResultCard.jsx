@@ -849,6 +849,8 @@ function ItemRow({ row, query, similarItems, labels, language, geo }) {
 
   const mid = getItemId(row);
   const name = getItemName(row, language);
+  const chips = resolveChips(row);
+  const indulgencePresentation = resolveIndulgencePresentation({ chips });
   const hrefBase = mid ? getCanonicalMenuItemPath({
     restaurant: {
       slug: getRestSlug(row),
@@ -879,7 +881,6 @@ function ItemRow({ row, query, similarItems, labels, language, geo }) {
   const isVegan = asBool(resolveItemFlag(row, "is_vegan"));
   const isGF = asBool(resolveItemFlag(row, "is_gluten_free"));
 
-  const chips = resolveChips(row);
   const nutChip = chips?.nutrition_chip || {};
 
   // Nutrition chip is "available" (lights up blue) when any of:
