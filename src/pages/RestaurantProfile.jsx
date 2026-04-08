@@ -1,5 +1,5 @@
 // menubloc-frontend/src/pages/RestaurantProfile.jsx
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 
@@ -20,6 +20,9 @@ export default function RestaurantProfile() {
 
   const presetEmail = safeText(qs.get("email") || "");
 
+  const [categories, setCategories] = useState([]);
+  const [cuisines, setCuisines] = useState([]);
+
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState("");
   const [restaurantId, setRestaurantId] = useState(null);
@@ -38,6 +41,18 @@ export default function RestaurantProfile() {
     postal_code: "",
     email: presetEmail,
   });
+
+  useEffect(() => {
+    fetch(`${API}/api/meta/categories`)
+      .then((r) => r.json())
+      .then((j) => { if (j.ok) setCategories(j.categories); })
+      .catch(() => {});
+
+    fetch(`${API}/api/meta/cuisines`)
+      .then((r) => r.json())
+      .then((j) => { if (j.ok) setCuisines(j.cuisines); })
+      .catch(() => {});
+  }, []);
 
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -143,6 +158,18 @@ export default function RestaurantProfile() {
       outline: "none",
       background: "#fff",
     },
+    select: {
+      width: "100%",
+      height: 42,
+      padding: "0 12px",
+      border: "1px solid #e5e5e5",
+      borderRadius: 12,
+      outline: "none",
+      background: "#fff",
+      appearance: "auto",
+      color: "#111",
+      fontSize: 14,
+    },
     btn: {
       height: 44,
       padding: "0 16px",
@@ -196,22 +223,30 @@ export default function RestaurantProfile() {
 
             <div>
               <div style={styles.label}>Category *</div>
-              <input
-                style={styles.input}
+              <select
+                style={styles.select}
                 value={form.category}
                 onChange={(e) => setField("category", e.target.value)}
-                placeholder="e.g., Restaurant"
-              />
+              >
+                <option value="">— Select category —</option>
+                {categories.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
             </div>
 
             <div>
               <div style={styles.label}>Cuisine</div>
-              <input
-                style={styles.input}
+              <select
+                style={styles.select}
                 value={form.cuisine}
                 onChange={(e) => setField("cuisine", e.target.value)}
-                placeholder="e.g., Italian"
-              />
+              >
+                <option value="">— Select cuisine —</option>
+                {cuisines.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
             </div>
 
             <div>
