@@ -29,6 +29,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { PageNav } from "../components/NavButton";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
+import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
 import {
   applyDocumentSocialMetadata,
@@ -38,6 +39,7 @@ import {
 } from "../components/share/shareUtils.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -366,6 +368,24 @@ function VerdictBlock({ detailSystem, isMobile, t }) {
   );
 }
 
+function DessertVerdictBlock({ presentation, isMobile, t }) {
+  if (!presentation?.indulgence) return null;
+
+  return (
+    <Surface style={{ marginTop: 20, padding: isMobile ? 22 : 28, background: "linear-gradient(135deg, rgba(88,28,16,0.98), rgba(153,27,27,0.94))", color: "#fff7ed" }}>
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(254,215,170,0.82)", marginBottom: 10 }}>
+        {t("menuItemDetail.verdict", "Verdict")}
+      </div>
+      <div style={{ fontSize: isMobile ? 34 : 46, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em", color: "#fff7ed" }}>
+        {presentation.verdict || "Indulgent"}
+      </div>
+      <div style={{ marginTop: 16, borderRadius: 18, padding: "14px 16px", background: "rgba(255,255,255,0.98)" }}>
+        <IndulgenceMeter indulgence={presentation.indulgence} />
+      </div>
+    </Surface>
+  );
+}
+
 function NutritionCard({ detailSystem, t }) {
   const nutrition = detailSystem?.nutrition || {};
   const perOz = nutrition?.per_oz || null;
@@ -498,6 +518,30 @@ function InsightsCard({ detailSystem, t }) {
   );
 }
 
+function DessertInterpretationCard({ presentation, t }) {
+  if (!presentation) return null;
+  const itemLabel = presentation.itemCategory === "pure_bread" ? "Bread interpretation" : "Dessert interpretation";
+
+  return (
+    <SectionCard
+      title={t("menuItemDetail.insights", "Insights")}
+      eyebrow={itemLabel}
+      style={{ padding: 16, background: "rgba(255,255,255,0.82)", border: "1px solid rgba(20,33,27,0.06)", boxShadow: "0 10px 24px rgba(20,33,27,0.04)" }}
+    >
+      <div style={{ fontSize: 15, lineHeight: 1.6, color: "#23352d", fontWeight: 800 }}>
+        {presentation.interpretation || "This item is still treated as an indulgent choice even if some protein or fiber offsets are present."}
+      </div>
+      {presentation.indulgence?.drivers?.length ? (
+        <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {presentation.indulgence.drivers.map((driver) => (
+            <BadgePill key={driver} tone="caution">{driver}</BadgePill>
+          ))}
+        </div>
+      ) : null}
+    </SectionCard>
+  );
+}
+
 function IngredientFlagsCard({ detailSystem, t }) {
   const processing = detailSystem?.ingredients_processing || null;
   const europe = detailSystem?.europe_standards || null;
@@ -609,7 +653,7 @@ function IngredientFlagsCard({ detailSystem, t }) {
   );
 }
 
-function NutritionInsightsCluster({ detailSystem, isMobile, t }) {
+function NutritionInsightsCluster({ detailSystem, isMobile, t, indulgencePresentation = null }) {
   return (
     <Surface style={{ marginTop: 22, padding: isMobile ? 18 : 22 }}>
       <Eyebrow>{t("menuItemDetail.nutritionAndInsights", "Nutrition & Insights")}</Eyebrow>
@@ -623,9 +667,13 @@ function NutritionInsightsCluster({ detailSystem, isMobile, t }) {
           }}
         >
           <NutritionCard detailSystem={detailSystem} t={t} />
-          <InsightsCard detailSystem={detailSystem} t={t} />
+          {indulgencePresentation ? (
+            <DessertInterpretationCard presentation={indulgencePresentation} t={t} />
+          ) : (
+            <InsightsCard detailSystem={detailSystem} t={t} />
+          )}
         </div>
-        <IngredientFlagsCard detailSystem={detailSystem} t={t} />
+        {!indulgencePresentation ? <IngredientFlagsCard detailSystem={detailSystem} t={t} /> : null}
       </div>
     </Surface>
   );
@@ -947,6 +995,7 @@ export default function MenuItemDetailPage() {
 
   const detailSystem = item.detailSystem || null;
   const hasNutritionData = hasAnyNutritionData(detailSystem);
+  const indulgencePresentation = resolveIndulgencePresentation({ detailSystem });
   const integrity = rawItem?.integrity || null;
   const isBrokenFranchiseLink = integrity?.status === "broken_franchise_link";
   const showRestaurantLogo = hasRenderableImage(item.restaurant.logoUrl);
@@ -1124,8 +1173,17 @@ export default function MenuItemDetailPage() {
       {/* ── 3. Verdict ── */}
       {hasNutritionData ? (
         <>
-          <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} />
-          <NutritionInsightsCluster detailSystem={detailSystem} isMobile={isMobile} t={t} />
+          {indulgencePresentation ? (
+            <DessertVerdictBlock presentation={indulgencePresentation} isMobile={isMobile} t={t} />
+          ) : (
+            <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} />
+          )}
+          <NutritionInsightsCluster
+            detailSystem={detailSystem}
+            isMobile={isMobile}
+            t={t}
+            indulgencePresentation={indulgencePresentation}
+          />
         </>
       ) : (
         <MissingNutritionState />

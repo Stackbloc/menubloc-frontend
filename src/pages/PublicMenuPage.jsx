@@ -31,10 +31,12 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import BasketSummaryBar from "../components/basket/BasketSummaryBar.jsx";
+import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ModifierSheet from "../components/basket/ModifierSheet.jsx";
 import { itemHasRequiredModifiers } from "../components/basket/modifierModel.js";
 import OrderCartToast from "../components/basket/OrderCartToast.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
+import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import {
   applyDocumentSocialMetadata,
   buildDishShareData,
@@ -73,6 +75,32 @@ function fmtMoney(price) {
 
 function formatMoneyFromCents(cents) {
   return `$${(Number(cents || 0) / 100).toFixed(2)}`;
+}
+
+function IndulgenceInline({ presentation }) {
+  if (!presentation?.indulgence) return null;
+
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        padding: "10px 12px",
+        borderRadius: 14,
+        background: "linear-gradient(135deg, rgba(255,247,237,1), rgba(255,255,255,1))",
+        border: "1px solid rgba(249,115,22,0.16)",
+      }}
+    >
+      <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: "#c2410c", marginBottom: 6 }}>
+        {presentation.verdict || "Indulgent"}
+      </div>
+      <IndulgenceMeter indulgence={presentation.indulgence} />
+      {presentation.interpretation ? (
+        <div style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.45, color: "#7c2d12", fontWeight: 700 }}>
+          {presentation.interpretation}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function buildGoogleMapsDirectionsUrl(destination) {
@@ -1204,6 +1232,7 @@ export default function PublicMenuPage() {
                           ""
                         ).trim();
                         const price   = fmtMoney(it?.price);
+                        const indulgencePresentation = resolveIndulgencePresentation({ chips: it?.chips });
                         const deal    = it?.id != null ? dealMap.get(it.id) : undefined;
                         const hasDeal = !!deal;
                         const cartState = getCartItemState(activeCartItems, it?.id);
@@ -1300,6 +1329,7 @@ export default function PublicMenuPage() {
                                         </span>
                                       </div>
                                     ) : null}
+                                    {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
                                   </div>
                                   <div style={{ display: "grid", justifyItems: "end", gap: 8, flexShrink: 0 }}>
                                     {dishShareData ? (
@@ -1530,6 +1560,7 @@ export default function PublicMenuPage() {
                                   {desc ? (
                                     <div style={{ marginTop: 4, fontSize: 13, color: "#475467", lineHeight: 1.5 }}>{desc}</div>
                                   ) : null}
+                                  {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
                                 </div>
                                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
                                   {dishShareData ? (

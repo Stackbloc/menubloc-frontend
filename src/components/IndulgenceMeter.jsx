@@ -50,6 +50,10 @@ export default function IndulgenceMeter({ indulgence }) {
           {meta.label}
         </span>
       </div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.3rem", fontSize: "0.72rem", fontWeight: 700, color: "#6b7280" }}>
+        <span>Lighter</span>
+        <span>More indulgent</span>
+      </div>
 
       {/* Track */}
       <div

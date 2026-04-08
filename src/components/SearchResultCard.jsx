@@ -35,9 +35,11 @@
 
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import IndulgenceMeter from "./IndulgenceMeter.jsx";
 import ShareButton from "./share/ShareButton.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
+import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import {
   buildCanonicalMenuPath,
   buildDishShareData,
@@ -685,11 +687,38 @@ function Chip({ label, active, available, onClick }) {
   );
 }
 
+function DessertSearchPanel({ presentation }) {
+  if (!presentation?.indulgence) return null;
+
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        padding: "12px 14px",
+        borderRadius: 16,
+        background: "linear-gradient(135deg, rgba(255,247,237,1), rgba(255,255,255,1))",
+        border: "1px solid rgba(249,115,22,0.18)",
+      }}
+    >
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: "#c2410c", marginBottom: 8 }}>
+        {presentation.verdict || "Indulgent"}
+      </div>
+      <IndulgenceMeter indulgence={presentation.indulgence} />
+      {presentation.interpretation ? (
+        <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.45, color: "#7c2d12", fontWeight: 700 }}>
+          {presentation.interpretation}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /* ---- Detail panel content ---- */
 
 function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
   const chips = resolveChips(row);
   const nutChip = chips?.nutrition_chip || {};
+  const indulgencePresentation = resolveIndulgencePresentation({ chips });
 
   const muted = { color: "#9ca3af" };
   const wrap = {
@@ -742,6 +771,7 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
                     const siPrice = fmtPrice(si);
                     const siId = getItemId(si);
                     const siHref = siId ? "/menu-items/" + siId : null;
+                    const similarIndulgence = resolveIndulgencePresentation(si);
                     return (
                       <div
                         key={siId || siName}
@@ -776,6 +806,11 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
                           ) : (
                             siName
                           )}
+                          {similarIndulgence?.indulgence ? (
+                            <div style={{ marginTop: 4, fontSize: "11.5px", color: "#b45309", fontWeight: 800 }}>
+                              Indulgent · {similarIndulgence.indulgence.score}/100
+                            </div>
+                          ) : null}
                         </div>
                         {siPrice ? (
                           <span
@@ -953,22 +988,25 @@ function ItemRow({ row, query, similarItems, labels, language, geo }) {
 
       <AllergenIndicator chip={nutChip} compact containsLabel={labels.contains} estimatedLabel={labels.estimated} />
       <PrecisionLine chip={nutChip} />
+      {indulgencePresentation ? <DessertSearchPanel presentation={indulgencePresentation} /> : null}
 
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {!indulgencePresentation ? (
           <Chip
-          label={labels.nutrition}
-          active={openTab === "nutrition"}
-          available={hasNut}
-          onClick={() => toggle("nutrition")}
-        />
-        {hasIns && (
+            label={labels.nutrition}
+            active={openTab === "nutrition"}
+            available={hasNut}
+            onClick={() => toggle("nutrition")}
+          />
+        ) : null}
+        {!indulgencePresentation && hasIns ? (
           <Chip
             label={labels.insights}
             active={openTab === "insights"}
             available={true}
             onClick={() => toggle("insights")}
           />
-        )}
+        ) : null}
         {hasSimilar && (
           <Chip
             label={labels.showSimilar}
