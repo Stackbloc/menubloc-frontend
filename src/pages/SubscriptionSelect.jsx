@@ -950,6 +950,7 @@ export default function SubscriptionSelect() {
               </ul>
 
               <button
+                type="button"
                 style={s.button(true, isCheckingOut)}
                 onClick={handleProCheckout}
                 disabled={isCheckingOut}
@@ -957,13 +958,13 @@ export default function SubscriptionSelect() {
                 {isCheckingOut
                   ? "Preparing checkout..."
                   : hasOnboardingContext
-                  ? proPricing.buttonLabel
+                  ? "Go Pro with Stripe"
                   : "Get Started"}
               </button>
 
               {hasOnboardingContext ? (
                 <div style={s.footnote}>
-                  Secure checkout via Stripe. Your plan selection carries into menu design.
+                  Clicking Pro sends you to secure Stripe checkout, then back into menu design.
                 </div>
               ) : null}
             </article>
@@ -1009,67 +1010,6 @@ export default function SubscriptionSelect() {
           </div>
         </section>
 
-        <section style={s.sectionCard}>
-          <div style={s.whyGrid}>
-            <div style={s.whyPanel}>
-              <div style={s.whyTitle}>Why Go Pro?</div>
-              <div style={s.whyIntro}>
-                Verified is the low-friction way to get listed. Pro is where your menu starts working harder for the business.
-              </div>
-              <ul style={s.whyList}>
-                {WHY_PRO_POINTS.map((point) => (
-                  <li key={point} style={s.whyItem}>
-                    <span style={s.whyMark}>&#10003;</span>
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div style={s.pressurePanel}>
-              <div>
-                <div style={s.pressureTitle}>Conversion pressure</div>
-                <div style={s.pressureHeading}>Pro is built to earn back the upgrade.</div>
-                <div style={s.pressureText}>
-                  Use Pro when you want better placement, better presentation, and direct revenue tools instead of a static listing.
-                </div>
-              </div>
-
-              <div style={s.pressureStats}>
-                <div style={s.pressureStat}>
-                  <div style={s.pressureLabel}>Verified</div>
-                  <div style={s.pressureValue}>Sufficient for getting live</div>
-                </div>
-                <div style={s.pressureStat}>
-                  <div style={s.pressureLabel}>Pro</div>
-                  <div style={s.pressureValue}>Built for growth, promotions, and ordering</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section style={s.footerCta}>
-          <div>
-            <div style={s.footerHeading}>Start with Verified or unlock full power with Pro.</div>
-            <div style={s.footerText}>
-              Keep the entry simple. Upgrade when you want search priority, stronger branding, promotions, analytics, and direct ordering.
-            </div>
-          </div>
-
-          <div style={s.footerActions}>
-            <button style={s.footerButton(false)} onClick={chooseVerified}>
-              {hasOnboardingContext ? "Choose Verified" : "Get Started"}
-            </button>
-            <button
-              style={s.footerButton(true)}
-              onClick={handleProCheckout}
-              disabled={isCheckingOut}
-            >
-              {isCheckingOut ? "Preparing checkout..." : "Go Pro"}
-            </button>
-          </div>
-        </section>
       </div>
     </div>
   );
