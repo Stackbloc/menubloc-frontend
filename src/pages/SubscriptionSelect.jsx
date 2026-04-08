@@ -30,175 +30,612 @@ import { BrandLockup } from "../components/BrandLogo.jsx";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const ONBOARDING_STATE_KEY = "grubbid.onboarding.state";
 
+const VERIFIED_PRICE_LABEL = "Free";
+const PRO_PRICING = {
+  monthly: {
+    amount: "$79",
+    suffix: "/ month",
+    tableLabel: "$79 / month",
+    buttonLabel: "Go Pro",
+    badge: null,
+  },
+  annual: {
+    amount: "$799",
+    suffix: "/ year",
+    tableLabel: "$799 / year",
+    buttonLabel: "Go Pro",
+    badge: "Best annual value",
+  },
+};
+
+const PLAN_CARD_FEATURES = {
+  verified: [
+    "Menu hosting",
+    "QR code access",
+    "Basic profile",
+  ],
+  pro: [
+    "Online ordering with Stripe",
+    "Deals and promotions",
+    "Full branding control",
+    "Analytics and insights",
+    "Multiple menus",
+  ],
+};
+
+const COMPARISON_ROWS = [
+  { feature: "Price", verified: VERIFIED_PRICE_LABEL, proKey: "tableLabel", emphasis: true },
+  { feature: "Grubbid Profile Page", verified: "check", pro: "check" },
+  { feature: "Menu Hosting", verified: "check", pro: "check" },
+  { feature: "QR Code Access", verified: "Basic", pro: "Advanced Kit" },
+  { feature: "Menu Editing", verified: "Limited", pro: "Full Access" },
+  { feature: "Deals and Promotions", verified: "cross", pro: "check" },
+  { feature: "Custom Branding (Logo, About)", verified: "cross", pro: "check" },
+  { feature: "Featured Menu Items", verified: "cross", pro: "check" },
+  { feature: "Analytics Dashboard", verified: "cross", pro: "check" },
+  { feature: "Online Ordering (Stripe)", verified: "cross", pro: "check" },
+  { feature: "Customer Insights", verified: "cross", pro: "check" },
+  { feature: "Multiple Menus (Lunch/Dinner/etc.)", verified: "cross", pro: "check" },
+  { feature: "Priority Placement in Search", verified: "cross", pro: "check" },
+];
+
+const FUTURE_ROWS = [
+  { feature: "Advanced Menu Design (Adobe)", verified: "cross", pro: "future" },
+  { feature: "Social Media Menu Exports", verified: "cross", pro: "future" },
+  { feature: "Seasonal Menu Scheduling", verified: "cross", pro: "future" },
+  { feature: "Menu Performance Insights", verified: "cross", pro: "future" },
+  { feature: "Future Feature", verified: "cross", pro: "future" },
+  { feature: "Future Feature", verified: "cross", pro: "future" },
+];
+
+const WHY_PRO_POINTS = [
+  "Increase visibility in search results",
+  "Run promotions and attract new customers",
+  "Turn your menu into a revenue engine",
+  "Accept orders directly with lower fees",
+];
+
 const s = {
   page: {
-    maxWidth: 760,
+    minHeight: "100vh",
+    background:
+      "radial-gradient(circle at top left, rgba(255, 202, 142, 0.35), transparent 30%), radial-gradient(circle at top right, rgba(255, 243, 205, 0.55), transparent 32%), linear-gradient(180deg, #fffdf8 0%, #fff7ea 48%, #fff3df 100%)",
+    padding: "28px 18px 72px",
+    color: "#2a2118",
+    fontFamily: '"Avenir Next", "Segoe UI", sans-serif',
+  },
+  shell: {
+    maxWidth: 1180,
     margin: "0 auto",
-    padding: "36px 20px 80px",
-    fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
-    color: "#111",
   },
-  brand:    { fontWeight: 800, fontSize: 18 },
-  subbrand: { fontSize: 12, color: "#666", marginBottom: 28 },
-
-  steps: {
-    display: "flex",
-    alignItems: "center",
-    gap: 0,
-    marginBottom: 40,
-    fontSize: 11,
-    fontWeight: 600,
-    flexWrap: "wrap",
-    rowGap: 8,
-  },
-  step: (active, done) => ({
-    padding: "4px 10px",
-    borderRadius: 999,
-    background: done ? "#111" : active ? "#f0f0f5" : "transparent",
-    color: done ? "#fff" : active ? "#111" : "#aaa",
-    border: active ? "1.5px solid #111" : "1.5px solid transparent",
-    whiteSpace: "nowrap",
-    fontSize: 11,
-  }),
-  stepDivider: { flex: "0 0 12px", height: 1, background: "#e0e0e0", margin: "0 2px" },
-
-  heading:    { fontSize: 24, fontWeight: 800, marginBottom: 6 },
-  subheading: { fontSize: 15, color: "#555", marginBottom: 32 },
-  summaryCard: {
-    border: "1px solid #e5e5e5",
-    borderRadius: 14,
-    padding: "14px 16px",
-    marginBottom: 24,
-    background: "#fafafa",
-    display: "flex",
-    gap: 14,
-    flexWrap: "wrap",
-    fontSize: 13,
-    color: "#444",
-  },
-  summaryLabel: { fontWeight: 800, color: "#111", marginRight: 4 },
-
-  grid: { display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 48 },
-  card: (highlighted) => ({
-    flex: "1 1 280px",
-    border: highlighted ? "2px solid #111" : "1px solid #e5e5e5",
-    borderRadius: 18,
-    padding: "24px 22px",
-    background: highlighted ? "#fafafa" : "#fff",
-    display: "flex",
-    flexDirection: "column",
-    gap: 0,
-    position: "relative",
-  }),
-  badge: {
-    display: "inline-block",
-    fontSize: 11,
-    fontWeight: 800,
-    background: "#111",
-    color: "#fff",
-    borderRadius: 999,
-    padding: "3px 10px",
-    marginBottom: 12,
-    alignSelf: "flex-start",
-  },
-  planName:    { fontSize: 20, fontWeight: 800, marginBottom: 4 },
-  planTagline: { fontSize: 13, fontWeight: 700, color: "#222", marginBottom: 8 },
-  planDesc:    { fontSize: 13, color: "#555", marginBottom: 18, lineHeight: 1.6 },
-  divider:     { height: 1, background: "#eee", marginBottom: 16 },
-  includesLabel: {
-    fontSize: 11, fontWeight: 800, color: "#888",
-    textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10,
-  },
-  featureList: { listStyle: "none", padding: 0, margin: "0 0 8px", fontSize: 13, color: "#333", lineHeight: 1.7 },
-  featureItem: { display: "flex", gap: 8, alignItems: "flex-start" },
-  checkmark:   { color: "#111", fontWeight: 900, marginTop: 1, flexShrink: 0 },
-  bestFor:     { fontSize: 12, color: "#888", marginTop: 12, lineHeight: 1.5, marginBottom: 20 },
-  bestForLabel:{ fontWeight: 700, color: "#555" },
   topLink: {
     display: "inline-flex",
     alignItems: "center",
-    marginBottom: 20,
-    color: "#555",
+    marginBottom: 18,
+    color: "#6f5c48",
     fontSize: 13,
     fontWeight: 700,
     textDecoration: "none",
   },
-  btn: (primary, disabled) => ({
-    width: "100%",
-    height: 46,
-    borderRadius: 12,
-    border: primary ? 0 : "1px solid #ccc",
-    background: disabled ? "#ccc" : primary ? "#111" : "#fff",
-    color: primary ? "#fff" : "#111",
-    fontWeight: 700,
-    fontSize: 15,
-    cursor: disabled ? "not-allowed" : "pointer",
-    marginTop: "auto",
-    fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
-  }),
-
-  designTeaser: {
-    border: "1.5px solid #e0e0e0",
-    borderRadius: 18,
-    padding: "24px 24px 20px",
-    background: "linear-gradient(135deg, #fafafa 0%, #f5f5ff 100%)",
-    display: "flex",
-    gap: 24,
-    flexWrap: "wrap",
-    alignItems: "center",
-  },
-  teaserLeft: { flex: "1 1 260px" },
-  teaserEyebrow: {
-    fontSize: 11, fontWeight: 800, color: "#888",
-    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8,
-  },
-  teaserHeading: { fontSize: 18, fontWeight: 800, marginBottom: 8, lineHeight: 1.3 },
-  teaserDesc:    { fontSize: 13, color: "#555", lineHeight: 1.6, marginBottom: 0 },
-  teaserRight: { flex: "0 0 auto", display: "flex", gap: 8 },
-
-  swatch: (bg, accent) => ({
-    width: 64,
-    height: 80,
-    borderRadius: 10,
-    background: bg,
-    border: "1.5px solid rgba(0,0,0,0.1)",
+  hero: {
+    border: "1px solid rgba(112, 79, 38, 0.12)",
+    borderRadius: 32,
+    background: "rgba(255, 251, 242, 0.9)",
+    boxShadow: "0 28px 80px rgba(118, 84, 36, 0.12)",
+    padding: "28px 24px 24px",
+    marginBottom: 22,
     overflow: "hidden",
+  },
+  heroGrid: {
+    display: "flex",
+    gap: 22,
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+  },
+  heroLeft: { flex: "1 1 520px" },
+  heroRight: {
+    flex: "0 1 320px",
+    display: "flex",
+    justifyContent: "flex-end",
+    width: "100%",
+  },
+  eyebrow: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+    padding: "8px 12px",
+    borderRadius: 999,
+    background: "#fff3d6",
+    border: "1px solid #f0d39b",
+    color: "#9f5b14",
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
+  heading: {
+    fontSize: "clamp(2.2rem, 5vw, 4.25rem)",
+    lineHeight: 0.95,
+    fontWeight: 900,
+    letterSpacing: "-0.04em",
+    marginBottom: 12,
+    maxWidth: 640,
+  },
+  subheading: {
+    fontSize: 17,
+    lineHeight: 1.6,
+    color: "#6f5c48",
+    maxWidth: 660,
+    marginBottom: 0,
+  },
+  summaryCard: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+    gap: 12,
+    border: "1px solid rgba(112, 79, 38, 0.12)",
+    background: "linear-gradient(180deg, #fffdf8 0%, #fff7ea 100%)",
+    borderRadius: 24,
+    padding: 20,
+    width: "100%",
+  },
+  summaryCell: {
+    padding: "12px 14px",
+    borderRadius: 16,
+    background: "#ffffff",
+    border: "1px solid #f2e3c4",
+  },
+  summaryLabel: {
+    fontSize: 11,
+    fontWeight: 800,
+    color: "#9f5b14",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  summaryValue: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#2a2118",
+    lineHeight: 1.35,
+  },
+  steps: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 22,
+    flexWrap: "wrap",
+  },
+  step: (active, done) => ({
+    padding: "8px 14px",
+    borderRadius: 999,
+    background: done ? "#2a2118" : active ? "#fff3d6" : "rgba(255,255,255,0.7)",
+    color: done ? "#fff" : active ? "#9f5b14" : "#9b8a76",
+    border: active ? "1px solid #f0d39b" : "1px solid rgba(112, 79, 38, 0.12)",
+    whiteSpace: "nowrap",
+    fontSize: 12,
+    fontWeight: 800,
+  }),
+  stepDivider: {
+    flex: "0 0 10px",
+    height: 1,
+    background: "#ddc8ac",
+  },
+  toggleWrap: {
+    display: "flex",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  toggle: {
+    display: "inline-flex",
+    padding: 6,
+    background: "rgba(255,255,255,0.82)",
+    border: "1px solid rgba(112, 79, 38, 0.12)",
+    borderRadius: 999,
+    boxShadow: "0 12px 30px rgba(118, 84, 36, 0.08)",
+    gap: 6,
+    flexWrap: "wrap",
+  },
+  toggleButton: (active) => ({
+    border: 0,
+    borderRadius: 999,
+    padding: "12px 18px",
+    minWidth: 170,
+    background: active ? "#2a2118" : "transparent",
+    color: active ? "#fff8ef" : "#6f5c48",
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 800,
+    letterSpacing: active ? "0.02em" : "normal",
+    fontFamily: '"Avenir Next", "Segoe UI", sans-serif',
+  }),
+  sectionCard: {
+    border: "1px solid rgba(112, 79, 38, 0.12)",
+    borderRadius: 30,
+    background: "rgba(255, 251, 242, 0.92)",
+    boxShadow: "0 24px 80px rgba(118, 84, 36, 0.09)",
+    padding: "26px 22px",
+    marginBottom: 22,
+  },
+  cardsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: 18,
+    marginBottom: 18,
+  },
+  planCard: (highlighted) => ({
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: 28,
+    padding: "24px 22px 22px",
+    border: highlighted ? "2px solid #d58a22" : "1px solid #ead9bd",
+    background: highlighted
+      ? "linear-gradient(180deg, #2a2118 0%, #3f2d1b 100%)"
+      : "linear-gradient(180deg, #fffefb 0%, #fff8eb 100%)",
+    color: highlighted ? "#fff8ef" : "#2a2118",
+    boxShadow: highlighted
+      ? "0 28px 90px rgba(103, 63, 15, 0.28)"
+      : "0 12px 36px rgba(118, 84, 36, 0.08)",
     display: "flex",
     flexDirection: "column",
-    padding: "8px 7px",
-    boxSizing: "border-box",
-    gap: 3,
+    minHeight: 380,
   }),
-  swatchHeader: (color) => ({ height: 5, borderRadius: 2, background: color, marginBottom: 2 }),
-  swatchLine: (opacity) => ({ height: 3, borderRadius: 2, background: `rgba(0,0,0,${opacity})`, width: "80%" }),
-  swatchLineSm: (opacity) => ({ height: 3, borderRadius: 2, background: `rgba(0,0,0,${opacity})`, width: "55%" }),
+  planBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    marginBottom: 16,
+    padding: "7px 12px",
+    borderRadius: 999,
+    background: "#ffcf70",
+    color: "#6f3a00",
+    fontSize: 11,
+    fontWeight: 900,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
+  planEyebrow: {
+    fontSize: 12,
+    fontWeight: 900,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    marginBottom: 8,
+    color: "inherit",
+    opacity: 0.78,
+  },
+  planName: {
+    fontSize: 34,
+    fontWeight: 900,
+    letterSpacing: "-0.04em",
+    lineHeight: 0.95,
+    marginBottom: 10,
+  },
+  planDesc: {
+    fontSize: 15,
+    lineHeight: 1.6,
+    marginBottom: 18,
+    opacity: 0.92,
+  },
+  priceRow: {
+    display: "flex",
+    alignItems: "flex-end",
+    gap: 8,
+    marginBottom: 16,
+  },
+  priceValue: {
+    fontSize: 36,
+    fontWeight: 900,
+    letterSpacing: "-0.04em",
+    lineHeight: 0.95,
+  },
+  priceSuffix: {
+    fontSize: 15,
+    fontWeight: 700,
+    marginBottom: 4,
+    opacity: 0.78,
+  },
+  priceBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    padding: "6px 10px",
+    borderRadius: 999,
+    background: "rgba(255, 207, 112, 0.18)",
+    border: "1px solid rgba(255, 207, 112, 0.35)",
+    color: "#ffd98f",
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    marginBottom: 14,
+  },
+  featureList: {
+    listStyle: "none",
+    padding: 0,
+    margin: "0 0 18px",
+    display: "grid",
+    gap: 10,
+  },
+  featureItem: {
+    display: "flex",
+    gap: 10,
+    alignItems: "flex-start",
+    fontSize: 14,
+    lineHeight: 1.5,
+  },
+  featureMark: (highlighted) => ({
+    flexShrink: 0,
+    width: 22,
+    height: 22,
+    borderRadius: "50%",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 12,
+    fontWeight: 900,
+    background: highlighted ? "#ffcf70" : "#2a2118",
+    color: highlighted ? "#402500" : "#fff8ef",
+    marginTop: 1,
+  }),
+  button: (primary, disabled) => ({
+    width: "100%",
+    minHeight: 50,
+    borderRadius: 16,
+    border: primary ? "1px solid #ffcf70" : "1px solid #d8c0a1",
+    background: disabled
+      ? "#c8b9aa"
+      : primary
+      ? "linear-gradient(180deg, #ffcf70 0%, #e9a739 100%)"
+      : "#fffefb",
+    color: primary ? "#3e2500" : "#2a2118",
+    fontSize: 15,
+    fontWeight: 900,
+    cursor: disabled ? "not-allowed" : "pointer",
+    fontFamily: '"Avenir Next", "Segoe UI", sans-serif',
+    marginTop: "auto",
+    boxShadow: primary ? "0 14px 28px rgba(202, 128, 29, 0.22)" : "none",
+  }),
+  footnote: {
+    marginTop: 10,
+    fontSize: 12,
+    lineHeight: 1.5,
+    color: "#d7c8b9",
+    textAlign: "center",
+  },
+  chartHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    gap: 16,
+    flexWrap: "wrap",
+    marginBottom: 18,
+  },
+  chartTitle: {
+    fontSize: 26,
+    fontWeight: 900,
+    letterSpacing: "-0.03em",
+    marginBottom: 6,
+  },
+  chartSubtitle: {
+    fontSize: 14,
+    color: "#6f5c48",
+    lineHeight: 1.6,
+    maxWidth: 620,
+  },
+  tableWrap: {
+    borderRadius: 24,
+    overflow: "hidden",
+    border: "1px solid #ead9bd",
+    background: "#fffdf8",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+  th: (highlighted) => ({
+    textAlign: highlighted ? "center" : "left",
+    padding: "16px 14px",
+    fontSize: 13,
+    fontWeight: 900,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: highlighted ? "#6f3a00" : "#7b6856",
+    background: highlighted ? "#ffe8b5" : "#fff8eb",
+    borderBottom: "1px solid #ead9bd",
+  }),
+  tdFeature: (muted) => ({
+    padding: "14px 14px",
+    borderBottom: "1px solid #f1e5d3",
+    fontSize: 14,
+    fontWeight: muted ? 700 : 800,
+    color: muted ? "#8e7d6b" : "#2a2118",
+    background: muted ? "#fffcf6" : "#fffdf8",
+  }),
+  tdValue: (highlighted, muted) => ({
+    padding: "14px 12px",
+    borderBottom: "1px solid #f1e5d3",
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: highlighted ? 900 : 700,
+    color: muted ? "#8e7d6b" : highlighted ? "#6f3a00" : "#4c3f33",
+    background: highlighted ? "#fff7e0" : muted ? "#fffcf6" : "#fffdf8",
+    minWidth: 150,
+  }),
+  whyGrid: {
+    display: "grid",
+    gridTemplateColumns: "1.2fr 0.8fr",
+    gap: 18,
+    alignItems: "stretch",
+  },
+  whyPanel: {
+    borderRadius: 24,
+    background: "linear-gradient(180deg, #fffefb 0%, #fff7ea 100%)",
+    border: "1px solid #ead9bd",
+    padding: 24,
+  },
+  whyTitle: {
+    fontSize: 24,
+    fontWeight: 900,
+    letterSpacing: "-0.03em",
+    marginBottom: 10,
+  },
+  whyIntro: {
+    fontSize: 15,
+    lineHeight: 1.65,
+    color: "#6f5c48",
+    marginBottom: 14,
+  },
+  whyList: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+    display: "grid",
+    gap: 12,
+  },
+  whyItem: {
+    display: "flex",
+    gap: 12,
+    alignItems: "flex-start",
+    fontSize: 15,
+    fontWeight: 700,
+    lineHeight: 1.5,
+  },
+  whyMark: {
+    flexShrink: 0,
+    width: 24,
+    height: 24,
+    borderRadius: "50%",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#2a2118",
+    color: "#fff8ef",
+    fontSize: 12,
+    fontWeight: 900,
+    marginTop: 1,
+  },
+  pressurePanel: {
+    borderRadius: 24,
+    background: "linear-gradient(180deg, #2f2419 0%, #4b3318 100%)",
+    border: "1px solid #6b4720",
+    padding: 24,
+    color: "#fff8ef",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+  },
+  pressureTitle: {
+    fontSize: 13,
+    fontWeight: 900,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#ffcf70",
+    marginBottom: 10,
+  },
+  pressureHeading: {
+    fontSize: 26,
+    fontWeight: 900,
+    letterSpacing: "-0.04em",
+    lineHeight: 1,
+    marginBottom: 12,
+  },
+  pressureText: {
+    fontSize: 15,
+    lineHeight: 1.65,
+    color: "#eadfce",
+    marginBottom: 18,
+  },
+  pressureStats: {
+    display: "grid",
+    gap: 10,
+  },
+  pressureStat: {
+    borderRadius: 18,
+    border: "1px solid rgba(255, 207, 112, 0.2)",
+    background: "rgba(255, 255, 255, 0.04)",
+    padding: "12px 14px",
+  },
+  pressureLabel: {
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#ffcf70",
+    marginBottom: 4,
+  },
+  pressureValue: {
+    fontSize: 15,
+    fontWeight: 800,
+    color: "#fff8ef",
+  },
+  footerCta: {
+    borderRadius: 28,
+    border: "1px solid #ead9bd",
+    background: "linear-gradient(135deg, #fff8ea 0%, #ffe5b2 100%)",
+    boxShadow: "0 20px 60px rgba(118, 84, 36, 0.12)",
+    padding: "26px 24px",
+    display: "flex",
+    gap: 18,
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+  },
+  footerHeading: {
+    fontSize: 26,
+    fontWeight: 900,
+    letterSpacing: "-0.03em",
+    marginBottom: 8,
+  },
+  footerText: {
+    fontSize: 15,
+    lineHeight: 1.65,
+    color: "#6f5c48",
+    maxWidth: 620,
+  },
+  footerActions: {
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  footerButton: (primary) => ({
+    minHeight: 48,
+    padding: "0 18px",
+    borderRadius: 16,
+    border: primary ? "1px solid #2a2118" : "1px solid #c9b28f",
+    background: primary ? "#2a2118" : "#fffdf8",
+    color: primary ? "#fff8ef" : "#2a2118",
+    fontSize: 14,
+    fontWeight: 900,
+    cursor: "pointer",
+    fontFamily: '"Avenir Next", "Segoe UI", sans-serif',
+  }),
+  banner: (tone) => ({
+    marginBottom: 18,
+    padding: "13px 16px",
+    borderRadius: 16,
+    border: tone === "error" ? "1px solid #fecaca" : "1px solid #fed7aa",
+    background: tone === "error" ? "#fef2f2" : "#fff7ed",
+    color: tone === "error" ? "#991b1b" : "#9a3412",
+    fontSize: 13,
+    fontWeight: 700,
+  }),
 };
 
-const VERIFIED_FEATURES = [
-  "Verified restaurant badge",
-  "Ability to edit and manage your menu",
-  "Update pricing, descriptions, and restaurant details",
-  "Eligibility to appear in search results",
-  "Basic menu insights",
-];
+function renderCellValue(value) {
+  if (value === "check") return <span aria-label="Included">&#10003;</span>;
+  if (value === "cross") return <span aria-label="Not included">&#10005;</span>;
+  if (value === "future") return <span aria-label="Coming soon">&#11036;</span>;
+  return value;
+}
 
-const PRO_FEATURES = [
-  "Everything in Verified, plus",
-  "AI-powered menu insights",
-  "Pairing suggestions for menu items",
-  "Advanced menu presentation features",
-  "Promotional menu layers such as deals and featured dishes",
-  "Priority visibility in menu discovery",
-];
-
-const TEASER_SWATCHES = [
-  { bg: "#111111", accent: "#f5c842" },
-  { bg: "#faf6f0", accent: "#8b5e3c" },
-  { bg: "#ffffff", accent: "#111111" },
-];
+function comparisonValue(row, interval) {
+  if (row.proKey) return PRO_PRICING[interval][row.proKey];
+  return row.pro;
+}
 
 export default function SubscriptionSelect() {
-  const nav      = useNavigate();
+  const nav = useNavigate();
   const location = useLocation();
 
   const [proInterval, setProInterval] = useState("monthly");
@@ -219,19 +656,16 @@ export default function SubscriptionSelect() {
 
   const hasOnboardingContext = Boolean(restaurant_id && owner_token);
 
-  // ── Handle return from Stripe Checkout ────────────────────────────────────
   const params = new URLSearchParams(location.search);
   const checkoutSuccess = params.get("checkout_success") === "1";
   const returnedPlanCode = params.get("plan_code") || "";
+  const checkoutCancelled = params.get("checkout_cancelled") === "1";
 
   useEffect(() => {
     if (!checkoutSuccess) return;
 
-    // Recover onboarding state saved before redirect to Stripe.
     try {
-      const saved = JSON.parse(
-        window.sessionStorage.getItem(ONBOARDING_STATE_KEY) || "null"
-      );
+      const saved = JSON.parse(window.sessionStorage.getItem(ONBOARDING_STATE_KEY) || "null");
       if (saved?.restaurant_id && saved?.owner_token) {
         window.sessionStorage.removeItem(ONBOARDING_STATE_KEY);
         nav("/restaurant/design-select", {
@@ -277,7 +711,6 @@ export default function SubscriptionSelect() {
     setIsCheckingOut(true);
     setCheckoutError("");
 
-    // Save onboarding state to sessionStorage before leaving to Stripe.
     try {
       window.sessionStorage.setItem(
         ONBOARDING_STATE_KEY,
@@ -299,7 +732,7 @@ export default function SubscriptionSelect() {
 
     const origin = window.location.origin;
     const successUrl = `${origin}/restaurant/subscription?checkout_success=1&plan_code=${planCode}`;
-    const cancelUrl  = `${origin}/restaurant/subscription?checkout_cancelled=1`;
+    const cancelUrl = `${origin}/restaurant/subscription?checkout_cancelled=1`;
 
     try {
       const res = await fetch(`${API}/owner/subscription/checkout-session`, {
@@ -321,7 +754,6 @@ export default function SubscriptionSelect() {
       }
 
       if (json.already_active) {
-        // Already subscribed — just continue onboarding.
         nav("/restaurant/design-select", {
           state: {
             restaurant_id,
@@ -351,231 +783,293 @@ export default function SubscriptionSelect() {
     }
   }
 
-  // ── Cancelled return from Stripe ──────────────────────────────────────────
-  const checkoutCancelled = params.get("checkout_cancelled") === "1";
-
   if (checkoutSuccess) {
-    // Briefly shown while useEffect redirects to design-select.
     return (
       <div style={s.page}>
-        <div style={{ textAlign: "center", paddingTop: 60 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
-          <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>
-            Payment confirmed
-          </div>
-          <div style={{ fontSize: 14, color: "#555" }}>
-            Continuing to design step…
-          </div>
+        <div style={{ ...s.shell, textAlign: "center", paddingTop: 80 }}>
+          <div style={{ fontSize: 48, marginBottom: 14 }}>&#10003;</div>
+          <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>Payment confirmed</div>
+          <div style={{ fontSize: 15, color: "#6f5c48" }}>Continuing to design step...</div>
         </div>
       </div>
     );
   }
 
+  const proPricing = PRO_PRICING[proInterval];
+
   return (
     <div style={s.page}>
-      <Link to="/restaurant/signup" style={s.topLink}>
-        ← Back to restaurant signup
-      </Link>
+      <div style={s.shell}>
+        <Link to="/restaurant/signup" style={s.topLink}>
+          &larr; Back to restaurant signup
+        </Link>
 
-      <BrandLockup
-        subtitle="for Restaurants"
-        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
-      />
+        <section style={s.hero}>
+          <div style={s.heroGrid}>
+            <div style={s.heroLeft}>
+              <BrandLockup
+                subtitle="for Restaurants"
+                wrapperStyle={{ alignItems: "flex-start", marginBottom: 18 }}
+                subtitleStyle={{ textAlign: "left" }}
+                logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#fff7ea" }}
+              />
 
-      {hasOnboardingContext ? (
-        <div style={s.steps}>
-          <div style={s.step(false, true)}>1. Account</div>
-          <div style={s.stepDivider} />
-          <div style={s.step(true, false)}>2. Choose plan</div>
-          <div style={s.stepDivider} />
-          <div style={s.step(false, false)}>3. Design</div>
-          <div style={s.stepDivider} />
-          <div style={s.step(false, false)}>4. Upload menu</div>
-        </div>
-      ) : null}
+              <div style={s.eyebrow}>Grubbid restaurant subscriptions</div>
+              <div style={s.heading}>Choose Your Plan</div>
+              <div style={s.subheading}>
+                Simple pricing. Powerful tools to grow your restaurant.
+              </div>
 
-      <div style={s.heading}>Choose your profile plan</div>
-      <div style={s.subheading}>
-        {hasOnboardingContext
-          ? "Select the plan that fits your restaurant."
-          : "Compare Grubbid restaurant plans before you start onboarding."}
-      </div>
-
-      {hasOnboardingContext ? (
-        <div style={s.summaryCard}>
-          <div><span style={s.summaryLabel}>Restaurant:</span>{restaurant_name}</div>
-          {city || state ? (
-            <div><span style={s.summaryLabel}>Location:</span>{[city, state].filter(Boolean).join(", ")}</div>
-          ) : null}
-          {phone ? <div><span style={s.summaryLabel}>Phone:</span>{phone}</div> : null}
-          {email ? <div><span style={s.summaryLabel}>Email:</span>{email}</div> : null}
-          {menu_choice ? (
-            <div>
-              <span style={s.summaryLabel}>Menu:</span>
-              {menu_choice === "pdf_now" ? "Upload PDF now" : "Upload later"}
+              {hasOnboardingContext ? (
+                <div style={s.steps}>
+                  <div style={s.step(false, true)}>1. Account</div>
+                  <div style={s.stepDivider} />
+                  <div style={s.step(true, false)}>2. Choose plan</div>
+                  <div style={s.stepDivider} />
+                  <div style={s.step(false, false)}>3. Design</div>
+                  <div style={s.stepDivider} />
+                  <div style={s.step(false, false)}>4. Upload menu</div>
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
-      ) : null}
 
-      {checkoutCancelled ? (
-        <div style={{ marginBottom: 20, padding: "12px 16px", borderRadius: 12, background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412", fontSize: 13, fontWeight: 600 }}>
-          Checkout was cancelled. You can try again or choose the Verified plan.
-        </div>
-      ) : null}
-
-      {checkoutError ? (
-        <div style={{ marginBottom: 20, padding: "12px 16px", borderRadius: 12, background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", fontSize: 13, fontWeight: 600 }}>
-          {checkoutError}
-        </div>
-      ) : null}
-
-      <div style={s.grid}>
-        {/* Verified */}
-        <div style={s.card(false)}>
-          <div style={s.planName}>Verified</div>
-          <div style={s.planTagline}>Verified Profile</div>
-          <div style={{ ...s.planDesc, marginBottom: 4 }}>
-            Claim and verify your restaurant on Grubbid so customers know your menu and
-            restaurant information are accurate. Verified restaurants receive a verified
-            badge and can manage their menu directly.
-          </div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: "#111", marginBottom: 18 }}>
-            Free
-          </div>
-
-          <div style={s.divider} />
-          <div style={s.includesLabel}>Includes</div>
-          <ul style={s.featureList}>
-            {VERIFIED_FEATURES.map((f) => (
-              <li key={f} style={s.featureItem}>
-                <span style={s.checkmark}>&#10003;</span>
-                <span>{f}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div style={s.bestFor}>
-            <span style={s.bestForLabel}>Best for: </span>
-            Restaurants that want an accurate, verified presence on Grubbid.
-          </div>
-
-          <button style={s.btn(false, false)} onClick={chooseVerified}>
-            {hasOnboardingContext ? "Get Started Free" : "Start Restaurant Signup"}
-          </button>
-        </div>
-
-        {/* Pro */}
-        <div style={s.card(true)}>
-          <div style={s.badge}>Pro</div>
-          <div style={s.planName}>Pro</div>
-          <div style={s.planTagline}>Pro Profile</div>
-          <div style={{ ...s.planDesc, marginBottom: 8 }}>
-            Unlock the full power of the Grubbid food intelligence platform. The Pro plan
-            enhances your menu with intelligent insights and helps your dishes stand out
-            in discovery results.
-          </div>
-
-          {/* Billing interval toggle */}
-          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-            {["monthly", "annual"].map((opt) => (
-              <button
-                key={opt}
-                onClick={() => setProInterval(opt)}
-                style={{
-                  flex: 1, height: 34, borderRadius: 8, cursor: "pointer",
-                  fontSize: 12, fontWeight: 700,
-                  border: proInterval === opt ? "2px solid #111" : "1.5px solid #ddd",
-                  background: proInterval === opt ? "#111" : "#fff",
-                  color: proInterval === opt ? "#fff" : "#555",
-                  fontFamily: "ui-sans-serif, system-ui, sans-serif",
-                }}
-              >
-                {opt === "monthly" ? "Monthly" : "Annual"}
-              </button>
-            ))}
-          </div>
-
-          {/* Price display */}
-          <div style={{ marginBottom: 18 }}>
-            <span style={{ fontSize: 28, fontWeight: 900, color: "#111" }}>
-              {proInterval === "annual" ? "$499" : "$59"}
-            </span>
-            <span style={{ fontSize: 13, color: "#666", marginLeft: 4 }}>
-              {proInterval === "annual" ? "/ year" : "/ month"}
-            </span>
-            {proInterval === "annual" ? (
-              <div style={{ fontSize: 11, color: "#16a34a", fontWeight: 700, marginTop: 2 }}>
-                Save $209 vs monthly
+            {hasOnboardingContext ? (
+              <div style={s.heroRight}>
+                <div style={s.summaryCard}>
+                  <div style={s.summaryCell}>
+                    <div style={s.summaryLabel}>Restaurant</div>
+                    <div style={s.summaryValue}>{restaurant_name || "Restaurant"}</div>
+                  </div>
+                  {(city || state) ? (
+                    <div style={s.summaryCell}>
+                      <div style={s.summaryLabel}>Location</div>
+                      <div style={s.summaryValue}>{[city, state].filter(Boolean).join(", ")}</div>
+                    </div>
+                  ) : null}
+                  {phone ? (
+                    <div style={s.summaryCell}>
+                      <div style={s.summaryLabel}>Phone</div>
+                      <div style={s.summaryValue}>{phone}</div>
+                    </div>
+                  ) : null}
+                  {email ? (
+                    <div style={s.summaryCell}>
+                      <div style={s.summaryLabel}>Email</div>
+                      <div style={s.summaryValue}>{email}</div>
+                    </div>
+                  ) : null}
+                  {menu_choice ? (
+                    <div style={s.summaryCell}>
+                      <div style={s.summaryLabel}>Menu</div>
+                      <div style={s.summaryValue}>
+                        {menu_choice === "pdf_now" ? "Upload PDF now" : "Upload later"}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             ) : null}
           </div>
+        </section>
 
-          <div style={s.divider} />
-          <div style={s.includesLabel}>Includes everything in Verified, plus</div>
-          <ul style={s.featureList}>
-            {PRO_FEATURES.slice(1).map((f) => (
-              <li key={f} style={s.featureItem}>
-                <span style={s.checkmark}>&#10003;</span>
-                <span>{f}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div style={s.bestFor}>
-            <span style={s.bestForLabel}>Best for: </span>
-            Restaurants that want maximum discoverability and menu intelligence.
+        {checkoutCancelled ? (
+          <div style={s.banner("warning")}>
+            Checkout was cancelled. You can try again or start with Verified.
           </div>
+        ) : null}
 
-          <button
-            style={s.btn(true, isCheckingOut)}
-            onClick={handleProCheckout}
-            disabled={isCheckingOut}
-          >
-            {isCheckingOut
-              ? "Preparing checkout…"
-              : hasOnboardingContext
-              ? "Choose Pro — Pay with Stripe →"
-              : "Start Restaurant Signup"}
-          </button>
+        {checkoutError ? (
+          <div style={s.banner("error")}>{checkoutError}</div>
+        ) : null}
 
-          {hasOnboardingContext ? (
-            <div style={{ marginTop: 8, fontSize: 11, color: "#888", textAlign: "center" }}>
-              Secure checkout via Stripe. Cancel anytime.
+        <div style={s.toggleWrap}>
+          <div style={s.toggle}>
+            <button
+              type="button"
+              style={s.toggleButton(proInterval === "monthly")}
+              onClick={() => setProInterval("monthly")}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              style={s.toggleButton(proInterval === "annual")}
+              onClick={() => setProInterval("annual")}
+            >
+              Annual
+            </button>
+          </div>
+        </div>
+
+        <section style={s.sectionCard}>
+          <div style={s.cardsGrid}>
+            <article style={s.planCard(false)}>
+              <div style={s.planEyebrow}>Verified</div>
+              <div style={s.planName}>Verified</div>
+              <div style={s.planDesc}>
+                Get your restaurant online with a clean, simple menu presence.
+              </div>
+              <div style={s.priceRow}>
+                <div style={s.priceValue}>{VERIFIED_PRICE_LABEL}</div>
+              </div>
+
+              <ul style={s.featureList}>
+                {PLAN_CARD_FEATURES.verified.map((feature) => (
+                  <li key={feature} style={s.featureItem}>
+                    <span style={s.featureMark(false)}>&#10003;</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <button style={s.button(false, false)} onClick={chooseVerified}>
+                {hasOnboardingContext ? "Choose Verified" : "Get Started"}
+              </button>
+            </article>
+
+            <article style={s.planCard(true)}>
+              <div style={s.planBadge}>Most Popular</div>
+              <div style={s.planEyebrow}>Pro</div>
+              <div style={s.planName}>Pro</div>
+              <div style={s.planDesc}>
+                Everything you need to grow, promote, and sell.
+              </div>
+              <div style={s.priceRow}>
+                <div style={s.priceValue}>{proPricing.amount}</div>
+                <div style={s.priceSuffix}>{proPricing.suffix}</div>
+              </div>
+              {proPricing.badge ? <div style={s.priceBadge}>{proPricing.badge}</div> : null}
+
+              <ul style={s.featureList}>
+                {PLAN_CARD_FEATURES.pro.map((feature) => (
+                  <li key={feature} style={s.featureItem}>
+                    <span style={s.featureMark(true)}>&#10003;</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                style={s.button(true, isCheckingOut)}
+                onClick={handleProCheckout}
+                disabled={isCheckingOut}
+              >
+                {isCheckingOut
+                  ? "Preparing checkout..."
+                  : hasOnboardingContext
+                  ? proPricing.buttonLabel
+                  : "Get Started"}
+              </button>
+
+              {hasOnboardingContext ? (
+                <div style={s.footnote}>
+                  Secure checkout via Stripe. Your plan selection carries into menu design.
+                </div>
+              ) : null}
+            </article>
+          </div>
+        </section>
+
+        <section style={s.sectionCard}>
+          <div style={s.chartHeader}>
+            <div>
+              <div style={s.chartTitle}>Plan Comparison</div>
+              <div style={s.chartSubtitle}>
+                Verified gets you live fast. Pro gives you the tools that turn your menu into an active growth channel.
+              </div>
             </div>
-          ) : null}
-        </div>
-      </div>
+          </div>
 
-      {/* Design upgrade teaser */}
-      <div style={s.designTeaser}>
-        <div style={s.teaserLeft}>
-          <div style={s.teaserEyebrow}>
-            {hasOnboardingContext ? "Up next — step 3" : "What happens next"}
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead>
+                <tr>
+                  <th style={s.th(false)}>Feature</th>
+                  <th style={s.th(false)}>Verified</th>
+                  <th style={s.th(true)}>Pro</th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARISON_ROWS.map((row) => (
+                  <tr key={row.feature}>
+                    <td style={s.tdFeature(false)}>{row.feature}</td>
+                    <td style={s.tdValue(false, false)}>{renderCellValue(row.verified)}</td>
+                    <td style={s.tdValue(true, false)}>{renderCellValue(comparisonValue(row, proInterval))}</td>
+                  </tr>
+                ))}
+                {FUTURE_ROWS.map((row) => (
+                  <tr key={`future-${row.feature}`}>
+                    <td style={s.tdFeature(true)}>{row.feature}</td>
+                    <td style={s.tdValue(false, true)}>{renderCellValue(row.verified)}</td>
+                    <td style={s.tdValue(true, true)}>{renderCellValue(row.pro)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <div style={s.teaserHeading}>
-            {hasOnboardingContext
-              ? "Make your menu look beautiful"
-              : "Continue into restaurant onboarding"}
-          </div>
-          <div style={s.teaserDesc}>
-            {hasOnboardingContext
-              ? "After choosing your plan, you will pick a design style for your digital menu. It takes under a minute, and no design skills are needed."
-              : "After signup, you can confirm your restaurant profile, choose a plan, pick a design style, and upload your menu."}
-          </div>
-        </div>
-        <div style={s.teaserRight}>
-          {TEASER_SWATCHES.map(({ bg, accent }, i) => (
-            <div key={i} style={s.swatch(bg, accent)}>
-              <div style={s.swatchHeader(accent)} />
-              <div style={s.swatchLine(bg === "#111111" ? 0.6 : 0.2)} />
-              <div style={s.swatchLineSm(bg === "#111111" ? 0.4 : 0.15)} />
-              <div style={{ ...s.swatchLine(bg === "#111111" ? 0.6 : 0.2), marginTop: 3 }} />
-              <div style={s.swatchLineSm(bg === "#111111" ? 0.4 : 0.15)} />
-              <div style={{ ...s.swatchLine(bg === "#111111" ? 0.6 : 0.2), marginTop: 2 }} />
+        </section>
+
+        <section style={s.sectionCard}>
+          <div style={s.whyGrid}>
+            <div style={s.whyPanel}>
+              <div style={s.whyTitle}>Why Go Pro?</div>
+              <div style={s.whyIntro}>
+                Verified is the low-friction way to get listed. Pro is where your menu starts working harder for the business.
+              </div>
+              <ul style={s.whyList}>
+                {WHY_PRO_POINTS.map((point) => (
+                  <li key={point} style={s.whyItem}>
+                    <span style={s.whyMark}>&#10003;</span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          ))}
-        </div>
+
+            <div style={s.pressurePanel}>
+              <div>
+                <div style={s.pressureTitle}>Conversion pressure</div>
+                <div style={s.pressureHeading}>Pro is built to earn back the upgrade.</div>
+                <div style={s.pressureText}>
+                  Use Pro when you want better placement, better presentation, and direct revenue tools instead of a static listing.
+                </div>
+              </div>
+
+              <div style={s.pressureStats}>
+                <div style={s.pressureStat}>
+                  <div style={s.pressureLabel}>Verified</div>
+                  <div style={s.pressureValue}>Sufficient for getting live</div>
+                </div>
+                <div style={s.pressureStat}>
+                  <div style={s.pressureLabel}>Pro</div>
+                  <div style={s.pressureValue}>Built for growth, promotions, and ordering</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section style={s.footerCta}>
+          <div>
+            <div style={s.footerHeading}>Start with Verified or unlock full power with Pro.</div>
+            <div style={s.footerText}>
+              Keep the entry simple. Upgrade when you want search priority, stronger branding, promotions, analytics, and direct ordering.
+            </div>
+          </div>
+
+          <div style={s.footerActions}>
+            <button style={s.footerButton(false)} onClick={chooseVerified}>
+              {hasOnboardingContext ? "Choose Verified" : "Get Started"}
+            </button>
+            <button
+              style={s.footerButton(true)}
+              onClick={handleProCheckout}
+              disabled={isCheckingOut}
+            >
+              {isCheckingOut ? "Preparing checkout..." : "Go Pro"}
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );
