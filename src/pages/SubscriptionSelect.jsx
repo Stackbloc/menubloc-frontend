@@ -1,7 +1,6 @@
 /**
  * File:    SubscriptionSelect.jsx
  * Path:    menubloc-frontend/src/pages/SubscriptionSelect.jsx
- * Date:    2026-03-09
  * Purpose:
  *   Onboarding step 2 — choose a profile plan (Verified or Pro).
  *   Reached after the simplified restaurant signup step.
@@ -13,23 +12,23 @@
  *     owner_token      — HMAC auth token
  *     ingestion_method — "pdf" | "spreadsheet" | "ocr"
  *
- *   On plan choice: navigates to /restaurant/design-select (step 4)
- *   with plan + all forwarded state in router state.
+ *   Plan choice:
+ *     Verified → navigate to /restaurant/design-select (free, no payment)
+ *     Pro      → create Stripe Checkout Session → redirect to Stripe hosted page
  *
- *   Update 2026-03-09:
- *     Added design upgrade teaser section below plan cards.
- *     Plan selection now routes to MenuDesignSelectPage (step 4)
- *     instead of directly to the upload page.
+ *   After Stripe payment:
+ *     Stripe redirects to /restaurant/subscription?checkout_success=1&plan_code=<code>
+ *     Onboarding state is recovered from sessionStorage and the user continues.
+ *
+ *   PayPal: RETIRED. All subscription billing is Stripe-only.
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useCart } from "../context/CartContext.jsx";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 
-// ── PayPal Plan IDs — replace with real IDs from developer.paypal.com ──
-const PLAN_ID_PRO_MONTHLY = "YOUR_PLAN_ID_PRO_MONTHLY";
-const PLAN_ID_PRO_ANNUAL  = "YOUR_PLAN_ID_PRO_ANNUAL";
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+const ONBOARDING_STATE_KEY = "grubbid.onboarding.state";
 
 const s = {
   page: {
@@ -42,8 +41,6 @@ const s = {
   brand:    { fontWeight: 800, fontSize: 18 },
   subbrand: { fontSize: 12, color: "#666", marginBottom: 28 },
 
-  
-  // Step trail
   steps: {
     display: "flex",
     alignItems: "center",
@@ -81,7 +78,6 @@ const s = {
   },
   summaryLabel: { fontWeight: 800, color: "#111", marginRight: 4 },
 
-  // Plan cards
   grid: { display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 48 },
   card: (highlighted) => ({
     flex: "1 1 280px",
@@ -127,21 +123,20 @@ const s = {
     fontWeight: 700,
     textDecoration: "none",
   },
-  btn: (primary) => ({
+  btn: (primary, disabled) => ({
     width: "100%",
     height: 46,
     borderRadius: 12,
     border: primary ? 0 : "1px solid #ccc",
-    background: primary ? "#111" : "#fff",
+    background: disabled ? "#ccc" : primary ? "#111" : "#fff",
     color: primary ? "#fff" : "#111",
     fontWeight: 700,
     fontSize: 15,
-    cursor: "pointer",
+    cursor: disabled ? "not-allowed" : "pointer",
     marginTop: "auto",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
   }),
 
-  // Design upgrade teaser
   designTeaser: {
     border: "1.5px solid #e0e0e0",
     borderRadius: 18,
@@ -161,7 +156,6 @@ const s = {
   teaserDesc:    { fontSize: 13, color: "#555", lineHeight: 1.6, marginBottom: 0 },
   teaserRight: { flex: "0 0 auto", display: "flex", gap: 8 },
 
-  // Mini style preview swatches (decorative)
   swatch: (bg, accent) => ({
     width: 64,
     height: 80,
@@ -175,15 +169,9 @@ const s = {
     boxSizing: "border-box",
     gap: 3,
   }),
-  swatchHeader: (color) => ({
-    height: 5, borderRadius: 2, background: color, marginBottom: 2,
-  }),
-  swatchLine: (opacity) => ({
-    height: 3, borderRadius: 2, background: `rgba(0,0,0,${opacity})`, width: "80%",
-  }),
-  swatchLineSm: (opacity) => ({
-    height: 3, borderRadius: 2, background: `rgba(0,0,0,${opacity})`, width: "55%",
-  }),
+  swatchHeader: (color) => ({ height: 5, borderRadius: 2, background: color, marginBottom: 2 }),
+  swatchLine: (opacity) => ({ height: 3, borderRadius: 2, background: `rgba(0,0,0,${opacity})`, width: "80%" }),
+  swatchLineSm: (opacity) => ({ height: 3, borderRadius: 2, background: `rgba(0,0,0,${opacity})`, width: "55%" }),
 };
 
 const VERIFIED_FEATURES = [
@@ -203,7 +191,6 @@ const PRO_FEATURES = [
   "Priority visibility in menu discovery",
 ];
 
-// Brief swatch previews shown in the design teaser — decorative only.
 const TEASER_SWATCHES = [
   { bg: "#111111", accent: "#f5c842" },
   { bg: "#faf6f0", accent: "#8b5e3c" },
@@ -213,9 +200,10 @@ const TEASER_SWATCHES = [
 export default function SubscriptionSelect() {
   const nav      = useNavigate();
   const location = useLocation();
-  const { addToCart, openCart } = useCart();
 
-  const [proInterval, setProInterval] = useState("monthly"); // "monthly" | "annual"
+  const [proInterval, setProInterval] = useState("monthly");
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
 
   const {
     restaurant_id,
@@ -228,57 +216,177 @@ export default function SubscriptionSelect() {
     phone,
     menu_choice,
   } = location.state || {};
+
   const hasOnboardingContext = Boolean(restaurant_id && owner_token);
+
+  // ── Handle return from Stripe Checkout ────────────────────────────────────
+  const params = new URLSearchParams(location.search);
+  const checkoutSuccess = params.get("checkout_success") === "1";
+  const returnedPlanCode = params.get("plan_code") || "";
+
+  useEffect(() => {
+    if (!checkoutSuccess) return;
+
+    // Recover onboarding state saved before redirect to Stripe.
+    try {
+      const saved = JSON.parse(
+        window.sessionStorage.getItem(ONBOARDING_STATE_KEY) || "null"
+      );
+      if (saved?.restaurant_id && saved?.owner_token) {
+        window.sessionStorage.removeItem(ONBOARDING_STATE_KEY);
+        nav("/restaurant/design-select", {
+          state: {
+            ...saved,
+            plan: returnedPlanCode.includes("annual") ? "pro_annual" : "pro_monthly",
+          },
+        });
+      }
+    } catch {
+      // sessionStorage unavailable — fall through to normal page render.
+    }
+  }, [checkoutSuccess, returnedPlanCode, nav]);
 
   function chooseVerified() {
     if (!hasOnboardingContext) {
       nav("/restaurant/signup");
       return;
     }
-
-    // Free plan — no payment, continue onboarding
     nav("/restaurant/design-select", {
-      state: { restaurant_id, restaurant_name, email, owner_token, city, state, phone, menu_choice, plan: "verified", ingestion_method },
+      state: {
+        restaurant_id,
+        restaurant_name,
+        email,
+        owner_token,
+        city,
+        state,
+        phone,
+        menu_choice,
+        plan: "verified",
+        ingestion_method,
+      },
     });
   }
 
-  function choosePro() {
+  async function handleProCheckout() {
     if (!hasOnboardingContext) {
       nav("/restaurant/signup");
       return;
     }
 
-    const isAnnual = proInterval === "annual";
-    addToCart({
-      id:           isAnnual ? "pro_annual" : "pro_monthly",
-      name:         isAnnual ? "Grubbid Pro — Annual" : "Grubbid Pro — Monthly",
-      description:  isAnnual ? "Best value · Save $209/year" : "Billed monthly, cancel anytime",
-      price:        isAnnual ? 499 : 59,
-      type:         "subscription",
-      interval:     isAnnual ? "year" : "month",
-      paypalPlanId: isAnnual ? PLAN_ID_PRO_ANNUAL : PLAN_ID_PRO_MONTHLY,
-    });
-    openCart();
+    const planCode = proInterval === "annual" ? "pro_annual" : "pro_monthly";
+    setIsCheckingOut(true);
+    setCheckoutError("");
+
+    // Save onboarding state to sessionStorage before leaving to Stripe.
+    try {
+      window.sessionStorage.setItem(
+        ONBOARDING_STATE_KEY,
+        JSON.stringify({
+          restaurant_id,
+          restaurant_name,
+          email,
+          owner_token,
+          city,
+          state,
+          phone,
+          menu_choice,
+          ingestion_method,
+        })
+      );
+    } catch {
+      // Non-fatal — user will need to re-enter state on return if storage fails.
+    }
+
+    const origin = window.location.origin;
+    const successUrl = `${origin}/restaurant/subscription?checkout_success=1&plan_code=${planCode}`;
+    const cancelUrl  = `${origin}/restaurant/subscription?checkout_cancelled=1`;
+
+    try {
+      const res = await fetch(`${API}/owner/subscription/checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurant_id,
+          owner_token,
+          email,
+          plan_code: planCode,
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+        }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || `Request failed (${res.status})`);
+      }
+
+      if (json.already_active) {
+        // Already subscribed — just continue onboarding.
+        nav("/restaurant/design-select", {
+          state: {
+            restaurant_id,
+            restaurant_name,
+            email,
+            owner_token,
+            city,
+            state,
+            phone,
+            menu_choice,
+            plan: planCode,
+            ingestion_method,
+          },
+        });
+        return;
+      }
+
+      if (json.checkout_url) {
+        window.location.href = json.checkout_url;
+        return;
+      }
+
+      throw new Error("No checkout URL returned. Please try again.");
+    } catch (err) {
+      setIsCheckingOut(false);
+      setCheckoutError(err.message || "Unable to start checkout. Please try again.");
+    }
+  }
+
+  // ── Cancelled return from Stripe ──────────────────────────────────────────
+  const checkoutCancelled = params.get("checkout_cancelled") === "1";
+
+  if (checkoutSuccess) {
+    // Briefly shown while useEffect redirects to design-select.
+    return (
+      <div style={s.page}>
+        <div style={{ textAlign: "center", paddingTop: 60 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
+          <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>
+            Payment confirmed
+          </div>
+          <div style={{ fontSize: 14, color: "#555" }}>
+            Continuing to design step…
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div style={s.page}>
       <Link to="/restaurant/signup" style={s.topLink}>
-        Back to restaurant signup
+        ← Back to restaurant signup
       </Link>
 
-      {/* Brand */}
       <BrandLockup
         subtitle="for Restaurants"
         logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
       />
 
-      {/* Step trail */}
       {hasOnboardingContext ? (
         <div style={s.steps}>
           <div style={s.step(false, true)}>1. Account</div>
           <div style={s.stepDivider} />
-          <div style={s.step(true,  false)}>2. Choose plan</div>
+          <div style={s.step(true, false)}>2. Choose plan</div>
           <div style={s.stepDivider} />
           <div style={s.step(false, false)}>3. Design</div>
           <div style={s.stepDivider} />
@@ -286,7 +394,6 @@ export default function SubscriptionSelect() {
         </div>
       ) : null}
 
-      {/* Heading */}
       <div style={s.heading}>Choose your profile plan</div>
       <div style={s.subheading}>
         {hasOnboardingContext
@@ -297,14 +404,32 @@ export default function SubscriptionSelect() {
       {hasOnboardingContext ? (
         <div style={s.summaryCard}>
           <div><span style={s.summaryLabel}>Restaurant:</span>{restaurant_name}</div>
-          {city || state ? <div><span style={s.summaryLabel}>Location:</span>{[city, state].filter(Boolean).join(", ")}</div> : null}
+          {city || state ? (
+            <div><span style={s.summaryLabel}>Location:</span>{[city, state].filter(Boolean).join(", ")}</div>
+          ) : null}
           {phone ? <div><span style={s.summaryLabel}>Phone:</span>{phone}</div> : null}
           {email ? <div><span style={s.summaryLabel}>Email:</span>{email}</div> : null}
-          {menu_choice ? <div><span style={s.summaryLabel}>Menu:</span>{menu_choice === "pdf_now" ? "Upload PDF now" : "Upload later"}</div> : null}
+          {menu_choice ? (
+            <div>
+              <span style={s.summaryLabel}>Menu:</span>
+              {menu_choice === "pdf_now" ? "Upload PDF now" : "Upload later"}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
-      {/* Plan cards */}
+      {checkoutCancelled ? (
+        <div style={{ marginBottom: 20, padding: "12px 16px", borderRadius: 12, background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412", fontSize: 13, fontWeight: 600 }}>
+          Checkout was cancelled. You can try again or choose the Verified plan.
+        </div>
+      ) : null}
+
+      {checkoutError ? (
+        <div style={{ marginBottom: 20, padding: "12px 16px", borderRadius: 12, background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", fontSize: 13, fontWeight: 600 }}>
+          {checkoutError}
+        </div>
+      ) : null}
+
       <div style={s.grid}>
         {/* Verified */}
         <div style={s.card(false)}>
@@ -320,7 +445,6 @@ export default function SubscriptionSelect() {
           </div>
 
           <div style={s.divider} />
-
           <div style={s.includesLabel}>Includes</div>
           <ul style={s.featureList}>
             {VERIFIED_FEATURES.map((f) => (
@@ -336,7 +460,7 @@ export default function SubscriptionSelect() {
             Restaurants that want an accurate, verified presence on Grubbid.
           </div>
 
-          <button style={s.btn(false)} onClick={chooseVerified}>
+          <button style={s.btn(false, false)} onClick={chooseVerified}>
             {hasOnboardingContext ? "Get Started Free" : "Start Restaurant Signup"}
           </button>
         </div>
@@ -388,7 +512,6 @@ export default function SubscriptionSelect() {
           </div>
 
           <div style={s.divider} />
-
           <div style={s.includesLabel}>Includes everything in Verified, plus</div>
           <ul style={s.featureList}>
             {PRO_FEATURES.slice(1).map((f) => (
@@ -404,18 +527,36 @@ export default function SubscriptionSelect() {
             Restaurants that want maximum discoverability and menu intelligence.
           </div>
 
-          <button style={s.btn(true)} onClick={choosePro}>
-            {hasOnboardingContext ? "Choose Pro →" : "Start Restaurant Signup"}
+          <button
+            style={s.btn(true, isCheckingOut)}
+            onClick={handleProCheckout}
+            disabled={isCheckingOut}
+          >
+            {isCheckingOut
+              ? "Preparing checkout…"
+              : hasOnboardingContext
+              ? "Choose Pro — Pay with Stripe →"
+              : "Start Restaurant Signup"}
           </button>
+
+          {hasOnboardingContext ? (
+            <div style={{ marginTop: 8, fontSize: 11, color: "#888", textAlign: "center" }}>
+              Secure checkout via Stripe. Cancel anytime.
+            </div>
+          ) : null}
         </div>
       </div>
 
       {/* Design upgrade teaser */}
       <div style={s.designTeaser}>
         <div style={s.teaserLeft}>
-          <div style={s.teaserEyebrow}>{hasOnboardingContext ? "Up next — step 4" : "What happens next"}</div>
+          <div style={s.teaserEyebrow}>
+            {hasOnboardingContext ? "Up next — step 3" : "What happens next"}
+          </div>
           <div style={s.teaserHeading}>
-            {hasOnboardingContext ? "Make your menu look beautiful" : "Continue into restaurant onboarding"}
+            {hasOnboardingContext
+              ? "Make your menu look beautiful"
+              : "Continue into restaurant onboarding"}
           </div>
           <div style={s.teaserDesc}>
             {hasOnboardingContext

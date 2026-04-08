@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
-import StripeElementsProvider from "../../components/payments/StripeElementsProvider.jsx";
-import SubscriptionCheckoutForm from "../../components/payments/SubscriptionCheckoutForm.jsx";
 import {
   formatMoney,
   getSubscriptionPlanLabel,
   getSubscriptionStatusLabel,
-  hasStripePublishableKey,
 } from "../../components/payments/paymentHelpers.js";
 
 const PLAN_OPTIONS = [
@@ -61,13 +59,27 @@ function StatusRow({ label, value }) {
 
 export default function OperatorSubscription() {
   const { selectedRestaurant } = useOperator();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [subscription, setSubscription] = useState(null);
   const [selectedPlanCode, setSelectedPlanCode] = useState("pro_monthly");
   const [loading, setLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [checkoutSession, setCheckoutSession] = useState(null);
+
+  // Handle return from Stripe Checkout
+  const checkoutResult = searchParams.get("checkout");
+
+  useEffect(() => {
+    if (checkoutResult === "success") {
+      setMessage("Subscription activated successfully. Your plan is now live.");
+      // Strip the query param so refresh doesn't re-trigger the banner
+      setSearchParams({}, { replace: true });
+      refreshSubscription();
+    } else if (checkoutResult === "cancelled") {
+      setSearchParams({}, { replace: true });
+    }
+  }, [checkoutResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function refreshSubscription() {
     if (!selectedRestaurant?.id) {
@@ -90,38 +102,43 @@ export default function OperatorSubscription() {
 
   useEffect(() => {
     refreshSubscription();
-  }, [selectedRestaurant?.id]);
+  }, [selectedRestaurant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleStartCheckout() {
+  async function handleCheckout() {
     if (!selectedRestaurant?.id) {
       setError("Select a restaurant before starting a subscription.");
       return;
     }
 
-    setCreating(true);
+    setIsCheckingOut(true);
     setError("");
     setMessage("");
-    setCheckoutSession(null);
 
     try {
-      const response = await api.createPlatformSubscription({
+      const origin = window.location.origin;
+      const result = await api.createPlatformCheckoutSession({
         restaurantId: selectedRestaurant.id,
         planCode: selectedPlanCode,
+        successUrl: `${origin}/operator/subscription?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${origin}/operator/subscription?checkout=cancelled`,
       });
 
-      setCheckoutSession(response);
-
-      if (response.already_active) {
+      if (result.already_active) {
         setMessage("This restaurant already has an active subscription for that plan.");
         await refreshSubscription();
-      } else if (!response.client_secret) {
-        setMessage("Subscription record created. Refreshing backend status.");
-        await refreshSubscription();
+        setIsCheckingOut(false);
+        return;
       }
+
+      if (!result.checkout_url) {
+        throw new Error("No checkout URL returned from server.");
+      }
+
+      // Redirect to Stripe Checkout — browser leaves this page
+      window.location.href = result.checkout_url;
     } catch (err) {
       setError(err.message || "Unable to start subscription checkout.");
-    } finally {
-      setCreating(false);
+      setIsCheckingOut(false);
     }
   }
 
@@ -140,7 +157,6 @@ export default function OperatorSubscription() {
         atPeriodEnd: true,
       });
       setMessage("Subscription will cancel at period end.");
-      setCheckoutSession(null);
       await refreshSubscription();
     } catch (err) {
       setError(err.message || "Unable to cancel subscription.");
@@ -185,7 +201,7 @@ export default function OperatorSubscription() {
             Restaurant Pro Subscriptions
           </h1>
           <p style={{ margin: "14px 0 0", maxWidth: 760, fontSize: 17, lineHeight: 1.7, color: "rgba(255,255,255,0.88)" }}>
-            The selected restaurant is billed as a platform customer through Stripe Billing. Payment confirmation uses Stripe Elements, and subscription state is finalized from webhook-backed backend status.
+            Select a billing interval and click Subscribe to be redirected to Stripe Checkout. After payment, your subscription is activated automatically via webhook.
           </p>
         </section>
 
@@ -243,6 +259,12 @@ export default function OperatorSubscription() {
           })}
         </section>
 
+        {checkoutResult === "cancelled" && !message && !error ? (
+          <div style={{ marginTop: 20, background: "#fff7ed", border: "1px solid #fdba74", color: "#9a3412", borderRadius: 16, padding: "14px 16px", fontSize: 14, fontWeight: 600 }}>
+            Checkout was cancelled. No charge was made. Select a plan and try again.
+          </div>
+        ) : null}
+
         {error ? (
           <div style={{ marginTop: 20, background: "#fef2f2", border: "1px solid #fecaca", color: "#b42318", borderRadius: 16, padding: "14px 16px", fontSize: 14, fontWeight: 600 }}>
             {error}
@@ -263,50 +285,29 @@ export default function OperatorSubscription() {
                 ? `Billing restaurant: ${selectedRestaurant.restaurant_name}`
                 : "Select a restaurant before starting a subscription."}
             </p>
-
-            {!hasStripePublishableKey() ? (
-              <div style={{ marginTop: 18, padding: "12px 14px", borderRadius: 14, background: "#fff7ed", color: "#9a3412", fontSize: 14, fontWeight: 700 }}>
-                VITE_STRIPE_PUBLISHABLE_KEY is not configured in the frontend environment.
-              </div>
-            ) : null}
+            <p style={{ margin: "8px 0 0", fontSize: 14, color: "#667085" }}>
+              You will be redirected to Stripe to complete payment. After checkout, you will be returned here and your subscription will be activated.
+            </p>
 
             <button
               type="button"
-              onClick={handleStartCheckout}
-              disabled={!selectedRestaurant?.id || creating || loading || !hasStripePublishableKey()}
+              onClick={handleCheckout}
+              disabled={!selectedRestaurant?.id || isCheckingOut || loading}
               style={{
                 marginTop: 18,
                 width: "100%",
                 border: "none",
                 borderRadius: 16,
-                background: creating ? "#94a3b8" : "#11211a",
+                background: isCheckingOut ? "#94a3b8" : "#11211a",
                 color: "#fff",
                 padding: "14px 16px",
                 fontSize: 15,
                 fontWeight: 900,
-                cursor: creating ? "wait" : "pointer",
+                cursor: isCheckingOut ? "wait" : "pointer",
               }}
             >
-              {creating ? "Preparing checkout..." : `Start ${getSubscriptionPlanLabel(selectedPlanCode)}`}
+              {isCheckingOut ? "Redirecting to Stripe..." : `Subscribe — ${getSubscriptionPlanLabel(selectedPlanCode)}`}
             </button>
-
-            {checkoutSession?.client_secret ? (
-              <div style={{ marginTop: 22 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#667085", marginBottom: 10 }}>
-                  Confirm first invoice payment
-                </div>
-                <StripeElementsProvider clientSecret={checkoutSession.client_secret}>
-                  <SubscriptionCheckoutForm
-                    returnUrl={`${window.location.origin}/operator/subscription`}
-                    onConfirmed={async () => {
-                      setMessage("Payment submitted. Refreshing subscription status from the backend.");
-                      setCheckoutSession(null);
-                      await refreshSubscription();
-                    }}
-                  />
-                </StripeElementsProvider>
-              </div>
-            ) : null}
           </div>
 
           <div style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 24, padding: 22, boxShadow: "0 18px 40px rgba(15, 23, 32, 0.04)" }}>
