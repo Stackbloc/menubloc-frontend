@@ -31,59 +31,48 @@ const ONBOARDING_STATE_KEY = "grubbid.onboarding.state";
 const VERIFIED_PRICE_LABEL = "Free";
 const PRO_PRICING = {
   monthly: {
-    amount: "$79",
+    amount: "$39.99",
     suffix: "/ month",
-    tableLabel: "$79 / month",
-    buttonLabel: "Go Pro",
+    tableLabel: "$39.99 / month",
     badge: null,
   },
   annual: {
-    amount: "$799",
-    suffix: "/ year",
-    tableLabel: "$799 / year",
-    buttonLabel: "Go Pro",
-    badge: "Best annual value",
+    amount: "$199.99",
+    suffix: "per year",
+    tableLabel: "$199.99 per year",
+    badge: "Free QR signage included",
   },
 };
 
 const PLAN_CARD_FEATURES = {
   verified: [
-    "Menu hosting",
-    "QR code access",
-    "Basic profile",
+    "Restaurant profile page",
+    "Discoverable restaurant and menu items",
+    "Menu editing with QR sharing",
   ],
   pro: [
-    "Online ordering",
-    "Deals and promotions",
-    "Full branding control",
-    "Analytics and insights",
-    "Multiple menus",
+    "Custom branding and featured dish",
+    "Unlimited menus",
+    "Adobe-supported design options",
+    "Social and PDF publishing",
+    "Online ordering and custom deals",
   ],
 };
 
 const COMPARISON_ROWS = [
-  { feature: "Grubbid Profile Page", verified: "check", pro: "check" },
-  { feature: "Menu Hosting", verified: "check", pro: "check" },
-  { feature: "QR Code Access", verified: "Basic", pro: "Advanced Kit" },
-  { feature: "Menu Editing", verified: "Limited", pro: "Full Access" },
-  { feature: "Deals and Promotions", verified: "cross", pro: "check" },
-  { feature: "Custom Branding (Logo, About)", verified: "cross", pro: "check" },
-  { feature: "Featured Menu Items", verified: "cross", pro: "check" },
-  { feature: "Analytics Dashboard", verified: "cross", pro: "check" },
-  { feature: "Online Ordering", verified: "cross", pro: "check" },
-  { feature: "Customer Insights", verified: "cross", pro: "check" },
-  { feature: "Multiple Menus (Lunch/Dinner/etc.)", verified: "cross", pro: "check" },
-  { feature: "Priority Placement in Search", verified: "cross", pro: "check" },
+  { feature: "Grubbid Restaurant Profile Page listing basic restaurant details", verified: "check", pro: "check" },
+  { feature: "Restaurant and menu items discoverable on Grubbid", verified: "check", pro: "check" },
+  { feature: "Logo, About Us, and featured dish shown on profile page", verified: "cross", pro: "check" },
+  { feature: "Unlimited number of menus and menu items", verified: "1 menu, unlimited items", pro: "check" },
+  { feature: "Customized menu design options supported by Adobe", verified: "cross", pro: "check" },
+  { feature: "Menus auto-publishable to social media and PDF", verified: "cross", pro: "check" },
+  { feature: "Menu editing and shareable with QR code", verified: "check", pro: "check" },
+  { feature: "Create custom deals searchable by menu item or restaurant", verified: "cross", pro: "check" },
+  { feature: "Online ordering for pickup and/or delivery", verified: "cross", pro: "check" },
+  { feature: "Free QR door and table signage", verified: "cross", pro: "Annual plan only" },
 ];
 
-const FUTURE_ROWS = [
-  { feature: "Advanced Menu Design (Adobe)", verified: "cross", pro: "future" },
-  { feature: "Social Media Menu Exports", verified: "cross", pro: "future" },
-  { feature: "Seasonal Menu Scheduling", verified: "cross", pro: "future" },
-  { feature: "Menu Performance Insights", verified: "cross", pro: "future" },
-  { feature: "Future Feature", verified: "cross", pro: "future" },
-  { feature: "Future Feature", verified: "cross", pro: "future" },
-];
+const FUTURE_ROWS = [];
 
 function normalizeOnboardingState(raw) {
   if (!raw || typeof raw !== "object") return null;
