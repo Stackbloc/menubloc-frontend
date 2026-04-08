@@ -462,8 +462,8 @@ const s = {
   },
   whyPanel: {
     borderRadius: 24,
-    background: "linear-gradient(180deg, #fffefb 0%, #fff7ea 100%)",
-    border: "1px solid #ead9bd",
+    background: "#ffffff",
+    border: "1px solid #eaecf0",
     padding: 24,
   },
   whyTitle: {
@@ -475,7 +475,7 @@ const s = {
   whyIntro: {
     fontSize: 15,
     lineHeight: 1.65,
-    color: "#6f5c48",
+    color: "#667085",
     marginBottom: 14,
   },
   whyList: {
@@ -502,7 +502,7 @@ const s = {
     alignItems: "center",
     justifyContent: "center",
     background: "#2a2118",
-    color: "#fff8ef",
+    color: "#ffffff",
     fontSize: 12,
     fontWeight: 900,
     marginTop: 1,
@@ -512,7 +512,7 @@ const s = {
     background: "linear-gradient(180deg, #2f2419 0%, #4b3318 100%)",
     border: "1px solid #6b4720",
     padding: 24,
-    color: "#fff8ef",
+    color: "#ffffff",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
@@ -522,7 +522,7 @@ const s = {
     fontWeight: 900,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
-    color: "#ffcf70",
+    color: "#d3f0e0",
     marginBottom: 10,
   },
   pressureHeading: {
@@ -553,19 +553,19 @@ const s = {
     fontWeight: 800,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
-    color: "#ffcf70",
+    color: "#d3f0e0",
     marginBottom: 4,
   },
   pressureValue: {
     fontSize: 15,
     fontWeight: 800,
-    color: "#fff8ef",
+    color: "#ffffff",
   },
   footerCta: {
     borderRadius: 28,
     border: "1px solid #ead9bd",
-    background: "linear-gradient(135deg, #fff8ea 0%, #ffe5b2 100%)",
-    boxShadow: "0 20px 60px rgba(118, 84, 36, 0.12)",
+    background: "linear-gradient(135deg, #eef6f1 0%, #f8fafc 100%)",
+    boxShadow: "0 20px 60px rgba(15, 23, 32, 0.08)",
     padding: "26px 24px",
     display: "flex",
     gap: 18,
@@ -582,7 +582,7 @@ const s = {
   footerText: {
     fontSize: 15,
     lineHeight: 1.65,
-    color: "#6f5c48",
+    color: "#667085",
     maxWidth: 620,
   },
   footerActions: {
@@ -596,7 +596,7 @@ const s = {
     borderRadius: 16,
     border: primary ? "1px solid #2a2118" : "1px solid #c9b28f",
     background: primary ? "#2a2118" : "#fffdf8",
-    color: primary ? "#fff8ef" : "#2a2118",
+    color: primary ? "#ffffff" : "#101828",
     fontSize: 14,
     fontWeight: 900,
     cursor: "pointer",
@@ -606,9 +606,9 @@ const s = {
     marginBottom: 18,
     padding: "13px 16px",
     borderRadius: 16,
-    border: tone === "error" ? "1px solid #fecaca" : "1px solid #fed7aa",
-    background: tone === "error" ? "#fef2f2" : "#fff7ed",
-    color: tone === "error" ? "#991b1b" : "#9a3412",
+    border: tone === "error" ? "1px solid #fecaca" : "1px solid #cfe0d8",
+    background: tone === "error" ? "#fef2f2" : "#eef6f1",
+    color: tone === "error" ? "#991b1b" : "#1F4E3D",
     fontSize: 13,
     fontWeight: 700,
   }),
@@ -781,7 +781,7 @@ export default function SubscriptionSelect() {
         <div style={{ ...s.shell, textAlign: "center", paddingTop: 80 }}>
           <div style={{ fontSize: 48, marginBottom: 14 }}>&#10003;</div>
           <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>Payment confirmed</div>
-          <div style={{ fontSize: 15, color: "#6f5c48" }}>Continuing to design step...</div>
+          <div style={{ fontSize: 15, color: "#667085" }}>Continuing to design step...</div>
         </div>
       </div>
     );
@@ -803,7 +803,7 @@ export default function SubscriptionSelect() {
                 subtitle="for Restaurants"
                 wrapperStyle={{ alignItems: "flex-start", marginBottom: 18 }}
                 subtitleStyle={{ textAlign: "left" }}
-                logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#fff7ea" }}
+                logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
               />
 
               <div style={s.eyebrow}>Grubbid restaurant subscriptions</div>
@@ -894,6 +894,45 @@ export default function SubscriptionSelect() {
         </div>
 
         <section style={s.sectionCard}>
+          <div style={s.chartHeader}>
+            <div>
+              <div style={s.chartTitle}>Plan Comparison</div>
+              <div style={s.chartSubtitle}>
+                Verified gets you live fast. Pro gives you the tools that turn your menu into an active growth channel.
+              </div>
+            </div>
+          </div>
+
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead>
+                <tr>
+                  <th style={s.th(false)}>Feature</th>
+                  <th style={s.th(false)}>Verified</th>
+                  <th style={s.th(true)}>Pro</th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARISON_ROWS.map((row) => (
+                  <tr key={row.feature}>
+                    <td style={s.tdFeature(false)}>{row.feature}</td>
+                    <td style={s.tdValue(false, false)}>{renderCellValue(row.verified)}</td>
+                    <td style={s.tdValue(true, false)}>{renderCellValue(comparisonValue(row, proInterval))}</td>
+                  </tr>
+                ))}
+                {FUTURE_ROWS.map((row) => (
+                  <tr key={`future-${row.feature}`}>
+                    <td style={s.tdFeature(true)}>{row.feature}</td>
+                    <td style={s.tdValue(false, true)}>{renderCellValue(row.verified)}</td>
+                    <td style={s.tdValue(true, true)}>{renderCellValue(row.pro)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section style={s.sectionCard}>
           <div style={s.cardsGrid}>
             <article style={s.planCard(false)}>
               <div style={s.planEyebrow}>Verified</div>
@@ -960,45 +999,6 @@ export default function SubscriptionSelect() {
                 </div>
               ) : null}
             </article>
-          </div>
-        </section>
-
-        <section style={s.sectionCard}>
-          <div style={s.chartHeader}>
-            <div>
-              <div style={s.chartTitle}>Plan Comparison</div>
-              <div style={s.chartSubtitle}>
-                Verified gets you live fast. Pro gives you the tools that turn your menu into an active growth channel.
-              </div>
-            </div>
-          </div>
-
-          <div style={s.tableWrap}>
-            <table style={s.table}>
-              <thead>
-                <tr>
-                  <th style={s.th(false)}>Feature</th>
-                  <th style={s.th(false)}>Verified</th>
-                  <th style={s.th(true)}>Pro</th>
-                </tr>
-              </thead>
-              <tbody>
-                {COMPARISON_ROWS.map((row) => (
-                  <tr key={row.feature}>
-                    <td style={s.tdFeature(false)}>{row.feature}</td>
-                    <td style={s.tdValue(false, false)}>{renderCellValue(row.verified)}</td>
-                    <td style={s.tdValue(true, false)}>{renderCellValue(comparisonValue(row, proInterval))}</td>
-                  </tr>
-                ))}
-                {FUTURE_ROWS.map((row) => (
-                  <tr key={`future-${row.feature}`}>
-                    <td style={s.tdFeature(true)}>{row.feature}</td>
-                    <td style={s.tdValue(false, true)}>{renderCellValue(row.verified)}</td>
-                    <td style={s.tdValue(true, true)}>{renderCellValue(row.pro)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </section>
 
