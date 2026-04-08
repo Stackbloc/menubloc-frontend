@@ -440,6 +440,33 @@ const s = {
     background: highlighted ? "#eef6f1" : "#f8fafc",
     borderBottom: "1px solid #eaecf0",
   }),
+  thPlanWrap: {
+    display: "inline-flex",
+    alignItems: "baseline",
+    justifyContent: "center",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  thPlanName: {
+    fontSize: 13,
+    fontWeight: 900,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#1F4E3D",
+  },
+  thPlanPrice: {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "4px 10px",
+    borderRadius: 999,
+    background: "#ffffff",
+    border: "1px solid #cfe0d8",
+    fontSize: 12,
+    fontWeight: 900,
+    letterSpacing: "0.01em",
+    color: "#101828",
+    boxShadow: "0 4px 12px rgba(15, 23, 32, 0.06)",
+  },
   tdFeature: (muted) => ({
     padding: "14px 14px",
     borderBottom: "1px solid #eaecf0",
@@ -932,7 +959,14 @@ export default function SubscriptionSelect() {
                 <tr>
                   <th style={s.th(false)}>Feature</th>
                   <th style={s.th(false)}>Verified</th>
-                  <th style={s.th(true)}>{`Pro ${proPricing.amount}`}</th>
+                  <th style={s.th(true)}>
+                    <span style={s.thPlanWrap}>
+                      <span style={s.thPlanName}>Pro</span>
+                      <span style={s.thPlanPrice}>
+                        {proInterval === "annual" ? "$199.99 annually" : "$39.99/month"}
+                      </span>
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -984,15 +1018,9 @@ export default function SubscriptionSelect() {
             <article style={s.planCard(true)}>
               <div style={s.planBadge}>Most Popular</div>
               <div style={s.planEyebrow}>Pro</div>
-              <div style={s.planName}>
-                {proInterval === "annual" ? 'Pro Annual "$199.99"' : "Pro Monthly $39.99"}
-              </div>
+              <div style={s.planName}>Pro</div>
               <div style={s.planDesc}>
                 Everything you need to grow, promote, and sell.
-              </div>
-              <div style={s.priceRow}>
-                <div style={s.priceValue}>{proPricing.amount}</div>
-                <div style={s.priceSuffix}>{proPricing.suffix}</div>
               </div>
               {proPricing.badge ? <div style={s.priceBadge}>{proPricing.badge}</div> : null}
 
