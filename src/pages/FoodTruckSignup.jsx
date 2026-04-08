@@ -2,31 +2,27 @@
  * ============================================================
  * File: FoodTruckSignup.jsx
  * Path: menubloc-frontend/src/pages/FoodTruckSignup.jsx
- * Date: 2026-03-13
+ * Date: 2026-04-08
  * Purpose:
  *   Food truck owner signup — Step 1 of food truck onboarding.
  *   Collects account info and truck info.
  *
  *   On submit: calls POST /owner/profile with category='food_truck'
  *   Returns { restaurant, owner_token }.
- *   Then adds Grubbid Food Truck Verified ($59/yr) to cart
- *   and opens the PayPal checkout drawer.
+ *   Then calls POST /owner/subscription/checkout-session and
+ *   redirects to Stripe Checkout.
  *
  * Route: /foodtruck/signup
- *
- * PayPal Plan ID placeholder:
- *   PLAN_ID_FOODTRUCK_VERIFIED — swap in from developer.paypal.com
  * ============================================================
  */
 
-import { useState } from "react";
-import { useCart } from "../context/CartContext.jsx";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
-// ── Replace with real sandbox Plan ID from developer.paypal.com ──
-const PLAN_ID_FOODTRUCK_VERIFIED = "YOUR_PLAN_ID_FOODTRUCK_VERIFIED";
+const SESSION_KEY = "grubbid.foodtruck.signup";
 
 const CUISINE_OPTIONS = [
   "American", "BBQ", "Caribbean", "Chinese", "Filipino", "French",
@@ -100,6 +96,18 @@ const st = {
     marginBottom: 16, fontSize: 13, color: "#c00",
   },
 
+  successBanner: {
+    background: "#f0fdf4", border: "1px solid #86efac",
+    borderRadius: 10, padding: "16px 18px",
+    marginBottom: 16, fontSize: 14, color: "#166534", fontWeight: 600,
+  },
+
+  cancelledBanner: {
+    background: "#fff7ed", border: "1px solid #fdba74",
+    borderRadius: 10, padding: "12px 16px",
+    marginBottom: 16, fontSize: 13, color: "#9a3412",
+  },
+
   // Plan card
   planCard: {
     border: "2px solid #111", borderRadius: 16,
@@ -140,7 +148,8 @@ const TRUCK_FEATURES = [
 ];
 
 export default function FoodTruckSignup() {
-  const { addToCart, openCart } = useCart();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const checkoutResult = searchParams.get("checkout");
 
   const [form, setForm] = useState({
     email: "",
@@ -159,6 +168,23 @@ export default function FoodTruckSignup() {
   const [fieldErrors, setFieldErrors]  = useState({});
   const [serverError, setServerError]  = useState("");
   const [submitting,  setSubmitting]   = useState(false);
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+
+  // Handle return from Stripe Checkout
+  useEffect(() => {
+    if (checkoutResult === "success") {
+      setCheckoutSuccess(true);
+      setSearchParams({}, { replace: true });
+      try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+    } else if (checkoutResult === "cancelled") {
+      setSearchParams({}, { replace: true });
+      // Restore form state if available
+      try {
+        const saved = sessionStorage.getItem(SESSION_KEY);
+        if (saved) setForm(JSON.parse(saved));
+      } catch { /* ignore */ }
+    }
+  }, [checkoutResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -210,23 +236,69 @@ export default function FoodTruckSignup() {
         throw new Error(data?.error || `Signup failed (${res.status})`);
       }
 
-      // Account created — add plan to cart and open PayPal drawer
-      addToCart({
-        id:           "foodtruck_verified_annual",
-        name:         "Grubbid Food Truck — Verified",
-        description:  "Annual verified listing · renews each year",
-        price:        59,
-        type:         "subscription",
-        interval:     "year",
-        paypalPlanId: PLAN_ID_FOODTRUCK_VERIFIED,
+      const { restaurant, owner_token } = data;
+      const email = form.email.trim();
+      const origin = window.location.origin;
+
+      // Save form state so it can be restored if checkout is cancelled
+      try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(form)); } catch { /* ignore */ }
+
+      // Create Stripe Checkout Session and redirect
+      const checkoutRes = await fetch(`${API}/owner/subscription/checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurant_id: restaurant.id,
+          owner_token,
+          email,
+          plan_code:   "foodtruck_verified_annual",
+          success_url: `${origin}/foodtruck/signup?checkout=success`,
+          cancel_url:  `${origin}/foodtruck/signup?checkout=cancelled`,
+        }),
       });
-      openCart();
+
+      const checkoutData = await checkoutRes.json().catch(() => null);
+      if (!checkoutRes.ok || !checkoutData?.ok) {
+        throw new Error(checkoutData?.error || "Failed to start checkout.");
+      }
+
+      if (!checkoutData.checkout_url) {
+        throw new Error("No checkout URL returned.");
+      }
+
+      window.location.href = checkoutData.checkout_url;
 
     } catch (err) {
       setServerError(err.message || "Signup failed. Please try again.");
-    } finally {
       setSubmitting(false);
     }
+    // Note: do not call setSubmitting(false) on success — browser is navigating away
+  }
+
+  if (checkoutSuccess) {
+    return (
+      <div style={st.page}>
+        <BrandLockup
+          subtitle="for Food Trucks"
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+        />
+        <div style={{ ...st.successBanner, marginTop: 28 }}>
+          <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>You are listed!</div>
+          Your Grubbid Food Truck Verified subscription is active. Your truck profile is now live and discoverable.
+        </div>
+        <a
+          href="/foodtruck/dashboard"
+          style={{
+            display: "block", textAlign: "center", marginTop: 16,
+            padding: "13px 0", borderRadius: 12, background: "#111",
+            color: "#fff", fontWeight: 700, fontSize: 15,
+            textDecoration: "none",
+          }}
+        >
+          Go to your dashboard
+        </a>
+      </div>
+    );
   }
 
   return (
@@ -240,6 +312,12 @@ export default function FoodTruckSignup() {
       <div style={st.pageSubtitle}>
         Get discovered by customers looking for food trucks in your area.
       </div>
+
+      {checkoutResult === "cancelled" && !serverError ? (
+        <div style={st.cancelledBanner}>
+          Checkout was cancelled. No charge was made. Complete your details below and try again.
+        </div>
+      ) : null}
 
       {serverError && <div style={st.errorBanner}>{serverError}</div>}
 
@@ -414,11 +492,11 @@ export default function FoodTruckSignup() {
         </div>
 
         <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
-          {submitting ? "Creating account…" : "Continue to Payment →"}
+          {submitting ? "Redirecting to Stripe…" : "Continue to Payment →"}
         </button>
 
         <div style={{ fontSize: 11, color: "#94a3b8", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
-          You will be taken to PayPal to complete your $59/year subscription.
+          You will be taken to Stripe to complete your $59/year subscription.
         </div>
 
       </form>

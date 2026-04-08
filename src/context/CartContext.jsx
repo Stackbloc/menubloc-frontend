@@ -16,7 +16,7 @@
  *     price:       number   — display price in USD
  *     type:        'subscription' | 'one_time'
  *     interval:    'month' | 'year' | null  — for subscriptions
- *     paypalPlanId: string  — PayPal Plan ID (subscriptions only)
+ *     productCode: string   — Grubbid product code (maps to Stripe price ID on backend)
  *   }
  *
  * Cart only holds one subscription at a time — adding a new

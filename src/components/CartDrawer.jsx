@@ -2,26 +2,19 @@
  * CartDrawer.jsx
  * Path: menubloc-frontend/src/components/CartDrawer.jsx
  *
- * Slide-in cart drawer with PayPal checkout.
+ * Slide-in cart drawer with Stripe Checkout.
  * Rendered once at the app root — controlled via CartContext.
  *
- * PayPal placeholders to swap before going live:
- *   PAYPAL_CLIENT_ID   — from PayPal Developer Dashboard → My Apps & Credentials
- *
- * Subscription items use PayPal Subscriptions API (createSubscription).
- * One-time items use PayPal Orders API (createOrder).
+ * Clicking "Checkout with Stripe" sends the cart to
+ * POST /api/checkout/session and redirects to the returned checkout_url.
+ * Stripe redirects back to successUrl / cancelUrl on completion.
  */
 
-import { useEffect, useRef } from "react";
-import {
-  PayPalScriptProvider,
-  PayPalButtons,
-} from "@paypal/react-paypal-js";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "../context/CartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
-// ── Replace with your real sandbox Client ID from developer.paypal.com ──
-const PAYPAL_CLIENT_ID = "YOUR_SANDBOX_CLIENT_ID";
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 function fmtPrice(price, interval) {
   const formatted = `$${price.toFixed(2)}`;
@@ -73,72 +66,12 @@ function LineItem({ item, onRemove, t }) {
   );
 }
 
-function CheckoutButtons({ cart, onSuccess, t }) {
-  const subscriptionItem = cart.find((i) => i.type === "subscription");
-  const oneTimeItems     = cart.filter((i) => i.type === "one_time");
-  const oneTimeTotal     = oneTimeItems.reduce((s, i) => s + i.price, 0);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {/* Subscription checkout */}
-      {subscriptionItem?.paypalPlanId ? (
-        <div>
-          <div style={{
-            fontSize: 11, fontWeight: 700, color: "#64748b",
-            marginBottom: 8, letterSpacing: 0.3,
-          }}>
-            {subscriptionItem.name}
-          </div>
-          <PayPalButtons
-            style={{ layout: "vertical", shape: "rect", label: "subscribe" }}
-            createSubscription={(_data, actions) =>
-              actions.subscription.create({ plan_id: subscriptionItem.paypalPlanId })
-            }
-            onApprove={(_data, _actions) => onSuccess("subscription")}
-            onError={(err) => console.error("PayPal subscription error:", err)}
-          />
-        </div>
-      ) : null}
-
-      {/* One-time checkout */}
-      {oneTimeItems.length > 0 ? (
-        <div>
-          {subscriptionItem ? (
-            <div style={{
-              fontSize: 11, fontWeight: 700, color: "#64748b",
-              marginBottom: 8, letterSpacing: 0.3,
-            }}>
-              {t("cart.oneTimePurchase")}
-            </div>
-          ) : null}
-          <PayPalButtons
-            style={{ layout: "vertical", shape: "rect" }}
-            createOrder={(_data, actions) =>
-              actions.order.create({
-                purchase_units: oneTimeItems.map((item) => ({
-                  description: item.name,
-                  amount: {
-                    currency_code: "USD",
-                    value: item.price.toFixed(2),
-                  },
-                })),
-              })
-            }
-            onApprove={(_data, actions) =>
-              actions.order.capture().then(() => onSuccess("one_time"))
-            }
-            onError={(err) => console.error("PayPal order error:", err)}
-          />
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 export default function CartDrawer() {
   const { cart, removeFromCart, clearCart, isOpen, closeCart, total } = useCart();
   const { t } = useLanguage();
   const overlayRef = useRef(null);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
 
   // Close on Escape
   useEffect(() => {
@@ -154,24 +87,50 @@ export default function CartDrawer() {
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
-  function handleSuccess(type) {
-    clearCart();
-    closeCart();
-    alert(type === "subscription"
-      ? t("cart.subscriptionActivated")
-      : t("cart.purchaseComplete")
-    );
+  async function handleCheckout() {
+    if (cart.length === 0) return;
+
+    setIsCheckingOut(true);
+    setCheckoutError("");
+
+    try {
+      const origin = window.location.origin;
+      const res = await fetch(`${API}/api/checkout/session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cart.map((item) => ({
+            productCode: item.productCode || item.id,
+            name: item.name,
+            price: item.price,
+            type: item.type,
+            interval: item.interval || null,
+          })),
+          successUrl: `${origin}${window.location.pathname}?checkout=success`,
+          cancelUrl:  `${origin}${window.location.pathname}?checkout=cancelled`,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Checkout failed. Please try again.");
+      }
+
+      if (!data.checkout_url) {
+        throw new Error("No checkout URL returned.");
+      }
+
+      window.location.href = data.checkout_url;
+    } catch (err) {
+      setCheckoutError(err.message || "Checkout failed. Please try again.");
+      setIsCheckingOut(false);
+    }
   }
 
   const hasItems = cart.length > 0;
 
   return (
-    <PayPalScriptProvider options={{
-      clientId: PAYPAL_CLIENT_ID,
-      vault: true,          // required for subscriptions
-      intent: "subscription",
-      currency: "USD",
-    }}>
+    <>
       {/* Overlay */}
       <div
         ref={overlayRef}
@@ -268,9 +227,30 @@ export default function CartDrawer() {
                 </span>
               </div>
 
-              {/* PayPal buttons */}
+              {/* Checkout */}
               <div style={{ paddingTop: 20 }}>
-                <CheckoutButtons cart={cart} onSuccess={handleSuccess} t={t} />
+                {checkoutError ? (
+                  <div style={{
+                    marginBottom: 14, padding: "10px 12px", borderRadius: 10,
+                    background: "#fef2f2", border: "1px solid #fecaca",
+                    fontSize: 13, color: "#b42318", fontWeight: 600,
+                  }}>
+                    {checkoutError}
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={isCheckingOut}
+                  style={{
+                    width: "100%", padding: "14px 0", borderRadius: 12,
+                    border: "none", background: isCheckingOut ? "#94a3b8" : "#0f172a",
+                    color: "#fff", fontSize: 15, fontWeight: 800,
+                    cursor: isCheckingOut ? "wait" : "pointer",
+                  }}
+                >
+                  {isCheckingOut ? "Redirecting to Stripe…" : t("cart.checkoutWithStripe")}
+                </button>
               </div>
             </>
           )}
@@ -283,7 +263,7 @@ export default function CartDrawer() {
           flexShrink: 0,
           fontSize: 11, color: "#94a3b8", textAlign: "center", lineHeight: 1.5,
         }}>
-          {t("cart.paypalSecure")}
+          {t("cart.stripeSecure")}
           {hasItems ? (
             <button
               onClick={clearCart}
@@ -299,6 +279,6 @@ export default function CartDrawer() {
           ) : null}
         </div>
       </div>
-    </PayPalScriptProvider>
+    </>
   );
 }
