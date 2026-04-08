@@ -85,6 +85,24 @@ const FUTURE_ROWS = [
   { feature: "Future Feature", verified: "cross", pro: "future" },
 ];
 
+function normalizeOnboardingState(raw) {
+  if (!raw || typeof raw !== "object") return null;
+
+  const normalized = {
+    restaurant_id: raw.restaurant_id ?? null,
+    restaurant_name: raw.restaurant_name ?? "",
+    email: raw.email ?? "",
+    owner_token: raw.owner_token ?? "",
+    ingestion_method: raw.ingestion_method ?? "",
+    city: raw.city ?? "",
+    state: raw.state ?? "",
+    phone: raw.phone ?? "",
+    menu_choice: raw.menu_choice ?? "",
+  };
+
+  return normalized.restaurant_id && normalized.owner_token ? normalized : null;
+}
+
 const s = {
   page: {
     minHeight: "100vh",
@@ -622,6 +640,18 @@ export default function SubscriptionSelect() {
   const nav = useNavigate();
   const location = useLocation();
 
+  const [onboardingState, setOnboardingState] = useState(() => {
+    const stateFromNavigation = normalizeOnboardingState(location.state);
+    if (stateFromNavigation) return stateFromNavigation;
+
+    try {
+      return normalizeOnboardingState(
+        JSON.parse(window.sessionStorage.getItem(ONBOARDING_STATE_KEY) || "null")
+      );
+    } catch {
+      return null;
+    }
+  });
   const [proInterval, setProInterval] = useState("monthly");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
@@ -636,7 +666,7 @@ export default function SubscriptionSelect() {
     state,
     phone,
     menu_choice,
-  } = location.state || {};
+  } = onboardingState || {};
 
   const hasOnboardingContext = Boolean(restaurant_id && owner_token);
 
@@ -644,6 +674,18 @@ export default function SubscriptionSelect() {
   const checkoutSuccess = params.get("checkout_success") === "1";
   const returnedPlanCode = params.get("plan_code") || "";
   const checkoutCancelled = params.get("checkout_cancelled") === "1";
+
+  useEffect(() => {
+    const stateFromNavigation = normalizeOnboardingState(location.state);
+    if (!stateFromNavigation) return;
+
+    setOnboardingState(stateFromNavigation);
+    try {
+      window.sessionStorage.setItem(ONBOARDING_STATE_KEY, JSON.stringify(stateFromNavigation));
+    } catch {
+      // Storage is optional. Navigation state still carries the flow.
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (!checkoutSuccess) return;
