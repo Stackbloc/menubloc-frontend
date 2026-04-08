@@ -1,6 +1,6 @@
 // menubloc-frontend/src/pages/RestaurantProfile.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -17,6 +17,7 @@ function useQuery() {
 export default function RestaurantProfile() {
   const nav = useNavigate();
   const qs = useQuery();
+  const { id: routeId } = useParams();
 
   const presetEmail = safeText(qs.get("email") || "");
 
@@ -25,7 +26,8 @@ export default function RestaurantProfile() {
 
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState("");
-  const [restaurantId, setRestaurantId] = useState(null);
+  // If an ID is in the URL the restaurant already exists — activate upload immediately
+  const [restaurantId, setRestaurantId] = useState(routeId || null);
 
   const [form, setForm] = useState({
     restaurant_name: "",
@@ -53,6 +55,31 @@ export default function RestaurantProfile() {
       .then((j) => { if (j.ok) setCuisines(j.cuisines); })
       .catch(() => {});
   }, []);
+
+  // Pre-fill form when an existing restaurant ID is in the URL
+  useEffect(() => {
+    if (!routeId) return;
+    fetch(`${API}/restaurants/${encodeURIComponent(routeId)}`)
+      .then((r) => r.json())
+      .then((r) => {
+        if (!r || r.error) return;
+        setForm({
+          restaurant_name: safeText(r.restaurant_name),
+          category:        safeText(r.category),
+          cuisine:         safeText(r.cuisine),
+          phone:           formatPhone(safeText(r.phone)),
+          website:         safeText(r.website_url),
+          manager_name:    safeText(r.manager_name),
+          address_line1:   safeText(r.address_line1),
+          address_line2:   safeText(r.address_line2),
+          city:            safeText(r.city),
+          state:           safeText(r.state),
+          postal_code:     safeText(r.postal_code),
+          email:           safeText(r.email) || presetEmail,
+        });
+      })
+      .catch(() => {});
+  }, [routeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -86,27 +113,37 @@ export default function RestaurantProfile() {
 
     setSaving(true);
     try {
-      const res = await fetch(`${API}/restaurants`, {
-        method: "POST",
+      // PATCH if updating an existing restaurant, POST to create a new one.
+      // PATCH expects website_url; POST accepts website as an alias.
+      const isUpdate = Boolean(restaurantId);
+      const url    = isUpdate ? `${API}/restaurants/${restaurantId}` : `${API}/restaurants`;
+      const method = isUpdate ? "PATCH" : "POST";
+      const body   = isUpdate
+        ? { ...form, website_url: form.website }
+        : form;
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
 
       const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) throw new Error(json?.error || `HTTP ${res.status}`);
+      if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
 
+      if (!json?.ok) throw new Error(json?.error || `HTTP ${res.status}`);
       const r = json.restaurant || {};
-      const id = r.id ? String(r.id) : null;
+      const id = r.id ? String(r.id) : restaurantId;
       if (!id) throw new Error("Saved, but no restaurant id returned.");
       setRestaurantId(id);
       nav("/restaurant/subscription");
     } catch (err) {
-      setRestaurantId(null);
       setSaveErr(err?.message || "Failed to save restaurant.");
     } finally {
       setSaving(false);
     }
+
   }
 
   async function uploadPdf(e) {
