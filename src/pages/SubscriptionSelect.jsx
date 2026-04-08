@@ -1022,6 +1022,12 @@ export default function SubscriptionSelect() {
               <div style={s.planDesc}>
                 Everything you need to grow, promote, and sell.
               </div>
+              <div style={s.priceRow}>
+                <div style={s.priceValue}>{proPricing.amount}</div>
+                <div style={s.priceSuffix}>
+                  {proInterval === "annual" ? "annually" : "/month"}
+                </div>
+              </div>
               {proPricing.badge ? <div style={s.priceBadge}>{proPricing.badge}</div> : null}
 
               <ul style={s.featureList}>
