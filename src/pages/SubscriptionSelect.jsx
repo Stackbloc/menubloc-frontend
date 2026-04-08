@@ -13,14 +13,12 @@
  *     ingestion_method — "pdf" | "spreadsheet" | "ocr"
  *
  *   Plan choice:
- *     Verified → navigate to /restaurant/design-select (free, no payment)
- *     Pro      → create Stripe Checkout Session → redirect to Stripe hosted page
+ *     Verified → navigate to /restaurant/design-select (free)
+ *     Pro      → create hosted checkout session → redirect to billing flow
  *
- *   After Stripe payment:
- *     Stripe redirects to /restaurant/subscription?checkout_success=1&plan_code=<code>
+ *   After successful checkout:
+ *     The billing flow redirects to /restaurant/subscription?checkout_success=1&plan_code=<code>
  *     Onboarding state is recovered from sessionStorage and the user continues.
- *
- *   PayPal: RETIRED. All subscription billing is Stripe-only.
  */
 
 import React, { useEffect, useState } from "react";
@@ -55,7 +53,7 @@ const PLAN_CARD_FEATURES = {
     "Basic profile",
   ],
   pro: [
-    "Online ordering with Stripe",
+    "Online ordering",
     "Deals and promotions",
     "Full branding control",
     "Analytics and insights",
@@ -64,7 +62,6 @@ const PLAN_CARD_FEATURES = {
 };
 
 const COMPARISON_ROWS = [
-  { feature: "Price", verified: VERIFIED_PRICE_LABEL, proKey: "tableLabel", emphasis: true },
   { feature: "Grubbid Profile Page", verified: "check", pro: "check" },
   { feature: "Menu Hosting", verified: "check", pro: "check" },
   { feature: "QR Code Access", verified: "Basic", pro: "Advanced Kit" },
@@ -73,7 +70,7 @@ const COMPARISON_ROWS = [
   { feature: "Custom Branding (Logo, About)", verified: "cross", pro: "check" },
   { feature: "Featured Menu Items", verified: "cross", pro: "check" },
   { feature: "Analytics Dashboard", verified: "cross", pro: "check" },
-  { feature: "Online Ordering (Stripe)", verified: "cross", pro: "check" },
+  { feature: "Online Ordering", verified: "cross", pro: "check" },
   { feature: "Customer Insights", verified: "cross", pro: "check" },
   { feature: "Multiple Menus (Lunch/Dinner/etc.)", verified: "cross", pro: "check" },
   { feature: "Priority Placement in Search", verified: "cross", pro: "check" },
@@ -621,11 +618,6 @@ function renderCellValue(value) {
   return value;
 }
 
-function comparisonValue(row, interval) {
-  if (row.proKey) return PRO_PRICING[interval][row.proKey];
-  return row.pro;
-}
-
 export default function SubscriptionSelect() {
   const nav = useNavigate();
   const location = useLocation();
@@ -917,7 +909,7 @@ export default function SubscriptionSelect() {
                   <tr key={row.feature}>
                     <td style={s.tdFeature(false)}>{row.feature}</td>
                     <td style={s.tdValue(false, false)}>{renderCellValue(row.verified)}</td>
-                    <td style={s.tdValue(true, false)}>{renderCellValue(comparisonValue(row, proInterval))}</td>
+                    <td style={s.tdValue(true, false)}>{renderCellValue(row.pro)}</td>
                   </tr>
                 ))}
                 {FUTURE_ROWS.map((row) => (
@@ -989,15 +981,9 @@ export default function SubscriptionSelect() {
                 {isCheckingOut
                   ? "Preparing checkout..."
                   : hasOnboardingContext
-                  ? "Go Pro with Stripe"
+                  ? "Choose Pro"
                   : "Get Started"}
               </button>
-
-              {hasOnboardingContext ? (
-                <div style={s.footnote}>
-                  Clicking Pro sends you to secure Stripe checkout, then back into menu design.
-                </div>
-              ) : null}
             </article>
           </div>
         </section>
