@@ -952,72 +952,83 @@ export default function PublicMenuPage() {
                 flexWrap: "wrap",
               }}
             >
-              {orderMode ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={openCheckout}
-                    style={{
-                      border: "none",
-                      borderRadius: 999,
-                      background: "#11211a",
-                      color: "#fff",
-                      padding: "12px 18px",
-                      fontSize: 14,
-                      fontWeight: 900,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Review Order
-                  </button>
-                  <button
-                    type="button"
-                    onClick={exitOrderMode}
-                    style={{
-                      border: "1px solid rgba(17,33,26,0.12)",
-                      borderRadius: 999,
-                      background: "#fff",
-                      color: "#11211a",
-                      padding: "12px 18px",
-                      fontSize: 14,
-                      fontWeight: 800,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Back to Menu View
-                  </button>
-                </>
-              ) : (
+              {/* Segmented View / Order toggle */}
+              <div
+                style={{
+                  display: "inline-flex",
+                  borderRadius: 999,
+                  border: "1px solid rgba(17,33,26,0.14)",
+                  background: "#fff",
+                  padding: 3,
+                  gap: 2,
+                  boxShadow: "0 2px 8px rgba(15,23,42,0.06)",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={exitOrderMode}
+                  style={{
+                    padding: "9px 20px",
+                    borderRadius: 999,
+                    border: "none",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    background: !orderMode ? "#11211a" : "transparent",
+                    color: !orderMode ? "#fff" : "#667085",
+                    transition: "background 140ms ease, color 140ms ease",
+                  }}
+                >
+                  View
+                </button>
                 <button
                   type="button"
                   onClick={enterOrderMode}
                   style={{
-                    border: "none",
+                    padding: "9px 20px",
                     borderRadius: 999,
-                    background: "#14532d",
-                    color: "#fff",
-                    padding: "14px 22px",
-                    fontSize: 15,
-                    fontWeight: 900,
+                    border: "none",
+                    fontSize: 13,
+                    fontWeight: 800,
                     cursor: "pointer",
-                    boxShadow: "0 14px 34px rgba(20,83,45,0.22)",
+                    background: orderMode ? "#14532d" : "transparent",
+                    color: orderMode ? "#fff" : "#667085",
+                    transition: "background 140ms ease, color 140ms ease",
                   }}
                 >
                   Order
+                </button>
+              </div>
+              {orderMode && (
+                <button
+                  type="button"
+                  onClick={openCheckout}
+                  style={{
+                    border: "none",
+                    borderRadius: 999,
+                    background: "#11211a",
+                    color: "#fff",
+                    padding: "10px 18px",
+                    fontSize: 14,
+                    fontWeight: 900,
+                    cursor: "pointer",
+                  }}
+                >
+                  Review Order →
                 </button>
               )}
             </div>
             {orderMode && hasBasketItems && basketMatchesCurrentRestaurant ? (
               <div
                 style={{
-                  marginTop: 14,
+                  marginTop: 10,
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 10,
                   borderRadius: 999,
                   background: "#ffffff",
                   border: "1px solid rgba(20,83,45,0.14)",
-                  padding: "9px 14px",
+                  padding: "7px 14px",
                   fontSize: 13,
                   fontWeight: 800,
                   color: "#166534",

@@ -27,6 +27,7 @@ import { OrderCartProvider } from "./context/OrderCartContext.jsx";
 import { LanguageProvider } from "./context/LanguageContext.jsx";
 import CartDrawer from "./components/CartDrawer.jsx";
 import OrderCartDrawer from "./components/OrderCartDrawer.jsx";
+import BasketResumePrompt from "./components/basket/BasketResumePrompt.jsx";
 import SiteFooter from "./components/SiteFooter.jsx";
 import { OperatorProvider, useOperator } from "./context/OperatorContext.jsx";
 import { OwnerProvider, useOwner } from "./context/OwnerContext.jsx";
@@ -410,6 +411,7 @@ function AppShell({ easyMenu, crmHost }) {
       <AnalyticsTracker />
       {crmHost ? null : <CartDrawer />}
       {crmHost ? null : <OrderCartDrawer />}
+      {crmHost ? null : <BasketResumePrompt />}
 
       <Routes>
         <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <GrubbidDiscovery />} />

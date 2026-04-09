@@ -33,17 +33,22 @@ export function BackButton() {
 /**
  * Consumer auth links shown in the site nav.
  * When logged out: Log In + Sign Up
- * When logged in:  Account
+ * When logged in:  Account: {name}
  */
 function ConsumerNavLinks() {
-  const { isAuthenticated, loading } = useConsumer();
+  const { isAuthenticated, loading, profile, consumer } = useConsumer();
 
   if (loading) return null;
 
   if (isAuthenticated) {
+    const displayName =
+      profile?.display_name ||
+      [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") ||
+      consumer?.email ||
+      null;
     return (
       <Link to="/account" style={navLinkStyle}>
-        Account
+        {displayName ? `Account: ${displayName}` : "Account"}
       </Link>
     );
   }
@@ -65,17 +70,19 @@ export function PageNav({ back = false }) {
 
   return (
     <div className="gb-page-nav">
-      <BrandLogo
-        width={96}
-        height={62}
-        radius={16}
-        pageColor="#f7f6f1"
-        linkStyle={{ flexShrink: 0 }}
-        ariaLabel={t("nav.brandAria")}
-      />
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {back ? <BackButton /> : <HomeButton />}
+        <BrandLogo
+          width={96}
+          height={62}
+          radius={16}
+          pageColor="#f7f6f1"
+          linkStyle={{ flexShrink: 0 }}
+          ariaLabel={t("nav.brandAria")}
+        />
+      </div>
       <div className="gb-page-nav__actions" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
         <ConsumerNavLinks />
-        {back ? <BackButton /> : <HomeButton />}
       </div>
     </div>
   );
