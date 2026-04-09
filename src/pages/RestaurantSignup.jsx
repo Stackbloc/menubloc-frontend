@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import { LEGAL_VERSIONS } from "../content/legal.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const PLAN_SELECTION_ROUTE = "/restaurant/subscription";
@@ -106,6 +107,29 @@ const styles = {
   },
   fieldError: { fontSize: 12, color: "#c00", marginTop: 5 },
   helperText: { fontSize: 12, color: "#667085", marginTop: 6 },
+  checkboxRow: {
+    display: "flex",
+    gap: 10,
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    marginTop: 2,
+    accentColor: "#111",
+    flex: "0 0 auto",
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    lineHeight: 1.6,
+    color: "#344054",
+  },
+  legalLink: {
+    color: "#111",
+    fontWeight: 700,
+    textDecoration: "underline",
+  },
 };
 
 function submitBtnStyle(disabled) {
@@ -173,6 +197,10 @@ export default function RestaurantSignup() {
     state: "",
     phone: "",
   });
+  const [agreements, setAgreements] = useState({
+    merchantTerms: false,
+    privacyPolicy: false,
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [menuChoice, setMenuChoice] = useState("");
@@ -183,6 +211,12 @@ export default function RestaurantSignup() {
   function handleChange(event) {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+    setFieldErrors((current) => ({ ...current, [name]: "" }));
+  }
+
+  function handleAgreementChange(event) {
+    const { name, checked } = event.target;
+    setAgreements((current) => ({ ...current, [name]: checked }));
     setFieldErrors((current) => ({ ...current, [name]: "" }));
   }
 
@@ -198,6 +232,8 @@ export default function RestaurantSignup() {
     if (!form.city.trim()) errors.city = "City is required.";
     if (!form.state.trim()) errors.state = "State is required.";
     if (!menuChoice) errors.menuChoice = "Choose whether you want to upload a PDF now or later.";
+    if (!agreements.merchantTerms) errors.merchantTerms = "You must agree to the Merchant Terms of Service.";
+    if (!agreements.privacyPolicy) errors.privacyPolicy = "You must agree to the Privacy Policy.";
 
     return errors;
   }
@@ -222,6 +258,16 @@ export default function RestaurantSignup() {
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
         phone: form.phone.trim() || null,
+        legal_acceptances: [
+          {
+            document_key: "merchant_terms",
+            document_version: LEGAL_VERSIONS.merchantTerms,
+          },
+          {
+            document_key: "privacy_policy",
+            document_version: LEGAL_VERSIONS.privacyPolicy,
+          },
+        ],
       };
 
       const res = await fetch(`${API}/owner/profile`, {
@@ -441,6 +487,46 @@ export default function RestaurantSignup() {
           </div>
 
           {fieldErrors.menuChoice ? <div style={styles.fieldError}>{fieldErrors.menuChoice}</div> : null}
+        </div>
+
+        <div style={styles.section}>
+          <div style={styles.sectionTitle}>Legal</div>
+
+          <label style={styles.checkboxRow}>
+            <input
+              type="checkbox"
+              name="merchantTerms"
+              checked={agreements.merchantTerms}
+              onChange={handleAgreementChange}
+              style={styles.checkbox}
+            />
+            <span style={styles.checkboxLabel}>
+              I agree to the{" "}
+              <Link to="/restaurant/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>
+                Merchant Terms of Service
+              </Link>
+              .
+            </span>
+          </label>
+          {fieldErrors.merchantTerms ? <div style={styles.fieldError}>{fieldErrors.merchantTerms}</div> : null}
+
+          <label style={styles.checkboxRow}>
+            <input
+              type="checkbox"
+              name="privacyPolicy"
+              checked={agreements.privacyPolicy}
+              onChange={handleAgreementChange}
+              style={styles.checkbox}
+            />
+            <span style={styles.checkboxLabel}>
+              I agree to the{" "}
+              <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.legalLink}>
+                Privacy Policy
+              </Link>
+              .
+            </span>
+          </label>
+          {fieldErrors.privacyPolicy ? <div style={styles.fieldError}>{fieldErrors.privacyPolicy}</div> : null}
         </div>
 
         <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>

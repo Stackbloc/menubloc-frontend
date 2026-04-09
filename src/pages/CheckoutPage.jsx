@@ -137,6 +137,24 @@ function PaymentStep({ orderId, onSuccess }) {
       >
         {submitting ? "Confirming payment..." : "Pay now"}
       </button>
+      <div
+        style={{
+          marginTop: 12,
+          fontSize: 12,
+          lineHeight: 1.6,
+          color: "#667085",
+        }}
+      >
+        By placing your order, you agree to the{" "}
+        <Link to="/terms" style={{ color: "#14532d", fontWeight: 800, textDecoration: "none" }}>
+          Terms of Use
+        </Link>{" "}
+        and{" "}
+        <Link to="/privacy" style={{ color: "#14532d", fontWeight: 800, textDecoration: "none" }}>
+          Privacy Policy
+        </Link>
+        .
+      </div>
     </form>
   );
 }

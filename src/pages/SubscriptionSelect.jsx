@@ -24,8 +24,13 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import { toConsumerErrorMessage } from "../lib/api.js";
+import { LEGAL_VERSIONS } from "../content/legal.js";
 
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? "http://localhost:3001" : "")
+).replace(/\/$/, "");
 const ONBOARDING_STATE_KEY = "grubbid.onboarding.state";
 
 const VERIFIED_PRICE_LABEL = "Free";
@@ -643,6 +648,17 @@ const s = {
     fontSize: 13,
     fontWeight: 700,
   }),
+  legalNotice: {
+    marginTop: 12,
+    fontSize: 13,
+    lineHeight: 1.6,
+    color: "#667085",
+  },
+  legalLink: {
+    color: "#1F4E3D",
+    fontWeight: 800,
+    textDecoration: "none",
+  },
 };
 
 function renderCellValue(value) {
@@ -655,10 +671,18 @@ function renderCellValue(value) {
 export default function SubscriptionSelect() {
   const nav = useNavigate();
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const checkoutSuccess = searchParams.get("checkout_success") === "1";
+  const returnedPlanCode = searchParams.get("plan_code") || "";
+  const checkoutCancelled = searchParams.get("checkout_cancelled") === "1";
 
   const [onboardingState, setOnboardingState] = useState(() => {
     const stateFromNavigation = normalizeOnboardingState(location.state);
     if (stateFromNavigation) return stateFromNavigation;
+
+    if (!checkoutSuccess && !checkoutCancelled) {
+      return null;
+    }
 
     try {
       return normalizeOnboardingState(
@@ -686,11 +710,6 @@ export default function SubscriptionSelect() {
 
   const hasOnboardingContext = Boolean(restaurant_id && owner_token);
 
-  const params = new URLSearchParams(location.search);
-  const checkoutSuccess = params.get("checkout_success") === "1";
-  const returnedPlanCode = params.get("plan_code") || "";
-  const checkoutCancelled = params.get("checkout_cancelled") === "1";
-
   useEffect(() => {
     const stateFromNavigation = normalizeOnboardingState(location.state);
     if (!stateFromNavigation) return;
@@ -702,6 +721,18 @@ export default function SubscriptionSelect() {
       // Storage is optional. Navigation state still carries the flow.
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (normalizeOnboardingState(location.state)) return;
+    if (checkoutSuccess || checkoutCancelled) return;
+
+    setOnboardingState(null);
+    try {
+      window.sessionStorage.removeItem(ONBOARDING_STATE_KEY);
+    } catch {
+      // Ignore storage cleanup failures.
+    }
+  }, [location.state, checkoutSuccess, checkoutCancelled]);
 
   useEffect(() => {
     if (!checkoutSuccess) return;
@@ -787,6 +818,10 @@ export default function SubscriptionSelect() {
           plan_code: planCode,
           success_url: successUrl,
           cancel_url: cancelUrl,
+          legal_acceptance: {
+            document_key: "subscription_terms",
+            document_version: LEGAL_VERSIONS.subscriptionTerms,
+          },
         }),
       });
 
@@ -821,7 +856,14 @@ export default function SubscriptionSelect() {
       throw new Error("No checkout URL returned. Please try again.");
     } catch (err) {
       setIsCheckingOut(false);
-      setCheckoutError(err.message || "Unable to start checkout. Please try again.");
+      setCheckoutError(
+        toConsumerErrorMessage(
+          err,
+          API
+            ? "Unable to start checkout. Please try again."
+            : "Subscription checkout is not configured on this site yet."
+        )
+      );
     }
   }
 
@@ -852,11 +894,10 @@ export default function SubscriptionSelect() {
               <BrandLockup
                 subtitle="for Restaurants"
                 wrapperStyle={{ alignItems: "flex-start", marginBottom: 18 }}
-                subtitleStyle={{ textAlign: "left" }}
+                subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
                 logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
               />
 
-              <div style={s.eyebrow}>Grubbid restaurant subscriptions</div>
               <div style={s.heading}>Choose Your Plan</div>
               <div style={s.subheading}>
                 Simple pricing. Powerful tools to grow your restaurant.
@@ -1051,6 +1092,18 @@ export default function SubscriptionSelect() {
                   ? "Choose Pro"
                   : "Get Started"}
               </button>
+              <div style={s.legalNotice}>
+                By subscribing, you agree to the{" "}
+                <Link to="/restaurant/subscription-terms" target="_blank" rel="noreferrer" style={s.legalLink}>
+                  Restaurant Subscription Terms
+                </Link>
+                .
+              </div>
+              {checkoutError ? (
+                <div style={{ ...s.banner("error"), marginTop: 12, marginBottom: 0 }}>
+                  {checkoutError}
+                </div>
+              ) : null}
             </article>
           </div>
         </section>

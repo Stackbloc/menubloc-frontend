@@ -63,6 +63,9 @@ export default function SiteFooter() {
           <Link to="/terms" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.terms")}
           </Link>
+          <Link to="/privacy" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+            Privacy Policy
+          </Link>
           <Link to="/about" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
             About Grubbid
           </Link>

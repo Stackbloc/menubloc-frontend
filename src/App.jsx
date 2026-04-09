@@ -93,6 +93,9 @@ import SubscriptionSelect from "./pages/SubscriptionSelect.jsx";
 import MenuDesignSelectPage from "./pages/MenuDesignSelectPage.jsx";
 import MenuUploadChoicePage from "./pages/MenuUploadChoicePage.jsx";
 import Terms from "./pages/Terms.jsx";
+import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
+import RestaurantMerchantTerms from "./pages/RestaurantMerchantTerms.jsx";
+import RestaurantSubscriptionTerms from "./pages/RestaurantSubscriptionTerms.jsx";
 import AboutGrubbid from "./pages/AboutGrubbid.jsx";
 import Contact from "./pages/Contact.jsx";
 
@@ -440,6 +443,9 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant/menu-upload-choice" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuUploadChoicePage />} />
 
         <Route path="/terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Terms />} />
+        <Route path="/privacy" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PrivacyPolicy />} />
+        <Route path="/restaurant/terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantMerchantTerms />} />
+        <Route path="/restaurant/subscription-terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSubscriptionTerms />} />
         <Route path="/about" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AboutGrubbid />} />
         <Route path="/contact" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Contact />} />
 
