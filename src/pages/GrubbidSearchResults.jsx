@@ -224,6 +224,10 @@ function normalizeRows(json) {
   return [];
 }
 
+function hasDegradedEmptyResponse(json) {
+  return json?.degraded === true && normalizeRows(json).length === 0;
+}
+
 function asString(v) {
   return v === undefined || v === null ? "" : String(v).trim();
 }
@@ -504,6 +508,10 @@ export default function GrubbidSearchResults() {
   const state = fallbackLocation.state;
   const near = fallbackLocation.near;
   const explicitLocationLabel = fallbackLocation.label;
+  const requestZip = routeZip;
+  const requestCity = routeCity;
+  const requestState = routeState;
+  const requestNear = routeNear;
 
   // Persist the resolved location back to sessionStorage so that returning to
   // the Discovery page pre-fills the same location the user already searched with.
@@ -537,8 +545,10 @@ export default function GrubbidSearchResults() {
 
   const { primaryUrl, fallbackUrl, hasGeoFilter } = useMemo(() => {
     const u = new URL(`${API}/search`);
-    // "explicit" means we have an actionable city/zip/near filter — not just a display label
-    const hasExplicitLocation = Boolean(zip || city || near);
+    const hasRouteCoords = routeLat != null && routeLat !== "" && routeLng != null && routeLng !== "";
+    // Only URL-authored manual location filters should suppress geo mode.
+    // Session/display labels must not turn an auto-location search into a city-only search.
+    const hasExplicitLocation = Boolean(requestZip || requestNear || (requestCity && !hasRouteCoords));
     if (q) u.searchParams.set("q", q);
     const dietaryParams = buildDietaryQueryParams({
       vegan,
@@ -560,10 +570,12 @@ export default function GrubbidSearchResults() {
       if (value) u.searchParams.set(key, value);
     }
     if (deals_only) u.searchParams.set("deals_only", "1");
-    if (zip) u.searchParams.set("zip", zip);
-    if (city) u.searchParams.set("city", city);
-    if (state) u.searchParams.set("state", state);
-    if (near) u.searchParams.set("near", near);
+    if (hasExplicitLocation) {
+      if (requestZip) u.searchParams.set("zip", requestZip);
+      if (requestCity) u.searchParams.set("city", requestCity);
+      if (requestState) u.searchParams.set("state", requestState);
+      if (requestNear) u.searchParams.set("near", requestNear);
+    }
     u.searchParams.set("limit", String(SEARCH_LIMIT));
 
     // Save the base URL (no geo) for fallback use
@@ -598,10 +610,10 @@ export default function GrubbidSearchResults() {
     low_sodium,
     dairy_free,
     diabetic_friendly,
-    zip,
-    city,
-    state,
-    near,
+    requestZip,
+    requestCity,
+    requestState,
+    requestNear,
     routeLat,
     routeLng,
     routeRadiusMiles,
@@ -621,7 +633,9 @@ export default function GrubbidSearchResults() {
     async function fetchSearch(url) {
       const res = await fetch(url, { credentials: "include" });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json?.ok) throw new Error(json?.error || `HTTP ${res.status}`);
+      if (!res.ok || !json?.ok || hasDegradedEmptyResponse(json)) {
+        throw new Error(json?.error || `HTTP ${res.status}`);
+      }
       return json;
     }
 
@@ -631,7 +645,8 @@ export default function GrubbidSearchResults() {
       const routeLatNum = routeLat != null ? Number(routeLat) : null;
       const routeLngNum = routeLng != null ? Number(routeLng) : null;
       const routeRadiusNum = routeRadiusMiles != null ? Number(routeRadiusMiles) : null;
-      const hasExplicitTarget = Boolean(zip || city || near);
+      const hasRouteCoords = routeLat != null && routeLat !== "" && routeLng != null && routeLng !== "";
+      const hasExplicitTarget = Boolean(requestZip || requestNear || (requestCity && !hasRouteCoords));
 
       const targetLat =
         !hasExplicitTarget && Number.isFinite(routeLatNum)
@@ -669,8 +684,8 @@ export default function GrubbidSearchResults() {
         routeLocationLabel || explicitLocationLabel || sessionLocation || ""
       );
 
-      const targetCity = city || near || originFallback.city || "";
-      const targetState = state || originFallback.state || "";
+      const targetCity = requestCity || requestNear || originFallback.city || "";
+      const targetState = requestState || originFallback.state || "";
 
       const payload = compactObject({
         searchOrigin: {
@@ -801,10 +816,10 @@ export default function GrubbidSearchResults() {
     fallbackUrl,
     hasGeoFilter,
     q,
-    zip,
-    city,
-    state,
-    near,
+    requestZip,
+    requestCity,
+    requestState,
+    requestNear,
     routeLat,
     routeLng,
     routeRadiusMiles,

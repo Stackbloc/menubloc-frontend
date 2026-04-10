@@ -195,17 +195,6 @@ const DISTANCE_RADIUS_OPTIONS = [
   { label: "Within 25 miles", value: 25   },
 ];
 
-const RESTAURANT_TYPE_OPTIONS = [
-  "Bar / Pub",
-  "Buffet",
-  "Cafe",
-  "Casual Dining",
-  "Fast Food",
-  "Fine Dining",
-  "Food Truck",
-  "QSR",
-];
-
 function getUserCoords() {
   return new Promise((resolve) => {
     if (typeof window === "undefined" || !navigator?.geolocation) {
@@ -276,6 +265,7 @@ export default function BrowseMenus() {
     category: urlCategory,
   }));
   const [cuisineOptions, setCuisineOptions] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState([]);
   // radiusMiles: null = any distance (no radius cap).
   // In geo mode default to 10 miles. In city/state mode default to null (any).
   // When a non-null radius is selected in city/state mode, geolocation is requested
@@ -296,7 +286,7 @@ export default function BrowseMenus() {
   const localizedCuisineOptions = cuisineOptions.map((option) =>
     localizeCanonicalOption(option, "cuisine", t)
   );
-  const localizedRestaurantTypeOptions = RESTAURANT_TYPE_OPTIONS.map((option) =>
+  const localizedCategoryOptions = categoryOptions.map((option) =>
     localizeCanonicalOption(option, "category", t)
   );
 
@@ -306,15 +296,23 @@ export default function BrowseMenus() {
   useEffect(() => {
     let cancelled = false;
 
-    apiGet("/api/meta/cuisines")
-      .then((json) => {
-        if (cancelled) return;
-        setCuisineOptions(Array.isArray(json?.cuisines) ? json.cuisines : []);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setCuisineOptions([]);
-      });
+    Promise.allSettled([
+      apiGet("/api/meta/cuisines"),
+      apiGet("/api/meta/categories"),
+    ]).then(([cuisinesResult, categoriesResult]) => {
+      if (cancelled) return;
+
+      setCuisineOptions(
+        cuisinesResult.status === "fulfilled" && Array.isArray(cuisinesResult.value?.cuisines)
+          ? cuisinesResult.value.cuisines
+          : []
+      );
+      setCategoryOptions(
+        categoriesResult.status === "fulfilled" && Array.isArray(categoriesResult.value?.categories)
+          ? categoriesResult.value.categories
+          : []
+      );
+    });
 
     return () => {
       cancelled = true;
@@ -557,7 +555,7 @@ export default function BrowseMenus() {
               />
               <FilterSelect
                 label={t("browse.category")}
-                options={localizedRestaurantTypeOptions}
+                  options={localizedCategoryOptions}
                 value={localFilters.category}
                 allLabel={t("common.all")}
                 onChange={(value) => {
