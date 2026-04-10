@@ -1,6 +1,8 @@
 /**
+ * ============================================================
  * File:    SubscriptionSelect.jsx
  * Path:    menubloc-frontend/src/pages/SubscriptionSelect.jsx
+ * Date:    2026-04-09
  * Purpose:
  *   Onboarding step 2 — choose a profile plan (Verified or Pro).
  *   Reached after the simplified restaurant signup step.
@@ -9,16 +11,22 @@
  *     restaurant_id    — numeric restaurant ID
  *     restaurant_name  — display name
  *     email            — owner email
- *     owner_token      — HMAC auth token
+ *     owner_token      — HMAC auth token (optional in evaluation mode)
  *     ingestion_method — "pdf" | "spreadsheet" | "ocr"
  *
  *   Plan choice:
  *     Verified → navigate to /restaurant/design-select (free)
  *     Pro      → create hosted checkout session → redirect to billing flow
  *
- *   After successful checkout:
- *     The billing flow redirects to /restaurant/subscription?checkout_success=1&plan_code=<code>
+ *   Evaluation mode (VITE_ALLOW_OWNER_TOKEN_BYPASS=true):
+ *     When the backend responds with { evaluation_mode: true }, no Stripe
+ *     redirect occurs. Instead a notice is shown and the user can continue
+ *     to the next onboarding step directly.
+ *
+ *   After successful Stripe checkout:
+ *     Billing flow redirects to /restaurant/subscription?checkout_success=1&plan_code=<code>
  *     Onboarding state is recovered from sessionStorage and the user continues.
+ * ============================================================
  */
 
 import React, { useEffect, useState } from "react";
@@ -32,6 +40,16 @@ const API = (
   (import.meta.env.DEV ? "http://localhost:3001" : "")
 ).replace(/\/$/, "");
 const ONBOARDING_STATE_KEY = "grubbid.onboarding.state";
+
+/**
+ * VITE_ALLOW_OWNER_TOKEN_BYPASS=true
+ *   Mirrors the backend bypass flag on the frontend.
+ *   When true:
+ *     - owner_token is not required to enter the onboarding context
+ *     - evaluation_mode response from backend shows a notice instead of an error
+ *   Must be false or unset in production.
+ */
+const BYPASS_MODE = import.meta.env.VITE_ALLOW_OWNER_TOKEN_BYPASS === "true";
 
 const VERIFIED_PRICE_LABEL = "Free";
 const PRO_PRICING = {
@@ -94,6 +112,11 @@ function normalizeOnboardingState(raw) {
     menu_choice: raw.menu_choice ?? "",
   };
 
+  // In bypass/evaluation mode the owner_token is optional — restaurant_id alone
+  // is sufficient to identify the context.  In production both are required.
+  if (BYPASS_MODE) {
+    return normalized.restaurant_id ? normalized : null;
+  }
   return normalized.restaurant_id && normalized.owner_token ? normalized : null;
 }
 
@@ -642,12 +665,59 @@ const s = {
     marginBottom: 18,
     padding: "13px 16px",
     borderRadius: 16,
-    border: tone === "error" ? "1px solid #fecaca" : "1px solid #cfe0d8",
-    background: tone === "error" ? "#fef2f2" : "#eef6f1",
-    color: tone === "error" ? "#991b1b" : "#1F4E3D",
+    border:
+      tone === "error"
+        ? "1px solid #fecaca"
+        : tone === "warning"
+        ? "1px solid #fde68a"
+        : "1px solid #cfe0d8",
+    background:
+      tone === "error"
+        ? "#fef2f2"
+        : tone === "warning"
+        ? "#fffbeb"
+        : "#eef6f1",
+    color:
+      tone === "error"
+        ? "#991b1b"
+        : tone === "warning"
+        ? "#92400e"
+        : "#1F4E3D",
     fontSize: 13,
     fontWeight: 700,
   }),
+  evaluationNotice: {
+    marginBottom: 18,
+    padding: "18px 20px",
+    borderRadius: 18,
+    border: "1px solid #cfe0d8",
+    background: "#eef6f1",
+    color: "#1F4E3D",
+  },
+  evaluationTitle: {
+    fontSize: 15,
+    fontWeight: 900,
+    marginBottom: 6,
+  },
+  evaluationBody: {
+    fontSize: 13,
+    lineHeight: 1.6,
+    marginBottom: 14,
+    color: "#344054",
+  },
+  evaluationButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "10px 18px",
+    borderRadius: 12,
+    border: "1px solid #1F4E3D",
+    background: "#1F4E3D",
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: 900,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
   legalNotice: {
     marginTop: 12,
     fontSize: 13,
@@ -692,9 +762,13 @@ export default function SubscriptionSelect() {
       return null;
     }
   });
+
   const [proInterval, setProInterval] = useState("monthly");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  // evaluationMode: set to the chosen plan_code when backend returns
+  // evaluation_mode: true (ALLOW_OWNER_TOKEN_BYPASS=true on backend).
+  const [evaluationMode, setEvaluationMode] = useState(null);
 
   const {
     restaurant_id,
@@ -708,7 +782,11 @@ export default function SubscriptionSelect() {
     menu_choice,
   } = onboardingState || {};
 
-  const hasOnboardingContext = Boolean(restaurant_id && owner_token);
+  // In bypass mode, only restaurant_id is required for onboarding context.
+  // In production, owner_token must also be present.
+  const hasOnboardingContext = BYPASS_MODE
+    ? Boolean(restaurant_id)
+    : Boolean(restaurant_id && owner_token);
 
   useEffect(() => {
     const stateFromNavigation = normalizeOnboardingState(location.state);
@@ -739,7 +817,7 @@ export default function SubscriptionSelect() {
 
     try {
       const saved = JSON.parse(window.sessionStorage.getItem(ONBOARDING_STATE_KEY) || "null");
-      if (saved?.restaurant_id && saved?.owner_token) {
+      if (saved?.restaurant_id && (BYPASS_MODE || saved?.owner_token)) {
         window.sessionStorage.removeItem(ONBOARDING_STATE_KEY);
         nav("/restaurant/design-select", {
           state: {
@@ -774,6 +852,25 @@ export default function SubscriptionSelect() {
     });
   }
 
+  function continueFromEvaluation() {
+    const planCode = evaluationMode || "pro_monthly";
+    nav("/restaurant/design-select", {
+      state: {
+        restaurant_id,
+        restaurant_name,
+        email,
+        owner_token,
+        city,
+        state,
+        phone,
+        menu_choice,
+        plan: planCode,
+        ingestion_method,
+        billing_mode: "evaluation",
+      },
+    });
+  }
+
   async function handleProCheckout() {
     if (!hasOnboardingContext) {
       nav("/restaurant/signup");
@@ -783,6 +880,7 @@ export default function SubscriptionSelect() {
     const planCode = proInterval === "annual" ? "pro_annual" : "pro_monthly";
     setIsCheckingOut(true);
     setCheckoutError("");
+    setEvaluationMode(null);
 
     try {
       window.sessionStorage.setItem(
@@ -800,7 +898,7 @@ export default function SubscriptionSelect() {
         })
       );
     } catch {
-      // Non-fatal — user will need to re-enter state on return if storage fails.
+      // Non-fatal.
     }
 
     const origin = window.location.origin;
@@ -830,6 +928,14 @@ export default function SubscriptionSelect() {
         throw new Error(json.error || `Request failed (${res.status})`);
       }
 
+      // ── Evaluation mode: backend bypassed Stripe, show notice ─────────────
+      if (json.evaluation_mode) {
+        setIsCheckingOut(false);
+        setEvaluationMode(planCode);
+        return;
+      }
+
+      // ── Already active subscription ───────────────────────────────────────
       if (json.already_active) {
         nav("/restaurant/design-select", {
           state: {
@@ -848,6 +954,7 @@ export default function SubscriptionSelect() {
         return;
       }
 
+      // ── Stripe checkout redirect ──────────────────────────────────────────
       if (json.checkout_url) {
         window.location.href = json.checkout_url;
         return;
@@ -955,13 +1062,32 @@ export default function SubscriptionSelect() {
           </div>
         </section>
 
-        {checkoutCancelled ? (
+        {/* Evaluation mode notice — shown after backend returns evaluation_mode: true */}
+        {evaluationMode ? (
+          <div style={s.evaluationNotice}>
+            <div style={s.evaluationTitle}>Evaluation mode: Stripe onboarding can be completed later.</div>
+            <div style={s.evaluationBody}>
+              Pro plan has been recorded for this restaurant. Payment setup is not yet configured in this
+              environment. You can continue through the rest of onboarding now and connect billing when
+              Stripe is ready.
+            </div>
+            <button
+              type="button"
+              style={s.evaluationButton}
+              onClick={continueFromEvaluation}
+            >
+              Continue to Pro setup &rarr;
+            </button>
+          </div>
+        ) : null}
+
+        {checkoutCancelled && !evaluationMode ? (
           <div style={s.banner("warning")}>
             Checkout was cancelled. You can try again or start with Verified.
           </div>
         ) : null}
 
-        {checkoutError ? (
+        {checkoutError && !evaluationMode ? (
           <div style={s.banner("error")}>{checkoutError}</div>
         ) : null}
 
@@ -1082,12 +1208,14 @@ export default function SubscriptionSelect() {
 
               <button
                 type="button"
-                style={s.button(true, isCheckingOut)}
-                onClick={handleProCheckout}
+                style={s.button(true, isCheckingOut || Boolean(evaluationMode))}
+                onClick={evaluationMode ? continueFromEvaluation : handleProCheckout}
                 disabled={isCheckingOut}
               >
                 {isCheckingOut
                   ? "Preparing checkout..."
+                  : evaluationMode
+                  ? "Continue to Pro setup \u2192"
                   : hasOnboardingContext
                   ? "Choose Pro"
                   : "Get Started"}
@@ -1099,7 +1227,7 @@ export default function SubscriptionSelect() {
                 </Link>
                 .
               </div>
-              {checkoutError ? (
+              {checkoutError && !evaluationMode ? (
                 <div style={{ ...s.banner("error"), marginTop: 12, marginBottom: 0 }}>
                   {checkoutError}
                 </div>
