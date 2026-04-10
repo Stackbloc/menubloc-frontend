@@ -26,6 +26,7 @@ export const DESIGN_STYLES = [
     tagline:     "Timeless and easy to read",
     description: "Simple, structured layout with a polished professional feel. Works beautifully for any restaurant type.",
     popular:     false,
+    proOnly:     false,
     preview: {
       bg:          "#ffffff",
       headerBg:    "#ffffff",
@@ -44,6 +45,7 @@ export const DESIGN_STYLES = [
     tagline:     "High-contrast and unmistakably sharp",
     description: "Dark backgrounds with bold typography. Commands attention — ideal for upscale, trendy, or bar concepts.",
     popular:     true,
+    proOnly:     true,
     preview: {
       bg:          "#111111",
       headerBg:    "#111111",
@@ -62,6 +64,7 @@ export const DESIGN_STYLES = [
     tagline:     "Warm, refined, and inviting",
     description: "Soft cream tones with graceful spacing. Perfect for fine dining, wine bars, and neighborhood cafes.",
     popular:     false,
+    proOnly:     true,
     preview: {
       bg:          "#faf6f0",
       headerBg:    "#faf6f0",
@@ -80,6 +83,7 @@ export const DESIGN_STYLES = [
     tagline:     "Energetic, colorful, and fast to scan",
     description: "Vibrant and approachable. Makes your menu feel alive — great for casual restaurants, food trucks, and delis.",
     popular:     false,
+    proOnly:     true,
     preview: {
       bg:          "#f0f7ff",
       headerBg:    "#0d5fd6",
@@ -98,6 +102,7 @@ export const DESIGN_STYLES = [
     tagline:     "Editorial, pure, and confident",
     description: "Maximum white space and clean typography. A bold statement of simplicity — stunning for premium concepts.",
     popular:     false,
+    proOnly:     true,
     preview: {
       bg:          "#fafafa",
       headerBg:    "#fafafa",

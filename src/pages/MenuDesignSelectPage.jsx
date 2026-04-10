@@ -29,6 +29,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 
+const BYPASS_MODE = import.meta.env.VITE_ALLOW_OWNER_TOKEN_BYPASS === "true";
+
 // ─────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────
@@ -336,9 +338,12 @@ export default function MenuDesignSelectPage() {
     ingestion_method,
   } = flowState;
 
+  const isPro = plan === "pro_monthly" || plan === "pro_annual" || plan === "pro";
+  const visibleStyles = isPro ? DESIGN_STYLES : DESIGN_STYLES.filter((s) => !s.proOnly);
+
   const [selectedStyle, setSelectedStyle] = useState(null);
 
-  const missingState = !restaurant_id || !email || !owner_token;
+  const missingState = !restaurant_id || !email || (!owner_token && !BYPASS_MODE);
 
   function navigate(designStyle) {
     const uploadRoute = UPLOAD_ROUTES[ingestion_method] || "/restaurant/signup-complete";
@@ -401,13 +406,14 @@ export default function MenuDesignSelectPage() {
       <div style={s.eyebrow}>Menu Design</div>
       <div style={s.heading}>Choose your menu style</div>
       <div style={s.subheading}>
-        Beautiful menu design in minutes. No design experience needed. Pick a style
-        that fits your restaurant — we handle the rest.
+        {isPro
+          ? "Beautiful menu design powered by Adobe. Pick a style that fits your restaurant — we handle the rest."
+          : "Your plan includes the Clean Classic design. Upgrade to Pro to unlock all styles including Adobe-powered designs."}
       </div>
 
       {/* Style cards */}
       <div style={s.grid}>
-        {DESIGN_STYLES.map((style) => {
+        {visibleStyles.map((style) => {
           const isSelected = selectedStyle === style.id;
           return (
             <div
@@ -459,12 +465,19 @@ export default function MenuDesignSelectPage() {
           ))}
         </div>
         <div style={s.valueCol}>
-          <div style={s.valueLabel}>Included with your plan</div>
-          {[
-            "Automatic updates when you edit your menu",
-            "Mobile-friendly layout out of the box",
-            "No design tools or skills required",
-          ].map((pt) => (
+          <div style={s.valueLabel}>{isPro ? "Pro plan includes" : "Included with your plan"}</div>
+          {(isPro
+            ? [
+                "All Adobe-powered design styles",
+                "Automatic updates when you edit your menu",
+                "Mobile-friendly layout out of the box",
+              ]
+            : [
+                "Clean Classic design style",
+                "Automatic updates when you edit your menu",
+                "Mobile-friendly layout out of the box",
+              ]
+          ).map((pt) => (
             <div key={pt} style={s.valuePt}>
               <span style={s.valuePtIcon}>&#10003;</span>
               <span>{pt}</span>
