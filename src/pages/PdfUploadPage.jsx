@@ -363,7 +363,13 @@ export default function PdfUploadPage() {
 
       setResult(data);
     } catch (err) {
-      setUploadErr(err.message || "Upload failed. Please try again.");
+      const raw = err.message || "";
+      const isFetchError = /failed to fetch|networkerror|load failed/i.test(raw);
+      setUploadErr(
+        isFetchError
+          ? `Your menu failed to upload. Make sure your file is a PDF document and try again, or email your menu to menus@grubbid.com with your Grubbid account ID.`
+          : raw || "Upload failed. Please try again."
+      );
     } finally {
       setUploading(false);
     }
