@@ -110,6 +110,7 @@ function normalizeOnboardingState(raw) {
     state: raw.state ?? "",
     phone: raw.phone ?? "",
     menu_choice: raw.menu_choice ?? "",
+    selected_plan: raw.selected_plan ?? raw.plan ?? "",
   };
 
   // In bypass/evaluation mode the owner_token is optional — restaurant_id alone
@@ -780,6 +781,7 @@ export default function SubscriptionSelect() {
     state,
     phone,
     menu_choice,
+    selected_plan,
   } = onboardingState || {};
 
   // In bypass mode, only restaurant_id is required for onboarding context.
@@ -830,6 +832,16 @@ export default function SubscriptionSelect() {
       // sessionStorage unavailable — fall through to normal page render.
     }
   }, [checkoutSuccess, returnedPlanCode, nav]);
+
+  useEffect(() => {
+    if (selected_plan === "pro_annual") {
+      setProInterval("annual");
+      return;
+    }
+    if (selected_plan === "pro_monthly") {
+      setProInterval("monthly");
+    }
+  }, [selected_plan]);
 
   function chooseVerified() {
     if (!hasOnboardingContext) {
@@ -1091,6 +1103,13 @@ export default function SubscriptionSelect() {
           <div style={s.banner("error")}>{checkoutError}</div>
         ) : null}
 
+        {selected_plan ? (
+          <div style={s.banner("success")}>
+            Selected during signup: {selected_plan === "verified" ? "Verified" : selected_plan === "pro_annual" ? "Pro Annual" : "Pro Monthly"}.
+            {selected_plan === "verified" ? " Continue with Verified below." : " You can continue with that Pro option below or switch intervals here."}
+          </div>
+        ) : null}
+
         <div style={s.toggleWrap}>
           <div style={s.toggle}>
             <button
@@ -1178,7 +1197,7 @@ export default function SubscriptionSelect() {
               </ul>
 
               <button style={s.button(false, false)} onClick={chooseVerified}>
-                {hasOnboardingContext ? "Choose Verified" : "Get Started"}
+                {hasOnboardingContext && selected_plan === "verified" ? "Continue with Verified" : hasOnboardingContext ? "Choose Verified" : "Get Started"}
               </button>
             </article>
 
@@ -1216,6 +1235,10 @@ export default function SubscriptionSelect() {
                   ? "Preparing checkout..."
                   : evaluationMode
                   ? "Continue to Pro setup \u2192"
+                  : hasOnboardingContext && selected_plan === "pro_annual"
+                  ? "Continue with Pro Annual"
+                  : hasOnboardingContext && selected_plan === "pro_monthly"
+                  ? "Continue with Pro Monthly"
                   : hasOnboardingContext
                   ? "Choose Pro"
                   : "Get Started"}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { BrandLockup } from "../components/BrandLogo.jsx";
@@ -7,6 +7,14 @@ import { LEGAL_VERSIONS } from "../content/legal.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const PLAN_SELECTION_ROUTE = "/restaurant/subscription";
+const PLAN_ENTRY_ROUTE = "/restaurant/signup";
+const DESIGN_SELECTION_ROUTE = "/restaurant/design-select";
+
+const PLAN_LABELS = {
+  verified: "Verified",
+  pro_monthly: "Pro Monthly",
+  pro_annual: "Pro Annual",
+};
 
 const styles = {
   page: {
@@ -108,6 +116,36 @@ const styles = {
   },
   fieldError: { fontSize: 12, color: "#c00", marginTop: 5 },
   helperText: { fontSize: 12, color: "#667085", marginTop: 6 },
+  planSummary: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 12,
+    alignItems: "center",
+    flexWrap: "wrap",
+    padding: "14px 16px",
+    borderRadius: 14,
+    background: "#eef6f1",
+    border: "1px solid #cfe0d8",
+    marginTop: 18,
+  },
+  planSummaryLabel: {
+    fontSize: 12,
+    fontWeight: 800,
+    color: "#1F4E3D",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  planSummaryValue: {
+    fontSize: 16,
+    fontWeight: 800,
+    color: "#101828",
+  },
+  planSummaryLink: {
+    color: "#1F4E3D",
+    fontWeight: 800,
+    textDecoration: "none",
+  },
   checkboxRow: {
     display: "flex",
     gap: 10,
@@ -187,8 +225,11 @@ function PasswordInput({
 
 export default function RestaurantSignup() {
   const nav = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
   const { operator, isAuthenticated: isOperatorAuthenticated, loading: operatorLoading } = useOperator();
+  const selectedPlan = location.state?.selected_plan || "";
+  const selectedPlanLabel = PLAN_LABELS[selectedPlan] || "";
 
   const [form, setForm] = useState({
     email: operator?.email || "",
@@ -298,9 +339,24 @@ export default function RestaurantSignup() {
         phone: form.phone.trim(),
         ingestion_method: menuChoice === "pdf_now" ? "pdf" : "later",
         menu_choice: menuChoice,
+        selected_plan: selectedPlan,
       };
+      if (selectedPlan === "verified") {
+        nav(DESIGN_SELECTION_ROUTE, {
+          state: {
+            ...nextState,
+            plan: "verified",
+          },
+        });
+        return;
+      }
 
-      nav(PLAN_SELECTION_ROUTE, { state: nextState });
+      nav(PLAN_SELECTION_ROUTE, {
+        state: {
+          ...nextState,
+          plan: selectedPlan,
+        },
+      });
     } catch (error) {
       setServerError(error.message || t("signup.error.signupFailed"));
     } finally {
@@ -318,11 +374,27 @@ export default function RestaurantSignup() {
         />
         <div style={styles.pageTitle}>Create your restaurant account</div>
         <div style={styles.pageSubtitle}>
-          Start with the basics. You will choose between Verified and Pro on the next step.
+          Enter your restaurant details to continue with your selected plan.
         </div>
+        {selectedPlanLabel ? (
+          <div style={styles.planSummary}>
+            <div>
+              <div style={styles.planSummaryLabel}>Selected plan</div>
+              <div style={styles.planSummaryValue}>{selectedPlanLabel}</div>
+            </div>
+            <Link to={PLAN_ENTRY_ROUTE} style={styles.planSummaryLink}>
+              Change plan
+            </Link>
+          </div>
+        ) : null}
       </div>
 
       {serverError ? <div style={styles.errorBanner}>{serverError}</div> : null}
+      {!selectedPlanLabel ? (
+        <div style={styles.errorBanner}>
+          Choose a plan first to start restaurant signup. <Link to={PLAN_ENTRY_ROUTE}>Go to pricing</Link>
+        </div>
+      ) : null}
 
       <form onSubmit={handleSubmit} noValidate>
         <div style={styles.section}>
@@ -476,7 +548,7 @@ export default function RestaurantSignup() {
           >
             <div style={styles.optionTitle}>Upload PDF now</div>
             <div style={styles.optionDesc}>
-              Continue into plan selection, then move straight into PDF upload after you choose your plan and design.
+              Continue straight into PDF upload after account creation, plan confirmation, and design selection.
             </div>
           </div>
 
@@ -499,7 +571,7 @@ export default function RestaurantSignup() {
           >
             <div style={styles.optionTitle}>Upload menu later</div>
             <div style={styles.optionDesc}>
-              Finish account setup first and come back to your menu after plan selection.
+              Finish account setup first and come back to your menu after plan confirmation.
             </div>
           </div>
 
@@ -546,8 +618,14 @@ export default function RestaurantSignup() {
           {fieldErrors.privacyPolicy ? <div style={styles.fieldError}>{fieldErrors.privacyPolicy}</div> : null}
         </div>
 
-        <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
-          {submitting ? "Creating account..." : "Continue to Plan Selection"}
+        <button type="submit" style={submitBtnStyle(submitting || !selectedPlanLabel || operatorLoading)} disabled={submitting || !selectedPlanLabel || operatorLoading}>
+          {submitting
+            ? "Creating account..."
+            : selectedPlan === "verified"
+            ? "Create account and continue with Verified"
+            : selectedPlan === "pro_annual"
+            ? "Create account and continue with Pro Annual"
+            : "Create account and continue with Pro Monthly"}
         </button>
       </form>
     </div>
