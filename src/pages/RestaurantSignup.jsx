@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { useOperator } from "../context/OperatorContext.jsx";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { LEGAL_VERSIONS } from "../content/legal.js";
 
@@ -187,9 +188,10 @@ function PasswordInput({
 export default function RestaurantSignup() {
   const nav = useNavigate();
   const { t } = useLanguage();
+  const { operator, isAuthenticated: isOperatorAuthenticated, loading: operatorLoading } = useOperator();
 
   const [form, setForm] = useState({
-    email: "",
+    email: operator?.email || "",
     password: "",
     confirmPassword: "",
     restaurant_name: "",
@@ -224,10 +226,12 @@ export default function RestaurantSignup() {
     const errors = {};
 
     if (!form.email.trim()) errors.email = t("signup.error.emailRequired");
-    if (!form.password) errors.password = "Password is required.";
-    else if (form.password.length < 8) errors.password = "Password must be at least 8 characters.";
-    if (!form.confirmPassword) errors.confirmPassword = "Confirm your password.";
-    else if (form.password !== form.confirmPassword) errors.confirmPassword = t("signup.error.passwordsDoNotMatch");
+    if (!isOperatorAuthenticated) {
+      if (!form.password) errors.password = "Password is required.";
+      else if (form.password.length < 8) errors.password = "Password must be at least 8 characters.";
+      if (!form.confirmPassword) errors.confirmPassword = "Confirm your password.";
+      else if (form.password !== form.confirmPassword) errors.confirmPassword = t("signup.error.passwordsDoNotMatch");
+    }
     if (!form.restaurant_name.trim()) errors.restaurant_name = t("signup.error.restaurantNameRequired");
     if (!form.city.trim()) errors.city = "City is required.";
     if (!form.state.trim()) errors.state = "State is required.";
@@ -253,7 +257,6 @@ export default function RestaurantSignup() {
     try {
       const payload = {
         email: form.email.trim(),
-        password: form.password,
         restaurant_name: form.restaurant_name.trim(),
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
@@ -269,6 +272,9 @@ export default function RestaurantSignup() {
           },
         ],
       };
+      if (!isOperatorAuthenticated) {
+        payload.password = form.password;
+      }
 
       const res = await fetch(`${API}/owner/profile`, {
         method: "POST",
@@ -322,6 +328,12 @@ export default function RestaurantSignup() {
         <div style={styles.section}>
           <div style={styles.sectionTitle}>Account</div>
 
+          {isOperatorAuthenticated ? (
+            <div style={{ ...styles.helperText, marginBottom: 14 }}>
+              Signed in as <strong>{form.email || operator?.email}</strong>. This new listing will be attached to your existing operator account.
+            </div>
+          ) : null}
+
           <div style={styles.fieldGroup}>
             <label htmlFor="email" style={styles.label}>
               {t("signup.email")}<span style={styles.required}>*</span>
@@ -333,37 +345,42 @@ export default function RestaurantSignup() {
               autoComplete="email"
               value={form.email}
               onChange={handleChange}
+              readOnly={isOperatorAuthenticated}
               style={fieldErrors.email ? styles.inputError : styles.input}
             />
             {fieldErrors.email ? <div style={styles.fieldError}>{fieldErrors.email}</div> : null}
           </div>
 
-          <PasswordInput
-            id="password"
-            name="password"
-            label="Password"
-            value={form.password}
-            visible={showPassword}
-            onChange={handleChange}
-            onToggle={() => setShowPassword((current) => !current)}
-            error={fieldErrors.password}
-          />
+          {!isOperatorAuthenticated ? (
+            <>
+              <PasswordInput
+                id="password"
+                name="password"
+                label="Password"
+                value={form.password}
+                visible={showPassword}
+                onChange={handleChange}
+                onToggle={() => setShowPassword((current) => !current)}
+                error={fieldErrors.password}
+              />
 
-          <PasswordInput
-            id="confirmPassword"
-            name="confirmPassword"
-            label="Confirm password"
-            value={form.confirmPassword}
-            visible={showConfirmPassword}
-            onChange={handleChange}
-            onToggle={() => setShowConfirmPassword((current) => !current)}
-            error={fieldErrors.confirmPassword}
-          />
+              <PasswordInput
+                id="confirmPassword"
+                name="confirmPassword"
+                label="Confirm password"
+                value={form.confirmPassword}
+                visible={showConfirmPassword}
+                onChange={handleChange}
+                onToggle={() => setShowConfirmPassword((current) => !current)}
+                error={fieldErrors.confirmPassword}
+              />
 
-          {!fieldErrors.confirmPassword && form.confirmPassword ? (
-            <div style={styles.helperText}>
-              {form.password === form.confirmPassword ? "Passwords match." : "Passwords do not match."}
-            </div>
+              {!fieldErrors.confirmPassword && form.confirmPassword ? (
+                <div style={styles.helperText}>
+                  {form.password === form.confirmPassword ? "Passwords match." : "Passwords do not match."}
+                </div>
+              ) : null}
+            </>
           ) : null}
         </div>
 

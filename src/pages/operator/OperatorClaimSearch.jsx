@@ -54,6 +54,7 @@ const INPUT = {
 export default function OperatorClaimSearch() {
   const { refreshRestaurants, operator } = useOperator();
   const navigate = useNavigate();
+  const createListingHref = "/restaurant/signup";
 
   const [query, setQuery]     = useState("");
   const [city, setCity]       = useState("");
@@ -241,7 +242,13 @@ export default function OperatorClaimSearch() {
             </div>
             <div style={{ fontSize: 13 }}>
               Try a different name or city. If your restaurant isn't listed yet,{" "}
-              <a href="/restaurant/signup" style={{ color: "#1F4E3D", fontWeight: 600 }}>create a new listing</a>.
+              <button
+                type="button"
+                onClick={() => navigate(createListingHref)}
+                style={{ background: "none", border: "none", padding: 0, color: "#1F4E3D", fontWeight: 600, cursor: "pointer", font: "inherit" }}
+              >
+                create a new listing
+              </button>.
             </div>
           </div>
         )}
@@ -310,9 +317,13 @@ export default function OperatorClaimSearch() {
           <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid #f0f0ec", textAlign: "center" }}>
             <span style={{ fontSize: 13, color: "#8a9ab0" }}>
               Don't see your restaurant?{" "}
-              <a href="/restaurant/signup" style={{ color: "#1F4E3D", fontWeight: 700, textDecoration: "none" }}>
+              <button
+                type="button"
+                onClick={() => navigate(createListingHref)}
+                style={{ background: "none", border: "none", padding: 0, color: "#1F4E3D", fontWeight: 700, textDecoration: "none", cursor: "pointer", font: "inherit" }}
+              >
                 Create a new listing →
-              </a>
+              </button>
             </span>
           </div>
         )}
