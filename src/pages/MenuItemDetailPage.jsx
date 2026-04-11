@@ -209,6 +209,7 @@ function hasAnyNutritionData(detailSystem) {
   if (!nutrition) return false;
   return [
     nutrition.calories,
+    nutrition.saturated_fat_g,
     nutrition.protein_g,
     nutrition.carbs_g,
     nutrition.fat_g,
@@ -216,6 +217,30 @@ function hasAnyNutritionData(detailSystem) {
     nutrition.sugar_g,
     nutrition.sodium_mg,
   ].some((value) => value !== null && value !== undefined);
+}
+
+const DAILY_CALORIES = 2000;
+const DAILY_FAT_G = 78;
+const DAILY_SAT_FAT_G = 20;
+const DAILY_CARBS_G = 275;
+const DAILY_FIBER_G = 28;
+const DAILY_SUGAR_G = 50;
+const DAILY_PROTEIN_G = 50;
+const DAILY_SODIUM_MG = 2300;
+
+function wholeDv(value, dailyValue, isReliable) {
+  if (!isReliable || value == null || dailyValue == null) return null;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  return Math.round((numeric / dailyValue) * 100);
+}
+
+function detailCategory(detailSystem) {
+  return detailSystem?.presentation_model?.item_category || detailSystem?.item_category || "entree";
+}
+
+function confidenceLevel(detailSystem) {
+  return String(detailSystem?.confidence?.level || "none").trim().toLowerCase() || "none";
 }
 
 // ── Design Tokens ────────────────────────────────────────────
@@ -368,38 +393,91 @@ function VerdictBlock({ detailSystem, isMobile, t }) {
   );
 }
 
-function DessertVerdictBlock({ presentation, isMobile, t }) {
-  if (!presentation?.indulgence) return null;
+function IndulgenceInline({ presentation }) {
+  if (!presentation) return null;
+  if (!presentation?.indulgence?.score && presentation?.indulgence?.score !== 0) {
+    return (
+      <div style={{ marginTop: 14, display: "inline-flex", padding: "8px 12px", borderRadius: 999, background: "rgba(176,96,0,0.10)", color: "#9b5c00", fontWeight: 900, fontSize: 13 }}>
+        Limited data
+      </div>
+    );
+  }
 
   return (
-    <Surface style={{ marginTop: 20, padding: isMobile ? 22 : 28, background: "linear-gradient(135deg, rgba(88,28,16,0.98), rgba(153,27,27,0.94))", color: "#fff7ed" }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(254,215,170,0.82)", marginBottom: 10 }}>
-        {t("menuItemDetail.verdict", "Verdict")}
+    <div style={{ marginTop: 18, maxWidth: 520 }}>
+      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: "#9b5c00", marginBottom: 8 }}>
+        Indulgent
       </div>
-      <div style={{ fontSize: isMobile ? 34 : 46, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em", color: "#fff7ed" }}>
-        {presentation.verdict || "Indulgent"}
-      </div>
-      <div style={{ marginTop: 16, borderRadius: 18, padding: "14px 16px", background: "rgba(255,255,255,0.98)" }}>
+      <div style={{ borderRadius: 18, padding: "14px 16px", background: "rgba(255,255,255,0.98)", border: "1px solid rgba(176,96,0,0.14)" }}>
         <IndulgenceMeter indulgence={presentation.indulgence} />
       </div>
-    </Surface>
+    </div>
+  );
+}
+
+function BreadScoreInline({ detailSystem }) {
+  const breadScore = detailSystem?.bread_score || null;
+  if (!breadScore) return null;
+  if (breadScore.score == null) {
+    return (
+      <div style={{ marginTop: 14, display: "inline-flex", padding: "8px 12px", borderRadius: 999, background: "rgba(176,96,0,0.10)", color: "#9b5c00", fontWeight: 900, fontSize: 13 }}>
+        Limited data
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 18, maxWidth: 520 }}>
+      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: "#9b5c00", marginBottom: 8 }}>
+        Verdict
+      </div>
+      <div style={{ borderRadius: 18, padding: "14px 16px", background: "rgba(255,255,255,0.98)", border: "1px solid rgba(176,96,0,0.14)" }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: "#7c2d12", letterSpacing: "-0.03em" }}>
+            Bread Score
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 900, color: "#9b5c00" }}>
+            {breadScore.score}
+          </div>
+        </div>
+        <div style={{ marginTop: 8, fontSize: 14, fontWeight: 800, color: "#9a3412" }}>
+          {breadScore.band}
+        </div>
+        {breadScore.explanation ? (
+          <div style={{ marginTop: 10, fontSize: 14, lineHeight: 1.5, color: "#7c2d12", fontWeight: 700 }}>
+            {breadScore.explanation}
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
 function NutritionCard({ detailSystem, t }) {
   const nutrition = detailSystem?.nutrition || {};
+  const category = detailCategory(detailSystem);
+  const reliability = confidenceLevel(detailSystem);
+  const isReliable = reliability !== "low" && reliability !== "none";
+  const isDrink = category === "beverage";
+  const isDessertOrBread = category === "dessert" || category === "pure_bread";
+  const isEntree = !isDrink && !isDessertOrBread;
   const perOz = nutrition?.per_oz || null;
-  const portionOz = nutrition?.portion_oz;
-  const portionLabel = portionOz == null ? "Not available" : formatMacro(portionOz, "oz");
-  const pairs = [
-    { label: t("menuItemDetail.metric.calories", "Calories"), value: formatMacro(nutrition.calories) },
-    { label: t("menuItemDetail.metric.protein", "Protein"), value: formatMacro(nutrition.protein_g, "g") },
-    { label: t("menuItemDetail.metric.carbs", "Carbs"), value: formatMacro(nutrition.carbs_g, "g") },
-    { label: t("menuItemDetail.metric.fat", "Fat"), value: formatMacro(nutrition.fat_g, "g") },
-    { label: t("menuItemDetail.metric.fiber", "Fiber"), value: formatMacro(nutrition.fiber_g, "g") },
-    { label: t("menuItemDetail.metric.sugar", "Sugar"), value: formatMacro(nutrition.sugar_g, "g") },
-    { label: t("menuItemDetail.metric.sodium", "Sodium"), value: formatMacro(nutrition.sodium_mg, "mg") },
-  ];
+  const pairs = isEntree
+    ? [
+        { label: "Calories", value: formatMacro(nutrition.calories), dv: wholeDv(nutrition.calories, DAILY_CALORIES, isReliable) },
+        { label: "Fat", value: formatMacro(nutrition.fat_g, "g"), dv: wholeDv(nutrition.fat_g, DAILY_FAT_G, isReliable) },
+        { label: "Saturated Fat", value: formatMacro(nutrition.saturated_fat_g, "g"), dv: wholeDv(nutrition.saturated_fat_g, DAILY_SAT_FAT_G, isReliable) },
+        { label: "Carbs", value: formatMacro(nutrition.carbs_g, "g"), dv: wholeDv(nutrition.carbs_g, DAILY_CARBS_G, isReliable) },
+        { label: "Fiber", value: formatMacro(nutrition.fiber_g, "g"), dv: wholeDv(nutrition.fiber_g, DAILY_FIBER_G, isReliable) },
+        { label: "Sugar", value: formatMacro(nutrition.sugar_g, "g"), dv: null },
+        { label: "Protein", value: formatMacro(nutrition.protein_g, "g"), dv: wholeDv(nutrition.protein_g, DAILY_PROTEIN_G, isReliable) },
+        { label: "Sodium", value: formatMacro(nutrition.sodium_mg, "mg"), dv: wholeDv(nutrition.sodium_mg, DAILY_SODIUM_MG, isReliable) },
+      ]
+    : [
+        { label: "Calories", value: formatMacro(nutrition.calories), dv: null },
+        { label: "Carbs", value: formatMacro(nutrition.carbs_g, "g"), dv: null },
+        { label: "Sugar", value: formatMacro(nutrition.sugar_g, "g"), dv: null },
+      ].filter((entry) => entry.value !== "—");
   const perOzRows = perOz
     ? [
         { label: "Calories / oz", value: formatPerOzValue(perOz.calories_kcal) || "—" },
@@ -411,30 +489,19 @@ function NutritionCard({ detailSystem, t }) {
 
   return (
     <SectionCard title={t("menuItemDetail.nutritionTitle", "Nutrition")} eyebrow={t("menuItemDetail.decisionData", "Decision Data")}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 10 }}>
+      <div style={{ display: "grid", gap: 10 }}>
         {pairs.map((entry) => (
-          <div key={entry.label} style={{ borderRadius: 18, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: "14px 12px" }}>
-            <div style={{ fontSize: 12, color: "#617167", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <div key={entry.label} style={{ borderRadius: 16, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: "12px 14px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ fontSize: 13, color: "#15241d", fontWeight: 800 }}>
               {entry.label}
             </div>
-            <div style={{ marginTop: 8, fontSize: 22, fontWeight: 900, letterSpacing: "-0.04em", color: "#15241d" }}>
-              {entry.value}
+            <div style={{ fontSize: 15, fontWeight: 900, color: "#15241d", textAlign: "right" }}>
+              {entry.value}{entry.dv != null ? ` · ${entry.dv}% DV` : ""}
             </div>
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 16, borderRadius: 18, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: "14px 16px" }}>
-        <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f" }}>
-          Portion Assumption
-        </div>
-        <div style={{ marginTop: 8, fontSize: 16, fontWeight: 900, color: "#15241d" }}>
-          {`Estimated portion: ${portionLabel}`}
-        </div>
-        <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1.45, color: "#617167" }}>
-          Total nutrition above is based on this assumed portion size.
-        </div>
-      </div>
-      {perOzRows.length ? (
+      {!isDrink && !isDessertOrBread && perOzRows.length && isReliable ? (
         <div style={{ marginTop: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f", marginBottom: 10 }}>
             Per Ounce
@@ -453,6 +520,10 @@ function NutritionCard({ detailSystem, t }) {
           </div>
         </div>
       ) : null}
+      <div style={{ marginTop: 14, fontSize: 13, lineHeight: 1.5, color: "#617167", fontWeight: 700 }}>
+        {reliability === "high" ? "HIGH" : reliability === "medium" ? "MEDIUM" : reliability === "low" ? "LOW" : "NONE"}
+        {reliability === "low" || reliability === "none" ? " · Nutrition estimate — confirm with restaurant" : ""}
+      </div>
     </SectionCard>
   );
 }
@@ -654,26 +725,19 @@ function IngredientFlagsCard({ detailSystem, t }) {
 }
 
 function NutritionInsightsCluster({ detailSystem, isMobile, t, indulgencePresentation = null }) {
+  const category = detailCategory(detailSystem);
+  const showInsights = category === "entree" && confidenceLevel(detailSystem) !== "low";
   return (
     <Surface style={{ marginTop: 22, padding: isMobile ? 18 : 22 }}>
       <Eyebrow>{t("menuItemDetail.nutritionAndInsights", "Nutrition & Insights")}</Eyebrow>
       <div style={{ display: "grid", gap: 18 }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 1.1fr) minmax(0, 0.9fr)",
-            gap: 18,
-            alignItems: "start",
-          }}
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18, alignItems: "start" }}>
           <NutritionCard detailSystem={detailSystem} t={t} />
-          {indulgencePresentation ? (
-            <DessertInterpretationCard presentation={indulgencePresentation} t={t} />
-          ) : (
+          {showInsights ? (
             <InsightsCard detailSystem={detailSystem} t={t} />
-          )}
+          ) : null}
         </div>
-        {!indulgencePresentation ? <IngredientFlagsCard detailSystem={detailSystem} t={t} /> : null}
+        {showInsights ? <IngredientFlagsCard detailSystem={detailSystem} t={t} /> : null}
       </div>
     </Surface>
   );
@@ -681,13 +745,19 @@ function NutritionInsightsCluster({ detailSystem, isMobile, t, indulgencePresent
 
 function PreparationCard({ detailSystem, t }) {
   const preparation = detailSystem?.preparation;
+  const category = detailCategory(detailSystem);
   if (!preparation) return null;
+  if (category === "dessert" || category === "pure_bread") return null;
 
   const rows = [
     { label: t("menuItemDetail.preparationMethod", "Cooking Method"), value: preparation.cooking_method },
     { label: t("menuItemDetail.preparationCoating", "Coating"), value: preparation.coating },
     { label: t("menuItemDetail.preparationSauce", "Sauce Style"), value: preparation.sauce_style },
-  ].filter((entry) => String(entry.value || "").trim());
+  ].filter((entry) => {
+    if (!String(entry.value || "").trim()) return false;
+    if (category === "beverage") return entry.label === t("menuItemDetail.preparationMethod", "Cooking Method");
+    return true;
+  });
 
   if (!rows.length && !preparation.impact_line && !preparation.why_it_matters) return null;
 
@@ -741,10 +811,10 @@ function MissingNutritionState() {
   return (
     <Surface style={{ marginTop: 22, padding: 20 }}>
       <div style={{ fontSize: 20, fontWeight: 900, color: "#15241d" }}>
-        Nutrition data not yet available
+        Nutrition estimate — confirm with restaurant
       </div>
       <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.5, color: "#53635a", fontWeight: 700 }}>
-        This item has not been analyzed yet
+        Incomplete nutrition data is available for this item.
       </div>
       <div style={{ marginTop: 4, fontSize: 14, lineHeight: 1.5, color: "#53635a" }}>
         Try similar items for guidance
@@ -1104,6 +1174,9 @@ export default function MenuItemDetailPage() {
                   </div>
                 ) : null}
               </div>
+
+              {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
+              {!indulgencePresentation && detailSystem?.bread_score ? <BreadScoreInline detailSystem={detailSystem} /> : null}
             </div>
 
             {(getLocalizedField(item, "description", language) || item.description) ? (
@@ -1173,11 +1246,10 @@ export default function MenuItemDetailPage() {
       {/* ── 3. Verdict ── */}
       {hasNutritionData ? (
         <>
-          {indulgencePresentation ? (
-            <DessertVerdictBlock presentation={indulgencePresentation} isMobile={isMobile} t={t} />
-          ) : (
+          {!indulgencePresentation && !detailSystem?.bread_score && confidenceLevel(detailSystem) !== "low" ? (
             <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} />
-          )}
+          ) : null}
+          <PreparationCard detailSystem={detailSystem} t={t} />
           <NutritionInsightsCluster
             detailSystem={detailSystem}
             isMobile={isMobile}
@@ -1188,15 +1260,6 @@ export default function MenuItemDetailPage() {
       ) : (
         <MissingNutritionState />
       )}
-
-      <PreparationCard detailSystem={detailSystem} t={t} />
-
-      {/* ── 6. Confidence — single line only ── */}
-      {detailSystem?.confidence?.level ? (
-        <Surface style={{ marginTop: 18, padding: "16px 20px" }}>
-          <CompactConfidence detailSystem={detailSystem} />
-        </Surface>
-      ) : null}
 
       {/* ── 7. Explore Similar Dishes ── */}
       <ExploreSimilarDishes

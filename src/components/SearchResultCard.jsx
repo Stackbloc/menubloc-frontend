@@ -687,8 +687,10 @@ function Chip({ label, active, available, onClick }) {
   );
 }
 
-function DessertSearchPanel({ presentation }) {
-  if (!presentation?.indulgence) return null;
+function CompactScoreSummary({ presentation, breadScore }) {
+  const indulgence = presentation?.indulgence || null;
+  const compactDrivers = indulgence?.drivers?.slice(0, 3) || breadScore?.drivers?.slice(0, 2) || [];
+  if (!indulgence && !breadScore) return null;
 
   return (
     <div
@@ -700,13 +702,35 @@ function DessertSearchPanel({ presentation }) {
         border: "1px solid rgba(249,115,22,0.18)",
       }}
     >
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: "#c2410c", marginBottom: 8 }}>
-        {presentation.verdict || "Indulgent"}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 12, fontWeight: 900, color: "#c2410c" }}>
+          {breadScore ? "Bread Score" : "Indulgence Score"}
+        </div>
+        <div style={{ fontSize: 12, fontWeight: 900, color: "#9a3412" }}>
+          {breadScore ? `${breadScore.score}` : `${indulgence.score}`}
+        </div>
       </div>
-      <IndulgenceMeter indulgence={presentation.indulgence} />
-      {presentation.interpretation ? (
-        <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.45, color: "#7c2d12", fontWeight: 700 }}>
-          {presentation.interpretation}
+      <div style={{ marginTop: 6, fontSize: 12.5, fontWeight: 800, color: "#9a3412" }}>
+        {breadScore ? breadScore.band : (indulgence.level === "indulgent" ? "Very rich" : indulgence.level === "rich" ? "Rich" : indulgence.level === "moderate" ? "Moderate" : "Lighter")}
+      </div>
+      {compactDrivers.length ? (
+        <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {compactDrivers.map((driver) => (
+            <span
+              key={driver}
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: "#7c2d12",
+                background: "rgba(249,115,22,0.08)",
+                border: "1px solid rgba(249,115,22,0.16)",
+                borderRadius: 999,
+                padding: "3px 8px",
+              }}
+            >
+              {driver}
+            </span>
+          ))}
         </div>
       ) : null}
     </div>
@@ -808,7 +832,7 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
                           )}
                           {similarIndulgence?.indulgence ? (
                             <div style={{ marginTop: 4, fontSize: "11.5px", color: "#b45309", fontWeight: 800 }}>
-                              Indulgent · {similarIndulgence.indulgence.score}/100
+                              Indulgent · {similarIndulgence.indulgence.score}
                             </div>
                           ) : null}
                         </div>
@@ -851,6 +875,7 @@ function ItemRow({ row, query, similarItems, labels, language, geo }) {
   const name = getItemName(row, language);
   const chips = resolveChips(row);
   const indulgencePresentation = resolveIndulgencePresentation({ chips });
+  const breadScore = row?.detail_system?.bread_score || row?.chips?.bread_score || null;
   const hrefBase = mid ? getCanonicalMenuItemPath({
     restaurant: {
       slug: getRestSlug(row),
@@ -989,7 +1014,7 @@ function ItemRow({ row, query, similarItems, labels, language, geo }) {
 
       <AllergenIndicator chip={nutChip} compact containsLabel={labels.contains} estimatedLabel={labels.estimated} />
       <PrecisionLine chip={nutChip} />
-      {indulgencePresentation ? <DessertSearchPanel presentation={indulgencePresentation} /> : null}
+      {(indulgencePresentation || breadScore) ? <CompactScoreSummary presentation={indulgencePresentation} breadScore={breadScore} /> : null}
 
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
         {!indulgencePresentation ? (
