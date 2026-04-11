@@ -1,4 +1,4 @@
-# Frontend Guardrails — see /Users/andrebarber/Desktop/menubloc/AGENTS.md for full rules
+# Frontend Guardrails — full rules in /Users/andrebarber/Desktop/menubloc/CLAUDE.md
 
 ## Quick reference: protected files
 
@@ -9,34 +9,40 @@
 
 ## Last known good commit: `62039b5`
 
-## Discovery page location — HARD RULES
+## PRE-EXECUTION LOCK (enforced here)
 
-The discovery page location input is a PLAIN TEXT FIELD.
-- No autocomplete
-- No dropdown
-- No API-backed city lookup
-- No canonical location picker
-- Users type manually (e.g. "Los Angeles, CA") OR use browser auto-detect
+Before touching any protected file, state all of the following or STOP:
+1. Current commit hash: `git log --oneline -1`
+2. Baseline page behavior confirmed (all 4 must pass)
+3. Which ONE change category this is
+4. Full diff shown and approved by user
 
-## autoLocation flow — do not break
+## Baseline pages (run before AND after every change)
+```
+/                                         → auto-detects location, plain text input only
+/browse-menus?city=Los+Angeles&state=CA   → LA restaurants only, no Dothan
+/browse-menus?city=Dothan&state=AL        → Dothan restaurants only, no LA
+/search?q=chicken&city=Los+Angeles&state=CA → returns results
+```
+
+## Discovery page location — ABSOLUTE RULES
+
+The location input is a PLAIN TEXT FIELD. Never add:
+- Autocomplete
+- Dropdown
+- API-backed city lookup
+- Canonical location picker
 
 `autoLocation.city` and `autoLocation.state` MUST flow to:
-1. `buildSearchParams` — included alongside lat/lng when no manual location set
-2. Browse Menus button click — passed as `?city=&state=` in the browse URL
+1. `buildSearchParams` (alongside lat/lng when no manual location is set)
+2. Browse Menus button click (`?city=&state=` in the URL)
 
-Removing either of these causes cross-city leakage and broken browse.
+## URL contract — params that must never be silently removed
+`city`, `state`, `lat`, `lng`, `radius_miles`
 
-## Before touching any protected file
+Any removal must be explicitly declared, explained, and approved.
 
-1. Note current commit: `git log --oneline -1`
-2. Confirm discovery page detects location automatically
-3. Confirm browse URL includes city/state
-4. Make ONE change only
-5. Re-verify all three above
-6. Only then commit
-
-## Revert command if something breaks
+## Rollback command
 ```bash
-git revert HEAD
-npm run dev
+git revert HEAD && npm run dev
 ```
