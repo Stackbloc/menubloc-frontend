@@ -505,8 +505,7 @@ export default function GrubbidDiscovery() {
               display: "flex",
               flexDirection: isMobile ? "column" : "row",
               gap: 10,
-              width: isMobile ? "calc(100% + 28px)" : "100%",
-              marginLeft: isMobile ? -14 : 0,
+              width: "100%",
             }}
           >
             <input
