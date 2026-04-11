@@ -74,3 +74,62 @@ Any removal must be explicitly declared, explained, and approved.
 ```bash
 git revert HEAD && npm run dev
 ```
+
+---
+
+## CORE RULE — BEHAVIORAL CONTINUITY
+
+No change is complete unless ALL previously working behavior continues to work.
+This includes: search results, filters (ALL filters), location handling, browse behavior, UI outputs.
+If any prior behavior breaks → the change is INVALID.
+
+---
+
+## 🚫 ARCHITECTURAL NON-INVENTION RULE (CRITICAL)
+
+Do NOT:
+- change filter logic structure
+- bypass filter pipelines
+- move filter evaluation order
+- merge item-level and menu-level filters incorrectly
+- remove or weaken filtering conditions
+
+If unsure → STOP and ask.
+
+---
+
+## 🔒 FILTER PROTECTION RULE (CRITICAL)
+
+Filters are **protected system behavior**: diabetic-friendly, vegan, vegetarian, gluten-free, low-carb, low-sodium, allergen filters.
+
+Requirements:
+1. Filters must work at BOTH item level AND menu/restaurant level
+2. Menus with ZERO qualifying items MUST be removed
+3. Item-level truth MUST NOT be overridden by keyword/template/weak inference fallback
+4. No filter may be silently degraded
+
+---
+
+## 🧪 MANDATORY FILTER VERIFICATION (before declaring any change complete)
+
+For ANY change touching search, discovery, filters, location, or ranking:
+
+- Diabetic ON → only qualifying items/menus appear; menus with no qualifying items excluded
+- Vegan ON → no non-vegan items appear
+- Gluten-Free ON → no gluten items appear
+- Filters ON vs OFF → DIFFERENT result sets (filters are not ignored)
+- "chicken + diabetic near Los Angeles" → returns filtered results, not empty
+- Known populated areas (LA, Dothan) → return data after any change
+
+---
+
+## 🧪 REQUIRED AI OUTPUT BEFORE APPLYING CHANGES
+
+Must provide: exact files changed, what behavior is modified, why safe, filter integrity confirmed, test results summary.
+If missing → DO NOT APPLY.
+
+---
+
+## FILTER vs RELEVANCE PRINCIPLE
+
+Filters ALWAYS override relevance. A "better search result" that breaks filters is a regression, not an improvement.
