@@ -1,5 +1,33 @@
 # Frontend Guardrails — full rules in /Users/andrebarber/Desktop/menubloc/CLAUDE.md
 
+---
+
+## ⛔ EXECUTION GATE — MANDATORY BEFORE ANY ACTION
+
+AI may NOT write code, modify files, or run git commands UNTIL it outputs ALL of the following.
+Missing section → STOP. Any baseline FAIL → STOP. No user approval on diff → STOP.
+
+```
+1. PRE-CHANGE STATE
+   Frontend commit: [git log --oneline -1]
+
+2. BASELINE RESULTS (all must be PASS)
+   [ ] /                                           → loads, auto-detects location, plain text input only
+   [ ] /browse-menus?city=Los+Angeles&state=CA     → LA restaurants only
+   [ ] /browse-menus?city=Dothan&state=AL          → Dothan restaurants only
+   [ ] /search?q=chicken&city=Los+Angeles&state=CA → returns results
+
+3. CHANGE PLAN
+   Category:       [ONE category]
+   Files modified: [explicit list]
+   What changes:   [one sentence]
+   What stays same:[explicit list]
+
+4. FULL DIFF shown → user approves → THEN apply
+```
+
+---
+
 ## Quick reference: protected files
 
 - `src/pages/GrubbidDiscovery.jsx`
