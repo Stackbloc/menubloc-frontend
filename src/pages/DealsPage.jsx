@@ -31,6 +31,13 @@ const CUISINE_OPTIONS = [
   "Vietnamese",
 ];
 
+const DISTANCE_OPTIONS = [
+  { label: "5 miles",  value: "5"  },
+  { label: "10 miles", value: "10" },
+  { label: "25 miles", value: "25" },
+  { label: "50 miles", value: "50" },
+];
+
 function formatDealBadge(deal) {
   const raw = String(deal?.discount_value || "").trim();
   if (!raw) return "";
@@ -48,17 +55,49 @@ function formatDealBadge(deal) {
   return raw;
 }
 
+function buildDealUrl(deal) {
+  const base = deal.restaurant_slug || deal.restaurant_id;
+  if (!base) return null;
+  if (deal.menu_item_id) {
+    return `/restaurants/${base}/menu-items/${deal.menu_item_id}`;
+  }
+  return `/restaurants/${base}/menu`;
+}
+
 export default function DealsPage() {
   const { search } = useLocation();
   const urlParams = new URLSearchParams(search);
-  const urlCity = urlParams.get("city") || "";
+  const urlCity  = urlParams.get("city")  || "";
   const urlState = urlParams.get("state") || "";
+  const urlLat   = urlParams.get("lat")   ? parseFloat(urlParams.get("lat"))  : null;
+  const urlLng   = urlParams.get("lng")   ? parseFloat(urlParams.get("lng"))  : null;
   const locationLabel = [urlCity, urlState].filter(Boolean).join(", ");
 
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError]   = useState(null);
   const [cuisine, setCuisine] = useState("");
+  const [radiusMiles, setRadiusMiles] = useState("");
+
+  // User coordinates — from URL params or browser geolocation
+  const [userLat, setUserLat] = useState(urlLat);
+  const [userLng, setUserLng] = useState(urlLng);
+  const [locDetecting, setLocDetecting] = useState(false);
+
+  useEffect(() => {
+    if (urlLat != null && urlLng != null) return; // already have coords from URL
+    if (!navigator.geolocation) return;
+    setLocDetecting(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLat(pos.coords.latitude);
+        setUserLng(pos.coords.longitude);
+        setLocDetecting(false);
+      },
+      () => setLocDetecting(false),
+      { timeout: 8000 }
+    );
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,9 +108,14 @@ export default function DealsPage() {
 
       try {
         const params = new URLSearchParams();
-        if (urlCity) params.set("city", urlCity);
+        if (urlCity)  params.set("city",  urlCity);
         if (urlState) params.set("state", urlState);
-        if (cuisine) params.set("cuisine", cuisine);
+        if (cuisine)  params.set("cuisine", cuisine);
+        if (userLat != null && userLng != null && radiusMiles) {
+          params.set("lat",          userLat);
+          params.set("lng",          userLng);
+          params.set("radius_miles", radiusMiles);
+        }
 
         const response = await fetch(`${API_BASE}/deals?${params.toString()}`);
         const data = await response.json().catch(() => ({}));
@@ -88,10 +132,10 @@ export default function DealsPage() {
     }
 
     fetchDeals();
-    return () => {
-      cancelled = true;
-    };
-  }, [urlCity, urlState, cuisine]);
+    return () => { cancelled = true; };
+  }, [urlCity, urlState, cuisine, userLat, userLng, radiusMiles]);
+
+  const hasLocation = userLat != null && userLng != null;
 
   return (
     <PageShell width="wide">
@@ -107,13 +151,29 @@ export default function DealsPage() {
               <SelectField label="Cuisine" value={cuisine} onChange={(event) => setCuisine(event.target.value)}>
                 <option value="">All</option>
                 {CUISINE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
+                  <option key={option} value={option}>{option}</option>
                 ))}
               </SelectField>
 
-              <FilterChip active={!cuisine} onClick={() => setCuisine("")}>
+              {/* Distance filter — only shown when user location is available */}
+              {hasLocation ? (
+                <SelectField
+                  label="Distance"
+                  value={radiusMiles}
+                  onChange={(event) => setRadiusMiles(event.target.value)}
+                >
+                  <option value="">Any distance</option>
+                  {DISTANCE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </SelectField>
+              ) : locDetecting ? (
+                <div style={{ fontSize: 13, color: "var(--gb-color-ink-muted)" }}>
+                  Detecting location for distance filter…
+                </div>
+              ) : null}
+
+              <FilterChip active={!cuisine && !radiusMiles} onClick={() => { setCuisine(""); setRadiusMiles(""); }}>
                 Show all deals
               </FilterChip>
             </div>
@@ -122,7 +182,7 @@ export default function DealsPage() {
       >
         <PageHero
           title={locationLabel ? `Restaurant Deals Near ${locationLabel}` : "Restaurant Deals"}
-          description="Deals uses the same typography, spacing, controls, and card language as Top Picks and Search."
+          description="Active promotions from restaurants in your area."
         />
 
         <Card>
@@ -168,59 +228,78 @@ export default function DealsPage() {
               </div>
 
               <div style={{ display: "grid", gap: 12 }}>
-                {deals.map((deal) => (
-                  <Card
-                    key={deal.id}
-                    muted
-                    style={{
-                      borderRadius: "var(--gb-radius-card-tight)",
-                      padding: "16px 20px",
-                      boxShadow: "none",
-                    }}
-                  >
-                    <div style={{ color: "var(--gb-color-ink-strong)", fontSize: 16, fontWeight: 900 }}>
-                      {deal.title || "Untitled Deal"}
-                    </div>
+                {deals.map((deal) => {
+                  const dealUrl = buildDealUrl(deal);
+                  return (
+                    <Card
+                      key={deal.deal_id || deal.id}
+                      muted
+                      style={{
+                        borderRadius: "var(--gb-radius-card-tight)",
+                        padding: "16px 20px",
+                        boxShadow: "none",
+                      }}
+                    >
+                      {/* Restaurant name — most prominent */}
+                      {deal.restaurant_name ? (
+                        <div style={{ color: "var(--gb-color-ink-strong)", fontSize: 18, fontWeight: 900, marginBottom: 6 }}>
+                          {deal.restaurant_name}
+                        </div>
+                      ) : null}
 
-                    {deal.description ? (
-                      <div style={{ marginTop: 6, color: "var(--gb-color-ink-soft)", fontSize: 14, lineHeight: 1.55 }}>
-                        {deal.description}
+                      {/* Deal title — clickable, goes to menu or menu item */}
+                      <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.4 }}>
+                        {dealUrl ? (
+                          <Link
+                            to={dealUrl}
+                            style={{
+                              color: "var(--gb-color-brand, #1a73e8)",
+                              textDecoration: "none",
+                            }}
+                          >
+                            {deal.title || "Untitled Deal"}
+                          </Link>
+                        ) : (
+                          <span style={{ color: "var(--gb-color-ink-strong)" }}>
+                            {deal.title || "Untitled Deal"}
+                          </span>
+                        )}
                       </div>
-                    ) : null}
 
-                    {deal.discount_value ? (
-                      <div
-                        style={{
-                          marginTop: 8,
-                          display: "inline-block",
-                          padding: "3px 10px",
-                          borderRadius: "var(--gb-radius-pill)",
-                          background: "var(--gb-color-success-bg)",
-                          border: "1px solid var(--gb-color-success-border)",
-                          color: "var(--gb-color-success-text)",
-                          fontSize: 12,
-                          fontWeight: 800,
-                        }}
-                      >
-                        {formatDealBadge(deal)}
-                      </div>
-                    ) : null}
+                      {deal.description ? (
+                        <div style={{ marginTop: 6, color: "var(--gb-color-ink-soft)", fontSize: 14, lineHeight: 1.55 }}>
+                          {deal.description}
+                        </div>
+                      ) : null}
 
-                    {deal.restaurant_name ? (
-                      <div style={{ marginTop: 8, color: "var(--gb-color-ink-muted)", fontSize: 13, fontWeight: 600 }}>
-                        {deal.restaurant_name}
-                      </div>
-                    ) : null}
+                      {deal.discount_value ? (
+                        <div
+                          style={{
+                            marginTop: 8,
+                            display: "inline-block",
+                            padding: "3px 10px",
+                            borderRadius: "var(--gb-radius-pill)",
+                            background: "var(--gb-color-success-bg)",
+                            border: "1px solid var(--gb-color-success-border)",
+                            color: "var(--gb-color-success-text)",
+                            fontSize: 12,
+                            fontWeight: 800,
+                          }}
+                        >
+                          {formatDealBadge(deal)}
+                        </div>
+                      ) : null}
 
-                    {deal.restaurant_id ? (
-                      <div style={{ marginTop: 10 }}>
-                        <Link to={`/restaurants/${deal.restaurant_id}`} className="gb-linkish" style={{ fontSize: 13, fontWeight: 800 }}>
-                          View Restaurant →
-                        </Link>
-                      </div>
-                    ) : null}
-                  </Card>
-                ))}
+                      {dealUrl ? (
+                        <div style={{ marginTop: 10 }}>
+                          <Link to={dealUrl} className="gb-linkish" style={{ fontSize: 13, fontWeight: 800 }}>
+                            {deal.menu_item_id ? `View ${deal.menu_item_name || "Item"} →` : "View Menu →"}
+                          </Link>
+                        </div>
+                      ) : null}
+                    </Card>
+                  );
+                })}
               </div>
             </>
           ) : null}
