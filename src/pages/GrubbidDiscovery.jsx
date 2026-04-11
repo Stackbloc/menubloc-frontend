@@ -26,21 +26,6 @@ const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const RECENT_LOCATIONS_KEY = "grubbid.recent.locations";
 const MAX_RECENT_LOCATIONS = 3;
 
-function countSearchResults(payload) {
-  if (!payload || typeof payload !== "object") return 0;
-
-  if (Array.isArray(payload.results)) return payload.results.length;
-  if (Array.isArray(payload.rows)) return payload.rows.length;
-
-  const bucketItems = Array.isArray(payload?.buckets?.menu_items) ? payload.buckets.menu_items.length : 0;
-  const bucketRestaurants = Array.isArray(payload?.buckets?.restaurants) ? payload.buckets.restaurants.length : 0;
-  if (bucketItems || bucketRestaurants) return bucketItems + bucketRestaurants;
-
-  const menuItems = Array.isArray(payload.menu_items) ? payload.menu_items.length : 0;
-  const restaurants = Array.isArray(payload.restaurants) ? payload.restaurants.length : 0;
-  return menuItems + restaurants;
-}
-
 function loadRecentLocations() {
   if (typeof window === "undefined") return [];
   try {
@@ -271,6 +256,10 @@ export default function GrubbidDiscovery() {
       params.set("lat", String(autoLocation.lat));
       params.set("lng", String(autoLocation.lng));
       params.set("radius_miles", String(LOCAL_RADIUS_MILES));
+      // Pass city/state separately so Search Results can display the precise label
+      // even when search is performed by lat/lng radius.
+      if (autoLocation.city) params.set("city", autoLocation.city);
+      if (autoLocation.state) params.set("state", autoLocation.state);
       if (autoLocation.label) params.set("location_label", autoLocation.label);
     }
 
@@ -295,11 +284,9 @@ export default function GrubbidDiscovery() {
       const url = `${API}/search?${params.toString()}&limit=1`;
       const res = await fetch(url, { credentials: "include" });
       const json = await res.json().catch(() => ({}));
-      const count = countSearchResults(json);
+      const count = (json?.menu_items?.length || 0) + (json?.buckets?.restaurants?.length || 0);
 
-      if (json?.degraded === true && count === 0) {
-        setInlineError(json?.error || t("search.noResultsGeneric", "No results."));
-      } else if (count === 0) {
+      if (count === 0) {
         // Build a readable location label for the error message
         const loc = getEffectiveSearchLocation() || "";
         const parsed = loc.match(/^\d{5}/) ? loc : loc;
@@ -615,6 +602,10 @@ export default function GrubbidDiscovery() {
                   const loc = parseLocation(appliedLocation);
                   if (loc.city) p.set("city", loc.city);
                   if (loc.state) p.set("state", loc.state);
+                } else if (autoLocation.city || autoLocation.state) {
+                  // Auto-detected location — city/state already extracted precisely
+                  if (autoLocation.city) p.set("city", autoLocation.city);
+                  if (autoLocation.state) p.set("state", autoLocation.state);
                 }
                 const qs = p.toString();
                 navigate(qs ? `${BROWSE_MENUS_PATH}?${qs}` : BROWSE_MENUS_PATH);
