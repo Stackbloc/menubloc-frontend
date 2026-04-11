@@ -40,6 +40,7 @@ import ShareButton from "./share/ShareButton.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
+import buildMatchPreview from "./searchResultMatchPreview.js";
 import {
   buildCanonicalMenuPath,
   buildDishShareData,
@@ -51,6 +52,8 @@ import {
   getNutritionSummary,
   computeInsights,
 } from "../lib/nutritionInsights.js";
+
+const MATCH_LABEL = "Match:";
 
 /* ---- Helpers ---- */
 
@@ -868,7 +871,7 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
 
 /* ---- Single item row ---- */
 
-function ItemRow({ row, query, similarItems, labels, language, geo }) {
+function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, language, geo }) {
   const [openTab, setOpenTab] = useState(null);
 
   const mid = getItemId(row);
@@ -905,6 +908,7 @@ function ItemRow({ row, query, similarItems, labels, language, geo }) {
   const hasDeal = asBool(resolveItemFlag(row, "has_active_deal"));
   const isVegan = asBool(resolveItemFlag(row, "is_vegan"));
   const isGF = asBool(resolveItemFlag(row, "is_gluten_free"));
+  const matchPreview = buildMatchPreview(row, queryMeta, matchContext);
 
   const nutChip = chips?.nutrition_chip || {};
 
@@ -1001,6 +1005,24 @@ function ItemRow({ row, query, similarItems, labels, language, geo }) {
             />
           ) : null}
       </div>
+
+      {matchPreview ? (
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: "13px",
+            lineHeight: 1.45,
+            color: "#667085",
+            fontWeight: 650,
+            overflowWrap: "anywhere",
+          }}
+        >
+          <span style={{ color: "#475467", fontWeight: 800 }}>
+            {MATCH_LABEL}{" "}
+          </span>
+          <span>{matchPreview.text}</span>
+        </div>
+      ) : null}
 
       {/* Badges */}
       {(popular || hasDeal || isGF || isVegan) && (
@@ -1195,7 +1217,7 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
 
 /* ---- Main export ---- */
 
-export default function SearchResultCard({ restaurant, items, item, query, crossRestaurantItems, geo }) {
+export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, crossRestaurantItems, geo }) {
   const location = useLocation();
   const { language, t } = useLanguage();
   const contextSearch = location.search || "";
@@ -1280,7 +1302,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
           {items.map((row) => {
             const mid = getItemId(row);
             const nm = getItemName(row, language);
-            return <ItemRow key={mid || nm} row={row} query={query} similarItems={similarItems} labels={labels} language={language} geo={geo} />;
+            return <ItemRow key={mid || nm} row={row} query={query} queryMeta={queryMeta} matchContext={matchContext} similarItems={similarItems} labels={labels} language={language} geo={geo} />;
           })}
         </div>
 
@@ -1360,7 +1382,7 @@ export default function SearchResultCard({ restaurant, items, item, query, cross
           distanceMiles={distanceMilesS}
           profileTier={profileTierS}
         />
-        <ItemRow row={item} query={query} similarItems={similarItemsS} labels={labels} language={language} geo={geo} />
+        <ItemRow row={item} query={query} queryMeta={queryMeta} matchContext={matchContext} similarItems={similarItemsS} labels={labels} language={language} geo={geo} />
         {menuHrefS && (
           <div style={{ marginTop: 10 }}>
             <Link

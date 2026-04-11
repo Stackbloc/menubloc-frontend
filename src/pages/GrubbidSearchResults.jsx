@@ -533,6 +533,7 @@ export default function GrubbidSearchResults() {
 
   const [rows, setRows] = useState([]);
   const [restaurantMetaMap, setRestaurantMetaMap] = useState(new Map());
+  const [queryMeta, setQueryMeta] = useState(null);
   const [searchMeta, setSearchMeta] = useState(null);
   const [responseAllergenFilter, setResponseAllergenFilter] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -785,6 +786,7 @@ export default function GrubbidSearchResults() {
         }
         setRows(resultRows);
         setRestaurantMetaMap(rMeta);
+        setQueryMeta(json?.query || null);
         setSearchMeta(json?.search_meta || null);
         setResponseAllergenFilter(json?.allergen_filter || null);
         setSearchTotalCount(total);
@@ -800,6 +802,7 @@ export default function GrubbidSearchResults() {
           )
         );
         setRows([]);
+        setQueryMeta(null);
         setSearchMeta(null);
         setResponseAllergenFilter(null);
       } finally {
@@ -1013,6 +1016,11 @@ export default function GrubbidSearchResults() {
                 }`}
                 item={r}
                 query={q}
+                queryMeta={queryMeta}
+                matchContext={{
+                  wantsNearby: searchMeta?.wants_nearby === true,
+                  coordinateSearchActive: hasGeoFilter === true,
+                }}
                 crossRestaurantItems={crossRestaurantItems}
               />
             ))}
@@ -1047,6 +1055,11 @@ export default function GrubbidSearchResults() {
                 }}
                 items={g.items}
                 query={q}
+                queryMeta={queryMeta}
+                matchContext={{
+                  wantsNearby: searchMeta?.wants_nearby === true,
+                  coordinateSearchActive: hasGeoFilter === true,
+                }}
                 crossRestaurantItems={crossRestaurantItems}
                 geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
               />
@@ -1088,6 +1101,7 @@ export default function GrubbidSearchResults() {
                   });
                 }
                 setRows((prev) => [...prev, ...moreRows]);
+                setQueryMeta((prev) => json?.query || prev || null);
                 setResponseAllergenFilter((prev) => json?.allergen_filter || prev);
                 setSearchTotalCount(total);
                 setSearchOffset(pageOffset + returned);
