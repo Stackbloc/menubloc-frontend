@@ -115,15 +115,25 @@ export function itemPassesDietFilter(item, prefs) {
     else if (item?.is_dairy_free !== true) return false;
   }
 
-  // Soft filters — strict: only evaluator "pass" is shown; unknown = hidden
+  // Soft filters — evaluator "pass" accepted, "fail" rejected, "unknown" falls back to DB flag.
+  // Mirrors hard-filter pattern so browse item counts and menu detail agree.
   if (prefs.keto) {
-    if (df.low_carb?.result !== "pass") return false; // keto maps to low_carb evaluator
+    const r = df.low_carb?.result;
+    if (r === "pass") { /* ok */ }
+    else if (r === "fail") return false;
+    else if (item?.is_keto !== true) return false;
   }
   if (prefs.low_sodium) {
-    if (df.low_sodium?.result !== "pass") return false;
+    const r = df.low_sodium?.result;
+    if (r === "pass") { /* ok */ }
+    else if (r === "fail") return false;
+    else if (item?.is_low_sodium !== true) return false;
   }
   if (prefs.diabetic_friendly) {
-    if (df.diabetic_friendly?.result !== "pass") return false;
+    const r = df.diabetic_friendly?.result;
+    if (r === "pass") { /* ok */ }
+    else if (r === "fail") return false;
+    else if (item?.is_diabetic_friendly !== true) return false;
   }
 
   return true;

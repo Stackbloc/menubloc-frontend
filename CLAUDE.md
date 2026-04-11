@@ -34,6 +34,7 @@ Missing section → STOP. Any baseline FAIL → STOP. No user approval on diff �
 - `src/pages/BrowseMenus.jsx`
 - `src/pages/GrubbidSearchResults.jsx`
 - `src/lib/locationUtils.js`
+- `src/hooks/useDietPreferences.js`
 
 ## Last known good commit: `62039b5`
 
