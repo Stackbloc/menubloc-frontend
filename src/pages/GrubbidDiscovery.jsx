@@ -434,10 +434,6 @@ export default function GrubbidDiscovery() {
       >
         <style>
           {`
-            .grubbid-discovery-search-row {
-              width: 100%;
-            }
-
             .grubbid-discovery-search::placeholder {
               font-size: 14px;
               font-weight: 400;
@@ -445,11 +441,6 @@ export default function GrubbidDiscovery() {
             }
 
             @media (max-width: 768px) {
-              .grubbid-discovery-search-row {
-                width: calc(100% + 28px);
-                margin-left: -14px;
-              }
-
               .grubbid-discovery-search::placeholder {
                 font-size: 13px;
               }
@@ -514,6 +505,8 @@ export default function GrubbidDiscovery() {
               display: "flex",
               flexDirection: isMobile ? "column" : "row",
               gap: 10,
+              width: isMobile ? "calc(100% + 28px)" : "100%",
+              marginLeft: isMobile ? -14 : 0,
             }}
           >
             <input
