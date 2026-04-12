@@ -14,9 +14,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { PageNav } from "../components/NavButton.jsx";
+import BuyMeThisShareModal from "../components/bmt/BuyMeThisShareModal.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { buildCheckoutItems } from "../context/orderCartModel.js";
-import { apiPost, toConsumerErrorMessage } from "../lib/api.js";
+import { apiPost, createBmtSession, toConsumerErrorMessage } from "../lib/api.js";
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
@@ -196,11 +197,17 @@ export default function CheckoutPage() {
   const [paymentSession, setPaymentSession] = useState(null);
   const [submitError, setSubmitError] = useState("");
   const [creatingIntent, setCreatingIntent] = useState(false);
+  const [creatingBmt, setCreatingBmt] = useState(false);
   const [applyCoins, setApplyCoins] = useState(false);
   const [userBidAttempted, setUserBidAttempted] = useState(false);
   const [userBidAttemptedAt, setUserBidAttemptedAt] = useState(null);
   const [userBidLoading, setUserBidLoading] = useState(false);
   const [userBidError, setUserBidError] = useState("");
+  const [bmtShareState, setBmtShareState] = useState({
+    open: false,
+    shareUrl: "",
+    expiresAt: "",
+  });
 
   const menuPath = restaurant?.restaurantId
     ? `/public/restaurants/${encodeURIComponent(String(restaurant.restaurantId))}/menu`
@@ -433,6 +440,49 @@ export default function CheckoutPage() {
       );
     } finally {
       setCreatingIntent(false);
+    }
+  }
+
+  async function handleCreateBmt(event) {
+    event.preventDefault();
+    setSubmitError("");
+
+    if (!restaurant?.restaurantId || apiItems.length === 0) {
+      setSubmitError("Your cart is empty.");
+      return;
+    }
+
+    if (!customerName.trim()) {
+      setSubmitError("Customer name is required.");
+      return;
+    }
+
+    setCreatingBmt(true);
+
+    try {
+      const response = await createBmtSession({
+        restaurantId: restaurant.restaurantId,
+        restaurantSlug: restaurant.slug || restaurant.restaurantSlug || null,
+        items: apiItems,
+        fulfillmentType,
+        deliveryAddress: fulfillmentType === "delivery" ? normalizedDeliveryAddress : undefined,
+        requesterName: customerName,
+        requesterPhone: customerPhone,
+        requesterMessage: notes,
+        customerNotes: notes,
+      });
+
+      setBmtShareState({
+        open: true,
+        shareUrl: response.share_url || "",
+        expiresAt: response.expires_at || "",
+      });
+    } catch (error) {
+      setSubmitError(
+        toConsumerErrorMessage(error, "We couldn't create a Buy Me This link.")
+      );
+    } finally {
+      setCreatingBmt(false);
     }
   }
 
@@ -670,23 +720,44 @@ export default function CheckoutPage() {
               ) : null}
 
               {!paymentSession ? (
-                <button
-                  type="submit"
-                  disabled={creatingIntent || previewState.status === "loading"}
-                  style={{
-                    width: "100%",
-                    border: "none",
-                    borderRadius: 16,
-                    background: creatingIntent ? "#94a3b8" : "#11211a",
-                    color: "#fff",
-                    padding: "14px 16px",
-                    fontSize: 15,
-                    fontWeight: 900,
-                    cursor: creatingIntent ? "wait" : "pointer",
-                  }}
-                >
-                  {creatingIntent ? "Preparing payment..." : "Continue to payment"}
-                </button>
+                <div style={{ display: "grid", gap: 10 }}>
+                  <button
+                    type="submit"
+                    disabled={creatingIntent || creatingBmt || previewState.status === "loading"}
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      borderRadius: 16,
+                      background: creatingIntent ? "#94a3b8" : "#11211a",
+                      color: "#fff",
+                      padding: "14px 16px",
+                      fontSize: 15,
+                      fontWeight: 900,
+                      cursor: creatingIntent ? "wait" : "pointer",
+                    }}
+                  >
+                    {creatingIntent ? "Preparing payment..." : "Continue to payment"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCreateBmt}
+                    disabled={creatingIntent || creatingBmt || previewState.status !== "ready"}
+                    style={{
+                      width: "100%",
+                      borderRadius: 16,
+                      border: "1px solid rgba(17,33,26,0.12)",
+                      background: "#fff",
+                      color: "#11211a",
+                      padding: "14px 16px",
+                      fontSize: 15,
+                      fontWeight: 900,
+                      cursor: creatingBmt ? "wait" : "pointer",
+                    }}
+                  >
+                    {creatingBmt ? "Creating Buy Me This link..." : "Buy Me This"}
+                  </button>
+                </div>
               ) : null}
             </form>
 
@@ -994,6 +1065,15 @@ export default function CheckoutPage() {
           </aside>
         </div>
       </div>
+
+      <BuyMeThisShareModal
+        open={bmtShareState.open}
+        onClose={() => setBmtShareState({ open: false, shareUrl: "", expiresAt: "" })}
+        shareUrl={bmtShareState.shareUrl}
+        requesterName={customerName}
+        restaurantName={restaurant?.restaurantName}
+        expiresAt={bmtShareState.expiresAt}
+      />
     </div>
   );
 }
