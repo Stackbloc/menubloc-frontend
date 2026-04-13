@@ -14,8 +14,10 @@ import {
   loginConsumer,
   loginConsumerWithApple,
   loginConsumerWithGoogle,
+  sendSmsCode as sendConsumerSmsCode,
   signupConsumer,
   logoutConsumer,
+  verifySmsCode as verifyConsumerSmsCode,
 } from "../lib/consumerApi.js";
 
 const ConsumerContext = createContext(null);
@@ -24,6 +26,7 @@ export function ConsumerProvider({ children }) {
   const [consumer, setConsumer] = useState(null);   // { id, email, email_verified }
   const [profile, setProfile] = useState(null);     // { display_name, first_name, ... }
   const [allergenFilter, setAllergenFilter] = useState(null);
+  const [authToast, setAuthToast] = useState("");
   const [loading, setLoading] = useState(true);
 
   const applySession = useCallback((data) => {
@@ -36,6 +39,7 @@ export function ConsumerProvider({ children }) {
     setConsumer(null);
     setProfile(null);
     setAllergenFilter(null);
+    setAuthToast("");
   }, []);
 
   const loadMe = useCallback(async () => {
@@ -84,6 +88,21 @@ export function ConsumerProvider({ children }) {
     clearSession();
   }, [clearSession]);
 
+  const sendSmsCode = useCallback(async (phoneNumber) => {
+    return sendConsumerSmsCode(phoneNumber);
+  }, []);
+
+  const verifySmsCode = useCallback(async (phoneNumber, code) => {
+    await verifyConsumerSmsCode(phoneNumber, code);
+    const data = await loadMe();
+    setAuthToast("You're signed in ✓");
+    return data;
+  }, [loadMe]);
+
+  const clearAuthToast = useCallback(() => {
+    setAuthToast("");
+  }, []);
+
   const value = {
     consumer,
     profile,
@@ -94,6 +113,10 @@ export function ConsumerProvider({ children }) {
     loginWithGoogle,
     loginWithApple,
     signup,
+    sendSmsCode,
+    verifySmsCode,
+    authToast,
+    clearAuthToast,
     logout,
     refreshSession: loadMe,
   };

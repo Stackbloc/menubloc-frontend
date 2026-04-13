@@ -8,14 +8,17 @@ export default function BuyMeThisShareModal({
   requesterName,
   restaurantName,
   expiresAt,
+  shareMessage,
 }) {
   const [copied, setCopied] = useState(false);
 
   const shareData = useMemo(() => ({
     title: `${requesterName || "Someone"} wants this from ${restaurantName || "this restaurant"} on Grubbid`,
-    text: "Pay for this order securely on Grubbid before it expires.",
+    text: String(
+      shareMessage || "Dear friend or family member, I would greatly appreciate it if you would buy me this on Grubbid!"
+    ).trim(),
     url: shareUrl,
-  }), [requesterName, restaurantName, shareUrl]);
+  }), [requesterName, restaurantName, shareMessage, shareUrl]);
 
   const links = useMemo(() => buildShareLinks(shareData), [shareData]);
 
@@ -112,6 +115,21 @@ export default function BuyMeThisShareModal({
             Expires {new Date(expiresAt).toLocaleString()}
           </div>
         ) : null}
+
+        <div
+          style={{
+            marginTop: 14,
+            borderRadius: 16,
+            background: "#f8fafc",
+            border: "1px solid rgba(18, 34, 28, 0.08)",
+            padding: "12px 14px",
+            fontSize: 13,
+            color: "#475467",
+            lineHeight: 1.6,
+          }}
+        >
+          {shareData.text}
+        </div>
 
         <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
           {navigator.share ? (

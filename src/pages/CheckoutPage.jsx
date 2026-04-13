@@ -9,18 +9,22 @@
  * ============================================================
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import SmsAuthModal from "../components/auth/SmsAuthModal.jsx";
 import { PageNav } from "../components/NavButton.jsx";
 import BuyMeThisShareModal from "../components/bmt/BuyMeThisShareModal.jsx";
+import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { buildCheckoutItems } from "../context/orderCartModel.js";
 import { apiPost, createBmtSession, toConsumerErrorMessage } from "../lib/api.js";
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
+const DEFAULT_BMT_SHARE_MESSAGE =
+  "Dear friend or family member, I would greatly appreciate it if you would buy me this on Grubbid!";
 
 function useIsMobile(breakpoint = 900) {
   const getMatches = () => {
@@ -52,6 +56,34 @@ function useIsMobile(breakpoint = 900) {
 
 function formatMoney(cents) {
   return `$${(Number(cents || 0) / 100).toFixed(2)}`;
+}
+
+function ShareIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      width="18"
+      height="18"
+      fill="none"
+      style={{ flexShrink: 0 }}
+    >
+      <path
+        d="M14.167 6.667a2.5 2.5 0 1 0-2.357-3.333L7.49 5.494a2.5 2.5 0 0 0 0 2.012l4.32 2.16a2.5 2.5 0 1 0 .745-1.49l-4.32-2.16a2.53 2.53 0 0 0 0-.032l4.32-2.16a2.49 2.49 0 0 0 1.612.593Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.833 15.833a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 function normalizeDeliveryAddress(address) {
@@ -162,7 +194,9 @@ function PaymentStep({ orderId, onSuccess }) {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const { consumer, isAuthenticated, authToast, clearAuthToast } = useConsumer();
   const { restaurant, items, clearCart, updateQuantity, removeItem } = useOrderCart();
+  const bmtSectionRef = useRef(null);
   const isMobile = useIsMobile();
   const availableFulfillmentTypes = useMemo(() => {
     if (Array.isArray(restaurant?.availableFulfillmentTypes) && restaurant.availableFulfillmentTypes.length > 0) {
@@ -198,6 +232,8 @@ export default function CheckoutPage() {
   const [submitError, setSubmitError] = useState("");
   const [creatingIntent, setCreatingIntent] = useState(false);
   const [creatingBmt, setCreatingBmt] = useState(false);
+  const [showBmtConfirm, setShowBmtConfirm] = useState(false);
+  const [showSmsAuthModal, setShowSmsAuthModal] = useState(false);
   const [applyCoins, setApplyCoins] = useState(false);
   const [userBidAttempted, setUserBidAttempted] = useState(false);
   const [userBidAttemptedAt, setUserBidAttemptedAt] = useState(null);
@@ -242,6 +278,9 @@ export default function CheckoutPage() {
   );
 
   const currentPreviewData = previewState.data;
+  const canUseBmt = consumer?.is_phone_verified === true;
+  const bmtGateTitle = isAuthenticated ? "Verify your phone to send this order" : "Sign in by text to use Buy Me This";
+  const bmtGateButton = isAuthenticated ? "Verify by text" : "Sign in by text";
   const eligibleHybridItemCount = currentPreviewData?.hybrid_eligibility?.eligible_item_count || 0;
   const hybridNegotiationEnabled =
     currentPreviewData?.hybrid_eligibility?.negotiation_enabled ??
@@ -265,7 +304,21 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setPaymentSession(null);
+    setShowBmtConfirm(false);
   }, [apiItems, fulfillmentType, normalizedDeliveryAddress, applyCoins]);
+
+  useEffect(() => {
+    if (!authToast) return undefined;
+    const timeoutId = window.setTimeout(() => clearAuthToast(), 2500);
+    return () => window.clearTimeout(timeoutId);
+  }, [authToast, clearAuthToast]);
+
+  function scrollToBmtSection() {
+    bmtSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }
 
   useEffect(() => {
     const bid = previewState.data?.user_bid;
@@ -385,6 +438,7 @@ export default function CheckoutPage() {
   async function handleCreatePaymentIntent(event) {
     event.preventDefault();
     setSubmitError("");
+    setShowBmtConfirm(false);
 
     if (!stripePublishableKey || !stripePromise) {
       setSubmitError("VITE_STRIPE_PUBLISHABLE_KEY is not configured.");
@@ -444,16 +498,16 @@ export default function CheckoutPage() {
   }
 
   async function handleCreateBmt(event) {
-    event.preventDefault();
+    event?.preventDefault?.();
     setSubmitError("");
 
-    if (!restaurant?.restaurantId || apiItems.length === 0) {
-      setSubmitError("Your cart is empty.");
+    if (!canUseBmt) {
+      setShowSmsAuthModal(true);
       return;
     }
 
-    if (!customerName.trim()) {
-      setSubmitError("Customer name is required.");
+    if (!restaurant?.restaurantId || apiItems.length === 0) {
+      setSubmitError("Your cart is empty.");
       return;
     }
 
@@ -466,10 +520,10 @@ export default function CheckoutPage() {
         items: apiItems,
         fulfillmentType,
         deliveryAddress: fulfillmentType === "delivery" ? normalizedDeliveryAddress : undefined,
-        requesterName: customerName,
+        requesterName: customerName.trim() || null,
         requesterPhone: customerPhone,
-        requesterMessage: notes,
-        customerNotes: notes,
+        requesterMessage: notes.trim() || DEFAULT_BMT_SHARE_MESSAGE,
+        customerNotes: notes.trim() || null,
       });
 
       setBmtShareState({
@@ -477,9 +531,13 @@ export default function CheckoutPage() {
         shareUrl: response.share_url || "",
         expiresAt: response.expires_at || "",
       });
+      setShowBmtConfirm(false);
     } catch (error) {
       setSubmitError(
-        toConsumerErrorMessage(error, "We couldn't create a Buy Me This link.")
+        toConsumerErrorMessage(
+          error,
+          "We couldn't create a Buy Me This link. This demo only needs the share link step, not Stripe payment."
+        )
       );
     } finally {
       setCreatingBmt(false);
@@ -738,25 +796,6 @@ export default function CheckoutPage() {
                   >
                     {creatingIntent ? "Preparing payment..." : "Continue to payment"}
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={handleCreateBmt}
-                    disabled={creatingIntent || creatingBmt || previewState.status !== "ready"}
-                    style={{
-                      width: "100%",
-                      borderRadius: 16,
-                      border: "1px solid rgba(17,33,26,0.12)",
-                      background: "#fff",
-                      color: "#11211a",
-                      padding: "14px 16px",
-                      fontSize: 15,
-                      fontWeight: 900,
-                      cursor: creatingBmt ? "wait" : "pointer",
-                    }}
-                  >
-                    {creatingBmt ? "Creating Buy Me This link..." : "Buy Me This"}
-                  </button>
                 </div>
               ) : null}
             </form>
@@ -777,6 +816,124 @@ export default function CheckoutPage() {
                     }}
                   />
                 </Elements>
+                <div
+                  ref={bmtSectionRef}
+                  style={{
+                    marginTop: 18,
+                    paddingTop: 18,
+                    borderTop: "1px solid rgba(17,33,26,0.08)",
+                  }}
+                >
+                  {canUseBmt ? (
+                    <>
+                      <div style={{ fontSize: 13, color: "#667085", lineHeight: 1.5 }}>
+                        Need someone else to pay?
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowBmtConfirm((prev) => !prev)}
+                        disabled={creatingBmt}
+                        style={{
+                          marginTop: 6,
+                          border: "none",
+                          background: "transparent",
+                          color: "#0f766e",
+                          padding: 0,
+                          fontSize: 14,
+                          fontWeight: 700,
+                          cursor: creatingBmt ? "wait" : "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <ShareIcon />
+                        Buy Me This instead
+                      </button>
+
+                      {showBmtConfirm ? (
+                        <div
+                          style={{
+                            marginTop: 14,
+                            borderRadius: 18,
+                            border: "1px solid rgba(17,33,26,0.10)",
+                            background: "#fffef8",
+                            padding: "14px 16px",
+                          }}
+                        >
+                          <div style={{ fontSize: 15, fontWeight: 900, color: "#11211a" }}>
+                            Send this order to someone else to pay?
+                          </div>
+                          <div style={{ marginTop: 6, fontSize: 13, color: "#667085", lineHeight: 1.5 }}>
+                            This request expires in 30 minutes.
+                          </div>
+                          <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 10 }}>
+                            <button
+                              type="button"
+                              onClick={handleCreateBmt}
+                              disabled={creatingBmt}
+                              style={{
+                                borderRadius: 14,
+                                border: "none",
+                                background: "#11211a",
+                                color: "#fff",
+                                padding: "12px 14px",
+                                fontSize: 14,
+                                fontWeight: 900,
+                                cursor: creatingBmt ? "wait" : "pointer",
+                              }}
+                            >
+                              {creatingBmt ? "Creating share link..." : "Create Buy Me This link"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowBmtConfirm(false)}
+                              disabled={creatingBmt}
+                              style={{
+                                borderRadius: 14,
+                                border: "1px solid rgba(17,33,26,0.12)",
+                                background: "#fff",
+                                color: "#11211a",
+                                padding: "12px 14px",
+                                fontSize: 14,
+                                fontWeight: 800,
+                                cursor: creatingBmt ? "wait" : "pointer",
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : (
+                    <div
+                      style={{
+                        paddingTop: 2,
+                      }}
+                    >
+                      <div style={{ fontSize: 14, fontWeight: 900, color: "#11211a" }}>
+                        {bmtGateTitle}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowSmsAuthModal(true)}
+                        style={{
+                          marginTop: 6,
+                          border: "none",
+                          background: "transparent",
+                          color: "#0f766e",
+                          padding: 0,
+                          fontSize: 14,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {bmtGateButton}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : null}
           </section>
@@ -1073,7 +1230,39 @@ export default function CheckoutPage() {
         requesterName={customerName}
         restaurantName={restaurant?.restaurantName}
         expiresAt={bmtShareState.expiresAt}
+        shareMessage={notes.trim() || DEFAULT_BMT_SHARE_MESSAGE}
       />
+      <SmsAuthModal
+        open={showSmsAuthModal}
+        onClose={() => setShowSmsAuthModal(false)}
+        onSuccess={() => {
+          setShowSmsAuthModal(false);
+          setShowBmtConfirm(true);
+          setSubmitError("");
+          setTimeout(() => {
+            scrollToBmtSection();
+          }, 0);
+        }}
+      />
+      {authToast ? (
+        <div
+          style={{
+            position: "fixed",
+            right: 18,
+            bottom: 18,
+            zIndex: 1500,
+            borderRadius: 14,
+            background: "#11211a",
+            color: "#fff",
+            padding: "12px 14px",
+            fontSize: 13,
+            fontWeight: 800,
+            boxShadow: "0 18px 40px rgba(15,23,42,0.24)",
+          }}
+        >
+          {authToast}
+        </div>
+      ) : null}
     </div>
   );
 }

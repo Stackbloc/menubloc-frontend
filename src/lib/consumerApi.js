@@ -42,6 +42,8 @@ export const logoutConsumer        = ()                    => post("/api/consume
 export const forgotPassword        = (email)               => post("/api/consumer-auth/forgot-password", { email });
 export const validateResetToken    = (token)               => get(`/api/consumer-auth/reset-password?token=${encodeURIComponent(token)}`);
 export const resetPassword         = (token, password)     => post("/api/consumer-auth/reset-password", { token, password });
+export const sendSmsCode           = (phone_number)        => post("/api/auth/send-code", { phone_number });
+export const verifySmsCode         = (phone_number, code)  => post("/api/auth/verify-code", { phone_number, code });
 
 // ── Profile ───────────────────────────────────────────────────────────────
 export const getConsumerProfile    = ()     => get("/api/consumer/profile");
