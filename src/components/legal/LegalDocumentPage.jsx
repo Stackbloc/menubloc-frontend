@@ -1,5 +1,6 @@
 import React from "react";
 import { PageNav } from "../NavButton.jsx";
+import Breadcrumbs from "../ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../grubbid/GrubbidPrimitives.jsx";
 import { LEGAL_CONTACT, LEGAL_EFFECTIVE_DATE } from "../../content/legal.js";
 
@@ -21,6 +22,12 @@ export default function LegalDocumentPage({ document, eyebrow }) {
   return (
     <PageShell width="reading">
       <PageNav back />
+      <Breadcrumbs
+        items={[
+          { label: "Discovery", to: "/" },
+          { label: document.title },
+        ]}
+      />
 
       <PageHero
         eyebrow={eyebrow}

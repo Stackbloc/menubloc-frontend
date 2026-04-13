@@ -11,6 +11,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { PageNav } from "../components/NavButton.jsx";
+import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -204,6 +205,12 @@ export default function Top5HealthiestPage() {
       >
         {/* Nav */}
         <PageNav />
+        <Breadcrumbs
+          items={[
+            { label: "Discovery", to: "/" },
+            { label: "Top Health Score Dishes" },
+          ]}
+        />
 
         {/* Hero */}
         <div style={{ marginBottom: isMobile ? 28 : 40 }}>

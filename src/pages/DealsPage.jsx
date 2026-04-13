@@ -6,8 +6,9 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { PageNav } from "../components/NavButton.jsx";
+import GlobalHeader from "../components/layout/GlobalHeader.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
+import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import {
   Card,
   FilterChip,
@@ -399,7 +400,13 @@ export default function DealsPage() {
 
   return (
     <PageShell width="wide">
-      <PageNav />
+      <GlobalHeader />
+      <Breadcrumbs
+        items={[
+          { label: "Discovery", to: "/" },
+          { label: "Deals" },
+        ]}
+      />
 
       <PageSplit
         aside={(

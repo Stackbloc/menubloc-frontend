@@ -11,6 +11,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { PageNav } from "../components/NavButton.jsx";
+import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import { Card, PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
 
 const CATEGORIES = [
@@ -88,6 +89,12 @@ export default function TopPicksPage() {
   return (
     <PageShell>
       <PageNav back />
+      <Breadcrumbs
+        items={[
+          { label: "Discovery", to: "/" },
+          { label: "Top Picks" },
+        ]}
+      />
 
       <PageHero
         eyebrow="Curated by Grubbid Intelligence"

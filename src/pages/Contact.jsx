@@ -10,6 +10,7 @@
 
 import React from "react";
 import { PageNav } from "../components/NavButton.jsx";
+import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
 
 const introStyle = {
@@ -59,6 +60,12 @@ export default function Contact() {
   return (
     <PageShell width="reading">
       <PageNav back />
+      <Breadcrumbs
+        items={[
+          { label: "Discovery", to: "/" },
+          { label: "Contact" },
+        ]}
+      />
 
       <PageHero
         title="Contact Us"
