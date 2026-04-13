@@ -7,6 +7,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { PageNav } from "../components/NavButton.jsx";
+import ShareIcon from "../components/share/ShareIcon.jsx";
 import {
   Card,
   FilterChip,
@@ -19,56 +20,12 @@ import {
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
-const CUISINE_OPTIONS = [
-  "American",
-  "Chinese",
-  "Indian",
-  "Italian",
-  "Japanese",
-  "Korean",
-  "Mexican",
-  "Thai",
-  "Vietnamese",
+const PRICE_FILTER_OPTIONS = [
+  { label: "All", value: "all" },
+  { label: "Under $10", value: "under_10" },
+  { label: "$10 to $20", value: "10_to_20" },
+  { label: "$20+", value: "20_plus" },
 ];
-
-const DISTANCE_OPTIONS = [
-  { label: "5 miles", value: "5" },
-  { label: "10 miles", value: "10" },
-  { label: "25 miles", value: "25" },
-  { label: "50 miles", value: "50" },
-];
-
-const SORT_OPTIONS = [
-  { label: "Default order", value: "default" },
-  { label: "Closest to me", value: "closest" },
-];
-
-function formatDealBadge(deal) {
-  const raw = String(
-    deal?.discount_value ||
-      (deal?.deal_type === "percent_off" && deal?.discount_percent != null ? `${deal.discount_percent}%` : "") ||
-      (deal?.deal_type === "amount_off" && deal?.discount_amount_cents != null
-        ? `$${(deal.discount_amount_cents / 100).toFixed(2)}`
-        : "") ||
-      (deal?.deal_type === "fixed_price" && deal?.fixed_price_cents != null
-        ? `$${(deal.fixed_price_cents / 100).toFixed(2)}`
-        : "")
-  ).trim();
-
-  if (!raw) return "";
-  if (deal?.deal_type === "fixed_price" && /^\$\d+(?:\.\d{1,2})?$/i.test(raw)) {
-    return `Only ${raw}`;
-  }
-  if (deal?.deal_type === "amount_off" && /^\$\d+(?:\.\d{1,2})?$/i.test(raw)) {
-    return `${raw} off`;
-  }
-  if (deal?.deal_type === "percent_off" && /^\d+(?:\.\d+)?%$/i.test(raw)) {
-    return `${raw} off`;
-  }
-  if (/^\d+(?:\.\d+)?%$/i.test(raw)) return `${raw} off`;
-  if (/^\$\d+(?:\.\d{1,2})?$/i.test(raw)) return `${raw} off`;
-  return raw;
-}
 
 function buildDealUrl(deal) {
   const base = deal.restaurant_slug || deal.restaurant_id;
@@ -102,11 +59,42 @@ function getGroupDistanceMiles(group) {
   return candidate ? Number(candidate.distance_miles) : null;
 }
 
-function formatDistanceMiles(value) {
+function formatInlineDistanceMiles(value) {
   const miles = Number(value);
   if (!Number.isFinite(miles)) return "";
-  if (miles < 10) return `${miles.toFixed(1)} miles away`;
-  return `${Math.round(miles)} miles away`;
+  if (miles < 10) return `${miles.toFixed(1)} mi`;
+  return `${Math.round(miles)} mi`;
+}
+
+function getDealDisplayPrice(deal) {
+  const menuPrice = Number.parseFloat(deal?.menu_item_price);
+  if (Number.isFinite(menuPrice) && menuPrice >= 0) {
+    return Math.round(menuPrice * 100);
+  }
+
+  const fixedPriceCents = Number(deal?.fixed_price_cents);
+  if (Number.isFinite(fixedPriceCents) && fixedPriceCents >= 0) {
+    return fixedPriceCents;
+  }
+
+  return null;
+}
+
+function getGroupPriceCents(group) {
+  for (const deal of group.deals) {
+    const price = getDealDisplayPrice(deal);
+    if (price != null) return price;
+  }
+  return null;
+}
+
+function matchesPriceFilter(priceCents, priceFilter) {
+  if (priceFilter === "all") return true;
+  if (!Number.isFinite(priceCents)) return false;
+  if (priceFilter === "under_10") return priceCents < 1000;
+  if (priceFilter === "10_to_20") return priceCents >= 1000 && priceCents < 2000;
+  if (priceFilter === "20_plus") return priceCents >= 2000;
+  return true;
 }
 
 function groupDealsByRestaurant(deals) {
@@ -134,8 +122,15 @@ function groupDealsByRestaurant(deals) {
       primaryDeal: sortedDeals[0] || null,
       extraDeals: sortedDeals.slice(1),
       distanceMiles: getGroupDistanceMiles({ deals: sortedDeals }),
+      priceCents: getGroupPriceCents({ deals: sortedDeals }),
     };
   });
+}
+
+function buildRestaurantMenuUrl(restaurantSlug, restaurantId) {
+  const base = restaurantSlug || restaurantId;
+  if (!base) return null;
+  return `/restaurants/${base}/menu`;
 }
 
 function buildRestaurantScopedShareUrl({
@@ -145,7 +140,6 @@ function buildRestaurantScopedShareUrl({
   lat,
   lng,
   cuisine,
-  radiusMiles,
   restaurantId,
 }) {
   const url = new URL("/deals", origin);
@@ -154,7 +148,6 @@ function buildRestaurantScopedShareUrl({
   if (lat != null) url.searchParams.set("lat", String(lat));
   if (lng != null) url.searchParams.set("lng", String(lng));
   if (cuisine) url.searchParams.set("cuisine", cuisine);
-  if (radiusMiles) url.searchParams.set("radius_miles", radiusMiles);
   if (restaurantId != null && restaurantId !== "") {
     url.searchParams.set("restaurant_id", String(restaurantId));
   }
@@ -181,75 +174,60 @@ function DealSummary({ deal, onShare = null }) {
 
   return (
     <div>
-      <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.4 }}>
-        {dealUrl ? (
-          <Link
-            to={dealUrl}
-            style={{
-              color: "var(--gb-color-brand, #1a73e8)",
-              textDecoration: "none",
-            }}
-          >
-            {deal.title || "Untitled Deal"}
-          </Link>
-        ) : (
-          <span style={{ color: "var(--gb-color-ink-strong)" }}>
-            {deal.title || "Untitled Deal"}
-          </span>
-        )}
-      </div>
-
-      {deal.description ? (
-        <div style={{ marginTop: 6, color: "var(--gb-color-ink-soft)", fontSize: 14, lineHeight: 1.55 }}>
-          {deal.description}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 10,
+        }}
+      >
+        <div style={{ minWidth: 0, flex: "1 1 260px", fontSize: 16, fontWeight: 800, lineHeight: 1.35 }}>
+          {dealUrl ? (
+            <Link
+              to={dealUrl}
+              style={{
+                color: "var(--gb-color-brand, #1a73e8)",
+                textDecoration: "none",
+              }}
+            >
+              {deal.title || "Untitled Deal"}
+            </Link>
+          ) : (
+            <span style={{ color: "var(--gb-color-ink-strong)" }}>
+              {deal.title || "Untitled Deal"}
+            </span>
+          )}
         </div>
-      ) : null}
 
-      {deal.discount_value || deal.discount_percent != null || deal.discount_amount_cents != null || deal.fixed_price_cents != null ? (
-        <div
-          style={{
-            marginTop: 8,
-            display: "inline-block",
-            padding: "3px 10px",
-            borderRadius: "var(--gb-radius-pill)",
-            background: "var(--gb-color-success-bg)",
-            border: "1px solid var(--gb-color-success-border)",
-            color: "var(--gb-color-success-text)",
-            fontSize: 12,
-            fontWeight: 800,
-          }}
-        >
-          {formatDealBadge(deal)}
-        </div>
-      ) : null}
-
-      {dealUrl ? (
-        <div style={{ marginTop: 10 }}>
-          <Link to={dealUrl} className="gb-linkish" style={{ fontSize: 13, fontWeight: 800 }}>
-            {deal.menu_item_id ? `View ${deal.menu_item_name || "Item"} →` : "View Menu →"}
-          </Link>
-        </div>
-      ) : null}
-
-      {onShare ? (
-        <div style={{ marginTop: 12 }}>
+        {onShare ? (
           <button
             type="button"
             onClick={onShare}
             style={{
-              border: "1px solid var(--gb-color-border, rgba(0,0,0,0.12))",
-              background: "#fff",
-              color: "var(--gb-color-ink-strong)",
-              borderRadius: 999,
-              padding: "8px 12px",
-              fontSize: 12,
-              fontWeight: 800,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              border: "none",
+              background: "transparent",
+              padding: 0,
+              color: "var(--gb-color-ink-muted)",
+              fontSize: 13,
+              fontWeight: 700,
               cursor: "pointer",
               whiteSpace: "nowrap",
             }}
           >
-            Share
+            <ShareIcon size={14} />
+            <span>Share this deal</span>
           </button>
+        ) : null}
+      </div>
+
+      {deal.description ? (
+        <div style={{ marginTop: 4, color: "var(--gb-color-ink-soft)", fontSize: 14, lineHeight: 1.45 }}>
+          {deal.description}
         </div>
       ) : null}
     </div>
@@ -270,8 +248,8 @@ export default function DealsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cuisine, setCuisine] = useState(urlParams.get("cuisine") || "");
-  const [radiusMiles, setRadiusMiles] = useState(urlParams.get("radius_miles") || "");
-  const [sortMode, setSortMode] = useState("default");
+  const [cuisineOptions, setCuisineOptions] = useState([]);
+  const [priceFilter, setPriceFilter] = useState("all");
   const [expandedRestaurants, setExpandedRestaurants] = useState(() =>
     expandedRestaurantId ? { [expandedRestaurantId]: true } : {}
   );
@@ -286,13 +264,24 @@ export default function DealsPage() {
   }, [expandedRestaurantId]);
 
   useEffect(() => {
-    setSortMode((prev) => {
-      if (userLat != null && userLng != null) {
-        return prev === "default" ? "closest" : prev;
+    let cancelled = false;
+
+    async function loadCuisineOptions() {
+      try {
+        const response = await fetch(`${API_BASE}/api/meta/cuisines`);
+        const data = await response.json().catch(() => ({}));
+        if (cancelled || !data?.ok || !Array.isArray(data.cuisines)) return;
+        setCuisineOptions(data.cuisines);
+      } catch {
+        if (!cancelled) setCuisineOptions([]);
       }
-      return prev === "closest" ? "default" : prev;
-    });
-  }, [userLat, userLng]);
+    }
+
+    loadCuisineOptions();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (urlLat != null && urlLng != null) return;
@@ -322,10 +311,9 @@ export default function DealsPage() {
         if (urlCity) params.set("city", urlCity);
         if (urlState) params.set("state", urlState);
         if (cuisine) params.set("cuisine", cuisine);
-        if (userLat != null && userLng != null && radiusMiles) {
+        if (userLat != null && userLng != null) {
           params.set("lat", userLat);
           params.set("lng", userLng);
-          params.set("radius_miles", radiusMiles);
         }
 
         const response = await fetch(`${API_BASE}/deals?${params.toString()}`);
@@ -346,7 +334,7 @@ export default function DealsPage() {
     return () => {
       cancelled = true;
     };
-  }, [urlCity, urlState, cuisine, userLat, userLng, radiusMiles]);
+  }, [urlCity, urlState, cuisine, userLat, userLng]);
 
   const groupedDeals = useMemo(() => {
     const groups = groupDealsByRestaurant(deals).map((group, index) => ({
@@ -354,20 +342,18 @@ export default function DealsPage() {
       originalIndex: index,
     }));
 
-    if (sortMode !== "closest" || userLat == null || userLng == null) {
-      return groups;
-    }
-
-    return [...groups].sort((a, b) => {
-      const aDistance = Number.isFinite(a.distanceMiles) ? a.distanceMiles : null;
-      const bDistance = Number.isFinite(b.distanceMiles) ? b.distanceMiles : null;
-      if (aDistance == null && bDistance == null) return a.originalIndex - b.originalIndex;
-      if (aDistance == null) return 1;
-      if (bDistance == null) return -1;
-      if (aDistance !== bDistance) return aDistance - bDistance;
-      return a.originalIndex - b.originalIndex;
-    });
-  }, [deals, sortMode, userLat, userLng]);
+    return [...groups]
+      .sort((a, b) => {
+        const aDistance = Number.isFinite(a.distanceMiles) ? a.distanceMiles : null;
+        const bDistance = Number.isFinite(b.distanceMiles) ? b.distanceMiles : null;
+        if (aDistance == null && bDistance == null) return a.originalIndex - b.originalIndex;
+        if (aDistance == null) return 1;
+        if (bDistance == null) return -1;
+        if (aDistance !== bDistance) return aDistance - bDistance;
+        return a.originalIndex - b.originalIndex;
+      })
+      .filter((group) => matchesPriceFilter(group.priceCents, priceFilter));
+  }, [deals, priceFilter]);
   const hasLocation = userLat != null && userLng != null;
 
   function toggleRestaurant(groupKey) {
@@ -377,14 +363,12 @@ export default function DealsPage() {
     }));
   }
 
-  async function handleShare(group) {
-    const oneDealOnly = group.deals.length === 1;
-    const singleDeal = group.primaryDeal;
-    const singleDealUrl = singleDeal ? buildDealUrl(singleDeal) : null;
+  async function handleShare(group, deal = group.primaryDeal) {
+    const dealUrl = deal ? buildDealUrl(deal) : null;
 
     const shareUrl =
-      oneDealOnly && singleDealUrl
-        ? new URL(singleDealUrl, window.location.origin).toString()
+      dealUrl
+        ? new URL(dealUrl, window.location.origin).toString()
         : buildRestaurantScopedShareUrl({
             origin: window.location.origin,
             city: urlCity,
@@ -392,17 +376,13 @@ export default function DealsPage() {
             lat: userLat,
             lng: userLng,
             cuisine,
-            radiusMiles,
             restaurantId: group.restaurantId || group.key,
           });
 
-    const shareTitle = oneDealOnly
-      ? `${group.restaurantName}: ${singleDeal?.title || "Deal"}`
-      : `${group.restaurantName} deals on Grubbid`;
-
-    const shareText = oneDealOnly
-      ? `Check out this deal from ${group.restaurantName}.`
-      : `Check out all deals from ${group.restaurantName}.`;
+    const shareTitle = `${group.restaurantName}: ${deal?.title || "Deal"}`;
+    const shareText = deal?.title
+      ? `Check out ${deal.title} from ${group.restaurantName}.`
+      : `Check out this deal from ${group.restaurantName}.`;
 
     try {
       await shareLink({
@@ -410,7 +390,7 @@ export default function DealsPage() {
         title: shareTitle,
         text: shareText,
       });
-    } catch (_error) {
+    } catch {
       // User dismissed share sheet or sharing failed.
     }
   }
@@ -423,57 +403,40 @@ export default function DealsPage() {
         aside={(
           <Card>
             <div style={{ marginBottom: 14, color: "var(--gb-color-ink-strong)", fontSize: 16, fontWeight: 900 }}>
-              Filter By
+              Filters
             </div>
             <div style={{ display: "grid", gap: 14 }}>
               <SelectField label="Cuisine" value={cuisine} onChange={(event) => setCuisine(event.target.value)}>
                 <option value="">All</option>
-                {CUISINE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
+                {cuisineOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </SelectField>
 
-              {hasLocation ? (
-                <>
-                  <SelectField
-                    label="Distance"
-                    value={radiusMiles}
-                    onChange={(event) => setRadiusMiles(event.target.value)}
-                  >
-                    <option value="">Any distance</option>
-                    {DISTANCE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </SelectField>
+              <SelectField label="Price" value={priceFilter} onChange={(event) => setPriceFilter(event.target.value)}>
+                {PRICE_FILTER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </SelectField>
 
-                  <SelectField
-                    label="Sort By"
-                    value={sortMode}
-                    onChange={(event) => setSortMode(event.target.value)}
-                  >
-                    {SORT_OPTIONS.map((opt) => (
-                      <option
-                        key={opt.value}
-                        value={opt.value}
-                        disabled={opt.value === "closest" && !hasLocation}
-                      >
-                        {opt.label}
-                      </option>
-                    ))}
-                  </SelectField>
-                </>
-              ) : locDetecting ? (
+              {!hasLocation && locDetecting ? (
                 <div style={{ fontSize: 13, color: "var(--gb-color-ink-muted)" }}>
-                  Detecting location for distance filter…
+                  Detecting location for nearby deals…
                 </div>
               ) : null}
 
-              <FilterChip active={!cuisine && !radiusMiles} onClick={() => { setCuisine(""); setRadiusMiles(""); }}>
-                Show all deals
+              <FilterChip
+                active={!cuisine && priceFilter === "all"}
+                onClick={() => {
+                  setCuisine("");
+                  setPriceFilter("all");
+                }}
+              >
+                Reset filters
               </FilterChip>
             </div>
           </Card>
@@ -531,6 +494,7 @@ export default function DealsPage() {
                   const expandedKey = group.restaurantId || group.key;
                   const isExpanded = Boolean(expandedRestaurants[expandedKey]);
                   const hiddenCount = group.extraDeals.length;
+                  const restaurantUrl = buildRestaurantMenuUrl(group.restaurantSlug, group.restaurantId);
 
                   return (
                     <Card
@@ -538,36 +502,59 @@ export default function DealsPage() {
                       muted
                       style={{
                         borderRadius: "var(--gb-radius-card-tight)",
-                        padding: "16px 20px",
+                        padding: "14px 18px",
                         boxShadow: "none",
                       }}
                     >
                       <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ color: "var(--gb-color-ink-strong)", fontSize: 18, fontWeight: 900, marginBottom: 6 }}>
-                            {group.restaurantName}
-                          </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            alignItems: "baseline",
+                            gap: 6,
+                            marginBottom: 8,
+                          }}
+                        >
+                          {restaurantUrl ? (
+                            <Link
+                              to={restaurantUrl}
+                              style={{
+                                color: "var(--gb-color-ink-strong)",
+                                fontSize: 17,
+                                fontWeight: 900,
+                                textDecoration: "none",
+                              }}
+                            >
+                              {group.restaurantName}
+                            </Link>
+                          ) : (
+                            <div style={{ color: "var(--gb-color-ink-strong)", fontSize: 17, fontWeight: 900 }}>
+                              {group.restaurantName}
+                            </div>
+                          )}
                           {group.distanceMiles != null ? (
                             <div
                               style={{
                                 color: "var(--gb-color-ink-muted)",
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: 600,
-                                marginBottom: 8,
                               }}
                             >
-                              {formatDistanceMiles(group.distanceMiles)}
+                              {"• "}{formatInlineDistanceMiles(group.distanceMiles)}
                             </div>
                           ) : null}
-                          {group.primaryDeal ? (
-                            <DealSummary
-                              deal={group.primaryDeal}
-                              onShare={() => handleShare(group)}
-                            />
-                          ) : null}
+                        </div>
+                        {group.primaryDeal ? (
+                          <DealSummary
+                            deal={group.primaryDeal}
+                            onShare={() => handleShare(group, group.primaryDeal)}
+                          />
+                        ) : null}
                       </div>
 
                       {hiddenCount > 0 ? (
-                        <div style={{ marginTop: 14 }}>
+                        <div style={{ marginTop: 12 }}>
                           <button
                             type="button"
                             onClick={() => toggleRestaurant(expandedKey)}
@@ -581,7 +568,9 @@ export default function DealsPage() {
                               cursor: "pointer",
                             }}
                           >
-                            {isExpanded ? "Hide Additional Deals" : `View More Deals (${hiddenCount})`}
+                            {isExpanded
+                              ? "Hide additional deals"
+                              : `View more deals from ${group.restaurantName}${hiddenCount > 0 ? ` (${hiddenCount})` : ""}`}
                           </button>
 
                           {isExpanded ? (
@@ -596,7 +585,7 @@ export default function DealsPage() {
                             >
                               {group.extraDeals.map((deal) => (
                                 <div key={deal.deal_id || deal.id}>
-                                  <DealSummary deal={deal} />
+                                  <DealSummary deal={deal} onShare={() => handleShare(group, deal)} />
                                 </div>
                               ))}
                             </div>
