@@ -55,6 +55,34 @@ function resolvePriceValue(row) {
   return null;
 }
 
+function extractIngredientReasonParts(row) {
+  const reasons = Array.isArray(row?.match_reasons)
+    ? row.match_reasons
+    : Array.isArray(row?.item?.match_reasons)
+      ? row.item.match_reasons
+      : [];
+
+  const tokens = [];
+  for (const reason of reasons) {
+    const text = String(reason || "").trim();
+    let raw = "";
+    if (text.startsWith("Ingredient match:")) {
+      raw = text.slice("Ingredient match:".length);
+    } else if (text.startsWith("Inferred ingredient text match:")) {
+      raw = text.slice("Inferred ingredient text match:".length);
+    } else {
+      continue;
+    }
+    raw
+      .split(",")
+      .map((token) => token.trim())
+      .filter(Boolean)
+      .forEach((token) => tokens.push(token));
+  }
+
+  return Array.from(new Set(tokens)).slice(0, 3);
+}
+
 export function buildMatchPreview(row, queryMeta, matchContext) {
   const parsed = queryMeta && typeof queryMeta === "object" ? queryMeta : {};
   const nutritionIntent = parsed?.nutrition_intent || {};
@@ -93,6 +121,21 @@ export function buildMatchPreview(row, queryMeta, matchContext) {
     diet?.low_sodium === true;
   const wantsPrice = parsed?.price?.min != null || parsed?.price?.max != null;
   const wantsDiet = diet?.vegan || diet?.vegetarian || diet?.gluten_free;
+  const ingredientMatches = extractIngredientReasonParts(row);
+  const wantsIngredientExplanation =
+    ingredientMatches.length > 0 &&
+    (
+      (Array.isArray(parsed?.include_ingredients) && parsed.include_ingredients.length > 0) ||
+      (Array.isArray(parsed?.ingredient_terms) && parsed.ingredient_terms.length > 0)
+    );
+
+  if (wantsIngredientExplanation) {
+    const text = `Ingredient match: ${ingredientMatches.join(", ")}`;
+    return {
+      parts: [text],
+      text,
+    };
+  }
 
   const dietPart = (() => {
     if (diet?.vegan && asBool(resolveItemFlag(row, "is_vegan"))) return "Vegan";
