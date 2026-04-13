@@ -8,6 +8,13 @@ function toPositiveInteger(value, fallback = 1) {
   return normalized > 0 ? normalized : fallback;
 }
 
+function normalizeTimestamp(value) {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric > 0) return numeric;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 function normalizeModifier(modifier, index = 0) {
   const groupId = String(
     modifier?.groupId ??
@@ -46,6 +53,15 @@ export function computeLineTotals(line) {
     line?.basePriceCents ?? line?.base_price_cents ?? line?.priceCents ?? line?.price_cents,
     0
   );
+  const originalBasePriceCents = toInteger(
+    line?.originalBasePriceCents ??
+      line?.original_base_price_cents ??
+      line?.basePriceCents ??
+      line?.base_price_cents ??
+      line?.priceCents ??
+      line?.price_cents,
+    basePriceCents
+  );
   const modifiers = Array.isArray(line?.modifiers) ? line.modifiers.map(normalizeModifier) : [];
   const modifierTotalCents = modifiers.reduce(
     (sum, modifier) => sum + toInteger(modifier?.priceDeltaCents, 0),
@@ -58,6 +74,9 @@ export function computeLineTotals(line) {
     ...line,
     quantity,
     basePriceCents,
+    originalBasePriceCents,
+    pricingType: String(line?.pricingType ?? line?.pricing_type ?? "").trim(),
+    pricingLabel: String(line?.pricingLabel ?? line?.pricing_label ?? "").trim(),
     modifiers,
     unitPriceCents,
     lineTotalCents,
@@ -85,24 +104,58 @@ export function normalizeCartLine(line) {
       line?.basePriceCents ?? line?.base_price_cents ?? line?.priceCents ?? line?.price_cents,
       0
     ),
+    originalBasePriceCents: toInteger(
+      line?.originalBasePriceCents ??
+        line?.original_base_price_cents ??
+        line?.basePriceCents ??
+        line?.base_price_cents ??
+        line?.priceCents ??
+        line?.price_cents,
+      0
+    ),
+    pricingType: String(line?.pricingType ?? line?.pricing_type ?? "").trim(),
+    pricingLabel: String(line?.pricingLabel ?? line?.pricing_label ?? "").trim(),
   });
 }
 
 export function normalizeStoredCart(raw) {
-  const restaurant = raw?.restaurant
+  const restaurantSource = raw?.restaurant || (raw?.restaurant_id ? {
+    restaurantId: raw.restaurant_id,
+    restaurantName: raw.restaurant_name ?? raw.restaurantName ?? "",
+    slug: raw.restaurant_slug ?? raw.slug ?? raw.restaurantSlug ?? null,
+  } : null);
+  const restaurant = restaurantSource
     ? {
-        ...raw.restaurant,
-        restaurantId: toInteger(raw.restaurant.restaurantId ?? raw.restaurant.restaurant_id, 0),
+        ...restaurantSource,
+        restaurantId: toInteger(restaurantSource.restaurantId ?? restaurantSource.restaurant_id, 0),
         restaurantName: String(
-          raw.restaurant.restaurantName ?? raw.restaurant.restaurant_name ?? ""
+          restaurantSource.restaurantName ?? restaurantSource.restaurant_name ?? ""
         ).trim(),
+        slug: restaurantSource.slug ?? null,
       }
     : null;
-  const items = Array.isArray(raw?.items) ? raw.items.map(normalizeCartLine) : [];
+  const rawItems = Array.isArray(raw?.items) ? raw.items : [];
+  const items = rawItems
+    .map(normalizeCartLine)
+    .filter((item) => item.menuItemId > 0 && item.restaurantId > 0);
+  const updatedAt = normalizeTimestamp(raw?.updatedAt ?? raw?.updated_at);
+
+  if (!restaurant?.restaurantId || items.length === 0) {
+    return {
+      restaurant: null,
+      items: [],
+      updatedAt: null,
+    };
+  }
+
+  const sameRestaurantItems = items.filter(
+    (item) => Number(item.restaurantId) === Number(restaurant.restaurantId)
+  );
 
   return {
-    restaurant: items.length > 0 ? restaurant : null,
-    items,
+    restaurant,
+    items: sameRestaurantItems,
+    updatedAt,
   };
 }
 
@@ -146,6 +199,17 @@ export function createCartLine({ restaurant, item }) {
     name: item?.name,
     description: item?.description,
     basePriceCents,
+    originalBasePriceCents: toInteger(
+      item?.originalBasePriceCents ??
+        item?.original_base_price_cents ??
+        item?.basePriceCents ??
+        item?.base_price_cents ??
+        item?.priceCents ??
+        item?.price_cents,
+      basePriceCents
+    ),
+    pricingType: item?.pricingType ?? item?.pricing_type ?? "",
+    pricingLabel: item?.pricingLabel ?? item?.pricing_label ?? "",
     quantity: item?.quantity,
     modifiers: item?.modifiers,
     specialInstructions: item?.specialInstructions ?? null,
@@ -179,6 +243,7 @@ export function addItemToCart(cartState, payload) {
   ) {
     return {
       ok: false,
+      code: "restaurant_conflict",
       cart: current,
       message: `Your cart already has items from ${current.restaurant.restaurantName}. Clear it before ordering from another restaurant.`,
     };
@@ -201,6 +266,7 @@ export function addItemToCart(cartState, payload) {
     cart: {
       restaurant: current.restaurant || nextRestaurant,
       items,
+      updatedAt: Date.now(),
     },
     addedLine: existingIndex >= 0 ? items[existingIndex] : nextLine,
   };
@@ -220,6 +286,7 @@ export function updateCartLineQuantity(cartState, lineId, quantity) {
   return {
     restaurant: nextItems.length > 0 ? current.restaurant : null,
     items: nextItems,
+    updatedAt: nextItems.length > 0 ? Date.now() : null,
   };
 }
 
@@ -231,6 +298,7 @@ export function removeCartLine(cartState, lineId) {
   return {
     restaurant: nextItems.length > 0 ? current.restaurant : null,
     items: nextItems,
+    updatedAt: nextItems.length > 0 ? Date.now() : null,
   };
 }
 

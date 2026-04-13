@@ -34,7 +34,6 @@ import BasketSummaryBar from "../components/basket/BasketSummaryBar.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ModifierSheet from "../components/basket/ModifierSheet.jsx";
 import { itemHasRequiredModifiers } from "../components/basket/modifierModel.js";
-import OrderCartToast from "../components/basket/OrderCartToast.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import {
@@ -423,9 +422,6 @@ export default function PublicMenuPage() {
     items: cartItems,
     itemCount,
     subtotalCents,
-    notice,
-    clearNotice,
-    handleNoticeAction,
     updateQuantity,
     removeItem,
   } = useOrderCart();
@@ -1694,12 +1690,6 @@ export default function PublicMenuPage() {
           );
           setModifierItem(null);
         }}
-      />
-      <OrderCartToast
-        notice={notice}
-        onDismiss={clearNotice}
-        onAction={handleNoticeAction}
-        bottomOffset={orderMode && hasBasketItems ? 94 : 18}
       />
       {orderMode && hasBasketItems ? (
         <BasketSummaryBar

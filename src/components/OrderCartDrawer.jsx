@@ -12,11 +12,9 @@ export default function OrderCartDrawer() {
     restaurant,
     items,
     isOpen,
-    notice,
     subtotalCents,
     closeCart,
     clearCart,
-    clearNotice,
     updateQuantity,
     removeItem,
   } = useOrderCart();
@@ -119,38 +117,6 @@ export default function OrderCartDrawer() {
               ×
             </button>
           </div>
-          {notice?.message ? (
-            <div
-              style={{
-                marginTop: 12,
-                padding: "10px 12px",
-                borderRadius: 12,
-                background: notice.tone === "warning" ? "#fef3c7" : "#dcfce7",
-                color: notice.tone === "warning" ? "#92400e" : "#166534",
-                fontSize: 12,
-                fontWeight: 700,
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
-              <span>{notice.message}</span>
-              <button
-                type="button"
-                onClick={clearNotice}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  color: "inherit",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  cursor: "pointer",
-                }}
-              >
-                Dismiss
-              </button>
-            </div>
-          ) : null}
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 22px" }}>
@@ -186,6 +152,14 @@ export default function OrderCartDrawer() {
                       {item.description ? (
                         <div style={{ fontSize: 12, color: "#667085", marginTop: 4, lineHeight: 1.5 }}>
                           {item.description}
+                        </div>
+                      ) : null}
+                      {item.pricingType === "deal" ? (
+                        <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: "#166534" }}>
+                          {item.pricingLabel || "Deal applied"}
+                          {item.originalBasePriceCents > item.basePriceCents
+                            ? ` · Was ${formatMoney(item.originalBasePriceCents)}`
+                            : ""}
                         </div>
                       ) : null}
                       {item.modifiers?.length ? (
@@ -324,7 +298,7 @@ export default function OrderCartDrawer() {
           </button>
           <button
             type="button"
-            onClick={clearCart}
+              onClick={() => clearCart({ announce: true })}
             disabled={items.length === 0}
             style={{
               width: "100%",

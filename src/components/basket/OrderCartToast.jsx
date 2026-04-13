@@ -3,6 +3,7 @@ export default function OrderCartToast({ notice, onDismiss, onAction, bottomOffs
 
   const isWarning = notice.tone === "warning";
   const actions = Array.isArray(notice.actions) ? notice.actions : [];
+  const title = notice.title || (isWarning ? "Cart notice" : "Added to your order");
 
   return (
     <div
@@ -45,7 +46,7 @@ export default function OrderCartToast({ notice, onDismiss, onAction, bottomOffs
               color: isWarning ? "#b45309" : "#047857",
             }}
           >
-            {isWarning ? "Basket notice" : "Added to basket"}
+            {title}
           </div>
           <div style={{ marginTop: 4, fontSize: 13, fontWeight: 700, color: isWarning ? "#92400e" : "#166534" }}>
             {notice.message}

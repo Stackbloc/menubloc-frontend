@@ -18,6 +18,7 @@ import {
   SelectField,
   StatusMessage,
 } from "../components/grubbid/GrubbidPrimitives.jsx";
+import { useOrderCart } from "../context/OrderCartContext.jsx";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -79,6 +80,50 @@ function getDealDisplayPrice(deal) {
   }
 
   return null;
+}
+
+function getDealMenuPriceCents(deal) {
+  const menuPrice = Number.parseFloat(deal?.menu_item_price);
+  return Number.isFinite(menuPrice) && menuPrice >= 0 ? Math.round(menuPrice * 100) : 0;
+}
+
+function parseCurrencyToCents(value) {
+  const normalized = String(value || "").replace(/[^0-9.]/g, "");
+  const amount = Number.parseFloat(normalized);
+  return Number.isFinite(amount) && amount >= 0 ? Math.round(amount * 100) : null;
+}
+
+function getDealOrderPriceCents(deal) {
+  const menuPriceCents = getDealMenuPriceCents(deal);
+  const fixedPriceCents = Number(deal?.fixed_price_cents);
+  if (Number.isFinite(fixedPriceCents) && fixedPriceCents >= 0) return fixedPriceCents;
+
+  const explicitDealPriceCents = Number(deal?.deal_price_cents);
+  if (Number.isFinite(explicitDealPriceCents) && explicitDealPriceCents >= 0) return explicitDealPriceCents;
+
+  if (deal?.deal_type === "fixed_price") {
+    const parsedFixedPrice = parseCurrencyToCents(deal?.discount_value);
+    if (parsedFixedPrice != null) return parsedFixedPrice;
+  }
+
+  if (deal?.deal_type === "amount_off" && menuPriceCents > 0) {
+    const amountOffCents = parseCurrencyToCents(
+      deal?.discount_value ?? deal?.discount_amount_cents
+    );
+    if (amountOffCents != null) {
+      return Math.max(menuPriceCents - amountOffCents, 0);
+    }
+  }
+
+  if (deal?.deal_type === "percent_off" && menuPriceCents > 0) {
+    const percentRaw = String(deal?.discount_value ?? deal?.discount_percent ?? "").replace(/[^0-9.]/g, "");
+    const percentOff = Number.parseFloat(percentRaw);
+    if (Number.isFinite(percentOff) && percentOff > 0) {
+      return Math.max(Math.round(menuPriceCents * (1 - percentOff / 100)), 0);
+    }
+  }
+
+  return menuPriceCents;
 }
 
 function getGroupPriceCents(group) {
@@ -170,7 +215,7 @@ async function shareLink({ url, title, text }) {
   window.prompt("Copy this link:", url);
 }
 
-function DealSummary({ deal, onShare = null }) {
+function DealSummary({ deal, onShare = null, onAddToOrder = null }) {
   const dealUrl = buildDealUrl(deal);
 
   return (
@@ -233,12 +278,34 @@ function DealSummary({ deal, onShare = null }) {
           {deal.description}
         </div>
       ) : null}
+
+      {onAddToOrder ? (
+        <div style={{ marginTop: 10 }}>
+          <button
+            type="button"
+            onClick={onAddToOrder}
+            style={{
+              border: "none",
+              borderRadius: 999,
+              background: "#11211a",
+              color: "#fff",
+              padding: "10px 14px",
+              fontSize: 13,
+              fontWeight: 900,
+              cursor: "pointer",
+            }}
+          >
+            Add to Order
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 export default function DealsPage() {
   const { search } = useLocation();
+  const { addToCart } = useOrderCart();
   const urlParams = new URLSearchParams(search);
   const urlCity = urlParams.get("city") || "";
   const urlState = urlParams.get("state") || "";
@@ -396,6 +463,32 @@ export default function DealsPage() {
     } catch {
       // User dismissed share sheet or sharing failed.
     }
+  }
+
+  function handleAddToOrder(group, deal) {
+    if (!deal?.menu_item_id || !group?.restaurantId) return;
+
+    const dealPriceCents = getDealOrderPriceCents(deal);
+    const menuPriceCents = getDealMenuPriceCents(deal);
+    const hasDealPrice = dealPriceCents > 0 && menuPriceCents > 0 && dealPriceCents !== menuPriceCents;
+
+    addToCart({
+      restaurant: {
+        restaurantId: group.restaurantId,
+        restaurantName: group.restaurantName,
+        slug: group.restaurantSlug,
+      },
+      item: {
+        menuItemId: deal.menu_item_id,
+        name: deal.menu_item_name || deal.title || "Deal item",
+        description: deal.description || "",
+        quantity: 1,
+        basePriceCents: dealPriceCents,
+        originalBasePriceCents: hasDealPrice ? menuPriceCents : dealPriceCents,
+        pricingType: hasDealPrice ? "deal" : "",
+        pricingLabel: hasDealPrice ? "Deal applied" : "",
+      },
+    });
   }
 
   return (
@@ -558,6 +651,11 @@ export default function DealsPage() {
                           <DealSummary
                             deal={group.primaryDeal}
                             onShare={() => handleShare(group, group.primaryDeal)}
+                            onAddToOrder={
+                              group.primaryDeal?.menu_item_id
+                                ? () => handleAddToOrder(group, group.primaryDeal)
+                                : null
+                            }
                           />
                         ) : null}
                       </div>
@@ -594,7 +692,11 @@ export default function DealsPage() {
                             >
                               {group.extraDeals.map((deal) => (
                                 <div key={deal.deal_id || deal.id}>
-                                  <DealSummary deal={deal} onShare={() => handleShare(group, deal)} />
+                                  <DealSummary
+                                    deal={deal}
+                                    onShare={() => handleShare(group, deal)}
+                                    onAddToOrder={deal?.menu_item_id ? () => handleAddToOrder(group, deal) : null}
+                                  />
                                 </div>
                               ))}
                             </div>

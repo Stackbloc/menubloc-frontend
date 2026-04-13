@@ -1,4 +1,7 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import ReplaceCartModal from "../components/basket/ReplaceCartModal.jsx";
+import OrderCartToast from "../components/basket/OrderCartToast.jsx";
 import {
   addItemToCart,
   getCartSummary,
@@ -7,37 +10,53 @@ import {
   updateCartLineQuantity,
 } from "./orderCartModel.js";
 
-const STORAGE_KEY = "grubbid.order-cart.v1";
+const STORAGE_KEY = "grubbid_cart";
+const LEGACY_STORAGE_KEY = "grubbid.order-cart.v1";
 const OrderCartContext = createContext(null);
 
 function readStoredCart() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) {
-      return { restaurant: null, items: [] };
+      return { restaurant: null, items: [], updatedAt: null };
     }
 
     return normalizeStoredCart(JSON.parse(raw));
   } catch {
-    return { restaurant: null, items: [] };
+    return { restaurant: null, items: [], updatedAt: null };
   }
 }
 
 export function OrderCartProvider({ children }) {
-  const [{ restaurant, items }, setCartState] = useState(readStoredCart);
+  const [{ restaurant, items, updatedAt }, setCartState] = useState(readStoredCart);
   const [isOpen, setIsOpen] = useState(false);
   const [notice, setNotice] = useState(null);
   const [pendingReplacement, setPendingReplacement] = useState(null);
-  const stateRef = useRef({ restaurant, items });
+  const stateRef = useRef({ restaurant, items, updatedAt });
 
   useEffect(() => {
-    stateRef.current = { restaurant, items };
+    stateRef.current = { restaurant, items, updatedAt };
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ restaurant, items }));
+      if (!restaurant?.restaurantId || items.length === 0) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
+        return;
+      }
+
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          restaurant_id: restaurant.restaurantId,
+          restaurant_name: restaurant.restaurantName,
+          restaurant_slug: restaurant.slug ?? null,
+          items,
+          updated_at: updatedAt,
+        })
+      );
     } catch {
       // Ignore persistence failures in browsers that block storage.
     }
-  }, [restaurant, items]);
+  }, [restaurant, items, updatedAt]);
 
   useEffect(() => {
     if (!notice?.message) return undefined;
@@ -52,20 +71,22 @@ export function OrderCartProvider({ children }) {
   const closeCart = useCallback(() => setIsOpen(false), []);
   const clearNotice = useCallback(() => {
     setNotice(null);
+  }, []);
+  const dismissReplacement = useCallback(() => setPendingReplacement(null), []);
+
+  const clearCart = useCallback(({ announce = false } = {}) => {
+    setCartState({ restaurant: null, items: [], updatedAt: null });
     setPendingReplacement(null);
+    setNotice(announce ? { tone: "success", title: "Cart cleared", message: "Cart cleared" } : null);
   }, []);
 
-  const clearCart = useCallback(() => {
-    setCartState({ restaurant: null, items: [] });
-    setNotice(null);
-    setPendingReplacement(null);
-  }, []);
-
-  const commitReplacement = useCallback((payload) => {
-    const result = addItemToCart({ restaurant: null, items: [] }, payload);
+  const commitReplacement = useCallback(() => {
+    if (!pendingReplacement) return null;
+    const result = addItemToCart({ restaurant: null, items: [], updatedAt: null }, pendingReplacement);
     if (!result.ok) {
       setNotice({
         tone: "warning",
+        title: "Cart notice",
         message: result.message,
       });
       return result;
@@ -73,49 +94,49 @@ export function OrderCartProvider({ children }) {
 
     setCartState(result.cart);
     setPendingReplacement(null);
+    setIsOpen(true);
     setNotice({
       tone: "success",
-      message: `Started a new basket with ${result.addedLine?.name || payload?.item?.name || "item"}.`,
+      title: "Added to your order",
+      message: "Added to your order",
     });
     return result;
-  }, []);
+  }, [pendingReplacement]);
 
-  const addMenuItem = useCallback(({ restaurant: nextRestaurant, item }) => {
+  const addToCart = useCallback(({ restaurant: nextRestaurant, item }) => {
     const result = addItemToCart(stateRef.current, {
       restaurant: nextRestaurant,
       item,
     });
 
     if (!result.ok) {
-      const currentRestaurantName =
-        stateRef.current.restaurant?.restaurantName || "your current restaurant";
-      if (/already has items from/i.test(result.message || "")) {
-        setPendingReplacement({ restaurant: nextRestaurant, item });
-        setNotice({
-          tone: "warning",
-          message: `Your basket has items from ${currentRestaurantName}. Replace it to start ordering from ${nextRestaurant?.restaurantName || "this restaurant"}.`,
-          actions: [
-            { id: "replace-cart", label: "Replace basket" },
-            { id: "dismiss", label: "Keep current basket" },
-          ],
+      if (result.code === "restaurant_conflict") {
+        setPendingReplacement({
+          restaurant: nextRestaurant,
+          item,
+          currentRestaurantName: stateRef.current.restaurant?.restaurantName || "another restaurant",
         });
         return result;
       }
 
       setNotice({
         tone: "warning",
+        title: "Cart notice",
         message: result.message,
       });
       return result;
     }
 
     setCartState(result.cart);
+    setIsOpen(true);
     setNotice({
       tone: "success",
-      message: `Added ${result.addedLine?.name || item?.name || "item"}`,
+      title: "Added to your order",
+      message: "Added to your order",
     });
     return result;
   }, []);
+  const addMenuItem = addToCart;
 
   const updateQuantity = useCallback((lineId, quantity) => {
     setCartState((prev) => updateCartLineQuantity(prev, lineId, quantity));
@@ -125,24 +146,16 @@ export function OrderCartProvider({ children }) {
     setCartState((prev) => removeCartLine(prev, lineId));
   }, []);
 
-  const handleNoticeAction = useCallback((actionId) => {
-    if (actionId === "replace-cart" && pendingReplacement) {
-      commitReplacement(pendingReplacement);
-      return;
-    }
-
-    clearNotice();
-  }, [clearNotice, commitReplacement, pendingReplacement]);
-
   const { subtotalCents, itemCount } = useMemo(
-    () => getCartSummary({ restaurant, items }),
-    [restaurant, items]
+    () => getCartSummary({ restaurant, items, updatedAt }),
+    [restaurant, items, updatedAt]
   );
 
   const value = useMemo(
     () => ({
       restaurant,
       items,
+      updatedAt,
       isOpen,
       notice,
       subtotalCents,
@@ -151,14 +164,17 @@ export function OrderCartProvider({ children }) {
       closeCart,
       clearCart,
       clearNotice,
+      dismissReplacement,
+      addToCart,
       addMenuItem,
       updateQuantity,
       removeItem,
-      handleNoticeAction,
+      commitReplacement,
     }),
     [
       restaurant,
       items,
+      updatedAt,
       isOpen,
       notice,
       subtotalCents,
@@ -167,14 +183,28 @@ export function OrderCartProvider({ children }) {
       closeCart,
       clearCart,
       clearNotice,
+      dismissReplacement,
+      addToCart,
       addMenuItem,
       updateQuantity,
       removeItem,
-      handleNoticeAction,
+      commitReplacement,
     ]
   );
 
-  return <OrderCartContext.Provider value={value}>{children}</OrderCartContext.Provider>;
+  return (
+    <>
+      <OrderCartContext.Provider value={value}>{children}</OrderCartContext.Provider>
+      <OrderCartToast notice={notice} onDismiss={clearNotice} />
+      <ReplaceCartModal
+        open={Boolean(pendingReplacement)}
+        currentRestaurantName={pendingReplacement?.currentRestaurantName}
+        nextRestaurantName={pendingReplacement?.restaurant?.restaurantName}
+        onKeep={dismissReplacement}
+        onReplace={commitReplacement}
+      />
+    </>
+  );
 }
 
 export function useOrderCart() {

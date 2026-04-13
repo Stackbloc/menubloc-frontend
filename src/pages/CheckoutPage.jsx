@@ -966,6 +966,14 @@ export default function CheckoutPage() {
                       <div style={{ fontSize: 12, color: "#667085", marginTop: 4 }}>
                         Qty {item.quantity}
                       </div>
+                      {item.pricingType === "deal" ? (
+                        <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: "#166534" }}>
+                          {item.pricingLabel || "Deal applied"}
+                          {item.originalBasePriceCents > item.basePriceCents
+                            ? ` · Was ${formatMoney(item.originalBasePriceCents)}`
+                            : ""}
+                        </div>
+                      ) : null}
                       {item.modifiers?.length ? (
                         <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
                           {item.modifiers.map((modifier) => (
