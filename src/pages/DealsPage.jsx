@@ -178,12 +178,13 @@ function DealSummary({ deal, onShare = null }) {
         style={{
           display: "flex",
           flexWrap: "wrap",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 10,
+          alignItems: "center",
+          justifyContent: "flex-start",
+          columnGap: 10,
+          rowGap: 6,
         }}
       >
-        <div style={{ minWidth: 0, flex: "1 1 260px", fontSize: 16, fontWeight: 800, lineHeight: 1.35 }}>
+        <div style={{ minWidth: 0, flex: "0 1 auto", fontSize: 16, fontWeight: 800, lineHeight: 1.35 }}>
           {dealUrl ? (
             <Link
               to={dealUrl}
@@ -217,6 +218,7 @@ function DealSummary({ deal, onShare = null }) {
               fontWeight: 700,
               cursor: "pointer",
               whiteSpace: "nowrap",
+              flex: "0 0 auto",
             }}
           >
             <ShareIcon size={14} />
