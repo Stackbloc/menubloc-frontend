@@ -728,7 +728,7 @@ function IngredientFlagsCard({ detailSystem, t }) {
 
 function NutritionInsightsCluster({ detailSystem, isMobile, t, indulgencePresentation = null }) {
   const category = detailCategory(detailSystem);
-  const showInsights = category === "entree" && confidenceLevel(detailSystem) !== "low";
+  const showInsights = detailSystem?.insights != null && confidenceLevel(detailSystem) !== "low";
   return (
     <Surface style={{ marginTop: 22, padding: isMobile ? 18 : 22 }}>
       <Eyebrow>{t("menuItemDetail.nutritionAndInsights", "Nutrition & Insights")}</Eyebrow>
