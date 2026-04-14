@@ -18,6 +18,7 @@ import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { parseLocation, reverseGeocode, US_STATE_ABBREVS } from "../lib/locationUtils.js";
+import { captureEvent } from "../services/posthog.js";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -278,6 +279,15 @@ export default function GrubbidDiscovery() {
       navigate(`/search?${params.toString()}`);
       return;
     }
+
+    captureEvent("search_performed", {
+      query: qTerm,
+      filters: {
+        vegan: Boolean(filters.vegan),
+        gluten_free: Boolean(filters.gluten_free),
+        price_max: null,
+      },
+    });
 
     setSearching(true);
     try {

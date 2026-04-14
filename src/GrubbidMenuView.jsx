@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { MOCK_MENU } from "./mockMenu.js";
 import { MKS_CATEGORIES, mapRawCategoryToMks } from "./mks/mksCategories.js";
 import MenuItemInsightsPanel from "./components/MenuItemInsightsPanel.jsx";
+import { captureEvent } from "./services/posthog.js";
 
 // -----------------------------
 // Helpers
@@ -408,6 +409,15 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
     ? `/r/${profileRestaurantId}`
     : "/";
 
+  function handleMenuItemClick(item) {
+    captureEvent("menu_item_clicked", {
+      item_id: item?.id ?? null,
+      name: item?.name || item?.title || null,
+      restaurant: restaurant?.name || restaurant?.restaurant_name || null,
+      price: item?.price ?? null,
+    });
+  }
+
   // For mock: assign one-of-each indicator to first N items
   let mockIndicatorCursor = 0;
 
@@ -637,6 +647,7 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                 return (
                   <div
                     key={item?.id ?? `${cat.code}-${String(name)}`}
+                    onClick={() => handleMenuItemClick(item)}
                     style={{
                       background: COLORS.panel,
                       border: `1px solid ${COLORS.border}`,

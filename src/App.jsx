@@ -22,6 +22,7 @@
 
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
+import { captureEvent, initPostHog } from "./services/posthog.js";
 import { CartProvider } from "./context/CartContext.jsx";
 import { OrderCartProvider } from "./context/OrderCartContext.jsx";
 import { LanguageProvider } from "./context/LanguageContext.jsx";
@@ -332,12 +333,20 @@ function AnalyticsTracker() {
   const { owner } = useOwner();
 
   useEffect(() => {
+    initPostHog();
+  }, []);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
     const gaReady = ensureGoogleAnalyticsLoaded();
     const pagePath = `${location.pathname}${location.search || ""}${location.hash || ""}`;
     const pageTitle = typeof document !== "undefined" ? document.title || "Grubbid" : "Grubbid";
     const pageLocation = window.location.href;
+
+    captureEvent("pageview", {
+      path: location.pathname,
+    });
 
     if (gaReady && typeof window.gtag === "function") {
       window.gtag("event", "page_view", {
