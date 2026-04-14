@@ -48,7 +48,7 @@ import { apiGet, getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
 import { loadDietPrefs, saveDietPrefs, activePrefLabels, hasActiveDietPrefs } from "../hooks/useDietPreferences";
-import { reverseGeocode } from "../lib/locationUtils.js";
+import { buildBrowseLocationParams, reverseGeocode } from "../lib/locationUtils.js";
 
 
 function useIsMobile(breakpoint = 900) {
@@ -392,10 +392,12 @@ export default function BrowseMenus() {
           if (cancelled) return;
           const hasCoords = coords.lat !== null && coords.lng !== null;
           apiParams = {
-            city: urlCity,
-            state: urlState,
-            ...(hasCoords ? { lat: coords.lat, lng: coords.lng } : {}),
-            ...(hasCoords && radiusMiles !== null ? { radius: radiusMiles } : {}),
+            ...buildBrowseLocationParams({
+              urlCity,
+              urlState,
+              coords: hasCoords ? coords : null,
+              radiusMiles,
+            }),
             limit: BROWSE_LIMIT,
             offset: loadMoreOffset,
             ...dietaryParams,
@@ -419,9 +421,10 @@ export default function BrowseMenus() {
               .catch(() => {});
           }
           apiParams = {
-            lat: coords.lat,
-            lng: coords.lng,
-            ...(hasCoords && radiusMiles !== null ? { radius: radiusMiles } : {}),
+            ...buildBrowseLocationParams({
+              coords: hasCoords ? coords : null,
+              radiusMiles,
+            }),
             limit: BROWSE_LIMIT,
             offset: loadMoreOffset,
             ...dietaryParams,
@@ -710,20 +713,24 @@ export default function BrowseMenus() {
                           let coords = { lat: null, lng: null };
                           try { coords = await getUserCoords(); } catch (_) {}
                           const hasCoords = coords.lat !== null && coords.lng !== null;
-                          const apiParams = hasCityStateParams
-                            ? {
-                                city: urlCity, state: urlState,
-                                ...(hasCoords ? { lat: coords.lat, lng: coords.lng } : {}),
-                                ...(hasCoords && radiusMiles !== null ? { radius: radiusMiles } : {}),
-                                limit: BROWSE_LIMIT, offset: browseOffset,
-                                ...dietaryParams,
-                              }
-                            : {
-                                lat: coords.lat, lng: coords.lng,
-                                ...(hasCoords && radiusMiles !== null ? { radius: radiusMiles } : {}),
-                                limit: BROWSE_LIMIT, offset: browseOffset,
-                                ...dietaryParams,
-                              };
+                          const apiParams = {
+                            ...buildBrowseLocationParams(
+                              hasCityStateParams
+                                ? {
+                                    urlCity,
+                                    urlState,
+                                    coords: hasCoords ? coords : null,
+                                    radiusMiles,
+                                  }
+                                : {
+                                    coords: hasCoords ? coords : null,
+                                    radiusMiles,
+                                  }
+                            ),
+                            limit: BROWSE_LIMIT,
+                            offset: browseOffset,
+                            ...dietaryParams,
+                          };
                           const response = await getBrowseMenus(apiParams);
                           const more = normalizeBrowseMenus(extractMenus(response), cuisineOptions);
                           const newTotal = response?.total_count ?? (browseOffset + more.length);

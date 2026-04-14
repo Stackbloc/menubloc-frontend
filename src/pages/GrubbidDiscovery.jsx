@@ -17,7 +17,12 @@ import { addLocation, getLocations, updateLocation } from "../lib/consumerApi.js
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
-import { parseLocation, reverseGeocode, US_STATE_ABBREVS } from "../lib/locationUtils.js";
+import {
+  buildSearchLocationParams,
+  normalizeLocationLabel,
+  parseLocation,
+  reverseGeocode,
+} from "../lib/locationUtils.js";
 import { captureEvent } from "../services/posthog.js";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
@@ -224,13 +229,15 @@ export default function GrubbidDiscovery() {
 
   function buildSearchParams(queryValue, options = {}) {
     const includeFilters = options.includeFilters !== false;
-    const params = new URLSearchParams();
-    const q = String(queryValue || "").trim();
     const explicitLocationValue = String(
       options.locationOverride ?? appliedLocation ?? ""
     ).trim();
-
-    if (q) params.set("q", q);
+    const params = buildSearchLocationParams({
+      query: queryValue,
+      explicitLocationValue,
+      autoLocation,
+      radiusMiles: LOCAL_RADIUS_MILES,
+    });
 
     if (includeFilters) {
       const dietaryParams = buildDietaryQueryParams(filters);
@@ -244,24 +251,6 @@ export default function GrubbidDiscovery() {
       for (const [key, value] of Object.entries(restaurantParams)) {
         if (value) params.set(key, value);
       }
-    }
-
-    const explicitLocation = parseLocation(explicitLocationValue);
-    if (explicitLocation.zip) params.set("zip", explicitLocation.zip);
-    if (explicitLocation.city) params.set("city", explicitLocation.city);
-    if (explicitLocation.state) params.set("state", explicitLocation.state);
-    if (explicitLocation.near) params.set("near", explicitLocation.near);
-    if (explicitLocation.label) params.set("location_label", explicitLocation.label);
-
-    if (!explicitLocation.label && autoLocation.lat != null && autoLocation.lng != null) {
-      params.set("lat", String(autoLocation.lat));
-      params.set("lng", String(autoLocation.lng));
-      params.set("radius_miles", String(LOCAL_RADIUS_MILES));
-      // Pass city/state separately so Search Results can display the precise label
-      // even when search is performed by lat/lng radius.
-      if (autoLocation.city) params.set("city", autoLocation.city);
-      if (autoLocation.state) params.set("state", autoLocation.state);
-      if (autoLocation.label) params.set("location_label", autoLocation.label);
     }
 
     return params;
@@ -335,26 +324,6 @@ export default function GrubbidDiscovery() {
       event.preventDefault();
       runSearch();
     }
-  }
-
-  function normalizeLocationLabel(raw) {
-    const trimmed = raw.trim();
-    if (!trimmed) return trimmed;
-    // Use parseLocation to handle both "City, ST" and "City ST" formats
-    const parsed = parseLocation(trimmed);
-    const city = parsed.city.replace(/\b\w/g, (c) => c.toUpperCase());
-    if (parsed.zip) return parsed.zip;
-    // Reconstruct state from label if parseLocation didn't extract it
-    const labelParts = trimmed.split(",");
-    const rawState = labelParts.length >= 2
-      ? labelParts[1].trim()
-      : (() => {
-          const tokens = trimmed.split(/\s+/);
-          const last = tokens[tokens.length - 1];
-          return US_STATE_ABBREVS.has(last.toLowerCase()) ? last : "";
-        })();
-    const state = rawState.toUpperCase();
-    return state ? `${city}, ${state}` : city;
   }
 
   async function persistDefaultLocation(rawLabel, sourceOverride = null) {

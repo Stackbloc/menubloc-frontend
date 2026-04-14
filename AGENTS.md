@@ -53,6 +53,22 @@ Before touching any protected file, state all of the following or STOP:
 /search?q=chicken&city=Los+Angeles&state=CA → returns results
 ```
 
+## Required route verifier
+For any frontend change touching discovery, browse, search, routing, or shared location helpers, run:
+
+```bash
+npm run verify:geo-routes
+```
+
+This is the canonical route-level verification workflow for:
+- discovery auto-location
+- browse URL persistence
+- LA vs Dothan separation
+- LA search rendering
+- backend baseline endpoint health
+
+If it fails, the change is not done.
+
 ## Discovery page location — ABSOLUTE RULES
 
 The location input is a PLAIN TEXT FIELD. Never add:

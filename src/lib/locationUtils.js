@@ -53,6 +53,87 @@ export function parseLocation(rawValue) {
   return { zip: "", city: raw, state: "", near: "", label: raw };
 }
 
+export function normalizeLocationLabel(rawValue) {
+  const trimmed = String(rawValue || "").trim();
+  if (!trimmed) return "";
+
+  const parsed = parseLocation(trimmed);
+  if (parsed.zip) return parsed.zip;
+
+  const city = parsed.city.replace(/\b\w/g, (c) => c.toUpperCase());
+  const parts = trimmed.split(",");
+  const rawState = parts.length >= 2
+    ? parts[1].trim()
+    : (() => {
+        const tokens = trimmed.split(/\s+/);
+        const last = tokens[tokens.length - 1] || "";
+        return US_STATE_ABBREVS.has(last.toLowerCase()) ? last : "";
+      })();
+  const state = rawState.toUpperCase();
+
+  return state ? `${city}, ${state}` : city;
+}
+
+export function buildSearchLocationParams({
+  query = "",
+  explicitLocationValue = "",
+  autoLocation = null,
+  radiusMiles = null,
+}) {
+  const params = new URLSearchParams();
+  const q = String(query || "").trim();
+  if (q) params.set("q", q);
+
+  const explicitLocation = parseLocation(explicitLocationValue);
+  if (explicitLocation.zip) params.set("zip", explicitLocation.zip);
+  if (explicitLocation.city) params.set("city", explicitLocation.city);
+  if (explicitLocation.state) params.set("state", explicitLocation.state);
+  if (explicitLocation.near) params.set("near", explicitLocation.near);
+  if (explicitLocation.label) params.set("location_label", explicitLocation.label);
+
+  if (!explicitLocation.label && autoLocation?.lat != null && autoLocation?.lng != null) {
+    params.set("lat", String(autoLocation.lat));
+    params.set("lng", String(autoLocation.lng));
+    if (radiusMiles != null) params.set("radius_miles", String(radiusMiles));
+    if (autoLocation.city) params.set("city", autoLocation.city);
+    if (autoLocation.state) params.set("state", autoLocation.state);
+    if (autoLocation.label) params.set("location_label", autoLocation.label);
+  }
+
+  return params;
+}
+
+export function buildBrowseLocationParams({
+  urlCity = "",
+  urlState = "",
+  coords = null,
+  radiusMiles = null,
+}) {
+  const params = {};
+  const city = String(urlCity || "").trim();
+  const state = String(urlState || "").trim();
+  const hasCoords = coords?.lat != null && coords?.lng != null;
+
+  if (city) {
+    params.city = city;
+    if (state) params.state = state;
+    if (hasCoords) {
+      params.lat = coords.lat;
+      params.lng = coords.lng;
+      if (radiusMiles != null) params.radius = radiusMiles;
+    }
+    return params;
+  }
+
+  if (hasCoords) {
+    params.lat = coords.lat;
+    params.lng = coords.lng;
+    if (radiusMiles != null) params.radius = radiusMiles;
+  }
+
+  return params;
+}
+
 /**
  * Format city + state abbreviation into a display label.
  * formatLocationLabel("Pasadena", "CA") → "Pasadena, CA"
