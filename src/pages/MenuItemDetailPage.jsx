@@ -41,6 +41,8 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
+import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
+import { fetchCompareItems } from "../lib/api.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -847,10 +849,17 @@ const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
 ]);
 
 function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, allergenFilter }) {
+  const navigate = useNavigate();
   const [similar, setSimilar] = useState(null);
   const [similarMeta, setSimilarMeta] = useState(null);
   const [failed, setFailed]   = useState(false);
   const searchSuffix = activeSearchParams?.toString() ? `?${activeSearchParams.toString()}` : "";
+
+  // ── Compare state ────────────────────────────────────────
+  const [compareOpen,    setCompareOpen]    = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareData,    setCompareData]    = useState(null);
+  const [compareError,   setCompareError]   = useState(null);
 
   useEffect(() => {
     if (!itemId) return undefined;
@@ -878,76 +887,141 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
     return () => { cancelled = true; };
   }, [activeSearchParams, geoLat, geoLng, itemId]);
 
+  function handleCompare(similarEntry) {
+    setCompareData(null);
+    setCompareError(null);
+    setCompareLoading(true);
+    setCompareOpen(true);
+    fetchCompareItems(itemId, similarEntry.id, geoLat || null, geoLng || null)
+      .then((data) => {
+        setCompareData(data);
+        setCompareLoading(false);
+      })
+      .catch((err) => {
+        setCompareError(String(err?.message || "Compare failed"));
+        setCompareLoading(false);
+      });
+  }
+
+  function handleSwap(candidateItem) {
+    // Navigate to the candidate item's detail page, preserving geo params.
+    // Safe first version: no cart mutation required.
+    setCompareOpen(false);
+    const slug = candidateItem?.restaurant_slug || null;
+    const id   = candidateItem?.id;
+    if (!id) return;
+    const geoSuffix = geoLat && geoLng ? `?lat=${geoLat}&lng=${geoLng}` : "";
+    const path = slug
+      ? `/restaurants/${slug}/menu-items/${id}${geoSuffix}`
+      : `/menu-items/${id}${geoSuffix}`;
+    navigate(path);
+  }
+
   if (failed || similar === null || similar.length === 0) return null;
 
   const helperLabel = buildSimilarItemsLabel(similarMeta);
 
   return (
-    <SectionCard
-      title={t("menuItemDetail.similarItems", "Similar Items")}
-      eyebrow={t("menuItemDetail.similarItems", "Similar Items")}
-      style={{ marginTop: 24 }}
-    >
-      <div style={{ display: "grid", gap: 14 }}>
-        {allergenFilter ? <AllergenFilterStatusBanner allergenFilter={allergenFilter} compact /> : null}
-        {helperLabel && (
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 800,
-              color: "#4c5c53",
-              background: "rgba(20,33,27,0.05)",
-              border: "1px solid rgba(20,33,27,0.08)",
-              borderRadius: 12,
-              padding: "10px 12px",
-            }}
-          >
-            {helperLabel}
-          </div>
-        )}
-        {similar.map((entry) => (
-          <div key={entry.id} style={{ borderRadius: 18, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f", marginBottom: 10 }}>
-              {entry.restaurant_name}
-              {entry.distance_miles != null && (
-                <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>
+    <>
+      <SectionCard
+        title={t("menuItemDetail.similarItems", "Similar Items")}
+        eyebrow={t("menuItemDetail.similarItems", "Similar Items")}
+        style={{ marginTop: 24 }}
+      >
+        <div style={{ display: "grid", gap: 14 }}>
+          {allergenFilter ? <AllergenFilterStatusBanner allergenFilter={allergenFilter} compact /> : null}
+          {helperLabel && (
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 800,
+                color: "#4c5c53",
+                background: "rgba(20,33,27,0.05)",
+                border: "1px solid rgba(20,33,27,0.08)",
+                borderRadius: 12,
+                padding: "10px 12px",
+              }}
+            >
+              {helperLabel}
+            </div>
+          )}
+          {similar.map((entry) => (
+            <div key={entry.id} style={{ borderRadius: 18, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f", marginBottom: 10 }}>
+                {entry.restaurant_name}
+                {entry.distance_miles != null && (
+                  <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>
+                )}
+              </div>
+
+              {/* Item name link + Compare button side-by-side */}
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+                <Link
+                  to={`${getCanonicalMenuItemPath({
+                    restaurant: {
+                      slug: entry.restaurant_slug || null,
+                      id: entry.restaurant_id || null,
+                    },
+                    menuItem: { id: entry.id },
+                  })}${searchSuffix}`}
+                  style={{ textDecoration: "none", color: "#124ba3", fontWeight: 800, fontSize: 15, lineHeight: 1.35, flex: "1 1 0", minWidth: 0 }}
+                >
+                  {entry.name}
+                </Link>
+                <button
+                  onClick={() => handleCompare(entry)}
+                  style={{
+                    flexShrink: 0,
+                    background: "rgba(18,75,163,0.09)",
+                    border: "1px solid rgba(18,75,163,0.18)",
+                    borderRadius: 999,
+                    padding: "5px 13px",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: "#124ba3",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Compare
+                </button>
+              </div>
+
+              {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                  {entry.profile_differences.map((phrase) => (
+                    <span
+                      key={phrase}
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#3a5a44",
+                        background: "rgba(40,100,60,0.08)",
+                        borderRadius: 20,
+                        padding: "3px 10px",
+                      }}
+                    >
+                      {phrase}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
-            <Link
-              to={`${getCanonicalMenuItemPath({
-                restaurant: {
-                  slug: entry.restaurant_slug || null,
-                  id: entry.restaurant_id || null,
-                },
-                menuItem: { id: entry.id },
-              })}${searchSuffix}`}
-              style={{ textDecoration: "none", color: "#124ba3", fontWeight: 800, fontSize: 15, lineHeight: 1.35 }}
-            >
-              {entry.name}
-            </Link>
-            {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-                {entry.profile_differences.map((phrase) => (
-                  <span
-                    key={phrase}
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: "#3a5a44",
-                      background: "rgba(40,100,60,0.08)",
-                      borderRadius: 20,
-                      padding: "3px 10px",
-                    }}
-                  >
-                    {phrase}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </SectionCard>
+          ))}
+        </div>
+      </SectionCard>
+
+      <CompareItemsModal
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        comparison={compareData}
+        loading={compareLoading}
+        error={compareError}
+        onSwap={handleSwap}
+        baseLabel="Current"
+      />
+    </>
   );
 }
 

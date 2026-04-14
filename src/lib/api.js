@@ -144,6 +144,20 @@ export async function createBmtCheckoutSession(token, body) {
   return apiPost(`/api/bmt/${encodeURIComponent(String(token))}/create-checkout-session`, body);
 }
 
+/**
+ * Fetch the compare payload for two menu items.
+ * Calls GET /menu-items/compare?baseItemId=X&candidateItemId=Y[&lat=Z&lng=W]
+ */
+export async function fetchCompareItems(baseItemId, candidateItemId, lat, lng) {
+  const params = new URLSearchParams({
+    baseItemId:      String(baseItemId),
+    candidateItemId: String(candidateItemId),
+  });
+  if (lat != null) params.set("lat", String(lat));
+  if (lng != null) params.set("lng", String(lng));
+  return apiGet(`/menu-items/compare?${params.toString()}`);
+}
+
 export default {
   apiGet,
   apiPost,
@@ -159,4 +173,5 @@ export default {
   createBmtCheckoutSession,
   getOrder,
   toConsumerErrorMessage,
+  fetchCompareItems,
 };
