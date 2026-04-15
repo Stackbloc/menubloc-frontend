@@ -26,6 +26,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import ErrorBoundary from "../components/ErrorBoundary.jsx";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { PageNav } from "../components/NavButton";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
@@ -1027,7 +1028,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
 
 // ── Page ─────────────────────────────────────────────────────
 
-export default function MenuItemDetailPage() {
+function MenuItemDetailPageInner() {
   const { id, restaurantSlug } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -1346,5 +1347,26 @@ export default function MenuItemDetailPage() {
       />
 
     </PageShell>
+  );
+}
+
+function MenuItemDetailPageFallback() {
+  return (
+    <div style={{ padding: 40, textAlign: "center" }}>
+      <div style={{ fontSize: 18, fontWeight: 900, color: "#15241d", marginBottom: 8 }}>
+        Something went wrong loading this item.
+      </div>
+      <a href="/" style={{ fontSize: 14, color: "#166a3e", fontWeight: 700 }}>
+        Return to home
+      </a>
+    </div>
+  );
+}
+
+export default function MenuItemDetailPage() {
+  return (
+    <ErrorBoundary fallback={<MenuItemDetailPageFallback />}>
+      <MenuItemDetailPageInner />
+    </ErrorBoundary>
   );
 }
