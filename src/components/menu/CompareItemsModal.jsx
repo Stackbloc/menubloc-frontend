@@ -4,27 +4,9 @@
  * Path: menubloc-frontend/src/components/menu/CompareItemsModal.jsx
  * Date: 2026-04-14
  * Purpose:
- *   Side-by-side decision modal for comparing two menu items.
- *   Opened from the Show Similar list on the menu item detail page.
- *
- *   Props:
- *     open        {boolean}
- *     onClose     {() => void}
- *     comparison  {object|null}  — { ok, baseItem, candidateItem, highlights }
- *     loading     {boolean}
- *     error       {string|null}
- *     onSwap      {(candidateItem) => void}
- *     baseLabel   {string}
- *
- *   Intelligence layer displayed:
- *     - Verdict label (when at least one item has a verdict)
- *     - Indulgence row (dessert/bread items only)
- *     - Insight rows: Protein Strength, Glycemic Impact, Sodium, Lasting Energy
- *       (entrees only — null when item is beverage, dessert, or low confidence)
- *     - Preparation row suppressed for dessert/bread/beverage comparisons
- *
- *   Swap: navigates to candidate detail page (no cart mutation).
- *   TODO: Add Both — requires unified cart/order flow not yet available.
+ *   Stable centered compare modal for side-by-side menu item comparison.
+ *   Fixes collapsed/clipped body rendering by using a simple modal layout:
+ *   header + scrollable body + footer.
  * ============================================================
  */
 
@@ -60,9 +42,9 @@ function fmtDist(value) {
   return `${n} mi`;
 }
 
-// Level value ordering for insight row winner computation
-const LEVEL_ORDER_ASC  = { Low: 0, Moderate: 1, High: 2, "Very High": 3 };
-const LEVEL_ORDER_DESC = { Low: 3, Moderate: 2, High: 1, "Very High": 0 };
+function hasValue(v) {
+  return v !== null && v !== undefined && v !== "";
+}
 
 // ── Styles ───────────────────────────────────────────────────
 
@@ -73,18 +55,19 @@ const OVERLAY_STYLE = {
   background: "rgba(14, 22, 18, 0.55)",
   backdropFilter: "blur(4px)",
   display: "flex",
-  alignItems: "flex-end",
+  alignItems: "center",
   justifyContent: "center",
-  padding: "0",
+  padding: "24px",
 };
 
-const SHEET_STYLE = {
-  width: "100%",
-  maxWidth: 780,
-  maxHeight: "92dvh",
+const MODAL_STYLE = {
+  width: "min(920px, 100%)",
+  maxHeight: "86vh",
+  minHeight: "520px",
   background: "#f8f7f2",
-  borderRadius: "24px 24px 0 0",
-  boxShadow: "0 -12px 48px rgba(14,22,18,0.18)",
+  borderRadius: 24,
+  boxShadow: "0 20px 60px rgba(14,22,18,0.22)",
+  border: "1px solid rgba(20,33,27,0.10)",
   display: "flex",
   flexDirection: "column",
   overflow: "hidden",
@@ -97,6 +80,7 @@ const HEADER_STYLE = {
   padding: "18px 20px 14px",
   borderBottom: "1px solid rgba(20,33,27,0.08)",
   flexShrink: 0,
+  background: "#f8f7f2",
 };
 
 const CLOSE_BTN_STYLE = {
@@ -114,10 +98,12 @@ const CLOSE_BTN_STYLE = {
   flexShrink: 0,
 };
 
-const SCROLL_AREA_STYLE = {
+const BODY_STYLE = {
+  flex: "1 1 auto",
+  minHeight: 0,
   overflowY: "auto",
-  flex: "1 1 0",
-  padding: "16px 20px",
+  padding: "18px 20px 22px",
+  WebkitOverflowScrolling: "touch",
 };
 
 const FOOTER_STYLE = {
@@ -142,14 +128,22 @@ const BTN_BASE = {
   justifyContent: "center",
 };
 
-const INSIGHT_ROW_STYLE = {
+const SECTION_LABEL_STYLE = {
+  fontSize: 10,
+  fontWeight: 900,
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+  color: "#8a9e94",
+};
+
+const ROW_GRID_STYLE = {
   display: "grid",
-  gridTemplateColumns: "80px 1fr 1fr",
-  gap: 6,
+  gridTemplateColumns: "96px 1fr 1fr",
+  gap: 8,
   alignItems: "center",
 };
 
-const INSIGHT_LABEL_STYLE = {
+const ROW_LABEL_STYLE = {
   fontSize: 11,
   fontWeight: 800,
   color: "#617167",
@@ -157,40 +151,95 @@ const INSIGHT_LABEL_STYLE = {
   letterSpacing: "0.07em",
 };
 
-// ── Item column header ───────────────────────────────────────
+function valueBox(isWinner) {
+  return {
+    padding: "10px 12px",
+    borderRadius: 12,
+    background: isWinner ? "rgba(22,105,62,0.09)" : "rgba(20,33,27,0.04)",
+    border: isWinner ? "1px solid rgba(22,105,62,0.20)" : "1px solid rgba(20,33,27,0.07)",
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: 900,
+    color: isWinner ? "#166a3e" : "#14211b",
+    minHeight: 42,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    wordBreak: "break-word",
+  };
+}
 
-function ItemHeader({ item, label, isCurrent }) {
+// ── Small pieces ─────────────────────────────────────────────
+
+function SectionLabel({ children }) {
+  return (
+    <div style={{ paddingTop: 10, paddingBottom: 4 }}>
+      <div style={SECTION_LABEL_STYLE}>{children}</div>
+    </div>
+  );
+}
+
+function CompareRow({ label, baseValue, candidateValue, baseWins = false, candidateWins = false }) {
+  return (
+    <div style={ROW_GRID_STYLE}>
+      <div style={ROW_LABEL_STYLE}>{label}</div>
+      <div style={valueBox(baseWins)}>{hasValue(baseValue) ? baseValue : "—"}</div>
+      <div style={valueBox(candidateWins)}>{hasValue(candidateValue) ? candidateValue : "—"}</div>
+    </div>
+  );
+}
+
+function ItemHeader({ item, label, emphasized }) {
   const price = fmtMoney(item?.price);
-  const dist  = fmtDist(item?.distance_miles);
+  const dist = fmtDist(item?.distance_miles);
+
   return (
     <div
       style={{
         borderRadius: 18,
         padding: "14px 16px",
-        background: isCurrent
+        background: emphasized
           ? "linear-gradient(135deg, rgba(17,33,26,0.96), rgba(30,55,42,0.92))"
-          : "rgba(255,255,255,0.90)",
-        border: isCurrent ? "none" : "1px solid rgba(20,33,27,0.10)",
-        color: isCurrent ? "#f0f7f3" : "#14211b",
-        minHeight: 110,
+          : "rgba(255,255,255,0.92)",
+        border: emphasized ? "none" : "1px solid rgba(20,33,27,0.10)",
+        color: emphasized ? "#f0f7f3" : "#14211b",
+        minHeight: 116,
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
         gap: 6,
       }}
     >
-      <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.65 }}>
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 900,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          opacity: 0.68,
+        }}
+      >
         {label}
       </div>
+
       <div style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.25 }}>
         {item?.name || "—"}
       </div>
-      <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.75, lineHeight: 1.4 }}>
+
+      <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.78, lineHeight: 1.4 }}>
         {item?.restaurant_name || "—"}
         {dist ? <span style={{ marginLeft: 6, fontWeight: 600 }}>· {dist}</span> : null}
       </div>
+
       {price ? (
-        <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.03em", marginTop: 4 }}>
+        <div
+          style={{
+            fontSize: 20,
+            fontWeight: 900,
+            letterSpacing: "-0.03em",
+            marginTop: 4,
+          }}
+        >
           {price}
         </div>
       ) : null}
@@ -198,99 +247,36 @@ function ItemHeader({ item, label, isCurrent }) {
   );
 }
 
-// ── Comparison row ───────────────────────────────────────────
-
-function CompareRow({ label, baseValue, candidateValue, baseWins, candidateWins }) {
-  const baseStyle = {
-    flex: 1,
-    padding: "8px 10px",
-    borderRadius: 12,
-    background: baseWins ? "rgba(22,105,62,0.09)" : "rgba(20,33,27,0.04)",
-    border: baseWins ? "1px solid rgba(22,105,62,0.20)" : "1px solid rgba(20,33,27,0.07)",
-    textAlign: "center",
-    fontSize: 15,
-    fontWeight: 900,
-    color: baseWins ? "#166a3e" : "#14211b",
-  };
-  const candStyle = {
-    ...baseStyle,
-    background: candidateWins ? "rgba(22,105,62,0.09)" : "rgba(20,33,27,0.04)",
-    border: candidateWins ? "1px solid rgba(22,105,62,0.20)" : "1px solid rgba(20,33,27,0.07)",
-    color: candidateWins ? "#166a3e" : "#14211b",
-  };
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 1fr", gap: 6, alignItems: "center" }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: "#617167", textTransform: "uppercase", letterSpacing: "0.07em" }}>
-        {label}
-      </div>
-      <div style={baseStyle}>{baseValue}</div>
-      <div style={candStyle}>{candidateValue}</div>
-    </div>
-  );
-}
-
-// ── Insight level badge ──────────────────────────────────────
-// Renders a colored pill for a signal level string.
-// higherIsBetter: true → High is green / Low is amber.
-//                false → Low is green / High is amber.
-
-function InsightBadge({ level, higherIsBetter }) {
-  if (!level) return <span style={{ color: "#8a9e94", fontSize: 13, fontWeight: 700 }}>—</span>;
-
-  const isPositive = higherIsBetter
-    ? (level === "High" || level === "Excellent" || level === "Good")
-    : (level === "Low");
-  const isNegative = higherIsBetter
-    ? (level === "Low")
-    : (level === "High" || level === "Very High");
-
-  const bg     = isPositive ? "rgba(22,105,62,0.10)"   : isNegative ? "rgba(160,40,0,0.09)" : "rgba(20,33,27,0.06)";
-  const color  = isPositive ? "#166a3e"                : isNegative ? "#a02800"              : "#3d5248";
-  const border = isPositive ? "1px solid rgba(22,105,62,0.20)" : isNegative ? "1px solid rgba(160,40,0,0.18)" : "1px solid rgba(20,33,27,0.09)";
-
-  return (
-    <span style={{ fontSize: 12, fontWeight: 900, borderRadius: 999, padding: "4px 10px", background: bg, color, border, whiteSpace: "nowrap" }}>
-      {level}
-    </span>
-  );
-}
-
-// ── Indulgence level pill ────────────────────────────────────
-
-function IndulgencePill({ label }) {
-  if (!label || label === "Limited data") {
-    return <span style={{ color: "#8a9e94", fontSize: 13, fontWeight: 700 }}>—</span>;
-  }
-  const isRich = label === "Rich" || label === "Very Rich";
-  return (
-    <span style={{
-      fontSize: 12, fontWeight: 900, borderRadius: 999, padding: "4px 10px",
-      background: isRich ? "rgba(160,40,0,0.09)" : "rgba(20,33,27,0.06)",
-      color: isRich ? "#a02800" : "#5a695f",
-      border: isRich ? "1px solid rgba(160,40,0,0.18)" : "1px solid rgba(20,33,27,0.09)",
-      whiteSpace: "nowrap",
-    }}>
-      {label}
-    </span>
-  );
-}
-
-// ── Highlights chips ─────────────────────────────────────────
-
 function HighlightChips({ highlights, baseLabel, candidateLabel }) {
   if (!highlights?.length) return null;
+
   return (
     <div style={{ marginTop: 18 }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.10em", textTransform: "uppercase", color: "#5a695f", marginBottom: 10 }}>
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 900,
+          letterSpacing: "0.10em",
+          textTransform: "uppercase",
+          color: "#5a695f",
+          marginBottom: 10,
+        }}
+      >
         Why this differs
       </div>
+
       <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-        {highlights.map((h) => (
+        {highlights.map((h, idx) => (
           <span
-            key={h.key}
+            key={`${h.key || "highlight"}-${idx}`}
             style={{
-              fontSize: 12, fontWeight: 800, borderRadius: 999, padding: "5px 12px",
-              background: "rgba(20,33,27,0.06)", border: "1px solid rgba(20,33,27,0.10)", color: "#2d4037",
+              fontSize: 12,
+              fontWeight: 800,
+              borderRadius: 999,
+              padding: "5px 12px",
+              background: "rgba(20,33,27,0.06)",
+              border: "1px solid rgba(20,33,27,0.10)",
+              color: "#2d4037",
             }}
           >
             {h.winner === "candidate" ? candidateLabel : baseLabel}: {h.summary}
@@ -301,23 +287,82 @@ function HighlightChips({ highlights, baseLabel, candidateLabel }) {
   );
 }
 
-// ── Section divider label ────────────────────────────────────
+function InsightBadge({ level, higherIsBetter }) {
+  if (!level) {
+    return <span style={{ color: "#8a9e94", fontSize: 13, fontWeight: 700 }}>—</span>;
+  }
 
-function SectionLabel({ children }) {
+  const isPositive = higherIsBetter ? level === "High" || level === "Excellent" || level === "Good" : level === "Low";
+  const isNegative = higherIsBetter ? level === "Low" : level === "High" || level === "Very High";
+
+  const bg = isPositive
+    ? "rgba(22,105,62,0.10)"
+    : isNegative
+      ? "rgba(160,40,0,0.09)"
+      : "rgba(20,33,27,0.06)";
+
+  const color = isPositive ? "#166a3e" : isNegative ? "#a02800" : "#3d5248";
+
+  const border = isPositive
+    ? "1px solid rgba(22,105,62,0.20)"
+    : isNegative
+      ? "1px solid rgba(160,40,0,0.18)"
+      : "1px solid rgba(20,33,27,0.09)";
+
   return (
-    <div style={{ paddingTop: 6, paddingBottom: 2 }}>
-      <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8a9e94" }}>
-        {children}
-      </div>
-    </div>
+    <span
+      style={{
+        fontSize: 12,
+        fontWeight: 900,
+        borderRadius: 999,
+        padding: "4px 10px",
+        background: bg,
+        color,
+        border,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {level}
+    </span>
   );
 }
 
-// ── Loading / error states ───────────────────────────────────
+function IndulgencePill({ label }) {
+  if (!label || label === "Limited data") {
+    return <span style={{ color: "#8a9e94", fontSize: 13, fontWeight: 700 }}>—</span>;
+  }
+
+  const isRich = label === "Rich" || label === "Very Rich";
+
+  return (
+    <span
+      style={{
+        fontSize: 12,
+        fontWeight: 900,
+        borderRadius: 999,
+        padding: "4px 10px",
+        background: isRich ? "rgba(160,40,0,0.09)" : "rgba(20,33,27,0.06)",
+        color: isRich ? "#a02800" : "#5a695f",
+        border: isRich ? "1px solid rgba(160,40,0,0.18)" : "1px solid rgba(20,33,27,0.09)",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
 
 function LoadingPane() {
   return (
-    <div style={{ padding: "40px 0", textAlign: "center", color: "#617167", fontSize: 14, fontWeight: 700 }}>
+    <div
+      style={{
+        padding: "40px 0",
+        textAlign: "center",
+        color: "#617167",
+        fontSize: 14,
+        fontWeight: 700,
+      }}
+    >
       Loading comparison…
     </div>
   );
@@ -325,7 +370,16 @@ function LoadingPane() {
 
 function ErrorPane({ message }) {
   return (
-    <div style={{ padding: "24px 0", textAlign: "center", color: "#a02800", fontSize: 14, fontWeight: 800, lineHeight: 1.5 }}>
+    <div
+      style={{
+        padding: "24px 0",
+        textAlign: "center",
+        color: "#a02800",
+        fontSize: 14,
+        fontWeight: 800,
+        lineHeight: 1.5,
+      }}
+    >
       {message || "Could not load comparison. Try again."}
     </div>
   );
@@ -346,252 +400,248 @@ export default function CompareItemsModal({
     if (!open) return undefined;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   if (!open) return null;
 
-  const base       = comparison?.baseItem      || null;
-  const candidate  = comparison?.candidateItem || null;
-  const highlights = comparison?.highlights    || [];
+  const base = comparison?.baseItem || null;
+  const candidate = comparison?.candidateItem || null;
+  const highlights = comparison?.highlights || [];
 
   const hlMap = {};
   for (const h of highlights) hlMap[h.key] = h.winner;
-  function wins(key, side) { return hlMap[key] === side; }
+
+  function wins(key, side) {
+    return hlMap[key] === side;
+  }
 
   const candidateLabel = candidate?.restaurant_name
     ? candidate.restaurant_name.split(" ").slice(0, 2).join(" ")
     : "Compare";
 
-  // Insight winner helpers: compare two level strings using an ordering map
-  function insightWinner(baseLevel, candLevel, orderMap) {
-    const bv = orderMap[baseLevel] ?? -1;
-    const cv = orderMap[candLevel] ?? -1;
-    if (bv === cv) return null;
-    return bv > cv ? "base" : "candidate";
-  }
-  function insightWinnerHigh(b, c) { return insightWinner(b, c, LEVEL_ORDER_ASC); }
-  function insightWinnerLow(b, c)  { return insightWinner(b, c, LEVEL_ORDER_DESC); }
+  const baseVerdictLabel = base?.verdict?.label || base?.verdict_label || base?.verdict || null;
+  const candVerdictLabel =
+    candidate?.verdict?.label || candidate?.verdict_label || candidate?.verdict || null;
 
-  // What to show
-  const baseVerdictLabel = base?.verdict?.label     || null;
-  const candVerdictLabel = candidate?.verdict?.label || null;
-  const showVerdictRow   = !!(baseVerdictLabel || candVerdictLabel);
-
-  // Show preparation row only when at least one item has a non-null preparation
-  // (route already nulls it out for desserts/bread/beverages)
+  const showVerdictRow = !!(baseVerdictLabel || candVerdictLabel);
   const showMethodRow = !!(base?.preparation || candidate?.preparation);
-
-  // Indulgence: show when at least one item has dessert indulgence data
   const showIndulgenceRow = !!(base?.indulgence?.label || candidate?.indulgence?.label);
 
-  // Insights: entree-only section — shown when at least one item has insight data
-  const baseIns = base?.insights  || null;
+  const baseIns = base?.insights || null;
   const candIns = candidate?.insights || null;
   const showInsightsSection = !!(baseIns || candIns);
 
+  const isNarrowViewport =
+    typeof window !== "undefined" ? window.innerWidth <= 640 : false;
+
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <div
       style={OVERLAY_STYLE}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-label="Compare items"
     >
-      <div style={SHEET_STYLE}>
-
-        {/* ── Header ── */}
+      <div style={MODAL_STYLE}>
         <div style={HEADER_STYLE}>
-          <span style={{ fontSize: 17, fontWeight: 900, color: "#14211b", letterSpacing: "-0.02em" }}>
+          <span
+            style={{
+              fontSize: 17,
+              fontWeight: 900,
+              color: "#14211b",
+              letterSpacing: "-0.02em",
+            }}
+          >
             Compare Items
           </span>
-          <button style={CLOSE_BTN_STYLE} onClick={onClose} aria-label="Close compare">×</button>
+
+          <button style={CLOSE_BTN_STYLE} onClick={onClose} aria-label="Close compare">
+            ×
+          </button>
         </div>
 
-        {/* ── Scroll area ── */}
-        <div style={SCROLL_AREA_STYLE}>
-
+        <div style={BODY_STYLE}>
           {loading && <LoadingPane />}
           {!loading && error && <ErrorPane message={error} />}
 
+          {!loading && !error && !base && !candidate && (
+            <ErrorPane message="Compare data did not load." />
+          )}
+
           {!loading && !error && base && candidate && (
             <>
-              {/* Item header cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <ItemHeader item={base}      label={baseLabel}      isCurrent />
-                <ItemHeader item={candidate} label={candidateLabel} isCurrent={false} />
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isNarrowViewport ? "1fr" : "1fr 1fr",
+                  gap: 10,
+                  marginBottom: 8,
+                }}
+              >
+                <ItemHeader item={base} label={baseLabel} emphasized />
+                <ItemHeader item={candidate} label={candidateLabel} emphasized={false} />
               </div>
 
-              {/* Verdict row — shown when at least one item has a verdict label */}
               {showVerdictRow && (
                 <div style={{ marginTop: 12 }}>
                   <CompareRow
                     label="Verdict"
                     baseValue={baseVerdictLabel || "—"}
                     candidateValue={candVerdictLabel || "—"}
-                    baseWins={false}
-                    candidateWins={false}
                   />
                 </div>
               )}
 
-              {/* Allergen alerts */}
-              {(base.allergen_alert || candidate.allergen_alert) && (
-                <div style={{ marginTop: showVerdictRow ? 6 : 12 }}>
+              {(base?.allergen_alert || candidate?.allergen_alert) && (
+                <div style={{ marginTop: showVerdictRow ? 8 : 12 }}>
                   <CompareRow
                     label="Allergens"
-                    baseValue={base.allergen_alert || "—"}
-                    candidateValue={candidate.allergen_alert || "—"}
-                    baseWins={false}
-                    candidateWins={false}
+                    baseValue={base?.allergen_alert || "—"}
+                    candidateValue={candidate?.allergen_alert || "—"}
                   />
                 </div>
               )}
 
-              {/* Comparison rows */}
-              <div style={{ marginTop: 12, display: "grid", gap: 7 }}>
+              <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
                 <CompareRow
                   label="Price"
-                  baseValue={fmtMoney(base.price) || "—"}
-                  candidateValue={fmtMoney(candidate.price) || "—"}
+                  baseValue={fmtMoney(base?.price) || "—"}
+                  candidateValue={fmtMoney(candidate?.price) || "—"}
                   baseWins={wins("price", "base")}
                   candidateWins={wins("price", "candidate")}
                 />
+
                 <CompareRow
                   label="Portion"
-                  baseValue={base.portion_oz != null ? `${base.portion_oz} oz` : "—"}
-                  candidateValue={candidate.portion_oz != null ? `${candidate.portion_oz} oz` : "—"}
+                  baseValue={base?.portion_oz != null ? `${base.portion_oz} oz` : "—"}
+                  candidateValue={candidate?.portion_oz != null ? `${candidate.portion_oz} oz` : "—"}
                   baseWins={wins("portion_oz", "base")}
                   candidateWins={wins("portion_oz", "candidate")}
                 />
+
                 <CompareRow
                   label="$/oz"
-                  baseValue={fmtPerOz(base.price_per_oz)}
-                  candidateValue={fmtPerOz(candidate.price_per_oz)}
+                  baseValue={fmtPerOz(base?.price_per_oz)}
+                  candidateValue={fmtPerOz(candidate?.price_per_oz)}
                   baseWins={wins("price_per_oz", "base")}
                   candidateWins={wins("price_per_oz", "candidate")}
                 />
 
-                {/* Preparation — suppressed for desserts, bread, and beverages */}
                 {showMethodRow && (
                   <CompareRow
                     label="Method"
-                    baseValue={base.preparation || "—"}
-                    candidateValue={candidate.preparation || "—"}
-                    baseWins={false}
-                    candidateWins={false}
+                    baseValue={base?.preparation || "—"}
+                    candidateValue={candidate?.preparation || "—"}
                   />
                 )}
 
                 <CompareRow
                   label="Distance"
-                  baseValue={fmtDist(base.distance_miles) || "—"}
-                  candidateValue={fmtDist(candidate.distance_miles) || "—"}
+                  baseValue={fmtDist(base?.distance_miles) || "—"}
+                  candidateValue={fmtDist(candidate?.distance_miles) || "—"}
                   baseWins={wins("distance_miles", "base")}
                   candidateWins={wins("distance_miles", "candidate")}
                 />
 
-                {/* Nutrition section */}
-                {(base.nutrition || candidate.nutrition) && (
+                {(base?.nutrition || candidate?.nutrition) && (
                   <>
                     <SectionLabel>Nutrition</SectionLabel>
+
                     <CompareRow
                       label="Calories"
-                      baseValue={fmt(base.nutrition?.calories)}
-                      candidateValue={fmt(candidate.nutrition?.calories)}
+                      baseValue={fmt(base?.nutrition?.calories)}
+                      candidateValue={fmt(candidate?.nutrition?.calories)}
                       baseWins={wins("calories", "base")}
                       candidateWins={wins("calories", "candidate")}
                     />
+
                     <CompareRow
                       label="Protein"
-                      baseValue={fmt(base.nutrition?.protein_g, "g")}
-                      candidateValue={fmt(candidate.nutrition?.protein_g, "g")}
+                      baseValue={fmt(base?.nutrition?.protein_g, "g")}
+                      candidateValue={fmt(candidate?.nutrition?.protein_g, "g")}
                       baseWins={wins("protein_g", "base")}
                       candidateWins={wins("protein_g", "candidate")}
                     />
+
                     <CompareRow
                       label="Carbs"
-                      baseValue={fmt(base.nutrition?.carbs_g, "g")}
-                      candidateValue={fmt(candidate.nutrition?.carbs_g, "g")}
-                      baseWins={false}
-                      candidateWins={false}
+                      baseValue={fmt(base?.nutrition?.carbs_g, "g")}
+                      candidateValue={fmt(candidate?.nutrition?.carbs_g, "g")}
                     />
+
                     <CompareRow
                       label="Fat"
-                      baseValue={fmt(base.nutrition?.fat_g, "g")}
-                      candidateValue={fmt(candidate.nutrition?.fat_g, "g")}
-                      baseWins={false}
-                      candidateWins={false}
+                      baseValue={fmt(base?.nutrition?.fat_g, "g")}
+                      candidateValue={fmt(candidate?.nutrition?.fat_g, "g")}
                     />
+
                     <CompareRow
                       label="Sodium"
-                      baseValue={fmt(base.nutrition?.sodium_mg, "mg")}
-                      candidateValue={fmt(candidate.nutrition?.sodium_mg, "mg")}
+                      baseValue={fmt(base?.nutrition?.sodium_mg, "mg")}
+                      candidateValue={fmt(candidate?.nutrition?.sodium_mg, "mg")}
                       baseWins={wins("sodium_mg", "base")}
                       candidateWins={wins("sodium_mg", "candidate")}
                     />
 
-                    {/* Indulgence — desserts and pure bread only */}
                     {showIndulgenceRow && (
-                      <div style={INSIGHT_ROW_STYLE}>
-                        <div style={INSIGHT_LABEL_STYLE}>Indulgence</div>
-                        <div style={{ display: "flex", justifyContent: "center" }}>
-                          <IndulgencePill label={base.indulgence?.label} />
+                      <div style={ROW_GRID_STYLE}>
+                        <div style={ROW_LABEL_STYLE}>Indulgence</div>
+                        <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
+                          <IndulgencePill label={base?.indulgence?.label} />
                         </div>
-                        <div style={{ display: "flex", justifyContent: "center" }}>
-                          <IndulgencePill label={candidate.indulgence?.label} />
+                        <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
+                          <IndulgencePill label={candidate?.indulgence?.label} />
                         </div>
                       </div>
                     )}
                   </>
                 )}
 
-                {/* Insights section — entrees only */}
                 {showInsightsSection && (
                   <>
                     <SectionLabel>Insights</SectionLabel>
 
-                    {/* Protein Strength: higher is better */}
-                    <div style={INSIGHT_ROW_STYLE}>
-                      <div style={INSIGHT_LABEL_STYLE}>Protein</div>
-                      <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div style={ROW_GRID_STYLE}>
+                      <div style={ROW_LABEL_STYLE}>Protein</div>
+                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
                         <InsightBadge level={baseIns?.protein_strength} higherIsBetter />
                       </div>
-                      <div style={{ display: "flex", justifyContent: "center" }}>
+                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
                         <InsightBadge level={candIns?.protein_strength} higherIsBetter />
                       </div>
                     </div>
 
-                    {/* Glycemic Impact: lower is better */}
-                    <div style={INSIGHT_ROW_STYLE}>
-                      <div style={INSIGHT_LABEL_STYLE}>Glycemic</div>
-                      <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div style={ROW_GRID_STYLE}>
+                      <div style={ROW_LABEL_STYLE}>Glycemic</div>
+                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
                         <InsightBadge level={baseIns?.glycemic_impact} higherIsBetter={false} />
                       </div>
-                      <div style={{ display: "flex", justifyContent: "center" }}>
+                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
                         <InsightBadge level={candIns?.glycemic_impact} higherIsBetter={false} />
                       </div>
                     </div>
 
-                    {/* Sodium Signal: lower is better */}
-                    <div style={INSIGHT_ROW_STYLE}>
-                      <div style={INSIGHT_LABEL_STYLE}>Sodium</div>
-                      <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div style={ROW_GRID_STYLE}>
+                      <div style={ROW_LABEL_STYLE}>Sodium</div>
+                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
                         <InsightBadge level={baseIns?.sodium_signal} higherIsBetter={false} />
                       </div>
-                      <div style={{ display: "flex", justifyContent: "center" }}>
+                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
                         <InsightBadge level={candIns?.sodium_signal} higherIsBetter={false} />
                       </div>
                     </div>
 
-                    {/* Lasting Energy: higher is better */}
-                    <div style={INSIGHT_ROW_STYLE}>
-                      <div style={INSIGHT_LABEL_STYLE}>Energy</div>
-                      <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div style={ROW_GRID_STYLE}>
+                      <div style={ROW_LABEL_STYLE}>Energy</div>
+                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
                         <InsightBadge level={baseIns?.lasting_energy} higherIsBetter />
                       </div>
-                      <div style={{ display: "flex", justifyContent: "center" }}>
+                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
                         <InsightBadge level={candIns?.lasting_energy} higherIsBetter />
                       </div>
                     </div>
@@ -599,15 +649,22 @@ export default function CompareItemsModal({
                 )}
               </div>
 
-              {/* Why this differs */}
               <HighlightChips
                 highlights={highlights}
                 baseLabel={baseLabel}
                 candidateLabel={candidateLabel}
               />
 
-              {!base.nutrition && !candidate.nutrition && (
-                <div style={{ marginTop: 14, fontSize: 12, color: "#8a9e94", fontWeight: 700, textAlign: "center" }}>
+              {!base?.nutrition && !candidate?.nutrition && (
+                <div
+                  style={{
+                    marginTop: 14,
+                    fontSize: 12,
+                    color: "#8a9e94",
+                    fontWeight: 700,
+                    textAlign: "center",
+                  }}
+                >
                   Limited nutrition data available
                 </div>
               )}
@@ -615,7 +672,6 @@ export default function CompareItemsModal({
           )}
         </div>
 
-        {/* ── Footer actions ── */}
         <div style={FOOTER_STYLE}>
           <button
             style={{ ...BTN_BASE, background: "rgba(20,33,27,0.08)", color: "#23352d" }}
@@ -624,6 +680,7 @@ export default function CompareItemsModal({
           >
             Keep Current
           </button>
+
           <button
             style={{
               ...BTN_BASE,
@@ -636,13 +693,7 @@ export default function CompareItemsModal({
           >
             Swap
           </button>
-          {/* TODO: Add Both — requires unified cart mutation.
-              Wire this button once the OrderCartContext supports multi-restaurant
-              item queueing.
-              TODO: Flex Pricing — wire flex_price_hint from compare payload when
-              Flex Pricing order flow is available. */}
         </div>
-
       </div>
     </div>
   );
