@@ -44,6 +44,7 @@ import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js"
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import { fetchCompareItems } from "../lib/api.js";
+import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -966,6 +967,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
                     menuItem: { id: entry.id },
                   })}${searchSuffix}`}
                   style={{ textDecoration: "none", color: "#124ba3", fontWeight: 800, fontSize: 15, lineHeight: 1.35, flex: "1 1 0", minWidth: 0 }}
+                  onClick={() => trackMenuItemInteraction(entry.id, "similar_click")}
                 >
                   {entry.name}
                 </Link>

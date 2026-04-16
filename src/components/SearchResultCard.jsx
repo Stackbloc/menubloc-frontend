@@ -47,6 +47,7 @@ import {
   getCanonicalMenuItemPath,
 } from "./share/shareUtils.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
+import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
 import {
   getQualitativeLabel,
   getNutritionSummary,
@@ -959,6 +960,7 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
             <Link
               to={href}
               style={{ color: "#11211a", textDecoration: "none" }}
+              onClick={() => trackMenuItemInteraction(mid, "click")}
               onMouseEnter={(e) => {
                 e.currentTarget.style.textDecoration = "underline";
                 e.currentTarget.style.textUnderlineOffset = "3px";
