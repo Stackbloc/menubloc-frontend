@@ -524,38 +524,43 @@ export default function GrubbidDiscovery() {
           </div>
 
           {/* Deals + location row */}
-          <div style={{ padding: "8px 16px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-            <button
-              type="button"
-              onClick={() => navigate("/deals")}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "6px 18px",
-                borderRadius: 999,
-                border: "1px solid rgba(22,101,62,0.35)",
-                background: "rgba(22,101,62,0.07)",
-                color: "#166a3e",
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: "pointer",
-                boxShadow: "0 1px 4px rgba(22,101,62,0.10)",
-              }}
-            >
-              🏷️ Deals · {locationStatusLine} →
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowLocationEditor((prev) => !prev)}
-              style={{
-                border: "none", background: "transparent",
-                color: "#667085", fontSize: 12, fontWeight: 700,
-                cursor: "pointer", padding: 0, lineHeight: 1,
-              }}
-            >
-              {showLocationEditor ? "Cancel" : "Change"}
-            </button>
+          <div style={{ padding: "8px 16px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            <div style={{ fontSize: 11, color: "#166a3e", fontWeight: 700, letterSpacing: "0.04em" }}>
+              👇 tap here to browse deals near you
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => navigate("/deals")}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 18px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(22,101,62,0.35)",
+                  background: "rgba(22,101,62,0.07)",
+                  color: "#166a3e",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: "0 1px 4px rgba(22,101,62,0.10)",
+                }}
+              >
+                🏷️ {locationStatusLine} →
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowLocationEditor((prev) => !prev)}
+                style={{
+                  border: "none", background: "transparent",
+                  color: "#667085", fontSize: 12, fontWeight: 700,
+                  cursor: "pointer", padding: 0, lineHeight: 1,
+                }}
+              >
+                {showLocationEditor ? "Cancel" : "Change"}
+              </button>
+            </div>
           </div>
         </div>
 
