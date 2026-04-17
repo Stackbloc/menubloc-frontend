@@ -79,6 +79,24 @@ function getLatLng(restaurant) {
   return null;
 }
 
+function computeDistanceLabel(restaurant) {
+  const candidates = [
+    restaurant?.distance_miles,
+    restaurant?.distanceMiles,
+    restaurant?.distance,
+    restaurant?.estimated_distance_miles,
+    restaurant?.meta?.distance_miles,
+  ];
+
+  for (const value of candidates) {
+    const miles = Number(value);
+    if (!Number.isFinite(miles) || miles < 0) continue;
+    return miles < 10 ? `${miles.toFixed(1)} mi` : `${miles.toFixed(0)} mi`;
+  }
+
+  return "";
+}
+
 // MKS-ish ordering helpers (best effort)
 function orderVal(obj) {
   const keys = ["mks_order", "item_order", "sort_order", "order", "position", "rank", "idx"];
@@ -139,7 +157,29 @@ function itemRawCategory(it) {
  */
 function normalizeToCategories(raw) {
   const d = raw || {};
-  const restaurant = d.restaurant || d.meta?.restaurant || null;
+  const restaurant =
+    d.restaurant ||
+    d.meta?.restaurant ||
+    (d && (d.restaurant_id || d.restaurant_name || d.name)
+      ? {
+          id: d.restaurant_id || d.id || null,
+          restaurant_id: d.restaurant_id || d.id || null,
+          name: d.name || d.restaurant_name || "",
+          restaurant_name: d.restaurant_name || d.name || "",
+          address: d.address || null,
+          address_line: d.address_line || null,
+          address_line1: d.address_line1 || d.address || null,
+          city: d.city || null,
+          state: d.state || null,
+          zip: d.zip || d.postal_code || null,
+          postal_code: d.postal_code || d.zip || null,
+          phone: d.phone || null,
+          slug: d.slug || null,
+          lat: d.lat ?? null,
+          lng: d.lng ?? null,
+          distance_miles: d.distance_miles ?? null,
+        }
+      : null);
 
   if (Array.isArray(d.categories)) {
     return { restaurant, categories: d.categories };
@@ -393,11 +433,13 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
 
   const rLatLng = getLatLng(restaurant);
   const distanceLabel = useMemo(() => {
+    const backendDistance = computeDistanceLabel(restaurant);
+    if (backendDistance) return backendDistance;
     if (!userGeo || !rLatLng) return "—";
     const miles = haversineMiles(userGeo.lat, userGeo.lng, rLatLng.lat, rLatLng.lng);
     if (!Number.isFinite(miles)) return "—";
     return miles < 10 ? `${miles.toFixed(1)} mi` : `${miles.toFixed(0)} mi`;
-  }, [userGeo, rLatLng]);
+  }, [restaurant, userGeo, rLatLng]);
 
   const profileRestaurantId = safeText(restaurant?.id || restaurantId);
   const bannerText = pendingBannerText(raw);

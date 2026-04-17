@@ -13,8 +13,8 @@
  * ============================================================
  */
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 import GrubbidMenuView from "../GrubbidMenuView.jsx";
 
@@ -47,12 +47,55 @@ function useIsMobile(breakpoint = 768) {
 
 export default function MenuPage() {
   const { restaurantId } = useParams();
+  const { search } = useLocation();
   const rid = safeText(restaurantId);
   const isMobile = useIsMobile();
+  const urlParams = useMemo(() => new URLSearchParams(search), [search]);
+  const urlCity = urlParams.get("city") || "";
+  const urlState = urlParams.get("state") || "";
+  const urlLat = urlParams.get("lat") ? parseFloat(urlParams.get("lat")) : null;
+  const urlLng = urlParams.get("lng") ? parseFloat(urlParams.get("lng")) : null;
 
   const [loading, setLoading] = useState(true);
   const [menuData, setMenuData] = useState(null);
   const [err, setErr] = useState("");
+  const [userLat, setUserLat] = useState(urlLat);
+  const [userLng, setUserLng] = useState(urlLng);
+
+  useEffect(() => {
+    if (urlLat != null && urlLng != null) return;
+    if (!navigator.geolocation) return;
+
+    let cancelled = false;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (cancelled) return;
+        const lat = Number(pos.coords?.latitude);
+        const lng = Number(pos.coords?.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        setUserLat(lat);
+        setUserLng(lng);
+      },
+      () => {},
+      { timeout: 8000, maximumAge: 300000 }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [urlLat, urlLng]);
+
+  const apiUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (urlCity) params.set("city", urlCity);
+    if (urlState) params.set("state", urlState);
+    if (userLat != null && userLng != null) {
+      params.set("lat", String(userLat));
+      params.set("lng", String(userLng));
+    }
+    const qs = params.toString();
+    return `${API}/public/restaurants/${encodeURIComponent(rid)}/menu${qs ? `?${qs}` : ""}`;
+  }, [rid, urlCity, urlState, userLat, userLng]);
 
   useEffect(() => {
     let alive = true;
@@ -63,10 +106,7 @@ export default function MenuPage() {
       setMenuData(null);
 
       try {
-        const res = await fetch(
-          `${API}/public/restaurants/${encodeURIComponent(rid)}/menu`,
-          { credentials: "include" }
-        );
+        const res = await fetch(apiUrl, { credentials: "include" });
 
         if (!res.ok) {
           const txt = await res.text().catch(() => "");
@@ -95,7 +135,7 @@ export default function MenuPage() {
     return () => {
       alive = false;
     };
-  }, [rid]);
+  }, [apiUrl, rid]);
 
   const shellStyle = {
     minHeight: "100vh",
