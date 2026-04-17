@@ -8,7 +8,7 @@ function formatCuisine(raw) {
     .trim();
 }
 
-export default function DiscoveryFeedCard({ menu, index = 0, onMore }) {
+export default function DiscoveryFeedCard({ menu, index = 0, onMore, matchReason }) {
   const name = menu?.restaurant_name || "Restaurant";
   const cuisine = menu?.cuisine || menu?.category || null;
   const preview = (menu?.preview_items || []).slice(0, 3);
@@ -70,6 +70,14 @@ export default function DiscoveryFeedCard({ menu, index = 0, onMore }) {
                 {item}
               </div>
             ))}
+          </div>
+        )}
+
+        {matchReason && (
+          <div style={{
+            fontSize: 11, fontWeight: 400, color: "#b0b7c3", marginBottom: 8,
+          }}>
+            {matchReason}
           </div>
         )}
 

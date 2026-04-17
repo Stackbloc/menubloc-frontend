@@ -37,6 +37,56 @@ const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const RECENT_LOCATIONS_KEY = "grubbid.recent.locations";
 const MAX_RECENT_LOCATIONS = 3;
 
+// Re-ranks feed when query is active; falls back to full list if nothing matches
+function filterAndRankMenus(menus, query) {
+  const q = (query || "").toLowerCase().trim();
+  if (!q) return menus;
+  const terms = q.split(/\s+/).filter(Boolean);
+  const scored = menus.map((menu) => {
+    let score = 0;
+    const name = (menu.restaurant_name || "").toLowerCase();
+    const cuisine = (menu.cuisine || menu.category || "").toLowerCase();
+    const items = (menu.preview_items || []).join(" ").toLowerCase();
+    if (name.includes(q)) score += 10;
+    if (cuisine.includes(q)) score += 6;
+    if (items.includes(q)) score += 4;
+    terms.forEach((t) => {
+      if (name.includes(t)) score += 3;
+      if (cuisine.includes(t)) score += 2;
+      if (items.includes(t)) score += 1;
+    });
+    if (/vegan|plant.?based/.test(q) && menu.has_vegan_options) score += 8;
+    if (/gluten.?free/.test(q) && menu.has_gluten_free_options) score += 8;
+    if (/keto|low.?carb/.test(q) && menu.has_keto_options) score += 8;
+    if (/low.?sodium/.test(q) && menu.has_low_sodium_options) score += 8;
+    if (/diabetic/.test(q) && menu.has_diabetic_friendly_options) score += 8;
+    if (/deal/.test(q) && menu.has_deals) score += 8;
+    return { menu, score };
+  });
+  const matches = scored.filter(({ score }) => score > 0).sort((a, b) => b.score - a.score);
+  return matches.length > 0 ? matches.map(({ menu }) => menu) : menus;
+}
+
+// Returns one short match reason, or null if no strong signal
+function buildMatchReason(menu, filters, query) {
+  if (filters.vegan && menu.has_vegan_options) return "Match: Vegan Friendly";
+  if (filters.gluten_free && menu.has_gluten_free_options) return "Match: Gluten-Free";
+  if (filters.diabetic_friendly && menu.has_diabetic_friendly_options) return "Match: Diabetic Friendly";
+  if (filters.keto && menu.has_keto_options) return "Match: Low Carb";
+  if (filters.dairy_free && menu.has_dairy_free_options) return "Match: Dairy-Free";
+  if (filters.low_sodium && menu.has_low_sodium_options) return "Match: Low Sodium";
+  const q = (query || "").toLowerCase();
+  if (q) {
+    if (/vegan|plant.?based/.test(q) && menu.has_vegan_options) return "Match: Vegan Friendly";
+    if (/gluten.?free/.test(q) && menu.has_gluten_free_options) return "Match: Gluten-Free";
+    if (/keto|low.?carb/.test(q) && menu.has_keto_options) return "Match: Low Carb";
+    if (/low.?sodium/.test(q) && menu.has_low_sodium_options) return "Match: Low Sodium";
+    if (/diabetic/.test(q) && menu.has_diabetic_friendly_options) return "Match: Diabetic Friendly";
+    if (/deal/.test(q) && menu.has_deals) return "Match: Deals Available";
+  }
+  return null;
+}
+
 function loadRecentLocations() {
   if (typeof window === "undefined") return [];
   try {
@@ -138,6 +188,11 @@ export default function GrubbidDiscovery() {
     if (appliedLocation) return appliedLocation;
     return autoLocation.label;
   }, [appliedLocation, autoLocation.label]);
+
+  const displayMenus = useMemo(
+    () => filterAndRankMenus(feedMenus, query),
+    [feedMenus, query]
+  );
 
   // Persist dietary prefs whenever they change
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
@@ -617,7 +672,7 @@ export default function GrubbidDiscovery() {
                 height: 200, marginBottom: 14,
               }} />
             ))
-          ) : feedMenus.length === 0 && autoLocation.status !== "locating" ? (
+          ) : displayMenus.length === 0 && autoLocation.status !== "locating" ? (
             <div style={{
               textAlign: "center", padding: "48px 20px",
               color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
@@ -627,12 +682,13 @@ export default function GrubbidDiscovery() {
                 : "No menus found nearby. Try changing your location."}
             </div>
           ) : (
-            feedMenus.map((menu, i) => (
+            displayMenus.map((menu, i) => (
               <DiscoveryFeedCard
                 key={menu.menu_id || `feed-${i}`}
                 menu={menu}
                 index={i}
                 onMore={setMoreSheet}
+                matchReason={buildMatchReason(menu, filters, query)}
               />
             ))
           )}
