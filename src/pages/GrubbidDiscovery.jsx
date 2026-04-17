@@ -2,9 +2,11 @@
  * ============================================================
  * File: GrubbidDiscovery.jsx
  * Path: menubloc-frontend/src/pages/GrubbidDiscovery.jsx
- * Date: 2026-04-03
+ * Date: 2026-04-17
  * Purpose:
- *   Search-first discovery page with automatic location detection.
+ *   Mobile-first discovery page. Fixed top bar + search, auto-loading
+ *   browse feed, left drawer, more-options bottom sheet.
+ *   All search/location/filter logic preserved from prior version.
  * ============================================================
  */
 
@@ -24,6 +26,9 @@ import {
   reverseGeocode,
 } from "../lib/locationUtils.js";
 import { captureEvent } from "../services/posthog.js";
+import DiscoveryDrawer from "../components/grubbid/DiscoveryDrawer.jsx";
+import DiscoveryFeedCard from "../components/grubbid/DiscoveryFeedCard.jsx";
+import DiscoveryMoreSheet from "../components/grubbid/DiscoveryMoreSheet.jsx";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -47,9 +52,7 @@ function saveRecentLocation(label) {
     const existing = loadRecentLocations().filter((l) => l !== label);
     const updated = [label, ...existing].slice(0, MAX_RECENT_LOCATIONS);
     window.localStorage.setItem(RECENT_LOCATIONS_KEY, JSON.stringify(updated));
-  } catch {
-    // ignore storage errors
-  }
+  } catch {}
 }
 
 function removeRecentLocation(label) {
@@ -57,75 +60,13 @@ function removeRecentLocation(label) {
   try {
     const updated = loadRecentLocations().filter((l) => l !== label);
     window.localStorage.setItem(RECENT_LOCATIONS_KEY, JSON.stringify(updated));
-  } catch {
-    // ignore storage errors
-  }
+  } catch {}
 }
-const CANDIDATE_SUGGESTED_SEARCHES = [
-  { value: "chicken sandwich", labelKey: "suggested.chickenSandwich" },
-  { value: "tacos", labelKey: "suggested.tacos" },
-  { value: "vegan breakfast", labelKey: "suggested.veganBreakfast" },
-  { value: "gluten-free pizza", labelKey: "suggested.glutenFreePizza" },
-  { value: "burger", labelKey: "suggested.burger" },
-  { value: "salad", labelKey: "suggested.salad" },
-  { value: "breakfast", labelKey: "suggested.breakfast" },
-];
-
-function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth <= breakpoint;
-  });
-
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-
-    function handleResize() {
-      setIsMobile(window.innerWidth <= breakpoint);
-    }
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [breakpoint]);
-
-  return isMobile;
-}
-
-// parseLocation and US_STATE_ABBREVS imported from ../lib/locationUtils.js
-
-function FilterChip({ label, active, onClick, accentColor = "#111827" }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        borderRadius: 999,
-        border: active ? `1px solid ${accentColor}` : "1px solid #d8dee8",
-        background: active ? accentColor : "#fff",
-        color: active ? "#fff" : "#1f2937",
-        padding: "8px 12px",
-        fontSize: 13,
-        fontWeight: 700,
-        cursor: "pointer",
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
-// reverseGeocode imported from ../lib/locationUtils.js
 
 function useAutoLocation() {
   const [state, setState] = useState({
     status: "locating",
-    label: "",
-    city: "",
-    state: "",
-    confidence: "low",
-    lat: null,
-    lng: null,
+    label: "", city: "", state: "", confidence: "low", lat: null, lng: null,
   });
 
   useEffect(() => {
@@ -138,12 +79,10 @@ function useAutoLocation() {
       async (position) => {
         const lat = Number(position?.coords?.latitude);
         const lng = Number(position?.coords?.longitude);
-
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
           setState({ status: "unavailable", label: "", city: "", state: "", confidence: "low", lat: null, lng: null });
           return;
         }
-
         try {
           const geo = await reverseGeocode(lat, lng);
           setState({ status: "ready", label: geo.label, city: geo.city, state: geo.state, confidence: geo.confidence, lat, lng });
@@ -162,17 +101,16 @@ function useAutoLocation() {
 }
 
 export default function GrubbidDiscovery() {
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
   const navigate = useNavigate();
   const inputRef = useRef(null);
-  const isMobile = useIsMobile();
   const autoLocation = useAutoLocation();
 
+  // ── existing state ──────────────────────────────────────────────────────────
   const [query, setQuery] = useState("");
   const [inlineError, setInlineError] = useState("");
   const [searching, setSearching] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [showLocationEditor, setShowLocationEditor] = useState(false);
   const [locationSaveState, setLocationSaveState] = useState("idle");
   const [locationInput, setLocationInput] = useState(() => {
@@ -187,34 +125,24 @@ export default function GrubbidDiscovery() {
   const [filters, setFilters] = useState(() => loadDietPrefs());
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [metaCategories, setMetaCategories] = useState([]);
-  const [metaCuisines, setMetaCuisines] = useState([]);
-  const suggestedSearches = CANDIDATE_SUGGESTED_SEARCHES.map((entry) => ({
-    ...entry,
-    label: t(entry.labelKey, entry.value),
-  }));
+
+  // ── new state ───────────────────────────────────────────────────────────────
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [moreSheet, setMoreSheet] = useState(null);
+  const [feedMenus, setFeedMenus] = useState([]);
+  const [feedLoading, setFeedLoading] = useState(false);
+  const [allergenFilters, setAllergenFilters] = useState({ nuts: false, dairy: false, gluten: false, shellfish: false });
+  const [hideCuisines, setHideCuisines] = useState({ fast_food: false, pizza: false, mexican: false });
 
   const resolvedLocationLabel = useMemo(() => {
     if (appliedLocation) return appliedLocation;
     return autoLocation.label;
   }, [appliedLocation, autoLocation.label]);
 
-  // Persist dietary prefs whenever they change so other pages see them
+  // Persist dietary prefs whenever they change
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
 
-  // Load category and cuisine options from the meta API
-  useEffect(() => {
-    fetch(`${API}/api/meta/categories`)
-      .then((r) => r.json())
-      .then((json) => { if (json?.categories) setMetaCategories(json.categories); })
-      .catch(() => {});
-    fetch(`${API}/api/meta/cuisines`)
-      .then((r) => r.json())
-      .then((json) => { if (json?.cuisines) setMetaCuisines(json.cuisines); })
-      .catch(() => {});
-  }, []);
-
-  // Seed recent locations from the session location on first load
+  // Seed recent locations from session on first load
   useEffect(() => {
     const sessionLoc = typeof window !== "undefined"
       ? String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim()
@@ -226,19 +154,46 @@ export default function GrubbidDiscovery() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-load feed when location becomes available or changes
+  useEffect(() => {
+    const hasLocation =
+      (autoLocation.status === "ready" && (autoLocation.city || autoLocation.lat)) ||
+      appliedLocation;
+    if (!hasLocation) return;
+
+    const params = new URLSearchParams();
+    if (appliedLocation) {
+      const loc = parseLocation(appliedLocation);
+      if (loc.city) params.set("city", loc.city);
+      if (loc.state) params.set("state", loc.state);
+    } else if (autoLocation.city) {
+      params.set("city", autoLocation.city);
+      if (autoLocation.state) params.set("state", autoLocation.state);
+    } else if (autoLocation.lat) {
+      params.set("lat", String(autoLocation.lat));
+      params.set("lng", String(autoLocation.lng));
+      params.set("radius_miles", String(LOCAL_RADIUS_MILES));
+    }
+
+    setFeedLoading(true);
+    fetch(`${API}/menus/browse?${params.toString()}`)
+      .then((r) => r.json())
+      .then((json) => { setFeedMenus(json.menus || []); })
+      .catch(() => {})
+      .finally(() => setFeedLoading(false));
+  }, [autoLocation.status, autoLocation.city, autoLocation.lat, appliedLocation]);
+
+  // ── existing logic (unchanged) ──────────────────────────────────────────────
 
   function buildSearchParams(queryValue, options = {}) {
     const includeFilters = options.includeFilters !== false;
-    const explicitLocationValue = String(
-      options.locationOverride ?? appliedLocation ?? ""
-    ).trim();
+    const explicitLocationValue = String(options.locationOverride ?? appliedLocation ?? "").trim();
     const params = buildSearchLocationParams({
       query: queryValue,
       explicitLocationValue,
       autoLocation,
       radiusMiles: LOCAL_RADIUS_MILES,
     });
-
     if (includeFilters) {
       const dietaryParams = buildDietaryQueryParams(filters);
       for (const [key, value] of Object.entries(dietaryParams)) {
@@ -252,66 +207,44 @@ export default function GrubbidDiscovery() {
         if (value) params.set(key, value);
       }
     }
-
     return params;
   }
 
   async function runSearch(queryValue = query) {
-    const params = buildSearchParams(queryValue, {
-      locationOverride: getEffectiveSearchLocation(),
-    });
+    const params = buildSearchParams(queryValue, { locationOverride: getEffectiveSearchLocation() });
     setInlineError("");
-
-    // Need a query term to check results
     const qTerm = String(queryValue || "").trim();
     if (!qTerm) {
       navigate(`/search?${params.toString()}`);
       return;
     }
-
     captureEvent("search_performed", {
       query: qTerm,
-      filters: {
-        vegan: Boolean(filters.vegan),
-        gluten_free: Boolean(filters.gluten_free),
-        price_max: null,
-      },
+      filters: { vegan: Boolean(filters.vegan), gluten_free: Boolean(filters.gluten_free), price_max: null },
     });
-
     setSearching(true);
     try {
       const url = `${API}/search?${params.toString()}&limit=1`;
       const res = await fetch(url, { credentials: "include" });
       const json = await res.json().catch(() => ({}));
       const count = (json?.menu_items?.length || 0) + (json?.buckets?.restaurants?.length || 0);
-
       if (count === 0) {
-        // Build a readable location label for the error message
         const loc = getEffectiveSearchLocation() || "";
-        const parsed = loc.match(/^\d{5}/) ? loc : loc;
-        const nearText = parsed ? ` near ${parsed}` : "";
-        setInlineError(
-          t("discovery.noResultsFoundFor", `No results found for "${qTerm}"${nearText}`, {
-            query: qTerm,
-            nearText,
-          })
-        );
+        const nearText = loc ? ` near ${loc}` : "";
+        setInlineError(t("discovery.noResultsFoundFor", `No results found for "${qTerm}"${nearText}`, { query: qTerm, nearText }));
       } else {
         const locationLabel = resolvedLocationLabel || "";
         if (locationLabel) {
           saveRecentLocation(locationLabel);
           setRecentLocations(loadRecentLocations());
-          // Persist so returning to this page keeps the same location pre-filled,
-          // even when the location was auto-detected (not manually applied).
-          try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, locationLabel); } catch { /* ignore */ }
+          try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, locationLabel); } catch {}
         }
         navigate(`/search?${params.toString()}`);
       }
     } catch {
-      // On network error just navigate anyway — still persist location
       const locationLabel = resolvedLocationLabel || "";
       if (locationLabel) {
-        try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, locationLabel); } catch { /* ignore */ }
+        try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, locationLabel); } catch {}
       }
       navigate(`/search?${params.toString()}`);
     } finally {
@@ -319,43 +252,28 @@ export default function GrubbidDiscovery() {
     }
   }
 
-  function handleSearchKeyDown(event) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      runSearch();
-    }
-  }
-
   async function persistDefaultLocation(rawLabel, sourceOverride = null) {
     if (!consumerLoggedIn) return;
-
     const normalizedLabel = normalizeLocationLabel(String(rawLabel || ""));
     if (!normalizedLabel) return;
-
     const parsed = parseLocation(normalizedLabel);
     const useAutoCoords = autoLocation.label && normalizeLocationLabel(autoLocation.label) === normalizedLabel;
     const lat = useAutoCoords ? autoLocation.lat : null;
     const lng = useAutoCoords ? autoLocation.lng : null;
     const source = sourceOverride || (useAutoCoords ? "autodetect" : "manual");
-    // When we know the autodetected city/state precisely, prefer them over the parsed label
     if (useAutoCoords && autoLocation.city) parsed.city = autoLocation.city;
     if (useAutoCoords && autoLocation.state) parsed.state = autoLocation.state;
-
     setLocationSaveState("saving");
     try {
       const locationsResponse = await getLocations();
       const locations = Array.isArray(locationsResponse?.locations) ? locationsResponse.locations : [];
-      const existingDefault = locations.find((location) => location.is_default);
+      const existingDefault = locations.find((l) => l.is_default);
       const payload = {
         label: normalizedLabel,
         city: parsed.city || null,
         state: parsed.state || null,
-        lat,
-        lng,
-        source,
-        is_default: true,
+        lat, lng, source, is_default: true,
       };
-
       if (existingDefault?.id) {
         await updateLocation(existingDefault.id, payload);
       } else {
@@ -393,301 +311,208 @@ export default function GrubbidDiscovery() {
     return appliedLocation;
   }
 
-  function buildTopPicksHref() {
-    const params = buildSearchParams("", {
-      includeFilters: false,
-      locationOverride: getEffectiveSearchLocation(),
-    });
-    return `/top-picks?${params.toString()}`;
+  function handleBrowse() {
+    const p = new URLSearchParams();
+    if (appliedLocation) {
+      const loc = parseLocation(appliedLocation);
+      if (loc.city) p.set("city", loc.city);
+      if (loc.state) p.set("state", loc.state);
+    } else if (autoLocation.city || autoLocation.state) {
+      if (autoLocation.city) p.set("city", autoLocation.city);
+      if (autoLocation.state) p.set("state", autoLocation.state);
+    }
+    const qs = p.toString();
+    navigate(qs ? `${BROWSE_MENUS_PATH}?${qs}` : BROWSE_MENUS_PATH);
   }
 
+  // ── render ──────────────────────────────────────────────────────────────────
+
+  const locationStatusLine = resolvedLocationLabel
+    ? `Near ${resolvedLocationLabel}`
+    : autoLocation.status === "locating"
+    ? "Detecting location…"
+    : autoLocation.status === "denied"
+    ? "Location access denied"
+    : "Enter your location";
+
   return (
-    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
-      <div
-        style={{
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: isMobile ? "36px 14px 56px" : "72px 32px 80px",
-          boxSizing: "border-box",
-        }}
-      >
-        <style>
-          {`
-            .grubbid-discovery-search::placeholder {
-              font-size: 14px;
-              font-weight: 400;
-              color: #667085;
-            }
+    <div style={{ position: "relative", minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+      <style>{`
+        .disc-search-input::placeholder { color: #9ca3af; font-size: 15px; font-weight: 500; }
+        .disc-search-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(31,78,61,0.25); }
+        .disc-feed-skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
+        @keyframes skelPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+      `}</style>
 
-            @media (max-width: 768px) {
-              .grubbid-discovery-search::placeholder {
-                font-size: 13px;
-              }
-            }
-          `}
-        </style>
+      <DiscoveryDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        filters={filters}
+        setFilters={setFilters}
+        allergenFilters={allergenFilters}
+        setAllergenFilters={setAllergenFilters}
+        hideCuisines={hideCuisines}
+        setHideCuisines={setHideCuisines}
+      />
 
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: isMobile ? 44 : 64 }}>
-          <BrandLockup
-            subtitle={t("nav.discovery")}
-            logoProps={{
-              width: isMobile ? 98 : 138,
-              height: isMobile ? 64 : 90,
-              radius: isMobile ? 18 : 24,
-              pageColor: "#f7f6f1",
-            }}
-            subtitleStyle={{
-              fontSize: isMobile ? 9 : 10,
-              letterSpacing: isMobile ? 1.1 : 1.25,
-              lineHeight: 1,
-              marginTop: -8,
-            }}
-          />
-          {!consumerLoading && (
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              {consumerLoggedIn ? (
-                <Link to="/account" style={{ fontSize: 14, fontWeight: 700, color: "#1F4E3D", textDecoration: "none" }}>
-                  Account
-                </Link>
-              ) : (
-                <>
-                  <Link to="/account/login" style={{ fontSize: 14, fontWeight: 600, color: "#1F4E3D", textDecoration: "none" }}>
-                    Log In
-                  </Link>
-                  <Link to="/account/signup" style={{ fontSize: 14, fontWeight: 700, color: "#fff", background: "#1F4E3D", padding: "6px 14px", borderRadius: 8, textDecoration: "none" }}>
-                    Sign Up
-                  </Link>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+      <DiscoveryMoreSheet
+        open={!!moreSheet}
+        menu={moreSheet}
+        onClose={() => setMoreSheet(null)}
+      />
 
-        <div style={{ maxWidth: 920 }}>
-          <div
-            style={{
-              fontSize: isMobile ? 15 : 17,
-              fontWeight: 800,
-              color: "#667085",
-              letterSpacing: 0.3,
-              marginBottom: isMobile ? 20 : 24,
-              paddingLeft: 14,
-            }}
-          >
-            {t("discovery.tagline")}
-          </div>
+      <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
-          {/* Search row — input and button are the same height */}
-          <div
-            className="grubbid-discovery-search-row"
-            style={{
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              gap: 10,
-              width: "100%",
-            }}
-          >
-            <input
-              className="grubbid-discovery-search"
-              ref={inputRef}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              placeholder={t("discovery.searchPlaceholder")}
+        {/* ── STICKY HEADER ──────────────────────────────────────────────── */}
+        <div style={{
+          position: "sticky", top: 0, zIndex: 100,
+          background: "#f7f6f1",
+          borderBottom: "1px solid rgba(0,0,0,0.06)",
+          paddingBottom: 12,
+        }}>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "14px 16px 10px",
+          }}>
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open menu"
               style={{
-                flex: 1,
-                width: isMobile ? "100%" : undefined,
-                height: isMobile ? 56 : 64,
-                borderRadius: 16,
-                border: "1px solid #d7dce5",
-                padding: isMobile ? "0 16px" : "0 20px",
-                fontSize: isMobile ? 16 : 18,
-                fontWeight: 600,
-                boxSizing: "border-box",
-                background: "#fff",
-                color: "#101828",
-                boxShadow: "0 8px 24px rgba(15,23,42,0.07)",
-                outline: "none",
+                border: "none", background: "transparent",
+                fontSize: 22, color: "#101828", cursor: "pointer",
+                padding: 4, lineHeight: 1, flexShrink: 0,
               }}
+            >
+              ☰
+            </button>
+
+            <BrandLockup
+              logoProps={{ width: 72, height: 48, radius: 14, pageColor: "#f7f6f1" }}
+              subtitleStyle={{ display: "none" }}
             />
 
-            <button
-              type="button"
-              onClick={() => runSearch(query)}
-              disabled={searching}
-              style={{
-                flexShrink: 0,
-                width: isMobile ? "100%" : 120,
-                height: isMobile ? 56 : 64,
-                borderRadius: 16,
-                border: "none",
-                background: searching ? "#344054" : "#101828",
-                color: "#fff",
-                fontSize: 16,
-                fontWeight: 900,
-                cursor: searching ? "default" : "pointer",
-                letterSpacing: 0.2,
-                transition: "background 160ms ease",
-              }}
-            >
-              {searching ? "…" : t("common.search")}
-            </button>
+            {!consumerLoading && (
+              consumerLoggedIn ? (
+                <Link to="/account" style={{ fontSize: 22, textDecoration: "none", flexShrink: 0 }}>
+                  👤
+                </Link>
+              ) : (
+                <Link to="/account/login" style={{
+                  fontSize: 13, fontWeight: 700, color: "#1F4E3D",
+                  textDecoration: "none", flexShrink: 0,
+                }}>
+                  Sign in
+                </Link>
+              )
+            )}
           </div>
 
-          {/* Suggested searches */}
-          <div style={{ marginTop: 20, fontSize: isMobile ? 13 : 14, color: "#475467", lineHeight: 1.6 }}>
-            {t("discovery.tryLine")}
-          </div>
-
-          {/* OR divider */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginTop: isMobile ? 32 : 40,
-            }}
-          >
-            <div style={{ flex: 1, height: 1, background: "#e4e7ec" }} />
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 900,
-                color: "#9ca3af",
-                letterSpacing: 1.2,
-              }}
-            >
-              {t("discovery.or")}
+          <div style={{ padding: "0 16px" }}>
+            <div style={{ position: "relative" }}>
+              <input
+                ref={inputRef}
+                className="disc-search-input"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
+                placeholder="Search meals, ingredients…"
+                style={{
+                  width: "100%",
+                  height: 52,
+                  borderRadius: 999,
+                  border: "1.5px solid #e4e7ec",
+                  background: "#fff",
+                  paddingLeft: 22,
+                  paddingRight: 56,
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: "#101828",
+                  boxSizing: "border-box",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.07)",
+                }}
+              />
+              <button
+                type="button"
+                aria-label="Search by photo (coming soon)"
+                style={{
+                  position: "absolute", right: 14, top: "50%",
+                  transform: "translateY(-50%)",
+                  border: "none", background: "transparent",
+                  fontSize: 20, color: "#667085", cursor: "pointer",
+                  padding: 4, lineHeight: 1,
+                }}
+              >
+                📷
+              </button>
             </div>
-            <div style={{ flex: 1, height: 1, background: "#e4e7ec" }} />
           </div>
+        </div>
 
-          {/* Browse Menus — centered space-bar style button */}
-          <div style={{ display: "flex", justifyContent: "center", marginTop: isMobile ? 20 : 24 }}>
-            <button
-              type="button"
-              onClick={() => {
-                const p = new URLSearchParams();
-                if (appliedLocation) {
-                  // User set a manual location — parse city/state from it
-                  const loc = parseLocation(appliedLocation);
-                  if (loc.city) p.set("city", loc.city);
-                  if (loc.state) p.set("state", loc.state);
-                } else if (autoLocation.city || autoLocation.state) {
-                  // Auto-detected location — city/state already extracted precisely
-                  if (autoLocation.city) p.set("city", autoLocation.city);
-                  if (autoLocation.state) p.set("state", autoLocation.state);
-                }
-                const qs = p.toString();
-                navigate(qs ? `${BROWSE_MENUS_PATH}?${qs}` : BROWSE_MENUS_PATH);
-              }}
-              style={{
-                height: isMobile ? 46 : 52,
-                padding: "0 52px",
-                borderRadius: 14,
-                border: "1px solid #d7dce5",
-                background: "#fff",
-                color: "#101828",
-                fontSize: 15,
-                fontWeight: 800,
-                cursor: "pointer",
-                letterSpacing: 0.1,
-                whiteSpace: "nowrap",
-              }}
-            >
-              <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                <span>{t("discovery.browseMenus")}</span>
-                <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.6 }}>{t("discovery.local")}</span>
-              </span>
-            </button>
-          </div>
+        {/* ── SCROLLABLE FEED CONTENT ────────────────────────────────────── */}
+        <div style={{ flex: 1, padding: "14px 16px 80px" }}>
 
-          <div
-            style={{
-              marginTop: 28,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-              alignItems: "flex-start",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: isMobile ? "column" : "row",
-                gap: isMobile ? 4 : 10,
-                alignItems: isMobile ? "flex-start" : "center",
-              }}
-            >
-              <div style={{ fontSize: 14, color: "#475467", fontWeight: 700 }}>
-              {resolvedLocationLabel
-                ? t("discovery.searchingNear", `Searching near ${resolvedLocationLabel}`, { location: resolvedLocationLabel })
-                : autoLocation.status === "locating"
-                ? t("discovery.determiningLocation")
-                : t("discovery.searchingNearYou")}
-              </div>
-
+          {/* Location label */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 16,
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#667085" }}>
+              📍 {locationStatusLine}
+            </span>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <button
                 type="button"
                 onClick={() => setShowLocationEditor((prev) => !prev)}
                 style={{
-                  border: "none",
-                  background: "transparent",
-                  color: "#11211a",
-                  fontSize: 14,
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  padding: 0,
+                  border: "none", background: "transparent",
+                  color: "#1F4E3D", fontSize: 13, fontWeight: 800,
+                  cursor: "pointer", padding: 0,
                 }}
               >
-                {t("discovery.changeLocation")}
+                {showLocationEditor ? "Cancel" : "Change"}
+              </button>
+              <button
+                type="button"
+                onClick={handleBrowse}
+                style={{
+                  border: "1px solid #d7dce5", background: "#fff",
+                  color: "#344054", fontSize: 12, fontWeight: 700,
+                  cursor: "pointer", padding: "5px 12px", borderRadius: 999,
+                }}
+              >
+                Browse all
               </button>
             </div>
           </div>
 
-          {showLocationEditor ? (
-            <div
-              style={{
-                marginTop: 12,
-                maxWidth: 420,
-                display: "grid",
-                gap: 10,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#344054" }}>
-                {t("discovery.locationInputLabel")}
+          {/* Location editor — plain text field, no autocomplete (CLAUDE.md rule) */}
+          {showLocationEditor && (
+            <div style={{
+              background: "#fff", borderRadius: 16,
+              border: "1px solid #e4e7ec",
+              padding: "16px", marginBottom: 16,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#344054", marginBottom: 10 }}>
+                {t("discovery.locationInputLabel", "Enter your location")}
               </div>
 
-              {/* Recent locations — click to select */}
-              {recentLocations.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {recentLocations.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 10 }}>
                   {recentLocations.map((label) => (
-                    <div
-                      key={label}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "8px 12px",
-                        borderRadius: 10,
-                        border: "1px solid #e4e7ec",
-                        background: locationInput === label ? "#f0faf4" : "#fafafa",
-                        cursor: "pointer",
-                      }}
-                    >
+                    <div key={label} style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "8px 12px", borderRadius: 10,
+                      border: "1px solid #e4e7ec",
+                      background: locationInput === label ? "#f0faf4" : "#fafafa",
+                    }}>
                       <button
                         type="button"
                         onClick={() => { setLocationInput(label); applyLocationChange(label); }}
                         style={{
-                          border: "none",
-                          background: "transparent",
-                          padding: 0,
-                          fontSize: 14,
-                          fontWeight: 700,
-                          color: "#11211a",
-                          cursor: "pointer",
-                          textAlign: "left",
-                          flex: 1,
+                          border: "none", background: "transparent",
+                          padding: 0, fontSize: 14, fontWeight: 700,
+                          color: "#11211a", cursor: "pointer", textAlign: "left", flex: 1,
                         }}
                       >
                         {label}
@@ -702,365 +527,116 @@ export default function GrubbidDiscovery() {
                           if (locationInput === label) setLocationInput("");
                         }}
                         style={{
-                          border: "none",
-                          background: "transparent",
-                          padding: "0 0 0 8px",
-                          color: "#9ca3af",
-                          fontSize: 16,
-                          lineHeight: 1,
-                          cursor: "pointer",
+                          border: "none", background: "transparent",
+                          padding: "0 0 0 8px", color: "#9ca3af",
+                          fontSize: 16, lineHeight: 1, cursor: "pointer",
                         }}
-                      >
-                        ×
-                      </button>
+                      >×</button>
                     </div>
                   ))}
                 </div>
-              ) : null}
+              )}
 
               <input
                 value={locationInput}
-                onChange={(event) => setLocationInput(event.target.value)}
-                placeholder={t("discovery.locationInputPlaceholder")}
+                onChange={(e) => setLocationInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") applyLocationChange(); }}
+                placeholder={t("discovery.locationInputPlaceholder", "City, state or zip code")}
                 style={{
-                  height: 42,
-                  borderRadius: 12,
-                  border: "1px solid #d7dce5",
-                  padding: "0 12px",
-                  fontSize: 14,
-                  background: "#fff",
+                  width: "100%", height: 42, borderRadius: 12,
+                  border: "1px solid #d7dce5", padding: "0 12px",
+                  fontSize: 14, background: "#fff", boxSizing: "border-box",
                 }}
               />
-              <div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+
+              <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() => applyLocationChange()}
+                  style={{
+                    height: 38, padding: "0 16px", borderRadius: 10,
+                    border: "1px solid #cbd5e1", background: "#fff",
+                    color: "#11211a", fontWeight: 900, fontSize: 13, cursor: "pointer",
+                  }}
+                >
+                  Apply
+                </button>
+                {autoLocation.label && (
                   <button
                     type="button"
-                    onClick={() => applyLocationChange()}
+                    onClick={() => {
+                      setLocationInput(autoLocation.label);
+                      void applyLocationChange(autoLocation.label, { source: "autodetect" });
+                    }}
                     style={{
-                      height: 42,
-                      padding: "0 16px",
-                      borderRadius: 12,
-                      border: "1px solid #cbd5e1",
-                      background: "#fff",
-                      color: "#11211a",
-                      fontWeight: 900,
-                      cursor: "pointer",
+                      height: 38, padding: "0 16px", borderRadius: 10,
+                      border: "1px solid #cbd5e1", background: "#fff",
+                      color: "#11211a", fontWeight: 900, fontSize: 13, cursor: "pointer",
                     }}
                   >
-                    {t("common.apply")}
+                    Use Current Location
                   </button>
-                  {autoLocation.label ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLocationInput(autoLocation.label);
-                        void applyLocationChange(autoLocation.label, { source: "autodetect" });
-                      }}
-                      style={{
-                        height: 42,
-                        padding: "0 16px",
-                        borderRadius: 12,
-                        border: "1px solid #cbd5e1",
-                        background: "#fff",
-                        color: "#11211a",
-                        fontWeight: 900,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Use Current Location
-                    </button>
-                  ) : null}
-                </div>
-                {consumerLoggedIn ? (
-                  <div style={{ marginTop: 8, fontSize: 12, color: locationSaveState === "error" ? "#b42318" : "#667085", fontWeight: 600 }}>
-                    {locationSaveState === "saving"
-                      ? "Saving as your default location..."
-                      : locationSaveState === "saved"
-                      ? "Default location updated for your account."
-                      : locationSaveState === "error"
-                      ? "Location changed here, but account default could not be updated."
-                      : "Location changes here also update your default search location."}
-                  </div>
-                ) : (
-                  <div style={{ marginTop: 8, fontSize: 12, color: "#667085", fontWeight: 600 }}>
-                    Sign in to save this as your default search location.
-                  </div>
                 )}
               </div>
-            </div>
-          ) : null}
 
-          {inlineError ? (
-            <div
-              style={{
-                marginTop: 20,
-                padding: "16px 20px",
-                borderRadius: 16,
-                border: "1px solid rgba(18,34,28,0.08)",
-                background: "#fff",
-                boxShadow: "0 4px 14px rgba(15,23,42,0.05)",
-              }}
-            >
-              <div style={{ fontSize: 16, fontWeight: 900, color: "#11211a", marginBottom: 4 }}>
+              {consumerLoggedIn && (
+                <div style={{
+                  marginTop: 8, fontSize: 12, fontWeight: 600,
+                  color: locationSaveState === "error" ? "#b42318" : "#667085",
+                }}>
+                  {locationSaveState === "saving" ? "Saving…"
+                    : locationSaveState === "saved" ? "Default location updated."
+                    : locationSaveState === "error" ? "Could not update account default."
+                    : "Location changes also update your account default."}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Inline search error */}
+          {inlineError && (
+            <div style={{
+              marginBottom: 16, padding: "14px 18px",
+              borderRadius: 14, border: "1px solid #fecaca",
+              background: "#fff8f8",
+            }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#b91c1c", marginBottom: 4 }}>
                 {inlineError}
               </div>
-              <div style={{ fontSize: 13, color: "#667085", fontWeight: 500 }}>
-                {t("discovery.tryDifferent")}
+              <div style={{ fontSize: 13, color: "#667085" }}>
+                {t("discovery.tryDifferent", "Try a different search or location.")}
               </div>
             </div>
-          ) : null}
+          )}
 
-          <div style={{ marginTop: 40 }}>
-            <button
-              type="button"
-              onClick={() => setShowFilters((prev) => !prev)}
-              style={{
-                border: "none",
-                background: "transparent",
-                color: "#11211a",
-                fontSize: 15,
-                fontWeight: 900,
-                cursor: "pointer",
-                padding: 0,
-              }}
-            >
-              {`${t("discovery.preferences")} ${showFilters ? "▴" : "▾"}`}
-            </button>
-
-            {showFilters ? (
-              <div
-                style={{
-                  marginTop: 14,
-                  borderRadius: 18,
-                  border: "1px solid #e4e7ec",
-                  boxShadow: "0 12px 30px rgba(15,23,42,0.06)",
-                  overflow: "hidden",
-                }}
-              >
-                {/* Dietary filters */}
-                <div
-                  style={{
-                    padding: "14px 18px",
-                    background: "#fff",
-                    borderBottom: "1px solid #e4e7ec",
-                  }}
-                >
-                  <div style={{ fontSize: 11, fontWeight: 900, color: "#9ca3af", letterSpacing: 1.1, textTransform: "uppercase", marginBottom: 10 }}>
-                    {t("discovery.dietary")}
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    <FilterChip
-                      label={t("diet.dairy_free")}
-                      active={filters.dairy_free}
-                      onClick={() => setFilters((prev) => ({ ...prev, dairy_free: !prev.dairy_free }))}
-                    />
-                    <FilterChip
-                      label={t("diet.diabetic_friendly")}
-                      active={filters.diabetic_friendly}
-                      onClick={() =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          diabetic_friendly: !prev.diabetic_friendly,
-                        }))
-                      }
-                    />
-                    <FilterChip
-                      label={t("diet.gluten_free")}
-                      active={filters.gluten_free}
-                      onClick={() => setFilters((prev) => ({ ...prev, gluten_free: !prev.gluten_free }))}
-                    />
-                    <FilterChip
-                      label={t("diet.keto")}
-                      active={filters.keto}
-                      onClick={() => setFilters((prev) => ({ ...prev, keto: !prev.keto }))}
-                    />
-                    <FilterChip
-                      label={t("diet.low_sodium")}
-                      active={filters.low_sodium}
-                      onClick={() => setFilters((prev) => ({ ...prev, low_sodium: !prev.low_sodium }))}
-                    />
-                    <FilterChip
-                      label={t("diet.vegan")}
-                      active={filters.vegan}
-                      onClick={() => setFilters((prev) => ({ ...prev, vegan: !prev.vegan }))}
-                    />
-                    <FilterChip
-                      label={t("diet.vegetarian")}
-                      active={filters.vegetarian}
-                      onClick={() =>
-                        setFilters((prev) => ({ ...prev, vegetarian: !prev.vegetarian }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                {/* Cuisine & Category filters */}
-                <div
-                  style={{
-                    padding: "14px 18px",
-                    background: "#f0faf4",
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 16,
-                  }}
-                >
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <label style={{ fontSize: 11, fontWeight: 900, color: "#065f46", letterSpacing: 1.1, textTransform: "uppercase" }}>
-                      {t("browse.cuisine")}
-                    </label>
-                    <select
-                      value={selectedCuisine}
-                      onChange={(e) => setSelectedCuisine(e.target.value)}
-                      style={{
-                        height: 36,
-                        borderRadius: 8,
-                        border: "1px solid #a7f3d0",
-                        background: "#fff",
-                        color: "#065f46",
-                        fontWeight: 700,
-                        fontSize: 13,
-                        padding: "0 10px",
-                        cursor: "pointer",
-                        minWidth: 160,
-                      }}
-                    >
-                      <option value="">{t("discovery.allCuisines")}</option>
-                      {metaCuisines.map((c) => (
-                        <option key={c.value} value={c.value}>{c.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <label style={{ fontSize: 11, fontWeight: 900, color: "#065f46", letterSpacing: 1.1, textTransform: "uppercase" }}>
-                      {t("browse.category")}
-                    </label>
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      style={{
-                        height: 36,
-                        borderRadius: 8,
-                        border: "1px solid #a7f3d0",
-                        background: "#fff",
-                        color: "#065f46",
-                        fontWeight: 700,
-                        fontSize: 13,
-                        padding: "0 10px",
-                        cursor: "pointer",
-                        minWidth: 160,
-                      }}
-                    >
-                      <option value="">{t("discovery.allCategories")}</option>
-                      {metaCategories.map((c) => (
-                        <option key={c.value} value={c.value}>{c.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <div
-            style={{
-              marginTop: isMobile ? 72 : 100,
-              paddingTop: isMobile ? 32 : 40,
-              borderTop: "1px solid #e4e7ec",
-              display: "flex",
-              flexWrap: "wrap",
-              flexDirection: isMobile ? "column" : "row",
-              alignItems: isMobile ? "flex-start" : "center",
-              justifyContent: isMobile ? "flex-start" : "space-between",
-              gap: isMobile ? 16 : 20,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: isMobile ? 16 : 28,
-                fontSize: 13,
-                alignItems: "center",
-                flex: isMobile ? "0 0 auto" : "1 1 auto",
-              }}
-            >
-              <Link to="/restaurant/signup" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
-                {t("discovery.footer.signup")}
-              </Link>
-              <Link
-                to={(() => {
-                  if (!resolvedLocationLabel) return "/deals";
-                  const parts = resolvedLocationLabel.split(",").map((s) => s.trim());
-                  const p = new URLSearchParams();
-                  if (parts[0]) p.set("city", parts[0]);
-                  if (parts[1]) p.set("state", parts[1]);
-                  return `/deals?${p.toString()}`;
-                })()}
-                style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}
-              >
-                {t("discovery.footer.deals")}
-              </Link>
-              {(resolvedLocationLabel || (autoLocation.lat != null && autoLocation.lng != null)) ? (
-                <Link
-                  to={buildTopPicksHref()}
-                  style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}
-                >
-                  {resolvedLocationLabel
-                    ? t("discovery.footer.topPicksIn", `Top Picks in ${resolvedLocationLabel.split(",")[0].trim()}`, {
-                        city: resolvedLocationLabel.split(",")[0].trim(),
-                      })
-                    : t("discovery.footer.topPicksNearYou")}
-                </Link>
-              ) : (
-                <span style={{ color: "#9ca3af", fontWeight: 700, cursor: "default" }}>
-                  {t("discovery.footer.topPicksNearYou")}
-                </span>
-              )}
-              <Link to="/terms" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
-                {t("discovery.footer.terms")}
-              </Link>
-              <Link to="/about" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
-                About Grubbid
-              </Link>
-              <Link to="/contact" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
-                {t("discovery.footer.contact")}
-              </Link>
+          {/* Feed */}
+          {feedLoading ? (
+            [0, 1, 2].map((i) => (
+              <div key={i} className="disc-feed-skeleton" style={{
+                background: "#e4e7ec", borderRadius: 20,
+                height: 200, marginBottom: 14,
+              }} />
+            ))
+          ) : feedMenus.length === 0 && autoLocation.status !== "locating" ? (
+            <div style={{
+              textAlign: "center", padding: "48px 20px",
+              color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
+            }}>
+              {autoLocation.status === "denied"
+                ? "Enable location access to see nearby menus, or tap Change to enter your city."
+                : "No menus found nearby. Try changing your location."}
             </div>
+          ) : (
+            feedMenus.map((menu, i) => (
+              <DiscoveryFeedCard
+                key={menu.menu_id || `feed-${i}`}
+                menu={menu}
+                index={i}
+                onMore={setMoreSheet}
+              />
+            ))
+          )}
 
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 10,
-                marginLeft: isMobile ? 0 : "auto",
-              }}
-            >
-              <span style={{ color: "#667085", fontWeight: 800 }} aria-hidden="true">
-                🌐
-              </span>
-              <select
-                value={language}
-                onChange={(event) => setLanguage(event.target.value)}
-                aria-label={t("footer.language")}
-                style={{
-                  height: 32,
-                  borderRadius: 10,
-                  border: "1px solid rgba(18,34,28,0.12)",
-                  background: "#fff",
-                  color: "#11211a",
-                  padding: "0 10px",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                <option value="en">{t("language.english")}</option>
-                <option value="es">{t("language.spanish")}</option>
-                <option value="zh">{t("language.chinese")}</option>
-              </select>
-            </div>
-          </div>
         </div>
       </div>
     </div>
