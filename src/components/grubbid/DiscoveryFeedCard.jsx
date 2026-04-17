@@ -16,6 +16,18 @@ function buildBadges(menu) {
   return badges.slice(0, 2);
 }
 
+// Muted per-card palette — soft background + readable foreground
+const MONO_PALETTE = [
+  { bg: "#e8f4fd", text: "#1e6fa8" },
+  { bg: "#edfcf2", text: "#1a6b3c" },
+  { bg: "#fdf3e7", text: "#a35b0a" },
+  { bg: "#f3eefa", text: "#6b21a8" },
+  { bg: "#fdecea", text: "#b91c1c" },
+  { bg: "#e9f7f6", text: "#0f766e" },
+  { bg: "#fef9e7", text: "#92400e" },
+  { bg: "#f0f0f5", text: "#374151" },
+];
+
 export default function DiscoveryFeedCard({ menu, index = 0, onMore }) {
   const name = menu?.restaurant_name || "Restaurant";
   const cuisine = menu?.cuisine || menu?.category || null;
@@ -29,94 +41,93 @@ export default function DiscoveryFeedCard({ menu, index = 0, onMore }) {
   const websiteUrl = menu?.website_url || null;
   const hasSecondCTA = phone || websiteUrl;
 
+  const mono = MONO_PALETTE[index % MONO_PALETTE.length];
+  const initial = name.replace(/^The\s+/i, "").charAt(0).toUpperCase();
+  const metaParts = [cuisine ? formatCuisine(cuisine) : null, distance].filter(Boolean);
+
   return (
     <div style={{
       background: "#fff",
-      borderRadius: 16,
+      borderRadius: 14,
       marginBottom: 12,
-      border: "1px solid #eaecf0",
-      boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)",
       overflow: "hidden",
     }}>
       <div style={{ padding: "16px 16px 14px" }}>
 
-        {/* Meta row: cuisine type + distance */}
-        <div style={{
-          display: "flex", alignItems: "center",
-          justifyContent: "space-between", marginBottom: 8,
-        }}>
-          <span style={{
-            fontSize: 11, fontWeight: 700, color: "#667085",
-            textTransform: "uppercase", letterSpacing: 0.7,
-          }}>
-            {cuisine ? formatCuisine(cuisine) : "Restaurant"}
-          </span>
-          {distance && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#9ca3af" }}>
-              {distance}
-            </span>
-          )}
-        </div>
+        {/* Header: monogram + name/meta + ⋮ */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
 
-        {/* Restaurant name + ⋮ */}
-        <div style={{
-          display: "flex", alignItems: "flex-start",
-          justifyContent: "space-between", marginBottom: 12,
-        }}>
-          <Link to={href} style={{
-            fontSize: 18, fontWeight: 800, color: "#101828",
-            textDecoration: "none", lineHeight: 1.25,
-            flex: 1, paddingRight: 8,
+          {/* Monogram — visual anchor */}
+          <div style={{
+            width: 42, height: 42, borderRadius: 10, flexShrink: 0,
+            background: mono.bg,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 17, fontWeight: 800, color: mono.text,
+            marginTop: 1,
           }}>
-            {name}
-          </Link>
+            {initial}
+          </div>
+
+          {/* Name + cuisine · distance */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Link to={href} style={{
+              display: "block",
+              fontSize: 17, fontWeight: 800, color: "#101828",
+              textDecoration: "none", lineHeight: 1.2, marginBottom: 3,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>
+              {name}
+            </Link>
+            {metaParts.length > 0 && (
+              <div style={{ fontSize: 12, fontWeight: 500, color: "#9ca3af" }}>
+                {metaParts.join("  ·  ")}
+              </div>
+            )}
+          </div>
+
+          {/* ⋮ */}
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onMore && onMore(menu); }}
             aria-label="More options"
             style={{
               border: "none", background: "transparent",
-              fontSize: 20, color: "#9ca3af", cursor: "pointer",
-              padding: "0 2px", flexShrink: 0, lineHeight: 1, marginTop: 2,
+              fontSize: 18, color: "#c4c9d4", cursor: "pointer",
+              padding: "0 2px", flexShrink: 0, lineHeight: 1, marginTop: 3,
             }}
           >
             ⋮
           </button>
         </div>
 
-        {/* Preview items — structured bullet list */}
+        {/* Preview items — hairline divider then bare list, no label */}
         {preview.length > 0 && (
-          <div style={{ marginBottom: 14 }}>
-            <div style={{
-              fontSize: 11, fontWeight: 700, color: "#9ca3af",
-              letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6,
-            }}>
-              Top items
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <>
+            <div style={{ height: 1, background: "#f2f4f7", marginBottom: 12 }} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
               {preview.map((item, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{
                     width: 3, height: 3, borderRadius: "50%",
                     background: "#d0d5dd", flexShrink: 0,
                   }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: "#344054" }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: "#475467" }}>
                     {item}
                   </span>
                 </div>
               ))}
             </div>
-          </div>
+          </>
         )}
 
-        {/* Diet badges — max 2, subdued */}
+        {/* Badges — borderless, very light */}
         {badges.length > 0 && (
-          <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 5, marginBottom: 14, flexWrap: "wrap" }}>
             {badges.map((b) => (
               <span key={b} style={{
-                fontSize: 11, fontWeight: 600, color: "#475467",
-                background: "#f9fafb", borderRadius: 999,
-                padding: "3px 10px", border: "1px solid #eaecf0",
+                fontSize: 11, fontWeight: 500, color: "#6b7280",
+                background: "#f9fafb", borderRadius: 999, padding: "2px 8px",
               }}>
                 {b}
               </span>
@@ -124,16 +135,14 @@ export default function DiscoveryFeedCard({ menu, index = 0, onMore }) {
           </div>
         )}
 
-        {/* CTAs */}
-        <div style={{ display: "flex", gap: 10 }}>
+        {/* CTAs — primary button + text link */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <Link to={href} style={{
-            flex: hasSecondCTA ? 1 : undefined,
-            width: hasSecondCTA ? undefined : "100%",
-            height: 40, borderRadius: 10,
+            height: 36, borderRadius: 8, flexShrink: 0,
             background: "#101828", color: "#fff",
-            fontSize: 14, fontWeight: 700, textDecoration: "none",
+            fontSize: 13, fontWeight: 600, textDecoration: "none",
             display: "flex", alignItems: "center", justifyContent: "center",
-            letterSpacing: 0.1,
+            padding: "0 18px",
           }}>
             View Menu
           </Link>
@@ -143,14 +152,12 @@ export default function DiscoveryFeedCard({ menu, index = 0, onMore }) {
               target={websiteUrl ? "_blank" : undefined}
               rel={websiteUrl ? "noopener noreferrer" : undefined}
               style={{
-                flex: 1, height: 40, borderRadius: 10,
-                background: "#fff", color: "#344054",
-                fontSize: 14, fontWeight: 700, textDecoration: "none",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                border: "1px solid #d0d5dd",
+                fontSize: 13, fontWeight: 600, color: "#1F4E3D",
+                textDecoration: "none",
+                display: "flex", alignItems: "center", gap: 3,
               }}
             >
-              {websiteUrl ? "Order" : "Call"}
+              {websiteUrl ? "Order" : "Call"} →
             </a>
           )}
         </div>
