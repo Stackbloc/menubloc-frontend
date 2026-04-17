@@ -79,7 +79,7 @@ export default function DiscoveryFeedCard({ menu, index = 0, onMore }) {
           fontSize: 13, fontWeight: 600, color: "#1F4E3D",
           textDecoration: "none", paddingTop: 2,
         }}>
-          View menu →
+          View menu
         </Link>
 
       </div>
