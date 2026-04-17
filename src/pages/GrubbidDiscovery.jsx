@@ -227,9 +227,13 @@ export default function GrubbidDiscovery() {
       params.set("city", autoLocation.city);
       if (autoLocation.state) params.set("state", autoLocation.state);
     } else if (autoLocation.lat) {
+      params.set("radius", String(LOCAL_RADIUS_MILES));
+    }
+    // Always include lat/lng when autoLocation has them — the backend uses them
+    // to compute accurate distance_miles regardless of whether city is also set.
+    if (!appliedLocation && autoLocation.lat != null && autoLocation.lng != null) {
       params.set("lat", String(autoLocation.lat));
       params.set("lng", String(autoLocation.lng));
-      params.set("radius_miles", String(LOCAL_RADIUS_MILES));
     }
 
     setFeedLoading(true);
