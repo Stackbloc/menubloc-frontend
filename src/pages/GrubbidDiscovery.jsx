@@ -547,7 +547,7 @@ export default function GrubbidDiscovery() {
                   boxShadow: "0 1px 4px rgba(22,101,62,0.10)",
                 }}
               >
-                🏷️ {locationStatusLine} →
+                🏷️ Deals Near {locationStatusLine} →
               </button>
               <button
                 type="button"
