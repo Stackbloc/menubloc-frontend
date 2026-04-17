@@ -531,18 +531,19 @@ export default function GrubbidDiscovery() {
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                padding: "5px 18px",
+                gap: 6,
+                padding: "6px 18px",
                 borderRadius: 999,
-                border: "1px solid rgba(18,34,28,0.14)",
-                background: "#fff",
-                color: "#344054",
+                border: "1px solid rgba(22,101,62,0.35)",
+                background: "rgba(22,101,62,0.07)",
+                color: "#166a3e",
                 fontSize: 13,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: "pointer",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                boxShadow: "0 1px 4px rgba(22,101,62,0.10)",
               }}
             >
-              Deals · {locationStatusLine}
+              🏷️ Deals · {locationStatusLine} →
             </button>
             <button
               type="button"
