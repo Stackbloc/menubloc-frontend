@@ -94,7 +94,6 @@ export function OrderCartProvider({ children }) {
 
     setCartState(result.cart);
     setPendingReplacement(null);
-    setIsOpen(true);
     setNotice({
       tone: "success",
       title: "Added to your order",
@@ -128,7 +127,6 @@ export function OrderCartProvider({ children }) {
     }
 
     setCartState(result.cart);
-    setIsOpen(true);
     setNotice({
       tone: "success",
       title: "Added to your order",

@@ -29,6 +29,7 @@ import { captureEvent } from "../services/posthog.js";
 import DiscoveryDrawer from "../components/grubbid/DiscoveryDrawer.jsx";
 import DiscoveryFeedCard from "../components/grubbid/DiscoveryFeedCard.jsx";
 import DiscoveryMoreSheet from "../components/grubbid/DiscoveryMoreSheet.jsx";
+import AppMenuSheet from "../components/grubbid/AppMenuSheet.jsx";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -179,6 +180,7 @@ export default function GrubbidDiscovery() {
   // ── new state ───────────────────────────────────────────────────────────────
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreSheet, setMoreSheet] = useState(null);
+  const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [feedMenus, setFeedMenus] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
   const [allergenFilters, setAllergenFilters] = useState({ nuts: false, dairy: false, gluten: false, shellfish: false });
@@ -416,6 +418,11 @@ export default function GrubbidDiscovery() {
         onClose={() => setMoreSheet(null)}
       />
 
+      <AppMenuSheet
+        open={appMenuOpen}
+        onClose={() => setAppMenuOpen(false)}
+      />
+
       <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
         {/* ── STICKY HEADER ──────────────────────────────────────────────── */}
@@ -447,20 +454,33 @@ export default function GrubbidDiscovery() {
               subtitleStyle={{ display: "none" }}
             />
 
-            {!consumerLoading && (
-              consumerLoggedIn ? (
-                <Link to="/account" style={{ fontSize: 22, textDecoration: "none", flexShrink: 0 }}>
-                  👤
-                </Link>
-              ) : (
-                <Link to="/account/login" style={{
-                  fontSize: 13, fontWeight: 700, color: "#1F4E3D",
-                  textDecoration: "none", flexShrink: 0,
-                }}>
-                  Sign in
-                </Link>
-              )
-            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+              {!consumerLoading && (
+                consumerLoggedIn ? (
+                  <Link to="/account" style={{ fontSize: 22, textDecoration: "none" }}>
+                    👤
+                  </Link>
+                ) : (
+                  <Link to="/account/login" style={{
+                    fontSize: 13, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
+                  }}>
+                    Sign in
+                  </Link>
+                )
+              )}
+              <button
+                type="button"
+                onClick={() => setAppMenuOpen(true)}
+                aria-label="Open app menu"
+                style={{
+                  border: "none", background: "transparent",
+                  fontSize: 20, color: "#667085", cursor: "pointer",
+                  padding: 4, lineHeight: 1,
+                }}
+              >
+                ⋯
+              </button>
+            </div>
           </div>
 
           <div style={{ padding: "0 16px" }}>
@@ -501,6 +521,29 @@ export default function GrubbidDiscovery() {
                 📷
               </button>
             </div>
+          </div>
+
+          {/* Deals access row */}
+          <div style={{ padding: "8px 16px 0", display: "flex", justifyContent: "center" }}>
+            <button
+              type="button"
+              onClick={() => navigate("/deals")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "5px 18px",
+                borderRadius: 999,
+                border: "1px solid rgba(18,34,28,0.14)",
+                background: "#fff",
+                color: "#344054",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+              }}
+            >
+              Deals near you
+            </button>
           </div>
         </div>
 

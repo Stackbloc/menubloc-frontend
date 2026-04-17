@@ -565,26 +565,6 @@ export default function CheckoutPage() {
             <p style={{ margin: 0, color: "#667085", lineHeight: 1.6 }}>
               Prices and totals are recalculated on the server before payment. The restaurant receives the direct charge on its connected Stripe account.
             </p>
-            <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 10 }}>
-              <Link
-                to={menuPath}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "10px 14px",
-                  borderRadius: 999,
-                  border: "1px solid rgba(17,33,26,0.10)",
-                  color: "#11211a",
-                  fontSize: 13,
-                  fontWeight: 800,
-                  textDecoration: "none",
-                  background: "#fffef8",
-                }}
-              >
-                Add more items
-              </Link>
-            </div>
 
             <form onSubmit={handleCreatePaymentIntent} style={{ marginTop: 24, display: "grid", gap: 16 }}>
               <div>
@@ -726,7 +706,7 @@ export default function CheckoutPage() {
                   }}
                 >
                   <div style={{ fontSize: 13, fontWeight: 900, color: "#11211a" }}>
-                    You have {formatMoney(previewState.data.coins.available_balance_cents)} in GrubBid Coins
+                    G-Coins balance: {formatMoney(previewState.data.coins.available_balance_cents)}
                   </div>
                   <label
                     style={{
@@ -752,7 +732,7 @@ export default function CheckoutPage() {
                         )
                       }
                     />
-                    <span>Apply GrubBid Coins</span>
+                    <span>Apply G-Coins</span>
                   </label>
                   {!previewState.data?.coins?.can_redeem && !previewState.data?.coins?.applied && previewState.data?.coins?.user_message ? (
                     <div style={{ marginTop: 8, fontSize: 12, color: "#667085" }}>
@@ -1069,6 +1049,28 @@ export default function CheckoutPage() {
               ))}
             </div>
 
+            <div style={{ marginTop: 16 }}>
+              <Link
+                to={menuPath}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "11px 16px",
+                  borderRadius: 12,
+                  border: "1.5px solid rgba(17,33,26,0.18)",
+                  background: "#fff",
+                  color: "#11211a",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  textAlign: "center",
+                }}
+              >
+                ← Continue ordering
+              </Link>
+            </div>
+
             <div style={{ marginTop: 20, borderTop: "1px solid rgba(17,33,26,0.08)", paddingTop: 16, display: "grid", gap: 10 }}>
               {previewState.status === "loading" ? (
                 <div style={{ fontSize: 14, color: "#667085" }}>Calculating server-side totals…</div>
@@ -1211,7 +1213,7 @@ export default function CheckoutPage() {
                         fontWeight: 800,
                       }}
                     >
-                      <span>GrubBid Coins</span>
+                      <span>G-Coins</span>
                       <strong>-{formatMoney(previewState.data.coins.redeemed_cents)}</strong>
                     </div>
                   ) : null}

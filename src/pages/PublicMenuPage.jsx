@@ -23,6 +23,7 @@ import { getLocalizedField } from "../utils/getLocalizedField.js";
 import BasketSummaryBar from "../components/basket/BasketSummaryBar.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ModifierSheet from "../components/basket/ModifierSheet.jsx";
+import { itemHasInsightsData } from "../components/basket/ItemInsightsSheet.jsx";
 import { itemHasRequiredModifiers } from "../components/basket/modifierModel.js";
 import ShareButton from "../components/share/ShareButton.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
@@ -408,7 +409,6 @@ function ItemDetailSheet({
   onOpenModifiers,
   onUpdateQuantity,
   onRemoveItem,
-  onNavigateToInsights,
   t,
 }) {
   const { item, name, desc, price, hasDeal, dishShareData, canNavigate, indulgencePresentation } = sheetData;
@@ -583,32 +583,63 @@ function ItemDetailSheet({
             )}
           </div>
 
-          {/* Nutrition link */}
-          {canNavigate ? (
-            <button
-              type="button"
-              onClick={() => { onNavigateToInsights(); onClose(); }}
-              style={{
-                marginTop: 16,
-                display: "block",
-                width: "100%",
-                border: "none",
-                background: "transparent",
-                color: "#2d6a4f",
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: "pointer",
-                textAlign: "center",
-                padding: "4px 0",
-              }}
-            >
-              {t("common.nutritionInsights", "Nutrition & insights →")}
-            </button>
-          ) : null}
 
         </div>
       </div>
     </>
+  );
+}
+
+/* ---- Added-to-order confirmation toast ---- */
+
+function AddedConfirmation({ name, onRemove, setConfirmation }) {
+  useEffect(() => {
+    const timer = setTimeout(() => setConfirmation(null), 2500);
+    return () => clearTimeout(timer);
+  }, [setConfirmation]);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 88,
+        left: "50%",
+        transform: "translateX(-50%)",
+        background: "#fff",
+        borderRadius: 14,
+        padding: "11px 16px",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.14)",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        zIndex: 600,
+        maxWidth: 360,
+        width: "calc(100% - 32px)",
+        border: "1px solid rgba(34,197,94,0.24)",
+      }}
+    >
+      <span style={{ color: "#16a34a", fontSize: 18, lineHeight: 1 }}>✓</span>
+      <span style={{ fontSize: 14, fontWeight: 700, color: "#11211a", flex: 1 }}>
+        {name ? `${name} added` : "Added to order"}
+      </span>
+      <button
+        type="button"
+        onClick={onRemove}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          fontSize: 13,
+          fontWeight: 700,
+          color: "#667085",
+          padding: "4px 0",
+          textDecoration: "underline",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Remove
+      </button>
+    </div>
   );
 }
 
@@ -633,6 +664,7 @@ export default function PublicMenuPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [modifierItem, setModifierItem] = useState(null);
   const [itemSheet, setItemSheet] = useState(null);
+  const [addedConfirmation, setAddedConfirmation] = useState(null);
   const [resolvedRouteState, setResolvedRouteState] = useState({
     status: "loading",
     restaurantId: "",
@@ -965,6 +997,13 @@ export default function PublicMenuPage() {
     Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
   const activeCartItems = basketMatchesCurrentRestaurant ? cartItems || [] : [];
 
+  function handleRemoveAdded() {
+    if (!addedConfirmation) return;
+    const state = getCartItemState(activeCartItems, addedConfirmation.itemId);
+    if (state.simpleLine) removeItem(state.simpleLine.lineId);
+    setAddedConfirmation(null);
+  }
+
   function navigateToFranchiseLocation(restaurantId, restaurantSlug = null) {
     if (!restaurantId) return;
     navigate({
@@ -1093,12 +1132,16 @@ export default function PublicMenuPage() {
                 {/* Menu type label */}
                 {menuTypeLabel ? (
                   <div style={{
-                    marginTop: 6,
+                    marginTop: 8,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "3px 10px",
+                    borderRadius: 999,
+                    background: "#f3f4f6",
+                    border: "1px solid rgba(18,34,28,0.08)",
                     fontSize: 12,
-                    fontWeight: 800,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    color: "#9ca3af",
+                    fontWeight: 700,
+                    color: "#374151",
                   }}>
                     {menuTypeLabel}
                   </div>
@@ -1269,12 +1312,14 @@ export default function PublicMenuPage() {
                 return (
                   <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 28 }}>
                     <div style={{
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: 900,
-                      letterSpacing: 1,
+                      letterSpacing: "0.08em",
                       textTransform: "uppercase",
-                      color: "#9ca3af",
+                      color: "#6b7280",
                       marginBottom: 10,
+                      paddingBottom: 8,
+                      borderBottom: "1px solid rgba(18,34,28,0.07)",
                     }}>
                       {title}
                     </div>
@@ -1328,7 +1373,14 @@ export default function PublicMenuPage() {
                         return (
                           <div
                             key={itemKey}
-                            onClick={openSheet}
+                            onClick={() => {
+                              if (itemHasRequiredModifiers(it)) {
+                                openSheet();
+                              } else {
+                                commitMenuItemToBasket(it, name, desc);
+                                setAddedConfirmation({ itemId: it.id, name });
+                              }
+                            }}
                             style={{
                               border: inCartCount > 0
                                 ? "1px solid rgba(34,197,94,0.32)"
@@ -1342,33 +1394,57 @@ export default function PublicMenuPage() {
                               WebkitTapHighlightColor: "transparent",
                             }}
                           >
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                                  <span style={{ fontSize: 15, fontWeight: 800, color: "#11211a", lineHeight: 1.2 }}>
-                                    {name}
-                                  </span>
-                                  {hasDeal && <Badge label={t("common.deals", "Deals")} bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" />}
-                                  {it?.is_vegan && <Badge label={t("diet.vegan", "Vegan")} bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" />}
-                                  {it?.is_gluten_free && <Badge label="GF" bg="#fffbeb" color="#92400e" border="1px solid #fde68a" />}
-                                </div>
-                                {desc ? (
-                                  <div style={{ marginTop: 4, fontSize: 13, color: "#6b7280", lineHeight: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {desc}
-                                  </div>
-                                ) : null}
-                              </div>
-                              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                                <span style={{ fontSize: 15, fontWeight: 800, color: "#11211a", lineHeight: 1.2 }}>
+                                  {name}
+                                </span>
                                 {price ? (
-                                  <div style={{ fontSize: 14, fontWeight: 800, color: "#11211a", whiteSpace: "nowrap" }}>{price}</div>
+                                  <span style={{ fontSize: 14, fontWeight: 700, color: "#374151", whiteSpace: "nowrap" }}>{price}</span>
                                 ) : null}
                                 {inCartCount > 0 ? (
-                                  <div style={{ fontSize: 11, fontWeight: 700, color: "#166534" }}>
+                                  <span style={{ fontSize: 11, fontWeight: 700, color: "#166534", background: "#dcfce7", borderRadius: 999, padding: "2px 7px", whiteSpace: "nowrap" }}>
                                     {inCartCount} in order
-                                  </div>
+                                  </span>
                                 ) : null}
+                                {hasDeal && <Badge label={t("common.deals", "Deals")} bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" />}
+                                {it?.is_vegan && <Badge label={t("diet.vegan", "Vegan")} bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" />}
+                                {it?.is_gluten_free && <Badge label="GF" bg="#fffbeb" color="#92400e" border="1px solid #fde68a" />}
                               </div>
+                              {desc ? (
+                                <div style={{ marginTop: 4, fontSize: 13, color: "#6b7280", lineHeight: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                  {desc}
+                                </div>
+                              ) : null}
                             </div>
+
+                            {/* Nutrition & insights link — stopPropagation prevents add-to-order */}
+                            {canNavigate && itemHasInsightsData(it) ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(getCanonicalMenuItemPath({
+                                    restaurant: { slug: data?.slug || null, id: currentRestaurantId },
+                                    menuItem: { id: it.id },
+                                  }));
+                                }}
+                                style={{
+                                  marginTop: 6,
+                                  display: "inline-block",
+                                  border: "none",
+                                  background: "transparent",
+                                  color: "#9ca3af",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  padding: "2px 0",
+                                  lineHeight: 1,
+                                }}
+                              >
+                                Nutrition &amp; insights →
+                              </button>
+                            ) : null}
                           </div>
                         );
                       })}
@@ -1392,13 +1468,6 @@ export default function PublicMenuPage() {
           onOpenModifiers={(item, name, desc) => openModifierFlow(item, name, desc)}
           onUpdateQuantity={(lineId, qty) => updateQuantity(lineId, qty)}
           onRemoveItem={(lineId) => removeItem(lineId)}
-          onNavigateToInsights={() => {
-            if (!itemSheet?.canNavigate || !itemSheet?.item?.id) return;
-            navigate(getCanonicalMenuItemPath({
-              restaurant: { slug: data?.slug || null, id: currentRestaurantId },
-              menuItem: { id: itemSheet.item.id },
-            }));
-          }}
           t={t}
         />
       ) : null}
@@ -1430,6 +1499,15 @@ export default function PublicMenuPage() {
           onOpenBasket={() => navigate("/checkout")}
         />
       ) : null}
+
+      {addedConfirmation ? (
+        <AddedConfirmation
+          name={addedConfirmation.name}
+          onRemove={handleRemoveAdded}
+          setConfirmation={setAddedConfirmation}
+        />
+      ) : null}
+
     </div>
   );
 }

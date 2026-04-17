@@ -346,9 +346,9 @@ export default function ConsumerProfile() {
           )}
         </Section>
 
-        <Section title="GrubBid Coins">
+        <Section title="G-Coins">
           <p style={styles.sectionDesc}>
-            Platform-funded loyalty credit for future qualifying GrubBid Checkout orders.
+            Platform credit applied automatically toward qualifying Grubbid Checkout orders.
           </p>
           <div style={styles.coinsGrid}>
             <div style={styles.coinTile}>
