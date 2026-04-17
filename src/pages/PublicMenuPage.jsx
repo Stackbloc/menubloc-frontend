@@ -1424,10 +1424,13 @@ export default function PublicMenuPage() {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  navigate(getCanonicalMenuItemPath({
-                                    restaurant: { slug: data?.slug || null, id: currentRestaurantId },
-                                    menuItem: { id: it.id },
-                                  }));
+                                  navigate(
+                                    getCanonicalMenuItemPath({
+                                      restaurant: { slug: data?.slug || null, id: currentRestaurantId },
+                                      menuItem: { id: it.id },
+                                    }),
+                                    { state: { from: "menu" } }
+                                  );
                                 }}
                                 style={{
                                   marginTop: 6,

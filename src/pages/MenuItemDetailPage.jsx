@@ -27,7 +27,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import ErrorBoundary from "../components/ErrorBoundary.jsx";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { PageNav } from "../components/NavButton";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
@@ -270,7 +271,7 @@ const SIGNAL_CHIP_COLORS = {
 function PageShell({ children, isMobile }) {
   return (
     <div style={{ minHeight: "100vh", background: "radial-gradient(circle at top left, rgba(255,241,214,0.85), rgba(255,255,255,0) 34%), linear-gradient(180deg, #fbf7ee 0%, #f6f1e7 45%, #f8f7f2 100%)" }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto", padding: isMobile ? "18px 14px 56px" : "28px 24px 72px", boxSizing: "border-box", color: "#14211b", fontFamily: 'var(--font-ui, "Avenir Next", "Segoe UI", sans-serif)' }}>
+      <div style={{ maxWidth: 840, margin: "0 auto", padding: isMobile ? "18px 14px 56px" : "28px 24px 72px", boxSizing: "border-box", color: "#14211b", fontFamily: 'var(--font-ui, "Avenir Next", "Segoe UI", sans-serif)' }}>
         <PageNav back />
         {children}
       </div>
@@ -830,17 +831,22 @@ function MissingNutritionState() {
 function MenuItemDetailPageInner() {
   const { id, restaurantSlug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const { language, t } = useLanguage();
   const { isAuthenticated, allergenFilter } = useConsumer();
+  const { addToCart } = useOrderCart();
+
+  const fromMenu = location.state?.from === "menu";
 
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
 
-  const [loading,  setLoading]  = useState(true);
-  const [err,      setErr]      = useState("");
-  const [rawItem,  setRawItem]  = useState(null);
+  const [loading,     setLoading]     = useState(true);
+  const [err,         setErr]         = useState("");
+  const [rawItem,     setRawItem]     = useState(null);
+  const [addedToCart, setAddedToCart] = useState(false);
 
   const item = useMemo(() => (rawItem ? normalizeResultItem(rawItem) : null), [rawItem]);
   const shareData = useMemo(() => {
@@ -987,117 +993,148 @@ function MenuItemDetailPageInner() {
               </div>
             </div>
 
-            <div>
-              <div
+            {/* Name + Share inline */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <h1
                 style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  justifyContent: "space-between",
-                  gap: 14,
-                  flexWrap: "wrap",
+                  margin: 0,
+                  fontSize: isMobile ? 30 : 38,
+                  lineHeight: 1.05,
+                  letterSpacing: "-0.03em",
+                  color: "#15241d",
+                  flex: "1 1 0",
+                  minWidth: 0,
                 }}
               >
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: isMobile ? 34 : 46,
-                    lineHeight: 0.96,
-                    letterSpacing: "-0.05em",
-                    color: "#15241d",
-                    maxWidth: 760,
-                    minWidth: 0,
-                    flex: "1 1 320px",
+                {getLocalizedField(item, "name", language) || item.name}
+              </h1>
+              {shareData ? (
+                <ShareButton
+                  variant="dish"
+                  label="Share"
+                  modalTitle={`Share ${getLocalizedField(item, "name", language) || item.name}`}
+                  shareData={shareData}
+                  analyticsContext={{
+                    restaurantId: item.restaurant.id,
+                    restaurantSlug: item.restaurant.slug || null,
+                    menuItemId: item.id,
+                    menuItemName: getLocalizedField(item, "name", language) || item.name,
+                    pageType: "menu_item_detail",
+                    shareTarget: "dish",
                   }}
-                >
-                  {getLocalizedField(item, "name", language) || item.name}
-                </h1>
-                {shareData ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 6,
-                      flex: "0 0 auto",
-                    }}
-                  >
-                    <ShareButton
-                      variant="dish"
-                      label="Share Dish"
-                      modalTitle={`Share ${getLocalizedField(item, "name", language) || item.name}`}
-                      shareData={shareData}
-                      analyticsContext={{
-                        restaurantId: item.restaurant.id,
-                        restaurantSlug: item.restaurant.slug || null,
-                        menuItemId: item.id,
-                        menuItemName: getLocalizedField(item, "name", language) || item.name,
-                        pageType: "menu_item_detail",
-                        shareTarget: "dish",
-                      }}
-                    />
-                    <div style={{ fontSize: 11, lineHeight: 1.3, color: "#617167", fontWeight: 400 }}>
-                      share this item
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                {priceLabel ? (
-                  <div style={{ fontSize: isMobile ? 24 : 28, fontWeight: 900, letterSpacing: "-0.04em", color: "#7a5b20" }}>
-                    {priceLabel}
-                  </div>
-                ) : null}
-              </div>
-
-              {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
-              {!indulgencePresentation && detailSystem?.bread_score ? <BreadScoreInline detailSystem={detailSystem} /> : null}
+                />
+              ) : null}
             </div>
 
+            {/* Price */}
+            {priceLabel ? (
+              <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 900, letterSpacing: "-0.04em", color: "#7a5b20" }}>
+                {priceLabel}
+              </div>
+            ) : null}
+
+            {/* Description */}
             {(getLocalizedField(item, "description", language) || item.description) ? (
-              <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#405048", maxWidth: 760 }}>
+              <div style={{ fontSize: 15, lineHeight: 1.65, color: "#405048" }}>
                 {getLocalizedField(item, "description", language) || item.description}
               </div>
             ) : null}
 
-            <div style={{ fontSize: 13, lineHeight: 1.5, color: "#617167", fontWeight: 700, maxWidth: 760 }}>
-              See nutrition, insights, and similar dishes on Grubbid.
-            </div>
+            {/* Indulgence / Bread score */}
+            {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
+            {!indulgencePresentation && detailSystem?.bread_score ? <BreadScoreInline detailSystem={detailSystem} /> : null}
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <Link
-                to={fullMenuHref}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  minHeight: 44,
-                  padding: "0 18px",
-                  borderRadius: 999,
-                  background: "#11211a",
-                  color: "#f8fafc",
-                  textDecoration: "none",
-                  fontSize: 14,
-                  fontWeight: 800,
-                  boxShadow: "0 10px 24px rgba(15, 23, 42, 0.10)",
-                }}
-              >
-                View Full Menu
-              </Link>
-              <div style={{ fontSize: 13, color: "#617167", fontWeight: 700 }}>
-                Explore this dish on Grubbid
-              </div>
-            </div>
-
+            {/* Tags */}
             {(item.badges.vegan || item.badges.glutenFree || item.badges.deal) && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {item.badges.vegan      ? <BadgePill tone="positive">{t("diet.vegan", "Vegan")}</BadgePill>              : null}
-                {item.badges.glutenFree ? <BadgePill tone="accent">{t("diet.gluten_free", "Gluten Free")}</BadgePill>    : null}
-                {item.badges.deal       ? <BadgePill tone="caution">{t("common.deals", "Deal")}</BadgePill>              : null}
+                {item.badges.vegan      ? <BadgePill tone="positive">{t("diet.vegan", "Vegan")}</BadgePill>           : null}
+                {item.badges.glutenFree ? <BadgePill tone="accent">{t("diet.gluten_free", "Gluten Free")}</BadgePill> : null}
+                {item.badges.deal       ? <BadgePill tone="caution">{t("common.deals", "Deal")}</BadgePill>           : null}
               </div>
             )}
 
-            {/* ── 2. Compact Allergen Alert (inside hero) ── */}
+            {/* ── 2. Compact Allergen Alert ── */}
             {hasNutritionData ? <CompactAllergenAlert section={detailSystem?.allergen_alerts} t={t} /> : null}
+
+            {/* ── Context-aware actions ── */}
+            {fromMenu ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (addedToCart) return;
+                    const result = addToCart({
+                      restaurant: {
+                        restaurantId: item.restaurant.id,
+                        restaurantName: item.restaurant.name,
+                        slug: item.restaurant.slug,
+                      },
+                      item: {
+                        menuItemId: item.id,
+                        name: item.name,
+                        description: item.description || "",
+                        priceCents: item.priceMinor,
+                      },
+                    });
+                    if (result?.ok !== false) {
+                      setAddedToCart(true);
+                      window.setTimeout(() => setAddedToCart(false), 2500);
+                    }
+                  }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minHeight: 44,
+                    padding: "0 22px",
+                    borderRadius: 999,
+                    border: "none",
+                    background: addedToCart ? "#166534" : "#11211a",
+                    color: "#f8fafc",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    cursor: addedToCart ? "default" : "pointer",
+                    transition: "background 200ms ease",
+                    boxShadow: "0 4px 14px rgba(15,23,42,0.12)",
+                  }}
+                >
+                  {addedToCart ? "Added to order ✓" : "Add to order"}
+                </button>
+                <Link
+                  to={fullMenuHref}
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "#617167",
+                    textDecoration: "none",
+                  }}
+                >
+                  ← Back to menu
+                </Link>
+              </div>
+            ) : (
+              <div style={{ marginTop: 4 }}>
+                <Link
+                  to={fullMenuHref}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minHeight: 44,
+                    padding: "0 20px",
+                    borderRadius: 999,
+                    background: "#11211a",
+                    color: "#f8fafc",
+                    textDecoration: "none",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    boxShadow: "0 4px 14px rgba(15,23,42,0.12)",
+                  }}
+                >
+                  View Full Menu
+                </Link>
+              </div>
+            )}
           </div>
 
           {showItemPhoto ? (

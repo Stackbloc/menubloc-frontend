@@ -423,7 +423,7 @@ export default function GrubbidDiscovery() {
         onClose={() => setAppMenuOpen(false)}
       />
 
-      <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ maxWidth: 576, margin: "0 auto", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
         {/* ── STICKY HEADER ──────────────────────────────────────────────── */}
         <div style={{
@@ -523,8 +523,8 @@ export default function GrubbidDiscovery() {
             </div>
           </div>
 
-          {/* Deals access row */}
-          <div style={{ padding: "8px 16px 0", display: "flex", justifyContent: "center" }}>
+          {/* Deals + location row */}
+          <div style={{ padding: "8px 16px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
             <button
               type="button"
               onClick={() => navigate("/deals")}
@@ -542,47 +542,24 @@ export default function GrubbidDiscovery() {
                 boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
               }}
             >
-              Deals near you
+              Deals · {locationStatusLine}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowLocationEditor((prev) => !prev)}
+              style={{
+                border: "none", background: "transparent",
+                color: "#667085", fontSize: 12, fontWeight: 700,
+                cursor: "pointer", padding: 0, lineHeight: 1,
+              }}
+            >
+              {showLocationEditor ? "Cancel" : "Change"}
             </button>
           </div>
         </div>
 
         {/* ── SCROLLABLE FEED CONTENT ────────────────────────────────────── */}
         <div style={{ flex: 1, padding: "14px 16px 80px" }}>
-
-          {/* Location label */}
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            marginBottom: 16,
-          }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#667085" }}>
-              📍 {locationStatusLine}
-            </span>
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <button
-                type="button"
-                onClick={() => setShowLocationEditor((prev) => !prev)}
-                style={{
-                  border: "none", background: "transparent",
-                  color: "#1F4E3D", fontSize: 13, fontWeight: 800,
-                  cursor: "pointer", padding: 0,
-                }}
-              >
-                {showLocationEditor ? "Cancel" : "Change"}
-              </button>
-              <button
-                type="button"
-                onClick={handleBrowse}
-                style={{
-                  border: "1px solid #d7dce5", background: "#fff",
-                  color: "#344054", fontSize: 12, fontWeight: 700,
-                  cursor: "pointer", padding: "5px 12px", borderRadius: 999,
-                }}
-              >
-                Browse all
-              </button>
-            </div>
-          </div>
 
           {/* Location editor — plain text field, no autocomplete (CLAUDE.md rule) */}
           {showLocationEditor && (

@@ -27,9 +27,9 @@ export default function SiteFooter() {
     >
       <div
         style={{
-          maxWidth: 1100,
+          maxWidth: 1450,
           margin: "0 auto",
-          padding: "18px 24px 22px",
+          padding: "18px 20px 22px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -45,12 +45,9 @@ export default function SiteFooter() {
             gap: 18,
             alignItems: "center",
             fontSize: 13,
-            flex: "1 1 560px",
+            paddingLeft: 284,
           }}
         >
-          <div style={{ fontSize: 13, color: "#667085", fontWeight: 600 }}>
-            {t("footer.powered")}
-          </div>
           <Link to="/restaurant/signup" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.signup")}
           </Link>

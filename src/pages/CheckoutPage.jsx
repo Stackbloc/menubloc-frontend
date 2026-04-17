@@ -202,10 +202,7 @@ export default function CheckoutPage() {
     if (Array.isArray(restaurant?.availableFulfillmentTypes) && restaurant.availableFulfillmentTypes.length > 0) {
       return restaurant.availableFulfillmentTypes;
     }
-    if (restaurant?.deliveryEnabled === true) {
-      return ["pickup", "delivery"];
-    }
-    return ["pickup"];
+    return ["pickup", "delivery"];
   }, [restaurant]);
   const [fulfillmentType, setFulfillmentType] = useState(
     availableFulfillmentTypes.includes("pickup") ? "pickup" : availableFulfillmentTypes[0] || "pickup"
@@ -426,8 +423,8 @@ export default function CheckoutPage() {
             <p style={{ marginTop: 10, color: "#667085", fontSize: 15, lineHeight: 1.6 }}>
               Add items from a restaurant menu before starting checkout.
             </p>
-            <Link to="/" style={{ color: "#14532d", fontWeight: 800 }}>
-              Back to discovery
+            <Link to={menuPath} style={{ color: "#14532d", fontWeight: 800 }}>
+              {restaurant?.restaurantName ? `← Back to ${restaurant.restaurantName}` : "← Back to discovery"}
             </Link>
           </div>
         </div>
@@ -598,31 +595,29 @@ export default function CheckoutPage() {
               <div>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 10 }}>Fulfillment</label>
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  {availableFulfillmentTypes.map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setFulfillmentType(value)}
-                      style={{
-                        borderRadius: 999,
-                        border: fulfillmentType === value ? "1px solid #11211a" : "1px solid #d0d5dd",
-                        background: fulfillmentType === value ? "#11211a" : "#fff",
-                        color: fulfillmentType === value ? "#fff" : "#11211a",
-                        padding: "10px 16px",
-                        fontSize: 13,
-                        fontWeight: 800,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {value === "pickup" ? "Pickup" : "Delivery"}
-                    </button>
-                  ))}
+                  {availableFulfillmentTypes.map((value) => {
+                    const active = fulfillmentType === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setFulfillmentType(value)}
+                        style={{
+                          borderRadius: 14,
+                          border: active ? "1.5px solid #11211a" : "1px solid #d0d5dd",
+                          background: active ? "#11211a" : "#fff",
+                          color: active ? "#fff" : "#11211a",
+                          padding: "10px 18px",
+                          fontSize: 13,
+                          fontWeight: 800,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <span>{value === "pickup" ? "Pickup" : "Delivery"}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-                {!availableFulfillmentTypes.includes("delivery") ? (
-                  <div style={{ marginTop: 10, fontSize: 13, color: "#667085" }}>
-                    This restaurant is currently pickup only.
-                  </div>
-                ) : null}
               </div>
 
               {fulfillmentType === "delivery" ? (
