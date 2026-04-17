@@ -44,6 +44,8 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
+import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
+import { fetchCompareItems } from "../lib/api.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -826,6 +828,150 @@ function MissingNutritionState() {
   );
 }
 
+// ── Explore Similar Dishes (search context only) ─────────────
+
+function ExploreSimilarDishes({ itemId, geoLat, geoLng }) {
+  const navigate = useNavigate();
+  const [similar, setSimilar] = useState(null);
+  const [simLoading, setSimLoading] = useState(true);
+  const [simErr, setSimErr] = useState("");
+
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareData, setCompareData] = useState(null);
+  const [compareError, setCompareError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setSimLoading(true);
+      setSimErr("");
+      try {
+        const params = new URLSearchParams({ limit: "5" });
+        if (geoLat != null) params.set("lat", String(geoLat));
+        if (geoLng != null) params.set("lng", String(geoLng));
+        const res = await fetch(
+          `${BACKEND_BASE}/menu-items/${encodeURIComponent(itemId)}/similar?${params}`,
+          { credentials: "include" }
+        );
+        const json = await res.json();
+        if (!cancelled) setSimilar(json?.items || []);
+      } catch (e) {
+        if (!cancelled) setSimErr(String(e?.message || e));
+      } finally {
+        if (!cancelled) setSimLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [itemId, geoLat, geoLng]);
+
+  async function handleCompare(similarEntry) {
+    setCompareOpen(true);
+    setCompareLoading(true);
+    setCompareData(null);
+    setCompareError("");
+    try {
+      const result = await fetchCompareItems(itemId, similarEntry.id, geoLat, geoLng);
+      if (result?.ok) {
+        setCompareData({ baseItem: result.baseItem, candidateItem: result.candidateItem, highlights: result.highlights });
+      } else {
+        setCompareError(result?.error || "Could not load comparison.");
+      }
+    } catch (e) {
+      setCompareError(String(e?.message || e));
+    } finally {
+      setCompareLoading(false);
+    }
+  }
+
+  function handleSwap(candidateItem) {
+    setCompareOpen(false);
+    setCompareData(null);
+    if (candidateItem?.id) {
+      const params = new URLSearchParams();
+      if (geoLat != null) params.set("lat", String(geoLat));
+      if (geoLng != null) params.set("lng", String(geoLng));
+      const qs = params.toString() ? `?${params}` : "";
+      navigate(`/menu-items/${candidateItem.id}${qs}`);
+    }
+  }
+
+  if (simLoading) return null;
+  if (simErr || !similar?.length) return null;
+
+  return (
+    <>
+      <Surface style={{ marginTop: 22, padding: 22 }}>
+        <Eyebrow>Explore Similar Dishes</Eyebrow>
+        <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+          {similar.map((entry) => (
+            <div
+              key={entry.id}
+              style={{
+                borderRadius: 16,
+                border: "1px solid rgba(20,33,27,0.08)",
+                background: "#fbfaf6",
+                padding: "14px 16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ minWidth: 0, flex: "1 1 0" }}>
+                <Link
+                  to={`/menu-items/${entry.id}${geoLat && geoLng ? `?lat=${geoLat}&lng=${geoLng}` : ""}`}
+                  style={{ fontSize: 15, fontWeight: 800, color: "#15241d", textDecoration: "none" }}
+                >
+                  {entry.name}
+                </Link>
+                {entry.restaurant_name ? (
+                  <div style={{ fontSize: 12, color: "#617167", marginTop: 2 }}>
+                    {entry.restaurant_name}
+                  </div>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleCompare(entry)}
+                style={{
+                  flexShrink: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minHeight: 36,
+                  padding: "0 14px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(20,33,27,0.16)",
+                  background: "transparent",
+                  color: "#15241d",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                Compare
+              </button>
+            </div>
+          ))}
+        </div>
+      </Surface>
+
+      <CompareItemsModal
+        open={compareOpen}
+        onClose={() => { setCompareOpen(false); setCompareData(null); }}
+        comparison={compareData}
+        loading={compareLoading}
+        error={compareError}
+        onSwap={handleSwap}
+        baseLabel="Current"
+      />
+    </>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────
 
 function MenuItemDetailPageInner() {
@@ -1171,6 +1317,11 @@ function MenuItemDetailPageInner() {
       ) : (
         <MissingNutritionState />
       )}
+
+      {/* ── 8. Explore Similar Dishes (search context only) ── */}
+      {!fromMenu ? (
+        <ExploreSimilarDishes itemId={id} geoLat={geoLat} geoLng={geoLng} />
+      ) : null}
 
     </PageShell>
   );
