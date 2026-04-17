@@ -1425,11 +1425,7 @@ export default function PublicMenuPage() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   navigate(
-                                    getCanonicalMenuItemPath({
-                                      restaurant: { slug: data?.slug || null, id: currentRestaurantId },
-                                      menuItem: { id: it.id },
-                                    }),
-                                    { state: { from: "menu" } }
+                                    `/restaurants/${encodeURIComponent(data?.slug || currentRestaurantId)}/menu-item-info/${encodeURIComponent(it.id)}`
                                   );
                                 }}
                                 style={{

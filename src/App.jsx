@@ -81,6 +81,7 @@ import RestaurantPublicPage from "./pages/RestaurantPublicPage.jsx";
 import MenuPage from "./pages/MenuPage.jsx";
 import MenuDetailPage from "./pages/MenuDetailPage.jsx";
 import MenuItemDetailPage from "./pages/MenuItemDetailPage.jsx";
+import MenuItemInfoPage from "./pages/MenuItemInfoPage.jsx";
 import PublicMenuPage from "./pages/PublicMenuPage.jsx";
 import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
@@ -476,6 +477,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/orders/:orderId/confirmation" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OrderConfirmationPage />} />
         <Route path="/restaurants/:restaurantSlug/menu-items/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemDetailPage />} />
         <Route path="/menu-items/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemDetailPage />} />
+        <Route path="/restaurants/:restaurantSlug/menu-item-info/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemInfoPage />} />
+        <Route path="/menu-item-info/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemInfoPage />} />
 
         <Route path="/field/intake" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorIntakePage />} />
         <Route path="/claim/verify" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClaimVerify />} />

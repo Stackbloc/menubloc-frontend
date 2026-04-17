@@ -1,27 +1,17 @@
 /**
  * ============================================================
- * File: MenuItemDetailPage.jsx
- * Path: menubloc-frontend/src/pages/MenuItemDetailPage.jsx
- * Date: 2026-03-30
+ * File: MenuItemInfoPage.jsx
+ * Path: menubloc-frontend/src/pages/MenuItemInfoPage.jsx
  * ============================================================
  *
- * Decision page hierarchy:
- *   1. Hero / item identity
- *   2. Compact allergen alert (inside hero)
- *   3. Verdict block  (NO confidence here)
- *   4. Full nutrition block  (NO confidence here — shows ALL macros)
- *   5. Insights row  (signals + InsightCardDeck, always shown when nutrition exists)
- *   6. Preparation block
- *   7. Compact confidence line  (SINGLE occurrence — here only)
- *   8. Explore Similar Dishes
+ * Read-only nutrition/info page for menu-origin item clicks.
+ * Identical to MenuItemDetailPage except:
+ *   - No ExploreSimilarDishes
+ *   - No CompareItemsModal
+ *   - No compare state / handlers / API calls
  *
- * Confidence rule: appears EXACTLY ONCE — CompactConfidence below preparation.
- * Not in VerdictBlock. Not in NutritionCard. Not anywhere else.
- *
- * 2026-04-03 update:
- *   - canonical dish sharing support
- *   - dynamic Open Graph / Twitter card metadata for dish pages
- *   - standalone public landing-page polish for shared dish URLs
+ * Used when a user taps a menu item from a restaurant menu page.
+ * Search/discovery clicks continue to use MenuItemDetailPage.
  * ============================================================
  */
 
@@ -35,13 +25,10 @@ import {
   applyDocumentSocialMetadata,
   buildDishShareData,
   buildCanonicalMenuPath,
-  getCanonicalMenuItemPath,
 } from "../components/share/shareUtils.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
-import { fetchCompareItems } from "../lib/api.js";
-import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -819,218 +806,9 @@ function MissingNutritionState() {
   );
 }
 
-// ── Explore Similar Dishes ───────────────────────────────────
-
-function buildSimilarItemsLabel(meta) {
-  if (!meta) return null;
-  if (meta.used_broad_fallback) {
-    return "Showing broader matches because nearby similar dishes were limited";
-  }
-  if (meta.radius_used_miles != null && Number(meta.radius_used_miles) > 25) {
-    return "Expanded nearby search";
-  }
-  return null;
-}
-
-const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
-  "vegan",
-  "vegetarian",
-  "gluten_free",
-  "dairy_free",
-  "diabetic_friendly",
-  "low_sodium",
-  "keto",
-]);
-
-function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, allergenFilter }) {
-  const navigate = useNavigate();
-  const [similar, setSimilar] = useState(null);
-  const [similarMeta, setSimilarMeta] = useState(null);
-  const [failed, setFailed] = useState(false);
-  const searchSuffix = activeSearchParams?.toString() ? `?${activeSearchParams.toString()}` : "";
-
-  const [compareOpen, setCompareOpen] = useState(false);
-  const [compareLoading, setCompareLoading] = useState(false);
-  const [compareData, setCompareData] = useState(null);
-  const [compareError, setCompareError] = useState(null);
-
-  useEffect(() => {
-    if (!itemId) return undefined;
-    let cancelled = false;
-    const params = new URLSearchParams();
-    if (geoLat && geoLng) {
-      params.set("lat", geoLat);
-      params.set("lng", geoLng);
-    }
-    for (const key of SIMILAR_DIET_FILTER_KEYS) {
-      if (activeSearchParams?.get(key) === "1") {
-        params.set(key, "1");
-      }
-    }
-    const suffix = params.toString() ? `?${params.toString()}` : "";
-    fetch(`${BACKEND_BASE}/menu-items/${encodeURIComponent(itemId)}/similar${suffix}`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((json) => {
-        if (!cancelled) {
-          setSimilar(Array.isArray(json?.similar) ? json.similar : []);
-          setSimilarMeta(json?.meta || null);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [activeSearchParams, geoLat, geoLng, itemId]);
-
-  function handleCompare(similarEntry) {
-    setCompareData(null);
-    setCompareError(null);
-    setCompareLoading(true);
-    setCompareOpen(true);
-    fetchCompareItems(itemId, similarEntry.id, geoLat || null, geoLng || null)
-      .then((data) => {
-        setCompareData(data);
-        setCompareLoading(false);
-      })
-      .catch((err) => {
-        setCompareError(String(err?.message || "Compare failed"));
-        setCompareLoading(false);
-      });
-  }
-
-  function handleSwap(candidateItem) {
-    setCompareOpen(false);
-    const slug = candidateItem?.restaurant_slug || null;
-    const id = candidateItem?.id;
-    if (!id) return;
-    const geoSuffix = geoLat && geoLng ? `?lat=${geoLat}&lng=${geoLng}` : "";
-    const path = slug
-      ? `/restaurants/${slug}/menu-items/${id}${geoSuffix}`
-      : `/menu-items/${id}${geoSuffix}`;
-    navigate(path);
-  }
-
-  if (failed || similar === null || similar.length === 0) return null;
-
-  const helperLabel = buildSimilarItemsLabel(similarMeta);
-
-  return (
-    <>
-      <SectionCard
-        title={t("menuItemDetail.similarItems", "Similar Items")}
-        eyebrow={t("menuItemDetail.similarItems", "Similar Items")}
-        style={{ marginTop: 24 }}
-      >
-        <div style={{ display: "grid", gap: 14 }}>
-          {allergenFilter ? <AllergenFilterStatusBanner allergenFilter={allergenFilter} compact /> : null}
-          {helperLabel && (
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 800,
-                color: "#4c5c53",
-                background: "rgba(20,33,27,0.05)",
-                border: "1px solid rgba(20,33,27,0.08)",
-                borderRadius: 12,
-                padding: "10px 12px",
-              }}
-            >
-              {helperLabel}
-            </div>
-          )}
-          {similar.map((entry) => (
-            <div key={entry.id} style={{ borderRadius: 18, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f", marginBottom: 10 }}>
-                {entry.restaurant_name}
-                {entry.distance_miles != null && (
-                  <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>
-                )}
-              </div>
-
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-                <Link
-                  to={`${getCanonicalMenuItemPath({
-                    restaurant: {
-                      slug: entry.restaurant_slug || null,
-                      id: entry.restaurant_id || null,
-                    },
-                    menuItem: { id: entry.id },
-                  })}${searchSuffix}`}
-                  style={{
-                    textDecoration: "none",
-                    color: "#124ba3",
-                    fontWeight: 800,
-                    fontSize: 15,
-                    lineHeight: 1.35,
-                    flex: "1 1 0",
-                    minWidth: 0,
-                  }}
-                >
-                  {entry.name}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => handleCompare(entry)}
-                  style={{
-                    flexShrink: 0,
-                    background: "rgba(18,75,163,0.09)",
-                    border: "1px solid rgba(18,75,163,0.18)",
-                    borderRadius: 999,
-                    padding: "5px 13px",
-                    fontSize: 12,
-                    fontWeight: 800,
-                    color: "#124ba3",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                    lineHeight: 1.4,
-                  }}
-                >
-                  Compare
-                </button>
-              </div>
-
-              {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-                  {entry.profile_differences.map((phrase) => (
-                    <span
-                      key={phrase}
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "#3a5a44",
-                        background: "rgba(40,100,60,0.08)",
-                        borderRadius: 20,
-                        padding: "3px 10px",
-                      }}
-                    >
-                      {phrase}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-
-      <CompareItemsModal
-        open={compareOpen}
-        onClose={() => setCompareOpen(false)}
-        comparison={compareData}
-        loading={compareLoading}
-        error={compareError}
-        onSwap={handleSwap}
-        baseLabel="Current"
-      />
-    </>
-  );
-}
-
 // ── Page ─────────────────────────────────────────────────────
 
-export default function MenuItemDetailPage() {
+export default function MenuItemInfoPage() {
   const { id, restaurantSlug } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -1091,7 +869,7 @@ export default function MenuItemDetailPage() {
             const slug =
               found?.restaurant_slug || found?.restaurant?.slug ||
               toSlug(found?.restaurant_name || found?.restaurant?.name || found?.restaurant);
-            if (slug) navigate(`/restaurants/${slug}/menu-items/${id}`, { replace: true });
+            if (slug) navigate(`/restaurants/${slug}/menu-item-info/${id}`, { replace: true });
           }
         }
       } catch (error) {
@@ -1234,7 +1012,7 @@ export default function MenuItemDetailPage() {
                         restaurantSlug: item.restaurant.slug || null,
                         menuItemId: item.id,
                         menuItemName: getLocalizedField(item, "name", language) || item.name,
-                        pageType: "menu_item_detail",
+                        pageType: "menu_item_info",
                         shareTarget: "dish",
                       }}
                     />
@@ -1335,14 +1113,6 @@ export default function MenuItemDetailPage() {
         <MissingNutritionState />
       )}
 
-      <ExploreSimilarDishes
-        itemId={item.id}
-        geoLat={geoLat}
-        geoLng={geoLng}
-        activeSearchParams={searchParams}
-        t={t}
-        allergenFilter={effectiveAllergenFilter}
-      />
     </PageShell>
   );
 }

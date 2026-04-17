@@ -46,6 +46,13 @@ function hasValue(v) {
   return v !== null && v !== undefined && v !== "";
 }
 
+function abbreviateLabel(name, fallback, max = 18) {
+  const raw = String(name || fallback || "").trim();
+  if (!raw) return fallback || "";
+  if (raw.length <= max) return raw;
+  return `${raw.slice(0, max - 1).trim()}…`;
+}
+
 // ── Styles ───────────────────────────────────────────────────
 
 const OVERLAY_STYLE = {
@@ -126,6 +133,10 @@ const BTN_BASE = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  padding: "0 16px",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
 };
 
 const SECTION_LABEL_STYLE = {
@@ -422,6 +433,9 @@ export default function CompareItemsModal({
     ? candidate.restaurant_name.split(" ").slice(0, 2).join(" ")
     : "Compare";
 
+  const baseActionLabel = `View ${abbreviateLabel(base?.name, "Current item")}`;
+  const candidateActionLabel = `View ${abbreviateLabel(candidate?.name, "Compared item")}`;
+
   const baseVerdictLabel = base?.verdict?.label || base?.verdict_label || base?.verdict || null;
   const candVerdictLabel =
     candidate?.verdict?.label || candidate?.verdict_label || candidate?.verdict || null;
@@ -677,8 +691,9 @@ export default function CompareItemsModal({
             style={{ ...BTN_BASE, background: "rgba(20,33,27,0.08)", color: "#23352d" }}
             onClick={onClose}
             disabled={loading}
+            title={base?.name || "Current item"}
           >
-            View {base?.name ? (base.name.length > 18 ? base.name.slice(0, 16).trimEnd() + "…" : base.name) : "Current Item"}
+            {baseActionLabel}
           </button>
 
           <button
@@ -690,8 +705,9 @@ export default function CompareItemsModal({
             }}
             onClick={() => candidate && !loading && onSwap && onSwap(candidate)}
             disabled={!candidate || loading}
+            title={candidate?.name || "Compared item"}
           >
-            View {candidate?.name ? (candidate.name.length > 18 ? candidate.name.slice(0, 16).trimEnd() + "…" : candidate.name) : "Swap"}
+            {candidateActionLabel}
           </button>
         </div>
       </div>
