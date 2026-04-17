@@ -525,8 +525,8 @@ export default function GrubbidDiscovery() {
 
           {/* Deals + location row */}
           <div style={{ padding: "8px 16px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-            <div style={{ fontSize: 11, color: "#166a3e", fontWeight: 700, letterSpacing: "0.04em" }}>
-              👇 tap here to browse deals
+            <div style={{ fontSize: 11, color: "#166a3e", fontWeight: 700, letterSpacing: "0.04em", textAlign: "center", width: "100%" }}>
+              👇 tap here to browse
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <button
