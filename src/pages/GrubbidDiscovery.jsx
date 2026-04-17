@@ -688,7 +688,6 @@ export default function GrubbidDiscovery() {
                 menu={menu}
                 index={i}
                 onMore={setMoreSheet}
-                matchReason={buildMatchReason(menu, filters, query)}
               />
             ))
           )}

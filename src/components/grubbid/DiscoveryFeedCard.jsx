@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 function formatCuisine(raw) {
   return String(raw || "")
@@ -8,34 +8,67 @@ function formatCuisine(raw) {
     .trim();
 }
 
-export default function DiscoveryFeedCard({ menu, index = 0, onMore, matchReason }) {
+export default function DiscoveryFeedCard({ menu, index = 0, onMore }) {
+  const [pressed, setPressed] = useState(false);
+  const navigate = useNavigate();
+
   const name = menu?.restaurant_name || "Restaurant";
   const cuisine = menu?.cuisine || menu?.category || null;
-  const preview = (menu?.preview_items || []).slice(0, 3);
+  const distance = menu?.distance_miles != null
+    ? `${Number(menu.distance_miles).toFixed(1)} mi`
+    : null;
   const href = `/public/restaurants/${menu?.restaurant_id}/menu`;
 
+  const meta = [cuisine ? formatCuisine(cuisine) : null, distance]
+    .filter(Boolean)
+    .join(" • ");
+
+  function handlePress() { setPressed(true); }
+  function handleRelease() { setPressed(false); }
+  function handleClick(e) {
+    if (e.target.closest("button")) return;
+    navigate(href);
+  }
+
   return (
-    <div style={{
-      background: "#fff",
-      borderRadius: 14,
-      marginBottom: 10,
-      boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)",
-    }}>
+    <div
+      role="button"
+      tabIndex={0}
+      onMouseDown={handlePress}
+      onMouseUp={handleRelease}
+      onMouseLeave={handleRelease}
+      onTouchStart={handlePress}
+      onTouchEnd={handleRelease}
+      onTouchCancel={handleRelease}
+      onClick={handleClick}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(href); }}
+      style={{
+        background: pressed ? "#f7f8fa" : "#fff",
+        borderRadius: 14,
+        marginBottom: 10,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)",
+        transform: pressed ? "scale(0.98)" : "scale(1)",
+        transition: pressed
+          ? "transform 100ms ease, background 100ms ease"
+          : "transform 150ms ease, background 150ms ease",
+        cursor: "pointer",
+        userSelect: "none",
+        WebkitTapHighlightColor: "transparent",
+      }}
+    >
       <div style={{ padding: "16px 16px 14px" }}>
 
-        {/* Name + ⋮ */}
         <div style={{
           display: "flex", alignItems: "flex-start",
           justifyContent: "space-between", marginBottom: 2,
         }}>
-          <Link to={href} style={{
+          <span style={{
             fontSize: 17, fontWeight: 800, color: "#101828",
-            textDecoration: "none", lineHeight: 1.2,
-            flex: 1, paddingRight: 8,
+            lineHeight: 1.2, flex: 1, paddingRight: 8,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
             {name}
-          </Link>
+          </span>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onMore && onMore(menu); }}
@@ -50,45 +83,19 @@ export default function DiscoveryFeedCard({ menu, index = 0, onMore, matchReason
           </button>
         </div>
 
-        {/* Cuisine */}
-        {cuisine && (
-          <div style={{
-            fontSize: 12, fontWeight: 500, color: "#9ca3af", marginBottom: 12,
-          }}>
-            {formatCuisine(cuisine)}
+        {meta && (
+          <div style={{ fontSize: 12, fontWeight: 500, color: "#9ca3af", marginBottom: 12 }}>
+            {meta}
           </div>
         )}
 
-        {/* Menu items */}
-        {preview.length > 0 && (
-          <div style={{ marginBottom: 14 }}>
-            {preview.map((item, i) => (
-              <div key={i} style={{
-                fontSize: 13, fontWeight: 500, color: "#475467",
-                lineHeight: 1.5,
-              }}>
-                {item}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {matchReason && (
-          <div style={{
-            fontSize: 11, fontWeight: 400, color: "#b0b7c3", marginBottom: 8,
-          }}>
-            {matchReason}
-          </div>
-        )}
-
-        {/* Text action */}
-        <Link to={href} style={{
+        <span style={{
           display: "inline-block",
           fontSize: 13, fontWeight: 600, color: "#1F4E3D",
-          textDecoration: "none", paddingTop: 2,
+          paddingTop: 2,
         }}>
           View menu
-        </Link>
+        </span>
 
       </div>
     </div>
