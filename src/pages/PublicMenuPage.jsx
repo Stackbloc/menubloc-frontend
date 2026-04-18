@@ -1150,106 +1150,35 @@ export default function PublicMenuPage() {
         padding: isMobile ? "16px 12px 56px" : "28px 20px 56px",
         color: "#101828",
       }}>
-        <PageNav back />
-
         {/* Restaurant header */}
-        <div style={{ marginBottom: isMobile ? 18 : 22 }}>
-          <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "flex-start",
-                gap: 14,
-                flexWrap: "wrap",
-              }}
-            >
-              <div style={{ minWidth: 0, flex: "1 1 320px" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: isMobile ? "flex-start" : "center",
-                    justifyContent: "flex-start",
-                    gap: 12,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div style={{ minWidth: 0, flex: "0 1 auto" }}>
-                    {restaurantProfileHref ? (
-                      <Link
-                        to={restaurantProfileHref}
-                        title={`Open ${restaurantName} profile`}
-                        style={{
-                          fontSize: isMobile ? 22 : 28,
-                          fontWeight: 900,
-                          letterSpacing: "-0.02em",
-                          lineHeight: 1.1,
-                          color: "#11211a",
-                          textDecoration: "none",
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        {restaurantName}
-                      </Link>
-                    ) : (
-                      <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word" }}>
-                        {restaurantName}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ flex: "0 0 auto", paddingTop: isMobile ? 2 : 0 }}>
-                    <ShareButton
-                      label="Share Menu"
-                      modalTitle={`Share ${restaurantName}`}
-                      shareData={shareData}
-                      analyticsContext={shareAnalyticsContext}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsFilterDrawerOpen(true)}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minHeight: 40,
-                      padding: "0 14px",
-                      borderRadius: 999,
-                      border: "1px solid rgba(18,34,28,0.12)",
-                      background: "#fff",
-                      color: "#11211a",
-                      fontSize: 13,
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
-                    }}
-                  >
-                    {t("common.filters", "Filters")} {" "}⚙️
-                  </button>
-                </div>
-
-                {/* Menu type label */}
-                {menuTypeLabel ? (
-                  <div style={{
-                    marginTop: 8,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    padding: "3px 10px",
-                    borderRadius: 999,
-                    background: "#f3f4f6",
-                    border: "1px solid rgba(18,34,28,0.08)",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#374151",
-                  }}>
-                    {menuTypeLabel}
-                  </div>
-                ) : null}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, marginBottom: isMobile ? 18 : 22 }}>
+          <div style={{ minWidth: 0, flex: "1 1 320px" }}>
+            {restaurantProfileHref ? (
+              <Link
+                to={restaurantProfileHref}
+                title={`Open ${restaurantName} profile`}
+                style={{
+                  fontSize: isMobile ? 22 : 28,
+                  fontWeight: 900,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.1,
+                  color: "#11211a",
+                  textDecoration: "none",
+                  wordBreak: "break-word",
+                  display: "block",
+                  marginBottom: 4,
+                }}
+              >
+                {restaurantName}
+              </Link>
+            ) : (
+              <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word", marginBottom: 4 }}>
+                {restaurantName}
               </div>
-            </div>
+            )}
 
             {addressLine ? (
-              <div style={{ marginTop: 6, fontSize: 14, color: "#667085", fontWeight: 600 }}>
+              <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>
                 {directionsHref ? (
                   <a
                     href={directionsHref}
@@ -1278,11 +1207,37 @@ export default function PublicMenuPage() {
               </div>
             ) : null}
 
+            {/* Menu type label */}
+            {menuTypeLabel ? (
+              <div style={{
+                marginTop: 8,
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "3px 10px",
+                borderRadius: 999,
+                background: "#f3f4f6",
+                border: "1px solid rgba(18,34,28,0.08)",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#374151",
+              }}>
+                {menuTypeLabel}
+              </div>
+            ) : null}
+
             <FranchiseBanner
               group={franchiseGroup}
               currentRestaurantId={currentRestaurantId}
               onPrevious={handlePreviousClosestLocation}
               onNext={handleNextClosestLocation}
+            />
+          </div>
+          <div style={{ flex: "0 0 auto", paddingTop: isMobile ? 2 : 0 }}>
+            <ShareButton
+              label="Share Menu"
+              modalTitle={`Share ${restaurantName}`}
+              shareData={shareData}
+              analyticsContext={shareAnalyticsContext}
             />
           </div>
         </div>
@@ -1327,14 +1282,13 @@ export default function PublicMenuPage() {
                 return (
                   <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 28 }}>
                     <div style={{
-                      fontSize: 12,
-                      fontWeight: 900,
-                      letterSpacing: "0.08em",
+                      fontSize: 18,
+                      fontWeight: 700,
+                      letterSpacing: "0.5px",
                       textTransform: "uppercase",
-                      color: "#6b7280",
-                      marginBottom: 10,
-                      paddingBottom: 8,
-                      borderBottom: "1px solid rgba(18,34,28,0.07)",
+                      color: "#11211a",
+                      marginTop: 24,
+                      marginBottom: 12,
                     }}>
                       {title}
                     </div>
@@ -1399,24 +1353,27 @@ export default function PublicMenuPage() {
                             style={{
                               border: inCartCount > 0
                                 ? "1px solid rgba(34,197,94,0.32)"
-                                : "1px solid rgba(18,34,28,0.08)",
-                              borderRadius: 18,
+                                : "1px solid #eee",
+                              borderRadius: 12,
                               background: inCartCount > 0 ? "#f7fef9" : "#fff",
-                              padding: "14px 16px",
+                              padding: "16px",
                               boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
                               cursor: "pointer",
                               transition: "background 120ms ease, border-color 120ms ease",
                               WebkitTapHighlightColor: "transparent",
                             }}
                           >
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                                <span style={{ fontSize: 15, fontWeight: 800, color: "#11211a", lineHeight: 1.2 }}>
-                                  {name}
-                                </span>
-                                {price ? (
-                                  <span style={{ fontSize: 14, fontWeight: 700, color: "#374151", whiteSpace: "nowrap" }}>{price}</span>
-                                ) : null}
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                              <span style={{ fontSize: 15, fontWeight: 600, color: "#11211a", lineHeight: 1.2, maxWidth: "75%" }}>
+                                {name}
+                              </span>
+                              {price ? (
+                                <span style={{ fontSize: 14, fontWeight: 700, color: "#374151", whiteSpace: "nowrap" }}>{price}</span>
+                              ) : null}
+                            </div>
+
+                            {(inCartCount > 0 || hasDeal || it?.is_vegan || it?.is_gluten_free) ? (
+                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
                                 {inCartCount > 0 ? (
                                   <span style={{ fontSize: 11, fontWeight: 700, color: "#166534", background: "#dcfce7", borderRadius: 999, padding: "2px 7px", whiteSpace: "nowrap" }}>
                                     {inCartCount} in order
@@ -1426,14 +1383,15 @@ export default function PublicMenuPage() {
                                 {it?.is_vegan && <Badge label={t("diet.vegan", "Vegan")} bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" />}
                                 {it?.is_gluten_free && <Badge label="GF" bg="#fffbeb" color="#92400e" border="1px solid #fde68a" />}
                               </div>
-                              {desc ? (
-                                <div style={{ marginTop: 4, fontSize: 13, color: "#6b7280", lineHeight: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                  {desc}
-                                </div>
-                              ) : null}
-                            </div>
+                            ) : null}
 
-                            {/* Nutrition & insights link — stopPropagation prevents add-to-order */}
+                            {desc ? (
+                              <div style={{ marginTop: 6, fontSize: 13, color: "#555", lineHeight: 1.5 }}>
+                                {desc}
+                              </div>
+                            ) : null}
+
+                            {/* Details link — stopPropagation prevents add-to-order */}
                             {canNavigate && itemHasInsightsData(it) ? (
                               <button
                                 type="button"
@@ -1445,18 +1403,23 @@ export default function PublicMenuPage() {
                                 }}
                                 style={{
                                   marginTop: 6,
-                                  display: "inline-block",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
                                   border: "none",
                                   background: "transparent",
-                                  color: "#9ca3af",
-                                  fontSize: 12,
-                                  fontWeight: 600,
+                                  color: "#0a7f5a",
+                                  fontSize: 14,
+                                  fontWeight: 500,
                                   cursor: "pointer",
-                                  padding: "2px 0",
+                                  padding: 0,
                                   lineHeight: 1,
+                                  transition: "all 0.15s ease",
                                 }}
+                                onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; e.currentTarget.style.opacity = "0.85"; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; e.currentTarget.style.opacity = "1"; }}
                               >
-                                Nutrition &amp; insights →
+                                Details →
                               </button>
                             ) : null}
                           </div>
