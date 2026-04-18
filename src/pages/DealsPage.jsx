@@ -11,23 +11,13 @@ import ShareIcon from "../components/share/ShareIcon.jsx";
 import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import {
   Card,
-  FilterChip,
   PageHero,
   PageShell,
-  PageSplit,
-  SelectField,
   StatusMessage,
 } from "../components/grubbid/GrubbidPrimitives.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-
-const PRICE_FILTER_OPTIONS = [
-  { label: "All", value: "all" },
-  { label: "Under $10", value: "under_10" },
-  { label: "$10 to $20", value: "10_to_20" },
-  { label: "$20+", value: "20_plus" },
-];
 
 function buildDealUrl(deal) {
   const base = deal.restaurant_slug || deal.restaurant_id;
@@ -66,20 +56,6 @@ function formatInlineDistanceMiles(value) {
   if (!Number.isFinite(miles)) return "";
   if (miles < 10) return `${miles.toFixed(1)} mi`;
   return `${Math.round(miles)} mi`;
-}
-
-function getDealDisplayPrice(deal) {
-  const menuPrice = Number.parseFloat(deal?.menu_item_price);
-  if (Number.isFinite(menuPrice) && menuPrice >= 0) {
-    return Math.round(menuPrice * 100);
-  }
-
-  const fixedPriceCents = Number(deal?.fixed_price_cents);
-  if (Number.isFinite(fixedPriceCents) && fixedPriceCents >= 0) {
-    return fixedPriceCents;
-  }
-
-  return null;
 }
 
 function getDealMenuPriceCents(deal) {
@@ -126,23 +102,6 @@ function getDealOrderPriceCents(deal) {
   return menuPriceCents;
 }
 
-function getGroupPriceCents(group) {
-  for (const deal of group.deals) {
-    const price = getDealDisplayPrice(deal);
-    if (price != null) return price;
-  }
-  return null;
-}
-
-function matchesPriceFilter(priceCents, priceFilter) {
-  if (priceFilter === "all") return true;
-  if (!Number.isFinite(priceCents)) return false;
-  if (priceFilter === "under_10") return priceCents < 1000;
-  if (priceFilter === "10_to_20") return priceCents >= 1000 && priceCents < 2000;
-  if (priceFilter === "20_plus") return priceCents >= 2000;
-  return true;
-}
-
 function groupDealsByRestaurant(deals) {
   const groups = new Map();
 
@@ -168,7 +127,6 @@ function groupDealsByRestaurant(deals) {
       primaryDeal: sortedDeals[0] || null,
       extraDeals: sortedDeals.slice(1),
       distanceMiles: getGroupDistanceMiles({ deals: sortedDeals }),
-      priceCents: getGroupPriceCents({ deals: sortedDeals }),
     };
   });
 }
@@ -185,7 +143,6 @@ function buildRestaurantScopedShareUrl({
   state,
   lat,
   lng,
-  cuisine,
   restaurantId,
 }) {
   const url = new URL("/deals", origin);
@@ -193,7 +150,6 @@ function buildRestaurantScopedShareUrl({
   if (state) url.searchParams.set("state", state);
   if (lat != null) url.searchParams.set("lat", String(lat));
   if (lng != null) url.searchParams.set("lng", String(lng));
-  if (cuisine) url.searchParams.set("cuisine", cuisine);
   if (restaurantId != null && restaurantId !== "") {
     url.searchParams.set("restaurant_id", String(restaurantId));
   }
@@ -215,7 +171,7 @@ async function shareLink({ url, title, text }) {
   window.prompt("Copy this link:", url);
 }
 
-function DealSummary({ deal, onShare = null, onAddToOrder = null }) {
+function DealSummary({ deal, menuUrl = null, onShare = null, onAddToOrder = null }) {
   const dealUrl = buildDealUrl(deal);
 
   return (
@@ -279,24 +235,69 @@ function DealSummary({ deal, onShare = null, onAddToOrder = null }) {
         </div>
       ) : null}
 
-      {onAddToOrder ? (
-        <div style={{ marginTop: 10 }}>
-          <button
-            type="button"
-            onClick={onAddToOrder}
-            style={{
-              border: "none",
-              borderRadius: 999,
-              background: "#11211a",
-              color: "#fff",
-              padding: "10px 14px",
-              fontSize: 13,
-              fontWeight: 900,
-              cursor: "pointer",
-            }}
-          >
-            Add to Order
-          </button>
+      {(dealUrl || menuUrl || onAddToOrder) ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
+          {dealUrl ? (
+            <Link
+              to={dealUrl}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 40,
+                padding: "0 16px",
+                borderRadius: 999,
+                background: "#11211a",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 900,
+                textDecoration: "none",
+              }}
+            >
+              View deal
+            </Link>
+          ) : null}
+
+          {menuUrl ? (
+            <Link
+              to={menuUrl}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 40,
+                padding: "0 16px",
+                borderRadius: 999,
+                border: "1px solid rgba(17, 33, 26, 0.16)",
+                background: "#fff",
+                color: "#11211a",
+                fontSize: 13,
+                fontWeight: 800,
+                textDecoration: "none",
+              }}
+            >
+              View full menu
+            </Link>
+          ) : null}
+
+          {onAddToOrder ? (
+            <button
+              type="button"
+              onClick={onAddToOrder}
+              style={{
+                border: "1px solid rgba(17, 33, 26, 0.12)",
+                borderRadius: 999,
+                background: "#f8faf8",
+                color: "#11211a",
+                padding: "10px 14px",
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              Add to order
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -317,16 +318,12 @@ export default function DealsPage() {
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [cuisine, setCuisine] = useState(urlParams.get("cuisine") || "");
-  const [cuisineOptions, setCuisineOptions] = useState([]);
-  const [priceFilter, setPriceFilter] = useState("all");
   const [expandedRestaurants, setExpandedRestaurants] = useState(() =>
     expandedRestaurantId ? { [expandedRestaurantId]: true } : {}
   );
 
   const [userLat, setUserLat] = useState(urlLat);
   const [userLng, setUserLng] = useState(urlLng);
-  const [locDetecting, setLocDetecting] = useState(false);
 
   useEffect(() => {
     if (!expandedRestaurantId) return;
@@ -334,37 +331,15 @@ export default function DealsPage() {
   }, [expandedRestaurantId]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadCuisineOptions() {
-      try {
-        const response = await fetch(`${API_BASE}/api/meta/cuisines`);
-        const data = await response.json().catch(() => ({}));
-        if (cancelled || !data?.ok || !Array.isArray(data.cuisines)) return;
-        setCuisineOptions(data.cuisines);
-      } catch {
-        if (!cancelled) setCuisineOptions([]);
-      }
-    }
-
-    loadCuisineOptions();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
     if (urlLat != null && urlLng != null) return;
     if (!navigator.geolocation) return;
 
-    setLocDetecting(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserLat(pos.coords.latitude);
         setUserLng(pos.coords.longitude);
-        setLocDetecting(false);
       },
-      () => setLocDetecting(false),
+      () => {},
       { timeout: 8000 }
     );
   }, [urlLat, urlLng]);
@@ -380,7 +355,6 @@ export default function DealsPage() {
         const params = new URLSearchParams();
         if (urlCity) params.set("city", urlCity);
         if (urlState) params.set("state", urlState);
-        if (cuisine) params.set("cuisine", cuisine);
         if (userLat != null && userLng != null) {
           params.set("lat", userLat);
           params.set("lng", userLng);
@@ -404,7 +378,7 @@ export default function DealsPage() {
     return () => {
       cancelled = true;
     };
-  }, [urlCity, urlState, cuisine, userLat, userLng]);
+  }, [urlCity, urlState, userLat, userLng]);
 
   const groupedDeals = useMemo(() => {
     const groups = groupDealsByRestaurant(deals).map((group, index) => ({
@@ -421,10 +395,14 @@ export default function DealsPage() {
         if (bDistance == null) return -1;
         if (aDistance !== bDistance) return aDistance - bDistance;
         return a.originalIndex - b.originalIndex;
-      })
-      .filter((group) => matchesPriceFilter(group.priceCents, priceFilter));
-  }, [deals, priceFilter]);
+      });
+  }, [deals]);
   const hasLocation = userLat != null && userLng != null;
+  const locationContextLabel = locationLabel
+    ? `Near ${locationLabel}`
+    : hasLocation
+    ? "Using current location"
+    : "Nearby deals";
 
   function toggleRestaurant(groupKey) {
     setExpandedRestaurants((prev) => ({
@@ -445,7 +423,6 @@ export default function DealsPage() {
             state: urlState,
             lat: userLat,
             lng: userLng,
-            cuisine,
             restaurantId: group.restaurantId || group.key,
           });
 
@@ -501,53 +478,31 @@ export default function DealsPage() {
         ]}
       />
 
-      <PageSplit
-        aside={(
-          <Card>
-            <div style={{ marginBottom: 14, color: "var(--gb-color-ink-strong)", fontSize: 16, fontWeight: 900 }}>
-              Filters
-            </div>
-            <div style={{ display: "grid", gap: 14 }}>
-              <SelectField label="Cuisine" value={cuisine} onChange={(event) => setCuisine(event.target.value)}>
-                <option value="">All</option>
-                {cuisineOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </SelectField>
-
-              <SelectField label="Price" value={priceFilter} onChange={(event) => setPriceFilter(event.target.value)}>
-                {PRICE_FILTER_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </SelectField>
-
-              {!hasLocation && locDetecting ? (
-                <div style={{ fontSize: 13, color: "var(--gb-color-ink-muted)" }}>
-                  Detecting location for nearby deals…
-                </div>
-              ) : null}
-
-              <FilterChip
-                active={!cuisine && priceFilter === "all"}
-                onClick={() => {
-                  setCuisine("");
-                  setPriceFilter("all");
-                }}
-              >
-                Reset filters
-              </FilterChip>
-            </div>
-          </Card>
-        )}
-      >
+      <div style={{ display: "grid", gap: 16 }}>
         <PageHero
-          title={locationLabel ? `Restaurant Deals Near ${locationLabel}` : "Restaurant Deals"}
-          description="Active promotions from restaurants in your area."
+          title={locationLabel ? `Restaurant Deals Near ${locationLabel}` : "Restaurant Deals Near You"}
+          description="Active promotions from restaurants in your area, with direct access to each full Grubbid menu."
         />
+
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            width: "fit-content",
+            minHeight: 40,
+            padding: "0 14px",
+            borderRadius: 999,
+            border: "1px solid rgba(17, 33, 26, 0.12)",
+            background: "#ffffff",
+            color: "#11211a",
+            fontSize: 13,
+            fontWeight: 800,
+          }}
+        >
+          <span style={{ color: "#667085", fontWeight: 700 }}>Location</span>
+          <span>{locationContextLabel}</span>
+        </div>
 
         <Card>
           {loading ? (
@@ -650,6 +605,7 @@ export default function DealsPage() {
                         {group.primaryDeal ? (
                           <DealSummary
                             deal={group.primaryDeal}
+                            menuUrl={restaurantUrl}
                             onShare={() => handleShare(group, group.primaryDeal)}
                             onAddToOrder={
                               group.primaryDeal?.menu_item_id
@@ -694,6 +650,7 @@ export default function DealsPage() {
                                 <div key={deal.deal_id || deal.id}>
                                   <DealSummary
                                     deal={deal}
+                                    menuUrl={restaurantUrl}
                                     onShare={() => handleShare(group, deal)}
                                     onAddToOrder={deal?.menu_item_id ? () => handleAddToOrder(group, deal) : null}
                                   />
@@ -710,7 +667,7 @@ export default function DealsPage() {
             </>
           ) : null}
         </Card>
-      </PageSplit>
+      </div>
     </PageShell>
   );
 }
