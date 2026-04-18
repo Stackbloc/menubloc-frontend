@@ -178,16 +178,10 @@ export default function GlobalHeader() {
         </form>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {!loading ? (
-            isAuthenticated ? (
-              <Link to="/account" style={authLinkStyle}>
-                {profileLabel}
-              </Link>
-            ) : (
-              <Link to="/account/login" style={authLinkStyle}>
-                Log in
-              </Link>
-            )
+          {!loading && isAuthenticated ? (
+            <Link to="/account" style={authLinkStyle}>
+              {profileLabel}
+            </Link>
           ) : null}
         </div>
       </header>

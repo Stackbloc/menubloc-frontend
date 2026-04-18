@@ -258,6 +258,25 @@ function DealSummary({ deal, menuUrl = null, onShare = null, onAddToOrder = null
             </Link>
           ) : null}
 
+          {onAddToOrder ? (
+            <button
+              type="button"
+              onClick={onAddToOrder}
+              style={{
+                border: "1px solid rgba(17, 33, 26, 0.12)",
+                borderRadius: 999,
+                background: "#f8faf8",
+                color: "#11211a",
+                padding: "10px 14px",
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              Add to order
+            </button>
+          ) : null}
+
           {menuUrl ? (
             <Link
               to={menuUrl}
@@ -278,25 +297,6 @@ function DealSummary({ deal, menuUrl = null, onShare = null, onAddToOrder = null
             >
               View full menu
             </Link>
-          ) : null}
-
-          {onAddToOrder ? (
-            <button
-              type="button"
-              onClick={onAddToOrder}
-              style={{
-                border: "1px solid rgba(17, 33, 26, 0.12)",
-                borderRadius: 999,
-                background: "#f8faf8",
-                color: "#11211a",
-                padding: "10px 14px",
-                fontSize: 13,
-                fontWeight: 800,
-                cursor: "pointer",
-              }}
-            >
-              Add to order
-            </button>
           ) : null}
         </div>
       ) : null}
