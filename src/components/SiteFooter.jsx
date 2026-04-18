@@ -34,18 +34,21 @@ export default function SiteFooter() {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 16,
-          flexWrap: "wrap",
+          flexWrap: "nowrap",
           boxSizing: "border-box",
+          overflowX: "auto",
         }}
       >
         <div
           style={{
             display: "flex",
-            flexWrap: "wrap",
+            flexWrap: "nowrap",
             gap: 18,
             alignItems: "center",
             fontSize: 13,
-            paddingLeft: 284,
+            paddingLeft: 0,
+            whiteSpace: "nowrap",
+            flex: "0 0 auto",
           }}
         >
           <Link to="/restaurant/signup" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
@@ -76,8 +79,9 @@ export default function SiteFooter() {
             display: "inline-flex",
             alignItems: "center",
             gap: 10,
-            flexWrap: "wrap",
+            flexWrap: "nowrap",
             marginLeft: "auto",
+            flex: "0 0 auto",
           }}
         >
           <span

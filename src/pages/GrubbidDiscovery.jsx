@@ -388,23 +388,13 @@ export default function GrubbidDiscovery() {
 
   // ── render ──────────────────────────────────────────────────────────────────
 
-  const locationControlLabel = resolvedLocationLabel
+  const locationPreferenceSummary = resolvedLocationLabel
     ? `Near ${resolvedLocationLabel}`
     : autoLocation.status === "locating"
     ? "Using current location"
     : autoLocation.status === "denied"
     ? "Location access denied"
-    : "Set your location";
-
-  const locationControlStatus = showLocationEditor
-    ? "Location preferences"
-    : autoLocation.status === "ready" && !appliedLocation
-    ? "Using current location"
-    : appliedLocation
-    ? "Location preferences"
-    : autoLocation.status === "locating"
-    ? "Detecting current location"
-    : "Location preferences";
+    : "Enter city, state or zip";
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
@@ -537,14 +527,44 @@ export default function GrubbidDiscovery() {
             </div>
           </div>
 
-          <div style={{ padding: "10px 16px 0" }}>
+          <div
+            style={{
+              padding: "10px 16px 0",
+              display: "flex",
+              alignItems: "stretch",
+              gap: 10,
+            }}
+          >
+            <Link
+              to="/deals"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 52,
+                padding: "0 16px",
+                borderRadius: 999,
+                border: "1px solid rgba(22,101,62,0.35)",
+                background: "rgba(22,101,62,0.07)",
+                color: "#166a3e",
+                fontSize: 13,
+                fontWeight: 800,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+                boxShadow: "0 1px 4px rgba(22,101,62,0.10)",
+              }}
+            >
+              🏷️ Deals
+            </Link>
+
             <button
               type="button"
               onClick={() => setShowLocationEditor((prev) => !prev)}
               aria-expanded={showLocationEditor}
               aria-controls="discovery-location-editor"
               style={{
-                width: "100%",
+                flex: 1,
+                minWidth: 0,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -560,14 +580,22 @@ export default function GrubbidDiscovery() {
               }}
             >
               <div style={{ minWidth: 0, textAlign: "left" }}>
-                <div style={{ fontSize: 11, color: "#667085", fontWeight: 800, letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                  {locationControlStatus}
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#667085",
+                    fontWeight: 800,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Location Preference
                 </div>
                 <div
                   style={{
                     marginTop: 2,
                     color: "#11211a",
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: 800,
                     lineHeight: 1.25,
                     whiteSpace: "nowrap",
@@ -575,20 +603,20 @@ export default function GrubbidDiscovery() {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {locationControlLabel}
+                  {locationPreferenceSummary}
                 </div>
               </div>
+
               <div
-                aria-hidden="true"
                 style={{
                   flexShrink: 0,
                   color: "#166a3e",
-                  fontSize: 18,
-                  fontWeight: 900,
-                  lineHeight: 1,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  whiteSpace: "nowrap",
                 }}
               >
-                {showLocationEditor ? "−" : "›"}
+                {showLocationEditor ? "Close" : "Change"}
               </div>
             </button>
           </div>
@@ -736,7 +764,7 @@ export default function GrubbidDiscovery() {
               color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
             }}>
               {autoLocation.status === "denied"
-                ? "Enable location access to see nearby menus, or open the location control to enter your city."
+                ? "Enable location access to see nearby menus, or open Location Preference to enter your city."
                 : "No menus found nearby. Try changing your location."}
             </div>
           ) : (
