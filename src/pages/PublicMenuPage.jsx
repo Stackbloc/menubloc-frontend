@@ -47,7 +47,7 @@ function useIsMobile(breakpoint = 900) {
   return isMobile;
 }
 import { PageNav } from "../components/NavButton.jsx";
-import { itemPassesDietFilter, activePrefLabels } from "../hooks/useDietPreferences";
+import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
@@ -363,6 +363,68 @@ function FilterChip({ label, active, onClick, fullWidth }) {
   );
 }
 
+function ActiveFilterChip({ label, onRemove }) {
+  return (
+    <button
+      type="button"
+      onClick={onRemove}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        minHeight: 34,
+        padding: "0 12px",
+        borderRadius: 999,
+        border: "1px solid rgba(18,34,28,0.12)",
+        background: "#fff",
+        color: "#11211a",
+        fontSize: 12,
+        fontWeight: 800,
+        cursor: "pointer",
+      }}
+    >
+      <span>{label}</span>
+      <span aria-hidden="true" style={{ color: "#667085", fontSize: 13, lineHeight: 1 }}>×</span>
+    </button>
+  );
+}
+
+function FilterDrawer({ open, onClose, children }) {
+  if (!open) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Filters"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1400,
+        background: "rgba(15,23,42,0.28)",
+        backdropFilter: "blur(3px)",
+        display: "flex",
+        justifyContent: "flex-end",
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(event) => event.stopPropagation()}
+        style={{
+          width: "min(360px, 100vw)",
+          height: "100%",
+          background: "#fff",
+          boxShadow: "-18px 0 40px rgba(15,23,42,0.16)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 const DIET_CHIPS = [
   { key: "dairy_free",        label: "Dairy Free" },
   { key: "diabetic_friendly", label: "Diabetic Friendly" },
@@ -665,6 +727,7 @@ export default function PublicMenuPage() {
   const [modifierItem, setModifierItem] = useState(null);
   const [itemSheet, setItemSheet] = useState(null);
   const [addedConfirmation, setAddedConfirmation] = useState(null);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [resolvedRouteState, setResolvedRouteState] = useState({
     status: "loading",
     restaurantId: "",
@@ -688,7 +751,22 @@ export default function PublicMenuPage() {
   };
   const dealsFilter = searchParams.get("deals") === "1";
   const filtersActive = Object.values(dietPrefs).some(Boolean) || dealsFilter;
-  const activeFilterLabels = [...activePrefLabels(dietPrefs), ...(dealsFilter ? [t("common.deals", "Deals")] : [])];
+  const activeFilterChips = [
+    ...DIET_CHIPS
+      .filter(({ key }) => dietPrefs[key])
+      .map(({ key, label }) => ({
+        key,
+        label: t(`diet.${key}`, label),
+        onRemove: () => handleTogglePref(key),
+      })),
+    ...(dealsFilter
+      ? [{
+          key: "deals",
+          label: t("common.deals", "Deals"),
+          onRemove: () => handleTogglePref("deals"),
+        }]
+      : []),
+  ];
   const proximityLat = asFiniteNumber(searchParams.get("lat"));
   const proximityLng = asFiniteNumber(searchParams.get("lng"));
   const contextCity  = searchParams.get("city")  || null;
@@ -1076,7 +1154,7 @@ export default function PublicMenuPage() {
 
         {/* Restaurant header */}
         <div style={{ marginBottom: isMobile ? 18 : 22 }}>
-          <div style={{ paddingLeft: isMobile ? 0 : 284 }}>
+          <div>
             <div
               style={{
                 display: "flex",
@@ -1127,6 +1205,27 @@ export default function PublicMenuPage() {
                       analyticsContext={shareAnalyticsContext}
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsFilterDrawerOpen(true)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: 40,
+                      padding: "0 14px",
+                      borderRadius: 999,
+                      border: "1px solid rgba(18,34,28,0.12)",
+                      background: "#fff",
+                      color: "#11211a",
+                      fontSize: 13,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+                    }}
+                  >
+                    {t("common.filters", "Filters")} {" "}⚙️
+                  </button>
                 </div>
 
                 {/* Menu type label */}
@@ -1188,106 +1287,22 @@ export default function PublicMenuPage() {
           </div>
         </div>
 
-        {/* Two-column layout: sidebar + menu content */}
-        <div style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          alignItems: "flex-start",
-          gap: isMobile ? 16 : 24,
-        }}>
-
-          {/* ── Filter sidebar ── */}
-          <aside style={{
-            flex: isMobile ? "1 1 auto" : "0 0 260px",
-            width: isMobile ? "100%" : 260,
-            position: isMobile ? "static" : "sticky",
-            top: 18,
-            alignSelf: "flex-start",
-            minWidth: 0,
-          }}>
-            <div style={{
-              borderRadius: 24,
-              padding: isMobile ? 14 : 18,
-              background: "#fff",
-              border: "1px solid rgba(18,34,28,0.08)",
-              boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
-              boxSizing: "border-box",
-            }}>
-              <div style={{ fontSize: 16, fontWeight: 900, color: "#11211a", marginBottom: 14 }}>
-                {t("discovery.dietary")}
-              </div>
-              <div style={{ display: "grid", gap: 10 }}>
-                {DIET_CHIPS.map(({ key, label }) => (
-                  <FilterChip
-                    key={key}
-                    label={t(`diet.${key}`, label)}
-                    active={dietPrefs[key]}
-                    onClick={() => handleTogglePref(key)}
-                    fullWidth
-                  />
-                ))}
-                <FilterChip
-                  label={t("common.deals", "Deals")}
-                  active={dealsFilter}
-                  onClick={() => handleTogglePref("deals")}
-                  fullWidth
-                />
-              </div>
-              {filtersActive && (
-                <button
-                  onClick={handleClearFilters}
-                  style={{
-                    marginTop: 12,
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#667085",
-                    padding: 0,
-                    textDecoration: "underline",
-                  }}
-                >{t("common.clearAll", "Clear all")}</button>
-              )}
-            </div>
-          </aside>
-
-          {/* ── Menu content ── */}
-          <main style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
+        <div>
+          <main style={{ minWidth: 0, width: "100%" }}>
 
             <IntakePreviewBanner show={isIntakePreview} />
 
             {filtersActive && (
               <div style={{
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
                 flexWrap: "wrap",
                 gap: 8,
-                padding: "10px 16px",
+                padding: 0,
                 marginBottom: 16,
-                borderRadius: 12,
-                background: "#f0fdf4",
-                border: "1px solid #bbf7d0",
-                fontSize: 13,
-                fontWeight: 600,
-                color: "#166534",
               }}>
-                <span>
-                  <span style={{ fontWeight: 800 }}>{t("common.filterApplied", "Filter applied: ")}</span>
-                  {activeFilterLabels.join(", ")}
-                  <span style={{ fontWeight: 400, color: "#475467" }}>{t("common.matchingItemsOnly", " — only matching items shown")}</span>
-                </span>
-                <button
-                  onClick={handleClearFilters}
-                  style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    fontSize: 12, fontWeight: 700, color: "#667085",
-                    padding: 0, textDecoration: "underline", whiteSpace: "nowrap",
-                  }}
-                >
-                  {t("common.showFullMenu", "Show full menu")}
-                </button>
+                {activeFilterChips.map(({ key, label, onRemove }) => (
+                  <ActiveFilterChip key={key} label={label} onRemove={onRemove} />
+                ))}
               </div>
             )}
 
@@ -1453,8 +1468,68 @@ export default function PublicMenuPage() {
               })
             )}
           </main>
-
         </div>
+
+        <FilterDrawer open={isFilterDrawerOpen} onClose={() => setIsFilterDrawerOpen(false)}>
+          <div style={{ padding: "18px 18px 14px", borderBottom: "1px solid rgba(18,34,28,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ fontSize: 17, fontWeight: 900, color: "#11211a" }}>
+              {t("common.filters", "Filters")}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsFilterDrawerOpen(false)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 20,
+                lineHeight: 1,
+                color: "#667085",
+                padding: 0,
+              }}
+              aria-label={t("common.close", "Close")}
+            >
+              ×
+            </button>
+          </div>
+          <div style={{ padding: 18, display: "grid", gap: 10, overflowY: "auto" }}>
+            {DIET_CHIPS.map(({ key, label }) => (
+              <FilterChip
+                key={key}
+                label={t(`diet.${key}`, label)}
+                active={dietPrefs[key]}
+                onClick={() => handleTogglePref(key)}
+                fullWidth
+              />
+            ))}
+            <FilterChip
+              label={t("common.deals", "Deals")}
+              active={dealsFilter}
+              onClick={() => handleTogglePref("deals")}
+              fullWidth
+            />
+            {filtersActive ? (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                style={{
+                  marginTop: 8,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#667085",
+                  padding: 0,
+                  textDecoration: "underline",
+                  textAlign: "left",
+                }}
+              >
+                {t("common.clearAll", "Clear all")}
+              </button>
+            ) : null}
+          </div>
+        </FilterDrawer>
       </div>
 
       {/* Item detail sheet */}
