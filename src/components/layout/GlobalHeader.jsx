@@ -135,9 +135,6 @@ export default function GlobalHeader() {
           <NavLink to="/deals" style={({ isActive }) => buildNavLinkStyle(isActive)}>
             Deals
           </NavLink>
-          <NavLink to="/browse-menus" style={({ isActive }) => buildNavLinkStyle(isActive)}>
-            Restaurants
-          </NavLink>
         </nav>
       </div>
 

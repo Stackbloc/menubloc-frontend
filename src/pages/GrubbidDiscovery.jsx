@@ -527,97 +527,54 @@ export default function GrubbidDiscovery() {
             </div>
           </div>
 
-          <div
-            style={{
-              padding: "10px 16px 0",
-              display: "flex",
-              alignItems: "stretch",
-              gap: 10,
-            }}
-          >
-            <Link
-              to="/deals"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: 52,
-                padding: "0 16px",
-                borderRadius: 999,
-                border: "1px solid rgba(22,101,62,0.35)",
-                background: "rgba(22,101,62,0.07)",
-                color: "#166a3e",
-                fontSize: 13,
-                fontWeight: 800,
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-                boxShadow: "0 1px 4px rgba(22,101,62,0.10)",
-              }}
-            >
-              🏷️ Deals
-            </Link>
-
+          <div style={{ padding: "10px 16px 0" }}>
             <button
               type="button"
               onClick={() => setShowLocationEditor((prev) => !prev)}
               aria-expanded={showLocationEditor}
               aria-controls="discovery-location-editor"
               style={{
-                flex: 1,
-                minWidth: 0,
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                minHeight: 52,
-                padding: "0 16px",
+                gap: 8,
+                maxWidth: "100%",
+                minHeight: 34,
+                padding: "0 12px",
                 borderRadius: 999,
-                border: showLocationEditor ? "1px solid rgba(17, 33, 26, 0.24)" : "1px solid rgba(17, 33, 26, 0.14)",
-                background: showLocationEditor ? "#eef6f1" : "#ffffff",
-                color: "#11211a",
+                border: "1px solid rgba(22,101,62,0.18)",
+                background: showLocationEditor ? "rgba(22,101,62,0.12)" : "rgba(22,101,62,0.08)",
+                color: "#486257",
                 cursor: "pointer",
-                boxShadow: showLocationEditor ? "0 2px 10px rgba(17,33,26,0.08)" : "0 1px 4px rgba(17,33,26,0.06)",
+                transition: "background 140ms ease, opacity 140ms ease, border-color 140ms ease",
               }}
             >
-              <div style={{ minWidth: 0, textAlign: "left" }}>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "#667085",
-                    fontWeight: 800,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Location Preference
-                </div>
-                <div
-                  style={{
-                    marginTop: 2,
-                    color: "#11211a",
-                    fontSize: 14,
-                    fontWeight: 800,
-                    lineHeight: 1.25,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {locationPreferenceSummary}
-                </div>
-              </div>
-
-              <div
+              <span aria-hidden="true" style={{ fontSize: 13, lineHeight: 1 }}>
+                📍
+              </span>
+              <span
                 style={{
-                  flexShrink: 0,
-                  color: "#166a3e",
-                  fontSize: 12,
-                  fontWeight: 800,
+                  minWidth: 0,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  lineHeight: 1.2,
                   whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
-                {showLocationEditor ? "Close" : "Change"}
-              </div>
+                {locationPreferenceSummary}
+              </span>
+              <span
+                aria-hidden="true"
+                style={{
+                  flexShrink: 0,
+                  fontSize: 11,
+                  color: "#6b7f76",
+                  lineHeight: 1,
+                }}
+              >
+                ▾
+              </span>
             </button>
           </div>
         </div>
