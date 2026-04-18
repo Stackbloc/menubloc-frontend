@@ -70,6 +70,7 @@ import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
 import OperatorCartNegotiationSettings from "./pages/operator/OperatorCartNegotiationSettings.jsx";
 
 import GrubbidDiscovery from "./pages/GrubbidDiscovery.jsx";
+import GrubbidHomeV1 from "./components/GrubbidHomeV1.jsx";
 import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
 
 import RestaurantSignup from "./pages/RestaurantSignup.jsx";
@@ -426,7 +427,7 @@ function AppShell({ easyMenu, crmHost }) {
       {crmHost ? null : <BasketResumePrompt />}
 
       <Routes>
-        <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <GrubbidDiscovery />} />
+        <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <GrubbidHomeV1 />} />
 
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
         <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />
