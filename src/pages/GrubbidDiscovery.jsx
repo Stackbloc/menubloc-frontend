@@ -459,6 +459,25 @@ export default function GrubbidDiscovery() {
             />
 
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+              <Link
+                to="/deals"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  minHeight: 32,
+                  padding: "0 12px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(22,101,62,0.18)",
+                  background: "rgba(22,101,62,0.08)",
+                  color: "#486257",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Deals
+              </Link>
               {!consumerLoading && (
                 consumerLoggedIn ? (
                   <Link to="/account" style={{ fontSize: 22, textDecoration: "none" }}>

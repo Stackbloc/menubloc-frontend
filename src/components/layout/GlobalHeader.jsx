@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../BrandLogo.jsx";
+import AppMenuSheet from "../grubbid/AppMenuSheet.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 
 const shellStyle = {
@@ -103,6 +104,8 @@ export default function GlobalHeader() {
   const { isAuthenticated, loading, profile, consumer } = useConsumer();
   const params = new URLSearchParams(location.search || "");
   const [query, setQuery] = useState(params.get("q") || "");
+  const [appMenuOpen, setAppMenuOpen] = useState(false);
+  const showDealsNav = location.pathname !== "/deals";
 
   const profileLabel =
     profile?.display_name ||
@@ -125,46 +128,69 @@ export default function GlobalHeader() {
   }
 
   return (
-    <header style={shellStyle}>
-      <div style={leftStyle}>
-        <Link to="/" aria-label="Go to home" style={{ display: "inline-flex", textDecoration: "none" }}>
-          <BrandLogo width={92} height={58} radius={16} pageColor="#f7f6f1" />
-        </Link>
+    <>
+      <AppMenuSheet open={appMenuOpen} onClose={() => setAppMenuOpen(false)} />
+      <header style={shellStyle}>
+        <div style={leftStyle}>
+          <button
+            type="button"
+            onClick={() => setAppMenuOpen(true)}
+            aria-label="Open menu"
+            style={{
+              border: "none",
+              background: "transparent",
+              fontSize: 22,
+              color: "#101828",
+              cursor: "pointer",
+              padding: 4,
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+          >
+            ☰
+          </button>
 
-        <nav aria-label="Primary" style={navStyle}>
-          <NavLink to="/deals" style={({ isActive }) => buildNavLinkStyle(isActive)}>
-            Deals
-          </NavLink>
-        </nav>
-      </div>
+          <Link to="/" aria-label="Go to home" style={{ display: "inline-flex", textDecoration: "none" }}>
+            <BrandLogo width={92} height={58} radius={16} pageColor="#f7f6f1" />
+          </Link>
 
-      <form onSubmit={handleSubmit} role="search" style={searchFormStyle}>
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search restaurants or dishes"
-          aria-label="Search restaurants or dishes"
-          style={searchInputStyle}
-        />
-        <button type="submit" style={searchButtonStyle}>
-          Search
-        </button>
-      </form>
+          {showDealsNav ? (
+            <nav aria-label="Primary" style={navStyle}>
+              <NavLink to="/deals" style={({ isActive }) => buildNavLinkStyle(isActive)}>
+                Deals
+              </NavLink>
+            </nav>
+          ) : null}
+        </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {!loading ? (
-          isAuthenticated ? (
-            <Link to="/account" style={authLinkStyle}>
-              {profileLabel}
-            </Link>
-          ) : (
-            <Link to="/account/login" style={authLinkStyle}>
-              Log in
-            </Link>
-          )
-        ) : null}
-      </div>
-    </header>
+        <form onSubmit={handleSubmit} role="search" style={searchFormStyle}>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search restaurants or dishes"
+            aria-label="Search restaurants or dishes"
+            style={searchInputStyle}
+          />
+          <button type="submit" style={searchButtonStyle}>
+            Search
+          </button>
+        </form>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {!loading ? (
+            isAuthenticated ? (
+              <Link to="/account" style={authLinkStyle}>
+                {profileLabel}
+              </Link>
+            ) : (
+              <Link to="/account/login" style={authLinkStyle}>
+                Log in
+              </Link>
+            )
+          ) : null}
+        </div>
+      </header>
+    </>
   );
 }
