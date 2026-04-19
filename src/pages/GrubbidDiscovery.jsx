@@ -493,10 +493,6 @@ export default function GrubbidDiscovery() {
         onClose={() => setDrawerOpen(false)}
         filters={filters}
         setFilters={setFilters}
-        allergenFilters={allergenFilters}
-        setAllergenFilters={setAllergenFilters}
-        hideCuisines={hideCuisines}
-        setHideCuisines={setHideCuisines}
       />
 
       <DiscoveryMoreSheet

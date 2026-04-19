@@ -271,7 +271,7 @@ export default function DiscoveryCard({
                 border: "1px solid #e0d8d0",
                 background: "transparent",
                 padding: "2px 7px", borderRadius: 99,
-              }}>{tag}</span>
+              }}>{tag.charAt(0).toUpperCase() + tag.slice(1)}</span>
             ))}
           </div>
         )}
