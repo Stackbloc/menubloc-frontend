@@ -1192,103 +1192,69 @@ export default function PublicMenuPage() {
           position: "sticky",
           top: 0,
           zIndex: 50,
-          background: "var(--gb-color-surface-strong)",
+          background: "#f7f1e6",
           borderBottom: "1px solid var(--gb-color-border)",
           marginBottom: isMobile ? 18 : 22,
           marginLeft: isMobile ? -12 : -20,
           marginRight: isMobile ? -12 : -20,
-          padding: isMobile ? "12px 12px" : "14px 20px",
+          padding: isMobile ? "10px 12px" : "12px 20px",
         }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14 }}>
-            <div style={{ minWidth: 0, flex: "1 1 320px" }}>
-              {restaurantProfileHref ? (
-                <Link
-                  to={restaurantProfileHref}
-                  title={`Open ${restaurantName} profile`}
-                  style={{
-                    fontSize: isMobile ? 18 : 22,
-                    fontWeight: 900,
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1.1,
-                    color: "#11211a",
-                    textDecoration: "none",
-                    wordBreak: "break-word",
-                    display: "block",
-                    marginBottom: 2,
-                  }}
-                >
-                  {restaurantName}
-                </Link>
-              ) : (
-                <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word", marginBottom: 2 }}>
-                  {restaurantName}
-                </div>
-              )}
-
-              {addressLine ? (
-                <div style={{ fontSize: 13, color: "#667085", fontWeight: 600 }}>
-                  {directionsHref ? (
-                    <a
-                      href={directionsHref}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`Get directions to ${restaurantName}`}
-                      title="Open Google Maps directions"
-                      style={{
-                        color: "inherit",
-                        textDecoration: "none",
-                        display: "inline-flex",
-                        flexDirection: "column",
-                        alignItems: "flex-start",
-                        gap: 1,
-                      }}
-                    >
-                      {addressLine1 ? <span>{addressLine1}</span> : null}
-                      {addressLine2 ? <span>{addressLine2}</span> : null}
-                    </a>
-                  ) : (
-                    <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
-                      {addressLine1 ? <span>{addressLine1}</span> : null}
-                      {addressLine2 ? <span>{addressLine2}</span> : null}
-                    </span>
-                  )}
-                </div>
-              ) : null}
-
-              {/* Menu type label */}
-              {menuTypeLabel ? (
-                <div style={{
-                  marginTop: 6,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: "2px 8px",
-                  borderRadius: 999,
-                  background: "#f3f4f6",
-                  border: "1px solid rgba(18,34,28,0.08)",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "#374151",
-                }}>
-                  {menuTypeLabel}
-                </div>
-              ) : null}
-
-              <FranchiseBanner
-                group={franchiseGroup}
-                currentRestaurantId={currentRestaurantId}
-                onPrevious={handlePreviousClosestLocation}
-                onNext={handleNextClosestLocation}
-              />
-            </div>
-            <div style={{ flex: "0 0 auto" }}>
-              <ShareButton
-                label="Share Menu"
-                modalTitle={`Share ${restaurantName}`}
-                shareData={shareData}
-                analyticsContext={shareAnalyticsContext}
-              />
-            </div>
+          {/* Name + Share on same line */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: addressLine ? 2 : 0 }}>
+            {restaurantProfileHref ? (
+              <Link
+                to={restaurantProfileHref}
+                title={`Open ${restaurantName} profile`}
+                style={{
+                  fontSize: isMobile ? 18 : 22,
+                  fontWeight: 900,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.1,
+                  color: "#11211a",
+                  textDecoration: "none",
+                  wordBreak: "break-word",
+                }}
+              >
+                {restaurantName}
+              </Link>
+            ) : (
+              <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word" }}>
+                {restaurantName}
+              </div>
+            )}
           </div>
+
+          {addressLine ? (
+            <div style={{ fontSize: 13, color: "#667085", fontWeight: 600 }}>
+              {directionsHref ? (
+                <a href={directionsHref} target="_blank" rel="noreferrer"
+                  aria-label={`Get directions to ${restaurantName}`}
+                  style={{ color: "inherit", textDecoration: "none", display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}
+                >
+                  {addressLine1 ? <span>{addressLine1}</span> : null}
+                  {addressLine2 ? <span>{addressLine2}</span> : null}
+                </a>
+              ) : (
+                <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
+                  {addressLine1 ? <span>{addressLine1}</span> : null}
+                  {addressLine2 ? <span>{addressLine2}</span> : null}
+                </span>
+              )}
+            </div>
+          ) : null}
+
+          {menuTypeLabel ? (
+            <div style={{ marginTop: 4, display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 999, background: "#f3f4f6", border: "1px solid rgba(18,34,28,0.08)", fontSize: 11, fontWeight: 700, color: "#374151" }}>
+              {menuTypeLabel}
+            </div>
+          ) : null}
+
+          <FranchiseBanner
+            group={franchiseGroup}
+            currentRestaurantId={currentRestaurantId}
+            onPrevious={handlePreviousClosestLocation}
+            onNext={handleNextClosestLocation}
+          />
         </div>
 
         <div>
@@ -1418,7 +1384,7 @@ export default function PublicMenuPage() {
                               WebkitTapHighlightColor: "transparent",
                             }}
                           >
-                            <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "baseline", gap: 8 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
                               <span style={{ fontSize: 14, fontWeight: 600, color: "#11211a", lineHeight: 1.2 }}>
                                 {name}
                               </span>
