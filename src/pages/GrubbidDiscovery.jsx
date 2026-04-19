@@ -296,17 +296,12 @@ export default function GrubbidDiscovery() {
       const loc = parseLocation(appliedLocation);
       if (loc.city) params.set("city", loc.city);
       if (loc.state) params.set("state", loc.state);
-    } else if (autoLocation.city) {
-      params.set("city", autoLocation.city);
-      if (autoLocation.state) params.set("state", autoLocation.state);
-    } else if (autoLocation.lat) {
-      params.set("radius", String(LOCAL_RADIUS_MILES));
-    }
-    // Always include lat/lng when autoLocation has them — the backend uses them
-    // to compute accurate distance_miles regardless of whether city is also set.
-    if (!appliedLocation && autoLocation.lat != null && autoLocation.lng != null) {
+    } else if (autoLocation.lat != null && autoLocation.lng != null) {
+      // Auto-detected location: filter by geo radius, not city name.
+      // reverseGeocode locality names often don't match restaurant DB city values.
       params.set("lat", String(autoLocation.lat));
       params.set("lng", String(autoLocation.lng));
+      params.set("radius", String(LOCAL_RADIUS_MILES));
     }
 
     setFeedLoading(true);
