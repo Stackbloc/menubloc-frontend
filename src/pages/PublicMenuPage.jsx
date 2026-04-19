@@ -1386,7 +1386,7 @@ export default function PublicMenuPage() {
                               WebkitTapHighlightColor: "transparent",
                             }}
                           >
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, maxWidth: 520 }}>
                               <span style={{ fontSize: 14, fontWeight: 600, color: "#11211a", lineHeight: 1.2 }}>
                                 {name}
                               </span>
