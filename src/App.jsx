@@ -40,6 +40,7 @@ import AppleAuthCallback from "./pages/consumer/AppleAuthCallback.jsx";
 import ConsumerForgotPassword from "./pages/consumer/ConsumerForgotPassword.jsx";
 import ConsumerResetPassword from "./pages/consumer/ConsumerResetPassword.jsx";
 import ConsumerProfile from "./pages/consumer/ConsumerProfile.jsx";
+import ConsumerFollowing from "./pages/consumer/ConsumerFollowing.jsx";
 import OperatorLogin from "./pages/operator/OperatorLogin.jsx";
 import OperatorSignup from "./pages/operator/OperatorSignup.jsx";
 import OperatorRecovery from "./pages/operator/OperatorRecovery.jsx";
@@ -493,6 +494,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/account/forgot-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerForgotPassword />} />
         <Route path="/account/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerResetPassword />} />
         <Route path="/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerProfile />} />
+        <Route path="/account/following" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ConsumerFollowing />} />
 
         <Route path="/operator/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorLogin />} />
         <Route path="/operator/signup" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorSignup />} />

@@ -48,6 +48,7 @@ export const verifySmsCode         = (phone_number, code)  => post("/api/auth/ve
 // ── Profile ───────────────────────────────────────────────────────────────
 export const getConsumerProfile    = ()     => get("/api/consumer/profile");
 export const updateConsumerProfile = (body) => put("/api/consumer/profile", body);
+export const getFollowedRestaurants = ()    => get("/api/consumer/followed-restaurants");
 
 // ── Preferences ───────────────────────────────────────────────────────────
 export const getPreferences        = ()     => get("/api/consumer/profile/preferences");
@@ -58,3 +59,11 @@ export const getLocations          = ()         => get("/api/consumer/profile/lo
 export const addLocation           = (body)     => post("/api/consumer/profile/locations", body);
 export const updateLocation        = (id, body) => put(`/api/consumer/profile/locations/${id}`, body);
 export const deleteLocation        = (id)       => del(`/api/consumer/profile/locations/${id}`);
+
+// ── Restaurant Follows ─────────────────────────────────────────────────────
+export const getRestaurantFollowStatus = (restaurantId) =>
+  get(`/api/restaurants/${encodeURIComponent(String(restaurantId))}/follow-status`);
+export const followRestaurant = (restaurantId) =>
+  post(`/api/restaurants/${encodeURIComponent(String(restaurantId))}/follow`, {});
+export const unfollowRestaurant = (restaurantId) =>
+  del(`/api/restaurants/${encodeURIComponent(String(restaurantId))}/follow`);

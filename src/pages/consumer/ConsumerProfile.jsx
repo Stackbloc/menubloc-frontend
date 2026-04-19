@@ -244,6 +244,13 @@ export default function ConsumerProfile() {
 
         <h1 style={styles.pageTitle}>Account Settings</h1>
 
+        <Section title="Following">
+          <p style={styles.sectionDesc}>
+            See the restaurants you follow and remove them from one place.
+          </p>
+          <Link to="/account/following" style={styles.followingLink}>Open Following feed</Link>
+        </Section>
+
         <Section title="Account">
           <div style={styles.field}>
             <label style={styles.fieldLabel}>Email</label>
@@ -601,6 +608,19 @@ const styles = {
     fontWeight: 800,
     cursor: "pointer",
     fontFamily: "inherit",
+  },
+  followingLink: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "42px",
+    padding: "0 16px",
+    borderRadius: "10px",
+    background: "#1F4E3D",
+    color: "#ffffff",
+    textDecoration: "none",
+    fontSize: "14px",
+    fontWeight: 700,
   },
   card: {
     maxWidth: "520px",

@@ -31,9 +31,15 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { useConsumer } from "../context/ConsumerContext.jsx";
+import {
+  followRestaurant as followRestaurantRequest,
+  getRestaurantFollowStatus,
+  unfollowRestaurant as unfollowRestaurantRequest,
+} from "../lib/consumerApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 
@@ -583,13 +589,21 @@ function Skel({ w = 160, h = 14, isDark }) {
 
 export default function RestaurantPublicPage() {
   const { language, t: translateUi } = useLanguage();
+  const { isAuthenticated } = useConsumer();
   const location = useLocation();
+  const navigate = useNavigate();
   const { slugOrId } = useParams();
 
   const [theme, setTheme] = useState(readTheme);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [data, setData] = useState(null);
+  const [followed, setFollowed] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followStatusLoading, setFollowStatusLoading] = useState(true);
+  const [followActionLoading, setFollowActionLoading] = useState(false);
+  const [followError, setFollowError] = useState("");
+  const [followNotice, setFollowNotice] = useState("");
 
   const isDark = theme === "dark";
   const dataUrl = useMemo(
@@ -632,6 +646,75 @@ export default function RestaurantPublicPage() {
       alive = false;
     };
   }, [dataUrl]);
+
+  useEffect(() => {
+    let alive = true;
+    const restaurantId = Number(data?.id);
+
+    setFollowed(false);
+    setFollowerCount(0);
+    setFollowError("");
+    setFollowNotice("");
+
+    if (!Number.isInteger(restaurantId) || restaurantId <= 0) {
+      setFollowStatusLoading(false);
+      return () => {
+        alive = false;
+      };
+    }
+
+    setFollowStatusLoading(true);
+
+    getRestaurantFollowStatus(restaurantId)
+      .then((result) => {
+        if (!alive) return;
+        setFollowed(result?.followed === true);
+        setFollowerCount(Number(result?.follower_count || 0));
+      })
+      .catch((error) => {
+        if (!alive) return;
+        setFollowError(error.message || "Unable to load follow status.");
+      })
+      .finally(() => {
+        if (alive) setFollowStatusLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [data?.id, isAuthenticated]);
+
+  async function handleFollowToggle() {
+    const restaurantId = Number(data?.id);
+    if (!Number.isInteger(restaurantId) || restaurantId <= 0 || followActionLoading) return;
+
+    setFollowError("");
+    setFollowNotice("");
+
+    if (!isAuthenticated) {
+      const redirectTo = `${location.pathname}${location.search || ""}${location.hash || ""}`;
+      setFollowNotice("Log in to follow this restaurant.");
+      navigate("/account/login", { state: { redirectTo } });
+      return;
+    }
+
+    setFollowActionLoading(true);
+    try {
+      const result = followed
+        ? await unfollowRestaurantRequest(restaurantId)
+        : await followRestaurantRequest(restaurantId);
+      setFollowed(result?.followed === true);
+      setFollowerCount(Number(result?.follower_count || 0));
+    } catch (error) {
+      if (error?.status === 401) {
+        setFollowNotice("Log in to follow this restaurant.");
+      } else {
+        setFollowError(error.message || "Unable to update follow status.");
+      }
+    } finally {
+      setFollowActionLoading(false);
+    }
+  }
 
   const tier = normalizeTier(data?.profile_tier, data?.listing_status);
   const t = getTierTheme(tier, isDark);
@@ -691,6 +774,16 @@ export default function RestaurantPublicPage() {
   const pageColor = isDark ? "#e2e8f0" : "#0f172a";
   const muted = isDark ? "rgba(255,255,255,0.45)" : "#64748b";
   const linkColor = isDark ? "#93c5fd" : "#1d4ed8";
+  const followButtonLabel = followStatusLoading
+    ? "Loading..."
+    : followActionLoading
+    ? followed
+      ? "Updating..."
+      : "Updating..."
+    : followed
+    ? "Following"
+    : "Follow";
+  const followerCountLabel = followerCount === 1 ? "1 follower" : `${followerCount} followers`;
 
   const landmarkLines = landmarks
     ? landmarks.split(/\n/).map((l) => l.trim()).filter(Boolean)
@@ -918,6 +1011,96 @@ export default function RestaurantPublicPage() {
                     >
                       {websiteRaw || website} ↗
                     </a>
+                  </div>
+                ) : null}
+
+                {!loading && !err && data?.id ? (
+                  <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={handleFollowToggle}
+                      disabled={followStatusLoading || followActionLoading}
+                      style={{
+                        alignSelf: "flex-start",
+                        minWidth: 112,
+                        height: 38,
+                        padding: "0 16px",
+                        borderRadius: 999,
+                        border: followed
+                          ? isDark
+                            ? "1px solid rgba(74,222,128,0.35)"
+                            : "1px solid #86efac"
+                          : isDark
+                          ? "1px solid rgba(255,255,255,0.16)"
+                          : "1px solid #cbd5e1",
+                        background: followed
+                          ? isDark
+                            ? "rgba(74,222,128,0.08)"
+                            : "#f0fff4"
+                          : isDark
+                          ? "rgba(255,255,255,0.04)"
+                          : "#ffffff",
+                        color: followed
+                          ? isDark
+                            ? "#86efac"
+                            : "#166534"
+                          : isDark
+                          ? "#f8fafc"
+                          : "#0f172a",
+                        cursor:
+                          followStatusLoading || followActionLoading ? "wait" : "pointer",
+                        fontSize: 13,
+                        fontWeight: 800,
+                        letterSpacing: 0.1,
+                      }}
+                    >
+                      {followButtonLabel}
+                    </button>
+
+                    {followerCount > 0 ? (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: isDark ? "#cbd5e1" : "#475569",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {followerCountLabel}
+                      </div>
+                    ) : null}
+
+                    {followNotice ? (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: isDark ? "#cbd5e1" : "#475569",
+                        }}
+                      >
+                        {followNotice}{" "}
+                        {!isAuthenticated ? (
+                          <Link
+                            to="/account/login"
+                            state={{
+                              redirectTo: `${location.pathname}${location.search || ""}${location.hash || ""}`,
+                            }}
+                            style={{ color: linkColor, fontWeight: 700, textDecoration: "none" }}
+                          >
+                            Log in
+                          </Link>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {followError ? (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: isDark ? "#fca5a5" : "#b91c1c",
+                        }}
+                      >
+                        {followError}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </>
