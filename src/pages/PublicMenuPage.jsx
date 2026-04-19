@@ -34,6 +34,7 @@ import {
   buildMenuShareMetadata,
   getCanonicalMenuItemPath,
 } from "../components/share/shareUtils.js";
+import BottomNav from "../components/BottomNav.jsx";
 
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(() =>
@@ -461,6 +462,24 @@ function Badge({ label, bg, color, border }) {
   );
 }
 
+function getItemPriceCents(item) {
+  const cents = Number(item?.price_cents);
+  if (Number.isFinite(cents)) {
+    return cents;
+  }
+
+  const dollars = Number(item?.price);
+  if (Number.isFinite(dollars)) {
+    return Math.round(dollars * 100);
+  }
+
+  return 0;
+}
+
+function isItemOrderable(item) {
+  return getItemPriceCents(item) > 0;
+}
+
 /* ---- Item Detail Sheet ---- */
 
 function ItemDetailSheet({
@@ -475,6 +494,7 @@ function ItemDetailSheet({
 }) {
   const { item, name, desc, price, hasDeal, dishShareData, canNavigate, indulgencePresentation } = sheetData;
   const hasRequiredOptions = itemHasRequiredModifiers(item);
+  const canAddToOrder = isItemOrderable(item);
   const cartState = getCartItemState(activeCartItems, item?.id);
   const hasSelected = hasRequiredOptions ? cartState.totalQuantity > 0 : cartState.simpleQuantity > 0;
   const selectedQty = hasRequiredOptions ? cartState.totalQuantity : cartState.simpleQuantity;
@@ -534,6 +554,23 @@ function ItemDetailSheet({
             <div style={{ fontSize: 14, color: "#475467", lineHeight: 1.65, marginBottom: 16 }}>{desc}</div>
           ) : null}
 
+          {!canAddToOrder ? (
+            <div
+              style={{
+                marginBottom: 16,
+                padding: "12px 14px",
+                borderRadius: 14,
+                background: "#fef3c7",
+                color: "#92400e",
+                fontSize: 13,
+                fontWeight: 700,
+                lineHeight: 1.5,
+              }}
+            >
+              This item is not currently available for checkout because pricing is unavailable.
+            </div>
+          ) : null}
+
           {/* Allergen */}
           {item?.chips?.nutrition_chip?.allergen_alert ? (
             <div style={{ marginBottom: 14 }}>
@@ -560,7 +597,7 @@ function ItemDetailSheet({
 
           {/* Add to order / quantity controls */}
           <div style={{ marginTop: 22 }}>
-            {hasRequiredOptions ? (
+            {!canAddToOrder ? null : hasRequiredOptions ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <button
                   type="button"
@@ -959,7 +996,7 @@ export default function PublicMenuPage() {
     return m;
   }, [pageState.data]);
 
-  const pageBg = { minHeight: "100vh", background: "#f7f6f1" };
+  const pageBg = { minHeight: "100vh" };
 
   useEffect(() => {
     if (routeState.status !== "ok" || pageState.status !== "ok" || !pageState.data) {
@@ -992,7 +1029,7 @@ export default function PublicMenuPage() {
   if (routeState.status === "loading" || pageState.status === "loading") {
     return (
       <div style={pageBg}>
-        <div style={{ maxWidth: 1450, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
           <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
         </div>
       </div>
@@ -1004,7 +1041,7 @@ export default function PublicMenuPage() {
   if (routeState.status === "error" || pageState.status === "error") {
     return (
       <div style={pageBg}>
-        <div style={{ maxWidth: 1450, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
           <PageNav back />
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{t("publicMenu.loadError", "Couldn't load menu")}</div>
           <div style={{ color: "var(--muted, #5b6675)", fontSize: 14 }}>{routeState.error || pageState.error}</div>
@@ -1145,100 +1182,112 @@ export default function PublicMenuPage() {
   return (
     <div style={pageBg}>
       <div style={{
-        maxWidth: 1450,
+        maxWidth: 860,
         margin: "0 auto",
         padding: isMobile ? "16px 12px 56px" : "28px 20px 56px",
         color: "#101828",
       }}>
-        {/* Restaurant header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, marginBottom: isMobile ? 18 : 22 }}>
-          <div style={{ minWidth: 0, flex: "1 1 320px" }}>
-            {restaurantProfileHref ? (
-              <Link
-                to={restaurantProfileHref}
-                title={`Open ${restaurantName} profile`}
-                style={{
-                  fontSize: isMobile ? 22 : 28,
-                  fontWeight: 900,
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.1,
-                  color: "#11211a",
-                  textDecoration: "none",
-                  wordBreak: "break-word",
-                  display: "block",
-                  marginBottom: 4,
-                }}
-              >
-                {restaurantName}
-              </Link>
-            ) : (
-              <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word", marginBottom: 4 }}>
-                {restaurantName}
-              </div>
-            )}
+        {/* Restaurant header — sticky */}
+        <div style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          background: "var(--gb-color-surface-strong)",
+          borderBottom: "1px solid var(--gb-color-border)",
+          marginBottom: isMobile ? 18 : 22,
+          marginLeft: isMobile ? -12 : -20,
+          marginRight: isMobile ? -12 : -20,
+          padding: isMobile ? "12px 12px" : "14px 20px",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14 }}>
+            <div style={{ minWidth: 0, flex: "1 1 320px" }}>
+              {restaurantProfileHref ? (
+                <Link
+                  to={restaurantProfileHref}
+                  title={`Open ${restaurantName} profile`}
+                  style={{
+                    fontSize: isMobile ? 18 : 22,
+                    fontWeight: 900,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.1,
+                    color: "#11211a",
+                    textDecoration: "none",
+                    wordBreak: "break-word",
+                    display: "block",
+                    marginBottom: 2,
+                  }}
+                >
+                  {restaurantName}
+                </Link>
+              ) : (
+                <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word", marginBottom: 2 }}>
+                  {restaurantName}
+                </div>
+              )}
 
-            {addressLine ? (
-              <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>
-                {directionsHref ? (
-                  <a
-                    href={directionsHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`Get directions to ${restaurantName}`}
-                    title="Open Google Maps directions"
-                    style={{
-                      color: "inherit",
-                      textDecoration: "none",
-                      display: "inline-flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      gap: 2,
-                    }}
-                  >
-                    {addressLine1 ? <span>{addressLine1}</span> : null}
-                    {addressLine2 ? <span>{addressLine2}</span> : null}
-                  </a>
-                ) : (
-                  <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
-                    {addressLine1 ? <span>{addressLine1}</span> : null}
-                    {addressLine2 ? <span>{addressLine2}</span> : null}
-                  </span>
-                )}
-              </div>
-            ) : null}
+              {addressLine ? (
+                <div style={{ fontSize: 13, color: "#667085", fontWeight: 600 }}>
+                  {directionsHref ? (
+                    <a
+                      href={directionsHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Get directions to ${restaurantName}`}
+                      title="Open Google Maps directions"
+                      style={{
+                        color: "inherit",
+                        textDecoration: "none",
+                        display: "inline-flex",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        gap: 1,
+                      }}
+                    >
+                      {addressLine1 ? <span>{addressLine1}</span> : null}
+                      {addressLine2 ? <span>{addressLine2}</span> : null}
+                    </a>
+                  ) : (
+                    <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
+                      {addressLine1 ? <span>{addressLine1}</span> : null}
+                      {addressLine2 ? <span>{addressLine2}</span> : null}
+                    </span>
+                  )}
+                </div>
+              ) : null}
 
-            {/* Menu type label */}
-            {menuTypeLabel ? (
-              <div style={{
-                marginTop: 8,
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "3px 10px",
-                borderRadius: 999,
-                background: "#f3f4f6",
-                border: "1px solid rgba(18,34,28,0.08)",
-                fontSize: 12,
-                fontWeight: 700,
-                color: "#374151",
-              }}>
-                {menuTypeLabel}
-              </div>
-            ) : null}
+              {/* Menu type label */}
+              {menuTypeLabel ? (
+                <div style={{
+                  marginTop: 6,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: "#f3f4f6",
+                  border: "1px solid rgba(18,34,28,0.08)",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#374151",
+                }}>
+                  {menuTypeLabel}
+                </div>
+              ) : null}
 
-            <FranchiseBanner
-              group={franchiseGroup}
-              currentRestaurantId={currentRestaurantId}
-              onPrevious={handlePreviousClosestLocation}
-              onNext={handleNextClosestLocation}
-            />
-          </div>
-          <div style={{ flex: "0 0 auto", paddingTop: isMobile ? 2 : 0 }}>
-            <ShareButton
-              label="Share Menu"
-              modalTitle={`Share ${restaurantName}`}
-              shareData={shareData}
-              analyticsContext={shareAnalyticsContext}
-            />
+              <FranchiseBanner
+                group={franchiseGroup}
+                currentRestaurantId={currentRestaurantId}
+                onPrevious={handlePreviousClosestLocation}
+                onNext={handleNextClosestLocation}
+              />
+            </div>
+            <div style={{ flex: "0 0 auto" }}>
+              <ShareButton
+                label="Share Menu"
+                modalTitle={`Share ${restaurantName}`}
+                shareData={shareData}
+                analyticsContext={shareAnalyticsContext}
+              />
+            </div>
           </div>
         </div>
 
@@ -1280,20 +1329,20 @@ export default function PublicMenuPage() {
                 const items = Array.isArray(sec?.items) ? sec.items : [];
 
                 return (
-                  <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 28 }}>
+                  <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 16 }}>
                     <div style={{
-                      fontSize: 18,
-                      fontWeight: 700,
-                      letterSpacing: "0.5px",
+                      fontSize: 13,
+                      fontWeight: 900,
+                      letterSpacing: "0.1em",
                       textTransform: "uppercase",
-                      color: "#11211a",
-                      marginTop: 24,
-                      marginBottom: 12,
+                      color: "var(--gb-color-ink-muted)",
+                      marginTop: 16,
+                      marginBottom: 8,
                     }}>
                       {title}
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {items.map((it, iIdx) => {
                         const itemKey = String(it?.id ?? `${sIdx}-${iIdx}`);
                         const name    = asStr(
@@ -1313,6 +1362,7 @@ export default function PublicMenuPage() {
                         const indulgencePresentation = resolveIndulgencePresentation({ chips: it?.chips });
                         const deal    = it?.id != null ? dealMap.get(it.id) : undefined;
                         const hasDeal = !!deal;
+                        const itemIsOrderable = isItemOrderable(it);
                         const canNavigate = it?.id != null;
                         const dishShareData = canNavigate ? buildDishShareData({
                           restaurant: {
@@ -1343,6 +1393,10 @@ export default function PublicMenuPage() {
                           <div
                             key={itemKey}
                             onClick={() => {
+                              if (!itemIsOrderable) {
+                                openSheet();
+                                return;
+                              }
                               if (itemHasRequiredModifiers(it)) {
                                 openSheet();
                               } else {
@@ -1353,18 +1407,19 @@ export default function PublicMenuPage() {
                             style={{
                               border: inCartCount > 0
                                 ? "1px solid rgba(34,197,94,0.32)"
-                                : "1px solid #eee",
-                              borderRadius: 12,
-                              background: inCartCount > 0 ? "#f7fef9" : "#fff",
-                              padding: "16px",
-                              boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+                                : "1px solid var(--gb-color-border)",
+                              borderRadius: 16,
+                              background: !itemIsOrderable ? "#f8fafc" : inCartCount > 0 ? "#f7fef9" : "var(--gb-color-surface-strong)",
+                              padding: "10px 14px",
+                              boxShadow: "var(--gb-shadow-card)",
                               cursor: "pointer",
+                              opacity: itemIsOrderable ? 1 : 0.78,
                               transition: "background 120ms ease, border-color 120ms ease",
                               WebkitTapHighlightColor: "transparent",
                             }}
                           >
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                              <span style={{ fontSize: 15, fontWeight: 600, color: "#11211a", lineHeight: 1.2, maxWidth: "75%" }}>
+                            <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "baseline", gap: 8 }}>
+                              <span style={{ fontSize: 14, fontWeight: 600, color: "#11211a", lineHeight: 1.2 }}>
                                 {name}
                               </span>
                               {price ? (
@@ -1372,12 +1427,20 @@ export default function PublicMenuPage() {
                               ) : null}
                             </div>
 
-                            {(inCartCount > 0 || hasDeal || it?.is_vegan || it?.is_gluten_free) ? (
+                            {(inCartCount > 0 || hasDeal || it?.is_vegan || it?.is_gluten_free || !itemIsOrderable) ? (
                               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
                                 {inCartCount > 0 ? (
                                   <span style={{ fontSize: 11, fontWeight: 700, color: "#166534", background: "#dcfce7", borderRadius: 999, padding: "2px 7px", whiteSpace: "nowrap" }}>
                                     {inCartCount} in order
                                   </span>
+                                ) : null}
+                                {!itemIsOrderable ? (
+                                  <Badge
+                                    label="Unavailable"
+                                    bg="#fff7ed"
+                                    color="#9a3412"
+                                    border="1px solid #fdba74"
+                                  />
                                 ) : null}
                                 {hasDeal && <Badge label={t("common.deals", "Deals")} bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" />}
                                 {it?.is_vegan && <Badge label={t("diet.vegan", "Vegan")} bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" />}
@@ -1386,7 +1449,7 @@ export default function PublicMenuPage() {
                             ) : null}
 
                             {desc ? (
-                              <div style={{ marginTop: 6, fontSize: 13, color: "#555", lineHeight: 1.5 }}>
+                              <div style={{ marginTop: 3, fontSize: 12, color: "#555", lineHeight: 1.35 }}>
                                 {desc}
                               </div>
                             ) : null}
@@ -1402,14 +1465,14 @@ export default function PublicMenuPage() {
                                   );
                                 }}
                                 style={{
-                                  marginTop: 6,
+                                  marginTop: 3,
                                   display: "inline-flex",
                                   alignItems: "center",
                                   gap: 4,
                                   border: "none",
                                   background: "transparent",
                                   color: "#0a7f5a",
-                                  fontSize: 14,
+                                  fontSize: 12,
                                   fontWeight: 500,
                                   cursor: "pointer",
                                   padding: 0,
@@ -1545,6 +1608,7 @@ export default function PublicMenuPage() {
         />
       ) : null}
 
+      <BottomNav />
     </div>
   );
 }

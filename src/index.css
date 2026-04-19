@@ -145,7 +145,7 @@ textarea:focus-visible {
 }
 
 .gb-shell--wide {
-  width: min(100%, 1450px);
+  width: min(100%, 1100px);
 }
 
 .gb-shell--reading {
