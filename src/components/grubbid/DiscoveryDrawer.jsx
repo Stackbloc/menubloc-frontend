@@ -49,8 +49,6 @@ function Section({ label }) {
 export default function DiscoveryDrawer({
   open, onClose,
   filters, setFilters,
-  allergenFilters, setAllergenFilters,
-  hideCuisines, setHideCuisines,
 }) {
   const { isAuthenticated: loggedIn } = useConsumer();
   const { language, setLanguage } = useLanguage();
@@ -122,19 +120,6 @@ export default function DiscoveryDrawer({
           <Toggle label="Low Carb / Keto" active={!!filters.keto} onToggle={() => setFilters((p) => ({ ...p, keto: !p.keto }))} />
           <Toggle label="Dairy-Free" active={!!filters.dairy_free} onToggle={() => setFilters((p) => ({ ...p, dairy_free: !p.dairy_free }))} />
           <Toggle label="Low Sodium" active={!!filters.low_sodium} onToggle={() => setFilters((p) => ({ ...p, low_sodium: !p.low_sodium }))} />
-
-          <Section label="Allergen Filters" />
-          <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 6, fontStyle: "italic" }}>UI only — search wiring coming soon</div>
-          <Toggle label="Tree Nuts" active={!!allergenFilters.nuts} onToggle={() => setAllergenFilters((p) => ({ ...p, nuts: !p.nuts }))} />
-          <Toggle label="Dairy" active={!!allergenFilters.dairy} onToggle={() => setAllergenFilters((p) => ({ ...p, dairy: !p.dairy }))} />
-          <Toggle label="Gluten" active={!!allergenFilters.gluten} onToggle={() => setAllergenFilters((p) => ({ ...p, gluten: !p.gluten }))} />
-          <Toggle label="Shellfish" active={!!allergenFilters.shellfish} onToggle={() => setAllergenFilters((p) => ({ ...p, shellfish: !p.shellfish }))} />
-
-          <Section label="Feed Preferences" />
-          <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 6, fontStyle: "italic" }}>Hide from feed (coming soon)</div>
-          <Toggle label="Fast Food" active={!!hideCuisines.fast_food} onToggle={() => setHideCuisines((p) => ({ ...p, fast_food: !p.fast_food }))} />
-          <Toggle label="Pizza" active={!!hideCuisines.pizza} onToggle={() => setHideCuisines((p) => ({ ...p, pizza: !p.pizza }))} />
-          <Toggle label="Mexican" active={!!hideCuisines.mexican} onToggle={() => setHideCuisines((p) => ({ ...p, mexican: !p.mexican }))} />
 
           <Section label="Language" />
           <select
