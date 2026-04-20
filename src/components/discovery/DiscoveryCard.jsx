@@ -154,7 +154,7 @@ export default function DiscoveryCard({
         overflow: "hidden",
         borderRadius: 12,
         border: "1px solid #eee",
-        boxShadow: "0 1px 6px rgba(0,0,0,0.07)",
+        boxShadow: "0 4px 18px rgba(0,0,0,0.13), 0 1px 4px rgba(0,0,0,0.08)",
         transition: "box-shadow 160ms ease, transform 160ms ease",
       }}
     >
