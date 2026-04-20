@@ -158,32 +158,15 @@ export default function DiscoveryCard({
         transition: "box-shadow 160ms ease, transform 160ms ease",
       }}
     >
-      {/* Follow button */}
-      <button
-        type="button"
-        onClick={handleFollow}
-        disabled={followLoading}
-        aria-label={followed ? `Unfollow ${name}` : `Follow ${name}`}
-        style={{
-          width: 38, flexShrink: 0, border: "none", padding: 0,
-          background: followed ? "#dc2626" : "#fff0f0",
-          cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          transition: "background 200ms ease",
-        }}
-      >
-        <span style={{
-          display: "inline-flex", alignItems: "center", justifyContent: "center",
-          width: 22, height: 22, borderRadius: 4,
-          border: followed ? "2px solid rgba(255,255,255,0.4)" : "2px solid #e57373",
-          background: followed ? "rgba(255,255,255,0.15)" : "transparent",
-          fontSize: 11, fontWeight: 900,
-          color: followed ? "#fff" : "#e57373",
-          transition: "all 200ms ease",
-        }}>
-          {followed ? "✓" : "F"}
-        </span>
-      </button>
+      {(menu.flex_activity > 0) && (
+        <div style={{
+          width: 7, flexShrink: 0,
+          borderTopLeftRadius: 12, borderBottomLeftRadius: 12,
+          background: `linear-gradient(to top, #16a34a ${Math.min(100, menu.flex_activity)}%, #bbf7d0 100%)`,
+          opacity: Math.max(0.4, Math.min(1, menu.flex_activity / 100)),
+          transition: "opacity 300ms ease",
+        }} />
+      )}
 
       {/* Content */}
       <div style={{ padding: "6px 11px 6px", background: "#fff", flex: 1, minWidth: 0 }}>
@@ -205,24 +188,46 @@ export default function DiscoveryCard({
               )}
             </div>
           </div>
-          {onSave && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            {onSave && (
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSave(id); }}
+                aria-label={saved ? "Unsave" : "Save"}
+                style={{
+                  fontSize: 15, cursor: "pointer", padding: "1px 4px",
+                  background: "none", border: "none",
+                  opacity: saved ? 1 : 0.2, transition: "opacity 0.2s", flexShrink: 0,
+                }}
+              >🔖</button>
+            )}
             <button
               type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSave(id); }}
-              aria-label={saved ? "Unsave" : "Save"}
+              onClick={handleFollow}
+              disabled={followLoading}
+              aria-label={followed ? `Unfollow ${name}` : `Follow ${name}`}
               style={{
-                fontSize: 16, cursor: "pointer", padding: "1px 0 1px 10px",
-                background: "none", border: "none",
-                opacity: saved ? 1 : 0.2, transition: "opacity 0.2s", flexShrink: 0,
+                width: 28, height: 28, border: "none", borderRadius: 6,
+                background: followed ? "#16a34a" : "#f3f4f6",
+                cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "background 200ms ease",
               }}
-            >🔖</button>
-          )}
+            >
+              <span style={{
+                fontSize: 11, fontWeight: 900,
+                color: followed ? "#fff" : "#9ca3af",
+              }}>
+                {followed ? "✓" : "F"}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Follow confirmation */}
         {followConfirm && (
           <div style={{
-            fontSize: 11, fontWeight: 800, color: "#dc2626",
+            fontSize: 11, fontWeight: 800, color: "#16a34a",
             marginBottom: 2, letterSpacing: "0.01em",
           }}>
             Following {name}

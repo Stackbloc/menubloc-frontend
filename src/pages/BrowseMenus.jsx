@@ -28,9 +28,9 @@
  * ============================================================
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import MenuPreviewCard from "../components/browse/MenuPreviewCard.jsx";
+import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
 import { PageNav } from "../components/NavButton.jsx";
 import {
@@ -47,7 +47,8 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { apiGet, getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
-import { loadDietPrefs, saveDietPrefs, activePrefLabels, hasActiveDietPrefs } from "../hooks/useDietPreferences";
+import { parseFiltersFromUrl, filtersToUrlParams, hasActiveFilters, activeFilterList } from "../lib/filterUtils.js";
+import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { buildBrowseLocationParams, reverseGeocode } from "../lib/locationUtils.js";
 
 
@@ -256,10 +257,10 @@ export default function BrowseMenus() {
     const parts = [urlCity, urlState].filter(Boolean);
     return parts.join(", ");
   });
-  const [filters, setFilters] = useState(() => ({
-    deals: false,
-    ...loadDietPrefs(),
-  }));
+  const filters = useMemo(
+    () => parseFiltersFromUrl(new URLSearchParams(search)),
+    [search]
+  );
   const [localFilters, setLocalFilters] = useState(() => ({
     cuisine: urlCuisine,
     category: urlCategory,
@@ -360,8 +361,11 @@ export default function BrowseMenus() {
     navigate({ search: next.toString() ? `?${next.toString()}` : "" }, { replace: true });
   }
 
-  // Persist diet prefs whenever they change
-  useEffect(() => { saveDietPrefs(filters); }, [filters]);
+  function toggleFilter(key) {
+    const next = { ...filters, [key]: !filters[key] };
+    const nextParams = filtersToUrlParams(next, new URLSearchParams(search));
+    navigate({ search: nextParams.toString() ? `?${nextParams.toString()}` : "" }, { replace: true });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -588,7 +592,7 @@ export default function BrowseMenus() {
                   <FilterChip
                     label={t("common.deals", "Deals")}
                     active={filters.deals}
-                    onClick={() => setFilters((prev) => ({ ...prev, deals: !prev.deals }))}
+                    onClick={() => toggleFilter("deals")}
                   />
                 </div>
               </div>
@@ -596,13 +600,13 @@ export default function BrowseMenus() {
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <span className="gb-field-label">{t("discovery.dietary")}</span>
                 <div style={{ display: "grid", gap: 10 }}>
-                  <FilterChip label={t("diet.dairy_free")} active={filters.dairy_free} onClick={() => setFilters((prev) => ({ ...prev, dairy_free: !prev.dairy_free }))} />
-                  <FilterChip label={t("diet.diabetic_friendly")} active={filters.diabetic_friendly} onClick={() => setFilters((prev) => ({ ...prev, diabetic_friendly: !prev.diabetic_friendly }))} />
-                  <FilterChip label={t("diet.gluten_free")} active={filters.gluten_free} onClick={() => setFilters((prev) => ({ ...prev, gluten_free: !prev.gluten_free }))} />
-                  <FilterChip label={t("diet.keto")} active={filters.keto} onClick={() => setFilters((prev) => ({ ...prev, keto: !prev.keto }))} />
-                  <FilterChip label={t("diet.low_sodium")} active={filters.low_sodium} onClick={() => setFilters((prev) => ({ ...prev, low_sodium: !prev.low_sodium }))} />
-                  <FilterChip label={t("diet.vegan")} active={filters.vegan} onClick={() => setFilters((prev) => ({ ...prev, vegan: !prev.vegan }))} />
-                  <FilterChip label={t("diet.vegetarian")} active={filters.vegetarian} onClick={() => setFilters((prev) => ({ ...prev, vegetarian: !prev.vegetarian }))} />
+                  <FilterChip label={t("diet.dairy_free")} active={filters.dairy_free} onClick={() => toggleFilter("dairy_free")} />
+                  <FilterChip label={t("diet.diabetic_friendly")} active={filters.diabetic_friendly} onClick={() => toggleFilter("diabetic_friendly")} />
+                  <FilterChip label={t("diet.gluten_free")} active={filters.gluten_free} onClick={() => toggleFilter("gluten_free")} />
+                  <FilterChip label={t("diet.keto")} active={filters.keto} onClick={() => toggleFilter("keto")} />
+                  <FilterChip label={t("diet.low_sodium")} active={filters.low_sodium} onClick={() => toggleFilter("low_sodium")} />
+                  <FilterChip label={t("diet.vegan")} active={filters.vegan} onClick={() => toggleFilter("vegan")} />
+                  <FilterChip label={t("diet.vegetarian")} active={filters.vegetarian} onClick={() => toggleFilter("vegetarian")} />
                 </div>
               </div>
             </div>
@@ -612,6 +616,8 @@ export default function BrowseMenus() {
         <PageHero
           title={locationLabel ? t("browse.nearTitle", `Browsing Menus Near ${locationLabel}`, { location: locationLabel }) : t("browse.title")}
         />
+
+        <ActiveFilterChips filters={filters} onToggle={toggleFilter} />
 
         {effectiveAllergenFilter ? (
           <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 14 }} />
@@ -635,10 +641,10 @@ export default function BrowseMenus() {
             </div>
           </div>
 
-          {hasActiveDietPrefs(filters) && (
+          {hasActiveFilters(filters) && (
             <StatusMessage tone="success" className="gb-status-message--success" style={{ marginBottom: 10 }}>
               <span style={{ fontWeight: 800 }}>{t("browse.dietaryFiltersActive", "Dietary filters active:")}</span>{" "}
-              {activePrefLabels(filters).join(", ")}
+              {activeFilterList(filters).map((f) => f.label).join(", ")}
               <span style={{ color: "var(--gb-color-ink-soft)", fontWeight: 500, fontSize: 11 }}>
                 {` ${t("browse.dietaryFiltersNote", "— will filter items inside each restaurant's menu")}`}
               </span>
@@ -683,11 +689,9 @@ export default function BrowseMenus() {
                 }}
               >
                 {visibleMenus.map((menu, index) => (
-                  <MenuPreviewCard
+                  <DiscoveryCard
                     key={String(menu?.menu_id ?? menu?.restaurant_id ?? index)}
                     menu={menu}
-                    index={index}
-                    isMobile={isMobile}
                     activeFilterLabel={activeFilterLabel}
                     activeFilterParams={activeFilterParams}
                   />

@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import SmsAuthModal from "../components/auth/SmsAuthModal.jsx";
@@ -96,6 +96,18 @@ function normalizeDeliveryAddress(address) {
     postalCode: String(address.postalCode || "").trim(),
     instructions: String(address.instructions || "").trim(),
   };
+}
+
+function getCartLineBasePriceCents(item) {
+  return Number(item?.basePriceCents || 0);
+}
+
+function hasUnavailablePricing(cartItems) {
+  return (Array.isArray(cartItems) ? cartItems : []).some((item) => getCartLineBasePriceCents(item) <= 0);
+}
+
+function unavailablePricingMessage() {
+  return "This item is not currently available for checkout because pricing is unavailable.";
 }
 
 function PaymentStep({ orderId, onSuccess }) {
@@ -194,6 +206,7 @@ function PaymentStep({ orderId, onSuccess }) {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { consumer, isAuthenticated, authToast, clearAuthToast } = useConsumer();
   const { restaurant, items, clearCart, updateQuantity, removeItem } = useOrderCart();
   const bmtSectionRef = useRef(null);
@@ -204,9 +217,11 @@ export default function CheckoutPage() {
     }
     return ["pickup", "delivery"];
   }, [restaurant]);
-  const [fulfillmentType, setFulfillmentType] = useState(
-    availableFulfillmentTypes.includes("pickup") ? "pickup" : availableFulfillmentTypes[0] || "pickup"
-  );
+  const [fulfillmentType, setFulfillmentType] = useState(() => {
+    const fromUrl = searchParams.get("fulfillment");
+    if (fromUrl === "delivery" || fromUrl === "pickup") return fromUrl;
+    return availableFulfillmentTypes.includes("pickup") ? "pickup" : availableFulfillmentTypes[0] || "pickup";
+  });
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -449,6 +464,11 @@ export default function CheckoutPage() {
 
     if (!customerPhone.trim()) {
       setSubmitError("Customer phone is required.");
+      return;
+    }
+
+    if (hasUnavailablePricing(items)) {
+      setSubmitError(unavailablePricingMessage());
       return;
     }
 
@@ -925,13 +945,16 @@ export default function CheckoutPage() {
               Order summary
             </div>
             <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
-              {items.map((item) => (
+              {items.map((item) => {
+                const pricingUnavailable = getCartLineBasePriceCents(item) <= 0;
+
+                return (
                 <div
                   key={item.lineId}
                   style={{
                     border: "1px solid rgba(17,33,26,0.08)",
                     borderRadius: 18,
-                    background: "#fffef8",
+                    background: pricingUnavailable ? "#f8fafc" : "#fffef8",
                     padding: "12px 14px",
                   }}
                 >
@@ -941,6 +964,29 @@ export default function CheckoutPage() {
                       <div style={{ fontSize: 12, color: "#667085", marginTop: 4 }}>
                         Qty {item.quantity}
                       </div>
+                      {pricingUnavailable ? (
+                        <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              width: "fit-content",
+                              borderRadius: 999,
+                              padding: "3px 8px",
+                              background: "#fff7ed",
+                              color: "#9a3412",
+                              border: "1px solid #fdba74",
+                              fontSize: 11,
+                              fontWeight: 800,
+                            }}
+                          >
+                            Unavailable
+                          </span>
+                          <div style={{ fontSize: 12, color: "#9a3412", lineHeight: 1.5 }}>
+                            {unavailablePricingMessage()}
+                          </div>
+                        </div>
+                      ) : null}
                       {item.pricingType === "deal" ? (
                         <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: "#166534" }}>
                           {item.pricingLabel || "Deal applied"}
@@ -1010,13 +1056,15 @@ export default function CheckoutPage() {
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.lineId, item.quantity + 1)}
+                        disabled={pricingUnavailable}
                         style={{
                           border: "none",
                           background: "#fff",
                           width: 30,
                           height: 30,
                           borderRadius: 999,
-                          cursor: "pointer",
+                          cursor: pricingUnavailable ? "not-allowed" : "pointer",
+                          opacity: pricingUnavailable ? 0.45 : 1,
                           fontSize: 16,
                           fontWeight: 900,
                         }}
@@ -1041,7 +1089,7 @@ export default function CheckoutPage() {
                     </button>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
 
             <div style={{ marginTop: 16 }}>

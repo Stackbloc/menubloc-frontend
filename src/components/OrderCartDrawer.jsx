@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 
@@ -8,6 +8,7 @@ function formatMoney(cents) {
 
 export default function OrderCartDrawer() {
   const navigate = useNavigate();
+  const [fulfillmentType, setFulfillmentType] = useState("pickup");
   const {
     restaurant,
     items,
@@ -116,6 +117,31 @@ export default function OrderCartDrawer() {
             >
               ×
             </button>
+          </div>
+
+          {/* Pickup / Delivery selector */}
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            {["pickup", "delivery"].map((type) => {
+              const active = fulfillmentType === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setFulfillmentType(type)}
+                  style={{
+                    flex: 1, height: 38, borderRadius: 12,
+                    border: active ? "1.5px solid #11211a" : "1px solid #d0d5dd",
+                    background: active ? "#11211a" : "#fff",
+                    color: active ? "#fff" : "#11211a",
+                    fontSize: 13, fontWeight: 800,
+                    cursor: "pointer",
+                    transition: "background 150ms ease, border-color 150ms ease",
+                  }}
+                >
+                  {type === "pickup" ? "Pickup" : "Delivery"}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -280,7 +306,7 @@ export default function OrderCartDrawer() {
             disabled={items.length === 0}
             onClick={() => {
               closeCart();
-              navigate("/checkout");
+              navigate(`/checkout?fulfillment=${fulfillmentType}`);
             }}
             style={{
               width: "100%",

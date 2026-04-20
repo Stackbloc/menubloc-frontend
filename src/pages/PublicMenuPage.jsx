@@ -1450,7 +1450,7 @@ export default function PublicMenuPage() {
                                 onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; e.currentTarget.style.opacity = "0.85"; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; e.currentTarget.style.opacity = "1"; }}
                               >
-                                Details →
+                                Insights →
                               </button>
                             ) : null}
                           </div>

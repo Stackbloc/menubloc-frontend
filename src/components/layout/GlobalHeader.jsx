@@ -4,6 +4,17 @@ import { BrandLogo } from "../BrandLogo.jsx";
 import AppMenuSheet from "../grubbid/AppMenuSheet.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 
+const SESSION_LOCATION_KEY = "grubbid.discovery.location";
+const SESSION_GEO_KEY = "grubbid.discovery.geo";
+
+function parseSessionLocation(raw) {
+  const parts = String(raw || "").split(",");
+  return {
+    city: parts[0]?.trim() || "",
+    state: parts[1]?.trim().toUpperCase() || "",
+  };
+}
+
 const shellStyle = {
   display: "flex",
   flexWrap: "wrap",
@@ -120,6 +131,27 @@ export default function GlobalHeader() {
 
     if (trimmed) nextParams.set("q", trimmed);
     else nextParams.delete("q");
+
+    // URL has no location context → read from session storage
+    if (!nextParams.has("city") && !nextParams.has("lat") && typeof window !== "undefined") {
+      try {
+        const label = String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim();
+        if (label) {
+          const loc = parseSessionLocation(label);
+          if (loc.city) nextParams.set("city", loc.city);
+          if (loc.state) nextParams.set("state", loc.state);
+        }
+        const rawGeo = window.sessionStorage.getItem(SESSION_GEO_KEY);
+        if (rawGeo) {
+          const geo = JSON.parse(rawGeo);
+          if (Number.isFinite(geo?.lat) && Number.isFinite(geo?.lng)) {
+            nextParams.set("lat", String(geo.lat));
+            nextParams.set("lng", String(geo.lng));
+            if (!nextParams.has("radius_miles")) nextParams.set("radius_miles", "8");
+          }
+        }
+      } catch {}
+    }
 
     navigate({
       pathname: "/search",

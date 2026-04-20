@@ -53,22 +53,21 @@ const ALLERGENS = [
 
 const CHIPS = {
   Default: [
-    { id: "pizza",   label: "Pizza",   query: "pizza" },
-    { id: "sushi",   label: "Sushi",   query: "sushi" },
-    { id: "tacos",   label: "Tacos",   query: "tacos" },
-    { id: "burgers", label: "Burgers", query: "burgers" },
-    { id: "salad",   label: "Salad",   query: "salad" },
+    { id: "pizza",      label: "Pizza",      query: "pizza" },
+    { id: "sandwiches", label: "Sandwiches", query: "sandwiches" },
+    { id: "salads",     label: "Salads",     query: "salads" },
+    { id: "burgers",    label: "Burgers",    query: "burgers" },
+    { id: "sushi",      label: "Sushi",      query: "sushi" },
   ],
   Lifestyle: [
     { id: "high_protein", label: "High Protein", query: "high protein" },
     { id: "low_carb",     label: "Low Carb",     filterKey: "keto" },
-    { id: "low_fat",      label: "Low Fat",       query: "low fat" },
+    { id: "keto",         label: "Keto",         filterKey: "keto" },
   ],
   Dietary: [
-    { id: "gluten_free",       label: "Gluten-Free",      filterKey: "gluten_free" },
     { id: "low_sodium",        label: "Low Sodium",        filterKey: "low_sodium" },
     { id: "diabetic_friendly", label: "Diabetic-Friendly", filterKey: "diabetic_friendly" },
-    { id: "vegetarian",        label: "Vegetarian",        filterKey: "vegetarian" },
+    { id: "gluten_free",       label: "Gluten-Free",       filterKey: "gluten_free" },
     { id: "vegan",             label: "Vegan",             filterKey: "vegan" },
   ],
 };
@@ -488,6 +487,8 @@ export default function GrubbidDiscovery() {
         onClose={() => setDrawerOpen(false)}
         filters={filters}
         setFilters={setFilters}
+        excludedAllergens={excludedAllergens}
+        onAllergenToggle={handleAllergenToggle}
       />
 
       <DiscoveryMoreSheet
@@ -529,7 +530,8 @@ export default function GrubbidDiscovery() {
 
             <BrandLockup
               logoProps={{ width: 72, height: 48, radius: 14, pageColor: "#f7f6f1" }}
-              subtitleStyle={{ display: "none" }}
+              subtitle="with BidFree Bidding"
+              subtitleStyle={{ fontSize: 9, fontWeight: 600, color: "#aab4c0", letterSpacing: "0.06em", marginTop: 1, textTransform: "none" }}
             />
 
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
@@ -659,8 +661,9 @@ export default function GrubbidDiscovery() {
                 aria-hidden="true"
                 style={{
                   flexShrink: 0,
-                  fontSize: 11,
-                  color: "#6b7f76",
+                  fontSize: 16,
+                  color: "#1F4E3D",
+                  opacity: 0.65,
                   lineHeight: 1,
                 }}
               >
@@ -756,35 +759,6 @@ export default function GrubbidDiscovery() {
               })}
             </div>
 
-            {/* Allergen exclusion row */}
-            <div style={{ borderTop: "1px solid #f2f4f7", paddingTop: 6, marginTop: 5 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
-                Exclude allergens
-              </div>
-              <div style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
-                {ALLERGENS.map(({ id, label }) => {
-                  const active = excludedAllergens.has(id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => handleAllergenToggle(id)}
-                      style={{
-                        height: 26, padding: "0 10px", borderRadius: 999, flexShrink: 0,
-                        cursor: "pointer", whiteSpace: "nowrap",
-                        border: active ? "none" : "1.5px solid #fca5a5",
-                        background: active ? "#dc2626" : "#fff5f5",
-                        color: active ? "#fff" : "#dc2626",
-                        fontSize: 11, fontWeight: 700,
-                        transition: "background 160ms ease, color 160ms ease",
-                      }}
-                    >
-                      {active ? `✕ ${label}` : label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
 
           </div>
         </div>
@@ -917,17 +891,17 @@ export default function GrubbidDiscovery() {
             </div>
           )}
 
-          {/* Feed count + allergen status */}
+          {/* Feed count + active filter status */}
           {!feedLoading && (
             <div style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", marginBottom: 8, paddingLeft: 2, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               {displayMenus.length > 0 && (
                 <span>{displayMenus.length} {displayMenus.length === 1 ? "menu" : "menus"}</span>
               )}
-              <span style={{ color: excludedAllergens.size > 0 ? "#dc2626" : "#9ca3af" }}>
-                Allergens: {excludedAllergens.size > 0
-                  ? `${[...excludedAllergens].map((a) => a.charAt(0).toUpperCase() + a.slice(1)).join(", ")} excluded`
-                  : "None"}
-              </span>
+              {excludedAllergens.size > 0 && (
+                <span style={{ color: "#dc2626", fontSize: 11, fontWeight: 800 }}>
+                  ⚠ {[...excludedAllergens].map((a) => a.charAt(0).toUpperCase() + a.slice(1)).join(", ")} excluded
+                </span>
+              )}
             </div>
           )}
 

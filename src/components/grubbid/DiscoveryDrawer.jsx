@@ -49,6 +49,8 @@ function Section({ label }) {
 export default function DiscoveryDrawer({
   open, onClose,
   filters, setFilters,
+  excludedAllergens = new Set(),
+  onAllergenToggle,
 }) {
   const { isAuthenticated: loggedIn } = useConsumer();
   const { language, setLanguage } = useLanguage();
@@ -120,6 +122,39 @@ export default function DiscoveryDrawer({
           <Toggle label="Low Carb / Keto" active={!!filters.keto} onToggle={() => setFilters((p) => ({ ...p, keto: !p.keto }))} />
           <Toggle label="Dairy-Free" active={!!filters.dairy_free} onToggle={() => setFilters((p) => ({ ...p, dairy_free: !p.dairy_free }))} />
           <Toggle label="Low Sodium" active={!!filters.low_sodium} onToggle={() => setFilters((p) => ({ ...p, low_sodium: !p.low_sodium }))} />
+
+          <Section label="Exclude Allergens" />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 8, paddingBottom: 4 }}>
+            {[
+              { id: "nuts",      label: "Nuts" },
+              { id: "dairy",     label: "Dairy" },
+              { id: "shellfish", label: "Shellfish" },
+              { id: "gluten",    label: "Gluten" },
+              { id: "soy",       label: "Soy" },
+              { id: "eggs",      label: "Eggs" },
+              { id: "fish",      label: "Fish" },
+            ].map(({ id, label }) => {
+              const active = excludedAllergens.has(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onAllergenToggle?.(id)}
+                  style={{
+                    height: 32, padding: "0 12px", borderRadius: 999,
+                    cursor: "pointer", whiteSpace: "nowrap",
+                    border: active ? "none" : "1.5px solid #fca5a5",
+                    background: active ? "#dc2626" : "#fff5f5",
+                    color: active ? "#fff" : "#dc2626",
+                    fontSize: 13, fontWeight: 700,
+                    transition: "background 160ms ease, color 160ms ease",
+                  }}
+                >
+                  {active ? `✕ ${label}` : label}
+                </button>
+              );
+            })}
+          </div>
 
           <Section label="Language" />
           <select

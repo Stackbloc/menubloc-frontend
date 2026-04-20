@@ -23,6 +23,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
+import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { PageNav } from "../components/NavButton";
 import { PageHero, PageShell, SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
@@ -30,6 +31,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
+import { parseFiltersFromUrl, filtersToUrlParams } from "../lib/filterUtils.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -848,6 +850,14 @@ export default function GrubbidSearchResults() {
   const restaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);
   const restaurantGroups = useMemo(() => buildRestaurantGroups(dishRows), [dishRows]);
 
+  const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
+
+  function toggleSearchFilter(key) {
+    const next = { ...activeFilters, [key]: !activeFilters[key] };
+    const nextParams = filtersToUrlParams(next, params);
+    navigate("?" + nextParams.toString(), { replace: true });
+  }
+
   const activeDietFilterLabels = useMemo(() => {
     const labels = [];
     if (vegan) labels.push("Vegan");
@@ -973,6 +983,8 @@ export default function GrubbidSearchResults() {
         title={q ? `${t("search.searchingFor", "Searching for")} "${q}"` : t("search.title")}
         description={subtitleParts || "Search results now inherit the canonical Grubbid discovery typography and card system."}
       />
+
+      <ActiveFilterChips filters={activeFilters} onToggle={toggleSearchFilter} />
 
       {effectiveAllergenFilter ? (
         <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 14 }} />

@@ -27,7 +27,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { PageNav } from "../components/NavButton";
+import BottomNav from "../components/BottomNav.jsx";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
@@ -261,13 +261,54 @@ const SIGNAL_CHIP_COLORS = {
 
 // ── Layout Primitives ────────────────────────────────────────
 
-function PageShell({ children, isMobile }) {
+function PageShell({ children, isMobile, stickyTitle }) {
+  const navigate = useNavigate();
   return (
-    <div style={{ minHeight: "100vh", background: "radial-gradient(circle at top left, rgba(255,241,214,0.85), rgba(255,255,255,0) 34%), linear-gradient(180deg, #fbf7ee 0%, #f6f1e7 45%, #f8f7f2 100%)" }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto", padding: isMobile ? "18px 14px 56px" : "28px 24px 72px", boxSizing: "border-box", color: "#14211b", fontFamily: 'var(--font-ui, "Avenir Next", "Segoe UI", sans-serif)' }}>
-        <PageNav back />
+    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#14211b" }}>
+      {/* Sticky top bar — matches discovery page pattern */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 100,
+        background: "#f7f6f1",
+        borderBottom: "1px solid rgba(0,0,0,0.06)",
+        display: "flex", alignItems: "center",
+        padding: "12px 16px",
+        gap: 12,
+        boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
+      }}>
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+          style={{
+            border: "1px solid rgba(0,0,0,0.10)", background: "#fff",
+            borderRadius: 999, width: 36, height: 36,
+            fontSize: 16, cursor: "pointer", color: "#101828",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          ←
+        </button>
+        {stickyTitle && (
+          <div style={{
+            flex: 1, minWidth: 0,
+            fontSize: 15, fontWeight: 800, color: "#101828",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}>
+            {stickyTitle}
+          </div>
+        )}
+      </div>
+
+      <div style={{
+        maxWidth: 720, margin: "0 auto",
+        padding: isMobile ? "16px 14px 80px" : "24px 20px 80px",
+        boxSizing: "border-box",
+        fontFamily: 'var(--font-ui, "Avenir Next", "Segoe UI", sans-serif)',
+      }}>
         {children}
       </div>
+      <BottomNav />
     </div>
   );
 }
@@ -1121,7 +1162,7 @@ export default function MenuItemDetailPage() {
 
   if (loading) {
     return (
-      <PageShell isMobile={isMobile}>
+      <PageShell isMobile={isMobile} stickyTitle="Menu Item">
         <Surface style={{ padding: 22 }}>
           <div style={{ fontSize: 14, color: "#53635a", fontWeight: 700 }}>{t("menuItemDetail.loadingItem", "Loading item...")}</div>
         </Surface>
@@ -1131,7 +1172,7 @@ export default function MenuItemDetailPage() {
 
   if (err || !item) {
     return (
-      <PageShell isMobile={isMobile}>
+      <PageShell isMobile={isMobile} stickyTitle="Menu Item">
         <Surface style={{ padding: 22 }}>
           <div style={{ fontSize: 18, fontWeight: 900, color: "#15241d" }}>{t("menuItemDetail.itemNotAvailable", "Item not available")}</div>
           <div style={{ marginTop: 8, fontSize: 14, color: "#53635a", lineHeight: 1.5 }}>{err || t("menuItemDetail.itemCouldNotLoad", "Item could not load")}</div>
@@ -1155,7 +1196,7 @@ export default function MenuItemDetailPage() {
   });
 
   return (
-    <PageShell isMobile={isMobile}>
+    <PageShell isMobile={isMobile} stickyTitle={getLocalizedField(item, "name", language) || item.name}>
 
       {effectiveAllergenFilter ? (
         <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 18 }} />
