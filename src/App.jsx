@@ -330,6 +330,12 @@ function ensureGoogleAnalyticsLoaded() {
   return true;
 }
 
+function ScrollToTop() {
+  const location = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
+  return null;
+}
+
 function AnalyticsTracker() {
   const location = useLocation();
   const { operator } = useOperator();
@@ -422,6 +428,7 @@ function AnalyticsTracker() {
 function AppShell({ easyMenu, crmHost }) {
   return (
     <>
+      <ScrollToTop />
       <AnalyticsTracker />
       {crmHost ? null : <CartDrawer />}
       {crmHost ? null : <OrderCartDrawer />}
