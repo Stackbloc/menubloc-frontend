@@ -32,13 +32,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
-import { PageNav } from "../components/NavButton.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import {
   Card,
   FilterChip as GrubbidFilterChip,
-  PageHero,
-  PageShell,
-  PageSplit,
   SelectField,
   StatusMessage,
 } from "../components/grubbid/GrubbidPrimitives.jsx";
@@ -516,12 +514,19 @@ export default function BrowseMenus() {
   });
 
   return (
-    <PageShell width="wide">
-      <PageNav />
-
-      <PageSplit
-        mobileStack={isMobile}
-        aside={(
+    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+      <StickyPageHeader
+        title={locationLabel
+          ? t("browse.nearTitle", `Browsing Near ${locationLabel}`, { location: locationLabel })
+          : t("browse.title")}
+      />
+      <div style={{
+        maxWidth: 1200, margin: "0 auto",
+        padding: isMobile ? "10px 10px 80px" : "16px 20px 80px",
+        display: "flex", flexDirection: isMobile ? "column" : "row",
+        gap: 16, alignItems: "flex-start",
+      }}>
+        <div style={{ width: isMobile ? "100%" : 240, flexShrink: 0 }}>
           <Card>
             <div style={{ marginBottom: 14, color: "var(--gb-color-ink-strong)", fontSize: 16, fontWeight: 900 }}>
               {t("browse.viewBy", "View By")}
@@ -611,11 +616,9 @@ export default function BrowseMenus() {
               </div>
             </div>
           </Card>
-        )}
-      >
-        <PageHero
-          title={locationLabel ? t("browse.nearTitle", `Browsing Menus Near ${locationLabel}`, { location: locationLabel }) : t("browse.title")}
         />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
 
         <ActiveFilterChips filters={filters} onToggle={toggleFilter} />
 
@@ -759,7 +762,9 @@ export default function BrowseMenus() {
             </>
           ) : null}
         </Card>
-      </PageSplit>
-    </PageShell>
+        </div>
+      </div>
+      <BottomNav />
+    </div>
   );
 }
