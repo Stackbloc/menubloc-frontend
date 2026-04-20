@@ -26,6 +26,7 @@ import {
   reverseGeocode,
 } from "../lib/locationUtils.js";
 import { captureEvent } from "../services/posthog.js";
+import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import DiscoveryDrawer from "../components/grubbid/DiscoveryDrawer.jsx";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
 import DiscoveryMoreSheet from "../components/grubbid/DiscoveryMoreSheet.jsx";
@@ -38,7 +39,6 @@ const LOCAL_RADIUS_MILES = 8;
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const RECENT_LOCATIONS_KEY = "grubbid.recent.locations";
 const MAX_RECENT_LOCATIONS = 3;
-const CHIP_MODE_KEY = "grubbid.chip.mode";
 const ALLERGEN_KEY = "grubbid.allergen.exclusions";
 
 const ALLERGENS = [
@@ -51,26 +51,16 @@ const ALLERGENS = [
   { id: "fish",      label: "Fish" },
 ];
 
-const CHIPS = {
-  Default: [
-    { id: "pizza",      label: "Pizza",      query: "pizza" },
-    { id: "sandwiches", label: "Sandwiches", query: "sandwiches" },
-    { id: "salads",     label: "Salads",     query: "salads" },
-    { id: "burgers",    label: "Burgers",    query: "burgers" },
-    { id: "sushi",      label: "Sushi",      query: "sushi" },
-  ],
-  Lifestyle: [
-    { id: "high_protein", label: "High Protein", query: "high protein" },
-    { id: "low_carb",     label: "Low Carb",     filterKey: "keto" },
-    { id: "keto",         label: "Keto",         filterKey: "keto" },
-  ],
-  Dietary: [
-    { id: "low_sodium",        label: "Low Sodium",        filterKey: "low_sodium" },
-    { id: "diabetic_friendly", label: "Diabetic-Friendly", filterKey: "diabetic_friendly" },
-    { id: "gluten_free",       label: "Gluten-Free",       filterKey: "gluten_free" },
-    { id: "vegan",             label: "Vegan",             filterKey: "vegan" },
-  ],
-};
+const FOOD_CHIPS = [
+  { id: "pizza",      label: "Pizza",      query: "pizza" },
+  { id: "burgers",    label: "Burgers",    query: "burgers" },
+  { id: "sandwiches", label: "Sandwiches", query: "sandwiches" },
+  { id: "tacos",      label: "Tacos",      query: "tacos" },
+  { id: "sushi",      label: "Sushi",      query: "sushi" },
+  { id: "wings",      label: "Wings",      query: "wings" },
+  { id: "salads",     label: "Salads",     query: "salads" },
+  { id: "breakfast",  label: "Breakfast",  query: "breakfast" },
+];
 
 // Re-ranks feed when query is active; falls back to full list if nothing matches
 function filterAndRankMenus(menus, query) {
@@ -223,11 +213,6 @@ export default function GrubbidDiscovery() {
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch { return new Set(); }
   });
-  const [chipMode, setChipMode] = useState(() => {
-    try { return localStorage.getItem(CHIP_MODE_KEY) || "Default"; } catch { return "Default"; }
-  });
-  const [modeOpen, setModeOpen] = useState(false);
-
   const resolvedLocationLabel = useMemo(() => {
     if (appliedLocation) return appliedLocation;
     return autoLocation.label;
@@ -252,11 +237,6 @@ export default function GrubbidDiscovery() {
 
   // Persist dietary prefs whenever they change
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
-
-  // Persist chip mode preference
-  useEffect(() => {
-    try { localStorage.setItem(CHIP_MODE_KEY, chipMode); } catch {}
-  }, [chipMode]);
 
   // Persist allergen exclusions
   useEffect(() => {
@@ -440,12 +420,12 @@ export default function GrubbidDiscovery() {
   }
 
   function handleChipClick(chip) {
-    if (chip.filterKey) {
-      setFilters((p) => ({ ...p, [chip.filterKey]: !p[chip.filterKey] }));
-      return;
-    }
     const params = buildSearchParams(chip.query, { locationOverride: getEffectiveSearchLocation() });
     navigate(`/search?${params.toString()}`);
+  }
+
+  function handleFilterToggle(key) {
+    setFilters((p) => ({ ...p, [key]: !p[key] }));
   }
 
   function handleBrowse() {
@@ -530,8 +510,14 @@ export default function GrubbidDiscovery() {
 
             <BrandLockup
               logoProps={{ width: 72, height: 48, radius: 14, pageColor: "#f7f6f1" }}
-              subtitle="with BidFree Bidding"
-              subtitleStyle={{ fontSize: 9, fontWeight: 600, color: "#aab4c0", letterSpacing: "0.06em", marginTop: 1, textTransform: "none" }}
+              subtitle="✦ BidFree Bidding"
+              subtitleStyle={{
+                fontSize: 9, fontWeight: 900, letterSpacing: "0.07em",
+                color: "#fff", textTransform: "uppercase",
+                background: "linear-gradient(90deg, #1F4E3D 0%, #059669 100%)",
+                borderRadius: 99, padding: "2px 9px", marginTop: 3,
+                boxShadow: "0 2px 8px rgba(5,150,105,0.30)",
+              }}
             />
 
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
@@ -672,94 +658,30 @@ export default function GrubbidDiscovery() {
             </button>
           </div>
 
-          {/* Chip mode selector + chip row */}
-          <div style={{ padding: "8px 16px 0", display: "flex", alignItems: "center", gap: 6 }}>
-
-            {/* Styled pill dropdown — no native browser control */}
-            <div style={{ position: "relative", flexShrink: 0 }}>
-              {modeOpen && (
-                <div
-                  onClick={() => setModeOpen(false)}
-                  style={{ position: "fixed", inset: 0, zIndex: 40 }}
-                />
-              )}
+          {/* Food category chips */}
+          <div style={{
+            padding: "8px 16px 0",
+            display: "flex", gap: 6,
+            overflowX: "auto", scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            WebkitOverflowScrolling: "touch",
+          }}>
+            {FOOD_CHIPS.map((chip) => (
               <button
+                key={chip.id}
                 type="button"
-                onClick={() => setModeOpen((o) => !o)}
-                aria-label="Switch chip mode"
+                onClick={() => handleChipClick(chip)}
                 style={{
-                  height: 28, padding: "0 10px", borderRadius: 999,
-                  border: "1.5px solid #d1d5db",
-                  background: "#f3f4f6", color: "#374151",
-                  fontSize: 12, fontWeight: 700, cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 3,
-                  whiteSpace: "nowrap",
+                  height: 28, padding: "0 12px", borderRadius: 999,
+                  flexShrink: 0, cursor: "pointer", whiteSpace: "nowrap",
+                  border: "1.5px solid #e4e7ec",
+                  background: "#fff", color: "#344054",
+                  fontSize: 12, fontWeight: 700,
                 }}
               >
-                Filter by
-                <span style={{ fontSize: 8, opacity: 0.7, marginTop: 1 }}>▾</span>
+                {chip.label}
               </button>
-              {modeOpen && (
-                <div style={{
-                  position: "absolute", top: "calc(100% + 4px)", left: 0,
-                  background: "#fff", borderRadius: 10,
-                  border: "1px solid #e4e7ec",
-                  boxShadow: "0 6px 20px rgba(0,0,0,0.10)",
-                  zIndex: 50, overflow: "hidden", minWidth: 110,
-                }}>
-                  {["Default", "Lifestyle", "Dietary"].map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => { setChipMode(mode); setModeOpen(false); }}
-                      style={{
-                        display: "block", width: "100%", padding: "9px 14px",
-                        border: "none",
-                        background: mode === chipMode ? "#f0faf4" : "transparent",
-                        color: mode === chipMode ? "#1F4E3D" : "#344054",
-                        fontSize: 13, fontWeight: 700,
-                        textAlign: "left", cursor: "pointer",
-                        borderBottom: mode !== "Dietary" ? "1px solid #f2f4f7" : "none",
-                      }}
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Chip row */}
-            <div style={{
-              display: "flex", gap: 6,
-              overflowX: "auto", scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              WebkitOverflowScrolling: "touch",
-            }}>
-              {CHIPS[chipMode].map((chip) => {
-                const isActive = chip.filterKey ? !!filters[chip.filterKey] : false;
-                return (
-                  <button
-                    key={chip.id}
-                    type="button"
-                    onClick={() => handleChipClick(chip)}
-                    style={{
-                      height: 28, padding: "0 12px", borderRadius: 999,
-                      flexShrink: 0, cursor: "pointer", whiteSpace: "nowrap",
-                      border: isActive ? "none" : "1.5px solid #e4e7ec",
-                      background: isActive ? "#1F4E3D" : "#fff",
-                      color: isActive ? "#fff" : "#344054",
-                      fontSize: 12, fontWeight: 700,
-                      transition: "background 160ms ease, color 160ms ease",
-                    }}
-                  >
-                    {chip.label}
-                  </button>
-                );
-              })}
-            </div>
-
-
+            ))}
           </div>
         </div>
 
@@ -874,6 +796,12 @@ export default function GrubbidDiscovery() {
               )}
             </div>
           )}
+
+          {/* Active drawer filters — shown as removable chips */}
+          <ActiveFilterChips
+            filters={filters}
+            onToggle={handleFilterToggle}
+          />
 
           {/* Inline search error */}
           {inlineError && (
