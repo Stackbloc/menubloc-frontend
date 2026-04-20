@@ -52,14 +52,13 @@ const ALLERGENS = [
 ];
 
 const FOOD_CHIPS = [
-  { id: "pizza",      label: "Pizza",      query: "pizza" },
-  { id: "burgers",    label: "Burgers",    query: "burgers" },
-  { id: "sandwiches", label: "Sandwiches", query: "sandwiches" },
-  { id: "tacos",      label: "Tacos",      query: "tacos" },
-  { id: "sushi",      label: "Sushi",      query: "sushi" },
-  { id: "wings",      label: "Wings",      query: "wings" },
-  { id: "salads",     label: "Salads",     query: "salads" },
-  { id: "breakfast",  label: "Breakfast",  query: "breakfast" },
+  { id: "pizza",      icon: "🍕", label: "Pizza",      query: "pizza" },
+  { id: "burgers",    icon: "🍔", label: "Burgers",    query: "burgers" },
+  { id: "sandwiches", icon: "🥪", label: "Sandwiches", query: "sandwiches" },
+  { id: "tacos",      icon: "🌮", label: "Tacos",      query: "tacos" },
+  { id: "sushi",      icon: "🍣", label: "Sushi",      query: "sushi" },
+  { id: "wings",      icon: "🍗", label: "Wings",      query: "wings" },
+  { id: "salads",     icon: "🥗", label: "Salads",     query: "salads" },
 ];
 
 // Re-ranks feed when query is active; falls back to full list if nothing matches
@@ -582,7 +581,7 @@ export default function GrubbidDiscovery() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
-                placeholder="Search meals, ingredients…"
+                placeholder="Search by food, restaurant, dietary preference, ingredient…"
                 style={{
                   width: "100%",
                   height: 52,
@@ -688,7 +687,7 @@ export default function GrubbidDiscovery() {
                   fontSize: 12, fontWeight: 700,
                 }}
               >
-                {chip.label}
+                {chip.icon} {chip.label}
               </button>
             ))}
           </div>
