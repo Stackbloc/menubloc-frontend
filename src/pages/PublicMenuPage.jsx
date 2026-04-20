@@ -751,6 +751,7 @@ export default function PublicMenuPage() {
   const [itemSheet, setItemSheet] = useState(null);
   const [addedConfirmation, setAddedConfirmation] = useState(null);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [hoveredItemId, setHoveredItemId] = useState(null);
   const [resolvedRouteState, setResolvedRouteState] = useState({
     status: "loading",
     restaurantId: "",
@@ -1359,6 +1360,8 @@ export default function PublicMenuPage() {
                         return (
                           <div
                             key={itemKey}
+                            onMouseEnter={() => { if (inCartCount > 0) setHoveredItemId(it.id); }}
+                            onMouseLeave={() => setHoveredItemId(null)}
                             onClick={() => {
                               if (!itemIsOrderable) {
                                 if (canNavigate && itemHasInsightsData(it)) openSheet();
@@ -1397,9 +1400,25 @@ export default function PublicMenuPage() {
                             {(inCartCount > 0 || hasDeal || it?.is_vegan || it?.is_gluten_free || !itemIsOrderable) ? (
                               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
                                 {inCartCount > 0 ? (
-                                  <span style={{ fontSize: 11, fontWeight: 700, color: "#166534", background: "#dcfce7", borderRadius: 999, padding: "2px 7px", whiteSpace: "nowrap" }}>
-                                    {inCartCount} in order
-                                  </span>
+                                  hoveredItemId === it.id ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeItem(cartState.simpleLine?.lineId);
+                                        setHoveredItemId(null);
+                                      }}
+                                      style={{ fontSize: 11, fontWeight: 700, color: "#991b1b",
+                                        background: "#fee2e2", borderRadius: 999, padding: "2px 7px",
+                                        border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                                    >
+                                      × Remove from basket
+                                    </button>
+                                  ) : (
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: "#166534", background: "#dcfce7", borderRadius: 999, padding: "2px 7px", whiteSpace: "nowrap" }}>
+                                      {inCartCount} in order
+                                    </span>
+                                  )
                                 ) : null}
                                 {!itemIsOrderable ? (
                                   <Badge
