@@ -18,6 +18,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { addLocation, getLocations, updateLocation } from "../lib/consumerApi.js";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
+import { filtersToUrlParams } from "../lib/filterUtils.js";
 import { BrandLogo, BrandLockup } from "../components/BrandLogo.jsx";
 import {
   buildSearchLocationParams,
@@ -218,6 +219,19 @@ export default function GrubbidDiscovery() {
     return autoLocation.label;
   }, [appliedLocation, autoLocation.label]);
 
+  const activeFilterLabel = (() => {
+    if (filters.vegan) return "vegan";
+    if (filters.vegetarian) return "vegetarian";
+    if (filters.diabetic_friendly) return "diabetic-friendly";
+    if (filters.dairy_free) return "dairy-free";
+    if (filters.gluten_free) return "gluten-free";
+    if (filters.keto) return "keto";
+    if (filters.low_sodium) return "low-sodium";
+    return null;
+  })();
+
+  const activeFilterParams = filtersToUrlParams(filters).toString();
+
   const displayMenus = useMemo(() => {
     let menus = filterAndRankMenus(feedMenus, query);
     if (excludedAllergens.size > 0) {
@@ -291,13 +305,18 @@ export default function GrubbidDiscovery() {
       params.set("radius", String(LOCAL_RADIUS_MILES));
     }
 
+    const dietaryParams = buildDietaryQueryParams(filters);
+    for (const [key, value] of Object.entries(dietaryParams)) {
+      if (value) params.set(key, String(value));
+    }
+
     setFeedLoading(true);
     fetch(`${API}/menus/browse?${params.toString()}`)
       .then((r) => r.json())
       .then((json) => { setFeedMenus(json.menus || []); })
       .catch(() => {})
       .finally(() => setFeedLoading(false));
-  }, [autoLocation.status, autoLocation.city, autoLocation.lat, appliedLocation]);
+  }, [autoLocation.status, autoLocation.city, autoLocation.lat, appliedLocation, filters]);
 
   // ── existing logic (unchanged) ──────────────────────────────────────────────
 
@@ -871,7 +890,12 @@ export default function GrubbidDiscovery() {
           ) : (
             <div className="disc-feed-grid">
               {displayMenus.map((menu, i) => (
-                <DiscoveryCard key={menu.menu_id || `feed-${i}`} menu={menu} />
+                <DiscoveryCard
+                    key={menu.menu_id || `feed-${i}`}
+                    menu={menu}
+                    activeFilterLabel={activeFilterLabel}
+                    activeFilterParams={activeFilterParams}
+                  />
               ))}
             </div>
           )}
