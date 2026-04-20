@@ -616,7 +616,6 @@ export default function BrowseMenus() {
               </div>
             </div>
           </Card>
-        />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
 

@@ -2,6 +2,8 @@ import React from "react";
 import { PageNav } from "../components/NavButton.jsx";
 import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 
 const paragraphStyle = {
   margin: "0 0 18px",
@@ -25,6 +27,8 @@ const listStyle = {
 
 export default function AboutGrubbid() {
   return (
+    <>
+    <StickyPageHeader />
     <PageShell width="reading">
       <PageNav back />
       <Breadcrumbs
@@ -111,5 +115,7 @@ export default function AboutGrubbid() {
         <p style={statementStyle}>That&apos;s Grubbid.</p>
       </div>
     </PageShell>
+    <BottomNav />
+    </>
   );
 }

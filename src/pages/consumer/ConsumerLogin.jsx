@@ -11,8 +11,10 @@ import {
   styles,
 } from "../../components/consumer/ConsumerAuthShared.jsx";
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+
 export default function ConsumerLogin() {
-  const { login, loginWithGoogle, loginWithApple } = useConsumer();
+  const { refreshSession, loginWithGoogle, loginWithApple } = useConsumer();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = useMemo(() => {
@@ -30,8 +32,9 @@ export default function ConsumerLogin() {
   async function handleSubmit(event) {
     event.preventDefault();
 
+    const trimmedEmail = email.trim();
     const nextErrors = {};
-    if (!email.trim()) nextErrors.email = "Email is required";
+    if (!trimmedEmail) nextErrors.email = "Email is required";
     if (!password) nextErrors.password = "Password is required";
 
     setFieldErrors(nextErrors);
@@ -39,6 +42,10 @@ export default function ConsumerLogin() {
     setSocialError("");
 
     if (Object.values(nextErrors).some(Boolean)) {
+      console.warn("LOGIN BLOCKED: missing required fields", {
+        hasEmail: Boolean(trimmedEmail),
+        hasPassword: Boolean(password),
+      });
       setFormError("Email and password are required.");
       return;
     }
@@ -46,10 +53,42 @@ export default function ConsumerLogin() {
     setLoading(true);
 
     try {
-      await login(email.trim(), password);
+      console.log("LOGIN CLICKED");
+      console.log("EMAIL:", trimmedEmail);
+      console.log("API BASE:", API_BASE);
+      console.log("ABOUT TO FETCH");
+
+      const res = await fetch(`${API_BASE}/api/consumer-auth/login`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: trimmedEmail,
+          password,
+        }),
+      });
+
+      console.log("FETCH RESPONSE", res.status);
+
+      let payload = {};
+      try {
+        payload = await res.json();
+      } catch (parseError) {
+        console.error("LOGIN RESPONSE PARSE ERROR", parseError);
+      }
+
+      if (!res.ok) {
+        const message = payload?.error || `Login failed (${res.status})`;
+        throw new Error(message);
+      }
+
+      await refreshSession();
       navigate(redirectTo, { replace: true });
-    } catch (error) {
-      setFormError(error.message || "Login failed. Please try again.");
+    } catch (err) {
+      console.error("LOGIN ERROR", err);
+      setFormError(err?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -63,6 +102,7 @@ export default function ConsumerLogin() {
       await loginWithGoogle(credential);
       navigate(redirectTo, { replace: true });
     } catch (error) {
+      console.error("GOOGLE LOGIN ERROR", error);
       setSocialError(error.message || "Google sign-in failed. Please try again.");
     } finally {
       setLoading(false);
@@ -77,6 +117,7 @@ export default function ConsumerLogin() {
       await loginWithApple(payload);
       navigate(redirectTo, { replace: true });
     } catch (error) {
+      console.error("APPLE LOGIN ERROR", error);
       setSocialError(error.message || "Apple sign-in failed. Please try again.");
     } finally {
       setLoading(false);
@@ -85,79 +126,79 @@ export default function ConsumerLogin() {
 
   return (
     <>
-    <StickyPageHeader />
-    <AuthPageFrame
-      showLogo={false}
-      title="Log in"
-      subtitle="Use your Grubbid account, Google, or Apple."
-      footer={(
-        <>
-          <p style={styles.footer}>
-            <Link to="/account/forgot-password" style={styles.link}>Forgot password?</Link>
-          </p>
-          <p style={{ ...styles.footer, marginTop: "12px" }}>
-            New to Grubbid?{" "}
-            <Link to="/account/signup" style={styles.link}>Create account</Link>
-          </p>
-        </>
-      )}
-    >
-      <form onSubmit={handleSubmit} noValidate style={styles.form}>
-        <div style={styles.fieldGroup}>
-          <label htmlFor="consumer-login-email" style={styles.label}>Email</label>
-          <input
-            id="consumer-login-email"
-            type="email"
-            autoComplete="email"
-            value={email}
+      <StickyPageHeader />
+      <AuthPageFrame
+        showLogo={false}
+        title="Log in"
+        subtitle="Use your Grubbid account, Google, or Apple."
+        footer={(
+          <>
+            <p style={styles.footer}>
+              <Link to="/account/forgot-password" style={styles.link}>Forgot password?</Link>
+            </p>
+            <p style={{ ...styles.footer, marginTop: "12px" }}>
+              New to Grubbid?{" "}
+              <Link to="/account/signup" style={styles.link}>Create account</Link>
+            </p>
+          </>
+        )}
+      >
+        <form onSubmit={handleSubmit} noValidate style={styles.form}>
+          <div style={styles.fieldGroup}>
+            <label htmlFor="consumer-login-email" style={styles.label}>Email</label>
+            <input
+              id="consumer-login-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setFieldErrors((current) => ({ ...current, email: undefined }));
+              }}
+              style={{ ...styles.input, ...(fieldErrors.email ? styles.inputError : null) }}
+              placeholder="you@example.com"
+              aria-invalid={fieldErrors.email ? "true" : "false"}
+              aria-describedby={fieldErrors.email ? "consumer-login-email-error" : undefined}
+              required
+            />
+            {fieldErrors.email ? <div id="consumer-login-email-error" style={styles.fieldError}>{fieldErrors.email}</div> : null}
+          </div>
+
+          <PasswordField
+            id="consumer-login-password"
+            label="Password"
+            autoComplete="current-password"
+            value={password}
             onChange={(event) => {
-              setEmail(event.target.value);
-              setFieldErrors((current) => ({ ...current, email: undefined }));
+              setPassword(event.target.value);
+              setFieldErrors((current) => ({ ...current, password: undefined }));
             }}
-            style={{ ...styles.input, ...(fieldErrors.email ? styles.inputError : null) }}
-            placeholder="you@example.com"
-            aria-invalid={fieldErrors.email ? "true" : "false"}
-            aria-describedby={fieldErrors.email ? "consumer-login-email-error" : undefined}
-            required
+            placeholder="Your password"
+            error={fieldErrors.password}
+            describedBy={fieldErrors.password ? "consumer-login-password-error" : undefined}
           />
-          {fieldErrors.email ? <div id="consumer-login-email-error" style={styles.fieldError}>{fieldErrors.email}</div> : null}
-        </div>
 
-        <PasswordField
-          id="consumer-login-password"
-          label="Password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => {
-            setPassword(event.target.value);
-            setFieldErrors((current) => ({ ...current, password: undefined }));
-          }}
-          placeholder="Your password"
-          error={fieldErrors.password}
-          describedBy={fieldErrors.password ? "consumer-login-password-error" : undefined}
-        />
+          <FormError error={formError} />
 
-        <FormError error={formError} />
+          <button
+            type="submit"
+            disabled={loading}
+            style={{ ...styles.submitButton, ...(loading ? styles.submitButtonDisabled : null) }}
+          >
+            {loading ? "Logging in..." : "Log in"}
+          </button>
+        </form>
 
-        <button
-          type="submit"
+        <SocialAuthSection
+          mode="login"
           disabled={loading}
-          style={{ ...styles.submitButton, ...(loading ? styles.submitButtonDisabled : null) }}
-        >
-          {loading ? "Logging in..." : "Log in"}
-        </button>
-      </form>
-
-      <SocialAuthSection
-        mode="login"
-        disabled={loading}
-        error={socialError}
-        onError={setSocialError}
-        onGoogleCredential={handleGoogle}
-        onApplePayload={handleApple}
-      />
-    </AuthPageFrame>
-    <BottomNav />
+          error={socialError}
+          onError={setSocialError}
+          onGoogleCredential={handleGoogle}
+          onApplePayload={handleApple}
+        />
+      </AuthPageFrame>
+      <BottomNav />
     </>
   );
 }

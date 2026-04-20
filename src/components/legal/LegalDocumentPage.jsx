@@ -3,6 +3,8 @@ import { PageNav } from "../NavButton.jsx";
 import Breadcrumbs from "../ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../grubbid/GrubbidPrimitives.jsx";
 import { LEGAL_CONTACT, LEGAL_EFFECTIVE_DATE } from "../../content/legal.js";
+import StickyPageHeader from "../StickyPageHeader.jsx";
+import BottomNav from "../BottomNav.jsx";
 
 const headingStyle = {
   margin: "32px 0 10px",
@@ -20,6 +22,8 @@ const paragraphStyle = {
 
 export default function LegalDocumentPage({ document, eyebrow }) {
   return (
+    <>
+    <StickyPageHeader />
     <PageShell width="reading">
       <PageNav back />
       <Breadcrumbs
@@ -53,5 +57,7 @@ export default function LegalDocumentPage({ document, eyebrow }) {
         </section>
       </div>
     </PageShell>
+    <BottomNav />
+    </>
   );
 }

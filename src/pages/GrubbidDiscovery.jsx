@@ -37,6 +37,7 @@ import BottomNav from "../components/BottomNav.jsx";
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const LOCAL_RADIUS_MILES = 8;
+const SESSION_GEO_KEY = "grubbid.discovery.geo";
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const RECENT_LOCATIONS_KEY = "grubbid.recent.locations";
 const MAX_RECENT_LOCATIONS = 3;
@@ -183,6 +184,8 @@ export default function GrubbidDiscovery() {
   const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
   const navigate = useNavigate();
   const inputRef = useRef(null);
+  const locationEditorRef = useRef(null);
+  const locationEditorInputRef = useRef(null);
   const autoLocation = useAutoLocation();
 
   // ── existing state ──────────────────────────────────────────────────────────
@@ -221,6 +224,16 @@ export default function GrubbidDiscovery() {
     if (appliedLocation) return appliedLocation;
     return autoLocation.label;
   }, [appliedLocation, autoLocation.label]);
+  const normalizedAppliedLocation = normalizeLocationLabel(appliedLocation);
+  const normalizedAutoLocationLabel = normalizeLocationLabel(autoLocation.label);
+  const autoLocationMatchesApplied =
+    Boolean(normalizedAppliedLocation) &&
+    normalizedAppliedLocation === normalizedAutoLocationLabel;
+  const shouldUseAutoGeo =
+    autoLocation.status === "ready" &&
+    autoLocation.lat != null && autoLocation.lng != null &&
+    (!appliedLocation || autoLocationMatchesApplied) &&
+    !locationManuallySet.current;
 
   const activeFilterLabel = (() => {
     if (filters.vegan) return "vegan";
@@ -262,11 +275,24 @@ export default function GrubbidDiscovery() {
 
   // When geo resolves, overwrite stale session location unless user manually set one
   useEffect(() => {
-    if (autoLocation.status !== "ready" || !autoLocation.label) return;
+    if (autoLocation.status !== "ready" || autoLocation.lat == null || autoLocation.lng == null) return;
+
+    try {
+      window.sessionStorage.setItem(
+        SESSION_GEO_KEY,
+        JSON.stringify({ lat: autoLocation.lat, lng: autoLocation.lng })
+      );
+    } catch {}
+
     if (locationManuallySet.current) return;
-    setAppliedLocation(autoLocation.label);
-    try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, autoLocation.label); } catch {}
-  }, [autoLocation.status, autoLocation.label]);
+
+    setAppliedLocation("");
+    if (autoLocation.label) setLocationInput(autoLocation.label);
+
+    try {
+      window.sessionStorage.removeItem(SESSION_LOCATION_KEY);
+    } catch {}
+  }, [autoLocation.status, autoLocation.lat, autoLocation.lng, autoLocation.label]);
 
   function handleAllergenToggle(id) {
     setExcludedAllergens((prev) => {
@@ -288,24 +314,36 @@ export default function GrubbidDiscovery() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!showLocationEditor) return;
+
+    const rafId = window.requestAnimationFrame(() => {
+      locationEditorRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      locationEditorInputRef.current?.focus();
+      locationEditorInputRef.current?.select();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+    };
+  }, [showLocationEditor]);
+
   // Auto-load feed when location becomes available or changes
   useEffect(() => {
     const hasLocation =
-      (autoLocation.status === "ready" && (autoLocation.city || autoLocation.lat)) ||
+      shouldUseAutoGeo ||
       appliedLocation;
     if (!hasLocation) return;
 
     const params = new URLSearchParams();
-    if (appliedLocation) {
-      const loc = parseLocation(appliedLocation);
-      if (loc.city) params.set("city", loc.city);
-      if (loc.state) params.set("state", loc.state);
-    } else if (autoLocation.lat != null && autoLocation.lng != null) {
-      // Auto-detected location: filter by geo radius, not city name.
-      // reverseGeocode locality names often don't match restaurant DB city values.
+    if (shouldUseAutoGeo) {
       params.set("lat", String(autoLocation.lat));
       params.set("lng", String(autoLocation.lng));
       params.set("radius", String(LOCAL_RADIUS_MILES));
+    } else if (appliedLocation) {
+      const loc = parseLocation(appliedLocation);
+      if (loc.city) params.set("city", loc.city);
+      if (loc.state) params.set("state", loc.state);
     }
 
     const dietaryParams = buildDietaryQueryParams(filters);
@@ -319,19 +357,26 @@ export default function GrubbidDiscovery() {
       .then((json) => { setFeedMenus(json.menus || []); })
       .catch(() => {})
       .finally(() => setFeedLoading(false));
-  }, [autoLocation.status, autoLocation.city, autoLocation.lat, appliedLocation, filters]);
+  }, [shouldUseAutoGeo, autoLocation.lat, autoLocation.lng, appliedLocation, filters]);
 
   // ── existing logic (unchanged) ──────────────────────────────────────────────
 
   function buildSearchParams(queryValue, options = {}) {
     const includeFilters = options.includeFilters !== false;
-    const explicitLocationValue = String(options.locationOverride ?? appliedLocation ?? "").trim();
+    const requestedLocationValue = String(options.locationOverride ?? appliedLocation ?? "").trim();
+    const explicitLocationValue =
+      shouldUseAutoGeo && (!requestedLocationValue || normalizeLocationLabel(requestedLocationValue) === normalizedAutoLocationLabel)
+        ? ""
+        : requestedLocationValue;
     const params = buildSearchLocationParams({
       query: queryValue,
       explicitLocationValue,
       autoLocation,
       radiusMiles: LOCAL_RADIUS_MILES,
     });
+    if (shouldUseAutoGeo && autoLocation.label) {
+      params.set("location_label", autoLocation.label);
+    }
     if (includeFilters) {
       const dietaryParams = buildDietaryQueryParams(filters);
       for (const [key, value] of Object.entries(dietaryParams)) {
@@ -372,7 +417,15 @@ export default function GrubbidDiscovery() {
         setInlineError(t("discovery.noResultsFoundFor", `No results found for "${qTerm}"${nearText}`, { query: qTerm, nearText }));
       } else {
         const locationLabel = resolvedLocationLabel || "";
-        if (locationLabel) {
+        if (shouldUseAutoGeo) {
+          try {
+            window.sessionStorage.removeItem(SESSION_LOCATION_KEY);
+            window.sessionStorage.setItem(
+              SESSION_GEO_KEY,
+              JSON.stringify({ lat: autoLocation.lat, lng: autoLocation.lng })
+            );
+          } catch {}
+        } else if (locationLabel) {
           saveRecentLocation(locationLabel);
           setRecentLocations(loadRecentLocations());
           try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, locationLabel); } catch {}
@@ -381,7 +434,7 @@ export default function GrubbidDiscovery() {
       }
     } catch {
       const locationLabel = resolvedLocationLabel || "";
-      if (locationLabel) {
+      if (!shouldUseAutoGeo && locationLabel) {
         try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, locationLabel); } catch {}
       }
       navigate(`/search?${params.toString()}`);
@@ -461,7 +514,13 @@ export default function GrubbidDiscovery() {
 
   function handleBrowse() {
     const p = new URLSearchParams();
-    if (appliedLocation) {
+    if (shouldUseAutoGeo) {
+      if (autoLocation.city) p.set("city", autoLocation.city);
+      if (autoLocation.state) p.set("state", autoLocation.state);
+      p.set("lat", String(autoLocation.lat));
+      p.set("lng", String(autoLocation.lng));
+      p.set("radius_miles", String(LOCAL_RADIUS_MILES));
+    } else if (appliedLocation) {
       const loc = parseLocation(appliedLocation);
       if (loc.city) p.set("city", loc.city);
       if (loc.state) p.set("state", loc.state);
@@ -733,6 +792,7 @@ export default function GrubbidDiscovery() {
           {showLocationEditor && (
             <div
               id="discovery-location-editor"
+              ref={locationEditorRef}
               style={{
               background: "#fff", borderRadius: 16,
               border: "1px solid #e4e7ec",
@@ -783,6 +843,7 @@ export default function GrubbidDiscovery() {
               )}
 
               <input
+                ref={locationEditorInputRef}
                 value={locationInput}
                 onChange={(e) => setLocationInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") applyLocationChange(); }}

@@ -122,6 +122,13 @@ async function verifyFrontend() {
 
     await page.goto(`${frontendBaseUrl}/search?q=chicken&city=Los+Angeles&state=CA`, { waitUntil: "domcontentloaded", timeout: 30000 });
     await page.waitForLoadState("load", { timeout: 15000 });
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return /Results|View Menu|Chipotle Mexican Grill/i.test(text) && !/Loading…|Loading\.\.\./i.test(text);
+      },
+      { timeout: 15000 }
+    );
     const searchBody = await page.textContent("body");
     assertCheck(
       /Results|View Menu|Chipotle Mexican Grill/i.test(searchBody || ""),

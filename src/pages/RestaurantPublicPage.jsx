@@ -32,7 +32,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { BrandLogo } from "../components/BrandLogo.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import {
@@ -237,8 +238,8 @@ function FieldRow({ label, value, placeholder, isDark }) {
         }}
       >
         {hasValue ? value : placeholder}
+        </div>
       </div>
-    </div>
   );
 }
 
@@ -288,6 +289,8 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
     : "Your information appears here with Pro subscription.";
 
   return (
+    <>
+    <StickyPageHeader />
     <div
       style={{
         minHeight: "100vh",
@@ -297,24 +300,6 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
         padding: "20px 16px 64px",
       }}
     >
-      <div
-        style={{
-          maxWidth: 860,
-          margin: "0 auto 20px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <BrandLogo
-          to="/"
-          width={96}
-          height={62}
-          radius={16}
-          pageColor={isDark ? "#0b0b0f" : "#ffffff"}
-          ariaLabel="Go to discovery"
-        />
-      </div>
 
       <div
         style={{
@@ -541,6 +526,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
@@ -788,22 +774,15 @@ export default function RestaurantPublicPage() {
   const landmarkLines = landmarks
     ? landmarks.split(/\n/).map((l) => l.trim()).filter(Boolean)
     : [];
-  const discoveryLogo = (
-    <BrandLogo
-      to="/"
-      width={96}
-      height={62}
-      radius={16}
-      pageColor={isDark ? "#0b0b0f" : "#ffffff"}
-      ariaLabel={translateUi("nav.brandAria", "Go to Grubbid home")}
-    />
-  );
+  const discoveryLogo = null;
 
   if (!loading && !err && data && !isClaimedRestaurant(data)) {
     return <UnclaimedRestaurantPage data={data} isDark={isDark} slugOrId={slugOrId} />;
   }
 
   return (
+    <>
+    <StickyPageHeader />
     <div
       style={{
         minHeight: "100vh",
@@ -813,37 +792,6 @@ export default function RestaurantPublicPage() {
         padding: "20px 16px 64px",
       }}
     >
-      <div
-        style={{
-          maxWidth: 680,
-          margin: "0 auto 20px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        {discoveryLogo}
-
-        <button
-          type="button"
-          onClick={() => setTheme((th) => (th === "dark" ? "light" : "dark"))}
-          style={{
-            height: 28,
-            padding: "0 12px",
-            fontSize: 11,
-            fontWeight: 700,
-            borderRadius: 8,
-            border: isDark ? "1px solid rgba(255,255,255,0.15)" : "1px solid #cbd5e1",
-            background: "transparent",
-            color: muted,
-            cursor: "pointer",
-            letterSpacing: 0.2,
-          }}
-          aria-label={translateUi("common.toggleTheme", "Toggle theme")}
-        >
-          {isDark ? translateUi("common.light", "Light") : translateUi("common.dark", "Dark")}
-        </button>
-      </div>
 
       <div
         style={{
@@ -1350,5 +1298,7 @@ export default function RestaurantPublicPage() {
         </div>
       </div>
     </div>
+    <BottomNav />
+    </>
   );
 }

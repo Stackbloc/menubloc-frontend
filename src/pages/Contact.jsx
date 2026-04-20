@@ -12,6 +12,8 @@ import React from "react";
 import { PageNav } from "../components/NavButton.jsx";
 import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 
 const introStyle = {
   margin: "0 0 24px",
@@ -58,6 +60,8 @@ const contactRows = [
 
 export default function Contact() {
   return (
+    <>
+    <StickyPageHeader />
     <PageShell width="reading">
       <PageNav back />
       <Breadcrumbs
@@ -97,5 +101,7 @@ export default function Contact() {
         </div>
       </div>
     </PageShell>
+    <BottomNav />
+    </>
   );
 }
