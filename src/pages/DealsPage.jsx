@@ -203,7 +203,10 @@ export default function DealsPage() {
   const urlLat = urlParams.get("lat") ? parseFloat(urlParams.get("lat")) : null;
   const urlLng = urlParams.get("lng") ? parseFloat(urlParams.get("lng")) : null;
   const expandedRestaurantId = urlParams.get("restaurant_id") || "";
-  const locationLabel = [urlCity, urlState].filter(Boolean).join(", ");
+  const sessionLocation = (() => {
+    try { return String(window.sessionStorage.getItem("grubbid.discovery.location") || "").trim(); } catch { return ""; }
+  })();
+  const locationLabel = [urlCity, urlState].filter(Boolean).join(", ") || sessionLocation;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [deals, setDeals] = useState([]);
