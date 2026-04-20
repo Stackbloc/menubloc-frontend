@@ -995,7 +995,7 @@ export default function GrubbidSearchResults() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             <BrandLogo width={72} height={48} radius={14} pageColor="#f7f6f1" />
             <div style={{
-              width: 88, marginTop: -2, padding: "4px 0 6px", textAlign: "center",
+              width: 72, marginTop: -1, padding: "4px 0 6px", textAlign: "center",
               background: "linear-gradient(180deg, #1a6b47 0%, #0d3d28 100%)",
               color: "#6ee7b7", fontSize: 8, fontWeight: 900,
               letterSpacing: "0.13em", textTransform: "uppercase",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { PageNav } from "../components/NavButton.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { apiGet, toConsumerErrorMessage } from "../lib/api.js";
 
@@ -72,8 +73,8 @@ export default function OrderConfirmationPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#11211a" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 18px 60px" }}>
-        <PageNav back />
+      <StickyPageHeader title="Order Confirmation" />
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 18px 80px" }}>
 
         <div
           style={{
@@ -189,6 +190,7 @@ export default function OrderConfirmationPage() {
           )}
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 }

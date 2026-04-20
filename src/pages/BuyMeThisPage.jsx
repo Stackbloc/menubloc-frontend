@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { PageNav } from "../components/NavButton.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import {
   applyDocumentSocialMetadata,
   resolveShareImageUrl,
@@ -86,8 +87,8 @@ export default function BuyMeThisPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#11211a" }}>
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 18px 60px" }}>
-        <PageNav back />
+      <StickyPageHeader title="Buy Me This" />
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "14px 18px 80px" }}>
 
         {state.status === "loading" ? (
           <div style={{ marginTop: 24 }}>Loading request…</div>
@@ -268,6 +269,7 @@ export default function BuyMeThisPage() {
           </div>
         ) : null}
       </div>
+      <BottomNav />
     </div>
   );
 }

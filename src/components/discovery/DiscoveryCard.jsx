@@ -255,17 +255,6 @@ export default function DiscoveryCard({
                 ) : item.text}
               </span>
             ))}
-            {phone && (
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ color: "#d4cbc2" }}>·</span>
-                <a
-                  href={`tel:${phone.replace(/[^\d+]/g, "")}`}
-                  onClick={(e) => e.stopPropagation()}
-                  style={{ color: "#a09285", textDecoration: "none" }}
-                  aria-label={`Call ${phone}`}
-                >📞</a>
-              </span>
-            )}
           </div>
         )}
 

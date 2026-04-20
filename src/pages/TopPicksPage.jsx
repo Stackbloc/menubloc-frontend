@@ -10,9 +10,9 @@
  */
 
 import { Link, useLocation } from "react-router-dom";
-import { PageNav } from "../components/NavButton.jsx";
-import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
-import { Card, PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
+import { Card } from "../components/grubbid/GrubbidPrimitives.jsx";
 
 const CATEGORIES = [
   {
@@ -87,21 +87,9 @@ export default function TopPicksPage() {
   }
 
   return (
-    <PageShell>
-      <PageNav back />
-      <Breadcrumbs
-        items={[
-          { label: "Discovery", to: "/" },
-          { label: "Top Picks" },
-        ]}
-      />
-
-      <PageHero
-        eyebrow="Curated by Grubbid Intelligence"
-        title="Top Picks"
-        accent={locationLabel ? ` in ${locationLabel}` : ""}
-        description="Browse curated categories powered by the same Grubbid discovery system used across search and browse."
-      />
+    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+      <StickyPageHeader title={`Top Picks${locationLabel ? ` in ${locationLabel}` : ""}`} />
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 14px 80px" }}>
 
       <div
         style={{
@@ -174,6 +162,8 @@ export default function TopPicksPage() {
         <Link to="/terms" className="gb-linkish">Terms of Use</Link>
         <Link to="/contact" className="gb-linkish">Contact Us</Link>
       </div>
-    </PageShell>
+      </div>
+      <BottomNav />
+    </div>
   );
 }

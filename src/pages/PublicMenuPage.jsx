@@ -47,7 +47,7 @@ function useIsMobile(breakpoint = 900) {
   }, [breakpoint]);
   return isMobile;
 }
-import { PageNav } from "../components/NavButton.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
@@ -996,7 +996,7 @@ export default function PublicMenuPage() {
     return m;
   }, [pageState.data]);
 
-  const pageBg = { minHeight: "100vh" };
+  const pageBg = { minHeight: "100vh", background: "#f7f6f1" };
 
   useEffect(() => {
     if (routeState.status !== "ok" || pageState.status !== "ok" || !pageState.data) {
@@ -1041,8 +1041,8 @@ export default function PublicMenuPage() {
   if (routeState.status === "error" || pageState.status === "error") {
     return (
       <div style={pageBg}>
-        <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
-          <PageNav back />
+        <StickyPageHeader />
+        <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "14px 12px 80px" : "20px 20px 80px", color: "#101828" }}>
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{t("publicMenu.loadError", "Couldn't load menu")}</div>
           <div style={{ color: "var(--muted, #5b6675)", fontSize: 14 }}>{routeState.error || pageState.error}</div>
           <div style={{ marginTop: 14, fontSize: 12, color: "var(--muted-2, #93a0b2)" }}>Endpoint: {apiUrl}</div>
@@ -1184,7 +1184,7 @@ export default function PublicMenuPage() {
       <div style={{
         maxWidth: 860,
         margin: "0 auto",
-        padding: isMobile ? "16px 12px 56px" : "28px 20px 56px",
+        padding: isMobile ? "16px 12px 80px" : "28px 20px 80px",
         color: "#101828",
       }}>
         {/* Restaurant header — sticky */}
@@ -1192,7 +1192,7 @@ export default function PublicMenuPage() {
           position: "sticky",
           top: 0,
           zIndex: 50,
-          background: "rgba(247, 241, 230, 0.88)",
+          background: "rgba(247, 246, 241, 0.92)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
           borderBottom: "1px solid rgba(18, 34, 28, 0.06)",
@@ -1201,8 +1201,12 @@ export default function PublicMenuPage() {
           marginRight: isMobile ? -12 : -20,
           padding: isMobile ? "10px 12px" : "12px 20px",
         }}>
-          {/* Name + Share on same line */}
+          {/* Back + Name + Share row */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: addressLine ? 2 : 0 }}>
+            <button type="button" onClick={() => navigate(-1)} aria-label="Go back"
+              style={{ border: "none", background: "transparent", fontSize: 20, color: "#101828", cursor: "pointer", padding: "0 4px 0 0", lineHeight: 1, flexShrink: 0 }}>
+              ←
+            </button>
             {restaurantProfileHref ? (
               <Link
                 to={restaurantProfileHref}

@@ -17,7 +17,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { PageNav } from "../components/NavButton";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
@@ -250,11 +251,12 @@ const SIGNAL_CHIP_COLORS = {
 
 function PageShell({ children, isMobile }) {
   return (
-    <div style={{ minHeight: "100vh", background: "radial-gradient(circle at top left, rgba(255,241,214,0.85), rgba(255,255,255,0) 34%), linear-gradient(180deg, #fbf7ee 0%, #f6f1e7 45%, #f8f7f2 100%)" }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto", padding: isMobile ? "18px 14px 56px" : "28px 24px 72px", boxSizing: "border-box", color: "#14211b", fontFamily: 'var(--font-ui, "Avenir Next", "Segoe UI", sans-serif)' }}>
-        <PageNav back />
+    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#14211b" }}>
+      <StickyPageHeader />
+      <div style={{ maxWidth: 1120, margin: "0 auto", padding: isMobile ? "14px 14px 80px" : "20px 24px 80px", boxSizing: "border-box", fontFamily: 'var(--font-ui, "Avenir Next", "Segoe UI", sans-serif)' }}>
         {children}
       </div>
+      <BottomNav />
     </div>
   );
 }

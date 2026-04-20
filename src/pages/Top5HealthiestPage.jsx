@@ -10,8 +10,8 @@
 
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { PageNav } from "../components/NavButton.jsx";
-import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -195,22 +195,15 @@ export default function Top5HealthiestPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+      <StickyPageHeader title="Top Health Score Dishes" />
       <div
         style={{
           maxWidth: 820,
           margin: "0 auto",
-          padding: isMobile ? "20px 14px 48px" : "36px 24px 72px",
+          padding: isMobile ? "14px 14px 80px" : "20px 24px 80px",
           boxSizing: "border-box",
         }}
       >
-        {/* Nav */}
-        <PageNav />
-        <Breadcrumbs
-          items={[
-            { label: "Discovery", to: "/" },
-            { label: "Top Health Score Dishes" },
-          ]}
-        />
 
         {/* Hero */}
         <div style={{ marginBottom: isMobile ? 28 : 40 }}>
@@ -331,6 +324,7 @@ export default function Top5HealthiestPage() {
           </div>
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 }

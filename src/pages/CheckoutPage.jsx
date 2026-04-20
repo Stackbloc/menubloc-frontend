@@ -14,7 +14,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import SmsAuthModal from "../components/auth/SmsAuthModal.jsx";
-import { PageNav } from "../components/NavButton.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import BuyMeThisShareModal from "../components/bmt/BuyMeThisShareModal.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
@@ -422,8 +423,8 @@ export default function CheckoutPage() {
   if (!restaurant || items.length === 0) {
     return (
       <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#11211a" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 18px 60px" }}>
-          <PageNav back />
+        <StickyPageHeader title="Checkout" />
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "14px 18px 80px" }}>
           <div
             style={{
               marginTop: 28,
@@ -563,8 +564,8 @@ export default function CheckoutPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#11211a" }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "24px 18px 60px" }}>
-        <PageNav back />
+      <StickyPageHeader title="Checkout" />
+      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "14px 18px 80px" }}>
 
         <div
           style={{
@@ -1316,6 +1317,7 @@ export default function CheckoutPage() {
           {authToast}
         </div>
       ) : null}
+      <BottomNav />
     </div>
   );
 }
