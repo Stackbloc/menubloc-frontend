@@ -400,7 +400,7 @@ export default function DealsPage() {
         </div>
 
         {/* Page title row */}
-        <div style={{ padding: "10px 16px 0", display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ padding: "10px 16px 0", textAlign: "center" }}>
           <span style={{ fontSize: 18, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em" }}>
             🔥 Deals Near {locationLabel || "You"}
           </span>
