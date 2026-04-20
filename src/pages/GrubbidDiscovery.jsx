@@ -206,6 +206,7 @@ export default function GrubbidDiscovery() {
   const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [feedMenus, setFeedMenus] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
+  const locationManuallySet = useRef(false);
   const [excludedAllergens, setExcludedAllergens] = useState(() => {
     try {
       const stored = localStorage.getItem(ALLERGEN_KEY);
@@ -241,6 +242,14 @@ export default function GrubbidDiscovery() {
   useEffect(() => {
     try { localStorage.setItem(ALLERGEN_KEY, JSON.stringify([...excludedAllergens])); } catch {}
   }, [excludedAllergens]);
+
+  // When geo resolves, overwrite stale session location unless user manually set one
+  useEffect(() => {
+    if (autoLocation.status !== "ready" || !autoLocation.label) return;
+    if (locationManuallySet.current) return;
+    setAppliedLocation(autoLocation.label);
+    try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, autoLocation.label); } catch {}
+  }, [autoLocation.status, autoLocation.label]);
 
   function handleAllergenToggle(id) {
     setExcludedAllergens((prev) => {
@@ -394,6 +403,7 @@ export default function GrubbidDiscovery() {
 
   async function applyLocationChange(rawValue, options = {}) {
     const nextLocation = normalizeLocationLabel((rawValue ?? locationInput).trim());
+    locationManuallySet.current = true;
     setAppliedLocation(nextLocation);
     if (typeof window !== "undefined") {
       if (nextLocation) {
