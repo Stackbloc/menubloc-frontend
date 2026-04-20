@@ -53,13 +53,16 @@ const ALLERGENS = [
 ];
 
 const FOOD_CHIPS = [
-  { id: "pizza",      icon: "🍕", label: "Pizza",      query: "pizza" },
-  { id: "burgers",    icon: "🍔", label: "Burgers",    query: "burgers" },
-  { id: "sandwiches", icon: "🥪", label: "Sandwiches", query: "sandwiches" },
-  { id: "tacos",      icon: "🌮", label: "Tacos",      query: "tacos" },
-  { id: "sushi",      icon: "🍣", label: "Sushi",      query: "sushi" },
-  { id: "wings",      icon: "🍗", label: "Wings",      query: "wings" },
-  { id: "salads",     icon: "🥗", label: "Salads",     query: "salads" },
+  { id: "pizza",        icon: "🍕", label: "Pizza",              query: "pizza" },
+  { id: "burgers",      icon: "🍔", label: "Burgers",            query: "burgers" },
+  { id: "sandwiches",   icon: "🥪", label: "Sandwiches",         query: "sandwiches" },
+  { id: "tacos",        icon: "🌮", label: "Tacos",              query: "tacos" },
+  { id: "sushi",        icon: "🍣", label: "Sushi",              query: "sushi" },
+  { id: "wings",        icon: "🍗", label: "Wings",              query: "wings" },
+  { id: "salads",       icon: "🥗", label: "Salads",             query: "salads" },
+  { id: "low-carb",     icon: "🥦", label: "Low Carb",           query: "low carb" },
+  { id: "high-protein", icon: "💪", label: "High Protein",       query: "high protein" },
+  { id: "diabetic",     icon: "🩺", label: "Diabetic Friendly",  query: "diabetic friendly" },
 ];
 
 // Re-ranks feed when query is active; falls back to full list if nothing matches
