@@ -24,8 +24,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
-import { PageNav } from "../components/NavButton";
-import { PageHero, PageShell, SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
+import BottomNav from "../components/BottomNav.jsx";
+import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -974,15 +975,56 @@ export default function GrubbidSearchResults() {
     : null;
 
   return (
-    <PageShell>
-      {/* Nav bar */}
-      <PageNav back />
-
-      {/* Search context */}
-      <PageHero
-        title={q ? `${t("search.searchingFor", "Searching for")} "${q}"` : t("search.title")}
-        description={subtitleParts || "Search results now inherit the canonical Grubbid discovery typography and card system."}
-      />
+    <div style={{ position: "relative", minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+      {/* ── STICKY HEADER ── */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 100,
+        background: "#f7f6f1",
+        borderBottom: "1px solid rgba(0,0,0,0.06)",
+        paddingBottom: 12,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px" }}>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+            style={{ border: "none", background: "transparent", fontSize: 22, color: "#101828", cursor: "pointer", padding: 4, lineHeight: 1, flexShrink: 0 }}
+          >
+            ←
+          </button>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <BrandLogo width={72} height={48} radius={14} pageColor="#f7f6f1" />
+            <div style={{
+              width: 88, marginTop: -2, padding: "4px 0 6px", textAlign: "center",
+              background: "linear-gradient(180deg, #1a6b47 0%, #0d3d28 100%)",
+              color: "#6ee7b7", fontSize: 8, fontWeight: 900,
+              letterSpacing: "0.13em", textTransform: "uppercase",
+              borderRadius: "0 0 7px 7px",
+              boxShadow: "0 6px 16px rgba(13,61,40,0.55), inset 0 1px 0 rgba(255,255,255,0.10)",
+              userSelect: "none",
+            }}>
+              ✦ BidFree Bidding
+            </div>
+          </div>
+          <div style={{ width: 30, flexShrink: 0 }} />
+        </div>
+        <div style={{ padding: "0 16px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 17, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em" }}>
+            🔍 {q ? `"${q}"` : "Search"}
+          </span>
+          {locationLabel && (
+            <span style={{
+              fontSize: 12, fontWeight: 600, color: "#486257",
+              background: "rgba(22,101,62,0.08)", borderRadius: 999,
+              padding: "2px 10px", border: "1px solid rgba(22,101,62,0.14)",
+            }}>
+              Near {locationLabel}
+            </span>
+          )}
+        </div>
+      </div>
+      {/* ── SCROLLABLE FEED ── */}
+      <div style={{ maxWidth: 576, margin: "0 auto", padding: "10px 14px 80px" }}>
 
       <ActiveFilterChips filters={activeFilters} onToggle={toggleSearchFilter} />
 
@@ -1159,6 +1201,8 @@ export default function GrubbidSearchResults() {
           </Link>
         </div>
       )}
-    </PageShell>
+      </div>
+      <BottomNav />
+    </div>
   );
 }
