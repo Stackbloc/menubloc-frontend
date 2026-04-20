@@ -10,7 +10,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
-import { BrandLogo } from "../../components/BrandLogo.jsx";
+import StickyPageHeader from "../../components/StickyPageHeader.jsx";
+import BottomNav from "../../components/BottomNav.jsx";
 import {
   getConsumerProfile,
   updateConsumerProfile,
@@ -205,24 +206,30 @@ export default function ConsumerProfile() {
 
   if (authLoading || pageLoading) {
     return (
+      <>
+      <StickyPageHeader title="Account" />
       <div style={styles.page}>
         <div style={styles.card}>
-          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <p style={styles.subheading}>Loading your account…</p>
         </div>
       </div>
+      <BottomNav />
+      </>
     );
   }
 
   if (pageError) {
     return (
+      <>
+      <StickyPageHeader title="Account" />
       <div style={styles.page}>
         <div style={styles.card}>
-          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <p style={styles.errorBlock}>{pageError}</p>
           <button onClick={loadProfile} style={styles.retryBtn}>Retry</button>
         </div>
       </div>
+      <BottomNav />
+      </>
     );
   }
 
@@ -235,13 +242,10 @@ export default function ConsumerProfile() {
     : "";
 
   return (
+    <>
+    <StickyPageHeader title="Account" />
     <div style={styles.page}>
       <div style={styles.pageInner}>
-        <div style={styles.topNav}>
-          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
-          <button onClick={handleLogout} style={styles.logoutBtn}>Log out</button>
-        </div>
-
         <h1 style={styles.pageTitle}>Account Settings</h1>
 
         <Section title="Following">
@@ -396,8 +400,13 @@ export default function ConsumerProfile() {
             </div>
           ) : null}
         </Section>
+        <Section title="Sign out">
+          <button type="button" onClick={handleLogout} style={styles.logoutBtn}>Log out</button>
+        </Section>
       </div>
     </div>
+    <BottomNav />
+    </>
   );
 }
 

@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import StickyPageHeader from "../../components/StickyPageHeader.jsx";
+import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import {
   AuthPageFrame,
@@ -114,7 +116,10 @@ export default function ConsumerSignup() {
   }
 
   return (
+    <>
+    <StickyPageHeader />
     <AuthPageFrame
+      showLogo={false}
       title="Create account"
       subtitle="Save your food preferences and favorite locations."
       footer={(
@@ -211,5 +216,7 @@ export default function ConsumerSignup() {
         onApplePayload={handleApple}
       />
     </AuthPageFrame>
+    <BottomNav />
+    </>
   );
 }

@@ -975,7 +975,6 @@ export default function MenuItemInfoPage() {
                 style={{
                   display: "flex",
                   alignItems: "flex-start",
-                  justifyContent: "space-between",
                   gap: 14,
                   flexWrap: "wrap",
                 }}
@@ -989,7 +988,7 @@ export default function MenuItemInfoPage() {
                     color: "#15241d",
                     maxWidth: 760,
                     minWidth: 0,
-                    flex: "1 1 320px",
+                    flex: "0 1 auto",
                   }}
                 >
                   {getLocalizedField(item, "name", language) || item.name}

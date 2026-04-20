@@ -45,17 +45,19 @@ export function getPasswordChecklist(password) {
   };
 }
 
-export function AuthPageFrame({ title, subtitle, children, footer }) {
+export function AuthPageFrame({ title, subtitle, children, footer, showLogo = true }) {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <BrandLogo
-          width={132}
-          height={84}
-          radius={20}
-          pageColor="#ffffff"
-          linkStyle={{ marginBottom: 18 }}
-        />
+        {showLogo !== false && (
+          <BrandLogo
+            width={132}
+            height={84}
+            radius={20}
+            pageColor="#ffffff"
+            linkStyle={{ marginBottom: 18 }}
+          />
+        )}
         <h1 style={styles.heading}>{title}</h1>
         {subtitle ? <p style={styles.subheading}>{subtitle}</p> : null}
         {children}

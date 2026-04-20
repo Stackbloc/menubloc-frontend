@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BrandLogo } from "../../components/BrandLogo.jsx";
+import StickyPageHeader from "../../components/StickyPageHeader.jsx";
+import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { getFollowedRestaurants, unfollowRestaurant } from "../../lib/consumerApi.js";
 
@@ -85,22 +86,23 @@ export default function ConsumerFollowing() {
 
   if (authLoading || loading) {
     return (
+      <>
+      <StickyPageHeader title="Following" />
       <div style={styles.page}>
         <div style={styles.card}>
-          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <p style={styles.helperText}>Loading your following feed…</p>
         </div>
       </div>
+      <BottomNav />
+      </>
     );
   }
 
   return (
+    <>
+    <StickyPageHeader title="Following" />
     <div style={styles.page}>
       <div style={styles.pageInner}>
-        <div style={styles.topNav}>
-          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
-          <Link to="/account" style={styles.backLink}>Back to account</Link>
-        </div>
 
         <div style={styles.header}>
           <div>
@@ -188,6 +190,8 @@ export default function ConsumerFollowing() {
         ) : null}
       </div>
     </div>
+    <BottomNav />
+    </>
   );
 }
 

@@ -8,7 +8,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "../../lib/consumerApi.js";
-import { BrandLogo } from "../../components/BrandLogo.jsx";
+import StickyPageHeader from "../../components/StickyPageHeader.jsx";
+import BottomNav from "../../components/BottomNav.jsx";
 
 export default function ConsumerForgotPassword() {
   const [email, setEmail] = useState("");
@@ -43,15 +44,10 @@ export default function ConsumerForgotPassword() {
   }
 
   return (
+    <>
+    <StickyPageHeader />
     <div style={styles.page}>
       <div style={styles.card}>
-        <BrandLogo
-          width={132}
-          height={84}
-          radius={20}
-          pageColor="#ffffff"
-          linkStyle={{ marginBottom: 24 }}
-        />
         <h1 style={styles.heading}>Reset password</h1>
 
         {submitted ? (
@@ -98,6 +94,8 @@ export default function ConsumerForgotPassword() {
         )}
       </div>
     </div>
+    <BottomNav />
+    </>
   );
 }
 

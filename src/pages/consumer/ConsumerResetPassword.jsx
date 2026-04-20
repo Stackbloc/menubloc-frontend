@@ -11,7 +11,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { validateResetToken, resetPassword } from "../../lib/consumerApi.js";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
-import { BrandLogo } from "../../components/BrandLogo.jsx";
+import StickyPageHeader from "../../components/StickyPageHeader.jsx";
+import BottomNav from "../../components/BottomNav.jsx";
 
 export default function ConsumerResetPassword() {
   const navigate = useNavigate();
@@ -77,20 +78,24 @@ export default function ConsumerResetPassword() {
 
   if (tokenState === "validating") {
     return (
+      <>
+      <StickyPageHeader />
       <div style={styles.page}>
         <div style={styles.card}>
-          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <p style={styles.subheading}>Validating reset link…</p>
         </div>
       </div>
+      <BottomNav />
+      </>
     );
   }
 
   if (tokenState === "invalid") {
     return (
+      <>
+      <StickyPageHeader />
       <div style={styles.page}>
         <div style={styles.card}>
-          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <h1 style={styles.heading}>Link expired</h1>
           <p style={styles.subheading}>
             This reset link is invalid or has expired. Request a new one.
@@ -100,24 +105,30 @@ export default function ConsumerResetPassword() {
           </p>
         </div>
       </div>
+      <BottomNav />
+      </>
     );
   }
 
   if (done) {
     return (
+      <>
+      <StickyPageHeader />
       <div style={styles.page}>
         <div style={styles.card}>
-          <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
           <p style={styles.successMsg}>Password reset. Redirecting to your account…</p>
         </div>
       </div>
+      <BottomNav />
+      </>
     );
   }
 
   return (
+    <>
+    <StickyPageHeader />
     <div style={styles.page}>
       <div style={styles.card}>
-        <BrandLogo width={132} height={84} radius={20} pageColor="#ffffff" linkStyle={{ marginBottom: 24 }} />
         <h1 style={styles.heading}>Set new password</h1>
         {tokenEmail && (
           <p style={styles.subheading}>For account: {tokenEmail}</p>
@@ -158,6 +169,8 @@ export default function ConsumerResetPassword() {
         </form>
       </div>
     </div>
+    <BottomNav />
+    </>
   );
 }
 
