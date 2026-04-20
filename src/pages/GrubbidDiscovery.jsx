@@ -18,7 +18,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { addLocation, getLocations, updateLocation } from "../lib/consumerApi.js";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo, BrandLockup } from "../components/BrandLogo.jsx";
 import {
   buildSearchLocationParams,
   normalizeLocationLabel,
@@ -508,17 +508,26 @@ export default function GrubbidDiscovery() {
               ☰
             </button>
 
-            <BrandLockup
-              logoProps={{ width: 72, height: 48, radius: 14, pageColor: "#f7f6f1" }}
-              subtitle="✦ BidFree Bidding"
-              subtitleStyle={{
-                fontSize: 9, fontWeight: 900, letterSpacing: "0.07em",
-                color: "#fff", textTransform: "uppercase",
-                background: "linear-gradient(90deg, #1F4E3D 0%, #059669 100%)",
-                borderRadius: 99, padding: "2px 9px", marginTop: 3,
-                boxShadow: "0 2px 8px rgba(5,150,105,0.30)",
-              }}
-            />
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <BrandLogo width={72} height={48} radius={14} pageColor="#f7f6f1" />
+              <div style={{
+                width: 88,
+                marginTop: -2,
+                padding: "4px 0 6px",
+                textAlign: "center",
+                background: "linear-gradient(180deg, #1a6b47 0%, #0d3d28 100%)",
+                color: "#6ee7b7",
+                fontSize: 8,
+                fontWeight: 900,
+                letterSpacing: "0.13em",
+                textTransform: "uppercase",
+                borderRadius: "0 0 7px 7px",
+                boxShadow: "0 6px 16px rgba(13,61,40,0.55), inset 0 1px 0 rgba(255,255,255,0.10)",
+                userSelect: "none",
+              }}>
+                ✦ BidFree Bidding
+              </div>
+            </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
               <Link
