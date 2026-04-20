@@ -158,15 +158,17 @@ export default function DiscoveryCard({
         transition: "box-shadow 160ms ease, transform 160ms ease",
       }}
     >
-      {(menu.flex_activity > 0) && (
-        <div style={{
-          width: 7, flexShrink: 0,
-          borderTopLeftRadius: 12, borderBottomLeftRadius: 12,
-          background: `linear-gradient(to top, #16a34a ${Math.min(100, menu.flex_activity)}%, #bbf7d0 100%)`,
-          opacity: Math.max(0.4, Math.min(1, menu.flex_activity / 100)),
-          transition: "opacity 300ms ease",
-        }} />
-      )}
+      <div style={{
+        width: 7, flexShrink: 0,
+        borderTopLeftRadius: 12, borderBottomLeftRadius: 12,
+        background: menu.flex_activity > 0
+          ? `linear-gradient(to top, #16a34a ${Math.min(100, menu.flex_activity)}%, #bbf7d0 100%)`
+          : "#e5e7eb",
+        opacity: menu.flex_activity > 0
+          ? Math.max(0.4, Math.min(1, menu.flex_activity / 100))
+          : 0.35,
+        transition: "background 300ms ease, opacity 300ms ease",
+      }} />
 
       {/* Content */}
       <div style={{ padding: "6px 11px 6px", background: "#fff", flex: 1, minWidth: 0 }}>
