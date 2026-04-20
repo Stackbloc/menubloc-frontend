@@ -553,7 +553,8 @@ export default function GrubbidDiscovery() {
                 boxShadow: "0 6px 16px rgba(13,61,40,0.55), inset 0 1px 0 rgba(255,255,255,0.10)",
                 userSelect: "none",
               }}>
-                ✦ BidFree Bidding
+                <span style={{ display: "block" }}>✦ BidFree</span>
+                <span style={{ display: "block", paddingLeft: 9 }}>Bidding</span>
               </div>
             </div>
 

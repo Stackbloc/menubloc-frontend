@@ -390,10 +390,10 @@ export default function DealsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: "100%", boxSizing: "border-box",
-              height: 48, borderRadius: 999,
+              height: 36, borderRadius: 999,
               border: "1.5px solid rgba(0,0,0,0.10)",
-              background: "#fff", padding: "0 18px",
-              fontSize: 14, fontWeight: 600, color: "#101828",
+              background: "#fff", padding: "0 14px",
+              fontSize: 13, fontWeight: 600, color: "#101828",
               outline: "none", boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
             }}
           />
