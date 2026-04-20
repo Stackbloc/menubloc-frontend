@@ -1008,7 +1008,7 @@ export default function GrubbidSearchResults() {
           </div>
           <div style={{ width: 30, flexShrink: 0 }} />
         </div>
-        <div style={{ padding: "0 16px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: 17, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em" }}>
             🔍 {q ? `"${q}"` : "Search"}
           </span>

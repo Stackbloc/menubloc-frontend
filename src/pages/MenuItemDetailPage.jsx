@@ -27,6 +27,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
@@ -262,44 +263,9 @@ const SIGNAL_CHIP_COLORS = {
 // ── Layout Primitives ────────────────────────────────────────
 
 function PageShell({ children, isMobile, stickyTitle }) {
-  const navigate = useNavigate();
   return (
     <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#14211b" }}>
-      {/* Sticky top bar — matches discovery page pattern */}
-      <div style={{
-        position: "sticky", top: 0, zIndex: 100,
-        background: "#f7f6f1",
-        borderBottom: "1px solid rgba(0,0,0,0.06)",
-        display: "flex", alignItems: "center",
-        padding: "12px 16px",
-        gap: 12,
-        boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
-      }}>
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="Go back"
-          style={{
-            border: "1px solid rgba(0,0,0,0.10)", background: "#fff",
-            borderRadius: 999, width: 36, height: 36,
-            fontSize: 16, cursor: "pointer", color: "#101828",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          ←
-        </button>
-        {stickyTitle && (
-          <div style={{
-            flex: 1, minWidth: 0,
-            fontSize: 15, fontWeight: 800, color: "#101828",
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          }}>
-            {stickyTitle}
-          </div>
-        )}
-      </div>
-
+      <StickyPageHeader title={stickyTitle} />
       <div style={{
         maxWidth: 720, margin: "0 auto",
         padding: isMobile ? "16px 14px 80px" : "24px 20px 80px",
@@ -1267,7 +1233,7 @@ export default function MenuItemDetailPage() {
                   >
                     <ShareButton
                       variant="dish"
-                      label="Share Dish"
+                      label="Share this item"
                       modalTitle={`Share ${getLocalizedField(item, "name", language) || item.name}`}
                       shareData={shareData}
                       analyticsContext={{

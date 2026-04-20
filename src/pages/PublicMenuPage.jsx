@@ -285,25 +285,18 @@ function FranchiseBanner({ group, currentRestaurantId, onPrevious, onNext }) {
             type="button"
             onClick={onPrevious}
             aria-label={`Show previous closest ${brandName}`}
-            title={`Show previous closest ${brandName}`}
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 38,
-              height: 38,
-              borderRadius: 999,
-              border: "1px solid rgba(30, 58, 138, 0.18)",
+              border: "1px solid rgba(30,58,138,0.18)",
+              borderRadius: 8,
               background: "#fff",
               color: "#1d4ed8",
+              fontSize: 12,
+              fontWeight: 800,
+              padding: "5px 10px",
               cursor: "pointer",
-              flexShrink: 0,
-              fontSize: 18,
-              fontWeight: 900,
-              boxShadow: "0 4px 14px rgba(37,99,235,0.10)",
             }}
           >
-            ←
+            Prev
           </button>
         ) : null}
         {hasNext ? (
@@ -311,25 +304,18 @@ function FranchiseBanner({ group, currentRestaurantId, onPrevious, onNext }) {
             type="button"
             onClick={onNext}
             aria-label={`Show next closest ${brandName}`}
-            title={`Show next closest ${brandName}`}
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 38,
-              height: 38,
-              borderRadius: 999,
-              border: "1px solid rgba(30, 58, 138, 0.18)",
+              border: "1px solid rgba(30,58,138,0.18)",
+              borderRadius: 8,
               background: "#fff",
               color: "#1d4ed8",
+              fontSize: 12,
+              fontWeight: 800,
+              padding: "5px 10px",
               cursor: "pointer",
-              flexShrink: 0,
-              fontSize: 18,
-              fontWeight: 900,
-              boxShadow: "0 4px 14px rgba(37,99,235,0.10)",
             }}
           >
-            →
+            Next
           </button>
         ) : null}
       </div>
@@ -1029,6 +1015,7 @@ export default function PublicMenuPage() {
   if (routeState.status === "loading" || pageState.status === "loading") {
     return (
       <div style={pageBg}>
+        <StickyPageHeader />
         <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
           <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
         </div>
@@ -1181,6 +1168,7 @@ export default function PublicMenuPage() {
 
   return (
     <div style={pageBg}>
+      <StickyPageHeader />
       <div style={{
         maxWidth: 860,
         margin: "0 auto",
@@ -1190,7 +1178,7 @@ export default function PublicMenuPage() {
         {/* Restaurant header — sticky */}
         <div style={{
           position: "sticky",
-          top: 0,
+          top: 88,
           zIndex: 50,
           background: "rgba(247, 246, 241, 0.92)",
           backdropFilter: "blur(12px)",
@@ -1201,12 +1189,8 @@ export default function PublicMenuPage() {
           marginRight: isMobile ? -12 : -20,
           padding: isMobile ? "10px 12px" : "12px 20px",
         }}>
-          {/* Back + Name + Share row */}
+          {/* Name + Share row */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: addressLine ? 2 : 0 }}>
-            <button type="button" onClick={() => navigate(-1)} aria-label="Go back"
-              style={{ border: "none", background: "transparent", fontSize: 20, color: "#101828", cursor: "pointer", padding: "0 4px 0 0", lineHeight: 1, flexShrink: 0 }}>
-              ←
-            </button>
             {restaurantProfileHref ? (
               <Link
                 to={restaurantProfileHref}
@@ -1228,6 +1212,14 @@ export default function PublicMenuPage() {
                 {restaurantName}
               </div>
             )}
+            <div style={{ marginLeft: "auto" }} onClick={(e) => e.stopPropagation()}>
+              <ShareButton
+                variant="menu"
+                label="Share this menu"
+                shareData={shareData}
+                analyticsContext={shareAnalyticsContext}
+              />
+            </div>
           </div>
 
           {addressLine ? (
@@ -1235,10 +1227,13 @@ export default function PublicMenuPage() {
               {directionsHref ? (
                 <a href={directionsHref} target="_blank" rel="noreferrer"
                   aria-label={`Get directions to ${restaurantName}`}
-                  style={{ color: "inherit", textDecoration: "none", display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}
+                  style={{ color: "inherit", textDecoration: "none", display: "inline-flex", alignItems: "flex-start", gap: 5 }}
                 >
-                  {addressLine1 ? <span>{addressLine1}</span> : null}
-                  {addressLine2 ? <span>{addressLine2}</span> : null}
+                  <span style={{ flexShrink: 0, fontSize: 13 }}>📍</span>
+                  <span style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    {addressLine1 ? <span>{addressLine1}</span> : null}
+                    {addressLine2 ? <span>{addressLine2}</span> : null}
+                  </span>
                 </a>
               ) : (
                 <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
@@ -1366,7 +1361,7 @@ export default function PublicMenuPage() {
                             key={itemKey}
                             onClick={() => {
                               if (!itemIsOrderable) {
-                                openSheet();
+                                if (canNavigate && itemHasInsightsData(it)) openSheet();
                                 return;
                               }
                               if (itemHasRequiredModifiers(it)) {
@@ -1456,6 +1451,23 @@ export default function PublicMenuPage() {
                               >
                                 Insights →
                               </button>
+                            ) : null}
+                            {dishShareData ? (
+                              <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-block", marginTop: 3, marginLeft: 8 }}>
+                                <ShareButton
+                                  variant="dish"
+                                  label="Share this item"
+                                  shareData={dishShareData}
+                                  analyticsContext={{
+                                    restaurantId: currentRestaurantId,
+                                    restaurantSlug: data?.slug || null,
+                                    menuItemId: it.id,
+                                    menuItemName: name,
+                                    pageType: "public_menu",
+                                    shareTarget: "dish",
+                                  }}
+                                />
+                              </div>
                             ) : null}
                           </div>
                         );
@@ -1569,6 +1581,7 @@ export default function PublicMenuPage() {
           summaryLabel={`${itemCount} ${itemCount === 1 ? "item" : "items"} • ${formatMoneyFromCents(subtotalCents)}`}
           ctaLabel="Review Order"
           onOpenBasket={() => navigate("/checkout")}
+          onClear={() => { for (const line of activeCartItems) removeItem(line.lineId); }}
         />
       ) : null}
 
