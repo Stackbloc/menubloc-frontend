@@ -1,33 +1,3 @@
-/**
- * ============================================================
- * File: BrowseMenus.jsx
- * Path: menubloc-frontend/src/pages/BrowseMenus.jsx
- * Date: 2026-03-25
- * Purpose:
- *   Browse Menus / Netflix-style browser page.
- *
- *   Search mode priority (explicit beats implicit):
- *   1. If ?city= and ?state= are in the URL → city/state mode.
- *      Geolocation is NOT called. Backend receives city+state params.
- *      Subtitle: "Showing menus near Dothan, AL"
- *      Distance filter is hidden — no lat/lng to compute from.
- *   2. Otherwise → browser geolocation mode.
- *      Backend receives lat/lng + radius. Results sorted nearest-first.
- *      Distance filter is visible; user can change radius.
- *
- *   Fix 2026-03-16:
- *     city+state in URL → skip geolocation, send city+state to backend.
- *
- *   Fix 2026-03-25 (Distance filter):
- *     Added Distance filter UI to sidebar (geo mode only). User can
- *     select a radius: 1, 3, 5, 10, 25 miles. Default 10 miles.
- *     radiusMiles state is added to useEffect dependency array so a
- *     change triggers a re-fetch. In city/state mode the distance
- *     section is hidden because the backend has no user coordinates to
- *     compute from.
- * ============================================================
- */
-
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
@@ -47,8 +17,10 @@ import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
 import { parseFiltersFromUrl, filtersToUrlParams, hasActiveFilters, activeFilterList } from "../lib/filterUtils.js";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
-import { buildBrowseLocationParams, reverseGeocode } from "../lib/locationUtils.js";
-
+import { isGeoMode } from "../lib/location/locationModel.js";
+import { buildLocationLabel } from "../lib/location/locationLabel.js";
+import { buildApiLocationParams } from "../lib/location/locationRequest.js";
+import { parseLocationFromSearch, mergeLocationIntoSearch } from "../lib/location/locationUrl.js";
 
 function useIsMobile(breakpoint = 900) {
   const [isMobile, setIsMobile] = useState(() => {
@@ -171,59 +143,24 @@ function FilterSelect({ label, options, value, onChange, allLabel = "All" }) {
 
   return (
     <SelectField label={label} value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">{allLabel}</option>
-        {normalizedOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </SelectField>
+      <option value="">{allLabel}</option>
+      {normalizedOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </SelectField>
   );
 }
 
-// Distance radius options. "Any Distance" (null) = no radius cap.
-// In city/state mode, selecting a specific radius triggers geolocation so the
-// backend can apply a haversine WHERE clause from the user's actual position.
-// Backend clamps radius to 4000 miles maximum via clampBrowseRadiusMiles().
 const DISTANCE_RADIUS_OPTIONS = [
-  { label: "Any Distance",    value: null },
-  { label: "Within 1 mile",   value: 1    },
-  { label: "Within 3 miles",  value: 3    },
-  { label: "Within 5 miles",  value: 5    },
-  { label: "Within 10 miles", value: 10   },
-  { label: "Within 25 miles", value: 25   },
+  { label: "Any Distance", value: null },
+  { label: "Within 1 mile", value: 1 },
+  { label: "Within 3 miles", value: 3 },
+  { label: "Within 5 miles", value: 5 },
+  { label: "Within 10 miles", value: 10 },
+  { label: "Within 25 miles", value: 25 },
 ];
-
-function getUserCoords() {
-  return new Promise((resolve) => {
-    if (typeof window === "undefined" || !navigator?.geolocation) {
-      resolve({ lat: null, lng: null, source: "unavailable" });
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = Number(position?.coords?.latitude);
-        const lng = Number(position?.coords?.longitude);
-
-        if (Number.isFinite(lat) && Number.isFinite(lng)) {
-          resolve({ lat, lng, source: "browser" });
-          return;
-        }
-
-        resolve({ lat: null, lng: null, source: "unavailable" });
-      },
-      () => {
-        resolve({ lat: null, lng: null, source: "unavailable" });
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 5000,
-        maximumAge: 300000,
-      }
-    );
-  });
-}
 
 export default function BrowseMenus() {
   const { t } = useLanguage();
@@ -231,15 +168,15 @@ export default function BrowseMenus() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { search } = useLocation();
-  const urlParams = new URLSearchParams(search);
-  const urlCity = urlParams.get("city") || "";
-  const urlState = urlParams.get("state") || "";
+
+  const urlParams = useMemo(() => new URLSearchParams(search), [search]);
   const urlCuisine = urlParams.get("cuisine") || "";
   const urlCategory = urlParams.get("category") || "";
 
-  // True when the URL explicitly specifies the location — geolocation must not run.
-  // City alone is sufficient; state is optional and used as an additional filter when present.
-  const hasCityStateParams = Boolean(urlCity);
+  const locationModel = useMemo(() => parseLocationFromSearch(urlParams), [urlParams]);
+  const apiLocationParams = useMemo(() => buildApiLocationParams(locationModel), [locationModel]);
+  const isGeoLocation = isGeoMode(locationModel);
+  const locationLabel = apiLocationParams ? buildLocationLabel(locationModel) : "";
 
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -250,11 +187,7 @@ export default function BrowseMenus() {
   const [totalCount, setTotalCount] = useState(0);
   const [responseAllergenFilter, setResponseAllergenFilter] = useState(null);
   const BROWSE_LIMIT = 24;
-  // Seed from URL so a shared/bookmarked link shows the label immediately
-  const [locationLabel, setLocationLabel] = useState(() => {
-    const parts = [urlCity, urlState].filter(Boolean);
-    return parts.join(", ");
-  });
+
   const filters = useMemo(
     () => parseFiltersFromUrl(new URLSearchParams(search)),
     [search]
@@ -265,12 +198,8 @@ export default function BrowseMenus() {
   }));
   const [cuisineOptions, setCuisineOptions] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
-  // radiusMiles: null = any distance (no radius cap).
-  // In geo mode default to 10 miles. In city/state mode default to null (any).
-  // When a non-null radius is selected in city/state mode, geolocation is requested
-  // so the backend can filter by actual distance from the user's position.
-  const [radiusMiles, setRadiusMiles] = useState(() => hasCityStateParams ? null : 10);
   const [alphaGroup, setAlphaGroup] = useState(null);
+
   const localizedDistanceOptions = DISTANCE_RADIUS_OPTIONS.map((opt) => {
     if (opt.value == null) {
       return { ...opt, label: t("browse.anyDistance") };
@@ -288,9 +217,6 @@ export default function BrowseMenus() {
   const localizedCategoryOptions = categoryOptions.map((option) =>
     localizeCanonicalOption(option, "category", t)
   );
-
-  const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
-    filters.dairy_free || filters.diabetic_friendly || filters.keto || filters.low_sodium || filters.deals;
 
   useEffect(() => {
     let cancelled = false;
@@ -345,7 +271,7 @@ export default function BrowseMenus() {
     for (const [key, value] of Object.entries(buildRestaurantFilterQueryParams(localFilters))) {
       if (value) p.set(key, value);
     }
-    if (filters.deals)             p.set("deals", "1");
+    if (filters.deals) p.set("deals", "1");
     return p.toString();
   })();
 
@@ -365,8 +291,33 @@ export default function BrowseMenus() {
     navigate({ search: nextParams.toString() ? `?${nextParams.toString()}` : "" }, { replace: true });
   }
 
+  function updateRadius(nextRadiusMiles) {
+    if (!apiLocationParams || !isGeoLocation) return;
+
+    const nextLocation = {
+      ...locationModel,
+      radius_miles: nextRadiusMiles,
+    };
+    const nextParams = mergeLocationIntoSearch(new URLSearchParams(search), nextLocation);
+    navigate({ search: nextParams.toString() ? `?${nextParams.toString()}` : "" }, { replace: true });
+  }
+
   useEffect(() => {
     let cancelled = false;
+
+    if (!apiLocationParams) {
+      setLoading(false);
+      setLoadingMore(false);
+      setError("");
+      setMenus([]);
+      setBrowseOffset(0);
+      setHasMore(false);
+      setTotalCount(0);
+      setResponseAllergenFilter(null);
+      return () => {
+        cancelled = true;
+      };
+    }
 
     async function run(loadMoreOffset = 0) {
       if (loadMoreOffset === 0) {
@@ -379,68 +330,21 @@ export default function BrowseMenus() {
       setError("");
 
       try {
-        let apiParams;
-
         const dietaryParams = {
           deals: filters.deals ? 1 : "",
           ...buildDietaryQueryParams(filters),
           ...buildRestaurantFilterQueryParams(localFilters),
         };
 
-        if (hasCityStateParams) {
-          // ── Mode 1: explicit city/state from URL ─────────────────
-          setLocationLabel([urlCity, urlState].filter(Boolean).join(", "));
-          const coords = await getUserCoords();
-          if (cancelled) return;
-          const hasCoords = coords.lat !== null && coords.lng !== null;
-          apiParams = {
-            ...buildBrowseLocationParams({
-              urlCity,
-              urlState,
-              coords: hasCoords ? coords : null,
-              radiusMiles,
-            }),
-            limit: BROWSE_LIMIT,
-            offset: loadMoreOffset,
-            ...dietaryParams,
-          };
-        } else {
-          // ── Mode 2: browser geolocation ───────────────────────────
-          const coords = await getUserCoords();
-          if (cancelled) return;
-          const hasCoords = coords.lat !== null && coords.lng !== null;
-          if (!hasCoords && radiusMiles !== null) {
-            setRadiusMiles(null);
-          }
-          // Set display label from reverse-geocoded user position (precise city/state),
-          // not from the first restaurant result. Restaurants nearby may have a different
-          // city in their address than the user's actual location.
-          if (hasCoords) {
-            reverseGeocode(coords.lat, coords.lng)
-              .then((geo) => {
-                if (!cancelled && geo.label) setLocationLabel(geo.label);
-              })
-              .catch(() => {});
-          }
-          apiParams = {
-            ...buildBrowseLocationParams({
-              coords: hasCoords ? coords : null,
-              radiusMiles,
-            }),
-            limit: BROWSE_LIMIT,
-            offset: loadMoreOffset,
-            ...dietaryParams,
-          };
-        }
-
-        // Always show restaurant cards — dietary filters apply within each restaurant's menu
-        const response = await getBrowseMenus(apiParams);
+        const response = await getBrowseMenus({
+          ...apiLocationParams,
+          limit: BROWSE_LIMIT,
+          offset: loadMoreOffset,
+          ...dietaryParams,
+        });
         if (cancelled) return;
 
         const extractedMenus = normalizeBrowseMenus(extractMenus(response), cuisineOptions);
-        // Backend already returns results nearest-first (or alphabetical when no distance).
-        // No client-side resort needed — preserve server order.
-
         const newTotal = response?.total_count ?? extractedMenus.length;
         const newOffset = response?.pagination?.next_offset ?? (loadMoreOffset + extractedMenus.length);
 
@@ -450,20 +354,9 @@ export default function BrowseMenus() {
           setMenus((prev) => [...prev, ...extractedMenus]);
         }
         setResponseAllergenFilter(response?.allergen_filter || null);
-
         setTotalCount(newTotal);
         setBrowseOffset(newOffset);
         setHasMore(response?.pagination?.has_more ?? (newOffset < newTotal));
-
-        // In city/state mode the URL is already authoritative.
-        // In geo mode the display label is set by reverseGeocode above (user's precise
-        // city). We do NOT derive the display label from restaurant data — a restaurant
-        // in an adjacent city would produce a misleading label (e.g. "Los Angeles" when
-        // the user is in Pasadena). The URL stays lat/lng-based in geo mode.
-        if (!hasCityStateParams) {
-          // intentionally left blank — display label set from reverseGeocode above
-          void 0;
-        }
       } catch (fetchError) {
         if (cancelled) return;
         setError(readErrorMessage(fetchError));
@@ -480,19 +373,13 @@ export default function BrowseMenus() {
     return () => {
       cancelled = true;
     };
-  // Re-run when the URL location, filters, or radius changes.
-  // radiusMiles only affects geo mode — city/state mode ignores it.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlCity, urlState, filters, radiusMiles, cuisineOptions, localFilters]);
+  }, [apiLocationParams, filters, cuisineOptions, localFilters]);
 
   const showEmptyState = !loading && !error && menus.length === 0;
   const effectiveAllergenFilter = isAuthenticated
     ? (responseAllergenFilter || consumerAllergenFilter || null)
     : null;
 
-  // ── Alpha range computation ────────────────────────────────────
-  // Derive the unique first letters present in loaded menus, then
-  // split them into 3 equal-ish groups to form range chips.
   const alphaRanges = [
     { label: "A – I", letters: new Set("ABCDEFGHI".split("")) },
     { label: "J – R", letters: new Set("JKLMNOPQR".split("")) },
@@ -513,6 +400,34 @@ export default function BrowseMenus() {
     return true;
   });
 
+  if (!apiLocationParams) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+        <StickyPageHeader title={t("browse.title")} />
+        <div
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+            padding: isMobile ? "10px 10px 80px" : "16px 20px 80px",
+          }}
+        >
+          <Card>
+            <StatusMessage tone="muted">
+              <strong style={{ display: "block", marginBottom: 8, color: "var(--gb-color-ink-strong)" }}>
+                {t("browse.locationRequiredTitle", "Location is required")}
+              </strong>
+              {t(
+                "browse.locationRequiredBody",
+                "Open this page with a valid city/state or geo URL."
+              )}
+            </StatusMessage>
+          </Card>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
       <StickyPageHeader
@@ -520,12 +435,17 @@ export default function BrowseMenus() {
           ? t("browse.nearTitle", `Browsing Near ${locationLabel}`, { location: locationLabel })
           : t("browse.title")}
       />
-      <div style={{
-        maxWidth: 1200, margin: "0 auto",
-        padding: isMobile ? "10px 10px 80px" : "16px 20px 80px",
-        display: "flex", flexDirection: isMobile ? "column" : "row",
-        gap: 16, alignItems: "flex-start",
-      }}>
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: isMobile ? "10px 10px 80px" : "16px 20px 80px",
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          gap: 16,
+          alignItems: "flex-start",
+        }}
+      >
         <div style={{ width: isMobile ? "100%" : 240, flexShrink: 0 }}>
           <Card>
             <div style={{ marginBottom: 14, color: "var(--gb-color-ink-strong)", fontSize: 16, fontWeight: 900 }}>
@@ -567,7 +487,7 @@ export default function BrowseMenus() {
               />
               <FilterSelect
                 label={t("browse.category")}
-                  options={localizedCategoryOptions}
+                options={localizedCategoryOptions}
                 value={localFilters.category}
                 allLabel={t("common.all")}
                 onChange={(value) => {
@@ -577,19 +497,21 @@ export default function BrowseMenus() {
                 }}
               />
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <span className="gb-field-label">{t("browse.distance")}</span>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {localizedDistanceOptions.map((opt) => (
-                    <FilterChip
-                      key={String(opt.value)}
-                      label={opt.label}
-                      active={radiusMiles === opt.value}
-                      onClick={() => setRadiusMiles(opt.value)}
-                    />
-                  ))}
+              {isGeoLocation ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <span className="gb-field-label">{t("browse.distance")}</span>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {localizedDistanceOptions.map((opt) => (
+                      <FilterChip
+                        key={String(opt.value)}
+                        label={opt.label}
+                        active={locationModel.radius_miles === opt.value}
+                        onClick={() => updateRadius(opt.value)}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : null}
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <span className="gb-field-label">{t("browse.offers", "Offers")}</span>
@@ -617,150 +539,134 @@ export default function BrowseMenus() {
             </div>
           </Card>
         </div>
+
         <div style={{ flex: 1, minWidth: 0 }}>
+          <ActiveFilterChips filters={filters} onToggle={toggleFilter} />
 
-        <ActiveFilterChips filters={filters} onToggle={toggleFilter} />
+          {effectiveAllergenFilter ? (
+            <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 14 }} />
+          ) : null}
 
-        {effectiveAllergenFilter ? (
-          <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 14 }} />
-        ) : null}
-
-        <Card>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              alignItems: isMobile ? "flex-start" : "center",
-              justifyContent: "space-between",
-              gap: 8,
-              padding: "4px 4px 18px",
-            }}
-          >
-            <div className="gb-count-label" style={{ whiteSpace: "nowrap" }}>
-              {visibleMenus.length === 1
-                ? t("browse.menuCountSingle", "1 menu", { count: visibleMenus.length })
-                : t("browse.menuCountPlural", `${visibleMenus.length} menus`, { count: visibleMenus.length })}
-            </div>
-          </div>
-
-          {hasActiveFilters(filters) && (
-            <StatusMessage tone="success" className="gb-status-message--success" style={{ marginBottom: 10 }}>
-              <span style={{ fontWeight: 800 }}>{t("browse.dietaryFiltersActive", "Dietary filters active:")}</span>{" "}
-              {activeFilterList(filters).map((f) => f.label).join(", ")}
-              <span style={{ color: "var(--gb-color-ink-soft)", fontWeight: 500, fontSize: 11 }}>
-                {` ${t("browse.dietaryFiltersNote", "— will filter items inside each restaurant's menu")}`}
-              </span>
-            </StatusMessage>
-          )}
-
-          {loading ? (
+          <Card>
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
-                gap: 14,
-                padding: "2px 4px 6px",
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                alignItems: isMobile ? "flex-start" : "center",
+                justifyContent: "space-between",
+                gap: 8,
+                padding: "4px 4px 18px",
               }}
             >
-              {[0, 1, 2, 3, 4, 5].map((card) => (
-                <div
-                  key={card}
-                  style={{ height: 148, borderRadius: 16, background: "rgba(0,0,0,0.06)" }}
-                />
-              ))}
+              <div className="gb-count-label" style={{ whiteSpace: "nowrap" }}>
+                {visibleMenus.length === 1
+                  ? t("browse.menuCountSingle", "1 menu", { count: visibleMenus.length })
+                  : t("browse.menuCountPlural", `${visibleMenus.length} menus`, { count: visibleMenus.length })}
+              </div>
             </div>
-          ) : null}
 
-          {(error || showEmptyState) ? (
-            <StatusMessage tone="muted">
-              <strong style={{ display: "block", marginBottom: 8, color: "var(--gb-color-ink-strong)" }}>
-                {t("browse.emptyTitle", "No local menus available in this area")}
-              </strong>
-              {error || t("browse.emptyBody", "We are constantly adding menus. Please check back soon.")}
-            </StatusMessage>
-          ) : null}
+            {hasActiveFilters(filters) && (
+              <StatusMessage tone="success" className="gb-status-message--success" style={{ marginBottom: 10 }}>
+                <span style={{ fontWeight: 800 }}>{t("browse.dietaryFiltersActive", "Dietary filters active:")}</span>{" "}
+                {activeFilterList(filters).map((f) => f.label).join(", ")}
+                <span style={{ color: "var(--gb-color-ink-soft)", fontWeight: 500, fontSize: 11 }}>
+                  {` ${t("browse.dietaryFiltersNote", "— will filter items inside each restaurant's menu")}`}
+                </span>
+              </StatusMessage>
+            )}
 
-          {!loading && !error && menus.length > 0 ? (
-            <>
+            {loading ? (
               <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
                   gap: 14,
-                  padding: "2px 4px 8px",
+                  padding: "2px 4px 6px",
                 }}
               >
-                {visibleMenus.map((menu, index) => (
-                  <DiscoveryCard
-                    key={String(menu?.menu_id ?? menu?.restaurant_id ?? index)}
-                    menu={menu}
-                    activeFilterLabel={activeFilterLabel}
-                    activeFilterParams={activeFilterParams}
+                {[0, 1, 2, 3, 4, 5].map((card) => (
+                  <div
+                    key={card}
+                    style={{ height: 148, borderRadius: 16, background: "rgba(0,0,0,0.06)" }}
                   />
                 ))}
               </div>
+            ) : null}
 
-              {hasMore && (
-                <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
-                  <button
-                    type="button"
-                    disabled={loadingMore}
-                    className={`gb-pill-button ${loadingMore ? "gb-pill-button--secondary" : "gb-pill-button--primary"}`}
-                    onClick={() => {
-                      (async () => {
-                        setLoadingMore(true);
-                        setError("");
-                        try {
-                          const dietaryParams = {
-                            deals: filters.deals ? 1 : "",
-                            ...buildDietaryQueryParams(filters),
-                            ...buildRestaurantFilterQueryParams(localFilters),
-                          };
-                          let coords = { lat: null, lng: null };
-                          try { coords = await getUserCoords(); } catch (_) {}
-                          const hasCoords = coords.lat !== null && coords.lng !== null;
-                          const apiParams = {
-                            ...buildBrowseLocationParams(
-                              hasCityStateParams
-                                ? {
-                                    urlCity,
-                                    urlState,
-                                    coords: hasCoords ? coords : null,
-                                    radiusMiles,
-                                  }
-                                : {
-                                    coords: hasCoords ? coords : null,
-                                    radiusMiles,
-                                  }
-                            ),
-                            limit: BROWSE_LIMIT,
-                            offset: browseOffset,
-                            ...dietaryParams,
-                          };
-                          const response = await getBrowseMenus(apiParams);
-                          const more = normalizeBrowseMenus(extractMenus(response), cuisineOptions);
-                          const newTotal = response?.total_count ?? (browseOffset + more.length);
-                          const newOffset = response?.pagination?.next_offset ?? (browseOffset + more.length);
-                          setMenus((prev) => [...prev, ...more]);
-                          setResponseAllergenFilter((prev) => response?.allergen_filter || prev);
-                          setTotalCount(newTotal);
-                          setBrowseOffset(newOffset);
-                          setHasMore(response?.pagination?.has_more ?? (newOffset < newTotal));
-                        } catch (e) {
-                          setError(readErrorMessage(e));
-                        } finally {
-                          setLoadingMore(false);
-                        }
-                      })();
-                    }}
-                  >
-                    {loadingMore ? "Loading…" : `Load More (${totalCount - menus.length} remaining)`}
-                  </button>
+            {(error || showEmptyState) ? (
+              <StatusMessage tone="muted">
+                <strong style={{ display: "block", marginBottom: 8, color: "var(--gb-color-ink-strong)" }}>
+                  {t("browse.emptyTitle", "No local menus available in this area")}
+                </strong>
+                {error || t("browse.emptyBody", "We are constantly adding menus. Please check back soon.")}
+              </StatusMessage>
+            ) : null}
+
+            {!loading && !error && menus.length > 0 ? (
+              <>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
+                    gap: 14,
+                    padding: "2px 4px 8px",
+                  }}
+                >
+                  {visibleMenus.map((menu, index) => (
+                    <DiscoveryCard
+                      key={String(menu?.menu_id ?? menu?.restaurant_id ?? index)}
+                      menu={menu}
+                      activeFilterLabel={activeFilterLabel}
+                      activeFilterParams={activeFilterParams}
+                    />
+                  ))}
                 </div>
-              )}
-            </>
-          ) : null}
-        </Card>
+
+                {hasMore && (
+                  <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
+                    <button
+                      type="button"
+                      disabled={loadingMore}
+                      className={`gb-pill-button ${loadingMore ? "gb-pill-button--secondary" : "gb-pill-button--primary"}`}
+                      onClick={() => {
+                        (async () => {
+                          setLoadingMore(true);
+                          setError("");
+                          try {
+                            const dietaryParams = {
+                              deals: filters.deals ? 1 : "",
+                              ...buildDietaryQueryParams(filters),
+                              ...buildRestaurantFilterQueryParams(localFilters),
+                            };
+                            const response = await getBrowseMenus({
+                              ...apiLocationParams,
+                              limit: BROWSE_LIMIT,
+                              offset: browseOffset,
+                              ...dietaryParams,
+                            });
+                            const more = normalizeBrowseMenus(extractMenus(response), cuisineOptions);
+                            const newTotal = response?.total_count ?? (browseOffset + more.length);
+                            const newOffset = response?.pagination?.next_offset ?? (browseOffset + more.length);
+                            setMenus((prev) => [...prev, ...more]);
+                            setResponseAllergenFilter((prev) => response?.allergen_filter || prev);
+                            setTotalCount(newTotal);
+                            setBrowseOffset(newOffset);
+                            setHasMore(response?.pagination?.has_more ?? (newOffset < newTotal));
+                          } catch (e) {
+                            setError(readErrorMessage(e));
+                          } finally {
+                            setLoadingMore(false);
+                          }
+                        })();
+                      }}
+                    >
+                      {loadingMore ? "Loading…" : `Load More (${totalCount - menus.length} remaining)`}
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : null}
+          </Card>
         </div>
       </div>
       <BottomNav />

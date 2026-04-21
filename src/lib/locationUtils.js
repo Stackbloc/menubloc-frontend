@@ -2,19 +2,17 @@
  * ============================================================
  * File: locationUtils.js
  * Path: menubloc-frontend/src/lib/locationUtils.js
- * Date: 2026-04-03
+ * Date: 2026-04-21
  * Purpose:
- *   Shared location helpers used across Discovery, Browse, and
- *   Search pages. Centralises reverse geocoding and label
- *   formatting so the same precision rules apply everywhere.
- *
- *   Key fix: reverseGeocode() now prefers json.locality over
- *   json.city. BigDataCloud's json.city can return the metro
- *   area name (e.g. "Los Angeles") for suburbs like Pasadena,
- *   while json.locality reliably returns the precise incorporated
- *   city or neighbourhood name.
+ *   Non-authoritative location utilities only.
+ *   Canonical route parsing/serialization now lives under src/lib/location/.
+ *   This file remains only for generic input parsing, display normalization,
+ *   and reverse geocoding helpers.
  * ============================================================
  */
+
+import { normalizeLocation, LOCATION_MODE_CITY, LOCATION_MODE_GEO } from "./location/locationModel.js";
+import { serializeLocationToSearch } from "./location/locationUrl.js";
 
 export const US_STATE_ABBREVS = new Set([
   "al","ak","az","ar","ca","co","ct","de","fl","ga","hi","id","il","in","ia",
@@ -24,17 +22,18 @@ export const US_STATE_ABBREVS = new Set([
 ]);
 
 /**
- * Parse a raw location string (user input or stored label) into structured fields.
- * Returns { zip, city, state, near, label }.
+ * Parse a raw user-entered location string into a simple city/state-or-zip shape.
+ * This helper is intentionally non-authoritative; route/location authority lives in
+ * the canonical location modules under src/lib/location/.
  */
 export function parseLocation(rawValue) {
   const raw = String(rawValue || "").trim();
   if (!raw) return { zip: "", city: "", state: "", near: "", label: "" };
+
   if (/^\d{5}(?:-\d{4})?$/.test(raw)) {
     return { zip: raw, city: "", state: "", near: "", label: raw };
   }
 
-  // "City, ST" format
   const parts = raw.split(",");
   if (parts.length >= 2) {
     const city = String(parts[0] || "").trim();
@@ -42,7 +41,6 @@ export function parseLocation(rawValue) {
     return { zip: "", city, state, near: "", label: raw };
   }
 
-  // "City ST" format — trailing 2-letter state abbreviation
   const tokens = raw.split(/\s+/);
   const last = tokens[tokens.length - 1].toLowerCase();
   if (tokens.length >= 2 && US_STATE_ABBREVS.has(last)) {
@@ -74,6 +72,14 @@ export function normalizeLocationLabel(rawValue) {
   return state ? `${city}, ${state}` : city;
 }
 
+export function formatLocationLabel(city, state) {
+  return [city, state].filter(Boolean).join(", ");
+}
+
+/**
+ * Legacy compatibility wrapper.
+ * Produces canonical city-mode or geo-mode params only; never mixes them.
+ */
 export function buildSearchLocationParams({
   query = "",
   explicitLocationValue = "",
@@ -85,78 +91,83 @@ export function buildSearchLocationParams({
   if (q) params.set("q", q);
 
   const explicitLocation = parseLocation(explicitLocationValue);
-  if (explicitLocation.zip) params.set("zip", explicitLocation.zip);
-  if (explicitLocation.city) params.set("city", explicitLocation.city);
-  if (explicitLocation.state) params.set("state", explicitLocation.state);
-  if (explicitLocation.near) params.set("near", explicitLocation.near);
-  if (explicitLocation.label) params.set("location_label", explicitLocation.label);
+  if (explicitLocation.zip) {
+    params.set("zip", explicitLocation.zip);
+    return params;
+  }
 
-  if (!explicitLocation.label && autoLocation?.lat != null && autoLocation?.lng != null) {
-    params.set("lat", String(autoLocation.lat));
-    params.set("lng", String(autoLocation.lng));
-    if (radiusMiles != null) params.set("radius_miles", String(radiusMiles));
-    if (autoLocation.city) params.set("city", autoLocation.city);
-    if (autoLocation.state) params.set("state", autoLocation.state);
-    if (autoLocation.label) params.set("location_label", autoLocation.label);
+  if (explicitLocation.city && explicitLocation.state) {
+    const canonical = normalizeLocation({
+      mode: LOCATION_MODE_CITY,
+      city: explicitLocation.city,
+      state: explicitLocation.state,
+      source: "manual",
+    });
+    const locationParams = serializeLocationToSearch(canonical);
+    for (const [key, value] of locationParams.entries()) params.set(key, value);
+    return params;
+  }
+
+  if (autoLocation?.lat != null && autoLocation?.lng != null) {
+    const canonical = normalizeLocation({
+      mode: LOCATION_MODE_GEO,
+      lat: autoLocation.lat,
+      lng: autoLocation.lng,
+      radius_miles: radiusMiles,
+      source: "auto",
+    });
+    const locationParams = serializeLocationToSearch(canonical);
+    for (const [key, value] of locationParams.entries()) params.set(key, value);
   }
 
   return params;
 }
 
+/**
+ * Legacy compatibility wrapper.
+ * Produces canonical city-mode or geo-mode params only; never mixes them.
+ */
 export function buildBrowseLocationParams({
   urlCity = "",
   urlState = "",
   coords = null,
   radiusMiles = null,
 }) {
-  const params = {};
   const city = String(urlCity || "").trim();
   const state = String(urlState || "").trim();
-  const hasCoords = coords?.lat != null && coords?.lng != null;
 
-  if (city) {
-    params.city = city;
-    if (state) params.state = state;
-    if (hasCoords) {
-      params.lat = coords.lat;
-      params.lng = coords.lng;
-      if (radiusMiles != null) params.radius = radiusMiles;
+  if (city && state) {
+    const canonical = normalizeLocation({
+      mode: LOCATION_MODE_CITY,
+      city,
+      state,
+      source: "url",
+    });
+    return Object.fromEntries(serializeLocationToSearch(canonical).entries());
+  }
+
+  if (coords?.lat != null && coords?.lng != null) {
+    const canonical = normalizeLocation({
+      mode: LOCATION_MODE_GEO,
+      lat: coords.lat,
+      lng: coords.lng,
+      radius_miles: radiusMiles,
+      source: "auto",
+    });
+    const entries = Object.fromEntries(serializeLocationToSearch(canonical).entries());
+    if (entries.radius_miles != null) {
+      entries.radius = Number(entries.radius_miles);
+      delete entries.radius_miles;
     }
-    return params;
+    return entries;
   }
 
-  if (hasCoords) {
-    params.lat = coords.lat;
-    params.lng = coords.lng;
-    if (radiusMiles != null) params.radius = radiusMiles;
-  }
-
-  return params;
-}
-
-/**
- * Format city + state abbreviation into a display label.
- * formatLocationLabel("Pasadena", "CA") → "Pasadena, CA"
- */
-export function formatLocationLabel(city, state) {
-  return [city, state].filter(Boolean).join(", ");
+  return {};
 }
 
 /**
  * Reverse geocode lat/lng using the BigDataCloud free API.
  * Returns { label, city, state, confidence }.
- *
- * confidence: "high" | "medium" | "low"
- *
- * Field priority for the precise city name:
- *   1. json.locality     — most precise (neighbourhood or exact city)
- *   2. json.city         — sometimes county/metro-level for large metros
- *   3. Most-specific entry from localityInfo.administrative array
- *
- * Why locality first:
- *   BigDataCloud's json.city returns "Los Angeles" for incorporated
- *   cities like Pasadena that sit within the LA metro area. json.locality
- *   consistently returns the precise city name ("Pasadena").
  */
 export async function reverseGeocode(lat, lng) {
   const url = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
@@ -167,18 +178,13 @@ export async function reverseGeocode(lat, lng) {
   const res = await fetch(url.toString());
   const json = await res.json().catch(() => ({}));
 
-  // State: principalSubdivisionCode → "US-CA" → strip prefix → "CA"
   const rawState =
     String(json?.principalSubdivisionCode || json?.principalSubdivision || "").trim();
   const state = rawState.includes("-") ? rawState.split("-").pop() : rawState;
 
-  // Precise city: prefer locality (neighbourhood/city) over city (often metro)
   const locality = String(json?.locality || "").trim();
   const cityField = String(json?.city || "").trim();
 
-  // Most-specific admin area as last resort
-  // localityInfo.administrative entries have an adminLevel field;
-  // higher adminLevel = more specific (country=2, state=4, county=6, city=8)
   const adminAreas = json?.localityInfo?.administrative;
   let adminSpecific = "";
   if (Array.isArray(adminAreas) && adminAreas.length > 0) {
@@ -186,7 +192,8 @@ export async function reverseGeocode(lat, lng) {
     adminSpecific = String(sorted[0]?.name || "").trim();
   }
 
-  let city, confidence;
+  let city;
+  let confidence;
   if (locality) {
     city = locality;
     confidence = "high";

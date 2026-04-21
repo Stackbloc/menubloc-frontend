@@ -26,6 +26,12 @@ import {
   parseLocation,
   reverseGeocode,
 } from "../lib/locationUtils.js";
+import {
+  clearManualSessionLocation,
+  readLocationSessionState,
+  seedAutoSessionLocation,
+  setManualSessionLocation,
+} from "../lib/sessionLocationStore.js";
 import { captureEvent } from "../services/posthog.js";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import DiscoveryDrawer from "../components/grubbid/DiscoveryDrawer.jsx";
@@ -37,8 +43,7 @@ import BottomNav from "../components/BottomNav.jsx";
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const LOCAL_RADIUS_MILES = 8;
-const SESSION_GEO_KEY = "grubbid.discovery.geo";
-const SESSION_LOCATION_KEY = "grubbid.discovery.location";
+const GEOLOCATION_OPTIONS = { enableHighAccuracy: false, timeout: 8000, maximumAge: 0 };
 const RECENT_LOCATIONS_KEY = "grubbid.recent.locations";
 const MAX_RECENT_LOCATIONS = 3;
 const ALLERGEN_KEY = "grubbid.allergen.exclusions";
@@ -172,7 +177,7 @@ function useAutoLocation() {
       () => {
         setState({ status: "denied", label: "", city: "", state: "", confidence: "low", lat: null, lng: null });
       },
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+      GEOLOCATION_OPTIONS
     );
   }, []);
 
@@ -194,14 +199,13 @@ export default function GrubbidDiscovery() {
   const [searching, setSearching] = useState(false);
   const [showLocationEditor, setShowLocationEditor] = useState(false);
   const [locationSaveState, setLocationSaveState] = useState("idle");
-  const [locationInput, setLocationInput] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim();
-  });
-  const [appliedLocation, setAppliedLocation] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim();
-  });
+  const [sessionLocationState, setSessionLocationState] = useState(() => readLocationSessionState());
+  const manualSessionLocation = sessionLocationState.manual;
+  const selectedSessionLocation = sessionLocationState.selected;
+  const [locationInput, setLocationInput] = useState(
+    () => manualSessionLocation?.label || selectedSessionLocation?.label || ""
+  );
+  const [appliedLocation, setAppliedLocation] = useState(() => manualSessionLocation?.label || "");
   const [recentLocations, setRecentLocations] = useState(() => loadRecentLocations());
   const [filters, setFilters] = useState(() => loadDietPrefs());
   const [selectedCuisine, setSelectedCuisine] = useState("");
@@ -213,27 +217,61 @@ export default function GrubbidDiscovery() {
   const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [feedMenus, setFeedMenus] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
-  const locationManuallySet = useRef(false);
   const [excludedAllergens, setExcludedAllergens] = useState(() => {
     try {
       const stored = localStorage.getItem(ALLERGEN_KEY);
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch { return new Set(); }
   });
-  const resolvedLocationLabel = useMemo(() => {
-    if (appliedLocation) return appliedLocation;
-    return autoLocation.label;
-  }, [appliedLocation, autoLocation.label]);
-  const normalizedAppliedLocation = normalizeLocationLabel(appliedLocation);
-  const normalizedAutoLocationLabel = normalizeLocationLabel(autoLocation.label);
-  const autoLocationMatchesApplied =
-    Boolean(normalizedAppliedLocation) &&
-    normalizedAppliedLocation === normalizedAutoLocationLabel;
-  const shouldUseAutoGeo =
+  const hasFreshAutoGeo =
     autoLocation.status === "ready" &&
-    autoLocation.lat != null && autoLocation.lng != null &&
-    (!appliedLocation || autoLocationMatchesApplied) &&
-    !locationManuallySet.current;
+    autoLocation.lat != null &&
+    autoLocation.lng != null;
+  const activeAutoLocation = hasFreshAutoGeo
+    ? {
+        source: "auto",
+        label: autoLocation.label,
+        city: autoLocation.city,
+        state: autoLocation.state,
+        lat: autoLocation.lat,
+        lng: autoLocation.lng,
+        radiusMiles: LOCAL_RADIUS_MILES,
+      }
+    : null;
+  const resolvedLocationLabel = useMemo(() => {
+    if (manualSessionLocation?.label) return manualSessionLocation.label;
+    if (activeAutoLocation?.label) return activeAutoLocation.label;
+    return "";
+  }, [activeAutoLocation?.label, manualSessionLocation?.label]);
+  const shouldUseAutoGeo =
+    !manualSessionLocation && !!activeAutoLocation;
+  const dealsHref = useMemo(() => {
+    const params = new URLSearchParams();
+
+    if (shouldUseAutoGeo) {
+      if (activeAutoLocation?.city) params.set("city", activeAutoLocation.city);
+      if (activeAutoLocation?.state) params.set("state", activeAutoLocation.state);
+      params.set("lat", String(activeAutoLocation.lat));
+      params.set("lng", String(activeAutoLocation.lng));
+      params.set("radius_miles", String(activeAutoLocation.radiusMiles || LOCAL_RADIUS_MILES));
+    } else if (manualSessionLocation?.label) {
+      const loc = parseLocation(manualSessionLocation.label);
+      if (loc.city) params.set("city", loc.city);
+      if (loc.state) params.set("state", loc.state);
+    }
+
+    const query = params.toString();
+    return query ? `/deals?${query}` : "/deals";
+  }, [
+    activeAutoLocation?.city,
+    activeAutoLocation?.label,
+    activeAutoLocation?.lat,
+    activeAutoLocation?.lng,
+    activeAutoLocation?.radiusMiles,
+    activeAutoLocation?.state,
+    manualSessionLocation?.label,
+    shouldUseAutoGeo,
+  ]);
 
   const activeFilterLabel = (() => {
     if (filters.vegan) return "vegan";
@@ -273,25 +311,25 @@ export default function GrubbidDiscovery() {
     try { localStorage.setItem(ALLERGEN_KEY, JSON.stringify([...excludedAllergens])); } catch {}
   }, [excludedAllergens]);
 
-  // When geo resolves, overwrite stale session location unless user manually set one
+  // Seed auto-session location, but never let it replace a manual selection.
   useEffect(() => {
     if (autoLocation.status !== "ready" || autoLocation.lat == null || autoLocation.lng == null) return;
 
-    try {
-      window.sessionStorage.setItem(
-        SESSION_GEO_KEY,
-        JSON.stringify({ lat: autoLocation.lat, lng: autoLocation.lng })
-      );
-    } catch {}
+    const nextState = seedAutoSessionLocation({
+      label: autoLocation.label,
+      city: autoLocation.city,
+      state: autoLocation.state,
+      lat: autoLocation.lat,
+      lng: autoLocation.lng,
+      radiusMiles: LOCAL_RADIUS_MILES,
+    });
 
-    if (locationManuallySet.current) return;
+    setSessionLocationState(nextState);
 
-    setAppliedLocation("");
-    if (autoLocation.label) setLocationInput(autoLocation.label);
-
-    try {
-      window.sessionStorage.removeItem(SESSION_LOCATION_KEY);
-    } catch {}
+    if (!nextState.manual) {
+      setAppliedLocation("");
+      if (nextState.selected?.label) setLocationInput(nextState.selected.label);
+    }
   }, [autoLocation.status, autoLocation.lat, autoLocation.lng, autoLocation.label]);
 
   function handleAllergenToggle(id) {
@@ -302,17 +340,13 @@ export default function GrubbidDiscovery() {
     });
   }
 
-  // Seed recent locations from session on first load
   useEffect(() => {
-    const sessionLoc = typeof window !== "undefined"
-      ? String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim()
-      : "";
+    const sessionLoc = manualSessionLocation?.label || selectedSessionLocation?.label || "";
     if (sessionLoc) {
       saveRecentLocation(sessionLoc);
       setRecentLocations(loadRecentLocations());
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [manualSessionLocation?.label, selectedSessionLocation?.label]);
 
   useEffect(() => {
     if (!showLocationEditor) return;
@@ -330,15 +364,13 @@ export default function GrubbidDiscovery() {
 
   // Auto-load feed when location becomes available or changes
   useEffect(() => {
-    const hasLocation =
-      shouldUseAutoGeo ||
-      appliedLocation;
+    const hasLocation = shouldUseAutoGeo || appliedLocation;
     if (!hasLocation) return;
 
     const params = new URLSearchParams();
     if (shouldUseAutoGeo) {
-      params.set("lat", String(autoLocation.lat));
-      params.set("lng", String(autoLocation.lng));
+      params.set("lat", String(activeAutoLocation.lat));
+      params.set("lng", String(activeAutoLocation.lng));
       params.set("radius", String(LOCAL_RADIUS_MILES));
     } else if (appliedLocation) {
       const loc = parseLocation(appliedLocation);
@@ -357,25 +389,21 @@ export default function GrubbidDiscovery() {
       .then((json) => { setFeedMenus(json.menus || []); })
       .catch(() => {})
       .finally(() => setFeedLoading(false));
-  }, [shouldUseAutoGeo, autoLocation.lat, autoLocation.lng, appliedLocation, filters]);
+  }, [activeAutoLocation?.lat, activeAutoLocation?.lng, appliedLocation, filters, shouldUseAutoGeo]);
 
   // ── existing logic (unchanged) ──────────────────────────────────────────────
 
   function buildSearchParams(queryValue, options = {}) {
     const includeFilters = options.includeFilters !== false;
-    const requestedLocationValue = String(options.locationOverride ?? appliedLocation ?? "").trim();
-    const explicitLocationValue =
-      shouldUseAutoGeo && (!requestedLocationValue || normalizeLocationLabel(requestedLocationValue) === normalizedAutoLocationLabel)
-        ? ""
-        : requestedLocationValue;
+    const requestedLocationValue = String(options.locationOverride ?? manualSessionLocation?.label ?? "").trim();
     const params = buildSearchLocationParams({
       query: queryValue,
-      explicitLocationValue,
-      autoLocation,
+      explicitLocationValue: requestedLocationValue,
+      autoLocation: requestedLocationValue ? null : activeAutoLocation,
       radiusMiles: LOCAL_RADIUS_MILES,
     });
-    if (shouldUseAutoGeo && autoLocation.label) {
-      params.set("location_label", autoLocation.label);
+    if (!requestedLocationValue && activeAutoLocation?.label) {
+      params.set("location_label", activeAutoLocation.label);
     }
     if (includeFilters) {
       const dietaryParams = buildDietaryQueryParams(filters);
@@ -417,26 +445,13 @@ export default function GrubbidDiscovery() {
         setInlineError(t("discovery.noResultsFoundFor", `No results found for "${qTerm}"${nearText}`, { query: qTerm, nearText }));
       } else {
         const locationLabel = resolvedLocationLabel || "";
-        if (shouldUseAutoGeo) {
-          try {
-            window.sessionStorage.removeItem(SESSION_LOCATION_KEY);
-            window.sessionStorage.setItem(
-              SESSION_GEO_KEY,
-              JSON.stringify({ lat: autoLocation.lat, lng: autoLocation.lng })
-            );
-          } catch {}
-        } else if (locationLabel) {
+        if (!shouldUseAutoGeo && locationLabel) {
           saveRecentLocation(locationLabel);
           setRecentLocations(loadRecentLocations());
-          try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, locationLabel); } catch {}
         }
         navigate(`/search?${params.toString()}`);
       }
     } catch {
-      const locationLabel = resolvedLocationLabel || "";
-      if (!shouldUseAutoGeo && locationLabel) {
-        try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, locationLabel); } catch {}
-      }
       navigate(`/search?${params.toString()}`);
     } finally {
       setSearching(false);
@@ -478,15 +493,13 @@ export default function GrubbidDiscovery() {
 
   async function applyLocationChange(rawValue, options = {}) {
     const nextLocation = normalizeLocationLabel((rawValue ?? locationInput).trim());
-    locationManuallySet.current = true;
-    setAppliedLocation(nextLocation);
-    if (typeof window !== "undefined") {
-      if (nextLocation) {
-        window.sessionStorage.setItem(SESSION_LOCATION_KEY, nextLocation);
-      } else {
-        window.sessionStorage.removeItem(SESSION_LOCATION_KEY);
-      }
-    }
+    const nextState = nextLocation
+      ? setManualSessionLocation(nextLocation)
+      : clearManualSessionLocation();
+
+    setSessionLocationState(nextState);
+    setAppliedLocation(nextState.manual?.label || "");
+    setLocationInput(nextState.selected?.label || "");
     if (nextLocation) {
       saveRecentLocation(nextLocation);
       setRecentLocations(loadRecentLocations());
@@ -500,7 +513,7 @@ export default function GrubbidDiscovery() {
   function getEffectiveSearchLocation() {
     const draft = locationInput.trim();
     if (showLocationEditor && draft) return draft;
-    return appliedLocation;
+    return manualSessionLocation?.label || "";
   }
 
   function handleChipClick(chip) {
@@ -514,19 +527,19 @@ export default function GrubbidDiscovery() {
 
   function handleBrowse() {
     const p = new URLSearchParams();
-    if (shouldUseAutoGeo) {
-      if (autoLocation.city) p.set("city", autoLocation.city);
-      if (autoLocation.state) p.set("state", autoLocation.state);
-      p.set("lat", String(autoLocation.lat));
-      p.set("lng", String(autoLocation.lng));
+    if (shouldUseAutoGeo && activeAutoLocation) {
+      if (activeAutoLocation.city) p.set("city", activeAutoLocation.city);
+      if (activeAutoLocation.state) p.set("state", activeAutoLocation.state);
+      p.set("lat", String(activeAutoLocation.lat));
+      p.set("lng", String(activeAutoLocation.lng));
       p.set("radius_miles", String(LOCAL_RADIUS_MILES));
-    } else if (appliedLocation) {
-      const loc = parseLocation(appliedLocation);
+    } else if (manualSessionLocation?.label) {
+      const loc = parseLocation(manualSessionLocation.label);
       if (loc.city) p.set("city", loc.city);
       if (loc.state) p.set("state", loc.state);
-    } else if (autoLocation.city || autoLocation.state) {
-      if (autoLocation.city) p.set("city", autoLocation.city);
-      if (autoLocation.state) p.set("state", autoLocation.state);
+    } else if (activeAutoLocation?.city || activeAutoLocation?.state) {
+      if (activeAutoLocation?.city) p.set("city", activeAutoLocation.city);
+      if (activeAutoLocation?.state) p.set("state", activeAutoLocation.state);
     }
     const qs = p.toString();
     navigate(qs ? `${BROWSE_MENUS_PATH}?${qs}` : BROWSE_MENUS_PATH);
@@ -622,7 +635,7 @@ export default function GrubbidDiscovery() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
               <Link
-                to="/deals"
+                to={dealsHref}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 3,
                   minHeight: 32, padding: "0 12px",
