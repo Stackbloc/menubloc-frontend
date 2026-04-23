@@ -7,6 +7,13 @@
  */
 
 export function buildDietaryQueryParams(filters = {}) {
+  const goal =
+    filters.energy && !filters.immunity
+      ? "energy"
+      : filters.immunity && !filters.energy
+        ? "immunity"
+        : "";
+
   return {
     vegan: filters.vegan ? 1 : "",
     vegetarian: filters.vegetarian ? 1 : "",
@@ -16,5 +23,6 @@ export function buildDietaryQueryParams(filters = {}) {
     keto: filters.keto ? 1 : "",
     low_carb: filters.keto || filters.low_carb ? 1 : "",
     low_sodium: filters.low_sodium ? 1 : "",
+    goal,
   };
 }

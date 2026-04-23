@@ -9,13 +9,23 @@
 // ============================================================
 
 // VITE_API_BASE_URL must be set in Vercel env vars for production.
-// In local dev it falls back to localhost:3001 automatically.
+// In local development and local preview, fall back to localhost:3001.
 const VITE_ENV = import.meta.env || {};
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);
 
-const API_BASE = (
-  VITE_ENV.VITE_API_BASE_URL ||
-  (VITE_ENV.DEV ? "http://localhost:3001" : "")
-).replace(/\/$/, "");
+function resolveApiBase() {
+  if (VITE_ENV.VITE_API_BASE_URL) return VITE_ENV.VITE_API_BASE_URL;
+  if (VITE_ENV.DEV) return "http://localhost:3001";
+
+  if (typeof window !== "undefined") {
+    const host = String(window.location?.hostname || "").trim().toLowerCase();
+    if (LOCAL_HOSTNAMES.has(host)) return "http://localhost:3001";
+  }
+
+  return "";
+}
+
+const API_BASE = resolveApiBase().replace(/\/$/, "");
 
 async function safeJson(res) {
   const text = await res.text();

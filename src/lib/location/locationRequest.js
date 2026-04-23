@@ -1,45 +1,69 @@
-import {
-  normalizeLocation,
-  isCityMode,
-  isGeoMode,
-  isValidCityLocation,
-  isValidGeoLocation,
-  isValidLocation,
-} from "./locationModel.js";
+/**
+ * ============================================================
+ * File: src/lib/location/locationRequest.js
+ * Purpose:
+ *   Build API-ready location params from parsed location model.
+ *   Enforces strict validity:
+ *     - city/state must BOTH exist
+ *     - lat/lng must BOTH be valid numbers
+ *     - otherwise returns null
+ * ============================================================
+ */
 
-function normalizeRadiusMiles(value) {
-  if (value === null || value === undefined || value === "") return null;
-  const num = Number(value);
+/**
+ * Safely parse a number and ensure it is finite
+ */
+function toValidNumber(value) {
+  if (value === null || value === undefined) return null;
+  const num = typeof value === "number" ? value : Number(value);
   return Number.isFinite(num) ? num : null;
 }
 
-export function buildApiLocationParams(locationInput) {
-  const location = normalizeLocation(locationInput);
+/**
+ * Normalize string (trim + basic guard)
+ */
+function toValidString(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
 
-  if (!isValidLocation(location)) {
+/**
+ * Build API location params
+ *
+ * @param {Object} locationModel
+ * @returns {Object|null}
+ */
+export function buildApiLocationParams(locationModel) {
+  if (!locationModel || typeof locationModel !== "object") {
     return null;
   }
 
-  if (isCityMode(location) && isValidCityLocation(location)) {
+  // Extract fields safely
+  const city = toValidString(locationModel.city);
+  const state = toValidString(locationModel.state);
+  const lat = toValidNumber(locationModel.lat);
+  const lng = toValidNumber(locationModel.lng);
+  const radius = toValidNumber(locationModel.radius);
+
+  // ✅ Case 1: valid lat/lng
+  if (lat !== null && lng !== null) {
     return {
-      city: location.city,
-      state: location.state,
+      lat,
+      lng,
+      // optional radius fallback
+      radius: radius !== null ? radius : 5,
     };
   }
 
-  if (isGeoMode(location) && isValidGeoLocation(location)) {
-    const params = {
-      lat: location.lat,
-      lng: location.lng,
+  // ✅ Case 2: valid city/state
+  if (city && state) {
+    return {
+      city,
+      state,
     };
-
-    const radiusMiles = normalizeRadiusMiles(location.radius_miles);
-    if (radiusMiles !== null) {
-      params.radius = radiusMiles;
-    }
-
-    return params;
   }
 
+  // ❌ Anything else is invalid
   return null;
 }

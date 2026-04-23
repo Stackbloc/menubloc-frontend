@@ -59,6 +59,10 @@ const ALLERGENS = [
 ];
 
 const FOOD_CHIPS = [
+  { id: "low-carb",     icon: "🥦", label: "Low Carb",           query: "low carb" },
+  { id: "high-protein", icon: "💪", label: "High Protein",       query: "high protein" },
+  { id: "diabetic",     icon: "🩺", label: "Diabetic Friendly",  query: "diabetic friendly" },
+  { id: "vitamin-c",    icon: "🍊", label: "High Vitamin C",     goal: "vitamin_c", query: "" },
   { id: "pizza",        icon: "🍕", label: "Pizza",              query: "pizza" },
   { id: "burgers",      icon: "🍔", label: "Burgers",            query: "burgers" },
   { id: "sandwiches",   icon: "🥪", label: "Sandwiches",         query: "sandwiches" },
@@ -66,9 +70,11 @@ const FOOD_CHIPS = [
   { id: "sushi",        icon: "🍣", label: "Sushi",              query: "sushi" },
   { id: "wings",        icon: "🍗", label: "Wings",              query: "wings" },
   { id: "salads",       icon: "🥗", label: "Salads",             query: "salads" },
-  { id: "low-carb",     icon: "🥦", label: "Low Carb",           query: "low carb" },
-  { id: "high-protein", icon: "💪", label: "High Protein",       query: "high protein" },
-  { id: "diabetic",     icon: "🩺", label: "Diabetic Friendly",  query: "diabetic friendly" },
+];
+
+const GOAL_CHIPS = [
+  { id: "energy", icon: "Energy", goal: "energy", query: "" },
+  { id: "immunity", icon: "Immunity", goal: "immunity", query: "" },
 ];
 
 // Re-ranks feed when query is active; falls back to full list if nothing matches
@@ -405,6 +411,9 @@ export default function GrubbidDiscovery() {
     if (!requestedLocationValue && activeAutoLocation?.label) {
       params.set("location_label", activeAutoLocation.label);
     }
+    if (options.goal === "energy" || options.goal === "immunity" || options.goal === "vitamin_c") {
+      params.set("goal", options.goal);
+    }
     if (includeFilters) {
       const dietaryParams = buildDietaryQueryParams(filters);
       for (const [key, value] of Object.entries(dietaryParams)) {
@@ -517,7 +526,10 @@ export default function GrubbidDiscovery() {
   }
 
   function handleChipClick(chip) {
-    const params = buildSearchParams(chip.query, { locationOverride: getEffectiveSearchLocation() });
+    const params = buildSearchParams(chip.query, {
+      locationOverride: getEffectiveSearchLocation(),
+      goal: chip.goal,
+    });
     navigate(`/search?${params.toString()}`);
   }
 
@@ -771,30 +783,54 @@ export default function GrubbidDiscovery() {
             </button>
           </div>
 
-          {/* Food category chips */}
-          <div style={{
-            padding: "8px 16px 0",
-            display: "flex", gap: 6,
-            overflowX: "auto", scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            WebkitOverflowScrolling: "touch",
-          }}>
-            {FOOD_CHIPS.map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => handleChipClick(chip)}
-                style={{
-                  height: 28, padding: "0 12px", borderRadius: 999,
-                  flexShrink: 0, cursor: "pointer", whiteSpace: "nowrap",
-                  border: "1.5px solid #e4e7ec",
-                  background: "#fff", color: "#344054",
-                  fontSize: 12, fontWeight: 700,
-                }}
-              >
-                {chip.icon} {chip.label}
-              </button>
-            ))}
+          <div style={{ padding: "8px 16px 0", display: "grid", gap: 8 }}>
+            <div style={{
+              display: "flex", gap: 6,
+              overflowX: "auto", scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch",
+            }}>
+              {GOAL_CHIPS.map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => handleChipClick(chip)}
+                  style={{
+                    height: 28, padding: "0 12px", borderRadius: 999,
+                    flexShrink: 0, cursor: "pointer", whiteSpace: "nowrap",
+                    border: "1.5px solid rgba(31,78,61,0.16)",
+                    background: "rgba(31,78,61,0.06)", color: "#1F4E3D",
+                    fontSize: 12, fontWeight: 700,
+                  }}
+                >
+                  {chip.icon}
+                </button>
+              ))}
+            </div>
+
+            <div style={{
+              display: "flex", gap: 6,
+              overflowX: "auto", scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch",
+            }}>
+              {FOOD_CHIPS.map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => handleChipClick(chip)}
+                  style={{
+                    height: 28, padding: "0 12px", borderRadius: 999,
+                    flexShrink: 0, cursor: "pointer", whiteSpace: "nowrap",
+                    border: "1.5px solid #e4e7ec",
+                    background: "#fff", color: "#344054",
+                    fontSize: 12, fontWeight: 700,
+                  }}
+                >
+                  {chip.icon} {chip.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

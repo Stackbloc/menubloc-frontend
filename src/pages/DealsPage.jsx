@@ -5,11 +5,14 @@
 // ============================================================
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
+import { buildLocationLabel } from "../lib/location/locationLabel.js";
+import { buildApiLocationParams } from "../lib/location/locationRequest.js";
+import { parseLocationFromSearch } from "../lib/location/locationUrl.js";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -195,28 +198,20 @@ function DealRow({ deal, restaurantUrl, onAddToOrder }) {
 
 export default function DealsPage() {
   const { search } = useLocation();
-  const navigate = useNavigate();
   const { addToCart } = useOrderCart();
-  const urlParams = new URLSearchParams(search);
-  const urlCity = urlParams.get("city") || "";
-  const urlState = urlParams.get("state") || "";
-  const urlLat = urlParams.get("lat") ? parseFloat(urlParams.get("lat")) : null;
-  const urlLng = urlParams.get("lng") ? parseFloat(urlParams.get("lng")) : null;
+  const urlParams = useMemo(() => new URLSearchParams(search), [search]);
+  const locationModel = useMemo(() => parseLocationFromSearch(urlParams), [urlParams]);
+  const apiLocationParams = useMemo(() => buildApiLocationParams(locationModel), [locationModel]);
+  const locationLabel = apiLocationParams ? buildLocationLabel(locationModel) : "";
   const expandedRestaurantId = urlParams.get("restaurant_id") || "";
-  const sessionLocation = (() => {
-    try { return String(window.sessionStorage.getItem("grubbid.discovery.location") || "").trim(); } catch { return ""; }
-  })();
-  const locationLabel = [urlCity, urlState].filter(Boolean).join(", ") || sessionLocation;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [deals, setDeals] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedRestaurants, setExpandedRestaurants] = useState(() =>
     expandedRestaurantId ? { [expandedRestaurantId]: true } : {}
   );
-  const [userLat, setUserLat] = useState(urlLat);
-  const [userLng, setUserLng] = useState(urlLng);
 
   useEffect(() => {
     if (!expandedRestaurantId) return;
@@ -224,27 +219,24 @@ export default function DealsPage() {
   }, [expandedRestaurantId]);
 
   useEffect(() => {
-    if (urlLat != null && urlLng != null) return;
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { setUserLat(pos.coords.latitude); setUserLng(pos.coords.longitude); },
-      () => {},
-      { timeout: 8000 }
-    );
-  }, [urlLat, urlLng]);
-
-  useEffect(() => {
     let cancelled = false;
+
+    if (!apiLocationParams) {
+      setLoading(false);
+      setError(null);
+      setDeals([]);
+      return () => { cancelled = true; };
+    }
+
     async function fetchDeals() {
       setLoading(true);
       setError(null);
       try {
         const params = new URLSearchParams();
-        if (urlCity) params.set("city", urlCity);
-        if (urlState) params.set("state", urlState);
-        if (userLat != null && userLng != null) {
-          params.set("lat", userLat);
-          params.set("lng", userLng);
+        for (const [key, value] of Object.entries(apiLocationParams)) {
+          if (value !== null && value !== undefined && value !== "") {
+            params.set(key, String(value));
+          }
         }
         const response = await fetch(`${API_BASE}/deals?${params.toString()}`);
         const data = await response.json().catch(() => ({}));
@@ -259,7 +251,7 @@ export default function DealsPage() {
     }
     fetchDeals();
     return () => { cancelled = true; };
-  }, [urlCity, urlState, userLat, userLng]);
+  }, [apiLocationParams]);
 
   const filteredDeals = useMemo(() => {
     if (!searchQuery.trim()) return deals;
@@ -283,11 +275,6 @@ export default function DealsPage() {
     });
   }, [deals]);
 
-  const hasLocation = userLat != null && userLng != null;
-  const locationContextLabel = locationLabel
-    ? `Near ${locationLabel}`
-    : hasLocation ? "Near you" : "Nearby";
-
   function toggleRestaurant(groupKey) {
     setExpandedRestaurants((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
   }
@@ -297,8 +284,12 @@ export default function DealsPage() {
     const shareUrl = dealUrl
       ? new URL(dealUrl, window.location.origin).toString()
       : buildRestaurantScopedShareUrl({
-          origin: window.location.origin, city: urlCity, state: urlState,
-          lat: userLat, lng: userLng, restaurantId: group.restaurantId || group.key,
+          origin: window.location.origin,
+          city: locationModel.city,
+          state: locationModel.state,
+          lat: apiLocationParams?.lat ?? null,
+          lng: apiLocationParams?.lng ?? null,
+          restaurantId: group.restaurantId || group.key,
         });
     try {
       await shareLink({
@@ -329,6 +320,34 @@ export default function DealsPage() {
         pricingLabel: hasDealPrice ? "Deal applied" : "",
       },
     });
+  }
+
+  if (!apiLocationParams) {
+    return (
+      <div style={{ position: "relative", minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+        <StickyPageHeader title="Deals" />
+        <div style={{ maxWidth: 576, margin: "0 auto", padding: "18px 14px 80px" }}>
+          <div
+            style={{
+              padding: "20px 18px",
+              borderRadius: 14,
+              border: "1px solid #e4e7ec",
+              background: "#fff",
+              fontSize: 14,
+              fontWeight: 700,
+              color: "#475467",
+              lineHeight: 1.5,
+            }}
+          >
+            <strong style={{ display: "block", marginBottom: 8, color: "#101828" }}>
+              Location is required
+            </strong>
+            Open this page with a valid city/state or geo URL.
+          </div>
+        </div>
+        <BottomNav />
+      </div>
+    );
   }
 
   return (
@@ -363,7 +382,7 @@ export default function DealsPage() {
         {/* Page title row */}
         <div style={{ padding: "10px 16px 0", textAlign: "center" }}>
           <span style={{ fontSize: 18, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em" }}>
-            🔥 Deals Near {locationLabel || "You"}
+            🔥 Deals Near {locationLabel}
           </span>
         </div>
       </div>

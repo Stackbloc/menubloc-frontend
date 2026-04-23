@@ -157,6 +157,55 @@ function formatPerOzValue(value, suffix = "") {
   return `${rounded}${suffix}`;
 }
 
+function numberOrNull(value) {
+  if (value == null || value === "") return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function formatGoalMetric(value, unit) {
+  const numeric = numberOrNull(value);
+  if (numeric == null) return "—";
+  const rounded = Math.round(numeric * 10) / 10;
+  const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return `${text} ${unit}`;
+}
+
+function buildGoalSupportSections(item, detailSystem) {
+  const goalSupport = item?.chips?.goals || {};
+  const chipNutrition = item?.nutritionChip || {};
+  const detailNutrition = detailSystem?.nutrition || {};
+  const readValue = (key) => chipNutrition?.[key] ?? detailNutrition?.[key] ?? null;
+
+  return [
+    {
+      key: "energy",
+      title: "Supports Energy",
+      supported: goalSupport?.energy?.supported === true,
+      rows: [
+        { label: "Iron", value: readValue("iron_mg"), unit: "mg" },
+        { label: "Vitamin B12", value: readValue("vitamin_b12_mcg"), unit: "mcg" },
+      ],
+    },
+    {
+      key: "immunity",
+      title: "Supports Immunity",
+      supported: goalSupport?.immunity?.supported === true,
+      rows: [
+        { label: "Vitamin C", value: readValue("vitamin_c_mg"), unit: "mg" },
+        { label: "Zinc", value: readValue("zinc_mg"), unit: "mg" },
+        { label: "Vitamin A", value: readValue("vitamin_a_mcg"), unit: "mcg" },
+      ],
+    },
+  ]
+    .filter((section) => section.supported)
+    .map((section) => ({
+      ...section,
+      rows: section.rows.filter((row) => numberOrNull(row.value) != null),
+    }))
+    .filter((section) => section.rows.length > 0);
+}
+
 function normalizeLabel(value) {
   return String(value || "")
     .trim().replace(/_/g, " ").replace(/\s+/g, " ").toLowerCase()
@@ -438,7 +487,7 @@ function BreadScoreInline({ detailSystem }) {
   );
 }
 
-function NutritionCard({ detailSystem, t }) {
+function NutritionCard({ detailSystem, goalSupportSections = [], t }) {
   const nutrition = detailSystem?.nutrition || {};
   const category = detailCategory(detailSystem);
   const reliability = confidenceLevel(detailSystem);
@@ -503,6 +552,29 @@ function NutritionCard({ detailSystem, t }) {
               </div>
             ))}
           </div>
+        </div>
+      ) : null}
+      {goalSupportSections.length ? (
+        <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
+          {goalSupportSections.map((section) => (
+            <div key={section.key} style={{ borderRadius: 16, border: "1px solid rgba(20,33,27,0.08)", background: "#f7faf8", padding: "14px 16px" }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: "#1F4E3D", marginBottom: 8 }}>
+                {section.title}
+              </div>
+              <div style={{ display: "grid", gap: 6 }}>
+                {section.rows.map((row) => (
+                  <div key={row.label} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+                    <div style={{ fontSize: 13, color: "#344054", fontWeight: 700 }}>
+                      {row.label}
+                    </div>
+                    <div style={{ fontSize: 14, color: "#15241d", fontWeight: 900, textAlign: "right" }}>
+                      {formatGoalMetric(row.value, row.unit)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       ) : null}
       <div style={{ marginTop: 14, fontSize: 13, lineHeight: 1.5, color: "#617167", fontWeight: 700 }}>
@@ -709,15 +781,16 @@ function IngredientFlagsCard({ detailSystem, t }) {
   );
 }
 
-function NutritionInsightsCluster({ detailSystem, isMobile, t, indulgencePresentation = null }) {
+function NutritionInsightsCluster({ item, detailSystem, isMobile, t, indulgencePresentation = null }) {
   const category = detailCategory(detailSystem);
   const showInsights = category === "entree" && confidenceLevel(detailSystem) !== "low";
+  const goalSupportSections = buildGoalSupportSections(item, detailSystem);
   return (
     <Surface style={{ marginTop: 22, padding: isMobile ? 18 : 22 }}>
       <Eyebrow>{t("menuItemDetail.nutritionAndInsights", "Nutrition & Insights")}</Eyebrow>
       <div style={{ display: "grid", gap: 18 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18, alignItems: "start" }}>
-          <NutritionCard detailSystem={detailSystem} t={t} />
+          <NutritionCard detailSystem={detailSystem} goalSupportSections={goalSupportSections} t={t} />
           {showInsights ? (
             <InsightsCard detailSystem={detailSystem} t={t} />
           ) : null}
@@ -1104,6 +1177,7 @@ export default function MenuItemInfoPage() {
           ) : null}
           <PreparationCard detailSystem={detailSystem} t={t} />
           <NutritionInsightsCluster
+            item={item}
             detailSystem={detailSystem}
             isMobile={isMobile}
             t={t}

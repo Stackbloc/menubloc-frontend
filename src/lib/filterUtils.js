@@ -1,6 +1,7 @@
 export const FILTER_KEYS = [
   "vegan", "vegetarian", "gluten_free", "dairy_free",
   "diabetic_friendly", "keto", "low_sodium", "deals",
+  "energy", "immunity", "vitamin_c",
 ];
 
 export const FILTER_LABELS = {
@@ -12,11 +13,15 @@ export const FILTER_LABELS = {
   keto: "Keto",
   low_sodium: "Low-Sodium",
   deals: "Deals",
+  energy: "Energy",
+  immunity: "Immunity",
+  vitamin_c: "High Vitamin C",
 };
 
 export const EMPTY_FILTERS = Object.fromEntries(FILTER_KEYS.map((k) => [k, false]));
 
 export function parseFiltersFromUrl(params) {
+  const goal = String(params.get("goal") || "").trim().toLowerCase();
   return {
     vegan: params.get("vegan") === "1",
     vegetarian: params.get("vegetarian") === "1",
@@ -26,6 +31,9 @@ export function parseFiltersFromUrl(params) {
     keto: params.get("keto") === "1" || params.get("low_carb") === "1",
     low_sodium: params.get("low_sodium") === "1",
     deals: params.get("deals") === "1" || params.get("deals_only") === "1",
+    energy: goal === "energy",
+    immunity: goal === "immunity",
+    vitamin_c: goal === "vitamin_c",
   };
 }
 
@@ -45,6 +53,10 @@ export function filtersToUrlParams(filters, baseParams) {
     if (filters[filterKey]) next.set(paramKey, "1");
     else next.delete(paramKey);
   }
+  if (filters.energy && !filters.immunity && !filters.vitamin_c) next.set("goal", "energy");
+  else if (filters.immunity && !filters.energy && !filters.vitamin_c) next.set("goal", "immunity");
+  else if (filters.vitamin_c && !filters.energy && !filters.immunity) next.set("goal", "vitamin_c");
+  else next.delete("goal");
   next.delete("low_carb");
   next.delete("deals_only");
   return next;

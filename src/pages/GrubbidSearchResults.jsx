@@ -393,6 +393,7 @@ export default function GrubbidSearchResults() {
   const low_sodium = params.get("low_sodium") === "1";
   const dairy_free = params.get("dairy_free") === "1";
   const diabetic_friendly = params.get("diabetic_friendly") === "1";
+  const goal = String(params.get("goal") || "").trim().toLowerCase();
 
   const locationModel = useMemo(() => parseLocationFromSearch(params), [params]);
   const apiLocationParams = useMemo(() => buildApiLocationParams(locationModel), [locationModel]);
@@ -442,6 +443,7 @@ export default function GrubbidSearchResults() {
     }
 
     if (deals_only) u.searchParams.set("deals_only", "1");
+    if (goal === "energy" || goal === "immunity" || goal === "vitamin_c") u.searchParams.set("goal", goal);
 
     for (const [key, value] of Object.entries(apiLocationParams)) {
       u.searchParams.set(key, String(value));
@@ -460,6 +462,7 @@ export default function GrubbidSearchResults() {
     keto,
     low_sodium,
     deals_only,
+    goal,
     routeCuisine,
     routeCategory,
   ]);
@@ -627,6 +630,12 @@ export default function GrubbidSearchResults() {
 
   function toggleSearchFilter(key) {
     const next = { ...activeFilters, [key]: !activeFilters[key] };
+    if (key === "energy") next.immunity = false;
+    if (key === "immunity") next.energy = false;
+    if (key === "vitamin_c") {
+      next.energy = false;
+      next.immunity = false;
+    }
     const nextParams = filtersToUrlParams(next, params);
     navigate("?" + nextParams.toString(), { replace: true });
   }
@@ -640,8 +649,11 @@ export default function GrubbidSearchResults() {
     if (low_sodium) labels.push("Low-Sodium");
     if (dairy_free) labels.push("Dairy-Free");
     if (diabetic_friendly) labels.push("Diabetic-Friendly");
+    if (goal === "energy") labels.push("Energy");
+    if (goal === "immunity") labels.push("Immunity");
+    if (goal === "vitamin_c") labels.push("High Vitamin C");
     return labels;
-  }, [vegan, vegetarian, gluten_free, keto, low_sodium, dairy_free, diabetic_friendly]);
+  }, [vegan, vegetarian, gluten_free, keto, low_sodium, dairy_free, diabetic_friendly, goal]);
   const hasDietFilter = activeDietFilterLabels.length > 0;
 
   const crossRestaurantItems = useMemo(() => {

@@ -375,11 +375,6 @@ export default function BrowseMenus() {
     };
   }, [apiLocationParams, filters, cuisineOptions, localFilters]);
 
-  const showEmptyState = !loading && !error && menus.length === 0;
-  const effectiveAllergenFilter = isAuthenticated
-    ? (responseAllergenFilter || consumerAllergenFilter || null)
-    : null;
-
   const alphaRanges = [
     { label: "A – I", letters: new Set("ABCDEFGHI".split("")) },
     { label: "J – R", letters: new Set("JKLMNOPQR".split("")) },
@@ -399,6 +394,11 @@ export default function BrowseMenus() {
     }
     return true;
   });
+
+  const showEmptyState = !loading && !error && visibleMenus.length === 0;
+  const effectiveAllergenFilter = isAuthenticated
+    ? (responseAllergenFilter || consumerAllergenFilter || null)
+    : null;
 
   if (!apiLocationParams) {
     return (
@@ -596,13 +596,13 @@ export default function BrowseMenus() {
             {(error || showEmptyState) ? (
               <StatusMessage tone="muted">
                 <strong style={{ display: "block", marginBottom: 8, color: "var(--gb-color-ink-strong)" }}>
-                  {t("browse.emptyTitle", "No local menus available in this area")}
+                  {error ? "No local menus available in this area" : "No menus found in this area yet."}
                 </strong>
-                {error || t("browse.emptyBody", "We are constantly adding menus. Please check back soon.")}
+                {error || "Try another city or check back soon."}
               </StatusMessage>
             ) : null}
 
-            {!loading && !error && menus.length > 0 ? (
+            {!loading && !error && visibleMenus.length > 0 ? (
               <>
                 <div
                   style={{
