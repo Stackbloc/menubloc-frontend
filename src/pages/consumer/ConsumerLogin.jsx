@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
@@ -28,6 +29,7 @@ export default function ConsumerLogin() {
   const [formError, setFormError] = useState("");
   const [socialError, setSocialError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [smsOpen, setSmsOpen] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -197,7 +199,23 @@ export default function ConsumerLogin() {
           onGoogleCredential={handleGoogle}
           onApplePayload={handleApple}
         />
+
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          <button
+            type="button"
+            onClick={() => setSmsOpen(true)}
+            style={{ background: "none", border: "none", color: "#1F4E3D", fontWeight: 800, fontSize: 14, cursor: "pointer", textDecoration: "underline" }}
+          >
+            Sign in with phone number
+          </button>
+        </div>
       </AuthPageFrame>
+
+      <SmsAuthModal
+        open={smsOpen}
+        onClose={() => setSmsOpen(false)}
+        onSuccess={() => navigate(redirectTo, { replace: true })}
+      />
       <BottomNav />
     </>
   );
