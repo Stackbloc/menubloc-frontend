@@ -157,6 +157,34 @@ function formatPerOzValue(value, suffix = "") {
   return `${rounded}${suffix}`;
 }
 
+function scaleMacroValue(value, multiplier) {
+  if (value == null || Number.isNaN(Number(value))) return value;
+  return Number(value) * multiplier;
+}
+
+function roundPortionOz(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return null;
+  return Math.max(1, Math.round(numeric));
+}
+
+function buildPortionEstimate(calories, caloriesPerOz) {
+  const totalCalories = Number(calories);
+  const perOzCalories = Number(caloriesPerOz);
+  if (!Number.isFinite(totalCalories) || totalCalories <= 0) return null;
+  if (!Number.isFinite(perOzCalories) || perOzCalories <= 0) return null;
+
+  const estimatedOz = totalCalories / perOzCalories;
+  const options = [
+    { key: "small", label: "Small", multiplier: 0.75, ounces: roundPortionOz(estimatedOz * 0.75) },
+    { key: "medium", label: "Medium", multiplier: 1, ounces: roundPortionOz(estimatedOz) },
+    { key: "large", label: "Large", multiplier: 1.5, ounces: roundPortionOz(estimatedOz * 1.5) },
+  ];
+
+  if (options.some((option) => option.ounces == null)) return null;
+  return options;
+}
+
 function normalizeLabel(value) {
   return String(value || "")
     .trim().replace(/_/g, " ").replace(/\s+/g, " ").toLowerCase()
@@ -447,21 +475,36 @@ function NutritionCard({ detailSystem, t }) {
   const isDessertOrBread = category === "dessert" || category === "pure_bread";
   const isEntree = !isDrink && !isDessertOrBread;
   const perOz = nutrition?.per_oz || null;
+  const portionOptions = buildPortionEstimate(nutrition.calories, perOz?.calories_kcal);
+  const [portionMenuOpen, setPortionMenuOpen] = useState(false);
+  const [selectedPortionKey, setSelectedPortionKey] = useState("medium");
+  const selectedPortion = portionOptions?.find((option) => option.key === selectedPortionKey) || portionOptions?.[1] || null;
+  const portionScale = selectedPortion?.multiplier || 1;
+  const scaledNutrition = {
+    calories: scaleMacroValue(nutrition.calories, portionScale),
+    fat_g: scaleMacroValue(nutrition.fat_g, portionScale),
+    saturated_fat_g: scaleMacroValue(nutrition.saturated_fat_g, portionScale),
+    carbs_g: scaleMacroValue(nutrition.carbs_g, portionScale),
+    fiber_g: scaleMacroValue(nutrition.fiber_g, portionScale),
+    sugar_g: scaleMacroValue(nutrition.sugar_g, portionScale),
+    protein_g: scaleMacroValue(nutrition.protein_g, portionScale),
+    sodium_mg: scaleMacroValue(nutrition.sodium_mg, portionScale),
+  };
   const pairs = isEntree
     ? [
-        { label: "Calories", value: formatMacro(nutrition.calories), dv: wholeDv(nutrition.calories, DAILY_CALORIES, isReliable) },
-        { label: "Fat", value: formatMacro(nutrition.fat_g, "g"), dv: wholeDv(nutrition.fat_g, DAILY_FAT_G, isReliable) },
-        { label: "Saturated Fat", value: formatMacro(nutrition.saturated_fat_g, "g"), dv: wholeDv(nutrition.saturated_fat_g, DAILY_SAT_FAT_G, isReliable) },
-        { label: "Carbs", value: formatMacro(nutrition.carbs_g, "g"), dv: wholeDv(nutrition.carbs_g, DAILY_CARBS_G, isReliable) },
-        { label: "Fiber", value: formatMacro(nutrition.fiber_g, "g"), dv: wholeDv(nutrition.fiber_g, DAILY_FIBER_G, isReliable) },
-        { label: "Sugar", value: formatMacro(nutrition.sugar_g, "g"), dv: null },
-        { label: "Protein", value: formatMacro(nutrition.protein_g, "g"), dv: wholeDv(nutrition.protein_g, DAILY_PROTEIN_G, isReliable) },
-        { label: "Sodium", value: formatMacro(nutrition.sodium_mg, "mg"), dv: wholeDv(nutrition.sodium_mg, DAILY_SODIUM_MG, isReliable) },
+        { label: "Calories", value: formatMacro(scaledNutrition.calories), dv: wholeDv(scaledNutrition.calories, DAILY_CALORIES, isReliable) },
+        { label: "Fat", value: formatMacro(scaledNutrition.fat_g, "g"), dv: wholeDv(scaledNutrition.fat_g, DAILY_FAT_G, isReliable) },
+        { label: "Saturated Fat", value: formatMacro(scaledNutrition.saturated_fat_g, "g"), dv: wholeDv(scaledNutrition.saturated_fat_g, DAILY_SAT_FAT_G, isReliable) },
+        { label: "Carbs", value: formatMacro(scaledNutrition.carbs_g, "g"), dv: wholeDv(scaledNutrition.carbs_g, DAILY_CARBS_G, isReliable) },
+        { label: "Fiber", value: formatMacro(scaledNutrition.fiber_g, "g"), dv: wholeDv(scaledNutrition.fiber_g, DAILY_FIBER_G, isReliable) },
+        { label: "Sugar", value: formatMacro(scaledNutrition.sugar_g, "g"), dv: null },
+        { label: "Protein", value: formatMacro(scaledNutrition.protein_g, "g"), dv: wholeDv(scaledNutrition.protein_g, DAILY_PROTEIN_G, isReliable) },
+        { label: "Sodium", value: formatMacro(scaledNutrition.sodium_mg, "mg"), dv: wholeDv(scaledNutrition.sodium_mg, DAILY_SODIUM_MG, isReliable) },
       ]
     : [
-        { label: "Calories", value: formatMacro(nutrition.calories), dv: null },
-        { label: "Carbs", value: formatMacro(nutrition.carbs_g, "g"), dv: null },
-        { label: "Sugar", value: formatMacro(nutrition.sugar_g, "g"), dv: null },
+        { label: "Calories", value: formatMacro(scaledNutrition.calories), dv: null },
+        { label: "Carbs", value: formatMacro(scaledNutrition.carbs_g, "g"), dv: null },
+        { label: "Sugar", value: formatMacro(scaledNutrition.sugar_g, "g"), dv: null },
       ].filter((entry) => entry.value !== "—");
   const perOzRows = perOz
     ? [
@@ -474,6 +517,62 @@ function NutritionCard({ detailSystem, t }) {
 
   return (
     <SectionCard title={t("menuItemDetail.nutritionTitle", "Nutrition")} eyebrow={t("menuItemDetail.decisionData", "Decision Data")}>
+      {portionOptions && selectedPortion ? (
+        <div style={{ marginBottom: 16 }}>
+          <button
+            type="button"
+            onClick={() => setPortionMenuOpen((open) => !open)}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              borderRadius: 16,
+              border: "1px solid rgba(20,33,27,0.10)",
+              background: "#fbfaf6",
+              padding: "12px 14px",
+              cursor: "pointer",
+              color: "#15241d",
+              textAlign: "left",
+            }}
+          >
+            <span style={{ fontSize: 14, fontWeight: 900 }}>
+              {`Portion Size: ${selectedPortion.label} (~${selectedPortion.ounces} oz)`}
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 900, color: "#617167" }}>
+              {portionMenuOpen ? "Hide" : "Change"}
+            </span>
+          </button>
+          {portionMenuOpen ? (
+            <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
+              {portionOptions.map((option) => {
+                const active = option.key === selectedPortion.key;
+                return (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setSelectedPortionKey(option.key)}
+                    style={{
+                      borderRadius: 14,
+                      border: active ? "1px solid rgba(18,75,163,0.28)" : "1px solid rgba(20,33,27,0.08)",
+                      background: active ? "rgba(18,75,163,0.08)" : "#fbfaf6",
+                      padding: "12px 10px",
+                      cursor: "pointer",
+                      color: "#15241d",
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 900 }}>{option.label}</div>
+                    <div style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: "#617167" }}>
+                      {`(~${option.ounces} oz)`}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <div style={{ display: "grid", gap: 10 }}>
         {pairs.map((entry) => (
           <div key={entry.label} style={{ borderRadius: 16, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: "12px 14px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
