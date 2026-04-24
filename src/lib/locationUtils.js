@@ -91,9 +91,11 @@ export function buildSearchLocationParams({
   if (explicitLocation.near) params.set("near", explicitLocation.near);
   if (explicitLocation.label) params.set("location_label", explicitLocation.label);
 
-  if (!explicitLocation.label && autoLocation?.lat != null && autoLocation?.lng != null) {
-    params.set("lat", String(autoLocation.lat));
-    params.set("lng", String(autoLocation.lng));
+  const autoLat = autoLocation?.lat;
+  const autoLng = autoLocation?.lng;
+  if (!explicitLocation.label && autoLat && autoLng && Number.isFinite(autoLat) && Number.isFinite(autoLng)) {
+    params.set("lat", String(autoLat));
+    params.set("lng", String(autoLng));
     if (radiusMiles != null) params.set("radius_miles", String(radiusMiles));
     if (autoLocation.city) params.set("city", autoLocation.city);
     if (autoLocation.state) params.set("state", autoLocation.state);
@@ -112,22 +114,24 @@ export function buildBrowseLocationParams({
   const params = {};
   const city = String(urlCity || "").trim();
   const state = String(urlState || "").trim();
-  const hasCoords = coords?.lat != null && coords?.lng != null;
+  const lat = coords?.lat;
+  const lng = coords?.lng;
+  const hasCoords = lat && lng && Number.isFinite(lat) && Number.isFinite(lng);
 
   if (city) {
     params.city = city;
     if (state) params.state = state;
     if (hasCoords) {
-      params.lat = coords.lat;
-      params.lng = coords.lng;
+      params.lat = lat;
+      params.lng = lng;
       if (radiusMiles != null) params.radius = radiusMiles;
     }
     return params;
   }
 
   if (hasCoords) {
-    params.lat = coords.lat;
-    params.lng = coords.lng;
+    params.lat = lat;
+    params.lng = lng;
     if (radiusMiles != null) params.radius = radiusMiles;
   }
 
