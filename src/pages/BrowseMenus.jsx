@@ -559,7 +559,9 @@ export default function BrowseMenus() {
               }}
             >
               <div className="gb-count-label" style={{ whiteSpace: "nowrap" }}>
-                {visibleMenus.length === 1
+                {loading
+                  ? "Loading…"
+                  : visibleMenus.length === 1
                   ? t("browse.menuCountSingle", "1 menu", { count: visibleMenus.length })
                   : t("browse.menuCountPlural", `${visibleMenus.length} menus`, { count: visibleMenus.length })}
               </div>

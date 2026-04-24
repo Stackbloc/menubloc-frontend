@@ -90,11 +90,12 @@ function extractRestaurantNamesOrDistances(bodyText) {
 function hasMenuOrDealOrSearchContent(bodyText) {
   const text = normalizeText(bodyText).toLowerCase();
   return (
-    /\b\d+\s+menus?\b/.test(text) ||
+    /\d+\s+menus?/.test(text) ||
     /\b\d+\s+deals?\b/.test(text) ||
     /\b\d+\s+dishes?\s+found\b/.test(text) ||
     text.includes("view deal") ||
     text.includes("load more") ||
+    text.includes("view menu") ||
     extractRestaurantNamesOrDistances(text).length > 0
   );
 }

@@ -54,8 +54,6 @@ import {
   computeInsights,
 } from "../lib/nutritionInsights.js";
 
-const MATCH_LABEL = "Match:";
-
 /* ---- Helpers ---- */
 
 function asStr(v) {
@@ -95,41 +93,6 @@ function normalizeGoalKey(value) {
   const normalized = asStr(value).toLowerCase();
   if (normalized === "energy" || normalized === "immunity" || normalized === "vitamin_c") return normalized;
   return "";
-}
-
-function formatGoalLabel(goal) {
-  if (goal === "energy") return "Energy";
-  if (goal === "immunity") return "Immunity";
-  if (goal === "vitamin_c") return "Vitamin C";
-  return "";
-}
-
-function formatGoalSignalValue(value) {
-  const numeric = asNum(value);
-  if (numeric === null) return null;
-  const rounded = Math.round(numeric * 10) / 10;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
-}
-
-function buildGoalMatchPreview(chips, goal) {
-  const normalizedGoal = normalizeGoalKey(goal);
-  if (!normalizedGoal) return null;
-
-  const goalData = chips?.goals?.[normalizedGoal];
-  if (!goalData?.supported) return null;
-
-  const label = formatGoalLabel(normalizedGoal);
-  const signal = goalData?.primary_signal || null;
-  const signalValue = formatGoalSignalValue(signal?.value);
-  const secondaryText =
-    signal?.label && signal?.unit && signalValue
-      ? `+${signalValue} ${signal.unit} ${signal.label}`
-      : null;
-
-  return {
-    text: `Supports ${label}`,
-    secondaryText,
-  };
 }
 
 function normalizeAllergenList(rawAllergens) {
@@ -951,10 +914,8 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
   const hasDeal = asBool(resolveItemFlag(row, "has_active_deal"));
   const isVegan = asBool(resolveItemFlag(row, "is_vegan"));
   const isGF = asBool(resolveItemFlag(row, "is_gluten_free"));
-  const matchPreview = buildMatchPreview(row, queryMeta, matchContext);
   const activeGoal = normalizeGoalKey(new URLSearchParams(location.search).get("goal"));
-  const goalMatchPreview = buildGoalMatchPreview(chips, activeGoal);
-  const resolvedMatchPreview = goalMatchPreview || matchPreview;
+  const matchPreview = buildMatchPreview(row, queryMeta, { ...matchContext, activeGoal });
 
   const nutChip = chips?.nutrition_chip || {};
 
@@ -1053,7 +1014,7 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
           ) : null}
       </div>
 
-      {resolvedMatchPreview ? (
+      {matchPreview ? (
         <div
           style={{
             marginTop: 8,
@@ -1063,16 +1024,8 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
             fontWeight: 650,
             overflowWrap: "anywhere",
           }}
-        >
-          <span style={{ color: "#475467", fontWeight: 800 }}>
-            {MATCH_LABEL}{" "}
-          </span>
-          <span>{resolvedMatchPreview.text}</span>
-          {goalMatchPreview?.secondaryText ? (
-            <div style={{ marginTop: 2, color: "#98a2b3", fontWeight: 700, fontSize: 12 }}>
-              {goalMatchPreview.secondaryText}
-            </div>
-          ) : null}
+      >
+          <span>{matchPreview.text}</span>
         </div>
       ) : null}
 
