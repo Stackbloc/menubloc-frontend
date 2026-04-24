@@ -948,9 +948,9 @@ export default function GrubbidDiscovery() {
               textAlign: "center", padding: "48px 20px",
               color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
             }}>
-              {autoLocation.status === "denied"
+              {!appliedLocation && autoLocation.status === "denied"
                 ? "Enable location access to see menus, or tap your location to enter a city."
-                : "No menus found. Try changing your location."}
+                : "No menus found in this area yet. Try another city."}
             </div>
           ) : (
             <div className="disc-feed-grid">
