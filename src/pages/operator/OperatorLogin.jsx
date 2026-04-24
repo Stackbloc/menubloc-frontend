@@ -8,6 +8,7 @@
 import React, { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
+import OperatorSmsAuthModal from "../../components/auth/OperatorSmsAuthModal.jsx";
 import {
   AuthPageFrame,
   FormError,
@@ -16,7 +17,7 @@ import {
 } from "../../components/consumer/ConsumerAuthShared.jsx";
 
 export default function OperatorLogin() {
-  const { login, isAuthenticated, loading } = useOperator();
+  const { login, isAuthenticated, loading, sendSmsCode, verifySmsCode } = useOperator();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -24,6 +25,7 @@ export default function OperatorLogin() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [smsOpen, setSmsOpen] = useState(false);
 
   if (!loading && isAuthenticated) {
     return <Navigate to="/operator" replace />;
@@ -115,6 +117,24 @@ export default function OperatorLogin() {
           {busy ? "Signing in..." : "Sign in"}
         </button>
       </form>
+
+      <div style={{ textAlign: "center", marginTop: 16 }}>
+        <button
+          type="button"
+          onClick={() => setSmsOpen(true)}
+          style={{ background: "none", border: "none", color: "#1F4E3D", fontWeight: 800, fontSize: 14, cursor: "pointer", textDecoration: "underline" }}
+        >
+          Sign in with phone number
+        </button>
+      </div>
+
+      <OperatorSmsAuthModal
+        open={smsOpen}
+        onClose={() => setSmsOpen(false)}
+        sendSmsCode={sendSmsCode}
+        verifySmsCode={verifySmsCode}
+        onSuccess={() => navigate("/operator", { replace: true })}
+      />
     </AuthPageFrame>
   );
 }

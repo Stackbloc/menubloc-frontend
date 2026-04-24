@@ -16,6 +16,8 @@ import {
   loginOperator,
   logoutOperator,
   registerOperator,
+  sendOperatorSmsCode,
+  verifyOperatorSmsCode,
 } from "../lib/operatorApi.js";
 
 const OperatorContext = createContext(null);
@@ -93,6 +95,16 @@ export function OperatorProvider({ children }) {
     clearSession();
   }, [clearSession]);
 
+  const sendSmsCode = useCallback(async (phoneNumber) => {
+    return sendOperatorSmsCode(phoneNumber);
+  }, []);
+
+  const verifySmsCode = useCallback(async (phoneNumber, code) => {
+    await verifyOperatorSmsCode(phoneNumber, code);
+    const me = await loadMe();
+    return { operator: me.operator, restaurants: me.restaurants || [] };
+  }, [loadMe]);
+
   const hasBenefit = useCallback((key) => {
     return subscription?.benefits?.[key]?.is_enabled === true;
   }, [subscription]);
@@ -108,6 +120,8 @@ export function OperatorProvider({ children }) {
     login,
     logout,
     register,
+    sendSmsCode,
+    verifySmsCode,
     refreshRestaurants,
     refreshSession: loadMe,
     hasBenefit,

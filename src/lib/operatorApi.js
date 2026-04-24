@@ -42,6 +42,8 @@ export const loginOperator = (email, password) => post("/operator/auth/login", {
 export const registerOperator = (email, password, full_name) =>
   post("/operator/auth/register", { email, password, full_name });
 export const logoutOperator = () => post("/operator/auth/logout", {});
+export const sendOperatorSmsCode   = (phone_number)       => post("/operator/auth/sms/send",   { phone_number });
+export const verifyOperatorSmsCode = (phone_number, code) => post("/operator/auth/sms/verify", { phone_number, code });
 export const requestOperatorRecovery = (email) => post("/operator/auth/forgot", { email });
 export const validateOperatorResetToken = (token) =>
   get(`/operator/auth/reset-password?token=${encodeURIComponent(token)}`);
