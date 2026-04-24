@@ -286,7 +286,7 @@ export default function GrubbidDiscovery() {
 
     if (locationManuallySet.current) return;
 
-    setAppliedLocation("");
+    setAppliedLocation(autoLocation.label);
     if (autoLocation.label) setLocationInput(autoLocation.label);
 
     try {
