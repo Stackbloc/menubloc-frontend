@@ -318,7 +318,7 @@ export default function DealsPage() {
         <StickyPageHeader title="Deals" />
         <div style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: 12 }}>
           {/* Search bar */}
-          <div style={{ padding: "10px 16px 0" }}>
+          <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0" }}>
             <input
               type="search"
               placeholder="Search deals or restaurants…"
@@ -336,7 +336,7 @@ export default function DealsPage() {
           </div>
 
           {/* Page title row */}
-          <div style={{ padding: "10px 16px 0", textAlign: "center" }}>
+          <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0", textAlign: "center" }}>
             <span style={{ fontSize: 18, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em" }}>
               🔥 Deals Near {locationLabel || "You"}
             </span>
