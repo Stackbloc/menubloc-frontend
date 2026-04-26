@@ -39,19 +39,6 @@ const ST = {
   },
   brand:    { fontWeight: 800, fontSize: 18 },
   subbrand: { fontSize: 12, color: "#666", marginBottom: 28 },
-  backBtn: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 4,
-    background: "none",
-    border: "none",
-    padding: 0,
-    fontSize: 13,
-    color: "#666",
-    cursor: "pointer",
-    marginBottom: 20,
-  },
-
   /* Step trail */
   steps: {
     display: "flex",
@@ -494,11 +481,6 @@ export default function ProfileSearchPage() {
         subtitle="for Restaurants"
         logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f7f6f1" }}
       />
-
-      {/* Back */}
-      <button style={ST.backBtn} onClick={() => nav(-1)}>
-        ← Back
-      </button>
 
       {/* Step trail */}
       <div style={ST.steps}>
