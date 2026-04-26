@@ -296,33 +296,34 @@ export default function DealsPage() {
         @keyframes skelPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
       `}</style>
 
-      <StickyPageHeader title="Deals" />
+      {/* ── STICKY TOP: page header + search + location title ── */}
+      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "#f7f6f1" }}>
+        <StickyPageHeader title="Deals" />
+        <div style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: 12 }}>
+          {/* Search bar */}
+          <div style={{ padding: "10px 16px 0" }}>
+            <input
+              type="search"
+              placeholder="Search deals or restaurants…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: "100%", boxSizing: "border-box",
+                height: 36, borderRadius: 999,
+                border: "1.5px solid rgba(0,0,0,0.10)",
+                background: "#fff", padding: "0 14px",
+                fontSize: 13, fontWeight: 600, color: "#101828",
+                outline: "none", boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+              }}
+            />
+          </div>
 
-      {/* ── SUB-HEADER (search + title) ── */}
-      <div style={{ background: "#f7f6f1", borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: 12 }}>
-        {/* Search bar */}
-        <div style={{ padding: "10px 16px 0" }}>
-          <input
-            type="search"
-            placeholder="Search deals or restaurants…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: "100%", boxSizing: "border-box",
-              height: 36, borderRadius: 999,
-              border: "1.5px solid rgba(0,0,0,0.10)",
-              background: "#fff", padding: "0 14px",
-              fontSize: 13, fontWeight: 600, color: "#101828",
-              outline: "none", boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
-            }}
-          />
-        </div>
-
-        {/* Page title row */}
-        <div style={{ padding: "10px 16px 0", textAlign: "center" }}>
-          <span style={{ fontSize: 18, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em" }}>
-            🔥 Deals Near {locationLabel || "You"}
-          </span>
+          {/* Page title row */}
+          <div style={{ padding: "10px 16px 0", textAlign: "center" }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em" }}>
+              🔥 Deals Near {locationLabel || "You"}
+            </span>
+          </div>
         </div>
       </div>
 
