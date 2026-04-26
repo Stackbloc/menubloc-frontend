@@ -5,6 +5,50 @@ const frontendBaseUrl = (process.env.VERIFY_FRONTEND_URL || "http://127.0.0.1:41
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH
   || "/Users/andrebarber/Library/Caches/ms-playwright/chromium-1208/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing";
 
+async function checkEndpoint(url, label) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2000);
+
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      throw new Error(`${label} responded with status ${res.status}`);
+    }
+
+    return true;
+  } catch (err) {
+    clearTimeout(timeout);
+
+    if (err.name === "AbortError") {
+      throw new Error(`${label} not reachable (timeout)`);
+    }
+
+    throw new Error(`${label} not reachable (${err.message})`);
+  }
+}
+
+async function preflightCheck() {
+  try {
+    await checkEndpoint("http://127.0.0.1:3001/health", "Backend");
+  } catch (err) {
+    console.error("❌ Backend not running on :3001");
+    console.error(err.message);
+    process.exit(1);
+  }
+
+  try {
+    await checkEndpoint("http://127.0.0.1:4173/", "Frontend");
+  } catch (err) {
+    console.error("❌ Frontend not running on :4173");
+    console.error(err.message);
+    process.exit(1);
+  }
+
+  console.log("✅ Preflight check passed (backend + frontend reachable)");
+}
+
 async function fetchJsonOrThrow(url) {
   const response = await fetch(url, { headers: { accept: "application/json" } });
   const text = await response.text();
@@ -44,6 +88,65 @@ function assertCheck(condition, message, details = {}) {
     error.details = details;
     throw error;
   }
+}
+
+async function verifyDiscoveryTyping(page) {
+  await page.goto(`${frontendBaseUrl}/`, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await page.waitForLoadState("load", { timeout: 15000 });
+  await page.waitForTimeout(3000);
+
+  const discoveryBody = await page.textContent("body");
+  assertCheck(/Search/i.test(discoveryBody || ""), "Discovery page must load");
+  assertCheck(
+    /Los Angeles, CA|Pasadena, CA/.test(discoveryBody || ""),
+    "Discovery page must show an auto-detected location label",
+    { bodySnippet: String(discoveryBody || "").slice(0, 500) }
+  );
+
+  const input = page.locator(".disc-search-input");
+  await input.waitFor({ state: "visible", timeout: 15000 });
+
+  const cardSelector = 'a[href*="/public/restaurants/"]';
+  const countCards = async () => page.locator(cardSelector).count();
+  const initialCardCount = await countCards();
+
+  assertCheck(
+    initialCardCount > 0,
+    "Discovery page must show default cards before typing",
+    { initialCardCount }
+  );
+
+  const typingSnapshots = [];
+  for (const term of ["c", "ch", "chi", "chick", "chicken"]) {
+    await input.fill(term);
+    await page.waitForTimeout(350);
+    const cardCount = await countCards();
+    typingSnapshots.push({ term, cardCount });
+    assertCheck(
+      cardCount > 0,
+      `Discovery cards vanished while typing "${term}"`,
+      { term, cardCount }
+    );
+  }
+
+  await input.press("Enter");
+  await page.waitForURL((url) => url.pathname === "/search", { timeout: 15000 });
+  await page.waitForLoadState("load", { timeout: 15000 });
+  await page.waitForFunction(
+    () => {
+      const text = document.body?.innerText || "";
+      return /Results|View Menu|Chipotle Mexican Grill/i.test(text) && !/Loading…|Loading\.\.\./i.test(text);
+    },
+    { timeout: 15000 }
+  );
+
+  return {
+    discoveryAutoLabelDetected: true,
+    discoveryTypingPreservedCards: true,
+    discoveryInitialCardCount: initialCardCount,
+    discoveryTypingSnapshots: typingSnapshots,
+    searchHasResults: true,
+  };
 }
 
 async function verifyBackend() {
@@ -95,16 +198,7 @@ async function verifyFrontend() {
       viewport: { width: 1440, height: 1400 },
     });
     const page = await context.newPage();
-
-    await page.goto(`${frontendBaseUrl}/`, { waitUntil: "domcontentloaded", timeout: 30000 });
-    await page.waitForLoadState("load", { timeout: 15000 });
-    const discoveryBody = await page.textContent("body");
-    assertCheck(/Search/i.test(discoveryBody || ""), "Discovery page must load");
-    assertCheck(
-      /Los Angeles, CA|Pasadena, CA/.test(discoveryBody || ""),
-      "Discovery page must show an auto-detected location label",
-      { bodySnippet: String(discoveryBody || "").slice(0, 500) }
-    );
+    const discoveryChecks = await verifyDiscoveryTyping(page);
 
     await page.goto(`${frontendBaseUrl}/browse-menus?city=Los+Angeles&state=CA`, { waitUntil: "domcontentloaded", timeout: 30000 });
     await page.waitForLoadState("load", { timeout: 15000 });
@@ -137,10 +231,9 @@ async function verifyFrontend() {
     );
 
     return {
-      discoveryAutoLabelDetected: true,
+      ...discoveryChecks,
       browseUrlPreserved: true,
       browseCrossCityLeakage: false,
-      searchHasResults: true,
     };
   } finally {
     await browser.close();
@@ -148,6 +241,7 @@ async function verifyFrontend() {
 }
 
 async function main() {
+  await preflightCheck();
   const backend = await verifyBackend();
   const frontend = await verifyFrontend();
 
