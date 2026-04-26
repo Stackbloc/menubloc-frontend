@@ -133,7 +133,7 @@ async function shareLink({ url, title, text }) {
 
 // ── Deal row card ─────────────────────────────────────────────
 
-function DealRow({ deal, restaurantUrl }) {
+function DealRow({ deal, restaurantUrl, onShare }) {
   const dealUrl = buildDealUrl(deal);
   const link = dealUrl || restaurantUrl;
   return (
@@ -148,24 +148,41 @@ function DealRow({ deal, restaurantUrl }) {
         )}
       </div>
       {deal.description && (
-        <div style={{ fontSize: 12, color: "#667085", marginBottom: 8, lineHeight: 1.45 }}>
+        <div style={{ fontSize: 12, color: "#667085", marginBottom: 6, lineHeight: 1.45 }}>
           {deal.description}
         </div>
       )}
-      {link && (
-        <Link
-          to={link}
-          style={{
-            display: "inline-flex", alignItems: "center",
-            height: 32, padding: "0 14px",
-            borderRadius: 999, background: "#1F4E3D",
-            color: "#fff", fontSize: 12, fontWeight: 800,
-            textDecoration: "none",
-          }}
-        >
-          View deal
-        </Link>
-      )}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+        {link && (
+          <Link
+            to={link}
+            style={{
+              display: "inline-flex", alignItems: "center",
+              height: 26, padding: "0 11px",
+              borderRadius: 999, background: "#1F4E3D",
+              color: "#fff", fontSize: 12, fontWeight: 800,
+              textDecoration: "none",
+            }}
+          >
+            View deal
+          </Link>
+        )}
+        {onShare && (
+          <button
+            type="button"
+            onClick={onShare}
+            aria-label="Share"
+            style={{
+              border: "none", background: "transparent",
+              color: "#9ca3af", cursor: "pointer",
+              padding: "2px 4px", lineHeight: 1,
+              display: "flex", alignItems: "center",
+            }}
+          >
+            <ShareIcon size={12} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -403,14 +420,6 @@ export default function DealsPage() {
                         </div>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleShare(group, group.primaryDeal)}
-                      aria-label="Share"
-                      style={{ border: "none", background: "transparent", color: "#9ca3af", cursor: "pointer", padding: "2px 0 0 8px", lineHeight: 1 }}
-                    >
-                      <ShareIcon size={14} />
-                    </button>
                   </div>
 
                   {/* Primary deal */}
@@ -418,6 +427,7 @@ export default function DealsPage() {
                     <DealRow
                       deal={group.primaryDeal}
                       restaurantUrl={restaurantUrl}
+                      onShare={() => handleShare(group, group.primaryDeal)}
                     />
                   )}
 
@@ -427,6 +437,7 @@ export default function DealsPage() {
                       key={deal.deal_id || deal.id}
                       deal={deal}
                       restaurantUrl={restaurantUrl}
+                      onShare={() => handleShare(group, deal)}
                     />
                   ))}
 
