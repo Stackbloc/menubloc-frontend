@@ -47,6 +47,19 @@ import { getLocalizedField } from "../utils/getLocalizedField.js";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
 
+function useIsMobile(breakpoint = 640) {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < breakpoint
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 /* ---- Theme persistence ---- */
 
 function readTheme() {
@@ -245,6 +258,7 @@ function FieldRow({ label, value, placeholder, isDark }) {
 
 function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
   const isFoodTruck = detectFoodTruck(data);
+  const isMobile = useIsMobile();
 
   const name =
     firstNonEmpty(data?.restaurant_name, data?.name) || `Restaurant ${slugOrId}`;
@@ -306,7 +320,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
           maxWidth: 860,
           margin: "0 auto",
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1.7fr) minmax(280px, 1fr)",
+          gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 1.7fr) minmax(280px, 1fr)",
           gap: 22,
         }}
       >
@@ -321,7 +335,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
         >
           <div
             style={{
-              padding: "24px 24px 22px",
+              padding: isMobile ? "20px 16px 18px" : "24px 24px 22px",
               background: heroBg,
               borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e9eef5",
             }}
@@ -342,7 +356,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
             <h1
               style={{
                 margin: 0,
-                fontSize: 32,
+                fontSize: isMobile ? 24 : 32,
                 lineHeight: 1.1,
                 fontWeight: 900,
                 letterSpacing: "-0.02em",
@@ -367,7 +381,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
             </p>
           </div>
 
-          <div style={{ padding: "8px 24px 24px" }}>
+          <div style={{ padding: isMobile ? "8px 16px 24px" : "8px 24px 24px" }}>
             <FieldRow label={isFoodTruck ? "Food Truck Name" : "Restaurant Name"} value={name} placeholder="" isDark={isDark} />
 
             <FieldRow
@@ -430,7 +444,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
             border: cardBorder,
             boxShadow: cardShadow,
             background: cardBg,
-            padding: 24,
+            padding: isMobile ? 16 : 24,
           }}
         >
           <div
@@ -592,6 +606,7 @@ export default function RestaurantPublicPage() {
   const [followNotice, setFollowNotice] = useState("");
 
   const isDark = theme === "dark";
+  const isMobile = useIsMobile();
   const dataUrl = useMemo(
     () => `${API}/public/restaurants/${encodeURIComponent(slugOrId)}`,
     [slugOrId]
@@ -806,7 +821,7 @@ export default function RestaurantPublicPage() {
       >
         <div
           style={{
-            padding: "24px 24px 22px",
+            padding: isMobile ? "20px 16px 18px" : "24px 24px 22px",
             background: t.heroBg,
             borderBottom: t.heroBorderBottom,
             position: "relative",
@@ -865,7 +880,7 @@ export default function RestaurantPublicPage() {
                 >
                   <h1
                     style={{
-                      fontSize: t.nameSize,
+                      fontSize: isMobile ? Math.min(t.nameSize, 22) : t.nameSize,
                       fontWeight: t.nameWeight,
                       lineHeight: 1.1,
                       color: t.nameColor,
@@ -1056,7 +1071,7 @@ export default function RestaurantPublicPage() {
           </div>
         </div>
 
-        <div style={{ padding: "4px 24px 28px" }}>
+        <div style={{ padding: isMobile ? "4px 16px 24px" : "4px 24px 28px" }}>
           {err && !loading ? (
             <div
               style={{
