@@ -42,8 +42,12 @@ export const loginOperator = (email, password) => post("/operator/auth/login", {
 export const registerOperator = (email, password, full_name) =>
   post("/operator/auth/register", { email, password, full_name });
 export const logoutOperator = () => post("/operator/auth/logout", {});
-export const sendOperatorSmsCode   = (phone_number)       => post("/operator/auth/sms/send",   { phone_number });
-export const verifyOperatorSmsCode = (phone_number, code) => post("/operator/auth/sms/verify", { phone_number, code });
+export const sendOperatorEmailCode = (email) =>
+  post("/restaurant-auth/send-email-code", { email });
+export const resendOperatorEmailCode = (email) =>
+  post("/restaurant-auth/resend-email-code", { email });
+export const verifyOperatorEmailCode = (email, code) =>
+  post("/restaurant-auth/verify-email-code", { email, code });
 export const requestOperatorRecovery = (email) => post("/operator/auth/forgot", { email });
 export const validateOperatorResetToken = (token) =>
   get(`/operator/auth/reset-password?token=${encodeURIComponent(token)}`);

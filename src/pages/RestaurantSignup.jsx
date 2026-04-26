@@ -346,17 +346,14 @@ export default function RestaurantSignup() {
         selected_plan: selectedPlan,
       });
 
-      if (selectedPlan === "verified") {
-        navigateWithRestaurantOnboardingState(nav, DESIGN_SELECTION_ROUTE, {
+      nav("/operator/verify-email", {
+        replace: true,
+        state: {
           ...draftState,
-          plan: "verified",
-        });
-        return;
-      }
-
-      navigateWithRestaurantOnboardingState(nav, PLAN_SELECTION_ROUTE, {
-        ...draftState,
-        plan: selectedPlan,
+          nextPath: selectedPlan === "verified" ? DESIGN_SELECTION_ROUTE : PLAN_SELECTION_ROUTE,
+          autoSend: true,
+          plan: selectedPlan,
+        },
       });
     } catch (error) {
       setServerError(error.message || t("signup.error.signupFailed"));

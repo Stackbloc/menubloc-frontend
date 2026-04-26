@@ -8,7 +8,6 @@
 import React, { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
-import OperatorSmsAuthModal from "../../components/auth/OperatorSmsAuthModal.jsx";
 import {
   AuthPageFrame,
   FormError,
@@ -17,7 +16,7 @@ import {
 } from "../../components/consumer/ConsumerAuthShared.jsx";
 
 export default function OperatorLogin() {
-  const { login, isAuthenticated, loading, sendSmsCode, verifySmsCode } = useOperator();
+  const { login, isAuthenticated, isEmailVerified, loading, operator, restaurants } = useOperator();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -25,10 +24,10 @@ export default function OperatorLogin() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [smsOpen, setSmsOpen] = useState(false);
 
   if (!loading && isAuthenticated) {
-    return <Navigate to="/operator" replace />;
+    const nextPath = restaurants?.length === 0 ? "/operator/claim" : "/operator";
+    return <Navigate to={isEmailVerified ? nextPath : "/operator/verify-email"} replace state={{ email: operator?.email, nextPath }} />;
   }
 
   async function handleSubmit(e) {
@@ -49,6 +48,13 @@ export default function OperatorLogin() {
     try {
       const result = await login(email.trim(), password);
       const dest = result.restaurants?.length === 0 ? "/operator/claim" : "/operator";
+      if (result.operator?.email_verified !== true) {
+        navigate("/operator/verify-email", {
+          replace: true,
+          state: { email: email.trim(), nextPath: dest, autoSend: true },
+        });
+        return;
+      }
       navigate(dest, { replace: true });
     } catch (err) {
       setFormError(err.message || "Sign in failed. Please try again.");
@@ -117,24 +123,6 @@ export default function OperatorLogin() {
           {busy ? "Signing in..." : "Sign in"}
         </button>
       </form>
-
-      <div style={{ textAlign: "center", marginTop: 16 }}>
-        <button
-          type="button"
-          onClick={() => setSmsOpen(true)}
-          style={{ background: "none", border: "none", color: "#1F4E3D", fontWeight: 800, fontSize: 14, cursor: "pointer", textDecoration: "underline" }}
-        >
-          Sign in with phone number
-        </button>
-      </div>
-
-      <OperatorSmsAuthModal
-        open={smsOpen}
-        onClose={() => setSmsOpen(false)}
-        sendSmsCode={sendSmsCode}
-        verifySmsCode={verifySmsCode}
-        onSuccess={() => navigate("/operator", { replace: true })}
-      />
     </AuthPageFrame>
   );
 }
