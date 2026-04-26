@@ -1193,7 +1193,7 @@ export default function PublicMenuPage() {
           padding: isMobile ? "10px 12px" : "12px 20px",
         }}>
           {/* Name + Share row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: addressLine ? 2 : 0 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "wrap", marginBottom: addressLine ? 2 : 0 }}>
             {restaurantProfileHref ? (
               <Link
                 to={restaurantProfileHref}
@@ -1215,14 +1215,6 @@ export default function PublicMenuPage() {
                 {restaurantName}
               </div>
             )}
-            <div style={{ marginLeft: "auto" }} onClick={(e) => e.stopPropagation()}>
-              <ShareButton
-                variant="menu"
-                label="Share this menu"
-                shareData={shareData}
-                analyticsContext={shareAnalyticsContext}
-              />
-            </div>
           </div>
 
           {addressLine ? (
@@ -1247,11 +1239,23 @@ export default function PublicMenuPage() {
             </div>
           ) : null}
 
-          {menuTypeLabel ? (
-            <div style={{ marginTop: 4, display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 999, background: "#f3f4f6", border: "1px solid rgba(18,34,28,0.08)", fontSize: 11, fontWeight: 700, color: "#374151" }}>
-              {menuTypeLabel}
+          <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            {menuTypeLabel ? (
+              <div style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 999, background: "#f3f4f6", border: "1px solid rgba(18,34,28,0.08)", fontSize: 11, fontWeight: 700, color: "#374151" }}>
+                {menuTypeLabel}
+              </div>
+            ) : null}
+            <div onClick={(e) => e.stopPropagation()}>
+              <ShareButton
+                variant="menu"
+                label="Share menu"
+                shareData={shareData}
+                analyticsContext={shareAnalyticsContext}
+                size="compact"
+                tone="subtle"
+              />
             </div>
-          ) : null}
+          </div>
 
           <FranchiseBanner
             group={franchiseGroup}
@@ -1442,52 +1446,56 @@ export default function PublicMenuPage() {
                               </div>
                             ) : null}
 
-                            {/* Details link — stopPropagation prevents add-to-order */}
-                            {canNavigate && itemHasInsightsData(it) ? (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(
-                                    `/restaurants/${encodeURIComponent(data?.slug || currentRestaurantId)}/menu-item-info/${encodeURIComponent(it.id)}`
-                                  );
-                                }}
-                                style={{
-                                  marginTop: 3,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 4,
-                                  border: "none",
-                                  background: "transparent",
-                                  color: "#0a7f5a",
-                                  fontSize: 12,
-                                  fontWeight: 500,
-                                  cursor: "pointer",
-                                  padding: 0,
-                                  lineHeight: 1,
-                                  transition: "all 0.15s ease",
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; e.currentTarget.style.opacity = "0.85"; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; e.currentTarget.style.opacity = "1"; }}
-                              >
-                                Insights →
-                              </button>
-                            ) : null}
-                            {dishShareData ? (
-                              <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-block", marginTop: 3, marginLeft: 8 }}>
-                                <ShareButton
-                                  variant="dish"
-                                  label="Share this item"
-                                  shareData={dishShareData}
-                                  analyticsContext={{
-                                    restaurantId: currentRestaurantId,
-                                    restaurantSlug: data?.slug || null,
-                                    menuItemId: it.id,
-                                    menuItemName: name,
-                                    pageType: "public_menu",
-                                    shareTarget: "dish",
-                                  }}
-                                />
+                            {(canNavigate && itemHasInsightsData(it)) || dishShareData ? (
+                              <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                {canNavigate && itemHasInsightsData(it) ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(
+                                        `/restaurants/${encodeURIComponent(data?.slug || currentRestaurantId)}/menu-item-info/${encodeURIComponent(it.id)}`
+                                      );
+                                    }}
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 4,
+                                      border: "none",
+                                      background: "transparent",
+                                      color: "#0a7f5a",
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      cursor: "pointer",
+                                      padding: 0,
+                                      lineHeight: 1,
+                                      transition: "all 0.15s ease",
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; e.currentTarget.style.opacity = "0.85"; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; e.currentTarget.style.opacity = "1"; }}
+                                  >
+                                    Insights →
+                                  </button>
+                                ) : null}
+                                {dishShareData ? (
+                                  <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex" }}>
+                                    <ShareButton
+                                      variant="dish"
+                                      label="Share"
+                                      shareData={dishShareData}
+                                      analyticsContext={{
+                                        restaurantId: currentRestaurantId,
+                                        restaurantSlug: data?.slug || null,
+                                        menuItemId: it.id,
+                                        menuItemName: name,
+                                        pageType: "public_menu",
+                                        shareTarget: "dish",
+                                      }}
+                                      size="compact"
+                                      tone="subtle"
+                                    />
+                                  </div>
+                                ) : null}
                               </div>
                             ) : null}
                           </div>
