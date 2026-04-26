@@ -132,6 +132,9 @@ export default function DealDetailPage() {
   const restaurantUrl = deal
     ? `/restaurants/${deal.restaurant_slug || deal.restaurant_id}`
     : null;
+  const restaurantMenuUrl = deal
+    ? `/restaurants/${deal.restaurant_slug || deal.restaurant_id}/menu`
+    : null;
 
   const dealPriceCents = deal ? getDealPriceCents(deal) : null;
   const menuPriceCents = deal ? parsePriceCents(deal.menu_item_price) : null;
@@ -193,36 +196,94 @@ export default function DealDetailPage() {
               </span>
             </div>
 
-            {/* Deal title + restaurant */}
+            {/* Deal title */}
             <h1 style={{ fontSize: 22, fontWeight: 900, margin: "0 0 4px", lineHeight: 1.2 }}>
               {deal.title}
             </h1>
-            {restaurantUrl ? (
-              <Link
-                to={restaurantUrl}
-                style={{ fontSize: 13, color: "#1F4E3D", fontWeight: 700, textDecoration: "none" }}
-              >
-                {deal.restaurant_name}
-              </Link>
-            ) : (
-              <span style={{ fontSize: 13, color: "#667085", fontWeight: 700 }}>
-                {deal.restaurant_name}
-              </span>
-            )}
+            <div
+              style={{
+                position: "sticky",
+                top: 68,
+                zIndex: 20,
+                marginTop: 10,
+                marginBottom: 16,
+                padding: "12px 14px",
+                borderRadius: 14,
+                background: "rgba(247, 246, 241, 0.96)",
+                border: "1px solid #e5e7eb",
+                boxShadow: "0 8px 24px rgba(16,24,40,0.08)",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              {restaurantUrl ? (
+                <Link
+                  to={restaurantUrl}
+                  style={{ fontSize: 13, color: "#1F4E3D", fontWeight: 700, textDecoration: "none" }}
+                >
+                  {deal.restaurant_name}
+                </Link>
+              ) : (
+                <span style={{ fontSize: 13, color: "#667085", fontWeight: 700 }}>
+                  {deal.restaurant_name}
+                </span>
+              )}
 
-            {/* Expiry */}
-            {days != null && (
-              <div style={{
-                marginTop: 8, fontSize: 12, fontWeight: 700,
-                color: days <= 2 ? "#b91c1c" : "#9ca3af",
-              }}>
-                {days === 0
-                  ? "Expires today"
-                  : days === 1
-                  ? "Expires tomorrow"
-                  : `Expires in ${days} days`}
+              {days != null && (
+                <div style={{
+                  marginTop: 6,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: days <= 2 ? "#b91c1c" : "#9ca3af",
+                }}>
+                  {days === 0
+                    ? "Expires today"
+                    : days === 1
+                    ? "Expires tomorrow"
+                    : `Expires in ${days} days`}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+                {restaurantMenuUrl && (
+                  <Link
+                    to={restaurantMenuUrl}
+                    style={{
+                      height: 38,
+                      padding: "0 14px",
+                      borderRadius: 10,
+                      border: "1.5px solid #1F4E3D",
+                      background: "#fff",
+                      color: "#1F4E3D",
+                      fontSize: 13,
+                      fontWeight: 800,
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    Show full menu
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => navigate("/deals")}
+                  style={{
+                    height: 38,
+                    padding: "0 14px",
+                    borderRadius: 10,
+                    border: "1.5px solid #e4e7ec",
+                    background: "#fff",
+                    color: "#344054",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                >
+                  Back to deals
+                </button>
               </div>
-            )}
+            </div>
 
             {/* Description */}
             {deal.description && (
@@ -341,18 +402,6 @@ export default function DealDetailPage() {
                   }}>
                     ✓ Added to your order
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => navigate(-1)}
-                    style={{
-                      height: 46, width: "100%", borderRadius: 10,
-                      border: "1.5px solid #e4e7ec", background: "#fff",
-                      fontSize: 14, fontWeight: 700, color: "#344054",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Back to deals
-                  </button>
                 </div>
               ) : (
                 <button
