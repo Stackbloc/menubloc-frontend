@@ -94,6 +94,7 @@ import BrowseMenus from "./pages/BrowseMenus.jsx";
 import TopPicksPage from "./pages/TopPicksPage.jsx";
 
 import DealsPage from "./pages/DealsPage.jsx";
+import DealDetailPage from "./pages/DealDetailPage.jsx";
 
 import ClaimVerify from "./pages/ClaimVerify.jsx";
 import EasyMenuLanding from "./pages/EasyMenuLanding.jsx";
@@ -446,6 +447,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/top5/healthiest" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TopPicksPage />} />
 
         <Route path="/deals" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealsPage />} />
+        <Route path="/deals/:dealId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealDetailPage />} />
 
         <Route path="/restaurants/:id/qr-codes" element={crmHost ? <HostRouteRedirect to="/crm" /> : <QrCodesPage />} />
 

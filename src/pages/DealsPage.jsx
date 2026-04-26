@@ -9,19 +9,14 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
-import { useOrderCart } from "../context/OrderCartContext.jsx";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 // ── Utility ──────────────────────────────────────────────────
 
 function buildDealUrl(deal) {
-  const base = deal.restaurant_slug || deal.restaurant_id;
-  if (!base) return null;
-  if (deal.menu_item_id) {
-    return `/restaurants/${base}/menu-items/${deal.menu_item_id}`;
-  }
-  return `/restaurants/${base}/menu`;
+  const id = deal.deal_id || deal.id;
+  return id ? `/deals/${id}` : null;
 }
 
 function getRestaurantKey(deal) {
@@ -138,7 +133,7 @@ async function shareLink({ url, title, text }) {
 
 // ── Deal row card ─────────────────────────────────────────────
 
-function DealRow({ deal, restaurantUrl, onAddToOrder }) {
+function DealRow({ deal, restaurantUrl }) {
   const dealUrl = buildDealUrl(deal);
   const link = dealUrl || restaurantUrl;
   return (
@@ -157,36 +152,20 @@ function DealRow({ deal, restaurantUrl, onAddToOrder }) {
           {deal.description}
         </div>
       )}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {link && (
-          <Link
-            to={link}
-            style={{
-              display: "inline-flex", alignItems: "center",
-              height: 32, padding: "0 14px",
-              borderRadius: 999, background: "#1F4E3D",
-              color: "#fff", fontSize: 12, fontWeight: 800,
-              textDecoration: "none",
-            }}
-          >
-            View deal
-          </Link>
-        )}
-        {onAddToOrder && (
-          <button
-            type="button"
-            onClick={onAddToOrder}
-            style={{
-              height: 32, padding: "0 14px",
-              borderRadius: 999, border: "1.5px solid #e4e7ec",
-              background: "#fff", color: "#344054",
-              fontSize: 12, fontWeight: 800, cursor: "pointer",
-            }}
-          >
-            Add to order
-          </button>
-        )}
-      </div>
+      {link && (
+        <Link
+          to={link}
+          style={{
+            display: "inline-flex", alignItems: "center",
+            height: 32, padding: "0 14px",
+            borderRadius: 999, background: "#1F4E3D",
+            color: "#fff", fontSize: 12, fontWeight: 800,
+            textDecoration: "none",
+          }}
+        >
+          View deal
+        </Link>
+      )}
     </div>
   );
 }
@@ -196,7 +175,6 @@ function DealRow({ deal, restaurantUrl, onAddToOrder }) {
 export default function DealsPage() {
   const { search } = useLocation();
   const navigate = useNavigate();
-  const { addToCart } = useOrderCart();
   const urlParams = new URLSearchParams(search);
   const urlCity = urlParams.get("city") || "";
   const urlState = urlParams.get("state") || "";
@@ -309,26 +287,6 @@ export default function DealsPage() {
           : `Check out this deal from ${group.restaurantName}.`,
       });
     } catch {}
-  }
-
-  function handleAddToOrder(group, deal) {
-    if (!deal?.menu_item_id || !group?.restaurantId) return;
-    const dealPriceCents = getDealOrderPriceCents(deal);
-    const menuPriceCents = getDealMenuPriceCents(deal);
-    const hasDealPrice = dealPriceCents > 0 && menuPriceCents > 0 && dealPriceCents !== menuPriceCents;
-    addToCart({
-      restaurant: { restaurantId: group.restaurantId, restaurantName: group.restaurantName, slug: group.restaurantSlug },
-      item: {
-        menuItemId: deal.menu_item_id,
-        name: deal.menu_item_name || deal.title || "Deal item",
-        description: deal.description || "",
-        quantity: 1,
-        basePriceCents: dealPriceCents,
-        originalBasePriceCents: hasDealPrice ? menuPriceCents : dealPriceCents,
-        pricingType: hasDealPrice ? "deal" : "",
-        pricingLabel: hasDealPrice ? "Deal applied" : "",
-      },
-    });
   }
 
   return (
@@ -459,7 +417,6 @@ export default function DealsPage() {
                     <DealRow
                       deal={group.primaryDeal}
                       restaurantUrl={restaurantUrl}
-                      onAddToOrder={group.primaryDeal?.menu_item_id ? () => handleAddToOrder(group, group.primaryDeal) : null}
                     />
                   )}
 
@@ -469,7 +426,6 @@ export default function DealsPage() {
                       key={deal.deal_id || deal.id}
                       deal={deal}
                       restaurantUrl={restaurantUrl}
-                      onAddToOrder={deal?.menu_item_id ? () => handleAddToOrder(group, deal) : null}
                     />
                   ))}
 
