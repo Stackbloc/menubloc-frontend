@@ -59,7 +59,7 @@ const FOOD_CHIPS = [
   { id: "low-carb",     icon: "🥦", label: "Low Carb",           query: "low carb" },
   { id: "high-protein", icon: "💪", label: "High Protein",       query: "high protein" },
   { id: "diabetic",     icon: "🩺", label: "Diabetic Friendly",  query: "diabetic friendly" },
-  { id: "low-fat",      icon: "🫙", label: "Low Fat",            query: "low fat" },
+  { id: "low-fat",      icon: "🫙", label: "Low Fat",            query: "low fat", filterKey: "low_fat" },
   { id: "high-fiber",   icon: "🌾", label: "High Fiber",         query: "high fiber" },
   { id: "pizza",        icon: "🍕", label: "Pizza",              query: "pizza" },
   { id: "burgers",      icon: "🍔", label: "Burgers",            query: "burgers" },
@@ -658,6 +658,10 @@ export default function GrubbidDiscovery() {
   }
 
   function handleChipClick(chip) {
+    if (chip.filterKey) {
+      setFilters((prev) => ({ ...prev, [chip.filterKey]: !prev[chip.filterKey] }));
+      return;
+    }
     const params = buildSearchParams(chip.query, { locationOverride: getEffectiveSearchLocation() });
     navigate(`/search?${params.toString()}`);
   }
@@ -951,20 +955,26 @@ export default function GrubbidDiscovery() {
               }}
             >
               {FOOD_CHIPS.map((chip) => (
-                <button
-                  key={chip.id}
-                  type="button"
-                  onClick={() => handleChipClick(chip)}
-                  style={{
-                    height: 28, padding: "0 12px", borderRadius: 999,
-                    flexShrink: 0, cursor: "pointer", whiteSpace: "nowrap",
-                    border: "1.5px solid #e4e7ec",
-                    background: "#fff", color: "#344054",
-                    fontSize: 12, fontWeight: 700,
-                  }}
-                >
-                  {chip.icon} {chip.label}
-                </button>
+                (() => {
+                  const isActive = chip.filterKey ? !!filters[chip.filterKey] : false;
+                  return (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onClick={() => handleChipClick(chip)}
+                      style={{
+                        height: 28, padding: "0 12px", borderRadius: 999,
+                        flexShrink: 0, cursor: "pointer", whiteSpace: "nowrap",
+                        border: isActive ? "1.5px solid #1f4e3d" : "1.5px solid #e4e7ec",
+                        background: isActive ? "#ecfdf3" : "#fff",
+                        color: isActive ? "#1f4e3d" : "#344054",
+                        fontSize: 12, fontWeight: 700,
+                      }}
+                    >
+                      {chip.icon} {chip.label}
+                    </button>
+                  );
+                })()
               ))}
             </div>
             {chipScrollLeft < chipScrollMax && (
