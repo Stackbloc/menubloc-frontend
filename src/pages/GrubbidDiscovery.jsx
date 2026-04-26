@@ -158,8 +158,24 @@ function useAutoLocation() {
   });
 
   useEffect(() => {
+    async function ipFallback() {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const json = await res.json().catch(() => ({}));
+        const city = String(json?.city || "").trim();
+        const st   = String(json?.region_code || "").trim();
+        if (city && st) {
+          setState({ status: "ready", label: `${city}, ${st}`, city, state: st,
+                     confidence: "low", lat: null, lng: null });
+          return;
+        }
+      } catch {}
+      setState({ status: "unavailable", label: "", city: "", state: "",
+                 confidence: "low", lat: null, lng: null });
+    }
+
     if (!navigator?.geolocation) {
-      setState({ status: "unavailable", label: "", city: "", state: "", confidence: "low", lat: null, lng: null });
+      ipFallback();
       return;
     }
 
@@ -168,7 +184,7 @@ function useAutoLocation() {
         const lat = Number(position?.coords?.latitude);
         const lng = Number(position?.coords?.longitude);
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-          setState({ status: "unavailable", label: "", city: "", state: "", confidence: "low", lat: null, lng: null });
+          ipFallback();
           return;
         }
         try {
@@ -179,7 +195,7 @@ function useAutoLocation() {
         }
       },
       () => {
-        setState({ status: "denied", label: "", city: "", state: "", confidence: "low", lat: null, lng: null });
+        ipFallback();
       },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
     );
@@ -571,8 +587,6 @@ export default function GrubbidDiscovery() {
     ? `Near ${resolvedLocationLabel}`
     : autoLocation.status === "locating"
     ? "Using current location"
-    : autoLocation.status === "denied"
-    ? "Location access denied"
     : "Enter city, state or zip";
 
   return (
@@ -1013,9 +1027,7 @@ export default function GrubbidDiscovery() {
               textAlign: "center", padding: "48px 20px",
               color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
             }}>
-              {!appliedLocation && autoLocation.status === "denied"
-                ? "Enable location access to see menus, or tap your location to enter a city."
-                : "No menus found in this area yet. Try another city."}
+              {"No menus found in this area yet. Try another city."}
             </div>
           ) : (
             <div className="disc-feed-grid">
