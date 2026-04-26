@@ -5,17 +5,25 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
-function Field({ label, required, hint, children }) {
+function Field({ label, required, hint, disabled, autoFilled, children }) {
   return (
     <div>
       <label style={{
-        display: "block", fontSize: 13, fontWeight: 700,
-        color: "#374151", marginBottom: 6,
+        display: "flex", alignItems: "center", gap: 6,
+        fontSize: 13, fontWeight: 700,
+        color: disabled ? "#94a3b8" : "#374151", marginBottom: 6,
       }}>
         {label}{" "}
         {required
-          ? <span style={{ color: "#ef4444" }}>*</span>
+          ? <span style={{ color: disabled ? "#cbd5e1" : "#ef4444" }}>*</span>
           : <span style={{ fontWeight: 400, color: "#94a3b8" }}>(optional)</span>}
+        {autoFilled && !disabled && (
+          <span style={{
+            fontSize: 11, fontWeight: 500, color: "#16a34a",
+            background: "#f0fdf4", border: "1px solid #bbf7d0",
+            borderRadius: 4, padding: "1px 5px",
+          }}>auto-detected</span>
+        )}
       </label>
       {children}
       {hint && <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94a3b8" }}>{hint}</p>}
@@ -23,25 +31,33 @@ function Field({ label, required, hint, children }) {
   );
 }
 
-const inputStyle = {
-  width: "100%", height: 46, padding: "0 14px",
-  border: "1.5px solid #e2e8f0", borderRadius: 10,
-  fontSize: 14, color: "#0f172a", background: "#fff",
-  outline: "none", boxSizing: "border-box",
-};
+function inputStyle(disabled) {
+  return {
+    width: "100%", height: 46, padding: "0 14px",
+    border: `1.5px solid ${disabled ? "#f1f5f9" : "#e2e8f0"}`, borderRadius: 10,
+    fontSize: 14,
+    color: disabled ? "#94a3b8" : "#0f172a",
+    background: disabled ? "#f8fafc" : "#fff",
+    outline: "none", boxSizing: "border-box",
+  };
+}
 
 export default function MenuCapturePage() {
   const navigate = useNavigate();
   const fileRef = useRef(null);
 
-  const [file, setFile] = useState(null);
+  const [pages, setPages] = useState([]);
+  const file = pages[0] ?? null;
   const [restaurantName, setRestaurantName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
 
-  // "form" | "confirm" | "uploading" | "success" | "error"
-  const [step, setStep] = useState("form");
+  const [extracting, setExtracting] = useState(false);
+  const [autoFilled, setAutoFilled] = useState({});
+
+  // "upload" | "form" | "confirm" | "uploading" | "success" | "error"
+  const [step, setStep] = useState("upload");
   const [errorMsg, setErrorMsg] = useState("");
 
   function handleFileChange(e) {
@@ -52,8 +68,35 @@ export default function MenuCapturePage() {
       e.target.value = "";
       return;
     }
-    setFile(f);
+    setPages(prev => [...prev, f]);
+    if (fileRef.current) fileRef.current.value = "";
     setErrorMsg("");
+  }
+
+  async function handleDoneAdding() {
+    if (pages.length === 0) { setErrorMsg("Please choose at least one menu photo or PDF."); return; }
+    setStep("form");
+    setExtracting(true);
+    setErrorMsg("");
+    try {
+      const fd = new FormData();
+      fd.append("file", pages[0]);
+      const res = await fetch(`${API}/menus-claim-upload-clean/extract-hint`,
+        { method: "POST", body: fd, credentials: "include" });
+      if (res.ok) {
+        const json = await res.json().catch(() => ({}));
+        if (json.ok && json.hints) {
+          const { name, address: addr, phone: ph, email: em } = json.hints;
+          const filled = {};
+          if (name) { setRestaurantName(name); filled.name = true; }
+          if (addr) { setAddress(addr);        filled.address = true; }
+          if (ph)   { setPhone(ph);            filled.phone = true; }
+          if (em)   { setEmail(em);            filled.email = true; }
+          setAutoFilled(filled);
+        }
+      }
+    } catch { /* non-fatal — proceed with empty fields */ }
+    setExtracting(false);
   }
 
   function handleReview(e) {
@@ -85,6 +128,116 @@ export default function MenuCapturePage() {
     }
   }
 
+  if (step === "upload") {
+    return (
+      <>
+        <StickyPageHeader />
+        <div style={{
+          maxWidth: 480, margin: "0 auto", padding: "24px 16px 80px",
+          fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
+        }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px", color: "#0f172a" }}>
+            Add a menu
+          </h1>
+          <p style={{ fontSize: 14, color: "#64748b", margin: "0 0 24px", lineHeight: 1.6 }}>
+            Take a photo of a physical menu or upload a PDF.
+            Multi-page menu? Add each page one at a time.
+          </p>
+
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,.pdf"
+            capture="environment"
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+          />
+
+          {pages.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              style={{
+                display: "flex", alignItems: "center", gap: 10, width: "100%",
+                height: 54, padding: "0 16px",
+                border: "2px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc",
+                cursor: "pointer", fontSize: 14, color: "#64748b", fontWeight: 600,
+                boxSizing: "border-box",
+              }}
+            >
+              <span style={{ fontSize: 22 }}>📸</span>
+              <span>Take photo or choose file</span>
+            </button>
+          ) : (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                {pages.map((p, i) => (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "10px 14px",
+                    border: "1.5px solid #16a34a", borderRadius: 10, background: "#f0fdf4",
+                  }}>
+                    <span style={{ fontSize: 20 }}>📄</span>
+                    <span style={{
+                      flex: 1, fontSize: 14, color: "#15803d", fontWeight: 500,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      Page {i + 1}: {p.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPages(prev => prev.filter((_, j) => j !== i))}
+                      style={{ fontSize: 12, color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    width: "100%", height: 46,
+                    border: "2px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc",
+                    cursor: "pointer", fontSize: 14, color: "#64748b", fontWeight: 600,
+                    boxSizing: "border-box",
+                  }}
+                >
+                  + Next menu page
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDoneAdding}
+                  style={{
+                    width: "100%", height: 48,
+                    background: "#111827", color: "#fff", border: "none",
+                    borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer",
+                  }}
+                >
+                  Done — continue
+                </button>
+              </div>
+            </>
+          )}
+
+          {errorMsg && (
+            <div style={{
+              marginTop: 14, padding: "10px 14px", borderRadius: 8,
+              background: "#fff5f5", border: "1px solid #fca5a5",
+              color: "#b91c1c", fontSize: 13, lineHeight: 1.5,
+            }}>
+              {errorMsg}
+            </div>
+          )}
+        </div>
+      </>
+    );
+  }
+
   if (step === "success") {
     return (
       <>
@@ -98,8 +251,9 @@ export default function MenuCapturePage() {
             Menu received
           </h1>
           <p style={{ fontSize: 15, color: "#475569", margin: "0 0 28px", lineHeight: 1.65 }}>
-            <strong>{restaurantName}</strong> has been matched and your menu is queued for
-            processing. Thank you for contributing!
+            <strong>{restaurantName}</strong> has been matched and your menu
+            ({pages.length} page{pages.length !== 1 ? "s" : ""}) is queued for processing.
+            Thank you for contributing!
           </p>
           <button
             type="button"
@@ -141,7 +295,7 @@ export default function MenuCapturePage() {
               { label: "Address", value: address },
               { label: "Phone", value: phone || "—" },
               { label: "Email", value: email || "—" },
-              { label: "Menu file", value: file?.name },
+              { label: "Menu", value: pages.length === 1 ? pages[0]?.name : `${pages.length} pages` },
             ].map(({ label, value }, i, arr) => (
               <div key={label} style={{
                 display: "flex", padding: "12px 16px",
@@ -200,7 +354,7 @@ export default function MenuCapturePage() {
     );
   }
 
-  const uploading = step === "uploading";
+  const fieldsDisabled = step === "uploading" || extracting;
 
   return (
     <>
@@ -210,91 +364,73 @@ export default function MenuCapturePage() {
         fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
       }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px", color: "#0f172a" }}>
-          Add a menu
+          Restaurant details
         </h1>
-        <p style={{ fontSize: 14, color: "#64748b", margin: "0 0 24px", lineHeight: 1.6 }}>
-          Take a photo of a physical menu or upload a PDF. We'll link it to the restaurant
-          and queue it for ingestion.
+        <p style={{ fontSize: 14, color: "#64748b", margin: "0 0 4px", lineHeight: 1.6 }}>
+          {pages.length} page{pages.length !== 1 ? "s" : ""} uploaded.{" "}
+          <button
+            type="button"
+            onClick={() => { setStep("upload"); setErrorMsg(""); }}
+            style={{ fontSize: 14, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline" }}
+          >
+            Change
+          </button>
         </p>
+        {extracting && (
+          <p style={{ fontSize: 13, color: "#94a3b8", margin: "0 0 20px" }}>
+            Reading menu for restaurant info…
+          </p>
+        )}
+        {!extracting && (
+          <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 20px", lineHeight: 1.6 }}>
+            {Object.keys(autoFilled).length > 0
+              ? "Some fields were auto-detected. Fill in anything missing."
+              : "Fill in the restaurant details below."}
+          </p>
+        )}
 
         <form onSubmit={handleReview} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <Field label="Menu photo or PDF" required>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*,.pdf"
-              capture="environment"
-              onChange={handleFileChange}
-              style={{ display: "none" }}
-            />
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              style={{
-                display: "flex", alignItems: "center", gap: 10, width: "100%",
-                height: 54, padding: "0 16px",
-                border: file ? "2px solid #16a34a" : "2px dashed #cbd5e1",
-                borderRadius: 10, background: file ? "#f0fdf4" : "#f8fafc",
-                cursor: "pointer", fontSize: 14, color: file ? "#15803d" : "#64748b",
-                fontWeight: 600, boxSizing: "border-box",
-              }}
-            >
-              <span style={{ fontSize: 22, flexShrink: 0 }}>{file ? "📄" : "📸"}</span>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {file ? file.name : "Take photo or choose file"}
-              </span>
-            </button>
-            {file && (
-              <button
-                type="button"
-                onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = ""; }}
-                style={{
-                  marginTop: 6, fontSize: 12, color: "#64748b",
-                  background: "none", border: "none", cursor: "pointer", padding: 0,
-                }}
-              >
-                Remove
-              </button>
-            )}
-          </Field>
-
-          <Field label="Restaurant name" required>
+          <Field label="Restaurant name" required disabled={fieldsDisabled} autoFilled={autoFilled.name}>
             <input
               type="text"
               value={restaurantName}
               onChange={(e) => setRestaurantName(e.target.value)}
               placeholder="e.g. Fire Stone Wood Fired Grill"
-              style={inputStyle}
+              disabled={fieldsDisabled}
+              style={inputStyle(fieldsDisabled)}
             />
           </Field>
 
-          <Field label="Address" required hint="Street address helps us match the correct location.">
+          <Field label="Address" required hint="Street address helps us match the correct location." disabled={fieldsDisabled} autoFilled={autoFilled.address}>
             <input
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="123 Main St, Los Angeles, CA 90001"
-              style={inputStyle}
+              disabled={fieldsDisabled}
+              style={inputStyle(fieldsDisabled)}
             />
           </Field>
 
-          <Field label="Phone">
+          <Field label="Phone" disabled={fieldsDisabled} autoFilled={autoFilled.phone}>
             <input
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="(555) 555-5555"
-              style={inputStyle}
+              disabled={fieldsDisabled}
+              style={inputStyle(fieldsDisabled)}
             />
           </Field>
 
-          <Field label="Your email">
+          <Field label="Your email" disabled={fieldsDisabled} autoFilled={autoFilled.email}>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              style={inputStyle}
+              disabled={fieldsDisabled}
+              style={inputStyle(fieldsDisabled)}
             />
           </Field>
 
@@ -310,13 +446,13 @@ export default function MenuCapturePage() {
 
           <button
             type="submit"
-            disabled={uploading}
+            disabled={fieldsDisabled}
             style={{
               height: 48, width: "100%",
-              background: uploading ? "#94a3b8" : "#111827",
+              background: fieldsDisabled ? "#94a3b8" : "#111827",
               color: "#fff", border: "none", borderRadius: 10,
               fontSize: 15, fontWeight: 700,
-              cursor: uploading ? "not-allowed" : "pointer",
+              cursor: fieldsDisabled ? "not-allowed" : "pointer",
             }}
           >
             Review & confirm
