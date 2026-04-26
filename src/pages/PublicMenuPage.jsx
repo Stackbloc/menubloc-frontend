@@ -417,6 +417,7 @@ const DIET_CHIPS = [
   { key: "diabetic_friendly", label: "Diabetic Friendly" },
   { key: "gluten_free",       label: "Gluten Free" },
   { key: "keto",              label: "Keto" },
+  { key: "low_fat",           label: "Low Fat" },
   { key: "low_sodium",        label: "Low Sodium" },
   { key: "vegan",             label: "Vegan" },
   { key: "vegetarian",        label: "Vegetarian" },
@@ -769,6 +770,7 @@ export default function PublicMenuPage() {
     diabetic_friendly: searchParams.get("diabetic_friendly") === "1",
     gluten_free:       searchParams.get("gluten_free")       === "1",
     keto:              searchParams.get("keto")              === "1" || searchParams.get("low_carb") === "1",
+    low_fat:           searchParams.get("low_fat")           === "1" || searchParams.get("low_fat") === "true",
     low_sodium:        searchParams.get("low_sodium")        === "1",
     vegan:             searchParams.get("vegan")             === "1",
     vegetarian:        searchParams.get("vegetarian")        === "1",
@@ -878,13 +880,13 @@ export default function PublicMenuPage() {
       const isKeto = key === "keto";
       const isActive = isKeto
         ? next.get("keto") === "1" || next.get("low_carb") === "1"
-        : next.get(key) === "1";
+        : next.get(key) === "1" || next.get(key) === "true";
 
       if (isActive) {
         next.delete(key);
         if (isKeto) next.delete("low_carb");
       } else {
-        next.set(key, "1");
+        next.set(key, key === "low_fat" ? "true" : "1");
         if (isKeto) next.set("low_carb", "1");
       }
       return next;

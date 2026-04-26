@@ -212,6 +212,7 @@ function buildGoalAlignment(diet, sourceLabel) {
   if (df.keto_friendly)            flags.push({ label: "Keto",         match: true });
   if (df.high_protein)             flags.push({ label: "High Protein", match: true });
   if (df.low_carb)                 flags.push({ label: "Low Carb",     match: true });
+  if (df.low_fat)                  flags.push({ label: "Low Fat",      match: true });
   if (df.low_sodium)               flags.push({ label: "Low Sodium",   match: true });
   if (df.dairy_free === true)      flags.push({ label: "Dairy-Free",   match: true });
   else if (df.dairy_free === false) flags.push({ label: "Dairy-Free",  match: false });

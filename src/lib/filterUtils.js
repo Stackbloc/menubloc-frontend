@@ -1,6 +1,6 @@
 export const FILTER_KEYS = [
   "vegan", "vegetarian", "gluten_free", "dairy_free",
-  "diabetic_friendly", "keto", "low_sodium", "deals",
+  "diabetic_friendly", "keto", "low_fat", "low_sodium", "deals",
 ];
 
 export const FILTER_LABELS = {
@@ -10,11 +10,16 @@ export const FILTER_LABELS = {
   dairy_free: "Dairy-Free",
   diabetic_friendly: "Diabetic-Friendly",
   keto: "Keto",
+  low_fat: "Low-Fat",
   low_sodium: "Low-Sodium",
   deals: "Deals",
 };
 
 export const EMPTY_FILTERS = Object.fromEntries(FILTER_KEYS.map((k) => [k, false]));
+
+function isEnabled(value) {
+  return value === "1" || value === "true";
+}
 
 export function parseFiltersFromUrl(params) {
   return {
@@ -23,6 +28,7 @@ export function parseFiltersFromUrl(params) {
     gluten_free: params.get("gluten_free") === "1",
     dairy_free: params.get("dairy_free") === "1",
     diabetic_friendly: params.get("diabetic_friendly") === "1",
+    low_fat: isEnabled(params.get("low_fat")),
     keto: params.get("keto") === "1" || params.get("low_carb") === "1",
     low_sodium: params.get("low_sodium") === "1",
     deals: params.get("deals") === "1" || params.get("deals_only") === "1",
@@ -37,12 +43,13 @@ export function filtersToUrlParams(filters, baseParams) {
     gluten_free: "gluten_free",
     dairy_free: "dairy_free",
     diabetic_friendly: "diabetic_friendly",
+    low_fat: "low_fat",
     keto: "keto",
     low_sodium: "low_sodium",
     deals: "deals",
   };
   for (const [filterKey, paramKey] of Object.entries(boolKeys)) {
-    if (filters[filterKey]) next.set(paramKey, "1");
+    if (filters[filterKey]) next.set(paramKey, filterKey === "low_fat" ? "true" : "1");
     else next.delete(paramKey);
   }
   next.delete("low_carb");

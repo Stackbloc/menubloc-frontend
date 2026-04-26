@@ -114,7 +114,8 @@ export function buildMatchPreview(row, queryMeta, matchContext) {
     diet?.keto === true;
   const wantsFat =
     constraints?.fat?.direction === "low" ||
-    nutritionIntent?.low_fat === true;
+    nutritionIntent?.low_fat === true ||
+    diet?.low_fat === true;
   const wantsSodium =
     constraints?.sodium?.direction === "low" ||
     nutritionIntent?.low_sodium === true ||

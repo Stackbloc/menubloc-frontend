@@ -290,7 +290,7 @@ export default function BrowseMenus() {
   );
 
   const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
-    filters.dairy_free || filters.diabetic_friendly || filters.keto || filters.low_sodium || filters.deals;
+    filters.dairy_free || filters.diabetic_friendly || filters.keto || filters.low_fat || filters.low_sodium || filters.deals;
 
   useEffect(() => {
     let cancelled = false;
@@ -332,6 +332,7 @@ export default function BrowseMenus() {
     if (filters.dairy_free) return "dairy-free";
     if (filters.gluten_free) return "gluten-free";
     if (filters.keto) return "keto";
+    if (filters.low_fat) return "low-fat";
     if (filters.low_sodium) return "low-sodium";
     if (filters.deals) return "deal";
     return null;
@@ -609,6 +610,7 @@ export default function BrowseMenus() {
                   <FilterChip label={t("diet.diabetic_friendly")} active={filters.diabetic_friendly} onClick={() => toggleFilter("diabetic_friendly")} />
                   <FilterChip label={t("diet.gluten_free")} active={filters.gluten_free} onClick={() => toggleFilter("gluten_free")} />
                   <FilterChip label={t("diet.keto")} active={filters.keto} onClick={() => toggleFilter("keto")} />
+                  <FilterChip label={t("diet.low_fat")} active={filters.low_fat} onClick={() => toggleFilter("low_fat")} />
                   <FilterChip label={t("diet.low_sodium")} active={filters.low_sodium} onClick={() => toggleFilter("low_sodium")} />
                   <FilterChip label={t("diet.vegan")} active={filters.vegan} onClick={() => toggleFilter("vegan")} />
                   <FilterChip label={t("diet.vegetarian")} active={filters.vegetarian} onClick={() => toggleFilter("vegetarian")} />

@@ -12,6 +12,7 @@ export const EMPTY_PREFS = {
   vegetarian: false,
   gluten_free: false,
   keto: false,
+  low_fat: false,
   low_sodium: false,
   dairy_free: false,
   diabetic_friendly: false,
@@ -56,6 +57,7 @@ const PREF_LABELS = {
   vegetarian: "Vegetarian",
   gluten_free: "Gluten Free",
   keto: "Keto",
+  low_fat: "Low Fat",
   low_sodium: "Low Sodium",
   dairy_free: "Dairy Free",
   diabetic_friendly: "Diabetic Friendly",
@@ -122,6 +124,10 @@ export function itemPassesDietFilter(item, prefs) {
     if (r === "pass") { /* ok */ }
     else if (r === "fail") return false;
     else if (item?.is_keto !== true) return false;
+  }
+  if (prefs.low_fat) {
+    const r = df.low_fat?.result;
+    if (r !== "pass") return false;
   }
   if (prefs.low_sodium) {
     const r = df.low_sodium?.result;

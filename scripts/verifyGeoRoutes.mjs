@@ -151,20 +151,35 @@ async function verifyDiscoveryTyping(page) {
 
 async function verifyBackend() {
   const searchLa = await fetchJsonOrThrow(`${backendBaseUrl}/search?q=chicken&city=Los+Angeles&state=CA`);
+  const searchLaLowFat = await fetchJsonOrThrow(`${backendBaseUrl}/search?q=chicken&city=Los+Angeles&state=CA&low_fat=true`);
   const browseLa = await fetchJsonOrThrow(`${backendBaseUrl}/menus/browse?city=Los+Angeles&state=CA`);
+  const browseLaLowFat = await fetchJsonOrThrow(`${backendBaseUrl}/menus/browse?city=Los+Angeles&state=CA&low_fat=true`);
   const browseDothan = await fetchJsonOrThrow(`${backendBaseUrl}/menus/browse?city=Dothan&state=AL`);
   const searchDothan = await fetchJsonOrThrow(`${backendBaseUrl}/search?q=chicken&city=Dothan&state=AL`);
 
   const browseLaRows = restaurantRowsFromBrowse(browseLa);
+  const browseLaLowFatRows = restaurantRowsFromBrowse(browseLaLowFat);
   const browseDothanRows = restaurantRowsFromBrowse(browseDothan);
+  const searchLaCount = (searchLa?.menu_items || []).length + (searchLa?.buckets?.restaurants || []).length;
+  const searchLaLowFatCount = (searchLaLowFat?.menu_items || []).length + (searchLaLowFat?.buckets?.restaurants || []).length;
 
   assertCheck(
-    ((searchLa?.menu_items || []).length + (searchLa?.buckets?.restaurants || []).length) > 0,
+    searchLaCount > 0,
     "LA search must return results"
+  );
+  assertCheck(
+    searchLaLowFatCount < searchLaCount,
+    "LA low-fat search must reduce result count",
+    { base: searchLaCount, lowFat: searchLaLowFatCount }
   );
   assertCheck(
     ((searchDothan?.menu_items || []).length + (searchDothan?.buckets?.restaurants || []).length) > 0,
     "Dothan search must return results"
+  );
+  assertCheck(
+    browseLaLowFatRows.length < browseLaRows.length,
+    "LA low-fat browse must reduce restaurant count",
+    { base: browseLaRows.length, lowFat: browseLaLowFatRows.length }
   );
   assertCheck(
     !hasCity(browseLaRows, "dothan"),
@@ -178,9 +193,11 @@ async function verifyBackend() {
   );
 
   return {
-    searchLaResults: (searchLa?.menu_items || []).length + (searchLa?.buckets?.restaurants || []).length,
+    searchLaResults: searchLaCount,
+    searchLaLowFatResults: searchLaLowFatCount,
     searchDothanResults: (searchDothan?.menu_items || []).length + (searchDothan?.buckets?.restaurants || []).length,
     browseLaCount: browseLaRows.length,
+    browseLaLowFatCount: browseLaLowFatRows.length,
     browseDothanCount: browseDothanRows.length,
   };
 }

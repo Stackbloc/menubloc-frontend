@@ -91,6 +91,7 @@ function filterAndRankMenus(menus, query) {
     if (/vegan|plant.?based/.test(q) && menu.has_vegan_options) score += 8;
     if (/gluten.?free/.test(q) && menu.has_gluten_free_options) score += 8;
     if (/keto|low.?carb/.test(q) && menu.has_keto_options) score += 8;
+    if (/low.?fat/.test(q) && menu.has_low_fat_options) score += 8;
     if (/low.?sodium/.test(q) && menu.has_low_sodium_options) score += 8;
     if (/diabetic/.test(q) && menu.has_diabetic_friendly_options) score += 8;
     if (/deal/.test(q) && menu.has_deals) score += 8;
@@ -114,12 +115,14 @@ function buildMatchReason(menu, filters, query) {
   if (filters.diabetic_friendly && menu.has_diabetic_friendly_options) return "Match: Diabetic Friendly";
   if (filters.keto && menu.has_keto_options) return "Match: Low Carb";
   if (filters.dairy_free && menu.has_dairy_free_options) return "Match: Dairy-Free";
+  if (filters.low_fat && menu.has_low_fat_options) return "Match: Low Fat";
   if (filters.low_sodium && menu.has_low_sodium_options) return "Match: Low Sodium";
   const q = (query || "").toLowerCase();
   if (q) {
     if (/vegan|plant.?based/.test(q) && menu.has_vegan_options) return "Match: Vegan Friendly";
     if (/gluten.?free/.test(q) && menu.has_gluten_free_options) return "Match: Gluten-Free";
     if (/keto|low.?carb/.test(q) && menu.has_keto_options) return "Match: Low Carb";
+    if (/low.?fat/.test(q) && menu.has_low_fat_options) return "Match: Low Fat";
     if (/low.?sodium/.test(q) && menu.has_low_sodium_options) return "Match: Low Sodium";
     if (/diabetic/.test(q) && menu.has_diabetic_friendly_options) return "Match: Diabetic Friendly";
     if (/deal/.test(q) && menu.has_deals) return "Match: Deals Available";
@@ -354,6 +357,7 @@ export default function GrubbidDiscovery() {
     if (filters.dairy_free) return "dairy-free";
     if (filters.gluten_free) return "gluten-free";
     if (filters.keto) return "keto";
+    if (filters.low_fat) return "low-fat";
     if (filters.low_sodium) return "low-sodium";
     return null;
   })();

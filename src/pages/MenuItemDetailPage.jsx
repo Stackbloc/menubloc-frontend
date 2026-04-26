@@ -944,6 +944,7 @@ const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
   "gluten_free",
   "dairy_free",
   "diabetic_friendly",
+  "low_fat",
   "low_sodium",
   "keto",
 ]);

@@ -121,6 +121,7 @@ export default function DiscoveryDrawer({
           <Toggle label="Diabetic Friendly" active={!!filters.diabetic_friendly} onToggle={() => setFilters((p) => ({ ...p, diabetic_friendly: !p.diabetic_friendly }))} />
           <Toggle label="Low Carb / Keto" active={!!filters.keto} onToggle={() => setFilters((p) => ({ ...p, keto: !p.keto }))} />
           <Toggle label="Dairy-Free" active={!!filters.dairy_free} onToggle={() => setFilters((p) => ({ ...p, dairy_free: !p.dairy_free }))} />
+          <Toggle label="Low Fat" active={!!filters.low_fat} onToggle={() => setFilters((p) => ({ ...p, low_fat: !p.low_fat }))} />
           <Toggle label="Low Sodium" active={!!filters.low_sodium} onToggle={() => setFilters((p) => ({ ...p, low_sodium: !p.low_sodium }))} />
 
           <Section label="Exclude Allergens" />

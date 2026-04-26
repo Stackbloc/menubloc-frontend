@@ -489,6 +489,7 @@ export default function GrubbidSearchResults() {
   const routeCategory = String(params.get("category") || "").trim();
   const vegetarian = params.get("vegetarian") === "1";
   const keto = params.get("keto") === "1" || params.get("low_carb") === "1";
+  const low_fat = params.get("low_fat") === "1" || params.get("low_fat") === "true";
   const low_sodium = params.get("low_sodium") === "1";
   const dairy_free = params.get("dairy_free") === "1";
   const diabetic_friendly = params.get("diabetic_friendly") === "1";
@@ -561,6 +562,7 @@ export default function GrubbidSearchResults() {
       dairy_free,
       diabetic_friendly,
       keto,
+      low_fat,
       low_sodium,
     });
     for (const [key, value] of Object.entries(dietaryParams)) {
@@ -836,6 +838,7 @@ export default function GrubbidSearchResults() {
     gluten_free,
     deals_only,
     keto,
+    low_fat,
     low_sodium,
     dairy_free,
     diabetic_friendly,
@@ -865,11 +868,12 @@ export default function GrubbidSearchResults() {
     if (vegetarian) labels.push("Vegetarian");
     if (gluten_free) labels.push("Gluten-Free");
     if (keto) labels.push("Keto");
+    if (low_fat) labels.push("Low-Fat");
     if (low_sodium) labels.push("Low-Sodium");
     if (dairy_free) labels.push("Dairy-Free");
     if (diabetic_friendly) labels.push("Diabetic-Friendly");
     return labels;
-  }, [vegan, vegetarian, gluten_free, keto, low_sodium, dairy_free, diabetic_friendly]);
+  }, [vegan, vegetarian, gluten_free, keto, low_fat, low_sodium, dairy_free, diabetic_friendly]);
   const hasDietFilter = activeDietFilterLabels.length > 0;
 
   const crossRestaurantItems = useMemo(() => {
