@@ -12,7 +12,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-export const GRUBBID_LOGO_SRC = "/grubbid-logo-2.1.svg";
+export const GRUBBID_LOGO_SRC = "/menuply-logo5-transparent.png";
 
 export function BrandLogo({
   to = "/",
