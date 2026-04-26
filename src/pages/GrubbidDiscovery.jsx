@@ -42,6 +42,8 @@ const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const RECENT_LOCATIONS_KEY = "grubbid.recent.locations";
 const MAX_RECENT_LOCATIONS = 3;
 const ALLERGEN_KEY = "grubbid.allergen.exclusions";
+const FILTER_HEALTH_CHECKED_KEY = "grubbid.filterHealthChecked";
+const FILTER_HEALTH_BROKEN_KEY = "grubbid.filterHealthBroken";
 
 const ALLERGENS = [
   { id: "nuts",      label: "Nuts" },
@@ -141,6 +143,60 @@ function saveRecentLocation(label) {
     const updated = [label, ...existing].slice(0, MAX_RECENT_LOCATIONS);
     window.localStorage.setItem(RECENT_LOCATIONS_KEY, JSON.stringify(updated));
   } catch {}
+}
+
+function countSearchResults(payload) {
+  if (Array.isArray(payload?.results)) return payload.results.length;
+  return (payload?.menu_items?.length || 0) + (payload?.buckets?.restaurants?.length || 0);
+}
+
+async function verifyFilterHealth(locationParams) {
+  try {
+    const query = "chicken";
+
+    const baseQuery = new URLSearchParams({
+      q: query,
+      ...locationParams,
+    }).toString();
+
+    const dietaryQuery = new URLSearchParams({
+      q: query,
+      ...locationParams,
+      gluten_free: "1",
+    }).toString();
+
+    const allergenQuery = new URLSearchParams({
+      q: query,
+      ...locationParams,
+      allergens: "gluten",
+    }).toString();
+
+    const [baseRes, dietaryRes, allergenRes] = await Promise.all([
+      fetch(`${API}/search?${baseQuery}`),
+      fetch(`${API}/search?${dietaryQuery}`),
+      fetch(`${API}/search?${allergenQuery}`),
+    ]);
+
+    const [baseData, dietaryData, allergenData] = await Promise.all([
+      baseRes.json(),
+      dietaryRes.json(),
+      allergenRes.json(),
+    ]);
+
+    const baseCount = countSearchResults(baseData);
+    const dietaryCount = countSearchResults(dietaryData);
+    const allergenCount = countSearchResults(allergenData);
+
+    return {
+      baseCount,
+      dietaryCount,
+      allergenCount,
+      isWorking: dietaryCount < baseCount && allergenCount < baseCount,
+    };
+  } catch (err) {
+    console.warn("Filter health check failed to run", err);
+    return { isWorking: true };
+  }
 }
 
 function removeRecentLocation(label) {
@@ -269,6 +325,13 @@ export default function GrubbidDiscovery() {
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch { return new Set(); }
   });
+  const [filterHealthBroken, setFilterHealthBroken] = useState(() => {
+    try {
+      return typeof window !== "undefined" && window.sessionStorage.getItem(FILTER_HEALTH_BROKEN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const resolvedLocationLabel = useMemo(() => {
     if (appliedLocation) return appliedLocation;
     return autoLocation.label;
@@ -321,6 +384,44 @@ export default function GrubbidDiscovery() {
   useEffect(() => {
     try { localStorage.setItem(ALLERGEN_KEY, JSON.stringify([...excludedAllergens])); } catch {}
   }, [excludedAllergens]);
+
+  function buildApiLocationParams() {
+    const requestedLocationValue = String(getEffectiveSearchLocation() || "").trim();
+    const explicitLocationValue =
+      shouldUseAutoGeo && (!requestedLocationValue || normalizeLocationLabel(requestedLocationValue) === normalizedAutoLocationLabel)
+        ? ""
+        : requestedLocationValue;
+    const params = buildSearchLocationParams({
+      query: "",
+      explicitLocationValue,
+      autoLocation,
+      radiusMiles: LOCAL_RADIUS_MILES,
+    });
+    params.delete("q");
+    return Object.fromEntries(params.entries());
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.sessionStorage.getItem(FILTER_HEALTH_CHECKED_KEY) === "1") return;
+
+    try { window.sessionStorage.setItem(FILTER_HEALTH_CHECKED_KEY, "1"); } catch {}
+    const locationParams = buildApiLocationParams();
+    if (!Object.keys(locationParams).length) return;
+
+    verifyFilterHealth(locationParams)
+      .then((result) => {
+        if (!result.isWorking) {
+          console.warn("FILTER HEALTH CHECK FAILED", result);
+          setFilterHealthBroken(true);
+          try { window.sessionStorage.setItem(FILTER_HEALTH_BROKEN_KEY, "1"); } catch {}
+        } else {
+          try { window.sessionStorage.setItem(FILTER_HEALTH_BROKEN_KEY, "0"); } catch {}
+        }
+      });
+  // Intentionally once per session; location is read at mount time only.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // When geo resolves, overwrite stale session location unless user manually set one
   useEffect(() => {
@@ -751,6 +852,20 @@ export default function GrubbidDiscovery() {
                 📸
               </button>
             </div>
+            {filterHealthBroken && (
+              <div style={{
+                marginTop: 10,
+                padding: "10px 14px",
+                borderRadius: 14,
+                border: "1px solid #fcd34d",
+                background: "#fffbeb",
+                color: "#92400e",
+                fontSize: 13,
+                fontWeight: 600,
+              }}>
+                ⚠️ Filters may not be applied correctly. Please refresh or try again.
+              </div>
+            )}
           </div>
 
           <div style={{ padding: "10px 16px 0" }}>
