@@ -8,7 +8,7 @@
  * Real data sources only — two card categories:
  *
  *   1. Phrase cards (contextual/comparative, section-relative)
- *      Source: chips.insights.phrases  → ["High Protein", "Best Value", "Low Calorie"]
+ *      Source: chips.insights.phrases  → ["High Protein", "Best Value", "Low Calorie", "Low Fat"]
  *      Numeric backing: chips.nutrition_chip
  *
  *   2. Score cards (absolute, computed from nutrition macros)
@@ -53,6 +53,20 @@ const PHRASE_META = {
       };
     },
     fallback: "Above-average protein content for this section.",
+  },
+  "Low Fat": {
+    accent: "#0e8a7a",
+    bg: "rgba(14,138,122,0.1)",
+    statsFrom(nut) {
+      const f = asN(nut.fat_g);
+      if (f === null) return null;
+      return {
+        value: `${Math.round(f)}g`,
+        label: "fat per serving",
+        sub: null,
+      };
+    },
+    fallback: "10g fat or less per serving.",
   },
   "Low Calorie": {
     accent: "#0e8a7a",
