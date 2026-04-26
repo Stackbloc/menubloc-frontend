@@ -32,7 +32,7 @@ export default function BottomNav() {
             style={{
               display: "flex", flexDirection: "column", alignItems: "center",
               gap: 2, textDecoration: "none", minWidth: 56,
-              color: active ? "#1F4E3D" : "#9ca3af",
+              color: active ? "#1d4ed8" : "#9ca3af",
               fontSize: 10, fontWeight: active ? 800 : 500,
               padding: "2px 8px",
               transition: "color 150ms ease",

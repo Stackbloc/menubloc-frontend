@@ -51,7 +51,7 @@ const navLinkBaseStyle = {
   textDecoration: "none",
   fontSize: 14,
   fontWeight: 700,
-  color: "#334155",
+  color: "#1d4ed8",
 };
 
 const authLinkStyle = {
@@ -63,9 +63,9 @@ const authLinkStyle = {
   textDecoration: "none",
   fontSize: 14,
   fontWeight: 700,
-  color: "#0f172a",
-  border: "1px solid rgba(15, 23, 42, 0.12)",
-  background: "#ffffff",
+  color: "#1d4ed8",
+  border: "1px solid rgba(29, 78, 216, 0.18)",
+  background: "#fff8f1",
 };
 
 const searchFormStyle = {
@@ -94,8 +94,8 @@ const searchButtonStyle = {
   padding: "0 18px",
   border: "none",
   borderRadius: 999,
-  background: "#0f172a",
-  color: "#ffffff",
+  background: "linear-gradient(180deg, #ff9a2f 0%, #ff6b00 100%)",
+  color: "#1638a0",
   fontSize: 14,
   fontWeight: 800,
   cursor: "pointer",
@@ -104,8 +104,8 @@ const searchButtonStyle = {
 function buildNavLinkStyle(isActive) {
   return {
     ...navLinkBaseStyle,
-    color: isActive ? "#0f172a" : "#475569",
-    background: isActive ? "rgba(15, 23, 42, 0.08)" : "transparent",
+    color: isActive ? "#1638a0" : "#4963a6",
+    background: isActive ? "rgba(255, 107, 0, 0.12)" : "transparent",
   };
 }
 

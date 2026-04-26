@@ -32,11 +32,11 @@ export default function StickyPageHeader({ onBack, title, children }) {
           <BrandLogo width={72} height={48} radius={14} pageColor="#f7f6f1" />
           <div style={{
             width: 72, marginTop: -1, padding: "4px 0 6px",
-            background: "linear-gradient(180deg, #1a6b47 0%, #0d3d28 100%)",
-            color: "#6ee7b7", fontSize: 8, fontWeight: 900,
+            background: "linear-gradient(180deg, #ff9a2f 0%, #ff6b00 100%)",
+            color: "#1d4ed8", fontSize: 8, fontWeight: 900,
             letterSpacing: "0.13em", textTransform: "uppercase",
             borderRadius: "0 0 7px 7px",
-            boxShadow: "0 6px 16px rgba(13,61,40,0.55), inset 0 1px 0 rgba(255,255,255,0.10)",
+            boxShadow: "0 6px 16px rgba(255,107,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",
             userSelect: "none",
             display: "flex", justifyContent: "center",
           }}>
