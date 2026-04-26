@@ -1,43 +1,18 @@
-/**
- * File:    PdfUploadPage.jsx
- * Path:    menubloc-frontend/src/pages/PdfUploadPage.jsx
- * Date:    2026-03-09
- * Purpose:
- *   Onboarding step 5 — PDF menu upload.
- *   Reached from MenuDesignSelectPage (step 4) via router state.
- *
- *   Router state expected:
- *     restaurant_id    — numeric id of the claimed/created restaurant
- *     restaurant_name  — display name
- *     email            — owner email (used to verify owner_token)
- *     owner_token      — HMAC token from signup/claim
- *     plan             — "verified" | "pro"
- *     design_style     — style id from MenuDesignSelectPage, or null if skipped
- *
- *   Submits: POST /menu-upload/pdf
- *     multipart/form-data: file, restaurant_id, email, owner_token, plan
- *
- *   On success: shows confirmation with design style info and link to restaurant profile.
- *
- *   Update 2026-03-09:
- *     Step trail updated to 5 steps (added step 4 Design).
- *     Success screen shows chosen design style (if any) and a design upsell if skipped.
- */
-
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import {
+  RESTAURANT_SIGNUP_RESTART_ROUTE,
+  navigateWithRestaurantOnboardingState,
+  persistRestaurantOnboardingState,
+  resolveRestaurantOnboardingState,
+} from "../lib/restaurantOnboardingState.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-
-const MAX_FILE_BYTES = 20 * 1024 * 1024; // 20 MB
-
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const FONT = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
 
-/* ─────────────────────────────────────────────────────────────
-   Styles
-───────────────────────────────────────────────────────────── */
 const s = {
   page: {
     maxWidth: 620,
@@ -46,10 +21,6 @@ const s = {
     fontFamily: FONT,
     color: "#111",
   },
-  brand:    { fontWeight: 800, fontSize: 18 },
-  subbrand: { fontSize: 12, color: "#666", marginBottom: 28 },
-
-  // Step trail
   steps: {
     display: "flex",
     alignItems: "center",
@@ -70,11 +41,8 @@ const s = {
     fontSize: 11,
   }),
   stepDivider: { flex: "0 0 12px", height: 1, background: "#e0e0e0", margin: "0 2px" },
-
-  heading:    { fontSize: 22, fontWeight: 800, marginBottom: 4 },
+  heading: { fontSize: 22, fontWeight: 800, marginBottom: 4 },
   subheading: { fontSize: 14, color: "#666", marginBottom: 28, lineHeight: 1.5 },
-
-  // Context card
   contextCard: {
     border: "1px solid #e5e5e5",
     borderRadius: 12,
@@ -87,7 +55,7 @@ const s = {
     flexWrap: "wrap",
     alignItems: "center",
   },
-  contextItem:  { color: "#555" },
+  contextItem: { color: "#555" },
   contextLabel: { fontWeight: 700, color: "#111", marginRight: 4 },
   planBadge: (plan) => ({
     display: "inline-block",
@@ -117,8 +85,6 @@ const s = {
     background: color,
     flexShrink: 0,
   }),
-
-  // Drop zone
   dropZone: (isDragOver, hasFile, hasError) => ({
     border: `2px dashed ${hasError ? "#c00" : isDragOver ? "#111" : hasFile ? "#2a7a2a" : "#ccc"}`,
     borderRadius: 16,
@@ -130,12 +96,10 @@ const s = {
     marginBottom: 20,
     userSelect: "none",
   }),
-  dropIcon:  { fontSize: 36, marginBottom: 10, lineHeight: 1 },
+  dropIcon: { fontSize: 36, marginBottom: 10, lineHeight: 1 },
   dropTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
-  dropSub:   { fontSize: 13, color: "#666", lineHeight: 1.5 },
-  dropHint:  { fontSize: 12, color: "#999", marginTop: 8 },
-
-  // File info
+  dropSub: { fontSize: 13, color: "#666", lineHeight: 1.5 },
+  dropHint: { fontSize: 12, color: "#999", marginTop: 8 },
   fileInfo: {
     display: "flex",
     alignItems: "center",
@@ -159,7 +123,6 @@ const s = {
     padding: 0,
     flexShrink: 0,
   },
-
   submitBtn: (disabled) => ({
     width: "100%",
     height: 48,
@@ -172,7 +135,6 @@ const s = {
     cursor: disabled ? "not-allowed" : "pointer",
     fontFamily: FONT,
   }),
-
   error: {
     padding: "12px 16px",
     background: "#fff0f0",
@@ -183,7 +145,6 @@ const s = {
     marginBottom: 16,
     lineHeight: 1.5,
   },
-
   progress: {
     padding: "14px 16px",
     background: "#f0f7ff",
@@ -194,8 +155,6 @@ const s = {
     marginBottom: 16,
     fontWeight: 600,
   },
-
-  /* Success screen */
   successBox: {
     border: "2px solid #2a7a2a",
     borderRadius: 16,
@@ -204,7 +163,7 @@ const s = {
     background: "#f0fbf0",
     marginBottom: 24,
   },
-  successIcon:  { fontSize: 48, marginBottom: 12, lineHeight: 1 },
+  successIcon: { fontSize: 48, marginBottom: 12, lineHeight: 1 },
   successTitle: { fontSize: 22, fontWeight: 800, marginBottom: 8, color: "#1a5c1a" },
   successSub: {
     fontSize: 14,
@@ -243,7 +202,7 @@ const s = {
   designBannerIcon: { fontSize: 28, flexShrink: 0 },
   designBannerText: { flex: 1 },
   designBannerTitle: { fontSize: 15, fontWeight: 800, marginBottom: 4 },
-  designBannerDesc:  { fontSize: 13, color: "#555", lineHeight: 1.5 },
+  designBannerDesc: { fontSize: 13, color: "#555", lineHeight: 1.5 },
   designBannerLink: {
     display: "inline-block",
     marginTop: 10,
@@ -257,60 +216,196 @@ const s = {
     padding: 0,
     fontFamily: FONT,
   },
+  restartBtn: {
+    display: "inline-flex",
+    marginTop: 14,
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: "#111",
+    color: "#fff",
+    fontWeight: 700,
+    textDecoration: "none",
+  },
 };
-
-/* ─────────────────────────────────────────────────────────────
-   Helpers
-───────────────────────────────────────────────────────────── */
 
 function formatBytes(bytes) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Component
-───────────────────────────────────────────────────────────── */
+function isPdfFile(file) {
+  if (!file) return false;
+  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+}
+
+function isImageFile(file) {
+  return Boolean(file?.type?.startsWith("image/"));
+}
+
+async function loadImageElement(file) {
+  const objectUrl = URL.createObjectURL(file);
+
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve({ image, objectUrl });
+    image.onerror = () => reject(new Error("Could not read this image. Try a JPG, PNG, or a PDF instead."));
+    image.src = objectUrl;
+  });
+}
+
+function base64ToUint8Array(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+function buildSingleImagePdfBlob(jpegBytes, width, height) {
+  const encoder = new TextEncoder();
+  const parts = [];
+  const offsets = [0];
+  let length = 0;
+
+  function pushText(text) {
+    const bytes = encoder.encode(text);
+    parts.push(bytes);
+    length += bytes.length;
+  }
+
+  function pushBytes(bytes) {
+    parts.push(bytes);
+    length += bytes.length;
+  }
+
+  pushText("%PDF-1.3\n");
+
+  offsets[1] = length;
+  pushText("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+
+  offsets[2] = length;
+  pushText("2 0 obj\n<< /Type /Pages /Count 1 /Kids [3 0 R] >>\nendobj\n");
+
+  offsets[3] = length;
+  pushText(
+    `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`
+  );
+
+  offsets[4] = length;
+  pushText(
+    `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`
+  );
+  pushBytes(jpegBytes);
+  pushText("\nendstream\nendobj\n");
+
+  const contents = `q\n${width} 0 0 ${height} 0 0 cm\n/Im0 Do\nQ\n`;
+  offsets[5] = length;
+  pushText(`5 0 obj\n<< /Length ${contents.length} >>\nstream\n${contents}endstream\nendobj\n`);
+
+  const xrefOffset = length;
+  pushText("xref\n0 6\n0000000000 65535 f \n");
+  for (let index = 1; index <= 5; index += 1) {
+    pushText(`${String(offsets[index]).padStart(10, "0")} 00000 n \n`);
+  }
+  pushText(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+
+  return new Blob(parts, { type: "application/pdf" });
+}
+
+async function convertImageFileToPdf(file) {
+  const { image, objectUrl } = await loadImageElement(file);
+
+  try {
+    const maxDimension = 2200;
+    const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Could not prepare your image for upload on this device.");
+    }
+
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+
+    const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    const base64 = jpegDataUrl.split(",")[1];
+    if (!base64) {
+      throw new Error("Could not prepare your image for upload.");
+    }
+
+    const jpegBytes = base64ToUint8Array(base64);
+    const pdfBlob = buildSingleImagePdfBlob(jpegBytes, width, height);
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "menu-scan";
+
+    return new File([pdfBlob], `${baseName}.pdf`, {
+      type: "application/pdf",
+      lastModified: Date.now(),
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
 
 export default function PdfUploadPage() {
   const location = useLocation();
-  const nav      = useNavigate();
-  const state    = location.state || {};
+  const nav = useNavigate();
+  const recovery = useMemo(
+    () => resolveRestaurantOnboardingState({ routeState: location.state, search: location.search }),
+    [location.state, location.search]
+  );
 
+  useEffect(() => {
+    if (recovery.hasAnyData) {
+      persistRestaurantOnboardingState(recovery.state);
+    }
+  }, [recovery]);
+
+  const state = recovery.state || {};
   const {
     restaurant_id,
     restaurant_name = "Your restaurant",
-    email           = "",
-    owner_token     = "",
-    plan            = "",
-    design_style    = null,
+    email = "",
+    owner_token = "",
+    plan = "",
+    design_style = null,
     ingestion_method = "pdf",
   } = state;
 
   const fileInputRef = useRef(null);
-
-  const [file,       setFile]       = useState(null);
+  const [file, setFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [fileError,  setFileError]  = useState("");
-  const [uploading,  setUploading]  = useState(false);
-  const [uploadErr,  setUploadErr]  = useState("");
-  const [result,     setResult]     = useState(null);
+  const [fileError, setFileError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
+  const [result, setResult] = useState(null);
 
-  const missingState = !restaurant_id || !email || !owner_token;
-
-  // Resolve chosen design style label
+  const missingState = recovery.missing;
   const chosenStyle = design_style
-    ? DESIGN_STYLES.find((d) => d.id === design_style) || null
+    ? DESIGN_STYLES.find((entry) => entry.id === design_style) || null
     : null;
+  const isOcrFlow = ingestion_method === "ocr";
+  const accept = isOcrFlow ? "image/*,application/pdf,.pdf" : "application/pdf,.pdf";
 
-  /* ── File validation ── */
   function validateAndSetFile(chosen) {
     setFileError("");
     setUploadErr("");
     if (!chosen) return;
 
-    if (chosen.type !== "application/pdf" && !chosen.name.toLowerCase().endsWith(".pdf")) {
-      setFileError("Only PDF files are accepted.");
+    const allowed = isPdfFile(chosen) || (isOcrFlow && isImageFile(chosen));
+    if (!allowed) {
+      setFileError(
+        isOcrFlow
+          ? "Choose a menu PDF or a phone photo of the menu."
+          : "Only PDF files are accepted."
+      );
       return;
     }
     if (chosen.size > MAX_FILE_BYTES) {
@@ -320,41 +415,62 @@ export default function PdfUploadPage() {
     setFile(chosen);
   }
 
-  /* ── Drag-and-drop ── */
-  function onDragOver(e)  { e.preventDefault(); setIsDragOver(true); }
-  function onDragLeave()  { setIsDragOver(false); }
-  function onDrop(e) {
-    e.preventDefault();
-    setIsDragOver(false);
-    validateAndSetFile(e.dataTransfer.files?.[0] || null);
-  }
-  function onDropZoneClick() { fileInputRef.current?.click(); }
-  function onFileChange(e) {
-    validateAndSetFile(e.target.files?.[0] || null);
-    e.target.value = "";
+  function onDragOver(event) {
+    event.preventDefault();
+    setIsDragOver(true);
   }
 
-  /* ── Submit ── */
-  async function handleSubmit(e) {
-    e.preventDefault();
+  function onDragLeave() {
+    setIsDragOver(false);
+  }
+
+  function onDrop(event) {
+    event.preventDefault();
+    setIsDragOver(false);
+    validateAndSetFile(event.dataTransfer.files?.[0] || null);
+  }
+
+  function onDropZoneClick() {
+    fileInputRef.current?.click();
+  }
+
+  function onFileChange(event) {
+    validateAndSetFile(event.target.files?.[0] || null);
+    event.target.value = "";
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
     setUploadErr("");
+    setFileError("");
 
     if (!file) {
-      setFileError("Please select a PDF file to upload.");
+      setFileError(isOcrFlow ? "Please take a menu photo or choose a PDF." : "Please select a PDF file to upload.");
       return;
     }
 
     setUploading(true);
 
     try {
-      const fd = new FormData();
-      fd.append("file",          file);
-      fd.append("restaurant_id", String(restaurant_id));
-      fd.append("email",         email);
-      fd.append("owner_token",   owner_token);
-      if (plan) fd.append("plan", plan);
+      const uploadFile = isOcrFlow && isImageFile(file)
+        ? await convertImageFileToPdf(file)
+        : file;
 
-      const res  = await fetch(`${API}/menu-upload/pdf`, { method: "POST", body: fd });
+      if (uploadFile.size > MAX_FILE_BYTES) {
+        throw new Error(`Prepared upload is too large (${formatBytes(uploadFile.size)}). Try a closer crop or a smaller PDF.`);
+      }
+
+      const formData = new FormData();
+      formData.append("file", uploadFile, uploadFile.name);
+      formData.append("restaurant_id", String(restaurant_id));
+      formData.append("email", email);
+      formData.append("owner_token", owner_token);
+      if (plan) formData.append("plan", plan);
+
+      const res = await fetch(`${API}/menu-upload/pdf`, {
+        method: "POST",
+        body: formData,
+      });
       const data = await res.json().catch(() => null);
 
       if (!res.ok || !data?.ok) {
@@ -362,12 +478,12 @@ export default function PdfUploadPage() {
       }
 
       setResult(data);
-    } catch (err) {
-      const raw = err.message || "";
+    } catch (error) {
+      const raw = error.message || "";
       const isFetchError = /failed to fetch|networkerror|load failed/i.test(raw);
       setUploadErr(
         isFetchError
-          ? `Your menu failed to upload. Make sure your file is a PDF document and try again, or email your menu to menus@grubbid.com with your Grubbid account ID.`
+          ? "Your menu failed to upload. Make sure the file is a clear menu PDF or photo and try again."
           : raw || "Upload failed. Please try again."
       );
     } finally {
@@ -375,7 +491,6 @@ export default function PdfUploadPage() {
     }
   }
 
-  /* ── Render: missing state ── */
   if (missingState) {
     return (
       <div style={s.page}>
@@ -384,15 +499,17 @@ export default function PdfUploadPage() {
           logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
         />
         <div style={{ ...s.error, marginTop: 24 }}>
-          <strong>Missing session data.</strong> Please complete the signup flow to reach this
-          page.{" "}
-          <a href="/signup" style={{ color: "#c00", fontWeight: 700 }}>Start over</a>
+          <strong>We could not recover your restaurant signup session.</strong><br />
+          Restart signup to reconnect this upload to your restaurant.
+          <br />
+          <Link to={RESTAURANT_SIGNUP_RESTART_ROUTE} style={s.restartBtn}>
+            Restart restaurant signup
+          </Link>
         </div>
       </div>
     );
   }
 
-  /* ── Render: success ── */
   if (result) {
     return (
       <div style={s.page}>
@@ -405,7 +522,7 @@ export default function PdfUploadPage() {
           <div style={s.successIcon}>✓</div>
           <div style={s.successTitle}>Menu uploaded successfully</div>
           <p style={s.successSub}>
-            Your menu PDF has been received and is being processed. Once approved, your
+            Your menu file has been received and is being processed. Once approved, your
             menu will appear on your Grubbid profile.
           </p>
           <Link to={`/restaurant-profile/${restaurant_id}`} style={s.profileLink}>
@@ -418,7 +535,6 @@ export default function PdfUploadPage() {
           </div>
         </div>
 
-        {/* Design style status / upsell */}
         {chosenStyle ? (
           <div style={s.designBanner(true)}>
             <div style={s.designBannerIcon}>🎨</div>
@@ -427,8 +543,7 @@ export default function PdfUploadPage() {
                 Design style selected: {chosenStyle.name}
               </div>
               <div style={s.designBannerDesc}>
-                {chosenStyle.tagline}. Your menu will be styled and ready once it is
-                approved and published.
+                {chosenStyle.tagline}. Your menu will be styled and ready once it is approved and published.
               </div>
             </div>
           </div>
@@ -436,18 +551,16 @@ export default function PdfUploadPage() {
           <div style={s.designBanner(false)}>
             <div style={s.designBannerIcon}>✦</div>
             <div style={s.designBannerText}>
-              <div style={s.designBannerTitle}>
-                Make your menu look beautiful
-              </div>
+              <div style={s.designBannerTitle}>Make your menu look beautiful</div>
               <div style={s.designBannerDesc}>
-                You skipped the design step. Choose a style anytime to give your menu a
-                polished, professional look — no design skills needed.
+                You skipped the design step. Choose a style anytime to give your menu a polished, professional look.
               </div>
               <button
                 style={s.designBannerLink}
                 onClick={() =>
-                  nav("/restaurant/design-select", {
-                    state: { restaurant_id, restaurant_name, email, owner_token, plan, ingestion_method: "pdf" },
+                  navigateWithRestaurantOnboardingState(nav, "/restaurant/design-select", {
+                    ...state,
+                    ingestion_method,
                   })
                 }
               >
@@ -460,7 +573,6 @@ export default function PdfUploadPage() {
     );
   }
 
-  /* ── Render: upload form ── */
   const submitDisabled = uploading || !!fileError || !file;
 
   return (
@@ -470,7 +582,6 @@ export default function PdfUploadPage() {
         logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
       />
 
-      {/* Step trail */}
       <div style={s.steps}>
         <div style={s.step(false, true)}>1. Account</div>
         <div style={s.stepDivider} />
@@ -481,30 +592,28 @@ export default function PdfUploadPage() {
         <div style={s.step(true, false)}>4. Upload menu</div>
       </div>
 
-      <div style={s.heading}>{ingestion_method === "ocr" ? "Upload your scanned menu for OCR" : "Upload your menu PDF"}</div>
+      <div style={s.heading}>{isOcrFlow ? "Take a menu photo or upload a scan" : "Upload your menu PDF"}</div>
       <div style={s.subheading}>
-        {ingestion_method === "ocr"
-          ? "Upload a scanned PDF of your menu and we will run it through the OCR-oriented ingestion path. PDF files work best for this flow."
-          : "Upload a PDF of your menu and we will extract and structure it automatically. Text-based PDFs work best. Scanned image PDFs may have limited results."}
+        {isOcrFlow
+          ? "Mobile-first OCR upload. Use your phone camera for a menu photo, or upload a menu PDF if you already have one."
+          : "Upload a PDF of your menu and we will extract and structure it automatically."}
       </div>
 
-      {/* Context: restaurant + plan + design style */}
       <div style={s.contextCard}>
         <span style={s.contextItem}>
           <span style={s.contextLabel}>Restaurant</span>
           {restaurant_name}
         </span>
-        {plan && <span style={s.planBadge(plan)}>{plan}</span>}
-        {chosenStyle && (
+        {plan ? <span style={s.planBadge(plan)}>{plan}</span> : null}
+        {chosenStyle ? (
           <span style={s.designBadge}>
             <span style={s.designDot(chosenStyle.preview.accent)} />
             {chosenStyle.name}
           </span>
-        )}
+        ) : null}
       </div>
 
       <form onSubmit={handleSubmit} noValidate>
-        {/* Drop zone */}
         <div
           style={s.dropZone(isDragOver, !!file, !!fileError)}
           onDragOver={onDragOver}
@@ -513,64 +622,58 @@ export default function PdfUploadPage() {
           onClick={onDropZoneClick}
           role="button"
           tabIndex={0}
-          aria-label="Click or drag to upload PDF"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
+          aria-label={isOcrFlow ? "Tap to take a photo or choose a menu PDF" : "Click or drag to upload PDF"}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
               onDropZoneClick();
             }
           }}
         >
-          <div style={s.dropIcon}>{file ? "📄" : "⬆"}</div>
+          <div style={s.dropIcon}>{isOcrFlow ? "📷" : "📄"}</div>
           <div style={s.dropTitle}>
-            {file ? file.name : "Click to select or drag & drop your PDF"}
+            {isOcrFlow ? "Tap to take a photo or choose a menu PDF" : "Click or drag to upload your menu PDF"}
           </div>
           <div style={s.dropSub}>
-            {file
-              ? `${formatBytes(file.size)} · PDF`
-              : "PDF files only · Maximum 20 MB"}
+            {isOcrFlow
+              ? "On phones, the camera will open when supported. We convert photos to a PDF before upload so they stay attached to this restaurant signup."
+              : "Select a PDF from your device or drag it into this box to begin the upload."}
           </div>
-          {!file && (
-            <div style={s.dropHint}>Your file will not leave this page until you click Upload.</div>
-          )}
+          <div style={s.dropHint}>
+            {isOcrFlow ? "Accepted: phone photos, PNG/JPG, or PDF" : "Accepted format: PDF only · Max file size: 20 MB"}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={accept}
+            capture={isOcrFlow ? "environment" : undefined}
+            style={{ display: "none" }}
+            onChange={onFileChange}
+          />
         </div>
 
-        {/* Hidden file input */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/pdf,.pdf"
-          style={{ display: "none" }}
-          onChange={onFileChange}
-        />
-
-        {/* Selected file info + clear */}
-        {file && !fileError && (
+        {file ? (
           <div style={s.fileInfo}>
-            <span style={{ fontSize: 20 }}>📄</span>
             <span style={s.fileName}>{file.name}</span>
             <span style={s.fileSize}>{formatBytes(file.size)}</span>
-            <button
-              type="button"
-              style={s.clearBtn}
-              onClick={() => { setFile(null); setFileError(""); }}
-              aria-label="Remove selected file"
-            >
-              ✕
+            <button type="button" style={s.clearBtn} onClick={() => setFile(null)} aria-label="Clear selected file">
+              ×
             </button>
           </div>
-        )}
+        ) : null}
 
-        {fileError  && <div style={s.error}>{fileError}</div>}
-        {uploading  && <div style={s.progress}>Uploading and extracting text… this may take a moment.</div>}
-        {uploadErr  && <div style={s.error}>{uploadErr}</div>}
+        {fileError ? <div style={s.error}>{fileError}</div> : null}
+        {uploadErr ? <div style={s.error}>{uploadErr}</div> : null}
+        {uploading ? (
+          <div style={s.progress}>
+            {isOcrFlow && isImageFile(file)
+              ? "Preparing your photo for upload and sending it now..."
+              : "Uploading and processing your menu. This may take a few moments…"}
+          </div>
+        ) : null}
 
-        <button
-          type="submit"
-          style={s.submitBtn(submitDisabled)}
-          disabled={submitDisabled}
-        >
-          {uploading ? "Uploading…" : ingestion_method === "ocr" ? "Upload scanned menu" : "Upload menu PDF"}
+        <button type="submit" style={s.submitBtn(submitDisabled)} disabled={submitDisabled}>
+          {uploading ? "Uploading..." : isOcrFlow ? "Upload menu photo or PDF" : "Upload PDF"}
         </button>
       </form>
     </div>

@@ -1,10 +1,17 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import {
+  RESTAURANT_SIGNUP_RESTART_ROUTE,
+  navigateWithRestaurantOnboardingState,
+  persistRestaurantOnboardingState,
+  resolveRestaurantOnboardingState,
+} from "../lib/restaurantOnboardingState.js";
 
 const ROUTES = {
   pdf: "/restaurant/pdf-upload",
   spreadsheet: "/restaurant/spreadsheet-upload",
-  ocr: "/restaurant/pdf-upload",
+  ocr: "/restaurant/ocr-upload",
 };
 
 const styles = {
@@ -15,8 +22,6 @@ const styles = {
     fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
     color: "#111",
   },
-  brand: { fontWeight: 800, fontSize: 18 },
-  subbrand: { fontSize: 12, color: "#666", marginBottom: 28 },
   steps: {
     display: "flex",
     alignItems: "center",
@@ -70,7 +75,17 @@ const styles = {
     fontSize: 13,
     color: "#c00",
     marginBottom: 16,
-    lineHeight: 1.5,
+    lineHeight: 1.6,
+  },
+  restartBtn: {
+    display: "inline-flex",
+    marginTop: 14,
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: "#111",
+    color: "#fff",
+    fontWeight: 700,
+    textDecoration: "none",
   },
 };
 
@@ -89,24 +104,33 @@ const OPTIONS = [
   },
   {
     key: "ocr",
-    title: "Upload photo or scan via OCR",
-    description: "Use the OCR-oriented path from the former signup flow after plan and design are set.",
-    meta: "This currently continues into the PDF upload screen. Use a scanned PDF for best OCR results.",
+    title: "Take a photo or upload a scan",
+    description: "Use your phone camera or upload menu images for the OCR path. PDFs still work too.",
+    meta: "Mobile-first: opens the rear camera on supported phones and keeps the upload attached to this restaurant signup.",
   },
 ];
 
 export default function MenuUploadChoicePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = location.state || {};
-  const missingState = !state.restaurant_id || !state.email || !state.owner_token;
+  const recovery = useMemo(
+    () => resolveRestaurantOnboardingState({ routeState: location.state, search: location.search }),
+    [location.state, location.search]
+  );
+
+  useEffect(() => {
+    if (recovery.hasAnyData) {
+      persistRestaurantOnboardingState(recovery.state);
+    }
+  }, [recovery]);
+
+  const state = recovery.state || {};
+  const missingState = recovery.missing;
 
   function handleChoice(choice) {
-    navigate(ROUTES[choice], {
-      state: {
-        ...state,
-        ingestion_method: choice,
-      },
+    navigateWithRestaurantOnboardingState(navigate, ROUTES[choice], {
+      ...state,
+      ingestion_method: choice,
     });
   }
 
@@ -118,7 +142,12 @@ export default function MenuUploadChoicePage() {
           logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#ffffff" }}
         />
         <div style={styles.error}>
-          <strong>Missing signup session data.</strong> Please restart restaurant signup to continue.
+          <strong>We could not recover your restaurant signup session.</strong><br />
+          Restart signup to continue into menu upload.
+          <br />
+          <Link to={RESTAURANT_SIGNUP_RESTART_ROUTE} style={styles.restartBtn}>
+            Restart restaurant signup
+          </Link>
         </div>
       </div>
     );
@@ -143,7 +172,7 @@ export default function MenuUploadChoicePage() {
 
       <div style={styles.heading}>Choose how to add your menu</div>
       <div style={styles.subheading}>
-        These are the same menu upload options that were previously shown during signup.
+        Refresh-safe recovery is enabled here, so your signup session survives page reloads and mobile camera handoffs.
       </div>
 
       <div style={styles.summary}>

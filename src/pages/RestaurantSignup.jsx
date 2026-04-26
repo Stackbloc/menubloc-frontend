@@ -4,6 +4,10 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { LEGAL_VERSIONS } from "../content/legal.js";
+import {
+  navigateWithRestaurantOnboardingState,
+  persistRestaurantOnboardingState,
+} from "../lib/restaurantOnboardingState.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const PLAN_SELECTION_ROUTE = "/restaurant/subscription";
@@ -329,7 +333,7 @@ export default function RestaurantSignup() {
       }
 
       const { restaurant, owner_token } = data;
-      const nextState = {
+      const draftState = persistRestaurantOnboardingState({
         restaurant_id: restaurant.id,
         restaurant_name: form.restaurant_name.trim(),
         email: form.email.trim(),
@@ -340,22 +344,19 @@ export default function RestaurantSignup() {
         ingestion_method: menuChoice === "pdf_now" ? "pdf" : "later",
         menu_choice: menuChoice,
         selected_plan: selectedPlan,
-      };
+      });
+
       if (selectedPlan === "verified") {
-        nav(DESIGN_SELECTION_ROUTE, {
-          state: {
-            ...nextState,
-            plan: "verified",
-          },
+        navigateWithRestaurantOnboardingState(nav, DESIGN_SELECTION_ROUTE, {
+          ...draftState,
+          plan: "verified",
         });
         return;
       }
 
-      nav(PLAN_SELECTION_ROUTE, {
-        state: {
-          ...nextState,
-          plan: selectedPlan,
-        },
+      navigateWithRestaurantOnboardingState(nav, PLAN_SELECTION_ROUTE, {
+        ...draftState,
+        plan: selectedPlan,
       });
     } catch (error) {
       setServerError(error.message || t("signup.error.signupFailed"));

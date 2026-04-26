@@ -1,39 +1,15 @@
-/**
- * ============================================================
- * Path: menubloc-frontend/src/pages/SpreadsheetUploadPage.jsx
- * Purpose:
- *   CSV menu upload step — final step of spreadsheet onboarding flow.
- *   Reached from SubscriptionSelect via router state.
- *
- *   Router state expected:
- *     restaurant_id   — numeric id
- *     restaurant_name — display name
- *     email           — owner email
- *     owner_token     — HMAC token
- *     plan            — "verified" | "pro"
- *
- *   Flow:
- *     1. User downloads the CSV template
- *     2. User selects their filled-in CSV file
- *     3. Client parses CSV into rows/objects (no backend dep needed)
- *     4. Preview table shown for confirmation
- *     5. Submit → POST /menu-upload/spreadsheet (JSON body with parsed items)
- *     6. Success screen with link to profile
- *
- *   Template columns (case-insensitive):
- *     Name | Description | Section | Price | IsVegan | IsGlutenFree
- * ============================================================
- */
-
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import {
+  RESTAURANT_SIGNUP_RESTART_ROUTE,
+  persistRestaurantOnboardingState,
+  resolveRestaurantOnboardingState,
+} from "../lib/restaurantOnboardingState.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
-const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
-
-/* ---- CSV template ---- */
 const TEMPLATE_HEADERS = ["Name", "Description", "Section", "Price", "IsVegan", "IsGlutenFree"];
 const TEMPLATE_EXAMPLE_ROWS = [
   ["Margherita Pizza", "Fresh mozzarella and basil", "Pizzas", "14.99", "TRUE", "FALSE"],
@@ -43,114 +19,107 @@ const TEMPLATE_EXAMPLE_ROWS = [
 
 function generateTemplateCsv() {
   const rows = [TEMPLATE_HEADERS, ...TEMPLATE_EXAMPLE_ROWS];
-  return rows.map((r) => r.map((cell) => `"${cell}"`).join(",")).join("\n");
+  return rows.map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n");
 }
 
 function downloadTemplate() {
-  const csv  = generateTemplateCsv();
+  const csv = generateTemplateCsv();
   const blob = new Blob([csv], { type: "text/csv" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  a.download = "Grubbid Menu Upload Template.csv";
-  a.click();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "Grubbid Menu Upload Template.csv";
+  anchor.click();
   URL.revokeObjectURL(url);
 }
 
-/* ---- CSV parser ---- */
-// Handles quoted fields, embedded commas, CRLF, BOM.
 function parseCSV(text) {
-  const raw = text.replace(/^\uFEFF/, ""); // strip BOM
-
+  const raw = text.replace(/^\uFEFF/, "");
   const records = [];
-  let cur       = "";
-  let inQuote   = false;
-  let fields    = [];
+  let current = "";
+  let inQuote = false;
+  let fields = [];
 
-  for (let i = 0; i < raw.length; i++) {
-    const ch   = raw[i];
-    const next = raw[i + 1];
+  for (let index = 0; index < raw.length; index += 1) {
+    const ch = raw[index];
+    const next = raw[index + 1];
 
-    if (ch === '"') {
-      if (inQuote && next === '"') {
-        cur += '"';
-        i++;
+    if (ch === "\"") {
+      if (inQuote && next === "\"") {
+        current += "\"";
+        index += 1;
       } else {
         inQuote = !inQuote;
       }
     } else if (ch === "," && !inQuote) {
-      fields.push(cur);
-      cur = "";
+      fields.push(current);
+      current = "";
     } else if ((ch === "\n" || ch === "\r") && !inQuote) {
-      fields.push(cur);
-      cur = "";
+      fields.push(current);
+      current = "";
       records.push(fields);
       fields = [];
-      if (ch === "\r" && next === "\n") i++; // skip \n in CRLF
+      if (ch === "\r" && next === "\n") index += 1;
     } else {
-      cur += ch;
+      current += ch;
     }
   }
-  // last field / line
-  if (cur || fields.length) {
-    fields.push(cur);
-    if (fields.some((f) => f !== "")) records.push(fields);
+
+  if (current || fields.length) {
+    fields.push(current);
+    if (fields.some((field) => field !== "")) records.push(fields);
   }
 
   return records;
 }
 
-// Map parsed CSV records to item objects using the header row.
 function csvToItems(records) {
   if (records.length < 2) return { items: [], warnings: ["CSV has no data rows."] };
 
-  const headerRaw = records[0].map((h) => h.trim().toLowerCase());
-
-  // Accept column aliases
+  const headerRaw = records[0].map((header) => header.trim().toLowerCase());
   const colIdx = {
-    name:          headerRaw.findIndex((h) => h === "name"),
-    description:   headerRaw.findIndex((h) => ["description", "desc"].includes(h)),
-    section:       headerRaw.findIndex((h) => ["section", "category"].includes(h)),
-    price:         headerRaw.findIndex((h) => h === "price"),
-    is_vegan:      headerRaw.findIndex((h) => ["isvegan", "is_vegan", "vegan"].includes(h)),
-    is_gluten_free:headerRaw.findIndex((h) => ["isglutenfree", "is_gluten_free", "glutenfree", "gluten_free"].includes(h)),
+    name: headerRaw.findIndex((header) => header === "name"),
+    description: headerRaw.findIndex((header) => ["description", "desc"].includes(header)),
+    section: headerRaw.findIndex((header) => ["section", "category"].includes(header)),
+    price: headerRaw.findIndex((header) => header === "price"),
+    is_vegan: headerRaw.findIndex((header) => ["isvegan", "is_vegan", "vegan"].includes(header)),
+    is_gluten_free: headerRaw.findIndex((header) => ["isglutenfree", "is_gluten_free", "glutenfree", "gluten_free"].includes(header)),
   };
 
   if (colIdx.name < 0) {
     return { items: [], warnings: ['Required column "Name" not found. Check column headers.'] };
   }
 
-  const items    = [];
+  const items = [];
   const warnings = [];
 
-  for (let r = 1; r < records.length; r++) {
-    const row  = records[r];
-    const get  = (idx) => (idx >= 0 ? (row[idx] ?? "").trim() : "");
+  for (let rowIndex = 1; rowIndex < records.length; rowIndex += 1) {
+    const row = records[rowIndex];
+    const get = (idx) => (idx >= 0 ? (row[idx] ?? "").trim() : "");
 
     const name = get(colIdx.name);
-    if (!name) continue; // blank row — skip silently
+    if (!name) continue;
 
     const priceRaw = get(colIdx.price);
     const priceNum = priceRaw ? parseFloat(priceRaw.replace(/[^0-9.]/g, "")) : null;
 
     items.push({
       name,
-      description:    get(colIdx.description)    || null,
-      section:        get(colIdx.section)         || null,
-      price:          Number.isFinite(priceNum) && priceNum >= 0 ? priceNum.toFixed(2) : null,
-      is_vegan:       get(colIdx.is_vegan)        || null,
-      is_gluten_free: get(colIdx.is_gluten_free)  || null,
+      description: get(colIdx.description) || null,
+      section: get(colIdx.section) || null,
+      price: Number.isFinite(priceNum) && priceNum >= 0 ? priceNum.toFixed(2) : null,
+      is_vegan: get(colIdx.is_vegan) || null,
+      is_gluten_free: get(colIdx.is_gluten_free) || null,
     });
 
     if (!Number.isFinite(priceNum) && priceRaw) {
-      warnings.push(`Row ${r + 1}: could not parse price "${priceRaw}" — it will be saved as null.`);
+      warnings.push(`Row ${rowIndex + 1}: could not parse price "${priceRaw}" — it will be saved as null.`);
     }
   }
 
   return { items, warnings };
 }
 
-/* ---- Styles ---- */
 const s = {
   page: {
     maxWidth: 700,
@@ -159,9 +128,6 @@ const s = {
     fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
     color: "#111",
   },
-  brand:    { fontWeight: 800, fontSize: 18 },
-  subbrand: { fontSize: 12, color: "#666", marginBottom: 28 },
-
   steps: {
     display: "flex",
     alignItems: "center",
@@ -179,10 +145,8 @@ const s = {
     whiteSpace: "nowrap",
   }),
   stepDivider: { flex: "0 0 16px", height: 1, background: "#e0e0e0", margin: "0 2px" },
-
-  heading:    { fontSize: 22, fontWeight: 800, marginBottom: 4 },
+  heading: { fontSize: 22, fontWeight: 800, marginBottom: 4 },
   subheading: { fontSize: 14, color: "#666", marginBottom: 24, lineHeight: 1.5 },
-
   contextCard: {
     border: "1px solid #e5e5e5",
     borderRadius: 12,
@@ -206,8 +170,6 @@ const s = {
     padding: "2px 10px",
     textTransform: "capitalize",
   }),
-
-  /* Template section */
   templateSection: {
     border: "1px solid #e5e5e5",
     borderRadius: 12,
@@ -216,7 +178,7 @@ const s = {
     background: "#fafafa",
   },
   templateTitle: { fontWeight: 700, fontSize: 14, marginBottom: 4 },
-  templateDesc:  { fontSize: 13, color: "#555", marginBottom: 12, lineHeight: 1.5 },
+  templateDesc: { fontSize: 13, color: "#555", marginBottom: 12, lineHeight: 1.5 },
   templateBtn: {
     height: 36,
     padding: "0 16px",
@@ -235,8 +197,6 @@ const s = {
     lineHeight: 1.8,
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
   },
-
-  /* Drop zone */
   dropZone: (isDragOver, hasFile, hasError) => ({
     border: `2px dashed ${hasError ? "#c00" : isDragOver ? "#111" : hasFile ? "#2a7a2a" : "#ccc"}`,
     borderRadius: 16,
@@ -248,10 +208,9 @@ const s = {
     marginBottom: 16,
     userSelect: "none",
   }),
-  dropIcon:  { fontSize: 36, marginBottom: 10, lineHeight: 1 },
+  dropIcon: { fontSize: 36, marginBottom: 10, lineHeight: 1 },
   dropTitle: { fontSize: 15, fontWeight: 700, marginBottom: 6 },
-  dropSub:   { fontSize: 13, color: "#666", lineHeight: 1.5 },
-
+  dropSub: { fontSize: 13, color: "#666", lineHeight: 1.5 },
   fileInfo: {
     display: "flex",
     alignItems: "center",
@@ -275,8 +234,6 @@ const s = {
     padding: 0,
     flexShrink: 0,
   },
-
-  /* Warnings */
   warning: {
     padding: "10px 14px",
     background: "#fffbe6",
@@ -287,8 +244,6 @@ const s = {
     marginBottom: 12,
     lineHeight: 1.6,
   },
-
-  /* Preview table */
   previewWrap: {
     overflowX: "auto",
     marginBottom: 20,
@@ -323,7 +278,6 @@ const s = {
     whiteSpace: "nowrap",
   }),
   previewCount: { fontSize: 12, color: "#666", marginBottom: 12 },
-
   submitBtn: (disabled) => ({
     width: "100%",
     height: 48,
@@ -335,7 +289,6 @@ const s = {
     fontSize: 15,
     cursor: disabled ? "not-allowed" : "pointer",
   }),
-
   error: {
     padding: "12px 16px",
     background: "#fff0f0",
@@ -346,7 +299,6 @@ const s = {
     marginBottom: 16,
     lineHeight: 1.5,
   },
-
   progress: {
     padding: "14px 16px",
     background: "#f0f7ff",
@@ -357,8 +309,6 @@ const s = {
     marginBottom: 16,
     fontWeight: 600,
   },
-
-  /* Success */
   successBox: {
     border: "2px solid #2a7a2a",
     borderRadius: 16,
@@ -366,7 +316,7 @@ const s = {
     textAlign: "center",
     background: "#f0fbf0",
   },
-  successIcon:  { fontSize: 48, marginBottom: 12, lineHeight: 1 },
+  successIcon: { fontSize: 48, marginBottom: 12, lineHeight: 1 },
   successTitle: { fontSize: 22, fontWeight: 800, marginBottom: 8, color: "#1a5c1a" },
   successSub: {
     fontSize: 14,
@@ -387,6 +337,16 @@ const s = {
     textDecoration: "none",
   },
   pendingNote: { marginTop: 16, fontSize: 12, color: "#777", lineHeight: 1.5 },
+  restartBtn: {
+    display: "inline-flex",
+    marginTop: 14,
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: "#111",
+    color: "#fff",
+    fontWeight: 700,
+    textDecoration: "none",
+  },
 };
 
 function formatBytes(bytes) {
@@ -396,37 +356,45 @@ function formatBytes(bytes) {
 
 function BoolDot({ val }) {
   if (val === null || val === undefined || val === "") return <span style={{ color: "#bbb" }}>—</span>;
-  const s = String(val).toLowerCase();
-  const is = s === "true" || s === "1" || s === "yes";
-  return <span style={{ color: is ? "#2a7a2a" : "#888" }}>{is ? "Yes" : "No"}</span>;
+  const normalized = String(val).toLowerCase();
+  const truthy = normalized === "true" || normalized === "1" || normalized === "yes";
+  return <span style={{ color: truthy ? "#2a7a2a" : "#888" }}>{truthy ? "Yes" : "No"}</span>;
 }
 
 export default function SpreadsheetUploadPage() {
   const location = useLocation();
-  const state    = location.state || {};
+  const recovery = useMemo(
+    () => resolveRestaurantOnboardingState({ routeState: location.state, search: location.search }),
+    [location.state, location.search]
+  );
 
+  useEffect(() => {
+    if (recovery.hasAnyData) {
+      persistRestaurantOnboardingState(recovery.state);
+    }
+  }, [recovery]);
+
+  const state = recovery.state || {};
   const {
     restaurant_id,
     restaurant_name = "Your restaurant",
-    email           = "",
-    owner_token     = "",
-    plan            = "",
+    email = "",
+    owner_token = "",
+    plan = "",
   } = state;
 
   const fileInputRef = useRef(null);
-
-  const [file,       setFile]       = useState(null);
+  const [file, setFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [fileError,  setFileError]  = useState("");
-  const [items,      setItems]      = useState(null);   // parsed items
-  const [warnings,   setWarnings]   = useState([]);
-  const [uploading,  setUploading]  = useState(false);
-  const [uploadErr,  setUploadErr]  = useState("");
-  const [result,     setResult]     = useState(null);
+  const [fileError, setFileError] = useState("");
+  const [items, setItems] = useState(null);
+  const [warnings, setWarnings] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
+  const [result, setResult] = useState(null);
 
-  const missingState = !restaurant_id || !email || !owner_token;
+  const missingState = recovery.missing;
 
-  /* ---- File handling ---- */
   function validateAndSetFile(chosen) {
     setFileError("");
     setUploadErr("");
@@ -435,8 +403,8 @@ export default function SpreadsheetUploadPage() {
 
     if (!chosen) return;
 
-    const isCSV = chosen.type === "text/csv" || chosen.name.toLowerCase().endsWith(".csv");
-    if (!isCSV) {
+    const isCsv = chosen.type === "text/csv" || chosen.name.toLowerCase().endsWith(".csv");
+    if (!isCsv) {
       setFileError("Only CSV files are accepted. Download the template below, fill it in, and save as CSV.");
       return;
     }
@@ -445,46 +413,55 @@ export default function SpreadsheetUploadPage() {
       return;
     }
 
-    // Parse immediately for preview
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = (event) => {
       try {
-        const text    = e.target.result;
+        const text = event.target.result;
         const records = parseCSV(text);
-        const { items: parsed, warnings: warns } = csvToItems(records);
+        const { items: parsed, warnings: nextWarnings } = csvToItems(records);
 
         if (parsed.length === 0) {
-          setFileError(warns.length ? warns[0] : "No valid rows found in this file.");
+          setFileError(nextWarnings.length ? nextWarnings[0] : "No valid rows found in this file.");
           return;
         }
 
         setFile(chosen);
         setItems(parsed);
-        setWarnings(warns);
-      } catch (err) {
-        setFileError(`Could not parse CSV: ${err.message}`);
+        setWarnings(nextWarnings);
+      } catch (error) {
+        setFileError(`Could not parse CSV: ${error.message}`);
       }
     };
     reader.onerror = () => setFileError("Could not read the file.");
     reader.readAsText(chosen, "utf-8");
   }
 
-  function onDragOver(e) { e.preventDefault(); setIsDragOver(true); }
-  function onDragLeave()  { setIsDragOver(false); }
-  function onDrop(e) {
-    e.preventDefault();
-    setIsDragOver(false);
-    validateAndSetFile(e.dataTransfer.files?.[0] || null);
-  }
-  function onDropZoneClick() { fileInputRef.current?.click(); }
-  function onFileChange(e) {
-    validateAndSetFile(e.target.files?.[0] || null);
-    e.target.value = "";
+  function onDragOver(event) {
+    event.preventDefault();
+    setIsDragOver(true);
   }
 
-  /* ---- Submit ---- */
-  async function handleSubmit(e) {
-    e.preventDefault();
+  function onDragLeave() {
+    setIsDragOver(false);
+  }
+
+  function onDrop(event) {
+    event.preventDefault();
+    setIsDragOver(false);
+    validateAndSetFile(event.dataTransfer.files?.[0] || null);
+  }
+
+  function onDropZoneClick() {
+    fileInputRef.current?.click();
+  }
+
+  function onFileChange(event) {
+    validateAndSetFile(event.target.files?.[0] || null);
+    event.target.value = "";
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
     if (!items || items.length === 0) {
       setFileError("No valid items to upload.");
       return;
@@ -495,7 +472,7 @@ export default function SpreadsheetUploadPage() {
 
     try {
       const res = await fetch(`${API}/menu-upload/spreadsheet`, {
-        method:  "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           restaurant_id,
@@ -512,14 +489,13 @@ export default function SpreadsheetUploadPage() {
       }
 
       setResult(data);
-    } catch (err) {
-      setUploadErr(err.message || "Upload failed. Please try again.");
+    } catch (error) {
+      setUploadErr(error.message || "Upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
   }
 
-  /* ---- Missing state ---- */
   if (missingState) {
     return (
       <div style={s.page}>
@@ -528,14 +504,17 @@ export default function SpreadsheetUploadPage() {
           logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
         />
         <div style={{ ...s.error, marginTop: 24 }}>
-          <strong>Missing session data.</strong> Please complete the signup flow to reach this page.{" "}
-          <a href="/signup" style={{ color: "#c00", fontWeight: 700 }}>Start over</a>
+          <strong>We could not recover your restaurant signup session.</strong><br />
+          Restart signup to continue with the spreadsheet menu upload.
+          <br />
+          <Link to={RESTAURANT_SIGNUP_RESTART_ROUTE} style={s.restartBtn}>
+            Restart restaurant signup
+          </Link>
         </div>
       </div>
     );
   }
 
-  /* ---- Success ---- */
   if (result) {
     return (
       <div style={s.page}>
@@ -555,8 +534,7 @@ export default function SpreadsheetUploadPage() {
             Go to your restaurant profile
           </Link>
           <div style={s.pendingNote}>
-            {result.items_inserted} items saved ·{" "}
-            {result.items_skipped > 0 ? `${result.items_skipped} skipped · ` : ""}
+            {result.items_inserted} items saved · {result.items_skipped > 0 ? `${result.items_skipped} skipped · ` : ""}
             Menu status: <strong>pending review</strong>
           </div>
         </div>
@@ -564,7 +542,6 @@ export default function SpreadsheetUploadPage() {
     );
   }
 
-  /* ---- Upload form ---- */
   const submitDisabled = uploading || !items || items.length === 0;
 
   return (
@@ -574,7 +551,6 @@ export default function SpreadsheetUploadPage() {
         logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
       />
 
-      {/* Step trail */}
       <div style={s.steps}>
         <div style={s.step(false, true)}>1. Account</div>
         <div style={s.stepDivider} />
@@ -590,16 +566,14 @@ export default function SpreadsheetUploadPage() {
         Download the template, fill in your menu items, save as CSV, and upload below.
       </div>
 
-      {/* Context */}
       <div style={s.contextCard}>
         <span>
           <span style={s.contextLabel}>Restaurant</span>
           {restaurant_name}
         </span>
-        {plan && <span style={s.planBadge(plan)}>{plan}</span>}
+        {plan ? <span style={s.planBadge(plan)}>{plan}</span> : null}
       </div>
 
-      {/* Template download */}
       <div style={s.templateSection}>
         <div style={s.templateTitle}>Step 1 — Download the menu template</div>
         <div style={s.templateDesc}>
@@ -610,16 +584,15 @@ export default function SpreadsheetUploadPage() {
           ↓ Download CSV template
         </button>
         <div style={s.columnList}>
-          {TEMPLATE_HEADERS.map((h, i) => (
-            <span key={h}>
-              <strong>{h}</strong>{i === 0 ? " (required)" : " (optional)"}
-              {i < TEMPLATE_HEADERS.length - 1 ? " · " : ""}
+          {TEMPLATE_HEADERS.map((header, index) => (
+            <span key={header}>
+              <strong>{header}</strong>{index === 0 ? " (required)" : " (optional)"}
+              {index < TEMPLATE_HEADERS.length - 1 ? " · " : ""}
             </span>
           ))}
         </div>
       </div>
 
-      {/* File upload */}
       <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: "#444" }}>
         Step 2 — Upload your filled-in CSV
       </div>
@@ -634,105 +607,79 @@ export default function SpreadsheetUploadPage() {
           role="button"
           tabIndex={0}
           aria-label="Click or drag to upload CSV"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onDropZoneClick(); }
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              onDropZoneClick();
+            }
           }}
         >
-          <div style={s.dropIcon}>{file ? "📊" : "⬆"}</div>
-          <div style={s.dropTitle}>
-            {file ? file.name : "Click to select or drag & drop your CSV"}
-          </div>
-          <div style={s.dropSub}>CSV files only · Maximum 5 MB</div>
+          <div style={s.dropIcon}>📊</div>
+          <div style={s.dropTitle}>Upload your CSV menu file</div>
+          <div style={s.dropSub}>Drag and drop the file here or tap to browse.</div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            style={{ display: "none" }}
+            onChange={onFileChange}
+          />
         </div>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv,text/csv"
-          style={{ display: "none" }}
-          onChange={onFileChange}
-        />
-
-        {/* Selected file */}
-        {file && !fileError && (
+        {file ? (
           <div style={s.fileInfo}>
-            <span style={{ fontSize: 20 }}>📊</span>
             <span style={s.fileName}>{file.name}</span>
             <span style={s.fileSize}>{formatBytes(file.size)}</span>
-            <button
-              type="button"
-              style={s.clearBtn}
-              onClick={() => { setFile(null); setItems(null); setWarnings([]); setFileError(""); }}
-              aria-label="Remove selected file"
-            >
-              ✕
+            <button type="button" style={s.clearBtn} onClick={() => setFile(null)} aria-label="Clear selected file">
+              ×
             </button>
           </div>
-        )}
+        ) : null}
 
-        {fileError && <div style={s.error}>{fileError}</div>}
+        {fileError ? <div style={s.error}>{fileError}</div> : null}
+        {uploadErr ? <div style={s.error}>{uploadErr}</div> : null}
+        {uploading ? <div style={s.progress}>Uploading your spreadsheet now...</div> : null}
 
-        {/* Parse warnings */}
-        {warnings.length > 0 && (
-          <div style={s.warning}>
-            <strong>Warnings</strong>
-            <ul style={{ margin: "4px 0 0", paddingLeft: 16 }}>
-              {warnings.map((w, i) => <li key={i}>{w}</li>)}
-            </ul>
-          </div>
-        )}
+        {warnings.map((warning) => (
+          <div key={warning} style={s.warning}>{warning}</div>
+        ))}
 
-        {/* Preview table */}
-        {items && items.length > 0 && (
+        {items?.length ? (
           <>
             <div style={s.previewCount}>
-              <strong>{items.length}</strong> menu item{items.length !== 1 ? "s" : ""} parsed — review before uploading
+              Previewing {items.length} parsed row{items.length !== 1 ? "s" : ""}
             </div>
             <div style={s.previewWrap}>
               <table style={s.previewTable}>
                 <thead>
                   <tr>
-                    <th style={s.th}>#</th>
                     <th style={s.th}>Name</th>
+                    <th style={s.th}>Description</th>
                     <th style={s.th}>Section</th>
                     <th style={s.th}>Price</th>
-                    <th style={s.th}>Description</th>
                     <th style={s.th}>Vegan</th>
-                    <th style={s.th}>GF</th>
+                    <th style={s.th}>Gluten Free</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {items.slice(0, 50).map((it, i) => (
-                    <tr key={i}>
-                      <td style={s.td(i % 2 === 1)}>{i + 1}</td>
-                      <td style={s.td(i % 2 === 1)}><strong>{it.name}</strong></td>
-                      <td style={s.td(i % 2 === 1)}>{it.section || <span style={{ color: "#bbb" }}>—</span>}</td>
-                      <td style={s.td(i % 2 === 1)}>{it.price ? `$${it.price}` : <span style={{ color: "#bbb" }}>—</span>}</td>
-                      <td style={s.td(i % 2 === 1)}>{it.description || <span style={{ color: "#bbb" }}>—</span>}</td>
-                      <td style={s.td(i % 2 === 1)}><BoolDot val={it.is_vegan} /></td>
-                      <td style={s.td(i % 2 === 1)}><BoolDot val={it.is_gluten_free} /></td>
+                  {items.slice(0, 25).map((item, index) => (
+                    <tr key={`${item.name}-${index}`}>
+                      <td style={s.td(index % 2 === 1)}>{item.name}</td>
+                      <td style={s.td(index % 2 === 1)}>{item.description || "—"}</td>
+                      <td style={s.td(index % 2 === 1)}>{item.section || "—"}</td>
+                      <td style={s.td(index % 2 === 1)}>{item.price || "—"}</td>
+                      <td style={s.td(index % 2 === 1)}><BoolDot val={item.is_vegan} /></td>
+                      <td style={s.td(index % 2 === 1)}><BoolDot val={item.is_gluten_free} /></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            {items.length > 50 && (
-              <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>
-                Showing 50 of {items.length} rows. All {items.length} will be uploaded.
-              </div>
-            )}
           </>
-        )}
-
-        {uploading && <div style={s.progress}>Uploading {items?.length} items…</div>}
-        {uploadErr  && <div style={s.error}>{uploadErr}</div>}
+        ) : null}
 
         <button type="submit" style={s.submitBtn(submitDisabled)} disabled={submitDisabled}>
-          {uploading
-            ? "Uploading…"
-            : items
-            ? `Upload ${items.length} menu item${items.length !== 1 ? "s" : ""}`
-            : "Select a CSV file to continue"}
+          {uploading ? "Uploading..." : "Upload spreadsheet menu"}
         </button>
       </form>
     </div>

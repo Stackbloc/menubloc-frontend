@@ -1,52 +1,22 @@
-/**
- * File:    MenuDesignSelectPage.jsx
- * Path:    menubloc-frontend/src/pages/MenuDesignSelectPage.jsx
- * Date:    2026-03-09
- * Purpose:
- *   Onboarding step 4 — design style selection.
- *   Reached from SubscriptionSelect after plan is chosen.
- *
- *   Router state expected (forwarded from SubscriptionSelect):
- *     restaurant_id    — numeric restaurant ID
- *     restaurant_name  — display name
- *     email            — owner email
- *     owner_token      — HMAC auth token
- *     plan             — "verified" | "pro"
- *     ingestion_method — "pdf" | "later" | "spreadsheet" | "ocr"
- *
- *   On style selection: navigates to the upload page (keyed by ingestion_method)
- *   and passes design_style in router state.
- *
- *   On "Skip for now": same navigation with design_style = null.
- *
- *   Adobe integration:
- *     designEngine.js is the sole integration point.
- *     No real Adobe API calls are made here yet.
- */
-
-import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import {
+  RESTAURANT_SIGNUP_RESTART_ROUTE,
+  navigateWithRestaurantOnboardingState,
+  persistRestaurantOnboardingState,
+  resolveRestaurantOnboardingState,
+} from "../lib/restaurantOnboardingState.js";
 
 const BYPASS_MODE = import.meta.env.VITE_ALLOW_OWNER_TOKEN_BYPASS === "true";
-
-// ─────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────
-
 const UPLOAD_ROUTES = {
-  pdf:         "/restaurant/pdf-upload",
-  later:       "/restaurant/menu-upload-choice",
+  pdf: "/restaurant/pdf-upload",
+  later: "/restaurant/menu-upload-choice",
   spreadsheet: "/restaurant/spreadsheet-upload",
-  ocr:         "/restaurant/ocr-upload",
+  ocr: "/restaurant/ocr-upload",
 };
-
 const FONT = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
-
-// ─────────────────────────────────────────────────────────────
-// Styles
-// ─────────────────────────────────────────────────────────────
 
 const s = {
   page: {
@@ -56,12 +26,6 @@ const s = {
     fontFamily: FONT,
     color: "#111",
   },
-
-  // Brand
-  brand:    { fontWeight: 800, fontSize: 18 },
-  subbrand: { fontSize: 12, color: "#666", marginBottom: 28 },
-
-  // Step trail
   steps: {
     display: "flex",
     alignItems: "center",
@@ -82,8 +46,6 @@ const s = {
     fontSize: 11,
   }),
   stepDivider: { flex: "0 0 12px", height: 1, background: "#e0e0e0", margin: "0 2px" },
-
-  // Page header
   eyebrow: {
     fontSize: 12,
     fontWeight: 700,
@@ -100,16 +62,12 @@ const s = {
     lineHeight: 1.6,
     maxWidth: 520,
   },
-
-  // Style grid
   grid: {
     display: "flex",
     flexWrap: "wrap",
     gap: 18,
     marginBottom: 52,
   },
-
-  // Individual style card
   card: (selected) => ({
     flex: "1 1 240px",
     maxWidth: 300,
@@ -125,10 +83,7 @@ const s = {
     display: "flex",
     flexDirection: "column",
   }),
-
-  // Preview area
   previewArea: { height: 190, flexShrink: 0, position: "relative", overflow: "hidden" },
-
   popularBadge: {
     position: "absolute",
     top: 10,
@@ -143,8 +98,6 @@ const s = {
     textTransform: "uppercase",
     zIndex: 1,
   },
-
-  // Card content
   cardContent: {
     padding: "16px 18px 18px",
     display: "flex",
@@ -154,7 +107,6 @@ const s = {
   cardName: { fontSize: 16, fontWeight: 800, marginBottom: 3 },
   cardTagline: { fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 8 },
   cardDesc: { fontSize: 12, color: "#777", lineHeight: 1.6, marginBottom: 16, flex: 1 },
-
   selectBtn: (selected) => ({
     width: "100%",
     height: 40,
@@ -168,8 +120,6 @@ const s = {
     transition: "background 0.15s, color 0.15s",
     fontFamily: FONT,
   }),
-
-  // Value proposition strip
   valueStrip: {
     background: "#f8f8f8",
     border: "1px solid #eee",
@@ -182,11 +132,24 @@ const s = {
     alignItems: "flex-start",
   },
   valueCol: { flex: "1 1 180px" },
-  valueLabel: { fontSize: 11, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 },
-  valuePt: { display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 7, fontSize: 13, color: "#333", lineHeight: 1.5 },
+  valueLabel: {
+    fontSize: 11,
+    fontWeight: 800,
+    color: "#888",
+    textTransform: "uppercase",
+    letterSpacing: "0.07em",
+    marginBottom: 10,
+  },
+  valuePt: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 8,
+    marginBottom: 7,
+    fontSize: 13,
+    color: "#333",
+    lineHeight: 1.5,
+  },
   valuePtIcon: { color: "#111", fontWeight: 900, flexShrink: 0, marginTop: 1 },
-
-  // Actions
   actions: {
     display: "flex",
     flexDirection: "column",
@@ -218,8 +181,6 @@ const s = {
     textDecorationColor: "rgba(0,0,0,0.2)",
     padding: 0,
   },
-
-  // Missing state error
   error: {
     padding: "14px 18px",
     background: "#fff0f0",
@@ -228,19 +189,25 @@ const s = {
     fontSize: 13,
     color: "#c00",
     marginTop: 24,
+    lineHeight: 1.6,
+  },
+  restartBtn: {
+    display: "inline-flex",
+    marginTop: 14,
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: "#111",
+    color: "#fff",
+    fontWeight: 700,
+    textDecoration: "none",
   },
 };
 
-// ─────────────────────────────────────────────────────────────
-// Mini menu preview renderer
-// Each style's preview object drives the color scheme.
-// ─────────────────────────────────────────────────────────────
-
 const PREVIEW_ITEMS = [
-  { name: "Garden Salad",   price: "$9" },
-  { name: "Bruschetta",     price: "$11" },
+  { name: "Garden Salad", price: "$9" },
+  { name: "Bruschetta", price: "$11" },
   { name: "Grilled Salmon", price: "$26" },
-  { name: "House Burger",   price: "$16" },
+  { name: "House Burger", price: "$16" },
 ];
 
 function StylePreview({ preview }) {
@@ -255,14 +222,8 @@ function StylePreview({ preview }) {
         padding: "14px 16px 10px",
         boxSizing: "border-box",
         fontFamily: FONT,
-        border: p.border,
-        borderBottom: "none",
-        borderLeft: "none",
-        borderRight: "none",
-        borderTop: "none",
       }}
     >
-      {/* Restaurant name */}
       <div
         style={{
           fontSize: 11,
@@ -279,7 +240,6 @@ function StylePreview({ preview }) {
         Rosewood Kitchen
       </div>
 
-      {/* Section label */}
       <div
         style={{
           fontSize: 8.5,
@@ -293,10 +253,9 @@ function StylePreview({ preview }) {
         Starters &amp; Mains
       </div>
 
-      {/* Items */}
-      {PREVIEW_ITEMS.map((item, i) => (
+      {PREVIEW_ITEMS.map((item, index) => (
         <div
-          key={i}
+          key={index}
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -305,7 +264,7 @@ function StylePreview({ preview }) {
             color: p.itemColor,
             paddingBottom: 5,
             marginBottom: 5,
-            borderBottom: i < PREVIEW_ITEMS.length - 1
+            borderBottom: index < PREVIEW_ITEMS.length - 1
               ? `1px solid ${p.divider}`
               : "none",
           }}
@@ -320,50 +279,43 @@ function StylePreview({ preview }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Main component
-// ─────────────────────────────────────────────────────────────
-
 export default function MenuDesignSelectPage() {
-  const nav      = useNavigate();
+  const nav = useNavigate();
   const location = useLocation();
-  const flowState = location.state || {};
+  const recovery = useMemo(
+    () => resolveRestaurantOnboardingState({ routeState: location.state, search: location.search }),
+    [location.state, location.search]
+  );
 
+  useEffect(() => {
+    if (recovery.hasAnyData) {
+      persistRestaurantOnboardingState(recovery.state);
+    }
+  }, [recovery]);
+
+  const flowState = recovery.state || {};
   const {
     restaurant_id,
     restaurant_name = "Your restaurant",
-    email           = "",
-    owner_token     = "",
-    plan            = "verified",
+    email = "",
+    owner_token = "",
+    plan = "verified",
     ingestion_method,
   } = flowState;
 
   const isPro = plan === "pro_monthly" || plan === "pro_annual" || plan === "pro";
-  const visibleStyles = isPro ? DESIGN_STYLES : DESIGN_STYLES.filter((s) => !s.proOnly);
-
+  const visibleStyles = isPro ? DESIGN_STYLES : DESIGN_STYLES.filter((style) => !style.proOnly);
   const [selectedStyle, setSelectedStyle] = useState(null);
-
   const missingState = !restaurant_id || !email || (!owner_token && !BYPASS_MODE);
 
-  function navigate(designStyle) {
+  function navigateNext(designStyle) {
     const uploadRoute = UPLOAD_ROUTES[ingestion_method] || "/restaurant/signup-complete";
-    nav(uploadRoute, {
-      state: {
-        ...flowState,
-        design_style: designStyle,
-      },
+    navigateWithRestaurantOnboardingState(nav, uploadRoute, {
+      ...flowState,
+      design_style: designStyle,
     });
   }
 
-  function handleContinue() {
-    navigate(selectedStyle);
-  }
-
-  function handleSkip() {
-    navigate(null);
-  }
-
-  // ── Missing state guard ──────────────────────────────────
   if (missingState) {
     return (
       <div style={s.page}>
@@ -372,46 +324,42 @@ export default function MenuDesignSelectPage() {
           logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
         />
         <div style={s.error}>
-          <strong>Missing session data.</strong> Please complete the signup flow to reach this
-          page.{" "}
-          <a href="/signup" style={{ color: "#c00", fontWeight: 700 }}>
-            Start over
-          </a>
+          <strong>We could not recover your restaurant signup session.</strong><br />
+          Start signup again to restore your account, plan, and upload path.
+          <br />
+          <Link to={RESTAURANT_SIGNUP_RESTART_ROUTE} style={s.restartBtn}>
+            Restart restaurant signup
+          </Link>
         </div>
       </div>
     );
   }
 
-  // ── Main render ──────────────────────────────────────────
   return (
     <div style={s.page}>
-      {/* Brand */}
       <BrandLockup
         subtitle="for Restaurants"
         logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
       />
 
-      {/* Step trail */}
       <div style={s.steps}>
         <div style={s.step(false, true)}>1. Account</div>
         <div style={s.stepDivider} />
         <div style={s.step(false, true)}>2. Choose plan</div>
         <div style={s.stepDivider} />
-        <div style={s.step(true,  false)}>3. Design</div>
+        <div style={s.step(true, false)}>3. Design</div>
         <div style={s.stepDivider} />
         <div style={s.step(false, false)}>4. Upload menu</div>
       </div>
 
-      {/* Page header */}
       <div style={s.eyebrow}>Menu Design</div>
       <div style={s.heading}>Choose your menu style</div>
       <div style={s.subheading}>
         {isPro
-          ? "Beautiful menu design powered by Adobe. Pick a style that fits your restaurant — we handle the rest."
+          ? "Beautiful menu design powered by Adobe. Pick a style that fits your restaurant and continue into upload."
           : "Your plan includes the Clean Classic design. Upgrade to Pro to unlock all styles including Adobe-powered designs."}
       </div>
 
-      {/* Style cards */}
       <div style={s.grid}>
         {visibleStyles.map((style) => {
           const isSelected = selectedStyle === style.id;
@@ -421,23 +369,19 @@ export default function MenuDesignSelectPage() {
               style={s.card(isSelected)}
               onClick={() => setSelectedStyle(style.id)}
             >
-              {/* Preview */}
               <div style={s.previewArea}>
-                {style.popular && (
-                  <div style={s.popularBadge}>Most Popular</div>
-                )}
+                {style.popular ? <div style={s.popularBadge}>Most Popular</div> : null}
                 <StylePreview preview={style.preview} />
               </div>
 
-              {/* Card content */}
               <div style={s.cardContent}>
                 <div style={s.cardName}>{style.name}</div>
                 <div style={s.cardTagline}>{style.tagline}</div>
                 <div style={s.cardDesc}>{style.description}</div>
                 <button
                   style={s.selectBtn(isSelected)}
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={(event) => {
+                    event.stopPropagation();
                     setSelectedStyle(style.id);
                   }}
                 >
@@ -449,7 +393,6 @@ export default function MenuDesignSelectPage() {
         })}
       </div>
 
-      {/* Value proposition */}
       <div style={s.valueStrip}>
         <div style={s.valueCol}>
           <div style={s.valueLabel}>What you get</div>
@@ -457,10 +400,10 @@ export default function MenuDesignSelectPage() {
             "Your menu styled and ready to share",
             "QR codes use your chosen design",
             "Great for dine-in, takeout, and online",
-          ].map((pt) => (
-            <div key={pt} style={s.valuePt}>
+          ].map((point) => (
+            <div key={point} style={s.valuePt}>
               <span style={s.valuePtIcon}>&#10003;</span>
-              <span>{pt}</span>
+              <span>{point}</span>
             </div>
           ))}
         </div>
@@ -477,29 +420,28 @@ export default function MenuDesignSelectPage() {
                 "Automatic updates when you edit your menu",
                 "Mobile-friendly layout out of the box",
               ]
-          ).map((pt) => (
-            <div key={pt} style={s.valuePt}>
+          ).map((point) => (
+            <div key={point} style={s.valuePt}>
               <span style={s.valuePtIcon}>&#10003;</span>
-              <span>{pt}</span>
+              <span>{point}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Actions */}
       <div style={s.actions}>
         <button
           style={s.continueBtn(!selectedStyle)}
           disabled={!selectedStyle}
-          onClick={handleContinue}
+          onClick={() => navigateNext(selectedStyle)}
         >
           {selectedStyle
-            ? `Continue with ${DESIGN_STYLES.find((d) => d.id === selectedStyle)?.name}`
+            ? `Continue with ${DESIGN_STYLES.find((entry) => entry.id === selectedStyle)?.name}`
             : "Select a style to continue"}
         </button>
 
-        <button style={s.skipLink} onClick={handleSkip}>
-          Skip for now — use basic menu layout
+        <button style={s.skipLink} onClick={() => navigateNext(null)}>
+          Skip for now and keep the basic menu layout
         </button>
       </div>
     </div>
