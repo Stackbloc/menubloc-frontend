@@ -56,6 +56,7 @@ export default function ShareButton({
   const resolvedModalTitle = modalTitle || resolvedLabel;
   const compact = size === "compact";
   const subtle = tone === "subtle";
+  const inline = tone === "inline";
 
   const buttonStyles = {
     display: "inline-flex",
@@ -64,19 +65,20 @@ export default function ShareButton({
     gap: compact ? 6 : 8,
     width: iconOnly ? (compact ? 34 : 40) : "auto",
     minWidth: iconOnly ? (compact ? 34 : 40) : "auto",
-    minHeight: iconOnly ? (compact ? 34 : 40) : compact ? 34 : 44,
-    padding: iconOnly ? 0 : compact ? "0 12px" : "0 16px",
+    minHeight: inline ? "auto" : iconOnly ? (compact ? 34 : 40) : compact ? 34 : 44,
+    padding: inline ? 0 : iconOnly ? 0 : compact ? "0 12px" : "0 16px",
     borderRadius: 999,
-    border: subtle ? "1px solid rgba(18, 34, 28, 0.1)" : "1px solid rgba(18, 34, 28, 0.14)",
-    background: subtle ? "rgba(255, 255, 255, 0.82)" : "#ffffff",
-    color: subtle ? "#31453c" : "#11211a",
-    fontSize: compact ? 12 : 14,
-    fontWeight: compact ? 700 : 800,
+    border: inline ? "none" : subtle ? "1px solid rgba(18, 34, 28, 0.1)" : "1px solid rgba(18, 34, 28, 0.14)",
+    background: inline ? "transparent" : subtle ? "rgba(255, 255, 255, 0.82)" : "#ffffff",
+    color: inline ? "#506153" : subtle ? "#31453c" : "#11211a",
+    fontSize: inline ? 13 : compact ? 12 : 14,
+    fontWeight: inline ? 700 : compact ? 700 : 800,
     cursor: "pointer",
-    boxShadow: subtle ? "none" : "0 8px 22px rgba(15, 23, 42, 0.06)",
+    boxShadow: inline || subtle ? "none" : "0 8px 22px rgba(15, 23, 42, 0.06)",
     whiteSpace: "nowrap",
     backdropFilter: subtle ? "blur(8px)" : "none",
     WebkitBackdropFilter: subtle ? "blur(8px)" : "none",
+    lineHeight: 1,
   };
 
   async function handleClick(event) {
@@ -113,7 +115,7 @@ export default function ShareButton({
         onClick={handleClick}
         style={buttonStyles}
       >
-        <ShareIcon size={compact ? 14 : 16} />
+        <ShareIcon size={inline ? 13 : compact ? 14 : 16} />
         {iconOnly ? (
           <span style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>
             {resolvedLabel}

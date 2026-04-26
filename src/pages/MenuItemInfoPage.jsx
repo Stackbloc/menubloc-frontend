@@ -1073,7 +1073,7 @@ export default function MenuItemInfoPage() {
               <div
                 style={{
                   display: "flex",
-                  alignItems: "flex-start",
+                  alignItems: "baseline",
                   gap: 14,
                   flexWrap: "wrap",
                 }}
@@ -1093,18 +1093,11 @@ export default function MenuItemInfoPage() {
                   {getLocalizedField(item, "name", language) || item.name}
                 </h1>
                 {shareData ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 6,
-                      flex: "0 0 auto",
-                    }}
-                  >
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 10, color: "#6b7280", flex: "0 0 auto" }}>
+                    <span style={{ fontSize: 12, opacity: 0.55 }}>•</span>
                     <ShareButton
                       variant="dish"
-                      label="Share Dish"
+                      label="Share item"
                       modalTitle={`Share ${getLocalizedField(item, "name", language) || item.name}`}
                       shareData={shareData}
                       analyticsContext={{
@@ -1115,10 +1108,9 @@ export default function MenuItemInfoPage() {
                         pageType: "menu_item_info",
                         shareTarget: "dish",
                       }}
+                      size="compact"
+                      tone="inline"
                     />
-                    <div style={{ fontSize: 11, lineHeight: 1.3, color: "#617167", fontWeight: 400 }}>
-                      share this item
-                    </div>
                   </div>
                 ) : null}
               </div>
@@ -1140,10 +1132,6 @@ export default function MenuItemInfoPage() {
               </div>
             ) : null}
 
-            <div style={{ fontSize: 13, lineHeight: 1.5, color: "#617167", fontWeight: 700, maxWidth: 760 }}>
-              See nutrition, insights, and similar dishes on Grubbid.
-            </div>
-
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
               <Link
                 to={fullMenuHref}
@@ -1164,9 +1152,6 @@ export default function MenuItemInfoPage() {
               >
                 View Full Menu
               </Link>
-              <div style={{ fontSize: 13, color: "#617167", fontWeight: 700 }}>
-                Explore this dish on Grubbid
-              </div>
             </div>
 
             {(item.badges.vegan || item.badges.glutenFree || item.badges.deal) && (
