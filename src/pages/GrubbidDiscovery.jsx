@@ -213,7 +213,9 @@ export default function GrubbidDiscovery() {
   const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [feedMenus, setFeedMenus] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
-  const locationManuallySet = useRef(false);
+  const locationManuallySet = useRef(
+    typeof window !== "undefined" && !!window.sessionStorage.getItem(SESSION_LOCATION_KEY)
+  );
   const [excludedAllergens, setExcludedAllergens] = useState(() => {
     try {
       const stored = localStorage.getItem(ALLERGEN_KEY);

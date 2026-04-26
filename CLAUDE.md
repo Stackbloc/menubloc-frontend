@@ -54,6 +54,20 @@ Before touching any protected file, state all of the following or STOP:
 /search?q=chicken&city=Los+Angeles&state=CA → returns results
 ```
 
+## 🔒 SESSION LOCATION PERSISTENCE — DO NOT CHANGE WITHOUT APPROVAL
+
+In `GrubbidDiscovery.jsx`, `locationManuallySet` MUST be initialized from sessionStorage:
+
+```js
+const locationManuallySet = useRef(
+  typeof window !== "undefined" && !!window.sessionStorage.getItem(SESSION_LOCATION_KEY)
+);
+```
+
+**Never initialize it to `useRef(false)`.** That causes geo to overwrite the user's saved session location on every navigation. Any change to this ref's initialization or to the geo-overwrite `useEffect` requires explicit user approval.
+
+---
+
 ## Discovery page location — ABSOLUTE RULES
 
 The location input is a PLAIN TEXT FIELD. Never add:
