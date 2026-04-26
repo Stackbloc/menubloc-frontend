@@ -66,7 +66,7 @@ const FOOD_CHIPS = [
   { id: "diabetic",     icon: "🩺", label: "Diabetic Friendly",  query: "diabetic friendly" },
 ];
 
-// Re-ranks feed when query is active; falls back to full list if nothing matches
+// Re-ranks feed when query is active without hiding the default cards.
 function filterAndRankMenus(menus, query) {
   const q = (query || "").toLowerCase().trim();
   if (!q) return menus;
@@ -92,8 +92,15 @@ function filterAndRankMenus(menus, query) {
     if (/deal/.test(q) && menu.has_deals) score += 8;
     return { menu, score };
   });
-  const matches = scored.filter(({ score }) => score > 0).sort((a, b) => b.score - a.score);
-  return matches.length > 0 ? matches.map(({ menu }) => menu) : menus;
+  const matches = scored
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(({ menu }) => menu);
+  if (matches.length === 0) return menus;
+
+  const matchedIds = new Set(matches.map((menu) => menu.menu_id || menu.restaurant_id));
+  const remainder = menus.filter((menu) => !matchedIds.has(menu.menu_id || menu.restaurant_id));
+  return [...matches, ...remainder];
 }
 
 // Returns one short match reason, or null if no strong signal
@@ -694,7 +701,7 @@ export default function GrubbidDiscovery() {
               <button
                 type="button"
                 aria-label="Add menu photo"
-                onClick={() => navigate("/restaurant/menu-upload-choice")}
+                onClick={() => navigate("/menu-capture")}
                 style={{
                   position: "absolute", right: 14, top: "50%",
                   transform: "translateY(-50%)",

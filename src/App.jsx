@@ -100,6 +100,7 @@ import EasyMenuLanding from "./pages/EasyMenuLanding.jsx";
 import SubscriptionSelect from "./pages/SubscriptionSelect.jsx";
 import MenuDesignSelectPage from "./pages/MenuDesignSelectPage.jsx";
 import MenuUploadChoicePage from "./pages/MenuUploadChoicePage.jsx";
+import MenuCapturePage from "./pages/MenuCapturePage.jsx";
 import Terms from "./pages/Terms.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
 import RestaurantMerchantTerms from "./pages/RestaurantMerchantTerms.jsx";
@@ -467,6 +468,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant/subscription" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
         <Route path="/restaurant/design-select" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuDesignSelectPage />} />
         <Route path="/restaurant/menu-upload-choice" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuUploadChoicePage />} />
+        <Route path="/menu-capture" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuCapturePage />} />
 
         <Route path="/terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Terms />} />
         <Route path="/privacy" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PrivacyPolicy />} />
