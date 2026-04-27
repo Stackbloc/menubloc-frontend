@@ -492,6 +492,11 @@ export default function GrubbidDiscovery() {
 
     const params = new URLSearchParams();
     if (shouldUseAutoGeo) {
+      const hasAutoCityState = Boolean(autoLocation.city && autoLocation.state);
+      if (hasAutoCityState) {
+        params.set("city", String(autoLocation.city));
+        params.set("state", String(autoLocation.state));
+      }
       params.set("lat", String(autoLocation.lat));
       params.set("lng", String(autoLocation.lng));
       params.set("radius", String(LOCAL_RADIUS_MILES));
