@@ -1228,7 +1228,7 @@ export default function MenuItemDetailPage() {
 
   if (loading) {
     return (
-      <PageShell isMobile={isMobile} stickyTitle="Menu Item">
+      <PageShell isMobile={isMobile}>
         <Surface style={{ padding: 22 }}>
           <div style={{ fontSize: 14, color: "#53635a", fontWeight: 700 }}>{t("menuItemDetail.loadingItem", "Loading item...")}</div>
         </Surface>
@@ -1238,7 +1238,7 @@ export default function MenuItemDetailPage() {
 
   if (err || !item) {
     return (
-      <PageShell isMobile={isMobile} stickyTitle="Menu Item">
+      <PageShell isMobile={isMobile}>
         <Surface style={{ padding: 22 }}>
           <div style={{ fontSize: 18, fontWeight: 900, color: "#15241d" }}>{t("menuItemDetail.itemNotAvailable", "Item not available")}</div>
           <div style={{ marginTop: 8, fontSize: 14, color: "#53635a", lineHeight: 1.5 }}>{err || t("menuItemDetail.itemCouldNotLoad", "Item could not load")}</div>
@@ -1262,7 +1262,7 @@ export default function MenuItemDetailPage() {
   });
 
   return (
-    <PageShell isMobile={isMobile} stickyTitle={getLocalizedField(item, "name", language) || item.name}>
+      <PageShell isMobile={isMobile}>
 
       {effectiveAllergenFilter ? (
         <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 18 }} />
