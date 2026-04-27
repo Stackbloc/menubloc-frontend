@@ -273,7 +273,8 @@ export default function GrubbidDiscovery() {
   const autoLocation = useAutoLocation();
 
   // ── existing state ──────────────────────────────────────────────────────────
-  const [query, setQuery] = useState("");
+  const [draftQuery, setDraftQuery] = useState("");
+  const [committedQuery, setCommittedQuery] = useState("");
   const [inlineError, setInlineError] = useState("");
   const [searching, setSearching] = useState(false);
   const [showLocationEditor, setShowLocationEditor] = useState(false);
@@ -365,7 +366,7 @@ export default function GrubbidDiscovery() {
   const activeFilterParams = filtersToUrlParams(filters).toString();
 
   const displayMenus = useMemo(() => {
-    let menus = filterAndRankMenus(feedMenus, query);
+    let menus = filterAndRankMenus(feedMenus, committedQuery);
     if (excludedAllergens.size > 0) {
       menus = menus.filter((menu) => {
         const allergens = [
@@ -379,7 +380,7 @@ export default function GrubbidDiscovery() {
       });
     }
     return menus;
-  }, [feedMenus, query, excludedAllergens]);
+  }, [feedMenus, committedQuery, excludedAllergens]);
 
   // Persist dietary prefs whenever they change
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
@@ -506,7 +507,9 @@ export default function GrubbidDiscovery() {
     }
 
     setFeedLoading(true);
-    fetch(`${API}/menus/browse?${params.toString()}`)
+    const feedUrl = `${API}/menus/browse?${params.toString()}`;
+    console.log("[Discovery] fetch URL:", feedUrl);
+    fetch(feedUrl)
       .then((r) => r.json())
       .then((json) => { setFeedMenus(json.menus || []); })
       .catch(() => {})
@@ -547,7 +550,9 @@ export default function GrubbidDiscovery() {
     return params;
   }
 
-  async function runSearch(queryValue = query) {
+  async function runSearch(queryValue = draftQuery) {
+    console.log("[Discovery] search committed:", queryValue);
+    setCommittedQuery(queryValue.trim());
     const params = buildSearchParams(queryValue, { locationOverride: getEffectiveSearchLocation() });
     setInlineError("");
     const qTerm = String(queryValue || "").trim();
@@ -826,8 +831,11 @@ export default function GrubbidDiscovery() {
               <input
                 ref={inputRef}
                 className="disc-search-input"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                value={draftQuery}
+                onChange={(e) => {
+                  console.log("[Discovery] input changed:", e.target.value);
+                  setDraftQuery(e.target.value);
+                }}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
                 placeholder="Search by food, restaurant, dietary preference, ingredient…"
                 style={{
