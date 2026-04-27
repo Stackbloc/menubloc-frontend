@@ -663,11 +663,10 @@ export default function GrubbidDiscovery() {
   }
 
   function handleChipClick(chip) {
+    const params = buildSearchParams(chip.query || "", { locationOverride: getEffectiveSearchLocation() });
     if (chip.filterKey) {
-      setFilters((prev) => ({ ...prev, [chip.filterKey]: !prev[chip.filterKey] }));
-      return;
+      params.set(chip.filterKey, "true");
     }
-    const params = buildSearchParams(chip.query, { locationOverride: getEffectiveSearchLocation() });
     navigate(`/search?${params.toString()}`);
   }
 
