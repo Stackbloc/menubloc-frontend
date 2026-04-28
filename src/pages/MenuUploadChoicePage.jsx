@@ -93,7 +93,7 @@ const OPTIONS = [
   {
     key: "pdf",
     title: "Upload menu PDF",
-    description: "Upload a PDF and continue with the standard Grubbid menu ingestion flow.",
+    description: "Upload a PDF and continue with the standard Menuply menu ingestion flow.",
     meta: "Best when you already have a finished menu PDF.",
   },
   {

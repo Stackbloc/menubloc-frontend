@@ -4,7 +4,7 @@
  * File: shareUtils.js
  * Date: 2026-04-03
  * Purpose:
- *   Reusable share helpers for Grubbid public pages.
+ *   Reusable share helpers for Menuply public pages.
  *
  *   Covers:
  *   - canonical public URL construction
@@ -85,8 +85,8 @@ export function buildMenuShareMetadata({
   origin = getPublicOrigin(),
 }) {
   const safeRestaurantName = pickFirstText(restaurantName, "this restaurant");
-  const title = `Check out the menu for ${safeRestaurantName} on Grubbid`;
-  const text = `Explore the menu, deals, and nutrition insights for ${safeRestaurantName} on Grubbid.`;
+  const title = `Check out the menu for ${safeRestaurantName} on Menuply`;
+  const text = `Explore the menu, deals, and nutrition insights for ${safeRestaurantName} on Menuply.`;
   const url = buildCanonicalMenuUrl({ restaurantSlug, restaurantId, origin });
   const image = resolveShareImageUrl({ imageUrl: logoUrl, origin });
 
@@ -160,8 +160,8 @@ export function buildDishShareData({
   });
 
   return {
-    title: `Check out ${dishName} at ${restaurantName} on Grubbid`,
-    text: `See price, nutrition insights, and menu details for ${dishName} at ${restaurantName} on Grubbid.`,
+    title: `Check out ${dishName} at ${restaurantName} on Menuply`,
+    text: `See price, nutrition insights, and menu details for ${dishName} at ${restaurantName} on Menuply.`,
     url: canonicalUrl,
     image,
     restaurantName,

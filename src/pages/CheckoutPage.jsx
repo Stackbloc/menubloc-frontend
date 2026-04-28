@@ -21,11 +21,14 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { buildCheckoutItems } from "../context/orderCartModel.js";
 import { apiPost, createBmtSession, toConsumerErrorMessage } from "../lib/api.js";
+import { formatMoney } from "../lib/pricingDisplay.js";
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 const DEFAULT_BMT_SHARE_MESSAGE =
-  "Dear friend or family member, I would greatly appreciate it if you would buy me this on Grubbid!";
+  "Dear friend or family member, I would greatly appreciate it if you would buy me this on Menuply!";
+const MENUPLY_PRICE_DISCLOSURE =
+  "Prices shown on Menuply may differ from in-store prices and may include Menuply’s service component. Taxes and optional tips are shown separately before you place your order.";
 
 function useIsMobile(breakpoint = 900) {
   const getMatches = () => {
@@ -53,10 +56,6 @@ function useIsMobile(breakpoint = 900) {
   }, [breakpoint]);
 
   return isMobile;
-}
-
-function formatMoney(cents) {
-  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
 }
 
 function ShareIcon() {
@@ -257,6 +256,9 @@ export default function CheckoutPage() {
     shareUrl: "",
     expiresAt: "",
   });
+  const totalDealsDiscountCents =
+    Math.round(Number(previewState.data?.unlock_savings?.discount_amount || 0) * 100) +
+    Math.round(Number(previewState.data?.cart_negotiation?.discount_amount || 0) * 100);
 
   const menuPath = restaurant?.restaurantId
     ? `/public/restaurants/${encodeURIComponent(String(restaurant.restaurantId))}/menu`
@@ -1123,9 +1125,15 @@ export default function CheckoutPage() {
               ) : previewState.data ? (
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                    <span style={{ color: "#667085" }}>Subtotal</span>
+                    <span style={{ color: "#667085" }}>Items subtotal</span>
                     <strong>{formatMoney(previewState.data.subtotal_cents)}</strong>
                   </div>
+                  {totalDealsDiscountCents > 0 ? (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#166534", fontWeight: 800 }}>
+                      <span>Deals</span>
+                      <strong>-{formatMoney(totalDealsDiscountCents)}</strong>
+                    </div>
+                  ) : null}
                   {previewState.data.unlock_savings?.user_message ? (
                     <div
                       style={{
@@ -1157,7 +1165,7 @@ export default function CheckoutPage() {
                           -{formatMoney(Math.round((previewState.data.unlock_savings?.discount_amount || 0) * 100))}
                         </strong>
                       </div>
-                      <div style={{ fontSize: 12, color: "#46703d", marginTop: 4 }}>Unlocked by GrubBid</div>
+                      <div style={{ fontSize: 12, color: "#46703d", marginTop: 4 }}>Unlocked by Menuply</div>
                     </div>
                   ) : null}
                   {previewState.data.cart_negotiation?.applied ? (
@@ -1175,7 +1183,7 @@ export default function CheckoutPage() {
                           -{formatMoney(Math.round(Number(previewState.data.cart_negotiation.discount_amount || 0) * 100))}
                         </strong>
                       </div>
-                      <div style={{ fontSize: 12, color: "#667085", marginTop: 4 }}>Unlocked by GrubBid</div>
+                      <div style={{ fontSize: 12, color: "#667085", marginTop: 4 }}>Unlocked by Menuply</div>
                     </div>
                   ) : null}
                   {currentPreviewData?.auto_optimization?.applied && currentPreviewData?.auto_optimization?.message ? (
@@ -1257,7 +1265,7 @@ export default function CheckoutPage() {
                         fontWeight: 800,
                       }}
                     >
-                      <span>G-Coins</span>
+                      <span>Menuply Coins</span>
                       <strong>-{formatMoney(previewState.data.coins.redeemed_cents)}</strong>
                     </div>
                   ) : null}
@@ -1266,6 +1274,9 @@ export default function CheckoutPage() {
                       Up to {formatMoney(previewState.data.coins.max_redeemable_cents)} available this order.
                     </div>
                   ) : null}
+                  <div style={{ fontSize: 12, lineHeight: 1.6, color: "#667085" }}>
+                    {MENUPLY_PRICE_DISCLOSURE}
+                  </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18 }}>
                     <span style={{ color: "#11211a", fontWeight: 900 }}>Total</span>
                     <strong>{formatMoney(previewState.data.total_cents)}</strong>

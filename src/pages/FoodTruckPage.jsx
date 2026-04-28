@@ -4,7 +4,7 @@
  * File: FoodTruckPage.jsx
  * Date: 2026-03-13
  * Purpose:
- *   Dedicated Grubbid profile page for food trucks.
+ *   Dedicated Menuply profile page for food trucks.
  *   React route: /foodtrucks/:slugOrId
  *
  *   Mobile-safe revision:
@@ -287,7 +287,7 @@ function SaveLinkBanner({ isDark, c, isMobile, truckName, truckPhone }) {
       `N:${name};;;;`,
       phone ? `TEL;TYPE=CELL:${phone}` : null,
       `URL:${permanentUrl}`,
-      `NOTE:Find us on Grubbid: ${permanentUrl}`,
+      `NOTE:Find us on Menuply: ${permanentUrl}`,
       "END:VCARD",
     ]
       .filter(Boolean)
@@ -451,7 +451,7 @@ function ProfileHeaderCard({ profile, slug, isDark, c, isMobile }) {
       if (navigator.share) {
         await navigator.share({
           title: shareTitle,
-          text: `Check out ${shareTitle} on Grubbid`,
+          text: `Check out ${shareTitle} on Menuply`,
           url: shareUrl,
         });
       } else {

@@ -11,10 +11,10 @@ import {
   getBmtSession,
   toConsumerErrorMessage,
 } from "../lib/api.js";
+import { formatMoney } from "../lib/pricingDisplay.js";
 
-function formatMoney(cents) {
-  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
-}
+const MENUPLY_PRICE_DISCLOSURE =
+  "Prices shown on Menuply may differ from in-store prices and may include Menuply’s service component. Taxes and optional tips are shown separately before you place your order.";
 
 export default function BuyMeThisPage() {
   const { token } = useParams();
@@ -214,16 +214,12 @@ export default function BuyMeThisPage() {
 
               <div style={{ marginTop: 18, display: "grid", gap: 8 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Subtotal</span>
+                  <span>Items subtotal</span>
                   <span>{formatMoney(currentTotals?.subtotal_cents)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span>Tax</span>
                   <span>{formatMoney(currentTotals?.tax_cents)}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Fees</span>
-                  <span>{formatMoney(currentTotals?.fees_cents)}</span>
                 </div>
                 {Number(currentTotals?.delivery_cents || 0) > 0 ? (
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -234,6 +230,9 @@ export default function BuyMeThisPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 900, fontSize: 18 }}>
                   <span>Total</span>
                   <span>{formatMoney(currentTotals?.total_cents)}</span>
+                </div>
+                <div style={{ fontSize: 12, lineHeight: 1.6, color: "#667085" }}>
+                  {MENUPLY_PRICE_DISCLOSURE}
                 </div>
               </div>
 

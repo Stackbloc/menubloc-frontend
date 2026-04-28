@@ -523,7 +523,7 @@ export default function PdfUploadPage() {
           <div style={s.successTitle}>Menu uploaded successfully</div>
           <p style={s.successSub}>
             Your menu file has been received and is being processed. Once approved, your
-            menu will appear on your Grubbid profile.
+            menu will appear on your Menuply profile.
           </p>
           <Link to={`/restaurant-profile/${restaurant_id}`} style={s.profileLink}>
             Go to your restaurant profile

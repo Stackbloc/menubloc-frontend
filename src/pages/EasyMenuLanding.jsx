@@ -154,12 +154,12 @@ export default function EasyMenuLanding() {
               }}
             >
               Upload a PDF or photo menu and EasyMenuUpload converts it into a searchable,
-              structured digital menu for your Grubbid profile.
+              structured digital menu for your Menuply profile.
             </p>
 
             <ul style={{ margin: "0 0 24px", paddingLeft: 18 }}>
               <li style={{ marginBottom: 8 }}>Update prices without reprinting your QR code</li>
-              <li style={{ marginBottom: 8 }}>Make your dishes searchable on Grubbid</li>
+              <li style={{ marginBottom: 8 }}>Make your dishes searchable on Menuply</li>
               <li style={{ marginBottom: 8 }}>Get your menu online faster with less manual work</li>
             </ul>
 
@@ -425,10 +425,10 @@ export default function EasyMenuLanding() {
               >
                 3
               </div>
-              <h3 style={{ margin: "0 0 8px", fontSize: isMobile ? 18 : 20 }}>Go Live on Grubbid</h3>
+              <h3 style={{ margin: "0 0 8px", fontSize: isMobile ? 18 : 20 }}>Go Live on Menuply</h3>
               <p style={{ color: "#5b6675", margin: 0 }}>
                 Your restaurant profile and menu can be published, updated, and
-                discovered on Grubbid.
+                discovered on Menuply.
               </p>
             </div>
           </div>
@@ -590,7 +590,7 @@ export default function EasyMenuLanding() {
                 <div style={{ fontWeight: 800, marginBottom: 10 }}>After</div>
                 <div style={{ color: "#5b6675" }}>
                   Searchable digital menu, easier updates, better presentation, and ready for
-                  Grubbid profile publishing.
+                  Menuply profile publishing.
                 </div>
               </div>
             </div>

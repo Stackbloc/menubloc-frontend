@@ -52,7 +52,7 @@ export default function ReplaceCartModal({ open, currentRestaurantName, nextRest
           <div style={{ fontSize: 22, fontWeight: 900, color: "#11211a" }}>Start a new order?</div>
           <div style={{ fontSize: 14, lineHeight: 1.6, color: "#475467" }}>
             Your cart already contains items from another restaurant.
-            Grubbid supports one restaurant per order.
+            Menuply supports one restaurant per order.
           </div>
           <div style={{ fontSize: 13, color: "#667085" }}>
             Current cart: <strong style={{ color: "#11211a" }}>{currentRestaurantName || "another restaurant"}</strong>

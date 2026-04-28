@@ -28,7 +28,7 @@ export default function ClaimSuccess() {
 
       <p>
         We are processing your menu now. Once complete,
-        your menu will be live on Grubbid.
+        your menu will be live on Menuply.
       </p>
 
       <div style={{ marginTop: "40px" }}>
@@ -39,7 +39,7 @@ export default function ClaimSuccess() {
           textDecoration: "none",
           borderRadius: "6px"
         }}>
-          Return to Grubbid
+          Return to Menuply
         </Link>
       </div>
     </div>

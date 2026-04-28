@@ -217,7 +217,7 @@ export default function Top5HealthiestPage() {
               marginBottom: 8,
             }}
           >
-            Curated by Grubbid Intelligence
+            Curated by Menuply Intelligence
           </div>
 
           <h1

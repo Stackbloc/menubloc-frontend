@@ -85,7 +85,7 @@ export default function DiscoveryDrawer({
           borderBottom: "1px solid #f2f4f7",
           position: "sticky", top: 0, background: "#fff", zIndex: 1,
         }}>
-          <span style={{ fontSize: 17, fontWeight: 900, color: "#101828" }}>Grubbid</span>
+          <span style={{ fontSize: 17, fontWeight: 900, color: "#101828" }}>Menuply</span>
           <button type="button" onClick={onClose} aria-label="Close" style={{
             border: "none", background: "transparent",
             fontSize: 20, color: "#667085", cursor: "pointer", padding: 4, lineHeight: 1,

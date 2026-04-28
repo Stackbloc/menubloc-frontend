@@ -53,7 +53,7 @@ export default function LegalDocumentPage({ document, eyebrow }) {
 
         <section>
           <h2 style={headingStyle}>Legal entity</h2>
-          <p style={paragraphStyle}>Grubbid is operated by {LEGAL_CONTACT.company}.</p>
+          <p style={paragraphStyle}>Menuply is operated by {LEGAL_CONTACT.company}.</p>
         </section>
       </div>
     </PageShell>

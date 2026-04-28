@@ -376,7 +376,7 @@ function MenuBoard({ menuData, pages, dealItems, dealIdSet, settings, accent, cl
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           {pages.length > 1 && <PageIndicator total={pages.length} current={page} accent={accent} />}
-          <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.2)" }}>grubbid</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.2)" }}>menuply</div>
         </div>
       </footer>
 
@@ -657,7 +657,7 @@ function UpgradeGate({ name }) {
       )}
       <div style={{ fontSize: 20, fontWeight: 700, color: "#4ade80", marginBottom: 16 }}>TV Menu Board</div>
       <div style={{ fontSize: 16, color: "rgba(255,255,255,0.38)", textAlign: "center", lineHeight: 1.7 }}>
-        This feature is available on the Pro plan.<br />Upgrade at grubbid.com
+        This feature is available on the Pro plan.<br />Upgrade at menuply.com
       </div>
     </div>
   );

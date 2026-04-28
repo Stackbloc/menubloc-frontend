@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { BrandLogo } from "./components/BrandLogo.jsx";
 
-export default function Header({ title = "Grubbid", subtitle = "Restaurants" }) {
+export default function Header({ title = "Menuply", subtitle = "Restaurants" }) {
   return (
     <div
       style={{

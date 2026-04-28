@@ -39,21 +39,21 @@ export default function AboutGrubbid() {
       />
 
       <PageHero
-        title="About Grubbid"
+        title="About Menuply"
         description="Food intelligence built to make restaurant choices clearer, not more judgmental."
       />
 
       <div style={{ maxWidth: 720 }}>
         <p style={paragraphStyle}>
-          Grubbid is a food intelligence platform built to help people better understand what they
+          Menuply is a food intelligence platform built to help people better understand what they
           eat without telling them what they should or shouldn&apos;t eat.
         </p>
 
         <p style={paragraphStyle}>
-          At its core, Grubbid brings clarity to restaurant menus by translating food into meaningful
+          At its core, Menuply brings clarity to restaurant menus by translating food into meaningful
           nutritional insight. Calories, protein, sodium, sugar, and more are surfaced in a way
           that helps you see the bigger picture behind your choices. Whether you&apos;re browsing for
-          something high-protein, low-sodium, indulgent, or just satisfying, Grubbid helps you make
+          something high-protein, low-sodium, indulgent, or just satisfying, Menuply helps you make
           sense of what&apos;s in front of you.
         </p>
 
@@ -63,7 +63,7 @@ export default function AboutGrubbid() {
         <p style={{ ...statementStyle, marginBottom: 22 }}>We are not diet fanatics.</p>
 
         <p style={paragraphStyle}>
-          Grubbid does not tell you to avoid chocolate cake. It also doesn&apos;t tell you to only eat
+          Menuply does not tell you to avoid chocolate cake. It also doesn&apos;t tell you to only eat
           steamed spinach. Food is personal. Food is cultural. Food is enjoyment.
         </p>
 
@@ -75,12 +75,12 @@ export default function AboutGrubbid() {
           When people have better information, they make better decisions over time.
         </p>
 
-        <p style={paragraphStyle}>That&apos;s the role Grubbid plays.</p>
+        <p style={paragraphStyle}>That&apos;s the role Menuply plays.</p>
 
         <p style={paragraphStyle}>
           If you want to indulge, you should enjoy it. If you want to optimize your nutrition, you
           should be able to do that too. Most people live somewhere in between and that&apos;s exactly
-          where Grubbid is most useful.
+          where Menuply is most useful.
         </p>
 
         <p style={paragraphStyle}>
@@ -106,13 +106,13 @@ export default function AboutGrubbid() {
         </p>
 
         <p style={paragraphStyle}>
-          Grubbid exists to make food choices more transparent, more informed, and ultimately more
+          Menuply exists to make food choices more transparent, more informed, and ultimately more
           aligned with how you want to live.
         </p>
 
         <p style={{ ...statementStyle, marginTop: 28 }}>Enjoy your food.</p>
         <p style={statementStyle}>Understand your food.</p>
-        <p style={statementStyle}>That&apos;s Grubbid.</p>
+        <p style={statementStyle}>That&apos;s Menuply.</p>
       </div>
     </PageShell>
     <BottomNav />

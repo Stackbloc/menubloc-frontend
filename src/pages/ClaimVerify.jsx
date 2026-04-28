@@ -49,7 +49,7 @@ export default function ClaimVerify() {
           </p>
           <p style={{ marginTop: "24px" }}>
             <Link to="/" style={{ textDecoration: "underline" }}>
-              Return to Grubbid
+              Return to Menuply
             </Link>
           </p>
         </>

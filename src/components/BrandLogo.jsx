@@ -4,7 +4,7 @@
  * Path: menubloc-frontend/src/components/BrandLogo.jsx
  * Date: 2026-04-03
  * Purpose:
- *   Shared Grubbid brand logo / lockup for consistent use across
+ *   Shared Menuply brand logo / lockup for consistent use across
  *   discovery, auth, nav, and onboarding pages.
  * ============================================================
  */
@@ -23,7 +23,7 @@ export function BrandLogo({
   matchPageBackground = true,
   imageStyle,
   linkStyle,
-  ariaLabel = "Go to Grubbid home",
+  ariaLabel = "Go to Menuply home",
   clickable = true,
 }) {
   const content = (
@@ -40,7 +40,7 @@ export function BrandLogo({
     >
       <img
         src={GRUBBID_LOGO_SRC}
-        alt="Grubbid"
+        alt="Menuply"
         style={{
           display: "block",
           width: "100%",
@@ -77,7 +77,7 @@ export function BrandLockup({
   wrapperStyle,
   logoProps,
   to = "/",
-  ariaLabel = "Go to Grubbid home",
+  ariaLabel = "Go to Menuply home",
 }) {
   return (
     <Link

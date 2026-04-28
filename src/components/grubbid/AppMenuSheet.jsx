@@ -8,7 +8,7 @@ const NAV_ITEMS = [
 
 const META_ITEMS = [
   { label: "Restaurant Sign Up",  href: "/restaurant/signup", icon: "🍴" },
-  { label: "About Grubbid",       href: "/about",             icon: "ℹ️" },
+  { label: "About Menuply",       href: "/about",             icon: "ℹ️" },
   { label: "Contact Us",          href: "/contact",           icon: "💬" },
 ];
 

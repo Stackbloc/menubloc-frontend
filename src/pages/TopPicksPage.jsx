@@ -3,8 +3,8 @@
  * File: TopPicksPage.jsx
  * Path: menubloc-frontend/src/pages/TopPicksPage.jsx
  * Purpose:
- *   Canonical public reference page for Grubbid discovery styling.
- *   This page must consume the shared Grubbid design system rather
+ *   Canonical public reference page for Menuply discovery styling.
+ *   This page must consume the shared Menuply design system rather
  *   than define its own typography or surface styling.
  * ============================================================
  */

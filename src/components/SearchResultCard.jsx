@@ -46,6 +46,7 @@ import {
   buildDishShareData,
   getCanonicalMenuItemPath,
 } from "./share/shareUtils.js";
+import { getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
 import {
@@ -185,12 +186,8 @@ function AllergenIndicator({ chip, compact = false, containsLabel = "Contains", 
 
 /* Whole dollars only — no cents on search cards */
 function fmtPrice(row) {
-  const d = asNum(row?.price) ?? asNum(row?.item?.price);
-  if (d !== null) return "$" + Math.round(d);
-  const m = asNum(row?.price_minor_units) ?? asNum(row?.item?.price_minor_units);
-  if (m !== null) return "$" + Math.round(m / 100);
-  const c = asNum(row?.price_cents) ?? asNum(row?.item?.price_cents);
-  if (c !== null) return "$" + Math.round(c / 100);
+  const cents = getConsumerDisplayPrice(row) ?? getConsumerDisplayPrice(row?.item);
+  if (cents != null) return "$" + Math.round(cents / 100);
   return "";
 }
 

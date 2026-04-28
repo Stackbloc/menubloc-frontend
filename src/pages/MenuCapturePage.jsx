@@ -264,7 +264,7 @@ export default function MenuCapturePage() {
               borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer",
             }}
           >
-            Back to Grubbid
+            Back to Menuply
           </button>
         </div>
       </>

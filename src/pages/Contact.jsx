@@ -73,7 +73,7 @@ export default function Contact() {
 
       <PageHero
         title="Contact Us"
-        description="Reach the right Grubbid team directly based on what you need."
+        description="Reach the right Menuply team directly based on what you need."
       />
 
       <div style={{ maxWidth: 720 }}>

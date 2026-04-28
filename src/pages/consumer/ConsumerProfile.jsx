@@ -359,7 +359,7 @@ export default function ConsumerProfile() {
 
         <Section title="G-Coins">
           <p style={styles.sectionDesc}>
-            Platform credit applied automatically toward qualifying Grubbid Checkout orders.
+            Platform credit applied automatically toward qualifying Menuply Checkout orders.
           </p>
           <div style={styles.coinsGrid}>
             <div style={styles.coinTile}>

@@ -44,6 +44,7 @@ import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js"
 import { fetchCompareItems } from "../lib/api.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
+import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -53,11 +54,6 @@ function asNum(v) {
   if (v === null || v === undefined || v === "") return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
-}
-
-function moneyFromMinor(priceMinor) {
-  if (priceMinor == null || Number.isNaN(Number(priceMinor))) return null;
-  return (Number(priceMinor) / 100).toLocaleString(undefined, { style: "currency", currency: "USD" });
 }
 
 function moneyFromFloat(price) {
@@ -106,7 +102,7 @@ function resolveNutritionChip(raw) {
 }
 
 function normalizeResultItem(raw) {
-  const exactPriceMinor = pickFirstDefined(
+  const exactPriceMinor = getConsumerDisplayPrice(raw) ?? pickFirstDefined(
     raw?.exact_price_minor, raw?.price_minor, raw?.priceMinor,
     raw?.price_minor_units, raw?.price_cents, null
   );
@@ -1223,7 +1219,7 @@ export default function MenuItemDetailPage() {
   }, [shareData]);
 
   const priceLabel =
-    item?.priceMinor != null ? moneyFromMinor(item.priceMinor) :
+    item?.priceMinor != null ? formatMoney(item.priceMinor) :
     item?.price      != null ? moneyFromFloat(item.price) : null;
 
   if (loading) {

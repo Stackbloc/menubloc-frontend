@@ -161,7 +161,7 @@ export default function ShareModal({
           <div>
             <div style={{ fontSize: 18, fontWeight: 900, color: "#11211a" }}>{modalTitle}</div>
             <div style={{ marginTop: 4, fontSize: 13, color: "#667085", lineHeight: 1.45 }}>
-              {`Share the canonical Grubbid ${entityLabel} link.`}
+              {`Share the canonical Menuply ${entityLabel} link.`}
             </div>
           </div>
           <button

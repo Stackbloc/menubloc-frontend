@@ -1,3 +1,5 @@
+import { getBaseMenuPrice, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
+
 function toInteger(value, fallback = 0) {
   const normalized = Number(value);
   return Number.isInteger(normalized) ? normalized : fallback;
@@ -184,9 +186,11 @@ export function createCartLine({ restaurant, item }) {
     restaurant?.restaurantId ?? restaurant?.restaurant_id,
     0
   );
+  const displayPriceCents = getConsumerDisplayPrice(item);
+  const baseMenuPriceCents = getBaseMenuPrice(item);
   const basePriceCents = toInteger(
     item?.basePriceCents ?? item?.base_price_cents ?? item?.priceCents ?? item?.price_cents,
-    0
+    displayPriceCents ?? 0
   );
 
   return normalizeCartLine({
@@ -206,7 +210,7 @@ export function createCartLine({ restaurant, item }) {
         item?.base_price_cents ??
         item?.priceCents ??
         item?.price_cents,
-      basePriceCents
+      baseMenuPriceCents ?? basePriceCents
     ),
     pricingType: item?.pricingType ?? item?.pricing_type ?? "",
     pricingLabel: item?.pricingLabel ?? item?.pricing_label ?? "",

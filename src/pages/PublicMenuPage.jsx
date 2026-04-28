@@ -27,6 +27,7 @@ import { itemHasInsightsData } from "../components/basket/ItemInsightsSheet.jsx"
 import { itemHasRequiredModifiers } from "../components/basket/modifierModel.js";
 import ShareButton from "../components/share/ShareButton.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
+import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import {
   applyDocumentSocialMetadata,
   buildDishShareData,
@@ -59,14 +60,12 @@ function asStr(v) {
   return v === undefined || v === null ? "" : String(v);
 }
 
-function fmtMoney(price) {
-  const s = asStr(price).trim();
-  return s;
+function fmtMoney(item) {
+  const cents = getConsumerDisplayPrice(item);
+  return cents != null ? formatMoney(cents) : "";
 }
 
-function formatMoneyFromCents(cents) {
-  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
-}
+const formatMoneyFromCents = formatMoney;
 
 function IndulgenceInline({ presentation }) {
   if (!presentation?.indulgence) return null;
@@ -450,17 +449,7 @@ function Badge({ label, bg, color, border }) {
 }
 
 function getItemPriceCents(item) {
-  const cents = Number(item?.price_cents);
-  if (Number.isFinite(cents)) {
-    return cents;
-  }
-
-  const dollars = Number(item?.price);
-  if (Number.isFinite(dollars)) {
-    return Math.round(dollars * 100);
-  }
-
-  return 0;
+  return getConsumerDisplayPrice(item) ?? 0;
 }
 
 function isItemOrderable(item) {
@@ -1151,7 +1140,8 @@ export default function PublicMenuPage() {
         menuItemId: item?.id,
         name: itemName,
         description: itemDescription,
-        basePriceCents: Number(item?.price_cents || 0),
+        basePriceCents: getConsumerDisplayPrice(item) ?? 0,
+        originalBasePriceCents: getBaseMenuPrice(item) ?? getConsumerDisplayPrice(item) ?? 0,
         modifiers,
       },
     });
@@ -1332,7 +1322,7 @@ export default function PublicMenuPage() {
                           it?.notes ||
                           ""
                         ).trim();
-                        const price   = fmtMoney(it?.price);
+                        const price   = fmtMoney(it);
                         const indulgencePresentation = resolveIndulgencePresentation({ chips: it?.chips });
                         const deal    = it?.id != null ? dealMap.get(it.id) : undefined;
                         const hasDeal = !!deal;

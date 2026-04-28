@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
+import { formatMoney } from "../lib/pricingDisplay.js";
 
-function formatMoney(cents) {
-  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
-}
+const MENUPLY_PRICE_DISCLOSURE =
+  "Prices shown on Menuply may differ from in-store prices and may include Menuply’s service component. Taxes and optional tips are shown separately before you place your order.";
 
 export default function OrderCartDrawer() {
   const navigate = useNavigate();
@@ -298,8 +298,11 @@ export default function OrderCartDrawer() {
               marginBottom: 14,
             }}
           >
-            <span style={{ fontSize: 14, color: "#667085", fontWeight: 700 }}>Estimated subtotal</span>
+            <span style={{ fontSize: 14, color: "#667085", fontWeight: 700 }}>Items subtotal</span>
             <strong style={{ fontSize: 18, color: "#11211a" }}>{formatMoney(subtotalCents)}</strong>
+          </div>
+          <div style={{ marginBottom: 14, fontSize: 12, lineHeight: 1.55, color: "#667085" }}>
+            {MENUPLY_PRICE_DISCLOSURE}
           </div>
           <button
             type="button"

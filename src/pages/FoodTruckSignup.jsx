@@ -142,7 +142,7 @@ const TRUCK_FEATURES = [
   "Verified food truck badge on your public profile",
   "Edit and manage your menu",
   "Update your live location and schedule",
-  "Appear in Grubbid food truck discovery",
+  "Appear in Menuply food truck discovery",
   "QR code for your menu",
   "Upcoming Locations & Events schedule page",
 ];
@@ -284,7 +284,7 @@ export default function FoodTruckSignup() {
         />
         <div style={{ ...st.successBanner, marginTop: 28 }}>
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>You are listed!</div>
-          Your Grubbid Food Truck Verified subscription is active. Your truck profile is now live and discoverable.
+          Your Menuply Food Truck Verified subscription is active. Your truck profile is now live and discoverable.
         </div>
         <a
           href="/foodtruck/dashboard"
@@ -474,7 +474,7 @@ export default function FoodTruckSignup() {
           <div style={st.sectionTitle}>Your Plan</div>
           <div style={st.planCard}>
             <div style={st.planBadge}>Food Truck Verified</div>
-            <div style={st.planName}>Grubbid Verified Listing</div>
+            <div style={st.planName}>Menuply Verified Listing</div>
             <div>
               <span style={st.planPrice}>$59</span>
               <span style={st.planPer}>/ year</span>

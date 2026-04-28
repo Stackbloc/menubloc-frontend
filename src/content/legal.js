@@ -14,35 +14,42 @@ export const LEGAL_CONTACT = {
 };
 
 export const TERMS_DOCUMENT = {
-  title: "Grubbid Terms of Use",
+  title: "Menuply Terms of Use",
   description:
-    "Public website, app, and consumer ordering terms for Grubbid, operated by Stack Bloc, Corporation.",
+    "Public website, app, and consumer ordering terms for Menuply, operated by Stack Bloc, Corporation.",
   sections: [
     {
       heading: "Overview",
       paragraphs: [
-        "These Terms of Use govern your access to and use of the Grubbid websites, mobile experiences, ordering tools, and related services operated by Stack Bloc, Corporation under the Grubbid brand.",
-        "By using Grubbid, you agree to these Terms of Use. If you do not agree, do not use the platform.",
+        "These Terms of Use govern your access to and use of the Menuply websites, mobile experiences, ordering tools, and related services operated by Stack Bloc, Corporation under the Menuply brand.",
+        "By using Menuply, you agree to these Terms of Use. If you do not agree, do not use the platform.",
       ],
     },
     {
       heading: "Operator and platform role",
       paragraphs: [
-        "Grubbid is a technology platform operated by Stack Bloc, Corporation. Grubbid helps consumers discover restaurants, browse menus, place digital orders, and complete related payment flows.",
-        "Grubbid is not the food preparer, not the seller of the restaurant's food and beverages, and not the delivery provider unless Grubbid expressly states otherwise in a separate written agreement.",
+        "Menuply is a technology platform operated by Stack Bloc, Corporation. Menuply helps consumers discover restaurants, browse menus, place digital orders, and complete related payment flows.",
+        "Menuply is not the food preparer, not the seller of the restaurant's food and beverages, and not the delivery provider unless Menuply expressly states otherwise in a separate written agreement.",
+      ],
+    },
+    {
+      heading: "Menu Prices and Fees",
+      paragraphs: [
+        "Menuply displays consumer-facing menu prices that may differ from in-store prices. Prices shown on Menuply may include a service component retained by Menuply. We do not add hidden mandatory platform fees at checkout. Applicable taxes and any optional tips are shown separately before you place an order.",
+        "Restaurants are responsible for providing accurate menu, pricing, and tax information where applicable. Menuply may calculate and display taxes based on restaurant-provided settings and applicable location data, but restaurants remain responsible for compliance with their tax obligations.",
       ],
     },
     {
       heading: "Restaurant independence",
       paragraphs: [
-        "Restaurants listed on Grubbid are independent businesses. Each restaurant remains the merchant of record for its own sales and is solely responsible for menu content, pricing, taxes charged to the consumer when applicable, food preparation, ingredient accuracy, allergy disclosures, packaging, fulfillment, pickup readiness, refund decisions, and customer service relating to the order.",
-        "Grubbid does not control restaurant operations and is not responsible for a restaurant's hours, staffing, inventory, substitutions, cancellations, or service quality.",
+        "Restaurants listed on Menuply are independent businesses. Each restaurant remains the merchant of record for its own sales and is solely responsible for menu content, pricing, taxes charged to the consumer when applicable, food preparation, ingredient accuracy, allergy disclosures, packaging, fulfillment, pickup readiness, refund decisions, and customer service relating to the order.",
+        "Menuply does not control restaurant operations and is not responsible for a restaurant's hours, staffing, inventory, substitutions, cancellations, or service quality.",
       ],
     },
     {
       heading: "Orders and payments",
       paragraphs: [
-        "When you submit an order through Grubbid, you authorize the applicable restaurant to charge you for the items, taxes, fees, and other disclosed amounts associated with that order.",
+        "When you submit an order through Menuply, you authorize the applicable restaurant to charge you for the items, taxes, and other disclosed amounts associated with that order.",
         "Payment processing is provided through Stripe and related payment service providers. By completing a purchase, you also authorize the processing, settlement, and related fraud-prevention steps required to complete the transaction.",
         "Displayed menu availability, pricing, and item details may change before a restaurant accepts and fulfills your order. A restaurant may reject, modify, or cancel an order if an item is unavailable, pricing is incorrect, or the order cannot be fulfilled.",
       ],
@@ -51,14 +58,14 @@ export const TERMS_DOCUMENT = {
       heading: "Delivery and pickup",
       paragraphs: [
         "If an order includes pickup, you are responsible for arriving during the restaurant's operating window and following the restaurant's pickup instructions.",
-        "If an order includes delivery, delivery is performed by the restaurant or a third-party delivery provider, not by Grubbid, unless Grubbid expressly states otherwise. Grubbid is not responsible for delivery times, courier conduct, damaged food in transit, or delivery-area limitations.",
+        "If an order includes delivery, delivery is performed by the restaurant or a third-party delivery provider, not by Menuply, unless Menuply expressly states otherwise. Menuply is not responsible for delivery times, courier conduct, damaged food in transit, or delivery-area limitations.",
       ],
     },
     {
       heading: "Refunds and issues",
       paragraphs: [
         "Questions about food quality, preparation, allergies, missing items, wrong items, timing, fulfillment, or refund eligibility should be directed first to the restaurant because the restaurant is the merchant of record and operational party for the order.",
-        "Grubbid may, in its discretion, help route support issues or coordinate with Stripe or the restaurant, but Grubbid is not required to issue credits, refunds, or charge reversals except where required by law or expressly agreed by Grubbid.",
+        "Menuply may, in its discretion, help route support issues or coordinate with Stripe or the restaurant, but Menuply is not required to issue credits, refunds, or charge reversals except where required by law or expressly agreed by Menuply.",
       ],
     },
     {
@@ -71,41 +78,41 @@ export const TERMS_DOCUMENT = {
     {
       heading: "Nutrition and informational content",
       paragraphs: [
-        "Menu descriptions, nutrition estimates, dietary labels, health scores, ingredient information, and similar content on Grubbid are informational only and may be generated or normalized using automated systems.",
+        "Menu descriptions, nutrition estimates, dietary labels, health scores, ingredient information, and similar content on Menuply are informational only and may be generated or normalized using automated systems.",
         "That content is not medical advice, dietary advice, or a guarantee of accuracy. You are responsible for confirming ingredients, allergens, and suitability directly with the restaurant.",
       ],
     },
     {
       heading: "Disclaimers",
       paragraphs: [
-        "Grubbid is provided on an as-is and as-available basis to the fullest extent permitted by law. Stack Bloc, Corporation disclaims all warranties, express or implied, including implied warranties of merchantability, fitness for a particular purpose, title, and non-infringement.",
-        "Without limiting the foregoing, Grubbid does not warrant that the platform will be uninterrupted, error-free, secure, or that any menu, pricing, restaurant, delivery, or payment information will always be complete, current, or accurate.",
+        "Menuply is provided on an as-is and as-available basis to the fullest extent permitted by law. Stack Bloc, Corporation disclaims all warranties, express or implied, including implied warranties of merchantability, fitness for a particular purpose, title, and non-infringement.",
+        "Without limiting the foregoing, Menuply does not warrant that the platform will be uninterrupted, error-free, secure, or that any menu, pricing, restaurant, delivery, or payment information will always be complete, current, or accurate.",
       ],
     },
     {
       heading: "Limitation of liability",
       paragraphs: [
-        "To the fullest extent permitted by law, Stack Bloc, Corporation and its affiliates, officers, employees, and service providers will not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, or for any loss of profits, revenues, goodwill, data, or business opportunities arising out of or related to Grubbid.",
-        "To the fullest extent permitted by law, the total liability of Stack Bloc, Corporation for any claim arising out of or relating to the platform will not exceed the greater of one hundred U.S. dollars (US $100) or the amount paid by you to Grubbid, if any, for the specific transaction giving rise to the claim in the twelve months before the event.",
+        "To the fullest extent permitted by law, Stack Bloc, Corporation and its affiliates, officers, employees, and service providers will not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, or for any loss of profits, revenues, goodwill, data, or business opportunities arising out of or related to Menuply.",
+        "To the fullest extent permitted by law, the total liability of Stack Bloc, Corporation for any claim arising out of or relating to the platform will not exceed the greater of one hundred U.S. dollars (US $100) or the amount paid by you to Menuply, if any, for the specific transaction giving rise to the claim in the twelve months before the event.",
       ],
     },
     {
       heading: "Termination",
       paragraphs: [
-        "Grubbid may suspend or terminate access to the platform, remove content, or cancel accounts if we believe a user has violated these Terms of Use, created risk for the platform or its users, or used the service fraudulently or unlawfully.",
+        "Menuply may suspend or terminate access to the platform, remove content, or cancel accounts if we believe a user has violated these Terms of Use, created risk for the platform or its users, or used the service fraudulently or unlawfully.",
       ],
     },
     {
       heading: "Dispute resolution and governing law",
       paragraphs: [
         "These Terms of Use are governed by the laws of the State of California, without regard to conflict-of-law principles.",
-        "If the existing Grubbid service or a separate agreement you accepted already includes arbitration, class action waiver, venue, or similar dispute-resolution provisions, those provisions continue to apply to the maximum extent permitted by law. Otherwise, any dispute arising out of these Terms of Use will be brought exclusively in the state or federal courts located in California, and each party consents to personal jurisdiction there.",
+        "If the existing Menuply service or a separate agreement you accepted already includes arbitration, class action waiver, venue, or similar dispute-resolution provisions, those provisions continue to apply to the maximum extent permitted by law. Otherwise, any dispute arising out of these Terms of Use will be brought exclusively in the state or federal courts located in California, and each party consents to personal jurisdiction there.",
       ],
     },
     {
       heading: "Changes to these terms",
       paragraphs: [
-        "We may update these Terms of Use from time to time. Updated terms become effective when posted unless a later effective date is stated. Your continued use of Grubbid after updated terms are posted means you accept the revised terms.",
+        "We may update these Terms of Use from time to time. Updated terms become effective when posted unless a later effective date is stated. Your continued use of Menuply after updated terms are posted means you accept the revised terms.",
       ],
     },
     {
@@ -118,15 +125,15 @@ export const TERMS_DOCUMENT = {
 };
 
 export const PRIVACY_DOCUMENT = {
-  title: "Grubbid Privacy Policy",
+  title: "Menuply Privacy Policy",
   description:
-    "How Stack Bloc, Corporation collects, uses, shares, and retains personal information when you use Grubbid.",
+    "How Stack Bloc, Corporation collects, uses, shares, and retains personal information when you use Menuply.",
   sections: [
     {
       heading: "Information we collect",
       paragraphs: [
         "We may collect information you provide directly, including your name, email address, phone number, account credentials, delivery or pickup details, support communications, and any restaurant information submitted through business onboarding flows.",
-        "We also collect transactional and technical information such as order details, device and browser information, approximate location data, IP address, cookies, usage logs, and analytics events associated with use of Grubbid.",
+        "We also collect transactional and technical information such as order details, device and browser information, approximate location data, IP address, cookies, usage logs, and analytics events associated with use of Menuply.",
       ],
     },
     {
@@ -139,7 +146,7 @@ export const PRIVACY_DOCUMENT = {
     {
       heading: "Payments and Stripe",
       paragraphs: [
-        "Payment information is processed through Stripe and related payment providers. Grubbid does not store full payment card numbers on its own servers when Stripe-hosted or Stripe-managed payment methods are used.",
+        "Payment information is processed through Stripe and related payment providers. Menuply does not store full payment card numbers on its own servers when Stripe-hosted or Stripe-managed payment methods are used.",
         "Stripe may collect and process payment, billing, fraud-prevention, and device information under Stripe's own privacy terms.",
       ],
     },
@@ -179,7 +186,7 @@ export const PRIVACY_DOCUMENT = {
     {
       heading: "Children",
       paragraphs: [
-        "Grubbid is not directed to children under 13, and we do not knowingly collect personal information from children under 13 through the consumer service.",
+        "Menuply is not directed to children under 13, and we do not knowingly collect personal information from children under 13 through the consumer service.",
       ],
     },
     {

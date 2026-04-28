@@ -13,9 +13,9 @@ export default function BuyMeThisShareModal({
   const [copied, setCopied] = useState(false);
 
   const shareData = useMemo(() => ({
-    title: `${requesterName || "Someone"} wants this from ${restaurantName || "this restaurant"} on Grubbid`,
+    title: `${requesterName || "Someone"} wants this from ${restaurantName || "this restaurant"} on Menuply`,
     text: String(
-      shareMessage || "Dear friend or family member, I would greatly appreciate it if you would buy me this on Grubbid!"
+      shareMessage || "Dear friend or family member, I would greatly appreciate it if you would buy me this on Menuply!"
     ).trim(),
     url: shareUrl,
   }), [requesterName, restaurantName, shareMessage, shareUrl]);

@@ -37,7 +37,7 @@ export default function AppleAuthCallback() {
     <div style={styles.page}>
       <div style={styles.card}>
         <h1 style={styles.heading}>Completing Apple sign-in</h1>
-        <p style={styles.text}>If this window does not close automatically, return to Grubbid.</p>
+        <p style={styles.text}>If this window does not close automatically, return to Menuply.</p>
       </div>
     </div>
   );

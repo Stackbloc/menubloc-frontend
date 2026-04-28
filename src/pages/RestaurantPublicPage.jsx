@@ -4,7 +4,7 @@
  * File: RestaurantPublicPage.jsx
  * Date: 2026-03-10
  * Purpose:
- *   Grubbid public restaurant profile page. React route:
+ *   Menuply public restaurant profile page. React route:
  *     /restaurants/:slugOrId
  *
  *   Primary destination for:
@@ -376,8 +376,8 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
               }}
             >
               {isFoodTruck
-                ? "This food truck does not yet have a completed Grubbid public profile. Core details can appear with a free Verified subscription, while richer brand presentation appears with Pro."
-                : "This restaurant does not yet have a completed Grubbid public profile. Core details can appear with a free Verified subscription, while richer brand presentation appears with Pro."}
+                ? "This food truck does not yet have a completed Menuply public profile. Core details can appear with a free Verified subscription, while richer brand presentation appears with Pro."
+                : "This restaurant does not yet have a completed Menuply public profile. Core details can appear with a free Verified subscription, while richer brand presentation appears with Pro."}
             </p>
           </div>
 
@@ -487,8 +487,8 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
               </div>
               <div>
                 {isFoodTruck
-                  ? "Show core food truck information on Grubbid with a free Verified subscription."
-                  : "Show core restaurant information on Grubbid with a free Verified subscription."}
+                  ? "Show core food truck information on Menuply with a free Verified subscription."
+                  : "Show core restaurant information on Menuply with a free Verified subscription."}
               </div>
             </div>
 

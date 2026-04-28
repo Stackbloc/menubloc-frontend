@@ -132,14 +132,14 @@ export default function ConsumerLogin() {
       <AuthPageFrame
         showLogo={false}
         title="Log in"
-        subtitle="Use your Grubbid account, Google, or Apple."
+        subtitle="Use your Menuply account, Google, or Apple."
         footer={(
           <>
             <p style={styles.footer}>
               <Link to="/account/forgot-password" style={styles.link}>Forgot password?</Link>
             </p>
             <p style={{ ...styles.footer, marginTop: "12px" }}>
-              New to Grubbid?{" "}
+              New to Menuply?{" "}
               <Link to="/account/signup" style={styles.link}>Create account</Link>
             </p>
           </>

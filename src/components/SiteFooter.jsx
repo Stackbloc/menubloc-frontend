@@ -67,7 +67,7 @@ export default function SiteFooter() {
             Privacy Policy
           </Link>
           <Link to="/about" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
-            About Grubbid
+            About Menuply
           </Link>
           <Link to="/contact" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.contact")}
