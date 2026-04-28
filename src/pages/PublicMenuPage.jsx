@@ -1183,8 +1183,8 @@ export default function PublicMenuPage() {
           padding: isMobile ? "10px 12px" : "12px 20px",
         }}>
           {/* Title row + Share */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "nowrap", marginBottom: addressLine ? 2 : 0 }}>
-            <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", marginBottom: addressLine ? 2 : 0 }}>
+            <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
               {restaurantProfileHref ? (
                 <Link
                   to={restaurantProfileHref}
@@ -1224,11 +1224,11 @@ export default function PublicMenuPage() {
             <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
               <ShareButton
                 variant="menu"
-                label="Share menu"
                 shareData={shareData}
                 analyticsContext={shareAnalyticsContext}
                 size="compact"
                 tone="subtle"
+                iconOnly
               />
             </div>
           </div>
@@ -1401,7 +1401,7 @@ export default function PublicMenuPage() {
                             }}
                           >
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1, flexWrap: "wrap" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1, flexWrap: "nowrap" }}>
                                 <span style={{
                                   fontSize: 14,
                                   fontWeight: 600,
@@ -1418,7 +1418,6 @@ export default function PublicMenuPage() {
                                   <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0, whiteSpace: "nowrap" }}>
                                     <ShareButton
                                       variant="dish"
-                                      label="Share"
                                       shareData={dishShareData}
                                       analyticsContext={{
                                         restaurantId: currentRestaurantId,
@@ -1430,6 +1429,7 @@ export default function PublicMenuPage() {
                                       }}
                                       size="compact"
                                       tone="subtle"
+                                      iconOnly
                                     />
                                   </div>
                                 ) : null}
