@@ -1183,8 +1183,8 @@ export default function PublicMenuPage() {
           padding: isMobile ? "10px 12px" : "12px 20px",
         }}>
           {/* Title row + Share */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: addressLine ? 2 : 0 }}>
-            <div style={{ minWidth: 0, flex: "1 1 280px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "nowrap", marginBottom: addressLine ? 2 : 0 }}>
+            <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
               {restaurantProfileHref ? (
                 <Link
                   to={restaurantProfileHref}
@@ -1196,19 +1196,32 @@ export default function PublicMenuPage() {
                     lineHeight: 1.1,
                     color: "#11211a",
                     textDecoration: "none",
-                    wordBreak: "break-word",
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {restaurantName}
                 </Link>
               ) : (
-                <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word" }}>
+                <div style={{
+                  fontSize: isMobile ? 18 : 22,
+                  fontWeight: 900,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.1,
+                  color: "#11211a",
+                  minWidth: 0,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}>
                   {restaurantName}
                 </div>
               )}
             </div>
 
-            <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, alignSelf: "flex-start" }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
               <ShareButton
                 variant="menu"
                 label="Share menu"
@@ -1389,11 +1402,20 @@ export default function PublicMenuPage() {
                           >
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1, flexWrap: "wrap" }}>
-                                <span style={{ fontSize: 14, fontWeight: 600, color: "#11211a", lineHeight: 1.2 }}>
+                                <span style={{
+                                  fontSize: 14,
+                                  fontWeight: 600,
+                                  color: "#11211a",
+                                  lineHeight: 1.2,
+                                  minWidth: 0,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}>
                                   {name}
                                 </span>
                                 {dishShareData ? (
-                                  <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0 }}>
+                                  <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0, whiteSpace: "nowrap" }}>
                                     <ShareButton
                                       variant="dish"
                                       label="Share"
