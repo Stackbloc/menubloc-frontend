@@ -1184,7 +1184,7 @@ export default function PublicMenuPage() {
         }}>
           {/* Title row + Share */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", marginBottom: addressLine ? 2 : 0 }}>
-            <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ minWidth: 0, flex: "0 1 auto", display: "flex", alignItems: "center", gap: 6 }}>
               {restaurantProfileHref ? (
                 <Link
                   to={restaurantProfileHref}
@@ -1224,13 +1224,15 @@ export default function PublicMenuPage() {
             <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
               <ShareButton
                 variant="menu"
+                label="Share Menu"
                 shareData={shareData}
                 analyticsContext={shareAnalyticsContext}
                 size="compact"
                 tone="subtle"
-                iconOnly
               />
             </div>
+
+            <div style={{ flex: 1 }} />
           </div>
 
           {addressLine ? (

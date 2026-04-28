@@ -46,6 +46,14 @@ function hasValue(v) {
   return v !== null && v !== undefined && v !== "";
 }
 
+function asSafeArray(value) {
+  return Array.isArray(value) ? value.filter(Boolean) : [];
+}
+
+function asSafeString(value, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
 function abbreviateLabel(name, fallback, max = 18) {
   const raw = String(name || fallback || "").trim();
   if (!raw) return fallback || "";
@@ -420,17 +428,21 @@ export default function CompareItemsModal({
 
   const base = comparison?.baseItem || null;
   const candidate = comparison?.candidateItem || null;
-  const highlights = comparison?.highlights || [];
+  const highlights = asSafeArray(comparison?.highlights);
 
   const hlMap = {};
-  for (const h of highlights) hlMap[h.key] = h.winner;
+  for (const h of highlights) {
+    if (!h?.key) continue;
+    hlMap[h.key] = h.winner;
+  }
 
   function wins(key, side) {
     return hlMap[key] === side;
   }
 
-  const candidateLabel = candidate?.restaurant_name
-    ? candidate.restaurant_name.split(" ").slice(0, 2).join(" ")
+  const candidateRestaurantName = asSafeString(candidate?.restaurant_name);
+  const candidateLabel = candidateRestaurantName
+    ? candidateRestaurantName.split(" ").slice(0, 2).join(" ")
     : "Compare";
 
   const baseActionLabel = `View ${abbreviateLabel(base?.name, "Current item")}`;

@@ -31,6 +31,17 @@ function formatFollowerCount(value) {
   return count === 1 ? "1 follower" : `${count} followers`;
 }
 
+function buildRestaurantHref(item) {
+  return item.slug
+    ? `/restaurants/${encodeURIComponent(item.slug)}`
+    : `/restaurants/${encodeURIComponent(String(item.restaurant_id))}`;
+}
+
+function buildMenuHref(item) {
+  if (item.slug) return `/restaurants/${encodeURIComponent(item.slug)}/menu`;
+  return `/public/restaurants/${encodeURIComponent(String(item.restaurant_id))}/menu`;
+}
+
 export default function ConsumerFollowing() {
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const navigate = useNavigate();
@@ -135,54 +146,73 @@ export default function ConsumerFollowing() {
         ) : null}
 
         {!error && items.length > 0 ? (
-          <div style={styles.list}>
+          <div style={styles.feedGrid}>
             {items.map((item) => {
               const location = [item.city, item.state].filter(Boolean).join(", ");
               const badge = formatTierLabel(item.profile_tier, item.listing_status);
-              const restaurantHref = item.slug
-                ? `/restaurants/${encodeURIComponent(item.slug)}`
-                : `/restaurants/${encodeURIComponent(String(item.restaurant_id))}`;
+              const restaurantHref = buildRestaurantHref(item);
+              const menuHref = buildMenuHref(item);
               const pending = pendingRestaurantId === item.restaurant_id;
 
               return (
-                <div key={item.restaurant_id} style={styles.rowCard}>
-                  <div style={styles.rowMain}>
-                    {item.logo_url ? (
-                      <img
-                        src={item.logo_url}
-                        alt=""
-                        aria-hidden="true"
-                        style={styles.logo}
-                      />
-                    ) : (
-                      <div style={styles.logoFallback} aria-hidden="true">
-                        {(item.restaurant_name || "?").slice(0, 1).toUpperCase()}
-                      </div>
-                    )}
+                <div key={item.restaurant_id} style={styles.menuCard}>
+                  <div style={styles.menuCardHeader}>
+                    <div style={styles.rowMain}>
+                      {item.logo_url ? (
+                        <img
+                          src={item.logo_url}
+                          alt=""
+                          aria-hidden="true"
+                          style={styles.logo}
+                        />
+                      ) : (
+                        <div style={styles.logoFallback} aria-hidden="true">
+                          {(item.restaurant_name || "?").slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
 
-                    <div style={styles.rowContent}>
-                      <div style={styles.rowHeading}>
-                        <Link to={restaurantHref} style={styles.restaurantLink}>
-                          {item.restaurant_name || "Restaurant"}
-                        </Link>
-                        {badge ? <span style={styles.badge}>{badge}</span> : null}
+                      <div style={styles.rowContent}>
+                        <div style={styles.rowHeading}>
+                          <Link to={restaurantHref} style={styles.restaurantLink}>
+                            {item.restaurant_name || "Restaurant"}
+                          </Link>
+                          {badge ? <span style={styles.badge}>{badge}</span> : null}
+                        </div>
+                        {location ? <p style={styles.location}>{location}</p> : null}
+                        <p style={styles.followedMeta}>{formatFollowedDate(item.followed_at)}</p>
+                        {Number(item.follower_count || 0) > 0 ? (
+                          <p style={styles.followerMeta}>{formatFollowerCount(item.follower_count)}</p>
+                        ) : null}
                       </div>
-                      {location ? <p style={styles.location}>{location}</p> : null}
-                      <p style={styles.followedMeta}>{formatFollowedDate(item.followed_at)}</p>
-                      {Number(item.follower_count || 0) > 0 ? (
-                        <p style={styles.followerMeta}>{formatFollowerCount(item.follower_count)}</p>
-                      ) : null}
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleUnfollow(item.restaurant_id)}
-                    disabled={pending}
-                    style={{ ...styles.unfollowBtn, ...(pending ? styles.unfollowBtnDisabled : null) }}
-                  >
-                    {pending ? "Removing..." : "Following"}
-                  </button>
+                  <div style={styles.windowBody}>
+                    <div style={styles.windowToolbar}>
+                      <span style={styles.windowDot} />
+                      <span style={styles.windowDot} />
+                      <span style={styles.windowDot} />
+                    </div>
+                    <div style={styles.windowPanel}>
+                      <div style={styles.windowLabel}>Menu Window</div>
+                      <div style={styles.windowTitle}>{item.restaurant_name || "Restaurant"}</div>
+                      <div style={styles.windowMeta}>
+                        {location || "Location unavailable"}
+                      </div>
+                      <div style={styles.windowActions}>
+                        <Link to={menuHref} style={styles.primaryLink}>View Menu</Link>
+                        <Link to={restaurantHref} style={styles.secondaryLink}>Restaurant</Link>
+                        <button
+                          type="button"
+                          onClick={() => handleUnfollow(item.restaurant_id)}
+                          disabled={pending}
+                          style={{ ...styles.unfollowBtn, ...(pending ? styles.unfollowBtnDisabled : null) }}
+                        >
+                          {pending ? "Removing..." : "Following"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -330,20 +360,21 @@ const styles = {
     fontSize: "14px",
     fontWeight: 700,
   },
-  list: {
+  feedGrid: {
     display: "grid",
-    gap: "14px",
+    gap: "16px",
   },
-  rowCard: {
+  menuCard: {
     background: "#ffffff",
     borderRadius: "18px",
     padding: "18px",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+    display: "grid",
+    gap: "14px",
+  },
+  menuCardHeader: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: "16px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-    flexWrap: "wrap",
   },
   rowMain: {
     display: "flex",
@@ -417,6 +448,58 @@ const styles = {
     color: "#4f5b57",
     fontSize: "13px",
     fontWeight: 600,
+  },
+  windowBody: {
+    borderRadius: "16px",
+    border: "1px solid #d7ddd8",
+    overflow: "hidden",
+    background: "#f9fafb",
+  },
+  windowToolbar: {
+    height: "34px",
+    background: "#eef2f1",
+    borderBottom: "1px solid #d7ddd8",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "0 14px",
+  },
+  windowDot: {
+    width: "10px",
+    height: "10px",
+    borderRadius: "999px",
+    background: "#c1c8c5",
+    display: "inline-block",
+  },
+  windowPanel: {
+    padding: "16px",
+    display: "grid",
+    gap: "8px",
+    background: "linear-gradient(180deg, #ffffff 0%, #f6f8f7 100%)",
+  },
+  windowLabel: {
+    fontSize: "11px",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#667085",
+  },
+  windowTitle: {
+    fontSize: "20px",
+    fontWeight: 800,
+    color: "#11211a",
+    lineHeight: 1.2,
+  },
+  windowMeta: {
+    fontSize: "14px",
+    color: "#4f5b57",
+    lineHeight: 1.5,
+  },
+  windowActions: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+    marginTop: "6px",
   },
   unfollowBtn: {
     minHeight: "42px",
