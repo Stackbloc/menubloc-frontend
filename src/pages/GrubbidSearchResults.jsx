@@ -105,6 +105,41 @@ const US_STATE_ABBREVS = new Set([
   "va","wa","wv","wi","wy","dc",
 ]);
 
+const WAITER_FORKS = [
+  {
+    id: "chicken_sandwich",
+    matchTerms: ["chicken"],
+    matchAny: ["sandwich", "sandwhich", "sandwitch"],
+    question: "Chicken sandwich?",
+    options: [
+      { id: "fried", label: "Fried", terms: ["fried", "crispy", "breaded", "spicy chicken sandwich", "classic chicken sandwich"] },
+      { id: "grilled", label: "Grilled", terms: ["grilled", "blackened"] },
+    ],
+  },
+  {
+    id: "pizza",
+    matchAny: ["pizza"],
+    question: "Pizza?",
+    options: [
+      { id: "new_york", label: "New York", terms: ["new york", "ny style", "slice"] },
+      { id: "chicago", label: "Chicago", terms: ["chicago", "deep dish"] },
+      { id: "neapolitan", label: "Neapolitan", terms: ["neapolitan", "wood fired"] },
+      { id: "fast_cheap", label: "Fast & Cheap", sort: "price_asc" },
+    ],
+  },
+  {
+    id: "tacos",
+    matchAny: ["taco", "tacos"],
+    question: "Tacos?",
+    options: [
+      { id: "street", label: "Street", terms: ["street"] },
+      { id: "loaded", label: "Loaded", terms: ["loaded", "supreme"] },
+      { id: "fish", label: "Fish", terms: ["fish"] },
+      { id: "cheap", label: "Cheap", sort: "price_asc" },
+    ],
+  },
+];
+
 function parseLocation(rawValue) {
   const raw = String(rawValue || "").trim();
   if (!raw) return { zip: "", city: "", state: "", near: "", label: "" };
@@ -290,6 +325,13 @@ function getDistanceMiles(row) {
   return distance !== null ? distance : null;
 }
 
+function compareNullableNumbers(a, b) {
+  if (a !== null && b !== null && a !== b) return a - b;
+  if (a !== null && b === null) return -1;
+  if (a === null && b !== null) return 1;
+  return 0;
+}
+
 function isBetterRestaurantRepresentative(nextRow, currentRow) {
   const nextDistance = getDistanceMiles(nextRow);
   const currentDistance = getDistanceMiles(currentRow);
@@ -473,6 +515,28 @@ export default function GrubbidSearchResults() {
   }, []);
 
   const q = String(params.get("q") || "").trim();
+  const normalizedQuery = (q || "")
+    .toLowerCase()
+    .replace(/\+/g, " ")
+    .trim();
+  const activeFork = useMemo(() => WAITER_FORKS.find((fork) => {
+    const matchesTerms = Array.isArray(fork.matchTerms)
+      ? fork.matchTerms.every((term) => normalizedQuery.includes(term))
+      : true;
+
+    const matchesAny = Array.isArray(fork.matchAny)
+      ? fork.matchAny.some((term) => normalizedQuery.includes(term))
+      : true;
+
+    if (Array.isArray(fork.matchTerms) && Array.isArray(fork.matchAny)) {
+      return matchesTerms && matchesAny;
+    }
+
+    if (Array.isArray(fork.matchTerms)) return matchesTerms;
+    if (Array.isArray(fork.matchAny)) return matchesAny;
+
+    return false;
+  }) || null, [normalizedQuery]);
   const vegan = params.get("vegan") === "1";
   const gluten_free = params.get("gluten_free") === "1";
   const deals_only = params.get("deals_only") === "1";
@@ -547,6 +611,11 @@ export default function GrubbidSearchResults() {
   const [searchHasMore, setSearchHasMore] = useState(false);
   const [searchTotalCount, setSearchTotalCount] = useState(0);
   const SEARCH_LIMIT = 24;
+  const [forkSelection, setForkSelection] = useState(null);
+
+  useEffect(() => {
+    setForkSelection(null);
+  }, [q, city, state, zip, near, activeFork?.id]);
 
   const { primaryUrl, fallbackUrl, hasGeoFilter } = useMemo(() => {
     const u = new URL(`${API}/search`);
@@ -851,8 +920,48 @@ export default function GrubbidSearchResults() {
   ]);
 
   const dishRows = useMemo(() => rows.filter(isDishRow), [rows]);
+  const waiterFilteredDishRows = dishRows;
+  const forkFilteredDishRows = useMemo(() => {
+    if (!forkSelection) {
+      return waiterFilteredDishRows;
+    }
+
+    let nextRows = waiterFilteredDishRows;
+
+    if (Array.isArray(forkSelection.terms) && forkSelection.terms.length > 0) {
+      const termMatches = waiterFilteredDishRows.filter((item) => {
+        const haystack = JSON.stringify(item).toLowerCase();
+        return forkSelection.terms.some((term) => haystack.includes(String(term).toLowerCase()));
+      });
+
+      if (termMatches.length > 0) {
+        nextRows = termMatches;
+      }
+    }
+
+    if (forkSelection.sort === "price_asc") {
+      return [...nextRows].sort((a, b) => {
+        const byPrice = compareNullableNumbers(getPriceMinor(a), getPriceMinor(b));
+        if (byPrice !== 0) return byPrice;
+        return compareNullableNumbers(getDistanceMiles(a), getDistanceMiles(b));
+      });
+    }
+
+    if (forkSelection.sort === "distance_asc") {
+      return [...nextRows].sort((a, b) => {
+        const byDistance = compareNullableNumbers(getDistanceMiles(a), getDistanceMiles(b));
+        if (byDistance !== 0) return byDistance;
+        return compareNullableNumbers(getPriceMinor(a), getPriceMinor(b));
+      });
+    }
+
+    return nextRows;
+  }, [forkSelection, waiterFilteredDishRows]);
   const restaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);
-  const restaurantGroups = useMemo(() => buildRestaurantGroups(dishRows), [dishRows]);
+  const restaurantGroups = useMemo(
+    () => buildRestaurantGroups(forkFilteredDishRows),
+    [forkFilteredDishRows]
+  );
 
   const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
 
@@ -887,6 +996,10 @@ export default function GrubbidSearchResults() {
   }, [restaurantGroups]);
 
   const hasMenuMatches = restaurantGroups.length > 0;
+  const hasVisibleForkResults =
+    restaurantGroups.length > 0 || forkFilteredDishRows.length > 0 || waiterFilteredDishRows.length > 0;
+  const visibleItems = restaurantGroups.flatMap((group) => (Array.isArray(group.items) ? group.items : []));
+  const waiterResultCount = visibleItems.length;
   const restaurantIntent = !!(
     searchMeta?.restaurant_oriented ||
     searchMeta?.restaurant_first ||
@@ -1089,40 +1202,83 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && hasMenuMatches && (
         <>
-          <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>
+          {!activeFork && (
+            <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>
+          )}
           <div style={styles.grid}>
+            {activeFork && hasVisibleForkResults && (
+              <div
+                style={{
+                  position: "sticky",
+                  top: 120,
+                  zIndex: 60,
+                  background: "#111",
+                  color: "#fff",
+                  borderRadius: 12,
+                  padding: 14,
+                  margin: "12px 0",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ marginBottom: 6, opacity: 0.8 }}>
+                  {activeFork.question}
+                </div>
+
+                <div style={{ fontSize: 14, fontWeight: 700, opacity: 0.9 }}>
+                  {waiterResultCount} results
+                </div>
+
+                {!forkSelection ? (
+                  <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800 }}>
+                    {activeFork.options.map((option, optionIndex) => (
+                      <React.Fragment key={option.id}>
+                        {optionIndex > 0 && <span style={{ margin: "0 10px", opacity: 0.6 }}>or</span>}
+                        <span style={{ cursor: "pointer" }} onClick={() => setForkSelection(option)}>
+                          {option.label}
+                        </span>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800 }}>{forkSelection.label} selected</div>
+                    <button type="button" onClick={() => setForkSelection(null)} style={{ border: "none", background: "transparent", color: "#fff", cursor: "pointer", padding: "6px 0 0", fontSize: 14, fontWeight: 700 }}>↶ Back</button>
+                  </>
+                )}
+              </div>
+            )}
             {restaurantGroups.map((g) => {
               const rMeta = restaurantMetaMap.get(asString(g.restaurant_id));
               return (
-              <SearchResultCard
-                key={`rg-${g.restaurant_id || g.restaurant_name}`}
-                restaurant={{
-                  id: g.restaurant_id,
-                  slug: g.restaurant_slug || g._first?.restaurant_slug || g._first?.slug || null,
-                  name: g.restaurant_name,
-                  cuisine: g._first?.cuisine || g._first?.restaurant_cuisine || null,
-                  category: g._first?.category || g._first?.restaurant_category || null,
-                  phone: g._first?.phone || g._first?.restaurant_phone || null,
-                  distance_miles:
-                    g._first?.distance_miles ?? g._first?.restaurant_distance_miles ?? null,
-                  profile_tier:
-                    g._first?.profile_tier || g._first?.restaurant_profile_tier || null,
-                  listing_status:
-                    g._first?.listing_status || g._first?.restaurant_listing_status || null,
-                  location_count: rMeta?.location_count ?? null,
-                  raw: g._first,
-                }}
-                items={g.items}
-                query={q}
-                queryMeta={queryMeta}
-                matchContext={{
-                  wantsNearby: searchMeta?.wants_nearby === true,
-                  coordinateSearchActive: hasGeoFilter === true,
-                }}
-                crossRestaurantItems={crossRestaurantItems}
-                geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
-              />
-            );
+                <SearchResultCard
+                  key={`rg-${g.restaurant_id || g.restaurant_name}`}
+                    restaurant={{
+                      id: g.restaurant_id,
+                      slug: g.restaurant_slug || g._first?.restaurant_slug || g._first?.slug || null,
+                      name: g.restaurant_name,
+                      cuisine: g._first?.cuisine || g._first?.restaurant_cuisine || null,
+                      category: g._first?.category || g._first?.restaurant_category || null,
+                      phone: g._first?.phone || g._first?.restaurant_phone || null,
+                      distance_miles:
+                        g._first?.distance_miles ?? g._first?.restaurant_distance_miles ?? null,
+                      profile_tier:
+                        g._first?.profile_tier || g._first?.restaurant_profile_tier || null,
+                      listing_status:
+                        g._first?.listing_status || g._first?.restaurant_listing_status || null,
+                      location_count: rMeta?.location_count ?? null,
+                      raw: g._first,
+                    }}
+                    items={g.items}
+                    query={q}
+                    queryMeta={queryMeta}
+                    matchContext={{
+                      wantsNearby: searchMeta?.wants_nearby === true,
+                      coordinateSearchActive: hasGeoFilter === true,
+                    }}
+                    crossRestaurantItems={crossRestaurantItems}
+                    geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+                  />
+              );
           })}
           </div>
         </>
