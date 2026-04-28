@@ -1182,29 +1182,42 @@ export default function PublicMenuPage() {
           marginRight: isMobile ? -12 : -20,
           padding: isMobile ? "10px 12px" : "12px 20px",
         }}>
-          {/* Name + Share row */}
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "wrap", marginBottom: addressLine ? 2 : 0 }}>
-            {restaurantProfileHref ? (
-              <Link
-                to={restaurantProfileHref}
-                title={`Open ${restaurantName} profile`}
-                style={{
-                  fontSize: isMobile ? 18 : 22,
-                  fontWeight: 900,
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.1,
-                  color: "#11211a",
-                  textDecoration: "none",
-                  wordBreak: "break-word",
-                }}
-              >
-                {restaurantName}
-              </Link>
-            ) : (
-              <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word" }}>
-                {restaurantName}
-              </div>
-            )}
+          {/* Title row + Share */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: addressLine ? 2 : 0 }}>
+            <div style={{ minWidth: 0, flex: "1 1 280px" }}>
+              {restaurantProfileHref ? (
+                <Link
+                  to={restaurantProfileHref}
+                  title={`Open ${restaurantName} profile`}
+                  style={{
+                    fontSize: isMobile ? 18 : 22,
+                    fontWeight: 900,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.1,
+                    color: "#11211a",
+                    textDecoration: "none",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {restaurantName}
+                </Link>
+              ) : (
+                <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#11211a", wordBreak: "break-word" }}>
+                  {restaurantName}
+                </div>
+              )}
+            </div>
+
+            <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, alignSelf: "flex-start" }}>
+              <ShareButton
+                variant="menu"
+                label="Share menu"
+                shareData={shareData}
+                analyticsContext={shareAnalyticsContext}
+                size="compact"
+                tone="subtle"
+              />
+            </div>
           </div>
 
           {addressLine ? (
@@ -1235,16 +1248,6 @@ export default function PublicMenuPage() {
                 {menuTypeLabel}
               </div>
             ) : null}
-            <div onClick={(e) => e.stopPropagation()}>
-              <ShareButton
-                variant="menu"
-                label="Share menu"
-                shareData={shareData}
-                analyticsContext={shareAnalyticsContext}
-                size="compact"
-                tone="subtle"
-              />
-            </div>
           </div>
 
           <FranchiseBanner
@@ -1385,9 +1388,30 @@ export default function PublicMenuPage() {
                             }}
                           >
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                              <span style={{ fontSize: 14, fontWeight: 600, color: "#11211a", lineHeight: 1.2 }}>
-                                {name}
-                              </span>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1, flexWrap: "wrap" }}>
+                                <span style={{ fontSize: 14, fontWeight: 600, color: "#11211a", lineHeight: 1.2 }}>
+                                  {name}
+                                </span>
+                                {dishShareData ? (
+                                  <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0 }}>
+                                    <ShareButton
+                                      variant="dish"
+                                      label="Share"
+                                      shareData={dishShareData}
+                                      analyticsContext={{
+                                        restaurantId: currentRestaurantId,
+                                        restaurantSlug: data?.slug || null,
+                                        menuItemId: it.id,
+                                        menuItemName: name,
+                                        pageType: "public_menu",
+                                        shareTarget: "dish",
+                                      }}
+                                      size="compact"
+                                      tone="subtle"
+                                    />
+                                  </div>
+                                ) : null}
+                              </div>
                               {price ? (
                                 <span style={{ fontSize: 14, fontWeight: 700, color: "#374151", whiteSpace: "nowrap" }}>{price}</span>
                               ) : null}
@@ -1436,7 +1460,7 @@ export default function PublicMenuPage() {
                               </div>
                             ) : null}
 
-                            {(canNavigate && itemHasInsightsData(it)) || dishShareData ? (
+                            {canNavigate && itemHasInsightsData(it) ? (
                               <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                                 {canNavigate && itemHasInsightsData(it) ? (
                                   <button
@@ -1466,25 +1490,6 @@ export default function PublicMenuPage() {
                                   >
                                     Insights →
                                   </button>
-                                ) : null}
-                                {dishShareData ? (
-                                  <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex" }}>
-                                    <ShareButton
-                                      variant="dish"
-                                      label="Share"
-                                      shareData={dishShareData}
-                                      analyticsContext={{
-                                        restaurantId: currentRestaurantId,
-                                        restaurantSlug: data?.slug || null,
-                                        menuItemId: it.id,
-                                        menuItemName: name,
-                                        pageType: "public_menu",
-                                        shareTarget: "dish",
-                                      }}
-                                      size="compact"
-                                      tone="subtle"
-                                    />
-                                  </div>
                                 ) : null}
                               </div>
                             ) : null}
