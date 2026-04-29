@@ -437,12 +437,12 @@ export default function CheckoutPage() {
               boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
             }}
           >
-            <h1 style={{ fontSize: 28, margin: 0 }}>Your order cart is empty</h1>
+            <h1 style={{ fontSize: 28, margin: 0 }}>Your basket is empty</h1>
             <p style={{ marginTop: 10, color: "#667085", fontSize: 15, lineHeight: 1.6 }}>
-              Add items from a restaurant menu before starting checkout.
+              Add items from a menu to start an order.
             </p>
             <Link to={menuPath} style={{ color: "#14532d", fontWeight: 800 }}>
-              {restaurant?.restaurantName ? `← Back to ${restaurant.restaurantName}` : "← Back to discovery"}
+              {restaurant?.restaurantName ? `← Back to ${restaurant.restaurantName}` : "← Back to home"}
             </Link>
           </div>
         </div>

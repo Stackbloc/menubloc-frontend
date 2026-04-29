@@ -1,14 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
+import { useOrderCart } from "../context/OrderCartContext.jsx";
 
 const TABS = [
   { label: "Home",    icon: "🏠", to: "/" },
   { label: "Explore", icon: "🔍", to: "/search" },
   { label: "Following", icon: "F", to: "/account/following" },
-  { label: "Account", icon: "👤", to: "/account" },
+  { label: "Basket", icon: "🧺", to: "/checkout" },
 ];
 
 export default function BottomNav() {
   const { pathname } = useLocation();
+  const { itemCount } = useOrderCart();
+  const basketBadge = itemCount > 9 ? "9+" : String(itemCount);
   return (
     <nav
       aria-label="Main navigation"
@@ -22,13 +25,18 @@ export default function BottomNav() {
       }}
     >
       {TABS.map((tab) => {
+        const isCheckout = tab.to === "/checkout";
         const active =
-          pathname === tab.to ||
-          (tab.to !== "/" && pathname.startsWith(tab.to));
+          isCheckout
+            ? pathname.startsWith("/checkout")
+            : pathname === tab.to ||
+              (tab.to !== "/" && pathname.startsWith(tab.to));
+        const showBadge = tab.to === "/checkout" && itemCount > 0;
         return (
           <Link
             key={tab.to}
             to={tab.to}
+            aria-label={tab.to === "/checkout" && itemCount > 0 ? `Basket with ${itemCount} items` : tab.label}
             style={{
               display: "flex", flexDirection: "column", alignItems: "center",
               gap: 2, textDecoration: "none", minWidth: 56,
@@ -38,7 +46,42 @@ export default function BottomNav() {
               transition: "color 150ms ease",
             }}
           >
-            <span style={{ fontSize: 22, lineHeight: 1 }}>{tab.icon}</span>
+            <span
+              style={{
+                position: "relative",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 22,
+                lineHeight: 1,
+              }}
+            >
+              <span aria-hidden="true">{tab.icon}</span>
+              {showBadge ? (
+                <span
+                  aria-label={`${itemCount} items in basket`}
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -6,
+                    minWidth: 16,
+                    height: 16,
+                    padding: "0 4px",
+                    borderRadius: 999,
+                    background: "#dc2626",
+                    color: "#fff",
+                    fontSize: 9,
+                    fontWeight: 800,
+                    lineHeight: "16px",
+                    textAlign: "center",
+                    boxSizing: "border-box",
+                    pointerEvents: "none",
+                  }}
+                >
+                  {basketBadge}
+                </span>
+              ) : null}
+            </span>
             <span style={{ letterSpacing: "0.01em" }}>{tab.label}</span>
           </Link>
         );
