@@ -50,6 +50,7 @@ export default function DiscoveryDrawer({
   open, onClose,
   filters, setFilters,
   excludedAllergens = new Set(),
+  allergenNoneSelected = false,
   onAllergenToggle,
 }) {
   const { isAuthenticated: loggedIn } = useConsumer();
@@ -126,6 +127,21 @@ export default function DiscoveryDrawer({
 
           <Section label="Exclude Allergens" />
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 8, paddingBottom: 4 }}>
+            <button
+              type="button"
+              onClick={() => onAllergenToggle?.("none")}
+              style={{
+                height: 32, padding: "0 12px", borderRadius: 999,
+                cursor: "pointer", whiteSpace: "nowrap",
+                border: allergenNoneSelected ? "none" : "1.5px solid #d0d5dd",
+                background: allergenNoneSelected ? "#667085" : "#f8fafc",
+                color: allergenNoneSelected ? "#fff" : "#475467",
+                fontSize: 13, fontWeight: 700,
+                transition: "background 160ms ease, color 160ms ease",
+              }}
+            >
+              {allergenNoneSelected ? "✓ None" : "None"}
+            </button>
             {[
               { id: "nuts",      label: "Nuts" },
               { id: "dairy",     label: "Dairy" },
@@ -136,19 +152,24 @@ export default function DiscoveryDrawer({
               { id: "fish",      label: "Fish" },
             ].map(({ id, label }) => {
               const active = excludedAllergens.has(id);
+              const disabled = allergenNoneSelected;
               return (
                 <button
                   key={id}
                   type="button"
-                  onClick={() => onAllergenToggle?.(id)}
+                  onClick={() => {
+                    if (!disabled) onAllergenToggle?.(id);
+                  }}
+                  disabled={disabled}
                   style={{
                     height: 32, padding: "0 12px", borderRadius: 999,
-                    cursor: "pointer", whiteSpace: "nowrap",
-                    border: active ? "none" : "1.5px solid #fca5a5",
-                    background: active ? "#dc2626" : "#fff5f5",
-                    color: active ? "#fff" : "#dc2626",
+                    cursor: disabled ? "not-allowed" : "pointer", whiteSpace: "nowrap",
+                    border: disabled ? "1.5px solid #e5e7eb" : active ? "none" : "1.5px solid #fca5a5",
+                    background: disabled ? "#f3f4f6" : active ? "#dc2626" : "#fff5f5",
+                    color: disabled ? "#98a2b3" : active ? "#fff" : "#dc2626",
                     fontSize: 13, fontWeight: 700,
                     transition: "background 160ms ease, color 160ms ease",
+                    opacity: disabled ? 0.72 : 1,
                   }}
                 >
                   {active ? `✕ ${label}` : label}

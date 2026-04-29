@@ -11,6 +11,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import {
   getConsumerSession,
+  getPreferences,
   loginConsumer,
   loginConsumerWithApple,
   loginConsumerWithGoogle,
@@ -26,27 +27,44 @@ export function ConsumerProvider({ children }) {
   const [consumer, setConsumer] = useState(null);   // { id, email, email_verified }
   const [profile, setProfile] = useState(null);     // { display_name, first_name, ... }
   const [allergenFilter, setAllergenFilter] = useState(null);
+  const [dietaryPreferences, setDietaryPreferences] = useState([]);
+  const [allergenPreferences, setAllergenPreferences] = useState([]);
   const [authToast, setAuthToast] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const applySession = useCallback((data) => {
+  const applySession = useCallback((data, preferences = null) => {
     setConsumer(data?.consumer || null);
     setProfile(data?.profile || null);
-    setAllergenFilter(data?.allergen_filter || null);
+    setAllergenFilter(preferences?.allergen_filter || data?.allergen_filter || null);
+    setDietaryPreferences(Array.isArray(preferences?.dietary_preferences) ? preferences.dietary_preferences : []);
+    setAllergenPreferences(Array.isArray(preferences?.allergen_preferences) ? preferences.allergen_preferences : []);
   }, []);
 
   const clearSession = useCallback(() => {
     setConsumer(null);
     setProfile(null);
     setAllergenFilter(null);
+    setDietaryPreferences([]);
+    setAllergenPreferences([]);
     setAuthToast("");
   }, []);
 
   const loadMe = useCallback(async () => {
     try {
-      const data = await getConsumerSession();
-      applySession(data);
-      return data;
+      const [data, preferences] = await Promise.all([
+        getConsumerSession(),
+        getPreferences().catch((err) => {
+          if (err?.status === 401) throw err;
+          return null;
+        }),
+      ]);
+      applySession(data, preferences);
+      return {
+        ...data,
+        dietary_preferences: preferences?.dietary_preferences || [],
+        allergen_preferences: preferences?.allergen_preferences || [],
+        allergen_filter: preferences?.allergen_filter || data?.allergen_filter || null,
+      };
     } catch (err) {
       if (err?.status === 401) clearSession();
       throw err;
@@ -107,6 +125,8 @@ export function ConsumerProvider({ children }) {
     consumer,
     profile,
     allergenFilter,
+    dietaryPreferences,
+    allergenPreferences,
     isAuthenticated: !!consumer,
     loading,
     login,

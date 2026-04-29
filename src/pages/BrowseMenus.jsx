@@ -488,7 +488,7 @@ export default function BrowseMenus() {
 
   const showEmptyState = !loading && !error && menus.length === 0;
   const effectiveAllergenFilter = isAuthenticated
-    ? (responseAllergenFilter || consumerAllergenFilter || null)
+    ? (consumerAllergenFilter || responseAllergenFilter || null)
     : null;
 
   // ── Alpha range computation ────────────────────────────────────

@@ -46,13 +46,15 @@ const ALLERGEN_OPTIONS = [
   { key: "sesame", label: "Sesame" },
   { key: "wheat", label: "Wheat" },
 ];
+const ALLERGEN_NONE_KEY = "__none__";
 
-function PreferenceToggle({ label, checked, onChange }) {
+function PreferenceToggle({ label, checked, onChange, disabled = false }) {
   return (
-    <label style={styles.prefToggle}>
+    <label style={{ ...styles.prefToggle, ...(disabled ? styles.prefToggleDisabled : null) }}>
       <input
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
         style={styles.checkbox}
       />
@@ -97,6 +99,7 @@ export default function ConsumerProfile() {
 
   const [dietPrefs, setDietPrefs] = useState({});
   const [allergenPrefs, setAllergenPrefs] = useState({});
+  const [allergenNoneSelected, setAllergenNoneSelected] = useState(false);
   const [savedLocations, setSavedLocations] = useState([]);
   const [coinsWallet, setCoinsWallet] = useState({
     balance_cents: 0,
@@ -130,6 +133,11 @@ export default function ConsumerProfile() {
         allergenMap[pref.allergen_key] = pref.is_enabled;
       }
       setAllergenPrefs(allergenMap);
+      setAllergenNoneSelected(
+        Array.isArray(allergen_preferences) &&
+        allergen_preferences.length > 0 &&
+        !allergen_preferences.some((pref) => pref.is_enabled)
+      );
 
       setSavedLocations(saved_locations || []);
       setCoinsWallet({
@@ -159,6 +167,16 @@ export default function ConsumerProfile() {
   }
 
   function toggleAllergen(key, value) {
+    if (key === ALLERGEN_NONE_KEY) {
+      setAllergenNoneSelected(value);
+      if (value) {
+        setAllergenPrefs(
+          Object.fromEntries(ALLERGEN_OPTIONS.map(({ key: allergenKey }) => [allergenKey, false]))
+        );
+      }
+      return;
+    }
+    setAllergenNoneSelected(false);
     setAllergenPrefs((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -174,7 +192,7 @@ export default function ConsumerProfile() {
       }));
       const allergen_preferences = ALLERGEN_OPTIONS.map(({ key }) => ({
         key,
-        is_enabled: Boolean(allergenPrefs[key]),
+        is_enabled: allergenNoneSelected ? false : Boolean(allergenPrefs[key]),
       }));
 
       await Promise.all([
@@ -325,14 +343,21 @@ export default function ConsumerProfile() {
 
         <Section title="Allergen Exclusions" id="allergen-preferences">
           <p style={styles.sectionDesc}>
-            Select allergens you want to avoid. These settings control the allergen filter status shown across discovery.
+            Select allergens you want to avoid. Choose None if you do not want any allergen exclusions. These settings control the allergen filter status shown across discovery.
           </p>
           <div style={styles.prefGrid}>
+            <PreferenceToggle
+              key={ALLERGEN_NONE_KEY}
+              label="None"
+              checked={allergenNoneSelected}
+              onChange={(value) => toggleAllergen(ALLERGEN_NONE_KEY, value)}
+            />
             {ALLERGEN_OPTIONS.map(({ key, label }) => (
               <PreferenceToggle
                 key={key}
                 label={label}
                 checked={Boolean(allergenPrefs[key])}
+                disabled={allergenNoneSelected}
                 onChange={(value) => toggleAllergen(key, value)}
               />
             ))}
@@ -564,6 +589,10 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
     gap: "12px",
+  },
+  prefToggleDisabled: {
+    opacity: 0.52,
+    cursor: "not-allowed",
   },
   coinTile: {
     borderRadius: "12px",

@@ -41,7 +41,9 @@ const SESSION_GEO_KEY = "grubbid.discovery.geo";
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const RECENT_LOCATIONS_KEY = "grubbid.recent.locations";
 const MAX_RECENT_LOCATIONS = 3;
+const DIET_PREFS_STORAGE_KEY = "grubbid.diet.prefs";
 const ALLERGEN_KEY = "grubbid.allergen.exclusions";
+const ALLERGEN_NONE_ID = "none";
 const FILTER_HEALTH_CHECKED_KEY = "grubbid.filterHealthChecked";
 const FILTER_HEALTH_BROKEN_KEY = "grubbid.filterHealthBroken";
 
@@ -69,6 +71,76 @@ const FOOD_CHIPS = [
   { id: "wings",        icon: "🍗", label: "Wings",              query: "wings" },
   { id: "salads",       icon: "🥗", label: "Salads",             query: "salads" },
 ];
+
+function hasStoredDietSelection() {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(DIET_PREFS_STORAGE_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+function hasStoredAllergenSelection() {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(ALLERGEN_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+function buildDiscoveryDietPrefsFromProfile(rows) {
+  const enabled = new Set(
+    (Array.isArray(rows) ? rows : [])
+      .filter((row) => row?.is_enabled)
+      .map((row) => String(row?.preference_key || "").trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  return {
+    vegan: enabled.has("vegan"),
+    vegetarian: enabled.has("vegetarian"),
+    gluten_free: enabled.has("gluten_free"),
+    keto: enabled.has("keto") || enabled.has("low_carb"),
+    low_fat: false,
+    low_sodium: enabled.has("low_sodium"),
+    dairy_free: enabled.has("dairy_free"),
+    diabetic_friendly: enabled.has("diabetic_friendly"),
+  };
+}
+
+function buildDiscoveryAllergenSetFromProfile(allergenRows, allergenFilter) {
+  if (allergenFilter?.configured && allergenFilter?.status === "off") {
+    return new Set([ALLERGEN_NONE_ID]);
+  }
+
+  const sourceKeys = Array.isArray(allergenFilter?.active_allergen_keys) && allergenFilter.active_allergen_keys.length > 0
+    ? allergenFilter.active_allergen_keys
+    : (Array.isArray(allergenRows) ? allergenRows.filter((row) => row?.is_enabled).map((row) => row?.allergen_key) : []);
+
+  const mapped = new Set();
+  for (const rawKey of sourceKeys) {
+    const key = String(rawKey || "").trim().toLowerCase();
+    if (!key) continue;
+    if (key === "peanuts" || key === "tree_nuts") mapped.add("nuts");
+    if (key === "dairy") mapped.add("dairy");
+    if (key === "gluten" || key === "wheat") mapped.add("gluten");
+    if (key === "shellfish" || key === "molluscs") mapped.add("shellfish");
+    if (key === "soy") mapped.add("soy");
+    if (key === "eggs") mapped.add("eggs");
+    if (key === "fish") mapped.add("fish");
+  }
+  return mapped;
+}
+
+function formatDiscoveryAllergenLabel(value) {
+  return String(value || "")
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
 // Re-ranks feed when query is active without hiding the default cards.
 function filterAndRankMenus(menus, query) {
@@ -265,7 +337,14 @@ function useAutoLocation() {
 
 export default function GrubbidDiscovery() {
   const { t } = useLanguage();
-  const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
+  const {
+    isAuthenticated: consumerLoggedIn,
+    loading: consumerLoading,
+    profile: consumerProfile,
+    dietaryPreferences,
+    allergenPreferences,
+    allergenFilter: consumerAllergenFilter,
+  } = useConsumer();
   const navigate = useNavigate();
   const inputRef = useRef(null);
   const locationEditorRef = useRef(null);
@@ -301,6 +380,8 @@ export default function GrubbidDiscovery() {
   const locationManuallySet = useRef(
     typeof window !== "undefined" && !!window.sessionStorage.getItem(SESSION_LOCATION_KEY)
   );
+  const seededProfilePrefsRef = useRef(false);
+  const seededProfileLocationRef = useRef(false);
   const chipRowRef = useRef(null);
   const [chipScrollLeft, setChipScrollLeft] = useState(0);
   const [chipScrollMax, setChipScrollMax] = useState(Infinity);
@@ -364,23 +445,25 @@ export default function GrubbidDiscovery() {
   })();
 
   const activeFilterParams = filtersToUrlParams(filters).toString();
+  const hasNoneAllergenSelected = excludedAllergens.has(ALLERGEN_NONE_ID);
+  const activeExcludedAllergens = [...excludedAllergens].filter((value) => value !== ALLERGEN_NONE_ID);
 
   const displayMenus = useMemo(() => {
     let menus = filterAndRankMenus(feedMenus, committedQuery);
-    if (excludedAllergens.size > 0) {
+    if (activeExcludedAllergens.length > 0) {
       menus = menus.filter((menu) => {
         const allergens = [
           ...(menu?.allergens || []),
           ...(menu?.preview_allergens || []),
           ...(menu?.chips?.nutrition_chip?.allergens || []),
         ].map((a) => String(a).toLowerCase().replace(/_/g, " ").trim());
-        return ![...excludedAllergens].some((ex) =>
+        return !activeExcludedAllergens.some((ex) =>
           allergens.some((a) => a.includes(ex) || ex.includes(a))
         );
       });
     }
     return menus;
-  }, [feedMenus, committedQuery, excludedAllergens]);
+  }, [feedMenus, committedQuery, activeExcludedAllergens]);
 
   // Persist dietary prefs whenever they change
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
@@ -389,6 +472,26 @@ export default function GrubbidDiscovery() {
   useEffect(() => {
     try { localStorage.setItem(ALLERGEN_KEY, JSON.stringify([...excludedAllergens])); } catch {}
   }, [excludedAllergens]);
+
+  useEffect(() => {
+    if (consumerLoading || !consumerLoggedIn || seededProfilePrefsRef.current) return;
+
+    if (!hasStoredDietSelection()) {
+      setFilters(buildDiscoveryDietPrefsFromProfile(dietaryPreferences));
+    }
+
+    if (!hasStoredAllergenSelection()) {
+      setExcludedAllergens(buildDiscoveryAllergenSetFromProfile(allergenPreferences, consumerAllergenFilter));
+    }
+
+    seededProfilePrefsRef.current = true;
+  }, [
+    consumerLoading,
+    consumerLoggedIn,
+    dietaryPreferences,
+    allergenPreferences,
+    consumerAllergenFilter,
+  ]);
 
   function buildApiLocationParams() {
     const requestedLocationValue = String(getEffectiveSearchLocation() || "").trim();
@@ -451,7 +554,11 @@ export default function GrubbidDiscovery() {
 
   function handleAllergenToggle(id) {
     setExcludedAllergens((prev) => {
+      if (id === ALLERGEN_NONE_ID) {
+        return prev.has(ALLERGEN_NONE_ID) ? new Set() : new Set([ALLERGEN_NONE_ID]);
+      }
       const next = new Set(prev);
+      if (next.has(ALLERGEN_NONE_ID)) next.delete(ALLERGEN_NONE_ID);
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
@@ -661,6 +768,29 @@ export default function GrubbidDiscovery() {
     }
   }
 
+  useEffect(() => {
+    if (consumerLoading || !consumerLoggedIn || seededProfileLocationRef.current) return;
+    seededProfileLocationRef.current = true;
+
+    if (typeof window !== "undefined" && window.sessionStorage.getItem(SESSION_LOCATION_KEY)) {
+      return;
+    }
+
+    const savedProfileLocation = normalizeLocationLabel(consumerProfile?.default_location_label || "");
+    if (!savedProfileLocation) return;
+
+    setLocationInput(savedProfileLocation);
+    void applyLocationChange(savedProfileLocation, {
+      source: consumerProfile?.location_source || "manual",
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    consumerLoading,
+    consumerLoggedIn,
+    consumerProfile?.default_location_label,
+    consumerProfile?.location_source,
+  ]);
+
   function getEffectiveSearchLocation() {
     const draft = locationInput.trim();
     if (showLocationEditor && draft) return draft;
@@ -723,6 +853,7 @@ export default function GrubbidDiscovery() {
         filters={filters}
         setFilters={setFilters}
         excludedAllergens={excludedAllergens}
+        allergenNoneSelected={hasNoneAllergenSelected}
         onAllergenToggle={handleAllergenToggle}
       />
 
@@ -1147,11 +1278,15 @@ export default function GrubbidDiscovery() {
               {displayMenus.length > 0 && (
                 <span>{displayMenus.length} {displayMenus.length === 1 ? "menu" : "menus"}</span>
               )}
-              {excludedAllergens.size > 0 && (
-                <span style={{ color: "#dc2626", fontSize: 11, fontWeight: 800 }}>
-                  ⚠ {[...excludedAllergens].map((a) => a.charAt(0).toUpperCase() + a.slice(1)).join(", ")} excluded
+              {hasNoneAllergenSelected ? (
+                <span style={{ color: "#667085", fontSize: 11, fontWeight: 800 }}>
+                  Allergen filter off
                 </span>
-              )}
+              ) : activeExcludedAllergens.length > 0 ? (
+                <span style={{ color: "#dc2626", fontSize: 11, fontWeight: 800 }}>
+                  ⚠ {activeExcludedAllergens.map((a) => formatDiscoveryAllergenLabel(a)).join(", ")} excluded
+                </span>
+              ) : null}
             </div>
           )}
 

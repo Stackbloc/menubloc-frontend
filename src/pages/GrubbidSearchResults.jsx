@@ -1047,6 +1047,10 @@ export default function GrubbidSearchResults() {
     if (locationLabel === "your current location") return "near your current location";
     return `in ${locationLabel}`;
   }, [locationLabel]);
+  const displayQuery = useMemo(() => {
+    const normalized = String(queryMeta?.normalized || "").trim();
+    return normalized || q;
+  }, [queryMeta, q]);
 
   const styles = {
     grid: {
@@ -1057,9 +1061,9 @@ export default function GrubbidSearchResults() {
     },
   };
 
-  const emptyMessage = q
-    ? t("search.noResultsFor", `No results for "${q}"${locationPhrase ? ` ${locationPhrase}` : ""}.`, {
-        query: q,
+  const emptyMessage = displayQuery
+    ? t("search.noResultsFor", `No results for "${displayQuery}"${locationPhrase ? ` ${locationPhrase}` : ""}.`, {
+        query: displayQuery,
         location: locationPhrase ? ` ${locationPhrase}` : "",
       })
     : t("search.noResultsGeneric", `No results${locationPhrase ? ` ${locationPhrase}` : ""}.`, {
@@ -1088,7 +1092,7 @@ export default function GrubbidSearchResults() {
     })(),
   ].filter(Boolean).join(" · ");
   const effectiveAllergenFilter = isAuthenticated
-    ? (responseAllergenFilter || consumerAllergenFilter || null)
+    ? (consumerAllergenFilter || responseAllergenFilter || null)
     : null;
 
   return (
@@ -1128,7 +1132,7 @@ export default function GrubbidSearchResults() {
         </div>
         <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: 17, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em" }}>
-            🔍 {q ? `"${q}"` : "Search"}
+            🔍 {displayQuery ? `"${displayQuery}"` : "Search"}
           </span>
           {locationLabel && (
             <span style={{

@@ -39,7 +39,7 @@ async function preflightCheck() {
   }
 
   try {
-    await checkEndpoint("http://127.0.0.1:4173/", "Frontend");
+    await checkEndpoint(`${frontendBaseUrl}/`, "Frontend");
   } catch (err) {
     console.error("❌ Frontend not running on :4173");
     console.error(err.message);
