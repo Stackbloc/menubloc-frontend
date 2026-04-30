@@ -936,6 +936,40 @@ export default function GrubbidSearchResults() {
   );
 
   const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
+  const browseRestaurantsHref = useMemo(() => {
+    const nextParams = new URLSearchParams();
+    const passthroughKeys = [
+      "zip",
+      "city",
+      "state",
+      "near",
+      "location_label",
+      "lat",
+      "lng",
+      "radius_miles",
+      "metro_id",
+      "cuisine",
+      "category",
+      "vegan",
+      "vegetarian",
+      "gluten_free",
+      "dairy_free",
+      "diabetic_friendly",
+      "keto",
+      "low_carb",
+      "low_fat",
+      "low_sodium",
+      "deals_only",
+    ];
+
+    for (const key of passthroughKeys) {
+      const value = params.get(key);
+      if (value != null && value !== "") nextParams.set(key, value);
+    }
+
+    const nextQuery = nextParams.toString();
+    return nextQuery ? `/browse-menus?${nextQuery}` : "/browse-menus";
+  }, [params]);
 
   function toggleSearchFilter(key) {
     const next = { ...activeFilters, [key]: !activeFilters[key] };
@@ -968,6 +1002,7 @@ export default function GrubbidSearchResults() {
   }, [restaurantGroups]);
 
   const hasMenuMatches = restaurantGroups.length > 0;
+  const foodSearchActive = Boolean((displayQuery || q || "").trim());
   const visibleItems = restaurantGroups.flatMap((group) => (Array.isArray(group.items) ? group.items : []));
   const waiterResultCount = visibleItems.length;
   const refinementOptions = useMemo(
@@ -1068,6 +1103,17 @@ export default function GrubbidSearchResults() {
   const effectiveAllergenFilter = isAuthenticated
     ? (consumerAllergenFilter || responseAllergenFilter || null)
     : null;
+  const showRestaurantOnlyResults =
+    !hasDietFilter &&
+    restaurantOnlyVisible.length > 0 &&
+    restaurantIntent;
+  const showBrowseFallback =
+    !loading &&
+    !err &&
+    foodSearchActive &&
+    !restaurantIntent &&
+    !hasMenuMatches &&
+    !hasDietFilter;
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
@@ -1151,11 +1197,50 @@ export default function GrubbidSearchResults() {
         </StatusMessage>
       )}
 
-      {!loading && !err && q && !hasMenuMatches && !hasDietFilter && restaurantOnlyVisible.length === 0 && (
+      {!loading && !err && q && !hasMenuMatches && !hasDietFilter && restaurantOnlyVisible.length === 0 && !showBrowseFallback && (
         <StatusMessage tone="muted">{emptyMessage}</StatusMessage>
       )}
 
-      {!loading && !err && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
+      {showBrowseFallback && (
+        <div
+          style={{
+            marginTop: 16,
+            marginBottom: 18,
+            padding: "16px 18px",
+            borderRadius: 18,
+            border: "1px solid rgba(17,33,26,0.10)",
+            background: "#fff",
+            boxShadow: "0 8px 24px rgba(16,24,40,0.06)",
+          }}
+        >
+          <div style={{ fontSize: 15, fontWeight: 900, color: "#101828" }}>
+            No matching dishes found. Browse nearby restaurants instead.
+          </div>
+          <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1.5, color: "#667085" }}>
+            {locationPhrase ? `Location locked ${locationPhrase}.` : "Browse the restaurants in your current selected market."}
+          </div>
+          <Link
+            to={browseRestaurantsHref}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              marginTop: 12,
+              minHeight: 38,
+              padding: "0 14px",
+              borderRadius: 999,
+              background: "#11211a",
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 800,
+              textDecoration: "none",
+            }}
+          >
+            Browse Restaurants
+          </Link>
+        </div>
+      )}
+
+      {!loading && !err && showRestaurantOnlyResults && (
         <>
           <SectionTitle>{t("search.restaurants", "Restaurants")}</SectionTitle>
           <div style={styles.grid}>
