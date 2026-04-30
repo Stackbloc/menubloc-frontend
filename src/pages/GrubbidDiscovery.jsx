@@ -354,8 +354,6 @@ export default function GrubbidDiscovery() {
   // ── existing state ──────────────────────────────────────────────────────────
   const [draftQuery, setDraftQuery] = useState("");
   const [committedQuery, setCommittedQuery] = useState("");
-  const [searchMode, setSearchMode] = useState("browse");
-  const [userLockedSearchMode, setUserLockedSearchMode] = useState(false);
   const [inlineError, setInlineError] = useState("");
   const [searching, setSearching] = useState(false);
   const [showLocationEditor, setShowLocationEditor] = useState(false);
@@ -449,19 +447,9 @@ export default function GrubbidDiscovery() {
   const activeFilterParams = filtersToUrlParams(filters).toString();
   const hasNoneAllergenSelected = excludedAllergens.has(ALLERGEN_NONE_ID);
   const activeExcludedAllergens = [...excludedAllergens].filter((value) => value !== ALLERGEN_NONE_ID);
-  const trimmedDraftQuery = draftQuery.trim();
-  const activeSearchMode =
-    trimmedDraftQuery.length === 0
-      ? "browse"
-      : searchMode;
-  const browseLocationLabel = resolvedLocationLabel || autoLocation.city || autoLocation.label || "Your Area";
-  const sectionHeaderLabel =
-    activeSearchMode === "browse"
-      ? `Browse Restaurants Near ${browseLocationLabel}`
-      : `Search Food Near ${browseLocationLabel}`;
 
   const displayMenus = useMemo(() => {
-    let menus = filterAndRankMenus(feedMenus, activeSearchMode === "search" ? committedQuery : "");
+    let menus = filterAndRankMenus(feedMenus, committedQuery);
     if (activeExcludedAllergens.length > 0) {
       menus = menus.filter((menu) => {
         const allergens = [
@@ -475,7 +463,7 @@ export default function GrubbidDiscovery() {
       });
     }
     return menus;
-  }, [feedMenus, committedQuery, activeExcludedAllergens, activeSearchMode]);
+  }, [feedMenus, committedQuery, activeExcludedAllergens]);
 
   // Persist dietary prefs whenever they change
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
@@ -676,19 +664,14 @@ export default function GrubbidDiscovery() {
 
   async function runSearch(queryValue = draftQuery) {
     console.log("[Discovery] search committed:", queryValue);
-    const normalizedQuery = queryValue.trim();
-    setCommittedQuery(normalizedQuery);
+    setCommittedQuery(queryValue.trim());
     const params = buildSearchParams(queryValue, { locationOverride: getEffectiveSearchLocation() });
     setInlineError("");
-    const qTerm = normalizedQuery;
+    const qTerm = String(queryValue || "").trim();
     if (!qTerm) {
-      setSearchMode("browse");
-      setUserLockedSearchMode(false);
-      setCommittedQuery("");
+      navigate(`/search?${params.toString()}`);
       return;
     }
-    setSearchMode("search");
-    setUserLockedSearchMode(true);
     captureEvent("search_performed", {
       query: qTerm,
       filters: { vegan: Boolean(filters.vegan), gluten_free: Boolean(filters.gluten_free), price_max: null },
@@ -819,8 +802,6 @@ export default function GrubbidDiscovery() {
     if (chip.filterKey) {
       params.set(chip.filterKey, "true");
     }
-    setSearchMode("search");
-    setUserLockedSearchMode(true);
     navigate(`/search?${params.toString()}`);
   }
 
@@ -829,10 +810,6 @@ export default function GrubbidDiscovery() {
   }
 
   function handleBrowse() {
-    setSearchMode("browse");
-    setUserLockedSearchMode(true);
-    setCommittedQuery("");
-    setInlineError("");
     const p = new URLSearchParams();
     if (shouldUseAutoGeo) {
       if (autoLocation.city) p.set("city", autoLocation.city);
@@ -850,12 +827,6 @@ export default function GrubbidDiscovery() {
     }
     const qs = p.toString();
     navigate(qs ? `${BROWSE_MENUS_PATH}?${qs}` : BROWSE_MENUS_PATH);
-  }
-
-  function handleSearchModeClick() {
-    setSearchMode("search");
-    setUserLockedSearchMode(true);
-    inputRef.current?.focus();
   }
 
   // ── render ──────────────────────────────────────────────────────────────────
@@ -997,20 +968,8 @@ export default function GrubbidDiscovery() {
                 className="disc-search-input"
                 value={draftQuery}
                 onChange={(e) => {
-                  const nextValue = e.target.value;
-                  const nextTrimmedValue = nextValue.trim();
-                  console.log("[Discovery] input changed:", nextValue);
-                  setDraftQuery(nextValue);
-                  if (!nextTrimmedValue) {
-                    setSearchMode("browse");
-                    setUserLockedSearchMode(false);
-                    setCommittedQuery("");
-                    setInlineError("");
-                    return;
-                  }
-                  if (!userLockedSearchMode) {
-                    setSearchMode("search");
-                  }
+                  console.log("[Discovery] input changed:", e.target.value);
+                  setDraftQuery(e.target.value);
                 }}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
                 placeholder="Search by food, restaurant, dietary preference, ingredient…"
@@ -1029,83 +988,33 @@ export default function GrubbidDiscovery() {
                   boxShadow: "0 4px 16px rgba(0,0,0,0.07)",
                 }}
               />
-              <div
+              <button
+                type="button"
+                aria-label="Search"
+                onClick={() => runSearch()}
                 style={{
-                  position: "absolute",
-                  right: 10,
-                  top: "50%",
+                  position: "absolute", right: 46, top: "50%",
                   transform: "translateY(-50%)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
+                  border: "none", background: "transparent",
+                  fontSize: 18, color: "#667085", cursor: "pointer",
+                  padding: 4, lineHeight: 1,
                 }}
               >
-                <button
-                  type="button"
-                  aria-label={trimmedDraftQuery ? "Search food" : "Browse restaurants"}
-                  onClick={() => runSearch()}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    fontSize: 18,
-                    color: "#1F4E3D",
-                    cursor: "pointer",
-                    padding: 4,
-                    lineHeight: 1,
-                  }}
-                >
-                  🔍
-                </button>
+                🔍
+              </button>
               <button
                 type="button"
                 aria-label="Add menu photo"
                 onClick={() => navigate("/menu-capture")}
                 style={{
+                  position: "absolute", right: 14, top: "50%",
+                  transform: "translateY(-50%)",
                   border: "none", background: "transparent",
                   fontSize: 20, color: "#667085", cursor: "pointer",
                   padding: 4, lineHeight: 1,
                 }}
               >
                 📸
-              </button>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-              <button
-                type="button"
-                onClick={() => {
-                  handleSearchModeClick();
-                }}
-                style={{
-                  height: 30,
-                  padding: "0 12px",
-                  borderRadius: 999,
-                  border: activeSearchMode === "search" ? "1.5px solid #11211a" : "1px solid #d0d5dd",
-                  background: activeSearchMode === "search" ? "#11211a" : "#fff",
-                  color: activeSearchMode === "search" ? "#fff" : "#344054",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  cursor: "pointer",
-                }}
-              >
-                Search Food
-              </button>
-              <button
-                type="button"
-                onClick={() => handleBrowse()}
-                style={{
-                  height: 30,
-                  padding: "0 12px",
-                  borderRadius: 999,
-                  border: activeSearchMode === "browse" ? "1.5px solid #11211a" : "1px solid #d0d5dd",
-                  background: activeSearchMode === "browse" ? "#11211a" : "#fff",
-                  color: activeSearchMode === "browse" ? "#fff" : "#344054",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  cursor: "pointer",
-                }}
-              >
-                Browse Restaurants
               </button>
             </div>
             {filterHealthBroken && (
@@ -1379,11 +1288,7 @@ export default function GrubbidDiscovery() {
 
           {/* Feed count + active filter status */}
           {!feedLoading && (
-            <>
-              <div style={{ fontSize: 17, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em", marginBottom: 8, paddingLeft: 2 }}>
-                {sectionHeaderLabel}
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", marginBottom: 8, paddingLeft: 2, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", marginBottom: 8, paddingLeft: 2, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               {displayMenus.length > 0 && (
                 <span>{displayMenus.length} {displayMenus.length === 1 ? "menu" : "menus"}</span>
               )}
@@ -1396,8 +1301,7 @@ export default function GrubbidDiscovery() {
                   ⚠ {activeExcludedAllergens.map((a) => formatDiscoveryAllergenLabel(a)).join(", ")} excluded
                 </span>
               ) : null}
-              </div>
-            </>
+            </div>
           )}
 
           {/* Feed */}
