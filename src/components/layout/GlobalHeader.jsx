@@ -113,6 +113,7 @@ export default function GlobalHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, loading, profile, consumer } = useConsumer();
+  const isAccountPage = location.pathname.startsWith("/account");
   const params = new URLSearchParams(location.search || "");
   const [query, setQuery] = useState(params.get("q") || "");
   const [appMenuOpen, setAppMenuOpen] = useState(false);
@@ -210,10 +211,16 @@ export default function GlobalHeader() {
         </form>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {!loading && isAuthenticated ? (
-            <Link to="/account" style={authLinkStyle}>
-              {profileLabel}
-            </Link>
+          {!loading ? (
+            isAuthenticated ? (
+              <Link to="/account" style={authLinkStyle}>
+                {isAccountPage ? profileLabel : "Account"}
+              </Link>
+            ) : (
+              <Link to="/account/login" style={authLinkStyle}>
+                Sign in
+              </Link>
+            )
           ) : null}
         </div>
       </header>
