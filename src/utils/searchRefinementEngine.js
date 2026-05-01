@@ -7,6 +7,70 @@ const MIN_REMOVED_ITEMS = 2;
 const PRICE_MIN_REDUCTION_RATIO = 0.25;
 const PRICE_WIDE_SPREAD = 10;
 
+// Maps backend strict_type (normalized category from dish_templates) → TEMPLATE_RULES key.
+// strict_type is already lowercase so most map 1:1, with aliases for dish variants.
+const STRICT_TYPE_TO_BUCKET = Object.freeze({
+  burger: "burger",
+  cheeseburger: "burger",
+  sandwich: "sandwich",
+  sub: "sandwich",
+  hoagie: "sandwich",
+  grinder: "sandwich",
+  pizza: "pizza",
+  flatbread: "pizza",
+  calzone: "pizza",
+  taco: "taco",
+  enchilada: "taco",
+  quesadilla: "taco",
+  salad: "salad",
+  bowl: "bowl",
+  grain_bowl: "bowl",
+  rice_bowl: "bowl",
+  burrito: "burrito",
+  pasta: "pasta",
+  noodle: "pasta",
+  wrap: "wrap",
+  noodle_bowl: "pasta",
+  noodle_soup: "pasta",
+  rice_bowl: "bowl",
+  rice_plate: "bowl",
+});
+
+// Slug-to-bucket fallback: substring match against template slug.
+// Used only when strict_type does not resolve.
+function slugToBucket(slug) {
+  if (!slug) return null;
+  const s = String(slug).toLowerCase();
+  if (s.includes("burger") || s.includes("cheeseburger")) return "burger";
+  if (s.includes("pizza") || s.includes("flatbread") || s.includes("calzone")) return "pizza";
+  if (s.includes("taco") || s.includes("enchilada") || s.includes("quesadilla")) return "taco";
+  if (s.includes("burrito")) return "burrito";
+  if (s.includes("sandwich") || s.includes("sub") || s.includes("hoagie") || s.includes("club") || s.includes("blt")) return "sandwich";
+  if (s.includes("salad")) return "salad";
+  if (s.includes("bowl")) return "bowl";
+  if (s.includes("pasta") || s.includes("spaghetti") || s.includes("penne") || s.includes("fettuccine") || s.includes("noodle")) return "pasta";
+  if (s.includes("wrap")) return "wrap";
+  return null;
+}
+
+// Display labels for primary_family values from dish_templates.
+const FAMILY_LABELS = Object.freeze({
+  american: "American",
+  mexican: "Mexican",
+  italian: "Italian",
+  asian: "Asian",
+  mediterranean: "Mediterranean",
+  seafood: "Seafood",
+  breakfast: "Breakfast",
+  indian: "Indian",
+  japanese: "Japanese",
+  chinese: "Chinese",
+  thai: "Thai",
+  middle_eastern: "Middle Eastern",
+  bbq: "BBQ",
+  southern: "Southern",
+});
+
 const TEMPLATE_RULES = [
   { key: "salad", label: "salads", patterns: [/\bsalad(s)?\b/] },
   { key: "taco", label: "tacos", patterns: [/\btaco(s)?\b/] },
@@ -179,13 +243,29 @@ export function classifyMenuItemForRefinement(item, searchTerm) {
   const token = searchToken(searchTerm);
   const name = normalizeText(getItemName(item));
   const text = itemText(item);
+
+  // Prefer backend-persisted template assignment over regex patterns.
+  // Backend sends strict_type, template_slug, primary_family, broad_category
+  // after Phase 1 (searchService.js applyTemplateMetadata).
+  const strictType = normalizeText(item?.strict_type || "");
+  const templateSlug = normalizeText(item?.template_slug || "");
+  let backendBucket = STRICT_TYPE_TO_BUCKET[strictType] || null;
+  if (!backendBucket && templateSlug) backendBucket = slugToBucket(templateSlug);
+
+  const templateKeys = backendBucket
+    ? [backendBucket]
+    : TEMPLATE_RULES
+        .filter((rule) => rule.patterns.some((pattern) => pattern.test(text)))
+        .map((rule) => rule.key);
+
   return {
-    templateKeys: TEMPLATE_RULES
-      .filter((rule) => rule.patterns.some((pattern) => pattern.test(text)))
-      .map((rule) => rule.key),
+    templateKeys,
     preparationKeys: PREPARATION_RULES
       .filter((rule) => rule.patterns.some((pattern) => pattern.test(text)))
       .map((rule) => rule.key),
+    // Backend family/category metadata for inventory-aware waiter forks.
+    templateFamily: normalizeText(item?.primary_family || "") || null,
+    templateBroadCategory: normalizeText(item?.broad_category || "") || null,
     direct: {
       token,
       standalone: token
@@ -206,6 +286,28 @@ export function classifyMenuItemForRefinement(item, searchTerm) {
       priceDollars: getPriceDollars(item),
     },
   };
+}
+
+// Family-level forks: when multiple primary_family values are present,
+// ask "What cuisine style?" rather than a dish-type question.
+// Requires backend template metadata (primary_family from dish_templates).
+function buildFamilyGroup(entries, selectedRefinements) {
+  const familyCounts = new Map();
+  for (const entry of entries) {
+    const family = entry.classification.templateFamily;
+    if (family) familyCounts.set(family, (familyCounts.get(family) || 0) + 1);
+  }
+
+  const options = Array.from(familyCounts.entries())
+    .filter(([family]) => !hasSelectedRefinement(selectedRefinements, "family", family))
+    .map(([family, count]) => {
+      const label = FAMILY_LABELS[family] || titleCase(family.replace(/_/g, " "));
+      return makeOption("family", family, label, count, `${label} cuisine items`);
+    })
+    .filter((option) => optionIsMeaningful(option.count, entries.length))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+  return { type: "family", options, totalCount: entries.length, clarityScore: 45 };
 }
 
 function buildTemplateGroup(entries, searchTerm, selectedRefinements) {
@@ -359,6 +461,7 @@ export function buildInventoryRefinementOptions(entries, searchTerm, selectedRef
   if (safeEntries.length < WAITER_CONTINUATION_MIN_RESULTS) return [];
 
   const candidateGroups = [
+    buildFamilyGroup(safeEntries, selectedRefinements),
     buildTemplateGroup(safeEntries, searchTerm, selectedRefinements),
     buildPreparationGroup(safeEntries, selectedRefinements),
     buildNutritionGroup(safeEntries, selectedRefinements),
@@ -404,6 +507,8 @@ export function applyInventoryRefinement(entries, selectedRefinement) {
       if (selectedRefinement.key === "under_20") return safeEntries.filter((entry) => entry.classification.commerce.priceDollars != null && entry.classification.commerce.priceDollars < 20);
       if (selectedRefinement.key === "20_plus") return safeEntries.filter((entry) => entry.classification.commerce.priceDollars != null && entry.classification.commerce.priceDollars >= 20);
       return safeEntries;
+    case "family":
+      return safeEntries.filter((entry) => entry.classification.templateFamily === selectedRefinement.key);
     case "allergen":
       if (selectedRefinement.key === "gluten_free") {
         return safeEntries.filter((entry) =>
