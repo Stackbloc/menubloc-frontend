@@ -8,7 +8,7 @@ const PLAN_OPTIONS = [
     code: "verified",
     name: "Verified",
     price: "Free",
-    description: "Launch a verified Grubbid restaurant presence with your menu and QR sharing tools.",
+    description: "Launch a verified MenuPly restaurant presence with your menu and QR sharing tools.",
     cta: "Continue with Verified",
     featured: false,
     features: [
@@ -33,7 +33,7 @@ const PLAN_OPTIONS = [
   {
     code: "pro_annual",
     name: "Pro Annual",
-    price: "$199.99 / year",
+    price: "$299.99 / year",
     description: "Best-value Pro setup with the annual rate and included QR signage support.",
     cta: "Continue with Pro Annual",
     featured: false,
@@ -238,7 +238,7 @@ export default function RestaurantSignupEntry() {
           />
 
           <div style={styles.eyebrow}>Restaurant Signup</div>
-          <div style={styles.heading}>Choose your Grubbid plan before you create your account.</div>
+          <div style={styles.heading}>Choose your MenuPly plan before you create your account.</div>
           <div style={styles.subheading}>
             Pick Verified, Pro Monthly, or Pro Annual first. On the next step you will create your restaurant account and we will keep your selected plan attached to the onboarding flow.
           </div>
