@@ -147,7 +147,7 @@ export default function OperatorResetPassword() {
       }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{ fontWeight: 800, fontSize: 26, color: "#1F4E3D", letterSpacing: "-0.8px" }}>
-            grubbid
+            Menuply
           </div>
           <div style={{ fontSize: 13, color: "#8a9ab0", marginTop: 4 }}>
             Reset Operator Password

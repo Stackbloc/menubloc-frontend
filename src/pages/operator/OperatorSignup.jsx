@@ -107,7 +107,7 @@ export default function OperatorSignup() {
   return (
     <AuthPageFrame
       title="Create operator account"
-      subtitle="List and manage your restaurant on Grubbid."
+      subtitle="List and manage your restaurant on Menuply."
       footer={(
         <p style={styles.footer}>
           Already have an account?{" "}

@@ -8,7 +8,7 @@ const MENUPLY_PRICE_DISCLOSURE =
 
 export default function OrderCartDrawer() {
   const navigate = useNavigate();
-  const [fulfillmentType, setFulfillmentType] = useState("pickup");
+  const [fulfillmentType, setFulfillmentType] = useState("delivery");
   const {
     restaurant,
     items,

@@ -66,14 +66,14 @@ export default function OperatorLogin() {
   return (
     <AuthPageFrame
       title="Operator sign in"
-      subtitle="Manage your restaurant on Grubbid."
+      subtitle="Manage your restaurant on Menuply."
       footer={(
         <>
           <p style={styles.footer}>
             <Link to="/operator/recover" style={styles.link}>Forgot password?</Link>
           </p>
           <p style={{ ...styles.footer, marginTop: "12px" }}>
-            New to Grubbid?{" "}
+            New to Menuply?{" "}
             <Link to="/operator/signup" style={styles.link}>Create operator account</Link>
           </p>
         </>

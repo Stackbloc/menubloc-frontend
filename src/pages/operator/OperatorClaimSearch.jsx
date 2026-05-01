@@ -160,7 +160,7 @@ export default function OperatorClaimSearch() {
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 36 }}>
         <div style={{ fontWeight: 800, fontSize: 22, color: "#1F4E3D", letterSpacing: "-0.5px", marginBottom: 8 }}>
-          grubbid
+          Menuply
         </div>
         <h1 style={{ margin: "0 0 10px", fontSize: 26, fontWeight: 800, color: "#0f1720" }}>
           Find your restaurant

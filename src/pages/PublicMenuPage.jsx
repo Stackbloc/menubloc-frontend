@@ -1082,9 +1082,10 @@ export default function PublicMenuPage() {
     activeDeliveryProviders: Array.isArray(data?.active_delivery_providers)
       ? data.active_delivery_providers
       : [],
-    availableFulfillmentTypes: Array.isArray(data?.available_fulfillment_types)
-      ? data.available_fulfillment_types
-      : ["pickup"],
+    availableFulfillmentTypes:
+      Array.isArray(data?.available_fulfillment_types) && data.available_fulfillment_types.length > 0
+        ? data.available_fulfillment_types
+        : ["pickup", "delivery"],
   };
   const hasBasketItems = itemCount > 0;
   const basketMatchesCurrentRestaurant =

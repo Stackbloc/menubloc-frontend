@@ -60,9 +60,9 @@ const PRO_PRICING = {
     badge: null,
   },
   annual: {
-    amount: "$199.99",
+    amount: "$299.99",
     suffix: "per year",
-    tableLabel: "$199.99 per year",
+    tableLabel: "$299.99 per year",
     badge: "Free QR signage included",
   },
 };
@@ -83,8 +83,8 @@ const PLAN_CARD_FEATURES = {
 };
 
 const COMPARISON_ROWS = [
-  { feature: "Grubbid Restaurant Profile Page listing basic restaurant details", verified: "check", pro: "check" },
-  { feature: "Restaurant and menu items discoverable on Grubbid", verified: "check", pro: "check" },
+  { feature: "Menuply Restaurant Profile Page listing basic restaurant details", verified: "check", pro: "check" },
+  { feature: "Restaurant and menu items discoverable on Menuply", verified: "check", pro: "check" },
   { feature: "Logo, About Us, and featured dish shown on profile page", verified: "cross", pro: "check" },
   { feature: "Unlimited number of menus and menu items", verified: "1 menu, unlimited items", pro: "check" },
   { feature: "Customized menu design options supported by Adobe", verified: "cross", pro: "check" },

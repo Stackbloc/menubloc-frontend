@@ -21,10 +21,10 @@ const PLAN_OPTIONS = [
   {
     code: "pro_annual",
     title: "Pro Annual",
-    priceCents: 19900,
+    priceCents: 29999,
     billing: "/year",
     description:
-      "Lower annual effective rate for restaurants ready to lock in Grubbid Pro for the year.",
+      "Lower annual effective rate for restaurants ready to lock in Menuply Pro for the year.",
   },
 ];
 

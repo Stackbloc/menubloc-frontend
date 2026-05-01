@@ -101,7 +101,7 @@ export default function OperatorRecovery() {
       }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{ fontWeight: 800, fontSize: 26, color: "#1F4E3D", letterSpacing: "-0.8px" }}>
-            grubbid
+            Menuply
           </div>
           <div style={{ fontSize: 13, color: "#8a9ab0", marginTop: 4 }}>
             Operator Recovery
@@ -117,7 +117,7 @@ export default function OperatorRecovery() {
           color: "#44515d",
           marginBottom: 18,
         }}>
-          Enter the email tied to your operator account. On Grubbid, that email is also your username.
+          Enter the email tied to your operator account. On Menuply, that email is also your username.
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
