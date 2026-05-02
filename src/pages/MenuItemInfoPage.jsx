@@ -958,7 +958,7 @@ export default function MenuItemInfoPage() {
           } catch {}
         }
 
-        if (!found) throw new Error("No item-detail endpoint found yet. Create GET /menu-items/:id to power this page.");
+        if (!found) throw new Error("");
 
         if (!cancelled) {
           setRawItem(found);
