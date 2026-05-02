@@ -212,3 +212,31 @@ if (!res.ok || !json?.ok || hasDegradedEmptyResponse(json)) {
 
 This is the enforcement contract for backend Invariant 1. Removing it would allow a backend response missing `ok: true` to silently render empty results with no error signal.
 Trigger: any edit to the `fetchSearch` function.
+
+---
+
+## 🚨 LIVE-USER TEXT GUARDRAIL
+
+**Full rules in:** `/Users/andrebarber/Desktop/menubloc/CLAUDE.md` — section "LIVE-USER TEXT GUARDRAIL"
+
+Any proposed addition or retention of developer-facing text in a user-visible code path **MUST** output this exact line before proceeding:
+
+> **WARNING: THIS PROPOSED CHANGE VIOLATES EXPRESS TERMS OF GUARDRAIL AS STATED IN menubloc-frontend/CLAUDE.md**
+
+Then identify the string, the file/line, and the user-facing condition that would surface it. Get explicit user approval before continuing. If the violation cannot be justified → STOP.
+
+### Patterns that trigger this warning (frontend)
+
+| Pattern | Example | Verdict |
+|---------|---------|---------|
+| Endpoint instruction in thrown Error | `throw new Error("Create GET /foo/:id to power this page")` | FORBIDDEN |
+| Schema / architecture note in thrown Error | `throw new Error("Item is in commonknowledge schema")` | FORBIDDEN |
+| File path or line number in any user-visible string | any | FORBIDDEN |
+| `"TODO"` / `"Coming soon"` / `"Not yet implemented"` rendered to UI | any | FORBIDDEN |
+| Empty throw that lets i18n fallback apply | `throw new Error("")` | ALLOWED |
+| i18n key fallback message | `t("menuItemDetail.itemCouldNotLoad", "Item could not load")` | ALLOWED |
+| Generic neutral message | `"Something went wrong. Please try again."` | ALLOWED |
+
+### Scope
+
+Applies to all strings that may reach the user's screen: `throw new Error("...")` inside fetch functions whose catch block sets an error state, JSX text literals in error/empty-state branches, any prop assigned to an error or message label.
