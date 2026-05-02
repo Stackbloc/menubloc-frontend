@@ -4,11 +4,15 @@ export default function WaiterRefinementPrompt({
   displayQuery,
   filteredResultCount = 0,
   refinementOptions = [],
-  selectedRefinements = [],
+  selectedRefinement = null,
   onSelectRefinement,
-  onRemoveRefinement,
   onClearRefinements,
 }) {
+  const optionLine = refinementOptions
+    .slice(0, 3)
+    .map((option) => option.label)
+    .join(" or ");
+
   return (
     <section
       style={{
@@ -22,50 +26,15 @@ export default function WaiterRefinementPrompt({
       }}
     >
       <div style={{ fontSize: 14, fontWeight: 800, color: "#475467" }}>
-        Search term: {displayQuery || "Search"}; {filteredResultCount} {filteredResultCount === 1 ? "result" : "results"}
+        Search term: {displayQuery || "Search"}
       </div>
-      {selectedRefinements.length > 0 ? (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-          {selectedRefinements.map((refinement, index) => (
-            <button
-              key={`${refinement.type}:${refinement.key}:${index}`}
-              type="button"
-              onClick={() => onRemoveRefinement?.(index)}
-              style={{
-                border: "1px solid rgba(16,24,40,0.12)",
-                background: "rgba(16,24,40,0.04)",
-                color: "#101828",
-                borderRadius: 999,
-                padding: "6px 10px",
-                fontSize: 12,
-                fontWeight: 800,
-                cursor: "pointer",
-              }}
-            >
-              {refinement.label} ×
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => onClearRefinements?.()}
-            style={{
-              border: "none",
-              background: "transparent",
-              color: "#475467",
-              fontSize: 12,
-              fontWeight: 800,
-              cursor: "pointer",
-              padding: "6px 0",
-            }}
-          >
-            Clear all
-          </button>
-        </div>
-      ) : null}
+      <div style={{ marginTop: 4, fontSize: 14, fontWeight: 800, color: "#101828" }}>
+        {filteredResultCount} {filteredResultCount === 1 ? "result" : "results"}
+      </div>
       {refinementOptions.length > 0 ? (
         <>
-          <div style={{ marginTop: 12, fontSize: 14, fontWeight: 800 }}>
-            Are you looking for:
+          <div style={{ marginTop: 10, fontSize: 16, fontWeight: 800 }}>
+            {optionLine}
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
             {refinementOptions.map((option) => (
@@ -76,8 +45,8 @@ export default function WaiterRefinementPrompt({
                 onClick={() => onSelectRefinement?.(option)}
                 style={{
                   border: "1px solid rgba(16,24,40,0.1)",
-                  background: "#101828",
-                  color: "#fff",
+                  background: selectedRefinement?.id === option.id ? "#101828" : "#fff",
+                  color: selectedRefinement?.id === option.id ? "#fff" : "#101828",
                   borderRadius: 999,
                   padding: "9px 12px",
                   fontSize: 14,
@@ -88,6 +57,23 @@ export default function WaiterRefinementPrompt({
                 {option.label} ({option.count})
               </button>
             ))}
+            {selectedRefinement ? (
+              <button
+                type="button"
+                onClick={() => onClearRefinements?.()}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "#475467",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  padding: "6px 0",
+                }}
+              >
+                Back
+              </button>
+            ) : null}
           </div>
         </>
       ) : null}

@@ -82,6 +82,11 @@ function hasCity(rows, city) {
   return rows.some((row) => cityOf(row).includes(token));
 }
 
+function searchResultCount(payload) {
+  if (!payload || !Array.isArray(payload.results)) return 0;
+  return payload.results.length;
+}
+
 function assertCheck(condition, message, details = {}) {
   if (!condition) {
     const error = new Error(message);
@@ -160,11 +165,12 @@ async function verifyBackend() {
   const browseLaRows = restaurantRowsFromBrowse(browseLa);
   const browseLaLowFatRows = restaurantRowsFromBrowse(browseLaLowFat);
   const browseDothanRows = restaurantRowsFromBrowse(browseDothan);
-  const searchLaCount = (searchLa?.menu_items || []).length + (searchLa?.buckets?.restaurants || []).length;
-  const searchLaLowFatCount = (searchLaLowFat?.menu_items || []).length + (searchLaLowFat?.buckets?.restaurants || []).length;
+  const searchLaCount = searchResultCount(searchLa);
+  const searchLaLowFatCount = searchResultCount(searchLaLowFat);
+  const searchDothanCount = searchResultCount(searchDothan);
 
   assertCheck(
-    searchLaCount > 0,
+    Array.isArray(searchLa?.results) && searchLaCount > 0,
     "LA search must return results"
   );
   assertCheck(
@@ -173,7 +179,7 @@ async function verifyBackend() {
     { base: searchLaCount, lowFat: searchLaLowFatCount }
   );
   assertCheck(
-    ((searchDothan?.menu_items || []).length + (searchDothan?.buckets?.restaurants || []).length) > 0,
+    Array.isArray(searchDothan?.results) && searchDothanCount > 0,
     "Dothan search must return results"
   );
   assertCheck(
@@ -195,7 +201,7 @@ async function verifyBackend() {
   return {
     searchLaResults: searchLaCount,
     searchLaLowFatResults: searchLaLowFatCount,
-    searchDothanResults: (searchDothan?.menu_items || []).length + (searchDothan?.buckets?.restaurants || []).length,
+    searchDothanResults: searchDothanCount,
     browseLaCount: browseLaRows.length,
     browseLaLowFatCount: browseLaLowFatRows.length,
     browseDothanCount: browseDothanRows.length,

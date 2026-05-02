@@ -222,7 +222,7 @@ function saveRecentLocation(label) {
 
 function countSearchResults(payload) {
   if (Array.isArray(payload?.results)) return payload.results.length;
-  return (payload?.menu_items?.length || 0) + (payload?.buckets?.restaurants?.length || 0);
+  return 0;
 }
 
 async function verifyFilterHealth(locationParams) {
@@ -681,7 +681,7 @@ export default function GrubbidDiscovery() {
       const url = `${API}/search?${params.toString()}&limit=1`;
       const res = await fetch(url, { credentials: "include" });
       const json = await res.json().catch(() => ({}));
-      const count = (json?.menu_items?.length || 0) + (json?.buckets?.restaurants?.length || 0);
+      const count = Array.isArray(json?.results) ? json.results.length : 0;
       if (count === 0) {
         const loc = getEffectiveSearchLocation() || "";
         const nearText = loc ? ` near ${loc}` : "";

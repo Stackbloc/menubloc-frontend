@@ -26,6 +26,7 @@ import SearchResultCard from "../components/SearchResultCard";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
@@ -105,38 +106,112 @@ const US_STATE_ABBREVS = new Set([
   "va","wa","wv","wi","wy","dc",
 ]);
 
-const WAITER_FORKS = [
+const WAITER_MIN_RESULTS = 16;
+const WAITER_MIN_ITEM_SIGNALS = 6;
+const WAITER_MIN_OPTION_COUNT = 3;
+const WAITER_DOMINANT_TOPIC_MIN_COUNT = 3;
+const WAITER_DOMINANT_TOPIC_MIN_SHARE = 0.25;
+const WAITER_TOPICS = [
+  "pizza",
+  "chicken",
+  "sandwich",
+  "burger",
+  "taco",
+  "salad",
+  "pasta",
+  "bowl",
+  "wrap",
+  "breakfast",
+  "seafood",
+  "wings",
+];
+const WAITER_STOP_WORDS = new Set([
+  "the",
+  "and",
+  "with",
+  "for",
+  "to",
+  "of",
+  "a",
+  "an",
+  "in",
+  "on",
+  "our",
+  "your",
+  "special",
+  "meal",
+  "combo",
+  "plate",
+  "menu",
+  "item",
+  "items",
+  "restaurant",
+  "restaurants",
+  "fresh",
+  "classic",
+  "style",
+]);
+const WAITER_PIZZA_RULES = [
   {
-    id: "chicken_sandwich",
-    matchTerms: ["chicken"],
-    matchAny: ["sandwich", "sandwhich", "sandwitch"],
-    question: "Chicken sandwich?",
-    options: [
-      { id: "fried", label: "Fried", terms: ["fried", "crispy", "breaded", "spicy chicken sandwich", "classic chicken sandwich"] },
-      { id: "grilled", label: "Grilled", terms: ["grilled", "blackened"] },
-    ],
+    id: "new_york",
+    label: "New York",
+    terms: ["new york", "ny style", "ny", "slice"],
   },
   {
-    id: "pizza",
-    matchAny: ["pizza"],
-    question: "Pizza?",
-    options: [
-      { id: "new_york", label: "New York", terms: ["new york", "ny style", "slice"] },
-      { id: "chicago", label: "Chicago", terms: ["chicago", "deep dish"] },
-      { id: "neapolitan", label: "Neapolitan", terms: ["neapolitan", "wood fired"] },
-      { id: "fast_cheap", label: "Fast & Cheap", sort: "price_asc" },
-    ],
+    id: "chicago",
+    label: "Chicago",
+    terms: ["chicago", "deep dish"],
   },
   {
-    id: "tacos",
-    matchAny: ["taco", "tacos"],
-    question: "Tacos?",
-    options: [
-      { id: "street", label: "Street", terms: ["street"] },
-      { id: "loaded", label: "Loaded", terms: ["loaded", "supreme"] },
-      { id: "fish", label: "Fish", terms: ["fish"] },
-      { id: "cheap", label: "Cheap", sort: "price_asc" },
-    ],
+    id: "thin_crust",
+    label: "Thin Crust",
+    terms: ["thin crust", "hand tossed", "hand-tossed", "crispy crust"],
+  },
+];
+const WAITER_CHICKEN_RULES = [
+  {
+    id: "fried",
+    label: "Fried",
+    terms: ["fried", "crispy", "breaded", "hot chicken", "nashville hot"],
+  },
+  {
+    id: "grilled",
+    label: "Grilled",
+    terms: ["grilled", "blackened"],
+  },
+  {
+    id: "sandwich",
+    label: "Sandwich",
+    terms: ["sandwich", "sandwhich", "sandwitch", "slider", "wrap"],
+  },
+];
+const WAITER_MIXED_RULES = [
+  {
+    id: "under_15",
+    label: "Under $15",
+    predicateDescription: "Items priced under $15",
+    test: (row) => {
+      const price = getWaiterPriceDollars(row);
+      return price !== null && price < 15;
+    },
+  },
+  {
+    id: "high_protein",
+    label: "High Protein",
+    predicateDescription: "Items with at least 25g protein",
+    test: (row) => {
+      const protein = getWaiterProtein(row);
+      return protein !== null && protein >= 25;
+    },
+  },
+  {
+    id: "nearby",
+    label: "Nearby",
+    predicateDescription: "Items within 3 miles",
+    test: (row) => {
+      const distance = getDistanceMiles(row);
+      return distance !== null && distance <= 3;
+    },
   },
 ];
 
@@ -224,7 +299,14 @@ function buildVisibleResultSignature(json) {
 }
 
 function isDishRow(x) {
-  return !!(x?.menu_item_id || x?.menu_item_name);
+  return !!(x?.menu_item_id || x?.menu_item_name || x?.item_name);
+}
+
+function singularizeWaiterToken(value) {
+  const normalized = normalizeKey(value);
+  if (normalized.endsWith("ies")) return `${normalized.slice(0, -3)}y`;
+  if (normalized.endsWith("s") && !normalized.endsWith("ss")) return normalized.slice(0, -1);
+  return normalized;
 }
 
 function normalizeRows(json) {
@@ -256,7 +338,6 @@ function normalizeRows(json) {
   }
 
   if (Array.isArray(json.rows)) return json.rows;
-  if (Array.isArray(json.menu_items)) return json.menu_items;
   if (Array.isArray(json.restaurants)) return json.restaurants;
 
   return [];
@@ -316,6 +397,182 @@ function getPriceMinor(row) {
   const dollars = asNumber(row?.price);
   if (dollars !== null) return Math.round(dollars * 100);
   return null;
+}
+
+function getWaiterPriceDollars(row) {
+  const minor = getPriceMinor(row);
+  return minor !== null ? minor / 100 : null;
+}
+
+function getWaiterProtein(row) {
+  const direct = asNumber(pickFirst(row, ["protein_g", "protein"], null));
+  if (direct !== null) return direct;
+  const chip = asNumber(row?.chips?.nutrition_chip?.protein_g);
+  return chip !== null ? chip : null;
+}
+
+function getWaiterItemName(row) {
+  return asString(
+    pickFirst(
+      row,
+      ["search_display_name", "menu_item_name", "menuItemName", "item_name", "name"],
+      ""
+    )
+  );
+}
+
+function getWaiterRestaurantName(row) {
+  return asString(pickFirst(row, ["restaurant_name", "restaurantName", "name"], ""));
+}
+
+function getWaiterCategory(row) {
+  return asString(
+    pickFirst(
+      row,
+      ["category", "type", "broad_category", "strict_type", "menu_item_category", "section", "section_name"],
+      ""
+    )
+  );
+}
+
+function getWaiterText(row) {
+  return normalizeKey(
+    [
+      getWaiterItemName(row),
+      getWaiterRestaurantName(row),
+      getWaiterCategory(row),
+      Array.isArray(row?.preview_items) ? row.preview_items.join(" ") : "",
+    ].join(" ")
+  );
+}
+
+function tokenizeWaiterText(value) {
+  return normalizeKey(value)
+    .split(/[^a-z0-9]+/)
+    .map((token) => singularizeWaiterToken(token))
+    .filter((token) => token && !WAITER_STOP_WORDS.has(token));
+}
+
+function buildWaiterInventory(rows) {
+  const inventory = [];
+  const seen = new Set();
+
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const restaurantName = getWaiterRestaurantName(row);
+    const category = normalizeKey(getWaiterCategory(row));
+    const baseItemNames = isDishRow(row)
+      ? [getWaiterItemName(row)]
+      : Array.isArray(row?.preview_items)
+      ? row.preview_items
+      : [];
+
+    for (const rawItemName of baseItemNames) {
+      const itemName = asString(rawItemName);
+      if (!itemName) continue;
+
+      const dedupeKey = `${normalizeKey(restaurantName)}|${normalizeKey(itemName)}|${category}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+
+      inventory.push({
+        ...row,
+        item_name: itemName,
+        search_display_name: itemName,
+        restaurant_name: restaurantName || row?.restaurant_name || "",
+        category: category || null,
+        price: getWaiterPriceDollars(row),
+        protein_g: getWaiterProtein(row),
+        distance_miles: getDistanceMiles(row),
+      });
+    }
+  }
+
+  return inventory;
+}
+
+function countWaiterMatches(rows, test) {
+  return (Array.isArray(rows) ? rows : []).reduce((count, row) => count + (test(row) ? 1 : 0), 0);
+}
+
+function rowMatchesTerms(row, terms) {
+  const haystack = getWaiterText(row);
+  return terms.some((term) => haystack.includes(normalizeKey(term)));
+}
+
+function pickWaiterDominantTopic(inventory) {
+  const topicCounts = new Map();
+
+  for (const topic of WAITER_TOPICS) {
+    topicCounts.set(topic, 0);
+  }
+
+  for (const row of inventory) {
+    const text = getWaiterText(row);
+    for (const topic of WAITER_TOPICS) {
+      if (text.includes(topic)) {
+        topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1);
+      }
+    }
+  }
+
+  const ranked = Array.from(topicCounts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const [topic, count] = ranked[0] || [];
+  const secondCount = ranked[1]?.[1] || 0;
+
+  if (!topic || count < WAITER_DOMINANT_TOPIC_MIN_COUNT) return null;
+  if (count / Math.max(inventory.length, 1) < WAITER_DOMINANT_TOPIC_MIN_SHARE) return null;
+  if (count - secondCount < 1 && secondCount >= WAITER_DOMINANT_TOPIC_MIN_COUNT) return null;
+
+  return topic;
+}
+
+function buildWaiterOptionRows(rows, specs) {
+  return specs
+    .map((spec) => ({
+      id: spec.id,
+      label: spec.label,
+      predicateDescription: spec.predicateDescription || `${spec.label} items`,
+      test: spec.test,
+      count: countWaiterMatches(rows, spec.test),
+    }))
+    .filter((option) => option.count >= WAITER_MIN_OPTION_COUNT)
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
+function buildWaiterOptions(rows) {
+  const inventory = buildWaiterInventory(rows);
+  if (inventory.length < WAITER_MIN_ITEM_SIGNALS) {
+    return { inventory, options: [], dominantTopic: null };
+  }
+
+  const dominantTopic = pickWaiterDominantTopic(inventory);
+  let options = [];
+
+  if (dominantTopic === "pizza") {
+    options = buildWaiterOptionRows(inventory, WAITER_PIZZA_RULES.map((rule) => ({
+      ...rule,
+      predicateDescription: `${rule.label} pizza items`,
+      test: (row) => rowMatchesTerms(row, rule.terms),
+    })));
+  } else if (dominantTopic === "chicken") {
+    options = buildWaiterOptionRows(inventory, WAITER_CHICKEN_RULES.map((rule) => ({
+      ...rule,
+      predicateDescription: `${rule.label} chicken items`,
+      test: (row) => rowMatchesTerms(row, rule.terms),
+    })));
+  } else {
+    options = buildWaiterOptionRows(inventory, WAITER_MIXED_RULES);
+  }
+
+  if (options.length < WAITER_MIN_OPTION_COUNT) {
+    return { inventory, options: [], dominantTopic };
+  }
+
+  return {
+    inventory,
+    options: options.slice(0, 3),
+    dominantTopic,
+  };
 }
 
 function getDistanceMiles(row) {
@@ -519,24 +776,6 @@ export default function GrubbidSearchResults() {
     .toLowerCase()
     .replace(/\+/g, " ")
     .trim();
-  const activeFork = useMemo(() => WAITER_FORKS.find((fork) => {
-    const matchesTerms = Array.isArray(fork.matchTerms)
-      ? fork.matchTerms.every((term) => normalizedQuery.includes(term))
-      : true;
-
-    const matchesAny = Array.isArray(fork.matchAny)
-      ? fork.matchAny.some((term) => normalizedQuery.includes(term))
-      : true;
-
-    if (Array.isArray(fork.matchTerms) && Array.isArray(fork.matchAny)) {
-      return matchesTerms && matchesAny;
-    }
-
-    if (Array.isArray(fork.matchTerms)) return matchesTerms;
-    if (Array.isArray(fork.matchAny)) return matchesAny;
-
-    return false;
-  }) || null, [normalizedQuery]);
   const vegan = params.get("vegan") === "1";
   const gluten_free = params.get("gluten_free") === "1";
   const deals_only = params.get("deals_only") === "1";
@@ -611,11 +850,17 @@ export default function GrubbidSearchResults() {
   const [searchHasMore, setSearchHasMore] = useState(false);
   const [searchTotalCount, setSearchTotalCount] = useState(0);
   const SEARCH_LIMIT = 24;
-  const [forkSelection, setForkSelection] = useState(null);
+  const [waiterSelection, setWaiterSelection] = useState(null);
+
+  const waiterState = useMemo(() => buildWaiterOptions(rows), [rows]);
+  const waiterOptionsSignature = useMemo(
+    () => waiterState.options.map((option) => `${option.id}:${option.count}`).join("|"),
+    [waiterState.options]
+  );
 
   useEffect(() => {
-    setForkSelection(null);
-  }, [q, city, state, zip, near, activeFork?.id]);
+    setWaiterSelection(null);
+  }, [q, city, state, zip, near, waiterOptionsSignature]);
 
   const { primaryUrl, fallbackUrl, hasGeoFilter } = useMemo(() => {
     const u = new URL(`${API}/search`);
@@ -845,10 +1090,9 @@ export default function GrubbidSearchResults() {
         if (!alive) return;
 
         const resultRows = normalizeRows(json);
-        const pagination = json?.pagination || {};
-        const total = pagination.total_count ?? resultRows.length;
-        const returned = pagination.returned_count ?? resultRows.length;
-        const pageOffset = pagination.offset ?? 0;
+        const total = Number.isFinite(Number(json?.total)) ? Number(json.total) : resultRows.length;
+        const returned = resultRows.length;
+        const pageOffset = 0;
 
         // Build restaurant meta lookup (location_count for franchise groups)
         const rMeta = new Map();
@@ -919,48 +1163,15 @@ export default function GrubbidSearchResults() {
     sortMode,
   ]);
 
-  const dishRows = useMemo(() => rows.filter(isDishRow), [rows]);
-  const waiterFilteredDishRows = dishRows;
-  const forkFilteredDishRows = useMemo(() => {
-    if (!forkSelection) {
-      return waiterFilteredDishRows;
-    }
-
-    let nextRows = waiterFilteredDishRows;
-
-    if (Array.isArray(forkSelection.terms) && forkSelection.terms.length > 0) {
-      const termMatches = waiterFilteredDishRows.filter((item) => {
-        const haystack = JSON.stringify(item).toLowerCase();
-        return forkSelection.terms.some((term) => haystack.includes(String(term).toLowerCase()));
-      });
-
-      if (termMatches.length > 0) {
-        nextRows = termMatches;
-      }
-    }
-
-    if (forkSelection.sort === "price_asc") {
-      return [...nextRows].sort((a, b) => {
-        const byPrice = compareNullableNumbers(getPriceMinor(a), getPriceMinor(b));
-        if (byPrice !== 0) return byPrice;
-        return compareNullableNumbers(getDistanceMiles(a), getDistanceMiles(b));
-      });
-    }
-
-    if (forkSelection.sort === "distance_asc") {
-      return [...nextRows].sort((a, b) => {
-        const byDistance = compareNullableNumbers(getDistanceMiles(a), getDistanceMiles(b));
-        if (byDistance !== 0) return byDistance;
-        return compareNullableNumbers(getPriceMinor(a), getPriceMinor(b));
-      });
-    }
-
-    return nextRows;
-  }, [forkSelection, waiterFilteredDishRows]);
-  const restaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);
+  const waiterFilteredRows = useMemo(() => {
+    if (!waiterSelection) return rows;
+    return rows.filter((row) => waiterSelection.test(row));
+  }, [rows, waiterSelection]);
+  const dishRows = useMemo(() => waiterFilteredRows.filter(isDishRow), [waiterFilteredRows]);
+  const restaurantOnlyRows = useMemo(() => waiterFilteredRows.filter((r) => !isDishRow(r)), [waiterFilteredRows]);
   const restaurantGroups = useMemo(
-    () => buildRestaurantGroups(forkFilteredDishRows),
-    [forkFilteredDishRows]
+    () => buildRestaurantGroups(dishRows),
+    [dishRows]
   );
 
   const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
@@ -996,10 +1207,11 @@ export default function GrubbidSearchResults() {
   }, [restaurantGroups]);
 
   const hasMenuMatches = restaurantGroups.length > 0;
-  const hasVisibleForkResults =
-    restaurantGroups.length > 0 || forkFilteredDishRows.length > 0 || waiterFilteredDishRows.length > 0;
-  const visibleItems = restaurantGroups.flatMap((group) => (Array.isArray(group.items) ? group.items : []));
-  const waiterResultCount = visibleItems.length;
+  const waiterResultCount = waiterFilteredRows.length;
+  const showWaiter =
+    rows.length >= WAITER_MIN_RESULTS &&
+    waiterState.inventory.length >= WAITER_MIN_ITEM_SIGNALS &&
+    waiterState.options.length >= WAITER_MIN_OPTION_COUNT;
   const restaurantIntent = !!(
     searchMeta?.restaurant_oriented ||
     searchMeta?.restaurant_first ||
@@ -1206,50 +1418,19 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && hasMenuMatches && (
         <>
-          {!activeFork && (
+          {!showWaiter && (
             <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>
           )}
           <div style={styles.grid}>
-            {activeFork && hasVisibleForkResults && (
-              <div
-                style={{
-                  position: "sticky",
-                  top: 120,
-                  zIndex: 60,
-                  background: "#111",
-                  color: "#fff",
-                  borderRadius: 12,
-                  padding: 14,
-                  margin: "12px 0",
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ marginBottom: 6, opacity: 0.8 }}>
-                  {activeFork.question}
-                </div>
-
-                <div style={{ fontSize: 14, fontWeight: 700, opacity: 0.9 }}>
-                  {waiterResultCount} results
-                </div>
-
-                {!forkSelection ? (
-                  <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800 }}>
-                    {activeFork.options.map((option, optionIndex) => (
-                      <React.Fragment key={option.id}>
-                        {optionIndex > 0 && <span style={{ margin: "0 10px", opacity: 0.6 }}>or</span>}
-                        <span style={{ cursor: "pointer" }} onClick={() => setForkSelection(option)}>
-                          {option.label}
-                        </span>
-                      </React.Fragment>
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800 }}>{forkSelection.label} selected</div>
-                    <button type="button" onClick={() => setForkSelection(null)} style={{ border: "none", background: "transparent", color: "#fff", cursor: "pointer", padding: "6px 0 0", fontSize: 14, fontWeight: 700 }}>↶ Back</button>
-                  </>
-                )}
-              </div>
+            {showWaiter && (
+              <WaiterRefinementPrompt
+                displayQuery={displayQuery}
+                filteredResultCount={waiterResultCount}
+                refinementOptions={waiterState.options}
+                selectedRefinement={waiterSelection}
+                onSelectRefinement={setWaiterSelection}
+                onClearRefinements={() => setWaiterSelection(null)}
+              />
             )}
             {restaurantGroups.map((g) => {
               const rMeta = restaurantMetaMap.get(asString(g.restaurant_id));
@@ -1305,10 +1486,9 @@ export default function GrubbidSearchResults() {
                 const json = await res.json().catch(() => ({}));
                 if (!res.ok || !json?.ok) throw new Error(json?.error || `HTTP ${res.status}`);
                 const moreRows = normalizeRows(json);
-                const pagination = json?.pagination || {};
-                const total = pagination.total_count ?? (searchOffset + moreRows.length);
-                const returned = pagination.returned_count ?? moreRows.length;
-                const pageOffset = pagination.offset ?? searchOffset;
+                const total = Number.isFinite(Number(json?.total)) ? Number(json.total) : (searchOffset + moreRows.length);
+                const returned = moreRows.length;
+                const pageOffset = searchOffset;
                 if (Array.isArray(json?.restaurants)) {
                   setRestaurantMetaMap((prev) => {
                     const next = new Map(prev);
