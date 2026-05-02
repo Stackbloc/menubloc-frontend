@@ -1,9 +1,35 @@
 import { Link, useLocation } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 
+function buildSearchHref() {
+  try {
+    const raw = sessionStorage.getItem("grubbid.discovery.location") || "";
+    const parts = raw.split(",");
+    const city = parts.length >= 2 ? parts[0].trim() : raw.trim();
+    const state = parts.length >= 2 ? parts[1].trim() : "";
+    if (city) {
+      const p = new URLSearchParams();
+      p.set("city", city);
+      if (state) p.set("state", state);
+      return `/search?${p.toString()}`;
+    }
+    const rawGeo = sessionStorage.getItem("grubbid.discovery.geo") || "";
+    if (rawGeo) {
+      const geo = JSON.parse(rawGeo);
+      if (geo?.lat && geo?.lng) {
+        const p = new URLSearchParams();
+        p.set("lat", String(geo.lat));
+        p.set("lng", String(geo.lng));
+        return `/search?${p.toString()}`;
+      }
+    }
+  } catch { /* sessionStorage unavailable or parse failed */ }
+  return "/search";
+}
+
 const TABS = [
   { label: "Home",    icon: "🏠", to: "/" },
-  { label: "Explore", icon: "🔍", to: "/search" },
+  { label: "Explore", icon: "🔍", to: "/search", buildHref: buildSearchHref },
   { label: "Following", icon: "F", to: "/account/following" },
   { label: "Basket", icon: "🛒", to: "/checkout" },
 ];
@@ -35,7 +61,7 @@ export default function BottomNav() {
         return (
           <Link
             key={tab.to}
-            to={tab.to}
+            to={tab.buildHref ? tab.buildHref() : tab.to}
             aria-label={tab.to === "/checkout" && itemCount > 0 ? `Basket with ${itemCount} items` : tab.label}
             style={{
               display: "flex", flexDirection: "column", alignItems: "center",
