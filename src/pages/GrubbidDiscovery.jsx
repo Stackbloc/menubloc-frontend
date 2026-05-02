@@ -1287,7 +1287,7 @@ export default function GrubbidDiscovery() {
           )}
 
           {/* Feed count + active filter status */}
-          {!feedLoading && (
+          {!feedLoading && !inlineError && (
             <div style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", marginBottom: 8, paddingLeft: 2, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               {displayMenus.length > 0 && (
                 <span>{displayMenus.length} {displayMenus.length === 1 ? "menu" : "menus"}</span>
@@ -1312,7 +1312,7 @@ export default function GrubbidDiscovery() {
                 height: 130, marginBottom: 10,
               }} />
             ))
-          ) : displayMenus.length === 0 && autoLocation.status !== "locating" ? (
+          ) : inlineError ? null : displayMenus.length === 0 && autoLocation.status !== "locating" ? (
             <div style={{
               textAlign: "center", padding: "48px 20px",
               color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
