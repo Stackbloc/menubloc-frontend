@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
-import { getFollowedRestaurants, unfollowRestaurant } from "../../lib/consumerApi.js";
+import { getFollowedRestaurants } from "../../lib/consumerApi.js";
 
 function formatFollowedDate(value) {
   if (!value) return "Following";
@@ -49,7 +49,6 @@ export default function ConsumerFollowing() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [items, setItems] = useState([]);
-  const [pendingRestaurantId, setPendingRestaurantId] = useState(null);
 
   const loadFollowedRestaurants = useCallback(async () => {
     setLoading(true);
@@ -75,19 +74,6 @@ export default function ConsumerFollowing() {
     }
     loadFollowedRestaurants();
   }, [authLoading, isAuthenticated, loadFollowedRestaurants, navigate]);
-
-  async function handleUnfollow(restaurantId) {
-    setPendingRestaurantId(restaurantId);
-    setError("");
-    try {
-      await unfollowRestaurant(restaurantId);
-      setItems((current) => current.filter((item) => item.restaurant_id !== restaurantId));
-    } catch (err) {
-      setError(err.message || "Could not unfollow this restaurant.");
-    } finally {
-      setPendingRestaurantId(null);
-    }
-  }
 
   const headingCopy = useMemo(() => {
     const count = items.length;
@@ -152,7 +138,6 @@ export default function ConsumerFollowing() {
               const badge = formatTierLabel(item.profile_tier, item.listing_status);
               const restaurantHref = buildRestaurantHref(item);
               const menuHref = buildMenuHref(item);
-              const pending = pendingRestaurantId === item.restaurant_id;
 
               return (
                 <div key={item.restaurant_id} style={styles.menuCard}>
@@ -200,16 +185,8 @@ export default function ConsumerFollowing() {
                         {location || "Location unavailable"}
                       </div>
                       <div style={styles.windowActions}>
-                        <Link to={menuHref} style={styles.primaryLink}>View Menu</Link>
                         <Link to={restaurantHref} style={styles.secondaryLink}>Restaurant</Link>
-                        <button
-                          type="button"
-                          onClick={() => handleUnfollow(item.restaurant_id)}
-                          disabled={pending}
-                          style={{ ...styles.unfollowBtn, ...(pending ? styles.unfollowBtnDisabled : null) }}
-                        >
-                          {pending ? "Removing..." : "Following"}
-                        </button>
+                        <Link to={menuHref} style={styles.primaryLink}>View Menu</Link>
                       </div>
                     </div>
                   </div>
@@ -230,7 +207,7 @@ const styles = {
     minHeight: "100vh",
     background: "#f6f6f3",
     fontFamily: "Inter, Arial, sans-serif",
-    padding: "0 0 60px",
+    padding: "0 0 calc(80px + env(safe-area-inset-bottom, 0px))",
   },
   pageInner: {
     maxWidth: "760px",
@@ -500,21 +477,5 @@ const styles = {
     gap: "10px",
     flexWrap: "wrap",
     marginTop: "6px",
-  },
-  unfollowBtn: {
-    minHeight: "42px",
-    padding: "0 16px",
-    borderRadius: "10px",
-    border: "1px solid #d7ddd8",
-    background: "#ffffff",
-    color: "#11211a",
-    fontSize: "14px",
-    fontWeight: 700,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  unfollowBtnDisabled: {
-    opacity: 0.68,
-    cursor: "default",
   },
 };

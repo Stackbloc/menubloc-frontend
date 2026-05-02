@@ -440,7 +440,7 @@ const styles = {
     minHeight: "100vh",
     background: "#f6f6f3",
     fontFamily: "Inter, Arial, sans-serif",
-    padding: "0 0 60px",
+    padding: "0 0 calc(80px + env(safe-area-inset-bottom, 0px))",
   },
   pageInner: {
     maxWidth: "680px",

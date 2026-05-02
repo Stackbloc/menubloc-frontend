@@ -167,17 +167,6 @@ export default function DealDetailPage() {
             fontSize: 14, fontWeight: 700, color: "#b91c1c",
           }}>
             {error}
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              style={{
-                display: "block", marginTop: 14, fontSize: 13,
-                color: "#1F4E3D", background: "none", border: "none",
-                cursor: "pointer", padding: 0, fontWeight: 700,
-              }}
-            >
-              ← Back to deals
-            </button>
           </div>
         )}
 

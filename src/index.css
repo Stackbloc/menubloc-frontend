@@ -138,6 +138,10 @@ textarea:focus-visible {
   min-height: 100vh;
 }
 
+.gb-bottom-nav-clearance {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
 .gb-shell {
   width: min(100%, 820px);
   margin: 0 auto;

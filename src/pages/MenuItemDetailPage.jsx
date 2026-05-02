@@ -267,11 +267,11 @@ function confidenceLevel(detailSystem) {
 // ── Design Tokens ────────────────────────────────────────────
 
 const VERDICT_THEMES = {
-  "Compatible with a health-conscious diet":      { bg: "linear-gradient(135deg, rgba(22,105,62,0.97), rgba(34,132,78,0.93))",    label: "rgba(186,248,204,0.97)", eye: "rgba(186,248,204,0.60)" },
-  "Suitable for frequent/regular consumption":    { bg: "linear-gradient(135deg, rgba(16,50,118,0.97), rgba(32,68,140,0.93))",    label: "rgba(180,212,255,0.97)", eye: "rgba(180,212,255,0.60)" },
-  "Solid nutritional profile — one consideration":{ bg: "linear-gradient(135deg, rgba(14,90,105,0.97), rgba(20,120,138,0.93))",   label: "rgba(178,238,248,0.97)", eye: "rgba(178,238,248,0.60)" },
-  "Best in moderation":                           { bg: "linear-gradient(135deg, rgba(138,70,0,0.97), rgba(176,100,0,0.92))",     label: "rgba(255,218,148,0.97)", eye: "rgba(255,218,148,0.60)" },
-  "Best suited for occasional consumption":       { bg: "linear-gradient(135deg, rgba(98,18,8,0.99), rgba(158,38,18,0.95))",     label: "rgba(255,188,168,0.97)", eye: "rgba(255,188,168,0.58)" },
+  "Compatible with a health-conscious diet":      { bg: "linear-gradient(135deg, rgba(30,86,63,0.95), rgba(45,106,79,0.88))",    label: "rgba(196,244,214,0.97)", eye: "rgba(196,244,214,0.62)" },
+  "Suitable for frequent/regular consumption":    { bg: "linear-gradient(135deg, rgba(20,56,110,0.94), rgba(33,72,138,0.88))",   label: "rgba(184,216,255,0.97)", eye: "rgba(184,216,255,0.62)" },
+  "Solid nutritional profile — one consideration":{ bg: "linear-gradient(135deg, rgba(18,84,100,0.94), rgba(24,112,132,0.88))",  label: "rgba(182,240,252,0.97)", eye: "rgba(182,240,252,0.62)" },
+  "Best in moderation":                           { bg: "linear-gradient(135deg, rgba(118,62,8,0.95), rgba(156,90,12,0.89))",    label: "rgba(255,220,155,0.97)", eye: "rgba(255,220,155,0.62)" },
+  "Best suited for occasional consumption":       { bg: "linear-gradient(135deg, rgba(106,20,10,0.96), rgba(162,40,20,0.91))",  label: "rgba(255,192,174,0.97)", eye: "rgba(255,192,174,0.62)" },
 };
 
 const SIGNAL_CHIP_COLORS = {
