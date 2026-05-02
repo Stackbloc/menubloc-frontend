@@ -36,7 +36,7 @@ Missing section → STOP. Any baseline FAIL → STOP. No user approval on diff �
 - `src/lib/locationUtils.js`
 - `src/hooks/useDietPreferences.js`
 
-## Last known good commit: `62039b5`
+## Last known good commit: `022aed5`
 
 ## PRE-EXECUTION LOCK (enforced here)
 
@@ -148,3 +148,67 @@ If missing → DO NOT APPLY.
 ## FILTER vs RELEVANCE PRINCIPLE
 
 Filters ALWAYS override relevance. A "better search result" that breaks filters is a regression, not an improvement.
+
+---
+
+## 🚨 SEARCH INTEGRITY GUARDRAIL
+
+Any proposed change to the files or functions listed below **MUST** output this exact line before proceeding:
+
+> **WARNING: THIS PROPOSED CHANGE VIOLATES THE SEARCH GUARDRAIL!**
+
+Then state which invariant is at risk and get explicit user approval. If the invariant cannot be preserved → STOP.
+
+---
+
+### INVARIANT 3 — Browse feed must be hidden when `inlineError` is truthy
+
+**File:** `src/pages/GrubbidDiscovery.jsx`
+
+Both the feed count block and the feed cards MUST be suppressed when `inlineError` is non-empty:
+
+```jsx
+// Feed count — MUST include !inlineError guard
+{!feedLoading && !inlineError && ( ... )}
+
+// Feed cards — MUST include inlineError ? null branch
+{feedLoading ? <skeleton /> : inlineError ? null : ...cards... }
+```
+
+Without this guard, stale or cross-market browse cards show beneath a "No results found" error, creating false cross-market leakage in the UI.
+Trigger: any edit to the feed count block or feed ternary.
+
+---
+
+### INVARIANT 4 — Geo fallback must NOT fire when city/state is explicit
+
+**File:** `src/pages/GrubbidSearchResults.jsx`
+**Function:** `fetchSearch()` caller / `hasExplicitLocation` / geo-fallback block
+
+`hasGeoFilter` MUST be `false` whenever `requestCity` or `requestZip` is set. The fallback re-fetch MUST NOT execute for city/state searches:
+
+```js
+const hasExplicitLocation = Boolean(requestZip || requestNear || (requestCity && !hasRouteCoords));
+// hasGeoFilter is only true when !hasExplicitLocation
+if (hasGeoFilter && fallbackUrl !== primaryUrl && ...) { /* must not fire for city queries */ }
+```
+
+Firing the fallback on an explicit city query silently returns results from a different market.
+Trigger: any edit to `hasExplicitLocation`, `hasGeoFilter`, or the geo-fallback `if` block.
+
+---
+
+### INVARIANT 5 — `fetchSearch` must retain the `!json?.ok` check
+
+**File:** `src/pages/GrubbidSearchResults.jsx`
+**Function:** `fetchSearch()`
+
+The check MUST remain intact:
+```js
+if (!res.ok || !json?.ok || hasDegradedEmptyResponse(json)) {
+  throw new Error(json?.error || `HTTP ${res.status}`);
+}
+```
+
+This is the enforcement contract for backend Invariant 1. Removing it would allow a backend response missing `ok: true` to silently render empty results with no error signal.
+Trigger: any edit to the `fetchSearch` function.
