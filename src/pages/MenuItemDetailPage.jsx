@@ -45,6 +45,7 @@ import { fetchCompareItems } from "../lib/api.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
+import { useOrderCart } from "../context/OrderCartContext.jsx";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -947,6 +948,7 @@ const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
 
 function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, allergenFilter }) {
   const navigate = useNavigate();
+  const { itemCount } = useOrderCart();
   const [similar, setSimilar] = useState(null);
   const [similarMeta, setSimilarMeta] = useState(null);
   const [failed, setFailed] = useState(false);
@@ -1015,6 +1017,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
     navigate(path);
   }
 
+  if (itemCount > 0) return null;
   if (failed || similar === null || similar.length === 0) return null;
 
   const helperLabel = buildSimilarItemsLabel(similarMeta);
@@ -1198,7 +1201,7 @@ export default function MenuItemDetailPage() {
           }
         }
       } catch (error) {
-        if (!cancelled) setErr(String(error?.message || error));
+        if (!cancelled) setErr(error?.message ?? "");
       } finally {
         if (!cancelled) setLoading(false);
       }
