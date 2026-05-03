@@ -315,7 +315,7 @@ export default function DealsPage() {
 
       {/* ── STICKY TOP: page header + search + location title ── */}
       <div style={{ position: "sticky", top: 0, zIndex: 50, background: "#f7f6f1" }}>
-        <StickyPageHeader title="Deals" />
+        <StickyPageHeader />
         <div style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: 12 }}>
           {/* Search bar */}
           <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0" }}>
