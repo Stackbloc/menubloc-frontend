@@ -12,6 +12,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+const MENUPLY_LOGO_SCALE = 1.12;
+
 export const GRUBBID_LOGO_SRC = "/menuply-logo5-transparent.png";
 
 export function BrandLogo({
@@ -33,6 +35,8 @@ export function BrandLogo({
         width,
         height,
         overflow: "hidden",
+        alignItems: "center",
+        justifyContent: "center",
         borderRadius: radius,
         background: matchPageBackground ? "transparent" : pageColor,
         lineHeight: 0,
@@ -47,6 +51,8 @@ export function BrandLogo({
           height: "100%",
           objectFit: "cover",
           objectPosition: "center",
+          transform: `scale(${MENUPLY_LOGO_SCALE})`,
+          transformOrigin: "center center",
           ...imageStyle,
         }}
       />
