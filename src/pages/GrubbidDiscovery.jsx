@@ -82,12 +82,16 @@ const INTELLIGENCE_CHIPS = [
 
 function DiscoveryChipRow({ chips, filters, onChipClick }) {
   return (
-    <div style={{ padding: "0 16px" }}>
+    <div style={{ padding: "0 16px", minWidth: 0, width: "100%", overflow: "hidden" }}>
       <div
         style={{
           display: "flex",
           gap: 6,
+          width: "100%",
+          minWidth: 0,
+          maxWidth: "100%",
           overflowX: "auto",
+          overflowY: "hidden",
           scrollbarWidth: "none",
           msOverflowStyle: "none",
           WebkitOverflowScrolling: "touch",
