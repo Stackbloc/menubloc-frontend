@@ -57,20 +57,114 @@ const ALLERGENS = [
   { id: "fish",      label: "Fish" },
 ];
 
-const FOOD_CHIPS = [
+const FOOD_CATEGORY_CHIPS = [
+  { id: "pizza",        icon: "🍕", label: "Pizza",              query: "pizza" },
+  { id: "burgers",      icon: "🍔", label: "Burgers",            query: "burgers" },
+  { id: "salads",       icon: "🥗", label: "Salads",             query: "salads" },
+  { id: "chicken",      icon: "🍗", label: "Chicken",            query: "chicken" },
+  { id: "tacos",        icon: "🌮", label: "Tacos",              query: "tacos" },
+  { id: "breakfast",    icon: "🍳", label: "Breakfast",          query: "breakfast" },
+  { id: "drinks",       icon: "🥤", label: "Drinks",             query: "drinks" },
+  { id: "fries",        icon: "🍟", label: "Fries",              query: "fries" },
+  { id: "sandwiches",   icon: "🥪", label: "Sandwiches",         query: "sandwiches" },
+  { id: "sushi",        icon: "🍣", label: "Sushi",              query: "sushi" },
+  { id: "wings",        icon: "🍗", label: "Wings",              query: "wings" },
+];
+
+const INTELLIGENCE_CHIPS = [
   { id: "low-carb",     icon: "🥦", label: "Low Carb",           query: "low carb" },
   { id: "high-protein", icon: "💪", label: "High Protein",       query: "high protein" },
   { id: "diabetic",     icon: "🩺", label: "Diabetic Friendly",  query: "diabetic friendly" },
-  { id: "low-fat",      icon: "🫙", label: "Low Fat",            query: "low fat", filterKey: "low_fat" },
+  { id: "low-sodium",   icon: "🧂", label: "Low Sodium",         query: "low sodium", filterKey: "low_sodium" },
+  { id: "low-fat",      icon: "🧈", label: "Low Fat",            query: "low fat", filterKey: "low_fat" },
   { id: "high-fiber",   icon: "🌾", label: "High Fiber",         query: "high fiber" },
-  { id: "pizza",        icon: "🍕", label: "Pizza",              query: "pizza" },
-  { id: "burgers",      icon: "🍔", label: "Burgers",            query: "burgers" },
-  { id: "sandwiches",   icon: "🥪", label: "Sandwiches",         query: "sandwiches" },
-  { id: "tacos",        icon: "🌮", label: "Tacos",              query: "tacos" },
-  { id: "sushi",        icon: "🍣", label: "Sushi",              query: "sushi" },
-  { id: "wings",        icon: "🍗", label: "Wings",              query: "wings" },
-  { id: "salads",       icon: "🥗", label: "Salads",             query: "salads" },
 ];
+
+function DiscoveryChipRow({ chips, filters, onChipClick }) {
+  const chipRowRef = useRef(null);
+  const [chipScrollLeft, setChipScrollLeft] = useState(0);
+  const [chipScrollMax, setChipScrollMax] = useState(Infinity);
+
+  function handleChipScroll() {
+    const el = chipRowRef.current;
+    if (!el) return;
+    setChipScrollLeft(el.scrollLeft);
+    setChipScrollMax(el.scrollWidth - el.clientWidth);
+  }
+
+  function scrollChips(delta) {
+    const el = chipRowRef.current;
+    if (!el) return;
+    el.scrollBy({ left: delta, behavior: "smooth" });
+  }
+
+  useEffect(() => {
+    handleChipScroll();
+  }, [chips]);
+
+  return (
+    <div style={{ position: "relative" }}>
+      {chipScrollLeft > 0 && (
+        <button
+          type="button"
+          onClick={() => scrollChips(-180)}
+          style={{
+            position: "absolute", left: 0, top: 0, bottom: 0, zIndex: 2,
+            width: 36, border: "none", cursor: "pointer",
+            background: "linear-gradient(to right, #fff 60%, transparent)",
+            display: "flex", alignItems: "center", justifyContent: "flex-start",
+            paddingLeft: 6, fontSize: 18, color: "#344054",
+          }}
+        >‹</button>
+      )}
+      <div
+        ref={chipRowRef}
+        onScroll={handleChipScroll}
+        style={{
+          padding: "0 16px",
+          display: "flex", gap: 6,
+          overflowX: "auto", scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {chips.map((chip) => {
+          const isActive = chip.filterKey ? !!filters[chip.filterKey] : false;
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => onChipClick(chip)}
+              style={{
+                height: 28, padding: "0 12px", borderRadius: 999,
+                flexShrink: 0, cursor: "pointer", whiteSpace: "nowrap",
+                border: isActive ? "1.5px solid #1f4e3d" : "1.5px solid #e4e7ec",
+                background: isActive ? "#ecfdf3" : "#fff",
+                color: isActive ? "#1f4e3d" : "#344054",
+                fontSize: 12, fontWeight: 700,
+              }}
+            >
+              {chip.icon} {chip.label}
+            </button>
+          );
+        })}
+      </div>
+      {chipScrollLeft < chipScrollMax && (
+        <button
+          type="button"
+          onClick={() => scrollChips(180)}
+          style={{
+            position: "absolute", right: 0, top: 0, bottom: 0, zIndex: 2,
+            width: 36, border: "none", cursor: "pointer",
+            background: "linear-gradient(to left, #fff 60%, transparent)",
+            display: "flex", alignItems: "center", justifyContent: "flex-end",
+            paddingRight: 6, fontSize: 18, color: "#344054",
+          }}
+        >›</button>
+      )}
+    </div>
+  );
+}
 
 function hasStoredDietSelection() {
   if (typeof window === "undefined") return false;
@@ -382,28 +476,6 @@ export default function GrubbidDiscovery() {
   );
   const seededProfilePrefsRef = useRef(false);
   const seededProfileLocationRef = useRef(false);
-  const chipRowRef = useRef(null);
-  const [chipScrollLeft, setChipScrollLeft] = useState(0);
-  const [chipScrollMax, setChipScrollMax] = useState(Infinity);
-
-  function handleChipScroll() {
-    const el = chipRowRef.current;
-    if (!el) return;
-    setChipScrollLeft(el.scrollLeft);
-    setChipScrollMax(el.scrollWidth - el.clientWidth);
-  }
-
-  function scrollChips(delta) {
-    const el = chipRowRef.current;
-    if (!el) return;
-    el.scrollBy({ left: delta, behavior: "smooth" });
-  }
-
-  useEffect(() => {
-    const el = chipRowRef.current;
-    if (!el) return;
-    setChipScrollMax(el.scrollWidth - el.clientWidth);
-  }, []);
   const [excludedAllergens, setExcludedAllergens] = useState(() => {
     try {
       const stored = localStorage.getItem(ALLERGEN_KEY);
@@ -1085,68 +1157,17 @@ export default function GrubbidDiscovery() {
             </button>
           </div>
 
-          {/* Food category chips */}
-          <div style={{ position: "relative", padding: "8px 0 0" }}>
-            {chipScrollLeft > 0 && (
-              <button
-                type="button"
-                onClick={() => scrollChips(-180)}
-                style={{
-                  position: "absolute", left: 0, top: 0, bottom: 0, zIndex: 2,
-                  width: 36, border: "none", cursor: "pointer",
-                  background: "linear-gradient(to right, #fff 60%, transparent)",
-                  display: "flex", alignItems: "center", justifyContent: "flex-start",
-                  paddingLeft: 6, fontSize: 18, color: "#344054",
-                }}
-              >‹</button>
-            )}
-            <div
-              ref={chipRowRef}
-              onScroll={handleChipScroll}
-              style={{
-                padding: "0 16px",
-                display: "flex", gap: 6,
-                overflowX: "auto", scrollbarWidth: "none",
-                msOverflowStyle: "none",
-                WebkitOverflowScrolling: "touch",
-              }}
-            >
-              {FOOD_CHIPS.map((chip) => (
-                (() => {
-                  const isActive = chip.filterKey ? !!filters[chip.filterKey] : false;
-                  return (
-                    <button
-                      key={chip.id}
-                      type="button"
-                      onClick={() => handleChipClick(chip)}
-                      style={{
-                        height: 28, padding: "0 12px", borderRadius: 999,
-                        flexShrink: 0, cursor: "pointer", whiteSpace: "nowrap",
-                        border: isActive ? "1.5px solid #1f4e3d" : "1.5px solid #e4e7ec",
-                        background: isActive ? "#ecfdf3" : "#fff",
-                        color: isActive ? "#1f4e3d" : "#344054",
-                        fontSize: 12, fontWeight: 700,
-                      }}
-                    >
-                      {chip.icon} {chip.label}
-                    </button>
-                  );
-                })()
-              ))}
-            </div>
-            {chipScrollLeft < chipScrollMax && (
-              <button
-                type="button"
-                onClick={() => scrollChips(180)}
-                style={{
-                  position: "absolute", right: 0, top: 0, bottom: 0, zIndex: 2,
-                  width: 36, border: "none", cursor: "pointer",
-                  background: "linear-gradient(to left, #fff 60%, transparent)",
-                  display: "flex", alignItems: "center", justifyContent: "flex-end",
-                  paddingRight: 6, fontSize: 18, color: "#344054",
-                }}
-              >›</button>
-            )}
+          <div style={{ display: "grid", gap: 8, padding: "8px 0 0" }}>
+            <DiscoveryChipRow
+              chips={FOOD_CATEGORY_CHIPS}
+              filters={filters}
+              onChipClick={handleChipClick}
+            />
+            <DiscoveryChipRow
+              chips={INTELLIGENCE_CHIPS}
+              filters={filters}
+              onChipClick={handleChipClick}
+            />
           </div>
         </div>
 
