@@ -1,7 +1,7 @@
-export const LEGAL_EFFECTIVE_DATE = "2026-04-09";
+export const LEGAL_EFFECTIVE_DATE = "2026-05-06";
 
 export const LEGAL_VERSIONS = {
-  consumerTerms: "consumer_terms_v2026_04_09",
+  consumerTerms: "consumer_terms_v2026_05_06",
   privacyPolicy: "privacy_policy_v2026_04_09",
   merchantTerms: "merchant_terms_v2026_04_09",
   subscriptionTerms: "subscription_terms_v2026_04_09",
@@ -9,26 +9,26 @@ export const LEGAL_VERSIONS = {
 };
 
 export const LEGAL_CONTACT = {
-  company: "Stack Bloc, Corporation",
+  company: "Stackbloc Corporation",
   email: "legal@grubbid.com",
 };
 
 export const TERMS_DOCUMENT = {
   title: "Menuply Terms of Use",
   description:
-    "Public website, app, and consumer ordering terms for Menuply, operated by Stack Bloc, Corporation.",
+    'Public website, app, and consumer ordering terms for Menuply, operated by Stackbloc Corporation, doing business as Menuply ("Menuply").',
   sections: [
     {
       heading: "Overview",
       paragraphs: [
-        "These Terms of Use govern your access to and use of the Menuply websites, mobile experiences, ordering tools, and related services operated by Stack Bloc, Corporation under the Menuply brand.",
+        'These Terms of Use govern your access to and use of the Menuply websites, mobile experiences, ordering tools, and related services operated by Stackbloc Corporation, doing business as Menuply ("Menuply").',
         "By using Menuply, you agree to these Terms of Use. If you do not agree, do not use the platform.",
       ],
     },
     {
       heading: "Operator and platform role",
       paragraphs: [
-        "Menuply is a technology platform operated by Stack Bloc, Corporation. Menuply helps consumers discover restaurants, browse menus, place digital orders, and complete related payment flows.",
+        "Menuply is a technology platform operated by Stackbloc Corporation. Menuply helps consumers discover restaurants, browse menus, place digital orders, and complete related payment flows.",
         "Menuply is not the food preparer, not the seller of the restaurant's food and beverages, and not the delivery provider unless Menuply expressly states otherwise in a separate written agreement.",
       ],
     },
@@ -44,6 +44,23 @@ export const TERMS_DOCUMENT = {
       paragraphs: [
         "Restaurants listed on Menuply are independent businesses. Each restaurant remains the merchant of record for its own sales and is solely responsible for menu content, pricing, taxes charged to the consumer when applicable, food preparation, ingredient accuracy, allergy disclosures, packaging, fulfillment, pickup readiness, refund decisions, and customer service relating to the order.",
         "Menuply does not control restaurant operations and is not responsible for a restaurant's hours, staffing, inventory, substitutions, cancellations, or service quality.",
+      ],
+    },
+    {
+      heading: "Restaurant Partner Terms",
+      paragraphs: [
+        'These Restaurant Partner Terms describe additional restaurant-facing terms for Menuply. Menuply is operated by Stackbloc Corporation, doing business as Menuply ("Menuply"). Restaurants remain the merchant of record and remain responsible for pricing, fulfillment, taxes, legal compliance, and their own customer-facing operations.',
+        "Menuply is designed to align restaurant sustainability, customer value, and long-term demand. Menuply is designed to operate without reliance on high-markup pricing models, while preserving restaurant flexibility outside the Menuply platform.",
+        "The price integrity requirements in this section apply only to pricing displayed on Menuply. Restaurants remain free to set pricing independently on other platforms, channels, and direct ordering surfaces. For Menuply-listed items, prices generally should not materially exceed in-store or direct ordering prices except for reasonable adjustments, and as a general guideline prices ordinarily should not materially exceed approximately 15% above in-store pricing unless approved by Menuply. Menuply may review pricing across channels, request verification, audit supporting information, and enforce pricing integrity in good faith and consistent with platform policies.",
+        "If Menuply identifies pricing concerns, Menuply may remove or suppress items, disable ordering for specific items or locations, revoke benefits including commission protection, downgrade plan status, or suspend or terminate restaurant access where appropriate.",
+        'For pricing and commission administration, Menuply may use a "Base Price" that reflects a protected reference price for an item and a "Current Price" that reflects the actual price shown to and paid by the customer on Menuply at the time of the transaction. Menuply may calculate commission using a protected Base Price rather than the Current Price for qualifying items, but the commissionable price will not exceed the actual Current Price paid by the customer for that transaction. If the Current Price is lower than the Base Price, the commissionable price will be the Current Price.',
+        "Menuply may provide a temporary commission grace period or similar protection for qualifying price increases on price-compliant items. Menuply may limit or deny protection for excessive increases, category-based thresholds, item-based thresholds, low-cost item exceptions, or other platform integrity concerns. After an applicable grace period, the Current Price may become the new Base Price.",
+        "Menuply may reject, adjust, or reset an asserted Base Price if Menuply reasonably believes the Base Price is artificial, unsupported, misleading, or manipulated. Menuply may request verification and may make Base Price integrity determinations in good faith and consistent with platform policies.",
+        "Menuply may offer subscription plans and commission structures that vary by tier. A free tier may have no subscription fee and may carry a higher commission rate, while paid tiers may offer lower commission rates or additional benefits. Certain plans may include a launch grace period before billing begins, and subscription activation may occur when a defined sales threshold, a defined elapsed-time threshold, or both are reached. Unless Menuply states otherwise, only completed, non-refunded transactions count toward activation thresholds or similar eligibility requirements.",
+        "Certain plans may include a commission stability period. After an applicable stability period ends, Menuply may modify commission rates or related pricing terms with advance notice, generally within a 30- to 180-day range depending on the plan. Menuply may make more immediate changes where Menuply reasonably determines they are necessary for fraud prevention, legal compliance, payment processing requirements, security, or platform integrity.",
+        "Commission calculations, Base Price determinations, pricing safeguards, ranking and visibility systems, fraud detection, and related platform operations are proprietary to Menuply. Menuply may modify these systems in good faith and consistent with platform policies. No specific formula, methodology, ranking treatment, or economic outcome is guaranteed unless Menuply expressly agrees otherwise in a separate written agreement.",
+        "To the fullest extent permitted by law, any dispute, claim, or controversy arising out of or relating to these Terms or the restaurant relationship with Menuply will be resolved by binding arbitration administered by the American Arbitration Association rather than in court, except that either party may bring an individual claim in small claims court if it qualifies. This arbitration provision includes a class action waiver, so claims must be brought only on an individual basis and not as a plaintiff or class member in any purported class, collective, coordinated, consolidated, or representative proceeding. The arbitrator will decide threshold issues concerning the scope, enforceability, and interpretation of this arbitration provision, except to the extent applicable law reserves a question for a court. Restaurants may opt out of arbitration by providing written notice within 30 days after first accepting these Terms. Menuply will bear arbitration costs to the extent necessary to ensure enforceability of this provision consistent with applicable law.",
+        "To the fullest extent permitted by law, Stackbloc Corporation's total liability arising out of or relating to Menuply, these Terms, or the restaurant relationship will be limited to the greater of one hundred U.S. dollars (US $100) or the fees paid by the restaurant to Menuply for the specific services giving rise to the claim during the twelve months before the event giving rise to liability.",
       ],
     },
     {
@@ -85,15 +102,15 @@ export const TERMS_DOCUMENT = {
     {
       heading: "Disclaimers",
       paragraphs: [
-        "Menuply is provided on an as-is and as-available basis to the fullest extent permitted by law. Stack Bloc, Corporation disclaims all warranties, express or implied, including implied warranties of merchantability, fitness for a particular purpose, title, and non-infringement.",
+        "Menuply is provided on an as-is and as-available basis to the fullest extent permitted by law. Stackbloc Corporation disclaims all warranties, express or implied, including implied warranties of merchantability, fitness for a particular purpose, title, and non-infringement.",
         "Without limiting the foregoing, Menuply does not warrant that the platform will be uninterrupted, error-free, secure, or that any menu, pricing, restaurant, delivery, or payment information will always be complete, current, or accurate.",
       ],
     },
     {
       heading: "Limitation of liability",
       paragraphs: [
-        "To the fullest extent permitted by law, Stack Bloc, Corporation and its affiliates, officers, employees, and service providers will not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, or for any loss of profits, revenues, goodwill, data, or business opportunities arising out of or related to Menuply.",
-        "To the fullest extent permitted by law, the total liability of Stack Bloc, Corporation for any claim arising out of or relating to the platform will not exceed the greater of one hundred U.S. dollars (US $100) or the amount paid by you to Menuply, if any, for the specific transaction giving rise to the claim in the twelve months before the event.",
+        "To the fullest extent permitted by law, Stackbloc Corporation and its affiliates, officers, employees, and service providers will not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, or for any loss of profits, revenues, goodwill, data, or business opportunities arising out of or related to Menuply.",
+        "To the fullest extent permitted by law, the total liability of Stackbloc Corporation for any claim arising out of or relating to the platform will not exceed the greater of one hundred U.S. dollars (US $100) or the amount paid by you to Menuply, if any, for the specific transaction giving rise to the claim in the twelve months before the event.",
       ],
     },
     {
@@ -118,7 +135,7 @@ export const TERMS_DOCUMENT = {
     {
       heading: "Contact",
       paragraphs: [
-        "Questions about these Terms of Use may be sent to Stack Bloc, Corporation at legal@grubbid.com.",
+        "Questions about these Terms of Use may be sent to Stackbloc Corporation at legal@grubbid.com.",
       ],
     },
   ],
@@ -127,7 +144,7 @@ export const TERMS_DOCUMENT = {
 export const PRIVACY_DOCUMENT = {
   title: "Menuply Privacy Policy",
   description:
-    "How Stack Bloc, Corporation collects, uses, shares, and retains personal information when you use Menuply.",
+    "How Stackbloc Corporation collects, uses, shares, and retains personal information when you use Menuply.",
   sections: [
     {
       heading: "Information we collect",
@@ -193,7 +210,7 @@ export const PRIVACY_DOCUMENT = {
       heading: "Changes and contact",
       paragraphs: [
         "We may update this Privacy Policy from time to time. Material updates will be reflected by the effective date shown on this page.",
-        "Privacy questions or requests may be sent to Stack Bloc, Corporation at legal@grubbid.com.",
+        "Privacy questions or requests may be sent to Stackbloc Corporation at legal@grubbid.com.",
       ],
     },
   ],
@@ -207,7 +224,7 @@ export const MERCHANT_TERMS_DOCUMENT = {
     {
       heading: "Merchant relationship",
       paragraphs: [
-        "These Merchant Terms of Service apply to each restaurant, food business, or other merchant that creates or uses a Grubbid restaurant account. Grubbid is operated by Stack Bloc, Corporation.",
+        "These Merchant Terms of Service apply to each restaurant, food business, or other merchant that creates or uses a Grubbid restaurant account. Grubbid is operated by Stackbloc Corporation.",
         "By creating a restaurant account, submitting restaurant information, or using merchant tools, you agree to these Merchant Terms of Service.",
       ],
     },
@@ -249,7 +266,7 @@ export const MERCHANT_TERMS_DOCUMENT = {
     {
       heading: "Content and license",
       paragraphs: [
-        "You retain ownership of your restaurant name, logos, menu information, images, and other materials you submit. You grant Stack Bloc, Corporation a non-exclusive, worldwide, royalty-free license to host, copy, adapt, format, display, distribute, and use that content as needed to operate, market, improve, and support Grubbid and your merchant presence on the platform.",
+        "You retain ownership of your restaurant name, logos, menu information, images, and other materials you submit. You grant Stackbloc Corporation a non-exclusive, worldwide, royalty-free license to host, copy, adapt, format, display, distribute, and use that content as needed to operate, market, improve, and support Grubbid and your merchant presence on the platform.",
       ],
     },
     {
@@ -287,8 +304,8 @@ export const MERCHANT_TERMS_DOCUMENT = {
     {
       heading: "Disclaimer, limitation of liability, and indemnification",
       paragraphs: [
-        "Grubbid is provided as is and as available to the fullest extent permitted by law. Stack Bloc, Corporation disclaims all implied warranties.",
-        "To the fullest extent permitted by law, Stack Bloc, Corporation will not be liable for indirect, incidental, consequential, special, exemplary, or punitive damages, or lost profits, revenues, goodwill, or data. The merchant will defend, indemnify, and hold harmless Stack Bloc, Corporation and its affiliates from claims arising from the merchant's menu content, food preparation, operations, taxes, legal noncompliance, customer interactions, or breach of these terms.",
+        "Grubbid is provided as is and as available to the fullest extent permitted by law. Stackbloc Corporation disclaims all implied warranties.",
+        "To the fullest extent permitted by law, Stackbloc Corporation will not be liable for indirect, incidental, consequential, special, exemplary, or punitive damages, or lost profits, revenues, goodwill, or data. The merchant will defend, indemnify, and hold harmless Stackbloc Corporation and its affiliates from claims arising from the merchant's menu content, food preparation, operations, taxes, legal noncompliance, customer interactions, or breach of these terms.",
       ],
     },
     {
@@ -300,7 +317,7 @@ export const MERCHANT_TERMS_DOCUMENT = {
     {
       heading: "Contact",
       paragraphs: [
-        "Questions about these Merchant Terms of Service may be sent to Stack Bloc, Corporation at legal@grubbid.com.",
+        "Questions about these Merchant Terms of Service may be sent to Stackbloc Corporation at legal@grubbid.com.",
       ],
     },
   ],
@@ -332,7 +349,7 @@ export const SUBSCRIPTION_TERMS_DOCUMENT = {
     {
       heading: "Payments and authorization",
       paragraphs: [
-        "By subscribing, you authorize Stack Bloc, Corporation and its payment processor Stripe to charge the payment method you provide for recurring subscription fees, taxes, and any other disclosed charges associated with your plan.",
+        "By subscribing, you authorize Stackbloc Corporation and its payment processor Stripe to charge the payment method you provide for recurring subscription fees, taxes, and any other disclosed charges associated with your plan.",
       ],
     },
     {
@@ -362,7 +379,7 @@ export const SUBSCRIPTION_TERMS_DOCUMENT = {
     {
       heading: "Contact",
       paragraphs: [
-        "Questions about subscription billing may be sent to Stack Bloc, Corporation at legal@grubbid.com.",
+        "Questions about subscription billing may be sent to Stackbloc Corporation at legal@grubbid.com.",
       ],
     },
   ],
