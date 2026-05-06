@@ -81,51 +81,20 @@ const INTELLIGENCE_CHIPS = [
 ];
 
 function DiscoveryChipRow({ chips, filters, onChipClick }) {
-  const chipRowRef = useRef(null);
-  const [chipScrollLeft, setChipScrollLeft] = useState(0);
-  const [chipScrollMax, setChipScrollMax] = useState(Infinity);
-
-  function handleChipScroll() {
-    const el = chipRowRef.current;
-    if (!el) return;
-    setChipScrollLeft(el.scrollLeft);
-    setChipScrollMax(el.scrollWidth - el.clientWidth);
-  }
-
-  function scrollChips(delta) {
-    const el = chipRowRef.current;
-    if (!el) return;
-    el.scrollBy({ left: delta, behavior: "smooth" });
-  }
-
-  useEffect(() => {
-    handleChipScroll();
-  }, [chips]);
-
   return (
-    <div style={{ position: "relative" }}>
-      {chipScrollLeft > 0 && (
-        <button
-          type="button"
-          onClick={() => scrollChips(-180)}
-          style={{
-            position: "absolute", left: 0, top: 0, bottom: 0, zIndex: 2,
-            width: 36, border: "none", cursor: "pointer",
-            background: "linear-gradient(to right, #fff 60%, transparent)",
-            display: "flex", alignItems: "center", justifyContent: "flex-start",
-            paddingLeft: 6, fontSize: 18, color: "#344054",
-          }}
-        >‹</button>
-      )}
+    <div style={{ padding: "0 16px" }}>
       <div
-        ref={chipRowRef}
-        onScroll={handleChipScroll}
         style={{
-          padding: "0 16px",
-          display: "flex", gap: 6,
-          overflowX: "auto", scrollbarWidth: "none",
+          display: "flex",
+          gap: 6,
+          overflowX: "auto",
+          scrollbarWidth: "none",
           msOverflowStyle: "none",
           WebkitOverflowScrolling: "touch",
+          overscrollBehaviorX: "contain",
+          touchAction: "pan-x",
+          scrollBehavior: "smooth",
+          paddingBottom: 2,
         }}
       >
         {chips.map((chip) => {
@@ -149,19 +118,6 @@ function DiscoveryChipRow({ chips, filters, onChipClick }) {
           );
         })}
       </div>
-      {chipScrollLeft < chipScrollMax && (
-        <button
-          type="button"
-          onClick={() => scrollChips(180)}
-          style={{
-            position: "absolute", right: 0, top: 0, bottom: 0, zIndex: 2,
-            width: 36, border: "none", cursor: "pointer",
-            background: "linear-gradient(to left, #fff 60%, transparent)",
-            display: "flex", alignItems: "center", justifyContent: "flex-end",
-            paddingRight: 6, fontSize: 18, color: "#344054",
-          }}
-        >›</button>
-      )}
     </div>
   );
 }
