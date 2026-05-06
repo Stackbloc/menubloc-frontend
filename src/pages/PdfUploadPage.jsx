@@ -354,6 +354,10 @@ async function convertImageFileToPdf(file) {
   }
 }
 
+function buildPreviewUrl(file) {
+  return URL.createObjectURL(file);
+}
+
 export default function PdfUploadPage() {
   const location = useLocation();
   const nav = useNavigate();
@@ -381,6 +385,8 @@ export default function PdfUploadPage() {
 
   const fileInputRef = useRef(null);
   const [file, setFile] = useState(null);
+  const [uploadSessionId, setUploadSessionId] = useState("");
+  const [capturedPages, setCapturedPages] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [fileError, setFileError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -392,27 +398,86 @@ export default function PdfUploadPage() {
     ? DESIGN_STYLES.find((entry) => entry.id === design_style) || null
     : null;
   const isOcrFlow = ingestion_method === "ocr";
-  const accept = isOcrFlow ? "image/*,application/pdf,.pdf" : "application/pdf,.pdf";
+  const accept = isOcrFlow ? "image/*" : "application/pdf,.pdf";
 
-  function validateAndSetFile(chosen) {
+  function validateChosenFile(chosen) {
     setFileError("");
     setUploadErr("");
-    if (!chosen) return;
+    if (!chosen) return { ok: false };
 
-    const allowed = isPdfFile(chosen) || (isOcrFlow && isImageFile(chosen));
+    const allowed = isOcrFlow ? isImageFile(chosen) : isPdfFile(chosen);
     if (!allowed) {
-      setFileError(
-        isOcrFlow
-          ? "Choose a menu PDF or a phone photo of the menu."
-          : "Only PDF files are accepted."
-      );
-      return;
+      const message = isOcrFlow
+        ? "Choose a phone photo of the menu."
+        : "Only PDF files are accepted.";
+      setFileError(message);
+      return { ok: false };
     }
     if (chosen.size > MAX_FILE_BYTES) {
-      setFileError(`File is too large (${formatBytes(chosen.size)}). Maximum is 20 MB.`);
-      return;
+      const message = `File is too large (${formatBytes(chosen.size)}). Maximum is 20 MB.`;
+      setFileError(message);
+      return { ok: false };
     }
-    setFile(chosen);
+    return { ok: true };
+  }
+
+  async function ensureUploadSession() {
+    if (uploadSessionId) return uploadSessionId;
+
+    const formData = new FormData();
+    formData.append("restaurant_id", String(restaurant_id));
+    formData.append("email", email);
+    formData.append("owner_token", owner_token);
+    if (plan) formData.append("plan", plan);
+
+    const res = await fetch(`${API}/uploads/menu-session/start`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || !data?.ok) {
+      throw new Error(data?.error || `Session start failed (${res.status})`);
+    }
+
+    setUploadSessionId(data.upload_session_id);
+    return data.upload_session_id;
+  }
+
+  async function uploadCapturedPage(imageFile) {
+    const sessionId = await ensureUploadSession();
+    const pdfFile = await convertImageFileToPdf(imageFile);
+    const nextPageNumber = capturedPages.length + 1;
+
+    const formData = new FormData();
+    formData.append("restaurant_id", String(restaurant_id));
+    formData.append("email", email);
+    formData.append("owner_token", owner_token);
+    formData.append("page_number", String(nextPageNumber));
+    formData.append("image_file", imageFile, imageFile.name);
+    formData.append("pdf_file", pdfFile, pdfFile.name);
+
+    const res = await fetch(`${API}/uploads/menu-session/${sessionId}/page`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || !data?.ok) {
+      throw new Error(data?.error || `Page upload failed (${res.status})`);
+    }
+
+    setCapturedPages((pages) => [
+      ...pages,
+      {
+        pageNumber: data.page_number,
+        previewUrl: buildPreviewUrl(imageFile),
+        imageUrl: data.image_url,
+        ocrText: data.ocr_text,
+        preview: data.preview,
+        status: data.status,
+      },
+    ]);
   }
 
   function onDragOver(event) {
@@ -427,7 +492,17 @@ export default function PdfUploadPage() {
   function onDrop(event) {
     event.preventDefault();
     setIsDragOver(false);
-    validateAndSetFile(event.dataTransfer.files?.[0] || null);
+    const chosen = event.dataTransfer.files?.[0] || null;
+    const validation = validateChosenFile(chosen);
+    if (!validation.ok || !chosen) return;
+    if (isOcrFlow && isImageFile(chosen)) {
+      setUploading(true);
+      uploadCapturedPage(chosen)
+        .catch((error) => setUploadErr(error.message || "Upload failed."))
+        .finally(() => setUploading(false));
+      return;
+    }
+    setFile(chosen);
   }
 
   function onDropZoneClick() {
@@ -435,7 +510,18 @@ export default function PdfUploadPage() {
   }
 
   function onFileChange(event) {
-    validateAndSetFile(event.target.files?.[0] || null);
+    const chosen = event.target.files?.[0] || null;
+    const validation = validateChosenFile(chosen);
+    if (validation.ok && chosen) {
+      if (isOcrFlow) {
+        setUploading(true);
+        uploadCapturedPage(chosen)
+          .catch((error) => setUploadErr(error.message || "Upload failed."))
+          .finally(() => setUploading(false));
+      } else {
+        setFile(chosen);
+      }
+    }
     event.target.value = "";
   }
 
@@ -444,8 +530,41 @@ export default function PdfUploadPage() {
     setUploadErr("");
     setFileError("");
 
+    if (isOcrFlow && capturedPages.length > 0) {
+      setUploading(true);
+
+      try {
+        const formData = new FormData();
+        formData.append("restaurant_id", String(restaurant_id));
+        formData.append("email", email);
+        formData.append("owner_token", owner_token);
+
+        const res = await fetch(`${API}/uploads/menu-session/${uploadSessionId}/finish`, {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok || !data?.ok) {
+          throw new Error(data?.error || `Finish failed (${res.status})`);
+        }
+
+        setResult(data);
+        return;
+      } catch (error) {
+        setUploadErr(error.message || "Upload failed. Please try again.");
+      } finally {
+        setUploading(false);
+      }
+    }
+
     if (!file) {
-      setFileError(isOcrFlow ? "Please take a menu photo or choose a PDF." : "Please select a PDF file to upload.");
+      setFileError(isOcrFlow ? "Please take a menu photo to begin the upload session." : "Please select a PDF file to upload.");
+      return;
+    }
+
+    if (isOcrFlow) {
+      setFileError("Use the camera flow for OCR uploads. This route now submits pages only through the upload session.");
       return;
     }
 
@@ -573,7 +692,7 @@ export default function PdfUploadPage() {
     );
   }
 
-  const submitDisabled = uploading || !!fileError || !file;
+  const submitDisabled = uploading || !!fileError || (!file && capturedPages.length === 0);
 
   return (
     <div style={s.page}>
@@ -595,7 +714,7 @@ export default function PdfUploadPage() {
       <div style={s.heading}>{isOcrFlow ? "Take a menu photo or upload a scan" : "Upload your menu PDF"}</div>
       <div style={s.subheading}>
         {isOcrFlow
-          ? "Mobile-first OCR upload. Use your phone camera for a menu photo, or upload a menu PDF if you already have one."
+          ? "Mobile-first OCR upload. Use your phone camera to capture menu pages into one upload session."
           : "Upload a PDF of your menu and we will extract and structure it automatically."}
       </div>
 
@@ -622,7 +741,7 @@ export default function PdfUploadPage() {
           onClick={onDropZoneClick}
           role="button"
           tabIndex={0}
-          aria-label={isOcrFlow ? "Tap to take a photo or choose a menu PDF" : "Click or drag to upload PDF"}
+          aria-label={isOcrFlow ? "Tap to take a photo of the menu" : "Click or drag to upload PDF"}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
@@ -632,15 +751,15 @@ export default function PdfUploadPage() {
         >
           <div style={s.dropIcon}>{isOcrFlow ? "📷" : "📄"}</div>
           <div style={s.dropTitle}>
-            {isOcrFlow ? "Tap to take a photo or choose a menu PDF" : "Click or drag to upload your menu PDF"}
+            {isOcrFlow ? "Tap to take a photo of the menu" : "Click or drag to upload your menu PDF"}
           </div>
           <div style={s.dropSub}>
             {isOcrFlow
-              ? "On phones, the camera will open when supported. We convert photos to a PDF before upload so they stay attached to this restaurant signup."
+              ? "On phones, the camera will open when supported. Each captured page is added to the same upload session."
               : "Select a PDF from your device or drag it into this box to begin the upload."}
           </div>
           <div style={s.dropHint}>
-            {isOcrFlow ? "Accepted: phone photos, PNG/JPG, or PDF" : "Accepted format: PDF only · Max file size: 20 MB"}
+            {isOcrFlow ? "Accepted: phone photos, PNG/JPG, or WEBP" : "Accepted format: PDF only · Max file size: 20 MB"}
           </div>
           <input
             ref={fileInputRef}
@@ -652,7 +771,28 @@ export default function PdfUploadPage() {
           />
         </div>
 
-        {file ? (
+        {capturedPages.length > 0 ? (
+          <div>
+            {capturedPages.map((page) => (
+              <div
+                key={page.pageNumber}
+                style={{ marginBottom: 16, border: "1px solid #e5e5e5", borderRadius: 12, padding: 12 }}
+              >
+                <div style={{ fontWeight: 700, marginBottom: 8 }}>{`Page ${page.pageNumber} added`}</div>
+                <img
+                  src={page.previewUrl}
+                  alt={`Menu page ${page.pageNumber}`}
+                  style={{ width: "100%", borderRadius: 10, marginBottom: 8 }}
+                />
+                <div style={{ fontSize: 13, color: "#444", marginBottom: 6 }}>
+                  {page.preview?.readable ? "Readable text detected." : "Text preview is weak."}
+                  {page.preview?.item_count > 0 ? ` Menu-like items found: ${page.preview.item_count}.` : ""}
+                </div>
+                {page.ocrText ? <div style={{ fontSize: 12, color: "#666" }}>{page.ocrText.slice(0, 180)}</div> : null}
+              </div>
+            ))}
+          </div>
+        ) : file ? (
           <div style={s.fileInfo}>
             <span style={s.fileName}>{file.name}</span>
             <span style={s.fileSize}>{formatBytes(file.size)}</span>
@@ -672,9 +812,20 @@ export default function PdfUploadPage() {
           </div>
         ) : null}
 
-        <button type="submit" style={s.submitBtn(submitDisabled)} disabled={submitDisabled}>
-          {uploading ? "Uploading..." : isOcrFlow ? "Upload menu photo or PDF" : "Upload PDF"}
-        </button>
+        {isOcrFlow && capturedPages.length > 0 ? (
+          <div style={{ display: "grid", gap: 12 }}>
+            <button type="button" style={s.submitBtn(false)} onClick={onDropZoneClick}>
+              Add another page
+            </button>
+            <button type="submit" style={s.submitBtn(submitDisabled)} disabled={submitDisabled}>
+              {uploading ? "Finishing..." : "Finished"}
+            </button>
+          </div>
+        ) : (
+          <button type="submit" style={s.submitBtn(submitDisabled)} disabled={submitDisabled}>
+            {uploading ? "Uploading..." : isOcrFlow ? "Start menu photo upload" : "Upload PDF"}
+          </button>
+        )}
       </form>
     </div>
   );
