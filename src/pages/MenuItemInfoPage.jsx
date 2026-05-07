@@ -271,14 +271,14 @@ const SIGNAL_CHIP_COLORS = {
   high:      { bg: "rgba(184,40,0,0.11)",   color: "#a02800", border: "1px solid rgba(184,40,0,0.18)" },
   very_high: { bg: "rgba(140,10,0,0.13)",   color: "#8a0a00", border: "1px solid rgba(140,10,0,0.20)" },
   low:       { bg: "rgba(80,80,80,0.08)",   color: "#4a5450", border: "1px solid rgba(80,80,80,0.12)" },
-  default:   { bg: "rgba(20,33,27,0.06)",   color: "#23352d", border: "1px solid rgba(20,33,27,0.10)" },
+  default:   { bg: "rgba(20,33,27,0.06)",   color: "#D1D5DB", border: "1px solid rgba(20,33,27,0.10)" },
 };
 
 // ── Layout Primitives ────────────────────────────────────────
 
 function PageShell({ children, isMobile }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#14211b" }}>
+    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       <StickyPageHeader />
       <div style={{ maxWidth: 1120, margin: "0 auto", padding: isMobile ? "14px 14px 80px" : "20px 24px 80px", boxSizing: "border-box", fontFamily: 'var(--font-ui, "Avenir Next", "Segoe UI", sans-serif)' }}>
         {children}
@@ -290,7 +290,7 @@ function PageShell({ children, isMobile }) {
 
 function Surface({ children, style }) {
   return (
-    <section style={{ background: "rgba(255,255,255,0.88)", border: "1px solid rgba(20,33,27,0.08)", borderRadius: 24, boxShadow: "0 16px 44px rgba(20,33,27,0.08)", backdropFilter: "blur(8px)", ...style }}>
+    <section style={{ background: "rgba(18,26,20,0.96)", border: "1px solid #1F2937", borderRadius: 24, boxShadow: "0 16px 44px rgba(20,33,27,0.08)", backdropFilter: "blur(8px)", ...style }}>
       {children}
     </section>
   );
@@ -306,7 +306,7 @@ function Eyebrow({ children, color = "#7a5b20" }) {
 
 function BadgePill({ children, tone = "default" }) {
   const tones = {
-    default:  { background: "rgba(20,33,27,0.06)",  color: "#23352d", border: "1px solid rgba(20,33,27,0.08)" },
+    default:  { background: "#121A14",  color: "#D1D5DB", border: "1px solid #1F2937" },
     positive: { background: "rgba(38,120,74,0.12)", color: "#1c6a43", border: "1px solid rgba(38,120,74,0.16)" },
     caution:  { background: "rgba(176,96,0,0.12)",  color: "#9b5c00", border: "1px solid rgba(176,96,0,0.14)" },
     accent:   { background: "rgba(18,75,163,0.10)", color: "#124ba3", border: "1px solid rgba(18,75,163,0.14)" },
@@ -529,7 +529,7 @@ function NutritionCard({ detailSystem, t }) {
               gap: 12,
               borderRadius: 16,
               border: "1px solid rgba(20,33,27,0.10)",
-              background: "#fbfaf6",
+              background: "#121A14",
               padding: "12px 14px",
               cursor: "pointer",
               color: "#15241d",
@@ -554,8 +554,8 @@ function NutritionCard({ detailSystem, t }) {
                     onClick={() => setSelectedPortionKey(option.key)}
                     style={{
                       borderRadius: 14,
-                      border: active ? "1px solid rgba(18,75,163,0.28)" : "1px solid rgba(20,33,27,0.08)",
-                      background: active ? "rgba(18,75,163,0.08)" : "#fbfaf6",
+                      border: active ? "1.5px solid #22C55E" : "1px solid #1F2937",
+                      background: active ? "rgba(34,197,94,0.12)" : "#121A14",
                       padding: "12px 10px",
                       cursor: "pointer",
                       color: "#15241d",
@@ -574,7 +574,7 @@ function NutritionCard({ detailSystem, t }) {
       ) : null}
       <div style={{ display: "grid", gap: 10 }}>
         {pairs.map((entry) => (
-          <div key={entry.label} style={{ borderRadius: 16, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: "12px 14px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+          <div key={entry.label} style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "12px 14px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
             <div style={{ fontSize: 13, color: "#15241d", fontWeight: 800 }}>
               {entry.label}
             </div>
@@ -591,7 +591,7 @@ function NutritionCard({ detailSystem, t }) {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(120px, 180px))", gap: 10, width: "fit-content", maxWidth: "100%" }}>
             {perOzRows.map((row) => (
-              <div key={row.label} style={{ borderRadius: 16, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: "12px 14px" }}>
+              <div key={row.label} style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "12px 14px" }}>
                 <div style={{ fontSize: 11, color: "#617167", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   {row.label}
                 </div>
@@ -645,19 +645,19 @@ function InsightsCard({ detailSystem, t }) {
     <SectionCard
       title={t("menuItemDetail.insights", "Insights")}
       eyebrow={t("menuItemDetail.insights", "Insights")}
-      style={{ padding: 16, background: "rgba(255,255,255,0.82)", border: "1px solid rgba(20,33,27,0.06)", boxShadow: "0 10px 24px rgba(20,33,27,0.04)" }}
+      style={{ padding: 16, background: "rgba(18,26,20,0.96)", border: "1px solid #1F2937", boxShadow: "0 10px 24px rgba(20,33,27,0.04)" }}
     >
       <div style={{ display: "grid", gap: 8, padding: "2px 0" }}>
         {items.map((item) => {
           const tone = insightTone(item.key, item.value);
           const meterFill = insightFillPercent(item.value);
           return (
-            <div key={item.label} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 140px 72px", alignItems: "center", gap: 10, background: "rgba(20,33,27,0.03)", padding: "6px 8px", borderRadius: 10 }}>
+            <div key={item.label} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 140px 72px", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.04)", padding: "6px 8px", borderRadius: 10 }}>
               <div style={{ minWidth: 0, fontSize: 13.5, fontWeight: 800, color: "#15241d", textAlign: "left" }}>
                 {item.label}
               </div>
               <div style={{ width: 140, display: "flex", justifyContent: "center" }}>
-                <div style={{ width: 140, height: 8, borderRadius: 999, background: "rgba(20,33,27,0.08)", overflow: "hidden" }}>
+                <div style={{ width: 140, height: 8, borderRadius: 999, background: "#1F2937", overflow: "hidden" }}>
                   <div style={{ width: meterFill, height: "100%", borderRadius: 999, background: tone.color }} />
                 </div>
               </div>
@@ -680,9 +680,9 @@ function DessertInterpretationCard({ presentation, t }) {
     <SectionCard
       title={t("menuItemDetail.insights", "Insights")}
       eyebrow={itemLabel}
-      style={{ padding: 16, background: "rgba(255,255,255,0.82)", border: "1px solid rgba(20,33,27,0.06)", boxShadow: "0 10px 24px rgba(20,33,27,0.04)" }}
+      style={{ padding: 16, background: "rgba(18,26,20,0.96)", border: "1px solid #1F2937", boxShadow: "0 10px 24px rgba(20,33,27,0.04)" }}
     >
-      <div style={{ fontSize: 15, lineHeight: 1.6, color: "#23352d", fontWeight: 800 }}>
+      <div style={{ fontSize: 15, lineHeight: 1.6, color: "#D1D5DB", fontWeight: 800 }}>
         {presentation.interpretation || "This item is still treated as an indulgent choice even if some protein or fiber offsets are present."}
       </div>
       {presentation.indulgence?.drivers?.length ? (
@@ -731,7 +731,7 @@ function IngredientFlagsCard({ detailSystem, t }) {
     >
       <div style={{ display: "grid", gap: 12 }}>
         {processing?.processing_level ? (
-          <div style={{ borderRadius: 16, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: "14px 16px" }}>
+          <div style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "14px 16px" }}>
             <div style={{ fontSize: 11, color: "#617167", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
               {t("menuItemDetail.processingLevel", "Processing Level")}
             </div>
@@ -854,7 +854,7 @@ function PreparationCard({ detailSystem, t }) {
         {rows.length ? (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
             {rows.map((row) => (
-              <div key={row.label} style={{ borderRadius: 16, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: "12px 14px" }}>
+              <div key={row.label} style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "12px 14px" }}>
                 <div style={{ fontSize: 11, color: "#617167", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   {row.label}
                 </div>
@@ -866,7 +866,7 @@ function PreparationCard({ detailSystem, t }) {
           </div>
         ) : null}
         {preparation.impact_line ? (
-          <div style={{ fontSize: 15, lineHeight: 1.5, color: "#23352d", fontWeight: 800 }}>
+          <div style={{ fontSize: 15, lineHeight: 1.5, color: "#D1D5DB", fontWeight: 800 }}>
             {preparation.impact_line}
           </div>
         ) : null}
@@ -986,12 +986,12 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
         <div style={{ display: "grid", gap: 14 }}>
           {allergenFilter ? <AllergenFilterStatusBanner allergenFilter={allergenFilter} compact /> : null}
           {helperLabel && (
-            <div style={{ fontSize: 12, fontWeight: 800, color: "#4c5c53", background: "rgba(20,33,27,0.05)", border: "1px solid rgba(20,33,27,0.08)", borderRadius: 12, padding: "10px 12px" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#9CA3AF", background: "rgba(255,255,255,0.04)", border: "1px solid #1F2937", borderRadius: 12, padding: "10px 12px" }}>
               {helperLabel}
             </div>
           )}
           {similar.map((entry) => (
-            <div key={entry.id} style={{ borderRadius: 18, border: "1px solid rgba(20,33,27,0.08)", background: "#fbfaf6", padding: 16 }}>
+            <div key={entry.id} style={{ borderRadius: 18, border: "1px solid #1F2937", background: "#121A14", padding: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f", marginBottom: 10 }}>
                 {entry.restaurant_name}
                 {entry.distance_miles != null && <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>}
@@ -1181,7 +1181,7 @@ export default function MenuItemInfoPage() {
                   <img
                     src={item.restaurant.logoUrl}
                     alt={`${item.restaurant.name} logo`}
-                    style={{ width: 62, height: 62, objectFit: "contain", borderRadius: 18, background: "rgba(255,255,255,0.75)", border: "1px solid rgba(20,33,27,0.08)", padding: 8 }}
+                    style={{ width: 62, height: 62, objectFit: "contain", borderRadius: 18, background: "rgba(255,255,255,0.75)", border: "1px solid #1F2937", padding: 8 }}
                   />
                 ) : null}
                 <div>
@@ -1296,7 +1296,7 @@ export default function MenuItemInfoPage() {
           </div>
 
           {showItemPhoto ? (
-            <div style={{ minHeight: isMobile ? 280 : 100, borderRadius: 22, overflow: "hidden", border: "1px solid rgba(20,33,27,0.08)", background: "#efe9dc" }}>
+            <div style={{ minHeight: isMobile ? 280 : 100, borderRadius: 22, overflow: "hidden", border: "1px solid #1F2937", background: "#efe9dc" }}>
               <img src={item.itemPhotoUrl} alt={`${item.name} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             </div>
           ) : null}

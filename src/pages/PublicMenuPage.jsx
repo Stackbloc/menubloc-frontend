@@ -175,8 +175,8 @@ function UnverifiedBanner({ show, onClaim }) {
         gap: 8,
         padding: "9px 18px",
         borderRadius: 10,
-        background: "#11211a",
-        color: "#fff",
+        background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+        color: "#0B0F0C",
         border: "none",
         fontSize: 12,
         fontWeight: 800,
@@ -190,7 +190,7 @@ function UnverifiedBanner({ show, onClaim }) {
         e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.22)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = "#11211a";
+        e.currentTarget.style.background = "#16A34A";
         e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.18)";
       }}
     >
@@ -211,9 +211,9 @@ function IntakePreviewBanner({ show }) {
         gap: 10,
         padding: "10px 16px",
         borderRadius: 12,
-        background: "#fffbeb",
-        border: "1px solid #fde68a",
-        color: "#92400e",
+        background: "#1c1a0a",
+        border: "1px solid #44400a",
+        color: "#FCD34D",
         fontSize: 13,
         fontWeight: 700,
         marginBottom: 16,
@@ -285,10 +285,10 @@ function FranchiseBanner({ group, currentRestaurantId, onPrevious, onNext }) {
             onClick={onPrevious}
             aria-label={`Show previous closest ${brandName}`}
             style={{
-              border: "1px solid rgba(30,58,138,0.18)",
+              border: "1px solid #1F2937",
               borderRadius: 8,
-              background: "#fff",
-              color: "#1d4ed8",
+              background: "#121A14",
+              color: "#22C55E",
               fontSize: 12,
               fontWeight: 800,
               padding: "5px 10px",
@@ -304,10 +304,10 @@ function FranchiseBanner({ group, currentRestaurantId, onPrevious, onNext }) {
             onClick={onNext}
             aria-label={`Show next closest ${brandName}`}
             style={{
-              border: "1px solid rgba(30,58,138,0.18)",
+              border: "1px solid #1F2937",
               borderRadius: 8,
-              background: "#fff",
-              color: "#1d4ed8",
+              background: "#121A14",
+              color: "#22C55E",
               fontSize: 12,
               fontWeight: 800,
               padding: "5px 10px",
@@ -334,9 +334,9 @@ function FilterChip({ label, active, onClick, fullWidth }) {
         width: fullWidth ? "100%" : "auto",
         padding: "0 16px",
         borderRadius: 999,
-        border: active ? "1px solid #11211a" : "1px solid rgba(18,34,28,0.12)",
-        background: active ? "#11211a" : "#fff",
-        color: active ? "#f7f6f1" : "#667085",
+        border: active ? "1.5px solid #22C55E" : "1px solid #1F2937",
+        background: active ? "#22C55E" : "#1A2419",
+        color: active ? "#0B0F0C" : "#9CA3AF",
         fontSize: 13,
         fontWeight: 800,
         cursor: "pointer",
@@ -361,16 +361,16 @@ function ActiveFilterChip({ label, onRemove }) {
         minHeight: 34,
         padding: "0 12px",
         borderRadius: 999,
-        border: "1px solid rgba(18,34,28,0.12)",
-        background: "#fff",
-        color: "#11211a",
+        border: "1px solid #1F2937",
+        background: "#1A2419",
+        color: "#D1D5DB",
         fontSize: 12,
         fontWeight: 800,
         cursor: "pointer",
       }}
     >
       <span>{label}</span>
-      <span aria-hidden="true" style={{ color: "#667085", fontSize: 13, lineHeight: 1 }}>×</span>
+      <span aria-hidden="true" style={{ color: "#6B7280", fontSize: 13, lineHeight: 1 }}>×</span>
     </button>
   );
 }
@@ -399,8 +399,8 @@ function FilterDrawer({ open, onClose, children }) {
         style={{
           width: "min(360px, 100vw)",
           height: "100%",
-          background: "#fff",
-          boxShadow: "-18px 0 40px rgba(15,23,42,0.16)",
+          background: "#121A14",
+          boxShadow: "-18px 0 40px rgba(0,0,0,0.5)",
           display: "flex",
           flexDirection: "column",
         }}
@@ -493,7 +493,7 @@ function ItemDetailSheet({
       <div
         style={{
           position: "fixed", bottom: 0, left: 0, right: 0,
-          background: "#fff",
+          background: "#121A14",
           borderRadius: "24px 24px 0 0",
           zIndex: 501,
           maxHeight: "88vh",
@@ -503,31 +503,31 @@ function ItemDetailSheet({
       >
         {/* drag handle */}
         <div style={{ paddingTop: 14, paddingBottom: 6, display: "flex", justifyContent: "center" }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e4e7ec" }} />
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "#374151" }} />
         </div>
 
         <div style={{ padding: "4px 20px 48px" }}>
 
           {/* Name + badges */}
           <div style={{ marginBottom: 6 }}>
-            <div style={{ fontSize: 21, fontWeight: 900, color: "#11211a", lineHeight: 1.2 }}>{name}</div>
+            <div style={{ fontSize: 21, fontWeight: 900, color: "#FFFFFF", lineHeight: 1.2 }}>{name}</div>
             {(hasDeal || item?.is_vegan || item?.is_gluten_free) && (
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-                {hasDeal && <Badge label={t("common.deals", "Deal")} bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" />}
-                {item?.is_vegan && <Badge label={t("diet.vegan", "Vegan")} bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" />}
-                {item?.is_gluten_free && <Badge label="GF" bg="#fffbeb" color="#92400e" border="1px solid #fde68a" />}
+                {hasDeal && <Badge label={t("common.deals", "Deal")} bg="rgba(34,197,94,0.12)" color="#22C55E" border="1px solid rgba(34,197,94,0.3)" />}
+                {item?.is_vegan && <Badge label={t("diet.vegan", "Vegan")} bg="rgba(34,197,94,0.12)" color="#22C55E" border="1px solid rgba(34,197,94,0.3)" />}
+                {item?.is_gluten_free && <Badge label="GF" bg="#1c1a0a" color="#FCD34D" border="1px solid #44400a" />}
               </div>
             )}
           </div>
 
           {/* Price */}
           {price ? (
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#11211a", marginBottom: 14 }}>{price}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#22C55E", marginBottom: 14 }}>{price}</div>
           ) : null}
 
           {/* Description */}
           {desc ? (
-            <div style={{ fontSize: 14, color: "#475467", lineHeight: 1.65, marginBottom: 16 }}>{desc}</div>
+            <div style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.65, marginBottom: 16 }}>{desc}</div>
           ) : null}
 
           {!canAddToOrder ? (
@@ -536,8 +536,8 @@ function ItemDetailSheet({
                 marginBottom: 16,
                 padding: "12px 14px",
                 borderRadius: 14,
-                background: "#fef3c7",
-                color: "#92400e",
+                background: "#1c1a0a",
+                color: "#FCD34D",
                 fontSize: 13,
                 fontWeight: 700,
                 lineHeight: 1.5,
@@ -582,8 +582,8 @@ function ItemDetailSheet({
                     width: "100%",
                     border: "none",
                     borderRadius: 14,
-                    background: "#11211a",
-                    color: "#fff",
+                    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+                    color: "#0B0F0C",
                     padding: "14px 20px",
                     fontSize: 15,
                     fontWeight: 900,
@@ -610,8 +610,8 @@ function ItemDetailSheet({
                   }}
                   style={{
                     width: 44, height: 44, borderRadius: 999,
-                    border: "1px solid rgba(17,33,26,0.12)",
-                    background: "#f8fafc", color: "#11211a",
+                    border: "1px solid #1F2937",
+                    background: "#1A2419", color: "#9CA3AF",
                     fontSize: 20, fontWeight: 900, cursor: "pointer",
                   }}
                 >
@@ -619,7 +619,7 @@ function ItemDetailSheet({
                 </button>
                 <span aria-live="polite" style={{
                   minWidth: 48, textAlign: "center",
-                  fontSize: 18, fontWeight: 900, color: "#11211a",
+                  fontSize: 18, fontWeight: 900, color: "#FFFFFF",
                 }}>
                   {selectedQty}
                 </span>
@@ -630,7 +630,7 @@ function ItemDetailSheet({
                   style={{
                     width: 44, height: 44, borderRadius: 999,
                     border: "none",
-                    background: "#dcfce7", color: "#166534",
+                    background: "#22C55E", color: "#0B0F0C",
                     fontSize: 20, fontWeight: 900, cursor: "pointer",
                   }}
                 >
@@ -645,8 +645,8 @@ function ItemDetailSheet({
                   width: "100%",
                   border: "none",
                   borderRadius: 14,
-                  background: "#11211a",
-                  color: "#fff",
+                  background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+                  color: "#0B0F0C",
                   padding: "14px 20px",
                   fontSize: 15,
                   fontWeight: 900,
@@ -680,10 +680,10 @@ function AddedConfirmation({ name, onRemove, setConfirmation }) {
         bottom: 88,
         left: "50%",
         transform: "translateX(-50%)",
-        background: "#fff",
+        background: "#121A14",
         borderRadius: 14,
         padding: "11px 16px",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.14)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
         display: "flex",
         alignItems: "center",
         gap: 10,
@@ -694,7 +694,7 @@ function AddedConfirmation({ name, onRemove, setConfirmation }) {
       }}
     >
       <span style={{ color: "#16a34a", fontSize: 18, lineHeight: 1 }}>✓</span>
-      <span style={{ fontSize: 14, fontWeight: 700, color: "#11211a", flex: 1 }}>
+      <span style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF", flex: 1 }}>
         {name ? `${name} added` : "Added to order"}
       </span>
       <button
@@ -974,7 +974,7 @@ export default function PublicMenuPage() {
     return m;
   }, [pageState.data]);
 
-  const pageBg = { minHeight: "100vh", background: "#f7f6f1" };
+  const pageBg = { minHeight: "100vh", background: "#0B0F0C" };
 
   useEffect(() => {
     if (routeState.status !== "ok" || pageState.status !== "ok" || !pageState.data) {
@@ -1167,17 +1167,17 @@ export default function PublicMenuPage() {
         maxWidth: 860,
         margin: "0 auto",
         padding: isMobile ? "16px 12px 80px" : "28px 20px 80px",
-        color: "#101828",
+        color: "#FFFFFF",
       }}>
         {/* Restaurant header — sticky */}
         <div style={{
           position: "sticky",
           top: 88,
           zIndex: 50,
-          background: "rgba(247, 246, 241, 0.92)",
+          background: "rgba(11, 15, 12, 0.95)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
-          borderBottom: "1px solid rgba(18, 34, 28, 0.06)",
+          borderBottom: "1px solid #1F2937",
           marginBottom: isMobile ? 18 : 22,
           marginLeft: isMobile ? -12 : -20,
           marginRight: isMobile ? -12 : -20,
@@ -1195,7 +1195,7 @@ export default function PublicMenuPage() {
                     fontWeight: 900,
                     letterSpacing: "-0.02em",
                     lineHeight: 1.1,
-                    color: "#11211a",
+                    color: "#FFFFFF",
                     textDecoration: "none",
                     minWidth: 0,
                     overflow: "hidden",
@@ -1211,7 +1211,7 @@ export default function PublicMenuPage() {
                   fontWeight: 900,
                   letterSpacing: "-0.02em",
                   lineHeight: 1.1,
-                  color: "#11211a",
+                  color: "#FFFFFF",
                   minWidth: 0,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -1260,7 +1260,7 @@ export default function PublicMenuPage() {
 
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             {menuTypeLabel ? (
-              <div style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 999, background: "#f3f4f6", border: "1px solid rgba(18,34,28,0.08)", fontSize: 11, fontWeight: 700, color: "#374151" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 999, background: "#1A2419", border: "1px solid #1F2937", fontSize: 11, fontWeight: 700, color: "#9CA3AF" }}>
                 {menuTypeLabel}
               </div>
             ) : null}
@@ -1298,7 +1298,7 @@ export default function PublicMenuPage() {
                 {filtersActive ? (
                   <>
                     {t("publicMenu.noItemsAfterFilters", "This restaurant has no displayable menu items after your active filters.")}{" "}
-                    <button onClick={handleClearFilters} style={{ background: "none", border: "none", cursor: "pointer", color: "#2d6a4f", fontWeight: 700, fontSize: 14, padding: 0, textDecoration: "underline" }}>
+                    <button onClick={handleClearFilters} style={{ background: "none", border: "none", cursor: "pointer", color: "#22C55E", fontWeight: 700, fontSize: 14, padding: 0, textDecoration: "underline" }}>
                       {t("common.clearFilters", "Clear filters")}
                     </button>
                   </>
@@ -1394,7 +1394,7 @@ export default function PublicMenuPage() {
                                 ? "1px solid rgba(34,197,94,0.32)"
                                 : "1px solid var(--gb-color-border)",
                               borderRadius: 16,
-                              background: !itemIsOrderable ? "#f8fafc" : inCartCount > 0 ? "#f7fef9" : "var(--gb-color-surface-strong)",
+                              background: !itemIsOrderable ? "#121A14" : inCartCount > 0 ? "rgba(34,197,94,0.08)" : "var(--gb-color-surface-strong)",
                               padding: "10px 14px",
                               boxShadow: "var(--gb-shadow-card)",
                               cursor: "pointer",
@@ -1408,7 +1408,7 @@ export default function PublicMenuPage() {
                                 <span style={{
                                   fontSize: 14,
                                   fontWeight: 600,
-                                  color: "#11211a",
+                                  color: "#FFFFFF",
                                   lineHeight: 1.2,
                                   minWidth: 0,
                                   overflow: "hidden",
@@ -1438,7 +1438,7 @@ export default function PublicMenuPage() {
                                 ) : null}
                               </div>
                               {price ? (
-                                <span style={{ fontSize: 14, fontWeight: 700, color: "#374151", whiteSpace: "nowrap" }}>{price}</span>
+                                <span style={{ fontSize: 14, fontWeight: 700, color: "#22C55E", whiteSpace: "nowrap" }}>{price}</span>
                               ) : null}
                             </div>
 
@@ -1453,14 +1453,14 @@ export default function PublicMenuPage() {
                                         removeItem(cartState.simpleLine?.lineId);
                                         setHoveredItemId(null);
                                       }}
-                                      style={{ fontSize: 11, fontWeight: 700, color: "#991b1b",
-                                        background: "#fee2e2", borderRadius: 999, padding: "2px 7px",
+                                      style={{ fontSize: 11, fontWeight: 700, color: "#fca5a5",
+                                        background: "#1c0a0a", borderRadius: 999, padding: "2px 7px",
                                         border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
                                     >
                                       × Remove from basket
                                     </button>
                                   ) : (
-                                    <span style={{ fontSize: 11, fontWeight: 700, color: "#166534", background: "#dcfce7", borderRadius: 999, padding: "2px 7px", whiteSpace: "nowrap" }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: "#0B0F0C", background: "#22C55E", borderRadius: 999, padding: "2px 7px", whiteSpace: "nowrap" }}>
                                       {inCartCount} in order
                                     </span>
                                   )
@@ -1468,19 +1468,19 @@ export default function PublicMenuPage() {
                                 {!itemIsOrderable ? (
                                   <Badge
                                     label="Unavailable"
-                                    bg="#fff7ed"
-                                    color="#9a3412"
-                                    border="1px solid #fdba74"
+                                    bg="#1c1208"
+                                    color="#fb923c"
+                                    border="1px solid #431407"
                                   />
                                 ) : null}
-                                {hasDeal && <Badge label={t("common.deals", "Deals")} bg="#dcfce7" color="#15803d" border="1px solid #bbf7d0" />}
-                                {it?.is_vegan && <Badge label={t("diet.vegan", "Vegan")} bg="#f0fdf4" color="#166534" border="1px solid #bbf7d0" />}
-                                {it?.is_gluten_free && <Badge label="GF" bg="#fffbeb" color="#92400e" border="1px solid #fde68a" />}
+                                {hasDeal && <Badge label={t("common.deals", "Deals")} bg="rgba(34,197,94,0.12)" color="#22C55E" border="1px solid rgba(34,197,94,0.3)" />}
+                                {it?.is_vegan && <Badge label={t("diet.vegan", "Vegan")} bg="rgba(34,197,94,0.12)" color="#22C55E" border="1px solid rgba(34,197,94,0.3)" />}
+                                {it?.is_gluten_free && <Badge label="GF" bg="#1c1a0a" color="#FCD34D" border="1px solid #44400a" />}
                               </div>
                             ) : null}
 
                             {desc ? (
-                              <div style={{ marginTop: 3, fontSize: 12, color: "#555", lineHeight: 1.35 }}>
+                              <div style={{ marginTop: 3, fontSize: 12, color: "#9CA3AF", lineHeight: 1.35 }}>
                                 {desc}
                               </div>
                             ) : null}
@@ -1502,7 +1502,7 @@ export default function PublicMenuPage() {
                                       gap: 4,
                                       border: "none",
                                       background: "transparent",
-                                      color: "#0a7f5a",
+                                      color: "#22C55E",
                                       fontSize: 12,
                                       fontWeight: 600,
                                       cursor: "pointer",
@@ -1530,8 +1530,8 @@ export default function PublicMenuPage() {
         </div>
 
         <FilterDrawer open={isFilterDrawerOpen} onClose={() => setIsFilterDrawerOpen(false)}>
-          <div style={{ padding: "18px 18px 14px", borderBottom: "1px solid rgba(18,34,28,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ fontSize: 17, fontWeight: 900, color: "#11211a" }}>
+          <div style={{ padding: "18px 18px 14px", borderBottom: "1px solid #1F2937", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ fontSize: 17, fontWeight: 900, color: "#FFFFFF" }}>
               {t("common.filters", "Filters")}
             </div>
             <button
