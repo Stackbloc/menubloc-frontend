@@ -14,7 +14,7 @@
  * ============================================================
  */
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -1075,8 +1075,25 @@ export default function MenuItemInfoPage() {
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
 
-  const heroRef = useRef(null);
   const [heroVisible, setHeroVisible] = useState(true);
+  const heroScrollCleanup = useRef(null);
+  const heroRef = useCallback((node) => {
+    if (heroScrollCleanup.current) {
+      heroScrollCleanup.current();
+      heroScrollCleanup.current = null;
+    }
+    if (!node) return;
+    function check() {
+      setHeroVisible(node.getBoundingClientRect().bottom > 73);
+    }
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check, { passive: true });
+    heroScrollCleanup.current = () => {
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
+  }, []);
 
   const [loading,  setLoading]  = useState(true);
   const [err,      setErr]      = useState("");
@@ -1151,22 +1168,6 @@ export default function MenuItemInfoPage() {
       image: shareData.image,
     });
   }, [shareData]);
-
-  useEffect(() => {
-    if (!item) return undefined;
-    const node = heroRef.current;
-    if (!node) return undefined;
-    function check() {
-      setHeroVisible(node.getBoundingClientRect().bottom > 73);
-    }
-    check();
-    window.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", check);
-      window.removeEventListener("resize", check);
-    };
-  }, [item]);
 
   const priceLabel =
     item?.priceMinor != null ? formatMoney(item.priceMinor) :
