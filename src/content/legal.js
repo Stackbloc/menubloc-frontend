@@ -257,9 +257,9 @@ export const MERCHANT_TERMS_DOCUMENT = {
       ],
     },
     {
-      heading: "Fees, subscriptions, and taxes",
+      heading: "Fees, restaurant plans, and taxes",
       paragraphs: [
-        "You agree to pay the fees, subscription charges, and other amounts disclosed by Grubbid for the plan or services you select. Unless expressly stated otherwise, fees are exclusive of taxes.",
+        "You agree to pay the fees, restaurant plan charges, and other amounts disclosed by Grubbid for the plan or services you select. Unless expressly stated otherwise, fees are exclusive of taxes.",
         "You are responsible for taxes arising from your restaurant operations, menu sales, and business activities, except for taxes based on Grubbid's own net income.",
       ],
     },
@@ -279,7 +279,7 @@ export const MERCHANT_TERMS_DOCUMENT = {
     {
       heading: "Subscription terms incorporation",
       paragraphs: [
-        "If you purchase or use a paid plan, the Restaurant Subscription Terms are incorporated into these Merchant Terms of Service by reference and control for billing-specific matters.",
+        "If you purchase or use a paid plan, the Restaurant Plan Terms are incorporated into these Merchant Terms of Service by reference and control for billing-specific matters.",
       ],
     },
     {
@@ -298,7 +298,7 @@ export const MERCHANT_TERMS_DOCUMENT = {
     {
       heading: "Termination",
       paragraphs: [
-        "Either party may stop using or offering the services at any time, subject to any active subscription commitments and any surviving provisions of these terms. Grubbid may suspend or terminate access immediately for fraud, nonpayment, legal risk, or material breach.",
+        "Either party may stop using or offering the services at any time, subject to any active restaurant plan commitments and any surviving provisions of these terms. Grubbid may suspend or terminate access immediately for fraud, nonpayment, legal risk, or material breach.",
       ],
     },
     {
@@ -324,14 +324,14 @@ export const MERCHANT_TERMS_DOCUMENT = {
 };
 
 export const SUBSCRIPTION_TERMS_DOCUMENT = {
-  title: "Restaurant Subscription Terms",
+  title: "Restaurant Plan Terms",
   description:
-    "Billing and plan terms for restaurants that subscribe to paid Grubbid features.",
+    "Billing and restaurant plan terms for restaurants using paid or performance-based Grubbid plans.",
   sections: [
     {
       heading: "Incorporation and scope",
       paragraphs: [
-        "These Restaurant Subscription Terms apply to paid restaurant plans offered through Grubbid and are incorporated into the Merchant Terms of Service.",
+        "These Restaurant Plan Terms apply to paid and performance-based restaurant plans offered through Grubbid and are incorporated into the Merchant Terms of Service.",
       ],
     },
     {
@@ -341,21 +341,21 @@ export const SUBSCRIPTION_TERMS_DOCUMENT = {
       ],
     },
     {
-      heading: "Billing timing and auto-renewal",
+      heading: "Billing timing and renewals",
       paragraphs: [
-        "Paid subscriptions are billed in advance on the billing interval shown at checkout. Unless cancelled in accordance with the platform settings or applicable law, subscriptions automatically renew for successive billing periods.",
+        "Paid restaurant plans are billed on the billing interval shown at checkout. Monthly and annual Pro Partner billing renew automatically unless cancelled in accordance with the platform settings or applicable law. Performance Partner does not have an upfront platform fee and may be cancelled anytime.",
       ],
     },
     {
       heading: "Payments and authorization",
       paragraphs: [
-        "By subscribing, you authorize Stackbloc Corporation and its payment processor Stripe to charge the payment method you provide for recurring subscription fees, taxes, and any other disclosed charges associated with your plan.",
+        "When you choose a billed restaurant plan, you authorize Stackbloc Corporation and its payment processor Stripe to charge the payment method you provide for recurring plan fees, taxes, and any other disclosed charges associated with your plan.",
       ],
     },
     {
       heading: "Refunds",
       paragraphs: [
-        "Subscription fees are non-refundable except where required by law or where Grubbid expressly agrees otherwise in writing. Partial-period credits are not guaranteed if you cancel after a billing cycle begins.",
+        "Plan fees are non-refundable except where required by law or where Grubbid expressly agrees otherwise in writing. Partial-period credits are not guaranteed if you cancel after a billing cycle begins.",
       ],
     },
     {
@@ -373,13 +373,13 @@ export const SUBSCRIPTION_TERMS_DOCUMENT = {
     {
       heading: "No business-results guarantee",
       paragraphs: [
-        "Subscription access gives you access to platform features only. Grubbid does not guarantee any level of sales, traffic, conversion, customer acquisition, business growth, or operational results.",
+        "Restaurant plan access gives you access to platform features only. Grubbid does not guarantee any level of sales, traffic, conversion, customer acquisition, business growth, or operational results.",
       ],
     },
     {
       heading: "Contact",
       paragraphs: [
-        "Questions about subscription billing may be sent to Stackbloc Corporation at legal@grubbid.com.",
+        "Questions about restaurant plan billing may be sent to Stackbloc Corporation at legal@grubbid.com.",
       ],
     },
   ],

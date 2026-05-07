@@ -1,3 +1,14 @@
+/**
+ * ============================================================
+ * Path: menubloc-frontend/src/pages/RestaurantSignupEntry.jsx
+ * File: RestaurantSignupEntry.jsx
+ * Date: 2026-05-06
+ * Purpose:
+ *   Restaurant onboarding entry screen for selecting a Menuply
+ *   restaurant plan before account creation.
+ * ============================================================
+ */
+
 import { useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 
@@ -7,40 +18,52 @@ const PLAN_OPTIONS = [
   {
     code: "verified",
     name: "Verified",
-    price: "Free",
-    description: "Launch a verified MenuPly restaurant presence with your menu and QR sharing tools.",
+    price: "$0",
+    description: "A simple verified restaurant presence on Menuply.",
     cta: "Continue with Verified",
     featured: false,
     features: [
-      "Restaurant profile page",
-      "Discoverable menu listing",
-      "Menu editing and QR sharing",
+      "Basic restaurant profile",
+      "1 editable menu listing",
+      "QR code for your menu",
+      "Menu visibility on Menuply",
     ],
   },
   {
-    code: "pro_monthly",
-    name: "Pro Monthly",
-    price: "$39.99 / month",
-    description: "Flexible monthly Pro access for restaurants that want branding, promotion, and ordering tools.",
-    cta: "Continue with Pro Monthly",
+    code: "pro_partner",
+    name: "Pro Partner",
+    price: "$39.99/month or $299/year",
+    description:
+      "For restaurants that want advanced tools, ordering, sharing, and stronger customer engagement.",
+    cta: "Continue with Pro Partner",
     featured: true,
     features: [
-      "Custom branding and featured dish",
-      "Unlimited menus",
-      "Online ordering and custom deals",
+      "Unlimited menus for time of day, events, seasonal menus, happy hour, and specials",
+      "Advanced restaurant profile with logo, featured meal, and restaurant bio",
+      "Billboard placement and functionality",
+      "Shareable menus and dishes",
+      "Follow functionality",
+      "Deals and promotions",
+      "Online ordering",
+      "Lower transaction-based pricing when eligible",
     ],
   },
   {
-    code: "pro_annual",
-    name: "Pro Annual",
-    price: "$299.99 / year",
-    description: "Best-value Pro setup with the annual rate and included QR signage support.",
-    cta: "Continue with Pro Annual",
+    code: "performance_partner",
+    name: "Performance Partner",
+    price: "$0 upfront platform fee",
+    description:
+      "For restaurants that want full ordering and promotional capabilities with no upfront platform fee.",
+    cta: "Continue with Performance Partner",
     featured: false,
     features: [
-      "Everything in Pro Monthly",
-      "Lower annual price",
-      "Free QR signage included",
+      "Tablet included",
+      "Full online ordering capabilities",
+      "Deals and promotions",
+      "Follow functionality",
+      "Shareable menus and dishes",
+      "Billboard functionality",
+      "Cancel anytime",
     ],
   },
 ];
@@ -238,9 +261,9 @@ export default function RestaurantSignupEntry() {
           />
 
           <div style={styles.eyebrow}>Restaurant Signup</div>
-          <div style={styles.heading}>Choose your MenuPly plan before you create your account.</div>
+          <div style={styles.heading}>Choose your Menuply restaurant plan before you create your account.</div>
           <div style={styles.subheading}>
-            Pick Verified, Pro Monthly, or Pro Annual first. On the next step you will create your restaurant account and we will keep your selected plan attached to the onboarding flow.
+            Pick Verified, Pro Partner, or Performance Partner first. On the next step you will create your restaurant account and we will keep your selected plan attached to the onboarding flow.
           </div>
 
           <div style={styles.steps}>

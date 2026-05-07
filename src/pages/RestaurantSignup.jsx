@@ -1,3 +1,13 @@
+/**
+ * ============================================================
+ * Path: menubloc-frontend/src/pages/RestaurantSignup.jsx
+ * File: RestaurantSignup.jsx
+ * Date: 2026-05-06
+ * Purpose:
+ *   Restaurant account creation step after a plan is selected.
+ * ============================================================
+ */
+
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -16,8 +26,10 @@ const DESIGN_SELECTION_ROUTE = "/restaurant/design-select";
 
 const PLAN_LABELS = {
   verified: "Verified",
-  pro_monthly: "Pro Monthly",
-  pro_annual: "Pro Annual",
+  pro_partner: "Pro Partner",
+  performance_partner: "Performance Partner",
+  pro_monthly: "Pro Partner",
+  pro_annual: "Pro Partner",
 };
 
 const styles = {
@@ -621,9 +633,9 @@ export default function RestaurantSignup() {
             ? "Creating account..."
             : selectedPlan === "verified"
             ? "Create account and continue with Verified"
-            : selectedPlan === "pro_annual"
-            ? "Create account and continue with Pro Annual"
-            : "Create account and continue with Pro Monthly"}
+            : selectedPlan === "performance_partner"
+            ? "Create account and continue with Performance Partner"
+            : "Create account and continue with Pro Partner"}
         </button>
       </form>
     </div>
