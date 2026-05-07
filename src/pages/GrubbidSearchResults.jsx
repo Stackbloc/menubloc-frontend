@@ -1325,21 +1325,7 @@ export default function GrubbidSearchResults() {
           >
             ←
           </button>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
-            <div style={{
-              width: 72, marginTop: -1, padding: "4px 0 6px", textAlign: "center",
-              background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-              fontSize: 8, fontWeight: 900,
-              letterSpacing: "0.13em", textTransform: "uppercase",
-              borderRadius: "0 0 7px 7px",
-              boxShadow: "0 6px 16px rgba(34,197,94,0.25), inset 0 1px 0 rgba(255,255,255,0.12)",
-              userSelect: "none",
-              color: "#0B0F0C",
-            }}>
-              Menu Coins
-            </div>
-          </div>
+          <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
           <div style={{ width: 30, flexShrink: 0 }} />
         </div>
         <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

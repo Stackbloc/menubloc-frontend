@@ -927,27 +927,7 @@ export default function GrubbidDiscovery() {
               ☰
             </button>
 
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
-              <div style={{
-                width: 113,
-                marginTop: -1,
-                padding: "4px 0 6px",
-                textAlign: "center",
-                background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-                fontSize: 8,
-                fontWeight: 900,
-                letterSpacing: "0.13em",
-                textTransform: "uppercase",
-                borderRadius: "0 0 7px 7px",
-                boxShadow: "0 4px 12px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.12)",
-                userSelect: "none",
-              }}>
-                <span style={{ display: "block", color: "rgba(0,0,0,0.5)" }}>✦</span>
-                <span style={{ display: "block", color: "#0B0F0C" }}>Menu</span>
-                <span style={{ display: "block", color: "#0B0F0C", paddingLeft: 9 }}>Coins</span>
-              </div>
-            </div>
+            <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
 
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
               <Link
