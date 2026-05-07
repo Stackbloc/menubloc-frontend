@@ -142,7 +142,7 @@ export default function DealDetailPage() {
   const days = deal ? daysUntil(deal.expires_at) : null;
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       <StickyPageHeader title="Deal details" />
 
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "16px 16px 100px" }}>
@@ -152,7 +152,7 @@ export default function DealDetailPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {[120, 60, 80, 200].map((h, i) => (
               <div key={i} style={{
-                height: h, borderRadius: 12, background: "#e4e7ec",
+                height: h, borderRadius: 12, background: "#1F2937",
                 animation: "skelPulse 1.4s ease-in-out infinite",
               }} />
             ))}
@@ -163,8 +163,8 @@ export default function DealDetailPage() {
         {!loading && error && (
           <div style={{
             padding: "20px 18px", borderRadius: 14,
-            border: "1px solid #fecaca", background: "#fff8f8",
-            fontSize: 14, fontWeight: 700, color: "#b91c1c",
+            border: "1px solid #450a0a", background: "#1c0a0a",
+            fontSize: 14, fontWeight: 700, color: "#fca5a5",
           }}>
             {error}
           </div>
@@ -178,7 +178,7 @@ export default function DealDetailPage() {
               <span style={{
                 display: "inline-block",
                 padding: "4px 14px", borderRadius: 999,
-                background: "#1F4E3D", color: "#fff",
+                background: "#22C55E", color: "#0B0F0C",
                 fontSize: 13, fontWeight: 900, letterSpacing: "0.02em",
               }}>
                 {discountBadgeText(deal)}
@@ -198,16 +198,16 @@ export default function DealDetailPage() {
                 marginBottom: 16,
                 padding: "12px 14px",
                 borderRadius: 14,
-                background: "rgba(247, 246, 241, 0.96)",
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 8px 24px rgba(16,24,40,0.08)",
+                background: "rgba(18, 26, 20, 0.96)",
+                border: "1px solid #1F2937",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
                 backdropFilter: "blur(10px)",
               }}
             >
               {restaurantUrl ? (
                 <Link
                   to={restaurantUrl}
-                  style={{ fontSize: 13, color: "#1F4E3D", fontWeight: 700, textDecoration: "none" }}
+                  style={{ fontSize: 13, color: "#22C55E", fontWeight: 700, textDecoration: "none" }}
                 >
                   {deal.restaurant_name}
                 </Link>
@@ -240,9 +240,9 @@ export default function DealDetailPage() {
                       height: 38,
                       padding: "0 14px",
                       borderRadius: 10,
-                      border: "1.5px solid #1F4E3D",
-                      background: "#fff",
-                      color: "#1F4E3D",
+                      border: "1.5px solid #22C55E",
+                      background: "transparent",
+                      color: "#22C55E",
                       fontSize: 13,
                       fontWeight: 800,
                       textDecoration: "none",
@@ -261,9 +261,9 @@ export default function DealDetailPage() {
                     height: 38,
                     padding: "0 14px",
                     borderRadius: 10,
-                    border: "1.5px solid #e4e7ec",
-                    background: "#fff",
-                    color: "#344054",
+                    border: "1.5px solid #1F2937",
+                    background: "transparent",
+                    color: "#9CA3AF",
                     fontSize: 13,
                     fontWeight: 800,
                     cursor: "pointer",
@@ -278,9 +278,9 @@ export default function DealDetailPage() {
             {deal.description && (
               <div style={{
                 marginTop: 16, padding: "14px 16px",
-                borderRadius: 12, background: "#fff",
-                border: "1px solid #eee",
-                fontSize: 14, color: "#344054", lineHeight: 1.65,
+                borderRadius: 12, background: "#121A14",
+                border: "1px solid #1F2937",
+                fontSize: 14, color: "#D1D5DB", lineHeight: 1.65,
               }}>
                 {deal.description}
               </div>
@@ -290,13 +290,13 @@ export default function DealDetailPage() {
             {deal.menu_item_name && (
               <div style={{
                 marginTop: 12, padding: "14px 16px",
-                borderRadius: 12, background: "#fff",
-                border: "1px solid #eee",
+                borderRadius: 12, background: "#121A14",
+                border: "1px solid #1F2937",
               }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   Includes
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#101828" }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF" }}>
                   {deal.menu_item_name}
                 </div>
                 {deal.menu_item_description && (
@@ -308,7 +308,7 @@ export default function DealDetailPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
                   {hasDealPrice && (
                     <span style={{
-                      fontSize: 18, fontWeight: 900, color: "#1F4E3D",
+                      fontSize: 18, fontWeight: 900, color: "#22C55E",
                     }}>
                       {formatCents(dealPriceCents)}
                     </span>
@@ -322,7 +322,7 @@ export default function DealDetailPage() {
                     </span>
                   )}
                   {!hasDealPrice && dealPriceCents != null && (
-                    <span style={{ fontSize: 18, fontWeight: 900, color: "#101828" }}>
+                    <span style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF" }}>
                       {formatCents(dealPriceCents)}
                     </span>
                   )}
@@ -334,8 +334,8 @@ export default function DealDetailPage() {
             {deal.deal_type === "bundle" && (
               <div style={{
                 marginTop: 12, padding: "14px 16px",
-                borderRadius: 12, background: "#fffbeb",
-                border: "1px solid #fde68a",
+                borderRadius: 12, background: "#1c1a0a",
+                border: "1px solid #44400a",
               }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: "#92400e", marginBottom: 4 }}>
                   Customize your deal
@@ -350,10 +350,10 @@ export default function DealDetailPage() {
             {/* Terms section */}
             <div style={{
               marginTop: 12, padding: "14px 16px",
-              borderRadius: 12, background: "#fff",
-              border: "1px solid #eee",
+              borderRadius: 12, background: "#121A14",
+              border: "1px solid #1F2937",
             }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                 Deal terms
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
@@ -385,9 +385,9 @@ export default function DealDetailPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{
                     textAlign: "center", padding: "14px",
-                    borderRadius: 12, background: "#f0fdf4",
-                    border: "1px solid #bbf7d0",
-                    fontSize: 14, fontWeight: 800, color: "#15803d",
+                    borderRadius: 12, background: "rgba(34,197,94,0.1)",
+                    border: "1px solid rgba(34,197,94,0.3)",
+                    fontSize: 14, fontWeight: 800, color: "#22C55E",
                   }}>
                     ✓ Added to your order
                   </div>

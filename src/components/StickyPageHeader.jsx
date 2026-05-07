@@ -8,8 +8,8 @@ export default function StickyPageHeader({ onBack, title, children }) {
   return (
     <div style={{
       position: "sticky", top: 0, zIndex: 100,
-      background: "#f7f6f1",
-      borderBottom: "1px solid rgba(0,0,0,0.06)",
+      background: "#0B0F0C",
+      borderBottom: "1px solid #1F2937",
       paddingBottom: title || children ? 12 : 0,
     }}>
       <div style={{
@@ -22,35 +22,20 @@ export default function StickyPageHeader({ onBack, title, children }) {
           aria-label="Go back"
           style={{
             border: "none", background: "transparent",
-            fontSize: 22, color: "#101828", cursor: "pointer",
+            fontSize: 22, color: "#9CA3AF", cursor: "pointer",
             padding: 4, lineHeight: 1, flexShrink: 0,
           }}
         >
           ←
         </button>
-        <Link to="/" style={{ display: "flex", flexDirection: "column", alignItems: "center", textDecoration: "none" }}>
-          <BrandLogo width={72} height={48} radius={14} pageColor="#f7f6f1" />
-          <div style={{
-            width: 72, marginTop: -1, padding: "4px 0 6px",
-            background: "linear-gradient(180deg, #ff9a2f 0%, #ff6b00 100%)",
-            color: "#1d4ed8", fontSize: 8, fontWeight: 900,
-            letterSpacing: "0.13em", textTransform: "uppercase",
-            borderRadius: "0 0 7px 7px",
-            boxShadow: "0 6px 16px rgba(255,107,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",
-            userSelect: "none",
-            display: "flex", justifyContent: "center",
-          }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-              <span>✦ BidFree</span>
-              <span style={{ paddingLeft: "1.4em" }}>Bidding</span>
-            </div>
-          </div>
+        <Link to="/" style={{ display: "inline-flex", textDecoration: "none" }}>
+          <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
         </Link>
         <div style={{ width: 30, flexShrink: 0 }} />
       </div>
       {title && (
         <div style={{ padding: "0 16px" }}>
-          <span style={{ fontSize: 17, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em" }}>
+          <span style={{ fontSize: 17, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.02em" }}>
             {title}
           </span>
         </div>

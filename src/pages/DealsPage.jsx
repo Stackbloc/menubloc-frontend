@@ -137,10 +137,10 @@ function DealRow({ deal, restaurantUrl, onShare }) {
   const dealUrl = buildDealUrl(deal);
   const link = dealUrl || restaurantUrl;
   return (
-    <div style={{ padding: "10px 14px", borderTop: "1px solid #f2f4f7" }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#101828", marginBottom: 3 }}>
+    <div style={{ padding: "10px 14px", borderTop: "1px solid #1F2937" }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF", marginBottom: 3 }}>
         {link ? (
-          <Link to={link} style={{ color: "#101828", textDecoration: "none" }}>
+          <Link to={link} style={{ color: "#FFFFFF", textDecoration: "none" }}>
             {deal.title || "Untitled Deal"}
           </Link>
         ) : (
@@ -159,8 +159,8 @@ function DealRow({ deal, restaurantUrl, onShare }) {
             style={{
               display: "inline-flex", alignItems: "center",
               height: 26, padding: "0 11px",
-              borderRadius: 999, background: "#1F4E3D",
-              color: "#fff", fontSize: 12, fontWeight: 800,
+              borderRadius: 999, background: "#22C55E",
+              color: "#0B0F0C", fontSize: 12, fontWeight: 800,
               textDecoration: "none",
             }}
           >
@@ -307,16 +307,16 @@ export default function DealsPage() {
   }
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       <style>{`
         .deals-skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
         @keyframes skelPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
       `}</style>
 
       {/* ── STICKY TOP: page header + search + location title ── */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "#f7f6f1" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "#0B0F0C" }}>
         <StickyPageHeader />
-        <div style={{ borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: 12 }}>
+        <div style={{ borderBottom: "1px solid #1F2937", paddingBottom: 12 }}>
           {/* Search bar */}
           <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0" }}>
             <input
@@ -327,17 +327,17 @@ export default function DealsPage() {
               style={{
                 width: "100%", boxSizing: "border-box",
                 height: 36, borderRadius: 999,
-                border: "1.5px solid rgba(0,0,0,0.10)",
-                background: "#fff", padding: "0 14px",
-                fontSize: 13, fontWeight: 600, color: "#101828",
-                outline: "none", boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+                border: "1.5px solid #1F2937",
+                background: "#121A14", padding: "0 14px",
+                fontSize: 13, fontWeight: 600, color: "#F9FAFB",
+                outline: "none",
               }}
             />
           </div>
 
           {/* Page title row */}
           <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0", textAlign: "center" }}>
-            <span style={{ fontSize: 18, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em" }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.02em" }}>
               🔥 Deals Near {locationLabel || "You"}
             </span>
           </div>
@@ -352,7 +352,7 @@ export default function DealsPage() {
           <div
             key={i}
             className="deals-skeleton"
-            style={{ background: "#e4e7ec", borderRadius: 12, height: 110, marginBottom: 8 }}
+            style={{ background: "#1F2937", borderRadius: 12, height: 110, marginBottom: 8 }}
           />
         ))}
 
@@ -360,8 +360,8 @@ export default function DealsPage() {
         {!loading && error && (
           <div style={{
             padding: "20px 18px", borderRadius: 14, marginBottom: 8,
-            border: "1px solid #fecaca", background: "#fff8f8",
-            fontSize: 14, fontWeight: 700, color: "#b91c1c",
+            border: "1px solid #450a0a", background: "#1c0a0a",
+            fontSize: 14, fontWeight: 700, color: "#fca5a5",
           }}>
             Could not load deals: {error}
           </div>
@@ -395,9 +395,9 @@ export default function DealsPage() {
                   key={group.key}
                   style={{
                     borderRadius: 12,
-                    border: "1px solid #eee",
-                    background: "#fff",
-                    boxShadow: "0 1px 6px rgba(0,0,0,0.07)",
+                    border: "1px solid #1F2937",
+                    background: "#121A14",
+                    boxShadow: "0 4px 18px rgba(0,0,0,0.4)",
                     overflow: "hidden",
                   }}
                 >
@@ -407,12 +407,12 @@ export default function DealsPage() {
                       {restaurantUrl ? (
                         <Link
                           to={restaurantUrl}
-                          style={{ fontSize: 14, fontWeight: 800, color: "#101828", textDecoration: "none", lineHeight: 1.2 }}
+                          style={{ fontSize: 14, fontWeight: 800, color: "#FFFFFF", textDecoration: "none", lineHeight: 1.2 }}
                         >
                           {group.restaurantName}
                         </Link>
                       ) : (
-                        <div style={{ fontSize: 14, fontWeight: 800, color: "#101828" }}>{group.restaurantName}</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: "#FFFFFF" }}>{group.restaurantName}</div>
                       )}
                       {group.distanceMiles != null && (
                         <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, marginTop: 2 }}>
@@ -448,10 +448,10 @@ export default function DealsPage() {
                       onClick={() => toggleRestaurant(expandedKey)}
                       style={{
                         display: "block", width: "100%",
-                        border: "none", borderTop: "1px solid #f2f4f7",
+                        border: "none", borderTop: "1px solid #1F2937",
                         background: "transparent", padding: "10px 14px",
                         fontSize: 12, fontWeight: 800,
-                        color: "#1F4E3D", cursor: "pointer",
+                        color: "#22C55E", cursor: "pointer",
                         textAlign: "left",
                       }}
                     >

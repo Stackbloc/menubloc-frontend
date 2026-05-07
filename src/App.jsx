@@ -354,7 +354,7 @@ function AnalyticsTracker() {
 
     const gaReady = ensureGoogleAnalyticsLoaded();
     const pagePath = `${location.pathname}${location.search || ""}${location.hash || ""}`;
-    const pageTitle = typeof document !== "undefined" ? document.title || "Grubbid" : "Grubbid";
+    const pageTitle = typeof document !== "undefined" ? document.title || "Menuply" : "Menuply";
     const pageLocation = window.location.href;
 
     captureEvent("pageview", {

@@ -87,7 +87,7 @@ export default function TopPicksPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       <StickyPageHeader title={`Top Picks${locationLabel ? ` in ${locationLabel}` : ""}`} />
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 14px 80px" }}>
 
