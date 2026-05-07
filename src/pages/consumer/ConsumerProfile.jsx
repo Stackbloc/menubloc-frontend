@@ -75,7 +75,7 @@ function Section({ title, children, id }) {
 function SaveStatus({ status, isError = false }) {
   if (!status) return null;
   return (
-    <span style={{ ...styles.saveStatus, color: isError ? "#c0392b" : "#1F4E3D" }}>
+    <span style={{ ...styles.saveStatus, color: isError ? "#F87171" : "#22C55E" }}>
       {status}
     </span>
   );
@@ -438,7 +438,7 @@ export default function ConsumerProfile() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#f6f6f3",
+    background: "#0B0F0C",
     fontFamily: "Inter, Arial, sans-serif",
     padding: "0 0 calc(80px + env(safe-area-inset-bottom, 0px))",
   },
@@ -452,34 +452,34 @@ const styles = {
     alignItems: "center",
     justifyContent: "space-between",
     padding: "20px 0",
-    borderBottom: "1px solid #e8e8e4",
+    borderBottom: "1px solid #1F2937",
     marginBottom: "32px",
   },
   brand: {
     fontSize: "20px",
     fontWeight: 800,
-    color: "#1F4E3D",
+    color: "#22C55E",
     textDecoration: "none",
   },
   logoutBtn: {
     background: "none",
-    border: "1.5px solid #ccc",
+    border: "1.5px solid #374151",
     borderRadius: "8px",
     padding: "6px 14px",
     fontSize: "14px",
     fontWeight: 600,
     cursor: "pointer",
-    color: "#555",
+    color: "#9CA3AF",
     fontFamily: "inherit",
   },
   pageTitle: {
     fontSize: "26px",
     fontWeight: 700,
-    color: "#0f1720",
+    color: "#FFFFFF",
     marginBottom: "32px",
   },
   section: {
-    background: "#ffffff",
+    background: "#121A14",
     borderRadius: "14px",
     padding: "28px",
     marginBottom: "20px",
@@ -488,12 +488,12 @@ const styles = {
   sectionTitle: {
     fontSize: "17px",
     fontWeight: 700,
-    color: "#0f1720",
+    color: "#FFFFFF",
     margin: "0 0 16px",
   },
   sectionDesc: {
     fontSize: "14px",
-    color: "#666",
+    color: "#9CA3AF",
     margin: "0 0 16px",
     lineHeight: 1.5,
   },
@@ -512,26 +512,28 @@ const styles = {
   fieldLabel: {
     fontSize: "13px",
     fontWeight: 600,
-    color: "#444",
+    color: "#D1D5DB",
   },
   optText: {
     fontWeight: 400,
-    color: "#999",
+    color: "#6B7280",
     fontSize: "12px",
   },
   readOnly: {
     fontSize: "15px",
-    color: "#0f1720",
+    color: "#FFFFFF",
     margin: 0,
     padding: "10px 14px",
-    background: "#f6f6f3",
+    background: "#0B0F0C",
     borderRadius: "8px",
-    border: "1.5px solid #e8e8e4",
+    border: "1.5px solid #1F2937",
   },
   input: {
     padding: "10px 14px",
     borderRadius: "8px",
-    border: "1.5px solid #ddd",
+    border: "1.5px solid #374151",
+    background: "#1A2419",
+    color: "#FFFFFF",
     fontSize: "15px",
     outline: "none",
     fontFamily: "inherit",
@@ -548,8 +550,8 @@ const styles = {
   saveBtn: {
     padding: "10px 20px",
     borderRadius: "10px",
-    background: "#1F4E3D",
-    color: "#ffffff",
+    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+    color: "#0B0F0C",
     fontSize: "14px",
     fontWeight: 700,
     border: "none",
@@ -578,12 +580,12 @@ const styles = {
   checkbox: {
     width: "16px",
     height: "16px",
-    accentColor: "#1F4E3D",
+    accentColor: "#22C55E",
     flexShrink: 0,
   },
   prefLabel: {
     fontSize: "14px",
-    color: "#0f1720",
+    color: "#FFFFFF",
   },
   coinsGrid: {
     display: "grid",
@@ -596,8 +598,8 @@ const styles = {
   },
   coinTile: {
     borderRadius: "12px",
-    border: "1px solid #e8e8e4",
-    background: "#f9faf7",
+    border: "1px solid #1F2937",
+    background: "#1A2419",
     padding: "14px 16px",
     display: "grid",
     gap: "6px",
@@ -605,20 +607,20 @@ const styles = {
   coinLabel: {
     fontSize: "12px",
     fontWeight: 700,
-    color: "#667085",
+    color: "#9CA3AF",
     textTransform: "uppercase",
     letterSpacing: "0.04em",
   },
   coinValue: {
     fontSize: "22px",
-    color: "#11211a",
+    color: "#FFFFFF",
   },
   currentLocation: {
     display: "flex",
     alignItems: "flex-start",
     gap: "10px",
     padding: "14px 16px",
-    background: "#f6f6f3",
+    background: "#0B0F0C",
     borderRadius: "10px",
   },
   locationIcon: {
@@ -628,7 +630,7 @@ const styles = {
   locationHint: {
     marginTop: "6px",
     fontSize: "13px",
-    color: "#667085",
+    color: "#9CA3AF",
     fontWeight: 500,
   },
   discoveryCtaRow: {
@@ -639,9 +641,9 @@ const styles = {
   discoveryBtn: {
     padding: "10px 16px",
     borderRadius: "10px",
-    border: "1px solid #cfd8d3",
-    background: "#fff",
-    color: "#11211a",
+    border: "1px solid #374151",
+    background: "#121A14",
+    color: "#FFFFFF",
     fontSize: "14px",
     fontWeight: 800,
     cursor: "pointer",
@@ -654,8 +656,8 @@ const styles = {
     minHeight: "42px",
     padding: "0 16px",
     borderRadius: "10px",
-    background: "#1F4E3D",
-    color: "#ffffff",
+    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+    color: "#0B0F0C",
     textDecoration: "none",
     fontSize: "14px",
     fontWeight: 700,
@@ -664,18 +666,18 @@ const styles = {
     maxWidth: "520px",
     margin: "80px auto 0",
     padding: "28px",
-    background: "#fff",
+    background: "#121A14",
     borderRadius: "14px",
     boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
   },
   subheading: {
     fontSize: "15px",
-    color: "#555",
+    color: "#9CA3AF",
     marginTop: "14px",
   },
   errorBlock: {
     fontSize: "15px",
-    color: "#c0392b",
+    color: "#F87171",
     marginTop: "14px",
     lineHeight: 1.6,
   },
@@ -684,8 +686,8 @@ const styles = {
     padding: "10px 16px",
     borderRadius: "10px",
     border: "none",
-    background: "#1F4E3D",
-    color: "#fff",
+    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+    color: "#0B0F0C",
     fontSize: "14px",
     fontWeight: 700,
     cursor: "pointer",

@@ -46,8 +46,8 @@ function Badge({ label }) {
         fontSize: 11,
         fontWeight: 800,
         letterSpacing: 0.3,
-        background: "rgba(18,34,28,0.07)",
-        color: "#344054",
+        background: "rgba(34,197,94,0.12)",
+        color: "#9CA3AF",
         whiteSpace: "nowrap",
       }}
     >
@@ -66,9 +66,9 @@ function DishCard({ dish, rank, isMobile }) {
         flexDirection: isMobile ? "column" : "row",
         gap: isMobile ? 16 : 28,
         padding: isMobile ? "20px 18px" : "28px 32px",
-        background: "#fff",
+        background: "#121A14",
         borderRadius: 24,
-        border: "1px solid rgba(18,34,28,0.08)",
+        border: "1px solid #1F2937",
         boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
         alignItems: "flex-start",
       }}
@@ -100,7 +100,7 @@ function DishCard({ dish, rank, isMobile }) {
           style={{
             fontSize: isMobile ? 18 : 21,
             fontWeight: 900,
-            color: "#11211a",
+            color: "#FFFFFF",
             lineHeight: 1.2,
             marginBottom: 3,
             display: "block",
@@ -114,7 +114,7 @@ function DishCard({ dish, rank, isMobile }) {
           style={{
             fontSize: 13,
             fontWeight: 700,
-            color: "#667085",
+            color: "#9CA3AF",
             marginBottom: 10,
           }}
         >
@@ -137,7 +137,7 @@ function DishCard({ dish, rank, isMobile }) {
               marginLeft: 4,
               fontSize: 12,
               fontWeight: 800,
-              color: "#667085",
+              color: "#9CA3AF",
             }}
           >
             Score: {dish.health_score}
@@ -194,7 +194,7 @@ export default function Top5HealthiestPage() {
   if (state) searchParams.set("state", state);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       <StickyPageHeader title="Top Health Score Dishes" />
       <div
         style={{
@@ -213,7 +213,7 @@ export default function Top5HealthiestPage() {
               fontWeight: 800,
               letterSpacing: 1.4,
               textTransform: "uppercase",
-              color: "#667085",
+              color: "#9CA3AF",
               marginBottom: 8,
             }}
           >
@@ -227,7 +227,7 @@ export default function Top5HealthiestPage() {
               fontWeight: 900,
               letterSpacing: -0.5,
               lineHeight: 1.1,
-              color: "#11211a",
+              color: "#FFFFFF",
             }}
           >
             Top Health Score Dishes
@@ -238,7 +238,7 @@ export default function Top5HealthiestPage() {
               style={{
                 fontSize: isMobile ? 17 : 21,
                 fontWeight: 700,
-                color: "#2d6a4f",
+                color: "#22C55E",
                 marginTop: 6,
               }}
             >
@@ -250,7 +250,7 @@ export default function Top5HealthiestPage() {
             style={{
               margin: "14px 0 0",
               fontSize: isMobile ? 14 : 15,
-              color: "#475467",
+              color: "#9CA3AF",
               lineHeight: 1.6,
               maxWidth: 560,
             }}
@@ -292,7 +292,7 @@ export default function Top5HealthiestPage() {
           style={{
             marginTop: isMobile ? 40 : 56,
             paddingTop: isMobile ? 24 : 32,
-            borderTop: "1px solid #e4e7ec",
+            borderTop: "1px solid #1F2937",
             display: "flex",
             flexDirection: isMobile ? "column" : "row",
             alignItems: isMobile ? "flex-start" : "center",
@@ -307,9 +307,9 @@ export default function Top5HealthiestPage() {
               height: 44,
               padding: "0 20px",
               borderRadius: 12,
-              border: "1px solid #101828",
-              background: "#101828",
-              color: "#fff",
+              border: "none",
+              background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+              color: "#0B0F0C",
               fontSize: 14,
               fontWeight: 800,
               cursor: "pointer",
