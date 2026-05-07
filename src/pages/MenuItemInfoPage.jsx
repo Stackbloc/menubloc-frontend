@@ -14,7 +14,7 @@
  * ============================================================
  */
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -287,11 +287,38 @@ function PageShell({ children, isMobile }) {
   );
 }
 
-function Surface({ children, style }) {
+const Surface = React.forwardRef(function Surface({ children, style }, ref) {
   return (
-    <section style={{ background: "rgba(18,26,20,0.96)", border: "1px solid #1F2937", borderRadius: 24, boxShadow: "0 16px 44px rgba(20,33,27,0.08)", backdropFilter: "blur(8px)", ...style }}>
+    <section ref={ref} style={{ background: "rgba(18,26,20,0.96)", border: "1px solid #1F2937", borderRadius: 24, boxShadow: "0 16px 44px rgba(20,33,27,0.08)", backdropFilter: "blur(8px)", ...style }}>
       {children}
     </section>
+  );
+});
+
+function ItemStickyBar({ item, priceLabel, fullMenuHref, visible, t, language }) {
+  return (
+    <div style={{
+      position: "fixed", top: 73, left: 0, right: 0, zIndex: 60,
+      background: "#0B0F0C", borderBottom: "1px solid #1F2937",
+      padding: "10px 16px",
+      transform: visible ? "translateY(0)" : "translateY(-100%)",
+      transition: "transform 200ms ease",
+      pointerEvents: visible ? "auto" : "none",
+    }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <span style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: "1 1 0" }}>
+          {getLocalizedField(item, "name", language) || item?.name}
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+          {priceLabel && <span style={{ fontSize: 14, fontWeight: 900, color: "#22C55E" }}>{priceLabel}</span>}
+          {fullMenuHref && (
+            <Link to={fullMenuHref} style={{ display: "inline-flex", alignItems: "center", minHeight: 34, padding: "0 14px", borderRadius: 999, background: "#11211a", color: "#f8fafc", textDecoration: "none", fontSize: 13, fontWeight: 800 }}>
+              View Menu
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1048,6 +1075,9 @@ export default function MenuItemInfoPage() {
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
 
+  const heroRef = useRef(null);
+  const [heroVisible, setHeroVisible] = useState(true);
+
   const [loading,  setLoading]  = useState(true);
   const [err,      setErr]      = useState("");
   const [rawItem,  setRawItem]  = useState(null);
@@ -1122,9 +1152,25 @@ export default function MenuItemInfoPage() {
     });
   }, [shareData]);
 
+  useEffect(() => {
+    const node = heroRef.current;
+    if (!node) return undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroVisible(entry.isIntersecting),
+      { threshold: 0, rootMargin: "-73px 0px 0px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   const priceLabel =
     item?.priceMinor != null ? formatMoney(item.priceMinor) :
     item?.price      != null ? moneyFromFloat(item.price) : null;
+
+  const fullMenuHref = item ? buildCanonicalMenuPath({
+    restaurantSlug: item.restaurant.slug || null,
+    restaurantId: item.restaurant.id || null,
+  }) : null;
 
   if (loading) {
     return (
@@ -1156,17 +1202,22 @@ export default function MenuItemInfoPage() {
   const showItemPhoto = hasRenderableImage(item.itemPhotoUrl);
   const heroGridColumns = isMobile ? "1fr" : showItemPhoto ? "minmax(0, 1.4fr) minmax(280px, 0.95fr)" : "1fr";
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
-  const fullMenuHref = buildCanonicalMenuPath({
-    restaurantSlug: item.restaurant.slug || null,
-    restaurantId: item.restaurant.id || null,
-  });
 
   return (
-    <PageShell isMobile={isMobile}>
+    <>
+      <ItemStickyBar
+        item={item}
+        priceLabel={priceLabel}
+        fullMenuHref={fullMenuHref}
+        visible={!heroVisible}
+        t={t}
+        language={language}
+      />
+      <PageShell isMobile={isMobile}>
 
 
       {/* ── 1. Hero / Item Identity ── */}
-      <Surface style={{ padding: isMobile ? 18 : 24 }}>
+      <Surface ref={heroRef} style={{ padding: isMobile ? 18 : 24 }}>
         <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 24, alignItems: "stretch" }}>
           <div style={{ display: "grid", gap: 16 }}>
             <div>
@@ -1332,6 +1383,7 @@ export default function MenuItemInfoPage() {
         allergenFilter={effectiveAllergenFilter}
       />
 
-    </PageShell>
+      </PageShell>
+    </>
   );
 }
