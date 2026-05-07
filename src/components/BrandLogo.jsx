@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 
 const MENUPLY_LOGO_SCALE = 1.12;
 
-export const GRUBBID_LOGO_SRC = "/menuply-logo5-transparent.png";
+export const GRUBBID_LOGO_SRC = "/menuply-logo-dark.png";
 
 export function BrandLogo({
   to = "/",
