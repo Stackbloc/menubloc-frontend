@@ -42,6 +42,35 @@ function buildMenuHref(item) {
   return `/public/restaurants/${encodeURIComponent(String(item.restaurant_id))}/menu`;
 }
 
+function buildBillboardHref(item) {
+  return item.slug
+    ? `/restaurants/${encodeURIComponent(item.slug)}/billboard`
+    : `/restaurants/${encodeURIComponent(String(item.restaurant_id))}/billboard`;
+}
+
+function formatBillboardStatusLabel(status) {
+  const value = String(status || "").trim().toLowerCase();
+  if (!value) return "Current";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function formatBillboardDateRange(startsAt, endsAt) {
+  if (!startsAt && !endsAt) return "";
+
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  const startText = startsAt ? formatter.format(new Date(startsAt)) : "";
+  const endText = endsAt ? formatter.format(new Date(endsAt)) : "";
+
+  if (startText && endText) return `${startText} - ${endText}`;
+  return startText || endText;
+}
+
 export default function ConsumerFollowing() {
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const navigate = useNavigate();
@@ -138,6 +167,8 @@ export default function ConsumerFollowing() {
               const badge = formatTierLabel(item.profile_tier, item.listing_status);
               const restaurantHref = buildRestaurantHref(item);
               const menuHref = buildMenuHref(item);
+              const billboardHref = buildBillboardHref(item);
+              const billboardPreview = Array.isArray(item.billboard_preview) ? item.billboard_preview : [];
 
               return (
                 <div key={item.restaurant_id} style={styles.menuCard}>
@@ -179,13 +210,39 @@ export default function ConsumerFollowing() {
                       <span style={styles.windowDot} />
                     </div>
                     <div style={styles.windowPanel}>
-                      <div style={styles.windowLabel}>Menu Window</div>
+                      <div style={styles.windowLabel}>Restaurant Snapshot</div>
                       <div style={styles.windowTitle}>{item.restaurant_name || "Restaurant"}</div>
                       <div style={styles.windowMeta}>
                         {location || "Location unavailable"}
                       </div>
+                      {billboardPreview.length > 0 ? (
+                        <div style={styles.billboardPreview}>
+                          <div style={styles.billboardPreviewLabel}>Billboard</div>
+                          {billboardPreview.slice(0, 2).map((post) => {
+                            const dateRange = formatBillboardDateRange(post.starts_at, post.ends_at);
+                            return (
+                              <div key={post.id} style={styles.billboardPreviewCard}>
+                                <div style={styles.billboardPreviewTitleRow}>
+                                  <div style={styles.billboardPreviewTitle}>{post.title}</div>
+                                  <span style={styles.billboardPreviewStatus}>
+                                    {formatBillboardStatusLabel(post.status)}
+                                  </span>
+                                </div>
+                                {post.body ? (
+                                  <div style={styles.billboardPreviewBody}>{post.body}</div>
+                                ) : null}
+                                {dateRange ? (
+                                  <div style={styles.billboardPreviewMeta}>{dateRange}</div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div style={styles.billboardEmpty}>No billboard updates yet.</div>
+                      )}
                       <div style={styles.windowActions}>
-                        <Link to={restaurantHref} style={styles.secondaryLink}>Restaurant</Link>
+                        <Link to={billboardHref} style={styles.secondaryLink}>Billboard</Link>
                         <Link to={menuHref} style={styles.primaryLink}>View Menu</Link>
                       </div>
                     </div>
@@ -471,6 +528,66 @@ const styles = {
     fontSize: "14px",
     color: "#9CA3AF",
     lineHeight: 1.5,
+  },
+  billboardPreview: {
+    display: "grid",
+    gap: "10px",
+    marginTop: "4px",
+  },
+  billboardPreviewLabel: {
+    fontSize: "11px",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#22C55E",
+  },
+  billboardPreviewCard: {
+    display: "grid",
+    gap: "6px",
+    padding: "12px",
+    borderRadius: "12px",
+    background: "#162019",
+    border: "1px solid #1F2937",
+  },
+  billboardPreviewTitleRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "10px",
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+  },
+  billboardPreviewTitle: {
+    fontSize: "14px",
+    fontWeight: 700,
+    color: "#FFFFFF",
+    lineHeight: 1.35,
+  },
+  billboardPreviewStatus: {
+    display: "inline-flex",
+    alignItems: "center",
+    minHeight: "22px",
+    padding: "0 8px",
+    borderRadius: "999px",
+    background: "rgba(34,197,94,0.12)",
+    color: "#86EFAC",
+    fontSize: "11px",
+    fontWeight: 800,
+  },
+  billboardPreviewBody: {
+    fontSize: "13px",
+    color: "#D1D5DB",
+    lineHeight: 1.5,
+  },
+  billboardPreviewMeta: {
+    fontSize: "12px",
+    color: "#9CA3AF",
+    lineHeight: 1.4,
+  },
+  billboardEmpty: {
+    fontSize: "13px",
+    color: "#9CA3AF",
+    lineHeight: 1.5,
+    padding: "10px 0 2px",
   },
   windowActions: {
     display: "flex",
