@@ -9,14 +9,14 @@ export default function StickyPageHeader({ title, children }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div style={{
-      position: "sticky", top: 0, zIndex: 100,
-      background: "#0B0F0C",
-      borderBottom: "1px solid #1F2937",
-      paddingBottom: title || children ? 12 : 0,
-    }}>
+    <div style={{ position: "sticky", top: 0, zIndex: 100 }}>
       <DiscoveryDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <div style={{ maxWidth: 576, margin: "0 auto" }}>
+      <div style={{
+        maxWidth: 576, margin: "0 auto",
+        background: "#0B0F0C",
+        borderBottom: "1px solid #1F2937",
+        paddingBottom: title || children ? 12 : 0,
+      }}>
         <div style={{
           display: "flex", alignItems: "center",
           padding: "14px 16px 10px",
