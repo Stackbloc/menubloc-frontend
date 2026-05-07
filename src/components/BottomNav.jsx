@@ -28,11 +28,10 @@ function buildSearchHref() {
 }
 
 const TABS = [
-  { label: "Home",        icon: "🏠", to: "/" },
-  { label: "Explore",     icon: "🔍", to: "/search", buildHref: buildSearchHref },
-  { label: "Food Trucks", icon: "🚚", to: "/foodtrucks" },
-  { label: "Following",   icon: "F",  to: "/account/following" },
-  { label: "Basket",      icon: "🛒", to: "/checkout" },
+  { label: "Home",      icon: "🏠", to: "/" },
+  { label: "Explore",   icon: "🔍", to: "/search", buildHref: buildSearchHref },
+  { label: "Following", icon: "F",  to: "/account/following" },
+  { label: "Basket",    icon: "🛒", to: "/checkout" },
 ];
 
 export default function BottomNav() {

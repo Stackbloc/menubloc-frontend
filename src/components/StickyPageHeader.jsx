@@ -1,11 +1,12 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { BrandLogo } from "./BrandLogo.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
+import AppMenuSheet from "./grubbid/AppMenuSheet.jsx";
 
-export default function StickyPageHeader({ onBack, title, children }) {
-  const navigate = useNavigate();
-  const handleBack = onBack ?? (() => navigate(-1));
+export default function StickyPageHeader({ title, children }) {
   const { isAuthenticated, loading: consumerLoading } = useConsumer();
+  const [appMenuOpen, setAppMenuOpen] = useState(false);
 
   return (
     <div style={{
@@ -14,21 +15,22 @@ export default function StickyPageHeader({ onBack, title, children }) {
       borderBottom: "1px solid #1F2937",
       paddingBottom: title || children ? 12 : 0,
     }}>
+      <AppMenuSheet open={appMenuOpen} onClose={() => setAppMenuOpen(false)} />
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "14px 16px 10px",
       }}>
         <button
           type="button"
-          onClick={handleBack}
-          aria-label="Go back"
+          onClick={() => setAppMenuOpen(true)}
+          aria-label="Open menu"
           style={{
             border: "none", background: "transparent",
             fontSize: 22, color: "#9CA3AF", cursor: "pointer",
             padding: 4, lineHeight: 1, flexShrink: 0,
           }}
         >
-          ←
+          ☰
         </button>
         <Link to="/" style={{ display: "inline-flex", textDecoration: "none" }}>
           <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
