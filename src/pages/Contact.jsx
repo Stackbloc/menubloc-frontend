@@ -26,7 +26,7 @@ const rowStyle = {
   display: "grid",
   gap: 4,
   padding: "16px 0",
-  borderTop: "1px solid rgba(18,34,28,0.08)",
+  borderTop: "1px solid #1F2937",
 };
 
 const labelStyle = {
@@ -88,7 +88,7 @@ export default function Contact() {
               style={{
                 ...rowStyle,
                 borderBottom: index === contactRows.length - 1
-                  ? "1px solid rgba(18,34,28,0.08)"
+                  ? "1px solid #1F2937"
                   : "none",
               }}
             >

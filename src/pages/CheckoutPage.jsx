@@ -155,7 +155,7 @@ function PaymentStep({ orderId, onSuccess }) {
             marginTop: 14,
             padding: "10px 12px",
             borderRadius: 12,
-            background: "#fee2e2",
+            background: "rgba(239,68,68,0.08)",
             color: "#991b1b",
             fontSize: 13,
             fontWeight: 700,
@@ -172,8 +172,8 @@ function PaymentStep({ orderId, onSuccess }) {
           width: "100%",
           border: "none",
           borderRadius: 16,
-          background: submitting ? "#94a3b8" : "#11211a",
-          color: "#fff",
+          background: submitting ? "#4B5563" : "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+          color: "#0B0F0C",
           padding: "14px 16px",
           fontSize: 15,
           fontWeight: 900,
@@ -187,7 +187,7 @@ function PaymentStep({ orderId, onSuccess }) {
           marginTop: 12,
           fontSize: 12,
           lineHeight: 1.6,
-          color: "#667085",
+          color: "#9CA3AF",
         }}
       >
         By placing your order, you agree to the{" "}
@@ -274,18 +274,19 @@ export default function CheckoutPage() {
       width: "100%",
       boxSizing: "border-box",
       borderRadius: 14,
-      border: "1px solid #d0d5dd",
+      border: "1px solid #374151",
       padding: "12px 14px",
       fontSize: 16,
-      background: "#fff",
+      background: "#1A2419",
+      color: "#FFFFFF",
     }),
     []
   );
   const sectionCardStyle = useMemo(
     () => ({
       borderRadius: 24,
-      background: "#fff",
-      border: "1px solid rgba(17,33,26,0.08)",
+      background: "#121A14",
+      border: "1px solid #1F2937",
       padding: isMobile ? "20px 16px" : "24px 22px",
       boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
     }),
@@ -424,21 +425,21 @@ export default function CheckoutPage() {
 
   if (!restaurant || items.length === 0) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#11211a" }}>
+      <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
         <StickyPageHeader title="Checkout" />
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "14px 18px 80px" }}>
           <div
             style={{
               marginTop: 28,
               borderRadius: 24,
-              background: "#fff",
-              border: "1px solid rgba(17,33,26,0.08)",
+              background: "#121A14",
+              border: "1px solid #1F2937",
               padding: "28px 24px",
               boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
             }}
           >
             <h1 style={{ fontSize: 28, margin: 0 }}>Your basket is empty</h1>
-            <p style={{ marginTop: 10, color: "#667085", fontSize: 15, lineHeight: 1.6 }}>
+            <p style={{ marginTop: 10, color: "#9CA3AF", fontSize: 15, lineHeight: 1.6 }}>
               Add items from a menu to start an order.
             </p>
             <Link to={menuPath} style={{ color: "#14532d", fontWeight: 800 }}>
@@ -565,7 +566,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#11211a" }}>
+    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       <StickyPageHeader title="Checkout" />
       <div style={{ maxWidth: 1120, margin: "0 auto", padding: "14px 18px 80px" }}>
 
@@ -578,11 +579,11 @@ export default function CheckoutPage() {
           }}
         >
           <section style={sectionCardStyle}>
-            <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7, color: "#667085" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7, color: "#9CA3AF" }}>
               Checkout
             </div>
             <h1 style={{ fontSize: isMobile ? 28 : 32, margin: "8px 0 6px" }}>{restaurant.restaurantName}</h1>
-            <p style={{ margin: 0, color: "#667085", lineHeight: 1.6 }}>
+            <p style={{ margin: 0, color: "#9CA3AF", lineHeight: 1.6 }}>
               Prices and totals are recalculated on the server before payment. The restaurant receives the direct charge on its connected Stripe account.
             </p>
 
@@ -627,9 +628,9 @@ export default function CheckoutPage() {
                         onClick={() => setFulfillmentType(value)}
                         style={{
                           borderRadius: 14,
-                          border: active ? "1.5px solid #11211a" : "1px solid #d0d5dd",
-                          background: active ? "#11211a" : "#fff",
-                          color: active ? "#fff" : "#11211a",
+                          border: active ? "1.5px solid #22C55E" : "1px solid #374151",
+                          background: active ? "#22C55E" : "#1A2419",
+                          color: active ? "#0B0F0C" : "#D1D5DB",
                           padding: "10px 18px",
                           fontSize: 13,
                           fontWeight: 800,
@@ -718,12 +719,12 @@ export default function CheckoutPage() {
                 <div
                   style={{
                     borderRadius: 16,
-                    border: "1px solid rgba(17,33,26,0.10)",
-                    background: "#fffef8",
+                    border: "1px solid #1F2937",
+                    background: "#121A14",
                     padding: "14px 16px",
                   }}
                 >
-                  <div style={{ fontSize: 13, fontWeight: 900, color: "#11211a" }}>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: "#FFFFFF" }}>
                     G-Coins balance: {formatMoney(previewState.data.coins.available_balance_cents)}
                   </div>
                   <label
@@ -733,7 +734,7 @@ export default function CheckoutPage() {
                       alignItems: "center",
                       gap: 10,
                       fontSize: 14,
-                      color: "#11211a",
+                      color: "#FFFFFF",
                       cursor: "pointer",
                     }}
                   >
@@ -753,7 +754,7 @@ export default function CheckoutPage() {
                     <span>Apply G-Coins</span>
                   </label>
                   {!previewState.data?.coins?.can_redeem && !previewState.data?.coins?.applied && previewState.data?.coins?.user_message ? (
-                    <div style={{ marginTop: 8, fontSize: 12, color: "#667085" }}>
+                    <div style={{ marginTop: 8, fontSize: 12, color: "#9CA3AF" }}>
                       {previewState.data.coins.user_message}
                     </div>
                   ) : null}
@@ -765,7 +766,7 @@ export default function CheckoutPage() {
                   style={{
                     padding: "12px 14px",
                     borderRadius: 14,
-                    background: "#fee2e2",
+                    background: "rgba(239,68,68,0.08)",
                     color: "#991b1b",
                     fontSize: 13,
                     fontWeight: 700,
@@ -784,8 +785,8 @@ export default function CheckoutPage() {
                       width: "100%",
                       border: "none",
                       borderRadius: 16,
-                      background: creatingIntent ? "#94a3b8" : "#11211a",
-                      color: "#fff",
+                      background: creatingIntent ? "#4B5563" : "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+                      color: "#0B0F0C",
                       padding: "14px 16px",
                       fontSize: 15,
                       fontWeight: 900,
@@ -800,7 +801,7 @@ export default function CheckoutPage() {
 
             {paymentSession ? (
               <div style={{ marginTop: 26 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7, color: "#667085", marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7, color: "#9CA3AF", marginBottom: 10 }}>
                   Payment
                 </div>
                 <Elements stripe={stripePromise} options={{ clientSecret: paymentSession.clientSecret }}>
@@ -819,12 +820,12 @@ export default function CheckoutPage() {
                   style={{
                     marginTop: 18,
                     paddingTop: 18,
-                    borderTop: "1px solid rgba(17,33,26,0.08)",
+                    borderTop: "1px solid #1F2937",
                   }}
                 >
                   {canUseBmt ? (
                     <>
-                      <div style={{ fontSize: 13, color: "#667085", lineHeight: 1.5 }}>
+                      <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.5 }}>
                         Need someone else to pay?
                       </div>
                       <button
@@ -854,15 +855,15 @@ export default function CheckoutPage() {
                           style={{
                             marginTop: 14,
                             borderRadius: 18,
-                            border: "1px solid rgba(17,33,26,0.10)",
-                            background: "#fffef8",
+                            border: "1px solid #1F2937",
+                            background: "#121A14",
                             padding: "14px 16px",
                           }}
                         >
-                          <div style={{ fontSize: 15, fontWeight: 900, color: "#11211a" }}>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF" }}>
                             Send this order to someone else to pay?
                           </div>
-                          <div style={{ marginTop: 6, fontSize: 13, color: "#667085", lineHeight: 1.5 }}>
+                          <div style={{ marginTop: 6, fontSize: 13, color: "#9CA3AF", lineHeight: 1.5 }}>
                             This request expires in 30 minutes.
                           </div>
                           <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 10 }}>
@@ -873,8 +874,8 @@ export default function CheckoutPage() {
                               style={{
                                 borderRadius: 14,
                                 border: "none",
-                                background: "#11211a",
-                                color: "#fff",
+                                background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+                                color: "#0B0F0C",
                                 padding: "12px 14px",
                                 fontSize: 14,
                                 fontWeight: 900,
@@ -889,9 +890,9 @@ export default function CheckoutPage() {
                               disabled={creatingBmt}
                               style={{
                                 borderRadius: 14,
-                                border: "1px solid rgba(17,33,26,0.12)",
-                                background: "#fff",
-                                color: "#11211a",
+                                border: "1px solid #374151",
+                                background: "#1A2419",
+                                color: "#D1D5DB",
                                 padding: "12px 14px",
                                 fontSize: 14,
                                 fontWeight: 800,
@@ -910,7 +911,7 @@ export default function CheckoutPage() {
                         paddingTop: 2,
                       }}
                     >
-                      <div style={{ fontSize: 14, fontWeight: 900, color: "#11211a" }}>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: "#FFFFFF" }}>
                         {bmtGateTitle}
                       </div>
                       <button
@@ -944,7 +945,7 @@ export default function CheckoutPage() {
               top: isMobile ? "auto" : 24,
             }}
           >
-            <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7, color: "#667085" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7, color: "#9CA3AF" }}>
               Order summary
             </div>
             <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
@@ -955,16 +956,16 @@ export default function CheckoutPage() {
                 <div
                   key={item.lineId}
                   style={{
-                    border: "1px solid rgba(17,33,26,0.08)",
+                    border: "1px solid #1F2937",
                     borderRadius: 18,
-                    background: pricingUnavailable ? "#f8fafc" : "#fffef8",
+                    background: "#121A14",
                     padding: "12px 14px",
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 900 }}>{item.name}</div>
-                      <div style={{ fontSize: 12, color: "#667085", marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 4 }}>
                         Qty {item.quantity}
                       </div>
                       {pricingUnavailable ? (
@@ -976,7 +977,7 @@ export default function CheckoutPage() {
                               width: "fit-content",
                               borderRadius: 999,
                               padding: "3px 8px",
-                              background: "#fff7ed",
+                              background: "rgba(234,179,8,0.08)",
                               color: "#9a3412",
                               border: "1px solid #fdba74",
                               fontSize: 11,
@@ -1031,10 +1032,10 @@ export default function CheckoutPage() {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: 10,
-                        border: "1px solid rgba(17,33,26,0.10)",
+                        border: "1px solid #1F2937",
                         borderRadius: 999,
                         padding: "4px 6px",
-                        background: "#f8fafc",
+                        background: "#1A2419",
                       }}
                     >
                       <button
@@ -1042,7 +1043,7 @@ export default function CheckoutPage() {
                         onClick={() => updateQuantity(item.lineId, item.quantity - 1)}
                         style={{
                           border: "none",
-                          background: "#fff",
+                          background: "#1F2937",
                           width: 30,
                           height: 30,
                           borderRadius: 999,
@@ -1062,7 +1063,7 @@ export default function CheckoutPage() {
                         disabled={pricingUnavailable}
                         style={{
                           border: "none",
-                          background: "#fff",
+                          background: "#1F2937",
                           width: 30,
                           height: 30,
                           borderRadius: 999,
@@ -1104,9 +1105,9 @@ export default function CheckoutPage() {
                   justifyContent: "center",
                   padding: "11px 16px",
                   borderRadius: 12,
-                  border: "1.5px solid rgba(17,33,26,0.18)",
-                  background: "#fff",
-                  color: "#11211a",
+                  border: "1.5px solid #374151",
+                  background: "#1A2419",
+                  color: "#D1D5DB",
                   fontSize: 14,
                   fontWeight: 700,
                   textDecoration: "none",
@@ -1117,15 +1118,15 @@ export default function CheckoutPage() {
               </Link>
             </div>
 
-            <div style={{ marginTop: 20, borderTop: "1px solid rgba(17,33,26,0.08)", paddingTop: 16, display: "grid", gap: 10 }}>
+            <div style={{ marginTop: 20, borderTop: "1px solid #1F2937", paddingTop: 16, display: "grid", gap: 10 }}>
               {previewState.status === "loading" ? (
-                <div style={{ fontSize: 14, color: "#667085" }}>Calculating server-side totals…</div>
+                <div style={{ fontSize: 14, color: "#9CA3AF" }}>Calculating server-side totals…</div>
               ) : previewState.status === "error" ? (
                 <div style={{ fontSize: 14, color: "#991b1b", lineHeight: 1.6 }}>{previewState.error}</div>
               ) : previewState.data ? (
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                    <span style={{ color: "#667085" }}>Items subtotal</span>
+                    <span style={{ color: "#9CA3AF" }}>Items subtotal</span>
                     <strong>{formatMoney(previewState.data.subtotal_cents)}</strong>
                   </div>
                   {totalDealsDiscountCents > 0 ? (
@@ -1139,7 +1140,7 @@ export default function CheckoutPage() {
                       style={{
                         marginTop: 10,
                         borderRadius: 12,
-                        background: "#f3f2ff",
+                        background: "rgba(34,197,94,0.06)",
                         border: "1px solid #c7d2fe",
                         padding: "10px 12px",
                         fontSize: 13,
@@ -1183,7 +1184,7 @@ export default function CheckoutPage() {
                           -{formatMoney(Math.round(Number(previewState.data.cart_negotiation.discount_amount || 0) * 100))}
                         </strong>
                       </div>
-                      <div style={{ fontSize: 12, color: "#667085", marginTop: 4 }}>Unlocked by Menuply</div>
+                      <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 4 }}>Unlocked by Menuply</div>
                     </div>
                   ) : null}
                   {currentPreviewData?.auto_optimization?.applied && currentPreviewData?.auto_optimization?.message ? (
@@ -1191,7 +1192,7 @@ export default function CheckoutPage() {
                       style={{
                         marginTop: 12,
                         borderRadius: 12,
-                        background: "#f0f5ff",
+                        background: "rgba(34,197,94,0.06)",
                         border: "1px solid #c3d5fa",
                         padding: "10px 12px",
                         fontSize: 13,
@@ -1210,9 +1211,9 @@ export default function CheckoutPage() {
                         marginTop: 14,
                         width: "100%",
                         borderRadius: 16,
-                        border: "1px solid #0f172a",
-                        background: userBidLoading ? "#94a3b8" : "#0f172a",
-                        color: "#fff",
+                        border: "none",
+                        background: userBidLoading ? "#4B5563" : "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+                        color: "#0B0F0C",
                         fontSize: 14,
                         fontWeight: 700,
                         padding: "12px 16px",
@@ -1226,11 +1227,11 @@ export default function CheckoutPage() {
                       style={{
                         marginTop: 14,
                         borderRadius: 14,
-                        border: "1px solid rgba(15,23,42,0.12)",
+                        border: "1px solid #1F2937",
                         padding: "12px 14px",
-                        background: "#fff",
+                        background: "#121A14",
                         fontSize: 13,
-                        color: "#0f172a",
+                        color: "#D1D5DB",
                       }}
                     >
                       {userBidMessageText}
@@ -1242,7 +1243,7 @@ export default function CheckoutPage() {
                         marginTop: 10,
                         padding: "10px 12px",
                         borderRadius: 12,
-                        background: "#fee2e2",
+                        background: "rgba(239,68,68,0.08)",
                         color: "#991b1b",
                         fontSize: 13,
                         fontWeight: 700,
@@ -1252,7 +1253,7 @@ export default function CheckoutPage() {
                     </div>
                   ) : null}
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                    <span style={{ color: "#667085" }}>Tax</span>
+                    <span style={{ color: "#9CA3AF" }}>Tax</span>
                     <strong>{formatMoney(previewState.data.tax_cents)}</strong>
                   </div>
                   {previewState.data.coins?.applied ? (
@@ -1270,15 +1271,15 @@ export default function CheckoutPage() {
                     </div>
                   ) : null}
                   {previewState.data.coins?.enabled && !previewState.data.coins?.applied && previewState.data.coins?.can_redeem ? (
-                    <div style={{ fontSize: 12, color: "#667085" }}>
+                    <div style={{ fontSize: 12, color: "#9CA3AF" }}>
                       Up to {formatMoney(previewState.data.coins.max_redeemable_cents)} available this order.
                     </div>
                   ) : null}
-                  <div style={{ fontSize: 12, lineHeight: 1.6, color: "#667085" }}>
+                  <div style={{ fontSize: 12, lineHeight: 1.6, color: "#9CA3AF" }}>
                     {MENUPLY_PRICE_DISCLOSURE}
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18 }}>
-                    <span style={{ color: "#11211a", fontWeight: 900 }}>Total</span>
+                    <span style={{ color: "#FFFFFF", fontWeight: 900 }}>Total</span>
                     <strong>{formatMoney(previewState.data.total_cents)}</strong>
                   </div>
                 </>
@@ -1317,11 +1318,12 @@ export default function CheckoutPage() {
             bottom: 18,
             zIndex: 1500,
             borderRadius: 14,
-            background: "#11211a",
-            color: "#fff",
+            background: "#121A14",
+            color: "#FFFFFF",
             padding: "12px 14px",
             fontSize: 13,
             fontWeight: 800,
+            border: "1px solid #1F2937",
             boxShadow: "0 18px 40px rgba(15,23,42,0.24)",
           }}
         >

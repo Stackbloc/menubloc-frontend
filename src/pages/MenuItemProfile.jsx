@@ -72,7 +72,7 @@ export default function MenuItemProfile() {
     },
 
     titleSub: {
-      color: "#666",
+      color: "#9CA3AF",
       fontSize: isMobile ? 13 : 14,
       fontWeight: 500,
       marginLeft: 6,
@@ -88,7 +88,7 @@ export default function MenuItemProfile() {
     actionLink: {
       fontWeight: 900,
       textDecoration: "underline",
-      color: "#111",
+      color: "#FFFFFF",
       textUnderlineOffset: "3px",
       wordBreak: "break-word",
       padding: isMobile ? "10px 0" : 0,
@@ -99,8 +99,8 @@ export default function MenuItemProfile() {
       marginTop: 16,
       padding: isMobile ? 14 : 16,
       borderRadius: 12,
-      border: "1px solid #eee",
-      background: "#fafafa",
+      border: "1px solid #1F2937",
+      background: "#121A14",
       lineHeight: 1.5,
       wordBreak: "break-word",
       fontSize: isMobile ? 14 : 15,
