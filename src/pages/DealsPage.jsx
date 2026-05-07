@@ -220,6 +220,7 @@ export default function DealsPage() {
 
   useEffect(() => {
     if (urlLat != null && urlLng != null) return;
+    if (urlCity) return;
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => { setUserLat(pos.coords.latitude); setUserLng(pos.coords.longitude); },

@@ -191,7 +191,7 @@ export default function EasyMenuLanding() {
               </a>
 
               <a
-                href="mailto:menus@grubbid.com"
+                href="mailto:menus@menuply.com"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -212,7 +212,7 @@ export default function EasyMenuLanding() {
             </div>
 
             <div style={{ fontSize: 14, color: "#5b6675", wordBreak: "break-word" }}>
-              Prefer email? Send your menu to <strong>menus@grubbid.com</strong>.
+              Prefer email? Send your menu to <strong>menus@menuply.com</strong>.
             </div>
           </div>
 
@@ -301,7 +301,7 @@ export default function EasyMenuLanding() {
               >
                 <strong>Email your menu</strong>
                 <div style={{ color: "#5b6675", wordBreak: "break-word" }}>
-                  Send attachments directly to <strong>menus@grubbid.com</strong>.
+                  Send attachments directly to <strong>menus@menuply.com</strong>.
                 </div>
               </div>
 
@@ -636,7 +636,7 @@ export default function EasyMenuLanding() {
             </a>
 
             <a
-              href="mailto:menus@grubbid.com"
+              href="mailto:menus@menuply.com"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -652,7 +652,7 @@ export default function EasyMenuLanding() {
                 textDecoration: "none",
               }}
             >
-              Email menus@grubbid.com
+              Email menus@menuply.com
             </a>
           </div>
         </section>

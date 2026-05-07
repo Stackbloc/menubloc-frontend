@@ -46,15 +46,15 @@ const linkStyle = {
 const contactRows = [
   {
     label: "Menu submissions",
-    email: "menus@grubbid.com",
+    email: "menus@menuply.com",
   },
   {
     label: "Support related issues",
-    email: "support@grubbid.com",
+    email: "support@menuply.com",
   },
   {
     label: "All other inquiries",
-    email: "inquiries@grubbid.com",
+    email: "inquiries@menuply.com",
   },
 ];
 

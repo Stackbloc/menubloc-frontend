@@ -1083,7 +1083,7 @@ export default function PublicMenuPage() {
       ? data.active_delivery_providers
       : [],
     availableFulfillmentTypes:
-      Array.isArray(data?.available_fulfillment_types) && data.available_fulfillment_types.length > 0
+      Array.isArray(data?.available_fulfillment_types) && data.available_fulfillment_types.includes("delivery")
         ? data.available_fulfillment_types
         : ["pickup", "delivery"],
   };

@@ -755,7 +755,7 @@ function IngredientFlagsCard({ detailSystem, t }) {
               {processing.processing_level}
             </div>
             {processing.user_impact ? (
-              <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#53635a" }}>
+              <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#9CA3AF" }}>
                 {processing.user_impact}
               </div>
             ) : null}
@@ -900,7 +900,7 @@ function CompactConfidence({ detailSystem }) {
   const confidence = detailSystem?.confidence;
   if (!confidence?.message) return null;
   return (
-    <div style={{ fontSize: 13, lineHeight: 1.5, color: "#425149", fontWeight: 700 }}>
+    <div style={{ fontSize: 13, lineHeight: 1.5, color: "#9CA3AF", fontWeight: 700 }}>
       {confidence.message}
     </div>
   );
@@ -912,10 +912,10 @@ function MissingNutritionState() {
       <div style={{ fontSize: 20, fontWeight: 900, color: "#FFFFFF" }}>
         Nutrition estimate — confirm with restaurant
       </div>
-      <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.5, color: "#53635a", fontWeight: 700 }}>
+      <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.5, color: "#9CA3AF", fontWeight: 700 }}>
         Incomplete nutrition data is available for this item.
       </div>
-      <div style={{ marginTop: 4, fontSize: 14, lineHeight: 1.5, color: "#53635a" }}>
+      <div style={{ marginTop: 4, fontSize: 14, lineHeight: 1.5, color: "#9CA3AF" }}>
         Try similar items for guidance
       </div>
     </Surface>
@@ -1105,8 +1105,8 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
                       style={{
                         fontSize: 11,
                         fontWeight: 700,
-                        color: "#3a5a44",
-                        background: "rgba(40,100,60,0.08)",
+                        color: "#9CA3AF",
+                        background: "rgba(255,255,255,0.05)",
                         borderRadius: 20,
                         padding: "3px 10px",
                       }}
@@ -1229,7 +1229,7 @@ export default function MenuItemDetailPage() {
     return (
       <PageShell isMobile={isMobile}>
         <Surface style={{ padding: 22 }}>
-          <div style={{ fontSize: 14, color: "#53635a", fontWeight: 700 }}>{t("menuItemDetail.loadingItem", "Loading item...")}</div>
+          <div style={{ fontSize: 14, color: "#9CA3AF", fontWeight: 700 }}>{t("menuItemDetail.loadingItem", "Loading item...")}</div>
         </Surface>
       </PageShell>
     );
@@ -1240,7 +1240,7 @@ export default function MenuItemDetailPage() {
       <PageShell isMobile={isMobile}>
         <Surface style={{ padding: 22 }}>
           <div style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF" }}>{t("menuItemDetail.itemNotAvailable", "Item not available")}</div>
-          <div style={{ marginTop: 8, fontSize: 14, color: "#53635a", lineHeight: 1.5 }}>{err || t("menuItemDetail.itemCouldNotLoad", "Item could not load")}</div>
+          <div style={{ marginTop: 8, fontSize: 14, color: "#9CA3AF", lineHeight: 1.5 }}>{err || t("menuItemDetail.itemCouldNotLoad", "Item could not load")}</div>
         </Surface>
       </PageShell>
     );
@@ -1288,7 +1288,7 @@ export default function MenuItemDetailPage() {
                     </Link>
                   </div>
                   {(item.restaurant.city || item.restaurant.cuisine) ? (
-                    <div style={{ marginTop: 4, fontSize: 13, color: "#6a786f" }}>
+                    <div style={{ marginTop: 4, fontSize: 13, color: "#9CA3AF" }}>
                       {[item.restaurant.city, item.restaurant.cuisine].filter(Boolean).join(" · ")}
                     </div>
                   ) : null}
@@ -1354,7 +1354,7 @@ export default function MenuItemDetailPage() {
             </div>
 
             {(getLocalizedField(item, "description", language) || item.description) ? (
-              <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#405048", maxWidth: 760 }}>
+              <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#D1D5DB", maxWidth: 760 }}>
                 {getLocalizedField(item, "description", language) || item.description}
               </div>
             ) : null}

@@ -265,13 +265,13 @@ const VERDICT_THEMES = {
 };
 
 const SIGNAL_CHIP_COLORS = {
-  excellent: { bg: "rgba(26,154,74,0.12)",  color: "#1a6a3a", border: "1px solid rgba(26,154,74,0.22)" },
-  good:      { bg: "rgba(18,75,163,0.11)",  color: "#124ba3", border: "1px solid rgba(18,75,163,0.20)" },
-  moderate:  { bg: "rgba(176,96,0,0.11)",   color: "#9b5c00", border: "1px solid rgba(176,96,0,0.18)" },
-  high:      { bg: "rgba(184,40,0,0.11)",   color: "#a02800", border: "1px solid rgba(184,40,0,0.18)" },
-  very_high: { bg: "rgba(140,10,0,0.13)",   color: "#8a0a00", border: "1px solid rgba(140,10,0,0.20)" },
-  low:       { bg: "rgba(80,80,80,0.08)",   color: "#4a5450", border: "1px solid rgba(80,80,80,0.12)" },
-  default:   { bg: "rgba(20,33,27,0.06)",   color: "#D1D5DB", border: "1px solid rgba(20,33,27,0.10)" },
+  excellent: { bg: "rgba(34,197,94,0.12)",   color: "#22C55E", border: "1px solid rgba(34,197,94,0.3)"  },
+  good:      { bg: "rgba(34,197,94,0.08)",   color: "#86EFAC", border: "1px solid rgba(34,197,94,0.2)"  },
+  moderate:  { bg: "rgba(234,179,8,0.12)",   color: "#FBBF24", border: "1px solid rgba(234,179,8,0.2)"  },
+  high:      { bg: "rgba(239,68,68,0.12)",   color: "#F87171", border: "1px solid rgba(239,68,68,0.2)"  },
+  very_high: { bg: "rgba(185,28,28,0.15)",   color: "#FCA5A5", border: "1px solid rgba(185,28,28,0.25)" },
+  low:       { bg: "rgba(107,114,128,0.12)", color: "#9CA3AF", border: "1px solid rgba(107,114,128,0.2)" },
+  default:   { bg: "#1A2419",               color: "#D1D5DB", border: "1px solid #1F2937" },
 };
 
 // ── Layout Primitives ────────────────────────────────────────
@@ -296,7 +296,7 @@ function Surface({ children, style }) {
   );
 }
 
-function Eyebrow({ children, color = "#7a5b20" }) {
+function Eyebrow({ children, color = "#9CA3AF" }) {
   return (
     <div style={{ fontSize: 11, lineHeight: 1.2, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 900, color, marginBottom: 10 }}>
       {children}
@@ -307,9 +307,9 @@ function Eyebrow({ children, color = "#7a5b20" }) {
 function BadgePill({ children, tone = "default" }) {
   const tones = {
     default:  { background: "#121A14",  color: "#D1D5DB", border: "1px solid #1F2937" },
-    positive: { background: "rgba(38,120,74,0.12)", color: "#1c6a43", border: "1px solid rgba(38,120,74,0.16)" },
-    caution:  { background: "rgba(176,96,0,0.12)",  color: "#9b5c00", border: "1px solid rgba(176,96,0,0.14)" },
-    accent:   { background: "rgba(18,75,163,0.10)", color: "#124ba3", border: "1px solid rgba(18,75,163,0.14)" },
+    positive: { background: "rgba(34,197,94,0.12)", color: "#22C55E", border: "1px solid rgba(34,197,94,0.3)"  },
+    caution:  { background: "rgba(234,179,8,0.12)", color: "#FBBF24", border: "1px solid rgba(234,179,8,0.2)"  },
+    accent:   { background: "rgba(34,197,94,0.10)", color: "#22C55E", border: "1px solid rgba(34,197,94,0.2)"  },
   };
   return (
     <span style={{ display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "7px 12px", fontSize: 12, lineHeight: 1, fontWeight: 800, ...tones[tone] }}>
@@ -322,7 +322,7 @@ function SectionCard({ title, eyebrow, children, style }) {
   return (
     <Surface style={{ padding: 22, ...style }}>
       {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      <h2 style={{ margin: 0, fontSize: 22, lineHeight: 1.05, letterSpacing: "-0.03em", color: "#16241d" }}>{title}</h2>
+      <h2 style={{ margin: 0, fontSize: 22, lineHeight: 1.05, letterSpacing: "-0.03em", color: "#FFFFFF" }}>{title}</h2>
       <div style={{ marginTop: 16 }}>{children}</div>
     </Surface>
   );
@@ -532,14 +532,14 @@ function NutritionCard({ detailSystem, t }) {
               background: "#121A14",
               padding: "12px 14px",
               cursor: "pointer",
-              color: "#15241d",
+              color: "#FFFFFF",
               textAlign: "left",
             }}
           >
             <span style={{ fontSize: 14, fontWeight: 900 }}>
               {`Portion Size: ${selectedPortion.label} (~${selectedPortion.ounces} oz)`}
             </span>
-            <span style={{ fontSize: 12, fontWeight: 900, color: "#617167" }}>
+            <span style={{ fontSize: 12, fontWeight: 900, color: "#9CA3AF" }}>
               {portionMenuOpen ? "Hide" : "Change"}
             </span>
           </button>
@@ -558,11 +558,11 @@ function NutritionCard({ detailSystem, t }) {
                       background: active ? "rgba(34,197,94,0.12)" : "#121A14",
                       padding: "12px 10px",
                       cursor: "pointer",
-                      color: "#15241d",
+                      color: "#FFFFFF",
                     }}
                   >
                     <div style={{ fontSize: 13, fontWeight: 900 }}>{option.label}</div>
-                    <div style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: "#617167" }}>
+                    <div style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: "#9CA3AF" }}>
                       {`(~${option.ounces} oz)`}
                     </div>
                   </button>
@@ -575,10 +575,10 @@ function NutritionCard({ detailSystem, t }) {
       <div style={{ display: "grid", gap: 10 }}>
         {pairs.map((entry) => (
           <div key={entry.label} style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "12px 14px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ fontSize: 13, color: "#15241d", fontWeight: 800 }}>
+            <div style={{ fontSize: 13, color: "#FFFFFF", fontWeight: 800 }}>
               {entry.label}
             </div>
-            <div style={{ fontSize: 15, fontWeight: 900, color: "#15241d", textAlign: "right" }}>
+            <div style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF", textAlign: "right" }}>
               {entry.value}{entry.dv != null ? ` · ${entry.dv}% DV` : ""}
             </div>
           </div>
@@ -586,16 +586,16 @@ function NutritionCard({ detailSystem, t }) {
       </div>
       {!isDrink && !isDessertOrBread && perOzRows.length && isReliable ? (
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f", marginBottom: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
             Per Ounce
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(120px, 180px))", gap: 10, width: "fit-content", maxWidth: "100%" }}>
             {perOzRows.map((row) => (
               <div key={row.label} style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "12px 14px" }}>
-                <div style={{ fontSize: 11, color: "#617167", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   {row.label}
                 </div>
-                <div style={{ marginTop: 6, fontSize: 18, fontWeight: 900, color: "#15241d" }}>
+                <div style={{ marginTop: 6, fontSize: 18, fontWeight: 900, color: "#FFFFFF" }}>
                   {row.value}
                 </div>
               </div>
@@ -603,7 +603,7 @@ function NutritionCard({ detailSystem, t }) {
           </div>
         </div>
       ) : null}
-      <div style={{ marginTop: 14, fontSize: 13, lineHeight: 1.5, color: "#617167", fontWeight: 700 }}>
+      <div style={{ marginTop: 14, fontSize: 13, lineHeight: 1.5, color: "#9CA3AF", fontWeight: 700 }}>
         {reliability === "high" ? "HIGH" : reliability === "medium" ? "MEDIUM" : reliability === "low" ? "LOW" : "NONE"}
         {reliability === "low" || reliability === "none" ? " · Nutrition estimate — confirm with restaurant" : ""}
       </div>
@@ -653,7 +653,7 @@ function InsightsCard({ detailSystem, t }) {
           const meterFill = insightFillPercent(item.value);
           return (
             <div key={item.label} style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 140px 72px", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.04)", padding: "6px 8px", borderRadius: 10 }}>
-              <div style={{ minWidth: 0, fontSize: 13.5, fontWeight: 800, color: "#15241d", textAlign: "left" }}>
+              <div style={{ minWidth: 0, fontSize: 13.5, fontWeight: 800, color: "#FFFFFF", textAlign: "left" }}>
                 {item.label}
               </div>
               <div style={{ width: 140, display: "flex", justifyContent: "center" }}>
@@ -732,14 +732,14 @@ function IngredientFlagsCard({ detailSystem, t }) {
       <div style={{ display: "grid", gap: 12 }}>
         {processing?.processing_level ? (
           <div style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "14px 16px" }}>
-            <div style={{ fontSize: 11, color: "#617167", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
               {t("menuItemDetail.processingLevel", "Processing Level")}
             </div>
-            <div style={{ marginTop: 6, fontSize: 18, fontWeight: 900, color: "#15241d" }}>
+            <div style={{ marginTop: 6, fontSize: 18, fontWeight: 900, color: "#FFFFFF" }}>
               {processing.processing_level}
             </div>
             {processing.user_impact ? (
-              <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#53635a" }}>
+              <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#9CA3AF" }}>
                 {processing.user_impact}
               </div>
             ) : null}
@@ -765,7 +765,7 @@ function IngredientFlagsCard({ detailSystem, t }) {
         <div style={{ display: "grid", gap: 10 }}>
           {uniqueAdditives.length ? (
             <div>
-              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f", marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 8 }}>
                 {t("menuItemDetail.artificialAndAdditiveSignals", "Artificial & Additive Signals")}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -855,10 +855,10 @@ function PreparationCard({ detailSystem, t }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
             {rows.map((row) => (
               <div key={row.label} style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "12px 14px" }}>
-                <div style={{ fontSize: 11, color: "#617167", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   {row.label}
                 </div>
-                <div style={{ marginTop: 6, fontSize: 17, fontWeight: 900, color: "#15241d" }}>
+                <div style={{ marginTop: 6, fontSize: 17, fontWeight: 900, color: "#FFFFFF" }}>
                   {row.value}
                 </div>
               </div>
@@ -871,7 +871,7 @@ function PreparationCard({ detailSystem, t }) {
           </div>
         ) : null}
         {preparation.why_it_matters ? (
-          <div style={{ fontSize: 13.5, lineHeight: 1.55, color: "#617167" }}>
+          <div style={{ fontSize: 13.5, lineHeight: 1.55, color: "#9CA3AF" }}>
             {preparation.why_it_matters}
           </div>
         ) : null}
@@ -884,7 +884,7 @@ function CompactConfidence({ detailSystem }) {
   const confidence = detailSystem?.confidence;
   if (!confidence?.message) return null;
   return (
-    <div style={{ fontSize: 13, lineHeight: 1.5, color: "#425149", fontWeight: 700 }}>
+    <div style={{ fontSize: 13, lineHeight: 1.5, color: "#9CA3AF", fontWeight: 700 }}>
       {confidence.message}
     </div>
   );
@@ -893,13 +893,13 @@ function CompactConfidence({ detailSystem }) {
 function MissingNutritionState() {
   return (
     <Surface style={{ marginTop: 22, padding: 20 }}>
-      <div style={{ fontSize: 20, fontWeight: 900, color: "#15241d" }}>
+      <div style={{ fontSize: 20, fontWeight: 900, color: "#FFFFFF" }}>
         Nutrition estimate — confirm with restaurant
       </div>
-      <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.5, color: "#53635a", fontWeight: 700 }}>
+      <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.5, color: "#9CA3AF", fontWeight: 700 }}>
         Incomplete nutrition data is available for this item.
       </div>
-      <div style={{ marginTop: 4, fontSize: 14, lineHeight: 1.5, color: "#53635a" }}>
+      <div style={{ marginTop: 4, fontSize: 14, lineHeight: 1.5, color: "#9CA3AF" }}>
         Try similar items for guidance
       </div>
     </Surface>
@@ -992,21 +992,21 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
           )}
           {similar.map((entry) => (
             <div key={entry.id} style={{ borderRadius: 18, border: "1px solid #1F2937", background: "#121A14", padding: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a695f", marginBottom: 10 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
                 {entry.restaurant_name}
                 {entry.distance_miles != null && <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>}
               </div>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
                 <Link
                   to={`${getCanonicalMenuItemPath({ restaurant: { slug: entry.restaurant_slug || null, id: entry.restaurant_id || null }, menuItem: { id: entry.id } })}${searchSuffix}`}
-                  style={{ textDecoration: "none", color: "#124ba3", fontWeight: 800, fontSize: 15, lineHeight: 1.35, flex: "1 1 0", minWidth: 0 }}
+                  style={{ textDecoration: "none", color: "#22C55E", fontWeight: 800, fontSize: 15, lineHeight: 1.35, flex: "1 1 0", minWidth: 0 }}
                 >
                   {entry.name}
                 </Link>
                 <button
                   type="button"
                   onClick={() => handleCompare(entry)}
-                  style={{ flexShrink: 0, background: "rgba(18,75,163,0.09)", border: "1px solid rgba(18,75,163,0.18)", borderRadius: 999, padding: "5px 13px", fontSize: 12, fontWeight: 800, color: "#124ba3", cursor: "pointer", whiteSpace: "nowrap", lineHeight: 1.4 }}
+                  style={{ flexShrink: 0, background: "rgba(34,197,94,0.09)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 999, padding: "5px 13px", fontSize: 12, fontWeight: 800, color: "#22C55E", cursor: "pointer", whiteSpace: "nowrap", lineHeight: 1.4 }}
                 >
                   Compare
                 </button>
@@ -1014,7 +1014,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
               {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
                   {entry.profile_differences.map((phrase) => (
-                    <span key={phrase} style={{ fontSize: 11, fontWeight: 700, color: "#3a5a44", background: "rgba(40,100,60,0.08)", borderRadius: 20, padding: "3px 10px" }}>
+                    <span key={phrase} style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", background: "rgba(255,255,255,0.05)", borderRadius: 20, padding: "3px 10px" }}>
                       {phrase}
                     </span>
                   ))}
@@ -1132,7 +1132,7 @@ export default function MenuItemInfoPage() {
     return (
       <PageShell isMobile={isMobile}>
         <Surface style={{ padding: 22 }}>
-          <div style={{ fontSize: 14, color: "#53635a", fontWeight: 700 }}>{t("menuItemDetail.loadingItem", "Loading item...")}</div>
+          <div style={{ fontSize: 14, color: "#9CA3AF", fontWeight: 700 }}>{t("menuItemDetail.loadingItem", "Loading item...")}</div>
         </Surface>
       </PageShell>
     );
@@ -1142,8 +1142,8 @@ export default function MenuItemInfoPage() {
     return (
       <PageShell isMobile={isMobile}>
         <Surface style={{ padding: 22 }}>
-          <div style={{ fontSize: 18, fontWeight: 900, color: "#15241d" }}>{t("menuItemDetail.itemNotAvailable", "Item not available")}</div>
-          <div style={{ marginTop: 8, fontSize: 14, color: "#53635a", lineHeight: 1.5 }}>{err || t("menuItemDetail.itemCouldNotLoad", "Item could not load")}</div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF" }}>{t("menuItemDetail.itemNotAvailable", "Item not available")}</div>
+          <div style={{ marginTop: 8, fontSize: 14, color: "#9CA3AF", lineHeight: 1.5 }}>{err || t("menuItemDetail.itemCouldNotLoad", "Item could not load")}</div>
         </Surface>
       </PageShell>
     );
@@ -1185,13 +1185,13 @@ export default function MenuItemInfoPage() {
                   />
                 ) : null}
                 <div>
-                  <div style={{ fontSize: 13, color: "#617167", fontWeight: 800 }}>
+                  <div style={{ fontSize: 13, color: "#9CA3AF", fontWeight: 800 }}>
                     <Link to={`/restaurants/${item.restaurant.slug || item.restaurant.id}`} style={{ color: "inherit", textDecoration: "none" }}>
                       {item.restaurant.name}
                     </Link>
                   </div>
                   {(item.restaurant.city || item.restaurant.cuisine) ? (
-                    <div style={{ marginTop: 4, fontSize: 13, color: "#6a786f" }}>
+                    <div style={{ marginTop: 4, fontSize: 13, color: "#9CA3AF" }}>
                       {[item.restaurant.city, item.restaurant.cuisine].filter(Boolean).join(" · ")}
                     </div>
                   ) : null}
@@ -1214,7 +1214,7 @@ export default function MenuItemInfoPage() {
                     fontSize: isMobile ? 34 : 46,
                     lineHeight: 0.96,
                     letterSpacing: "-0.05em",
-                    color: "#15241d",
+                    color: "#FFFFFF",
                     maxWidth: 760,
                     minWidth: 0,
                     flex: "0 1 auto",
@@ -1246,7 +1246,7 @@ export default function MenuItemInfoPage() {
               </div>
               <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 {priceLabel ? (
-                  <div style={{ fontSize: isMobile ? 24 : 28, fontWeight: 900, letterSpacing: "-0.04em", color: "#7a5b20" }}>
+                  <div style={{ fontSize: isMobile ? 24 : 28, fontWeight: 900, letterSpacing: "-0.04em", color: "#22C55E" }}>
                     {priceLabel}
                   </div>
                 ) : null}
@@ -1257,7 +1257,7 @@ export default function MenuItemInfoPage() {
             </div>
 
             {(getLocalizedField(item, "description", language) || item.description) ? (
-              <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#405048", maxWidth: 760 }}>
+              <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#D1D5DB", maxWidth: 760 }}>
                 {getLocalizedField(item, "description", language) || item.description}
               </div>
             ) : null}
@@ -1304,8 +1304,8 @@ export default function MenuItemInfoPage() {
       </Surface>
 
       {isBrokenFranchiseLink && (
-        <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20, background: "rgba(18,75,163,0.06)", border: "1px solid rgba(18,75,163,0.14)" }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: "#124ba3", lineHeight: 1.5 }}>
+        <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "#22C55E", lineHeight: 1.5 }}>
             Official nutrition data for this franchise item is still being linked.
           </div>
         </Surface>
