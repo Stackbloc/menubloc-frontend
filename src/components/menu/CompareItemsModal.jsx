@@ -448,9 +448,8 @@ export default function CompareItemsModal({
   const baseActionLabel = `View ${abbreviateLabel(base?.name, "Current item")}`;
   const candidateActionLabel = `View ${abbreviateLabel(candidate?.name, "Compared item")}`;
 
-  const baseVerdictLabel = base?.verdict?.label || base?.verdict_label || base?.verdict || null;
-  const candVerdictLabel =
-    candidate?.verdict?.label || candidate?.verdict_label || candidate?.verdict || null;
+  const baseVerdictLabel = base?.verdict?.label || null;
+  const candVerdictLabel = candidate?.verdict?.label || null;
 
   const showVerdictRow = !!(baseVerdictLabel || candVerdictLabel);
   const showMethodRow = !!(base?.preparation || candidate?.preparation);
