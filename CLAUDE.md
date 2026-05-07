@@ -4,7 +4,7 @@
 
 ## 🚀 DEPLOYMENT — VERCEL
 
-**Platform:** Vercel (project: `andre-barber-s-projects/menubloc-frontend`, alias: `grubbid.com`)
+**Platform:** Vercel (project: `andre-barber-s-projects/menubloc-frontend`, alias: `menuply.com`)
 
 **Git push alone does NOT deploy to production.** Always run:
 ```bash
