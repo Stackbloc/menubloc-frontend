@@ -29,7 +29,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
-import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
 import {
@@ -1030,7 +1029,6 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
         style={{ marginTop: 24 }}
       >
         <div style={{ display: "grid", gap: 14 }}>
-          {allergenFilter ? <AllergenFilterStatusBanner allergenFilter={allergenFilter} compact /> : null}
           {helperLabel && (
             <div
               style={{
@@ -1263,9 +1261,6 @@ export default function MenuItemDetailPage() {
   return (
       <PageShell isMobile={isMobile}>
 
-      {effectiveAllergenFilter ? (
-        <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 18 }} />
-      ) : null}
 
       {/* ── 1. Hero / Item Identity ── */}
       <Surface style={{ padding: isMobile ? 18 : 24 }}>
