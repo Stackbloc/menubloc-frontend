@@ -1153,14 +1153,19 @@ export default function MenuItemInfoPage() {
   }, [shareData]);
 
   useEffect(() => {
+    if (!item) return undefined;
     const node = heroRef.current;
     if (!node) return undefined;
-    const observer = new IntersectionObserver(
-      ([entry]) => setHeroVisible(entry.isIntersecting),
-      { threshold: 0, rootMargin: "-73px 0px 0px 0px" }
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
+    function check() {
+      setHeroVisible(node.getBoundingClientRect().bottom > 73);
+    }
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
   }, [item]);
 
   const priceLabel =
