@@ -86,7 +86,7 @@ export default function BuyMeThisPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#11211a" }}>
+    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       <StickyPageHeader title="Buy Me This" />
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "14px 18px 80px" }}>
 
@@ -100,8 +100,8 @@ export default function BuyMeThisPage() {
               marginTop: 24,
               padding: "14px 16px",
               borderRadius: 16,
-              background: "#fee2e2",
-              color: "#991b1b",
+              background: "rgba(239,68,68,0.08)",
+              color: "#F87171",
               fontWeight: 700,
             }}
           >
@@ -114,29 +114,29 @@ export default function BuyMeThisPage() {
             <div
               style={{
                 borderRadius: 24,
-                background: "#fff",
-                border: "1px solid rgba(17,33,26,0.08)",
+                background: "#121A14",
+                border: "1px solid #1F2937",
                 padding: "24px 22px",
                 boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
               }}
             >
-              <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: 0.7 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: 0.7 }}>
                 Buy Me This
               </div>
               <h1 style={{ margin: "8px 0 6px", fontSize: 32 }}>
                 {session.restaurant?.name || "Restaurant"}
               </h1>
               {session.requester_name ? (
-                <div style={{ color: "#475467", fontWeight: 700 }}>
+                <div style={{ color: "#9CA3AF", fontWeight: 700 }}>
                   {session.requester_name} wants this order paid
                 </div>
               ) : null}
               {session.requester_message ? (
-                <div style={{ marginTop: 8, color: "#667085", lineHeight: 1.6 }}>
+                <div style={{ marginTop: 8, color: "#9CA3AF", lineHeight: 1.6 }}>
                   {session.requester_message}
                 </div>
               ) : null}
-              <div style={{ marginTop: 12, fontSize: 13, color: "#667085" }}>
+              <div style={{ marginTop: 12, fontSize: 13, color: "#9CA3AF" }}>
                 {session.status === "expired"
                   ? "This request has expired."
                   : `Expires ${new Date(session.expires_at).toLocaleString()}`}
@@ -148,8 +148,8 @@ export default function BuyMeThisPage() {
                     marginTop: 12,
                     padding: "12px 14px",
                     borderRadius: 14,
-                    background: "#fffbeb",
-                    color: "#92400e",
+                    background: "rgba(234,179,8,0.08)",
+                    color: "#FBBF24",
                     fontWeight: 700,
                   }}
                 >
@@ -163,8 +163,8 @@ export default function BuyMeThisPage() {
                     marginTop: 12,
                     padding: "12px 14px",
                     borderRadius: 14,
-                    background: "#fee2e2",
-                    color: "#991b1b",
+                    background: "rgba(239,68,68,0.08)",
+                    color: "#F87171",
                     fontWeight: 700,
                   }}
                 >
@@ -176,8 +176,8 @@ export default function BuyMeThisPage() {
             <div
               style={{
                 borderRadius: 24,
-                background: "#fff",
-                border: "1px solid rgba(17,33,26,0.08)",
+                background: "#121A14",
+                border: "1px solid #1F2937",
                 padding: "24px 22px",
                 boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
               }}
@@ -187,20 +187,20 @@ export default function BuyMeThisPage() {
                   <div
                     key={`${item.line_id || index}`}
                     style={{
-                      border: "1px solid rgba(17,33,26,0.08)",
+                      border: "1px solid #1F2937",
                       borderRadius: 18,
-                      background: "#fffef8",
+                      background: "#121A14",
                       padding: "12px 14px",
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                       <div>
                         <div style={{ fontWeight: 900 }}>{item.name}</div>
-                        <div style={{ fontSize: 13, color: "#667085" }}>Qty {item.quantity}</div>
+                        <div style={{ fontSize: 13, color: "#9CA3AF" }}>Qty {item.quantity}</div>
                         {(item.modifiers || []).map((modifier) => (
                           <div
                             key={`${modifier.group_id}-${modifier.option_id}`}
-                            style={{ marginTop: 4, fontSize: 12, color: "#667085" }}
+                            style={{ marginTop: 4, fontSize: 12, color: "#9CA3AF" }}
                           >
                             {modifier.name}
                           </div>
@@ -231,7 +231,7 @@ export default function BuyMeThisPage() {
                   <span>Total</span>
                   <span>{formatMoney(currentTotals?.total_cents)}</span>
                 </div>
-                <div style={{ fontSize: 12, lineHeight: 1.6, color: "#667085" }}>
+                <div style={{ fontSize: 12, lineHeight: 1.6, color: "#9CA3AF" }}>
                   {MENUPLY_PRICE_DISCLOSURE}
                 </div>
               </div>
@@ -246,8 +246,8 @@ export default function BuyMeThisPage() {
                     width: "100%",
                     border: "none",
                     borderRadius: 16,
-                    background: startingCheckout ? "#94a3b8" : "#11211a",
-                    color: "#fff",
+                    background: startingCheckout ? "#4B5563" : "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+                    color: "#0B0F0C",
                     padding: "14px 16px",
                     fontSize: 15,
                     fontWeight: 900,

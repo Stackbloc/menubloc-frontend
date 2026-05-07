@@ -72,7 +72,7 @@ export default function OrderConfirmationPage() {
   }, [orderId, clearCart, restaurant?.restaurantId, state.order]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#11211a" }}>
+    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       <StickyPageHeader title="Order Confirmation" />
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 18px 80px" }}>
 
@@ -80,25 +80,25 @@ export default function OrderConfirmationPage() {
           style={{
             marginTop: 24,
             borderRadius: 24,
-            background: "#fff",
-            border: "1px solid rgba(17,33,26,0.08)",
+            background: "#121A14",
+            border: "1px solid #1F2937",
             padding: "28px 24px",
             boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
           }}
         >
           {state.status === "loading" ? (
-            <div style={{ fontSize: 15, color: "#667085" }}>Loading order confirmation…</div>
+            <div style={{ fontSize: 15, color: "#9CA3AF" }}>Loading order confirmation…</div>
           ) : state.status === "error" ? (
-            <div style={{ fontSize: 15, color: "#991b1b" }}>{state.error}</div>
+            <div style={{ fontSize: 15, color: "#F87171" }}>{state.error}</div>
           ) : (
             <>
-              <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7, color: "#667085" }}>
+              <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7, color: "#9CA3AF" }}>
                 Order confirmation
               </div>
               <h1 style={{ fontSize: 32, margin: "10px 0 6px" }}>
                 Order #{state.order.id}
               </h1>
-              <p style={{ margin: 0, color: "#667085", lineHeight: 1.6 }}>
+              <p style={{ margin: 0, color: "#9CA3AF", lineHeight: 1.6 }}>
                 {state.order.payment_status === "succeeded"
                   ? "Payment succeeded. The restaurant will handle fulfillment directly."
                   : state.order.payment_status === "processing"
@@ -110,28 +110,28 @@ export default function OrderConfirmationPage() {
 
               <div style={{ marginTop: 22, display: "grid", gap: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                  <span style={{ color: "#667085", fontWeight: 700 }}>Restaurant</span>
+                  <span style={{ color: "#9CA3AF", fontWeight: 700 }}>Restaurant</span>
                   <strong>{state.order.restaurant_name}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                  <span style={{ color: "#667085", fontWeight: 700 }}>Fulfillment</span>
+                  <span style={{ color: "#9CA3AF", fontWeight: 700 }}>Fulfillment</span>
                   <strong style={{ textTransform: "capitalize" }}>{state.order.fulfillment_type}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                  <span style={{ color: "#667085", fontWeight: 700 }}>Payment status</span>
+                  <span style={{ color: "#9CA3AF", fontWeight: 700 }}>Payment status</span>
                   <strong style={{ textTransform: "capitalize" }}>{state.order.payment_status}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                  <span style={{ color: "#667085", fontWeight: 700 }}>Order status</span>
+                  <span style={{ color: "#9CA3AF", fontWeight: 700 }}>Order status</span>
                   <strong style={{ textTransform: "capitalize" }}>{state.order.order_status}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                  <span style={{ color: "#667085", fontWeight: 700 }}>Total</span>
+                  <span style={{ color: "#9CA3AF", fontWeight: 700 }}>Total</span>
                   <strong>{formatMoney(state.order.total_cents)}</strong>
                 </div>
                 {Number(state.order.coins_redeemed_cents || 0) > 0 ? (
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <span style={{ color: "#667085", fontWeight: 700 }}>G-Coins applied</span>
+                    <span style={{ color: "#9CA3AF", fontWeight: 700 }}>G-Coins applied</span>
                     <strong>-{formatMoney(state.order.coins_redeemed_cents)}</strong>
                   </div>
                 ) : null}
@@ -143,7 +143,7 @@ export default function OrderConfirmationPage() {
                       background: "#ecfdf3",
                       border: "1px solid #bbf7d0",
                       padding: "12px 14px",
-                      color: "#0f7048",
+                      color: "#22C55E",
                       fontSize: 14,
                       fontWeight: 800,
                     }}
@@ -161,8 +161,8 @@ export default function OrderConfirmationPage() {
                       key={item.id}
                       style={{
                         borderRadius: 18,
-                        border: "1px solid rgba(17,33,26,0.08)",
-                        background: "#fffef8",
+                        border: "1px solid #1F2937",
+                        background: "#121A14",
                         padding: "12px 14px",
                         display: "flex",
                         justifyContent: "space-between",
@@ -171,7 +171,7 @@ export default function OrderConfirmationPage() {
                     >
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 900 }}>{item.name_snapshot}</div>
-                        <div style={{ fontSize: 12, color: "#667085", marginTop: 4 }}>
+                        <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 4 }}>
                           Qty {item.quantity}
                         </div>
                       </div>
@@ -182,7 +182,7 @@ export default function OrderConfirmationPage() {
               </div>
 
               <div style={{ marginTop: 24 }}>
-                <Link to={`/public/restaurants/${state.order.restaurant_id}/menu`} style={{ color: "#14532d", fontWeight: 800 }}>
+                <Link to={`/public/restaurants/${state.order.restaurant_id}/menu`} style={{ color: "#22C55E", fontWeight: 800 }}>
                   Back to menu
                 </Link>
               </div>
