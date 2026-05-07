@@ -139,6 +139,8 @@ export default function MenuPage() {
 
   const shellStyle = {
     minHeight: "100vh",
+    background: "#0B0F0C",
+    color: "#FFFFFF",
     padding: isMobile ? 14 : 20,
     boxSizing: "border-box",
     overflowX: "hidden",
@@ -159,7 +161,7 @@ export default function MenuPage() {
             style={{
               fontSize: isMobile ? 15 : 16,
               fontWeight: 700,
-              color: "#334155",
+              color: "#9CA3AF",
               lineHeight: 1.4,
             }}
           >
@@ -179,7 +181,7 @@ export default function MenuPage() {
               padding: isMobile ? 14 : 18,
               border: "1px solid #f1d0d0",
               borderRadius: 14,
-              background: "#fff7f7",
+              background: "rgba(239,68,68,0.08)",
               wordBreak: "break-word",
             }}
           >
@@ -188,7 +190,7 @@ export default function MenuPage() {
                 fontWeight: 900,
                 fontSize: isMobile ? 18 : 20,
                 lineHeight: 1.2,
-                color: "#111827",
+                color: "#FFFFFF",
               }}
             >
               Menu unavailable
@@ -197,7 +199,7 @@ export default function MenuPage() {
             <div
               style={{
                 marginTop: 8,
-                color: "#666",
+                color: "#9CA3AF",
                 lineHeight: 1.45,
                 fontSize: isMobile ? 14 : 15,
                 whiteSpace: "pre-wrap",
