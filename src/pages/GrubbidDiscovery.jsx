@@ -905,25 +905,27 @@ export default function GrubbidDiscovery() {
           paddingBottom: 12,
         }}>
           <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
+            display: "flex", alignItems: "center",
             padding: "14px 16px 10px",
           }}>
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Open menu"
-              style={{
-                border: "none", background: "transparent",
-                fontSize: 22, color: "#9CA3AF", cursor: "pointer",
-                padding: 4, lineHeight: 1, flexShrink: 0,
-              }}
-            >
-              ☰
-            </button>
+            <div style={{ flex: 1, display: "flex" }}>
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                aria-label="Open menu"
+                style={{
+                  border: "none", background: "transparent",
+                  fontSize: 22, color: "#9CA3AF", cursor: "pointer",
+                  padding: 4, lineHeight: 1,
+                }}
+              >
+                ☰
+              </button>
+            </div>
 
             <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
 
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
               <Link
                 to="/deals"
                 style={{
