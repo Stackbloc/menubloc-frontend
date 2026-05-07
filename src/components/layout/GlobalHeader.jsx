@@ -22,8 +22,9 @@ const shellStyle = {
   justifyContent: "space-between",
   gap: 16,
   padding: "16px 0 20px",
-  borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
+  borderBottom: "1px solid #1F2937",
   marginBottom: 16,
+  background: "#0B0F0C",
 };
 
 const leftStyle = {
@@ -51,7 +52,7 @@ const navLinkBaseStyle = {
   textDecoration: "none",
   fontSize: 14,
   fontWeight: 700,
-  color: "#1d4ed8",
+  color: "#9CA3AF",
 };
 
 const authLinkStyle = {
@@ -63,9 +64,9 @@ const authLinkStyle = {
   textDecoration: "none",
   fontSize: 14,
   fontWeight: 700,
-  color: "#1d4ed8",
-  border: "1px solid rgba(29, 78, 216, 0.18)",
-  background: "#fff8f1",
+  color: "#22C55E",
+  border: "1px solid rgba(34, 197, 94, 0.25)",
+  background: "rgba(34, 197, 94, 0.08)",
 };
 
 const searchFormStyle = {
@@ -81,12 +82,12 @@ const searchInputStyle = {
   minWidth: 0,
   height: 44,
   borderRadius: 999,
-  border: "1px solid rgba(15, 23, 42, 0.12)",
+  border: "1px solid #1F2937",
   padding: "0 16px",
   fontSize: 15,
   fontWeight: 500,
-  color: "#0f172a",
-  background: "#ffffff",
+  color: "#F9FAFB",
+  background: "#121A14",
 };
 
 const searchButtonStyle = {
@@ -94,8 +95,8 @@ const searchButtonStyle = {
   padding: "0 18px",
   border: "none",
   borderRadius: 999,
-  background: "linear-gradient(180deg, #ff9a2f 0%, #ff6b00 100%)",
-  color: "#1638a0",
+  background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+  color: "#0B0F0C",
   fontSize: 14,
   fontWeight: 800,
   cursor: "pointer",
@@ -104,8 +105,8 @@ const searchButtonStyle = {
 function buildNavLinkStyle(isActive) {
   return {
     ...navLinkBaseStyle,
-    color: isActive ? "#1638a0" : "#4963a6",
-    background: isActive ? "rgba(255, 107, 0, 0.12)" : "transparent",
+    color: isActive ? "#22C55E" : "#9CA3AF",
+    background: isActive ? "rgba(34, 197, 94, 0.1)" : "transparent",
   };
 }
 
@@ -173,7 +174,7 @@ export default function GlobalHeader() {
               border: "none",
               background: "transparent",
               fontSize: 22,
-              color: "#101828",
+              color: "#9CA3AF",
               cursor: "pointer",
               padding: 4,
               lineHeight: 1,
@@ -184,7 +185,7 @@ export default function GlobalHeader() {
           </button>
 
           <Link to="/" aria-label="Go to home" style={{ display: "inline-flex", textDecoration: "none" }}>
-            <BrandLogo width={92} height={58} radius={16} pageColor="#f7f6f1" />
+            <BrandLogo width={92} height={58} radius={16} pageColor="#0B0F0C" />
           </Link>
 
           {showDealsNav ? (
@@ -201,8 +202,8 @@ export default function GlobalHeader() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search restaurants or dishes"
-            aria-label="Search restaurants or dishes"
+            placeholder="Search dishes, ingredients, cuisines, or restaurants..."
+            aria-label="Search dishes, ingredients, cuisines, or restaurants"
             style={searchInputStyle}
           />
           <button type="submit" style={searchButtonStyle}>

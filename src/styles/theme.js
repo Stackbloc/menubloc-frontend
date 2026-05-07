@@ -1,9 +1,8 @@
 /**
  * ============================================================
- * Grubbid Canonical Design System Lock
- * This file is a thin JavaScript mirror of the canonical CSS
- * variables in src/index.css for inline-style consumers that
- * still need semantic token names.
+ * Menuply Canonical Design System — Dark Theme
+ * JavaScript mirror of the canonical CSS variables in src/index.css
+ * for inline-style consumers that need semantic token names.
  *
  * Do not introduce literal font families or parallel token sets
  * here without explicit approval from Andre.
@@ -16,7 +15,7 @@ export const theme = {
     surface: "var(--gb-color-surface-strong)",
     surfaceMuted: "var(--gb-color-surface-muted)",
     primary: "var(--gb-color-accent)",
-    primaryDark: "var(--gb-color-ink-strong)",
+    primaryDark: "#16A34A",
     accent: "var(--gb-color-accent)",
     textPrimary: "var(--gb-color-ink)",
     textSecondary: "var(--gb-color-ink-soft)",

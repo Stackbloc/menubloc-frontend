@@ -20,8 +20,8 @@ export default function SiteFooter() {
   return (
     <footer
       style={{
-        borderTop: "1px solid rgba(18,34,28,0.08)",
-        background: "#fbfaf6",
+        borderTop: "1px solid #1F2937",
+        background: "#0B0F0C",
         marginTop: 40,
       }}
     >
@@ -51,25 +51,25 @@ export default function SiteFooter() {
             flex: "0 0 auto",
           }}
         >
-          <Link to="/restaurant/signup" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/restaurant/signup" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.signup")}
           </Link>
-          <Link to="/deals" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/deals" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.deals")}
           </Link>
-          <Link to="/top-picks" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/top-picks" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.topPicksNearYou")}
           </Link>
-          <Link to="/terms" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/terms" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.terms")}
           </Link>
-          <Link to="/privacy" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/privacy" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
             Privacy Policy
           </Link>
-          <Link to="/about" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/about" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
             About Menuply
           </Link>
-          <Link to="/contact" style={{ color: "#344054", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/contact" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.contact")}
           </Link>
         </div>
@@ -90,7 +90,7 @@ export default function SiteFooter() {
               fontWeight: 900,
               letterSpacing: 0.8,
               textTransform: "uppercase",
-              color: "#667085",
+              color: "#6B7280",
             }}
             aria-hidden="true"
           >
@@ -103,9 +103,9 @@ export default function SiteFooter() {
             style={{
               height: 34,
               borderRadius: 10,
-              border: "1px solid rgba(18,34,28,0.12)",
-              background: "#fff",
-              color: "#11211a",
+              border: "1px solid #1F2937",
+              background: "#121A14",
+              color: "#D1D5DB",
               padding: "0 10px",
               fontSize: 13,
               fontWeight: 700,

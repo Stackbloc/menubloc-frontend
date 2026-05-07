@@ -55,17 +55,17 @@ const CUISINE_IDENTITY = {
   mediterranean: { color: "#0d9488", emoji: "🫒" },
   greek:         { color: "#0d9488", emoji: "🫒" },
   seafood:       { color: "#0284c7", emoji: "🦞" },
-  vegan:         { color: "#16a34a", emoji: "🥗" },
-  vegetarian:    { color: "#16a34a", emoji: "🥗" },
-  salad:         { color: "#16a34a", emoji: "🥗" },
-  healthy:       { color: "#16a34a", emoji: "🥗" },
+  vegan:         { color: "#22C55E", emoji: "🥗" },
+  vegetarian:    { color: "#22C55E", emoji: "🥗" },
+  salad:         { color: "#22C55E", emoji: "🥗" },
+  healthy:       { color: "#22C55E", emoji: "🥗" },
   breakfast:     { color: "#ca8a04", emoji: "🍳" },
   brunch:        { color: "#ca8a04", emoji: "🍳" },
   cafe:          { color: "#78716c", emoji: "☕" },
   coffee:        { color: "#78716c", emoji: "☕" },
 };
 
-const DEFAULT_IDENTITY = { color: "#64748b", emoji: "🍽️" };
+const DEFAULT_IDENTITY = { color: "#4B5563", emoji: "🍽️" };
 
 function getCuisineIdentity(cuisine) {
   if (!cuisine) return DEFAULT_IDENTITY;
@@ -149,43 +149,56 @@ export default function DiscoveryCard({
     <Link
       to={href}
       style={{
-        display: "flex", flexDirection: "row",
-        textDecoration: "none", color: "inherit",
+        display: "flex",
+        flexDirection: "row",
+        textDecoration: "none",
+        color: "inherit",
         overflow: "hidden",
         borderRadius: 12,
-        border: "1px solid #eee",
-        boxShadow: "0 4px 18px rgba(0,0,0,0.13), 0 1px 4px rgba(0,0,0,0.08)",
-        transition: "box-shadow 160ms ease, transform 160ms ease",
+        border: "1px solid #1F2937",
+        background: "#121A14",
+        boxShadow: "0 4px 18px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)",
+        transition: "box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease",
       }}
     >
       <div style={{
-        width: 7, flexShrink: 0,
-        borderTopLeftRadius: 12, borderBottomLeftRadius: 12,
+        width: 7,
+        flexShrink: 0,
+        borderTopLeftRadius: 12,
+        borderBottomLeftRadius: 12,
         background: menu.flex_activity > 0
-          ? `linear-gradient(to top, #16a34a ${Math.min(100, menu.flex_activity)}%, #bbf7d0 100%)`
-          : "#e5e7eb",
+          ? `linear-gradient(to top, #22C55E ${Math.min(100, menu.flex_activity)}%, #4ade80 100%)`
+          : "#1F2937",
         opacity: menu.flex_activity > 0
-          ? Math.max(0.4, Math.min(1, menu.flex_activity / 100))
-          : 0.35,
+          ? Math.max(0.5, Math.min(1, menu.flex_activity / 100))
+          : 0.5,
         transition: "background 300ms ease, opacity 300ms ease",
       }} />
 
       {/* Content */}
-      <div style={{ padding: "6px 11px 6px", background: "#fff", flex: 1, minWidth: 0 }}>
+      <div style={{ padding: "8px 12px 8px", background: "#121A14", flex: 1, minWidth: 0 }}>
         {/* Name row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{
-              fontWeight: 700, fontSize: 13, color: "#111",
-              lineHeight: 1.2, letterSpacing: "-0.01em",
+              fontWeight: 700,
+              fontSize: 13,
+              color: "#FFFFFF",
+              lineHeight: 1.2,
+              letterSpacing: "-0.01em",
             }}>
               {name}
               {isVerified && (
                 <span style={{
-                  marginLeft: 6, fontSize: 9, fontWeight: 800,
-                  color: "#fff", background: "#2d6a4f",
-                  borderRadius: 3, padding: "1px 4px",
-                  verticalAlign: "middle", letterSpacing: "0.04em",
+                  marginLeft: 6,
+                  fontSize: 9,
+                  fontWeight: 800,
+                  color: "#0B0F0C",
+                  background: "#22C55E",
+                  borderRadius: 3,
+                  padding: "1px 4px",
+                  verticalAlign: "middle",
+                  letterSpacing: "0.04em",
                 }}>LIVE</span>
               )}
             </div>
@@ -197,9 +210,14 @@ export default function DiscoveryCard({
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSave(id); }}
                 aria-label={saved ? "Unsave" : "Save"}
                 style={{
-                  fontSize: 15, cursor: "pointer", padding: "1px 4px",
-                  background: "none", border: "none",
-                  opacity: saved ? 1 : 0.2, transition: "opacity 0.2s", flexShrink: 0,
+                  fontSize: 15,
+                  cursor: "pointer",
+                  padding: "1px 4px",
+                  background: "none",
+                  border: "none",
+                  opacity: saved ? 1 : 0.3,
+                  transition: "opacity 0.2s",
+                  flexShrink: 0,
                 }}
               >🔖</button>
             )}
@@ -209,16 +227,22 @@ export default function DiscoveryCard({
               disabled={followLoading}
               aria-label={followed ? `Unfollow ${name}` : `Follow ${name}`}
               style={{
-                width: 28, height: 28, border: "none", borderRadius: 6,
-                background: followed ? "#16a34a" : "#f3f4f6",
+                width: 28,
+                height: 28,
+                border: "none",
+                borderRadius: 6,
+                background: followed ? "#22C55E" : "#1F2937",
                 cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 transition: "background 200ms ease",
               }}
             >
               <span style={{
-                fontSize: 11, fontWeight: 900,
-                color: followed ? "#fff" : "#9ca3af",
+                fontSize: 11,
+                fontWeight: 900,
+                color: followed ? "#0B0F0C" : "#6B7280",
               }}>
                 {followed ? "✓" : "F"}
               </span>
@@ -229,8 +253,11 @@ export default function DiscoveryCard({
         {/* Follow confirmation */}
         {followConfirm && (
           <div style={{
-            fontSize: 11, fontWeight: 800, color: "#16a34a",
-            marginBottom: 2, letterSpacing: "0.01em",
+            fontSize: 11,
+            fontWeight: 800,
+            color: "#22C55E",
+            marginBottom: 2,
+            letterSpacing: "0.01em",
           }}>
             Following {name}
           </div>
@@ -238,18 +265,23 @@ export default function DiscoveryCard({
 
         {/* Meta row */}
         {metaItems.length > 0 && (
-          <div style={{ fontSize: 11, color: "#a09285", marginTop: 2, display: "flex", flexWrap: "wrap", gap: "0 4px" }}>
+          <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2, display: "flex", flexWrap: "wrap", gap: "0 4px" }}>
             {metaItems.map((item, i) => (
               <span key={item.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {i > 0 && <span style={{ color: "#d4cbc2" }}>·</span>}
+                {i > 0 && <span style={{ color: "#374151" }}>·</span>}
                 {item.clickable ? (
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowChainSheet(true); }}
                     style={{
-                      background: "none", border: "none", padding: 0,
-                      font: "inherit", color: "inherit", cursor: "pointer",
-                      textDecoration: "underline", textUnderlineOffset: 2,
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      font: "inherit",
+                      color: "inherit",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                      textUnderlineOffset: 2,
                     }}
                   >{item.text}</button>
                 ) : item.text}
@@ -260,13 +292,15 @@ export default function DiscoveryCard({
 
         {/* Preview chips */}
         {chips.length > 0 && (
-          <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 4, marginTop: 5, flexWrap: "wrap" }}>
             {chips.map((tag) => (
               <span key={tag} style={{
-                fontSize: 10, color: "#7a6f66",
-                border: "1px solid #e0d8d0",
+                fontSize: 10,
+                color: "#9CA3AF",
+                border: "1px solid #1F2937",
                 background: "transparent",
-                padding: "2px 7px", borderRadius: 99,
+                padding: "2px 7px",
+                borderRadius: 99,
               }}>{tag.charAt(0).toUpperCase() + tag.slice(1)}</span>
             ))}
           </div>
@@ -274,7 +308,7 @@ export default function DiscoveryCard({
 
         {/* Allergen indicator */}
         {allergens.length > 0 && (
-          <div style={{ marginTop: 5, fontSize: 11, fontWeight: 700, color: "#9a3412" }}>
+          <div style={{ marginTop: 5, fontSize: 11, fontWeight: 700, color: "#FCA5A5" }}>
             ⚠️ {allergens.join(", ")}
           </div>
         )}

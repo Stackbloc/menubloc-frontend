@@ -2,34 +2,10 @@
  * ============================================================
  * File: SearchResultCard.jsx
  * Path: menubloc-frontend/src/components/SearchResultCard.jsx
- * Date: 2026-03-14
+ * Date: 2026-05-06
  * Purpose:
  *   Search result card UI — food-first, scan-optimized.
- *   - Grouped by restaurant (restaurant header, muted)
- *   - Menu items as primary content
- *   - Badges inline after item name: Popular → Deal → GF → Vegan
- *   - Price: whole dollars only, right-aligned, minWidth 64
- *   - Chips in order: Nutrition → Insights → Show Similar
- *   - Nutrition chip now uses NutritionCard (includes Allergen Alert)
- *   - Insights chip toggles InsightCardDeck (real chip-driven data only)
- *     Data derived entirely from existing row payload — no new fetches.
- *   - Footer CTA: "View Menu" → canonical /restaurants/:slugOrId/menu
- *
- *   2026-03-10 update:
- *   - Public restaurant profile links now prefer /restaurants/:slugOrId
- *   - Menu links now prefer canonical /restaurants/:slugOrId/menu
- *
- *   2026-03-14 update:
- *   - Nutrition chip expanded to use NutritionCard component.
- *   - hasNut check includes allergen presence so chip lights up
- *     when allergens are inferred even without calorie data.
- *
- *   2026-04-03 update:
- *   - compact dish share controls added to item rows
- *
- *   Design lock:
- *   Shared search-result typography and card styling must inherit
- *   from the Grubbid canonical design system.
+ *   Dark Menuply theme. Visual-only update; all logic preserved.
  * ============================================================
  */
 
@@ -116,20 +92,20 @@ function getAllergenTone(source) {
   const normalized = normalizeAllergenSource(source);
   if (normalized === "chain_official") {
     return {
-      background: "rgba(188, 37, 37, 0.10)",
-      border: "1px solid rgba(188, 37, 37, 0.24)",
-      color: "#9f2323",
+      background: "rgba(188, 37, 37, 0.15)",
+      border: "1px solid rgba(188, 37, 37, 0.3)",
+      color: "#FCA5A5",
       badgeBackground: "#b91c1c",
       badgeColor: "#fff7f7",
     };
   }
 
   return {
-    background: "rgba(202, 138, 4, 0.10)",
-    border: "1px solid rgba(107, 114, 128, 0.18)",
-    color: "#8a5b00",
-    badgeBackground: "rgba(107, 114, 128, 0.14)",
-    badgeColor: "#5b6472",
+    background: "rgba(202, 138, 4, 0.12)",
+    border: "1px solid rgba(107, 114, 128, 0.25)",
+    color: "#FCD34D",
+    badgeBackground: "rgba(107, 114, 128, 0.2)",
+    badgeColor: "#9CA3AF",
   };
 }
 
@@ -206,7 +182,7 @@ function hl(text, query) {
     i % 2 === 1
       ? React.createElement(
           "span",
-          { key: i, style: { fontWeight: 900 } },
+          { key: i, style: { fontWeight: 900, color: "#22C55E" } },
           p
         )
       : React.createElement("span", { key: i }, p)
@@ -341,15 +317,6 @@ function getPopular(row) {
   return clickCount !== null && clickCount >= 10000;
 }
 
-/*
- * resolveChips / resolveItemFlag
- *
- * The search API returns rows as { item: { chips, is_vegan, ... }, restaurant: {...} }.
- * normalizeRows spreads the outer object, so chips and item-level flags live at
- * row.item.chips / row.item.is_vegan — NOT at row.chips / row.is_vegan.
- * These helpers check the top-level first (for any legacy flat shapes) and fall
- * back to the nested item object.
- */
 function resolveChips(row) {
   return row?.chips || row?.item?.chips || {};
 }
@@ -366,16 +333,16 @@ function BarRow({ label, pct, valueLabel, qualLabel, color, indent }) {
   const fill = Math.max(0, Math.min(100, Number(pct) || 0));
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: indent ? "2px 0" : "4px 0", paddingLeft: indent ? 12 : 0 }}>
-      <div style={{ width: indent ? 56 : 68, fontSize: indent ? 12 : 13, color: indent ? "#9ca3af" : "#667085", flexShrink: 0 }}>
+      <div style={{ width: indent ? 56 : 68, fontSize: indent ? 12 : 13, color: indent ? "#6B7280" : "#9CA3AF", flexShrink: 0 }}>
         {indent && <span style={{ marginRight: 4, opacity: 0.5 }}>·</span>}{label}
       </div>
-      <div style={{ flex: 1, maxWidth: 160, height: indent ? 4 : 6, background: "rgba(0,0,0,0.07)", borderRadius: 3, overflow: "hidden" }}>
-        <div style={{ width: `${fill}%`, height: "100%", background: color, opacity: indent ? 0.55 : 0.75, borderRadius: 3 }} />
+      <div style={{ flex: 1, maxWidth: 160, height: indent ? 4 : 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ width: `${fill}%`, height: "100%", background: color, opacity: indent ? 0.65 : 0.85, borderRadius: 3 }} />
       </div>
-      <div style={{ minWidth: 48, fontSize: indent ? 12 : 13, fontWeight: 700, color: "#344054", textAlign: "right", flexShrink: 0 }}>
+      <div style={{ minWidth: 48, fontSize: indent ? 12 : 13, fontWeight: 700, color: "#D1D5DB", textAlign: "right", flexShrink: 0 }}>
         {valueLabel}
         {qualLabel && (
-          <span style={{ marginLeft: 4, fontWeight: 500, color: "#9ca3af", fontSize: 11 }}>
+          <span style={{ marginLeft: 4, fontWeight: 500, color: "#6B7280", fontSize: 11 }}>
             ({qualLabel})
           </span>
         )}
@@ -400,7 +367,6 @@ function NutritionPanel({ chip }) {
   const glycemic    = r(chip?.glycemic_score);
   const glycemicLbl = chip?.glycemic_label || null;
 
-  // Per-ounce — only present when chain official serving size was available
   const servingOz    = r1(chip?.serving_weight_oz);
   const proPerOz     = r1(chip?.protein_per_oz);
   const carbsPerOz   = r1(chip?.carbs_per_oz);
@@ -411,7 +377,7 @@ function NutritionPanel({ chip }) {
 
   const hasValues = cal !== null || pro !== null || fat !== null || sod !== null;
   if (!hasValues) {
-    return <div style={{ fontSize: 14, color: "#9ca3af" }}>Nutrition info unavailable for this item yet.</div>;
+    return <div style={{ fontSize: 14, color: "#6B7280" }}>Nutrition info unavailable for this item yet.</div>;
   }
 
   const summary = getNutritionSummary(chip);
@@ -419,7 +385,7 @@ function NutritionPanel({ chip }) {
   return (
     <div>
       {cal   !== null && <BarRow label="Calories" pct={(cal   / 2000) * 100} valueLabel={String(cal)}   qualLabel={getQualitativeLabel("calories", cal)} color="#e07b39" />}
-      {pro   !== null && <BarRow label="Protein"  pct={(pro   / 50)   * 100} valueLabel={`${pro}g`}    qualLabel={getQualitativeLabel("protein", pro)}  color="#1a9a4a" />}
+      {pro   !== null && <BarRow label="Protein"  pct={(pro   / 50)   * 100} valueLabel={`${pro}g`}    qualLabel={getQualitativeLabel("protein", pro)}  color="#22C55E" />}
       {carbs !== null && <BarRow label="Carbs"    pct={(carbs / 275)  * 100} valueLabel={`${carbs}g`}  qualLabel={getQualitativeLabel("carbs", carbs)}  color="#b87a00" />}
       {netCarbs !== null && (
         <BarRow label="Net carbs" pct={(netCarbs / 150) * 100} valueLabel={`${netCarbs}g`} qualLabel={null} color="#b87a00" indent />
@@ -430,16 +396,16 @@ function NutritionPanel({ chip }) {
       {sod   !== null && <BarRow label="Sodium"   pct={(sod   / 2300) * 100} valueLabel={`${sod}mg`}   qualLabel={getQualitativeLabel("sodium", sod)}   color="#c0392b" />}
 
       {hasPerOz && (
-        <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(18,34,28,0.04)", border: "1px solid rgba(18,34,28,0.08)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#667085", letterSpacing: "0.04em", marginBottom: 5, textTransform: "uppercase" }}>
+        <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.04em", marginBottom: 5, textTransform: "uppercase" }}>
             Per oz · {servingOz} oz serving
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-            {proPerOz !== null && <span style={{ fontSize: 12, color: "#344054" }}><span style={{ fontWeight: 700 }}>{proPerOz}g</span> protein/oz</span>}
-            {carbsPerOz !== null && netCarbsPerOz !== null && <span style={{ fontSize: 12, color: "#344054" }}><span style={{ fontWeight: 700 }}>{netCarbsPerOz}g</span> net carbs/oz</span>}
-            {carbsPerOz !== null && netCarbsPerOz === null && <span style={{ fontSize: 12, color: "#344054" }}><span style={{ fontWeight: 700 }}>{carbsPerOz}g</span> carbs/oz</span>}
-            {sodPerOz !== null && <span style={{ fontSize: 12, color: "#344054" }}><span style={{ fontWeight: 700 }}>{sodPerOz}mg</span> sodium/oz</span>}
-            {fiberPerOz !== null && <span style={{ fontSize: 12, color: "#344054" }}><span style={{ fontWeight: 700 }}>{fiberPerOz}g</span> fiber/oz</span>}
+            {proPerOz !== null && <span style={{ fontSize: 12, color: "#D1D5DB" }}><span style={{ fontWeight: 700 }}>{proPerOz}g</span> protein/oz</span>}
+            {carbsPerOz !== null && netCarbsPerOz !== null && <span style={{ fontSize: 12, color: "#D1D5DB" }}><span style={{ fontWeight: 700 }}>{netCarbsPerOz}g</span> net carbs/oz</span>}
+            {carbsPerOz !== null && netCarbsPerOz === null && <span style={{ fontSize: 12, color: "#D1D5DB" }}><span style={{ fontWeight: 700 }}>{carbsPerOz}g</span> carbs/oz</span>}
+            {sodPerOz !== null && <span style={{ fontSize: 12, color: "#D1D5DB" }}><span style={{ fontWeight: 700 }}>{sodPerOz}mg</span> sodium/oz</span>}
+            {fiberPerOz !== null && <span style={{ fontSize: 12, color: "#D1D5DB" }}><span style={{ fontWeight: 700 }}>{fiberPerOz}g</span> fiber/oz</span>}
           </div>
         </div>
       )}
@@ -447,17 +413,17 @@ function NutritionPanel({ chip }) {
       {(satiety !== null || glycemic !== null) && (
         <div style={{ marginTop: 8, display: "flex", gap: 12, flexWrap: "wrap" }}>
           {satiety !== null && (
-            <div style={{ fontSize: 13, color: "#344054" }}>
-              <span style={{ color: "#667085" }}>Satiety </span>
+            <div style={{ fontSize: 13, color: "#D1D5DB" }}>
+              <span style={{ color: "#9CA3AF" }}>Satiety </span>
               <span style={{ fontWeight: 700 }}>{satiety}/10</span>
-              {satietyLbl && <span style={{ color: "#9ca3af", marginLeft: 4 }}>· {satietyLbl}</span>}
+              {satietyLbl && <span style={{ color: "#6B7280", marginLeft: 4 }}>· {satietyLbl}</span>}
             </div>
           )}
           {glycemic !== null && (
-            <div style={{ fontSize: 13, color: "#344054" }}>
-              <span style={{ color: "#667085" }}>Glycemic </span>
+            <div style={{ fontSize: 13, color: "#D1D5DB" }}>
+              <span style={{ color: "#9CA3AF" }}>Glycemic </span>
               <span style={{ fontWeight: 700 }}>{glycemic}/10</span>
-              {glycemicLbl && <span style={{ color: "#9ca3af", marginLeft: 4 }}>· {glycemicLbl}</span>}
+              {glycemicLbl && <span style={{ color: "#6B7280", marginLeft: 4 }}>· {glycemicLbl}</span>}
             </div>
           )}
         </div>
@@ -465,12 +431,12 @@ function NutritionPanel({ chip }) {
 
       <AllergenIndicator chip={chip} />
       {summary && (
-        <div style={{ marginTop: 10, fontSize: 13, color: "#344054", fontWeight: 600, lineHeight: 1.4 }}>
+        <div style={{ marginTop: 10, fontSize: 13, color: "#D1D5DB", fontWeight: 600, lineHeight: 1.4 }}>
           {summary}
         </div>
       )}
       {chip?.disclosure && (
-        <div style={{ marginTop: 4, fontSize: 12, color: "#93a0b2", fontStyle: "italic", lineHeight: 1.4 }}>
+        <div style={{ marginTop: 4, fontSize: 12, color: "#6B7280", fontStyle: "italic", lineHeight: 1.4 }}>
           {chip.disclosure}
         </div>
       )}
@@ -480,7 +446,6 @@ function NutritionPanel({ chip }) {
 
 /* ---- Insights panel ---- */
 
-// Backend score key → display metadata
 const INSIGHT_DEFS = [
   { backendKey: "protein_strength", clientKey: "proteinStrength", label: "High Protein",       positive: true  },
   { backendKey: "protein_quality",  clientKey: null,               label: "Protein Quality",    positive: true  },
@@ -489,22 +454,20 @@ const INSIGHT_DEFS = [
   { backendKey: "lasting_energy",   clientKey: "lastingEnergy",     label: "Lasting Energy",     positive: true  },
 ];
 
-// Dynamic accent: green=good end, red=bad end for each metric direction
 function levelAccent(positive, score) {
   if (positive) {
-    if (score >= 8) return "#1a9a4a";
-    if (score >= 6) return "#2d7dd2";
-    if (score >= 4) return "#9ca3af";
-    return "#e05252";
+    if (score >= 8) return "#22C55E";
+    if (score >= 6) return "#3B82F6";
+    if (score >= 4) return "#6B7280";
+    return "#EF4444";
   } else {
-    if (score >= 8) return "#c0392b";
-    if (score >= 6) return "#e07b39";
-    if (score >= 4) return "#9ca3af";
-    return "#1a9a4a";
+    if (score >= 8) return "#EF4444";
+    if (score >= 6) return "#F97316";
+    if (score >= 4) return "#6B7280";
+    return "#22C55E";
   }
 }
 
-// Add directional emoji marker and optional level-name override
 function formatLevel(positive, level, levelOverrides) {
   if (!level) return level;
   const key = level.toLowerCase();
@@ -519,7 +482,6 @@ function formatLevel(positive, level, levelOverrides) {
   return raw;
 }
 
-// Convert numeric score to raw level string for client-side path
 function scoreToLevel(positive, score) {
   if (positive) {
     if (score >= 8) return "excellent";
@@ -560,7 +522,6 @@ function InsightsPanel({ chips, onFindSimilar }) {
   const clientScores  = computeInsights(nutChip);
 
   const rows = INSIGHT_DEFS.map(({ backendKey, clientKey, label, positive, levelOverrides }) => {
-    // Prefer backend score (includes prep-aware explanation)
     const bs = backendScores?.[backendKey];
     if (bs && bs.score !== null && Number.isFinite(bs.score)) {
       const rawLevel = bs.level || scoreToLevel(positive, bs.score);
@@ -572,7 +533,6 @@ function InsightsPanel({ chips, onFindSimilar }) {
         explanation: bs.explanation || null,
       };
     }
-    // Client fallback — no explanation available
     const cs = clientScores[clientKey];
     if (cs === null || cs === undefined) return null;
     const rawLevel = scoreToLevel(positive, Math.round(cs));
@@ -586,7 +546,7 @@ function InsightsPanel({ chips, onFindSimilar }) {
   }).filter(Boolean);
 
   if (!rows.length) {
-    return <div style={{ fontSize: 14, color: "#9ca3af" }}>Not enough data to compute insights.</div>;
+    return <div style={{ fontSize: 14, color: "#6B7280" }}>Not enough data to compute insights.</div>;
   }
 
   const summary = buildSummary(rows);
@@ -594,20 +554,20 @@ function InsightsPanel({ chips, onFindSimilar }) {
   return (
     <div>
       {summary && (
-        <div style={{ fontSize: 12, color: "#667085", marginBottom: 10, fontStyle: "italic" }}>
+        <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 10, fontStyle: "italic" }}>
           {summary}
         </div>
       )}
       {rows.map(({ label, accent, score, level, explanation }) => (
-        <div key={label} style={{ padding: "6px 0", borderBottom: "1px solid #f0f2f5" }}>
+        <div key={label} style={{ padding: "6px 0", borderBottom: "1px solid #1F2937" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#344054" }}>{label}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#D1D5DB" }}>{label}</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: accent }}>{level}</span>
-            <span style={{ fontSize: 12, color: "#9ca3af" }}>({score}/10)</span>
+            <span style={{ fontSize: 12, color: "#6B7280" }}>({score}/10)</span>
           </div>
           {explanation && (
-            <div style={{ fontSize: 12, color: "#667085", marginTop: 2 }}>
-              {"\u2192"} {explanation}
+            <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>
+              {"→"} {explanation}
             </div>
           )}
         </div>
@@ -623,9 +583,9 @@ function InsightsPanel({ chips, onFindSimilar }) {
           gap: 4,
           padding: "6px 14px",
           borderRadius: 999,
-          border: "1px solid #d0d5dd",
-          background: "#f2f4f7",
-          color: "#344054",
+          border: "1px solid #374151",
+          background: "#1A2419",
+          color: "#D1D5DB",
           fontSize: 13,
           fontWeight: 700,
           cursor: "pointer",
@@ -648,7 +608,7 @@ function PrecisionLine({ chip }) {
         marginTop: 5,
         fontSize: 12,
         fontWeight: 700,
-        color: "#2d6a4f",
+        color: "#22C55E",
         letterSpacing: "0.01em",
         lineHeight: 1.4,
       }}
@@ -675,12 +635,12 @@ function Chip({ label, active, available, onClick }) {
         lineHeight: 1,
         cursor: "pointer",
         border: active
-          ? "1px solid #11211a"
+          ? "1px solid #22C55E"
           : available
-          ? "1px solid #d0d5dd"
-          : "1px solid #e4e7ec",
-        background: active ? "#11211a" : available ? "#f2f4f7" : "#f7f9fc",
-        color: active ? "#fff" : available ? "#344054" : "#9ca3af",
+          ? "1px solid #374151"
+          : "1px solid #1F2937",
+        background: active ? "#22C55E" : available ? "#1A2419" : "#121A14",
+        color: active ? "#0B0F0C" : available ? "#D1D5DB" : "#6B7280",
       }}
     >
       {label}
@@ -699,19 +659,19 @@ function CompactScoreSummary({ presentation, breadScore }) {
         marginTop: 10,
         padding: "12px 14px",
         borderRadius: 16,
-        background: "linear-gradient(135deg, rgba(255,247,237,1), rgba(255,255,255,1))",
-        border: "1px solid rgba(249,115,22,0.18)",
+        background: "linear-gradient(135deg, rgba(180,83,9,0.18), rgba(18,26,20,1))",
+        border: "1px solid rgba(249,115,22,0.2)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-        <div style={{ fontSize: 12, fontWeight: 900, color: "#c2410c" }}>
+        <div style={{ fontSize: 12, fontWeight: 900, color: "#FB923C" }}>
           {breadScore ? "Bread Score" : "Indulgence Score"}
         </div>
-        <div style={{ fontSize: 12, fontWeight: 900, color: "#9a3412" }}>
+        <div style={{ fontSize: 12, fontWeight: 900, color: "#FDBA74" }}>
           {breadScore ? `${breadScore.score}` : `${indulgence.score}`}
         </div>
       </div>
-      <div style={{ marginTop: 6, fontSize: 12.5, fontWeight: 800, color: "#9a3412" }}>
+      <div style={{ marginTop: 6, fontSize: 12.5, fontWeight: 800, color: "#FDBA74" }}>
         {breadScore ? breadScore.band : (indulgence.level === "indulgent" ? "Very rich" : indulgence.level === "rich" ? "Rich" : indulgence.level === "moderate" ? "Moderate" : "Lighter")}
       </div>
       {compactDrivers.length ? (
@@ -722,9 +682,9 @@ function CompactScoreSummary({ presentation, breadScore }) {
               style={{
                 fontSize: 11,
                 fontWeight: 800,
-                color: "#7c2d12",
-                background: "rgba(249,115,22,0.08)",
-                border: "1px solid rgba(249,115,22,0.16)",
+                color: "#FDBA74",
+                background: "rgba(249,115,22,0.1)",
+                border: "1px solid rgba(249,115,22,0.2)",
                 borderRadius: 999,
                 padding: "3px 8px",
               }}
@@ -745,13 +705,13 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
   const nutChip = chips?.nutrition_chip || {};
   const indulgencePresentation = resolveIndulgencePresentation({ chips });
 
-  const muted = { color: "#9ca3af" };
+  const muted = { color: "#6B7280" };
   const wrap = {
     marginTop: 10,
     paddingTop: 10,
-    borderTop: "1px solid #e4e7ec",
+    borderTop: "1px solid #1F2937",
     fontSize: "14px",
-    color: "#11211a",
+    color: "#D1D5DB",
     lineHeight: 1.5,
     maxWidth: 560,
   };
@@ -783,7 +743,7 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
                 <div
                   style={{
                     fontSize: "12px",
-                    color: "#667085",
+                    color: "#9CA3AF",
                     fontWeight: 700,
                     marginBottom: 6,
                   }}
@@ -811,14 +771,14 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
                           style={{
                             fontSize: "14px",
                             fontWeight: 600,
-                            color: "#11211a",
+                            color: "#FFFFFF",
                             minWidth: 0,
                           }}
                         >
                           {siHref ? (
                             <Link
                               to={siHref}
-                              style={{ color: "#11211a", textDecoration: "none" }}
+                              style={{ color: "#FFFFFF", textDecoration: "none" }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.textDecoration = "underline";
                               }}
@@ -832,7 +792,7 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
                             siName
                           )}
                           {similarIndulgence?.indulgence ? (
-                            <div style={{ marginTop: 4, fontSize: "11.5px", color: "#b45309", fontWeight: 800 }}>
+                            <div style={{ marginTop: 4, fontSize: "11.5px", color: "#FB923C", fontWeight: 800 }}>
                               Indulgent · {similarIndulgence.indulgence.score}
                             </div>
                           ) : null}
@@ -843,7 +803,7 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
                               fontSize: "14px",
                               fontWeight: 800,
                               whiteSpace: "nowrap",
-                              color: "#11211a",
+                              color: "#22C55E",
                               flexShrink: 0,
                             }}
                           >
@@ -910,9 +870,6 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
 
   const nutChip = chips?.nutrition_chip || {};
 
-  // Nutrition chip is "available" (lights up blue) when any of:
-  // - actual nutrient values present
-  // - allergens have been inferred
   const hasNut =
     asStr(nutChip?.status).toLowerCase() === "available" ||
     asNum(nutChip.calories_kcal) !== null ||
@@ -940,10 +897,10 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
       style={{
         paddingTop: 10,
         paddingBottom: 10,
-        borderBottom: "1px solid #e4e7ec",
+        borderBottom: "1px solid #1F2937",
       }}
     >
-      {/* Name + price — left-anchored, not pushed apart */}
+      {/* Name + price */}
       <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 20px" }}>
         <span
           style={{
@@ -951,19 +908,20 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
             fontWeight: 800,
             lineHeight: 1.25,
             letterSpacing: "-0.01em",
+            color: "#FFFFFF",
           }}
         >
           {href ? (
             <Link
               to={href}
-              style={{ color: "#11211a", textDecoration: "none" }}
+              style={{ color: "#FFFFFF", textDecoration: "none" }}
               onClick={() => trackMenuItemInteraction(mid, "click")}
               onMouseEnter={(e) => {
-                e.currentTarget.style.textDecoration = "underline";
+                e.currentTarget.style.color = "#22C55E";
                 e.currentTarget.style.textUnderlineOffset = "3px";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.textDecoration = "none";
+                e.currentTarget.style.color = "#FFFFFF";
               }}
             >
               {hl(name, query)}
@@ -973,36 +931,36 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
           )}
         </span>
 
-	        {price ? (
-	          <span
+        {price ? (
+          <span
             style={{
               fontSize: "16px",
               fontWeight: 800,
               whiteSpace: "nowrap",
-              color: "#667085",
+              color: "#22C55E",
             }}
-	          >
-	            {price}
-	          </span>
-	        ) : null}
-          {dishShareData ? (
-            <ShareButton
-              variant="dish"
-              label="Share Dish"
-              modalTitle={`Share ${name}`}
-              shareData={dishShareData}
-              analyticsContext={{
-                restaurantId: getRestId(row),
-                restaurantSlug: getRestSlug(row) || null,
-                menuItemId: mid,
-                menuItemName: name,
-                pageType: "search_results",
-                shareTarget: "dish",
-              }}
-              iconOnly
-              stopPropagation
-            />
-          ) : null}
+          >
+            {price}
+          </span>
+        ) : null}
+        {dishShareData ? (
+          <ShareButton
+            variant="dish"
+            label="Share Dish"
+            modalTitle={`Share ${name}`}
+            shareData={dishShareData}
+            analyticsContext={{
+              restaurantId: getRestId(row),
+              restaurantSlug: getRestSlug(row) || null,
+              menuItemId: mid,
+              menuItemName: name,
+              pageType: "search_results",
+              shareTarget: "dish",
+            }}
+            iconOnly
+            stopPropagation
+          />
+        ) : null}
       </div>
 
       {matchPreview ? (
@@ -1011,12 +969,12 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
             marginTop: 8,
             fontSize: "13px",
             lineHeight: 1.45,
-            color: "#667085",
+            color: "#9CA3AF",
             fontWeight: 650,
             overflowWrap: "anywhere",
           }}
         >
-          <span style={{ color: "#475467", fontWeight: 800 }}>
+          <span style={{ color: "#22C55E", fontWeight: 800 }}>
             {MATCH_LABEL}{" "}
           </span>
           <span>{matchPreview.text}</span>
@@ -1081,10 +1039,10 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
 
 function DietBadge({ label, tone }) {
   const tones = {
-    deal: { background: "#fff8e8", borderColor: "#e8cf9c", color: "#7a5600" },
-    vegan: { background: "#eefcf2", borderColor: "#b9e2c3", color: "#27643a" },
-    gf: { background: "#f2f4f7", borderColor: "#d0d5dd", color: "#344054" },
-    popular: { background: "#fff1f1", borderColor: "#f1c0c0", color: "#8a2f2f" },
+    deal:    { background: "rgba(234,179,8,0.1)",   borderColor: "rgba(234,179,8,0.25)",   color: "#FCD34D" },
+    vegan:   { background: "rgba(34,197,94,0.1)",   borderColor: "rgba(34,197,94,0.25)",   color: "#22C55E" },
+    gf:      { background: "#1F2937",               borderColor: "#374151",                color: "#D1D5DB" },
+    popular: { background: "rgba(239,68,68,0.1)",   borderColor: "rgba(239,68,68,0.25)",   color: "#FCA5A5" },
   };
   const t = tones[tone] || {};
   return (
@@ -1097,9 +1055,9 @@ function DietBadge({ label, tone }) {
         fontSize: "12px",
         fontWeight: 700,
         lineHeight: 1,
-        border: "1px solid " + (t.borderColor || "#e4e7ec"),
-        background: t.background || "#f7f9fc",
-        color: t.color || "#667085",
+        border: "1px solid " + (t.borderColor || "#1F2937"),
+        background: t.background || "#121A14",
+        color: t.color || "#9CA3AF",
         userSelect: "none",
       }}
     >
@@ -1130,9 +1088,9 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
   const tierLabel = profileTier === "pro" ? "Pro" : profileTier === "verified" ? "Verified" : "";
   const tierStyle =
     profileTier === "pro"
-      ? { background: "#f2f4f7", border: "1px solid #d0d5dd", color: "#344054" }
+      ? { background: "#1F2937", border: "1px solid #374151", color: "#D1D5DB" }
       : profileTier === "verified"
-      ? { background: "#ecfff4", border: "1px solid #b9e7c9", color: "#1f6a3c" }
+      ? { background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)", color: "#22C55E" }
       : null;
 
   return (
@@ -1162,7 +1120,7 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
         <span
           style={{
             fontSize: "var(--text-2, 13px)",
-            color: "var(--muted, #5b6675)",
+            color: "#9CA3AF",
             fontWeight: 650,
           }}
         >
@@ -1176,9 +1134,9 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
             fontWeight: 800,
             borderRadius: 999,
             padding: "2px 7px",
-            background: "rgba(45,106,79,0.08)",
-            border: "1px solid rgba(45,106,79,0.2)",
-            color: "#2d6a4f",
+            background: "rgba(34,197,94,0.1)",
+            border: "1px solid rgba(34,197,94,0.2)",
+            color: "#22C55E",
             whiteSpace: "nowrap",
           }}
         >
@@ -1198,9 +1156,9 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
             width: 24,
             height: 24,
             borderRadius: 6,
-            background: "var(--chip-bg, #f2f4f7)",
-            border: "1px solid var(--border2, #d0d5dd)",
-            color: "var(--muted, #5b6675)",
+            background: "#1F2937",
+            border: "1px solid #374151",
+            color: "#9CA3AF",
             textDecoration: "none",
             flexShrink: 0,
           }}
@@ -1264,13 +1222,15 @@ export default function SearchResultCard({ restaurant, items, item, query, query
               style={{
                 fontSize: "var(--text-3, 16px)",
                 fontWeight: 800,
-                color: "var(--muted, #5b6675)",
+                color: "#9CA3AF",
                 textDecoration: "none",
               }}
               onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#22C55E";
                 e.currentTarget.style.textDecoration = "underline";
               }}
               onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#9CA3AF";
                 e.currentTarget.style.textDecoration = "none";
               }}
             >
@@ -1281,7 +1241,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
               style={{
                 fontSize: "var(--text-3, 16px)",
                 fontWeight: 800,
-                color: "var(--muted, #5b6675)",
+                color: "#9CA3AF",
               }}
             >
               {restName}
@@ -1312,7 +1272,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
               style={{
                 fontSize: "var(--text-3, 15px)",
                 fontWeight: 800,
-                color: "var(--link, #11211a)",
+                color: "#22C55E",
                 textDecoration: "none",
               }}
               onMouseEnter={(e) => {
@@ -1361,13 +1321,15 @@ export default function SearchResultCard({ restaurant, items, item, query, query
               style={{
                 fontSize: "var(--text-3, 16px)",
                 fontWeight: 800,
-                color: "var(--muted, #5b6675)",
+                color: "#9CA3AF",
                 textDecoration: "none",
               }}
               onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#22C55E";
                 e.currentTarget.style.textDecoration = "underline";
               }}
               onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#9CA3AF";
                 e.currentTarget.style.textDecoration = "none";
               }}
             >
@@ -1389,7 +1351,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
               style={{
                 fontSize: "var(--text-3, 15px)",
                 fontWeight: 800,
-                color: "var(--link, #11211a)",
+                color: "#22C55E",
                 textDecoration: "none",
               }}
               onMouseEnter={(e) => {
@@ -1418,13 +1380,13 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   return (
     <article className="gb-card" style={cardStyle}>
       {/* Restaurant name */}
-      <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.01em", color: "#11211a" }}>
+      <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.01em", color: "#FFFFFF" }}>
         {restHrefS ? (
           <Link
             to={restHrefS}
-            style={{ color: "#11211a", textDecoration: "none" }}
-            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; e.currentTarget.style.textUnderlineOffset = "3px"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+            style={{ color: "#FFFFFF", textDecoration: "none" }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "#22C55E"; e.currentTarget.style.textUnderlineOffset = "3px"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "#FFFFFF"; }}
           >
             {hl(restNameS, query)}
           </Link>
@@ -1433,24 +1395,21 @@ export default function SearchResultCard({ restaurant, items, item, query, query
         )}
       </div>
 
-      {/* Cuisine tag */}
       {cuisineS && (
-        <div style={{ marginTop: 4, fontSize: 13, fontWeight: 600, color: "#667085" }}>
+        <div style={{ marginTop: 4, fontSize: 13, fontWeight: 600, color: "#9CA3AF" }}>
           {cuisineS}
         </div>
       )}
 
-      {/* Address — line 1: street, line 2: City, ST ZIP */}
       {(addressLine1S || cityStateLine) && (
-        <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "#475467", lineHeight: 1.5 }}>
+        <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "#9CA3AF", lineHeight: 1.5 }}>
           {addressLine1S && <div>{addressLine1S}</div>}
           {cityStateLine && <div>{cityStateLine}</div>}
         </div>
       )}
 
-      {/* Distance · Phone */}
       {detailPieces.length > 0 && (
-        <div style={{ marginTop: 4, fontSize: 14, fontWeight: 500, color: "#667085" }}>
+        <div style={{ marginTop: 4, fontSize: 14, fontWeight: 500, color: "#6B7280" }}>
           {detailPieces.join(" · ")}
         </div>
       )}
@@ -1459,7 +1418,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
         <div style={{ marginTop: 12 }}>
           <Link
             to={menuHrefS}
-            style={{ fontSize: 15, fontWeight: 800, color: "#11211a", textDecoration: "none" }}
+            style={{ fontSize: 15, fontWeight: 800, color: "#22C55E", textDecoration: "none" }}
             onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
             onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
           >

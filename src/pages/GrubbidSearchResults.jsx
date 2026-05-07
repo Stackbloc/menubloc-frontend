@@ -747,9 +747,9 @@ function FilterToggle({ label, active, onClick, isMobile }) {
         fontWeight: 700,
         lineHeight: 1,
         cursor: "pointer",
-        border: active ? "1.5px solid #11211a" : "1px solid rgba(18,34,28,0.12)",
-        background: active ? "#11211a" : "#fff",
-        color: active ? "#fff" : "#11211a",
+        border: active ? "1.5px solid #22C55E" : "1px solid #1F2937",
+        background: active ? "#22C55E" : "#1A2419",
+        color: active ? "#0B0F0C" : "#D1D5DB",
         transition: "background 0.1s, color 0.1s",
         whiteSpace: "nowrap",
       }}
@@ -1308,12 +1308,12 @@ export default function GrubbidSearchResults() {
     : null;
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       {/* ── STICKY HEADER ── */}
       <div style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: "#f7f6f1",
-        borderBottom: "1px solid rgba(0,0,0,0.06)",
+        background: "#0B0F0C",
+        borderBottom: "1px solid #1F2937",
         paddingBottom: 12,
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px" }}>
@@ -1321,36 +1321,36 @@ export default function GrubbidSearchResults() {
             type="button"
             onClick={() => navigate(-1)}
             aria-label="Go back"
-            style={{ border: "none", background: "transparent", fontSize: 22, color: "#101828", cursor: "pointer", padding: 4, lineHeight: 1, flexShrink: 0 }}
+            style={{ border: "none", background: "transparent", fontSize: 22, color: "#9CA3AF", cursor: "pointer", padding: 4, lineHeight: 1, flexShrink: 0 }}
           >
             ←
           </button>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <BrandLogo width={72} height={48} radius={14} pageColor="#f7f6f1" />
+            <BrandLogo width={72} height={48} radius={14} pageColor="#0B0F0C" />
             <div style={{
               width: 72, marginTop: -1, padding: "4px 0 6px", textAlign: "center",
-              background: "linear-gradient(180deg, #ff9a2f 0%, #ff6b00 100%)",
+              background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
               fontSize: 8, fontWeight: 900,
               letterSpacing: "0.13em", textTransform: "uppercase",
               borderRadius: "0 0 7px 7px",
-              boxShadow: "0 6px 16px rgba(255,107,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",
+              boxShadow: "0 6px 16px rgba(34,197,94,0.25), inset 0 1px 0 rgba(255,255,255,0.12)",
               userSelect: "none",
+              color: "#0B0F0C",
             }}>
-              <span style={{ color: "#ffb15c" }}>✦</span>{" "}
-              <span style={{ color: "#1d4ed8" }}>BidFree Bidding</span>
+              Menu Coins
             </div>
           </div>
           <div style={{ width: 30, flexShrink: 0 }} />
         </div>
         <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 17, fontWeight: 900, color: "#101828", letterSpacing: "-0.02em" }}>
+          <span style={{ fontSize: 17, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.02em" }}>
             🔍 {displayQuery ? `"${displayQuery}"` : "Search"}
           </span>
           {locationLabel && (
             <span style={{
-              fontSize: 12, fontWeight: 600, color: "#486257",
-              background: "rgba(22,101,62,0.08)", borderRadius: 999,
-              padding: "2px 10px", border: "1px solid rgba(22,101,62,0.14)",
+              fontSize: 12, fontWeight: 600, color: "#22C55E",
+              background: "rgba(34,197,94,0.08)", borderRadius: 999,
+              padding: "2px 10px", border: "1px solid rgba(34,197,94,0.2)",
             }}>
               Near {locationLabel}
             </span>
@@ -1525,19 +1525,19 @@ export default function GrubbidSearchResults() {
           style={{
             marginTop: isMobile ? 32 : 44,
             paddingTop: isMobile ? 16 : 20,
-            borderTop: "1px solid rgba(18,34,28,0.08)",
+            borderTop: "1px solid #1F2937",
             display: "flex",
             alignItems: "center",
             gap: 8,
             fontSize: isMobile ? 13 : 14,
-            color: "#667085",
+            color: "#6B7280",
           }}
         >
           <span style={{ fontWeight: 500 }}>Looking for something healthier?</span>
           <Link
             to={`/top-picks?city=${encodeURIComponent(city)}${state ? `&state=${encodeURIComponent(state)}` : ""}`}
             style={{
-              color: "#2d6a4f",
+              color: "#22C55E",
               fontWeight: 700,
               textDecoration: "none",
             }}

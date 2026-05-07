@@ -2,11 +2,12 @@
  * ============================================================
  * File: GrubbidDiscovery.jsx
  * Path: menubloc-frontend/src/pages/GrubbidDiscovery.jsx
- * Date: 2026-04-17
+ * Date: 2026-05-06
  * Purpose:
  *   Mobile-first discovery page. Fixed top bar + search, auto-loading
  *   browse feed, left drawer, more-options bottom sheet.
  *   All search/location/filter logic preserved from prior version.
+ *   Visual-only update: dark Menuply theme.
  * ============================================================
  */
 
@@ -111,9 +112,9 @@ function DiscoveryChipRow({ chips, filters, onChipClick }) {
               style={{
                 height: 28, padding: "0 12px", borderRadius: 999,
                 flexShrink: 0, cursor: "pointer", whiteSpace: "nowrap",
-                border: isActive ? "1.5px solid #1f4e3d" : "1.5px solid #e4e7ec",
-                background: isActive ? "#ecfdf3" : "#fff",
-                color: isActive ? "#1f4e3d" : "#344054",
+                border: isActive ? "1.5px solid #22C55E" : "1.5px solid #1F2937",
+                background: isActive ? "rgba(34,197,94,0.15)" : "#1A2419",
+                color: isActive ? "#22C55E" : "#D1D5DB",
                 fontSize: 12, fontWeight: 700,
               }}
             >
@@ -870,10 +871,10 @@ export default function GrubbidDiscovery() {
     : "Enter city, state or zip";
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       <style>{`
-        .disc-search-input::placeholder { color: #9ca3af; font-size: 15px; font-weight: 500; }
-        .disc-search-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(31,78,61,0.25); }
+        .disc-search-input::placeholder { color: #6B7280; font-size: 15px; font-weight: 500; }
+        .disc-search-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(34,197,94,0.35); }
         .disc-feed-skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
         @keyframes skelPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
         .disc-feed-grid { display:flex; flex-direction:column; gap:6px; }
@@ -905,8 +906,8 @@ export default function GrubbidDiscovery() {
         {/* ── STICKY HEADER ──────────────────────────────────────────────── */}
         <div style={{
           position: "sticky", top: 0, zIndex: 100,
-          background: "#f7f6f1",
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
+          background: "#0B0F0C",
+          borderBottom: "1px solid #1F2937",
           paddingBottom: 12,
         }}>
           <div style={{
@@ -919,7 +920,7 @@ export default function GrubbidDiscovery() {
               aria-label="Open menu"
               style={{
                 border: "none", background: "transparent",
-                fontSize: 22, color: "#101828", cursor: "pointer",
+                fontSize: 22, color: "#9CA3AF", cursor: "pointer",
                 padding: 4, lineHeight: 1, flexShrink: 0,
               }}
             >
@@ -927,24 +928,24 @@ export default function GrubbidDiscovery() {
             </button>
 
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <BrandLogo width={72} height={48} radius={14} pageColor="#f7f6f1" />
+              <BrandLogo width={72} height={48} radius={14} pageColor="#0B0F0C" />
               <div style={{
                 width: 72,
                 marginTop: -1,
                 padding: "4px 0 6px",
                 textAlign: "center",
-                background: "linear-gradient(180deg, #ff9a2f 0%, #ff6b00 100%)",
+                background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
                 fontSize: 8,
                 fontWeight: 900,
                 letterSpacing: "0.13em",
                 textTransform: "uppercase",
                 borderRadius: "0 0 7px 7px",
-                boxShadow: "0 6px 16px rgba(255,107,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",
+                boxShadow: "0 4px 12px rgba(34,197,94,0.3), inset 0 1px 0 rgba(255,255,255,0.12)",
                 userSelect: "none",
               }}>
-                <span style={{ display: "block", color: "#ffb15c" }}>✦</span>
-                <span style={{ display: "block", color: "#1d4ed8" }}>BidFree</span>
-                <span style={{ display: "block", color: "#1d4ed8", paddingLeft: 9 }}>Bidding</span>
+                <span style={{ display: "block", color: "rgba(0,0,0,0.5)" }}>✦</span>
+                <span style={{ display: "block", color: "#0B0F0C" }}>Menu</span>
+                <span style={{ display: "block", color: "#0B0F0C", paddingLeft: 9 }}>Coins</span>
               </div>
             </div>
 
@@ -955,9 +956,9 @@ export default function GrubbidDiscovery() {
                   display: "inline-flex", alignItems: "center", gap: 3,
                   minHeight: 32, padding: "0 12px",
                   borderRadius: 999,
-                  border: "1.5px solid rgba(196,55,0,0.38)",
-                  background: "#fff4ef",
-                  color: "#c03200",
+                  border: "1.5px solid rgba(34,197,94,0.3)",
+                  background: "rgba(34,197,94,0.08)",
+                  color: "#22C55E",
                   fontSize: 13, fontWeight: 800,
                   textDecoration: "none", whiteSpace: "nowrap",
                   letterSpacing: "0.01em",
@@ -972,7 +973,7 @@ export default function GrubbidDiscovery() {
                   </Link>
                 ) : (
                   <Link to="/account/login" style={{
-                    fontSize: 13, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
+                    fontSize: 13, fontWeight: 700, color: "#22C55E", textDecoration: "none",
                   }}>
                     Sign in
                   </Link>
@@ -984,7 +985,7 @@ export default function GrubbidDiscovery() {
                 aria-label="Open app menu"
                 style={{
                   border: "none", background: "transparent",
-                  fontSize: 20, color: "#667085", cursor: "pointer",
+                  fontSize: 20, color: "#6B7280", cursor: "pointer",
                   padding: 4, lineHeight: 1,
                 }}
               >
@@ -1004,20 +1005,20 @@ export default function GrubbidDiscovery() {
                   setDraftQuery(e.target.value);
                 }}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
-                placeholder="Search by food, restaurant, dietary preference, ingredient…"
+                placeholder="Search dishes, ingredients, cuisines, or restaurants..."
                 style={{
                   width: "100%",
                   height: 52,
                   borderRadius: 999,
-                  border: "1.5px solid #e4e7ec",
-                  background: "#fff",
+                  border: "1.5px solid #1F2937",
+                  background: "#121A14",
                   paddingLeft: 22,
                   paddingRight: 92,
                   fontSize: 16,
                   fontWeight: 600,
-                  color: "#101828",
+                  color: "#FFFFFF",
                   boxSizing: "border-box",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.07)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
                 }}
               />
               <button
@@ -1028,7 +1029,7 @@ export default function GrubbidDiscovery() {
                   position: "absolute", right: 46, top: "50%",
                   transform: "translateY(-50%)",
                   border: "none", background: "transparent",
-                  fontSize: 18, color: "#667085", cursor: "pointer",
+                  fontSize: 18, color: "#9CA3AF", cursor: "pointer",
                   padding: 4, lineHeight: 1,
                 }}
               >
@@ -1042,7 +1043,7 @@ export default function GrubbidDiscovery() {
                   position: "absolute", right: 14, top: "50%",
                   transform: "translateY(-50%)",
                   border: "none", background: "transparent",
-                  fontSize: 20, color: "#667085", cursor: "pointer",
+                  fontSize: 20, color: "#9CA3AF", cursor: "pointer",
                   padding: 4, lineHeight: 1,
                 }}
               >
@@ -1054,9 +1055,9 @@ export default function GrubbidDiscovery() {
                 marginTop: 10,
                 padding: "10px 14px",
                 borderRadius: 14,
-                border: "1px solid #fcd34d",
-                background: "#fffbeb",
-                color: "#92400e",
+                border: "1px solid rgba(234,179,8,0.25)",
+                background: "rgba(234,179,8,0.08)",
+                color: "#FCD34D",
                 fontSize: 13,
                 fontWeight: 600,
               }}>
@@ -1079,9 +1080,9 @@ export default function GrubbidDiscovery() {
                 minHeight: 34,
                 padding: "0 12px",
                 borderRadius: 999,
-                border: "1px solid rgba(22,101,62,0.18)",
-                background: showLocationEditor ? "rgba(22,101,62,0.12)" : "rgba(22,101,62,0.08)",
-                color: "#486257",
+                border: "1px solid rgba(34,197,94,0.2)",
+                background: showLocationEditor ? "rgba(34,197,94,0.15)" : "rgba(34,197,94,0.08)",
+                color: "#22C55E",
                 cursor: "pointer",
                 transition: "background 140ms ease, opacity 140ms ease, border-color 140ms ease",
               }}
@@ -1107,7 +1108,7 @@ export default function GrubbidDiscovery() {
                 style={{
                   flexShrink: 0,
                   fontSize: 16,
-                  color: "#1F4E3D",
+                  color: "#22C55E",
                   opacity: 0.65,
                   lineHeight: 1,
                 }}
@@ -1140,11 +1141,11 @@ export default function GrubbidDiscovery() {
               id="discovery-location-editor"
               ref={locationEditorRef}
               style={{
-              background: "#fff", borderRadius: 16,
-              border: "1px solid #e4e7ec",
+              background: "#121A14", borderRadius: 16,
+              border: "1px solid #1F2937",
               padding: "16px", marginBottom: 16,
             }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#344054", marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#D1D5DB", marginBottom: 10 }}>
                 {t("discovery.locationInputLabel", "Enter your location")}
               </div>
 
@@ -1154,8 +1155,8 @@ export default function GrubbidDiscovery() {
                     <div key={label} style={{
                       display: "flex", alignItems: "center", justifyContent: "space-between",
                       padding: "8px 12px", borderRadius: 10,
-                      border: "1px solid #e4e7ec",
-                      background: locationInput === label ? "#f0faf4" : "#fafafa",
+                      border: "1px solid #1F2937",
+                      background: locationInput === label ? "rgba(34,197,94,0.1)" : "#0F1310",
                     }}>
                       <button
                         type="button"
@@ -1163,7 +1164,7 @@ export default function GrubbidDiscovery() {
                         style={{
                           border: "none", background: "transparent",
                           padding: 0, fontSize: 14, fontWeight: 700,
-                          color: "#11211a", cursor: "pointer", textAlign: "left", flex: 1,
+                          color: "#FFFFFF", cursor: "pointer", textAlign: "left", flex: 1,
                         }}
                       >
                         {label}
@@ -1179,7 +1180,7 @@ export default function GrubbidDiscovery() {
                         }}
                         style={{
                           border: "none", background: "transparent",
-                          padding: "0 0 0 8px", color: "#9ca3af",
+                          padding: "0 0 0 8px", color: "#6B7280",
                           fontSize: 16, lineHeight: 1, cursor: "pointer",
                         }}
                       >×</button>
@@ -1196,8 +1197,9 @@ export default function GrubbidDiscovery() {
                 placeholder={t("discovery.locationInputPlaceholder", "City, state or zip code")}
                 style={{
                   width: "100%", height: 42, borderRadius: 12,
-                  border: "1px solid #d7dce5", padding: "0 12px",
-                  fontSize: 14, background: "#fff", boxSizing: "border-box",
+                  border: "1px solid #374151", padding: "0 12px",
+                  fontSize: 14, background: "#0B0F0C", color: "#FFFFFF",
+                  boxSizing: "border-box",
                 }}
               />
 
@@ -1207,8 +1209,8 @@ export default function GrubbidDiscovery() {
                   onClick={() => applyLocationChange()}
                   style={{
                     height: 38, padding: "0 16px", borderRadius: 10,
-                    border: "1px solid #cbd5e1", background: "#fff",
-                    color: "#11211a", fontWeight: 900, fontSize: 13, cursor: "pointer",
+                    border: "1px solid #374151", background: "#121A14",
+                    color: "#FFFFFF", fontWeight: 900, fontSize: 13, cursor: "pointer",
                   }}
                 >
                   Apply
@@ -1222,8 +1224,8 @@ export default function GrubbidDiscovery() {
                     }}
                     style={{
                       height: 38, padding: "0 16px", borderRadius: 10,
-                      border: "1px solid #cbd5e1", background: "#fff",
-                      color: "#11211a", fontWeight: 900, fontSize: 13, cursor: "pointer",
+                      border: "1px solid #374151", background: "#121A14",
+                      color: "#FFFFFF", fontWeight: 900, fontSize: 13, cursor: "pointer",
                     }}
                   >
                     Use Current Location
@@ -1234,7 +1236,7 @@ export default function GrubbidDiscovery() {
               {consumerLoggedIn && (
                 <div style={{
                   marginTop: 8, fontSize: 12, fontWeight: 600,
-                  color: locationSaveState === "error" ? "#b42318" : "#667085",
+                  color: locationSaveState === "error" ? "#FCA5A5" : "#6B7280",
                 }}>
                   {locationSaveState === "saving" ? "Saving…"
                     : locationSaveState === "saved" ? "Default location updated."
@@ -1255,13 +1257,13 @@ export default function GrubbidDiscovery() {
           {inlineError && (
             <div style={{
               marginBottom: 16, padding: "14px 18px",
-              borderRadius: 14, border: "1px solid #fecaca",
-              background: "#fff8f8",
+              borderRadius: 14, border: "1px solid rgba(239,68,68,0.3)",
+              background: "rgba(239,68,68,0.08)",
             }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#b91c1c", marginBottom: 4 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#FCA5A5", marginBottom: 4 }}>
                 {inlineError}
               </div>
-              <div style={{ fontSize: 13, color: "#667085" }}>
+              <div style={{ fontSize: 13, color: "#9CA3AF" }}>
                 {t("discovery.tryDifferent", "Try a different search or location.")}
               </div>
             </div>
@@ -1289,7 +1291,7 @@ export default function GrubbidDiscovery() {
           {feedLoading ? (
             [0, 1, 2].map((i) => (
               <div key={i} className="disc-feed-skeleton" style={{
-                background: "#e4e7ec", borderRadius: 20,
+                background: "#1F2937", borderRadius: 20,
                 height: 130, marginBottom: 10,
               }} />
             ))
