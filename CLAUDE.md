@@ -2,6 +2,18 @@
 
 ---
 
+## 🚀 DEPLOYMENT — VERCEL
+
+**Platform:** Vercel (project: `andre-barber-s-projects/menubloc-frontend`, alias: `grubbid.com`)
+
+**Git push alone does NOT deploy to production.** Always run:
+```bash
+npx vercel --prod
+```
+from the `menubloc-frontend/` directory after pushing changes.
+
+---
+
 ## ⛔ EXECUTION GATE — MANDATORY BEFORE ANY ACTION
 
 AI may NOT write code, modify files, or run git commands UNTIL it outputs ALL of the following.
