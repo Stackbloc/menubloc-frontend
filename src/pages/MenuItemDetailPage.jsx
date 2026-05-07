@@ -945,13 +945,28 @@ const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
   "keto",
 ]);
 
-function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, allergenFilter }) {
+function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, activeSearchParams, t, allergenFilter }) {
   const navigate = useNavigate();
   const { itemCount } = useOrderCart();
   const [similar, setSimilar] = useState(null);
   const [similarMeta, setSimilarMeta] = useState(null);
   const [failed, setFailed] = useState(false);
-  const searchSuffix = activeSearchParams?.toString() ? `?${activeSearchParams.toString()}` : "";
+
+  function buildSimilarLink(entry) {
+    const basePath = getCanonicalMenuItemPath({
+      restaurant: { slug: entry.restaurant_slug || null, id: entry.restaurant_id || null },
+      menuItem: { id: entry.id },
+    });
+    const params = new URLSearchParams();
+    if (geoLat && geoLng) { params.set("lat", geoLat); params.set("lng", geoLng); }
+    for (const key of SIMILAR_DIET_FILTER_KEYS) {
+      if (activeSearchParams?.get(key) === "1") params.set(key, "1");
+    }
+    if (itemId) params.set("fromItem", String(itemId));
+    if (itemName) params.set("fromName", itemName);
+    if (currentSlug) params.set("fromSlug", currentSlug);
+    return `${basePath}?${params.toString()}`;
+  }
 
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
@@ -1009,11 +1024,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
     const slug = candidateItem?.restaurant_slug || null;
     const id = candidateItem?.id;
     if (!id) return;
-    const geoSuffix = geoLat && geoLng ? `?lat=${geoLat}&lng=${geoLng}` : "";
-    const path = slug
-      ? `/restaurants/${slug}/menu-items/${id}${geoSuffix}`
-      : `/menu-items/${id}${geoSuffix}`;
-    navigate(path);
+    navigate(buildSimilarLink({ ...candidateItem, restaurant_slug: slug, restaurant_id: candidateItem?.restaurant_id }));
   }
 
   if (itemCount > 0) return null;
@@ -1055,13 +1066,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
 
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
                 <Link
-                  to={`${getCanonicalMenuItemPath({
-                    restaurant: {
-                      slug: entry.restaurant_slug || null,
-                      id: entry.restaurant_id || null,
-                    },
-                    menuItem: { id: entry.id },
-                  })}${searchSuffix}`}
+                  to={buildSimilarLink(entry)}
                   style={{
                     textDecoration: "none",
                     color: "#22C55E",
@@ -1263,6 +1268,15 @@ export default function MenuItemDetailPage() {
     item?.priceMinor != null ? formatMoney(item.priceMinor) :
     item?.price      != null ? moneyFromFloat(item.price) : null;
 
+  const fromItemId   = searchParams.get("fromItem");
+  const fromItemName = searchParams.get("fromName");
+  const fromItemSlug = searchParams.get("fromSlug");
+  const backUrl = fromItemId
+    ? (fromItemSlug
+        ? `/restaurants/${fromItemSlug}/menu-items/${fromItemId}`
+        : `/menu-items/${fromItemId}`)
+    : null;
+
   if (loading) {
     return (
       <PageShell isMobile={isMobile}>
@@ -1307,6 +1321,25 @@ export default function MenuItemDetailPage() {
         t={t}
         language={language}
       />
+
+      {backUrl && fromItemName && (
+        <Link
+          to={backUrl}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            marginBottom: 14, fontSize: 13, fontWeight: 800,
+            color: "#9CA3AF", textDecoration: "none",
+          }}
+        >
+          <span style={{ fontSize: 16, lineHeight: 1 }}>←</span>
+          <span style={{
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            maxWidth: 220,
+          }}>
+            {fromItemName}
+          </span>
+        </Link>
+      )}
 
       {/* ── 1. Hero / Item Identity ── */}
       <Surface style={{ padding: isMobile ? 18 : 24 }} ref={heroRef}>
@@ -1468,6 +1501,8 @@ export default function MenuItemDetailPage() {
 
       <ExploreSimilarDishes
         itemId={item.id}
+        itemName={getLocalizedField(item, "name", language) || item.name}
+        currentSlug={item.restaurant.slug || null}
         geoLat={geoLat}
         geoLng={geoLng}
         activeSearchParams={searchParams}
