@@ -515,7 +515,7 @@ export default function BrowseMenus() {
   });
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f7f6f1", color: "#101828" }}>
+    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       <StickyPageHeader
         title={locationLabel
           ? t("browse.nearTitle", `Browsing Near ${locationLabel}`, { location: locationLabel })
@@ -667,7 +667,7 @@ export default function BrowseMenus() {
               {[0, 1, 2, 3, 4, 5].map((card) => (
                 <div
                   key={card}
-                  style={{ height: 148, borderRadius: 16, background: "rgba(0,0,0,0.06)" }}
+                  style={{ height: 148, borderRadius: 16, background: "#1F2937" }}
                 />
               ))}
             </div>
