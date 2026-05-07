@@ -4,10 +4,14 @@ import { Link } from "react-router-dom";
 const NAV_ITEMS = [
   { label: "Deals",               href: "/deals",             icon: "🏷️" },
   { label: "Top Picks Near You",  href: "/top-picks",         icon: "⭐" },
+  { label: "Food Truck Directory", href: "/foodtrucks",       icon: "🚚" },
 ];
 
 const META_ITEMS = [
   { label: "Restaurant Sign Up",  href: "/restaurant/signup", icon: "🍴" },
+  { label: "Food Truck Sign Up",  href: "/foodtruck/signup",  icon: "🛻" },
+  { label: "Terms of Use",        href: "/terms",             icon: "📄" },
+  { label: "Privacy Policy",      href: "/privacy",           icon: "🔒" },
   { label: "About Menuply",       href: "/about",             icon: "ℹ️" },
   { label: "Contact Us",          href: "/contact",           icon: "💬" },
 ];

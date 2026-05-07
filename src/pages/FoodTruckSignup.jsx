@@ -17,8 +17,9 @@
  */
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import { LEGAL_VERSIONS } from "../content/legal.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -126,6 +127,29 @@ const st = {
   planFeatures: { listStyle: "none", padding: 0, margin: "12px 0 0", fontSize: 13, color: "#333", lineHeight: 1.7 },
   planFeatureItem: { display: "flex", gap: 8, alignItems: "flex-start" },
   checkmark: { color: "#111", fontWeight: 900, marginTop: 1, flexShrink: 0 },
+  checkboxRow: {
+    display: "flex",
+    gap: 10,
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    marginTop: 2,
+    accentColor: "#111",
+    flex: "0 0 auto",
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    lineHeight: 1.6,
+    color: "#344054",
+  },
+  legalLink: {
+    color: "#111",
+    fontWeight: 700,
+    textDecoration: "underline",
+  },
 };
 
 function submitBtnStyle(disabled) {
@@ -139,12 +163,12 @@ function submitBtnStyle(disabled) {
 }
 
 const TRUCK_FEATURES = [
-  "Verified food truck badge on your public profile",
-  "Edit and manage your menu",
+  "Public food truck profile page",
+  "Upload and manage your menu",
+  "QR code with sticker for your menu",
   "Update your live location and schedule",
   "Appear in Menuply food truck discovery",
-  "QR code for your menu",
-  "Upcoming Locations & Events schedule page",
+  "Upcoming locations and events schedule page",
 ];
 
 export default function FoodTruckSignup() {
@@ -169,6 +193,10 @@ export default function FoodTruckSignup() {
   const [serverError, setServerError]  = useState("");
   const [submitting,  setSubmitting]   = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  const [agreements, setAgreements] = useState({
+    merchantTerms: false,
+    privacyPolicy: false,
+  });
 
   // Handle return from Stripe Checkout
   useEffect(() => {
@@ -192,15 +220,26 @@ export default function FoodTruckSignup() {
     if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
+  function handleAgreementChange(e) {
+    const { name, checked } = e.target;
+    setAgreements((prev) => ({ ...prev, [name]: checked }));
+    if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  }
+
   function validate() {
     const errors = {};
     if (!form.truck_name.trim()) errors.truck_name = "Truck name is required.";
     if (!form.email.trim())      errors.email      = "Email is required.";
     if (!form.city.trim())       errors.city       = "City is required.";
     if (!form.state.trim())      errors.state      = "State is required.";
+    if (!form.password) errors.password = "Password is required.";
+    else if (form.password.length < 8) errors.password = "Password must be at least 8 characters.";
+    if (!form.confirmPassword) errors.confirmPassword = "Confirm your password.";
     if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
       errors.confirmPassword = "Passwords do not match.";
     }
+    if (!agreements.merchantTerms) errors.merchantTerms = "You must agree to the Merchant Terms of Service.";
+    if (!agreements.privacyPolicy) errors.privacyPolicy = "You must agree to the Privacy Policy.";
     return errors;
   }
 
@@ -219,15 +258,26 @@ export default function FoodTruckSignup() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email:           form.email.trim(),
+          password:        form.password,
           restaurant_name: form.truck_name.trim(),
           phone:           form.phone.trim()       || null,
           website_url:     form.website_url.trim() || null,
           city:            form.city.trim()         || null,
-          state:           form.state.trim()        || null,
+          state:           form.state.trim().toUpperCase() || null,
           cuisine:         form.cuisine             || null,
           instagram:       form.instagram.trim().replace(/^@/, "") || null,
           service_area:    form.service_area.trim() || null,
           category:        "food_truck",
+          legal_acceptances: [
+            {
+              document_key: "merchant_terms",
+              document_version: LEGAL_VERSIONS.merchantTerms,
+            },
+            {
+              document_key: "privacy_policy",
+              document_version: LEGAL_VERSIONS.privacyPolicy,
+            },
+          ],
         }),
       });
 
@@ -254,6 +304,10 @@ export default function FoodTruckSignup() {
           plan_code:   "foodtruck_verified_annual",
           success_url: `${origin}/foodtruck/signup?checkout=success`,
           cancel_url:  `${origin}/foodtruck/signup?checkout=cancelled`,
+          legal_acceptance: {
+            document_key: "merchant_terms",
+            document_version: LEGAL_VERSIONS.merchantTerms,
+          },
         }),
       });
 
@@ -476,7 +530,7 @@ export default function FoodTruckSignup() {
             <div style={st.planBadge}>Food Truck Verified</div>
             <div style={st.planName}>Menuply Verified Listing</div>
             <div>
-              <span style={st.planPrice}>$59</span>
+              <span style={st.planPrice}>$49</span>
               <span style={st.planPer}>/ year</span>
             </div>
             <div style={st.planSavings}>Less than $5/month</div>
@@ -491,12 +545,44 @@ export default function FoodTruckSignup() {
           </div>
         </div>
 
+        <div style={st.section}>
+          <div style={st.sectionTitle}>Agreements</div>
+
+          <label style={st.checkboxRow}>
+            <input
+              type="checkbox"
+              name="merchantTerms"
+              checked={agreements.merchantTerms}
+              onChange={handleAgreementChange}
+              style={st.checkbox}
+            />
+            <span style={st.checkboxLabel}>
+              I agree to the <Link to="/merchant-terms" style={st.legalLink}>Merchant Terms of Service</Link>.
+            </span>
+          </label>
+          {fieldErrors.merchantTerms ? <div style={st.fieldError}>{fieldErrors.merchantTerms}</div> : null}
+
+          <label style={st.checkboxRow}>
+            <input
+              type="checkbox"
+              name="privacyPolicy"
+              checked={agreements.privacyPolicy}
+              onChange={handleAgreementChange}
+              style={st.checkbox}
+            />
+            <span style={st.checkboxLabel}>
+              I agree to the <Link to="/privacy" style={st.legalLink}>Privacy Policy</Link>.
+            </span>
+          </label>
+          {fieldErrors.privacyPolicy ? <div style={st.fieldError}>{fieldErrors.privacyPolicy}</div> : null}
+        </div>
+
         <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
           {submitting ? "Redirecting to Stripe…" : "Continue to Payment →"}
         </button>
 
         <div style={{ fontSize: 11, color: "#94a3b8", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
-          You will be taken to Stripe to complete your $59/year subscription.
+          You will be taken to Stripe to complete your $49/year subscription.
         </div>
 
       </form>
