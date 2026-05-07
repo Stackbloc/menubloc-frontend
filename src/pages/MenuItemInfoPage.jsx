@@ -1161,7 +1161,7 @@ export default function MenuItemInfoPage() {
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [item]);
 
   const priceLabel =
     item?.priceMinor != null ? formatMoney(item.priceMinor) :
