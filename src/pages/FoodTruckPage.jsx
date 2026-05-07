@@ -26,6 +26,7 @@ import { HomeButton } from "../components/NavButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
+import BottomNav from "../components/BottomNav.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -1326,21 +1327,24 @@ export default function FoodTruckPage() {
   }, [restaurantId]);
 
   const pageWrap = (children) => (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: c.pageBg,
-        color: c.pageColor,
-        fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
-        padding: isMobile ? "14px 12px 48px" : "20px 16px 72px",
-        overflowX: "hidden",
-        boxSizing: "border-box",
-      }}
-    >
-      <div style={{ maxWidth: 600, margin: "0 auto", width: "100%", minWidth: 0 }}>
-        {children}
+    <>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: c.pageBg,
+          color: c.pageColor,
+          fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
+          padding: isMobile ? "14px 12px 80px" : "20px 16px 100px",
+          overflowX: "hidden",
+          boxSizing: "border-box",
+        }}
+      >
+        <div style={{ maxWidth: 600, margin: "0 auto", width: "100%", minWidth: 0 }}>
+          {children}
+        </div>
       </div>
-    </div>
+      <BottomNav />
+    </>
   );
 
   const navBar = (

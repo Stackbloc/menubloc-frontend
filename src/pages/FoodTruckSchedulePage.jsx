@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
+import BottomNav from "../components/BottomNav.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -178,58 +179,65 @@ export default function FoodTruckSchedulePage() {
     background: c.pageBg,
     color: c.pageColor,
     fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
-    padding: isMobile ? "14px 12px 40px" : "20px 16px 72px",
+    padding: isMobile ? "14px 12px 80px" : "20px 16px 100px",
     overflowX: "hidden",
     boxSizing: "border-box",
   };
 
   if (profileState.status === "loading") {
     return (
-      <div style={pageStyle}>
-        <div style={{ maxWidth: 600, margin: "0 auto", width: "100%", minWidth: 0 }}>
-          <div style={{ marginBottom: 20 }}>
-            <HomeButton />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <Skel w={180} h={28} isDark={isDark} />
-            <Skel w={120} h={14} isDark={isDark} />
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skel key={i} w="100%" h={64} isDark={isDark} />
-            ))}
+      <>
+        <div style={pageStyle}>
+          <div style={{ maxWidth: 600, margin: "0 auto", width: "100%", minWidth: 0 }}>
+            <div style={{ marginBottom: 20 }}>
+              <HomeButton />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <Skel w={180} h={28} isDark={isDark} />
+              <Skel w={120} h={14} isDark={isDark} />
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skel key={i} w="100%" h={64} isDark={isDark} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+        <BottomNav />
+      </>
     );
   }
 
   if (profileState.status === "error") {
     return (
-      <div style={pageStyle}>
-        <div style={{ maxWidth: 600, margin: "0 auto", width: "100%", minWidth: 0 }}>
-          <div style={{ marginBottom: 16 }}>
-            <HomeButton />
-          </div>
-          <div
-            style={{
-              padding: "14px 16px",
-              borderRadius: 12,
-              background: isDark ? "rgba(248,113,113,0.07)" : "#fff5f5",
-              border: isDark ? "1px solid rgba(248,113,113,0.25)" : "1px solid #fca5a5",
-              color: isDark ? "#fca5a5" : "#b91c1c",
-              fontSize: 14,
-              fontWeight: 600,
-              lineHeight: 1.45,
-              wordBreak: "break-word",
-            }}
-          >
-            {profileState.error}
+      <>
+        <div style={pageStyle}>
+          <div style={{ maxWidth: 600, margin: "0 auto", width: "100%", minWidth: 0 }}>
+            <div style={{ marginBottom: 16 }}>
+              <HomeButton />
+            </div>
+            <div
+              style={{
+                padding: "14px 16px",
+                borderRadius: 12,
+                background: isDark ? "rgba(248,113,113,0.07)" : "#fff5f5",
+                border: isDark ? "1px solid rgba(248,113,113,0.25)" : "1px solid #fca5a5",
+                color: isDark ? "#fca5a5" : "#b91c1c",
+                fontSize: 14,
+                fontWeight: 600,
+                lineHeight: 1.45,
+                wordBreak: "break-word",
+              }}
+            >
+              {profileState.error}
+            </div>
           </div>
         </div>
-      </div>
+        <BottomNav />
+      </>
     );
   }
 
   return (
+    <>
     <div style={pageStyle}>
       <div style={{ maxWidth: 600, margin: "0 auto", width: "100%", minWidth: 0 }}>
         <div
@@ -417,5 +425,7 @@ export default function FoodTruckSchedulePage() {
         )}
       </div>
     </div>
+    <BottomNav />
+    </>
   );
 }

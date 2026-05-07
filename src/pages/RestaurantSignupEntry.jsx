@@ -9,7 +9,7 @@
  * ============================================================
  */
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
@@ -273,6 +273,48 @@ export default function RestaurantSignupEntry() {
             <div style={styles.stepDivider} />
             <div style={styles.step(false)}>3. Finish onboarding</div>
           </div>
+        </section>
+
+        <section style={{
+          marginBottom: 22,
+          borderRadius: 20,
+          border: "1px solid #d9e0ea",
+          background: "#f8faf9",
+          padding: "20px 22px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
+        }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#101828", marginBottom: 4 }}>
+              Do you have a food truck?
+            </div>
+            <div style={{ fontSize: 14, color: "#667085", lineHeight: 1.5 }}>
+              Food trucks have their own sign-up path with scheduling and location tools.
+            </div>
+          </div>
+          <Link
+            to="/foodtruck/signup"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              minHeight: 44,
+              padding: "0 20px",
+              borderRadius: 12,
+              border: "1.5px solid #1F4E3D",
+              background: "#ffffff",
+              color: "#1F4E3D",
+              fontSize: 14,
+              fontWeight: 800,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            🚚 Sign up as a Food Truck
+          </Link>
         </section>
 
         <section style={styles.cardsGrid}>
