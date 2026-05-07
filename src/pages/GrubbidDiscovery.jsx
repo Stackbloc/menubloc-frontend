@@ -32,7 +32,6 @@ import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import DiscoveryDrawer from "../components/grubbid/DiscoveryDrawer.jsx";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
 import DiscoveryMoreSheet from "../components/grubbid/DiscoveryMoreSheet.jsx";
-import AppMenuSheet from "../components/grubbid/AppMenuSheet.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
@@ -429,7 +428,6 @@ export default function GrubbidDiscovery() {
   // ── new state ───────────────────────────────────────────────────────────────
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreSheet, setMoreSheet] = useState(null);
-  const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [feedMenus, setFeedMenus] = useState([]);
   const [feedLoading, setFeedLoading] = useState(false);
   const locationManuallySet = useRef(
@@ -896,10 +894,6 @@ export default function GrubbidDiscovery() {
         onClose={() => setMoreSheet(null)}
       />
 
-      <AppMenuSheet
-        open={appMenuOpen}
-        onClose={() => setAppMenuOpen(false)}
-      />
 
       <div style={{ maxWidth: 576, margin: "0 auto", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
@@ -929,7 +923,7 @@ export default function GrubbidDiscovery() {
 
             <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
 
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
               <Link
                 to="/deals"
                 style={{
@@ -959,18 +953,6 @@ export default function GrubbidDiscovery() {
                   </Link>
                 )
               )}
-              <button
-                type="button"
-                onClick={() => setAppMenuOpen(true)}
-                aria-label="Open app menu"
-                style={{
-                  border: "none", background: "transparent",
-                  fontSize: 20, color: "#6B7280", cursor: "pointer",
-                  padding: 4, lineHeight: 1,
-                }}
-              >
-                ⋯
-              </button>
             </div>
           </div>
 

@@ -1263,7 +1263,7 @@ export default function MenuItemDetailPage() {
 
 
       {/* ── 1. Hero / Item Identity ── */}
-      <Surface style={{ padding: isMobile ? 18 : 24 }}>
+      <Surface style={{ padding: isMobile ? 18 : 24, position: "sticky", top: 73, zIndex: 50 }}>
         <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 24, alignItems: "stretch" }}>
           <div style={{ display: "grid", gap: 16 }}>
             <div>
