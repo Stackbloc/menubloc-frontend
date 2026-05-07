@@ -25,7 +25,7 @@
  * ============================================================
  */
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -303,13 +303,13 @@ function PageShell({ children, isMobile, stickyTitle }) {
   );
 }
 
-function Surface({ children, style }) {
+const Surface = React.forwardRef(function Surface({ children, style }, ref) {
   return (
-    <section style={{ background: "#121A14", border: "1px solid #1F2937", borderRadius: 24, boxShadow: "0 16px 44px rgba(0,0,0,0.3)", backdropFilter: "blur(8px)", ...style }}>
+    <section ref={ref} style={{ background: "#121A14", border: "1px solid #1F2937", borderRadius: 24, boxShadow: "0 16px 44px rgba(0,0,0,0.3)", backdropFilter: "blur(8px)", ...style }}>
       {children}
     </section>
   );
-}
+});
 
 function Eyebrow({ children, color = "#6B7280" }) {
   return (
@@ -1132,6 +1132,32 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
   );
 }
 
+// ── Compact sticky bar (appears when hero scrolls out of view) ─
+
+function ItemStickyBar({ item, priceLabel, visible, t, language }) {
+  return (
+    <div style={{
+      position: "fixed", top: 73, left: 0, right: 0, zIndex: 60,
+      background: "#0B0F0C", borderBottom: "1px solid #1F2937",
+      padding: "10px 16px",
+      transform: visible ? "translateY(0)" : "translateY(-100%)",
+      transition: "transform 200ms ease",
+      pointerEvents: visible ? "auto" : "none",
+    }}>
+      <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <span style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {getLocalizedField(item, "name", language) || item?.name}
+        </span>
+        {priceLabel && (
+          <span style={{ fontSize: 14, fontWeight: 900, color: "#22C55E", flexShrink: 0 }}>
+            {priceLabel}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────
 
 export default function MenuItemDetailPage() {
@@ -1144,6 +1170,9 @@ export default function MenuItemDetailPage() {
 
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
+
+  const heroRef = useRef(null);
+  const [heroVisible, setHeroVisible] = useState(true);
 
   const [loading,  setLoading]  = useState(true);
   const [err,      setErr]      = useState("");
@@ -1161,6 +1190,17 @@ export default function MenuItemDetailPage() {
       },
     });
   }, [item]);
+
+  useEffect(() => {
+    const node = heroRef.current;
+    if (!node) return undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroVisible(entry.isIntersecting),
+      { threshold: 0, rootMargin: "-73px 0px 0px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -1259,11 +1299,17 @@ export default function MenuItemDetailPage() {
   });
 
   return (
-      <PageShell isMobile={isMobile}>
-
+    <PageShell isMobile={isMobile}>
+      <ItemStickyBar
+        item={item}
+        priceLabel={priceLabel}
+        visible={!heroVisible}
+        t={t}
+        language={language}
+      />
 
       {/* ── 1. Hero / Item Identity ── */}
-      <Surface style={{ padding: isMobile ? 18 : 24, position: "sticky", top: 73, zIndex: 50 }}>
+      <Surface style={{ padding: isMobile ? 18 : 24 }} ref={heroRef}>
         <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 24, alignItems: "stretch" }}>
           <div style={{ display: "grid", gap: 16 }}>
             <div>
