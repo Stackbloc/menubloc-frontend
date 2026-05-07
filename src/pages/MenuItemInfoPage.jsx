@@ -1082,18 +1082,9 @@ export default function MenuItemInfoPage() {
       heroScrollCleanup.current();
       heroScrollCleanup.current = null;
     }
-    if (!node) {
-      // eslint-disable-next-line no-console
-      console.log("STICKY DEBUG: heroRef called with null (unmount)");
-      return;
-    }
-    // eslint-disable-next-line no-console
-    console.log("STICKY DEBUG: heroRef attached", node);
+    if (!node) return;
     function check() {
-      const bottom = node.getBoundingClientRect().bottom;
-      // eslint-disable-next-line no-console
-      console.log("STICKY CHECK", { bottom, visible: bottom > 73 });
-      setHeroVisible(bottom > 73);
+      setHeroVisible(node.getBoundingClientRect().bottom > 73);
     }
     check();
     window.addEventListener("scroll", check, { passive: true });
