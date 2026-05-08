@@ -4,11 +4,12 @@
 // Grubbid discovery page (sticky header, cream bg, card feed).
 // ============================================================
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
+import { parseLocation } from "../lib/locationUtils.js";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -201,7 +202,11 @@ export default function DealsPage() {
   const sessionLocation = (() => {
     try { return String(window.sessionStorage.getItem("grubbid.discovery.location") || "").trim(); } catch { return ""; }
   })();
-  const locationLabel = [urlCity, urlState].filter(Boolean).join(", ") || sessionLocation;
+  const parsedSessionLocation = useMemo(() => parseLocation(sessionLocation), [sessionLocation]);
+  const effectiveCity = urlCity || parsedSessionLocation.city || "";
+  const effectiveState = urlState || parsedSessionLocation.state || "";
+  const locationLabel = [effectiveCity, effectiveState].filter(Boolean).join(", ") || sessionLocation;
+  const requestIdRef = useRef(0);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [deals, setDeals] = useState([]);
@@ -220,42 +225,49 @@ export default function DealsPage() {
 
   useEffect(() => {
     if (urlLat != null && urlLng != null) return;
-    if (urlCity) return;
+    if (effectiveCity) return;
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => { setUserLat(pos.coords.latitude); setUserLng(pos.coords.longitude); },
       () => {},
       { timeout: 8000 }
     );
-  }, [urlLat, urlLng]);
+  }, [urlLat, urlLng, effectiveCity]);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    const requestId = ++requestIdRef.current;
+
     async function fetchDeals() {
       setLoading(true);
       setError(null);
       try {
         const params = new URLSearchParams();
-        if (urlCity) params.set("city", urlCity);
-        if (urlState) params.set("state", urlState);
-        if (userLat != null && userLng != null) {
+        const hasExplicitCityScope = Boolean(effectiveCity);
+        if (effectiveCity) params.set("city", effectiveCity);
+        if (effectiveState) params.set("state", effectiveState);
+        if (!hasExplicitCityScope && userLat != null && userLng != null) {
           params.set("lat", userLat);
           params.set("lng", userLng);
         }
-        const response = await fetch(`${API_BASE}/deals?${params.toString()}`);
+        const response = await fetch(`${API_BASE}/deals?${params.toString()}`, {
+          signal: controller.signal,
+        });
         const data = await response.json().catch(() => ({}));
-        if (cancelled) return;
+        if (controller.signal.aborted || requestId !== requestIdRef.current) return;
         if (!data.ok && data.error) throw new Error(data.error);
         setDeals(data.deals || []);
       } catch (nextError) {
-        if (!cancelled) setError(nextError.message);
+        if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+        setError(nextError.message);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+        setLoading(false);
       }
     }
     fetchDeals();
-    return () => { cancelled = true; };
-  }, [urlCity, urlState, userLat, userLng]);
+    return () => { controller.abort(); };
+  }, [effectiveCity, effectiveState, userLat, userLng]);
 
   const filteredDeals = useMemo(() => {
     if (!searchQuery.trim()) return deals;
@@ -279,7 +291,7 @@ export default function DealsPage() {
     });
   }, [deals]);
 
-  const hasLocation = userLat != null && userLng != null;
+  const hasLocation = Boolean(effectiveCity) || (userLat != null && userLng != null);
   const locationContextLabel = locationLabel
     ? `Near ${locationLabel}`
     : hasLocation ? "Near you" : "Nearby";
@@ -293,8 +305,12 @@ export default function DealsPage() {
     const shareUrl = dealUrl
       ? new URL(dealUrl, window.location.origin).toString()
       : buildRestaurantScopedShareUrl({
-          origin: window.location.origin, city: urlCity, state: urlState,
-          lat: userLat, lng: userLng, restaurantId: group.restaurantId || group.key,
+          origin: window.location.origin,
+          city: effectiveCity,
+          state: effectiveState,
+          lat: effectiveCity ? null : userLat,
+          lng: effectiveCity ? null : userLng,
+          restaurantId: group.restaurantId || group.key,
         });
     try {
       await shareLink({
