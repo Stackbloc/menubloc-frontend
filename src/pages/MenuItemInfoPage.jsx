@@ -299,46 +299,58 @@ const Surface = React.forwardRef(function Surface({ children, style }, ref) {
 function ItemStickyBar({ item, priceLabel, fullMenuHref, visible, t, language }) {
   const itemName = getLocalizedField(item, "name", language) || item?.name;
   const itemDescription = getLocalizedField(item, "description", language) || item?.description || "";
+  const showBadges = item?.badges?.vegan || item?.badges?.glutenFree || item?.badges?.deal;
 
   return (
     <div style={{
       position: "fixed", top: NAV_HEIGHT, left: 0, right: 0, zIndex: 60,
-      background: "#0B0F0C", borderBottom: "1px solid #1F2937",
       padding: "12px 16px",
       transform: visible ? "translateY(0)" : "translateY(-100%)",
       transition: "transform 200ms ease",
       pointerEvents: visible ? "auto" : "none",
     }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ minWidth: 0, flex: "1 1 320px", display: "grid", gap: 4 }}>
-          <div style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {itemName}
-          </div>
-          {itemDescription ? (
-            <div
-              style={{
-                fontSize: 12.5,
-                lineHeight: 1.4,
-                color: "#9CA3AF",
-                overflow: "hidden",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-              }}
-            >
-              {itemDescription}
+      <Surface style={{ maxWidth: 1120, margin: "0 auto", padding: "16px 18px" }}>
+        <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ minWidth: 0, flex: "1 1 320px", display: "grid", gap: 6 }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF", lineHeight: 1.1 }}>
+                {itemName}
+              </div>
+              {itemDescription ? (
+                <div
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 1.45,
+                    color: "#D1D5DB",
+                    overflow: "hidden",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                  }}
+                >
+                  {itemDescription}
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0, flexWrap: "wrap" }}>
-          {priceLabel && <span style={{ fontSize: 14, fontWeight: 900, color: "#22C55E" }}>{priceLabel}</span>}
-          {fullMenuHref && (
-            <Link to={fullMenuHref} style={{ display: "inline-flex", alignItems: "center", minHeight: 34, padding: "0 14px", borderRadius: 999, background: "#11211a", color: "#f8fafc", textDecoration: "none", fontSize: 13, fontWeight: 800 }}>
-              View Menu
-            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0, flexWrap: "wrap" }}>
+              {priceLabel && <span style={{ fontSize: 16, fontWeight: 900, color: "#22C55E" }}>{priceLabel}</span>}
+              {fullMenuHref && (
+                <Link to={fullMenuHref} style={{ display: "inline-flex", alignItems: "center", minHeight: 36, padding: "0 14px", borderRadius: 999, background: "#11211a", color: "#f8fafc", textDecoration: "none", fontSize: 13, fontWeight: 800 }}>
+                  View Menu
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {showBadges && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {item.badges.vegan ? <BadgePill tone="positive">{t("diet.vegan", "Vegan")}</BadgePill> : null}
+              {item.badges.glutenFree ? <BadgePill tone="accent">{t("diet.gluten_free", "Gluten Free")}</BadgePill> : null}
+              {item.badges.deal ? <BadgePill tone="caution">{t("common.deals", "Deal")}</BadgePill> : null}
+            </div>
           )}
         </div>
-      </div>
+      </Surface>
     </div>
   );
 }
@@ -1096,21 +1108,21 @@ export default function MenuItemInfoPage() {
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
 
-  const [heroVisible, setHeroVisible] = useState(true);
-  const heroRef = useRef(null);
+  const [identityBoxVisible, setIdentityBoxVisible] = useState(true);
+  const identityBoxRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
-    const heroNode = heroRef.current;
-    if (!heroNode) return undefined;
+    const identityBoxNode = identityBoxRef.current;
+    if (!identityBoxNode) return undefined;
 
     let frameId = null;
     const scrollTarget = window;
 
     const measure = () => {
       frameId = null;
-      const heroBottom = heroNode.getBoundingClientRect().bottom;
-      setHeroVisible(heroBottom > NAV_HEIGHT);
+      const identityBoxBottom = identityBoxNode.getBoundingClientRect().bottom;
+      setIdentityBoxVisible(identityBoxBottom > NAV_HEIGHT);
     };
 
     const requestMeasure = () => {
@@ -1121,7 +1133,7 @@ export default function MenuItemInfoPage() {
     requestMeasure();
 
     const resizeObserver = new ResizeObserver(requestMeasure);
-    resizeObserver.observe(heroNode);
+    resizeObserver.observe(identityBoxNode);
     scrollTarget.addEventListener("scroll", requestMeasure, { passive: true });
     window.addEventListener("resize", requestMeasure);
 
@@ -1253,7 +1265,7 @@ export default function MenuItemInfoPage() {
         item={item}
         priceLabel={priceLabel}
         fullMenuHref={fullMenuHref}
-        visible={!heroVisible}
+        visible={!identityBoxVisible}
         t={t}
         language={language}
       />
@@ -1261,9 +1273,9 @@ export default function MenuItemInfoPage() {
 
 
       {/* ── 1. Hero / Item Identity ── */}
-      <Surface ref={heroRef} style={{ padding: isMobile ? 18 : 24 }}>
+      <Surface style={{ padding: isMobile ? 18 : 24 }}>
         <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 24, alignItems: "stretch" }}>
-          <div style={{ display: "grid", gap: 16 }}>
+          <div ref={identityBoxRef} style={{ display: "grid", gap: 16 }}>
             <div>
               <Eyebrow>{t("menuItemDetail.menuItemIntelligence", "Menu Item Intelligence")}</Eyebrow>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
