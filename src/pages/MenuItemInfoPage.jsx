@@ -14,7 +14,7 @@
  * ============================================================
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -237,6 +237,7 @@ const DAILY_FIBER_G = 28;
 const DAILY_SUGAR_G = 50;
 const DAILY_PROTEIN_G = 50;
 const DAILY_SODIUM_MG = 2300;
+const NAV_HEIGHT = 73;
 
 function wholeDv(value, dailyValue, isReliable) {
   if (!isReliable || value == null || dailyValue == null) return null;
@@ -296,20 +297,40 @@ const Surface = React.forwardRef(function Surface({ children, style }, ref) {
 });
 
 function ItemStickyBar({ item, priceLabel, fullMenuHref, visible, t, language }) {
+  const itemName = getLocalizedField(item, "name", language) || item?.name;
+  const itemDescription = getLocalizedField(item, "description", language) || item?.description || "";
+
   return (
     <div style={{
-      position: "fixed", top: 73, left: 0, right: 0, zIndex: 60,
+      position: "fixed", top: NAV_HEIGHT, left: 0, right: 0, zIndex: 60,
       background: "#0B0F0C", borderBottom: "1px solid #1F2937",
-      padding: "10px 16px",
+      padding: "12px 16px",
       transform: visible ? "translateY(0)" : "translateY(-100%)",
       transition: "transform 200ms ease",
       pointerEvents: visible ? "auto" : "none",
     }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <span style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: "1 1 0" }}>
-          {getLocalizedField(item, "name", language) || item?.name}
-        </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0, flex: "1 1 320px", display: "grid", gap: 4 }}>
+          <div style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {itemName}
+          </div>
+          {itemDescription ? (
+            <div
+              style={{
+                fontSize: 12.5,
+                lineHeight: 1.4,
+                color: "#9CA3AF",
+                overflow: "hidden",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+              }}
+            >
+              {itemDescription}
+            </div>
+          ) : null}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0, flexWrap: "wrap" }}>
           {priceLabel && <span style={{ fontSize: 14, fontWeight: 900, color: "#22C55E" }}>{priceLabel}</span>}
           {fullMenuHref && (
             <Link to={fullMenuHref} style={{ display: "inline-flex", alignItems: "center", minHeight: 34, padding: "0 14px", borderRadius: 999, background: "#11211a", color: "#f8fafc", textDecoration: "none", fontSize: 13, fontWeight: 800 }}>
@@ -1076,22 +1097,39 @@ export default function MenuItemInfoPage() {
   const geoLng = searchParams.get("lng");
 
   const [heroVisible, setHeroVisible] = useState(true);
-  const heroScrollCleanup = useRef(null);
-  const heroRef = useCallback((node) => {
-    if (heroScrollCleanup.current) {
-      heroScrollCleanup.current();
-      heroScrollCleanup.current = null;
-    }
-    if (!node) return;
-    function check() {
-      setHeroVisible(node.getBoundingClientRect().bottom > 73);
-    }
-    check();
-    window.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check, { passive: true });
-    heroScrollCleanup.current = () => {
-      window.removeEventListener("scroll", check);
-      window.removeEventListener("resize", check);
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const heroNode = heroRef.current;
+    if (!heroNode) return undefined;
+
+    let frameId = null;
+    const scrollTarget = window;
+
+    const measure = () => {
+      frameId = null;
+      const heroBottom = heroNode.getBoundingClientRect().bottom;
+      setHeroVisible(heroBottom > NAV_HEIGHT);
+    };
+
+    const requestMeasure = () => {
+      if (frameId != null) return;
+      frameId = window.requestAnimationFrame(measure);
+    };
+
+    requestMeasure();
+
+    const resizeObserver = new ResizeObserver(requestMeasure);
+    resizeObserver.observe(heroNode);
+    scrollTarget.addEventListener("scroll", requestMeasure, { passive: true });
+    window.addEventListener("resize", requestMeasure);
+
+    return () => {
+      if (frameId != null) window.cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+      scrollTarget.removeEventListener("scroll", requestMeasure);
+      window.removeEventListener("resize", requestMeasure);
     };
   }, []);
 
