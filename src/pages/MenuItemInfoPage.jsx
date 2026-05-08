@@ -296,65 +296,6 @@ const Surface = React.forwardRef(function Surface({ children, style }, ref) {
   );
 });
 
-function ItemStickyBar({ item, priceLabel, fullMenuHref, visible, t, language }) {
-  const itemName = getLocalizedField(item, "name", language) || item?.name;
-  const itemDescription = getLocalizedField(item, "description", language) || item?.description || "";
-  const showBadges = item?.badges?.vegan || item?.badges?.glutenFree || item?.badges?.deal;
-
-  return (
-    <div style={{
-      position: "fixed", top: NAV_HEIGHT, left: 0, right: 0, zIndex: 60,
-      padding: "12px 16px",
-      transform: visible ? "translateY(0)" : "translateY(-100%)",
-      transition: "transform 200ms ease",
-      pointerEvents: visible ? "auto" : "none",
-    }}>
-      <Surface style={{ maxWidth: 1120, margin: "0 auto", padding: "16px 18px" }}>
-        <div style={{ display: "grid", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-            <div style={{ minWidth: 0, flex: "1 1 320px", display: "grid", gap: 6 }}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF", lineHeight: 1.1 }}>
-                {itemName}
-              </div>
-              {itemDescription ? (
-                <div
-                  style={{
-                    fontSize: 13,
-                    lineHeight: 1.45,
-                    color: "#D1D5DB",
-                    overflow: "hidden",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                  }}
-                >
-                  {itemDescription}
-                </div>
-              ) : null}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0, flexWrap: "wrap" }}>
-              {priceLabel && <span style={{ fontSize: 16, fontWeight: 900, color: "#22C55E" }}>{priceLabel}</span>}
-              {fullMenuHref && (
-                <Link to={fullMenuHref} style={{ display: "inline-flex", alignItems: "center", minHeight: 36, padding: "0 14px", borderRadius: 999, background: "#11211a", color: "#f8fafc", textDecoration: "none", fontSize: 13, fontWeight: 800 }}>
-                  View Menu
-                </Link>
-              )}
-            </div>
-          </div>
-
-          {showBadges && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {item.badges.vegan ? <BadgePill tone="positive">{t("diet.vegan", "Vegan")}</BadgePill> : null}
-              {item.badges.glutenFree ? <BadgePill tone="accent">{t("diet.gluten_free", "Gluten Free")}</BadgePill> : null}
-              {item.badges.deal ? <BadgePill tone="caution">{t("common.deals", "Deal")}</BadgePill> : null}
-            </div>
-          )}
-        </div>
-      </Surface>
-    </div>
-  );
-}
-
 function Eyebrow({ children, color = "#9CA3AF" }) {
   return (
     <div style={{ fontSize: 11, lineHeight: 1.2, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 900, color, marginBottom: 10 }}>
@@ -1108,8 +1049,9 @@ export default function MenuItemInfoPage() {
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
 
-  const [identityBoxVisible, setIdentityBoxVisible] = useState(true);
+  const [isIdentitySticky, setIsIdentitySticky] = useState(false);
   const identityBoxRef = useRef(null);
+  const identityStickyStartRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -1121,8 +1063,11 @@ export default function MenuItemInfoPage() {
 
     const measure = () => {
       frameId = null;
-      const identityBoxBottom = identityBoxNode.getBoundingClientRect().bottom;
-      setIdentityBoxVisible(identityBoxBottom > NAV_HEIGHT);
+      if (identityStickyStartRef.current == null) {
+        identityStickyStartRef.current =
+          identityBoxNode.getBoundingClientRect().top + window.scrollY - NAV_HEIGHT;
+      }
+      setIsIdentitySticky(window.scrollY >= identityStickyStartRef.current);
     };
 
     const requestMeasure = () => {
@@ -1132,7 +1077,10 @@ export default function MenuItemInfoPage() {
 
     requestMeasure();
 
-    const resizeObserver = new ResizeObserver(requestMeasure);
+    const resizeObserver = new ResizeObserver(() => {
+      identityStickyStartRef.current = null;
+      requestMeasure();
+    });
     resizeObserver.observe(identityBoxNode);
     scrollTarget.addEventListener("scroll", requestMeasure, { passive: true });
     window.addEventListener("resize", requestMeasure);
@@ -1260,22 +1208,27 @@ export default function MenuItemInfoPage() {
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
 
   return (
-    <>
-      <ItemStickyBar
-        item={item}
-        priceLabel={priceLabel}
-        fullMenuHref={fullMenuHref}
-        visible={!identityBoxVisible}
-        t={t}
-        language={language}
-      />
-      <PageShell isMobile={isMobile}>
-
-
+    <PageShell isMobile={isMobile}>
+      <style>{`
+        .menu-item-identity-box {
+          display: grid;
+          gap: 16px;
+          padding: 18px;
+          border-radius: 22px;
+          background: rgba(11,15,12,0.96);
+          border: 1px solid #1F2937;
+          box-shadow: 0 14px 34px rgba(0,0,0,0.22);
+        }
+        .menu-item-identity-box--sticky {
+          position: sticky;
+          top: 73px;
+          z-index: 60;
+        }
+      `}</style>
       {/* ── 1. Hero / Item Identity ── */}
       <Surface style={{ padding: isMobile ? 18 : 24 }}>
         <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 24, alignItems: "stretch" }}>
-          <div ref={identityBoxRef} style={{ display: "grid", gap: 16 }}>
+          <div style={{ display: "grid", gap: 16 }}>
             <div>
               <Eyebrow>{t("menuItemDetail.menuItemIntelligence", "Menu Item Intelligence")}</Eyebrow>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -1301,7 +1254,10 @@ export default function MenuItemInfoPage() {
               </div>
             </div>
 
-            <div>
+            <div
+              ref={identityBoxRef}
+              className={isIdentitySticky ? "menu-item-identity-box menu-item-identity-box--sticky" : "menu-item-identity-box"}
+            >
               <div
                 style={{
                   display: "flex",
@@ -1356,43 +1312,43 @@ export default function MenuItemInfoPage() {
 
               {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
               {!indulgencePresentation && detailSystem?.bread_score ? <BreadScoreInline detailSystem={detailSystem} /> : null}
-            </div>
 
-            {(getLocalizedField(item, "description", language) || item.description) ? (
-              <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#D1D5DB", maxWidth: 760 }}>
-                {getLocalizedField(item, "description", language) || item.description}
+              {(getLocalizedField(item, "description", language) || item.description) ? (
+                <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#D1D5DB", maxWidth: 760 }}>
+                  {getLocalizedField(item, "description", language) || item.description}
+                </div>
+              ) : null}
+
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <Link
+                  to={fullMenuHref}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minHeight: 44,
+                    padding: "0 18px",
+                    borderRadius: 999,
+                    background: "#11211a",
+                    color: "#f8fafc",
+                    textDecoration: "none",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.10)",
+                  }}
+                >
+                  View Full Menu
+                </Link>
               </div>
-            ) : null}
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <Link
-                to={fullMenuHref}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  minHeight: 44,
-                  padding: "0 18px",
-                  borderRadius: 999,
-                  background: "#11211a",
-                  color: "#f8fafc",
-                  textDecoration: "none",
-                  fontSize: 14,
-                  fontWeight: 800,
-                  boxShadow: "0 10px 24px rgba(15, 23, 42, 0.10)",
-                }}
-              >
-                View Full Menu
-              </Link>
+              {(item.badges.vegan || item.badges.glutenFree || item.badges.deal) && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {item.badges.vegan      ? <BadgePill tone="positive">{t("diet.vegan", "Vegan")}</BadgePill> : null}
+                  {item.badges.glutenFree ? <BadgePill tone="accent">{t("diet.gluten_free", "Gluten Free")}</BadgePill> : null}
+                  {item.badges.deal       ? <BadgePill tone="caution">{t("common.deals", "Deal")}</BadgePill> : null}
+                </div>
+              )}
             </div>
-
-            {(item.badges.vegan || item.badges.glutenFree || item.badges.deal) && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {item.badges.vegan      ? <BadgePill tone="positive">{t("diet.vegan", "Vegan")}</BadgePill> : null}
-                {item.badges.glutenFree ? <BadgePill tone="accent">{t("diet.gluten_free", "Gluten Free")}</BadgePill> : null}
-                {item.badges.deal       ? <BadgePill tone="caution">{t("common.deals", "Deal")}</BadgePill> : null}
-              </div>
-            )}
 
             {hasNutritionData ? <CompactAllergenAlert section={detailSystem?.allergen_alerts} t={t} /> : null}
           </div>
@@ -1438,8 +1394,6 @@ export default function MenuItemInfoPage() {
         t={t}
         allergenFilter={effectiveAllergenFilter}
       />
-
-      </PageShell>
-    </>
+    </PageShell>
   );
 }
