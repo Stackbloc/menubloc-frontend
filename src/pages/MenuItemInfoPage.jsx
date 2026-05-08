@@ -14,7 +14,7 @@
  * ============================================================
  */
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -237,8 +237,6 @@ const DAILY_FIBER_G = 28;
 const DAILY_SUGAR_G = 50;
 const DAILY_PROTEIN_G = 50;
 const DAILY_SODIUM_MG = 2300;
-const NAV_HEIGHT = 73;
-
 function wholeDv(value, dailyValue, isReliable) {
   if (!isReliable || value == null || dailyValue == null) return null;
   const numeric = Number(value);
@@ -295,6 +293,33 @@ const Surface = React.forwardRef(function Surface({ children, style }, ref) {
     </section>
   );
 });
+
+function ItemStickyBar({ item, priceLabel, fullMenuHref, visible, t, language }) {
+  return (
+    <div style={{
+      position: "fixed", top: 73, left: 0, right: 0, zIndex: 60,
+      background: "#0B0F0C", borderBottom: "1px solid #1F2937",
+      padding: "10px 16px",
+      transform: visible ? "translateY(0)" : "translateY(-100%)",
+      transition: "transform 200ms ease",
+      pointerEvents: visible ? "auto" : "none",
+    }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <span style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: "1 1 0" }}>
+          {getLocalizedField(item, "name", language) || item?.name}
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+          {priceLabel && <span style={{ fontSize: 14, fontWeight: 900, color: "#22C55E" }}>{priceLabel}</span>}
+          {fullMenuHref && (
+            <Link to={fullMenuHref} style={{ display: "inline-flex", alignItems: "center", minHeight: 34, padding: "0 14px", borderRadius: 999, background: "#11211a", color: "#f8fafc", textDecoration: "none", fontSize: 13, fontWeight: 800 }}>
+              View Menu
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Eyebrow({ children, color = "#9CA3AF" }) {
   return (
@@ -1049,47 +1074,23 @@ export default function MenuItemInfoPage() {
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
 
-  const [isIdentitySticky, setIsIdentitySticky] = useState(false);
-  const identityBoxRef = useRef(null);
-  const identityStickyStartRef = useRef(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    const identityBoxNode = identityBoxRef.current;
-    if (!identityBoxNode) return undefined;
-
-    let frameId = null;
-    const scrollTarget = window;
-
-    const measure = () => {
-      frameId = null;
-      if (identityStickyStartRef.current == null) {
-        identityStickyStartRef.current =
-          identityBoxNode.getBoundingClientRect().top + window.scrollY - NAV_HEIGHT;
-      }
-      setIsIdentitySticky(window.scrollY >= identityStickyStartRef.current);
-    };
-
-    const requestMeasure = () => {
-      if (frameId != null) return;
-      frameId = window.requestAnimationFrame(measure);
-    };
-
-    requestMeasure();
-
-    const resizeObserver = new ResizeObserver(() => {
-      identityStickyStartRef.current = null;
-      requestMeasure();
-    });
-    resizeObserver.observe(identityBoxNode);
-    scrollTarget.addEventListener("scroll", requestMeasure, { passive: true });
-    window.addEventListener("resize", requestMeasure);
-
-    return () => {
-      if (frameId != null) window.cancelAnimationFrame(frameId);
-      resizeObserver.disconnect();
-      scrollTarget.removeEventListener("scroll", requestMeasure);
-      window.removeEventListener("resize", requestMeasure);
+  const [heroVisible, setHeroVisible] = useState(true);
+  const heroScrollCleanup = useRef(null);
+  const heroRef = useCallback((node) => {
+    if (heroScrollCleanup.current) {
+      heroScrollCleanup.current();
+      heroScrollCleanup.current = null;
+    }
+    if (!node) return;
+    function check() {
+      setHeroVisible(node.getBoundingClientRect().bottom > 73);
+    }
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check, { passive: true });
+    heroScrollCleanup.current = () => {
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
     };
   }, []);
 
@@ -1208,25 +1209,18 @@ export default function MenuItemInfoPage() {
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
 
   return (
-    <PageShell isMobile={isMobile}>
-      <style>{`
-        .menu-item-identity-box {
-          display: grid;
-          gap: 16px;
-          padding: 18px;
-          border-radius: 22px;
-          background: rgba(11,15,12,0.96);
-          border: 1px solid #1F2937;
-          box-shadow: 0 14px 34px rgba(0,0,0,0.22);
-        }
-        .menu-item-identity-box--sticky {
-          position: sticky;
-          top: 73px;
-          z-index: 60;
-        }
-      `}</style>
+    <>
+      <ItemStickyBar
+        item={item}
+        priceLabel={priceLabel}
+        fullMenuHref={fullMenuHref}
+        visible={!heroVisible}
+        t={t}
+        language={language}
+      />
+      <PageShell isMobile={isMobile}>
       {/* ── 1. Hero / Item Identity ── */}
-      <Surface style={{ padding: isMobile ? 18 : 24 }}>
+      <Surface ref={heroRef} style={{ padding: isMobile ? 18 : 24 }}>
         <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 24, alignItems: "stretch" }}>
           <div style={{ display: "grid", gap: 16 }}>
             <div>
@@ -1254,10 +1248,7 @@ export default function MenuItemInfoPage() {
               </div>
             </div>
 
-            <div
-              ref={identityBoxRef}
-              className={isIdentitySticky ? "menu-item-identity-box menu-item-identity-box--sticky" : "menu-item-identity-box"}
-            >
+            <div>
               <div
                 style={{
                   display: "flex",
@@ -1394,6 +1385,7 @@ export default function MenuItemInfoPage() {
         t={t}
         allergenFilter={effectiveAllergenFilter}
       />
-    </PageShell>
+      </PageShell>
+    </>
   );
 }
