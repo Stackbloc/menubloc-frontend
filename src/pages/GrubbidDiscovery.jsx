@@ -496,6 +496,20 @@ export default function GrubbidDiscovery() {
     return menus;
   }, [feedMenus, committedQuery, activeExcludedAllergens]);
 
+  const hasBackendFeedData = feedMenus.length > 0;
+  const hasVisibleMenus = displayMenus.length > 0;
+  const showBackendEmptyState =
+    !feedLoading &&
+    !inlineError &&
+    autoLocation.status !== "locating" &&
+    !hasBackendFeedData;
+  const showFilterEmptyState =
+    !feedLoading &&
+    !inlineError &&
+    autoLocation.status !== "locating" &&
+    hasBackendFeedData &&
+    !hasVisibleMenus;
+
   // Persist dietary prefs whenever they change
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
 
@@ -654,7 +668,14 @@ export default function GrubbidDiscovery() {
     console.log("[Discovery] fetch URL:", feedUrl);
     fetch(feedUrl)
       .then((r) => r.json())
-      .then((json) => { setFeedMenus(json.menus || []); })
+      .then((json) => {
+        const menus = Array.isArray(json?.menus)
+          ? json.menus
+          : Array.isArray(json?.rows?.[0]?.menus)
+            ? json.rows[0].menus
+            : [];
+        setFeedMenus(menus);
+      })
       .catch(() => {})
       .finally(() => setFeedLoading(false));
   }, [shouldUseAutoGeo, autoLocation.lat, autoLocation.lng, appliedLocation, filters]);
@@ -1234,7 +1255,7 @@ export default function GrubbidDiscovery() {
           {/* Feed count + active filter status */}
           {!feedLoading && !inlineError && (
             <div style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", marginBottom: 8, paddingLeft: 2, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              {displayMenus.length > 0 && (
+              {hasVisibleMenus && (
                 <span>{displayMenus.length} {displayMenus.length === 1 ? "menu" : "menus"}</span>
               )}
               {hasNoneAllergenSelected ? (
@@ -1257,12 +1278,19 @@ export default function GrubbidDiscovery() {
                 height: 130, marginBottom: 10,
               }} />
             ))
-          ) : inlineError ? null : displayMenus.length === 0 && autoLocation.status !== "locating" ? (
+          ) : inlineError ? null : showBackendEmptyState ? (
             <div style={{
               textAlign: "center", padding: "48px 20px",
               color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
             }}>
               {"No menus found in this area yet. Try another city."}
+            </div>
+          ) : showFilterEmptyState ? (
+            <div style={{
+              textAlign: "center", padding: "48px 20px",
+              color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
+            }}>
+              {"No items match the current filters."}
             </div>
           ) : (
             <div className="disc-feed-grid">
