@@ -98,6 +98,7 @@ import DealsPage from "./pages/DealsPage.jsx";
 import DealDetailPage from "./pages/DealDetailPage.jsx";
 
 import ClaimVerify from "./pages/ClaimVerify.jsx";
+import MenuVerificationPage from "./pages/MenuVerificationPage.jsx";
 import EasyMenuLanding from "./pages/EasyMenuLanding.jsx";
 import SubscriptionSelect from "./pages/SubscriptionSelect.jsx";
 import MenuDesignSelectPage from "./pages/MenuDesignSelectPage.jsx";
@@ -501,6 +502,10 @@ function AppShell({ easyMenu, crmHost }) {
 
         <Route path="/field/intake" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorIntakePage />} />
         <Route path="/claim/verify" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClaimVerify />} />
+        <Route
+          path="/menu-verification/:token"
+          element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuVerificationPage />}
+        />
 
         <Route path="/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <Navigate to="/account/login" replace />} />
         <Route path="/forgot-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <Navigate to="/account/forgot-password" replace />} />
