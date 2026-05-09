@@ -372,11 +372,34 @@ function useAutoLocation() {
           ipFallback();
           return;
         }
+        // Unblock the initial Discovery feed as soon as browser geo resolves.
+        // Reverse geocoding is a secondary enrichment step and must not gate cards.
+        setState({
+          status: "ready",
+          label: "",
+          city: "",
+          state: "",
+          confidence: "low",
+          lat,
+          lng,
+        });
+
         try {
           const geo = await reverseGeocode(lat, lng);
-          setState({ status: "ready", label: geo.label, city: geo.city, state: geo.state, confidence: geo.confidence, lat, lng });
+          setState((prev) => {
+            if (prev.lat !== lat || prev.lng !== lng) return prev;
+            return {
+              status: "ready",
+              label: geo.label,
+              city: geo.city,
+              state: geo.state,
+              confidence: geo.confidence,
+              lat,
+              lng,
+            };
+          });
         } catch {
-          setState({ status: "ready", label: "", city: "", state: "", confidence: "low", lat, lng });
+          // Keep the coordinate-backed ready state so Discovery cards remain visible.
         }
       },
       () => {
@@ -678,7 +701,7 @@ export default function GrubbidDiscovery() {
       })
       .catch(() => {})
       .finally(() => setFeedLoading(false));
-  }, [shouldUseAutoGeo, autoLocation.lat, autoLocation.lng, appliedLocation, filters]);
+  }, [shouldUseAutoGeo, autoLocation.lat, autoLocation.lng, autoLocation.city, autoLocation.state, appliedLocation, filters]);
 
   // ── existing logic (unchanged) ──────────────────────────────────────────────
 
