@@ -13,6 +13,86 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").repla
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const FONT = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
 
+/** OCR menu photo + server processing — staged UX (single round-trip; phases timed + milestone-based). */
+const OCR_PHASE_COPY = {
+  uploading_photo: { title: "Uploading photo…", sub: "Sending your picture securely." },
+  reading_menu: { title: "Reading menu…", sub: "Opening your menu page on our servers." },
+  extracting_text: { title: "Extracting menu text…", sub: "Pulling words and prices from the image." },
+  structuring: { title: "Organizing menu items…", sub: "Grouping sections and dishes." },
+  finalizing: { title: "Finalizing your menu…", sub: "Saving items for review." },
+};
+
+const OCR_PHASE_STEP = {
+  uploading_photo: 1,
+  reading_menu: 2,
+  extracting_text: 3,
+  structuring: 4,
+  finalizing: null,
+};
+
+function formatOcrFlowError(rawMessage, httpStatus) {
+  const msg = String(rawMessage || "").trim();
+  const status = Number(httpStatus) || 0;
+  const lower = msg.toLowerCase();
+
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
+    return "We could not reach the server. Check your connection and try again.";
+  }
+  if (status === 408 || status === 504 || /timeout|timed out/i.test(lower)) {
+    return "This is taking too long. Try again with a smaller photo or a stronger signal.";
+  }
+  if (status === 413 || /too large|payload/i.test(lower)) {
+    return "That file is too large to upload. Try a smaller photo.";
+  }
+  if (
+    /could not parse menu items|could not parse|menu items were saved|parse menu/i.test(lower) ||
+    /structuring|normalized from/i.test(lower)
+  ) {
+    return msg || "We could not turn this menu into items. Try a clearer photo.";
+  }
+  if (/extracted text|no menu-like|readable menu|does not look like a readable/i.test(lower)) {
+    return msg || "We could not read menu text in this photo. Try better lighting or a closer shot.";
+  }
+  if (status === 422) {
+    return msg || "This upload could not be processed. Try another photo.";
+  }
+  if (status >= 500 || /ocr|ingestion|adobe|extraction failed/i.test(lower)) {
+    return msg || "Menu reading failed on our side. Please try again in a moment.";
+  }
+  if (status === 401 || status === 403) {
+    return msg || "Your session is no longer valid. Restart signup and try again.";
+  }
+  return msg || "Something went wrong. Please try again.";
+}
+
+function OcrProgressSpinner() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden style={{ flexShrink: 0 }}>
+      <circle cx="12" cy="12" r="10" stroke="#e8e8e8" strokeWidth="2.5" fill="none" />
+      <g>
+        <animateTransform
+          attributeName="transform"
+          type="rotate"
+          from="0 12 12"
+          to="360 12 12"
+          dur="0.75s"
+          repeatCount="indefinite"
+        />
+        <circle
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="#111"
+          strokeWidth="2.5"
+          fill="none"
+          strokeDasharray="47 63"
+          strokeLinecap="round"
+        />
+      </g>
+    </svg>
+  );
+}
+
 const s = {
   page: {
     maxWidth: 620,
@@ -154,6 +234,46 @@ const s = {
     color: "#2563a8",
     marginBottom: 16,
     fontWeight: 600,
+  },
+  ocrProgressCard: {
+    display: "flex",
+    gap: 14,
+    alignItems: "flex-start",
+    padding: "16px 18px",
+    minHeight: 72,
+    background: "#f6f8fc",
+    border: "1px solid #c5d4eb",
+    borderRadius: 12,
+    marginBottom: 18,
+    boxShadow: "0 1px 0 rgba(0,0,0,0.04)",
+  },
+  ocrProgressText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  ocrProgressTitle: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: "#111",
+    marginBottom: 4,
+    lineHeight: 1.35,
+  },
+  ocrProgressSub: {
+    fontSize: 13,
+    color: "#5a6578",
+    lineHeight: 1.45,
+  },
+  ocrProgressMeta: {
+    fontSize: 11,
+    fontWeight: 600,
+    color: "#2563a8",
+    marginTop: 8,
+    letterSpacing: "0.02em",
+  },
+  dropZoneDisabled: {
+    opacity: 0.72,
+    pointerEvents: "none",
+    cursor: "default",
   },
   successBox: {
     border: "2px solid #2a7a2a",
@@ -384,6 +504,10 @@ export default function PdfUploadPage() {
   } = state;
 
   const fileInputRef = useRef(null);
+  /** Same as uploadSessionId state, updated synchronously so "Finish" never uses a stale empty id. */
+  const uploadSessionIdRef = useRef("");
+  const ocrTimerRefs = useRef([]);
+  const ocrPageWorkRef = useRef(false);
   const [file, setFile] = useState(null);
   const [uploadSessionId, setUploadSessionId] = useState("");
   const [capturedPages, setCapturedPages] = useState([]);
@@ -392,13 +516,28 @@ export default function PdfUploadPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState("");
   const [result, setResult] = useState(null);
+  /** null = idle; otherwise staged OCR UX label key */
+  const [ocrProgressPhase, setOcrProgressPhase] = useState(null);
+  /** 1-based page index while a photo is being processed (consumer-facing progress). */
+  const [ocrActivePageNumber, setOcrActivePageNumber] = useState(null);
 
   const missingState = recovery.missing;
   const chosenStyle = design_style
     ? DESIGN_STYLES.find((entry) => entry.id === design_style) || null
     : null;
-  const isOcrFlow = ingestion_method === "ocr";
+  const isOcrRoute =
+    typeof location.pathname === "string" && location.pathname.endsWith("/ocr-upload");
+  const isOcrFlow = ingestion_method === "ocr" || isOcrRoute;
   const accept = isOcrFlow ? "image/*" : "application/pdf,.pdf";
+
+  function clearOcrPhaseTimers() {
+    ocrTimerRefs.current.forEach((id) => clearTimeout(id));
+    ocrTimerRefs.current = [];
+  }
+
+  useEffect(() => {
+    return () => clearOcrPhaseTimers();
+  }, []);
 
   function validateChosenFile(chosen) {
     setFileError("");
@@ -422,7 +561,11 @@ export default function PdfUploadPage() {
   }
 
   async function ensureUploadSession() {
-    if (uploadSessionId) return uploadSessionId;
+    if (uploadSessionIdRef.current) return uploadSessionIdRef.current;
+    if (uploadSessionId) {
+      uploadSessionIdRef.current = uploadSessionId;
+      return uploadSessionId;
+    }
 
     const formData = new FormData();
     formData.append("restaurant_id", String(restaurant_id));
@@ -440,44 +583,76 @@ export default function PdfUploadPage() {
       throw new Error(data?.error || `Session start failed (${res.status})`);
     }
 
+    uploadSessionIdRef.current = data.upload_session_id;
     setUploadSessionId(data.upload_session_id);
     return data.upload_session_id;
   }
 
   async function uploadCapturedPage(imageFile) {
-    const sessionId = await ensureUploadSession();
-    const pdfFile = await convertImageFileToPdf(imageFile);
-    const nextPageNumber = capturedPages.length + 1;
+    ocrPageWorkRef.current = true;
+    clearOcrPhaseTimers();
+    setUploadErr("");
+    const pageIndex = capturedPages.length + 1;
+    setOcrActivePageNumber(pageIndex);
+    setOcrProgressPhase("uploading_photo");
 
-    const formData = new FormData();
-    formData.append("restaurant_id", String(restaurant_id));
-    formData.append("email", email);
-    formData.append("owner_token", owner_token);
-    formData.append("page_number", String(nextPageNumber));
-    formData.append("image_file", imageFile, imageFile.name);
-    formData.append("pdf_file", pdfFile, pdfFile.name);
+    try {
+      const sessionId = await ensureUploadSession();
+      const pdfFile = await convertImageFileToPdf(imageFile);
+      const nextPageNumber = capturedPages.length + 1;
 
-    const res = await fetch(`${API}/uploads/menu-session/${sessionId}/page`, {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json().catch(() => null);
+      const formData = new FormData();
+      formData.append("restaurant_id", String(restaurant_id));
+      formData.append("email", email);
+      formData.append("owner_token", owner_token);
+      formData.append("page_number", String(nextPageNumber));
+      formData.append("image_file", imageFile, imageFile.name);
+      formData.append("pdf_file", pdfFile, pdfFile.name);
 
-    if (!res.ok || !data?.ok) {
-      throw new Error(data?.error || `Page upload failed (${res.status})`);
+      if (ocrPageWorkRef.current) setOcrProgressPhase("reading_menu");
+
+      const schedulePhase = (phase, ms) => {
+        const id = setTimeout(() => {
+          if (ocrPageWorkRef.current) setOcrProgressPhase(phase);
+        }, ms);
+        ocrTimerRefs.current.push(id);
+      };
+      schedulePhase("extracting_text", 2200);
+      schedulePhase("structuring", 4800);
+
+      const res = await fetch(`${API}/uploads/menu-session/${sessionId}/page`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.ok) {
+        const err = new Error(data?.error || `Page upload failed (${res.status})`);
+        err.status = res.status;
+        throw err;
+      }
+
+      setCapturedPages((pages) => [
+        ...pages,
+        {
+          pageNumber: data.page_number,
+          previewUrl: buildPreviewUrl(imageFile),
+          imageUrl: data.image_url,
+          ocrText: data.ocr_text,
+          preview: data.preview,
+          status: data.status,
+        },
+      ]);
+    } catch (error) {
+      const status = error?.status ?? error?.cause?.status;
+      setUploadErr(formatOcrFlowError(error?.message, status));
+      throw error;
+    } finally {
+      ocrPageWorkRef.current = false;
+      clearOcrPhaseTimers();
+      setOcrProgressPhase(null);
+      setOcrActivePageNumber(null);
     }
-
-    setCapturedPages((pages) => [
-      ...pages,
-      {
-        pageNumber: data.page_number,
-        previewUrl: buildPreviewUrl(imageFile),
-        imageUrl: data.image_url,
-        ocrText: data.ocr_text,
-        preview: data.preview,
-        status: data.status,
-      },
-    ]);
   }
 
   function onDragOver(event) {
@@ -498,7 +673,7 @@ export default function PdfUploadPage() {
     if (isOcrFlow && isImageFile(chosen)) {
       setUploading(true);
       uploadCapturedPage(chosen)
-        .catch((error) => setUploadErr(error.message || "Upload failed."))
+        .catch(() => {})
         .finally(() => setUploading(false));
       return;
     }
@@ -516,7 +691,7 @@ export default function PdfUploadPage() {
       if (isOcrFlow) {
         setUploading(true);
         uploadCapturedPage(chosen)
-          .catch((error) => setUploadErr(error.message || "Upload failed."))
+          .catch(() => {})
           .finally(() => setUploading(false));
       } else {
         setFile(chosen);
@@ -532,28 +707,48 @@ export default function PdfUploadPage() {
 
     if (isOcrFlow && capturedPages.length > 0) {
       setUploading(true);
+      setOcrProgressPhase("finalizing");
+      setUploadErr("");
 
       try {
+        const sessionForFinish = String(uploadSessionIdRef.current || uploadSessionId || "").trim();
+        if (!sessionForFinish) {
+          throw new Error(
+            "Upload session is not ready yet. Wait for the photo to finish processing, or capture another page."
+          );
+        }
+
         const formData = new FormData();
         formData.append("restaurant_id", String(restaurant_id));
         formData.append("email", email);
         formData.append("owner_token", owner_token);
 
-        const res = await fetch(`${API}/uploads/menu-session/${uploadSessionId}/finish`, {
+        const res = await fetch(`${API}/uploads/menu-session/${sessionForFinish}/finish`, {
           method: "POST",
           body: formData,
         });
         const data = await res.json().catch(() => null);
 
         if (!res.ok || !data?.ok) {
-          throw new Error(data?.error || `Finish failed (${res.status})`);
+          const err = new Error(data?.error || `Finish failed (${res.status})`);
+          err.status = res.status;
+          throw err;
+        }
+
+        const itemsSaved = (Number(data.inserted_items) || 0) + (Number(data.updated_items) || 0);
+        if (itemsSaved <= 0) {
+          throw new Error(
+            "Upload finished but no menu items were saved. Try clearer photos or contact support."
+          );
         }
 
         setResult(data);
         return;
       } catch (error) {
-        setUploadErr(error.message || "Upload failed. Please try again.");
+        const status = error?.status ?? error?.cause?.status;
+        setUploadErr(formatOcrFlowError(error?.message, status));
       } finally {
+        setOcrProgressPhase(null);
         setUploading(false);
       }
     }
@@ -593,18 +788,16 @@ export default function PdfUploadPage() {
       const data = await res.json().catch(() => null);
 
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error || `Upload failed (${res.status})`);
+        const err = new Error(data?.error || `Upload failed (${res.status})`);
+        err.status = res.status;
+        throw err;
       }
 
       setResult(data);
     } catch (error) {
       const raw = error.message || "";
-      const isFetchError = /failed to fetch|networkerror|load failed/i.test(raw);
-      setUploadErr(
-        isFetchError
-          ? "Your menu failed to upload. Make sure the file is a clear menu PDF or photo and try again."
-          : raw || "Upload failed. Please try again."
-      );
+      const status = error?.status;
+      setUploadErr(formatOcrFlowError(raw, status));
     } finally {
       setUploading(false);
     }
@@ -639,17 +832,35 @@ export default function PdfUploadPage() {
 
         <div style={s.successBox}>
           <div style={s.successIcon}>✓</div>
-          <div style={s.successTitle}>Menu uploaded successfully</div>
-          <p style={s.successSub}>
-            Your menu file has been received and is being processed. Once approved, your
-            menu will appear on your Menuply profile.
-          </p>
+          {(() => {
+            const pageCount = Number(result.page_count || result.pages || 0) || 0;
+            const itemsProcessed =
+              (Number(result.inserted_items) || 0) + (Number(result.updated_items) || 0);
+            const summaryParts = [];
+            if (pageCount > 0) summaryParts.push(`${pageCount} page${pageCount === 1 ? "" : "s"}`);
+            if (itemsProcessed > 0) {
+              summaryParts.push(`${itemsProcessed} item${itemsProcessed === 1 ? "" : "s"} processed`);
+            }
+            const dash = summaryParts.length ? ` — ${summaryParts.join(", ")}` : "";
+            return (
+              <>
+                <div style={s.successTitle}>{`Menu uploaded successfully${dash}.`}</div>
+                <p style={s.successSub}>
+                  Your menu is being reviewed. Once approved, it will appear on your Menuply profile.
+                </p>
+              </>
+            );
+          })()}
           <Link to={`/restaurant-profile/${restaurant_id}`} style={s.profileLink}>
             Go to your restaurant profile
           </Link>
           <div style={s.pendingNote}>
-            {result.pages > 0 && `${result.pages}-page PDF · `}
             {result.text_length > 0 && `${result.text_length.toLocaleString()} characters extracted · `}
+            {(Number(result.inserted_items) > 0 || Number(result.updated_items) > 0) && (
+              <>
+                {Number(result.inserted_items) || 0} new / {Number(result.updated_items) || 0} updated ·{" "}
+              </>
+            )}
             Menu status: <strong>pending review</strong>
           </div>
         </div>
@@ -679,7 +890,7 @@ export default function PdfUploadPage() {
                 onClick={() =>
                   navigateWithRestaurantOnboardingState(nav, "/restaurant/design-select", {
                     ...state,
-                    ingestion_method,
+                    ingestion_method: isOcrFlow ? "ocr" : ingestion_method,
                   })
                 }
               >
@@ -732,15 +943,19 @@ export default function PdfUploadPage() {
         ) : null}
       </div>
 
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} noValidate aria-busy={uploading ? "true" : "false"}>
         <div
-          style={s.dropZone(isDragOver, !!file, !!fileError)}
+          style={{
+            ...s.dropZone(isDragOver, !!file, !!fileError),
+            ...(isOcrFlow && uploading ? s.dropZoneDisabled : {}),
+          }}
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           onClick={onDropZoneClick}
           role="button"
           tabIndex={0}
+          aria-busy={isOcrFlow && uploading ? "true" : "false"}
           aria-label={isOcrFlow ? "Tap to take a photo of the menu" : "Click or drag to upload PDF"}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
@@ -804,26 +1019,57 @@ export default function PdfUploadPage() {
 
         {fileError ? <div style={s.error}>{fileError}</div> : null}
         {uploadErr ? <div style={s.error}>{uploadErr}</div> : null}
-        {uploading ? (
-          <div style={s.progress}>
-            {isOcrFlow && isImageFile(file)
-              ? "Preparing your photo for upload and sending it now..."
-              : "Uploading and processing your menu. This may take a few moments…"}
+
+        {isOcrFlow && ocrProgressPhase && OCR_PHASE_COPY[ocrProgressPhase] ? (
+          <div style={s.ocrProgressCard} role="status" aria-live="polite" aria-atomic="true">
+            <OcrProgressSpinner />
+            <div style={s.ocrProgressText}>
+              <div style={s.ocrProgressTitle}>{OCR_PHASE_COPY[ocrProgressPhase].title}</div>
+              <div style={s.ocrProgressSub}>{OCR_PHASE_COPY[ocrProgressPhase].sub}</div>
+              {OCR_PHASE_STEP[ocrProgressPhase] != null ? (
+                <div style={s.ocrProgressMeta}>
+                  {ocrActivePageNumber != null ? `Page ${ocrActivePageNumber} · ` : ""}
+                  {`Step ${OCR_PHASE_STEP[ocrProgressPhase]} of 4 · Please keep this screen open`}
+                </div>
+              ) : (
+                <div style={s.ocrProgressMeta}>
+                  {ocrProgressPhase === "finalizing" && capturedPages.length > 0
+                    ? `${capturedPages.length} page${capturedPages.length === 1 ? "" : "s"} ready · `
+                    : ""}
+                  Almost done · Please keep this screen open
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        {!isOcrFlow && uploading ? (
+          <div style={s.ocrProgressCard} role="status" aria-live="polite">
+            <OcrProgressSpinner />
+            <div style={s.ocrProgressText}>
+              <div style={s.ocrProgressTitle}>Uploading your PDF…</div>
+              <div style={s.ocrProgressSub}>Large files may take a minute. Please keep this screen open.</div>
+            </div>
           </div>
         ) : null}
 
         {isOcrFlow && capturedPages.length > 0 ? (
           <div style={{ display: "grid", gap: 12 }}>
-            <button type="button" style={s.submitBtn(false)} onClick={onDropZoneClick}>
+            <button
+              type="button"
+              style={s.submitBtn(uploading)}
+              disabled={uploading}
+              onClick={onDropZoneClick}
+            >
               Add another page
             </button>
             <button type="submit" style={s.submitBtn(submitDisabled)} disabled={submitDisabled}>
-              {uploading ? "Finishing..." : "Finished"}
+              {uploading && ocrProgressPhase === "finalizing" ? "Finalizing…" : uploading ? "Working…" : "Submit menu"}
             </button>
           </div>
         ) : (
           <button type="submit" style={s.submitBtn(submitDisabled)} disabled={submitDisabled}>
-            {uploading ? "Uploading..." : isOcrFlow ? "Start menu photo upload" : "Upload PDF"}
+            {uploading ? "Working…" : isOcrFlow ? "Start menu photo upload" : "Upload PDF"}
           </button>
         )}
       </form>
