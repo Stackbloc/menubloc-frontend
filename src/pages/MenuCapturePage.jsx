@@ -1,28 +1,93 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import {
+  buildCapturePreviewUrl,
+  convertImageFileToPdf,
+  isCaptureImageFile,
+} from "../lib/menuCaptureImagePdf.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
-function Field({ label, required, hint, disabled, autoFilled, children }) {
+/** Match PdfUploadPage OCR messaging (timed phases during round-trip). */
+const OCR_PHASE_COPY = {
+  uploading_photo: { title: "Uploading photo…", sub: "Sending your picture securely." },
+  reading_menu: { title: "Reading menu…", sub: "Opening your menu page on our servers." },
+  extracting_text: { title: "Extracting menu text…", sub: "Pulling words and prices from the image." },
+  structuring: { title: "Organizing menu items…", sub: "Grouping sections and dishes." },
+  finalizing: { title: "Finalizing your menu…", sub: "Saving items for review." },
+};
+
+const OCR_PHASE_STEP = {
+  uploading_photo: 1,
+  reading_menu: 2,
+  extracting_text: 3,
+  structuring: 4,
+  finalizing: null,
+};
+
+function OcrProgressSpinner() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden style={{ flexShrink: 0 }}>
+      <circle cx="12" cy="12" r="10" stroke="#e8e8e8" strokeWidth="2.5" fill="none" />
+      <g>
+        <animateTransform
+          attributeName="transform"
+          type="rotate"
+          from="0 12 12"
+          to="360 12 12"
+          dur="0.75s"
+          repeatCount="indefinite"
+        />
+        <circle
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="#111"
+          strokeWidth="2.5"
+          fill="none"
+          strokeDasharray="47 63"
+          strokeLinecap="round"
+        />
+      </g>
+    </svg>
+  );
+}
+
+function formatFlowError(rawMessage, httpStatus) {
+  const msg = String(rawMessage || "").trim();
+  const status = Number(httpStatus) || 0;
+  const lower = msg.toLowerCase();
+  if (/failed to fetch|networkerror|load failed/i.test(msg)) {
+    return "We could not reach the server. Check your connection and try again.";
+  }
+  if (status === 408 || status === 504 || /timeout/i.test(lower)) {
+    return "This is taking too long. Try again with a smaller photo or a stronger signal.";
+  }
+  if (status === 413) return "That file is too large to upload.";
+  return msg || "Something went wrong. Please try again.";
+}
+
+function Field({ label, required, hint, children }) {
   return (
     <div>
-      <label style={{
-        display: "flex", alignItems: "center", gap: 6,
-        fontSize: 13, fontWeight: 700,
-        color: disabled ? "#94a3b8" : "#374151", marginBottom: 6,
-      }}>
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontSize: 13,
+          fontWeight: 700,
+          color: "#374151",
+          marginBottom: 6,
+        }}
+      >
         {label}{" "}
-        {required
-          ? <span style={{ color: disabled ? "#cbd5e1" : "#ef4444" }}>*</span>
-          : <span style={{ fontWeight: 400, color: "#94a3b8" }}>(optional)</span>}
-        {autoFilled && !disabled && (
-          <span style={{
-            fontSize: 11, fontWeight: 500, color: "#16a34a",
-            background: "#f0fdf4", border: "1px solid #bbf7d0",
-            borderRadius: 4, padding: "1px 5px",
-          }}>auto-detected</span>
+        {required ? (
+          <span style={{ color: "#ef4444" }}>*</span>
+        ) : (
+          <span style={{ fontWeight: 400, color: "#94a3b8" }}>(optional)</span>
         )}
       </label>
       {children}
@@ -31,237 +96,374 @@ function Field({ label, required, hint, disabled, autoFilled, children }) {
   );
 }
 
-function inputStyle(disabled) {
+function inputStyle() {
   return {
-    width: "100%", height: 46, padding: "0 14px",
-    border: `1.5px solid ${disabled ? "#f1f5f9" : "#e2e8f0"}`, borderRadius: 10,
+    width: "100%",
+    height: 46,
+    padding: "0 14px",
+    border: "1.5px solid #e2e8f0",
+    borderRadius: 10,
     fontSize: 14,
-    color: disabled ? "#94a3b8" : "#0f172a",
-    background: disabled ? "#f8fafc" : "#fff",
-    outline: "none", boxSizing: "border-box",
+    color: "#0f172a",
+    background: "#fff",
+    outline: "none",
+    boxSizing: "border-box",
   };
 }
 
+/**
+ * Phases: step1 | step1_manual | step2 | step3 | success
+ */
 export default function MenuCapturePage() {
   const navigate = useNavigate();
-  const fileRef = useRef(null);
+  const step1InputRef = useRef(null);
+  const menuInputRef = useRef(null);
+  const ocrTimerRefs = useRef([]);
+  const ocrWorkRef = useRef(false);
 
-  const [pages, setPages] = useState([]);
-  const file = pages[0] ?? null;
+  const [phase, setPhase] = useState("step1");
+  const [captureSessionId, setCaptureSessionId] = useState("");
+  const [sessionStartError, setSessionStartError] = useState("");
+  const [nextPageNumber, setNextPageNumber] = useState(1);
+  const [hasRestaurantInfoPhoto, setHasRestaurantInfoPhoto] = useState(false);
+  const [ocrHintsFromPhoto, setOcrHintsFromPhoto] = useState(null);
+  const [menuPageCount, setMenuPageCount] = useState(0);
+  const [menuThumbUrls, setMenuThumbUrls] = useState([]);
+
   const [restaurantName, setRestaurantName] = useState("");
-  const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [stateField, setStateField] = useState("");
+  const [website, setWebsite] = useState("");
   const [email, setEmail] = useState("");
 
-  const [extracting, setExtracting] = useState(false);
-  const [autoFilled, setAutoFilled] = useState({});
-
-  // "upload" | "form" | "confirm" | "uploading" | "success" | "error"
-  const [step, setStep] = useState("upload");
   const [errorMsg, setErrorMsg] = useState("");
+  const [ocrProgressPhase, setOcrProgressPhase] = useState(null);
+  const [ocrActiveLabel, setOcrActiveLabel] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleFileChange(e) {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  const clearOcrTimers = () => {
+    ocrTimerRefs.current.forEach((id) => clearTimeout(id));
+    ocrTimerRefs.current = [];
+  };
+
+  useEffect(() => () => clearOcrTimers(), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API}/menus-claim-upload-clean/capture-session/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email: "" }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok || !data?.ok || !data.capture_session_id) {
+          setSessionStartError(data?.error || "Could not start upload session.");
+          return;
+        }
+        setCaptureSessionId(data.capture_session_id);
+      } catch {
+        if (!cancelled) setSessionStartError("Could not start upload session.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const scheduleOcrPhases = () => {
+    clearOcrTimers();
+    const schedule = (phaseKey, ms) => {
+      const id = setTimeout(() => {
+        if (ocrWorkRef.current) setOcrProgressPhase(phaseKey);
+      }, ms);
+      ocrTimerRefs.current.push(id);
+    };
+    schedule("reading_menu", 400);
+    schedule("extracting_text", 2200);
+    schedule("structuring", 4800);
+  };
+
+  const postPage = useCallback(
+    async (file, pageRole, pageNumber) => {
+      if (!captureSessionId) throw new Error("Session not ready.");
+      const pdfFile = await convertImageFileToPdf(file);
+      const fd = new FormData();
+      fd.append("page_number", String(pageNumber));
+      fd.append("page_role", pageRole);
+      fd.append("image_file", file, file.name);
+      fd.append("pdf_file", pdfFile, pdfFile.name);
+
+      ocrWorkRef.current = true;
+      setOcrProgressPhase("uploading_photo");
+      scheduleOcrPhases();
+
+      const res = await fetch(
+        `${API}/menus-claim-upload-clean/capture-session/${captureSessionId}/page`,
+        { method: "POST", body: fd, credentials: "include" }
+      );
+      const json = await res.json().catch(() => ({}));
+      ocrWorkRef.current = false;
+      clearOcrTimers();
+      setOcrProgressPhase(null);
+      setOcrActiveLabel("");
+
+      if (!res.ok || !json?.ok) {
+        const err = new Error(json?.error || `Upload failed (${res.status})`);
+        err.status = res.status;
+        throw err;
+      }
+      return json;
+    },
+    [captureSessionId]
+  );
+
+  function validateImageFile(f) {
+    if (!f) return "No file selected.";
+    if (!isCaptureImageFile(f)) return "Please choose a photo (JPG or PNG).";
     if (f.size > MAX_FILE_BYTES) {
-      setErrorMsg(`File too large (max 25 MB). Yours is ${(f.size / 1024 / 1024).toFixed(1)} MB.`);
-      e.target.value = "";
+      return `File too large (max 25 MB). Yours is ${(f.size / 1024 / 1024).toFixed(1)} MB.`;
+    }
+    return "";
+  }
+
+  async function onRestaurantPhotoChosen(e) {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    const v = validateImageFile(f);
+    if (v) {
+      setErrorMsg(v);
       return;
     }
-    setPages(prev => [...prev, f]);
-    if (fileRef.current) fileRef.current.value = "";
+    if (!captureSessionId) {
+      setErrorMsg(sessionStartError || "Session not ready. Please wait or refresh.");
+      return;
+    }
     setErrorMsg("");
-  }
-
-  async function handleDoneAdding() {
-    if (pages.length === 0) { setErrorMsg("Please choose at least one menu photo or PDF."); return; }
-    setStep("form");
-    setExtracting(true);
-    setErrorMsg("");
+    const pn = 1;
     try {
-      const fd = new FormData();
-      fd.append("file", pages[0]);
-      const res = await fetch(`${API}/menus-claim-upload-clean/extract-hint`,
-        { method: "POST", body: fd, credentials: "include" });
-      if (res.ok) {
-        const json = await res.json().catch(() => ({}));
-        if (json.ok && json.hints) {
-          const { name, address: addr, phone: ph, email: em } = json.hints;
-          const filled = {};
-          if (name) { setRestaurantName(name); filled.name = true; }
-          if (addr) { setAddress(addr);        filled.address = true; }
-          if (ph)   { setPhone(ph);            filled.phone = true; }
-          if (em)   { setEmail(em);            filled.email = true; }
-          setAutoFilled(filled);
-        }
+      setOcrActiveLabel("Restaurant details photo");
+      const json = await postPage(f, "restaurant_info", pn);
+      setHasRestaurantInfoPhoto(true);
+      setNextPageNumber(2);
+      if (json.extracted_hints) {
+        setOcrHintsFromPhoto(json.extracted_hints);
+        const h = json.extracted_hints;
+        setRestaurantName((prev) => (prev.trim() ? prev : h.name || prev));
+        setPhone((prev) => (prev.trim() ? prev : h.phone || prev));
+        setAddress((prev) => (prev.trim() ? prev : h.address || prev));
+        setWebsite((prev) => (prev.trim() ? prev : h.website || prev));
       }
-    } catch { /* non-fatal — proceed with empty fields */ }
-    setExtracting(false);
-  }
-
-  function handleReview(e) {
-    e.preventDefault();
-    if (!file) { setErrorMsg("Please choose a menu photo or PDF."); return; }
-    if (!restaurantName.trim()) { setErrorMsg("Please enter the restaurant name."); return; }
-    if (!address.trim()) { setErrorMsg("Please enter the restaurant address."); return; }
-    setErrorMsg("");
-    setStep("confirm");
-  }
-
-  async function handleConfirmSubmit() {
-    setStep("uploading");
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("restaurant_name", restaurantName.trim());
-    fd.append("address", address.trim());
-    if (phone.trim()) fd.append("phone", phone.trim());
-    if (email.trim()) fd.append("email", email.trim());
-    try {
-      const res = await fetch(`${API}/menus-claim-upload-clean/claim-upload`,
-        { method: "POST", body: fd, credentials: "include" });
-      const json = await res.json().catch(() => ({}));
-      if (!json.ok) throw new Error(json.error || `Upload failed (${res.status})`);
-      setStep("success");
+      setPhase("step2");
     } catch (err) {
-      setErrorMsg(err.message || "Upload failed. Please try again.");
-      setStep("error");
+      setErrorMsg(formatFlowError(err.message, err.status));
     }
   }
 
-  if (step === "upload") {
-    return (
-      <>
-        <StickyPageHeader />
-        <div style={{
-          maxWidth: 480, margin: "0 auto", padding: "24px 16px 80px",
-          fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
-        }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px", color: "#0f172a" }}>
-            Add a menu
-          </h1>
-          <p style={{ fontSize: 14, color: "#64748b", margin: "0 0 24px", lineHeight: 1.6 }}>
-            Take a photo of a physical menu or upload a PDF.
-            Multi-page menu? Add each page one at a time.
-          </p>
-
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*,.pdf"
-            capture="environment"
-            onChange={handleFileChange}
-            style={{ display: "none" }}
-          />
-
-          {pages.length === 0 ? (
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              style={{
-                display: "flex", alignItems: "center", gap: 10, width: "100%",
-                height: 54, padding: "0 16px",
-                border: "2px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc",
-                cursor: "pointer", fontSize: 14, color: "#64748b", fontWeight: 600,
-                boxSizing: "border-box",
-              }}
-            >
-              <span style={{ fontSize: 22 }}>📸</span>
-              <span>Take photo or choose file</span>
-            </button>
-          ) : (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                {pages.map((p, i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "10px 14px",
-                    border: "1.5px solid #16a34a", borderRadius: 10, background: "#f0fdf4",
-                  }}>
-                    <span style={{ fontSize: 20 }}>📄</span>
-                    <span style={{
-                      flex: 1, fontSize: 14, color: "#15803d", fontWeight: 500,
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
-                      Page {i + 1}: {p.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setPages(prev => prev.filter((_, j) => j !== i))}
-                      style={{ fontSize: 12, color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    width: "100%", height: 46,
-                    border: "2px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc",
-                    cursor: "pointer", fontSize: 14, color: "#64748b", fontWeight: 600,
-                    boxSizing: "border-box",
-                  }}
-                >
-                  + Next menu page
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDoneAdding}
-                  style={{
-                    width: "100%", height: 48,
-                    background: "#111827", color: "#fff", border: "none",
-                    borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer",
-                  }}
-                >
-                  Done — continue
-                </button>
-              </div>
-            </>
-          )}
-
-          {errorMsg && (
-            <div style={{
-              marginTop: 14, padding: "10px 14px", borderRadius: 8,
-              background: "#fff5f5", border: "1px solid #fca5a5",
-              color: "#b91c1c", fontSize: 13, lineHeight: 1.5,
-            }}>
-              {errorMsg}
-            </div>
-          )}
-        </div>
-      </>
-    );
+  function onInfoNotAvailable() {
+    setErrorMsg("");
+    setPhase("step1_manual");
   }
 
-  if (step === "success") {
+  function continueManualToMenu() {
+    if (!restaurantName.trim()) {
+      setErrorMsg("Please enter the restaurant name.");
+      return;
+    }
+    if (!city.trim()) {
+      setErrorMsg("Please enter the city.");
+      return;
+    }
+    if (!stateField.trim()) {
+      setErrorMsg("Please enter the state.");
+      return;
+    }
+    setErrorMsg("");
+    setHasRestaurantInfoPhoto(false);
+    setNextPageNumber(1);
+    setPhase("step2");
+  }
+
+  async function onMenuPhotoChosen(e) {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    const v = validateImageFile(f);
+    if (v) {
+      setErrorMsg(v);
+      return;
+    }
+    if (!captureSessionId) {
+      setErrorMsg(sessionStartError || "Session not ready.");
+      return;
+    }
+    setErrorMsg("");
+    const pn = nextPageNumber;
+    try {
+      setOcrActiveLabel(`Menu page ${menuPageCount + 1}`);
+      await postPage(f, "menu_items", pn);
+      setMenuPageCount((c) => c + 1);
+      setNextPageNumber((n) => n + 1);
+      setMenuThumbUrls((prev) => [...prev, buildCapturePreviewUrl(f)]);
+    } catch (err) {
+      setErrorMsg(formatFlowError(err.message, err.status));
+    }
+  }
+
+  function goReview() {
+    if (menuPageCount < 1) {
+      setErrorMsg("Add at least one photo of menu items.");
+      return;
+    }
+    setErrorMsg("");
+    setPhase("step3");
+  }
+
+  async function finalizeSubmit() {
+    const name = restaurantName.trim();
+    if (!name) {
+      setErrorMsg("Please enter the restaurant name before submitting.");
+      return;
+    }
+    if (!hasRestaurantInfoPhoto) {
+      if (!city.trim()) {
+        setErrorMsg("City is required when restaurant details weren’t photographed.");
+        return;
+      }
+      if (!stateField.trim()) {
+        setErrorMsg("State is required when restaurant details weren’t photographed.");
+        return;
+      }
+    }
+    if (!captureSessionId) {
+      setErrorMsg("Session missing. Refresh and try again.");
+      return;
+    }
+    setErrorMsg("");
+    setSubmitting(true);
+    ocrWorkRef.current = true;
+    setOcrProgressPhase("finalizing");
+    clearOcrTimers();
+    try {
+      const res = await fetch(
+        `${API}/menus-claim-upload-clean/capture-session/${captureSessionId}/finish`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            restaurant_name: name,
+            phone: phone.trim(),
+            address: address.trim(),
+            city: city.trim(),
+            state: stateField.trim(),
+            website: website.trim(),
+            email: email.trim(),
+          }),
+        }
+      );
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || `Submit failed (${res.status})`);
+      }
+      const itemsSaved = (Number(json.inserted_items) || 0) + (Number(json.updated_items) || 0);
+      if (itemsSaved <= 0) {
+        throw new Error("No menu items were saved. Try clearer photos of the menu.");
+      }
+      setPhase("success");
+    } catch (err) {
+      setErrorMsg(formatFlowError(err.message, err.status));
+    } finally {
+      ocrWorkRef.current = false;
+      setOcrProgressPhase(null);
+      setSubmitting(false);
+    }
+  }
+
+  const mergedHintsDisplay = ocrHintsFromPhoto
+    ? [
+        ocrHintsFromPhoto.name && `Name (from photo): ${ocrHintsFromPhoto.name}`,
+        ocrHintsFromPhoto.phone && `Phone (from photo): ${ocrHintsFromPhoto.phone}`,
+        ocrHintsFromPhoto.address && `Address (from photo): ${ocrHintsFromPhoto.address}`,
+        ocrHintsFromPhoto.website && `Website (from photo): ${ocrHintsFromPhoto.website}`,
+      ].filter(Boolean)
+    : [];
+
+  const ocrCard =
+    ocrProgressPhase && OCR_PHASE_COPY[ocrProgressPhase] ? (
+      <div
+        style={{
+          display: "flex",
+          gap: 14,
+          alignItems: "flex-start",
+          padding: "16px 18px",
+          background: "#f6f8fc",
+          border: "1px solid #c5d4eb",
+          borderRadius: 12,
+          marginBottom: 16,
+        }}
+      >
+        <OcrProgressSpinner />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#111", marginBottom: 4 }}>
+            {OCR_PHASE_COPY[ocrProgressPhase].title}
+          </div>
+          <div style={{ fontSize: 13, color: "#5a6578", lineHeight: 1.45 }}>
+            {OCR_PHASE_COPY[ocrProgressPhase].sub}
+          </div>
+          {OCR_PHASE_STEP[ocrProgressPhase] != null ? (
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#2563a8", marginTop: 8 }}>
+              {`Step ${OCR_PHASE_STEP[ocrProgressPhase]} of 4 · Please keep this screen open`}
+              {ocrActiveLabel ? ` · ${ocrActiveLabel}` : ""}
+            </div>
+          ) : ocrActiveLabel ? (
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#2563a8", marginTop: 8 }}>
+              {ocrActiveLabel}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    ) : null;
+
+  if (phase === "success") {
     return (
       <>
         <StickyPageHeader />
-        <div style={{
-          maxWidth: 480, margin: "0 auto", padding: "40px 16px 80px",
-          fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
-        }}>
+        <div
+          style={{
+            maxWidth: 480,
+            margin: "0 auto",
+            padding: "40px 16px 80px",
+            fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
+          }}
+        >
           <div style={{ fontSize: 44, marginBottom: 14 }}>✅</div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 10px", color: "#0f172a" }}>
             Menu received
           </h1>
           <p style={{ fontSize: 15, color: "#475569", margin: "0 0 28px", lineHeight: 1.65 }}>
-            <strong>{restaurantName}</strong> has been matched and your menu
-            ({pages.length} page{pages.length !== 1 ? "s" : ""}) is queued for processing.
-            Thank you for contributing!
+            <strong>{restaurantName.trim()}</strong>: we saved{" "}
+            <strong>{menuPageCount}</strong> menu photo{menuPageCount !== 1 ? "s" : ""}
+            {hasRestaurantInfoPhoto ? " plus your restaurant details photo" : ""}. Thank you for contributing!
           </p>
           <button
             type="button"
             onClick={() => navigate("/")}
             style={{
-              display: "block", width: "100%", height: 46,
-              background: "#111827", color: "#fff", border: "none",
-              borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer",
+              display: "block",
+              width: "100%",
+              height: 46,
+              background: "#111827",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: "pointer",
             }}
           >
             Back to Menuply
@@ -271,193 +473,454 @@ export default function MenuCapturePage() {
     );
   }
 
-  if (step === "confirm") {
-    return (
-      <>
-        <StickyPageHeader />
-        <div style={{
-          maxWidth: 480, margin: "0 auto", padding: "24px 16px 80px",
-          fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
-        }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 6px", color: "#0f172a" }}>
-            Confirm details
-          </h1>
-          <p style={{ fontSize: 14, color: "#64748b", margin: "0 0 24px", lineHeight: 1.6 }}>
-            Review before submitting. Tap Edit to go back.
-          </p>
-
-          <div style={{
-            border: "1.5px solid #e2e8f0", borderRadius: 12,
-            overflow: "hidden", marginBottom: 24,
-          }}>
-            {[
-              { label: "Restaurant", value: restaurantName },
-              { label: "Address", value: address },
-              { label: "Phone", value: phone || "—" },
-              { label: "Email", value: email || "—" },
-              { label: "Menu", value: pages.length === 1 ? pages[0]?.name : `${pages.length} pages` },
-            ].map(({ label, value }, i, arr) => (
-              <div key={label} style={{
-                display: "flex", padding: "12px 16px",
-                borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none",
-                background: i % 2 === 0 ? "#fff" : "#f8fafc",
-              }}>
-                <span style={{ width: 110, fontSize: 12, fontWeight: 700, color: "#64748b", flexShrink: 0 }}>
-                  {label}
-                </span>
-                <span style={{
-                  fontSize: 14, color: "#0f172a",
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                }}>
-                  {value}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {errorMsg && (
-            <div style={{
-              padding: "10px 14px", borderRadius: 8, marginBottom: 16,
-              background: "#fff5f5", border: "1px solid #fca5a5",
-              color: "#b91c1c", fontSize: 13, lineHeight: 1.5,
-            }}>
-              {errorMsg}
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: 12 }}>
-            <button
-              type="button"
-              onClick={() => { setStep("form"); setErrorMsg(""); }}
-              style={{
-                flex: 1, height: 46, background: "#f1f5f9", color: "#374151",
-                border: "none", borderRadius: 10, fontSize: 15, fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmSubmit}
-              style={{
-                flex: 2, height: 46, background: "#111827", color: "#fff",
-                border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              Submit menu
-            </button>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  const fieldsDisabled = step === "uploading" || extracting;
-
   return (
     <>
       <StickyPageHeader />
-      <div style={{
-        maxWidth: 480, margin: "0 auto", padding: "24px 16px 80px",
-        fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
-      }}>
+      <div
+        style={{
+          maxWidth: 480,
+          margin: "0 auto",
+          padding: "24px 16px 80px",
+          fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
+        }}
+      >
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px", color: "#0f172a" }}>
-          Restaurant details
+          Add a menu
         </h1>
-        <p style={{ fontSize: 14, color: "#64748b", margin: "0 0 4px", lineHeight: 1.6 }}>
-          {pages.length} page{pages.length !== 1 ? "s" : ""} uploaded.{" "}
-          <button
-            type="button"
-            onClick={() => { setStep("upload"); setErrorMsg(""); }}
-            style={{ fontSize: 14, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline" }}
-          >
-            Change
-          </button>
+        <p style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>
+          Step{" "}
+          {phase === "step1" || phase === "step1_manual"
+            ? "1"
+            : phase === "step2"
+              ? "2"
+              : phase === "step3"
+                ? "3"
+                : "—"}{" "}
+          of 3
         </p>
-        {extracting && (
-          <p style={{ fontSize: 13, color: "#94a3b8", margin: "0 0 20px" }}>
-            Reading menu for restaurant info…
-          </p>
-        )}
-        {!extracting && (
-          <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 20px", lineHeight: 1.6 }}>
-            {Object.keys(autoFilled).length > 0
-              ? "Some fields were auto-detected. Fill in anything missing."
-              : "Fill in the restaurant details below."}
-          </p>
-        )}
 
-        <form onSubmit={handleReview} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <Field label="Restaurant name" required disabled={fieldsDisabled} autoFilled={autoFilled.name}>
-            <input
-              type="text"
-              value={restaurantName}
-              onChange={(e) => setRestaurantName(e.target.value)}
-              placeholder="e.g. Fire Stone Wood Fired Grill"
-              disabled={fieldsDisabled}
-              style={inputStyle(fieldsDisabled)}
-            />
-          </Field>
-
-          <Field label="Address" required hint="Street address helps us match the correct location." disabled={fieldsDisabled} autoFilled={autoFilled.address}>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="123 Main St, Los Angeles, CA 90001"
-              disabled={fieldsDisabled}
-              style={inputStyle(fieldsDisabled)}
-            />
-          </Field>
-
-          <Field label="Phone" disabled={fieldsDisabled} autoFilled={autoFilled.phone}>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="(555) 555-5555"
-              disabled={fieldsDisabled}
-              style={inputStyle(fieldsDisabled)}
-            />
-          </Field>
-
-          <Field label="Your email" disabled={fieldsDisabled} autoFilled={autoFilled.email}>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              disabled={fieldsDisabled}
-              style={inputStyle(fieldsDisabled)}
-            />
-          </Field>
-
-          {errorMsg && (
-            <div style={{
-              padding: "10px 14px", borderRadius: 8,
-              background: "#fff5f5", border: "1px solid #fca5a5",
-              color: "#b91c1c", fontSize: 13, lineHeight: 1.5,
-            }}>
-              {errorMsg}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={fieldsDisabled}
+        {sessionStartError && !captureSessionId && (
+          <div
             style={{
-              height: 48, width: "100%",
-              background: fieldsDisabled ? "#94a3b8" : "#111827",
-              color: "#fff", border: "none", borderRadius: 10,
-              fontSize: 15, fontWeight: 700,
-              cursor: fieldsDisabled ? "not-allowed" : "pointer",
+              marginBottom: 16,
+              padding: "10px 14px",
+              borderRadius: 8,
+              background: "#fff5f5",
+              border: "1px solid #fca5a5",
+              color: "#b91c1c",
+              fontSize: 13,
             }}
           >
-            Review & confirm
-          </button>
-        </form>
+            {sessionStartError}
+          </div>
+        )}
+
+        {ocrCard}
+
+        {phase === "step1" && (
+          <>
+            <p style={{ fontSize: 15, color: "#334155", lineHeight: 1.6, marginBottom: 8 }}>
+              First, take a photo of the <strong>restaurant name and contact information</strong> shown on the
+              menu.
+            </p>
+            <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6, marginBottom: 20 }}>
+              This helps us match the menu to the correct restaurant.
+            </p>
+            <input
+              ref={step1InputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={onRestaurantPhotoChosen}
+              style={{ display: "none" }}
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button
+                type="button"
+                disabled={!captureSessionId || !!ocrProgressPhase}
+                onClick={() => step1InputRef.current?.click()}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  width: "100%",
+                  height: 52,
+                  border: "2px dashed #cbd5e1",
+                  borderRadius: 10,
+                  background: "#f8fafc",
+                  cursor: !captureSessionId || ocrProgressPhase ? "not-allowed" : "pointer",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: "#334155",
+                }}
+              >
+                <span style={{ fontSize: 22 }}>📸</span>
+                Take photo / upload image
+              </button>
+              <button
+                type="button"
+                disabled={!captureSessionId || !!ocrProgressPhase}
+                onClick={onInfoNotAvailable}
+                style={{
+                  width: "100%",
+                  height: 46,
+                  background: "#fff",
+                  color: "#475569",
+                  border: "1.5px solid #e2e8f0",
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: !captureSessionId || ocrProgressPhase ? "not-allowed" : "pointer",
+                }}
+              >
+                Information not available
+              </button>
+            </div>
+          </>
+        )}
+
+        {phase === "step1_manual" && (
+          <>
+            <p style={{ fontSize: 14, color: "#64748b", marginBottom: 16, lineHeight: 1.6 }}>
+              Enter the restaurant name and location. Street address is not required. Phone and website are optional.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <Field label="Restaurant name" required>
+                <input
+                  type="text"
+                  value={restaurantName}
+                  onChange={(e) => setRestaurantName(e.target.value)}
+                  placeholder="e.g. Joe's Diner"
+                  style={inputStyle()}
+                />
+              </Field>
+              <Field label="City" required>
+                <input
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="City"
+                  style={inputStyle()}
+                />
+              </Field>
+              <Field label="State" required hint="e.g. CA or California">
+                <input
+                  type="text"
+                  value={stateField}
+                  onChange={(e) => setStateField(e.target.value)}
+                  placeholder="State"
+                  style={inputStyle()}
+                />
+              </Field>
+              <Field label="Phone">
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="(555) 555-5555"
+                  style={inputStyle()}
+                />
+              </Field>
+              <Field label="Website">
+                <input
+                  type="url"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="https://"
+                  style={inputStyle()}
+                />
+              </Field>
+              <button
+                type="button"
+                onClick={continueManualToMenu}
+                style={{
+                  height: 48,
+                  background: "#111827",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 10,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Continue to menu photos
+              </button>
+            </div>
+          </>
+        )}
+
+        {phase === "step2" && (
+          <>
+            <p style={{ fontSize: 15, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>
+              Now take photos of the <strong>menu items</strong> (prices and dish names).
+            </p>
+            <input
+              ref={menuInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={onMenuPhotoChosen}
+              style={{ display: "none" }}
+            />
+            <div
+              style={{
+                padding: "12px 14px",
+                borderRadius: 10,
+                background: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+                marginBottom: 14,
+                fontSize: 14,
+                color: "#166534",
+                fontWeight: 600,
+              }}
+            >
+              Menu photos added: {menuPageCount}
+            </div>
+            {menuThumbUrls.length > 0 && (
+              <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 14, paddingBottom: 4 }}>
+                {menuThumbUrls.map((url, i) => (
+                  <img
+                    key={url}
+                    src={url}
+                    alt=""
+                    style={{
+                      width: 56,
+                      height: 56,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                      flexShrink: 0,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              disabled={!captureSessionId || !!ocrProgressPhase}
+              onClick={() => menuInputRef.current?.click()}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                width: "100%",
+                height: 50,
+                border: "2px dashed #cbd5e1",
+                borderRadius: 10,
+                background: "#f8fafc",
+                cursor: !captureSessionId || ocrProgressPhase ? "not-allowed" : "pointer",
+                fontSize: 15,
+                fontWeight: 700,
+                color: "#334155",
+                marginBottom: 10,
+              }}
+            >
+              + Add menu page / photo
+            </button>
+            <button
+              type="button"
+              disabled={menuPageCount < 1 || !!ocrProgressPhase}
+              onClick={goReview}
+              style={{
+                width: "100%",
+                height: 48,
+                background: menuPageCount < 1 ? "#94a3b8" : "#111827",
+                color: "#fff",
+                border: "none",
+                borderRadius: 10,
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: menuPageCount < 1 || ocrProgressPhase ? "not-allowed" : "pointer",
+              }}
+            >
+              Continue to review
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setErrorMsg("");
+                setPhase(hasRestaurantInfoPhoto ? "step1" : "step1_manual");
+              }}
+              style={{
+                marginTop: 12,
+                width: "100%",
+                height: 40,
+                background: "transparent",
+                border: "none",
+                color: "#64748b",
+                fontSize: 13,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              ← Back
+            </button>
+          </>
+        )}
+
+        {phase === "step3" && (
+          <>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>
+              Review & submit
+            </p>
+            <div
+              style={{
+                border: "1.5px solid #e2e8f0",
+                borderRadius: 12,
+                overflow: "hidden",
+                marginBottom: 16,
+              }}
+            >
+              {[
+                { label: "Restaurant", value: restaurantName.trim() || "—" },
+                { label: "City", value: city.trim() || "—" },
+                { label: "State", value: stateField.trim() || "—" },
+                { label: "Phone", value: phone.trim() || "—" },
+                { label: "Website", value: website.trim() || "—" },
+                ...(address.trim()
+                  ? [{ label: "Address (from photo)", value: address.trim() }]
+                  : []),
+                { label: "Menu photos", value: String(menuPageCount) },
+                {
+                  label: "Restaurant info photo",
+                  value: hasRestaurantInfoPhoto ? "Yes (used for matching, not menu items)" : "No (manual / skipped)",
+                },
+              ].map((row, i, arr) => (
+                <div
+                  key={row.label}
+                  style={{
+                    display: "flex",
+                    padding: "12px 16px",
+                    borderBottom: i < arr.length - 1 ? "1px solid #f1f5f9" : "none",
+                    background: i % 2 === 0 ? "#fff" : "#f8fafc",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 130,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#64748b",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {row.label}
+                  </span>
+                  <span style={{ fontSize: 14, color: "#0f172a", wordBreak: "break-word" }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+            {mergedHintsDisplay.length > 0 && (
+              <div
+                style={{
+                  fontSize: 13,
+                  color: "#475569",
+                  background: "#f8fafc",
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  marginBottom: 16,
+                  lineHeight: 1.5,
+                }}
+              >
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Detected from restaurant photo</div>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {mergedHintsDisplay.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+                <div style={{ marginTop: 8, fontSize: 12, color: "#94a3b8" }}>
+                  Values you entered above take priority when we save the menu.
+                </div>
+              </div>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <Field
+                label="Restaurant name (confirm)"
+                required
+                hint={
+                  hasRestaurantInfoPhoto
+                    ? "Required to submit. Add or fix the name if needed."
+                    : "Required to submit. City and state must also be filled in (from the previous step)."
+                }
+              >
+                <input
+                  type="text"
+                  value={restaurantName}
+                  onChange={(e) => setRestaurantName(e.target.value)}
+                  style={inputStyle()}
+                />
+              </Field>
+              <Field label="Your email (optional)" hint="For questions about this upload.">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  style={inputStyle()}
+                />
+              </Field>
+            </div>
+            <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => {
+                  setErrorMsg("");
+                  setPhase("step2");
+                }}
+                style={{
+                  flex: 1,
+                  height: 46,
+                  background: "#f1f5f9",
+                  color: "#374151",
+                  border: "none",
+                  borderRadius: 10,
+                  fontWeight: 600,
+                  cursor: submitting ? "not-allowed" : "pointer",
+                }}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={submitting || !!ocrProgressPhase}
+                onClick={finalizeSubmit}
+                style={{
+                  flex: 2,
+                  height: 46,
+                  background: submitting ? "#94a3b8" : "#111827",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 10,
+                  fontWeight: 700,
+                  cursor: submitting || ocrProgressPhase ? "not-allowed" : "pointer",
+                }}
+              >
+                Submit menu
+              </button>
+            </div>
+          </>
+        )}
+
+        {errorMsg && (
+          <div
+            style={{
+              marginTop: 14,
+              padding: "10px 14px",
+              borderRadius: 8,
+              background: "#fff5f5",
+              border: "1px solid #fca5a5",
+              color: "#b91c1c",
+              fontSize: 13,
+              lineHeight: 1.5,
+            }}
+          >
+            {errorMsg}
+          </div>
+        )}
       </div>
     </>
   );
