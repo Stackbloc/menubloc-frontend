@@ -980,7 +980,11 @@ function ItemRow({
     insightScores.proteinStrength !== null ||
     insightScores.glycemicImpact  !== null ||
     insightScores.sodiumRisk      !== null;
-  const hasSimilar = Array.isArray(similarItems) && similarItems.length > 0;
+  const similarComparableCount = Array.isArray(similarItems)
+    ? similarItems.reduce((n, g) => n + (Array.isArray(g.items) ? g.items.length : 0), 0)
+    : 0;
+  /** Require at least two eligible dishes elsewhere — modifiers are pre-filtered upstream */
+  const hasSimilar = similarComparableCount >= 2;
 
   function toggle(tab) {
     setOpenTab((prev) => (prev === tab ? null : tab));

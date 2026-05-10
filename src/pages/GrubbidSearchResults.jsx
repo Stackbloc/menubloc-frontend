@@ -35,6 +35,7 @@ import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
 import { parseFiltersFromUrl, filtersToUrlParams } from "../lib/filterUtils.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
+import { filterEligibleSimilarMenuItems } from "../lib/similarItemsEligibility.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
@@ -1253,8 +1254,9 @@ export default function GrubbidSearchResults() {
       .map((g) => ({
         restaurant_id: asString(g.restaurant_id),
         restaurant_name: g.restaurant_name,
-        items: g.items,
-      }));
+        items: filterEligibleSimilarMenuItems(g.items),
+      }))
+      .filter((g) => g.items.length > 0);
   }, [restaurantGroups]);
 
   const hasMenuMatches = restaurantGroups.length > 0;
