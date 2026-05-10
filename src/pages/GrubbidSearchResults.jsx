@@ -65,6 +65,50 @@ function useIsMobile(breakpoint = 768) {
 
 /* ---- Geolocation hook ---- */
 
+function SearchRefinementNudge({ displayQuery, locationLabel }) {
+  const { pathname, search } = useLocation();
+
+  function hrefFor(patch) {
+    const p = new URLSearchParams(search);
+    for (const [k, v] of Object.entries(patch)) {
+      if (v == null || v === "") p.delete(k);
+      else p.set(k, String(v));
+    }
+    const qs = p.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  }
+
+  if (!displayQuery && !locationLabel) return null;
+
+  const refinements = [
+    { label: "Low Fat", patch: { low_fat: "true" } },
+    { label: "High Protein", patch: { high_protein: "1" } },
+    { label: "Low Sodium", patch: { low_sodium: "1" } },
+    { label: "Under $15", patch: { price_max: "15" } },
+  ];
+
+  return (
+    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 12, lineHeight: 1.5 }}>
+      <span>
+        Showing {displayQuery ? `“${displayQuery}”` : "results"}
+        {locationLabel ? ` near ${locationLabel}` : ""}. Refine by:{" "}
+      </span>
+      {refinements.map((r, i) => (
+        <React.Fragment key={r.label}>
+          {i > 0 ? ", " : null}
+          <Link
+            to={hrefFor(r.patch)}
+            style={{ color: "#22C55E", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}
+          >
+            {r.label}
+          </Link>
+        </React.Fragment>
+      ))}
+      .
+    </div>
+  );
+}
+
 function useGeolocation() {
   const [geo, setGeo] = useState({ status: "pending", lat: null, lng: null });
 
@@ -794,8 +838,10 @@ export default function GrubbidSearchResults() {
   const keto = params.get("keto") === "1" || params.get("low_carb") === "1";
   const low_fat = params.get("low_fat") === "1" || params.get("low_fat") === "true";
   const low_sodium = params.get("low_sodium") === "1";
+  const high_protein = params.get("high_protein") === "1" || params.get("high_protein") === "true";
   const dairy_free = params.get("dairy_free") === "1";
   const diabetic_friendly = params.get("diabetic_friendly") === "1";
+  const routePriceMax = String(params.get("price_max") || "").trim();
 
 
   const fallbackLocation = useMemo(() => {
@@ -878,6 +924,7 @@ export default function GrubbidSearchResults() {
       keto,
       low_fat,
       low_sodium,
+      high_protein,
     });
     for (const [key, value] of Object.entries(dietaryParams)) {
       if (value) u.searchParams.set(key, String(value));
@@ -890,6 +937,7 @@ export default function GrubbidSearchResults() {
       if (value) u.searchParams.set(key, value);
     }
     if (deals_only) u.searchParams.set("deals_only", "1");
+    if (routePriceMax) u.searchParams.set("price_max", routePriceMax);
     if (hasExplicitLocation) {
       if (requestZip) u.searchParams.set("zip", requestZip);
       if (requestCity) u.searchParams.set("city", requestCity);
@@ -927,9 +975,12 @@ export default function GrubbidSearchResults() {
     deals_only,
     vegetarian,
     keto,
+    low_fat,
     low_sodium,
+    high_protein,
     dairy_free,
     diabetic_friendly,
+    routePriceMax,
     requestZip,
     requestCity,
     requestState,
@@ -1348,6 +1399,10 @@ export default function GrubbidSearchResults() {
 
       <ActiveFilterChips filters={activeFilters} onToggle={toggleSearchFilter} />
 
+      {!loading && !err && q && (hasMenuMatches || restaurantOnlyVisible.length > 0) ? (
+        <SearchRefinementNudge displayQuery={displayQuery} locationLabel={locationLabel} />
+      ) : null}
+
       {effectiveAllergenFilter ? (
         <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 14 }} />
       ) : null}
@@ -1396,6 +1451,7 @@ export default function GrubbidSearchResults() {
                   coordinateSearchActive: hasGeoFilter === true,
                 }}
                 crossRestaurantItems={crossRestaurantItems}
+                geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
               />
             ))}
           </div>

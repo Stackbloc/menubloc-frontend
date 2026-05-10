@@ -17,5 +17,6 @@ export function buildDietaryQueryParams(filters = {}) {
     low_carb: filters.keto || filters.low_carb ? 1 : "",
     low_fat: filters.low_fat ? "true" : "",
     low_sodium: filters.low_sodium ? 1 : "",
+    high_protein: filters.high_protein ? 1 : "",
   };
 }

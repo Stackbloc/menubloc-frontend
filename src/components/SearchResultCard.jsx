@@ -11,6 +11,13 @@
 
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useConsumer } from "../context/ConsumerContext.jsx";
+import {
+  buildWhyMatchLabel,
+  buildNutritionPreviewChips,
+  formatPairingTeaser,
+  shouldShowAllergenOnSearchCard,
+} from "../lib/searchResultEnrichment.js";
 import IndulgenceMeter from "./IndulgenceMeter.jsx";
 import ShareButton from "./share/ShareButton.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -827,10 +834,83 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
   return null;
 }
 
+/* ---- Key facts (price / distance / locale / cuisine / deal) ---- */
+
+function buildKeyFactsLine({ row, restaurantSummary, matchContext }) {
+  const parts = [];
+  const price = fmtPrice(row);
+  if (price) parts.push(price);
+
+  const distSource =
+    restaurantSummary && typeof restaurantSummary === "object"
+      ? { ...row, distance_miles: restaurantSummary.distance_miles ?? row.distance_miles }
+      : row;
+  const dist = getDistanceMilesLike(distSource);
+  const showDist =
+    matchContext?.coordinateSearchActive === true || matchContext?.wantsNearby === true;
+  if (showDist && dist != null) parts.push(`${dist.toFixed(1)} mi`);
+
+  const city = getCityLike(row);
+  const state = getStateLike(row);
+  if (city || state) parts.push([city, state].filter(Boolean).join(", "));
+
+  const cuisine =
+    (restaurantSummary && getCuisineLike(restaurantSummary)) || getCuisineLike(row);
+  if (cuisine) parts.push(cuisine);
+
+  const catRaw = asStr(pick(row, ["category", "broad_category", "restaurant_category"], ""));
+  if (catRaw) {
+    const catPretty = toTitleCase(catRaw.replace(/[_-]+/g, " "));
+    const cuLower = asStr(cuisine).toLowerCase();
+    if (!cuLower || catPretty.toLowerCase() !== cuLower) parts.push(catPretty);
+  }
+
+  if (asBool(resolveItemFlag(row, "has_active_deal"))) parts.push("Deal");
+
+  return parts.length ? parts.join(" · ") : "";
+}
+
+function NutritionPreviewStrip({ chips }) {
+  if (!Array.isArray(chips) || !chips.length) return null;
+  return (
+    <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
+      {chips.map((c) => (
+        <span
+          key={c}
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: "#D1D5DB",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 999,
+            padding: "4px 10px",
+            lineHeight: 1.2,
+          }}
+        >
+          {c}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /* ---- Single item row ---- */
 
-function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, language, geo }) {
+function ItemRow({
+  row,
+  query,
+  queryMeta,
+  matchContext,
+  similarItems,
+  labels,
+  language,
+  geo,
+  restaurantSummary = null,
+  searchQuery = "",
+}) {
   const [openTab, setOpenTab] = useState(null);
+  const { isAuthenticated, allergenFilter, allergenPreferences } = useConsumer();
 
   const mid = getItemId(row);
   const name = getItemName(row, language);
@@ -839,15 +919,14 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
   const breadScore = row?.detail_system?.bread_score || row?.chips?.bread_score || null;
   const hrefBase = mid ? getCanonicalMenuItemPath({
     restaurant: {
-      slug: getRestSlug(row),
-      id: getRestId(row),
+      slug: (restaurantSummary && restaurantSummary.slug) || getRestSlug(row),
+      id: (restaurantSummary && restaurantSummary.id) || getRestId(row),
     },
     menuItem: { id: mid },
   }) : null;
   const href = hrefBase && geo?.lat != null && geo?.lng != null
     ? `${hrefBase}?lat=${geo.lat}&lng=${geo.lng}`
     : hrefBase;
-  const price = fmtPrice(row);
   const dishShareData = mid ? buildDishShareData({
     restaurant: {
       id: getRestId(row),
@@ -863,10 +942,25 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
     },
   }) : null;
   const popular = getPopular(row);
-  const hasDeal = asBool(resolveItemFlag(row, "has_active_deal"));
   const isVegan = asBool(resolveItemFlag(row, "is_vegan"));
   const isGF = asBool(resolveItemFlag(row, "is_gluten_free"));
-  const matchPreview = buildMatchPreview(row, queryMeta, matchContext);
+  const whyLabel = buildWhyMatchLabel(row, queryMeta);
+  const matchPreviewFallback = whyLabel ? null : buildMatchPreview(row, queryMeta, matchContext);
+  const matchLineText = whyLabel || (matchPreviewFallback && matchPreviewFallback.text) || "";
+  const nutritionPreviewChips = buildNutritionPreviewChips(row, queryMeta);
+  const pairingTeaser = formatPairingTeaser(row);
+  const factsLine = buildKeyFactsLine({ row, restaurantSummary, matchContext });
+
+  const restDisplayName =
+    (restaurantSummary &&
+      (getLocalizedField(restaurantSummary, "restaurant_name", language) ||
+        getLocalizedField(restaurantSummary, "name", language) ||
+        asStr(restaurantSummary.name || restaurantSummary.restaurant_name))) ||
+    getRestName(row, language);
+  const restIdForLink = (restaurantSummary && restaurantSummary.id) || getRestId(row);
+  const restSlugForLink = (restaurantSummary && restaurantSummary.slug) || getRestSlug(row);
+  const restProfileTarget = restSlugForLink || restIdForLink;
+  const restHref = restProfileTarget ? "/restaurants/" + restProfileTarget : null;
 
   const nutChip = chips?.nutrition_chip || {};
 
@@ -892,6 +986,14 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
     setOpenTab((prev) => (prev === tab ? null : tab));
   }
 
+  const showSurfaceAllergen = shouldShowAllergenOnSearchCard(row, {
+    searchQuery,
+    isAuthenticated,
+    allergenFilter,
+    allergenPreferences,
+    nutritionDetailOpen: openTab === "nutrition",
+  });
+
   return (
     <div
       style={{
@@ -900,8 +1002,8 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
         borderBottom: "1px solid #1F2937",
       }}
     >
-      {/* Name + price */}
-      <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 20px" }}>
+      {/* 1. Item name + share */}
+      <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 12px" }}>
         <span
           style={{
             fontSize: "20px",
@@ -909,6 +1011,7 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
             lineHeight: 1.25,
             letterSpacing: "-0.01em",
             color: "#FFFFFF",
+            minWidth: 0,
           }}
         >
           {href ? (
@@ -930,19 +1033,6 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
             hl(name, query)
           )}
         </span>
-
-        {price ? (
-          <span
-            style={{
-              fontSize: "16px",
-              fontWeight: 800,
-              whiteSpace: "nowrap",
-              color: "#22C55E",
-            }}
-          >
-            {price}
-          </span>
-        ) : null}
         {dishShareData ? (
           <ShareButton
             variant="dish"
@@ -950,8 +1040,8 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
             modalTitle={`Share ${name}`}
             shareData={dishShareData}
             analyticsContext={{
-              restaurantId: getRestId(row),
-              restaurantSlug: getRestSlug(row) || null,
+              restaurantId: restIdForLink,
+              restaurantSlug: restSlugForLink || null,
               menuItemId: mid,
               menuItemName: name,
               pageType: "search_results",
@@ -963,7 +1053,55 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
         ) : null}
       </div>
 
-      {matchPreview ? (
+      {/* 2. Restaurant name */}
+      {restDisplayName ? (
+        <div style={{ marginTop: 6 }}>
+          {restHref ? (
+            <Link
+              to={restHref}
+              style={{
+                fontSize: "var(--text-2, 14px)",
+                fontWeight: 700,
+                color: "#9CA3AF",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#22C55E";
+                e.currentTarget.style.textDecoration = "underline";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#9CA3AF";
+                e.currentTarget.style.textDecoration = "none";
+              }}
+            >
+              {restDisplayName}
+            </Link>
+          ) : (
+            <span style={{ fontSize: "var(--text-2, 14px)", fontWeight: 700, color: "#9CA3AF" }}>
+              {restDisplayName}
+            </span>
+          )}
+        </div>
+      ) : null}
+
+      {/* 3. Price / distance / locale / cuisine / deal */}
+      {factsLine ? (
+        <div
+          style={{
+            marginTop: 6,
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#9CA3AF",
+            lineHeight: 1.45,
+            overflowWrap: "anywhere",
+          }}
+        >
+          {factsLine}
+        </div>
+      ) : null}
+
+      {/* 4. Why it matched */}
+      {matchLineText ? (
         <div
           style={{
             marginTop: 8,
@@ -974,24 +1112,42 @@ function ItemRow({ row, query, queryMeta, matchContext, similarItems, labels, la
             overflowWrap: "anywhere",
           }}
         >
-          <span style={{ color: "#22C55E", fontWeight: 800 }}>
-            {MATCH_LABEL}{" "}
-          </span>
-          <span>{matchPreview.text}</span>
+          <span style={{ color: "#22C55E", fontWeight: 800 }}>{MATCH_LABEL} </span>
+          <span>{matchLineText}</span>
         </div>
       ) : null}
 
-      {/* Badges */}
-      {(popular || hasDeal || isGF || isVegan) && (
-        <div style={{ marginTop: 4, display: "flex", flexWrap: "wrap", gap: 6 }}>
+      {/* 5. Nutrition preview chips */}
+      <NutritionPreviewStrip chips={nutritionPreviewChips} />
+
+      {/* Pairings teaser */}
+      {pairingTeaser ? (
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: 12,
+            fontWeight: 650,
+            color: "#6B7280",
+            lineHeight: 1.4,
+            fontStyle: "italic",
+          }}
+        >
+          {pairingTeaser}
+        </div>
+      ) : null}
+
+      {/* Badges — deal text lives in the key-facts row above */}
+      {(popular || isGF || isVegan) && (
+        <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
           {popular && <DietBadge label="★ Popular" tone="popular" />}
-          {hasDeal && <DietBadge label="🏷 Deal" tone="deal" />}
           {isGF && <DietBadge label="GF" tone="gf" />}
           {isVegan && <DietBadge label="🌿 Vegan" tone="vegan" />}
         </div>
       )}
 
-      <AllergenIndicator chip={nutChip} compact containsLabel={labels.contains} estimatedLabel={labels.estimated} />
+      {showSurfaceAllergen ? (
+        <AllergenIndicator chip={nutChip} compact containsLabel={labels.contains} estimatedLabel={labels.estimated} />
+      ) : null}
       <PrecisionLine chip={nutChip} />
       {(indulgencePresentation || breadScore) ? <CompactScoreSummary presentation={indulgencePresentation} breadScore={breadScore} /> : null}
 
@@ -1197,14 +1353,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
       getLocalizedField(restaurant, "name", language) ||
       asStr(restaurant?.restaurant_name || restaurant?.name) ||
       getRestName(items[0], language);
-    const cuisine = getCuisineLike(restaurant) || getCuisineLike(items[0]);
-    const phone = getPhoneLike(restaurant) || getPhoneLike(items[0]);
-    const distanceMiles = getDistanceMilesLike(restaurant) ?? getDistanceMilesLike(items[0]);
-    const profileTier = getProfileTierLike(restaurant) || getProfileTierLike(items[0]);
-    const locationCount = asNum(restaurant?.location_count) ?? asNum(restaurant?.raw?.location_count) ?? null;
 
-    const restProfileTarget = restSlug || restId;
-    const restHref = restProfileTarget ? "/restaurants/" + restProfileTarget : null;
     const menuHref = restId
       ? buildCanonicalMenuPath({ restaurantSlug: restSlug, restaurantId: restId }) + contextSearch
       : null;
@@ -1213,55 +1362,37 @@ export default function SearchResultCard({ restaurant, items, item, query, query
       ? crossRestaurantItems.filter((x) => asStr(x.restaurant_id) !== restId)
       : [];
 
+    const restaurantSummary = {
+      id: restId,
+      slug: restSlug,
+      name: restName,
+      restaurant_name: restName,
+      cuisine: restaurant?.cuisine ?? null,
+      restaurant_cuisine: restaurant?.cuisine ?? null,
+      distance_miles: restaurant?.distance_miles ?? null,
+    };
+
     return (
       <article className="gb-card" style={cardStyle}>
-        <div style={{ marginBottom: 2 }}>
-          {restHref ? (
-            <Link
-              to={restHref}
-              style={{
-                fontSize: "var(--text-3, 16px)",
-                fontWeight: 800,
-                color: "#9CA3AF",
-                textDecoration: "none",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#22C55E";
-                e.currentTarget.style.textDecoration = "underline";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#9CA3AF";
-                e.currentTarget.style.textDecoration = "none";
-              }}
-            >
-              {restName}
-            </Link>
-          ) : (
-            <span
-              style={{
-                fontSize: "var(--text-3, 16px)",
-                fontWeight: 800,
-                color: "#9CA3AF",
-              }}
-            >
-              {restName}
-            </span>
-          )}
-        </div>
-
-        <RestaurantMeta
-          cuisine={cuisine}
-          phone={phone}
-          distanceMiles={distanceMiles}
-          profileTier={profileTier}
-          locationCount={locationCount}
-        />
-
         <div>
           {items.map((row) => {
             const mid = getItemId(row);
             const nm = getItemName(row, language);
-            return <ItemRow key={mid || nm} row={row} query={query} queryMeta={queryMeta} matchContext={matchContext} similarItems={similarItems} labels={labels} language={language} geo={geo} />;
+            return (
+              <ItemRow
+                key={mid || nm}
+                row={row}
+                query={query}
+                queryMeta={queryMeta}
+                matchContext={matchContext}
+                similarItems={similarItems}
+                labels={labels}
+                language={language}
+                geo={geo}
+                restaurantSummary={restaurantSummary}
+                searchQuery={query}
+              />
+            );
           })}
         </div>
 
@@ -1301,7 +1432,6 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const stateS = getStateLike(item);
   const postalS = getPostalCodeLike(item);
   const distanceMilesS = getDistanceMilesLike(item);
-  const profileTierS = getProfileTierLike(item);
   const restProfileTargetS = restSlugS || restIdS;
   const restHrefS = restProfileTargetS ? "/restaurants/" + restProfileTargetS : null;
   const menuHrefS = restIdS
@@ -1314,36 +1444,18 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   if (isItemRow) {
     return (
       <article className="gb-card" style={cardStyle}>
-        {restHrefS && (
-          <div style={{ marginBottom: 2 }}>
-            <Link
-              to={restHrefS}
-              style={{
-                fontSize: "var(--text-3, 16px)",
-                fontWeight: 800,
-                color: "#9CA3AF",
-                textDecoration: "none",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#22C55E";
-                e.currentTarget.style.textDecoration = "underline";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#9CA3AF";
-                e.currentTarget.style.textDecoration = "none";
-              }}
-            >
-              {restNameS}
-            </Link>
-          </div>
-        )}
-        <RestaurantMeta
-          cuisine={cuisineS}
-          phone={phoneS}
-          distanceMiles={distanceMilesS}
-          profileTier={profileTierS}
+        <ItemRow
+          row={item}
+          query={query}
+          queryMeta={queryMeta}
+          matchContext={matchContext}
+          similarItems={similarItemsS}
+          labels={labels}
+          language={language}
+          geo={geo}
+          restaurantSummary={null}
+          searchQuery={query}
         />
-        <ItemRow row={item} query={query} queryMeta={queryMeta} matchContext={matchContext} similarItems={similarItemsS} labels={labels} language={language} geo={geo} />
         {menuHrefS && (
           <div style={{ marginTop: 10 }}>
             <Link
