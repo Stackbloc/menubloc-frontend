@@ -18,5 +18,6 @@ export function buildDietaryQueryParams(filters = {}) {
     low_fat: filters.low_fat ? "true" : "",
     low_sodium: filters.low_sodium ? 1 : "",
     high_protein: filters.high_protein ? 1 : "",
+    glp1_friendly: filters.glp1_friendly ? 1 : "",
   };
 }

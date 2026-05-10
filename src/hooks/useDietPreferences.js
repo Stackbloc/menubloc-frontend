@@ -16,6 +16,7 @@ export const EMPTY_PREFS = {
   low_sodium: false,
   dairy_free: false,
   diabetic_friendly: false,
+  glp1_friendly: false,
 };
 
 export function loadDietPrefs() {
@@ -61,6 +62,7 @@ const PREF_LABELS = {
   low_sodium: "Low Sodium",
   dairy_free: "Dairy Free",
   diabetic_friendly: "Diabetic Friendly",
+  glp1_friendly: "GLP-1 Friendly",
 };
 
 export function activePrefLabels(prefs) {

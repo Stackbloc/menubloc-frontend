@@ -75,15 +75,32 @@ const INTELLIGENCE_CHIPS = [
   { id: "low-carb",     icon: "🥦", label: "Low Carb",           query: "low carb" },
   { id: "high-protein", icon: "💪", label: "High Protein",       query: "high protein" },
   { id: "diabetic",     icon: "🩺", label: "Diabetic Friendly",  query: "diabetic friendly" },
-  { id: "low-sodium",   icon: "🧂", label: "Low Sodium",         query: "low sodium", filterKey: "low_sodium" },
+  { id: "glp1",         icon: "🥗", label: "GLP-1 Friendly",     query: "", filterKey: "glp1_friendly" },
   { id: "low-fat",      icon: "🧈", label: "Low Fat",            query: "low fat", filterKey: "low_fat" },
+  { id: "low-sodium",   icon: "🧂", label: "Low Sodium",         query: "low sodium", filterKey: "low_sodium" },
   { id: "high-fiber",   icon: "🌾", label: "High Fiber",         query: "high fiber" },
 ];
 
 function DiscoveryChipRow({ chips, filters, onChipClick }) {
+  const scrollerRef = useRef(null);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const onWheel = (e) => {
+      if (el.scrollWidth <= el.clientWidth + 1) return;
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [chips.length]);
+
   return (
-    <div style={{ padding: "0 16px", minWidth: 0, width: "100%", overflow: "hidden" }}>
+    <div style={{ padding: "0 16px", minWidth: 0, width: "100%", overflowX: "hidden", overflowY: "visible" }}>
       <div
+        ref={scrollerRef}
         style={{
           display: "flex",
           gap: 6,
@@ -944,6 +961,7 @@ export default function GrubbidDiscovery() {
         {/* ── STICKY HEADER ──────────────────────────────────────────────── */}
         <div style={{
           position: "sticky", top: 0, zIndex: 100,
+          minWidth: 0,
           background: "#0B0F0C",
           borderBottom: "1px solid #1F2937",
           paddingBottom: 12,
@@ -1124,7 +1142,7 @@ export default function GrubbidDiscovery() {
             </button>
           </div>
 
-          <div style={{ display: "grid", gap: 8, padding: "8px 0 0" }}>
+          <div style={{ display: "grid", gap: 8, padding: "8px 0 0", minWidth: 0 }}>
             <DiscoveryChipRow
               chips={FOOD_CATEGORY_CHIPS}
               filters={filters}

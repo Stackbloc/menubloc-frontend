@@ -1,6 +1,6 @@
 export const FILTER_KEYS = [
   "vegan", "vegetarian", "gluten_free", "dairy_free",
-  "diabetic_friendly", "keto", "low_fat", "low_sodium", "deals",
+  "diabetic_friendly", "glp1_friendly", "keto", "low_fat", "low_sodium", "deals",
 ];
 
 export const FILTER_LABELS = {
@@ -9,6 +9,7 @@ export const FILTER_LABELS = {
   gluten_free: "Gluten-Free",
   dairy_free: "Dairy-Free",
   diabetic_friendly: "Diabetic-Friendly",
+  glp1_friendly: "GLP-1 Friendly",
   keto: "Keto",
   low_fat: "Low-Fat",
   low_sodium: "Low-Sodium",
@@ -28,6 +29,7 @@ export function parseFiltersFromUrl(params) {
     gluten_free: params.get("gluten_free") === "1",
     dairy_free: params.get("dairy_free") === "1",
     diabetic_friendly: params.get("diabetic_friendly") === "1",
+    glp1_friendly: isEnabled(params.get("glp1_friendly")),
     low_fat: isEnabled(params.get("low_fat")),
     keto: params.get("keto") === "1" || params.get("low_carb") === "1",
     low_sodium: params.get("low_sodium") === "1",
@@ -43,6 +45,7 @@ export function filtersToUrlParams(filters, baseParams) {
     gluten_free: "gluten_free",
     dairy_free: "dairy_free",
     diabetic_friendly: "diabetic_friendly",
+    glp1_friendly: "glp1_friendly",
     low_fat: "low_fat",
     keto: "keto",
     low_sodium: "low_sodium",
