@@ -606,6 +606,7 @@ export default function PdfUploadPage() {
       formData.append("email", email);
       formData.append("owner_token", owner_token);
       formData.append("page_number", String(nextPageNumber));
+      formData.append("page_role", "menu_items");
       formData.append("image_file", imageFile, imageFile.name);
       formData.append("pdf_file", pdfFile, pdfFile.name);
 
@@ -925,8 +926,8 @@ export default function PdfUploadPage() {
       <div style={s.heading}>{isOcrFlow ? "Take a menu photo or upload a scan" : "Upload your menu PDF"}</div>
       <div style={s.subheading}>
         {isOcrFlow
-          ? "Mobile-first OCR upload. Use your phone camera to capture menu pages into one upload session."
-          : "Upload a PDF of your menu and we will extract and structure it automatically."}
+          ? "Upload one photo at a time."
+          : "Upload a PDF menu. Multi-page PDFs are supported."}
       </div>
 
       <div style={s.contextCard}>
@@ -970,8 +971,8 @@ export default function PdfUploadPage() {
           </div>
           <div style={s.dropSub}>
             {isOcrFlow
-              ? "On phones, the camera will open when supported. Each captured page is added to the same upload session."
-              : "Select a PDF from your device or drag it into this box to begin the upload."}
+              ? "On phones, the camera opens when supported. Each photo is added to the same upload session."
+              : "Select a PDF from your device or drag it into this box. Multi-page PDFs are supported."}
           </div>
           <div style={s.dropHint}>
             {isOcrFlow ? "Accepted: phone photos, PNG/JPG, or WEBP" : "Accepted format: PDF only · Max file size: 20 MB"}
