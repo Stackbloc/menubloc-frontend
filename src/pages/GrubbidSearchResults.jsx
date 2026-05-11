@@ -666,7 +666,7 @@ function isBetterRow(nextRow, currentRow) {
   return false;
 }
 
-function buildRestaurantGroups(dishRows) {
+function buildRestaurantGroups(dishRows, maxItemsPerRestaurantGroup = MAX_MENU_ITEMS_PER_RESTAURANT_GROUP) {
   const restaurantMap = new Map();
 
   for (const row of dishRows) {
@@ -746,7 +746,12 @@ function buildRestaurantGroups(dishRows) {
         if (pa !== null && pb !== null && pa !== pb) return pa - pb;
         return 0;
       })
-      .slice(0, MAX_MENU_ITEMS_PER_RESTAURANT_GROUP);
+      .slice(
+        0,
+        Number.isFinite(maxItemsPerRestaurantGroup) && maxItemsPerRestaurantGroup > 0
+          ? maxItemsPerRestaurantGroup
+          : Number.MAX_SAFE_INTEGER
+      );
 
     groups.push({
       restaurant_id: g.restaurant_id,
@@ -1236,8 +1241,12 @@ export default function GrubbidSearchResults() {
   const dishRows = useMemo(() => waiterFilteredRows.filter(isDishRow), [waiterFilteredRows]);
   const restaurantOnlyRows = useMemo(() => waiterFilteredRows.filter((r) => !isDishRow(r)), [waiterFilteredRows]);
   const restaurantGroups = useMemo(
-    () => buildRestaurantGroups(dishRows),
-    [dishRows]
+    () =>
+      buildRestaurantGroups(
+        dishRows,
+        relaxPerRestaurantItemCap ? Number.MAX_SAFE_INTEGER : MAX_MENU_ITEMS_PER_RESTAURANT_GROUP
+      ),
+    [dishRows, relaxPerRestaurantItemCap]
   );
 
   const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
@@ -1259,9 +1268,18 @@ export default function GrubbidSearchResults() {
     if (dairy_free) labels.push("Dairy-Free");
     if (diabetic_friendly) labels.push("Diabetic-Friendly");
     if (glp1_friendly) labels.push("GLP-1 Friendly");
+    if (high_protein) labels.push("High Protein");
     return labels;
-  }, [vegan, vegetarian, gluten_free, keto, low_fat, low_sodium, dairy_free, diabetic_friendly, glp1_friendly]);
+  }, [vegan, vegetarian, gluten_free, keto, low_fat, low_sodium, dairy_free, diabetic_friendly, glp1_friendly, high_protein]);
   const hasDietFilter = activeDietFilterLabels.length > 0;
+
+  const relaxPerRestaurantItemCap = useMemo(() => {
+    if (hasDietFilter) return true;
+    const n = normalizedQuery;
+    return /\b(high[\s-]?protein|protein[\s-]?(rich|packed)|low[\s-]?carb|low[\s-]?sodium|keto|vegan|vegetarian|gluten[\s-]?free|diabetic|heart[\s-]?healthy)\b/i.test(
+      n
+    );
+  }, [hasDietFilter, normalizedQuery]);
 
   const crossRestaurantItems = useMemo(() => {
     return restaurantGroups
