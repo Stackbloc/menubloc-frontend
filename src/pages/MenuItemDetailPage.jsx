@@ -22,10 +22,14 @@
  *   - canonical dish sharing support
  *   - dynamic Open Graph / Twitter card metadata for dish pages
  *   - standalone public landing-page polish for shared dish URLs
+ *
+ * Header guardrail (2026-05): do not render item name or price in the global
+ * sticky header or any fixed top band — StickyPageHeader stays nav-only; item
+ * identity and price live only in the hero Surface below.
  * ============================================================
  */
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -47,6 +51,9 @@ import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+
+/** Offset below `StickyPageHeader` (nav-only row, no title) so sticky hero clears the bar. */
+const STICKY_ITEM_HERO_TOP_PX = 72;
 
 // ── Utility ─────────────────────────────────────────────────
 
@@ -1137,32 +1144,6 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
   );
 }
 
-// ── Compact sticky bar (appears when hero scrolls out of view) ─
-
-function ItemStickyBar({ item, priceLabel, visible, t, language }) {
-  return (
-    <div style={{
-      position: "fixed", top: 73, left: 0, right: 0, zIndex: 60,
-      background: "#0B0F0C", borderBottom: "1px solid #1F2937",
-      padding: "10px 16px",
-      transform: visible ? "translateY(0)" : "translateY(-100%)",
-      transition: "transform 200ms ease",
-      pointerEvents: visible ? "auto" : "none",
-    }}>
-      <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <span style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {getLocalizedField(item, "name", language) || item?.name}
-        </span>
-        {priceLabel && (
-          <span style={{ fontSize: 14, fontWeight: 900, color: "#22C55E", flexShrink: 0 }}>
-            {priceLabel}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ── Page ─────────────────────────────────────────────────────
 
 export default function MenuItemDetailPage() {
@@ -1175,9 +1156,6 @@ export default function MenuItemDetailPage() {
 
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
-
-  const heroRef = useRef(null);
-  const [heroVisible, setHeroVisible] = useState(true);
 
   const [loading,  setLoading]  = useState(true);
   const [err,      setErr]      = useState("");
@@ -1195,17 +1173,6 @@ export default function MenuItemDetailPage() {
       },
     });
   }, [item]);
-
-  useEffect(() => {
-    const node = heroRef.current;
-    if (!node) return undefined;
-    const observer = new IntersectionObserver(
-      ([entry]) => setHeroVisible(entry.isIntersecting),
-      { threshold: 0, rootMargin: "-73px 0px 0px 0px" }
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -1314,14 +1281,6 @@ export default function MenuItemDetailPage() {
 
   return (
     <PageShell isMobile={isMobile}>
-      <ItemStickyBar
-        item={item}
-        priceLabel={priceLabel}
-        visible={!heroVisible}
-        t={t}
-        language={language}
-      />
-
       {backUrl && fromItemName && (
         <Link
           to={backUrl}
@@ -1342,7 +1301,14 @@ export default function MenuItemDetailPage() {
       )}
 
       {/* ── 1. Hero / Item Identity ── */}
-      <Surface style={{ padding: isMobile ? 18 : 24 }} ref={heroRef}>
+      <Surface style={{
+        padding: isMobile ? 18 : 24,
+        position: "sticky",
+        top: STICKY_ITEM_HERO_TOP_PX,
+        zIndex: 40,
+        background: "rgba(18,26,20,0.98)",
+        boxShadow: "0 16px 44px rgba(20,33,27,0.12), 0 8px 24px rgba(0,0,0,0.35)",
+      }}>
         <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 24, alignItems: "stretch" }}>
           <div style={{ display: "grid", gap: 16 }}>
             <div>

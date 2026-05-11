@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "design-lock": "node scripts/check-design-lock.mjs",
+    "design-lock": "node scripts/check-design-lock.mjs && npm run verify:discovery-chips",
+    "verify:discovery-chips": "node scripts/guard-discovery-chip-scroll.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test tests/*.test.js && npm run verify:geo-routes",
+    "test": "node --test tests/*.test.js && npm run verify:geo-routes && npm run verify:discovery-chips",
     "verify:geo-routes": "node scripts/verifyGeoRoutes.mjs",
     "verify:search-quality": "node scripts/verifyGeoRoutes.mjs"
   },

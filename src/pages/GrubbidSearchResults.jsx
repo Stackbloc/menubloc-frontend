@@ -152,6 +152,8 @@ const US_STATE_ABBREVS = new Set([
 ]);
 
 const WAITER_MIN_RESULTS = 16;
+/** General search: max dishes shown under one restaurant card (grouped UI). */
+const MAX_MENU_ITEMS_PER_RESTAURANT_GROUP = 3;
 const WAITER_MIN_ITEM_SIGNALS = 6;
 const WAITER_MIN_OPTION_COUNT = 3;
 const WAITER_DOMINANT_TOPIC_MIN_COUNT = 3;
@@ -675,13 +677,17 @@ function buildRestaurantGroups(dishRows) {
       pickFirst(row, ["restaurant_name", "restaurantName"], "Restaurant")
     );
     const normalizedBrand = normalizeKey(restaurantName);
-    const restaurantKey = chainId
-      ? `chain:${chainId}`
-      : normalizedBrand
-      ? `brand:${normalizedBrand}`
-      : restaurantId
+    const city = normalizeKey(pickFirst(row, ["city", "restaurant_city", "restaurant_city_name"], ""));
+    const state = normalizeKey(pickFirst(row, ["state", "restaurant_state"], ""));
+    const brandLocKey =
+      normalizedBrand && (city || state) ? `brandloc:${normalizedBrand}|${city}|${state}` : "";
+
+    // Prefer venue id so inconsistent chain_id values do not split one location into multiple cards.
+    // When ids differ across franchise rows in the same market, fall back to brand + city + state.
+    const restaurantKey = restaurantId
       ? `id:${restaurantId}`
-      : `name:${normalizedBrand}`;
+      : brandLocKey ||
+        (chainId ? `chain:${chainId}` : normalizedBrand ? `brand:${normalizedBrand}` : `name:${normalizedBrand || "unknown"}`);
 
     if (!restaurantMap.has(restaurantKey)) {
       restaurantMap.set(restaurantKey, {
@@ -730,15 +736,17 @@ function buildRestaurantGroups(dishRows) {
 
   const groups = [];
   for (const g of restaurantMap.values()) {
-    const items = Array.from(g._itemMap.values()).sort((a, b) => {
-      const sa = getScore(a);
-      const sb = getScore(b);
-      if (sa !== null && sb !== null && sa !== sb) return sb - sa;
-      const pa = getPriceMinor(a);
-      const pb = getPriceMinor(b);
-      if (pa !== null && pb !== null && pa !== pb) return pa - pb;
-      return 0;
-    });
+    const items = Array.from(g._itemMap.values())
+      .sort((a, b) => {
+        const sa = getScore(a);
+        const sb = getScore(b);
+        if (sa !== null && sb !== null && sa !== sb) return sb - sa;
+        const pa = getPriceMinor(a);
+        const pb = getPriceMinor(b);
+        if (pa !== null && pb !== null && pa !== pb) return pa - pb;
+        return 0;
+      })
+      .slice(0, MAX_MENU_ITEMS_PER_RESTAURANT_GROUP);
 
     groups.push({
       restaurant_id: g.restaurant_id,

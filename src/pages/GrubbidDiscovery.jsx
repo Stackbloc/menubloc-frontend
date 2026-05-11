@@ -81,6 +81,8 @@ const INTELLIGENCE_CHIPS = [
   { id: "high-fiber",   icon: "🌾", label: "High Fiber",         query: "high fiber" },
 ];
 
+const DISCOVERY_CHIP_MOBILE_MQ = "(max-width: 768px)";
+
 function DiscoveryChipRow({ chips, filters, onChipClick }) {
   const scrollerRef = useRef(null);
 
@@ -88,6 +90,7 @@ function DiscoveryChipRow({ chips, filters, onChipClick }) {
     const el = scrollerRef.current;
     if (!el) return;
     const onWheel = (e) => {
+      if (typeof window === "undefined" || !window.matchMedia(DISCOVERY_CHIP_MOBILE_MQ).matches) return;
       if (el.scrollWidth <= el.clientWidth + 1) return;
       if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
       e.preventDefault();
@@ -99,25 +102,7 @@ function DiscoveryChipRow({ chips, filters, onChipClick }) {
 
   return (
     <div style={{ padding: "0 16px", minWidth: 0, width: "100%", overflowX: "hidden", overflowY: "visible" }}>
-      <div
-        ref={scrollerRef}
-        style={{
-          display: "flex",
-          gap: 6,
-          width: "100%",
-          minWidth: 0,
-          maxWidth: "100%",
-          overflowX: "auto",
-          overflowY: "hidden",
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-          WebkitOverflowScrolling: "touch",
-          overscrollBehaviorX: "contain",
-          touchAction: "pan-x",
-          scrollBehavior: "smooth",
-          paddingBottom: 2,
-        }}
-      >
+      <div ref={scrollerRef} className="gb-discovery-chip-scroller">
         {chips.map((chip) => {
           const isActive = chip.filterKey ? !!filters[chip.filterKey] : false;
           return (

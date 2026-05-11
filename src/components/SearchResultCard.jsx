@@ -836,10 +836,10 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
 
 /* ---- Key facts (price / distance / locale / cuisine / deal) ---- */
 
-function buildKeyFactsLine({ row, restaurantSummary, matchContext }) {
+function buildKeyFactsLine({ row, restaurantSummary, matchContext, omitPrice = false }) {
   const parts = [];
   const price = fmtPrice(row);
-  if (price) parts.push(price);
+  if (price && !omitPrice) parts.push(price);
 
   const distSource =
     restaurantSummary && typeof restaurantSummary === "object"
@@ -908,6 +908,7 @@ function ItemRow({
   geo,
   restaurantSummary = null,
   searchQuery = "",
+  venueRenderedAbove = false,
 }) {
   const [openTab, setOpenTab] = useState(null);
   const { isAuthenticated, allergenFilter, allergenPreferences } = useConsumer();
@@ -949,7 +950,10 @@ function ItemRow({
   const matchLineText = whyLabel || (matchPreviewFallback && matchPreviewFallback.text) || "";
   const nutritionPreviewChips = buildNutritionPreviewChips(row, queryMeta);
   const pairingTeaser = formatPairingTeaser(row);
-  const factsLine = buildKeyFactsLine({ row, restaurantSummary, matchContext });
+  const factsLine = venueRenderedAbove
+    ? ""
+    : buildKeyFactsLine({ row, restaurantSummary, matchContext });
+  const itemPriceOnly = venueRenderedAbove ? fmtPrice(row) : "";
 
   const restDisplayName =
     (restaurantSummary &&
@@ -1057,8 +1061,22 @@ function ItemRow({
         ) : null}
       </div>
 
+      {venueRenderedAbove && itemPriceOnly ? (
+        <div
+          style={{
+            marginTop: 6,
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#9CA3AF",
+            lineHeight: 1.45,
+          }}
+        >
+          {itemPriceOnly}
+        </div>
+      ) : null}
+
       {/* 2. Restaurant name */}
-      {restDisplayName ? (
+      {!venueRenderedAbove && restDisplayName ? (
         <div style={{ marginTop: 6 }}>
           {restHref ? (
             <Link
@@ -1089,7 +1107,7 @@ function ItemRow({
       ) : null}
 
       {/* 3. Price / distance / locale / cuisine / deal */}
-      {factsLine ? (
+      {!venueRenderedAbove && factsLine ? (
         <div
           style={{
             marginTop: 6,
@@ -1376,8 +1394,63 @@ export default function SearchResultCard({ restaurant, items, item, query, query
       distance_miles: restaurant?.distance_miles ?? null,
     };
 
+    const restProfileTarget = restSlug || restId;
+    const restHrefHeader = restProfileTarget ? "/restaurants/" + restProfileTarget : null;
+    const venueFactsLine = buildKeyFactsLine({
+      row: items[0],
+      restaurantSummary,
+      matchContext,
+      omitPrice: true,
+    });
+
     return (
       <article className="gb-card" style={cardStyle}>
+        <div
+          style={{
+            paddingBottom: 12,
+            marginBottom: 4,
+            borderBottom: "1px solid #1F2937",
+          }}
+        >
+          {restHrefHeader ? (
+            <Link
+              to={restHrefHeader}
+              style={{
+                fontSize: "var(--text-2, 14px)",
+                fontWeight: 800,
+                color: "#E5E7EB",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#22C55E";
+                e.currentTarget.style.textDecoration = "underline";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#E5E7EB";
+                e.currentTarget.style.textDecoration = "none";
+              }}
+            >
+              {restName}
+            </Link>
+          ) : (
+            <span style={{ fontSize: "var(--text-2, 14px)", fontWeight: 800, color: "#E5E7EB" }}>{restName}</span>
+          )}
+          {venueFactsLine ? (
+            <div
+              style={{
+                marginTop: 6,
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#9CA3AF",
+                lineHeight: 1.45,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {venueFactsLine}
+            </div>
+          ) : null}
+        </div>
+
         <div>
           {items.map((row) => {
             const mid = getItemId(row);
@@ -1395,6 +1468,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
                 geo={geo}
                 restaurantSummary={restaurantSummary}
                 searchQuery={query}
+                venueRenderedAbove
               />
             );
           })}

@@ -37,6 +37,9 @@ import { useOrderCart } from "../context/OrderCartContext.jsx";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
+/** Offset below `StickyPageHeader` (nav-only row, no title) so sticky hero clears the bar. */
+const STICKY_ITEM_HERO_TOP_PX = 72;
+
 // ── Utility ─────────────────────────────────────────────────
 
 function asNum(v) {
@@ -1164,7 +1167,14 @@ export default function MenuItemInfoPage() {
   return (
     <PageShell isMobile={isMobile}>
       {/* ── 1. Hero / Item Identity ── */}
-      <Surface style={{ padding: isMobile ? 18 : 24 }}>
+      <Surface style={{
+        padding: isMobile ? 18 : 24,
+        position: "sticky",
+        top: STICKY_ITEM_HERO_TOP_PX,
+        zIndex: 40,
+        background: "rgba(18,26,20,0.98)",
+        boxShadow: "0 16px 44px rgba(20,33,27,0.12), 0 8px 24px rgba(0,0,0,0.35)",
+      }}>
         <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 24, alignItems: "stretch" }}>
           <div style={{ display: "grid", gap: 16 }}>
             <div>

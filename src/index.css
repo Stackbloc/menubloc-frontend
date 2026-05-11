@@ -419,3 +419,39 @@ textarea:focus-visible {
     font-size: 15px;
   }
 }
+
+/*
+ * Discovery diet / category chip rows (GrubbidDiscovery.jsx — DiscoveryChipRow).
+ * Desktop: wrap — no horizontal scrollbar (trackpad must not scroll the row).
+ * Mobile (≤768px): single-line horizontal scroll + touch pan-x.
+ * Guard: npm run verify:discovery-chips — do not reintroduce inline overflowX:auto on the scroller.
+ */
+.gb-discovery-chip-scroller {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  overflow-x: visible;
+  overflow-y: visible;
+  padding-bottom: 2px;
+}
+
+@media (max-width: 768px) {
+  .gb-discovery-chip-scroller {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scroll-behavior: smooth;
+  }
+
+  .gb-discovery-chip-scroller::-webkit-scrollbar {
+    display: none;
+  }
+}
