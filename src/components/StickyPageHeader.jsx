@@ -51,11 +51,16 @@ export default function StickyPageHeader({ title, children }) {
         onAllergenToggle={handleAllergenToggle}
       />
 
-      <div style={{ position: "sticky", top: 0, zIndex: 100 }}>
+      {/* Full-width opaque bar so wide viewports do not show scrolling page content in the side gutters. */}
+      <div style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        background: "#0B0F0C",
+        borderBottom: "1px solid #1F2937",
+      }}>
         <div style={{
           maxWidth: 576, margin: "0 auto",
-          background: "#0B0F0C",
-          borderBottom: "1px solid #1F2937",
           paddingBottom: title || children ? 12 : 0,
         }}>
           <div style={{
