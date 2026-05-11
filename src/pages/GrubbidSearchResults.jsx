@@ -28,8 +28,6 @@ import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
-import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
-import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
@@ -819,7 +817,6 @@ function FilterToggle({ label, active, onClick, isMobile }) {
 
 export default function GrubbidSearchResults() {
   const { t } = useLanguage();
-  const { isAuthenticated, allergenFilter: consumerAllergenFilter } = useConsumer();
   const params = useQueryParams();
   const navigate = useNavigate();
   const geo = useGeolocation();
@@ -904,7 +901,6 @@ export default function GrubbidSearchResults() {
   const [restaurantMetaMap, setRestaurantMetaMap] = useState(new Map());
   const [queryMeta, setQueryMeta] = useState(null);
   const [searchMeta, setSearchMeta] = useState(null);
-  const [responseAllergenFilter, setResponseAllergenFilter] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState("");
@@ -1175,7 +1171,6 @@ export default function GrubbidSearchResults() {
         setRestaurantMetaMap(rMeta);
         setQueryMeta(json?.query || null);
         setSearchMeta(json?.search_meta || null);
-        setResponseAllergenFilter(json?.allergen_filter || null);
         setSearchTotalCount(total);
         setSearchOffset(pageOffset + returned);
         setSearchHasMore(pageOffset + returned < total);
@@ -1191,7 +1186,6 @@ export default function GrubbidSearchResults() {
         setRows([]);
         setQueryMeta(null);
         setSearchMeta(null);
-        setResponseAllergenFilter(null);
       } finally {
         if (alive) setLoading(false);
       }
@@ -1389,9 +1383,6 @@ export default function GrubbidSearchResults() {
       return null;
     })(),
   ].filter(Boolean).join(" · ");
-  const effectiveAllergenFilter = isAuthenticated
-    ? (consumerAllergenFilter || responseAllergenFilter || null)
-    : null;
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
@@ -1436,10 +1427,6 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && q && (hasMenuMatches || restaurantOnlyVisible.length > 0) ? (
         <SearchRefinementNudge displayQuery={displayQuery} locationLabel={locationLabel} />
-      ) : null}
-
-      {effectiveAllergenFilter ? (
-        <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 14 }} />
       ) : null}
 
       {geoFallbackUsed && (
@@ -1578,7 +1565,6 @@ export default function GrubbidSearchResults() {
                 }
                 setRows((prev) => [...prev, ...moreRows]);
                 setQueryMeta((prev) => json?.query || prev || null);
-                setResponseAllergenFilter((prev) => json?.allergen_filter || prev);
                 setSearchTotalCount(total);
                 setSearchOffset(pageOffset + returned);
                 setSearchHasMore(pageOffset + returned < total);

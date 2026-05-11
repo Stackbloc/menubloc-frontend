@@ -5,7 +5,6 @@ import {
   buildWhyMatchLabel,
   buildNutritionPreviewChips,
   formatPairingTeaser,
-  shouldShowAllergenOnSearchCard,
 } from "../src/lib/searchResultEnrichment.js";
 
 test("buildWhyMatchLabel prefers match_reasons_v1", () => {
@@ -60,67 +59,4 @@ test("formatPairingTeaser formats suggestion objects", () => {
   });
   assert.ok(line.startsWith("Pairs with"));
   assert.match(line, /Side salad/);
-});
-
-test("shouldShowAllergenOnSearchCard hidden by default without prefs or allergy query", () => {
-  const row = {
-    chips: {
-      nutrition_chip: { allergens: ["Peanuts"], allergen_alert: "Contains peanuts" },
-    },
-  };
-  assert.equal(
-    shouldShowAllergenOnSearchCard(row, {
-      searchQuery: "burger",
-      isAuthenticated: false,
-      allergenPreferences: [],
-      allergenFilter: null,
-    }),
-    false
-  );
-});
-
-test("shouldShowAllergenOnSearchCard shows for allergy-related query", () => {
-  const row = {
-    chips: { nutrition_chip: { allergens: ["Dairy"], allergen_alert: "" } },
-  };
-  assert.equal(
-    shouldShowAllergenOnSearchCard(row, {
-      searchQuery: "peanut free options",
-      isAuthenticated: false,
-      allergenPreferences: [],
-      allergenFilter: null,
-    }),
-    true
-  );
-});
-
-test("shouldShowAllergenOnSearchCard shows when user has allergen preferences", () => {
-  const row = {
-    chips: { nutrition_chip: { allergens: ["Soy"], allergen_alert: "" } },
-  };
-  assert.equal(
-    shouldShowAllergenOnSearchCard(row, {
-      searchQuery: "tofu bowl",
-      isAuthenticated: true,
-      allergenPreferences: ["soy"],
-      allergenFilter: null,
-    }),
-    true
-  );
-});
-
-test("shouldShowAllergenOnSearchCard hides when nutrition panel is open", () => {
-  const row = {
-    chips: { nutrition_chip: { allergens: ["Egg"], allergen_alert: "" } },
-  };
-  assert.equal(
-    shouldShowAllergenOnSearchCard(row, {
-      searchQuery: "allergy friendly",
-      isAuthenticated: true,
-      allergenPreferences: ["egg"],
-      allergenFilter: null,
-      nutritionDetailOpen: true,
-    }),
-    false
-  );
 });

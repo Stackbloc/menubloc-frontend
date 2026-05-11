@@ -11,12 +11,10 @@
 
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useConsumer } from "../context/ConsumerContext.jsx";
 import {
   buildWhyMatchLabel,
   buildNutritionPreviewChips,
   formatPairingTeaser,
-  shouldShowAllergenOnSearchCard,
 } from "../lib/searchResultEnrichment.js";
 import IndulgenceMeter from "./IndulgenceMeter.jsx";
 import ShareButton from "./share/ShareButton.jsx";
@@ -73,98 +71,6 @@ function asBool(v) {
     return s === "true" || s === "yes" || s === "1";
   }
   return false;
-}
-
-function normalizeAllergenList(rawAllergens) {
-  if (!Array.isArray(rawAllergens)) return [];
-  return rawAllergens
-    .map((value) =>
-      asStr(value)
-        .replace(/_/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-    )
-    .filter(Boolean)
-    .map((value) => value.charAt(0).toUpperCase() + value.slice(1));
-}
-
-function normalizeAllergenSource(source) {
-  const normalized = asStr(source).toLowerCase();
-  if (normalized === "chain_official") return "chain_official";
-  if (normalized === "reference_dataset") return "reference_dataset";
-  return normalized || "";
-}
-
-function getAllergenTone(source) {
-  const normalized = normalizeAllergenSource(source);
-  if (normalized === "chain_official") {
-    return {
-      background: "rgba(188, 37, 37, 0.15)",
-      border: "1px solid rgba(188, 37, 37, 0.3)",
-      color: "#FCA5A5",
-      badgeBackground: "#b91c1c",
-      badgeColor: "#fff7f7",
-    };
-  }
-
-  return {
-    background: "rgba(202, 138, 4, 0.12)",
-    border: "1px solid rgba(107, 114, 128, 0.25)",
-    color: "#FCD34D",
-    badgeBackground: "rgba(107, 114, 128, 0.2)",
-    badgeColor: "#9CA3AF",
-  };
-}
-
-function AllergenIndicator({ chip, compact = false, containsLabel = "Contains", estimatedLabel = "estimated" }) {
-  const allergens = normalizeAllergenList(chip?.allergens);
-  if (!allergens.length) return null;
-
-  const source = normalizeAllergenSource(chip?.source);
-  const tone = getAllergenTone(source);
-  const isEstimated = source === "reference_dataset";
-
-  return (
-    <div
-      style={{
-        marginTop: compact ? 8 : 10,
-        padding: compact ? "8px 10px" : "9px 12px",
-        borderRadius: compact ? 12 : 14,
-        background: tone.background,
-        border: tone.border,
-        color: tone.color,
-        display: "inline-flex",
-        alignSelf: "flex-start",
-        alignItems: "center",
-        gap: 10,
-        flexWrap: "wrap",
-        maxWidth: "100%",
-      }}
-    >
-      <div style={{ fontSize: compact ? 12 : 13, lineHeight: 1.35, fontWeight: 700 }}>
-        {`⚠️ ${containsLabel}: ${allergens.join(", ")}`}
-      </div>
-      {isEstimated ? (
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            borderRadius: 999,
-            padding: "4px 8px",
-            background: tone.badgeBackground,
-            color: tone.badgeColor,
-            fontSize: 11,
-            lineHeight: 1,
-            fontWeight: 900,
-            letterSpacing: "0.03em",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {estimatedLabel}
-        </span>
-      ) : null}
-    </div>
-  );
 }
 
 /* Whole dollars only — no cents on search cards */
@@ -436,7 +342,6 @@ function NutritionPanel({ chip }) {
         </div>
       )}
 
-      <AllergenIndicator chip={chip} />
       {summary && (
         <div style={{ marginTop: 10, fontSize: 13, color: "#D1D5DB", fontWeight: 600, lineHeight: 1.4 }}>
           {summary}
@@ -600,27 +505,6 @@ function InsightsPanel({ chips, onFindSimilar }) {
       >
         Find Similar →
       </button>
-    </div>
-  );
-}
-
-/* ---- Query-specific precision explanation line ---- */
-
-function PrecisionLine({ chip }) {
-  const line = chip?.precision_line;
-  if (!line) return null;
-  return (
-    <div
-      style={{
-        marginTop: 5,
-        fontSize: 12,
-        fontWeight: 700,
-        color: "#22C55E",
-        letterSpacing: "0.01em",
-        lineHeight: 1.4,
-      }}
-    >
-      {line}
     </div>
   );
 }
@@ -907,11 +791,9 @@ function ItemRow({
   language,
   geo,
   restaurantSummary = null,
-  searchQuery = "",
   venueRenderedAbove = false,
 }) {
   const [openTab, setOpenTab] = useState(null);
-  const { isAuthenticated, allergenFilter, allergenPreferences } = useConsumer();
 
   const mid = getItemId(row);
   const name = getItemName(row, language);
@@ -975,8 +857,7 @@ function ItemRow({
     asNum(nutChip.fat_g) !== null ||
     asNum(nutChip.sodium_mg) !== null ||
     asNum(nutChip.sugar_g) !== null ||
-    (Array.isArray(nutChip.allergens) && nutChip.allergens.length > 0) ||
-    String(nutChip.allergen_alert || "").trim().length > 0;
+    (Array.isArray(nutChip.allergens) && nutChip.allergens.length > 0);
 
   const insightScores = computeInsights(nutChip);
   const hasIns =
@@ -993,14 +874,6 @@ function ItemRow({
   function toggle(tab) {
     setOpenTab((prev) => (prev === tab ? null : tab));
   }
-
-  const showSurfaceAllergen = shouldShowAllergenOnSearchCard(row, {
-    searchQuery,
-    isAuthenticated,
-    allergenFilter,
-    allergenPreferences,
-    nutritionDetailOpen: openTab === "nutrition",
-  });
 
   return (
     <div
@@ -1167,11 +1040,9 @@ function ItemRow({
         </div>
       )}
 
-      {showSurfaceAllergen ? (
-        <AllergenIndicator chip={nutChip} compact containsLabel={labels.contains} estimatedLabel={labels.estimated} />
+      {(indulgencePresentation || breadScore) ? (
+        <CompactScoreSummary presentation={indulgencePresentation} breadScore={breadScore} />
       ) : null}
-      <PrecisionLine chip={nutChip} />
-      {(indulgencePresentation || breadScore) ? <CompactScoreSummary presentation={indulgencePresentation} breadScore={breadScore} /> : null}
 
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
         {!indulgencePresentation ? (
@@ -1357,8 +1228,6 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const { language, t } = useLanguage();
   const contextSearch = location.search || "";
   const labels = {
-    contains: t("common.allergensContains", "Contains"),
-    estimated: t("common.estimated"),
     nutrition: t("common.nutrition", "Nutrition"),
     insights: t("common.insights", "Insights"),
     showSimilar: t("common.showSimilar", "Show Similar"),
@@ -1467,7 +1336,6 @@ export default function SearchResultCard({ restaurant, items, item, query, query
                 language={language}
                 geo={geo}
                 restaurantSummary={restaurantSummary}
-                searchQuery={query}
                 venueRenderedAbove
               />
             );
@@ -1532,7 +1400,6 @@ export default function SearchResultCard({ restaurant, items, item, query, query
           language={language}
           geo={geo}
           restaurantSummary={null}
-          searchQuery={query}
         />
         {menuHrefS && (
           <div style={{ marginTop: 10 }}>

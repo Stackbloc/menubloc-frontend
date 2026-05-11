@@ -4,7 +4,7 @@
  * Path: menubloc-frontend/src/components/NutritionCard.jsx
  * Date: 2026-03-14
  * Purpose:
- *   Reusable nutrition + allergen card.
+ *   Reusable nutrition card (values + disclosure).
  *   Used by SearchResultCard (search results) and
  *   MenuItemInsightsPanel (menu view / item detail page).
  *
@@ -16,7 +16,7 @@
  *
  *   Rendering:
  *     With colors   → full bordered card with "NUTRITION" section title,
- *                     MetricGrid tiles, allergen alert, disclosure.
+ *                     MetricGrid tiles, disclosure.
  *     Without colors → bare inline list (fits inside SearchResultCard's
  *                     DetailPanel which provides the border-top wrap).
  *
@@ -24,13 +24,10 @@
  *     1. Calories (+ daily value %)
  *     2. Protein / Fat
  *     3. Sodium / Sugar
- *     4. Allergen Alert (if inferred allergens present)
- *     5. Disclosure / source line
+ *     4. Disclosure / source line
  *
  *   Fallback states:
- *     - No nutrition values but allergens present →
- *         "Nutrition info unavailable for this item yet." + Allergen Alert
- *     - Nothing meaningful → compact "unavailable" message
+ *     - No nutrition values → "Nutrition info unavailable for this item yet."
  *
  *   No fake data. No placeholders. All values come from chip prop.
  * ============================================================
@@ -56,46 +53,6 @@ const CSS_COLORS = {
   panel2:  "var(--surface-1, #f4f7fb)",
   chipBg:  "var(--surface-2, #f8fafc)",
 };
-
-/* ---- Allergen Alert block (shared between both layout modes) ---- */
-
-function AllergenAlert({ alert, colors }) {
-  if (!alert) return null;
-
-  const isColored = Boolean(colors);
-  const bgColor   = isColored ? "rgba(230,130,0,0.10)" : "#fff9f0";
-  const border    = isColored ? "1px solid rgba(230,130,0,0.22)" : "1px solid #f0d5a0";
-  const textColor = isColored ? (colors.text || "rgba(255,255,255,0.9)") : "var(--ink, #0f1720)";
-
-  return (
-    <div
-      style={{
-        marginTop: 10,
-        display: "inline-flex",
-        alignItems: "baseline",
-        flexWrap: "wrap",
-        gap: 6,
-        padding: "4px 8px",
-        background: bgColor,
-        border,
-        borderRadius: 999,
-      }}
-    >
-      <span
-        style={{
-          fontSize: 10,
-          fontWeight: 900,
-          color: "#b36000",
-        }}
-      >
-        ⚠ Allergen Alert
-      </span>
-      <span style={{ fontSize: 11.5, color: textColor, lineHeight: 1.35 }}>
-        {alert}
-      </span>
-    </div>
-  );
-}
 
 /* ---- MetricGrid (used in colors/menu mode) ---- */
 
@@ -178,12 +135,10 @@ export default function NutritionCard({ chip, colors }) {
   const glycemic = asN(chip?.glycemic_score);
   const glycemicLabel = chip?.glycemic_label || null;
 
-  // Extract allergen fields
-  const allergenAlert = String(chip?.allergen_alert || "").trim();
+  // Extract disclosure (allergen_alert no longer surfaced as a card banner)
   const disclosure    = String(chip?.disclosure || "").trim();
 
   const hasValues    = cal !== null || pro !== null || carbs !== null || fib !== null || fat !== null || sod !== null || sug !== null;
-  const hasAllergens = allergenAlert.length > 0;
 
   /* ------------------------------------------------------------------ */
   /* Mode A: full card with colors prop (menu view / item detail)        */
@@ -250,8 +205,6 @@ export default function NutritionCard({ chip, colors }) {
             Nutrition info unavailable for this item yet.
           </div>
         )}
-
-        <AllergenAlert alert={allergenAlert} colors={C} />
 
         {disclosure && (
           <div
@@ -326,12 +279,10 @@ export default function NutritionCard({ chip, colors }) {
         </span>
       )}
 
-      <AllergenAlert alert={allergenAlert} />
-
       {disclosure && (
         <div
           style={{
-            marginTop: hasValues || hasAllergens ? 8 : 4,
+            marginTop: hasValues ? 8 : 4,
             fontSize: "var(--text-1, 12px)",
             color: "var(--muted-2, #93a0b2)",
             lineHeight: 1.45,
