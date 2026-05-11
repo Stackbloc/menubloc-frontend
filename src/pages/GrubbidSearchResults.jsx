@@ -1234,22 +1234,6 @@ export default function GrubbidSearchResults() {
   }, [rows, waiterSelection]);
   const dishRows = useMemo(() => waiterFilteredRows.filter(isDishRow), [waiterFilteredRows]);
   const restaurantOnlyRows = useMemo(() => waiterFilteredRows.filter((r) => !isDishRow(r)), [waiterFilteredRows]);
-  const restaurantGroups = useMemo(
-    () =>
-      buildRestaurantGroups(
-        dishRows,
-        relaxPerRestaurantItemCap ? Number.MAX_SAFE_INTEGER : MAX_MENU_ITEMS_PER_RESTAURANT_GROUP
-      ),
-    [dishRows, relaxPerRestaurantItemCap]
-  );
-
-  const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
-
-  function toggleSearchFilter(key) {
-    const next = { ...activeFilters, [key]: !activeFilters[key] };
-    const nextParams = filtersToUrlParams(next, params);
-    navigate("?" + nextParams.toString(), { replace: true });
-  }
 
   const activeDietFilterLabels = useMemo(() => {
     const labels = [];
@@ -1274,6 +1258,23 @@ export default function GrubbidSearchResults() {
       n
     );
   }, [hasDietFilter, normalizedQuery]);
+
+  const restaurantGroups = useMemo(
+    () =>
+      buildRestaurantGroups(
+        dishRows,
+        relaxPerRestaurantItemCap ? Number.MAX_SAFE_INTEGER : MAX_MENU_ITEMS_PER_RESTAURANT_GROUP
+      ),
+    [dishRows, relaxPerRestaurantItemCap]
+  );
+
+  const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
+
+  function toggleSearchFilter(key) {
+    const next = { ...activeFilters, [key]: !activeFilters[key] };
+    const nextParams = filtersToUrlParams(next, params);
+    navigate("?" + nextParams.toString(), { replace: true });
+  }
 
   const crossRestaurantItems = useMemo(() => {
     return restaurantGroups
