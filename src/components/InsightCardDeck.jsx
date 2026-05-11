@@ -147,8 +147,8 @@ const SCORE_META = {
 };
 
 function formatLevel(positive, level, levelOverrides) {
-  if (!level) return level;
-  const key = level.toLowerCase();
+  if (level == null || level === "") return level;
+  const key = String(level).toLowerCase();
   const raw = levelOverrides?.[key] ?? level;
   if (positive) {
     if (key === "excellent" || key === "good" || key === "high") return `${raw} ✅`;
@@ -223,7 +223,10 @@ export function buildInsightCards(item) {
 
     const meta = SCORE_META[key];
     // Normalize human-readable level to color map key (e.g. "Very High" → "very_high")
-    const levelKey = s.level ? s.level.toLowerCase().replace(/\s+/g, "_") : null;
+    const levelKey =
+      s.level != null && s.level !== ""
+        ? String(s.level).toLowerCase().replace(/\s+/g, "_")
+        : null;
     const levelColors = (LEVEL_COLORS[key] || {})[levelKey] || FALLBACK_META;
 
     const dirLevel = formatLevel(meta.positive, s.level, meta.levelOverrides);

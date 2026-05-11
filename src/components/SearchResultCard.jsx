@@ -381,8 +381,8 @@ function levelAccent(positive, score) {
 }
 
 function formatLevel(positive, level, levelOverrides) {
-  if (!level) return level;
-  const key = level.toLowerCase();
+  if (level == null || level === "") return level;
+  const key = String(level).toLowerCase();
   const raw = levelOverrides?.[key] ?? level;
   if (positive) {
     if (key === "excellent" || key === "good" || key === "high") return `${raw} ✅`;
@@ -417,10 +417,10 @@ function buildSummary(rows) {
       .toLowerCase();
   const goods = rows
     .filter((r) => r.positive && ["excellent", "good", "high"].includes(clean(r.level)))
-    .map((r) => r.label.toLowerCase());
+    .map((r) => String(r.label || "").toLowerCase());
   const bads = rows
     .filter((r) => !r.positive && ["high", "very high", "high spike", "very high spike"].some((k) => clean(r.level).startsWith(k)))
-    .map((r) => r.label.toLowerCase());
+    .map((r) => String(r.label || "").toLowerCase());
   if (!goods.length && !bads.length) return null;
   if (goods.length && bads.length)
     return `⚖️ Strong on ${goods.join(" & ")} — watch ${bads.join(" & ")}`;
