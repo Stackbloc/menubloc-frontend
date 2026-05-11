@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /**
- * Regression guard: discovery diet/category chip rows must not use a desktop
- * horizontal scroller (inline overflowX:auto on the chip track). Desktop must
- * wrap via .gb-discovery-chip-scroller in index.css; mobile scroll lives in CSS
- * under @media (max-width: 768px).
+ * Regression guard: discovery chip rows use .gb-discovery-chip-scroller in index.css
+ * (flex-wrap: nowrap + overflow-x: auto) — two rows, each horizontally scrollable.
+ * Do not set overflowX:auto inline on DiscoveryChipRow (use CSS class only).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -36,21 +35,28 @@ if (!rowSlice.includes("gb-discovery-chip-scroller")) {
 
 if (/overflowX:\s*["']auto["']/.test(rowSlice) || /overflowX:\s*['"]auto['"]/.test(rowSlice)) {
   console.error(
-    "guard-discovery-chip-scroll: Do not set overflowX:auto inline on DiscoveryChipRow — desktop becomes trackpad-scrollable. Use index.css .gb-discovery-chip-scroller (wrap desktop / scroll mobile)."
+    "guard-discovery-chip-scroll: Do not set overflowX:auto inline on DiscoveryChipRow — use index.css .gb-discovery-chip-scroller only."
   );
   process.exit(1);
 }
 
-if (!css.includes(".gb-discovery-chip-scroller") || !css.includes("flex-wrap: wrap")) {
+if (!css.includes(".gb-discovery-chip-scroller") || !css.includes("flex-wrap: nowrap")) {
   console.error(
-    "guard-discovery-chip-scroll: index.css must define .gb-discovery-chip-scroller with flex-wrap: wrap for desktop."
+    "guard-discovery-chip-scroll: index.css must define .gb-discovery-chip-scroller with flex-wrap: nowrap (single line per row)."
   );
   process.exit(1);
 }
 
-if (!css.includes("@media (max-width: 768px)") || !css.includes("overflow-x: auto")) {
+if (!css.includes(".gb-discovery-chip-scroller") || !css.includes("overflow-x: auto")) {
   console.error(
-    "guard-discovery-chip-scroll: index.css must include a max-width 768px block with horizontal scroll for .gb-discovery-chip-scroller."
+    "guard-discovery-chip-scroll: index.css must define .gb-discovery-chip-scroller with overflow-x: auto."
+  );
+  process.exit(1);
+}
+
+if (!css.includes("@media (max-width: 768px)") || !css.includes("touch-action: pan-x")) {
+  console.error(
+    "guard-discovery-chip-scroll: index.css must include a max-width 768px block with touch-action: pan-x for .gb-discovery-chip-scroller."
   );
   process.exit(1);
 }

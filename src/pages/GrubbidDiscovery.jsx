@@ -57,18 +57,14 @@ const ALLERGENS = [
   { id: "fish",      label: "Fish" },
 ];
 
-/** Row 1 — category shortcuts (prior layout: breakfast / drinks / fries in-row; sushi removed for space). */
+/** Row 1 — category shortcuts on discovery (breakfast / drinks / fries / wings removed). */
 const FOOD_CATEGORY_CHIPS = [
   { id: "pizza",        icon: "🍕", label: "Pizza",              query: "pizza" },
   { id: "burgers",      icon: "🍔", label: "Burgers",            query: "burgers" },
   { id: "salads",       icon: "🥗", label: "Salads",             query: "salads" },
   { id: "chicken",      icon: "🍗", label: "Chicken",            query: "chicken" },
   { id: "tacos",        icon: "🌮", label: "Tacos",              query: "tacos" },
-  { id: "breakfast",    icon: "🍳", label: "Breakfast",          query: "breakfast" },
-  { id: "drinks",       icon: "🥤", label: "Drinks",             query: "drinks" },
-  { id: "fries",        icon: "🍟", label: "Fries",              query: "fries" },
   { id: "sandwiches",   icon: "🥪", label: "Sandwiches",         query: "sandwiches" },
-  { id: "wings",        icon: "🍗", label: "Wings",              query: "wings" },
 ];
 
 /** Row 2 — nutrition & diet intent. */
@@ -82,8 +78,6 @@ const INTELLIGENCE_CHIPS = [
   { id: "high-fiber",   icon: "🌾", label: "High Fiber",         query: "high fiber" },
 ];
 
-const DISCOVERY_CHIP_MOBILE_MQ = "(max-width: 768px)";
-
 function DiscoveryChipRow({ chips, filters, onChipClick }) {
   const scrollerRef = useRef(null);
 
@@ -91,7 +85,6 @@ function DiscoveryChipRow({ chips, filters, onChipClick }) {
     const el = scrollerRef.current;
     if (!el) return;
     const onWheel = (e) => {
-      if (typeof window === "undefined" || !window.matchMedia(DISCOVERY_CHIP_MOBILE_MQ).matches) return;
       if (el.scrollWidth <= el.clientWidth + 1) return;
       if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
       e.preventDefault();

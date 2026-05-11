@@ -541,7 +541,9 @@ function Chip({ label, active, available, onClick }) {
 
 function CompactScoreSummary({ presentation, breadScore }) {
   const indulgence = presentation?.indulgence || null;
-  const compactDrivers = indulgence?.drivers?.slice(0, 3) || breadScore?.drivers?.slice(0, 2) || [];
+  const indDrivers = Array.isArray(indulgence?.drivers) ? indulgence.drivers.slice(0, 3) : [];
+  const breadDrivers = Array.isArray(breadScore?.drivers) ? breadScore.drivers.slice(0, 2) : [];
+  const compactDrivers = indDrivers.length > 0 ? indDrivers : breadDrivers;
   if (!indulgence && !breadScore) return null;
 
   return (
