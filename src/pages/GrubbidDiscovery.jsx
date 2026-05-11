@@ -57,20 +57,19 @@ const ALLERGENS = [
   { id: "fish",      label: "Fish" },
 ];
 
+/** Row 1 — high-intent category shortcuts (popular industrywide). No fries/drinks. */
 const FOOD_CATEGORY_CHIPS = [
   { id: "pizza",        icon: "🍕", label: "Pizza",              query: "pizza" },
   { id: "burgers",      icon: "🍔", label: "Burgers",            query: "burgers" },
   { id: "salads",       icon: "🥗", label: "Salads",             query: "salads" },
   { id: "chicken",      icon: "🍗", label: "Chicken",            query: "chicken" },
   { id: "tacos",        icon: "🌮", label: "Tacos",              query: "tacos" },
-  { id: "breakfast",    icon: "🍳", label: "Breakfast",          query: "breakfast" },
-  { id: "drinks",       icon: "🥤", label: "Drinks",             query: "drinks" },
-  { id: "fries",        icon: "🍟", label: "Fries",              query: "fries" },
   { id: "sandwiches",   icon: "🥪", label: "Sandwiches",         query: "sandwiches" },
   { id: "sushi",        icon: "🍣", label: "Sushi",              query: "sushi" },
   { id: "wings",        icon: "🍗", label: "Wings",              query: "wings" },
 ];
 
+/** Row 2 — nutrition & diet intent (may overlap conceptually with row 1 / 3). */
 const INTELLIGENCE_CHIPS = [
   { id: "low-carb",     icon: "🥦", label: "Low Carb",           query: "low carb" },
   { id: "high-protein", icon: "💪", label: "High Protein",       query: "high protein" },
@@ -79,6 +78,14 @@ const INTELLIGENCE_CHIPS = [
   { id: "low-fat",      icon: "🧈", label: "Low Fat",            query: "low fat", filterKey: "low_fat" },
   { id: "low-sodium",   icon: "🧂", label: "Low Sodium",         query: "low sodium", filterKey: "low_sodium" },
   { id: "high-fiber",   icon: "🌾", label: "High Fiber",         query: "high fiber" },
+];
+
+/** Row 3 — daypart / contextual search order (adjacent; breakfast → late night). */
+const MEAL_CONTEXT_CHIPS = [
+  { id: "breakfast",   icon: "🍳", label: "Breakfast",   query: "breakfast" },
+  { id: "lunch",       icon: "🥙", label: "Lunch",       query: "lunch" },
+  { id: "dinner",      icon: "🍽️", label: "Dinner",      query: "dinner" },
+  { id: "late-night",  icon: "🌙", label: "Late Night",  query: "late night" },
 ];
 
 const DISCOVERY_CHIP_MOBILE_MQ = "(max-width: 768px)";
@@ -1135,6 +1142,11 @@ export default function GrubbidDiscovery() {
             />
             <DiscoveryChipRow
               chips={INTELLIGENCE_CHIPS}
+              filters={filters}
+              onChipClick={handleChipClick}
+            />
+            <DiscoveryChipRow
+              chips={MEAL_CONTEXT_CHIPS}
               filters={filters}
               onChipClick={handleChipClick}
             />
