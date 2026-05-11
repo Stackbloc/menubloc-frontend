@@ -7,7 +7,7 @@
  *
  * Decision page hierarchy:
  *   1. Hero / item identity
- *   2. Compact allergen alert (inside hero)
+ *   2. Compact allergen line (hero — subtle strip, not full banner)
  *   3. Verdict block  (NO confidence here)
  *   4. Full nutrition block  (NO confidence here — shows ALL macros)
  *   5. Insights row  (signals + InsightCardDeck, always shown when nutrition exists)
@@ -45,6 +45,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import { fetchCompareItems } from "../lib/api.js";
+import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
@@ -201,14 +202,6 @@ function buildPortionEstimate(calories, caloriesPerOz) {
   return options;
 }
 
-function normalizeLabel(value) {
-  return String(value || "")
-    .trim().replace(/_/g, " ").replace(/\s+/g, " ").toLowerCase()
-    .split(" ").filter(Boolean)
-    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-    .join(" ");
-}
-
 function toTranslationSuffix(value) {
   return String(value || "").trim().toLowerCase()
     .replace(/&/g, "and").replace(/[-/\s]+/g, "_")
@@ -225,6 +218,14 @@ function localizeCanonicalLabel(t, prefix, value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
   return t(`${prefix}.${toTranslationSuffix(raw)}`, raw);
+}
+
+function normalizeLabel(value) {
+  return String(value || "")
+    .trim().replace(/_/g, " ").replace(/\s+/g, " ").toLowerCase()
+    .split(" ").filter(Boolean)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(" ");
 }
 
 function translateAllergenValue(t, value) {
@@ -352,20 +353,34 @@ function SectionCard({ title, eyebrow, children, style }) {
 
 // ── Hero sub-components ──────────────────────────────────────
 
+/** Short allergen notice — avoids the previous full-width light “card” banner. */
 function CompactAllergenAlert({ section, t }) {
   if (!section?.items?.length) return null;
   const allergens = section.items.map((entry) => translateAllergenValue(t, entry.label));
+  const disclosure = translateInsightText(t, section.disclosure || "");
   return (
-    <div style={{ marginTop: 16, borderRadius: 18, border: "1px solid rgba(234,179,8,0.2)", background: "rgba(234,179,8,0.08)", padding: "14px 16px" }}>
-      <div style={{ fontSize: 11, lineHeight: 1.2, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 900, color: "#FBBF24", marginBottom: 8 }}>
-        {t("menuItemDetail.allergenAlert", "Allergen Alert")}
+    <div
+      style={{
+        marginTop: 12,
+        padding: "8px 12px",
+        borderRadius: 12,
+        border: "1px solid rgba(251, 191, 36, 0.22)",
+        background: "rgba(251, 191, 36, 0.05)",
+        maxWidth: 760,
+      }}
+    >
+      <div style={{ fontSize: 12, fontWeight: 700, color: "#FDE68A", lineHeight: 1.45 }}>
+        <span style={{ fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800, color: "rgba(253, 230, 138, 0.75)" }}>
+          {t("menuItemDetail.allergenNoticeShort", "Allergen")}
+        </span>
+        {" · "}
+        {t("menuItemDetail.likelyContainsAllergens", "Likely contains")} {allergens.join(", ")}
       </div>
-      <div style={{ fontSize: 15, lineHeight: 1.45, color: "#FDE68A", fontWeight: 800 }}>
-        Likely contains: {allergens.join(", ")}
-      </div>
-      <div style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.45, color: "#FCD34D" }}>
-        {translateInsightText(t, section.disclosure || "Confirm with the restaurant for allergy safety.")}
-      </div>
+      {disclosure ? (
+        <div style={{ marginTop: 6, fontSize: 11, lineHeight: 1.45, color: "#9CA3AF" }}>
+          {disclosure}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1011,11 +1026,14 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
   }, [activeSearchParams, geoLat, geoLng, itemId]);
 
   function handleCompare(similarEntry) {
+    if (!isSimilarRowCompareEligible(similarEntry)) return;
     setCompareData(null);
     setCompareError(null);
     setCompareLoading(true);
     setCompareOpen(true);
-    fetchCompareItems(itemId, similarEntry.id, geoLat || null, geoLng || null)
+    fetchCompareItems(itemId, similarEntry.id, geoLat || null, geoLng || null, {
+      skipEligibilityCheck: true,
+    })
       .then((data) => {
         setCompareData(data);
         setCompareLoading(false);
@@ -1086,25 +1104,27 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
                 >
                   {entry.name}
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => handleCompare(entry)}
-                  style={{
-                    flexShrink: 0,
-                    background: "rgba(34,197,94,0.09)",
-                    border: "1px solid rgba(34,197,94,0.2)",
-                    borderRadius: 999,
-                    padding: "5px 13px",
-                    fontSize: 12,
-                    fontWeight: 800,
-                    color: "#22C55E",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                    lineHeight: 1.4,
-                  }}
-                >
-                  Compare
-                </button>
+                {isSimilarRowCompareEligible(entry) ? (
+                  <button
+                    type="button"
+                    onClick={() => handleCompare(entry)}
+                    style={{
+                      flexShrink: 0,
+                      background: "rgba(34,197,94,0.09)",
+                      border: "1px solid rgba(34,197,94,0.2)",
+                      borderRadius: 999,
+                      padding: "5px 13px",
+                      fontSize: 12,
+                      fontWeight: 800,
+                      color: "#22C55E",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    Compare
+                  </button>
+                ) : null}
               </div>
 
               {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
@@ -1432,11 +1452,11 @@ export default function MenuItemDetailPage() {
             {hasNutritionData ? <CompactAllergenAlert section={detailSystem?.allergen_alerts} t={t} /> : null}
           </div>
 
-          {showItemPhoto ? (
-            <div style={{ minHeight: isMobile ? 280 : 100, borderRadius: 22, overflow: "hidden", border: "1px solid #1F2937", background: "#1A2419" }}>
-              <img src={item.itemPhotoUrl} alt={`${item.name} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-            </div>
-          ) : null}
+        {showItemPhoto ? (
+          <div style={{ minHeight: isMobile ? 280 : 100, borderRadius: 22, overflow: "hidden", border: "1px solid #1F2937", background: "#1A2419" }}>
+            <img src={item.itemPhotoUrl} alt={`${item.name} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </div>
+        ) : null}
         </div>
       </Surface>
 

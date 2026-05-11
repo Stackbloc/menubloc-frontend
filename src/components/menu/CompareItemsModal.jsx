@@ -5,6 +5,8 @@
  * Date: 2026-04-14
  * Purpose:
  *   Stable centered compare modal for side-by-side menu item comparison.
+ *   Callers should only open after eligibility is confirmed (see comparePolicy.js
+ *   and fetchCompareItems / fetchCompareEligibility in api.js).
  *   Fixes collapsed/clipped body rendering by using a simple modal layout:
  *   header + scrollable body + footer.
  * ============================================================

@@ -145,12 +145,35 @@ export async function createBmtCheckoutSession(token, body) {
 }
 
 /**
+ * Preflight: same canonical + primary-family gate as GET /menu-items/compare.
+ * Use before showing Compare when the row does not include compare_eligible from /similar.
+ */
+export async function fetchCompareEligibility(baseItemId, candidateItemId) {
+  const params = new URLSearchParams({
+    baseItemId: String(baseItemId),
+    candidateItemId: String(candidateItemId),
+  });
+  return apiGet(`/menu-items/compare/eligibility?${params.toString()}`);
+}
+
+/**
  * Fetch the compare payload for two menu items.
  * Calls GET /menu-items/compare?baseItemId=X&candidateItemId=Y[&lat=Z&lng=W]
+ *
+ * By default runs GET /menu-items/compare/eligibility first so incompatible pairs never load the heavy payload.
+ * Pass { skipEligibilityCheck: true } only when the caller already proved eligibility (e.g. similar row has compare_eligible === true).
  */
-export async function fetchCompareItems(baseItemId, candidateItemId, lat, lng) {
+export async function fetchCompareItems(baseItemId, candidateItemId, lat, lng, options = {}) {
+  if (!options.skipEligibilityCheck) {
+    const el = await fetchCompareEligibility(baseItemId, candidateItemId);
+    if (!el?.ok || el.eligible !== true) {
+      const err = new Error("These menu items cannot be compared.");
+      err.code = "COMPARE_INELIGIBLE";
+      throw err;
+    }
+  }
   const params = new URLSearchParams({
-    baseItemId:      String(baseItemId),
+    baseItemId: String(baseItemId),
     candidateItemId: String(candidateItemId),
   });
   if (lat != null) params.set("lat", String(lat));
@@ -173,5 +196,6 @@ export default {
   createBmtCheckoutSession,
   getOrder,
   toConsumerErrorMessage,
+  fetchCompareEligibility,
   fetchCompareItems,
 };
