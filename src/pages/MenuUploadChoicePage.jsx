@@ -104,9 +104,10 @@ const OPTIONS = [
   },
   {
     key: "ocr",
-    title: "Take a photo or upload a scan",
-    description: "Use your phone camera or upload menu images for the OCR path. PDFs still work too.",
-    meta: "Mobile-first: opens the rear camera on supported phones and keeps the upload attached to this restaurant signup.",
+    title: "Photograph the menu page (OCR)",
+    description:
+      "Clear photos of printed menu text and prices work best. This path is for menu pages, not photos of dishes. PDFs work too.",
+    meta: "Camera or gallery: capture the menu sheet so we can read wording and prices—not food photography.",
   },
 ];
 

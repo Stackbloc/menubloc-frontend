@@ -13,9 +13,9 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").repla
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const FONT = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
 
-/** OCR menu photo + server processing — staged UX (single round-trip; phases timed + milestone-based). */
+/** OCR from menu-page images + server processing — staged UX (menu text, not dish photos). */
 const OCR_PHASE_COPY = {
-  uploading_photo: { title: "Uploading photo…", sub: "Sending your picture securely." },
+  uploading_photo: { title: "Uploading menu page…", sub: "Sending your menu image securely." },
   reading_menu: { title: "Reading menu…", sub: "Opening your menu page on our servers." },
   extracting_text: { title: "Extracting menu text…", sub: "Pulling words and prices from the image." },
   structuring: { title: "Organizing menu items…", sub: "Grouping sections and dishes." },
@@ -547,7 +547,7 @@ export default function PdfUploadPage() {
     const allowed = isOcrFlow ? isImageFile(chosen) : isPdfFile(chosen);
     if (!allowed) {
       const message = isOcrFlow
-        ? "Choose a phone photo of the menu."
+        ? "Choose a clear photo of the menu page (text and prices), not a dish photo."
         : "Only PDF files are accepted.";
       setFileError(message);
       return { ok: false };
@@ -755,7 +755,7 @@ export default function PdfUploadPage() {
     }
 
     if (!file) {
-      setFileError(isOcrFlow ? "Please take a menu photo to begin the upload session." : "Please select a PDF file to upload.");
+      setFileError(isOcrFlow ? "Add at least one photo of a menu page (text and prices)." : "Please select a PDF file to upload.");
       return;
     }
 
@@ -923,10 +923,12 @@ export default function PdfUploadPage() {
         <div style={s.step(true, false)}>4. Upload menu</div>
       </div>
 
-      <div style={s.heading}>{isOcrFlow ? "Take a menu photo or upload a scan" : "Upload your menu PDF"}</div>
+      <div style={s.heading}>
+        {isOcrFlow ? "Photo or scan of the menu text" : "Upload your menu PDF"}
+      </div>
       <div style={s.subheading}>
         {isOcrFlow
-          ? "Upload one photo at a time."
+          ? "Photograph printed menu wording and prices—one page at a time. Not for photos of food."
           : "Upload a PDF menu. Multi-page PDFs are supported."}
       </div>
 
@@ -957,7 +959,7 @@ export default function PdfUploadPage() {
           role="button"
           tabIndex={0}
           aria-busy={isOcrFlow && uploading ? "true" : "false"}
-          aria-label={isOcrFlow ? "Tap to take a photo of the menu" : "Click or drag to upload PDF"}
+          aria-label={isOcrFlow ? "Tap to add a photo of menu text" : "Click or drag to upload PDF"}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
@@ -967,15 +969,15 @@ export default function PdfUploadPage() {
         >
           <div style={s.dropIcon}>{isOcrFlow ? "📷" : "📄"}</div>
           <div style={s.dropTitle}>
-            {isOcrFlow ? "Tap to take a photo of the menu" : "Click or drag to upload your menu PDF"}
+            {isOcrFlow ? "Tap to photograph menu text" : "Click or drag to upload your menu PDF"}
           </div>
           <div style={s.dropSub}>
             {isOcrFlow
-              ? "On phones, the camera opens when supported. Each photo is added to the same upload session."
+              ? "On phones, the camera opens when supported. Add one menu page per photo—show prices and dish names, not plated food."
               : "Select a PDF from your device or drag it into this box. Multi-page PDFs are supported."}
           </div>
           <div style={s.dropHint}>
-            {isOcrFlow ? "Accepted: phone photos, PNG/JPG, or WEBP" : "Accepted format: PDF only · Max file size: 20 MB"}
+            {isOcrFlow ? "Accepted: menu page photos (PNG/JPG/WEBP)" : "Accepted format: PDF only · Max file size: 20 MB"}
           </div>
           <input
             ref={fileInputRef}
@@ -1070,7 +1072,7 @@ export default function PdfUploadPage() {
           </div>
         ) : (
           <button type="submit" style={s.submitBtn(submitDisabled)} disabled={submitDisabled}>
-            {uploading ? "Working…" : isOcrFlow ? "Start menu photo upload" : "Upload PDF"}
+            {uploading ? "Working…" : isOcrFlow ? "Start menu page upload" : "Upload PDF"}
           </button>
         )}
       </form>

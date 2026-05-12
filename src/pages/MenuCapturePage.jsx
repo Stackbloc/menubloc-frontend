@@ -12,7 +12,7 @@ const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
 /** Match PdfUploadPage OCR messaging (timed phases during round-trip). */
 const OCR_PHASE_COPY = {
-  uploading_photo: { title: "Uploading photo…", sub: "Sending your picture securely." },
+  uploading_photo: { title: "Uploading menu page…", sub: "Sending your menu image securely." },
   reading_menu: { title: "Reading menu…", sub: "Opening your menu page on our servers." },
   extracting_text: { title: "Extracting menu text…", sub: "Pulling words and prices from the image." },
   structuring: { title: "Organizing menu items…", sub: "Grouping sections and dishes." },
@@ -316,7 +316,7 @@ export default function MenuCapturePage() {
 
   function goReview() {
     if (menuPageCount < 1) {
-      setErrorMsg("Add at least one photo of menu items.");
+      setErrorMsg("Add at least one photo of a menu page (text and prices).");
       return;
     }
     setErrorMsg("");
@@ -372,7 +372,7 @@ export default function MenuCapturePage() {
       }
       const itemsSaved = (Number(json.inserted_items) || 0) + (Number(json.updated_items) || 0);
       if (itemsSaved <= 0) {
-        throw new Error("No menu items were saved. Try clearer photos of the menu.");
+        throw new Error("No menu items were saved. Try clearer photos of the menu text or contact support.");
       }
       setPhase("success");
     } catch (err) {
@@ -447,7 +447,7 @@ export default function MenuCapturePage() {
           </h1>
           <p style={{ fontSize: 15, color: "#475569", margin: "0 0 28px", lineHeight: 1.65 }}>
             <strong>{restaurantName.trim()}</strong>: we saved{" "}
-            <strong>{menuPageCount}</strong> menu photo{menuPageCount !== 1 ? "s" : ""}
+            <strong>{menuPageCount}</strong> menu page{menuPageCount !== 1 ? "s" : ""}
             {hasRestaurantInfoPhoto ? " plus your restaurant details photo" : ""}. Thank you for contributing!
           </p>
           <button
@@ -645,7 +645,7 @@ export default function MenuCapturePage() {
                   cursor: "pointer",
                 }}
               >
-                Continue to menu photos
+                Continue to menu pages
               </button>
             </div>
           </>
@@ -654,7 +654,7 @@ export default function MenuCapturePage() {
         {phase === "step2" && (
           <>
             <p style={{ fontSize: 15, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>
-              Now take photos of the <strong>menu items</strong> (prices and dish names).
+              Now take photos of the <strong>menu listings</strong> (dish names and prices on the printed menu—not photos of food).
             </p>
             <input
               ref={menuInputRef}
@@ -676,7 +676,7 @@ export default function MenuCapturePage() {
                 fontWeight: 600,
               }}
             >
-              Menu photos added: {menuPageCount}
+              Menu pages added: {menuPageCount}
             </div>
             {menuThumbUrls.length > 0 && (
               <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 14, paddingBottom: 4 }}>
@@ -718,7 +718,7 @@ export default function MenuCapturePage() {
                 marginBottom: 10,
               }}
             >
-              + Add menu page / photo
+              + Add menu page photo
             </button>
             <button
               type="button"

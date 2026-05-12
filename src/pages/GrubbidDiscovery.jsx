@@ -1040,7 +1040,7 @@ export default function GrubbidDiscovery() {
               </button>
               <button
                 type="button"
-                aria-label="Add menu photo"
+                aria-label="Add photo of menu text"
                 onClick={() => navigate("/menu-capture")}
                 style={{
                   position: "absolute", right: 14, top: "50%",
