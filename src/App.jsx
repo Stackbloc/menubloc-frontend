@@ -195,6 +195,9 @@ function isPublicGrubbidHost() {
   const host = (window?.location?.hostname || "").toLowerCase();
   if (!host) return false;
   if (host === "grubbid.com" || host === "www.grubbid.com") return true;
+  // Consumer prod + previews (Vercel); GA stream is shared with Grubbid property.
+  if (host === "menuply.com" || host === "www.menuply.com") return true;
+  if (host.endsWith(".vercel.app")) return true;
   if (host === "localhost" || host === "127.0.0.1") return true;
   return false;
 }
@@ -263,6 +266,12 @@ function ensureGoogleAnalyticsLoaded() {
       ready: false,
       reason: "missing_measurement_id",
     });
+    if (publicHost && import.meta.env.PROD && typeof console !== "undefined" && !window.__grubbidGaMissingIdWarned) {
+      window.__grubbidGaMissingIdWarned = true;
+      console.warn(
+        "[GA4] VITE_GA_MEASUREMENT_ID was not set at build time. Add it in Vercel (Project → Settings → Environment Variables) for Production and Preview, then redeploy. Also confirm the value matches Admin → Data streams → Web → Measurement ID."
+      );
+    }
     return false;
   }
 
@@ -463,6 +472,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurants/:slugOrId/billboard" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantBillboard />} />
         <Route path="/restaurants/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantPublicPage />} />
         <Route path="/restaurants/:slugOrId/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
+        <Route path="/menu-template-preview" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/restaurant/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSingularRedirect />} />
 
         <Route path="/restaurant-profile/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantProfile />} />
