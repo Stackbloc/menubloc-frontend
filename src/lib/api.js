@@ -145,8 +145,8 @@ export async function createBmtCheckoutSession(token, body) {
 }
 
 /**
- * Preflight: same canonical + primary-family gate as GET /menu-items/compare.
- * Use before showing Compare when the row does not include compare_eligible from /similar.
+ * Preflight: same market gate as GET /menu-items/compare (items must be in the same city/state).
+ * Similar rows are already vetted; use when the caller does not have compare_eligible from /similar.
  */
 export async function fetchCompareEligibility(baseItemId, candidateItemId) {
   const params = new URLSearchParams({

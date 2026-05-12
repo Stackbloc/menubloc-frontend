@@ -1,9 +1,11 @@
 /**
  * Side-by-side compare policy (consumer app).
  *
- * Eligibility matches GET /menu-items/compare (canonical class + primary food family).
- * - Similar Items responses include `compare_eligible` per row — only show Compare when true.
- * - Elsewhere, call `fetchCompareEligibility` from api.js before offering Compare.
+ * Similar Items are pre-vetted by the backend pipeline; anything returned in `similar`
+ * is intended to be comparable. Rows include `compare_eligible: true` by contract.
+ *
+ * - Elsewhere (deep links), call `fetchCompareEligibility` from api.js before offering Compare;
+ *   it enforces the same market alignment as GET /menu-items/compare.
  * - `fetchCompareItems` runs an eligibility preflight unless you pass
  *   `{ skipEligibilityCheck: true }` after server-backed `compare_eligible === true`.
  */
