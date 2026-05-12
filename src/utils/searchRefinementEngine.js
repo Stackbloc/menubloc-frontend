@@ -1,3 +1,5 @@
+import { labelFromPrimaryFamily } from "../lib/foodIdentityDisplay.js";
+
 export const WAITER_INITIAL_MIN_RESULTS = 16;
 export const WAITER_CONTINUATION_MIN_RESULTS = 6;
 export const WAITER_MIN_OPTIONS = 2;
@@ -301,7 +303,10 @@ function buildFamilyGroup(entries, selectedRefinements) {
   const options = Array.from(familyCounts.entries())
     .filter(([family]) => !hasSelectedRefinement(selectedRefinements, "family", family))
     .map(([family, count]) => {
-      const label = FAMILY_LABELS[family] || titleCase(family.replace(/_/g, " "));
+      const label =
+        labelFromPrimaryFamily(family) ||
+        FAMILY_LABELS[family] ||
+        titleCase(family.replace(/_/g, " "));
       return makeOption("family", family, label, count, `${label} cuisine items`);
     })
     .filter((option) => optionIsMeaningful(option.count, entries.length))

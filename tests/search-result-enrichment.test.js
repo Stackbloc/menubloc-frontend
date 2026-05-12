@@ -20,12 +20,56 @@ test("buildWhyMatchLabel prefers match_reasons_v1", () => {
   assert.equal(label, "40g protein");
 });
 
-test("buildWhyMatchLabel falls back to template_name", () => {
+test("buildWhyMatchLabel prefers primary_family over template slug noise", () => {
   const label = buildWhyMatchLabel(
-    { match_reasons_v1: [], match_reasons_structured: [], match_reasons: [], template_name: "crispy_chicken_sandwich" },
+    {
+      match_reasons_v1: [],
+      match_reasons_structured: [],
+      match_reasons: [],
+      primary_family: "breaded_chicken",
+      template_name: "fried_chicken_sandwich",
+    },
     {}
   );
-  assert.ok(/crispy/i.test(label) && /sandwich/i.test(label));
+  assert.equal(label, "Breaded Chicken");
+});
+
+test("buildWhyMatchLabel skips ontology canonical reasons when primary_family is set", () => {
+  assert.equal(
+    buildWhyMatchLabel(
+      {
+        match_reasons_v1: [{ type: "canonical", label: "Crispy-style prep", priority: 1 }],
+        primary_family: "burger",
+      },
+      {}
+    ),
+    "Burger"
+  );
+});
+
+test("buildWhyMatchLabel uses broader identity when template confidence is low", () => {
+  assert.equal(
+    buildWhyMatchLabel(
+      {
+        match_reasons_v1: [],
+        primary_family: "breaded_chicken",
+        template_confidence_score: 0.2,
+      },
+      {}
+    ),
+    "Chicken"
+  );
+  assert.equal(
+    buildWhyMatchLabel(
+      {
+        match_reasons_v1: [],
+        primary_family: "breaded_chicken",
+        template_confidence_score: 0.9,
+      },
+      {}
+    ),
+    "Breaded Chicken"
+  );
 });
 
 test("buildNutritionPreviewChips omits missing values", () => {

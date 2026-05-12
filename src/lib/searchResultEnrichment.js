@@ -1,9 +1,17 @@
 /**
  * Search result card enrichment — pure helpers over existing API fields only.
  * No ranking, parsing, or schema changes.
+ *
+ * Match-line identity: consumer-safe labels only — never ontology fallbacks,
+ * similarity tiers, or structural compatibility jargon ({@link foodIdentityDisplay.js}).
  */
 
-"use strict";
+import {
+  hasLowIdentityConfidence,
+  isLeakyOntologyLabel,
+  labelFromPrimaryFamily,
+  labelFromStrictType,
+} from "./foodIdentityDisplay.js";
 
 function asNum(value) {
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
@@ -38,6 +46,15 @@ function toTitleWords(s) {
     .join(" ");
 }
 
+/** Query-aligned match reasons — OK on the Match strip before canonical identity. */
+const USER_QUERY_MATCH_TYPES = new Set(["nutrient", "dietary", "ingredient", "price"]);
+
+function sanitizeIdentityCandidate(raw) {
+  const t = asStr(raw);
+  if (!t || isLeakyOntologyLabel(t)) return null;
+  return t.length > 120 ? t.slice(0, 120) : t;
+}
+
 function getNutritionChip(row) {
   if (row?.chips?.nutrition_chip) return row.chips.nutrition_chip;
   if (row?.item?.chips?.nutrition_chip) return row.item.chips.nutrition_chip;
@@ -52,6 +69,8 @@ function getPairingsChip(row) {
 
 /**
  * Best single "why matched" label for the intelligence strip.
+ * Prefers query-aligned reasons (nutrition, diet, ingredient, price), then
+ * canonical identity from primary_family — never ontology canonical noise.
  */
 export function buildWhyMatchLabel(row, queryMeta) {
   const v1 = Array.isArray(row?.match_reasons_v1)
@@ -61,9 +80,17 @@ export function buildWhyMatchLabel(row, queryMeta) {
       : [];
   if (v1.length) {
     const sorted = [...v1].sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99));
-    const label = sorted[0]?.label;
-    if (label) return asStr(label);
+    for (const r of sorted) {
+      const typ = asStr(r?.type).toLowerCase();
+      const lab = sanitizeIdentityCandidate(r?.label);
+      if (!lab) continue;
+      if (USER_QUERY_MATCH_TYPES.has(typ)) return lab;
+    }
   }
+
+  const identityOpts = { lowConfidence: hasLowIdentityConfidence(row) };
+  const identityFromFamily = labelFromPrimaryFamily(pick(row, ["primary_family"], ""), identityOpts);
+  if (identityFromFamily) return identityFromFamily;
 
   const structured = Array.isArray(row?.match_reasons_structured)
     ? row.match_reasons_structured
@@ -72,7 +99,9 @@ export function buildWhyMatchLabel(row, queryMeta) {
       : [];
   for (const s of structured) {
     const token = s?.token ?? s?.label ?? s?.term;
-    if (token) return toTitleWords(token);
+    if (!token) continue;
+    const candidate = toTitleWords(token);
+    if (!isLeakyOntologyLabel(candidate)) return candidate;
   }
 
   const legacy = Array.isArray(row?.match_reasons)
@@ -86,17 +115,24 @@ export function buildWhyMatchLabel(row, queryMeta) {
     if (/^ingredient match:/i.test(t)) continue;
     if (/^inferred ingredient/i.test(t)) continue;
     const shortened = t.replace(/^[^:]+:\s*/, "").trim();
-    return (shortened || t).slice(0, 120);
+    const cand = (shortened || t).slice(0, 120);
+    if (!isLeakyOntologyLabel(cand)) return cand;
   }
 
   const templateName = pick(row, ["template_name", "menu_template_name"], "");
-  if (templateName) return toTitleWords(templateName);
+  if (templateName) {
+    const titled = toTitleWords(templateName);
+    if (!isLeakyOntologyLabel(titled)) return titled;
+  }
 
-  const primaryFamily = pick(row, ["primary_family"], "");
-  if (primaryFamily) return toTitleWords(primaryFamily);
+  const strictMapped = labelFromStrictType(pick(row, ["strict_type"], ""), identityOpts);
+  if (strictMapped) return strictMapped;
 
-  const strictType = pick(row, ["strict_type"], "");
-  if (strictType) return toTitleWords(strictType);
+  const strictRaw = pick(row, ["strict_type"], "");
+  if (strictRaw) {
+    const titled = toTitleWords(strictRaw);
+    if (!isLeakyOntologyLabel(titled)) return titled;
+  }
 
   return null;
 }
