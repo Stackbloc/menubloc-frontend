@@ -138,9 +138,14 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
       expires_at: form.expires_at,
       menu_item_id: form.menu_item_id || undefined,
     };
-    if (form.deal_type === "percent_off") p.discount_percent = parseFloat(form.discount_percent) || null;
-    if (form.deal_type === "amount_off")  p.discount_amount_cents = Math.round((parseFloat(form.discount_amount_cents) || 0) * 100);
-    if (form.deal_type === "fixed_price") p.fixed_price_cents = Math.round((parseFloat(form.fixed_price_cents) || 0) * 100);
+    // Backend buildDealFields reads `body.value`:
+    // percent_off → value is the percent integer (e.g. 20)
+    // amount_off  → value is dollars (e.g. 3.00); backend multiplies by 100
+    // fixed_price → value is dollars (e.g. 9.99); backend multiplies by 100
+    // Form state stores dollars for amount_off/fixed_price (initialized as cents/100).
+    if (form.deal_type === "percent_off") p.value = parseFloat(form.discount_percent) || null;
+    if (form.deal_type === "amount_off")  p.value = parseFloat(form.discount_amount_cents) || null;
+    if (form.deal_type === "fixed_price") p.value = parseFloat(form.fixed_price_cents) || null;
     return p;
   }
 
