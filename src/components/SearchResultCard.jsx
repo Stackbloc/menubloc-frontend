@@ -83,6 +83,7 @@ function SearchBillboardBanner({ billboard }) {
           <img
             src={billboard.image_url}
             alt={billboard.image_alt_text || headline}
+            loading="lazy"
             style={{ width: "100%", height: "100%", objectFit: billboard.image_fit || "cover", display: "block" }}
           />
         )}
