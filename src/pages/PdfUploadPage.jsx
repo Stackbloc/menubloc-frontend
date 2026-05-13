@@ -782,9 +782,8 @@ export default function PdfUploadPage() {
 
     if (isOcrFlow && capturedPages.length > 0) {
       setUploading(true);
-      setOcrProgressPhase("processing");
+      setOcrProgressPhase("finalizing");
       setUploadErr("");
-      setFinishProgress({ processed: 0, total: capturedPages.length });
 
       try {
         const sessionForFinish = String(uploadSessionIdRef.current || uploadSessionId || "").trim();
@@ -811,6 +810,7 @@ export default function PdfUploadPage() {
           throw err;
         }
 
+        // Legacy synchronous fast-path: backend already finished and returned counts inline.
         if (startData.result) {
           const itemsSaved =
             (Number(startData.result.inserted_items) || 0) +
@@ -824,60 +824,18 @@ export default function PdfUploadPage() {
           return;
         }
 
-        if (Number(startData.total_pages) > 0) {
-          setFinishProgress({ processed: 0, total: Number(startData.total_pages) });
-        }
-
-        const statusUrl = new URL(`${API}/uploads/menu-session/${sessionForFinish}/finish-status`);
-        statusUrl.searchParams.set("restaurant_id", String(restaurant_id));
-        statusUrl.searchParams.set("email", email);
-        statusUrl.searchParams.set("owner_token", owner_token);
-
-        let pollResult = null;
-        const startedAt = Date.now();
-        const maxWaitMs = 8 * 60 * 1000;
-
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          if (Date.now() - startedAt > maxWaitMs) {
-            throw new Error("Menu processing is taking longer than expected. Please refresh and try again.");
-          }
-          await new Promise((r) => setTimeout(r, 1500));
-          const r = await fetch(statusUrl.toString(), { method: "GET" });
-          const j = await r.json().catch(() => null);
-          if (!r.ok || !j?.ok) {
-            const err = new Error(j?.error || `Status check failed (${r.status})`);
-            err.status = r.status;
-            throw err;
-          }
-          if (j.found) {
-            if (typeof j.processed === "number" && typeof j.total === "number" && j.total > 0) {
-              setFinishProgress({ processed: j.processed, total: j.total });
-            }
-            if (j.done) {
-              if (j.error) {
-                const err = new Error(j.error);
-                throw err;
-              }
-              pollResult = j.result;
-              break;
-            }
-          }
-        }
-
-        if (!pollResult) {
-          throw new Error("Menu processing finished without a result. Please try again.");
-        }
-
-        const itemsSaved =
-          (Number(pollResult.inserted_items) || 0) + (Number(pollResult.updated_items) || 0);
-        if (itemsSaved <= 0) {
-          throw new Error(
-            "Upload finished but no menu items were saved. Try clearer photos or contact support."
-          );
-        }
-
-        setResult(pollResult);
+        // Async path (default): backend accepted the job and is processing in the background.
+        // Do NOT block the user; surface a "submitted" success screen immediately so they can
+        // close the phone and walk away. Backend keeps processing via /finish-status.
+        const submittedTotal =
+          Number(startData.total_pages) > 0
+            ? Number(startData.total_pages)
+            : capturedPages.length;
+        setResult({
+          pending: true,
+          page_count: submittedTotal,
+          total_pages: submittedTotal,
+        });
         return;
       } catch (error) {
         const status = error?.status ?? error?.cause?.status;
@@ -967,37 +925,53 @@ export default function PdfUploadPage() {
 
         <div style={s.successBox}>
           <div style={s.successIcon}>✓</div>
-          {(() => {
-            const pageCount = Number(result.page_count || result.pages || 0) || 0;
-            const itemsProcessed =
-              (Number(result.inserted_items) || 0) + (Number(result.updated_items) || 0);
-            const summaryParts = [];
-            if (pageCount > 0) summaryParts.push(`${pageCount} page${pageCount === 1 ? "" : "s"}`);
-            if (itemsProcessed > 0) {
-              summaryParts.push(`${itemsProcessed} item${itemsProcessed === 1 ? "" : "s"} processed`);
-            }
-            const dash = summaryParts.length ? ` — ${summaryParts.join(", ")}` : "";
-            return (
-              <>
-                <div style={s.successTitle}>{`Menu uploaded successfully${dash}.`}</div>
-                <p style={s.successSub}>
-                  Your menu is being reviewed. Once approved, it will appear on your Menuply profile.
-                </p>
-              </>
-            );
-          })()}
-          <Link to={`/restaurant-profile/${restaurant_id}`} style={s.profileLink}>
-            Go to your restaurant profile
-          </Link>
-          <div style={s.pendingNote}>
-            {result.text_length > 0 && `${result.text_length.toLocaleString()} characters extracted · `}
-            {(Number(result.inserted_items) > 0 || Number(result.updated_items) > 0) && (
-              <>
-                {Number(result.inserted_items) || 0} new / {Number(result.updated_items) || 0} updated ·{" "}
-              </>
-            )}
-            Menu status: <strong>pending review</strong>
-          </div>
+          {result.pending ? (
+            <>
+              <div style={s.successTitle}>
+                {`Got it — ${result.page_count || 0} page${(result.page_count || 0) === 1 ? "" : "s"} submitted.`}
+              </div>
+              <p style={s.successSub}>
+                You can close this page now. We're processing your menu in the background; it will
+                appear on your Menuply profile once review is complete — usually within a few minutes.
+                No need to wait here.
+              </p>
+              <Link to={`/restaurant-profile/${restaurant_id}`} style={s.profileLink}>
+                Go to your restaurant profile
+              </Link>
+            </>
+          ) : (
+            <>
+              {(() => {
+                const pageCount = Number(result.page_count || result.pages || 0) || 0;
+                const itemsProcessed =
+                  (Number(result.inserted_items) || 0) + (Number(result.updated_items) || 0);
+                const summaryParts = [];
+                if (pageCount > 0) summaryParts.push(`${pageCount} page${pageCount === 1 ? "" : "s"}`);
+                if (itemsProcessed > 0) {
+                  summaryParts.push(`${itemsProcessed} item${itemsProcessed === 1 ? "" : "s"} processed`);
+                }
+                const dash = summaryParts.length ? ` — ${summaryParts.join(", ")}` : "";
+                return (
+                  <>
+                    <div style={s.successTitle}>{`Menu uploaded successfully${dash}.`}</div>
+                    <p style={s.successSub}>
+                      Your menu is being reviewed. Once approved, it will appear on your Menuply profile.
+                    </p>
+                  </>
+                );
+              })()}
+              <Link to={`/restaurant-profile/${restaurant_id}`} style={s.profileLink}>
+                Go to your restaurant profile
+              </Link>
+              <div style={s.pendingNote}>
+                {result.text_length > 0 && `${result.text_length.toLocaleString()} characters extracted · `}
+                {(Number(result.inserted_items) > 0 || Number(result.updated_items) > 0) && (
+                  <>
+                    {Number(result.inserted_items) || 0} new / {Number(result.updated_items) || 0} updated ·{" "}
+                  </>
+                )}
+                Menu status: <strong>pending review</strong>
+              </div>
           {(() => {
             const q = result.ingestion_quality_summary;
             if (!q || typeof q !== "object") return null;
@@ -1055,6 +1029,8 @@ export default function PdfUploadPage() {
               </div>
             );
           })()}
+            </>
+          )}
         </div>
 
         {chosenStyle ? (
