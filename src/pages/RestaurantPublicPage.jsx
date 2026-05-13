@@ -34,6 +34,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import RestaurantBillboardStrip from "../components/RestaurantBillboardStrip.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import {
@@ -138,29 +139,6 @@ function buildRestaurantBaseHref(slugOrId) {
 
 function buildRestaurantBillboardHref(slugOrId) {
   return `${buildRestaurantBaseHref(slugOrId)}/billboard`;
-}
-
-function formatBillboardStatusLabel(status) {
-  const value = String(status || "").trim().toLowerCase();
-  if (!value) return "Current";
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function formatBillboardDateRange(startsAt, endsAt) {
-  if (!startsAt && !endsAt) return "";
-
-  const formatter = new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-
-  const startText = startsAt ? formatter.format(new Date(startsAt)) : "";
-  const endText = endsAt ? formatter.format(new Date(endsAt)) : "";
-
-  if (startText && endText) return `${startText} - ${endText}`;
-  return startText || endText;
 }
 
 function detectFoodTruck(data) {
@@ -1204,78 +1182,13 @@ export default function RestaurantPublicPage() {
             <>
               <Divider isDark={isDark} />
               <SectionLabel color={t.sectionColor}>Billboard</SectionLabel>
-              <div style={{ display: "grid", gap: 12 }}>
-                {billboardPreview.length > 0 ? (
-                  billboardPreview.map((post) => {
-                    const dateRange = formatBillboardDateRange(post.starts_at, post.ends_at);
-                    return (
-                      <div
-                        key={post.id}
-                        style={{
-                          padding: "14px 16px",
-                          borderRadius: 12,
-                          background: isDark ? "rgba(34,197,94,0.08)" : "#f0fdf4",
-                          border: isDark ? "1px solid rgba(34,197,94,0.20)" : "1px solid #bbf7d0",
-                          display: "grid",
-                          gap: 8,
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a" }}>
-                            {post.title}
-                          </div>
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              minHeight: 24,
-                              padding: "0 10px",
-                              borderRadius: 999,
-                              background: post.status === "past"
-                                ? (isDark ? "rgba(148,163,184,0.16)" : "#e2e8f0")
-                                : post.status === "upcoming"
-                                ? (isDark ? "rgba(250,204,21,0.16)" : "#fef3c7")
-                                : (isDark ? "rgba(34,197,94,0.16)" : "#dcfce7"),
-                              color: post.status === "past"
-                                ? (isDark ? "#cbd5e1" : "#475569")
-                                : post.status === "upcoming"
-                                ? (isDark ? "#fde68a" : "#92400e")
-                                : (isDark ? "#86efac" : "#166534"),
-                              fontSize: 12,
-                              fontWeight: 800,
-                            }}
-                          >
-                            {formatBillboardStatusLabel(post.status)}
-                          </span>
-                        </div>
-                        {post.body ? (
-                          <div style={{ fontSize: 13, lineHeight: 1.55, color: muted }}>
-                            {post.body}
-                          </div>
-                        ) : null}
-                        {dateRange ? (
-                          <div style={{ fontSize: 12, fontWeight: 600, color: muted }}>
-                            {dateRange}
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div
-                    style={{
-                      padding: "14px 16px",
-                      borderRadius: 12,
-                      background: isDark ? "rgba(255,255,255,0.03)" : "#f8fafc",
-                      border: isDark ? "1px dashed rgba(255,255,255,0.12)" : "1px dashed #cbd5e1",
-                      color: muted,
-                      fontSize: 14,
-                    }}
-                  >
-                    No billboard updates yet.
-                  </div>
-                )}
-
+              <RestaurantBillboardStrip
+                posts={billboardPreview}
+                isDark={isDark}
+                isMobile={isMobile}
+                muted={muted}
+              />
+              <div style={{ marginTop: 12 }}>
                 <Link
                   to={billboardHref}
                   style={{
