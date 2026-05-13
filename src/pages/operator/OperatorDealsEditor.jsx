@@ -9,6 +9,7 @@
  *   • "New Deal" slide-in form
  *   • Item picker (type-ahead search from menu items)
  *   • Publish / Pause / Delete per row
+ *   • "Feature as Billboard" section — promotes a deal as a display billboard
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -28,6 +29,7 @@ const INPUT = {
   fontFamily: "inherit",
   boxSizing: "border-box",
 };
+const LABEL = { fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 };
 const BTN = (variant = "primary", extra = {}) => ({
   padding: "8px 16px",
   fontSize: 13,
@@ -87,7 +89,9 @@ function formatDate(iso) {
 }
 
 // ── Deal form panel ────────────────────────────────────────────────────────
-function DealForm({ allItems, initial = {}, onSave, onCancel, busy }) {
+// onSave receives (dealPayload, billboardPayload)
+// billboardPayload: { enabled: false } | { enabled: true, headline_override, image_url, cta_label, cta_url, is_primary_search_billboard }
+function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onCancel, busy }) {
   const [form, setForm] = useState({
     title: initial.title || "",
     description: initial.description || "",
@@ -105,7 +109,19 @@ function DealForm({ allItems, initial = {}, onSave, onCancel, busy }) {
   });
   const [itemSearch, setItemSearch] = useState(initial.item_name || "");
 
-  const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
+  // Billboard section state
+  const existingActive = initialBillboard?.billboard_status === "active";
+  const [billboardEnabled, setBillboardEnabled] = useState(existingActive);
+  const [bb, setBb] = useState({
+    headline_override:          initialBillboard?.headline_override || "",
+    image_url:                  initialBillboard?.image_url || "",
+    cta_label:                  initialBillboard?.cta_label || "",
+    cta_url:                    initialBillboard?.cta_url || "",
+    is_primary_search_billboard: initialBillboard?.is_primary_search_billboard || false,
+  });
+
+  const f    = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
+  const bb_f = (k) => (e) => setBb(p => ({ ...p, [k]: e.target.value }));
 
   const filteredItems = allItems.filter(i =>
     !itemSearch.trim() ||
@@ -128,6 +144,18 @@ function DealForm({ allItems, initial = {}, onSave, onCancel, busy }) {
     return p;
   }
 
+  function buildBillboardPayload() {
+    if (!billboardEnabled) return { enabled: false };
+    return {
+      enabled: true,
+      headline_override:          bb.headline_override.trim() || null,
+      image_url:                  bb.image_url.trim() || null,
+      cta_label:                  bb.cta_label.trim() || null,
+      cta_url:                    bb.cta_url.trim() || null,
+      is_primary_search_billboard: bb.is_primary_search_billboard,
+    };
+  }
+
   const valid = form.title && form.description && form.expires_at && form.menu_item_id;
 
   return (
@@ -147,17 +175,17 @@ function DealForm({ allItems, initial = {}, onSave, onCancel, busy }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div style={{ gridColumn: "1 / -1" }}>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Title *</label>
+          <label style={LABEL}>Title *</label>
           <input style={{ ...INPUT, width: "100%" }} value={form.title} onChange={f("title")} placeholder="e.g. Happy Hour Special" />
         </div>
         <div style={{ gridColumn: "1 / -1" }}>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Description *</label>
+          <label style={LABEL}>Description *</label>
           <input style={{ ...INPUT, width: "100%" }} value={form.description} onChange={f("description")} placeholder="Short description shown to customers" />
         </div>
 
         {/* Item picker */}
         <div style={{ gridColumn: "1 / -1" }}>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Menu item *</label>
+          <label style={LABEL}>Menu item *</label>
           <input
             style={{ ...INPUT, width: "100%", marginBottom: 6 }}
             value={itemSearch}
@@ -196,7 +224,7 @@ function DealForm({ allItems, initial = {}, onSave, onCancel, busy }) {
 
         {/* Deal type */}
         <div>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Deal type</label>
+          <label style={LABEL}>Deal type</label>
           <select style={{ ...INPUT, width: "100%", cursor: "pointer" }} value={form.deal_type} onChange={f("deal_type")}>
             {DEAL_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
@@ -205,31 +233,114 @@ function DealForm({ allItems, initial = {}, onSave, onCancel, busy }) {
         {/* Conditional discount field */}
         {form.deal_type === "percent_off" && (
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Discount %</label>
+            <label style={LABEL}>Discount %</label>
             <input style={{ ...INPUT, width: "100%" }} type="number" min="1" max="100" value={form.discount_percent} onChange={f("discount_percent")} placeholder="e.g. 20" />
           </div>
         )}
         {form.deal_type === "amount_off" && (
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Discount $</label>
+            <label style={LABEL}>Discount $</label>
             <input style={{ ...INPUT, width: "100%" }} type="number" min="0" step="0.01" value={form.discount_amount_cents} onChange={f("discount_amount_cents")} placeholder="e.g. 3.00" />
           </div>
         )}
         {form.deal_type === "fixed_price" && (
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Fixed price $</label>
+            <label style={LABEL}>Fixed price $</label>
             <input style={{ ...INPUT, width: "100%" }} type="number" min="0" step="0.01" value={form.fixed_price_cents} onChange={f("fixed_price_cents")} placeholder="e.g. 9.99" />
           </div>
         )}
 
         <div>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Start date</label>
+          <label style={LABEL}>Start date</label>
           <input style={{ ...INPUT, width: "100%" }} type="date" value={form.starts_at} onChange={f("starts_at")} />
         </div>
         <div>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Expires *</label>
+          <label style={LABEL}>Expires *</label>
           <input style={{ ...INPUT, width: "100%" }} type="date" value={form.expires_at} onChange={f("expires_at")} />
         </div>
+      </div>
+
+      {/* ── Feature as Billboard section ──────────────────────────────── */}
+      <div style={{ borderTop: "1.5px solid #e4e9f0", paddingTop: 16, marginTop: 2 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={billboardEnabled}
+            onChange={e => setBillboardEnabled(e.target.checked)}
+            style={{ width: 15, height: 15, cursor: "pointer", accentColor: "#1F4E3D" }}
+          />
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#0f1720" }}>Feature this deal as a billboard</span>
+        </label>
+
+        {billboardEnabled && (
+          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontSize: 12, color: "#8a9ab0", lineHeight: 1.5 }}>
+              These settings control how this deal appears in your restaurant profile and search results.
+              All fields are optional — defaults use the deal title and description above.
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={LABEL}>
+                  Headline{" "}
+                  <span style={{ fontWeight: 400, color: "#b0bbc8" }}>(optional — defaults to deal title)</span>
+                </label>
+                <input
+                  style={{ ...INPUT, width: "100%" }}
+                  value={bb.headline_override}
+                  onChange={bb_f("headline_override")}
+                  placeholder={form.title || "Deal title"}
+                />
+              </div>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={LABEL}>
+                  Image URL{" "}
+                  <span style={{ fontWeight: 400, color: "#b0bbc8" }}>(optional)</span>
+                </label>
+                <input
+                  style={{ ...INPUT, width: "100%" }}
+                  value={bb.image_url}
+                  onChange={bb_f("image_url")}
+                  placeholder="https://…"
+                />
+              </div>
+              <div>
+                <label style={LABEL}>
+                  CTA label{" "}
+                  <span style={{ fontWeight: 400, color: "#b0bbc8" }}>(optional)</span>
+                </label>
+                <input
+                  style={{ ...INPUT, width: "100%" }}
+                  value={bb.cta_label}
+                  onChange={bb_f("cta_label")}
+                  placeholder="e.g. Get this deal"
+                />
+              </div>
+              <div>
+                <label style={LABEL}>
+                  CTA URL{" "}
+                  <span style={{ fontWeight: 400, color: "#b0bbc8" }}>(optional)</span>
+                </label>
+                <input
+                  style={{ ...INPUT, width: "100%" }}
+                  value={bb.cta_url}
+                  onChange={bb_f("cta_url")}
+                  placeholder="https://…"
+                />
+              </div>
+            </div>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={bb.is_primary_search_billboard}
+                onChange={e => setBb(p => ({ ...p, is_primary_search_billboard: e.target.checked }))}
+                style={{ width: 14, height: 14, cursor: "pointer", accentColor: "#1F4E3D" }}
+              />
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#0f1720" }}>Show in search results</span>
+            </label>
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -237,7 +348,7 @@ function DealForm({ allItems, initial = {}, onSave, onCancel, busy }) {
         <button
           style={{ ...BTN("primary"), opacity: (busy || !valid) ? 0.6 : 1 }}
           disabled={busy || !valid}
-          onClick={() => onSave(buildPayload())}
+          onClick={() => onSave(buildPayload(), buildBillboardPayload())}
           type="button"
         >
           {busy ? "Saving…" : initial.id ? "Save changes" : "Create deal"}
@@ -249,6 +360,7 @@ function DealForm({ allItems, initial = {}, onSave, onCancel, busy }) {
 
 // ── Deal row ───────────────────────────────────────────────────────────────
 function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy }) {
+  const isFeatured = deal.billboard_status === "active";
   return (
     <div style={{
       background: "#fff",
@@ -273,6 +385,15 @@ function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy }) {
           <span style={{ fontSize: 11, color: "#b0bbc8" }}>
             {formatDate(deal.starts_at)} – {formatDate(deal.expires_at)}
           </span>
+          {isFeatured && (
+            <span style={{
+              background: "#fef3c7", color: "#92400e",
+              borderRadius: 999, padding: "2px 8px",
+              fontSize: 10, fontWeight: 700, letterSpacing: 0.3,
+            }}>
+              Featured
+            </span>
+          )}
         </div>
       </div>
 
@@ -294,7 +415,7 @@ function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy }) {
               Resume
             </button>
           )}
-          <button style={{ ...BTN("ghost"), fontSize: 12, padding: "4px 10px" }} onClick={() => onEdit(deal)}>
+          <button style={{ ...BTN("ghost"), fontSize: 12, padding: "4px 10px" }} onClick={() => onEdit(deal)} disabled={busy}>
             Edit
           </button>
           <button style={{ ...BTN("danger"), fontSize: 12, padding: "4px 10px" }} onClick={() => onDelete(deal)} disabled={busy}>
@@ -311,14 +432,15 @@ export default function OperatorDealsEditor() {
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
 
-  const [deals, setDeals]         = useState([]);
-  const [allItems, setAllItems]   = useState([]);
+  const [deals, setDeals]               = useState([]);
+  const [allItems, setAllItems]         = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState("");
-  const [showForm, setShowForm]   = useState(false);
-  const [editingDeal, setEditingDeal] = useState(null);
-  const [busy, setBusy]           = useState(false);
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState("");
+  const [showForm, setShowForm]         = useState(false);
+  const [editingDeal, setEditingDeal]   = useState(null);
+  const [editingBillboard, setEditingBillboard] = useState(null);
+  const [busy, setBusy]                 = useState(false);
 
   const loadDeals = useCallback(async () => {
     if (!rid) return;
@@ -339,23 +461,28 @@ export default function OperatorDealsEditor() {
   // Load all menu items for the item picker
   useEffect(() => {
     if (!rid) return;
-    // Get all menus first, then items from each
     api.getMenus(rid).then(async d => {
       const menus = d.menus || [];
       const itemArrays = await Promise.all(
         menus.map(m => api.getMenuItems(rid, m.id).then(r => r.items || []).catch(() => []))
       );
       const all = itemArrays.flat();
-      // Dedupe by id
       const seen = new Set();
       setAllItems(all.filter(i => { if (seen.has(i.id)) return false; seen.add(i.id); return true; }));
     }).catch(() => {});
   }, [rid]);
 
-  async function handleCreate(payload) {
+  async function handleCreate(payload, billboardPayload) {
     setBusy(true);
     try {
-      await api.createDeal(rid, payload);
+      const result = await api.createDeal(rid, payload);
+      if (billboardPayload?.enabled && result.deal?.id) {
+        try {
+          await api.upsertDealBillboard(rid, result.deal.id, billboardPayload);
+        } catch (billboardErr) {
+          setError(`Deal created but billboard could not be saved: ${billboardErr.message}`);
+        }
+      }
       setShowForm(false);
       loadDeals();
     } catch (e) {
@@ -365,11 +492,42 @@ export default function OperatorDealsEditor() {
     }
   }
 
-  async function handleEditSave(payload) {
+  async function handleEdit(deal) {
+    setShowForm(false);
+    setEditingBillboard(null);
+    setBusy(true);
+    try {
+      const data = await api.getDealBillboard(rid, deal.id);
+      setEditingBillboard(data.billboard || null);
+    } catch {
+      setEditingBillboard(null);
+    } finally {
+      setBusy(false);
+      setEditingDeal(deal);
+    }
+  }
+
+  async function handleEditSave(payload, billboardPayload) {
     setBusy(true);
     try {
       await api.updateDeal(rid, editingDeal.id, payload);
+
+      if (billboardPayload?.enabled) {
+        try {
+          await api.upsertDealBillboard(rid, editingDeal.id, billboardPayload);
+        } catch (billboardErr) {
+          setError(`Deal saved but billboard could not be updated: ${billboardErr.message}`);
+        }
+      } else if (billboardPayload?.enabled === false) {
+        try {
+          await api.removeDealBillboard(rid, editingDeal.id);
+        } catch {
+          // Non-fatal — billboard may not have existed
+        }
+      }
+
       setEditingDeal(null);
+      setEditingBillboard(null);
       loadDeals();
     } catch (e) {
       setError(e.message);
@@ -431,7 +589,6 @@ export default function OperatorDealsEditor() {
     <OperatorLayout title="Deals">
       {/* ── Top bar ──────────────────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        {/* Status filter pills */}
         <div style={{ display: "flex", gap: 6 }}>
           {STATUS_FILTERS.map(s => (
             <button
@@ -457,7 +614,7 @@ export default function OperatorDealsEditor() {
 
         <button
           style={{ ...BTN("primary"), marginLeft: "auto" }}
-          onClick={() => { setShowForm(v => !v); setEditingDeal(null); }}
+          onClick={() => { setShowForm(v => !v); setEditingDeal(null); setEditingBillboard(null); }}
         >
           + New deal
         </button>
@@ -490,8 +647,9 @@ export default function OperatorDealsEditor() {
         <DealForm
           allItems={allItems}
           initial={editingDeal}
+          initialBillboard={editingBillboard}
           onSave={handleEditSave}
-          onCancel={() => setEditingDeal(null)}
+          onCancel={() => { setEditingDeal(null); setEditingBillboard(null); }}
           busy={busy}
         />
       )}
@@ -520,7 +678,7 @@ export default function OperatorDealsEditor() {
             <DealRow
               key={deal.id}
               deal={deal}
-              onEdit={(d) => { setEditingDeal(d); setShowForm(false); }}
+              onEdit={handleEdit}
               onPublish={handlePublish}
               onPause={handlePause}
               onDelete={handleDelete}

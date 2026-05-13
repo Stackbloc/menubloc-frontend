@@ -147,6 +147,9 @@ export const updateDeal = (rid, did, body) => patch(`/operator/restaurants/${rid
 export const publishDeal = (rid, did) => post(`/operator/restaurants/${rid}/deals/${did}/publish`, {});
 export const pauseDeal = (rid, did) => post(`/operator/restaurants/${rid}/deals/${did}/pause`, {});
 export const deleteDeal = (rid, did) => del(`/operator/restaurants/${rid}/deals/${did}`);
+export const getDealBillboard    = (rid, did)       => get(`/operator/restaurants/${rid}/deals/${did}/billboard`);
+export const upsertDealBillboard = (rid, did, body) => put(`/operator/restaurants/${rid}/deals/${did}/billboard`, body);
+export const removeDealBillboard = (rid, did)       => del(`/operator/restaurants/${rid}/deals/${did}/billboard`);
 
 // ── Restaurant: QR Kit Orders ─────────────────────────────────────────────
 export const getQrKitPreviewUrl = (rid, params = {}) => {
