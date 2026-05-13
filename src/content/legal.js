@@ -10,7 +10,7 @@ export const LEGAL_VERSIONS = {
 
 export const LEGAL_CONTACT = {
   company: "Stackbloc Corporation",
-  email: "legal@grubbid.com",
+  email: "support@menuply.com",
 };
 
 export const TERMS_DOCUMENT = {
@@ -135,7 +135,7 @@ export const TERMS_DOCUMENT = {
     {
       heading: "Contact",
       paragraphs: [
-        "Questions about these Terms of Use may be sent to Stackbloc Corporation at legal@grubbid.com.",
+        "Questions about these Terms of Use may be sent to Stackbloc Corporation at support@menuply.com.",
       ],
     },
   ],
@@ -197,7 +197,7 @@ export const PRIVACY_DOCUMENT = {
       heading: "Your rights and requests",
       paragraphs: [
         "Depending on where you live, you may have rights to request access to, correction of, deletion of, or information about the personal data we hold about you, subject to applicable exceptions.",
-        "Requests may be sent to legal@grubbid.com. We may request information needed to verify your identity before responding.",
+        "Requests may be sent to support@menuply.com. We may request information needed to verify your identity before responding.",
       ],
     },
     {
@@ -210,7 +210,7 @@ export const PRIVACY_DOCUMENT = {
       heading: "Changes and contact",
       paragraphs: [
         "We may update this Privacy Policy from time to time. Material updates will be reflected by the effective date shown on this page.",
-        "Privacy questions or requests may be sent to Stackbloc Corporation at legal@grubbid.com.",
+        "Privacy questions or requests may be sent to Stackbloc Corporation at support@menuply.com.",
       ],
     },
   ],
@@ -317,7 +317,7 @@ export const MERCHANT_TERMS_DOCUMENT = {
     {
       heading: "Contact",
       paragraphs: [
-        "Questions about these Merchant Terms of Service may be sent to Stackbloc Corporation at legal@grubbid.com.",
+        "Questions about these Merchant Terms of Service may be sent to Stackbloc Corporation at support@menuply.com.",
       ],
     },
   ],
@@ -379,7 +379,7 @@ export const SUBSCRIPTION_TERMS_DOCUMENT = {
     {
       heading: "Contact",
       paragraphs: [
-        "Questions about restaurant plan billing may be sent to Stackbloc Corporation at legal@grubbid.com.",
+        "Questions about restaurant plan billing may be sent to Stackbloc Corporation at support@menuply.com.",
       ],
     },
   ],
