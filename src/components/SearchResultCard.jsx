@@ -38,6 +38,131 @@ import {
 
 const MATCH_LABEL = "Match:";
 
+/* ---- Billboard banner (compact, search-surface) ---- */
+
+const SEARCH_BILLBOARD_TYPE_META = {
+  deal:         { label: "Deal",   badgeColor: "#FCD34D", badgeBg: "rgba(252,211,77,0.12)",   grad: "linear-gradient(135deg,#92400e,#b45309)" },
+  event:        { label: "Event",  badgeColor: "#C4B5FD", badgeBg: "rgba(196,181,253,0.12)",  grad: "linear-gradient(135deg,#4c1d95,#6d28d9)" },
+  menu:         { label: "New",    badgeColor: "#93C5FD", badgeBg: "rgba(147,197,253,0.12)",  grad: "linear-gradient(135deg,#1e3a5f,#1d4ed8)" },
+  notice:       { label: "Notice", badgeColor: "#FCA5A5", badgeBg: "rgba(252,165,165,0.12)",  grad: "linear-gradient(135deg,#7f1d1d,#dc2626)" },
+  announcement: { label: "Update", badgeColor: "#86EFAC", badgeBg: "rgba(134,239,172,0.12)",  grad: "linear-gradient(135deg,#14532d,#15803d)" },
+  general:      { label: "Post",   badgeColor: "#CBD5E1", badgeBg: "rgba(203,213,225,0.12)",  grad: "linear-gradient(135deg,#1e293b,#475569)" },
+};
+
+function SearchBillboardBanner({ billboard }) {
+  if (!billboard) return null;
+  const meta = SEARCH_BILLBOARD_TYPE_META[billboard.post_type] || SEARCH_BILLBOARD_TYPE_META.general;
+  const headline = billboard.headline || billboard.title || "";
+  const sub = billboard.subheadline || null;
+  if (!headline) return null;
+
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        borderRadius: 8,
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        overflow: "hidden",
+        minWidth: 0,
+      }}
+    >
+      <div
+        style={{
+          width: 44,
+          height: 44,
+          flexShrink: 0,
+          background: billboard.image_url ? "#000" : meta.grad,
+          position: "relative",
+        }}
+      >
+        {billboard.image_url && (
+          <img
+            src={billboard.image_url}
+            alt={billboard.image_alt_text || headline}
+            style={{ width: "100%", height: "100%", objectFit: billboard.image_fit || "cover", display: "block" }}
+          />
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0, padding: "8px 10px 8px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: sub ? 2 : 0 }}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              height: 16,
+              padding: "0 6px",
+              borderRadius: 999,
+              background: meta.badgeBg,
+              color: meta.badgeColor,
+              fontSize: 9,
+              fontWeight: 800,
+              letterSpacing: 0.5,
+              textTransform: "uppercase",
+              flexShrink: 0,
+            }}
+          >
+            {meta.label}
+          </span>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: "#E5E7EB",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {headline}
+          </span>
+        </div>
+        {sub && (
+          <div
+            style={{
+              fontSize: 11,
+              color: "#6B7280",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {sub}
+          </div>
+        )}
+      </div>
+      {billboard.cta_label && billboard.cta_url && (
+        <a
+          href={billboard.cta_url}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            flexShrink: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            height: 28,
+            padding: "0 10px",
+            marginRight: 10,
+            borderRadius: 6,
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            color: "#E5E7EB",
+            fontSize: 11,
+            fontWeight: 700,
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {billboard.cta_label}
+        </a>
+      )}
+    </div>
+  );
+}
+
 /* ---- Helpers ---- */
 
 function asStr(v) {
@@ -1320,6 +1445,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
               {venueFactsLine}
             </div>
           ) : null}
+          <SearchBillboardBanner billboard={restaurant?.raw?.primary_billboard} />
         </div>
 
         <div>
@@ -1472,6 +1598,8 @@ export default function SearchResultCard({ restaurant, items, item, query, query
           {detailPieces.join(" · ")}
         </div>
       )}
+
+      <SearchBillboardBanner billboard={item?.primary_billboard} />
 
       {menuHrefS && (
         <div style={{ marginTop: 12 }}>
