@@ -13,20 +13,19 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").repla
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const FONT = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
 
-/** OCR from menu-page images + server processing — staged UX (menu text, not dish photos). */
+/** OCR from menu-page images — page capture is fast; menu reading happens once on Finish. */
 const OCR_PHASE_COPY = {
-  uploading_photo: { title: "Uploading menu page…", sub: "Sending your menu image securely." },
-  reading_menu: { title: "Reading menu…", sub: "Opening your menu page on our servers." },
-  extracting_text: { title: "Extracting menu text…", sub: "Pulling words and prices from the image." },
-  structuring: { title: "Organizing menu items…", sub: "Grouping sections and dishes." },
+  uploading_photo: { title: "Saving page…", sub: "Sending your menu image securely." },
+  processing: {
+    title: "Reading your menu…",
+    sub: "We're reading every page now. This usually takes about 8–15 seconds per page.",
+  },
   finalizing: { title: "Finalizing your menu…", sub: "Saving items for review." },
 };
 
 const OCR_PHASE_STEP = {
-  uploading_photo: 1,
-  reading_menu: 2,
-  extracting_text: 3,
-  structuring: 4,
+  uploading_photo: null,
+  processing: null,
   finalizing: null,
 };
 
@@ -309,6 +308,20 @@ const s = {
     color: "#777",
     lineHeight: 1.5,
   },
+  ingestionReviewHint: {
+    marginTop: 14,
+    padding: "12px 14px",
+    borderRadius: 10,
+    background: "#f4f6fb",
+    border: "1px solid #dde3f0",
+    fontSize: 13,
+    color: "#3d4d63",
+    lineHeight: 1.55,
+    maxWidth: 520,
+    marginLeft: "auto",
+    marginRight: "auto",
+    textAlign: "left",
+  },
   designBanner: (hasStyle) => ({
     border: hasStyle ? "1.5px solid #e0e0e0" : "1.5px dashed #ccc",
     borderRadius: 14,
@@ -520,6 +533,8 @@ export default function PdfUploadPage() {
   const [ocrProgressPhase, setOcrProgressPhase] = useState(null);
   /** 1-based page index while a photo is being processed (consumer-facing progress). */
   const [ocrActivePageNumber, setOcrActivePageNumber] = useState(null);
+  /** Per-page Finish processing progress (deferred Adobe ingestion). */
+  const [finishProgress, setFinishProgress] = useState({ processed: 0, total: 0 });
 
   const missingState = recovery.missing;
   const chosenStyle = design_style
@@ -588,7 +603,7 @@ export default function PdfUploadPage() {
     return data.upload_session_id;
   }
 
-  async function uploadCapturedPage(imageFile) {
+  async function uploadCapturedPage(imageFile, { pageRole = "menu_items" } = {}) {
     ocrPageWorkRef.current = true;
     clearOcrPhaseTimers();
     setUploadErr("");
@@ -606,20 +621,9 @@ export default function PdfUploadPage() {
       formData.append("email", email);
       formData.append("owner_token", owner_token);
       formData.append("page_number", String(nextPageNumber));
-      formData.append("page_role", "menu_items");
+      formData.append("page_role", pageRole);
       formData.append("image_file", imageFile, imageFile.name);
       formData.append("pdf_file", pdfFile, pdfFile.name);
-
-      if (ocrPageWorkRef.current) setOcrProgressPhase("reading_menu");
-
-      const schedulePhase = (phase, ms) => {
-        const id = setTimeout(() => {
-          if (ocrPageWorkRef.current) setOcrProgressPhase(phase);
-        }, ms);
-        ocrTimerRefs.current.push(id);
-      };
-      schedulePhase("extracting_text", 2200);
-      schedulePhase("structuring", 4800);
 
       const res = await fetch(`${API}/uploads/menu-session/${sessionId}/page`, {
         method: "POST",
@@ -639,9 +643,10 @@ export default function PdfUploadPage() {
           pageNumber: data.page_number,
           previewUrl: buildPreviewUrl(imageFile),
           imageUrl: data.image_url,
-          ocrText: data.ocr_text,
-          preview: data.preview,
+          ocrText: data.ocr_text || "",
+          preview: data.preview || { captured: true, accepted: true },
           status: data.status,
+          pageRole,
         },
       ]);
     } catch (error) {
@@ -708,8 +713,9 @@ export default function PdfUploadPage() {
 
     if (isOcrFlow && capturedPages.length > 0) {
       setUploading(true);
-      setOcrProgressPhase("finalizing");
+      setOcrProgressPhase("processing");
       setUploadErr("");
+      setFinishProgress({ processed: 0, total: capturedPages.length });
 
       try {
         const sessionForFinish = String(uploadSessionIdRef.current || uploadSessionId || "").trim();
@@ -724,26 +730,85 @@ export default function PdfUploadPage() {
         formData.append("email", email);
         formData.append("owner_token", owner_token);
 
-        const res = await fetch(`${API}/uploads/menu-session/${sessionForFinish}/finish`, {
+        const startRes = await fetch(`${API}/uploads/menu-session/${sessionForFinish}/finish`, {
           method: "POST",
           body: formData,
         });
-        const data = await res.json().catch(() => null);
+        const startData = await startRes.json().catch(() => null);
 
-        if (!res.ok || !data?.ok) {
-          const err = new Error(data?.error || `Finish failed (${res.status})`);
-          err.status = res.status;
+        if (!startRes.ok || !startData?.ok) {
+          const err = new Error(startData?.error || `Finish failed (${startRes.status})`);
+          err.status = startRes.status;
           throw err;
         }
 
-        const itemsSaved = (Number(data.inserted_items) || 0) + (Number(data.updated_items) || 0);
+        if (startData.result) {
+          const itemsSaved =
+            (Number(startData.result.inserted_items) || 0) +
+            (Number(startData.result.updated_items) || 0);
+          if (itemsSaved <= 0) {
+            throw new Error(
+              "Upload finished but no menu items were saved. Try clearer photos or contact support."
+            );
+          }
+          setResult(startData.result);
+          return;
+        }
+
+        if (Number(startData.total_pages) > 0) {
+          setFinishProgress({ processed: 0, total: Number(startData.total_pages) });
+        }
+
+        const statusUrl = new URL(`${API}/uploads/menu-session/${sessionForFinish}/finish-status`);
+        statusUrl.searchParams.set("restaurant_id", String(restaurant_id));
+        statusUrl.searchParams.set("email", email);
+        statusUrl.searchParams.set("owner_token", owner_token);
+
+        let pollResult = null;
+        const startedAt = Date.now();
+        const maxWaitMs = 8 * 60 * 1000;
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          if (Date.now() - startedAt > maxWaitMs) {
+            throw new Error("Menu processing is taking longer than expected. Please refresh and try again.");
+          }
+          await new Promise((r) => setTimeout(r, 1500));
+          const r = await fetch(statusUrl.toString(), { method: "GET" });
+          const j = await r.json().catch(() => null);
+          if (!r.ok || !j?.ok) {
+            const err = new Error(j?.error || `Status check failed (${r.status})`);
+            err.status = r.status;
+            throw err;
+          }
+          if (j.found) {
+            if (typeof j.processed === "number" && typeof j.total === "number" && j.total > 0) {
+              setFinishProgress({ processed: j.processed, total: j.total });
+            }
+            if (j.done) {
+              if (j.error) {
+                const err = new Error(j.error);
+                throw err;
+              }
+              pollResult = j.result;
+              break;
+            }
+          }
+        }
+
+        if (!pollResult) {
+          throw new Error("Menu processing finished without a result. Please try again.");
+        }
+
+        const itemsSaved =
+          (Number(pollResult.inserted_items) || 0) + (Number(pollResult.updated_items) || 0);
         if (itemsSaved <= 0) {
           throw new Error(
             "Upload finished but no menu items were saved. Try clearer photos or contact support."
           );
         }
 
-        setResult(data);
+        setResult(pollResult);
         return;
       } catch (error) {
         const status = error?.status ?? error?.cause?.status;
@@ -864,6 +929,63 @@ export default function PdfUploadPage() {
             )}
             Menu status: <strong>pending review</strong>
           </div>
+          {(() => {
+            const q = result.ingestion_quality_summary;
+            if (!q || typeof q !== "object") return null;
+
+            const isPdfRoute = Boolean(result.structured_summary);
+            const low = Number(q.low_confidence_row_count) || 0;
+            const sus = Number(q.suspicious_row_count) || 0;
+            const ext = Number(q.extreme_low_confidence_row_count) || 0;
+            const blocked =
+              Number(result.promotion_blocked_count ?? q.promotion_blocked_count ?? 0) || 0;
+            const ocrWeak = q.ocr_quality_score != null && Number(q.ocr_quality_score) < 0.55;
+            const pdfScore =
+              q.pdf_extraction_quality_score != null ? Number(q.pdf_extraction_quality_score) : null;
+            const pdfWeak = pdfScore != null && Number.isFinite(pdfScore) && pdfScore < 0.58;
+            const extractionFlagCount = Array.isArray(q.extraction_quality_flags)
+              ? q.extraction_quality_flags.length
+              : 0;
+            const extractionNoisy = extractionFlagCount > 3;
+
+            if (
+              low === 0 &&
+              sus === 0 &&
+              ext === 0 &&
+              blocked === 0 &&
+              !ocrWeak &&
+              !pdfWeak &&
+              !extractionNoisy
+            ) {
+              return null;
+            }
+
+            const routeNote = isPdfRoute
+              ? pdfWeak || extractionNoisy
+                ? " — PDF text extraction looked noisy or low-signal in places."
+                : blocked > 0
+                  ? " — some lines were held from automatic promotion until reviewed."
+                  : "."
+              : ocrWeak
+                ? " — overall photo capture was soft."
+                : ".";
+
+            const holdLine =
+              blocked > 0 || ext > 0
+                ? ` (${Math.max(blocked, ext)} queued for extra review / held from auto-publish)`
+                : "";
+
+            return (
+              <div style={s.ingestionReviewHint} role="status">
+                <strong>Quick check recommended:</strong> automatic parsing flagged uncertainty on parts of this menu
+                {low ? ` (${low} lower-confidence lines)` : ""}
+                {sus ? ` (${sus} unusual patterns)` : ""}
+                {holdLine}
+                {routeNote}{" "}
+                When you review your menu, confirm names and prices look right.
+              </div>
+            );
+          })()}
         </div>
 
         {chosenStyle ? (
@@ -991,24 +1113,43 @@ export default function PdfUploadPage() {
 
         {capturedPages.length > 0 ? (
           <div>
-            {capturedPages.map((page) => (
-              <div
-                key={page.pageNumber}
-                style={{ marginBottom: 16, border: "1px solid #e5e5e5", borderRadius: 12, padding: 12 }}
-              >
-                <div style={{ fontWeight: 700, marginBottom: 8 }}>{`Page ${page.pageNumber} added`}</div>
-                <img
-                  src={page.previewUrl}
-                  alt={`Menu page ${page.pageNumber}`}
-                  style={{ width: "100%", borderRadius: 10, marginBottom: 8 }}
-                />
-                <div style={{ fontSize: 13, color: "#444", marginBottom: 6 }}>
-                  {page.preview?.readable ? "Readable text detected." : "Text preview is weak."}
-                  {page.preview?.item_count > 0 ? ` Menu-like items found: ${page.preview.item_count}.` : ""}
+            {capturedPages.map((page) => {
+              const role = page.pageRole === "restaurant_info" ? "restaurant_info" : "menu_items";
+              const headerLabel =
+                role === "restaurant_info"
+                  ? "Restaurant info photo"
+                  : `Page ${page.pageNumber} captured`;
+              const statusLine =
+                page.preview?.captured || !page.ocrText
+                  ? role === "restaurant_info"
+                    ? "Saved. We'll use this on Finish."
+                    : "Saved. We'll read this page when you click Submit menu."
+                  : page.preview?.readable
+                    ? "Readable text detected."
+                    : "Text preview is weak.";
+              return (
+                <div
+                  key={page.pageNumber}
+                  style={{ marginBottom: 16, border: "1px solid #e5e5e5", borderRadius: 12, padding: 12 }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>{headerLabel}</div>
+                  <img
+                    src={page.previewUrl}
+                    alt={`Menu page ${page.pageNumber}`}
+                    style={{ width: "100%", borderRadius: 10, marginBottom: 8 }}
+                  />
+                  <div style={{ fontSize: 13, color: "#444", marginBottom: 6 }}>
+                    {statusLine}
+                    {page.preview?.item_count > 0
+                      ? ` Menu-like items found: ${page.preview.item_count}.`
+                      : ""}
+                  </div>
+                  {page.ocrText ? (
+                    <div style={{ fontSize: 12, color: "#666" }}>{page.ocrText.slice(0, 180)}</div>
+                  ) : null}
                 </div>
-                {page.ocrText ? <div style={{ fontSize: 12, color: "#666" }}>{page.ocrText.slice(0, 180)}</div> : null}
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : file ? (
           <div style={s.fileInfo}>
@@ -1029,10 +1170,14 @@ export default function PdfUploadPage() {
             <div style={s.ocrProgressText}>
               <div style={s.ocrProgressTitle}>{OCR_PHASE_COPY[ocrProgressPhase].title}</div>
               <div style={s.ocrProgressSub}>{OCR_PHASE_COPY[ocrProgressPhase].sub}</div>
-              {OCR_PHASE_STEP[ocrProgressPhase] != null ? (
+              {ocrProgressPhase === "processing" && finishProgress.total > 0 ? (
+                <div style={s.ocrProgressMeta}>
+                  {`Processing ${Math.min(finishProgress.processed, finishProgress.total)} of ${finishProgress.total} page${finishProgress.total === 1 ? "" : "s"} · Please keep this screen open`}
+                </div>
+              ) : ocrProgressPhase === "uploading_photo" ? (
                 <div style={s.ocrProgressMeta}>
                   {ocrActivePageNumber != null ? `Page ${ocrActivePageNumber} · ` : ""}
-                  {`Step ${OCR_PHASE_STEP[ocrProgressPhase]} of 4 · Please keep this screen open`}
+                  Saving page · Please keep this screen open
                 </div>
               ) : (
                 <div style={s.ocrProgressMeta}>
@@ -1067,7 +1212,15 @@ export default function PdfUploadPage() {
               Add another page
             </button>
             <button type="submit" style={s.submitBtn(submitDisabled)} disabled={submitDisabled}>
-              {uploading && ocrProgressPhase === "finalizing" ? "Finalizing…" : uploading ? "Working…" : "Submit menu"}
+              {uploading && ocrProgressPhase === "processing"
+                ? finishProgress.total > 0
+                  ? `Processing ${Math.min(finishProgress.processed, finishProgress.total)} of ${finishProgress.total}…`
+                  : "Processing…"
+                : uploading && ocrProgressPhase === "finalizing"
+                  ? "Finalizing…"
+                  : uploading
+                    ? "Working…"
+                    : "Submit menu"}
             </button>
           </div>
         ) : (
