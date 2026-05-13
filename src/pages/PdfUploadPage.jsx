@@ -274,6 +274,54 @@ const s = {
     pointerEvents: "none",
     cursor: "default",
   },
+  infoStepCard: {
+    border: "1px solid #e5e5e5",
+    borderRadius: 14,
+    padding: "18px 18px 20px",
+    marginBottom: 20,
+    background: "#fafafa",
+  },
+  infoStepBadge: {
+    display: "inline-block",
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    color: "#475569",
+    background: "#eef2f7",
+    border: "1px solid #dbe2ec",
+    borderRadius: 999,
+    padding: "2px 10px",
+    marginBottom: 10,
+  },
+  infoStepTitle: { fontSize: 15, fontWeight: 800, marginBottom: 6, color: "#111" },
+  infoStepBody: { fontSize: 13, color: "#475569", lineHeight: 1.5, marginBottom: 14 },
+  infoStepActions: { display: "grid", gap: 8 },
+  infoStepPrimary: {
+    width: "100%",
+    height: 44,
+    borderRadius: 10,
+    border: "1.5px solid #111",
+    background: "#111",
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: 14,
+    cursor: "pointer",
+    fontFamily: FONT,
+  },
+  infoStepSecondary: {
+    width: "100%",
+    height: 44,
+    borderRadius: 10,
+    border: "1.5px solid #cbd5e1",
+    background: "#fff",
+    color: "#111",
+    fontWeight: 600,
+    fontSize: 14,
+    cursor: "pointer",
+    fontFamily: FONT,
+  },
+  infoStepHint: { fontSize: 12, color: "#94a3b8", marginTop: 8, lineHeight: 1.5 },
   successBox: {
     border: "2px solid #2a7a2a",
     borderRadius: 16,
@@ -517,6 +565,7 @@ export default function PdfUploadPage() {
   } = state;
 
   const fileInputRef = useRef(null);
+  const restaurantInfoInputRef = useRef(null);
   /** Same as uploadSessionId state, updated synchronously so "Finish" never uses a stale empty id. */
   const uploadSessionIdRef = useRef("");
   const ocrTimerRefs = useRef([]);
@@ -524,6 +573,13 @@ export default function PdfUploadPage() {
   const [file, setFile] = useState(null);
   const [uploadSessionId, setUploadSessionId] = useState("");
   const [capturedPages, setCapturedPages] = useState([]);
+  /**
+   * Optional first step on the operator phone flow:
+   *   null      – user has not chosen yet (show the choice block)
+   *   "captured" – they took a restaurant_info photo
+   *   "skipped"  – they confirmed their menu pages already include it
+   */
+  const [restaurantInfoChoice, setRestaurantInfoChoice] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [fileError, setFileError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -702,6 +758,19 @@ export default function PdfUploadPage() {
       } else {
         setFile(chosen);
       }
+    }
+    event.target.value = "";
+  }
+
+  function onRestaurantInfoChange(event) {
+    const chosen = event.target.files?.[0] || null;
+    const validation = validateChosenFile(chosen);
+    if (validation.ok && chosen) {
+      setUploading(true);
+      uploadCapturedPage(chosen, { pageRole: "restaurant_info" })
+        .then(() => setRestaurantInfoChoice("captured"))
+        .catch(() => {})
+        .finally(() => setUploading(false));
     }
     event.target.value = "";
   }
@@ -1069,10 +1138,55 @@ export default function PdfUploadPage() {
       </div>
 
       <form onSubmit={handleSubmit} noValidate aria-busy={uploading ? "true" : "false"}>
+        {isOcrFlow && capturedPages.length === 0 && restaurantInfoChoice === null ? (
+          <div style={s.infoStepCard}>
+            <div style={s.infoStepBadge}>Optional · Step 1 of 2</div>
+            <div style={s.infoStepTitle}>Photo of your restaurant name or address</div>
+            <div style={s.infoStepBody}>
+              Take one photo of your restaurant's name, address, or signage so we can confirm
+              the listing details. We'll also pick up this info from your menu pages if it's
+              already printed there — this photo just makes sure we get it right. Skip if your
+              menu pages already show the name and address.
+            </div>
+            <div style={s.infoStepActions}>
+              <button
+                type="button"
+                style={s.infoStepPrimary}
+                disabled={uploading}
+                onClick={() => restaurantInfoInputRef.current?.click()}
+              >
+                Take photo of restaurant info
+              </button>
+              <button
+                type="button"
+                style={s.infoStepSecondary}
+                disabled={uploading}
+                onClick={() => setRestaurantInfoChoice("skipped")}
+              >
+                Skip — my menu pages already show this
+              </button>
+            </div>
+            <div style={s.infoStepHint}>
+              You can capture menu pages right after. We don't process anything until you tap Submit menu.
+            </div>
+            <input
+              ref={restaurantInfoInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: "none" }}
+              onChange={onRestaurantInfoChange}
+            />
+          </div>
+        ) : null}
+
         <div
           style={{
             ...s.dropZone(isDragOver, !!file, !!fileError),
             ...(isOcrFlow && uploading ? s.dropZoneDisabled : {}),
+            ...(isOcrFlow && capturedPages.length === 0 && restaurantInfoChoice === null
+              ? { display: "none" }
+              : {}),
           }}
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
@@ -1091,7 +1205,13 @@ export default function PdfUploadPage() {
         >
           <div style={s.dropIcon}>{isOcrFlow ? "📷" : "📄"}</div>
           <div style={s.dropTitle}>
-            {isOcrFlow ? "Tap to photograph menu text" : "Click or drag to upload your menu PDF"}
+            {isOcrFlow
+              ? capturedPages.length === 0
+                ? restaurantInfoChoice === "captured"
+                  ? "Now photograph your first menu page"
+                  : "Tap to photograph menu text"
+                : "Tap to add the next menu page"
+              : "Click or drag to upload your menu PDF"}
           </div>
           <div style={s.dropSub}>
             {isOcrFlow
