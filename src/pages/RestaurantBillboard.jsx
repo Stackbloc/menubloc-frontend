@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import { trackBillboardView } from "../lib/analytics.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -162,6 +163,7 @@ function BillboardSection({ title, emptyCopy, posts }) {
 
 export default function RestaurantBillboard() {
   const { slugOrId } = useParams();
+  const trackedBillboardViewRef = useRef(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
@@ -201,6 +203,19 @@ export default function RestaurantBillboard() {
   const location = [restaurant.city, restaurant.state].filter(Boolean).join(", ");
   const profileHref = `/restaurants/${encodeURIComponent(String(restaurant.slug || restaurant.id || slugOrId))}`;
   const menuHref = buildMenuHref(restaurant.slug || restaurant.id ? restaurant : { id: slugOrId });
+
+  useEffect(() => {
+    if (loading || error || !restaurant?.id) return;
+    const currentPost = grouped.current[0] || posts[0] || null;
+    const key = `${restaurant.id}:${currentPost?.id || "none"}`;
+    if (trackedBillboardViewRef.current.has(key)) return;
+    trackedBillboardViewRef.current.add(key);
+    trackBillboardView({
+      restaurantId: restaurant.id,
+      restaurantName: restaurant.name || "",
+      billboardId: currentPost?.id || null,
+    });
+  }, [loading, error, restaurant?.id, restaurant?.name, grouped.current, posts]);
 
   return (
     <>

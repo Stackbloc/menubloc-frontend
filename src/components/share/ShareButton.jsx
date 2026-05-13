@@ -18,6 +18,7 @@ import React, { useState } from "react";
 import ShareModal from "./ShareModal.jsx";
 import ShareIcon from "./ShareIcon.jsx";
 import { trackShareEvent } from "./shareUtils.js";
+import { trackMenuShare } from "../../lib/analytics.js";
 
 function canUseNativeShare(shareData) {
   if (typeof navigator === "undefined" || typeof navigator.share !== "function") return false;
@@ -112,6 +113,14 @@ export default function ShareButton({
 
     if (canUseNativeShare(shareData)) {
       try {
+        if (normalizedVariant === "menu") {
+          trackMenuShare({
+            restaurantId: analyticsContext?.restaurantId,
+            restaurantName: analyticsContext?.restaurantName,
+            menuId: analyticsContext?.menuId || analyticsContext?.restaurantId,
+            shareMethod: "native",
+          });
+        }
         await navigator.share({
           title: shareData?.title,
           text: shareData?.text,

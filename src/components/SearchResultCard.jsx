@@ -30,6 +30,7 @@ import {
 import { getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
+import { trackBillboardClick } from "../lib/analytics.js";
 import {
   getQualitativeLabel,
   getNutritionSummary,
@@ -49,7 +50,7 @@ const SEARCH_BILLBOARD_TYPE_META = {
   general:      { label: "Post",   badgeColor: "#CBD5E1", badgeBg: "rgba(203,213,225,0.12)",  grad: "linear-gradient(135deg,#1e293b,#475569)" },
 };
 
-function SearchBillboardBanner({ billboard }) {
+function SearchBillboardBanner({ billboard, restaurantId = null, restaurantName = null }) {
   if (!billboard) return null;
   const meta = SEARCH_BILLBOARD_TYPE_META[billboard.post_type] || SEARCH_BILLBOARD_TYPE_META.general;
   const headline = billboard.headline || billboard.title || "";
@@ -140,6 +141,14 @@ function SearchBillboardBanner({ billboard }) {
           href={billboard.cta_url}
           target="_blank"
           rel="noreferrer"
+          onClick={() =>
+            trackBillboardClick({
+              restaurantId,
+              restaurantName,
+              billboardId: billboard.id || billboard.billboard_id || null,
+              target: billboard.cta_url,
+            })
+          }
           style={{
             flexShrink: 0,
             display: "inline-flex",
@@ -1446,7 +1455,11 @@ export default function SearchResultCard({ restaurant, items, item, query, query
               {venueFactsLine}
             </div>
           ) : null}
-          <SearchBillboardBanner billboard={restaurant?.raw?.primary_billboard} />
+          <SearchBillboardBanner
+            billboard={restaurant?.raw?.primary_billboard}
+            restaurantId={restId}
+            restaurantName={restName}
+          />
         </div>
 
         <div>
@@ -1600,7 +1613,11 @@ export default function SearchResultCard({ restaurant, items, item, query, query
         </div>
       )}
 
-      <SearchBillboardBanner billboard={item?.primary_billboard} />
+      <SearchBillboardBanner
+        billboard={item?.primary_billboard}
+        restaurantId={restIdS}
+        restaurantName={restName}
+      />
 
       {menuHrefS && (
         <div style={{ marginTop: 12 }}>

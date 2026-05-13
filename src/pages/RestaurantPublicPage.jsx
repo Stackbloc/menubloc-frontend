@@ -30,7 +30,7 @@
  * ============================================================
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -43,6 +43,7 @@ import {
   unfollowRestaurant as unfollowRestaurantRequest,
 } from "../lib/consumerApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
+import { trackRestaurantFollow, trackRestaurantView } from "../lib/analytics.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -602,6 +603,7 @@ export default function RestaurantPublicPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { slugOrId } = useParams();
+  const trackedRestaurantViewRef = useRef(new Set());
 
   const [theme, setTheme] = useState(readTheme);
   const [loading, setLoading] = useState(true);
@@ -658,6 +660,19 @@ export default function RestaurantPublicPage() {
   }, [dataUrl]);
 
   useEffect(() => {
+    const restaurantId = String(data?.id || "").trim();
+    if (!restaurantId || loading || err) return;
+    if (trackedRestaurantViewRef.current.has(restaurantId)) return;
+    trackedRestaurantViewRef.current.add(restaurantId);
+    trackRestaurantView({
+      restaurantId,
+      restaurantName: data?.restaurant_name || data?.name || "",
+      slug: data?.slug || slugOrId,
+      source: "restaurant_profile",
+    });
+  }, [data?.id, data?.restaurant_name, data?.name, data?.slug, slugOrId, loading, err]);
+
+  useEffect(() => {
     let alive = true;
     const restaurantId = Number(data?.id);
 
@@ -710,11 +725,19 @@ export default function RestaurantPublicPage() {
 
     setFollowActionLoading(true);
     try {
+      const wasFollowed = followed;
       const result = followed
         ? await unfollowRestaurantRequest(restaurantId)
         : await followRestaurantRequest(restaurantId);
       setFollowed(result?.followed === true);
       setFollowerCount(Number(result?.follower_count || 0));
+      if (!wasFollowed && result?.followed === true) {
+        trackRestaurantFollow({
+          restaurantId,
+          restaurantName: data?.restaurant_name || data?.name || "",
+          source: "restaurant_profile",
+        });
+      }
     } catch (error) {
       if (error?.status === 401) {
         setFollowNotice("Log in to follow this restaurant.");

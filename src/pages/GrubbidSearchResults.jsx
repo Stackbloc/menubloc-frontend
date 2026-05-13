@@ -33,6 +33,7 @@ import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
 import { parseFiltersFromUrl, filtersToUrlParams } from "../lib/filterUtils.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
+import { trackSearchPerformed } from "../lib/analytics.js";
 import { filterEligibleSimilarMenuItems } from "../lib/similarItemsEligibility.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -1009,6 +1010,7 @@ export default function GrubbidSearchResults() {
   ]);
 
   const [geoFallbackUsed, setGeoFallbackUsed] = useState(false);
+  const gaTrackedSearchKeysRef = useRef(new Set());
 
   useEffect(() => {
     let alive = true;
@@ -1174,6 +1176,29 @@ export default function GrubbidSearchResults() {
         setSearchTotalCount(total);
         setSearchOffset(pageOffset + returned);
         setSearchHasMore(pageOffset + returned < total);
+        const locationLabelForAnalytics =
+          routeLocationLabel ||
+          explicitLocationLabel ||
+          [requestCity, requestState].filter(Boolean).join(", ") ||
+          sessionLocation ||
+          "";
+        const gaSearchKey = JSON.stringify({
+          q,
+          total,
+          locationLabelForAnalytics,
+          source: params.get("source") || "discovery_search",
+          primaryUrl,
+          usedFallback,
+        });
+        if (!gaTrackedSearchKeysRef.current.has(gaSearchKey)) {
+          gaTrackedSearchKeysRef.current.add(gaSearchKey);
+          trackSearchPerformed({
+            searchTerm: q,
+            source: params.get("source") || "discovery_search",
+            resultCount: total,
+            locationLabel: locationLabelForAnalytics || null,
+          });
+        }
         void trackSearchEvent(json, usedFallback);
       } catch (e) {
         if (!alive) return;

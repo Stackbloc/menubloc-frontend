@@ -22,6 +22,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { buildShareLinks, copyText, trackShareEvent } from "./shareUtils.js";
+import { trackMenuShare } from "../../lib/analytics.js";
 
 const ACTIONS = [
   { key: "copy", label: "Copy Link" },
@@ -99,6 +100,14 @@ export default function ShareModal({
 
       setCopyState("success");
       trackShareEvent(eventNameForAction(variant, "copy"), analyticsContext);
+      if (variant === "menu") {
+        trackMenuShare({
+          restaurantId: analyticsContext?.restaurantId,
+          restaurantName: analyticsContext?.restaurantName,
+          menuId: analyticsContext?.menuId || analyticsContext?.restaurantId,
+          shareMethod: "copy",
+        });
+      }
     } catch {
       setCopyState("error");
     }
@@ -107,6 +116,14 @@ export default function ShareModal({
   function handleChannelClick(action) {
     const eventName = eventNameForAction(variant, action);
     if (eventName) trackShareEvent(eventName, analyticsContext);
+    if (variant === "menu") {
+      trackMenuShare({
+        restaurantId: analyticsContext?.restaurantId,
+        restaurantName: analyticsContext?.restaurantName,
+        menuId: analyticsContext?.menuId || analyticsContext?.restaurantId,
+        shareMethod: action,
+      });
+    }
     onClose?.();
   }
 

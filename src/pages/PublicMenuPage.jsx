@@ -15,7 +15,7 @@
  * ============================================================
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
@@ -51,6 +51,7 @@ function useIsMobile(breakpoint = 900) {
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
+import { trackRestaurantView } from "../lib/analytics.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
 
@@ -721,6 +722,7 @@ function AddedConfirmation({ name, onRemove, setConfirmation }) {
 /* ---- Main component ---- */
 
 export default function PublicMenuPage() {
+  const trackedRestaurantViewRef = useRef(new Set());
   const { language, t } = useLanguage();
   const { id, slugOrId } = useParams();
   const navigate = useNavigate();
@@ -1070,7 +1072,9 @@ export default function PublicMenuPage() {
   });
   const shareAnalyticsContext = {
     restaurantId: currentRestaurantId,
+    restaurantName,
     restaurantSlug: data?.slug || null,
+    menuId: currentRestaurantId,
     pageType: "public_menu",
     shareTarget: "menu",
   };
@@ -1091,6 +1095,19 @@ export default function PublicMenuPage() {
   const basketMatchesCurrentRestaurant =
     Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
   const activeCartItems = basketMatchesCurrentRestaurant ? cartItems || [] : [];
+
+  useEffect(() => {
+    if (pageState.status !== "ok" || !data?.restaurant_id) return;
+    const key = String(data.restaurant_id);
+    if (trackedRestaurantViewRef.current.has(key)) return;
+    trackedRestaurantViewRef.current.add(key);
+    trackRestaurantView({
+      restaurantId: data.restaurant_id,
+      restaurantName,
+      slug: data?.slug || routeRestaurantParam,
+      source: "public_menu",
+    });
+  }, [pageState.status, data?.restaurant_id, data?.slug, restaurantName, routeRestaurantParam]);
 
   function handleRemoveAdded() {
     if (!addedConfirmation) return;

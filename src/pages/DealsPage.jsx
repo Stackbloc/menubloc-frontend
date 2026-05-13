@@ -10,6 +10,7 @@ import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
 import { parseLocation } from "../lib/locationUtils.js";
+import { trackDealClick } from "../lib/analytics.js";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -134,7 +135,7 @@ async function shareLink({ url, title, text }) {
 
 // ── Deal row card ─────────────────────────────────────────────
 
-function DealRow({ deal, restaurantUrl, onShare }) {
+function DealRow({ deal, restaurantUrl, onShare, onDealClick }) {
   const dealUrl = buildDealUrl(deal);
   const link = dealUrl || restaurantUrl;
   return (
@@ -157,6 +158,7 @@ function DealRow({ deal, restaurantUrl, onShare }) {
         {link && (
           <Link
             to={link}
+            onClick={() => onDealClick?.(deal)}
             style={{
               display: "inline-flex", alignItems: "center",
               height: 26, padding: "0 11px",
@@ -323,6 +325,15 @@ export default function DealsPage() {
     } catch {}
   }
 
+  function handleDealClick(group, deal) {
+    trackDealClick({
+      dealId: deal?.deal_id || deal?.id,
+      restaurantId: group?.restaurantId || group?.key,
+      restaurantName: group?.restaurantName || "",
+      dealTitle: deal?.title || "",
+    });
+  }
+
   return (
     <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       <style>{`
@@ -445,6 +456,7 @@ export default function DealsPage() {
                       deal={group.primaryDeal}
                       restaurantUrl={restaurantUrl}
                       onShare={() => handleShare(group, group.primaryDeal)}
+                      onDealClick={(clickedDeal) => handleDealClick(group, clickedDeal)}
                     />
                   )}
 
@@ -455,6 +467,7 @@ export default function DealsPage() {
                       deal={deal}
                       restaurantUrl={restaurantUrl}
                       onShare={() => handleShare(group, deal)}
+                      onDealClick={(clickedDeal) => handleDealClick(group, clickedDeal)}
                     />
                   ))}
 

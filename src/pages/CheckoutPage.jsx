@@ -21,6 +21,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { buildCheckoutItems } from "../context/orderCartModel.js";
 import { apiPost, createBmtSession, toConsumerErrorMessage } from "../lib/api.js";
+import { trackCheckoutCompleted, trackCheckoutStarted } from "../lib/analytics.js";
 import { formatMoney } from "../lib/pricingDisplay.js";
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
@@ -108,6 +109,10 @@ function hasUnavailablePricing(cartItems) {
 
 function unavailablePricingMessage() {
   return "This item is not currently available for checkout because pricing is unavailable.";
+}
+
+function getItemCount(items) {
+  return (Array.isArray(items) ? items : []).reduce((sum, item) => sum + Number(item?.quantity || 0), 0);
 }
 
 function PaymentStep({ orderId, onSuccess }) {
@@ -509,6 +514,12 @@ export default function CheckoutPage() {
         orderId: response.orderId,
         clientSecret: response.clientSecret,
       });
+      trackCheckoutStarted({
+        restaurantId: restaurant.restaurantId,
+        restaurantName: restaurant.restaurantName,
+        cartValue: Number((previewState.data?.total_cents || 0) / 100),
+        itemCount: getItemCount(items),
+      });
     } catch (error) {
       setSubmitError(
         toConsumerErrorMessage(error, "We couldn't start payment for this order.")
@@ -809,6 +820,14 @@ export default function CheckoutPage() {
                     orderId={paymentSession.orderId}
                     onSuccess={(status) => {
                       if (status === "succeeded" || status === "processing") {
+                        trackCheckoutCompleted({
+                          restaurantId: restaurant.restaurantId,
+                          restaurantName: restaurant.restaurantName,
+                          orderId: paymentSession.orderId,
+                          value: Number((previewState.data?.total_cents || 0) / 100),
+                          currency: "USD",
+                          itemCount: getItemCount(items),
+                        });
                         clearCart();
                         navigate(`/orders/${paymentSession.orderId}/confirmation`);
                       }
