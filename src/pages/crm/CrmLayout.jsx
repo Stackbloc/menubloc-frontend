@@ -23,7 +23,7 @@ export default function CrmLayout({ title, actions = null, children }) {
     <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "240px 1fr", background: "linear-gradient(180deg, #f5f7fb 0%, #eef2f7 100%)", fontFamily: '"Instrument Sans", "Avenir Next", sans-serif' }}>
       <aside style={{ borderRight: "1px solid #d9e0ea", background: "rgba(255,255,255,0.92)", padding: "26px 18px", backdropFilter: "blur(10px)" }}>
         <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "#173f35", letterSpacing: "-0.04em" }}>grubbid</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#173f35", letterSpacing: "-0.04em" }}>Menuply</div>
           <div style={{ marginTop: 6, fontSize: 12, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.16em" }}>
             CRM Workspace
           </div>
