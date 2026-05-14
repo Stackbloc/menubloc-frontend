@@ -1,0 +1,333 @@
+import { Link } from "react-router-dom";
+import ShareButton from "../share/ShareButton.jsx";
+import { getLocalizedField } from "../../utils/getLocalizedField.js";
+import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
+import { pickFeaturedMenuItems } from "./menuTemplateFeatured.js";
+
+function RestaurantLogoSlot({ logoUrl, restaurantName, size = 56 }) {
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt=""
+        width={size}
+        height={size}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: 16,
+          objectFit: "cover",
+          flexShrink: 0,
+          border: "2px solid rgba(255,255,255,0.25)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+        }}
+      />
+    );
+  }
+  return (
+    <div
+      title={restaurantName}
+      aria-hidden
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 16,
+        flexShrink: 0,
+        background: "rgba(0,0,0,0.35)",
+        border: "2px solid rgba(255,255,255,0.2)",
+      }}
+    />
+  );
+}
+
+/**
+ * V2 Modern / Cinematic — hero, featured row, immersive sections.
+ */
+export default function CinematicMenuTemplate(ctx) {
+  const {
+    isMobile,
+    language,
+    t,
+    restaurantName,
+    restaurantProfileHref,
+    heroImageUrl,
+    logoUrl,
+    shareData,
+    shareAnalyticsContext,
+    franchiseSlot,
+    intakeBannerSlot,
+    filterChipsSlot,
+    onOpenFilters,
+    displaySections,
+    displayableItemCount,
+    dealItems,
+    filtersActive,
+    handleClearFilters,
+    data,
+    currentRestaurantId,
+    dealMap,
+    activeCartItems,
+    hoveredItemId,
+    setHoveredItemId,
+    removeItem,
+    navigate,
+    setItemSheet,
+    setAddedConfirmation,
+    commitMenuItemToBasket,
+    fmtMoney,
+    getConsumerDisplayPrice,
+    brand,
+  } = ctx;
+
+  const gradientFallback = brand?.heroBackdrop ?? "linear-gradient(135deg, hsl(24, 42%, 12%) 0%, hsl(280, 35%, 8%) 100%)";
+  const featured = pickFeaturedMenuItems(displaySections, dealItems, 6);
+
+  return (
+    <>
+      <div
+        style={{
+          position: "relative",
+          marginLeft: isMobile ? -12 : -20,
+          marginRight: isMobile ? -12 : -20,
+          marginBottom: 20,
+          borderRadius: isMobile ? 0 : 20,
+          overflow: "hidden",
+          minHeight: isMobile ? 200 : 240,
+          border: "1px solid rgba(148,163,184,0.12)",
+        }}
+      >
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: heroImageUrl ? `url(${heroImageUrl}) center/cover no-repeat` : gradientFallback,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(11,15,12,0.92) 100%)",
+          }}
+        />
+        <div style={{ position: "relative", padding: isMobile ? "18px 14px 22px" : "28px 22px 26px" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+            <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                {restaurantProfileHref ? (
+                  <Link
+                    to={restaurantProfileHref}
+                    style={{
+                      fontSize: isMobile ? 22 : 28,
+                      fontWeight: 900,
+                      color: "#fff",
+                      textDecoration: "none",
+                      lineHeight: 1.15,
+                      textShadow: "0 2px 18px rgba(0,0,0,0.55)",
+                    }}
+                  >
+                    {restaurantName}
+                  </Link>
+                ) : (
+                  <div
+                    style={{
+                      fontSize: isMobile ? 22 : 28,
+                      fontWeight: 900,
+                      color: "#fff",
+                      lineHeight: 1.15,
+                      textShadow: "0 2px 18px rgba(0,0,0,0.55)",
+                    }}
+                  >
+                    {restaurantName}
+                  </div>
+                )}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <ShareButton
+                    variant="menu"
+                    label="Share"
+                    shareData={shareData}
+                    analyticsContext={shareAnalyticsContext}
+                    size="compact"
+                    tone="subtle"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={onOpenFilters}
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.25)",
+                    borderRadius: 999,
+                    background: "rgba(0,0,0,0.35)",
+                    color: "#e5e7eb",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Filters
+                </button>
+              </div>
+              <div style={{ marginTop: 10, fontSize: 12, fontWeight: 700, color: "rgba(226,232,240,0.85)" }}>
+                {t("menuTemplates.v2.tagline", "Featured picks & full menu below")}
+              </div>
+            </div>
+          </div>
+          {franchiseSlot ? <div style={{ marginTop: 14 }}>{franchiseSlot}</div> : null}
+        </div>
+      </div>
+
+      {intakeBannerSlot}
+      {filterChipsSlot}
+
+      {displayableItemCount === 0 ? (
+        <div style={{ fontSize: 14, color: "var(--muted, #5b6675)", padding: "24px 0" }}>
+          {filtersActive ? (
+            <>
+              {t(
+                "publicMenu.noItemsAfterFilters",
+                "This restaurant has no displayable menu items after your active filters."
+              )}{" "}
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: brand?.accent ?? "#22C55E",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  padding: 0,
+                  textDecoration: "underline",
+                }}
+              >
+                {t("common.clearFilters", "Clear filters")}
+              </button>
+            </>
+          ) : (
+            t("publicMenu.noItems", "This restaurant does not currently have any displayable menu items.")
+          )}
+        </div>
+      ) : (
+        <>
+          {featured.length > 0 ? (
+            <div style={{ marginBottom: 22 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 900,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "rgba(148,163,184,0.9)",
+                  marginBottom: 10,
+                }}
+              >
+                {t("menuTemplates.v2.featured", "Featured")}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  overflowX: "auto",
+                  paddingBottom: 6,
+                  scrollSnapType: "x mandatory",
+                  WebkitOverflowScrolling: "touch",
+                }}
+              >
+                {featured.map((it, idx) => (
+                  <div
+                    key={String(it?.id ?? idx)}
+                    style={{
+                      flex: "0 0 min(280px, 82vw)",
+                      scrollSnapAlign: "start",
+                    }}
+                  >
+                    <PublicMenuItemCard
+                      density="cinematic"
+                      it={it}
+                      sIdx={0}
+                      iIdx={idx}
+                      language={language}
+                      t={t}
+                      data={data}
+                      restaurantName={restaurantName}
+                      currentRestaurantId={currentRestaurantId}
+                      dealMap={dealMap}
+                      activeCartItems={activeCartItems}
+                      hoveredItemId={hoveredItemId}
+                      setHoveredItemId={setHoveredItemId}
+                      removeItem={removeItem}
+                      navigate={navigate}
+                      setItemSheet={setItemSheet}
+                      setAddedConfirmation={setAddedConfirmation}
+                      commitMenuItemToBasket={commitMenuItemToBasket}
+                      fmtMoney={fmtMoney}
+                      getConsumerDisplayPrice={getConsumerDisplayPrice}
+                      brand={brand}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {displaySections.map((sec, sIdx) => {
+            const title = String(
+              getLocalizedField(sec, "title", language) || sec?.title || t("publicMenu.menu")
+            ).trim();
+            const items = Array.isArray(sec?.items) ? sec.items : [];
+
+            return (
+              <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 20 }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 900,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: "rgba(148,163,184,0.95)",
+                    marginBottom: 10,
+                  }}
+                >
+                  {title}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {items.map((it, iIdx) => (
+                    <PublicMenuItemCard
+                      key={String(it?.id ?? `${sIdx}-${iIdx}`)}
+                      density="cinematic"
+                      it={it}
+                      sIdx={sIdx}
+                      iIdx={iIdx}
+                      language={language}
+                      t={t}
+                      data={data}
+                      restaurantName={restaurantName}
+                      currentRestaurantId={currentRestaurantId}
+                      dealMap={dealMap}
+                      activeCartItems={activeCartItems}
+                      hoveredItemId={hoveredItemId}
+                      setHoveredItemId={setHoveredItemId}
+                      removeItem={removeItem}
+                      navigate={navigate}
+                      setItemSheet={setItemSheet}
+                      setAddedConfirmation={setAddedConfirmation}
+                      commitMenuItemToBasket={commitMenuItemToBasket}
+                      fmtMoney={fmtMoney}
+                      getConsumerDisplayPrice={getConsumerDisplayPrice}
+                      brand={brand}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+
+    </>
+  );
+}
