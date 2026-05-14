@@ -12,7 +12,7 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    padding: "48px 24px 72px",
+    padding: "48px 24px 80px",
     fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
     color: "#101828",
   },
@@ -21,64 +21,76 @@ const styles = {
     width: "100%",
   },
   heading: {
-    fontSize: "clamp(1.6rem, 4vw, 2.25rem)",
+    fontSize: "clamp(1.55rem, 3.8vw, 2.15rem)",
     fontWeight: 800,
     letterSpacing: "-0.03em",
-    lineHeight: 1.18,
-    marginBottom: 32,
+    lineHeight: 1.2,
+    marginBottom: 36,
     marginTop: 28,
     color: "#101828",
   },
-  bodyBlock: {
-    marginBottom: 22,
-  },
   body: {
     fontSize: 16,
-    lineHeight: 1.8,
+    lineHeight: 1.85,
     color: "#344054",
-    margin: 0,
+    margin: "0 0 22px",
   },
   goalIntro: {
     fontSize: 16,
-    lineHeight: 1.8,
+    lineHeight: 1.85,
     color: "#344054",
-    marginBottom: 10,
-    margin: 0,
+    margin: "0 0 14px",
   },
   bulletList: {
     listStyle: "none",
     padding: 0,
-    margin: "0 0 24px",
+    margin: "0 0 32px",
     display: "grid",
-    gap: 10,
+    gap: 12,
   },
   bulletItem: {
     display: "flex",
-    gap: 12,
+    gap: 13,
     alignItems: "flex-start",
-    fontSize: 15,
+    fontSize: 15.5,
     lineHeight: 1.65,
     color: "#344054",
   },
   bulletDot: {
     flexShrink: 0,
-    marginTop: 6,
+    marginTop: 7,
     width: 7,
     height: 7,
     borderRadius: "50%",
     background: "#1F4E3D",
   },
-  closingText: {
-    fontSize: 15,
+  multiplierBox: {
+    background: "#f8faf9",
+    border: "1.5px solid #cfe0d8",
+    borderRadius: 18,
+    padding: "24px 26px",
+    marginBottom: 28,
+  },
+  multiplierText: {
+    fontSize: 15.5,
     lineHeight: 1.8,
     color: "#344054",
-    marginBottom: 32,
+    margin: "0 0 14px",
+  },
+  multiplierTextLast: {
+    fontSize: 15.5,
+    lineHeight: 1.8,
+    color: "#344054",
     margin: 0,
+  },
+  multiplierHighlight: {
+    fontWeight: 800,
+    color: "#1F4E3D",
   },
   divider: {
     height: 1,
     background: "#e4e7ec",
-    margin: "28px 0",
+    margin: "8px 0 28px",
   },
   checkRow: {
     display: "flex",
@@ -140,60 +152,60 @@ export default function RestaurantPhilosophy() {
         />
 
         <h1 style={styles.heading}>
-          We believe that restaurants and diners alike deserve a platform built around value,
-          fairness, and long-term sustainability.
+          Restaurants and diners alike deserve a platform built around rich, dynamic menu
+          information, diner value, and long-term sustainability.
         </h1>
 
-        <div style={styles.bodyBlock}>
-          <p style={styles.body}>
-            Many restaurants operating on higher-cost third-party delivery platforms have had to
-            substantially raise menu prices to absorb high commissions and other marketing costs.
-            We believe that model is difficult to sustain for both restaurants and diners.
-          </p>
-        </div>
+        <p style={styles.body}>
+          Many restaurants operating on higher-cost third-party delivery platforms have had to
+          drastically increase menu prices to absorb the high costs of doing business on those
+          platforms. These higher-cost models have negatively impacted both restaurants and diners.
+        </p>
 
-        <div style={styles.bodyBlock}>
-          <p style={styles.body}>
-            Menuply was designed with a lower-cost, restaurant-centered structure, allowing
-            restaurants to offer diners stronger value without sacrificing margins. We believe this
-            model is in the best interests of restaurants and diners alike.
-          </p>
-        </div>
+        <p style={styles.body}>
+          Menuply was designed with a lower-cost, restaurant-centered structure that allows
+          restaurants to offer diners substantially better day-to-day pricing, meaningful deals,
+          richer menu information, and more direct engagement — all without sacrificing margins.
+          This model better serves both restaurants and diners over the long term.
+        </p>
 
-        <div style={styles.bodyBlock}>
-          <p style={styles.goalIntro}>Our goal is simple:</p>
-        </div>
+        <p style={styles.body}>
+          When restaurants and diners come together around a shared ecosystem focused on value,
+          sustainability, and informed decision making — powered by thousands of intelligently
+          connected menus — the collective power of those menus multiplies.
+        </p>
+
+        <p style={styles.goalIntro}>Our goal is simple:</p>
 
         <ul style={styles.bulletList}>
           <li style={styles.bulletItem}>
             <span style={styles.bulletDot} aria-hidden="true" />
-            <span>Help restaurants grow sustainably</span>
+            <span>Help restaurants better serve their patrons and ensure long-term success</span>
           </li>
           <li style={styles.bulletItem}>
             <span style={styles.bulletDot} aria-hidden="true" />
-            <span>Help diners discover better value</span>
-          </li>
-          <li style={styles.bulletItem}>
-            <span style={styles.bulletDot} aria-hidden="true" />
-            <span>Help diners navigate their dining and deal options</span>
+            <span>Help diners better navigate their dining options and experience greater value</span>
           </li>
         </ul>
 
-        <div style={{ marginBottom: 28 }}>
-          <p style={styles.closingText}>
-            While restaurants always control their own pricing, partners who prioritize fairness,
-            quality, transparency, customer value, and meaningful deals are most aligned with the
-            Menuply platform and may receive increased visibility opportunities within the platform
-            experience.
+        <div style={styles.multiplierBox}>
+          <p style={styles.multiplierText}>
+            While restaurants always control their own pricing, Menuply seeks to partner with
+            restaurants that prioritize customer value without compromising quality. These are the
+            kinds of restaurants we call{" "}
+            <span style={styles.multiplierHighlight}>&ldquo;Multipliers&rdquo;</span> — restaurants
+            that strengthen the ecosystem by contributing stronger value, meaningful deals, richer
+            menu information, and a better dining discovery experience.
+          </p>
+          <p style={styles.multiplierTextLast}>
+            Restaurants more closely aligned with these principles may receive increased visibility
+            opportunities within the Menuply platform experience.
           </p>
         </div>
 
         <div style={styles.divider} />
 
-        <label
-          style={styles.checkRow}
-          onClick={() => setAgreed((v) => !v)}
-        >
+        <label style={styles.checkRow} onClick={() => setAgreed((v) => !v)}>
           <input
             id="philosophy-agree"
             type="checkbox"
