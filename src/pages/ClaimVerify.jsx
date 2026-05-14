@@ -23,7 +23,7 @@ export default function ClaimVerify() {
 
     // IMPORTANT: Backend performs the verification. Frontend only forwards.
     const backendBase =
-      import.meta.env.VITE_API_BASE_URL || "https://menubloc-backend.onrender.com";
+      import.meta.env.VITE_API_BASE_URL || "https://menubloc-backend-production.up.railway.app";
 
     window.location.href = `${backendBase}/claim?token=${encodeURIComponent(
       token
