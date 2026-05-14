@@ -17,74 +17,75 @@ const styles = {
     color: "#101828",
   },
   shell: {
-    maxWidth: 640,
+    maxWidth: 680,
     width: "100%",
   },
   heading: {
-    fontSize: "clamp(2rem, 5vw, 3rem)",
-    fontWeight: 900,
-    letterSpacing: "-0.04em",
-    lineHeight: 1.05,
-    marginBottom: 24,
+    fontSize: "clamp(1.6rem, 4vw, 2.25rem)",
+    fontWeight: 800,
+    letterSpacing: "-0.03em",
+    lineHeight: 1.18,
+    marginBottom: 32,
     marginTop: 28,
     color: "#101828",
   },
   bodyBlock: {
-    marginBottom: 20,
+    marginBottom: 22,
   },
   body: {
     fontSize: 16,
-    lineHeight: 1.75,
+    lineHeight: 1.8,
     color: "#344054",
     margin: 0,
   },
-  principleList: {
+  goalIntro: {
+    fontSize: 16,
+    lineHeight: 1.8,
+    color: "#344054",
+    marginBottom: 10,
+    margin: 0,
+  },
+  bulletList: {
     listStyle: "none",
     padding: 0,
-    margin: "24px 0",
+    margin: "0 0 24px",
     display: "grid",
-    gap: 14,
+    gap: 10,
   },
-  principleItem: {
+  bulletItem: {
     display: "flex",
-    gap: 14,
+    gap: 12,
     alignItems: "flex-start",
     fontSize: 15,
-    lineHeight: 1.6,
+    lineHeight: 1.65,
     color: "#344054",
   },
-  principleIcon: {
+  bulletDot: {
     flexShrink: 0,
-    width: 28,
-    height: 28,
+    marginTop: 6,
+    width: 7,
+    height: 7,
     borderRadius: "50%",
-    background: "#eef6f1",
-    border: "1px solid #cfe0d8",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 13,
-    color: "#1F4E3D",
-    fontWeight: 900,
-    marginTop: 1,
+    background: "#1F4E3D",
   },
   closingText: {
     fontSize: 15,
-    lineHeight: 1.75,
+    lineHeight: 1.8,
     color: "#344054",
     marginBottom: 32,
     margin: 0,
   },
-  highlightText: {
-    fontWeight: 800,
-    color: "#1F4E3D",
+  divider: {
+    height: 1,
+    background: "#e4e7ec",
+    margin: "28px 0",
   },
   checkRow: {
     display: "flex",
-    gap: 12,
+    gap: 14,
     alignItems: "flex-start",
-    margin: "28px 0",
-    padding: "18px 20px",
+    margin: "0 0 24px",
+    padding: "20px 22px",
     borderRadius: 16,
     border: "1.5px solid #cfe0d8",
     background: "#f8faf9",
@@ -110,7 +111,7 @@ const styles = {
 function continueBtn(enabled) {
   return {
     width: "100%",
-    height: 52,
+    height: 54,
     borderRadius: 16,
     border: 0,
     background: enabled ? "#1F4E3D" : "#d0d5dd",
@@ -120,6 +121,7 @@ function continueBtn(enabled) {
     cursor: enabled ? "pointer" : "not-allowed",
     fontFamily: "inherit",
     transition: "background 0.15s",
+    letterSpacing: "-0.01em",
   };
 }
 
@@ -137,48 +139,56 @@ export default function RestaurantPhilosophy() {
           logoProps={{ width: 160, height: 100, radius: 22, pageColor: "#ffffff" }}
         />
 
-        <div style={styles.heading}>
-          We believe restaurants succeed when diners receive real value.
-        </div>
+        <h1 style={styles.heading}>
+          We believe that restaurants and diners alike deserve a platform built around value,
+          fairness, and long-term sustainability.
+        </h1>
 
         <div style={styles.bodyBlock}>
           <p style={styles.body}>
-            Menuply is a platform centered on long-term customer relationships, sustainable restaurant
-            growth, and better dining experiences — not simply higher fees and higher prices.
+            Many restaurants operating on higher-cost third-party delivery platforms have had to
+            substantially raise menu prices to absorb high commissions and other marketing costs.
+            We believe that model is difficult to sustain for both restaurants and diners.
           </p>
         </div>
 
         <div style={styles.bodyBlock}>
           <p style={styles.body}>
-            Many restaurants on more costly third-party platforms raise prices substantially to offset
-            commissions and fees. Menuply was designed with a lower-cost structure so restaurants can
-            compete more effectively while still protecting their margins.
+            Menuply was designed with a lower-cost, restaurant-centered structure, allowing
+            restaurants to offer diners stronger value without sacrificing margins. We believe this
+            model is in the best interests of restaurants and diners alike.
           </p>
         </div>
 
-        <ul style={styles.principleList}>
-          <li style={styles.principleItem}>
-            <span style={styles.principleIcon}>&#10003;</span>
-            <span>Help restaurants <strong>grow sustainably</strong></span>
+        <div style={styles.bodyBlock}>
+          <p style={styles.goalIntro}>Our goal is simple:</p>
+        </div>
+
+        <ul style={styles.bulletList}>
+          <li style={styles.bulletItem}>
+            <span style={styles.bulletDot} aria-hidden="true" />
+            <span>Help restaurants grow sustainably</span>
           </li>
-          <li style={styles.principleItem}>
-            <span style={styles.principleIcon}>&#10003;</span>
-            <span>Help diners <strong>discover better value</strong></span>
+          <li style={styles.bulletItem}>
+            <span style={styles.bulletDot} aria-hidden="true" />
+            <span>Help diners discover better value</span>
           </li>
-          <li style={styles.principleItem}>
-            <span style={styles.principleIcon}>&#10003;</span>
-            <span>Help bring <strong>customers back to restaurants</strong></span>
+          <li style={styles.bulletItem}>
+            <span style={styles.bulletDot} aria-hidden="true" />
+            <span>Help diners navigate their dining and deal options</span>
           </li>
         </ul>
 
-        <p style={styles.closingText}>
-          While restaurants always control their own pricing, partners who prioritize fairness, quality,
-          transparency, and customer value are most aligned with the Menuply platform.{" "}
-          <span style={styles.highlightText}>
-            Restaurants offering strong everyday value and meaningful deals may receive increased
-            visibility opportunities within the platform experience.
-          </span>
-        </p>
+        <div style={{ marginBottom: 28 }}>
+          <p style={styles.closingText}>
+            While restaurants always control their own pricing, partners who prioritize fairness,
+            quality, transparency, customer value, and meaningful deals are most aligned with the
+            Menuply platform and may receive increased visibility opportunities within the platform
+            experience.
+          </p>
+        </div>
+
+        <div style={styles.divider} />
 
         <label
           style={styles.checkRow}
@@ -193,7 +203,7 @@ export default function RestaurantPhilosophy() {
             onClick={(e) => e.stopPropagation()}
           />
           <span style={styles.checkLabel}>
-            I understand and agree with Menuply's core value philosophy.
+            I understand and agree with Menuply&apos;s core value philosophy.
           </span>
         </label>
 

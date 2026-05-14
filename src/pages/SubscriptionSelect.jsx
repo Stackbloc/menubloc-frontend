@@ -76,10 +76,11 @@ const PLAN_CARDS = {
       "Follow functionality",
       "Shareable menus and dishes",
       "Billboard functionality",
+      "Reduced introductory marketplace commission rate for first 24 months",
       "Cancel anytime",
     ],
     footnote:
-      "Cancel anytime. If you switch to Pro Partner, an early conversion or equipment recovery fee may apply.",
+      "Early partner introductory rate applies for the first 24 months. After 24 months, commission reverts to the standard marketplace partner rate. Cancel anytime. If you switch to Pro Partner, an early conversion or equipment recovery fee may apply.",
   },
 };
 

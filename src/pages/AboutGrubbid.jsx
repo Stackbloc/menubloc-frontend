@@ -44,6 +44,43 @@ export default function AboutGrubbid() {
       />
 
       <div style={{ maxWidth: 720 }}>
+
+        {/* ── New platform intro ── */}
+        <p style={{ ...paragraphStyle, fontSize: "17px", fontWeight: 700, color: "var(--gb-color-ink-strong)", marginBottom: 12 }}>
+          Menuply — we know, the name is a little different. But we are building a different kind
+          of restaurant platform.
+        </p>
+
+        <p style={paragraphStyle}>
+          The name comes from a simple idea: menus become more powerful when they work together for
+          the common good. Instead of forcing diners to jump from app to app, menu to menu, or
+          website to website, Menuply brings dining options together into one connected experience.
+        </p>
+
+        <p style={paragraphStyle}>
+          When diners visit Menuply, our goal is to place thousands of dining options at their
+          fingertips while providing the best available information to help make dining decisions
+          easier, faster, and more informed.
+        </p>
+
+        <p style={{ ...paragraphStyle, marginBottom: 6 }}>
+          That is why we say:
+        </p>
+
+        <p style={{
+          ...statementStyle,
+          fontSize: "18px",
+          fontStyle: "italic",
+          color: "var(--gb-color-ink-strong)",
+          marginBottom: 32,
+          paddingLeft: 16,
+          borderLeft: "3px solid var(--gb-color-ink-soft, #9ca3af)",
+        }}>
+          &ldquo;Menuply — One Menu. Multiplied by Thousands.&rdquo;
+        </p>
+
+        <hr style={{ border: "none", borderTop: "1px solid var(--gb-color-border, #e5e7eb)", margin: "0 0 28px" }} />
+
         <p style={paragraphStyle}>
           Menuply is a food intelligence platform built to help people better understand what they
           eat without telling them what they should or shouldn&apos;t eat.
