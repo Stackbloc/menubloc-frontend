@@ -1,4 +1,24 @@
 {
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://menuply.com/$1",
+      "permanent": true,
+      "has": [{ "type": "host", "value": "grubbid.com" }]
+    },
+    {
+      "source": "/(.*)",
+      "destination": "https://menuply.com/$1",
+      "permanent": true,
+      "has": [{ "type": "host", "value": "www.grubbid.com" }]
+    },
+    {
+      "source": "/(.*)",
+      "destination": "https://menuply.com/$1",
+      "permanent": true,
+      "has": [{ "type": "host", "value": "www.menuply.com" }]
+    }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/" }
   ]

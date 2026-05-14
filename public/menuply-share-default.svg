@@ -1,0 +1,30 @@
+<!--
+============================================================
+Path: menubloc-frontend/public/menuply-share-default.svg
+File: menuply-share-default.svg
+Purpose:
+  Default social preview image for Menuply public pages when a
+  restaurant logo is unavailable.
+============================================================
+-->
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#F6F4ED"/>
+  <rect x="38" y="38" width="1124" height="554" rx="36" fill="url(#bg)"/>
+  <rect x="88" y="88" width="1024" height="454" rx="30" fill="rgba(255,255,255,0.88)"/>
+  <circle cx="188" cy="176" r="48" fill="#11211A"/>
+  <path d="M166 177C166 164.85 175.85 155 188 155H211C223.15 155 233 164.85 233 177V177C233 189.15 223.15 199 211 199H188C175.85 199 166 189.15 166 177V177Z" fill="#D5F179"/>
+  <path d="M188 155H211C223.15 155 233 164.85 233 177V177C233 189.15 223.15 199 211 199H188V155Z" fill="#FF8A4C"/>
+  <text x="268" y="166" fill="#11211A" font-family="Georgia, Times New Roman, serif" font-size="46" font-weight="700">Menuply</text>
+  <text x="268" y="214" fill="#475467" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="600">Menus, deals, and nutrition insights</text>
+  <text x="92" y="332" fill="#11211A" font-family="Georgia, Times New Roman, serif" font-size="82" font-weight="700">Shareable public menu pages</text>
+  <text x="92" y="392" fill="#475467" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="600">Canonical Menuply links with restaurant-aware previews.</text>
+  <rect x="92" y="446" width="314" height="66" rx="33" fill="#11211A"/>
+  <text x="124" y="489" fill="#F8FAFC" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">menuply.com</text>
+  <defs>
+    <linearGradient id="bg" x1="70" y1="62" x2="1120" y2="588" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF3D6"/>
+      <stop offset="0.48" stop-color="#F4FBE5"/>
+      <stop offset="1" stop-color="#E9F3FF"/>
+    </linearGradient>
+  </defs>
+</svg>

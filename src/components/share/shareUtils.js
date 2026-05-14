@@ -16,8 +16,8 @@
  * ============================================================
  */
 
-const DEFAULT_PUBLIC_ORIGIN = "https://www.grubbid.com";
-const DEFAULT_SHARE_IMAGE_PATH = "/grubbid-share-default.svg";
+const DEFAULT_PUBLIC_ORIGIN = "https://menuply.com";
+const DEFAULT_SHARE_IMAGE_PATH = "/menuply-share-default.svg";
 
 function asText(value) {
   return value == null ? "" : String(value).trim();
@@ -273,7 +273,7 @@ function upsertManagedTag(tagName, attributes) {
     element.setAttribute(key, value);
   });
 
-  element.setAttribute("data-grubbid-managed", "true");
+  element.setAttribute("data-menuply-managed", "true");
   return { element, created, previousAttributes };
 }
 

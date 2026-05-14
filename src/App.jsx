@@ -22,6 +22,7 @@
 
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
+import { useCanonical } from "./hooks/useCanonical.js";
 import { captureEvent, initPostHog } from "./services/posthog.js";
 import { CartProvider } from "./context/CartContext.jsx";
 import { OrderCartProvider } from "./context/OrderCartContext.jsx";
@@ -442,10 +443,16 @@ function AnalyticsTracker() {
   return null;
 }
 
+function CanonicalUpdater() {
+  useCanonical();
+  return null;
+}
+
 function AppShell({ easyMenu, crmHost }) {
   return (
     <>
       <ScrollToTop />
+      <CanonicalUpdater />
       <AnalyticsTracker />
       {crmHost ? null : <CartDrawer />}
       {crmHost ? null : <OrderCartDrawer />}

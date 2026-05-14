@@ -43,7 +43,7 @@ export async function forwardGeocode(label) {
 
     const res = await fetch(url.toString(), {
       signal: controller.signal,
-      headers: { "User-Agent": "Grubbid/1.0", "Accept-Language": "en-US,en;q=0.9" },
+      headers: { "User-Agent": "Menuply/1.0", "Accept-Language": "en-US,en;q=0.9" },
     });
     clearTimeout(timer);
 
