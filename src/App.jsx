@@ -6,7 +6,7 @@
  * Purpose:
  *   Domain-aware routing:
  *     - easymenuupload.com -> EasyMenuLanding on "/"
- *     - crm.grubbid.com -> internal CRM shell
+ *     - crm.menuply.com (primary) / crm.grubbid.com (legacy) -> internal CRM shell
  *     - grubbid.com (and everything else) -> GrubbidDiscovery on "/"
  *
  *   Public route support:
@@ -165,7 +165,7 @@ function isEasyMenuHost() {
 
 function isCrmHost() {
   const host = (window?.location?.hostname || "").toLowerCase();
-  return host === "crm.grubbid.com";
+  return host === "crm.menuply.com" || host === "crm.grubbid.com";
 }
 
 function CrmHostRoot() {

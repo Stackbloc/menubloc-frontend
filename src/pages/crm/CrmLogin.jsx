@@ -32,14 +32,14 @@ export default function CrmLogin() {
     <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 20, background: "linear-gradient(135deg, #edf3f7 0%, #f7f3ec 100%)", fontFamily: '"Instrument Sans", "Avenir Next", sans-serif' }}>
       <div style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: 20, padding: "36px 32px", boxShadow: "0 20px 50px rgba(15, 23, 32, 0.10)", border: "1px solid #d9e0ea" }}>
         <div style={{ marginBottom: 26, textAlign: "center" }}>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.04em", color: "#173f35" }}>grubbid</div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.04em", color: "#173f35" }}>Menuply</div>
           <div style={{ marginTop: 6, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.16em", color: "#64748b" }}>
             Internal CRM Login
           </div>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14 }}>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="employee@grubbid.com" required style={inputStyle} />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="employee@menuply.com" required style={inputStyle} />
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required style={inputStyle} />
           {error ? <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "#b91c1c" }}>{error}</div> : null}
           <button type="submit" disabled={busy} style={busy ? disabledButtonStyle : buttonStyle}>
