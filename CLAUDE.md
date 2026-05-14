@@ -227,6 +227,50 @@ Trigger: any edit to the `fetchSearch` function.
 
 ---
 
+## 🚨 PUBLIC MENU PAGE GUARDRAIL (CRITICAL — REVENUE PATH)
+
+**File:** `src/pages/PublicMenuPage.jsx` + `src/components/menu-templates/`
+
+The public menu page (`/public/restaurants/:id/menu`, `/restaurants/:slugOrId/menu`) is the primary revenue path. A broken menu page = zero orders. Any change touching these files requires the full verification sequence below before being declared done.
+
+### MANDATORY verification before declaring menu page change complete
+
+1. **Build passes:** `npx vite build` exits with 0 errors and all imports resolve
+2. **Git completeness check:** every file imported by `PublicMenuPage.jsx` and every file in `src/components/menu-templates/` MUST be tracked in git (`git status` shows no untracked files in those paths). Committed code that imports untracked files breaks the Vercel production build.
+3. **Live test from discovery:** navigate from the home/discovery page → click a restaurant menu card → confirm the menu page loads with items visible
+4. **Live test via direct URL:** navigate directly to `/public/restaurants/{id}/menu` → confirm the same page loads
+5. **Error states verified:** confirm the error message shown to users contains no developer text (no file paths, no endpoint URLs, no schema names)
+6. **Deploy and confirm:** run `npx vercel --prod` → confirm the production URL returns a working menu (not a blank screen, not a build error)
+
+### What a "blank screen" means on the menu page
+
+A blank/dark screen on the menu page almost always means one of:
+- A JS import that resolves locally but is absent from git (→ Vercel build fails or imports undefined)
+- A React render crash with no error boundary (→ component unmounts silently)
+- A fetch that returns `{ ok: false }` or no `ok: true` field (→ error state shown)
+
+Check browser DevTools console first. If the error is an import failure, run `git status` to confirm all template files are tracked.
+
+### Protected template files (must stay committed together)
+
+All files below MUST be committed as a unit. Committing `PublicMenuPage.jsx` changes without committing changes to these files (or vice versa) creates a broken production state:
+- `src/components/menu-templates/PublicMenuMainContent.jsx`
+- `src/components/menu-templates/ClassicMenuTemplate.jsx`
+- `src/components/menu-templates/CinematicMenuTemplate.jsx`
+- `src/components/menu-templates/TakeoutMenuTemplate.jsx`
+- `src/components/menu-templates/PublicMenuItemCard.jsx`
+- `src/components/menu-templates/menuPresentationUtils.js`
+- `src/components/menu-templates/restaurantMenuBrand.js`
+- `src/data/menuTemplatePreviewSample.js`
+
+### API contract (do not change without explicit approval)
+
+- Backend returns `{ ok: true, ... }` — frontend checks `json.ok !== true` and shows an error if missing
+- Route params: `/public/restaurants/:id/menu` uses `id`; `/restaurants/:slugOrId/menu` uses `slugOrId`
+- Optional query params forwarded to backend: `lat`, `lng`, `city`, `state` — do NOT remove these
+
+---
+
 ## 🚨 LIVE-USER TEXT GUARDRAIL
 
 **Full rules in:** `/Users/andrebarber/Desktop/menubloc/CLAUDE.md` — section "LIVE-USER TEXT GUARDRAIL"
