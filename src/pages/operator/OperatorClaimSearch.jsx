@@ -54,7 +54,7 @@ const INPUT = {
 export default function OperatorClaimSearch() {
   const { refreshRestaurants, operator } = useOperator();
   const navigate = useNavigate();
-  const createListingHref = "/restaurant/signup";
+  const createListingHref = "/restaurant/onboarding";
 
   const [query, setQuery]     = useState("");
   const [city, setCity]       = useState("");

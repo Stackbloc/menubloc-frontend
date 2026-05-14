@@ -470,7 +470,7 @@ export default function GrubbidDiscovery() {
       </div>
 
       <div style={styles.footer}>
-        <Link to="/restaurant/signup" style={styles.footerLink}>
+        <Link to="/restaurant/onboarding" style={styles.footerLink}>
           Restaurant sign up
         </Link>{" "}
         · get discovered

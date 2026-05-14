@@ -51,7 +51,7 @@ export default function SiteFooter() {
             flex: "0 0 auto",
           }}
         >
-          <Link to="/restaurant/signup" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/restaurant/onboarding" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.signup")}
           </Link>
           <Link to="/deals" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
