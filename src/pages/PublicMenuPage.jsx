@@ -16,24 +16,20 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import BasketSummaryBar from "../components/basket/BasketSummaryBar.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ModifierSheet from "../components/basket/ModifierSheet.jsx";
-import { itemHasInsightsData } from "../components/basket/ItemInsightsSheet.jsx";
 import { itemHasRequiredModifiers } from "../components/basket/modifierModel.js";
 import ShareButton from "../components/share/ShareButton.jsx";
-import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import {
   applyDocumentSocialMetadata,
-  buildDishShareData,
   buildCanonicalMenuPath,
   buildMenuShareMetadata,
-  getCanonicalMenuItemPath,
 } from "../components/share/shareUtils.js";
 import BottomNav from "../components/BottomNav.jsx";
 
@@ -49,6 +45,10 @@ function useIsMobile(breakpoint = 900) {
   return isMobile;
 }
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
+import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templates/menuPresentationUtils.js";
+import { buildRestaurantMenuBrand } from "../components/menu-templates/restaurantMenuBrand.js";
+import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
 import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
@@ -226,7 +226,8 @@ function IntakePreviewBanner({ show }) {
   );
 }
 
-function FranchiseBanner({ group, currentRestaurantId, onPrevious, onNext }) {
+function FranchiseBanner({ group, currentRestaurantId, onPrevious, onNext, brand }) {
+  const accent = brand?.accent ?? "#22C55E";
   const { t } = useLanguage();
   const locations = (Array.isArray(group?.locations) ? group.locations : []).filter(
     (location) => location?.is_displayable !== false && location?.restaurant_id
@@ -289,7 +290,7 @@ function FranchiseBanner({ group, currentRestaurantId, onPrevious, onNext }) {
               border: "1px solid #1F2937",
               borderRadius: 8,
               background: "#121A14",
-              color: "#22C55E",
+              color: accent,
               fontSize: 12,
               fontWeight: 800,
               padding: "5px 10px",
@@ -308,7 +309,7 @@ function FranchiseBanner({ group, currentRestaurantId, onPrevious, onNext }) {
               border: "1px solid #1F2937",
               borderRadius: 8,
               background: "#121A14",
-              color: "#22C55E",
+              color: accent,
               fontSize: 12,
               fontWeight: 800,
               padding: "5px 10px",
@@ -325,7 +326,9 @@ function FranchiseBanner({ group, currentRestaurantId, onPrevious, onNext }) {
 
 /* ---- Filter chip ---- */
 
-function FilterChip({ label, active, onClick, fullWidth }) {
+function FilterChip({ label, active, onClick, fullWidth, brand }) {
+  const accent = brand?.accent ?? "#22C55E";
+  const onAccent = brand?.onAccent ?? "#0B0F0C";
   return (
     <button
       type="button"
@@ -335,9 +338,9 @@ function FilterChip({ label, active, onClick, fullWidth }) {
         width: fullWidth ? "100%" : "auto",
         padding: "0 16px",
         borderRadius: 999,
-        border: active ? "1.5px solid #22C55E" : "1px solid #1F2937",
-        background: active ? "#22C55E" : "#1A2419",
-        color: active ? "#0B0F0C" : "#9CA3AF",
+        border: active ? `1.5px solid ${accent}` : "1px solid #1F2937",
+        background: active ? accent : "#1A2419",
+        color: active ? onAccent : "#9CA3AF",
         fontSize: 13,
         fontWeight: 800,
         cursor: "pointer",
@@ -468,8 +471,15 @@ function ItemDetailSheet({
   onUpdateQuantity,
   onRemoveItem,
   t,
+  brand,
 }) {
-  const { item, name, desc, price, hasDeal, dishShareData, canNavigate, indulgencePresentation } = sheetData;
+  const accent = brand?.accent ?? "#22C55E";
+  const accentStrong = brand?.accentStrong ?? "#16A34A";
+  const onAccent = brand?.onAccent ?? "#0B0F0C";
+  const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
+  const softBorder = brand?.accentBorder ?? "1px solid rgba(34,197,94,0.3)";
+  const primaryGradient = `linear-gradient(180deg, ${accent} 0%, ${accentStrong} 100%)`;
+  const { item, name, desc, price, hasDeal, indulgencePresentation } = sheetData;
   const hasRequiredOptions = itemHasRequiredModifiers(item);
   const canAddToOrder = isItemOrderable(item);
   const cartState = getCartItemState(activeCartItems, item?.id);
@@ -514,8 +524,8 @@ function ItemDetailSheet({
             <div style={{ fontSize: 21, fontWeight: 900, color: "#FFFFFF", lineHeight: 1.2 }}>{name}</div>
             {(hasDeal || item?.is_vegan || item?.is_gluten_free) && (
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-                {hasDeal && <Badge label={t("common.deals", "Deal")} bg="rgba(34,197,94,0.12)" color="#22C55E" border="1px solid rgba(34,197,94,0.3)" />}
-                {item?.is_vegan && <Badge label={t("diet.vegan", "Vegan")} bg="rgba(34,197,94,0.12)" color="#22C55E" border="1px solid rgba(34,197,94,0.3)" />}
+                {hasDeal && <Badge label={t("common.deals", "Deal")} bg={softBg} color={accent} border={softBorder} />}
+                {item?.is_vegan && <Badge label={t("diet.vegan", "Vegan")} bg={softBg} color={accent} border={softBorder} />}
                 {item?.is_gluten_free && <Badge label="GF" bg="#1c1a0a" color="#FCD34D" border="1px solid #44400a" />}
               </div>
             )}
@@ -523,7 +533,7 @@ function ItemDetailSheet({
 
           {/* Price */}
           {price ? (
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#22C55E", marginBottom: 14 }}>{price}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: accent, marginBottom: 14 }}>{price}</div>
           ) : null}
 
           {/* Description */}
@@ -583,8 +593,8 @@ function ItemDetailSheet({
                     width: "100%",
                     border: "none",
                     borderRadius: 14,
-                    background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-                    color: "#0B0F0C",
+                    background: primaryGradient,
+                    color: onAccent,
                     padding: "14px 20px",
                     fontSize: 15,
                     fontWeight: 900,
@@ -594,7 +604,7 @@ function ItemDetailSheet({
                   {hasSelected ? "Add another customized item" : "Customize to add"}
                 </button>
                 {hasSelected ? (
-                  <div style={{ textAlign: "center", fontSize: 13, fontWeight: 700, color: "#166534" }}>
+                  <div style={{ textAlign: "center", fontSize: 13, fontWeight: 700, color: accentStrong }}>
                     {`${selectedQty} ${selectedQty === 1 ? "custom item" : "custom items"} in order`}
                   </div>
                 ) : null}
@@ -631,7 +641,7 @@ function ItemDetailSheet({
                   style={{
                     width: 44, height: 44, borderRadius: 999,
                     border: "none",
-                    background: "#22C55E", color: "#0B0F0C",
+                    background: accent, color: onAccent,
                     fontSize: 20, fontWeight: 900, cursor: "pointer",
                   }}
                 >
@@ -646,8 +656,8 @@ function ItemDetailSheet({
                   width: "100%",
                   border: "none",
                   borderRadius: 14,
-                  background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-                  color: "#0B0F0C",
+                  background: primaryGradient,
+                  color: onAccent,
                   padding: "14px 20px",
                   fontSize: 15,
                   fontWeight: 900,
@@ -668,7 +678,9 @@ function ItemDetailSheet({
 
 /* ---- Added-to-order confirmation toast ---- */
 
-function AddedConfirmation({ name, onRemove, setConfirmation }) {
+function AddedConfirmation({ name, onRemove, setConfirmation, brand }) {
+  const accent = brand?.accent ?? "#22C55E";
+  const accentBorder = brand?.accentBorder ?? "rgba(34,197,94,0.24)";
   useEffect(() => {
     const timer = setTimeout(() => setConfirmation(null), 2500);
     return () => clearTimeout(timer);
@@ -691,10 +703,10 @@ function AddedConfirmation({ name, onRemove, setConfirmation }) {
         zIndex: 600,
         maxWidth: 360,
         width: "calc(100% - 32px)",
-        border: "1px solid rgba(34,197,94,0.24)",
+        border: `1px solid ${accentBorder}`,
       }}
     >
-      <span style={{ color: "#16a34a", fontSize: 18, lineHeight: 1 }}>✓</span>
+      <span style={{ color: accent, fontSize: 18, lineHeight: 1 }}>✓</span>
       <span style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF", flex: 1 }}>
         {name ? `${name} added` : "Added to order"}
       </span>
@@ -724,6 +736,8 @@ function AddedConfirmation({ name, onRemove, setConfirmation }) {
 export default function PublicMenuPage() {
   const trackedRestaurantViewRef = useRef(new Set());
   const { language, t } = useLanguage();
+  const location = useLocation();
+  const isMenuTemplatePreview = location.pathname === "/menu-template-preview";
   const { id, slugOrId } = useParams();
   const navigate = useNavigate();
   const routeRestaurantParam = asStr(slugOrId || id).trim();
@@ -750,11 +764,11 @@ export default function PublicMenuPage() {
     error: null,
   });
 
-  const [pageState, setPageState] = useState({
-    status: "loading",
-    data: null,
+  const [pageState, setPageState] = useState(() => ({
+    status: location.pathname === "/menu-template-preview" ? "ok" : "loading",
+    data: location.pathname === "/menu-template-preview" ? MENU_TEMPLATE_PREVIEW_SAMPLE : null,
     error: null,
-  });
+  }));
 
   const dietPrefs = {
     dairy_free:        searchParams.get("dairy_free")        === "1",
@@ -791,6 +805,10 @@ export default function PublicMenuPage() {
 
   useEffect(() => {
     let cancelled = false;
+
+    if (isMenuTemplatePreview) {
+      return undefined;
+    }
 
     if (numericRouteRestaurantId != null) {
       return undefined;
@@ -848,22 +866,33 @@ export default function PublicMenuPage() {
 
     resolveRouteRestaurant();
     return () => { cancelled = true; };
-  }, [numericRouteRestaurantId, routeRestaurantParam]);
+  }, [numericRouteRestaurantId, routeRestaurantParam, isMenuTemplatePreview]);
 
-  const routeState =
-    !routeRestaurantParam
-      ? {
-          status: "error",
-          restaurantId: "",
-          error: "Missing restaurant identifier.",
-        }
-      : numericRouteRestaurantId != null
-      ? {
-          status: "ok",
-          restaurantId: String(numericRouteRestaurantId),
-          error: null,
-        }
-      : resolvedRouteState;
+  const routeState = useMemo(() => {
+    if (isMenuTemplatePreview) {
+      return { status: "ok", restaurantId: "0", error: null };
+    }
+    if (!routeRestaurantParam) {
+      return {
+        status: "error",
+        restaurantId: "",
+        error: "Missing restaurant identifier.",
+      };
+    }
+    if (numericRouteRestaurantId != null) {
+      return {
+        status: "ok",
+        restaurantId: String(numericRouteRestaurantId),
+        error: null,
+      };
+    }
+    return resolvedRouteState;
+  }, [
+    isMenuTemplatePreview,
+    routeRestaurantParam,
+    numericRouteRestaurantId,
+    resolvedRouteState,
+  ]);
 
   function handleTogglePref(key) {
     setSearchParams((prev) => {
@@ -902,6 +931,7 @@ export default function PublicMenuPage() {
   }, [routeState.restaurantId, proximityLat, proximityLng, contextCity, contextState]);
 
   useEffect(() => {
+    if (isMenuTemplatePreview) return;
     if (proximityLat != null && proximityLng != null) return;
     if (typeof navigator === "undefined" || !navigator.geolocation) return;
 
@@ -925,10 +955,12 @@ export default function PublicMenuPage() {
     );
 
     return () => { cancelled = true; };
-  }, [proximityLat, proximityLng, setSearchParams]);
+  }, [proximityLat, proximityLng, setSearchParams, isMenuTemplatePreview]);
 
   useEffect(() => {
     let cancelled = false;
+
+    if (isMenuTemplatePreview) return undefined;
 
     if (routeState.status !== "ok" || !routeState.restaurantId) return undefined;
 
@@ -966,7 +998,7 @@ export default function PublicMenuPage() {
 
     run();
     return () => { cancelled = true; };
-  }, [apiUrl, routeState.restaurantId, routeState.status]);
+  }, [apiUrl, routeState.restaurantId, routeState.status, isMenuTemplatePreview]);
 
   const dealMap = useMemo(() => {
     const m = new Map();
@@ -975,8 +1007,6 @@ export default function PublicMenuPage() {
     }
     return m;
   }, [pageState.data]);
-
-  const pageBg = { minHeight: "100vh", background: "#0B0F0C" };
 
   useEffect(() => {
     if (routeState.status !== "ok" || pageState.status !== "ok" || !pageState.data) {
@@ -1004,41 +1034,12 @@ export default function PublicMenuPage() {
     });
   }, [language, pageState.data, pageState.status, routeState.restaurantId, routeState.status]);
 
-  /* ---- Loading ---- */
-
-  if (routeState.status === "loading" || pageState.status === "loading") {
-    return (
-      <div style={pageBg}>
-        <StickyPageHeader />
-        <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
-          <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
-        </div>
-      </div>
-    );
-  }
-
-  /* ---- Error ---- */
-
-  if (routeState.status === "error" || pageState.status === "error") {
-    return (
-      <div style={pageBg}>
-        <StickyPageHeader />
-        <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "14px 12px 80px" : "20px 20px 80px", color: "#101828" }}>
-          <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{t("publicMenu.loadError", "Couldn't load menu")}</div>
-          <div style={{ color: "var(--muted, #5b6675)", fontSize: 14 }}>{routeState.error || pageState.error}</div>
-          <div style={{ marginTop: 14, fontSize: 12, color: "var(--muted-2, #93a0b2)" }}>Endpoint: {apiUrl}</div>
-        </div>
-      </div>
-    );
-  }
-
-  /* ---- OK ---- */
-
-  const data = pageState.data;
-  const restaurantName  =
-    getLocalizedField(data, "restaurant_name", language) ||
-    getLocalizedField(data, "name", language) ||
-    asStr(data?.restaurant_name || data?.name || `Restaurant ${id}`).trim();
+  const data = pageState.status === "ok" ? pageState.data : null;
+  const restaurantName = data
+    ? getLocalizedField(data, "restaurant_name", language) ||
+      getLocalizedField(data, "name", language) ||
+      asStr(data?.restaurant_name || data?.name || `Restaurant ${id}`).trim()
+    : "";
   const menuTypeLabel = asStr(data?.menu_name || data?.menu_label || "").trim() || null;
   const isFoodTruck =
     isFoodTruckCategory(data?.category) ||
@@ -1095,6 +1096,9 @@ export default function PublicMenuPage() {
   const basketMatchesCurrentRestaurant =
     Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
   const activeCartItems = basketMatchesCurrentRestaurant ? cartItems || [] : [];
+
+  const menuBrand = data ? buildRestaurantMenuBrand(data, restaurantName) : null;
+  const pageShellStyle = { minHeight: "100vh", background: menuBrand?.pageBackground ?? "#0B0F0C" };
 
   useEffect(() => {
     if (pageState.status !== "ok" || !data?.restaurant_id) return;
@@ -1177,374 +1181,169 @@ export default function PublicMenuPage() {
     });
   }
 
+  const menuPresentationStyle = normalizeMenuStyle(
+    searchParams.get("menuStyle") || searchParams.get("previewStyle")
+  );
+
+  const filterChipsSlot = filtersActive ? (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 8,
+        padding: 0,
+        marginBottom: 16,
+      }}
+    >
+      {activeFilterChips.map(({ key, label, onRemove }) => (
+        <ActiveFilterChip key={key} label={label} onRemove={onRemove} />
+      ))}
+    </div>
+  ) : null;
+
+  const franchiseSlot = franchiseGroup ? (
+    <FranchiseBanner
+      group={franchiseGroup}
+      currentRestaurantId={currentRestaurantId}
+      onPrevious={handlePreviousClosestLocation}
+      onNext={handleNextClosestLocation}
+      brand={menuBrand}
+    />
+  ) : null;
+
+  const templateContext =
+    data && pageState.status === "ok"
+      ? {
+          isMobile,
+          language,
+          t,
+          restaurantName,
+          restaurantProfileHref,
+          menuTypeLabel,
+          addressLine1,
+          addressLine2,
+          addressLine,
+          directionsHref,
+          logoUrl: data?.logo_url || null,
+          shareData,
+          shareAnalyticsContext,
+          franchiseSlot,
+          intakeBannerSlot: <IntakePreviewBanner show={isIntakePreview} />,
+          filterChipsSlot,
+          onOpenFilters: () => setIsFilterDrawerOpen(true),
+          displaySections,
+          displayableItemCount,
+          dealItems: data?.deal_items || [],
+          filtersActive,
+          handleClearFilters,
+          data,
+          currentRestaurantId,
+          dealMap,
+          activeCartItems,
+          hoveredItemId,
+          setHoveredItemId,
+          removeItem,
+          navigate,
+          setItemSheet,
+          setAddedConfirmation,
+          commitMenuItemToBasket,
+          fmtMoney,
+          getConsumerDisplayPrice,
+          heroImageUrl: pickHeroImageUrl(data),
+          cartLineCount: basketMatchesCurrentRestaurant ? itemCount : 0,
+          onGoCheckout: openCheckout,
+          brand: menuBrand,
+        }
+      : null;
+
+  if (!isMenuTemplatePreview && (routeState.status === "loading" || pageState.status === "loading")) {
+    return (
+      <div style={pageShellStyle}>
+        <StickyPageHeader
+          barBackground={menuBrand?.pageBackground}
+          linkAccent={menuBrand?.accent}
+          dealsPillBackground={menuBrand?.accentSoftBg}
+          dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
+          logoPageColor={menuBrand?.pageBackground}
+        />
+        <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
+          <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isMenuTemplatePreview && (routeState.status === "error" || pageState.status === "error")) {
+    return (
+      <div style={pageShellStyle}>
+        <StickyPageHeader
+          barBackground={menuBrand?.pageBackground}
+          linkAccent={menuBrand?.accent}
+          dealsPillBackground={menuBrand?.accentSoftBg}
+          dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
+          logoPageColor={menuBrand?.pageBackground}
+        />
+        <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "14px 12px 80px" : "20px 20px 80px", color: "#101828" }}>
+          <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{t("publicMenu.loadError", "Couldn't load menu")}</div>
+          <div style={{ color: "var(--muted, #5b6675)", fontSize: 14 }}>{routeState.error || pageState.error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!templateContext) {
+    return (
+      <div style={pageShellStyle}>
+        <StickyPageHeader
+          barBackground={menuBrand?.pageBackground}
+          linkAccent={menuBrand?.accent}
+          dealsPillBackground={menuBrand?.accentSoftBg}
+          dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
+          logoPageColor={menuBrand?.pageBackground}
+        />
+        <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
+          <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={pageBg}>
-      <StickyPageHeader />
+    <div style={pageShellStyle}>
+      <StickyPageHeader
+        barBackground={menuBrand?.pageBackground}
+        linkAccent={menuBrand?.accent}
+        dealsPillBackground={menuBrand?.accentSoftBg}
+        dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
+        logoPageColor={menuBrand?.pageBackground}
+      />
       <div style={{
         maxWidth: 860,
         margin: "0 auto",
         padding: isMobile ? "16px 12px 80px" : "28px 20px 80px",
         color: "#FFFFFF",
       }}>
-        {/* Restaurant header — sticky */}
-        <div style={{
-          position: "sticky",
-          top: 88,
-          zIndex: 50,
-          background: "rgba(11, 15, 12, 0.95)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          borderBottom: "1px solid #1F2937",
-          marginBottom: isMobile ? 18 : 22,
-          marginLeft: isMobile ? -12 : -20,
-          marginRight: isMobile ? -12 : -20,
-          padding: isMobile ? "10px 12px" : "12px 20px",
-        }}>
-          {/* Title row + Share */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", marginBottom: addressLine ? 2 : 0 }}>
-            <div style={{ minWidth: 0, flex: "0 1 auto", display: "flex", alignItems: "center", gap: 6 }}>
-              {restaurantProfileHref ? (
-                <Link
-                  to={restaurantProfileHref}
-                  title={`Open ${restaurantName} profile`}
-                  style={{
-                    fontSize: isMobile ? 18 : 22,
-                    fontWeight: 900,
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1.1,
-                    color: "#FFFFFF",
-                    textDecoration: "none",
-                    minWidth: 0,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {restaurantName}
-                </Link>
-              ) : (
-                <div style={{
-                  fontSize: isMobile ? 18 : 22,
-                  fontWeight: 900,
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.1,
-                  color: "#FFFFFF",
-                  minWidth: 0,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}>
-                  {restaurantName}
-                </div>
-              )}
-            </div>
-
-            <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
-              <ShareButton
-                variant="menu"
-                label="Share Menu"
-                shareData={shareData}
-                analyticsContext={shareAnalyticsContext}
-                size="compact"
-                tone="subtle"
-              />
-            </div>
-
-            <div style={{ flex: 1 }} />
-          </div>
-
-          {addressLine ? (
-            <div style={{ fontSize: 13, color: "#667085", fontWeight: 600 }}>
-              {directionsHref ? (
-                <a href={directionsHref} target="_blank" rel="noreferrer"
-                  aria-label={`Get directions to ${restaurantName}`}
-                  style={{ color: "inherit", textDecoration: "none", display: "inline-flex", alignItems: "flex-start", gap: 5 }}
-                >
-                  <span style={{ flexShrink: 0, fontSize: 13 }}>📍</span>
-                  <span style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    {addressLine1 ? <span>{addressLine1}</span> : null}
-                    {addressLine2 ? <span>{addressLine2}</span> : null}
-                  </span>
-                </a>
-              ) : (
-                <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
-                  {addressLine1 ? <span>{addressLine1}</span> : null}
-                  {addressLine2 ? <span>{addressLine2}</span> : null}
-                </span>
-              )}
-            </div>
-          ) : null}
-
-          <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            {menuTypeLabel ? (
-              <div style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 999, background: "#1A2419", border: "1px solid #1F2937", fontSize: 11, fontWeight: 700, color: "#9CA3AF" }}>
-                {menuTypeLabel}
-              </div>
-            ) : null}
-          </div>
-
-          <FranchiseBanner
-            group={franchiseGroup}
-            currentRestaurantId={currentRestaurantId}
-            onPrevious={handlePreviousClosestLocation}
-            onNext={handleNextClosestLocation}
-          />
-        </div>
-
-        <div>
-          <main style={{ minWidth: 0, width: "100%" }}>
-
-            <IntakePreviewBanner show={isIntakePreview} />
-
-            {filtersActive && (
-              <div style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 8,
-                padding: 0,
-                marginBottom: 16,
-              }}>
-                {activeFilterChips.map(({ key, label, onRemove }) => (
-                  <ActiveFilterChip key={key} label={label} onRemove={onRemove} />
-                ))}
-              </div>
+        {isMenuTemplatePreview ? (
+          <div
+            style={{
+              marginBottom: 14,
+              padding: "10px 12px",
+              borderRadius: 12,
+              background: "#1c1a0a",
+              border: "1px solid #44400a",
+              color: "#FCD34D",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            {t(
+              "menuTemplates.previewBanner",
+              "Preview mode — sample data only. Use ?previewStyle=v1|v2|v3. On a live menu add ?menuStyle=v2."
             )}
+          </div>
+        ) : null}
 
-            {displayableItemCount === 0 ? (
-              <div style={{ fontSize: 14, color: "var(--muted, #5b6675)", padding: "24px 0" }}>
-                {filtersActive ? (
-                  <>
-                    {t("publicMenu.noItemsAfterFilters", "This restaurant has no displayable menu items after your active filters.")}{" "}
-                    <button onClick={handleClearFilters} style={{ background: "none", border: "none", cursor: "pointer", color: "#22C55E", fontWeight: 700, fontSize: 14, padding: 0, textDecoration: "underline" }}>
-                      {t("common.clearFilters", "Clear filters")}
-                    </button>
-                  </>
-                ) : (
-                  t("publicMenu.noItems", "This restaurant does not currently have any displayable menu items.")
-                )}
-              </div>
-            ) : (
-              displaySections.map((sec, sIdx) => {
-                const title = asStr(getLocalizedField(sec, "title", language) || sec?.title || t("publicMenu.menu")).trim();
-                const items = Array.isArray(sec?.items) ? sec.items : [];
-
-                return (
-                  <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 16 }}>
-                    <div style={{
-                      fontSize: 13,
-                      fontWeight: 900,
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                      color: "var(--gb-color-ink-muted)",
-                      marginTop: 16,
-                      marginBottom: 8,
-                    }}>
-                      {title}
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      {items.map((it, iIdx) => {
-                        const itemKey = String(it?.id ?? `${sIdx}-${iIdx}`);
-                        const name    = asStr(
-                          getLocalizedField(it, "name", language) ||
-                          getLocalizedField(it, "menu_item_name", language) ||
-                          it?.name ||
-                          "Item"
-                        ).trim();
-                        const desc    = asStr(
-                          getLocalizedField(it, "description", language) ||
-                          getLocalizedField(it, "notes", language) ||
-                          it?.description ||
-                          it?.notes ||
-                          ""
-                        ).trim();
-                        const price   = fmtMoney(it);
-                        const indulgencePresentation = resolveIndulgencePresentation({ chips: it?.chips });
-                        const deal    = it?.id != null ? dealMap.get(it.id) : undefined;
-                        const hasDeal = !!deal;
-                        const itemIsOrderable = isItemOrderable(it);
-                        const canNavigate = it?.id != null;
-                        const dishShareData = canNavigate ? buildDishShareData({
-                          restaurant: {
-                            id: currentRestaurantId,
-                            slug: data?.slug || null,
-                            name: restaurantName,
-                            logoUrl: data?.logo_url || null,
-                          },
-                          menuItem: { ...it, id: it.id, name },
-                        }) : null;
-                        const cartState = getCartItemState(activeCartItems, it?.id);
-                        const inCartCount = cartState.totalQuantity;
-
-                        function openSheet() {
-                          setItemSheet({
-                            item: it,
-                            name,
-                            desc,
-                            price,
-                            hasDeal,
-                            dishShareData,
-                            canNavigate,
-                            indulgencePresentation,
-                          });
-                        }
-
-                        return (
-                          <div
-                            key={itemKey}
-                            onMouseEnter={() => { if (inCartCount > 0) setHoveredItemId(it.id); }}
-                            onMouseLeave={() => setHoveredItemId(null)}
-                            onClick={() => {
-                              if (!itemIsOrderable) {
-                                if (canNavigate && itemHasInsightsData(it)) openSheet();
-                                return;
-                              }
-                              if (itemHasRequiredModifiers(it)) {
-                                openSheet();
-                              } else {
-                                commitMenuItemToBasket(it, name, desc);
-                                setAddedConfirmation({ itemId: it.id, name });
-                              }
-                            }}
-                            style={{
-                              border: inCartCount > 0
-                                ? "1px solid rgba(34,197,94,0.32)"
-                                : "1px solid var(--gb-color-border)",
-                              borderRadius: 16,
-                              background: !itemIsOrderable ? "#121A14" : inCartCount > 0 ? "rgba(34,197,94,0.08)" : "var(--gb-color-surface-strong)",
-                              padding: "10px 14px",
-                              boxShadow: "var(--gb-shadow-card)",
-                              cursor: "pointer",
-                              opacity: itemIsOrderable ? 1 : 0.78,
-                              transition: "background 120ms ease, border-color 120ms ease",
-                              WebkitTapHighlightColor: "transparent",
-                            }}
-                          >
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1, flexWrap: "nowrap" }}>
-                                <span style={{
-                                  fontSize: 14,
-                                  fontWeight: 600,
-                                  color: "#FFFFFF",
-                                  lineHeight: 1.2,
-                                  minWidth: 0,
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap",
-                                }}>
-                                  {name}
-                                </span>
-                                {dishShareData ? (
-                                  <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0, whiteSpace: "nowrap" }}>
-                                    <ShareButton
-                                      variant="dish"
-                                      shareData={dishShareData}
-                                      analyticsContext={{
-                                        restaurantId: currentRestaurantId,
-                                        restaurantSlug: data?.slug || null,
-                                        menuItemId: it.id,
-                                        menuItemName: name,
-                                        pageType: "public_menu",
-                                        shareTarget: "dish",
-                                      }}
-                                      size="compact"
-                                      tone="subtle"
-                                      iconOnly
-                                    />
-                                  </div>
-                                ) : null}
-                              </div>
-                              {price ? (
-                                <span style={{ fontSize: 14, fontWeight: 700, color: "#22C55E", whiteSpace: "nowrap" }}>{price}</span>
-                              ) : null}
-                            </div>
-
-                            {(inCartCount > 0 || hasDeal || it?.is_vegan || it?.is_gluten_free || !itemIsOrderable) ? (
-                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
-                                {inCartCount > 0 ? (
-                                  hoveredItemId === it.id ? (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        removeItem(cartState.simpleLine?.lineId);
-                                        setHoveredItemId(null);
-                                      }}
-                                      style={{ fontSize: 11, fontWeight: 700, color: "#fca5a5",
-                                        background: "#1c0a0a", borderRadius: 999, padding: "2px 7px",
-                                        border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
-                                    >
-                                      × Remove from basket
-                                    </button>
-                                  ) : (
-                                    <span style={{ fontSize: 11, fontWeight: 700, color: "#0B0F0C", background: "#22C55E", borderRadius: 999, padding: "2px 7px", whiteSpace: "nowrap" }}>
-                                      {inCartCount} in order
-                                    </span>
-                                  )
-                                ) : null}
-                                {!itemIsOrderable ? (
-                                  <Badge
-                                    label="Unavailable"
-                                    bg="#1c1208"
-                                    color="#fb923c"
-                                    border="1px solid #431407"
-                                  />
-                                ) : null}
-                                {hasDeal && <Badge label={t("common.deals", "Deals")} bg="rgba(34,197,94,0.12)" color="#22C55E" border="1px solid rgba(34,197,94,0.3)" />}
-                                {it?.is_vegan && <Badge label={t("diet.vegan", "Vegan")} bg="rgba(34,197,94,0.12)" color="#22C55E" border="1px solid rgba(34,197,94,0.3)" />}
-                                {it?.is_gluten_free && <Badge label="GF" bg="#1c1a0a" color="#FCD34D" border="1px solid #44400a" />}
-                              </div>
-                            ) : null}
-
-                            {desc ? (
-                              <div style={{ marginTop: 3, fontSize: 12, color: "#9CA3AF", lineHeight: 1.35 }}>
-                                {desc}
-                              </div>
-                            ) : null}
-
-                            {canNavigate && itemHasInsightsData(it) ? (
-                              <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                                {canNavigate && itemHasInsightsData(it) ? (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate(
-                                        `/restaurants/${encodeURIComponent(data?.slug || currentRestaurantId)}/menu-item-info/${encodeURIComponent(it.id)}`
-                                      );
-                                    }}
-                                    style={{
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 4,
-                                      border: "none",
-                                      background: "transparent",
-                                      color: "#22C55E",
-                                      fontSize: 12,
-                                      fontWeight: 600,
-                                      cursor: "pointer",
-                                      padding: 0,
-                                      lineHeight: 1,
-                                      transition: "all 0.15s ease",
-                                    }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; e.currentTarget.style.opacity = "0.85"; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; e.currentTarget.style.opacity = "1"; }}
-                                  >
-                                    Insights →
-                                  </button>
-                                ) : null}
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </main>
-        </div>
+        <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
 
         <FilterDrawer open={isFilterDrawerOpen} onClose={() => setIsFilterDrawerOpen(false)}>
           <div style={{ padding: "18px 18px 14px", borderBottom: "1px solid #1F2937", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -1576,6 +1375,7 @@ export default function PublicMenuPage() {
                 active={dietPrefs[key]}
                 onClick={() => handleTogglePref(key)}
                 fullWidth
+                brand={menuBrand}
               />
             ))}
             <FilterChip
@@ -1583,6 +1383,7 @@ export default function PublicMenuPage() {
               active={dealsFilter}
               onClick={() => handleTogglePref("deals")}
               fullWidth
+              brand={menuBrand}
             />
             {filtersActive ? (
               <button
@@ -1619,6 +1420,7 @@ export default function PublicMenuPage() {
           onUpdateQuantity={(lineId, qty) => updateQuantity(lineId, qty)}
           onRemoveItem={(lineId) => removeItem(lineId)}
           t={t}
+          brand={menuBrand}
         />
       ) : null}
 
@@ -1656,6 +1458,7 @@ export default function PublicMenuPage() {
           name={addedConfirmation.name}
           onRemove={handleRemoveAdded}
           setConfirmation={setAddedConfirmation}
+          brand={menuBrand}
         />
       ) : null}
 
