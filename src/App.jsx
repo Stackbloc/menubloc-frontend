@@ -129,6 +129,8 @@ import CrmLeadDetail from "./pages/crm/CrmLeadDetail.jsx";
 import CrmTasks from "./pages/crm/CrmTasks.jsx";
 import CrmReports from "./pages/crm/CrmReports.jsx";
 import CrmLogin from "./pages/crm/CrmLogin.jsx";
+import CrmForgotPassword from "./pages/crm/CrmForgotPassword.jsx";
+import CrmResetPassword from "./pages/crm/CrmResetPassword.jsx";
 
 function OperatorRoute({ children }) {
   const { isAuthenticated, isEmailVerified, loading } = useOperator();
@@ -569,6 +571,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/owner/support/:ticketId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTicketDetail /></OwnerRoute>} />
 
         <Route path="/crm/login" element={<CrmLogin />} />
+        <Route path="/crm/forgot-password" element={<CrmForgotPassword />} />
+        <Route path="/crm/reset-password" element={<CrmResetPassword />} />
         <Route path="/crm" element={<CrmRoute><CrmDashboard /></CrmRoute>} />
         <Route path="/crm/orders" element={<CrmRoute><AdminOrdersPage /></CrmRoute>} />
         <Route path="/crm/orders/:orderId" element={<CrmRoute><AdminOrderDetailPage /></CrmRoute>} />
