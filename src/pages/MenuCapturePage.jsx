@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import {
@@ -9,24 +9,6 @@ import {
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
-
-/** Match PdfUploadPage OCR messaging (timed phases during round-trip). */
-const OCR_PHASE_COPY = {
-  uploading_photo: { title: "Uploading menu page…", sub: "Sending your menu image securely." },
-  reading_menu: { title: "Reading menu…", sub: "Opening your menu page on our servers." },
-  extracting_text: { title: "Extracting menu text…", sub: "Pulling words and prices from the image." },
-  structuring: { title: "Organizing menu items…", sub: "Grouping sections and dishes." },
-  finalizing: { title: "Finalizing your menu…", sub: "Saving items for review." },
-};
-
-const OCR_PHASE_STEP = {
-  uploading_photo: 1,
-  reading_menu: 2,
-  extracting_text: 3,
-  structuring: 4,
-  finalizing: null,
-};
-
 function OcrProgressSpinner() {
   return (
     <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden style={{ flexShrink: 0 }}>
@@ -112,16 +94,14 @@ function inputStyle() {
 }
 
 /**
- * Phases: step1 | step1_manual | step2 | step3 | success
+ * Phases: identity | optional_info_photo | menu | review | success
  */
 export default function MenuCapturePage() {
   const navigate = useNavigate();
   const step1InputRef = useRef(null);
   const menuInputRef = useRef(null);
-  const ocrTimerRefs = useRef([]);
-  const ocrWorkRef = useRef(false);
 
-  const [phase, setPhase] = useState("step1");
+  const [phase, setPhase] = useState("identity");
   const [captureSessionId, setCaptureSessionId] = useState("");
   const [sessionStartError, setSessionStartError] = useState("");
   const [nextPageNumber, setNextPageNumber] = useState(1);
@@ -139,55 +119,8 @@ export default function MenuCapturePage() {
   const [email, setEmail] = useState("");
 
   const [errorMsg, setErrorMsg] = useState("");
-  const [ocrProgressPhase, setOcrProgressPhase] = useState(null);
-  const [ocrActiveLabel, setOcrActiveLabel] = useState("");
+  const [savingPhoto, setSavingPhoto] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  const clearOcrTimers = () => {
-    ocrTimerRefs.current.forEach((id) => clearTimeout(id));
-    ocrTimerRefs.current = [];
-  };
-
-  useEffect(() => () => clearOcrTimers(), []);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`${API}/menus-claim-upload-clean/capture-session/start`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ email: "" }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (cancelled) return;
-        if (!res.ok || !data?.ok || !data.capture_session_id) {
-          setSessionStartError(data?.error || "Could not start upload session.");
-          return;
-        }
-        setCaptureSessionId(data.capture_session_id);
-      } catch {
-        if (!cancelled) setSessionStartError("Could not start upload session.");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const scheduleOcrPhases = () => {
-    clearOcrTimers();
-    const schedule = (phaseKey, ms) => {
-      const id = setTimeout(() => {
-        if (ocrWorkRef.current) setOcrProgressPhase(phaseKey);
-      }, ms);
-      ocrTimerRefs.current.push(id);
-    };
-    schedule("reading_menu", 400);
-    schedule("extracting_text", 2200);
-    schedule("structuring", 4800);
-  };
 
   const postPage = useCallback(
     async (file, pageRole, pageNumber) => {
@@ -199,19 +132,13 @@ export default function MenuCapturePage() {
       fd.append("image_file", file, file.name);
       fd.append("pdf_file", pdfFile, pdfFile.name);
 
-      ocrWorkRef.current = true;
-      setOcrProgressPhase("uploading_photo");
-      scheduleOcrPhases();
-
+      setSavingPhoto(true);
       const res = await fetch(
         `${API}/menus-claim-upload-clean/capture-session/${captureSessionId}/page`,
         { method: "POST", body: fd, credentials: "include" }
       );
       const json = await res.json().catch(() => ({}));
-      ocrWorkRef.current = false;
-      clearOcrTimers();
-      setOcrProgressPhase(null);
-      setOcrActiveLabel("");
+      setSavingPhoto(false);
 
       if (!res.ok || !json?.ok) {
         const err = new Error(json?.error || `Upload failed (${res.status})`);
@@ -222,6 +149,54 @@ export default function MenuCapturePage() {
     },
     [captureSessionId]
   );
+
+  async function startCaptureSessionFromIdentity() {
+    if (!restaurantName.trim()) {
+      setErrorMsg("Please enter the restaurant name.");
+      return;
+    }
+    if (!city.trim()) {
+      setErrorMsg("Please enter the city.");
+      return;
+    }
+    if (!stateField.trim()) {
+      setErrorMsg("Please enter the state.");
+      return;
+    }
+    setErrorMsg("");
+    setSessionStartError("");
+    setSavingPhoto(true);
+    try {
+      const res = await fetch(`${API}/menus-claim-upload-clean/capture-session/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          email: email.trim() || "",
+          restaurant_name_input: restaurantName.trim(),
+          restaurant_address_input: address.trim(),
+          locked_city: city.trim(),
+          locked_state: stateField.trim(),
+          phone: phone.trim(),
+          website: website.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok || !data.capture_session_id) {
+        setSessionStartError(data?.error || "Could not start upload session.");
+        return;
+      }
+      setCaptureSessionId(data.capture_session_id);
+      setHasRestaurantInfoPhoto(false);
+      setNextPageNumber(1);
+      setOcrHintsFromPhoto(null);
+      setPhase("optional_info_photo");
+    } catch {
+      setSessionStartError("Could not start upload session.");
+    } finally {
+      setSavingPhoto(false);
+    }
+  }
 
   function validateImageFile(f) {
     if (!f) return "No file selected.";
@@ -241,52 +216,26 @@ export default function MenuCapturePage() {
       return;
     }
     if (!captureSessionId) {
-      setErrorMsg(sessionStartError || "Session not ready. Please wait or refresh.");
+      setErrorMsg(sessionStartError || "Session not ready. Go back and continue from restaurant details.");
       return;
     }
     setErrorMsg("");
     const pn = 1;
     try {
-      setOcrActiveLabel("Restaurant details photo");
-      const json = await postPage(f, "restaurant_info", pn);
+      await postPage(f, "restaurant_info", pn);
       setHasRestaurantInfoPhoto(true);
       setNextPageNumber(2);
-      if (json.extracted_hints) {
-        setOcrHintsFromPhoto(json.extracted_hints);
-        const h = json.extracted_hints;
-        setRestaurantName((prev) => (prev.trim() ? prev : h.name || prev));
-        setPhone((prev) => (prev.trim() ? prev : h.phone || prev));
-        setAddress((prev) => (prev.trim() ? prev : h.address || prev));
-        setWebsite((prev) => (prev.trim() ? prev : h.website || prev));
-      }
-      setPhase("step2");
+      setPhase("menu");
     } catch (err) {
       setErrorMsg(formatFlowError(err.message, err.status));
     }
   }
 
-  function onInfoNotAvailable() {
-    setErrorMsg("");
-    setPhase("step1_manual");
-  }
-
-  function continueManualToMenu() {
-    if (!restaurantName.trim()) {
-      setErrorMsg("Please enter the restaurant name.");
-      return;
-    }
-    if (!city.trim()) {
-      setErrorMsg("Please enter the city.");
-      return;
-    }
-    if (!stateField.trim()) {
-      setErrorMsg("Please enter the state.");
-      return;
-    }
+  function skipOptionalRestaurantPhoto() {
     setErrorMsg("");
     setHasRestaurantInfoPhoto(false);
     setNextPageNumber(1);
-    setPhase("step2");
+    setPhase("menu");
   }
 
   async function onMenuPhotoChosen(e) {
@@ -304,7 +253,6 @@ export default function MenuCapturePage() {
     setErrorMsg("");
     const pn = nextPageNumber;
     try {
-      setOcrActiveLabel(`Menu page ${menuPageCount + 1}`);
       await postPage(f, "menu_items", pn);
       setMenuPageCount((c) => c + 1);
       setNextPageNumber((n) => n + 1);
@@ -320,7 +268,7 @@ export default function MenuCapturePage() {
       return;
     }
     setErrorMsg("");
-    setPhase("step3");
+    setPhase("review");
   }
 
   async function finalizeSubmit() {
@@ -329,15 +277,9 @@ export default function MenuCapturePage() {
       setErrorMsg("Please enter the restaurant name before submitting.");
       return;
     }
-    if (!hasRestaurantInfoPhoto) {
-      if (!city.trim()) {
-        setErrorMsg("City is required when restaurant details weren’t photographed.");
-        return;
-      }
-      if (!stateField.trim()) {
-        setErrorMsg("State is required when restaurant details weren’t photographed.");
-        return;
-      }
+    if (!city.trim() || !stateField.trim()) {
+      setErrorMsg("City and state are required.");
+      return;
     }
     if (!captureSessionId) {
       setErrorMsg("Session missing. Refresh and try again.");
@@ -345,9 +287,6 @@ export default function MenuCapturePage() {
     }
     setErrorMsg("");
     setSubmitting(true);
-    ocrWorkRef.current = true;
-    setOcrProgressPhase("finalizing");
-    clearOcrTimers();
     try {
       const res = await fetch(
         `${API}/menus-claim-upload-clean/capture-session/${captureSessionId}/finish`,
@@ -370,16 +309,13 @@ export default function MenuCapturePage() {
       if (!res.ok || !json?.ok) {
         throw new Error(json?.error || `Submit failed (${res.status})`);
       }
-      const itemsSaved = (Number(json.inserted_items) || 0) + (Number(json.updated_items) || 0);
-      if (itemsSaved <= 0) {
-        throw new Error("No menu items were saved. Try clearer photos of the menu text or contact support.");
+      if (!json.queued) {
+        throw new Error("Unexpected response from server. Please try again.");
       }
       setPhase("success");
     } catch (err) {
       setErrorMsg(formatFlowError(err.message, err.status));
     } finally {
-      ocrWorkRef.current = false;
-      setOcrProgressPhase(null);
       setSubmitting(false);
     }
   }
@@ -393,41 +329,30 @@ export default function MenuCapturePage() {
       ].filter(Boolean)
     : [];
 
-  const ocrCard =
-    ocrProgressPhase && OCR_PHASE_COPY[ocrProgressPhase] ? (
-      <div
-        style={{
-          display: "flex",
-          gap: 14,
-          alignItems: "flex-start",
-          padding: "16px 18px",
-          background: "#f6f8fc",
-          border: "1px solid #c5d4eb",
-          borderRadius: 12,
-          marginBottom: 16,
-        }}
-      >
-        <OcrProgressSpinner />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#111", marginBottom: 4 }}>
-            {OCR_PHASE_COPY[ocrProgressPhase].title}
-          </div>
-          <div style={{ fontSize: 13, color: "#5a6578", lineHeight: 1.45 }}>
-            {OCR_PHASE_COPY[ocrProgressPhase].sub}
-          </div>
-          {OCR_PHASE_STEP[ocrProgressPhase] != null ? (
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#2563a8", marginTop: 8 }}>
-              {`Step ${OCR_PHASE_STEP[ocrProgressPhase]} of 4 · Please keep this screen open`}
-              {ocrActiveLabel ? ` · ${ocrActiveLabel}` : ""}
-            </div>
-          ) : ocrActiveLabel ? (
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#2563a8", marginTop: 8 }}>
-              {ocrActiveLabel}
-            </div>
-          ) : null}
+  const progressCard = savingPhoto ? (
+    <div
+      style={{
+        display: "flex",
+        gap: 14,
+        alignItems: "flex-start",
+        padding: "16px 18px",
+        background: "#f6f8fc",
+        border: "1px solid #c5d4eb",
+        borderRadius: 12,
+        marginBottom: 16,
+      }}
+    >
+      <OcrProgressSpinner />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#111", marginBottom: 4 }}>
+          Saving photo…
+        </div>
+        <div style={{ fontSize: 13, color: "#5a6578", lineHeight: 1.45 }}>
+          Uploading securely. You can add another page as soon as this finishes.
         </div>
       </div>
-    ) : null;
+    </div>
+  ) : null;
 
   if (phase === "success") {
     return (
@@ -446,9 +371,10 @@ export default function MenuCapturePage() {
             Menu received
           </h1>
           <p style={{ fontSize: 15, color: "#475569", margin: "0 0 28px", lineHeight: 1.65 }}>
-            <strong>{restaurantName.trim()}</strong>: we saved{" "}
+            <strong>{restaurantName.trim()}</strong>: we received{" "}
             <strong>{menuPageCount}</strong> menu page{menuPageCount !== 1 ? "s" : ""}
-            {hasRestaurantInfoPhoto ? " plus your restaurant details photo" : ""}. Thank you for contributing!
+            {hasRestaurantInfoPhoto ? " plus your optional restaurant-details photo" : ""}. Photos are processing in
+            the background — items may take a few minutes to appear in search. Thank you for contributing!
           </p>
           <button
             type="button"
@@ -489,17 +415,19 @@ export default function MenuCapturePage() {
         </h1>
         <p style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>
           Step{" "}
-          {phase === "step1" || phase === "step1_manual"
+          {phase === "identity"
             ? "1"
-            : phase === "step2"
+            : phase === "optional_info_photo"
               ? "2"
-              : phase === "step3"
+              : phase === "menu"
                 ? "3"
-                : "—"}{" "}
-          of 3
+                : phase === "review"
+                  ? "4"
+                  : "—"}{" "}
+          of 4
         </p>
 
-        {sessionStartError && !captureSessionId && (
+        {sessionStartError && phase === "identity" && (
           <div
             style={{
               marginBottom: 16,
@@ -515,16 +443,16 @@ export default function MenuCapturePage() {
           </div>
         )}
 
-        {ocrCard}
+        {progressCard}
 
-        {phase === "step1" && (
+        {phase === "optional_info_photo" && (
           <>
             <p style={{ fontSize: 15, color: "#334155", lineHeight: 1.6, marginBottom: 8 }}>
-              First, take a photo of the <strong>restaurant name and contact information</strong> shown on the
-              menu.
+              Optional: add a photo of the <strong>restaurant name or address</strong> from the menu cover or window
+              card. Text will be read after you submit (in the background).
             </p>
             <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6, marginBottom: 20 }}>
-              This helps us match the menu to the correct restaurant.
+              You can skip this if you already entered the details on the previous step.
             </p>
             <input
               ref={step1InputRef}
@@ -537,7 +465,7 @@ export default function MenuCapturePage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <button
                 type="button"
-                disabled={!captureSessionId || !!ocrProgressPhase}
+                disabled={!captureSessionId || savingPhoto}
                 onClick={() => step1InputRef.current?.click()}
                 style={{
                   display: "flex",
@@ -549,7 +477,7 @@ export default function MenuCapturePage() {
                   border: "2px dashed #cbd5e1",
                   borderRadius: 10,
                   background: "#f8fafc",
-                  cursor: !captureSessionId || ocrProgressPhase ? "not-allowed" : "pointer",
+                  cursor: !captureSessionId || savingPhoto ? "not-allowed" : "pointer",
                   fontSize: 15,
                   fontWeight: 700,
                   color: "#334155",
@@ -560,8 +488,8 @@ export default function MenuCapturePage() {
               </button>
               <button
                 type="button"
-                disabled={!captureSessionId || !!ocrProgressPhase}
-                onClick={onInfoNotAvailable}
+                disabled={!captureSessionId || savingPhoto}
+                onClick={skipOptionalRestaurantPhoto}
                 style={{
                   width: "100%",
                   height: 46,
@@ -571,19 +499,20 @@ export default function MenuCapturePage() {
                   borderRadius: 10,
                   fontSize: 14,
                   fontWeight: 600,
-                  cursor: !captureSessionId || ocrProgressPhase ? "not-allowed" : "pointer",
+                  cursor: !captureSessionId || savingPhoto ? "not-allowed" : "pointer",
                 }}
               >
-                Information not available
+                Skip — go to menu pages
               </button>
             </div>
           </>
         )}
 
-        {phase === "step1_manual" && (
+        {phase === "identity" && (
           <>
             <p style={{ fontSize: 14, color: "#64748b", marginBottom: 16, lineHeight: 1.6 }}>
-              Enter the restaurant name and location. Street address is not required. Phone and website are optional.
+              Enter the restaurant this menu belongs to. Street address is optional. Phone and website are optional.
+              We use this to lock the correct restaurant before you photograph the menu.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <Field label="Restaurant name" required>
@@ -592,6 +521,15 @@ export default function MenuCapturePage() {
                   value={restaurantName}
                   onChange={(e) => setRestaurantName(e.target.value)}
                   placeholder="e.g. Joe's Diner"
+                  style={inputStyle()}
+                />
+              </Field>
+              <Field label="Street address">
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Optional"
                   style={inputStyle()}
                 />
               </Field>
@@ -633,25 +571,26 @@ export default function MenuCapturePage() {
               </Field>
               <button
                 type="button"
-                onClick={continueManualToMenu}
+                onClick={startCaptureSessionFromIdentity}
+                disabled={savingPhoto}
                 style={{
                   height: 48,
-                  background: "#111827",
+                  background: savingPhoto ? "#94a3b8" : "#111827",
                   color: "#fff",
                   border: "none",
                   borderRadius: 10,
                   fontSize: 15,
                   fontWeight: 700,
-                  cursor: "pointer",
+                  cursor: savingPhoto ? "not-allowed" : "pointer",
                 }}
               >
-                Continue to menu pages
+                Continue
               </button>
             </div>
           </>
         )}
 
-        {phase === "step2" && (
+        {phase === "menu" && (
           <>
             <p style={{ fontSize: 15, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>
               Now take photos of the <strong>menu listings</strong> (dish names and prices on the printed menu—not photos of food).
@@ -699,7 +638,7 @@ export default function MenuCapturePage() {
             )}
             <button
               type="button"
-              disabled={!captureSessionId || !!ocrProgressPhase}
+              disabled={!captureSessionId || savingPhoto}
               onClick={() => menuInputRef.current?.click()}
               style={{
                 display: "flex",
@@ -711,7 +650,7 @@ export default function MenuCapturePage() {
                 border: "2px dashed #cbd5e1",
                 borderRadius: 10,
                 background: "#f8fafc",
-                cursor: !captureSessionId || ocrProgressPhase ? "not-allowed" : "pointer",
+                cursor: !captureSessionId || savingPhoto ? "not-allowed" : "pointer",
                 fontSize: 15,
                 fontWeight: 700,
                 color: "#334155",
@@ -722,7 +661,7 @@ export default function MenuCapturePage() {
             </button>
             <button
               type="button"
-              disabled={menuPageCount < 1 || !!ocrProgressPhase}
+              disabled={menuPageCount < 1 || savingPhoto}
               onClick={goReview}
               style={{
                 width: "100%",
@@ -733,7 +672,7 @@ export default function MenuCapturePage() {
                 borderRadius: 10,
                 fontSize: 15,
                 fontWeight: 700,
-                cursor: menuPageCount < 1 || ocrProgressPhase ? "not-allowed" : "pointer",
+                cursor: menuPageCount < 1 || savingPhoto ? "not-allowed" : "pointer",
               }}
             >
               Continue to review
@@ -742,7 +681,7 @@ export default function MenuCapturePage() {
               type="button"
               onClick={() => {
                 setErrorMsg("");
-                setPhase(hasRestaurantInfoPhoto ? "step1" : "step1_manual");
+                setPhase("optional_info_photo");
               }}
               style={{
                 marginTop: 12,
@@ -761,8 +700,18 @@ export default function MenuCapturePage() {
           </>
         )}
 
-        {phase === "step3" && (
+        {phase === "review" && (
           <>
+            <p style={{ fontSize: 14, color: "#0f172a", marginBottom: 12, lineHeight: 1.55, fontWeight: 600 }}>
+              Items will be added to:{" "}
+              <strong>
+                {restaurantName.trim() || "—"}
+                {city.trim() && stateField.trim()
+                  ? `, ${city.trim()}, ${stateField.trim()}`
+                  : ""}
+              </strong>
+              . Processing runs in the background after you submit.
+            </p>
             <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>
               Review & submit
             </p>
@@ -869,7 +818,7 @@ export default function MenuCapturePage() {
                 disabled={submitting}
                 onClick={() => {
                   setErrorMsg("");
-                  setPhase("step2");
+                  setPhase("menu");
                 }}
                 style={{
                   flex: 1,
@@ -886,7 +835,7 @@ export default function MenuCapturePage() {
               </button>
               <button
                 type="button"
-                disabled={submitting || !!ocrProgressPhase}
+                disabled={submitting || savingPhoto}
                 onClick={finalizeSubmit}
                 style={{
                   flex: 2,
@@ -896,7 +845,7 @@ export default function MenuCapturePage() {
                   border: "none",
                   borderRadius: 10,
                   fontWeight: 700,
-                  cursor: submitting || ocrProgressPhase ? "not-allowed" : "pointer",
+                  cursor: submitting || savingPhoto ? "not-allowed" : "pointer",
                 }}
               >
                 Submit menu

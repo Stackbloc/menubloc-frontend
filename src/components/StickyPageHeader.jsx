@@ -8,7 +8,16 @@ import { loadDietPrefs, saveDietPrefs } from "../hooks/useDietPreferences.js";
 const ALLERGEN_KEY = "grubbid.allergen.exclusions";
 const ALLERGEN_NONE_ID = "none";
 
-export default function StickyPageHeader({ title, children }) {
+export default function StickyPageHeader({
+  title,
+  children,
+  /** When set (e.g. public menu), tints bar + accents so the page matches restaurant brand */
+  barBackground,
+  linkAccent,
+  dealsPillBackground,
+  dealsPillBorder,
+  logoPageColor,
+}) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
 
@@ -22,7 +31,7 @@ export default function StickyPageHeader({ title, children }) {
 
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
   useEffect(() => {
-    try { localStorage.setItem(ALLERGEN_KEY, JSON.stringify([...excludedAllergens])); } catch {}
+    try { localStorage.setItem(ALLERGEN_KEY, JSON.stringify([...excludedAllergens])); } catch { /* ignore */ }
   }, [excludedAllergens]);
 
   function handleAllergenToggle(id) {
@@ -38,6 +47,12 @@ export default function StickyPageHeader({ title, children }) {
   }
 
   const hasNoneAllergenSelected = excludedAllergens.has(ALLERGEN_NONE_ID);
+
+  const headerBg = barBackground ?? "#0B0F0C";
+  const accent = linkAccent ?? "#22C55E";
+  const dealsBg = dealsPillBackground ?? "rgba(34,197,94,0.08)";
+  const dealsBorder = dealsPillBorder ?? "1.5px solid rgba(34,197,94,0.3)";
+  const brandLogoPage = logoPageColor ?? headerBg;
 
   return (
     <>
@@ -56,7 +71,7 @@ export default function StickyPageHeader({ title, children }) {
         position: "sticky",
         top: 0,
         zIndex: 100,
-        background: "#0B0F0C",
+        background: headerBg,
         borderBottom: "1px solid #1F2937",
       }}>
         <div style={{
@@ -78,7 +93,7 @@ export default function StickyPageHeader({ title, children }) {
               }}
             >☰</button>
             <Link to="/" style={{ display: "inline-flex", textDecoration: "none" }}>
-              <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
+              <BrandLogo width={113} height={48} radius={14} pageColor={brandLogoPage} />
             </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
               <Link
@@ -86,16 +101,16 @@ export default function StickyPageHeader({ title, children }) {
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 3,
                   minHeight: 32, padding: "0 12px", borderRadius: 999,
-                  border: "1.5px solid rgba(34,197,94,0.3)",
-                  background: "rgba(34,197,94,0.08)",
-                  color: "#22C55E", fontSize: 13, fontWeight: 800,
+                  border: dealsBorder,
+                  background: dealsBg,
+                  color: accent, fontSize: 13, fontWeight: 800,
                   textDecoration: "none", whiteSpace: "nowrap", letterSpacing: "0.01em",
                 }}
               >🔥 Deals</Link>
               {!consumerLoading && (
                 consumerLoggedIn
                   ? <Link to="/account" style={{ fontSize: 22, textDecoration: "none" }}>👤</Link>
-                  : <Link to="/account/login" style={{ fontSize: 13, fontWeight: 700, color: "#22C55E", textDecoration: "none" }}>Sign in</Link>
+                  : <Link to="/account/login" style={{ fontSize: 13, fontWeight: 700, color: accent, textDecoration: "none" }}>Sign in</Link>
               )}
             </div>
           </div>
