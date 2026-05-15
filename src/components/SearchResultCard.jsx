@@ -1616,7 +1616,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
       <SearchBillboardBanner
         billboard={item?.primary_billboard}
         restaurantId={restIdS}
-        restaurantName={restName}
+        restaurantName={restNameS}
       />
 
       {menuHrefS && (
