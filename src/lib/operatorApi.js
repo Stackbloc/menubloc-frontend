@@ -57,6 +57,8 @@ export const resetOperatorPassword = (token, password) =>
 // ── Subscription ──────────────────────────────────────────────────────────
 export const getSubscription = () => get("/operator/subscription");
 export const getPlans = () => get("/operator/subscription/plans");
+export const upgradeSubscription = (body) => post("/operator/subscription/upgrade", body);
+export const validateDiscountCode = (code) => get(`/operator/subscription/validate-discount?code=${encodeURIComponent(code)}`);
 export const getBillingOverview = (rid) => get(`/operator/restaurants/${rid}/billing/overview`);
 export const startBillingCheckout = (rid, body) => post(`/operator/restaurants/${rid}/billing/checkout`, body);
 export const syncAdobeUsageCharge = (rid) => post(`/operator/restaurants/${rid}/billing/usage/adobe/sync`, {});

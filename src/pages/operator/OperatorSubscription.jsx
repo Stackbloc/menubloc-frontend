@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+import { validateDiscountCode } from "../../lib/operatorApi.js";
 import {
   formatMoney,
   getSubscriptionPlanLabel,
@@ -66,6 +67,10 @@ export default function OperatorSubscription() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [discountCodeInput, setDiscountCodeInput] = useState("");
+  const [discountValidation, setDiscountValidation] = useState(null);
+  const [discountLoading, setDiscountLoading] = useState(false);
+  const [discountError, setDiscountError] = useState("");
 
   // Handle return from Stripe Checkout
   const checkoutResult = searchParams.get("checkout");
@@ -104,6 +109,22 @@ export default function OperatorSubscription() {
     refreshSubscription();
   }, [selectedRestaurant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  async function handleApplyDiscount() {
+    const code = discountCodeInput.trim().toUpperCase();
+    if (!code) return;
+    setDiscountLoading(true);
+    setDiscountError("");
+    setDiscountValidation(null);
+    try {
+      const data = await validateDiscountCode(code);
+      setDiscountValidation(data.discount_code);
+    } catch (e) {
+      setDiscountError(e.message || "Invalid discount code");
+    } finally {
+      setDiscountLoading(false);
+    }
+  }
+
   async function handleCheckout() {
     if (!selectedRestaurant?.id) {
       setError("Select a restaurant before starting a subscription.");
@@ -121,6 +142,7 @@ export default function OperatorSubscription() {
         planCode: selectedPlanCode,
         successUrl: `${origin}/operator/subscription?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${origin}/operator/subscription?checkout=cancelled`,
+        discountCode: discountValidation?.code || undefined,
       });
 
       if (result.already_active) {
@@ -288,6 +310,46 @@ export default function OperatorSubscription() {
             <p style={{ margin: "8px 0 0", fontSize: 14, color: "#667085" }}>
               You will be redirected to Stripe to complete payment. After checkout, you will be returned here and your subscription will be activated.
             </p>
+
+            <div style={{ marginTop: 18, borderTop: "1px solid #eaecf0", paddingTop: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#475467", marginBottom: 8 }}>Have a discount code?</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  value={discountCodeInput}
+                  onChange={(e) => { setDiscountCodeInput(e.target.value.toUpperCase()); setDiscountValidation(null); setDiscountError(""); }}
+                  placeholder="Enter code"
+                  style={{ flex: 1, padding: "10px 12px", borderRadius: 12, border: "1px solid #d0d5dd", fontSize: 14, fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.06em" }}
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyDiscount}
+                  disabled={!discountCodeInput.trim() || discountLoading}
+                  style={{ padding: "10px 16px", borderRadius: 12, border: "none", background: "#0f1720", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                >
+                  {discountLoading ? "…" : "Apply"}
+                </button>
+              </div>
+              {discountError && (
+                <div style={{ marginTop: 8, fontSize: 13, color: "#b42318", fontWeight: 600 }}>{discountError}</div>
+              )}
+              {discountValidation && (
+                <div style={{ marginTop: 10, background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 12, padding: "10px 14px" }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#166534" }}>Code applied: {discountValidation.code}</div>
+                  {discountValidation.subscription_discount_percent && (
+                    <div style={{ fontSize: 12, color: "#166534", marginTop: 4 }}>
+                      {discountValidation.subscription_discount_percent}% off subscription fees
+                      {discountValidation.subscription_discount_days ? ` for ${discountValidation.subscription_discount_days} days` : " (ongoing)"}
+                    </div>
+                  )}
+                  {discountValidation.commission_discount_percent && (
+                    <div style={{ fontSize: 12, color: "#166534", marginTop: 2 }}>
+                      {discountValidation.commission_discount_percent}% off commission rate
+                      {discountValidation.commission_discount_days ? ` for ${discountValidation.commission_discount_days} days` : " (ongoing)"}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <button
               type="button"

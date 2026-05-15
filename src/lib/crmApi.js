@@ -62,6 +62,11 @@ export const getCrmOrderDetail = (orderId) => get(`/api/orders/${orderId}/detail
 
 export const getCrmSubscriptions = () => get("/api/crm/subscriptions");
 export const getCrmBilling = () => get("/api/crm/billing");
+export const getCrmCommissionRates = () => get("/api/crm/commission-rates");
+export const updateCrmCommissionRate = (plan_type, rate_percent) => post("/api/crm/commission-rates", { plan_type, rate_percent });
+export const getCrmDiscountCodes = () => get("/api/crm/discount-codes");
+export const createCrmDiscountCode = (body) => post("/api/crm/discount-codes", body);
+export const updateCrmDiscountCode = (id, body) => req(`/api/crm/discount-codes/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 
 export const forgotCrmPassword = (email) => post("/api/crm/auth/forgot", { email });
 export const verifyCrmResetToken = (token) => get(`/api/crm/auth/reset-password?token=${encodeURIComponent(token)}`);
