@@ -50,8 +50,10 @@ export default function CrmLeadDetail() {
         phone: json.lead?.phone || "",
         email: json.lead?.email || "",
         website: json.lead?.website || "",
+        address_line1: json.lead?.address_line1 || json.lead?.account_address || "",
         city: json.lead?.city || "",
         state: json.lead?.state || "",
+        postal_code: json.lead?.postal_code || json.lead?.account_postal_code || "",
         source: json.lead?.source || "",
         source_detail: json.lead?.source_detail || "",
         priority: json.lead?.priority || "normal",
@@ -158,6 +160,7 @@ export default function CrmLeadDetail() {
               <div style={overviewGridStyle}>
                 <Field label="Lead name" value={lead.lead_name} />
                 <Field label="Restaurant" value={lead.restaurant_name || "—"} />
+                <Field label="Address" value={[lead.account_address, lead.account_city, lead.account_state, lead.account_postal_code].filter(Boolean).join(", ") || "—"} />
                 <Field label="City / State" value={`${fieldValue(lead.account_city)} / ${fieldValue(lead.account_state)}`} />
                 <Field label="Source" value={lead.source} />
                 <Field label="Assigned user" value={lead.assigned_user} />
@@ -211,9 +214,11 @@ export default function CrmLeadDetail() {
                     {["low", "normal", "high", "urgent"].map((value) => <option key={value} value={value}>{value}</option>)}
                   </select>
                 </div>
-                <div style={twoColStyle}>
+                <input value={leadForm.address_line1} onChange={(e) => setLeadForm({ ...leadForm, address_line1: e.target.value })} placeholder="Street address" style={inputStyle} />
+                <div style={threeColStyle}>
                   <input value={leadForm.city} onChange={(e) => setLeadForm({ ...leadForm, city: e.target.value })} placeholder="City" style={inputStyle} />
                   <input value={leadForm.state} onChange={(e) => setLeadForm({ ...leadForm, state: e.target.value })} placeholder="State" style={inputStyle} />
+                  <input value={leadForm.postal_code} onChange={(e) => setLeadForm({ ...leadForm, postal_code: e.target.value })} placeholder="ZIP" style={inputStyle} />
                 </div>
                 <div style={twoColStyle}>
                   <input value={leadForm.source} onChange={(e) => setLeadForm({ ...leadForm, source: e.target.value })} placeholder="Source" style={inputStyle} />
@@ -370,6 +375,12 @@ const overviewGridStyle = {
 const twoColStyle = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
+  gap: 10,
+};
+
+const threeColStyle = {
+  display: "grid",
+  gridTemplateColumns: "2fr 1fr 1fr",
   gap: 10,
 };
 
