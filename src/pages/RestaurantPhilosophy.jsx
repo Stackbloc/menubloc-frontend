@@ -158,15 +158,18 @@ export default function RestaurantPhilosophy() {
 
         <p style={styles.body}>
           Many restaurants operating on higher-cost third-party delivery platforms have had to
-          drastically increase menu prices to absorb the high costs of doing business on those
-          platforms. These higher-cost models have negatively impacted both restaurants and diners.
+          increase menu prices to help absorb the structural costs associated with those platforms.
+          These higher-cost models have often created challenges for both restaurants and diners.
         </p>
 
         <p style={styles.body}>
-          Menuply was designed with a lower-cost, restaurant-centered structure that allows
-          restaurants to offer diners substantially better day-to-day pricing, meaningful deals,
-          richer menu information, and more direct engagement — all without sacrificing margins.
-          This model better serves both restaurants and diners over the long term.
+          Menuply was designed with a lower-cost, restaurant-centered structure intended to give
+          restaurants greater flexibility to offer diners better day-to-day pricing, meaningful
+          deals, richer menu information, and more direct engagement. The platform is built around
+          the idea that lower structural costs can create better long-term value for both restaurants
+          and diners. Prospective restaurant partners are encouraged to keep this principle in mind
+          when joining the platform, as it represents a core Menuply value and reflects the broader
+          operational and marketplace philosophy on which Menuply was built.
         </p>
 
         <p style={styles.body}>
