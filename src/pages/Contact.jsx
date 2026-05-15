@@ -14,6 +14,7 @@ import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import { usePageMeta } from "../hooks/usePageMeta.js";
 
 const introStyle = {
   margin: "0 0 24px",
@@ -59,6 +60,7 @@ const contactRows = [
 ];
 
 export default function Contact() {
+  usePageMeta();
   return (
     <>
     <StickyPageHeader />

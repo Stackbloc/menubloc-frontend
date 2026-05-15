@@ -4,6 +4,7 @@ import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import { usePageMeta } from "../hooks/usePageMeta.js";
 
 const paragraphStyle = {
   margin: "0 0 18px",
@@ -26,8 +27,9 @@ const listStyle = {
 };
 
 export default function AboutGrubbid() {
+  usePageMeta();
   return (
-    <>
+<>
     <StickyPageHeader />
     <PageShell width="reading">
       <PageNav back />

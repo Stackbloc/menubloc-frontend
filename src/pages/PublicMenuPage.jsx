@@ -52,6 +52,8 @@ import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.
 import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
+import JsonLd from "../seo/JsonLd.jsx";
+import { buildMenuPageSchema } from "../seo/jsonLd.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
 
@@ -1310,6 +1312,7 @@ export default function PublicMenuPage() {
 
   return (
     <div style={pageShellStyle}>
+      <JsonLd schema={buildMenuPageSchema(data, sections)} />
       <StickyPageHeader
         barBackground={menuBrand?.pageBackground}
         linkAccent={menuBrand?.accent}
