@@ -4,6 +4,7 @@ import { useCrm } from "../../context/CrmContext.jsx";
 
 const NAV = [
   { to: "/crm", label: "Dashboard" },
+  { to: "/crm/subscriptions", label: "Subscriptions" },
   { to: "/crm/orders", label: "Orders" },
   { to: "/crm/leads", label: "Leads" },
   { to: "/crm/tasks", label: "Tasks" },

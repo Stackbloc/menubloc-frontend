@@ -60,6 +60,9 @@ export const getCrmOrders = (params = {}) => {
 };
 export const getCrmOrderDetail = (orderId) => get(`/api/orders/${orderId}/detail`);
 
+export const getCrmSubscriptions = () => get("/api/crm/subscriptions");
+export const getCrmBilling = () => get("/api/crm/billing");
+
 export const forgotCrmPassword = (email) => post("/api/crm/auth/forgot", { email });
 export const verifyCrmResetToken = (token) => get(`/api/crm/auth/reset-password?token=${encodeURIComponent(token)}`);
 export const resetCrmPassword = (token, password) => post("/api/crm/auth/reset-password", { token, password });
