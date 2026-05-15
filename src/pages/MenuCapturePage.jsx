@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import {
@@ -121,6 +121,7 @@ export default function MenuCapturePage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [savingPhoto, setSavingPhoto] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [captureStatus, setCaptureStatus] = useState(null);
 
   const postPage = useCallback(
     async (file, pageRole, pageNumber) => {
@@ -312,6 +313,7 @@ export default function MenuCapturePage() {
       if (!json.queued) {
         throw new Error("Unexpected response from server. Please try again.");
       }
+      setCaptureStatus({ session_status: "queued", processing_complete: false });
       setPhase("success");
     } catch (err) {
       setErrorMsg(formatFlowError(err.message, err.status));
@@ -319,6 +321,40 @@ export default function MenuCapturePage() {
       setSubmitting(false);
     }
   }
+
+  useEffect(() => {
+    if (phase !== "success" || !captureSessionId) return undefined;
+    let cancelled = false;
+
+    async function poll() {
+      try {
+        const res = await fetch(
+          `${API}/menus-claim-upload-clean/capture-session/${captureSessionId}/status`,
+          { credentials: "include" }
+        );
+        const json = await res.json().catch(() => ({}));
+        if (!cancelled && res.ok && json?.ok) {
+          setCaptureStatus({
+            session_status: json.session?.status || null,
+            processing_complete: Boolean(json.processing_complete),
+            menu_completeness_status: json.menu_completeness_status,
+            review_pending_count: json.review_pending_count,
+            item_total: json.item_total,
+            job_error: json.job_error,
+          });
+        }
+      } catch {
+        /* ignore transient poll errors */
+      }
+    }
+
+    poll();
+    const id = setInterval(poll, 4000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [phase, captureSessionId]);
 
   const mergedHintsDisplay = ocrHintsFromPhoto
     ? [
@@ -370,12 +406,90 @@ export default function MenuCapturePage() {
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 10px", color: "#0f172a" }}>
             Menu received
           </h1>
-          <p style={{ fontSize: 15, color: "#475569", margin: "0 0 28px", lineHeight: 1.65 }}>
+          <p style={{ fontSize: 15, color: "#475569", margin: "0 0 16px", lineHeight: 1.65 }}>
             <strong>{restaurantName.trim()}</strong>: we received{" "}
             <strong>{menuPageCount}</strong> menu page{menuPageCount !== 1 ? "s" : ""}
             {hasRestaurantInfoPhoto ? " plus your optional restaurant-details photo" : ""}. Photos are processing in
             the background — items may take a few minutes to appear in search. Thank you for contributing!
           </p>
+          {captureStatus?.session_status === "failed" && (
+            <div
+              style={{
+                marginBottom: 16,
+                padding: "12px 14px",
+                borderRadius: 8,
+                background: "#fff5f5",
+                border: "1px solid #fca5a5",
+                color: "#b91c1c",
+                fontSize: 13,
+                lineHeight: 1.5,
+              }}
+            >
+              Processing could not finish. You can try submitting again or contact support if this persists.
+            </div>
+          )}
+          {captureStatus?.processing_complete &&
+            captureStatus?.menu_completeness_status &&
+            captureStatus.menu_completeness_status !== "complete" && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: "12px 14px",
+                  borderRadius: 8,
+                  background: "#fffbeb",
+                  border: "1px solid #fcd34d",
+                  color: "#92400e",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                }}
+              >
+                {captureStatus.menu_completeness_status === "partial" ||
+                captureStatus.menu_completeness_status === "review_pending" ? (
+                  <>
+                    Some items from your photos are still under review
+                    {Number(captureStatus.review_pending_count) > 0
+                      ? ` (${captureStatus.review_pending_count} held for quality check)`
+                      : ""}
+                    . Approved items are already on the menu.
+                  </>
+                ) : (
+                  <>Menu processing finished with limited items published.</>
+                )}
+              </div>
+            )}
+          {captureStatus?.processing_complete &&
+            captureStatus?.menu_completeness_status === "complete" &&
+            Number(captureStatus.item_total) > 0 && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: "12px 14px",
+                  borderRadius: 8,
+                  background: "#ecfdf5",
+                  border: "1px solid #6ee7b7",
+                  color: "#065f46",
+                  fontSize: 13,
+                }}
+              >
+                Processing complete — {captureStatus.item_total} menu item
+                {captureStatus.item_total !== 1 ? "s" : ""} published.
+              </div>
+            )}
+          {!captureStatus?.processing_complete && captureStatus?.session_status !== "failed" && (
+            <div
+              style={{
+                marginBottom: 16,
+                padding: "12px 14px",
+                borderRadius: 8,
+                background: "#f6f8fc",
+                border: "1px solid #c5d4eb",
+                color: "#334155",
+                fontSize: 13,
+              }}
+            >
+              Still processing your photos…
+            </div>
+          )}
           <button
             type="button"
             onClick={() => navigate("/")}
