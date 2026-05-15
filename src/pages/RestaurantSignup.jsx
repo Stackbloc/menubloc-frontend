@@ -8,7 +8,7 @@
  * ============================================================
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
@@ -260,6 +260,16 @@ export default function RestaurantSignup() {
     merchantTerms: false,
     privacyPolicy: false,
   });
+
+  // Sync email from operator once the async session resolves.
+  // useState initializer runs before the session loads, so form.email
+  // starts as "" even when the user is already signed in.
+  useEffect(() => {
+    if (operator?.email) {
+      setForm((current) => ({ ...current, email: current.email || operator.email }));
+    }
+  }, [operator?.email]);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [menuChoice, setMenuChoice] = useState("");
