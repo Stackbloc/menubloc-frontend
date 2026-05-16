@@ -71,7 +71,7 @@ export default function OwnerLayout({ title, children, actions = null }) {
       <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh" }}>
         <aside style={{ borderRight: `1px solid ${OWNER_COLORS.line}`, padding: "28px 18px", background: "rgba(255,250,243,0.86)", backdropFilter: "blur(10px)" }}>
           <div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.04em", color: OWNER_COLORS.accent }}>grubbid</div>
+            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.04em", color: OWNER_COLORS.accent }}>menuply</div>
             <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: OWNER_COLORS.muted, marginTop: 6 }}>
               Owner Control Center
             </div>

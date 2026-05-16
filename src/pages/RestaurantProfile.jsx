@@ -247,7 +247,7 @@ export default function RestaurantProfile() {
     <div style={styles.wrap}>
       <div style={{ marginBottom: 18 }}>
         <HomeButton />
-        <div style={{ ...styles.brand, marginTop: 14 }}>Grubbid · Restaurant Setup</div>
+        <div style={{ ...styles.brand, marginTop: 14 }}>Menuply · Restaurant Setup</div>
       </div>
 
       <div style={styles.card}>

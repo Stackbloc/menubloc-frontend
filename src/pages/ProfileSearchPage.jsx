@@ -495,7 +495,7 @@ export default function ProfileSearchPage() {
 
       <div style={ST.heading}>Find your restaurant profile</div>
       <div style={ST.subheading}>
-        Search for your restaurant below. If it already has a Grubbid profile you can claim it.
+        Search for your restaurant below. If it already has a Menuply profile you can claim it.
         {hasCreatedProfile
           ? " Or continue with the profile we just created."
           : " If not, create a new profile."}

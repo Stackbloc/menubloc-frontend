@@ -122,7 +122,7 @@ function ProviderCard({
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: "#0f1720" }}>{providerDef.label}</div>
           <div style={{ marginTop: 6, fontSize: 13, color: "#5b6675", lineHeight: 1.5 }}>
-            This restaurant owns the provider relationship. Grubbid only dispatches through the restaurant’s connected account.
+            This restaurant owns the provider relationship. Menuply only dispatches through the restaurant’s connected account.
           </div>
         </div>
         <div style={{ textAlign: "right" }}>

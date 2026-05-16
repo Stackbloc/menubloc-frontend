@@ -224,61 +224,61 @@ export const PRIVACY_DOCUMENT = {
 export const MERCHANT_TERMS_DOCUMENT = {
   title: "Merchant Terms of Service",
   description:
-    "Restaurant-facing terms governing merchant use of Grubbid's onboarding, listing, ordering, and account services.",
+    "Restaurant-facing terms governing merchant use of Menuply's onboarding, listing, ordering, and account services.",
   sections: [
     {
       heading: "Merchant relationship",
       paragraphs: [
-        "These Merchant Terms of Service apply to each restaurant, food business, or other merchant that creates or uses a Grubbid restaurant account. Grubbid is operated by Stackbloc Corporation.",
+        "These Merchant Terms of Service apply to each restaurant, food business, or other merchant that creates or uses a Menuply restaurant account. Menuply is operated by Stackbloc Corporation.",
         "By creating a restaurant account, submitting restaurant information, or using merchant tools, you agree to these Merchant Terms of Service.",
       ],
     },
     {
       heading: "Platform role",
       paragraphs: [
-        "Grubbid is a software and technology platform. Grubbid provides discovery, menu publishing, ordering, payments integrations, and related merchant tools.",
-        "You remain the merchant of record for transactions between your restaurant and consumers unless a separate written agreement expressly states otherwise. Grubbid is not your employee, delivery provider, food preparer, or inventory manager.",
+        "Menuply is a software and technology platform. Menuply provides discovery, menu publishing, ordering, payments integrations, and related merchant tools.",
+        "You remain the merchant of record for transactions between your restaurant and consumers unless a separate written agreement expressly states otherwise. Menuply is not your employee, delivery provider, food preparer, or inventory manager.",
       ],
     },
     {
       heading: "Merchant responsibilities",
       paragraphs: [
         "You are solely responsible for your restaurant's legal compliance, licenses, menu accuracy, pricing, tax treatment, food preparation, allergen and ingredient disclosures, operating hours, staffing, order acceptance, fulfillment, customer service, and refund decisions.",
-        "You represent that the person accepting these terms is authorized to bind the restaurant and that all information submitted to Grubbid is accurate and current.",
+        "You represent that the person accepting these terms is authorized to bind the restaurant and that all information submitted to Menuply is accurate and current.",
       ],
     },
     {
       heading: "Orders and fulfillment",
       paragraphs: [
-        "If your restaurant enables ordering through Grubbid, you are responsible for monitoring incoming orders, accepting or rejecting orders, preparing items, handling substitutions, and fulfilling pickup or delivery commitments.",
+        "If your restaurant enables ordering through Menuply, you are responsible for monitoring incoming orders, accepting or rejecting orders, preparing items, handling substitutions, and fulfilling pickup or delivery commitments.",
         "You will promptly address customer issues involving missing items, wrong items, quality complaints, delays, cancellations, charge disputes, and refund requests.",
       ],
     },
     {
       heading: "Payments and Stripe",
       paragraphs: [
-        "Grubbid may use Stripe and related payment providers to facilitate payment acceptance, subscription billing, and related payouts or settlements.",
+        "Menuply may use Stripe and related payment providers to facilitate payment acceptance, subscription billing, and related payouts or settlements.",
         "You agree to provide accurate business, tax, and payment onboarding information required by Stripe or by law. Your use of payment functionality may also be subject to Stripe's services agreement and connected-account requirements.",
       ],
     },
     {
       heading: "Fees, restaurant plans, and taxes",
       paragraphs: [
-        "You agree to pay the fees, restaurant plan charges, and other amounts disclosed by Grubbid for the plan or services you select. Unless expressly stated otherwise, fees are exclusive of taxes.",
-        "You are responsible for taxes arising from your restaurant operations, menu sales, and business activities, except for taxes based on Grubbid's own net income.",
+        "You agree to pay the fees, restaurant plan charges, and other amounts disclosed by Menuply for the plan or services you select. Unless expressly stated otherwise, fees are exclusive of taxes.",
+        "You are responsible for taxes arising from your restaurant operations, menu sales, and business activities, except for taxes based on Menuply's own net income.",
       ],
     },
     {
       heading: "Content and license",
       paragraphs: [
-        "You retain ownership of your restaurant name, logos, menu information, images, and other materials you submit. You grant Stackbloc Corporation a non-exclusive, worldwide, royalty-free license to host, copy, adapt, format, display, distribute, and use that content as needed to operate, market, improve, and support Grubbid and your merchant presence on the platform.",
+        "You retain ownership of your restaurant name, logos, menu information, images, and other materials you submit. You grant Stackbloc Corporation a non-exclusive, worldwide, royalty-free license to host, copy, adapt, format, display, distribute, and use that content as needed to operate, market, improve, and support Menuply and your merchant presence on the platform.",
       ],
     },
     {
       heading: "Platform restrictions",
       paragraphs: [
-        "You may not use Grubbid to submit false or misleading information, infringe third-party rights, upload malicious code, interfere with the platform, scrape restricted platform data, or violate law.",
-        "Grubbid may remove content, limit features, suspend ordering, or restrict access if we reasonably believe your account creates legal, operational, security, fraud, or reputational risk.",
+        "You may not use Menuply to submit false or misleading information, infringe third-party rights, upload malicious code, interfere with the platform, scrape restricted platform data, or violate law.",
+        "Menuply may remove content, limit features, suspend ordering, or restrict access if we reasonably believe your account creates legal, operational, security, fraud, or reputational risk.",
       ],
     },
     {
@@ -291,25 +291,25 @@ export const MERCHANT_TERMS_DOCUMENT = {
       heading: "Data and privacy",
       paragraphs: [
         "You agree to use consumer and order information only as necessary to fulfill orders, support customer service, comply with law, and operate your restaurant relationship with the customer.",
-        "You must protect any personal information you receive through Grubbid and comply with applicable privacy and data-security laws.",
+        "You must protect any personal information you receive through Menuply and comply with applicable privacy and data-security laws.",
       ],
     },
     {
       heading: "Independent contractor status",
       paragraphs: [
-        "The relationship between Grubbid and the merchant is that of independent contracting parties. Nothing in these Merchant Terms of Service creates a partnership, joint venture, franchise, employment, fiduciary, or agency relationship.",
+        "The relationship between Menuply and the merchant is that of independent contracting parties. Nothing in these Merchant Terms of Service creates a partnership, joint venture, franchise, employment, fiduciary, or agency relationship.",
       ],
     },
     {
       heading: "Termination",
       paragraphs: [
-        "Either party may stop using or offering the services at any time, subject to any active restaurant plan commitments and any surviving provisions of these terms. Grubbid may suspend or terminate access immediately for fraud, nonpayment, legal risk, or material breach.",
+        "Either party may stop using or offering the services at any time, subject to any active restaurant plan commitments and any surviving provisions of these terms. Menuply may suspend or terminate access immediately for fraud, nonpayment, legal risk, or material breach.",
       ],
     },
     {
       heading: "Disclaimer, limitation of liability, and indemnification",
       paragraphs: [
-        "Grubbid is provided as is and as available to the fullest extent permitted by law. Stackbloc Corporation disclaims all implied warranties.",
+        "Menuply is provided as is and as available to the fullest extent permitted by law. Stackbloc Corporation disclaims all implied warranties.",
         "To the fullest extent permitted by law, Stackbloc Corporation will not be liable for indirect, incidental, consequential, special, exemplary, or punitive damages, or lost profits, revenues, goodwill, or data. The merchant will defend, indemnify, and hold harmless Stackbloc Corporation and its affiliates from claims arising from the merchant's menu content, food preparation, operations, taxes, legal noncompliance, customer interactions, or breach of these terms.",
       ],
     },
@@ -331,18 +331,18 @@ export const MERCHANT_TERMS_DOCUMENT = {
 export const SUBSCRIPTION_TERMS_DOCUMENT = {
   title: "Restaurant Plan Terms",
   description:
-    "Billing and restaurant plan terms for restaurants using paid or performance-based Grubbid plans.",
+    "Billing and restaurant plan terms for restaurants using paid or performance-based Menuply plans.",
   sections: [
     {
       heading: "Incorporation and scope",
       paragraphs: [
-        "These Restaurant Plan Terms apply to paid and performance-based restaurant plans offered through Grubbid and are incorporated into the Merchant Terms of Service.",
+        "These Restaurant Plan Terms apply to paid and performance-based restaurant plans offered through Menuply and are incorporated into the Merchant Terms of Service.",
       ],
     },
     {
       heading: "Plan structure and features",
       paragraphs: [
-        "Grubbid may offer different plan tiers, billing intervals, and feature bundles. Available features may vary by selected plan and may include ordering, design tools, promotional tools, branding tools, analytics, or other merchant capabilities.",
+        "Menuply may offer different plan tiers, billing intervals, and feature bundles. Available features may vary by selected plan and may include ordering, design tools, promotional tools, branding tools, analytics, or other merchant capabilities.",
       ],
     },
     {
@@ -360,25 +360,25 @@ export const SUBSCRIPTION_TERMS_DOCUMENT = {
     {
       heading: "Refunds",
       paragraphs: [
-        "Plan fees are non-refundable except where required by law or where Grubbid expressly agrees otherwise in writing. Partial-period credits are not guaranteed if you cancel after a billing cycle begins.",
+        "Plan fees are non-refundable except where required by law or where Menuply expressly agrees otherwise in writing. Partial-period credits are not guaranteed if you cancel after a billing cycle begins.",
       ],
     },
     {
       heading: "Price changes",
       paragraphs: [
-        "Grubbid may change pricing, packaging, or included features for future billing periods. Changes become effective no earlier than the next renewal period after notice is provided or the updated pricing is posted.",
+        "Menuply may change pricing, packaging, or included features for future billing periods. Changes become effective no earlier than the next renewal period after notice is provided or the updated pricing is posted.",
       ],
     },
     {
       heading: "Suspension and termination",
       paragraphs: [
-        "Grubbid may suspend, restrict, or terminate paid features for failed payments, suspected fraud, chargebacks, abuse, legal risk, or material breach of the merchant terms.",
+        "Menuply may suspend, restrict, or terminate paid features for failed payments, suspected fraud, chargebacks, abuse, legal risk, or material breach of the merchant terms.",
       ],
     },
     {
       heading: "No business-results guarantee",
       paragraphs: [
-        "Restaurant plan access gives you access to platform features only. Grubbid does not guarantee any level of sales, traffic, conversion, customer acquisition, business growth, or operational results.",
+        "Restaurant plan access gives you access to platform features only. Menuply does not guarantee any level of sales, traffic, conversion, customer acquisition, business growth, or operational results.",
       ],
     },
     {

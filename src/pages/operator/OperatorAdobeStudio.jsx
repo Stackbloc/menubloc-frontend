@@ -53,7 +53,7 @@ function saveBlob(blob, filename) {
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = filename || "grubbid-export.pdf";
+  a.download = filename || "menuply-export.pdf";
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -137,7 +137,7 @@ export default function OperatorAdobeStudio() {
     await window.CCEverywhere.initialize(
       {
         clientId,
-        appName: "Grubbid Pro",
+        appName: "Menuply Pro",
         appVersion: { major: 1, minor: 0 },
         platformCategory: "web",
       },
@@ -159,7 +159,7 @@ export default function OperatorAdobeStudio() {
         variant,
         layout_id: layoutId,
       });
-      saveBlob(result.blob, parseDispositionFilename(result.filename) || "grubbid-print-menu.pdf");
+      saveBlob(result.blob, parseDispositionFilename(result.filename) || "menuply-print-menu.pdf");
       setStatus("Adobe PDF export completed.");
     } catch (err) {
       setError(err.message);
@@ -179,7 +179,7 @@ export default function OperatorAdobeStudio() {
         variant,
         layout_id: layoutId,
       });
-      saveBlob(result.blob, parseDispositionFilename(result.filename) || "grubbid-docgen-menu.pdf");
+      saveBlob(result.blob, parseDispositionFilename(result.filename) || "menuply-docgen-menu.pdf");
       setStatus("Adobe Document Generation export completed.");
     } catch (err) {
       setError(err.message);
@@ -311,7 +311,7 @@ export default function OperatorAdobeStudio() {
             </h2>
             <p style={{ margin: 0, color: "#566273", lineHeight: 1.6 }}>
               Share your menu anywhere, including Instagram, Google, and your website, and send customers directly to
-              your ordering system. Grubbid menu JSON remains the source of truth, so restaurants can choose a preset,
+              your ordering system. Menuply menu JSON remains the source of truth, so restaurants can choose a preset,
               pick a variant, and export without rebuilding the menu inside Adobe.
             </p>
           </div>

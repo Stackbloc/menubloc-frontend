@@ -28,7 +28,7 @@ function downloadTemplate() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "Grubbid Menu Upload Template.csv";
+  anchor.download = "Menuply Menu Upload Template.csv";
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -528,7 +528,7 @@ export default function SpreadsheetUploadPage() {
           <div style={s.successTitle}>Menu uploaded successfully</div>
           <p style={s.successSub}>
             {result.items_inserted} menu item{result.items_inserted !== 1 ? "s" : ""} uploaded and pending review.
-            Once approved, your menu will appear on your Grubbid profile.
+            Once approved, your menu will appear on your Menuply profile.
           </p>
           <Link to={`/restaurant-profile/${restaurant_id}`} style={s.profileLink}>
             Go to your restaurant profile

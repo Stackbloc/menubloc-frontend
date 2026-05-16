@@ -239,7 +239,7 @@ export default function OperatorQrKitOrder() {
             Platform Payment
           </div>
           <h1 style={{ margin: 0, fontSize: "clamp(32px, 5vw, 56px)", lineHeight: 0.96, letterSpacing: "-0.06em", maxWidth: 720 }}>
-            QR kits paid on the Grubbid platform account
+            QR kits paid on the Menuply platform account
           </h1>
           <p style={{ margin: "14px 0 0", maxWidth: 760, fontSize: 17, lineHeight: 1.7, color: "rgba(255,255,255,0.88)" }}>
             The QR kit is charged on the platform account with Stripe Elements, then fulfillment is created only after a verified successful payment intent exists in the backend ledger.

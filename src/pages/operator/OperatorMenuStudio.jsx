@@ -665,7 +665,7 @@ const OUTPUT_TYPES = [
   { value: "social_post",   label: "Social Post" },
   { value: "story",         label: "Story / Reel" },
   { value: "flyer",         label: "Print Flyer" },
-  { value: "grubbid_live",  label: "Grubbid Live" },
+  { value: "grubbid_live",  label: "Menuply Live" },
 ];
 
 function OutputsTab({ rid, usageSummary }) {
