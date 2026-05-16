@@ -45,6 +45,7 @@ function useIsMobile(breakpoint = 900) {
   return isMobile;
 }
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import UvMenuNotice from "../components/UvMenuNotice.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand } from "../components/menu-templates/restaurantMenuBrand.js";
@@ -1258,6 +1259,10 @@ export default function PublicMenuPage() {
           shareAnalyticsContext,
           franchiseSlot,
           intakeBannerSlot: <IntakePreviewBanner show={isIntakePreview} />,
+          uvMenuBannerSlot:
+            data?.is_authoritative === false ? (
+              <UvMenuNotice show variant="banner" menuBanner={data?.menu_banner} />
+            ) : null,
           filterChipsSlot,
           onOpenFilters: () => setIsFilterDrawerOpen(true),
           displaySections,

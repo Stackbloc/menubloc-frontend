@@ -167,7 +167,7 @@ function getMenuTierLabel(menuData) {
 
   if (status === "verified") return "Verified Menu";
   if (status === "pro") return "Pro Menu";
-  return "Unverified Menu";
+  return "UV";
 }
 
 // ── Data fetching ──────────────────────────────────────────────────────────
