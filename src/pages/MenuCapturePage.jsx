@@ -7,7 +7,12 @@ import {
   isCaptureImageFile,
 } from "../lib/menuCaptureImagePdf.js";
 
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV
+    ? "http://localhost:3001"
+    : "https://menubloc-backend-production.up.railway.app")
+).replace(/\/$/, "");
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 function OcrProgressSpinner() {
   return (
