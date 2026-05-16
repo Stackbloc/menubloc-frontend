@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender.mjs",
     "design-lock": "node scripts/check-design-lock.mjs && npm run verify:discovery-chips",
     "verify:discovery-chips": "node scripts/guard-discovery-chip-scroll.mjs",
     "lint": "eslint .",
@@ -27,6 +27,7 @@
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "cheerio": "^1.2.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm ci && npx playwright install chromium",
+  "installCommand": "npm ci",
   "redirects": [
     {
       "source": "/(.*)",
