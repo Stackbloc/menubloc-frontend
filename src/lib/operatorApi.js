@@ -12,6 +12,9 @@
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
+// Exported for components that construct raw URLs (e.g. EventSource for SSE)
+export const API_BASE = API;
+
 async function req(path, opts = {}) {
   const res = await fetch(`${API}${path}`, {
     credentials: "include",
@@ -212,7 +215,7 @@ export const saveDeliveryProviderAccount = (rid, provider, body) =>
 export const disconnectDeliveryProviderAccount = (rid, provider) =>
   del(`/operator/restaurants/${rid}/delivery/providers/${provider}`);
 
-// ── Restaurant: Orders ────────────────────────────────────────────────────
+// ── Restaurant: Orders (existing endpoints — do not remove) ───────────────
 export const getRestaurantOrders = (rid, params = {}) => {
   const qs = new URLSearchParams(
     Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
@@ -223,6 +226,36 @@ export const getRestaurantOrderDetail = (orderId) =>
   get(`/api/orders/${orderId}/detail`);
 export const updateRestaurantOrderStatus = (orderId, orderStatus) =>
   patch(`/api/orders/${orderId}/status`, { orderStatus });
+
+// ── Restaurant: Order Receiver (KDS operator endpoints) ───────────────────
+export const getLiveOrders = (rid) =>
+  get(`/operator/restaurants/${rid}/orders/live`);
+
+export const getOperatorOrderDetail = (rid, orderId) =>
+  get(`/operator/restaurants/${rid}/orders/${orderId}`);
+
+export const confirmOrder = (rid, orderId) =>
+  post(`/operator/restaurants/${rid}/orders/${orderId}/confirm`, {});
+
+export const cancelOrder = (rid, orderId, reason = "") =>
+  post(`/operator/restaurants/${rid}/orders/${orderId}/cancel`, {
+    cancellation_reason: reason,
+  });
+
+export const markOrderReady = (rid, orderId) =>
+  post(`/operator/restaurants/${rid}/orders/${orderId}/ready`, {});
+
+export const confirmDeliveryPickup = (rid, orderId) =>
+  post(`/operator/restaurants/${rid}/orders/${orderId}/picked-up`, {});
+
+export const getOrderHistory = (rid, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== ""
+    )
+  ).toString();
+  return get(`/operator/restaurants/${rid}/orders/history${qs ? `?${qs}` : ""}`);
+};
 
 // ── Restaurant: Menu Studio — Schedules (Pro) ─────────────────────────────
 export const duplicateMenu = (rid, mid) =>
