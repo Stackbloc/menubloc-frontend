@@ -52,6 +52,8 @@ import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.
 import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
+import JsonLd from "../seo/JsonLd.jsx";
+import { buildMenuPageSchema } from "../seo/jsonLd.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
 
@@ -122,6 +124,14 @@ function normalizeSections(data) {
   if (Array.isArray(data?.menu_sections)) return data.menu_sections;
   if (Array.isArray(data?.menu)) return data.menu;
   return [];
+}
+
+function getPublicMenuTabLabel(menu) {
+  return asStr(menu?.display_name || menu?.tab_label || menu?.name).trim() || "Menu";
+}
+
+function isVisiblePublicMenu(menu) {
+  return menu?.is_public !== false && menu?.is_active !== false;
 }
 
 function isDisplayableMenuItem(item) {
@@ -1035,12 +1045,20 @@ export default function PublicMenuPage() {
   }, [language, pageState.data, pageState.status, routeState.restaurantId, routeState.status]);
 
   const data = pageState.status === "ok" ? pageState.data : null;
+  const visibleMenus = useMemo(
+    () => (Array.isArray(data?.menus) ? data.menus.filter(isVisiblePublicMenu) : []),
+    [data?.menus]
+  );
+  const selectedMenuMeta = useMemo(
+    () => visibleMenus.find((menu) => Number(menu.id) === Number(data?.selected_menu_id)) || null,
+    [data?.selected_menu_id, visibleMenus]
+  );
   const restaurantName = data
     ? getLocalizedField(data, "restaurant_name", language) ||
       getLocalizedField(data, "name", language) ||
       asStr(data?.restaurant_name || data?.name || `Restaurant ${id}`).trim()
     : "";
-  const menuTypeLabel = asStr(data?.menu_name || data?.menu_label || "").trim() || null;
+  const menuTypeLabel = selectedMenuMeta ? getPublicMenuTabLabel(selectedMenuMeta) : null;
   const isFoodTruck =
     isFoodTruckCategory(data?.category) ||
     isFoodTruckCategory(data?.restaurant_category) ||
@@ -1184,6 +1202,17 @@ export default function PublicMenuPage() {
   const menuPresentationStyle = normalizeMenuStyle(
     searchParams.get("menuStyle") || searchParams.get("previewStyle")
   );
+  const showMenuTabs =
+    data?.menu_presentation?.tabs_allowed_for_public_view === true &&
+    visibleMenus.length > 1;
+
+  function handleMenuTabSelect(menuId) {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("menu", String(menuId));
+      return next;
+    });
+  }
 
   const filterChipsSlot = filtersActive ? (
     <div
@@ -1310,6 +1339,7 @@ export default function PublicMenuPage() {
 
   return (
     <div style={pageShellStyle}>
+      <JsonLd schema={buildMenuPageSchema(data, sections)} />
       <StickyPageHeader
         barBackground={menuBrand?.pageBackground}
         linkAccent={menuBrand?.accent}
@@ -1340,6 +1370,71 @@ export default function PublicMenuPage() {
               "menuTemplates.previewBanner",
               "Preview mode — sample data only. Use ?previewStyle=v1|v2|v3. On a live menu add ?menuStyle=v2."
             )}
+          </div>
+        ) : null}
+
+        {showMenuTabs ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              marginBottom: 18,
+              padding: "14px 14px 12px",
+              borderRadius: 18,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 900,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.55)",
+              }}
+            >
+              Menus
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                overflowX: "auto",
+                paddingBottom: 2,
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              {visibleMenus.map((menu) => {
+                const active = Number(menu.id) === Number(data?.selected_menu_id);
+                return (
+                  <button
+                    key={menu.id}
+                    type="button"
+                    onClick={() => handleMenuTabSelect(menu.id)}
+                    style={{
+                      borderRadius: 999,
+                      padding: "10px 14px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      border: active
+                        ? "1px solid rgba(34,197,94,0.55)"
+                        : "1px solid rgba(255,255,255,0.10)",
+                      background: active
+                        ? "linear-gradient(180deg, rgba(34,197,94,0.22) 0%, rgba(22,163,74,0.12) 100%)"
+                        : "rgba(255,255,255,0.03)",
+                      color: active ? "#dcfce7" : "rgba(255,255,255,0.74)",
+                      fontSize: 13,
+                      fontWeight: active ? 900 : 700,
+                      boxShadow: active ? "0 10px 22px rgba(22,163,74,0.18)" : "none",
+                    }}
+                  >
+                    {getPublicMenuTabLabel(menu)}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         ) : null}
 

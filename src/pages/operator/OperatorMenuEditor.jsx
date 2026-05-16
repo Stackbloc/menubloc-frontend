@@ -16,6 +16,22 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 
+const STARTER_MENU_PRESETS = [
+  { value: "breakfast", label: "Breakfast" },
+  { value: "lunch", label: "Lunch" },
+  { value: "dinner", label: "Dinner" },
+  { value: "custom", label: "Custom" },
+];
+const SCHEDULE_DAY_OPTIONS = [
+  { value: "sunday", label: "Sun" },
+  { value: "monday", label: "Mon" },
+  { value: "tuesday", label: "Tue" },
+  { value: "wednesday", label: "Wed" },
+  { value: "thursday", label: "Thu" },
+  { value: "friday", label: "Fri" },
+  { value: "saturday", label: "Sat" },
+];
+
 // ── Tiny shared styles ─────────────────────────────────────────────────────
 const INPUT = {
   padding: "9px 12px",
@@ -166,14 +182,45 @@ export default function OperatorMenuEditor() {
   const [error, setError]             = useState("");
 
   const [showNewMenuForm, setShowNewMenuForm] = useState(false);
+  const [newMenuPreset, setNewMenuPreset]     = useState("lunch");
   const [newMenuName, setNewMenuName]         = useState("");
   const [newMenuBusy, setNewMenuBusy]         = useState(false);
+  const [menuSettings, setMenuSettings]       = useState(null);
+  const [savingMenuSettings, setSavingMenuSettings] = useState(false);
 
   const [showAddItem, setShowAddItem] = useState(false);
   const [editingItem, setEditingItem] = useState(null); // item being edited inline
   const [actionBusy, setActionBusy]   = useState(false);
 
   const selectedMenu = menus.find(m => m.id === selectedMenuId);
+
+  useEffect(() => {
+    if (!selectedMenu) {
+      setMenuSettings(null);
+      return;
+    }
+    const presetType = STARTER_MENU_PRESETS.some((preset) => preset.value === selectedMenu.preset_type)
+      ? selectedMenu.preset_type
+      : ["breakfast", "lunch", "dinner"].includes(selectedMenu.menu_type)
+      ? selectedMenu.menu_type
+      : "custom";
+
+    setMenuSettings({
+      preset_type: presetType || "custom",
+      custom_label:
+        presetType === "custom"
+          ? selectedMenu.custom_label || selectedMenu.display_name || selectedMenu.name || ""
+          : "",
+      display_priority: selectedMenu.display_priority ?? "",
+      is_primary: selectedMenu.is_primary === true,
+      is_public: selectedMenu.is_public !== false,
+      is_active: selectedMenu.is_active !== false,
+      schedule_days: Array.isArray(selectedMenu.schedule_days) ? selectedMenu.schedule_days : [],
+      start_time: selectedMenu.start_time || "",
+      end_time: selectedMenu.end_time || "",
+      timezone: selectedMenu.timezone || "America/Los_Angeles",
+    });
+  }, [selectedMenu]);
 
   // Load menus
   useEffect(() => {
@@ -210,19 +257,62 @@ export default function OperatorMenuEditor() {
 
   // Create menu
   async function handleCreateMenu() {
-    if (!newMenuName.trim()) return;
+    if (newMenuPreset === "custom" && !newMenuName.trim()) return;
     setNewMenuBusy(true);
     try {
-      const d = await api.createMenu(rid, { name: newMenuName.trim(), is_primary: menus.length === 0 });
+      const d = await api.createMenu(rid, {
+        preset_type: newMenuPreset,
+        custom_label: newMenuPreset === "custom" ? newMenuName.trim() : null,
+        is_primary: menus.length === 0,
+      });
       const updated = [...menus, d.menu];
       setMenus(updated);
       setSelectedMenuId(d.menu.id);
       setNewMenuName("");
+      setNewMenuPreset("lunch");
       setShowNewMenuForm(false);
     } catch (e) {
       setError(e.message);
     } finally {
       setNewMenuBusy(false);
+    }
+  }
+
+  function toggleScheduleDay(day) {
+    setMenuSettings(prev => ({
+      ...prev,
+      schedule_days: prev.schedule_days.includes(day)
+        ? prev.schedule_days.filter(entry => entry !== day)
+        : [...prev.schedule_days, day],
+    }));
+  }
+
+  async function handleSaveMenuSettings() {
+    if (!selectedMenuId || !menuSettings) return;
+    if (menuSettings.preset_type === "custom" && !menuSettings.custom_label.trim()) {
+      setError("Custom menus need a menu name.");
+      return;
+    }
+    setSavingMenuSettings(true);
+    try {
+      const d = await api.updateMenu(rid, selectedMenuId, {
+        preset_type: menuSettings.preset_type,
+        custom_label: menuSettings.preset_type === "custom" ? menuSettings.custom_label.trim() : null,
+        display_priority:
+          menuSettings.display_priority === "" ? null : Number(menuSettings.display_priority),
+        is_primary: menuSettings.is_primary,
+        is_public: menuSettings.is_public,
+        is_active: menuSettings.is_active,
+        schedule_days: menuSettings.schedule_days,
+        start_time: menuSettings.start_time || null,
+        end_time: menuSettings.end_time || null,
+        timezone: menuSettings.timezone.trim() || null,
+      });
+      setMenus(prev => prev.map(menu => (menu.id === d.menu.id ? d.menu : menu)));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSavingMenuSettings(false);
     }
   }
 
@@ -372,25 +462,228 @@ export default function OperatorMenuEditor() {
           borderRadius: 12,
           padding: "16px 18px",
           marginBottom: 20,
-          display: "flex",
-          gap: 10,
-          alignItems: "flex-end",
+          display: "grid",
+          gap: 14,
         }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Menu name</label>
-            <input
-              style={{ ...INPUT, width: "100%" }}
-              value={newMenuName}
-              onChange={e => setNewMenuName(e.target.value)}
-              placeholder="e.g. Lunch Menu, Seasonal Specials"
-              autoFocus
-              onKeyDown={e => e.key === "Enter" && handleCreateMenu()}
-            />
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 8 }}>
+              Starter preset
+            </label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {STARTER_MENU_PRESETS.map((preset) => {
+                const active = preset.value === newMenuPreset;
+                return (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => setNewMenuPreset(preset.value)}
+                    style={{
+                      ...BTN(active ? "primary" : "ghost"),
+                      padding: "7px 12px",
+                      fontSize: 12,
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <button style={BTN("primary")} onClick={handleCreateMenu} disabled={newMenuBusy || !newMenuName.trim()}>
-            {newMenuBusy ? "Creating…" : "Create"}
-          </button>
-          <button style={BTN("muted")} onClick={() => setShowNewMenuForm(false)}>Cancel</button>
+          <div style={{ flex: 1 }}>
+            {newMenuPreset === "custom" ? (
+              <>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>
+                  Custom menu name
+                </label>
+                <input
+                  style={{ ...INPUT, width: "100%" }}
+                  value={newMenuName}
+                  onChange={e => setNewMenuName(e.target.value)}
+                  placeholder="e.g. Mimi's Biscuit Bar, Brunch Sippins, Late Night"
+                  autoFocus
+                  onKeyDown={e => e.key === "Enter" && handleCreateMenu()}
+                />
+              </>
+            ) : (
+              <div style={{ color: "#5b6675", fontSize: 13 }}>
+                This menu will be created as <strong>{STARTER_MENU_PRESETS.find((preset) => preset.value === newMenuPreset)?.label}</strong>.
+              </div>
+            )}
+            <div style={{ marginTop: 6, fontSize: 12, color: "#8a9ab0" }}>
+              Suggested custom examples: Brunch, Bar, Catering, Happy Hour, Kids, Bakery, Seasonal.
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <button
+              style={BTN("primary")}
+              onClick={handleCreateMenu}
+              disabled={newMenuBusy || (newMenuPreset === "custom" && !newMenuName.trim())}
+            >
+              {newMenuBusy ? "Creating…" : "Create"}
+            </button>
+            <button style={BTN("muted")} onClick={() => setShowNewMenuForm(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {selectedMenu && menuSettings && (
+        <div style={{
+          background: "#fff",
+          border: "1px solid #e4e9f0",
+          borderRadius: 14,
+          padding: "18px 20px",
+          marginBottom: 20,
+          display: "grid",
+          gap: 16,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720" }}>Menu settings</div>
+              <div style={{ fontSize: 12, color: "#8a9ab0", marginTop: 4 }}>
+                Public tabs use these saved fields automatically.
+              </div>
+            </div>
+            <button style={BTN("primary")} onClick={handleSaveMenuSettings} disabled={savingMenuSettings}>
+              {savingMenuSettings ? "Saving…" : "Save menu settings"}
+            </button>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 8 }}>
+              Menu type
+            </label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {STARTER_MENU_PRESETS.map((preset) => {
+                const active = preset.value === menuSettings.preset_type;
+                return (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => setMenuSettings(prev => ({
+                      ...prev,
+                      preset_type: preset.value,
+                      custom_label: preset.value === "custom" ? prev.custom_label : "",
+                    }))}
+                    style={{ ...BTN(active ? "primary" : "ghost"), padding: "7px 12px", fontSize: 12 }}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {menuSettings.preset_type === "custom" && (
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>
+                Custom menu name
+              </label>
+              <input
+                style={{ ...INPUT, width: "100%" }}
+                value={menuSettings.custom_label}
+                onChange={e => setMenuSettings(prev => ({ ...prev, custom_label: e.target.value }))}
+                placeholder="Late Night, Catering, Brunch Sippins"
+              />
+            </div>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>
+                Display priority
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                style={{ ...INPUT, width: "100%" }}
+                value={menuSettings.display_priority}
+                onChange={e => setMenuSettings(prev => ({ ...prev, display_priority: e.target.value }))}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>
+                Timezone
+              </label>
+              <input
+                style={{ ...INPUT, width: "100%" }}
+                value={menuSettings.timezone}
+                onChange={e => setMenuSettings(prev => ({ ...prev, timezone: e.target.value }))}
+                placeholder="America/Los_Angeles"
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>
+                Start time
+              </label>
+              <input
+                type="time"
+                style={{ ...INPUT, width: "100%" }}
+                value={menuSettings.start_time}
+                onChange={e => setMenuSettings(prev => ({ ...prev, start_time: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>
+                End time
+              </label>
+              <input
+                type="time"
+                style={{ ...INPUT, width: "100%" }}
+                value={menuSettings.end_time}
+                onChange={e => setMenuSettings(prev => ({ ...prev, end_time: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 8 }}>
+              Active days
+            </label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {SCHEDULE_DAY_OPTIONS.map((day) => {
+                const active = menuSettings.schedule_days.includes(day.value);
+                return (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleScheduleDay(day.value)}
+                    style={{ ...BTN(active ? "primary" : "ghost"), padding: "6px 10px", fontSize: 12 }}
+                  >
+                    {day.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#0f1720" }}>
+              <input
+                type="checkbox"
+                checked={menuSettings.is_primary}
+                onChange={e => setMenuSettings(prev => ({ ...prev, is_primary: e.target.checked }))}
+              />
+              Primary menu fallback
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#0f1720" }}>
+              <input
+                type="checkbox"
+                checked={menuSettings.is_public}
+                onChange={e => setMenuSettings(prev => ({ ...prev, is_public: e.target.checked }))}
+              />
+              Publicly visible when published
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#0f1720" }}>
+              <input
+                type="checkbox"
+                checked={menuSettings.is_active}
+                onChange={e => setMenuSettings(prev => ({ ...prev, is_active: e.target.checked }))}
+              />
+              Active menu collection
+            </label>
+          </div>
         </div>
       )}
 
