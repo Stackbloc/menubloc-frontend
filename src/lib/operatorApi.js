@@ -268,7 +268,21 @@ export const removeBrandLogo = (rid) =>
 export const getAdobeUsageSummary = (rid) =>
   get(`/operator/restaurants/${rid}/adobe-usage`);
 
+// ── Help Center ───────────────────────────────────────────────────────────
+export const getHelpArticles = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/operator/help/articles${qs ? `?${qs}` : ""}`);
+};
+export const getKnownIssues = () => get("/operator/help/known-issues");
+
 // ── Support ───────────────────────────────────────────────────────────────
-export const getTickets = () => get("/operator/support/tickets");
+export const getTickets = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/operator/support/tickets${qs ? `?${qs}` : ""}`);
+};
 export const createTicket = (body) => post("/operator/support/tickets", body);
 export const replyTicket = (tid, message) => post(`/operator/support/tickets/${tid}/messages`, { message });

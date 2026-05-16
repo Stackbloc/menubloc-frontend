@@ -25,6 +25,7 @@ const NAV = [
   { to: "/operator/display-settings", label: "Display Board",  icon: "⊡", benefitKey: "tv_menu_board" },
   { to: "/operator/menu-studio",      label: "Menu Studio",    icon: "✦", benefitKey: "menu_outputs" },
   { to: "/operator/brand",            label: "Brand Settings", icon: "◉", benefitKey: "brand_customization" },
+  { to: "/operator/help",             label: "Ops Center",     icon: "?" },
   { to: "/operator/subscription",     label: "Subscription",   icon: "◈" },
 ];
 

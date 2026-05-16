@@ -60,6 +60,7 @@ import OperatorSubscription from "./pages/operator/OperatorSubscription.jsx";
 import OperatorAdobeStudio from "./pages/operator/OperatorAdobeStudio.jsx";
 import OperatorQrKitOrder from "./pages/operator/OperatorQrKitOrder.jsx";
 import OperatorDisplaySettings from "./pages/operator/OperatorDisplaySettings.jsx";
+import RestaurantHelpCenter from "./pages/operator/RestaurantHelpCenter.jsx";
 import OwnerLogin from "./pages/owner/OwnerLogin.jsx";
 import OwnerDashboard from "./pages/owner/OwnerDashboard.jsx";
 import OwnerSiteAnalytics from "./pages/owner/OwnerSiteAnalytics.jsx";
@@ -579,6 +580,9 @@ function AppShell({ easyMenu, stackbloc, crmHost }) {
         <Route path="/operator/display-settings" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDisplaySettings /></OperatorRoute>} />
         <Route path="/operator/menu-studio" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuStudio /></OperatorRoute>} />
         <Route path="/operator/brand" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorBrandSettings /></OperatorRoute>} />
+        <Route path="/operator/help" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantHelpCenter /></OperatorRoute>} />
+        <Route path="/dashboard/help" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><Navigate to="/operator/help" replace /></OperatorRoute>} />
+        <Route path="/dashboard/support" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><Navigate to="/operator/help" replace /></OperatorRoute>} />
 
         <Route path="/owner/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerLogin />} />
         <Route path="/owner" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerDashboard /></OwnerRoute>} />
