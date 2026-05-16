@@ -45,6 +45,8 @@ import {
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantFollow, trackRestaurantView } from "../lib/analytics.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
+import JsonLd from "../seo/JsonLd.jsx";
+import { buildRestaurantSchema } from "../seo/jsonLd.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -831,6 +833,7 @@ export default function RestaurantPublicPage() {
 
   return (
     <>
+    <JsonLd schema={buildRestaurantSchema(data)} />
     <StickyPageHeader />
     <div
       style={{

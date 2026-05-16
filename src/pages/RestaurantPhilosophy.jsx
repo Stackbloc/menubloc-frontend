@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import { usePageMeta } from "../hooks/usePageMeta.js";
 
 const PLAN_ROUTE = "/restaurant/signup";
 
@@ -138,6 +139,7 @@ function continueBtn(enabled) {
 }
 
 export default function RestaurantPhilosophy() {
+  usePageMeta();
   const navigate = useNavigate();
   const [agreed, setAgreed] = useState(false);
 

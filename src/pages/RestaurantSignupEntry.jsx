@@ -11,6 +11,7 @@
 
 import { useNavigate, Link } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import { usePageMeta } from "../hooks/usePageMeta.js";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
 
@@ -239,6 +240,7 @@ const styles = {
 };
 
 export default function RestaurantSignupEntry() {
+  usePageMeta();
   const navigate = useNavigate();
 
   function handlePlanSelect(selectedPlan) {
