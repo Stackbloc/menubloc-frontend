@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import {
@@ -13,7 +14,16 @@ import {
 
 // ── Audio ─────────────────────────────────────────────────────────────────
 
-function playAlertBeep() {
+// Volume levels — minimum floor is "low"; alerts cannot be silenced entirely.
+const VOLUME_LEVELS = [
+  { key: "low",    label: "Low",    gain: 0.15 },
+  { key: "medium", label: "Med",    gain: 0.35 },
+  { key: "high",   label: "High",   gain: 0.65 },
+  { key: "max",    label: "Max",    gain: 0.90 },
+];
+const DEFAULT_VOLUME = "medium";
+
+function playAlertBeep(gainValue = 0.35) {
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return;
@@ -25,7 +35,7 @@ function playAlertBeep() {
     osc.type = "sine";
     osc.frequency.setValueAtTime(880, ctx.currentTime);
     osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.setValueAtTime(gainValue, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.7);
@@ -334,6 +344,7 @@ function HistoryRow({ order }) {
 export default function RestaurantOrdersPage() {
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
+  const [searchParams] = useSearchParams();
 
   // Live queue state
   const [liveOrders, setLiveOrders] = useState([]);
@@ -342,18 +353,21 @@ export default function RestaurantOrdersPage() {
   // History / cancelled
   const [historyOrders, setHistoryOrders] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyFilter, setHistoryFilter] = useState({ status: "", fulfillment_type: "", days: 15 });
+  const [historyFilter, setHistoryFilter] = useState({ status: "", fulfillment_type: "", days: 21 });
   const [cancelledOrders, setCancelledOrders] = useState([]);
   const [cancelledLoading, setCancelledLoading] = useState(false);
 
-  // UI tabs
-  const [activeTab, setActiveTab] = useState("pending");
+  // UI tabs — support ?tab=history from sidebar link
+  const initialTab = ["pending", "cancelled", "history"].includes(searchParams.get("tab"))
+    ? searchParams.get("tab")
+    : "pending";
+  const [activeTab, setActiveTab] = useState(initialTab);
 
-  // Audio control
-  const [audioEnabled, setAudioEnabled] = useState(false);
-  const [audioMuted, setAudioMuted] = useState(false);
-  const audioEnabledRef = useRef(false);
-  const audioMutedRef = useRef(false);
+  // Audio — always active after first user gesture; volume controls level (no mute/disable)
+  const [audioReady, setAudioReady] = useState(false);   // true after browser gesture
+  const audioReadyRef = useRef(false);
+  const [alertVolume, setAlertVolume] = useState(DEFAULT_VOLUME);
+  const alertVolumeRef = useRef(DEFAULT_VOLUME);
 
   // SSE connection status
   const [sseStatus, setSseStatus] = useState("disconnected");
@@ -386,7 +400,6 @@ export default function RestaurantOrdersPage() {
   const pendingOrders = liveOrders.filter((o) => ["preparing", "ready"].includes(o.order_status));
   const hasIncoming = incomingOrders.length > 0;
   const selectedIncoming = incomingOrders[0] ?? null;
-  const sseOk = sseStatus === "connected";
 
   // ── Flash banner ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -402,13 +415,13 @@ export default function RestaurantOrdersPage() {
   }, []);
 
   // ── Repeating alert beep (every 30 s while unacknowledged orders exist) ──
+  // Alerts always fire once audio is ready — volume controls level, not on/off.
   useEffect(() => {
-    if (!hasIncoming || !audioEnabled) return;
-    const id = setInterval(() => {
-      if (!audioMutedRef.current) playAlertBeep();
-    }, 30000);
+    if (!hasIncoming || !audioReady) return;
+    const gain = VOLUME_LEVELS.find((v) => v.key === alertVolumeRef.current)?.gain ?? 0.35;
+    const id = setInterval(() => playAlertBeep(gain), 30000);
     return () => clearInterval(id);
-  }, [hasIncoming, audioEnabled]);
+  }, [hasIncoming, audioReady]);
 
   // ── Load live orders from API ─────────────────────────────────────────────
   const loadLive = useCallback(async (restaurantId) => {
@@ -448,7 +461,10 @@ export default function RestaurantOrdersPage() {
     });
 
     es.addEventListener("new_order", () => {
-      if (audioEnabledRef.current && !audioMutedRef.current) playAlertBeep();
+      if (audioReadyRef.current) {
+        const gain = VOLUME_LEVELS.find((v) => v.key === alertVolumeRef.current)?.gain ?? 0.35;
+        playAlertBeep(gain);
+      }
       loadLive(rid);
     });
 
@@ -502,18 +518,23 @@ export default function RestaurantOrdersPage() {
   }, [printOrder]);
 
   // ── Audio controls ────────────────────────────────────────────────────────
-  function handleEnableAudio() {
-    audioEnabledRef.current = true;
-    setAudioEnabled(true);
-    audioMutedRef.current = false;
-    setAudioMuted(false);
-    playAlertBeep(); // test beep to confirm it works
+  function handleActivateAlerts() {
+    // Browser requires a user gesture to unlock AudioContext.
+    // After this, alerts always fire; volume controls the level (no mute/disable).
+    const gain = VOLUME_LEVELS.find((v) => v.key === alertVolumeRef.current)?.gain ?? 0.35;
+    playAlertBeep(gain);
+    audioReadyRef.current = true;
+    setAudioReady(true);
   }
 
-  function handleToggleMute() {
-    const next = !audioMuted;
-    audioMutedRef.current = next;
-    setAudioMuted(next);
+  function handleVolumeChange(levelKey) {
+    alertVolumeRef.current = levelKey;
+    setAlertVolume(levelKey);
+    // Play a short preview at the new level
+    if (audioReady) {
+      const gain = VOLUME_LEVELS.find((v) => v.key === levelKey)?.gain ?? 0.35;
+      playAlertBeep(gain);
+    }
   }
 
   // ── Order actions ─────────────────────────────────────────────────────────
@@ -644,32 +665,41 @@ export default function RestaurantOrdersPage() {
             </div>
 
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              {!audioEnabled ? (
+              {/* Audio — activate once (browser gesture), then show volume control */}
+              {!audioReady ? (
                 <button
                   type="button"
-                  onClick={handleEnableAudio}
+                  onClick={handleActivateAlerts}
                   style={{
                     minHeight: 44, padding: "10px 16px", borderRadius: 12,
                     border: "2px solid #1F4E3D", background: "#fff",
                     color: "#1F4E3D", fontSize: 14, fontWeight: 800, cursor: "pointer",
                   }}
                 >
-                  🔔 Enable Order Alerts
+                  🔔 Activate Alerts
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleToggleMute}
-                  style={{
-                    minHeight: 44, padding: "10px 16px", borderRadius: 12,
-                    border: "none",
-                    background: audioMuted ? "#fee2e2" : "#dcfce7",
-                    color: audioMuted ? "#991b1b" : "#166534",
-                    fontSize: 14, fontWeight: 800, cursor: "pointer",
-                  }}
-                >
-                  {audioMuted ? "🔕 Alerts Muted" : "🔔 Alerts On"}
-                </button>
+                /* Volume selector — minimum is Low; no mute/disable option */
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 12, color: "#5b6675", fontWeight: 700 }}>🔔</span>
+                  {VOLUME_LEVELS.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleVolumeChange(key)}
+                      style={{
+                        minHeight: 36, padding: "6px 12px", borderRadius: 8,
+                        border: alertVolume === key ? "2px solid #1F4E3D" : "1px solid #d0d5dd",
+                        background: alertVolume === key ? "#edf7f2" : "#fff",
+                        color: alertVolume === key ? "#1F4E3D" : "#5b6675",
+                        fontSize: 12, fontWeight: alertVolume === key ? 800 : 500,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               )}
               <button
                 type="button"
@@ -697,9 +727,9 @@ export default function RestaurantOrdersPage() {
               transition: "background 0.12s, color 0.12s",
             }}>
               NEW ORDER{incomingOrders.length > 1 ? ` (${incomingOrders.length})` : ""}
-              {audioEnabled && audioMuted && (
+              {!audioReady && (
                 <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4, opacity: 0.75 }}>
-                  Sound muted — visual alert active
+                  Tap "Activate Alerts" above to enable sound
                 </div>
               )}
             </div>
@@ -939,7 +969,7 @@ export default function RestaurantOrdersPage() {
               {[
                 { key: "pending",   label: `Pending Orders${pendingOrders.length > 0 ? ` (${pendingOrders.length})` : ""}` },
                 { key: "cancelled", label: "Cancelled Orders" },
-                { key: "history",   label: "15-Day History" },
+                { key: "history",   label: "21-Day History" },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -1023,7 +1053,7 @@ export default function RestaurantOrdersPage() {
               )
             )}
 
-            {/* 15-Day History */}
+            {/* 21-Day History */}
             {activeTab === "history" && (
               <div>
                 {/* Filters */}
@@ -1046,7 +1076,7 @@ export default function RestaurantOrdersPage() {
                     {
                       label: "Range", value: historyFilter.days,
                       onChange: (v) => setHistoryFilter((f) => ({ ...f, days: Number(v) })),
-                      options: [[1, "Last 24 h"], [7, "Last 7 days"], [15, "Last 15 days"], [30, "Last 30 days"]],
+                      options: [[1, "Last 24 h"], [7, "Last 7 days"], [21, "Last 21 days"], [30, "Last 30 days"]],
                     },
                   ].map(({ label, value, onChange, options }) => (
                     <select

@@ -305,3 +305,13 @@ export const getAdobeUsageSummary = (rid) =>
 export const getTickets = () => get("/operator/support/tickets");
 export const createTicket = (body) => post("/operator/support/tickets", body);
 export const replyTicket = (tid, message) => post(`/operator/support/tickets/${tid}/messages`, { message });
+
+// ── Restaurant: Owner PIN / Security ─────────────────────────────────────
+export const getSensitiveSession = (rid) =>
+  get(`/operator/restaurants/${rid}/security/sensitive-session`);
+export const setupOwnerPin = (rid, pin) =>
+  post(`/operator/restaurants/${rid}/security/pin/setup`, { pin });
+export const verifyOwnerPin = (rid, pin) =>
+  post(`/operator/restaurants/${rid}/security/pin/verify`, { pin });
+export const resetOwnerPin = (rid) =>
+  post(`/operator/restaurants/${rid}/security/pin/reset`, {});
