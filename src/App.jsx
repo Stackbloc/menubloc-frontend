@@ -102,6 +102,7 @@ import DealDetailPage from "./pages/DealDetailPage.jsx";
 import ClaimVerify from "./pages/ClaimVerify.jsx";
 import MenuVerificationPage from "./pages/MenuVerificationPage.jsx";
 import EasyMenuLanding from "./pages/EasyMenuLanding.jsx";
+import StackblocLanding from "./pages/StackblocLanding.jsx";
 import SubscriptionSelect from "./pages/SubscriptionSelect.jsx";
 import MenuDesignSelectPage from "./pages/MenuDesignSelectPage.jsx";
 import MenuUploadChoicePage from "./pages/MenuUploadChoicePage.jsx";
@@ -165,6 +166,11 @@ function OwnerRoute({ children }) {
 function isEasyMenuHost() {
   const host = (window?.location?.hostname || "").toLowerCase();
   return host === "easymenuupload.com" || host === "www.easymenuupload.com";
+}
+
+function isStackblocHost() {
+  const host = (window?.location?.hostname || "").toLowerCase();
+  return host === "stackbloc.com" || host === "www.stackbloc.com";
 }
 
 function isCrmHost() {
@@ -452,7 +458,7 @@ function CanonicalUpdater() {
   return null;
 }
 
-function AppShell({ easyMenu, crmHost }) {
+function AppShell({ easyMenu, stackbloc, crmHost }) {
   return (
     <>
       <ScrollToTop />
@@ -463,7 +469,18 @@ function AppShell({ easyMenu, crmHost }) {
       {crmHost ? null : <BasketResumePrompt />}
 
       <Routes>
-        <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <GrubbidDiscovery />} />
+        <Route
+          path="/"
+          element={
+            crmHost
+              ? <CrmHostRoot />
+              : easyMenu
+                ? <EasyMenuLanding />
+                : stackbloc
+                  ? <StackblocLanding />
+                  : <GrubbidDiscovery />
+          }
+        />
 
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
         <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />
@@ -600,6 +617,7 @@ function AppShell({ easyMenu, crmHost }) {
 
 export default function App() {
   const easyMenu = isEasyMenuHost();
+  const stackbloc = isStackblocHost();
   const crmHost = isCrmHost();
 
   return (
@@ -611,7 +629,7 @@ export default function App() {
               <OrderCartProvider>
                 <LanguageProvider>
                   <BrowserRouter>
-                    <AppShell easyMenu={easyMenu} crmHost={crmHost} />
+                    <AppShell easyMenu={easyMenu} stackbloc={stackbloc} crmHost={crmHost} />
                   </BrowserRouter>
                 </LanguageProvider>
               </OrderCartProvider>
