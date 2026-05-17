@@ -33,7 +33,6 @@ const MENU_NAV = [
   { to: "/operator/menu",              label: "Menu Editor",        icon: "☰" },
   { to: "/operator/deals",             label: "Deals",              icon: "⊹" },
   { to: "/operator/hours",             label: "Hours",              icon: "⏰" },
-  { to: "/operator/help",              label: "Operations Center",  icon: "?" },
   { to: "/operator/bid-free-bidding",  label: "Bid-Free Bidding™",  icon: "◇" },
   { to: "/operator/design",            label: "Adobe Studio",       icon: "▣", benefitKey: "design_exports" },
   { to: "/operator/display-settings",  label: "Display Board",      icon: "⊞", benefitKey: "tv_menu_board" },
@@ -46,7 +45,10 @@ const STAFF_MENU_NAV = [
   { to: "/operator/menu",   label: "Menu Editor",  icon: "☰" },
   { to: "/operator/deals",  label: "Deals",        icon: "⊹" },
   { to: "/operator/hours",  label: "Hours",        icon: "⏰" },
-  { to: "/operator/help",   label: "Operations Center",  icon: "?" },
+];
+
+const SUPPORT_NAV = [
+  { to: "/operator/help", label: "Knowledge Base", icon: "?" },
 ];
 
 const BUSINESS_NAV = [
@@ -458,6 +460,14 @@ export default function OperatorLayout({ title, children }) {
               )}
             </div>
           )}
+
+          {/* ── SUPPORT section ───────────────────────────────────── */}
+          <div style={{ borderTop: "1px solid #f0f0ec" }}>
+            <SectionHeader label="Support" />
+            {SUPPORT_NAV.map(({ to, label, icon }) => (
+              <SideNavLink key={to} to={to} label={label} icon={icon} />
+            ))}
+          </div>
         </nav>
 
         {/* ── Operator info + logout ────────────────────────────── */}
