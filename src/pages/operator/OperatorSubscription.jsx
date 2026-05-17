@@ -13,7 +13,7 @@ import {
 // TODO: replace with CK-backed taxonomy when available
 const PLAN_DESCRIPTIONS = {
   pro_monthly:
-    "Flexible monthly billing for restaurants that want direct ordering, stronger branding, and Stripe-backed billing without annual commitment.",
+    "Flexible monthly billing for restaurants that want direct ordering, stronger branding, and operational flexibility without annual commitment.",
   pro_annual:
     "Lower annual effective rate for restaurants ready to lock in Menuply Pro for the year.",
 };
@@ -238,13 +238,13 @@ export default function OperatorSubscription() {
               marginBottom: 16,
             }}
           >
-            Stripe Billing
+            Pro Billing
           </div>
           <h1 style={{ margin: 0, fontSize: "clamp(34px, 5vw, 58px)", lineHeight: 0.95, letterSpacing: "-0.06em" }}>
             Restaurant Pro Subscriptions
           </h1>
           <p style={{ margin: "14px 0 0", maxWidth: 760, fontSize: 17, lineHeight: 1.7, color: "rgba(255,255,255,0.88)" }}>
-            Select a billing interval and click Subscribe to be redirected to Stripe Checkout. After payment, your subscription is activated automatically via webhook.
+            Select a billing interval and subscribe. After payment, your plan activates automatically.
           </p>
         </section>
 
@@ -331,7 +331,7 @@ export default function OperatorSubscription() {
                 : "Select a restaurant before starting a subscription."}
             </p>
             <p style={{ margin: "8px 0 0", fontSize: 14, color: "#667085" }}>
-              You will be redirected to Stripe to complete payment. After checkout, you will be returned here and your subscription will be activated.
+              Complete payment securely, then return here once your subscription is active.
             </p>
 
             <div style={{ marginTop: 18, borderTop: "1px solid #eaecf0", paddingTop: 16 }}>
