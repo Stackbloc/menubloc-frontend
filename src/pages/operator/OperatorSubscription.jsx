@@ -24,6 +24,17 @@ function billingLabel(interval) {
   return "";
 }
 
+function getMarketplaceSetupStatus(subscription) {
+  if (!subscription) return "Not started";
+  if (subscription.stripe_subscription_id) return "Connected";
+  if (subscription.stripe_customer_id) return "In progress";
+  return "Not started";
+}
+
+function getAutoRenewLabel(subscription) {
+  return subscription?.cancel_at_period_end ? "No" : "Yes";
+}
+
 function cardStyle(active) {
   return {
     background: active ? "linear-gradient(180deg, #fff7ed 0%, #ffffff 100%)" : "#fff",
@@ -191,7 +202,7 @@ export default function OperatorSubscription() {
         restaurantId: selectedRestaurant.id,
         atPeriodEnd: true,
       });
-      setMessage("Subscription will cancel at period end.");
+      setMessage("Auto-renewal turned off. Subscription ends at the current period end.");
       await refreshSubscription();
     } catch (err) {
       setError(err.message || "Unable to cancel subscription.");
@@ -290,6 +301,11 @@ export default function OperatorSubscription() {
                     </span>
                   ) : null}
                 </div>
+                {!active ? (
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#b42318" }}>
+                    Click here to select
+                  </div>
+                ) : null}
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                   <div style={{ fontSize: 38, fontWeight: 800, color: "#b45309", letterSpacing: "-0.05em" }}>
                     {formatMoney(plan.amount_cents)}
@@ -401,9 +417,8 @@ export default function OperatorSubscription() {
               <StatusRow label="Plan" value={getSubscriptionPlanLabel(currentPlanCode)} />
               <StatusRow label="Status" value={loading ? "Loading..." : currentStatus} />
               <StatusRow label="Current Period End" value={loading ? "Loading..." : currentPeriodEnd} />
-              <StatusRow label="Cancel At Period End" value={subscription?.cancel_at_period_end ? "Yes" : "No"} />
-              <StatusRow label="Stripe Customer" value={subscription?.stripe_customer_id || "Not created"} />
-              <StatusRow label="Stripe Subscription" value={subscription?.stripe_subscription_id || "Not created"} />
+              <StatusRow label="Auto Renew" value={loading ? "Loading..." : getAutoRenewLabel(subscription)} />
+              <StatusRow label="Marketplace Setup" value={loading ? "Loading..." : getMarketplaceSetupStatus(subscription)} />
             </div>
 
             {hasActiveStripeSubscription ? (
@@ -441,12 +456,14 @@ export default function OperatorSubscription() {
                     cursor: canCancel ? "pointer" : "not-allowed",
                   }}
                 >
-                  Cancel At Period End
+                  Turn Off Auto-Renew
                 </button>
               )
             ) : null}
           </div>
         </section>
+
+        {/* TODO: Delivery setup must be handled during onboarding after plan selection. */}
       </div>
     </OperatorLayout>
   );
