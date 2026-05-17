@@ -10,11 +10,15 @@ import {
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
-const TEMPLATE_HEADERS = ["Name", "Description", "Section", "Price", "IsVegan", "IsGlutenFree"];
+const TEMPLATE_HEADERS = [
+  "item_name", "item_description", "section_category", "price", "available",
+  "dietary_tags", "allergens_declared", "preparation_method", "dish_template",
+  "owner_calories_if_known",
+];
 const TEMPLATE_EXAMPLE_ROWS = [
-  ["Margherita Pizza", "Fresh mozzarella and basil", "Pizzas", "14.99", "TRUE", "FALSE"],
-  ["Caesar Salad", "Romaine, croutons, parmesan", "Salads", "11.00", "FALSE", "FALSE"],
-  ["Spaghetti Aglio e Olio", "Garlic, olive oil, chili flakes", "Pasta", "13.50", "TRUE", "FALSE"],
+  ["Margherita Pizza", "Fresh mozzarella and basil", "Main Course", "14.99", "Y", "vegetarian", "", "baked", "pizza", ""],
+  ["Caesar Salad", "Romaine, croutons, parmesan", "Salad", "11.00", "Y", "", "", "raw", "salad", ""],
+  ["Grilled Chicken Sandwich", "Crispy chicken, pickles, mayo on brioche", "Main Course", "12.99", "Y", "high_protein", "wheat, eggs", "grilled", "sandwich", "540"],
 ];
 
 function generateTemplateCsv() {
@@ -28,7 +32,7 @@ function downloadTemplate() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "Menuply Menu Upload Template.csv";
+  anchor.download = "Menuply MKS Menu Template.csv";
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -73,21 +77,74 @@ function parseCSV(text) {
   return records;
 }
 
+function parseBool(v) {
+  const s = String(v ?? "").trim().toLowerCase();
+  return s === "true" || s === "1" || s === "yes" || s === "y";
+}
+
 function csvToItems(records) {
   if (records.length < 2) return { items: [], warnings: ["CSV has no data rows."] };
 
-  const headerRaw = records[0].map((header) => header.trim().toLowerCase());
+  const headerRaw = records[0].map((h) => h.trim().toLowerCase());
   const colIdx = {
-    name: headerRaw.findIndex((header) => header === "name"),
-    description: headerRaw.findIndex((header) => ["description", "desc"].includes(header)),
-    section: headerRaw.findIndex((header) => ["section", "category"].includes(header)),
-    price: headerRaw.findIndex((header) => header === "price"),
-    is_vegan: headerRaw.findIndex((header) => ["isvegan", "is_vegan", "vegan"].includes(header)),
-    is_gluten_free: headerRaw.findIndex((header) => ["isglutenfree", "is_gluten_free", "glutenfree", "gluten_free"].includes(header)),
+    // Core — supports both old and new MKS header names
+    name:            headerRaw.findIndex((h) => ["name", "item_name"].includes(h)),
+    description:     headerRaw.findIndex((h) => ["description", "desc", "item_description"].includes(h)),
+    section:         headerRaw.findIndex((h) => ["section", "category", "section_category"].includes(h)),
+    price:           headerRaw.findIndex((h) => h === "price"),
+    is_vegan:        headerRaw.findIndex((h) => ["isvegan", "is_vegan", "vegan"].includes(h)),
+    is_gluten_free:  headerRaw.findIndex((h) => ["isglutenfree", "is_gluten_free", "glutenfree", "gluten_free"].includes(h)),
+    available:       headerRaw.findIndex((h) => ["available", "is_available", "isavailable"].includes(h)),
+    dietary_tags:    headerRaw.findIndex((h) => ["dietary_tags", "diet tags", "diet_tags"].includes(h)),
+    allergens_declared: headerRaw.findIndex((h) => ["allergens", "allergens_declared", "allergens (comma separated)", "allergens declared"].includes(h)),
+    // Extended — all passed through to backend for JSONB preservation
+    portion_size:           headerRaw.findIndex((h) => h === "portion_size"),
+    portion_unit:           headerRaw.findIndex((h) => h === "portion_unit"),
+    serving_count:          headerRaw.findIndex((h) => h === "serving_count"),
+    protein_ounces:         headerRaw.findIndex((h) => h === "protein_ounces"),
+    side_included:          headerRaw.findIndex((h) => h === "side_included"),
+    side_item_name:         headerRaw.findIndex((h) => h === "side_item_name"),
+    combo_included_items:   headerRaw.findIndex((h) => h === "combo_included_items"),
+    kids_item:              headerRaw.findIndex((h) => h === "kids_item"),
+    preparation_method:     headerRaw.findIndex((h) => h === "preparation_method"),
+    coating_or_breading:    headerRaw.findIndex((h) => h === "coating_or_breading"),
+    sauce_style:            headerRaw.findIndex((h) => h === "sauce_style"),
+    spice_level:            headerRaw.findIndex((h) => h === "spice_level"),
+    heat_level_score:       headerRaw.findIndex((h) => h === "heat_level_score"),
+    cooking_fat:            headerRaw.findIndex((h) => h === "cooking_fat"),
+    preparation_confidence: headerRaw.findIndex((h) => h === "preparation_confidence"),
+    dish_template:          headerRaw.findIndex((h) => h === "dish_template"),
+    bread_type:             headerRaw.findIndex((h) => h === "bread_type"),
+    tortilla_type:          headerRaw.findIndex((h) => h === "tortilla_type"),
+    rice_type:              headerRaw.findIndex((h) => h === "rice_type"),
+    noodle_type:            headerRaw.findIndex((h) => h === "noodle_type"),
+    protein_type:           headerRaw.findIndex((h) => h === "protein_type"),
+    cheese_type:            headerRaw.findIndex((h) => h === "cheese_type"),
+    primary_ingredients:    headerRaw.findIndex((h) => h === "primary_ingredients"),
+    secondary_ingredients:  headerRaw.findIndex((h) => h === "secondary_ingredients"),
+    toppings:               headerRaw.findIndex((h) => h === "toppings"),
+    sauces:                 headerRaw.findIndex((h) => h === "sauces"),
+    optional_modifiers:     headerRaw.findIndex((h) => h === "optional_modifiers"),
+    primary_supplier:       headerRaw.findIndex((h) => h === "primary_supplier"),
+    supplier_item_code:     headerRaw.findIndex((h) => h === "supplier_item_code"),
+    portion_pack_size:      headerRaw.findIndex((h) => h === "portion_pack_size"),
+    prepared_in_house:      headerRaw.findIndex((h) => h === "prepared_in_house"),
+    frozen_or_fresh:        headerRaw.findIndex((h) => h === "frozen_or_fresh"),
+    branded_product_used:   headerRaw.findIndex((h) => h === "branded_product_used"),
+    owner_calories_if_known:    headerRaw.findIndex((h) => ["owner_calories_if_known", "calories", "calories (if known)"].includes(h)),
+    owner_sodium_mg_if_known:   headerRaw.findIndex((h) => ["owner_sodium_mg_if_known", "sodium mg (if known)"].includes(h)),
+    owner_protein_g_if_known:   headerRaw.findIndex((h) => ["owner_protein_g_if_known", "protein g (if known)"].includes(h)),
+    owner_notes_for_nutrition:  headerRaw.findIndex((h) => h === "owner_notes_for_nutrition"),
+    meal_period:            headerRaw.findIndex((h) => h === "meal_period"),
+    flavor_tags:            headerRaw.findIndex((h) => h === "flavor_tags"),
+    texture_tags:           headerRaw.findIndex((h) => h === "texture_tags"),
+    drink_type:             headerRaw.findIndex((h) => h === "drink_type"),
+    contains_alcohol:       headerRaw.findIndex((h) => h === "contains_alcohol"),
+    caffeine_level:         headerRaw.findIndex((h) => h === "caffeine_level"),
   };
 
   if (colIdx.name < 0) {
-    return { items: [], warnings: ['Required column "Name" not found. Check column headers.'] };
+    return { items: [], warnings: ['Required column "item_name" (or "Name") not found. Check column headers.'] };
   }
 
   const items = [];
@@ -103,13 +160,71 @@ function csvToItems(records) {
     const priceRaw = get(colIdx.price);
     const priceNum = priceRaw ? parseFloat(priceRaw.replace(/[^0-9.]/g, "")) : null;
 
+    // Derive is_vegan / is_gluten_free from dietary_tags when explicit bool columns are absent
+    const dtags = get(colIdx.dietary_tags).toLowerCase();
+    const is_vegan = colIdx.is_vegan >= 0
+      ? (get(colIdx.is_vegan) || null)
+      : (dtags.includes("vegan") ? "true" : null);
+    const is_gluten_free = colIdx.is_gluten_free >= 0
+      ? (get(colIdx.is_gluten_free) || null)
+      : ((dtags.includes("gluten_free") || dtags.includes("gluten-free")) ? "true" : null);
+
     items.push({
+      // Core fields
       name,
-      description: get(colIdx.description) || null,
-      section: get(colIdx.section) || null,
-      price: Number.isFinite(priceNum) && priceNum >= 0 ? priceNum.toFixed(2) : null,
-      is_vegan: get(colIdx.is_vegan) || null,
-      is_gluten_free: get(colIdx.is_gluten_free) || null,
+      description:  get(colIdx.description) || null,
+      section:      get(colIdx.section) || null,
+      price:        Number.isFinite(priceNum) && priceNum >= 0 ? priceNum.toFixed(2) : null,
+      is_vegan,
+      is_gluten_free,
+      // Standard optional
+      available:           get(colIdx.available) || null,
+      dietary_tags:        get(colIdx.dietary_tags) || null,
+      allergens_declared:  get(colIdx.allergens_declared) || null,
+      // Extended — all preserved in backend extended_attributes JSONB
+      portion_size:           get(colIdx.portion_size) || null,
+      portion_unit:           get(colIdx.portion_unit) || null,
+      serving_count:          get(colIdx.serving_count) || null,
+      protein_ounces:         get(colIdx.protein_ounces) || null,
+      side_included:          get(colIdx.side_included) || null,
+      side_item_name:         get(colIdx.side_item_name) || null,
+      combo_included_items:   get(colIdx.combo_included_items) || null,
+      kids_item:              get(colIdx.kids_item) || null,
+      preparation_method:     get(colIdx.preparation_method) || null,
+      coating_or_breading:    get(colIdx.coating_or_breading) || null,
+      sauce_style:            get(colIdx.sauce_style) || null,
+      spice_level:            get(colIdx.spice_level) || null,
+      heat_level_score:       get(colIdx.heat_level_score) || null,
+      cooking_fat:            get(colIdx.cooking_fat) || null,
+      preparation_confidence: get(colIdx.preparation_confidence) || null,
+      dish_template:          get(colIdx.dish_template) || null,
+      bread_type:             get(colIdx.bread_type) || null,
+      tortilla_type:          get(colIdx.tortilla_type) || null,
+      rice_type:              get(colIdx.rice_type) || null,
+      noodle_type:            get(colIdx.noodle_type) || null,
+      protein_type:           get(colIdx.protein_type) || null,
+      cheese_type:            get(colIdx.cheese_type) || null,
+      primary_ingredients:    get(colIdx.primary_ingredients) || null,
+      secondary_ingredients:  get(colIdx.secondary_ingredients) || null,
+      toppings:               get(colIdx.toppings) || null,
+      sauces:                 get(colIdx.sauces) || null,
+      optional_modifiers:     get(colIdx.optional_modifiers) || null,
+      primary_supplier:       get(colIdx.primary_supplier) || null,
+      supplier_item_code:     get(colIdx.supplier_item_code) || null,
+      portion_pack_size:      get(colIdx.portion_pack_size) || null,
+      prepared_in_house:      get(colIdx.prepared_in_house) || null,
+      frozen_or_fresh:        get(colIdx.frozen_or_fresh) || null,
+      branded_product_used:   get(colIdx.branded_product_used) || null,
+      owner_calories_if_known:    get(colIdx.owner_calories_if_known) || null,
+      owner_sodium_mg_if_known:   get(colIdx.owner_sodium_mg_if_known) || null,
+      owner_protein_g_if_known:   get(colIdx.owner_protein_g_if_known) || null,
+      owner_notes_for_nutrition:  get(colIdx.owner_notes_for_nutrition) || null,
+      meal_period:            get(colIdx.meal_period) || null,
+      flavor_tags:            get(colIdx.flavor_tags) || null,
+      texture_tags:           get(colIdx.texture_tags) || null,
+      drink_type:             get(colIdx.drink_type) || null,
+      contains_alcohol:       get(colIdx.contains_alcohol) || null,
+      caffeine_level:         get(colIdx.caffeine_level) || null,
     });
 
     if (!Number.isFinite(priceNum) && priceRaw) {
