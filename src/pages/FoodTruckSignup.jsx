@@ -25,12 +25,8 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").repla
 
 const SESSION_KEY = "grubbid.foodtruck.signup";
 
-const CUISINE_OPTIONS = [
-  "American", "BBQ", "Caribbean", "Chinese", "Filipino", "French",
-  "Greek", "Indian", "Italian", "Japanese", "Korean", "Latin",
-  "Mediterranean", "Mexican", "Middle Eastern", "Soul Food",
-  "Southeast Asian", "Thai", "Vegan / Plant-Based", "Other",
-];
+// TAXONOMY GUARDRAIL: Do not add local cuisine arrays here.
+// Options are loaded from /api/meta/cuisines (backend is the source of truth).
 
 const st = {
   page: {
@@ -197,6 +193,15 @@ export default function FoodTruckSignup() {
     merchantTerms: false,
     privacyPolicy: false,
   });
+  const [cuisineOptions, setCuisineOptions] = useState([]); // [{value, label}] from API
+
+  // Load cuisine options from backend — single source of truth
+  useEffect(() => {
+    fetch(`${API}/api/meta/cuisines`)
+      .then(r => r.json())
+      .then(d => { if (d.ok && Array.isArray(d.cuisines)) setCuisineOptions(d.cuisines); })
+      .catch(() => {});
+  }, []);
 
   // Handle return from Stripe Checkout
   useEffect(() => {
@@ -436,8 +441,11 @@ export default function FoodTruckSignup() {
               style={st.select}
             >
               <option value="">Select cuisine…</option>
-              {CUISINE_OPTIONS.map((c) => (
-                <option key={c} value={c}>{c}</option>
+              {form.cuisine && !cuisineOptions.some(o => o.value === form.cuisine) && (
+                <option value={form.cuisine}>{form.cuisine} (legacy — please update)</option>
+              )}
+              {cuisineOptions.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
               ))}
             </select>
           </div>
