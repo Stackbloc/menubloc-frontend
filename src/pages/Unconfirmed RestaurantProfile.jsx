@@ -58,7 +58,7 @@ export default function UnconfirmedRestaurantProfile() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900">{restaurantName}</h1>
           <p className="mt-3 max-w-3xl text-sm text-gray-600">
-            This restaurant does not yet have a completed Grubbid profile.
+            This restaurant does not yet have a completed Menuply profile.
             Claiming and verifying the listing unlocks a richer public presence.
           </p>
         </div>

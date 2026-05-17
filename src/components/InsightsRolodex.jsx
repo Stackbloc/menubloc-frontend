@@ -114,7 +114,7 @@ function normNum(x)  { const n = Number(x); return Number.isFinite(n) ? n : null
 
 function coverageSourceLabel(ratio) {
   const r = Number(ratio ?? 0);
-  if (r >= 0.57) return "Grubbid intelligence";
+  if (r >= 0.57) return "Menuply intelligence";
   if (r >= 0.3)  return "Estimated from menu language";
   return "Estimated from menu language";
 }
@@ -145,7 +145,7 @@ function buildWhatItIs(template, prep, conf, basis, itemName) {
     verdict,
     bullets:     bullets.slice(0, 3),
     confidence:  Math.max(tplConf, prepConf),
-    sourceLabel: tplConf < 0.45 ? "Estimated from menu language" : "Grubbid intelligence",
+    sourceLabel: tplConf < 0.45 ? "Estimated from menu language" : "Menuply intelligence",
     scores:      [],
     flags:       [],
   };
@@ -701,7 +701,7 @@ export default function InsightsRolodex({ data, compact = false, itemName = "" }
           textTransform: "uppercase",
           letterSpacing: "0.09em",
         }}>
-          Grubbid Insights
+          Menuply Insights
         </span>
         <span style={{ fontSize: 10, color: "#bbb" }}>
           {activeIdx + 1} / {CARD_COUNT}
