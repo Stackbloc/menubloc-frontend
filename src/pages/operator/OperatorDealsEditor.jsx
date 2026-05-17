@@ -91,6 +91,61 @@ function formatDate(iso) {
 // ── Deal form panel ────────────────────────────────────────────────────────
 // onSave receives (dealPayload, billboardPayload)
 // billboardPayload: { enabled: false } | { enabled: true, headline_override, image_url, cta_label, cta_url, is_primary_search_billboard }
+// One additional item picker slot for combo deals.
+// selectedId: the chosen menu_item_id | ""; onSelect(id, name); onClear()
+function ComboItemPicker({ label, selectedId, selectedName, allItems, onSelect, onClear, disabledIds }) {
+  const [search, setSearch] = useState(selectedName || "");
+  const filtered = allItems.filter(i => {
+    if (disabledIds.has(i.id)) return false;
+    if (!search.trim() || selectedId) return false;
+    return (
+      i.name.toLowerCase().includes(search.toLowerCase()) ||
+      (i.item_number || "").toLowerCase().includes(search.toLowerCase())
+    );
+  });
+
+  return (
+    <div style={{ gridColumn: "1 / -1" }}>
+      <label style={LABEL}>{label} <span style={{ fontWeight: 400, color: "#b0bbc8" }}>(optional)</span></label>
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <input
+          style={{ ...INPUT, flex: 1 }}
+          value={selectedId ? selectedName : search}
+          onChange={e => { setSearch(e.target.value); if (selectedId) onClear(); }}
+          placeholder="Search by name or item number…"
+          disabled={false}
+        />
+        {selectedId && (
+          <button
+            type="button"
+            onClick={() => { onClear(); setSearch(""); }}
+            style={{ background: "none", border: "1.5px solid #e4e9f0", borderRadius: 8, padding: "8px 10px", cursor: "pointer", color: "#8a9ab0", fontSize: 13 }}
+          >✕</button>
+        )}
+      </div>
+      {!selectedId && search && filtered.length > 0 && (
+        <div style={{ border: "1px solid #e4e9f0", borderRadius: 8, background: "#fff", maxHeight: 140, overflowY: "auto", marginTop: 4 }}>
+          {filtered.slice(0, 8).map(i => (
+            <div
+              key={i.id}
+              onClick={() => { onSelect(i.id, i.name); setSearch(i.name); }}
+              style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, borderBottom: "1px solid #f4f3ef", display: "flex", justifyContent: "space-between" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#f0f8f4"}
+              onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+            >
+              <span>{i.name}</span>
+              <span style={{ color: "#8a9ab0", fontSize: 11 }}>{i.item_number} · {i.price != null ? `$${Number(i.price).toFixed(2)}` : ""}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {selectedId && (
+        <div style={{ fontSize: 12, color: "#1F4E3D", fontWeight: 600, marginTop: 4 }}>✓ {selectedName}</div>
+      )}
+    </div>
+  );
+}
+
 function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onCancel, busy }) {
   const [form, setForm] = useState({
     title: initial.title || "",
@@ -108,6 +163,18 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
     expires_at: initial.expires_at ? initial.expires_at.slice(0, 10) : "",
   });
   const [itemSearch, setItemSearch] = useState(initial.item_name || "");
+
+  // Combo additional items: up to 3 slots, each {id, name}
+  const initComboIds = Array.isArray(initial.combo_item_ids) ? initial.combo_item_ids : [];
+  const initComboNames = (() => {
+    const map = Object.fromEntries(allItems.map(i => [i.id, i.name]));
+    return initComboIds.map(id => map[id] || "");
+  })();
+  const [comboItems, setComboItems] = useState([
+    { id: initComboIds[0] || "", name: initComboNames[0] || "" },
+    { id: initComboIds[1] || "", name: initComboNames[1] || "" },
+    { id: initComboIds[2] || "", name: initComboNames[2] || "" },
+  ]);
 
   // Billboard section state
   const existingActive = initialBillboard?.billboard_status === "active";
@@ -146,6 +213,9 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
     if (form.deal_type === "percent_off") p.value = parseFloat(form.discount_percent) || null;
     if (form.deal_type === "amount_off")  p.value = parseFloat(form.discount_amount_cents) || null;
     if (form.deal_type === "fixed_price") p.value = parseFloat(form.fixed_price_cents) || null;
+    if (form.deal_type === "combo") {
+      p.combo_item_ids = comboItems.filter(c => c.id).map(c => Number(c.id));
+    }
     return p;
   }
 
@@ -230,7 +300,15 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
         {/* Deal type */}
         <div>
           <label style={LABEL}>Deal type</label>
-          <select style={{ ...INPUT, width: "100%", cursor: "pointer" }} value={form.deal_type} onChange={f("deal_type")}>
+          <select
+            style={{ ...INPUT, width: "100%", cursor: "pointer" }}
+            value={form.deal_type}
+            onChange={e => {
+              const newType = e.target.value;
+              setForm(p => ({ ...p, deal_type: newType }));
+              if (newType !== "combo") setComboItems([{ id: "", name: "" }, { id: "", name: "" }, { id: "", name: "" }]);
+            }}
+          >
             {DEAL_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
@@ -253,6 +331,39 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
             <label style={LABEL}>Fixed price $</label>
             <input style={{ ...INPUT, width: "100%" }} type="number" min="0" step="0.01" value={form.fixed_price_cents} onChange={f("fixed_price_cents")} placeholder="e.g. 9.99" />
           </div>
+        )}
+
+        {/* Combo additional item pickers */}
+        {form.deal_type === "combo" && (
+          <>
+            <ComboItemPicker
+              label="Additional item 1"
+              selectedId={comboItems[0].id}
+              selectedName={comboItems[0].name}
+              allItems={allItems}
+              onSelect={(id, name) => setComboItems(p => [{ id, name }, p[1], p[2]])}
+              onClear={() => setComboItems(p => [{ id: "", name: "" }, p[1], p[2]])}
+              disabledIds={new Set([form.menu_item_id, comboItems[1].id, comboItems[2].id].filter(Boolean).map(Number))}
+            />
+            <ComboItemPicker
+              label="Additional item 2"
+              selectedId={comboItems[1].id}
+              selectedName={comboItems[1].name}
+              allItems={allItems}
+              onSelect={(id, name) => setComboItems(p => [p[0], { id, name }, p[2]])}
+              onClear={() => setComboItems(p => [p[0], { id: "", name: "" }, p[2]])}
+              disabledIds={new Set([form.menu_item_id, comboItems[0].id, comboItems[2].id].filter(Boolean).map(Number))}
+            />
+            <ComboItemPicker
+              label="Additional item 3"
+              selectedId={comboItems[2].id}
+              selectedName={comboItems[2].name}
+              allItems={allItems}
+              onSelect={(id, name) => setComboItems(p => [p[0], p[1], { id, name }])}
+              onClear={() => setComboItems(p => [p[0], p[1], { id: "", name: "" }])}
+              disabledIds={new Set([form.menu_item_id, comboItems[0].id, comboItems[1].id].filter(Boolean).map(Number))}
+            />
+          </>
         )}
 
         <div>
