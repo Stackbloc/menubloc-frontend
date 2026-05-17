@@ -259,7 +259,7 @@ export default function OperatorCartNegotiationSettings() {
         </div>
 
         <div style={CARD}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 10 }}>
+        <div className="operator-responsive-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 10 }}>
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: "#0f1720", marginBottom: 4 }}>Bid-Free Bidding™</div>
               <div style={{ fontSize: 14, color: "#475467", lineHeight: 1.6 }}>
@@ -318,7 +318,7 @@ export default function OperatorCartNegotiationSettings() {
               </Field>
 
               <Field label="Margin protection" helper={`Current: ${getFriendlyMarginLabel(settings.negotiation_margin_floor_pct)}`}>
-                <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+                <div className="operator-responsive-grid-3" style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
                   {marginOptions.map((option) => (
                     <button
                       key={option.label}
@@ -341,7 +341,7 @@ export default function OperatorCartNegotiationSettings() {
               </Field>
 
               <Field label="How often should savings be applied?" helper={`Current: ${getFriendlyFrequencyLabel(settings.negotiation_rarity_pct)}`}>
-                <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+                <div className="operator-responsive-grid-3" style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
                   {frequencyOptions.map((option) => (
                     <button
                       key={option.label}
@@ -379,7 +379,7 @@ export default function OperatorCartNegotiationSettings() {
               </Field>
 
               <Field label="When can savings be offered?" helper={`Current: ${scheduleMode}`}>
-                <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginBottom: 12 }}>
+                <div className="operator-responsive-grid-3" style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginBottom: 12 }}>
                   {["Anytime", "Slow hours only", "Custom schedule"].map((option) => (
                     <button
                       key={option}
@@ -410,7 +410,7 @@ export default function OperatorCartNegotiationSettings() {
                 </div>
 
                 {scheduleMode !== "Anytime" ? (
-                  <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr" }}>
+                  <div className="operator-responsive-grid-2" style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr" }}>
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#475467", marginBottom: 6 }}>Start</div>
                       <input
@@ -451,7 +451,7 @@ export default function OperatorCartNegotiationSettings() {
                 ) : null}
               </Field>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <button
                   type="button"
                   onClick={handleSave}
@@ -530,7 +530,7 @@ export default function OperatorCartNegotiationSettings() {
                   style={INPUT}
                 />
               </Field>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <button
                   type="button"
                   onClick={handleUnlockSave}

@@ -78,7 +78,7 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
       flexDirection: "column",
       gap: 10,
     }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+      <div className="operator-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <div>
           <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Item name *</label>
           <input style={{ ...INPUT, width: "100%" }} value={form.name} onChange={f("name")} placeholder="e.g. House Burger" required />
@@ -96,7 +96,7 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
           <input style={{ ...INPUT, width: "100%" }} value={form.description} onChange={f("description")} placeholder="Short description" />
         </div>
       </div>
-      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+      <div className="operator-responsive-card-actions" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button style={BTN("muted")} onClick={onCancel} type="button">Cancel</button>
         <button
           style={{ ...BTN("primary"), opacity: busy ? 0.6 : 1 }}
@@ -114,7 +114,7 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
 // ── Item row ───────────────────────────────────────────────────────────────
 function ItemRow({ item, onEdit, onPublish, onDelete, actionBusy }) {
   return (
-    <div style={{
+    <div className="operator-responsive-row" style={{
       display: "flex",
       alignItems: "center",
       gap: 12,
@@ -136,7 +136,7 @@ function ItemRow({ item, onEdit, onPublish, onDelete, actionBusy }) {
         {item.price != null ? `$${Number(item.price).toFixed(2)}` : ""}
       </div>
       <StatusBadge status={item.status} />
-      <div style={{ display: "flex", gap: 6 }}>
+      <div className="operator-responsive-card-actions" style={{ display: "flex", gap: 6 }}>
         {item.status === "draft" && (
           <button style={BTN("publish")} disabled={actionBusy} onClick={() => onPublish(item)}>
             Publish
@@ -325,13 +325,14 @@ export default function OperatorMenuEditor() {
   return (
     <OperatorLayout title="Menu Editor">
       {/* ── Top bar ──────────────────────────────────────────────────── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+      <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
         {loadingMenus ? (
           <span style={{ color: "#8a9ab0", fontSize: 13 }}>Loading menus…</span>
         ) : menus.length === 0 ? (
           <span style={{ color: "#8a9ab0", fontSize: 13 }}>No menus yet</span>
         ) : (
           <select
+            className="operator-responsive-select"
             value={selectedMenuId || ""}
             onChange={e => setSelectedMenuId(Number(e.target.value))}
             style={{ ...INPUT, minWidth: 200, cursor: "pointer" }}
@@ -366,13 +367,13 @@ export default function OperatorMenuEditor() {
 
       {/* New menu inline form */}
       {showNewMenuForm && (
-        <div style={{
+        <div className="operator-responsive-inline-form" style={{
           background: "#fff",
           border: "1.5px solid #1F4E3D",
           borderRadius: 12,
           padding: "16px 18px",
           marginBottom: 20,
-          display: "flex",
+          display: "grid",
           gap: 10,
           alignItems: "flex-end",
         }}>

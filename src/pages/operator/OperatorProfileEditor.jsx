@@ -13,118 +13,16 @@
  * Locked fields show an upgrade notice instead of the input.
  */
 
+// TAXONOMY GUARDRAIL: This file must NOT define local cuisine or category arrays.
+// Load from /api/meta/cuisines and /api/meta/categories only.
+// The backend src/lib/restaurantTaxonomy.js is the single source of truth.
+// Hardcoding options here silently diverges from backend validation rules.
+
 import React, { useState, useEffect, useCallback } from "react";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
-
-// TODO: replace with CK-backed taxonomy API when available
-const CUISINE_OPTIONS = [
-  "American", "Italian", "Mexican", "Chinese", "Japanese",
-  "Thai", "Korean", "Mediterranean", "Indian", "Vegan",
-  "Barbecue", "Seafood", "French", "Greek", "Middle Eastern",
-  "Vietnamese", "Caribbean", "Latin American", "Pizza", "Burgers",
-];
-
-// TODO: replace with CK-backed taxonomy API when available
-const CATEGORY_OPTIONS = [
-  "Fast Food", "Fast Casual", "Casual Dining", "Fine Dining",
-  "Cafe", "Bakery", "Food Truck", "Dessert Shop", "Bar",
-  "Ghost Kitchen", "Buffet", "Deli", "Juice Bar", "Catering",
-];
-
-function parseCuisine(str) {
-  return String(str || "").split(",").map((s) => s.trim()).filter(Boolean);
-}
-
-function MultiCuisineSelect({ value, onChange }) {
-  const selected = parseCuisine(value);
-  const unknowns = selected.filter((v) => !CUISINE_OPTIONS.includes(v));
-
-  function toggle(option) {
-    const next = selected.includes(option)
-      ? selected.filter((v) => v !== option)
-      : [...selected, option];
-    onChange(next.join(", "));
-  }
-
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-      {CUISINE_OPTIONS.map((opt) => {
-        const checked = selected.includes(opt);
-        return (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => toggle(opt)}
-            style={{
-              padding: "5px 11px",
-              borderRadius: 999,
-              fontSize: 12,
-              fontWeight: 700,
-              border: checked ? "1.5px solid #1F4E3D" : "1.5px solid #d7deea",
-              background: checked ? "#edf7f2" : "#fff",
-              color: checked ? "#1F4E3D" : "#475467",
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            {opt}
-          </button>
-        );
-      })}
-      {unknowns.map((u) => (
-        <button
-          key={u}
-          type="button"
-          onClick={() => toggle(u)}
-          style={{
-            padding: "5px 11px",
-            borderRadius: 999,
-            fontSize: 12,
-            fontWeight: 700,
-            border: "1.5px solid #1F4E3D",
-            background: "#edf7f2",
-            color: "#1F4E3D",
-            cursor: "pointer",
-            fontFamily: "inherit",
-          }}
-        >
-          {u}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function CategorySelect({ value, onChange }) {
-  const isKnown = !value || CATEGORY_OPTIONS.includes(value);
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{
-        width: "100%",
-        padding: "10px 13px",
-        fontSize: 13,
-        border: "1.5px solid #e4e9f0",
-        borderRadius: 9,
-        outline: "none",
-        color: value ? "#0f1720" : "#8a9ab0",
-        background: "#fff",
-        fontFamily: "inherit",
-        boxSizing: "border-box",
-        appearance: "auto",
-      }}
-    >
-      <option value="">Select a category…</option>
-      {!isKnown && <option value={value}>{value}</option>}
-      {CATEGORY_OPTIONS.map((opt) => (
-        <option key={opt} value={opt}>{opt}</option>
-      ))}
-    </select>
-  );
-}
+import { API_BASE } from "../../lib/operatorApi.js";
 
 const INPUT = {
   width: "100%",
@@ -160,6 +58,7 @@ function LockedField({ benefitName }) {
       color: "#8a9ab0",
       display: "flex",
       alignItems: "center",
+      flexWrap: "wrap",
       gap: 8,
     }}>
       <span style={{ fontSize: 14 }}>🔒</span>
@@ -197,8 +96,25 @@ export default function OperatorProfileEditor() {
   const [saved, setSaved]       = useState(false);
   const [published, setPublished] = useState(false);
   const [error, setError]       = useState("");
+  const [cuisineOptions, setCuisineOptions] = useState([]); // [{value, label}] from API
+  const [categoryOptions, setCategoryOptions] = useState([]); // [{value, label}] from API
 
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  // Load taxonomy from backend — single source of truth
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API_BASE}/api/meta/cuisines`).then(r => r.json()).catch(() => ({ ok: false })),
+      fetch(`${API_BASE}/api/meta/categories`).then(r => r.json()).catch(() => ({ ok: false })),
+    ]).then(([cuisineData, categoryData]) => {
+      if (cuisineData.ok && Array.isArray(cuisineData.cuisines)) {
+        setCuisineOptions(cuisineData.cuisines); // pre-sorted alphabetically by backend
+      }
+      if (categoryData.ok && Array.isArray(categoryData.categories)) {
+        setCategoryOptions(categoryData.categories); // pre-sorted alphabetically by backend
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!rid) return;
@@ -248,7 +164,6 @@ export default function OperatorProfileEditor() {
         cuisine:         form.cuisine,
         category:        form.category,
         phone:           form.phone,
-        website_url:     form.website_url,
         instagram:       form.instagram,
         bio:             form.bio,
       };
@@ -334,32 +249,53 @@ export default function OperatorProfileEditor() {
 
         {/* ── Core Info ──────────────────────────────────────────────── */}
         <Section title="Restaurant info" sub="Basic details shown on your public listing.">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="operator-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div style={{ gridColumn: "1 / -1" }}>
               <Label>Restaurant name</Label>
               <input style={INPUT} value={form.restaurant_name} onChange={f("restaurant_name")} />
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <Label>Cuisine</Label>
-              <MultiCuisineSelect
-                value={form.cuisine}
-                onChange={(v) => setForm((p) => ({ ...p, cuisine: v }))}
-              />
+              <select
+                value={form.cuisine || ""}
+                onChange={(e) => setForm(p => ({ ...p, cuisine: e.target.value }))}
+                style={{ ...INPUT, cursor: "pointer", appearance: "auto" }}
+              >
+                <option value="">Select cuisine…</option>
+                {form.cuisine && !cuisineOptions.some(o => o.value === form.cuisine) && (
+                  <option value={form.cuisine}>{form.cuisine} (legacy — please update)</option>
+                )}
+                {cuisineOptions.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
             </div>
             <div>
-              <Label>Category</Label>
-              <CategorySelect
-                value={form.category}
-                onChange={(v) => setForm((p) => ({ ...p, category: v }))}
-              />
+              <Label>Restaurant type</Label>
+              <select
+                value={form.category || ""}
+                onChange={(e) => setForm(p => ({ ...p, category: e.target.value }))}
+                style={{ ...INPUT, cursor: "pointer", appearance: "auto" }}
+              >
+                <option value="">Select type…</option>
+                {form.category && !categoryOptions.some(o => o.value === form.category) && (
+                  <option value={form.category}>{form.category} (legacy — please update)</option>
+                )}
+                {categoryOptions.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
             </div>
+            {/*
+              Website field intentionally omitted from the operator UI.
+              Menuply serves as the primary digital presence for most operators,
+              so requiring them to maintain a separate external website creates
+              unnecessary friction. The column remains in the DB and backend
+              for potential future advanced/integration use.
+            */}
             <div>
               <Label>Phone</Label>
               <input style={INPUT} value={form.phone} onChange={f("phone")} placeholder="(555) 555-5555" />
-            </div>
-            <div>
-              <Label>Website</Label>
-              <input style={INPUT} value={form.website_url} onChange={f("website_url")} placeholder="https://…" />
             </div>
             <div>
               <Label>Instagram</Label>
@@ -389,7 +325,7 @@ export default function OperatorProfileEditor() {
         {/* ── Logo ───────────────────────────────────────────────────── */}
         <Section title="Logo" sub="Square image recommended. 512×512px minimum.">
           {hasBenefit("logo_upload") ? (
-            <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+            <div className="operator-responsive-row" style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
               {form.logo_url && (
                 <img
                   src={form.logo_url}
@@ -443,7 +379,7 @@ export default function OperatorProfileEditor() {
         </Section>
 
         {/* ── Action bar ─────────────────────────────────────────────── */}
-        <div style={{
+        <div className="operator-responsive-actions" style={{
           display: "flex",
           gap: 12,
           paddingTop: 24,

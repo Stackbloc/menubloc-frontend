@@ -612,7 +612,7 @@ export default function RestaurantHelpCenter() {
             border: "none",
           }}
         >
-          <div style={{ display: "grid", gap: 18, gridTemplateColumns: "minmax(0, 1.35fr) minmax(260px, 0.8fr)" }}>
+          <div className="operator-responsive-split" style={{ display: "grid", gap: 18, gridTemplateColumns: "minmax(0, 1.35fr) minmax(260px, 0.8fr)" }}>
             <div>
               <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.78, marginBottom: 10 }}>
                 Operator Portal
@@ -691,8 +691,8 @@ export default function RestaurantHelpCenter() {
           </div>
         </section>
 
-        <div style={{ display: "grid", gap: 20, gridTemplateColumns: "minmax(280px, 0.9fr) minmax(0, 1.3fr)", alignItems: "start" }}>
-          <section style={{ ...cardStyle, position: "sticky", top: 76 }}>
+        <div className="operator-responsive-split" style={{ display: "grid", gap: 20, gridTemplateColumns: "minmax(280px, 0.9fr) minmax(0, 1.3fr)", alignItems: "start" }}>
+          <section className="operator-responsive-sticky" style={{ ...cardStyle, position: "sticky", top: 76 }}>
             <SectionTitle
               eyebrow="Guides"
               title="Operational sections"
@@ -920,6 +920,7 @@ export default function RestaurantHelpCenter() {
               style={textareaStyle}
             />
             <button
+              className="operator-responsive-button"
               type="submit"
               disabled={submitting || !selectedRestaurant?.id}
               style={{
@@ -948,7 +949,7 @@ export default function RestaurantHelpCenter() {
             <div style={{ display: "grid", gap: 12 }}>
               {openTickets.slice(0, 5).map((ticket) => (
                 <div key={ticket.id} style={{ border: "1px solid #eef2f6", borderRadius: 12, padding: 14 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
+                  <div className="operator-responsive-row" style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
                     <div style={{ fontSize: 14, fontWeight: 800, color: "#0f1720" }}>{ticket.subject}</div>
                     <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", color: "#8a9ab0" }}>
                       {ticket.status}

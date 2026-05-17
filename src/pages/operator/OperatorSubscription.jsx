@@ -50,6 +50,7 @@ function cardStyle(active) {
 function StatusRow({ label, value }) {
   return (
     <div
+      className="operator-responsive-status"
       style={{
         display: "flex",
         justifyContent: "space-between",
@@ -259,7 +260,7 @@ export default function OperatorSubscription() {
           </p>
         </section>
 
-        <section style={{ marginTop: 24, display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
+        <section className="operator-responsive-grid-2" style={{ marginTop: 24, display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
           {planOptions.map((plan) => {
             const active = selectedPlanCode === plan.code;
             const current = currentPlanCode === plan.code;
@@ -275,7 +276,7 @@ export default function OperatorSubscription() {
                   cursor: "pointer",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                <div className="operator-responsive-row" style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 800, color: "#475467", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                       {plan.billing_interval === "year" ? "Annual" : "Monthly"}
@@ -338,7 +339,7 @@ export default function OperatorSubscription() {
           </div>
         ) : null}
 
-        <section style={{ marginTop: 24, display: "grid", gap: 20, gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 0.9fr)" }}>
+        <section className="operator-responsive-split" style={{ marginTop: 24, display: "grid", gap: 20, gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 0.9fr)" }}>
           <div style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 24, padding: 22, boxShadow: "0 18px 40px rgba(15, 23, 32, 0.04)" }}>
             <h3 style={{ margin: 0, fontSize: 24, color: "#0f1720", letterSpacing: "-0.04em" }}>Checkout</h3>
             <p style={{ margin: "10px 0 0", fontSize: 15, lineHeight: 1.7, color: "#475467" }}>
@@ -352,7 +353,7 @@ export default function OperatorSubscription() {
 
             <div style={{ marginTop: 18, borderTop: "1px solid #eaecf0", paddingTop: 16 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#475467", marginBottom: 8 }}>Have a discount code?</div>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div className="operator-responsive-actions" style={{ display: "flex", gap: 8 }}>
                 <input
                   value={discountCodeInput}
                   onChange={(e) => { setDiscountCodeInput(e.target.value.toUpperCase()); setDiscountValidation(null); setDiscountError(""); }}

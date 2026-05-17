@@ -173,7 +173,7 @@ export default function OperatorHoursEditor() {
         {/* ── Weekly schedule ─────────────────────────────────────── */}
         <div style={{ background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14, overflow: "hidden", marginBottom: 32 }}>
           {/* Header */}
-          <div style={{
+          <div className="operator-hours-table-header" style={{
             display: "grid", gridTemplateColumns: "120px 80px 1fr 1fr",
             padding: "10px 16px", background: "#f8f7f4",
             borderBottom: "1px solid #e4e9f0",
@@ -188,6 +188,7 @@ export default function OperatorHoursEditor() {
           ) : (
             schedule.map((row, idx) => (
               <div
+                className="operator-hours-table-row"
                 key={row.day_of_week}
                 style={{
                   display: "grid", gridTemplateColumns: "120px 80px 1fr 1fr",
@@ -214,22 +215,30 @@ export default function OperatorHoursEditor() {
                 </div>
 
                 {/* Open time */}
-                <input
-                  type="time"
-                  value={row.opens_at || ""}
-                  onChange={e => updateRow(idx, "opens_at", e.target.value)}
-                  disabled={row.is_closed}
-                  style={{ ...INPUT, width: 110, opacity: row.is_closed ? 0.35 : 1 }}
-                />
+                <div>
+                  <div className="operator-hours-mobile-label">Opens</div>
+                  <input
+                    className="operator-hours-time-input"
+                    type="time"
+                    value={row.opens_at || ""}
+                    onChange={e => updateRow(idx, "opens_at", e.target.value)}
+                    disabled={row.is_closed}
+                    style={{ ...INPUT, width: 110, opacity: row.is_closed ? 0.35 : 1 }}
+                  />
+                </div>
 
                 {/* Close time */}
-                <input
-                  type="time"
-                  value={row.closes_at || ""}
-                  onChange={e => updateRow(idx, "closes_at", e.target.value)}
-                  disabled={row.is_closed}
-                  style={{ ...INPUT, width: 110, opacity: row.is_closed ? 0.35 : 1 }}
-                />
+                <div>
+                  <div className="operator-hours-mobile-label">Closes</div>
+                  <input
+                    className="operator-hours-time-input"
+                    type="time"
+                    value={row.closes_at || ""}
+                    onChange={e => updateRow(idx, "closes_at", e.target.value)}
+                    disabled={row.is_closed}
+                    style={{ ...INPUT, width: 110, opacity: row.is_closed ? 0.35 : 1 }}
+                  />
+                </div>
               </div>
             ))
           )}
@@ -245,7 +254,7 @@ export default function OperatorHoursEditor() {
         </button>
 
         {/* ── Exceptions ──────────────────────────────────────────── */}
-        <div style={{ marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="operator-responsive-row" style={{ marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f1720" }}>Special hours & closures</h2>
             <p style={{ margin: "4px 0 0", fontSize: 12, color: "#8a9ab0" }}>Holiday closures, early closings, special event hours.</p>
@@ -256,7 +265,7 @@ export default function OperatorHoursEditor() {
         </div>
 
         {showExcForm && (
-          <div style={{
+          <div className="operator-responsive-grid-3" style={{
             background: "#fff",
             border: "1.5px solid #1F4E3D",
             borderRadius: 12,
@@ -293,7 +302,7 @@ export default function OperatorHoursEditor() {
                 </div>
               </>
             )}
-            <div style={{ gridColumn: "1 / -1", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <div className="operator-responsive-card-actions" style={{ gridColumn: "1 / -1", display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button style={BTN("ghost")} onClick={() => setShowExcForm(false)}>Cancel</button>
               <button style={{ ...BTN("primary"), opacity: savingExc ? 0.65 : 1 }} onClick={handleAddException} disabled={savingExc || !excForm.exception_date}>
                 {savingExc ? "Saving…" : "Save"}
@@ -306,7 +315,7 @@ export default function OperatorHoursEditor() {
         {exceptions.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
             {exceptions.map(exc => (
-              <div key={exc.id} style={{
+              <div key={exc.id} className="operator-responsive-row" style={{
                 background: "#fff", border: "1px solid #e4e9f0",
                 borderRadius: 10, padding: "10px 14px",
                 display: "flex", alignItems: "center", gap: 12,

@@ -178,7 +178,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
         {initial.id ? "Edit deal" : "New deal"}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div className="operator-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div style={{ gridColumn: "1 / -1" }}>
           <label style={LABEL}>Title *</label>
           <input style={{ ...INPUT, width: "100%" }} value={form.title} onChange={f("title")} placeholder="e.g. Happy Hour Special" />
@@ -284,7 +284,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
               All fields are optional — defaults use the deal title and description above.
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="operator-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={LABEL}>
                   Headline{" "}
@@ -348,7 +348,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
         )}
       </div>
 
-      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+      <div className="operator-responsive-card-actions" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button style={BTN("muted")} onClick={onCancel} type="button">Cancel</button>
         <button
           style={{ ...BTN("primary"), opacity: (busy || !valid) ? 0.6 : 1 }}
@@ -367,7 +367,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
 function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy }) {
   const isFeatured = deal.billboard_status === "active";
   return (
-    <div style={{
+    <div className="operator-responsive-row" style={{
       background: "#fff",
       border: "1px solid #e4e9f0",
       borderRadius: 12,
@@ -402,9 +402,9 @@ function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+      <div className="operator-responsive-status" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
         <StatusBadge status={deal.status} />
-        <div style={{ display: "flex", gap: 6 }}>
+        <div className="operator-responsive-card-actions" style={{ display: "flex", gap: 6 }}>
           {deal.status === "draft" && (
             <button style={BTN("sm")} onClick={() => onPublish(deal)} disabled={busy}>
               Publish
@@ -593,7 +593,7 @@ export default function OperatorDealsEditor() {
   return (
     <OperatorLayout title="Deals">
       {/* ── Top bar ──────────────────────────────────────────────────── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+      <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 6 }}>
           {STATUS_FILTERS.map(s => (
             <button

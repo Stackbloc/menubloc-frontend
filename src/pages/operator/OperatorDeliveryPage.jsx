@@ -118,14 +118,14 @@ function ProviderCard({
         boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+      <div className="operator-responsive-row" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: "#0f1720" }}>{providerDef.label}</div>
           <div style={{ marginTop: 6, fontSize: 13, color: "#5b6675", lineHeight: 1.5 }}>
             This restaurant owns the provider relationship. Menuply only dispatches through the restaurant’s connected account.
           </div>
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div className="operator-responsive-status" style={{ textAlign: "right" }}>
           <StatusPill value={savedAccount?.account_status || formState.accountStatus} />
           <div style={{ marginTop: 8, fontSize: 12, color: "#667085" }}>
             {savedAccount?.credentials_last4 ? `Saved credential ending in ${savedAccount.credentials_last4}` : "No credential stored yet"}
@@ -133,7 +133,7 @@ function ProviderCard({
         </div>
       </div>
 
-      <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+      <div className="operator-responsive-grid-4" style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
         <label style={{ display: "grid", gap: 6 }}>
           <span style={labelStyle}>Account label</span>
           <input value={formState.accountLabel} onChange={(event) => onChange("accountLabel", event.target.value)} style={inputStyle} />
@@ -169,7 +169,7 @@ function ProviderCard({
         </label>
       </div>
 
-      <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+      <div className="operator-responsive-grid-3" style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
         {providerDef.fields.map((field) => (
           <label key={field.key} style={{ display: "grid", gap: 6 }}>
             <span style={labelStyle}>{field.label}</span>
@@ -184,7 +184,7 @@ function ProviderCard({
         ))}
       </div>
 
-      <div style={{ marginTop: 16, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="operator-responsive-actions" style={{ marginTop: 16, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
         <label style={checkLabelStyle}>
           <input type="checkbox" checked={formState.isEnabled} onChange={(event) => onChange("isEnabled", event.target.checked)} />
           Enable this provider for delivery dispatch
@@ -195,7 +195,7 @@ function ProviderCard({
         </label>
       </div>
 
-      <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <div className="operator-responsive-card-actions" style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button type="button" onClick={onSave} disabled={busyKey === provider} style={primaryButtonStyle}>
           {busyKey === provider ? "Saving..." : `Save ${providerDef.label}`}
         </button>
@@ -404,7 +404,7 @@ export default function OperatorDeliveryPage() {
                 Enable delivery checkout for this restaurant
               </label>
 
-              <label style={{ display: "grid", gap: 6, maxWidth: 320 }}>
+              <label className="operator-responsive-field" style={{ display: "grid", gap: 6, maxWidth: 320 }}>
                 <span style={labelStyle}>Default delivery provider</span>
                 <select
                   value={state.settings?.default_delivery_provider || ""}
@@ -432,7 +432,7 @@ export default function OperatorDeliveryPage() {
                 Active providers: {activeProviders.length ? activeProviders.join(", ") : "none"}
               </div>
 
-              <div>
+              <div className="operator-responsive-card-actions">
                 <button type="submit" disabled={busyKey === "settings"} style={primaryButtonStyle}>
                   {busyKey === "settings" ? "Saving..." : "Save restaurant delivery settings"}
                 </button>

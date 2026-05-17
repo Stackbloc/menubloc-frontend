@@ -13,10 +13,11 @@
  * After successful verify, a 15-min server-side session is granted.
  */
 
-import React, { useState, useCallback } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { useState, useCallback, useEffect } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { getSensitiveSession, verifyOwnerPin } from "../../lib/operatorApi.js";
+import "./operatorResponsive.css";
 
 // ── Sidebar width ────────────────────────────────────────────────────────
 const SIDEBAR_W = 230;
@@ -273,6 +274,8 @@ export default function OperatorLayout({ title, children }) {
     setSelectedRestaurant, logout, hasBenefit,
   } = useOperator();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // PIN gate state
   const [pinTarget, setPinTarget] = useState(null);   // route string to navigate to after PIN
@@ -287,6 +290,10 @@ export default function OperatorLayout({ title, children }) {
 
   // Business section only shown to owners and managers
   const showBusiness = role === "owner" || role === "manager";
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname, location.search]);
 
   async function handleLogout() {
     await logout();
@@ -317,10 +324,16 @@ export default function OperatorLayout({ title, children }) {
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f4f3ef", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <div className="operator-shell" style={{ display: "flex", minHeight: "100vh", background: "#f4f3ef", fontFamily: "Inter, system-ui, sans-serif" }}>
+      <div
+        className={`operator-shell__backdrop${mobileNavOpen ? " operator-shell__backdrop--visible" : ""}`}
+        onClick={() => setMobileNavOpen(false)}
+      />
 
       {/* ── Sidebar ──────────────────────────────────────────────── */}
-      <aside style={{
+      <aside
+        className={`operator-shell__sidebar${mobileNavOpen ? " operator-shell__sidebar--open" : ""}`}
+        style={{
         width: SIDEBAR_W, minHeight: "100vh",
         background: "#fff", borderRight: "1px solid #e4e9f0",
         display: "flex", flexDirection: "column",
@@ -495,18 +508,36 @@ export default function OperatorLayout({ title, children }) {
       </aside>
 
       {/* ── Main content ─────────────────────────────────────────── */}
-      <div style={{ marginLeft: SIDEBAR_W, flex: 1, display: "flex", flexDirection: "column" }}>
-        <header style={{
+      <div className="operator-shell__main" style={{ marginLeft: SIDEBAR_W, flex: 1, display: "flex", flexDirection: "column" }}>
+        <header className="operator-shell__header" style={{
           background: "#fff", borderBottom: "1px solid #e4e9f0",
           padding: "0 28px", height: 56,
           display: "flex", alignItems: "center",
           position: "sticky", top: 0, zIndex: 5,
         }}>
-          <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f1720" }}>
-            {title}
-          </h1>
+          <div className="operator-shell__header-row">
+            <button
+              type="button"
+              className="operator-shell__menu-button"
+              onClick={() => setMobileNavOpen((open) => !open)}
+              aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileNavOpen}
+            >
+              ☰
+            </button>
+            <div className="operator-shell__title-wrap">
+              <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f1720" }}>
+                {title}
+              </h1>
+              {selectedRestaurant?.restaurant_name ? (
+                <div className="operator-shell__mobile-restaurant">
+                  {selectedRestaurant.restaurant_name}
+                </div>
+              ) : null}
+            </div>
+          </div>
         </header>
-        <main style={{ padding: "28px", flex: 1 }}>
+        <main className="operator-shell__content" style={{ padding: "28px", flex: 1 }}>
           {children}
         </main>
       </div>
