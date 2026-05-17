@@ -1,19 +1,19 @@
 /**
  * src/pages/operator/OperatorSubscription.jsx
  *
- * Kit-style pricing comparison: persistent plan header row + feature matrix.
- * All Stripe checkout wiring preserved exactly from previous version.
+ * Plan selection page — Verified (free) | Pro (paid) | Founders (paid, annual).
  *
- * Layout:
- *   1. Alert banners (success / error / cancelled)
- *   2. Sticky plan header row — Verified | Pro | Founders
- *   3. Feature comparison matrix
- *   4. Checkout section (Stripe, discount codes)
- *   5. Current Status + account controls
+ * Flow:
+ *   1. Operator lands here after account creation or from sidebar nav
+ *   2. Selects a plan (Verified → immediate redirect; Pro/Founders → Stripe checkout)
+ *   3. On success → /operator/menu (upload-first menu screen)
+ *
+ * Founders is a pricing variant of Pro, not a separate feature tier.
+ * Verified is a meaningful free entry tier — intentionally lightweight.
  */
 
-import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -24,77 +24,63 @@ import {
   getSubscriptionStatusLabel,
 } from "../../components/payments/paymentHelpers.js";
 
-// ── Feature matrix data ────────────────────────────────────────────────────
-// v = Verified   p = Pro   f = Founders
+// ── Feature comparison matrix ──────────────────────────────────────────────
+// Verified checkmarks: only the 4 approved features.
+// Founders (f) = Pro (p) — Founders is pricing differentiation only.
 const MATRIX = [
   {
     category: "Discovery & Presence",
     rows: [
-      { label: "Searchable listing",  v: true,  p: true,  f: true  },
-      { label: "Restaurant profile",  v: true,  p: true,  f: true  },
-      { label: "QR menu",             v: true,  p: true,  f: true  },
-      { label: "Public menu page",    v: true,  p: true,  f: true  },
-      { label: "Social sharing",      v: true,  p: true,  f: true  },
-      { label: "Followers",           v: true,  p: true,  f: true  },
+      { label: "Searchable listing",           v: true,  p: true, f: true },
+      { label: "Public restaurant profile",     v: true,  p: true, f: true },
+      { label: "QR code & public menu sharing", v: true,  p: true, f: true },
+      { label: "Social sharing",               v: false, p: true, f: true },
+      { label: "Followers",                    v: false, p: true, f: true },
     ],
   },
   {
     category: "Menu Management",
     rows: [
-      { label: "PDF upload",          v: true,  p: true,  f: true  },
-      { label: "Spreadsheet upload",  v: true,  p: true,  f: true  },
-      { label: "Photo upload",        v: true,  p: true,  f: true  },
-      { label: "Paste menu text",     v: true,  p: true,  f: true  },
-      { label: "Edit & delete menus", v: true,  p: true,  f: true  },
-      { label: "Publish / unpublish", v: true,  p: true,  f: true  },
-      { label: "Manual item editing", v: true,  p: true,  f: true  },
-      { label: "Multiple menus",      v: false, p: true,  f: true  },
+      { label: "Single menu + unlimited items",     v: true,  p: true, f: true },
+      { label: "PDF, spreadsheet & photo upload",   v: true,  p: true, f: true },
+      { label: "Paste menu text",                   v: true,  p: true, f: true },
+      { label: "Edit, publish & delete items",      v: true,  p: true, f: true },
+      { label: "Multiple menus",                    v: false, p: true, f: true },
     ],
   },
   {
     category: "Menu Intelligence",
     rows: [
-      { label: "Structured menu fields",     v: true,  p: true, f: true },
-      { label: "Preparation fields",         v: true,  p: true, f: true },
-      { label: "Portion fields",             v: true,  p: true, f: true },
-      { label: "Allergen fields",            v: true,  p: true, f: true },
-      { label: "Nutrition enrichment",       v: false, p: true, f: true },
-      { label: "Ingredient intelligence",    v: false, p: true, f: true },
-      { label: "Advanced menu attributes",   v: false, p: true, f: true },
+      { label: "Nutrition enrichment",     v: false, p: true, f: true },
+      { label: "Ingredient intelligence",  v: false, p: true, f: true },
+      { label: "Advanced menu attributes", v: false, p: true, f: true },
     ],
   },
   {
     category: "Pricing & Deals",
     rows: [
-      { label: "Advanced pricing tools",  v: true,  p: true, f: true },
       { label: "Bulk price adjustments",  v: false, p: true, f: true },
-      { label: "Compare pricing fields",  v: false, p: true, f: true },
-      { label: "Deals",                   v: false, p: true, f: true },
-      { label: "Billboard deals",         v: false, p: true, f: true },
+      { label: "Deals & billboard deals", v: false, p: true, f: true },
     ],
   },
   {
     category: "Marketplace & Commerce",
     rows: [
-      { label: "Marketplace ordering",   v: false, p: true, f: true },
-      { label: "Direct ordering",        v: false, p: true, f: true },
-      { label: "Future loyalty support", v: false, p: true, f: true },
+      { label: "Marketplace ordering", v: false, p: true, f: true },
+      { label: "Direct ordering",      v: false, p: true, f: true },
     ],
   },
 ];
 
-// ── Shared tokens ──────────────────────────────────────────────────────────
-const GREEN  = "#1F4E3D";
-const AMBER  = "#92400e";
-const CHECK  = <span style={{ color: GREEN,  fontWeight: 800, fontSize: 15 }}>✓</span>;
-const DASH   = <span style={{ color: "#d1d5db", fontWeight: 600, fontSize: 15 }}>—</span>;
+// ── Design tokens ──────────────────────────────────────────────────────────
+const GREEN = "#1F4E3D";
+const AMBER = "#92400e";
 
-function cell(flag) { return flag ? CHECK : DASH; }
-
-function billingLabel(interval) {
-  if (interval === "month") return "/month";
-  if (interval === "year") return "/year";
-  return "";
+function getPlanTier(planCode) {
+  if (!planCode) return "verified";
+  if (planCode === "founders_annual") return "founders";
+  if (planCode?.startsWith("pro")) return "pro";
+  return "verified";
 }
 
 function getMarketplaceSetupStatus(sub) {
@@ -108,22 +94,11 @@ function getAutoRenewLabel(sub) {
   return sub?.cancel_at_period_end ? "No" : "Yes";
 }
 
-// Map plan code → logical tier for current-plan indicator
-function getPlanTier(planCode) {
-  if (!planCode) return "verified";
-  if (planCode === "founders_annual") return "founders";
-  if (planCode?.startsWith("pro")) return "pro";
-  return "verified";
-}
-
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 function StatusRow({ label, value }) {
   return (
-    <div style={{
-      display: "flex", justifyContent: "space-between", gap: 12,
-      paddingTop: 12, borderTop: "1px solid #eaecf0",
-    }}>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, paddingTop: 12, borderTop: "1px solid #eaecf0" }}>
       <span style={{ fontSize: 13, color: "#475467", fontWeight: 600 }}>{label}</span>
       <span style={{ fontSize: 13, color: "#0f1720", fontWeight: 700, textAlign: "right" }}>{value}</span>
     </div>
@@ -134,11 +109,10 @@ function CategoryHeader({ label }) {
   return (
     <tr>
       <td colSpan={4} style={{
-        padding: "20px 16px 8px",
+        padding: "18px 16px 8px",
         fontSize: 11, fontWeight: 800, textTransform: "uppercase",
         letterSpacing: "0.07em", color: "#8a9ab0",
-        background: "#f8faf9",
-        borderTop: "1px solid #e4e9f0",
+        background: "#f8faf9", borderTop: "1px solid #e4e9f0",
       }}>
         {label}
       </td>
@@ -147,14 +121,15 @@ function CategoryHeader({ label }) {
 }
 
 function FeatureRow({ label, v, p, f, shade }) {
+  const check = (flag) => flag
+    ? <span style={{ color: GREEN, fontWeight: 800, fontSize: 15 }}>✓</span>
+    : <span style={{ color: "#d1d5db", fontSize: 15 }}>—</span>;
   return (
     <tr style={{ background: shade ? "#f8faf9" : "#fff" }}>
-      <td style={{ padding: "11px 16px", fontSize: 13, color: "#374151", fontWeight: 500, borderRight: "1px solid #f0f4f8" }}>
-        {label}
-      </td>
-      <td style={{ padding: "11px 0", textAlign: "center", width: 90 }}>{cell(v)}</td>
-      <td style={{ padding: "11px 0", textAlign: "center", width: 90, background: shade ? "#f0f7f4" : "#f8fdf9" }}>{cell(p)}</td>
-      <td style={{ padding: "11px 0", textAlign: "center", width: 90 }}>{cell(f)}</td>
+      <td style={{ padding: "11px 16px", fontSize: 13, color: "#374151", fontWeight: 500, borderRight: "1px solid #f0f4f8" }}>{label}</td>
+      <td style={{ padding: "11px 0", textAlign: "center", width: 90 }}>{check(v)}</td>
+      <td style={{ padding: "11px 0", textAlign: "center", width: 90, background: shade ? "#f0f7f4" : "#f8fdf9" }}>{check(p)}</td>
+      <td style={{ padding: "11px 0", textAlign: "center", width: 90 }}>{check(f)}</td>
     </tr>
   );
 }
@@ -162,28 +137,50 @@ function FeatureRow({ label, v, p, f, shade }) {
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function OperatorSubscription() {
   const { selectedRestaurant } = useOperator();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // ── State (all preserved from previous version) ──────────────────────────
-  const [planOptions, setPlanOptions]         = useState([]);
-  const [subscription, setSubscription]       = useState(null);
-  const [selectedPlanCode, setSelectedPlanCode] = useState("pro_monthly");
-  const [loading, setLoading]                 = useState(false);
-  const [isCheckingOut, setIsCheckingOut]     = useState(false);
-  const [message, setMessage]                 = useState("");
-  const [error, setError]                     = useState("");
+  const [planOptions, setPlanOptions]     = useState([]);
+  const [subscription, setSubscription]   = useState(null);
+  const [proInterval, setProInterval]     = useState("monthly");
+  const [loading, setLoading]             = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [message, setMessage]             = useState("");
+  const [error, setError]                 = useState("");
+
   const [discountCodeInput, setDiscountCodeInput]   = useState("");
   const [discountValidation, setDiscountValidation] = useState(null);
   const [discountLoading, setDiscountLoading]       = useState(false);
   const [discountError, setDiscountError]           = useState("");
 
-  const checkoutRef = useRef(null);
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const monthlyPlan  = planOptions.find(p => p.code === "pro_monthly");
+  const annualPlan   = planOptions.find(p => p.code === "pro_annual");
+  const foundersPlan = planOptions.find(p => p.code === "founders_annual") || annualPlan;
 
-  // ── Data loading ─────────────────────────────────────────────────────────
+  const currentPlanCode = subscription?.plan_code || null;
+  const currentTier     = getPlanTier(currentPlanCode);
+
+  const hasActiveStripeSubscription = Boolean(
+    subscription?.stripe_subscription_id && subscription?.current_period_end
+  );
+  const canCancel =
+    hasActiveStripeSubscription &&
+    ["active", "trialing", "past_due"].includes(subscription?.status) &&
+    !subscription?.cancel_at_period_end;
+
+  const annualSavings = monthlyPlan && annualPlan
+    ? Math.round(100 - (annualPlan.amount_cents / (monthlyPlan.amount_cents * 12)) * 100)
+    : null;
+
+  const currentPeriodEnd = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString() : "N/A";
+
+  // ── Data loading ──────────────────────────────────────────────────────────
   useEffect(() => {
     getCheckoutPlans()
-      .then((data) => {
-        const filtered = (data.plans || []).filter((p) =>
+      .then(data => {
+        const filtered = (data.plans || []).filter(p =>
           ["pro_monthly", "pro_annual", "founders_annual"].includes(p.code)
         );
         if (filtered.length) setPlanOptions(filtered);
@@ -195,18 +192,6 @@ export default function OperatorSubscription() {
         ]);
       });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const checkoutResult = searchParams.get("checkout");
-
-  useEffect(() => {
-    if (checkoutResult === "success") {
-      setMessage("Subscription activated. Your plan is now live.");
-      setSearchParams({}, { replace: true });
-      refreshSubscription();
-    } else if (checkoutResult === "cancelled") {
-      setSearchParams({}, { replace: true });
-    }
-  }, [checkoutResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function refreshSubscription() {
     if (!selectedRestaurant?.id) { setSubscription(null); return; }
@@ -226,7 +211,22 @@ export default function OperatorSubscription() {
     refreshSubscription();
   }, [selectedRestaurant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Handlers (all preserved) ─────────────────────────────────────────────
+  // ── Checkout success → redirect to /operator/menu ─────────────────────────
+  const checkoutResult = searchParams.get("checkout");
+  useEffect(() => {
+    if (checkoutResult === "success") {
+      setMessage("Subscription activated. Taking you to your dashboard…");
+      setSearchParams({}, { replace: true });
+      refreshSubscription().then(() => {
+        setTimeout(() => navigate("/operator/menu"), 2000);
+      });
+    } else if (checkoutResult === "cancelled") {
+      setSearchParams({}, { replace: true });
+    }
+  }, [checkoutResult]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
   async function handleApplyDiscount() {
     const code = discountCodeInput.trim().toUpperCase();
     if (!code) return;
@@ -243,7 +243,28 @@ export default function OperatorSubscription() {
     }
   }
 
-  async function handleCheckout() {
+  async function handleSelectVerified() {
+    setError("");
+    setMessage("");
+    if (currentTier === "verified") {
+      navigate("/operator/menu");
+      return;
+    }
+    if (!selectedRestaurant?.id) {
+      setError("Select a restaurant first.");
+      return;
+    }
+    try {
+      await api.cancelPlatformSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
+      setMessage("Downgraded to Verified. Your menu and data are preserved.");
+      await refreshSubscription();
+      setTimeout(() => navigate("/operator/menu"), 1500);
+    } catch (err) {
+      setError(err.message || "Unable to downgrade plan.");
+    }
+  }
+
+  async function handleStripeCheckout(planCode, discountCode) {
     if (!selectedRestaurant?.id) {
       setError("Select a restaurant before starting a subscription.");
       return;
@@ -255,18 +276,19 @@ export default function OperatorSubscription() {
       const origin = window.location.origin;
       const result = await api.createPlatformCheckoutSession({
         restaurantId: selectedRestaurant.id,
-        planCode: selectedPlanCode,
-        successUrl: `${origin}/operator/subscription?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+        planCode,
+        successUrl: `${origin}/operator/subscription?checkout=success`,
         cancelUrl:  `${origin}/operator/subscription?checkout=cancelled`,
-        discountCode: discountValidation?.code || undefined,
+        discountCode: discountCode || undefined,
       });
       if (result.already_active) {
-        setMessage("This restaurant already has an active subscription for that plan.");
+        setMessage("Plan active. Taking you to your dashboard…");
         await refreshSubscription();
+        setTimeout(() => navigate("/operator/menu"), 1500);
         setIsCheckingOut(false);
         return;
       }
-      if (!result.checkout_url) throw new Error("No checkout URL returned from server.");
+      if (!result.checkout_url) throw new Error("No checkout URL returned.");
       window.location.href = result.checkout_url;
     } catch (err) {
       setError(err.message || "Unable to start checkout.");
@@ -275,10 +297,7 @@ export default function OperatorSubscription() {
   }
 
   async function handleCancelSubscription() {
-    if (!selectedRestaurant?.id) {
-      setError("Select a restaurant before cancelling.");
-      return;
-    }
+    if (!selectedRestaurant?.id) { setError("Select a restaurant first."); return; }
     setError("");
     setMessage("");
     try {
@@ -290,158 +309,275 @@ export default function OperatorSubscription() {
     }
   }
 
-  // ── Derived values ───────────────────────────────────────────────────────
-  const currentPlanCode  = subscription?.plan_code || null;
-  const currentTier      = getPlanTier(currentPlanCode);
-  const currentStatus    = getSubscriptionStatusLabel(subscription?.status);
-  const currentPeriodEnd = subscription?.current_period_end
-    ? new Date(subscription.current_period_end).toLocaleDateString() : "N/A";
-
-  const hasActiveStripeSubscription = Boolean(
-    subscription?.stripe_subscription_id && subscription?.current_period_end
-  );
-  const canCancel =
-    hasActiveStripeSubscription &&
-    ["active", "trialing", "past_due"].includes(subscription?.status) &&
-    !subscription?.cancel_at_period_end;
-
-  const monthlyPlan  = planOptions.find(p => p.code === "pro_monthly");
-  const annualPlan   = planOptions.find(p => p.code === "pro_annual");
-  const foundersPlan = planOptions.find(p => p.code === "founders_annual") || annualPlan;
-
-  function scrollToCheckout(code) {
-    setSelectedPlanCode(code);
-    setTimeout(() => checkoutRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-  }
-
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <OperatorLayout title="Subscription">
-      <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+      <div style={{ maxWidth: 960, margin: "0 auto" }}>
 
-        {/* ── Alert banners ──────────────────────────────────────────── */}
+        {/* ── Alert banners ──────────────────────────────────────── */}
         {checkoutResult === "cancelled" && !message && !error && (
           <div style={banner("warn")}>Checkout was cancelled. No charge was made.</div>
         )}
         {error   && <div style={banner("error")}>{error}</div>}
         {message && <div style={banner("success")}>{message}</div>}
 
-        {/* ── Plan header row ─────────────────────────────────────────── */}
+        {/* ── Page heading ───────────────────────────────────────── */}
+        <div style={{ marginBottom: 28 }}>
+          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>
+            Choose your plan
+          </h2>
+          <p style={{ margin: "6px 0 0", fontSize: 14, color: "#6b7280" }}>
+            All plans include a public menu, QR code, and upload tools. Upgrade any time.
+          </p>
+        </div>
+
+        {/* ── Plan cards: Verified | Pro | Founders ──────────────── */}
         <div style={{
-          position: "sticky", top: 0, zIndex: 20,
-          background: "#fff",
-          paddingTop: 4, paddingBottom: 4,
-          marginBottom: 0,
-        }}>
-          {/* Column headers label row */}
-          <div style={planGridStyle}>
-            <PlanHeaderCard
-              tier="verified"
-              name="Verified"
-              badge={currentTier === "verified" ? "Current plan" : null}
-              price="Free"
-              priceSub="Always"
-              bullets={[
-                "Searchable listing",
-                "Single menu support",
-                "QR / menu hosting",
-                "Upload-first onboarding",
-                "Basic operator tools",
-              ]}
-              accentColor={GREEN}
-              borderColor="#d1e7dd"
-              bg="#f8faf9"
-              cta={currentTier === "verified" ? null : {
-                label: "Downgrade to Verified",
-                variant: "muted",
-                onClick: canCancel ? handleCancelSubscription : null,
-                disabled: !canCancel,
-              }}
-            />
-            <PlanHeaderCard
-              tier="pro"
-              name="Pro"
-              badge={currentTier === "pro" ? "Current plan" : null}
-              price={
-                monthlyPlan
-                  ? <>{formatMoney(monthlyPlan.amount_cents)}<span style={{ fontSize: 14, fontWeight: 600, color: "#6b7280" }}>/mo</span></>
-                  : "—"
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 16,
+          marginBottom: 36,
+          alignItems: "start",
+        }} className="operator-responsive-grid-3">
+
+          {/* ── Verified ── */}
+          <div style={planCard("#f8faf9", "#d1e7dd", false)}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Verified</span>
+              {currentTier === "verified" && (
+                <span style={currentBadge(GREEN)}>Current plan</span>
+              )}
+            </div>
+
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.04em" }}>Free</div>
+              <div style={{ fontSize: 12, color: "#8a9ab0", marginTop: 2 }}>Always</div>
+            </div>
+
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 6 }}>
+              {[
+                "Public restaurant profile",
+                "Single menu + unlimited items",
+                "QR code & public menu sharing",
+                "Basic upload & editing tools",
+              ].map(b => (
+                <li key={b} style={{ fontSize: 13, color: "#374151", display: "flex", gap: 7, alignItems: "flex-start" }}>
+                  <span style={{ color: GREEN, fontWeight: 700, flexShrink: 0 }}>✓</span>
+                  {b}
+                </li>
+              ))}
+            </ul>
+
+            {currentTier === "verified" ? (
+              <button
+                style={planBtn("primary", GREEN)}
+                onClick={() => navigate("/operator/menu")}
+              >
+                Go to Dashboard →
+              </button>
+            ) : (
+              <button
+                style={planBtn("muted", GREEN)}
+                onClick={handleSelectVerified}
+                disabled={isCheckingOut}
+              >
+                Downgrade to Verified
+              </button>
+            )}
+
+            <p style={{ margin: 0, fontSize: 11, color: "#8a9ab0", textAlign: "center" }}>
+              Your menu and data are preserved if you downgrade.
+            </p>
+          </div>
+
+          {/* ── Pro ── */}
+          <div style={planCard("#fff", GREEN, true)}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Pro</span>
+              {currentTier === "pro"
+                ? <span style={currentBadge(GREEN)}>Current plan</span>
+                : <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, background: "#d1fae5", color: "#065f46" }}>Most popular</span>
               }
-              priceSub={annualPlan ? `${formatMoney(annualPlan.amount_cents)}/year` : ""}
-              bullets={[
+            </div>
+
+            {/* Billing toggle */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {[
+                { key: "monthly", plan: monthlyPlan, label: "Monthly", sub: null },
+                { key: "annual",  plan: annualPlan,  label: "Annual",  sub: annualSavings ? `Save ${annualSavings}%` : "Best value" },
+              ].map(({ key, plan, label, sub }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setProInterval(key)}
+                  style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "9px 12px", borderRadius: 10,
+                    border: proInterval === key ? `1.5px solid ${GREEN}` : "1.5px solid #e4e9f0",
+                    background: proInterval === key ? "#f0f7f4" : "#fff",
+                    cursor: "pointer", fontFamily: "inherit", width: "100%",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{
+                      width: 14, height: 14, borderRadius: "50%",
+                      border: `2px solid ${proInterval === key ? GREEN : "#d1d5db"}`,
+                      background: proInterval === key ? GREEN : "transparent",
+                      flexShrink: 0,
+                    }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: proInterval === key ? GREEN : "#374151" }}>
+                      {label}
+                      {sub && <span style={{ fontSize: 11, fontWeight: 600, color: "#059669", marginLeft: 6 }}>{sub}</span>}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#0f1720" }}>
+                    {plan ? formatMoney(plan.amount_cents) : "—"}
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7280" }}>
+                      {key === "monthly" ? "/mo" : "/yr"}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 6 }}>
+              {[
                 "Multiple menus",
-                "Advanced pricing controls",
-                "Deals & billboards",
-                "Marketplace capabilities",
-                "Direct ordering",
-              ]}
-              accentColor={GREEN}
-              borderColor={GREEN}
-              bg="#fff"
-              highlighted
-              cta={currentTier !== "pro" ? {
-                label: "Upgrade to Pro",
-                variant: "primary",
-                onClick: () => scrollToCheckout("pro_monthly"),
-              } : null}
-              secondaryCta={currentTier !== "pro" && annualPlan ? {
-                label: "Pay annually",
-                onClick: () => scrollToCheckout("pro_annual"),
-              } : null}
-            />
-            <PlanHeaderCard
-              tier="founders"
-              name="Founders"
-              badge="Limited time"
-              badgeStyle={{ background: "#fef3c7", color: AMBER }}
-              price={
-                foundersPlan
-                  ? <>{formatMoney(foundersPlan.amount_cents)}<span style={{ fontSize: 14, fontWeight: 600, color: "#6b7280" }}>/yr</span></>
-                  : "—"
+                "Advanced pricing & deals",
+                "Marketplace & ordering",
+                "Nutrition enrichment",
+                "Ingredient intelligence",
+              ].map(b => (
+                <li key={b} style={{ fontSize: 13, color: "#374151", display: "flex", gap: 7, alignItems: "flex-start" }}>
+                  <span style={{ color: GREEN, fontWeight: 700, flexShrink: 0 }}>✓</span>
+                  {b}
+                </li>
+              ))}
+            </ul>
+
+            {currentTier !== "pro" ? (
+              <>
+                <button
+                  style={{ ...planBtn("primary", GREEN), opacity: isCheckingOut ? 0.6 : 1 }}
+                  disabled={isCheckingOut}
+                  onClick={() => handleStripeCheckout(
+                    proInterval === "annual" ? "pro_annual" : "pro_monthly",
+                    discountValidation?.code || undefined
+                  )}
+                >
+                  {isCheckingOut ? "Redirecting…" : `Get Pro ${proInterval === "annual" ? "(Annual)" : "(Monthly)"} →`}
+                </button>
+                {discountValidation && (
+                  <div style={{ fontSize: 11, color: "#059669", textAlign: "center", fontWeight: 600 }}>
+                    Code applied: {discountValidation.code}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ padding: "10px 12px", borderRadius: 10, background: "#f0f7f4", textAlign: "center", fontSize: 13, fontWeight: 700, color: GREEN }}>
+                ✓ You're on Pro
+              </div>
+            )}
+          </div>
+
+          {/* ── Founders ── */}
+          <div style={planCard("#fffbeb", "#fcd34d", false)}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <span style={{ fontSize: 16, fontWeight: 800, color: AMBER }}>Founders</span>
+              {currentTier === "founders"
+                ? <span style={currentBadge(AMBER)}>Current plan</span>
+                : <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, background: "#fef3c7", color: AMBER }}>Limited time</span>
               }
-              priceSub="Pricing guaranteed for 3 years"
-              bullets={[
-                "All Pro capabilities",
-                "Annual billing only",
-                "3-year price guarantee",
-                "Limited availability",
-              ]}
-              accentColor={AMBER}
-              borderColor="#fcd34d"
-              bg="#fffbeb"
-              cta={currentTier !== "founders" ? {
-                label: "Join as Founder",
-                variant: "founders",
-                onClick: () => scrollToCheckout(foundersPlan?.code || "pro_annual"),
-              } : (currentTier === "founders" ? { label: "Current plan", variant: "muted", disabled: true } : null)}
-            />
+            </div>
+
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.04em" }}>
+                {foundersPlan ? (
+                  <>{formatMoney(foundersPlan.amount_cents)}<span style={{ fontSize: 14, fontWeight: 600, color: "#6b7280" }}>/yr</span></>
+                ) : "—"}
+              </div>
+              <div style={{ fontSize: 12, color: "#8a9ab0", marginTop: 2 }}>Pricing guaranteed for 3 years</div>
+            </div>
+
+            <p style={{ margin: 0, fontSize: 13, color: "#374151", lineHeight: 1.6 }}>
+              Founders includes the Pro feature set with discounted annual pricing guaranteed for 3 years.
+            </p>
+
+            {/* Founders discount code */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "9px 12px", borderRadius: 10,
+              background: "#fef3c7", border: "1px solid #fcd34d",
+            }}>
+              <span style={{ fontSize: 12, color: AMBER, fontWeight: 600 }}>Discount code</span>
+              <span style={{ fontFamily: "monospace", fontSize: 14, fontWeight: 800, color: AMBER, letterSpacing: "0.08em" }}>
+                FOUNDERS
+              </span>
+            </div>
+
+            {currentTier !== "founders" ? (
+              <button
+                style={{ ...planBtn("founders", AMBER), opacity: isCheckingOut ? 0.6 : 1 }}
+                disabled={isCheckingOut}
+                onClick={() => handleStripeCheckout(foundersPlan?.code || "founders_annual", "FOUNDERS")}
+              >
+                {isCheckingOut ? "Redirecting…" : "Join as Founder →"}
+              </button>
+            ) : (
+              <div style={{ padding: "10px 12px", borderRadius: 10, background: "#fef3c7", textAlign: "center", fontSize: 13, fontWeight: 700, color: AMBER }}>
+                ✓ You're a Founder
+              </div>
+            )}
           </div>
         </div>
 
-        {/* ── Feature comparison matrix ────────────────────────────────── */}
-        <div style={{
-          background: "#fff",
-          border: "1px solid #e4e9f0",
-          borderRadius: 14,
-          overflow: "hidden",
-          marginBottom: 32,
-        }}>
-          {/* Matrix column headers */}
+        {/* ── Discount code (for Pro) ─────────────────────────────── */}
+        <div style={{ maxWidth: 440, marginBottom: 36 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#475467", marginBottom: 8 }}>Have a discount code?</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={discountCodeInput}
+              onChange={e => { setDiscountCodeInput(e.target.value.toUpperCase()); setDiscountValidation(null); setDiscountError(""); }}
+              placeholder="Enter code"
+              style={{ flex: 1, padding: "9px 12px", borderRadius: 10, border: "1px solid #d0d5dd", fontSize: 14, fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.06em" }}
+            />
+            <button
+              type="button"
+              onClick={handleApplyDiscount}
+              disabled={!discountCodeInput.trim() || discountLoading}
+              style={{ padding: "9px 14px", borderRadius: 10, border: "none", background: "#0f1720", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+            >
+              {discountLoading ? "…" : "Apply"}
+            </button>
+          </div>
+          {discountError && <div style={{ marginTop: 6, fontSize: 13, color: "#b42318", fontWeight: 600 }}>{discountError}</div>}
+          {discountValidation && (
+            <div style={{ marginTop: 10, background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 10, padding: "10px 14px" }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#166534" }}>✓ Code applied: {discountValidation.code}</div>
+              {discountValidation.subscription_discount_percent && (
+                <div style={{ fontSize: 12, color: "#166534", marginTop: 4 }}>
+                  {discountValidation.subscription_discount_percent}% off
+                  {discountValidation.subscription_discount_days ? ` for ${discountValidation.subscription_discount_days} days` : " (ongoing)"}
+                </div>
+              )}
+            </div>
+          )}
+          <p style={{ margin: "8px 0 0", fontSize: 12, color: "#8a9ab0" }}>
+            Founders code <strong>FOUNDERS</strong> is applied automatically when you join as a Founder.
+          </p>
+        </div>
+
+        {/* ── Feature comparison matrix ───────────────────────────── */}
+        <div style={{ background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14, overflow: "hidden", marginBottom: 32 }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f8faf9", borderBottom: "2px solid #e4e9f0" }}>
-                <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#8a9ab0", width: "50%" }}>
+                <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#8a9ab0", width: "55%" }}>
                   Feature
                 </th>
-                <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN, width: 90 }}>
-                  Verified
-                </th>
-                <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 800, color: GREEN, width: 90, background: "#f0f7f4" }}>
-                  Pro
-                </th>
-                <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: AMBER, width: 90 }}>
-                  Founders
-                </th>
+                <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN, width: 90 }}>Verified</th>
+                <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 800, color: GREEN, width: 90, background: "#f0f7f4" }}>Pro</th>
+                <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: AMBER, width: 90 }}>Founders</th>
               </tr>
             </thead>
             <tbody>
@@ -452,9 +588,7 @@ export default function OperatorSubscription() {
                     <FeatureRow
                       key={row.label}
                       label={row.label}
-                      v={row.v}
-                      p={row.p}
-                      f={row.f}
+                      v={row.v} p={row.p} f={row.f}
                       shade={idx % 2 === 1}
                     />
                   ))}
@@ -464,275 +598,87 @@ export default function OperatorSubscription() {
           </table>
         </div>
 
-        {/* ── Checkout + Current Status ────────────────────────────────── */}
-        <div ref={checkoutRef} style={{ scrollMarginTop: 80 }} />
-        <div style={{ display: "grid", gap: 20, gridTemplateColumns: "minmax(0,1fr) minmax(280px,0.85fr)" }}
-          className="operator-responsive-split">
-
-          {/* Checkout card */}
-          <div style={sectionCard}>
-            <h3 style={sectionTitle}>Checkout</h3>
-
-            {/* Billing interval selector */}
-            <div style={{ marginTop: 14, display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {planOptions.map(plan => (
-                <button
-                  key={plan.code}
-                  type="button"
-                  onClick={() => setSelectedPlanCode(plan.code)}
-                  style={{
-                    padding: "7px 14px",
-                    borderRadius: 8,
-                    border: selectedPlanCode === plan.code ? `1.5px solid ${GREEN}` : "1.5px solid #e4e9f0",
-                    background: selectedPlanCode === plan.code ? "#f0f7f4" : "#fff",
-                    color: selectedPlanCode === plan.code ? GREEN : "#6b7280",
-                    fontWeight: 700,
-                    fontSize: 13,
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  {plan.billing_interval === "month" ? "Monthly" : "Annual"}
-                  {" — "}
-                  {formatMoney(plan.amount_cents)}
-                  {billingLabel(plan.billing_interval)}
-                  {plan.code === "founders_annual" && " · Founders"}
-                </button>
-              ))}
+        {/* ── Current status + cancel (paid subscribers only) ──────── */}
+        {hasActiveStripeSubscription && (
+          <div style={{ maxWidth: 440, background: "#fff", border: "1px solid #eaecf0", borderRadius: 16, padding: 22 }}>
+            <h3 style={{ margin: "0 0 14px", fontSize: 16, fontWeight: 800, color: "#0f1720" }}>Subscription status</h3>
+            <div style={{ display: "grid", gap: 2 }}>
+              <StatusRow label="Plan"         value={getSubscriptionPlanLabel(currentPlanCode)} />
+              <StatusRow label="Status"       value={loading ? "Loading…" : getSubscriptionStatusLabel(subscription?.status)} />
+              <StatusRow label="Period ends"  value={loading ? "Loading…" : currentPeriodEnd} />
+              <StatusRow label="Auto-renew"   value={loading ? "Loading…" : getAutoRenewLabel(subscription)} />
+              <StatusRow label="Marketplace"  value={loading ? "Loading…" : getMarketplaceSetupStatus(subscription)} />
             </div>
 
-            <p style={{ margin: "12px 0 0", fontSize: 14, color: "#6b7280" }}>
-              {selectedRestaurant?.restaurant_name
-                ? `Billing restaurant: ${selectedRestaurant.restaurant_name}`
-                : "Select a restaurant from the sidebar."}
-            </p>
-
-            {/* Discount code */}
-            <div style={{ marginTop: 16, borderTop: "1px solid #eaecf0", paddingTop: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#475467", marginBottom: 8 }}>Have a discount code?</div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  value={discountCodeInput}
-                  onChange={(e) => { setDiscountCodeInput(e.target.value.toUpperCase()); setDiscountValidation(null); setDiscountError(""); }}
-                  placeholder="Enter code"
-                  style={{ flex: 1, padding: "9px 12px", borderRadius: 10, border: "1px solid #d0d5dd", fontSize: 14, fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.06em" }}
-                />
-                <button
-                  type="button"
-                  onClick={handleApplyDiscount}
-                  disabled={!discountCodeInput.trim() || discountLoading}
-                  style={{ padding: "9px 14px", borderRadius: 10, border: "none", background: "#0f1720", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-                >
-                  {discountLoading ? "…" : "Apply"}
-                </button>
+            {subscription?.cancel_at_period_end ? (
+              <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 12, background: "#f8fafc", border: "1px solid #eaecf0", fontSize: 14, fontWeight: 700, color: "#667085", textAlign: "center" }}>
+                Cancellation scheduled — access continues until period end
               </div>
-              {discountError && <div style={{ marginTop: 6, fontSize: 13, color: "#b42318", fontWeight: 600 }}>{discountError}</div>}
-              {discountValidation && (
-                <div style={{ marginTop: 10, background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 10, padding: "10px 14px" }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#166534" }}>Code applied: {discountValidation.code}</div>
-                  {discountValidation.subscription_discount_percent && (
-                    <div style={{ fontSize: 12, color: "#166534", marginTop: 4 }}>
-                      {discountValidation.subscription_discount_percent}% off
-                      {discountValidation.subscription_discount_days ? ` for ${discountValidation.subscription_discount_days} days` : " (ongoing)"}
-                    </div>
-                  )}
-                  {discountValidation.commission_discount_percent && (
-                    <div style={{ fontSize: 12, color: "#166534", marginTop: 2 }}>
-                      {discountValidation.commission_discount_percent}% off commission rate
-                      {discountValidation.commission_discount_days ? ` for ${discountValidation.commission_discount_days} days` : " (ongoing)"}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={!selectedRestaurant?.id || isCheckingOut || loading}
-              style={{
-                marginTop: 16, width: "100%", border: "none", borderRadius: 12,
-                background: isCheckingOut ? "#94a3b8" : GREEN,
-                color: "#fff", padding: "13px 16px",
-                fontSize: 15, fontWeight: 800,
-                cursor: isCheckingOut ? "wait" : "pointer",
-              }}
-            >
-              {isCheckingOut ? "Redirecting to Stripe…" : `Subscribe — ${getSubscriptionPlanLabel(selectedPlanCode)}`}
-            </button>
-          </div>
-
-          {/* Current Status card */}
-          <div style={sectionCard}>
-            <h3 style={sectionTitle}>Current Status</h3>
-            <div style={{ marginTop: 14, display: "grid", gap: 2 }}>
-              <StatusRow label="Plan"               value={getSubscriptionPlanLabel(currentPlanCode)} />
-              <StatusRow label="Status"             value={loading ? "Loading…" : currentStatus} />
-              <StatusRow label="Period ends"        value={loading ? "Loading…" : currentPeriodEnd} />
-              <StatusRow label="Auto-renew"         value={loading ? "Loading…" : getAutoRenewLabel(subscription)} />
-              <StatusRow label="Marketplace"        value={loading ? "Loading…" : getMarketplaceSetupStatus(subscription)} />
-            </div>
-
-            {hasActiveStripeSubscription ? (
-              subscription?.cancel_at_period_end ? (
-                <div style={{
-                  marginTop: 16, padding: "12px 14px", borderRadius: 12,
-                  background: "#f8fafc", border: "1px solid #eaecf0",
-                  fontSize: 14, fontWeight: 700, color: "#667085", textAlign: "center",
-                }}>
-                  Cancellation scheduled at period end
-                </div>
-              ) : (
-                <div style={{ marginTop: 16, display: "grid", gap: 8 }}>
+            ) : (
+              <div style={{ marginTop: 16, display: "grid", gap: 8 }}>
+                {canCancel && (
                   <button
                     type="button"
-                    onClick={handleCancelSubscription}
-                    disabled={!canCancel}
-                    style={{
-                      width: "100%", borderRadius: 12, border: "1px solid #fecaca",
-                      background: "#fff5f5", color: "#b42318",
-                      padding: "11px 14px", fontSize: 13, fontWeight: 700,
-                      cursor: canCancel ? "pointer" : "not-allowed",
-                    }}
+                    onClick={handleSelectVerified}
+                    style={{ width: "100%", borderRadius: 12, border: "1px solid #e4e9f0", background: "#f4f3ef", color: "#5b6675", padding: "11px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
                   >
-                    Cancel Subscription
+                    Downgrade to Verified (free)
                   </button>
-                  {canCancel && (
-                    <button
-                      type="button"
-                      onClick={handleCancelSubscription}
-                      style={{
-                        width: "100%", borderRadius: 12, border: "1px solid #e4e9f0",
-                        background: "#f4f3ef", color: "#5b6675",
-                        padding: "11px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer",
-                      }}
-                    >
-                      Downgrade to Verified (free)
-                    </button>
-                  )}
-                </div>
-              )
-            ) : null}
+                )}
+                <button
+                  type="button"
+                  onClick={handleCancelSubscription}
+                  disabled={!canCancel}
+                  style={{ width: "100%", borderRadius: 12, border: "1px solid #fecaca", background: "#fff5f5", color: "#b42318", padding: "11px 14px", fontSize: 13, fontWeight: 700, cursor: canCancel ? "pointer" : "not-allowed", opacity: canCancel ? 1 : 0.5 }}
+                >
+                  Cancel Subscription
+                </button>
+                <p style={{ margin: 0, fontSize: 11, color: "#8a9ab0", textAlign: "center" }}>
+                  Your menu and data are preserved when you cancel or downgrade.
+                </p>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
       </div>
     </OperatorLayout>
   );
 }
 
-// ── Plan header card ───────────────────────────────────────────────────────
-function PlanHeaderCard({
-  name, badge, badgeStyle, price, priceSub, bullets,
-  accentColor, borderColor, bg, highlighted,
-  cta, secondaryCta,
-}) {
-  return (
-    <div style={{
-      background: bg,
-      border: `${highlighted ? 2 : 1.5}px solid ${borderColor}`,
-      borderRadius: 14,
-      padding: "18px 16px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 10,
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <span style={{ fontSize: 15, fontWeight: 800, color: accentColor }}>{name}</span>
-        {badge && (
-          <span style={{
-            fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em",
-            padding: "3px 8px", borderRadius: 999,
-            background: badgeStyle?.background || "#d1fae5",
-            color: badgeStyle?.color || "#065f46",
-            ...badgeStyle,
-          }}>
-            {badge}
-          </span>
-        )}
-      </div>
+// ── Style helpers ──────────────────────────────────────────────────────────
 
-      <div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.04em", lineHeight: 1.1 }}>
-          {price}
-        </div>
-        {priceSub && (
-          <div style={{ fontSize: 11, color: "#8a9ab0", marginTop: 2 }}>{priceSub}</div>
-        )}
-      </div>
-
-      <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 4 }}>
-        {bullets.map(b => (
-          <li key={b} style={{ fontSize: 12, color: "#374151", display: "flex", gap: 6, alignItems: "flex-start" }}>
-            <span style={{ color: accentColor, fontWeight: 700, flexShrink: 0 }}>✓</span>
-            {b}
-          </li>
-        ))}
-      </ul>
-
-      {cta && (
-        <button
-          type="button"
-          onClick={cta.onClick || undefined}
-          disabled={cta.disabled}
-          style={ctaBtnStyle(cta.variant, accentColor, cta.disabled)}
-        >
-          {cta.label}
-        </button>
-      )}
-      {secondaryCta && (
-        <button
-          type="button"
-          onClick={secondaryCta.onClick}
-          style={{
-            background: "none", border: "none", cursor: "pointer",
-            fontSize: 12, color: accentColor, fontWeight: 600, padding: "2px 0",
-            textDecoration: "underline", fontFamily: "inherit",
-          }}
-        >
-          {secondaryCta.label}
-        </button>
-      )}
-    </div>
-  );
+function planCard(bg, borderColor, highlighted) {
+  return {
+    background: bg,
+    border: `${highlighted ? 2 : 1.5}px solid ${borderColor}`,
+    borderRadius: 16,
+    padding: "20px 18px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+  };
 }
 
-function ctaBtnStyle(variant, accentColor, disabled) {
+function currentBadge(color) {
+  return {
+    fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em",
+    padding: "3px 8px", borderRadius: 999,
+    background: color === AMBER ? "#fef3c7" : "#d1fae5",
+    color: color === AMBER ? AMBER : "#065f46",
+  };
+}
+
+function planBtn(variant, accentColor) {
   const base = {
     width: "100%", border: "none", borderRadius: 10,
-    padding: "9px 12px", fontSize: 12, fontWeight: 700,
-    cursor: disabled ? "not-allowed" : "pointer",
-    fontFamily: "inherit",
-    opacity: disabled ? 0.5 : 1,
+    padding: "11px 12px", fontSize: 13, fontWeight: 700,
+    cursor: "pointer", fontFamily: "inherit",
   };
   if (variant === "primary")  return { ...base, background: accentColor, color: "#fff" };
-  if (variant === "founders") return { ...base, background: "#92400e",   color: "#fff" };
+  if (variant === "founders") return { ...base, background: AMBER, color: "#fff" };
   return { ...base, background: "#f4f3ef", color: "#5b6675" };
 }
-
-// ── Style helpers ──────────────────────────────────────────────────────────
-const planGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
-  gap: 10,
-  padding: "8px 0",
-};
-
-const sectionCard = {
-  background: "#fff",
-  border: "1px solid #eaecf0",
-  borderRadius: 16,
-  padding: 22,
-  boxShadow: "0 8px 24px rgba(15, 23, 32, 0.04)",
-};
-
-const sectionTitle = {
-  margin: 0,
-  fontSize: 20,
-  color: "#0f1720",
-  letterSpacing: "-0.04em",
-  fontWeight: 800,
-};
 
 function banner(type) {
   const map = {
@@ -742,8 +688,7 @@ function banner(type) {
   };
   const s = map[type];
   return {
-    marginBottom: 16,
-    background: s.bg, border: `1px solid ${s.border}`,
+    marginBottom: 16, background: s.bg, border: `1px solid ${s.border}`,
     color: s.color, borderRadius: 12, padding: "13px 16px",
     fontSize: 14, fontWeight: 600,
   };
