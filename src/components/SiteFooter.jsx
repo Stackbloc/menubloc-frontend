@@ -54,11 +54,8 @@ export default function SiteFooter() {
           <Link to="/restaurant/onboarding" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.signup")}
           </Link>
-          <Link to="/deals" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
-            {t("discovery.footer.deals")}
-          </Link>
-          <Link to="/top-picks" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
-            {t("discovery.footer.topPicksNearYou")}
+          <Link to="/operator/login" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
+            {t("discovery.footer.signin")}
           </Link>
           <Link to="/terms" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.terms")}
