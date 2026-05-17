@@ -105,6 +105,7 @@ import MenuVerificationPage from "./pages/MenuVerificationPage.jsx";
 import EasyMenuLanding from "./pages/EasyMenuLanding.jsx";
 import SubscriptionSelect from "./pages/SubscriptionSelect.jsx";
 import MenuDesignSelectPage from "./pages/MenuDesignSelectPage.jsx";
+import RestaurantQrUpsell from "./pages/RestaurantQrUpsell.jsx";
 import MenuUploadChoicePage from "./pages/MenuUploadChoicePage.jsx";
 import MenuCapturePage from "./pages/MenuCapturePage.jsx";
 import Terms from "./pages/Terms.jsx";
@@ -497,6 +498,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/pricing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
         <Route path="/profilesearch" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProfileSearchPage />} />
         <Route path="/restaurant/subscription" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
+        <Route path="/restaurant/qr-upsell" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantQrUpsell />} />
         <Route path="/restaurant/design-select" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuDesignSelectPage />} />
         <Route path="/restaurant/menu-upload-choice" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuUploadChoicePage />} />
         <Route path="/menu-capture" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuCapturePage />} />
