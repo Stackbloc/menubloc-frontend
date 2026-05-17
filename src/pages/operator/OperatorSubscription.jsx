@@ -204,6 +204,14 @@ export default function OperatorSubscription() {
     ? new Date(subscription.current_period_end).toLocaleDateString()
     : "N/A";
 
+  const hasActiveStripeSubscription = Boolean(
+    subscription?.stripe_subscription_id && subscription?.current_period_end
+  );
+  const canCancel =
+    hasActiveStripeSubscription &&
+    ["active", "trialing", "past_due"].includes(subscription?.status) &&
+    !subscription?.cancel_at_period_end;
+
   return (
     <OperatorLayout title="Subscription">
       <div style={{ maxWidth: 1120, margin: "0 auto" }}>
@@ -398,25 +406,45 @@ export default function OperatorSubscription() {
               <StatusRow label="Stripe Subscription" value={subscription?.stripe_subscription_id || "Not created"} />
             </div>
 
-            <button
-              type="button"
-              onClick={handleCancelSubscription}
-              disabled={!subscription?.stripe_subscription_id || subscription?.cancel_at_period_end === true}
-              style={{
-                marginTop: 18,
-                width: "100%",
-                borderRadius: 16,
-                border: "1px solid #fecaca",
-                background: subscription?.cancel_at_period_end ? "#f8fafc" : "#fff5f5",
-                color: "#b42318",
-                padding: "13px 16px",
-                fontSize: 14,
-                fontWeight: 800,
-                cursor: subscription?.cancel_at_period_end ? "not-allowed" : "pointer",
-              }}
-            >
-              {subscription?.cancel_at_period_end ? "Cancellation already scheduled" : "Cancel At Period End"}
-            </button>
+            {hasActiveStripeSubscription ? (
+              subscription?.cancel_at_period_end ? (
+                <div
+                  style={{
+                    marginTop: 18,
+                    padding: "13px 16px",
+                    borderRadius: 16,
+                    background: "#f8fafc",
+                    border: "1px solid #eaecf0",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: "#667085",
+                    textAlign: "center",
+                  }}
+                >
+                  Cancellation scheduled at period end
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleCancelSubscription}
+                  disabled={!canCancel}
+                  style={{
+                    marginTop: 18,
+                    width: "100%",
+                    borderRadius: 16,
+                    border: "1px solid #fecaca",
+                    background: "#fff5f5",
+                    color: "#b42318",
+                    padding: "13px 16px",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    cursor: canCancel ? "pointer" : "not-allowed",
+                  }}
+                >
+                  Cancel At Period End
+                </button>
+              )
+            ) : null}
           </div>
         </section>
       </div>
