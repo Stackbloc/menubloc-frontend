@@ -3,18 +3,33 @@
  *
  * Menu Editor — select a menu, manage its items.
  *
+ * GUARDRAIL: Upload paths (PDF, MKS Spreadsheet, photos, paste) are the primary
+ * onboarding workflow. Manual single-item entry is the secondary correction
+ * workflow. Do NOT promote manual entry above upload actions in the empty state.
+ * Upload your existing menu to let Menuply structure it for review.
+ *
  * Features:
+ *   • Upload-first empty state: PDF / MKS Spreadsheet / Photos / Paste text
  *   • Menu selector dropdown + "New Menu" button
  *   • Items grouped by category/section
  *   • Add, inline-edit, publish, delete items
  *   • Status badge per item (draft / active)
- *   • Empty-state prompt to create first menu
  */
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+
+const CANONICAL_MENU_CATEGORIES = [
+  "Appetizers",
+  "Drinks",
+  "Desserts",
+  "Entrees",
+  "Salads",
+  "Soups",
+];
 
 // ── Tiny shared styles ─────────────────────────────────────────────────────
 const INPUT = {
@@ -64,7 +79,8 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
     name: initial.name || "",
     description: initial.description || "",
     price: initial.price ?? "",
-    category: initial.category || "",
+    canonical_category: initial.canonical_category || "",
+    display_category_label: initial.display_category_label || "",
   });
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
 
@@ -88,19 +104,31 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
           <input style={{ ...INPUT, width: "100%" }} value={form.price} onChange={f("price")} placeholder="12.99" type="number" step="0.01" min="0" />
         </div>
         <div>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Section / Category</label>
-          <input style={{ ...INPUT, width: "100%" }} value={form.category} onChange={f("category")} placeholder="e.g. Burgers, Salads, Drinks" />
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Canonical category *</label>
+          <select style={{ ...INPUT, width: "100%", cursor: "pointer" }} value={form.canonical_category} onChange={f("canonical_category")}>
+            <option value="">Select a canonical category</option>
+            {CANONICAL_MENU_CATEGORIES.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+          <div style={{ fontSize: 11, color: "#8a9ab0", marginTop: 4 }}>
+            Canonical item categories are controlled by Common Knowledge. Restaurant display labels are presentation-only synonyms.
+          </div>
         </div>
         <div>
           <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Description</label>
           <input style={{ ...INPUT, width: "100%" }} value={form.description} onChange={f("description")} placeholder="Short description" />
+        </div>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Display label</label>
+          <input style={{ ...INPUT, width: "100%" }} value={form.display_category_label} onChange={f("display_category_label")} placeholder="Optional menu label, e.g. Mains or Starters" />
         </div>
       </div>
       <div className="operator-responsive-card-actions" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button style={BTN("muted")} onClick={onCancel} type="button">Cancel</button>
         <button
           style={{ ...BTN("primary"), opacity: busy ? 0.6 : 1 }}
-          disabled={busy || !form.name.trim()}
+          disabled={busy || !form.name.trim() || !form.canonical_category}
           onClick={() => onSave(form)}
           type="button"
         >
@@ -153,10 +181,43 @@ function ItemRow({ item, onEdit, onPublish, onDelete, actionBusy }) {
   );
 }
 
+// ── Upload action card ─────────────────────────────────────────────────────
+function UploadCard({ icon, label, sub, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      type="button"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        padding: "18px 12px",
+        background: hovered ? "#f0f7f4" : "#f8faf9",
+        border: `1.5px solid ${hovered ? "#1F4E3D" : "#d1e7dd"}`,
+        borderRadius: 12,
+        cursor: "pointer",
+        fontFamily: "inherit",
+        minWidth: 120,
+        flex: 1,
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <span style={{ fontSize: 22 }}>{icon}</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: "#1F4E3D" }}>{label}</span>
+      {sub && <span style={{ fontSize: 11, color: "#8a9ab0", textAlign: "center" }}>{sub}</span>}
+    </button>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function OperatorMenuEditor() {
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
+  const navigate = useNavigate();
 
   const [menus, setMenus]             = useState([]);
   const [selectedMenuId, setSelectedMenuId] = useState(null);
@@ -170,8 +231,13 @@ export default function OperatorMenuEditor() {
   const [newMenuBusy, setNewMenuBusy]         = useState(false);
 
   const [showAddItem, setShowAddItem] = useState(false);
-  const [editingItem, setEditingItem] = useState(null); // item being edited inline
+  const [editingItem, setEditingItem] = useState(null);
   const [actionBusy, setActionBusy]   = useState(false);
+
+  const [showPasteForm, setShowPasteForm] = useState(false);
+  const [pasteText, setPasteText]         = useState("");
+  const [pasteBusy, setPasteBusy]         = useState(false);
+  const [pasteSuccess, setPasteSuccess]   = useState(false);
 
   const selectedMenu = menus.find(m => m.id === selectedMenuId);
 
@@ -248,7 +314,8 @@ export default function OperatorMenuEditor() {
         name: form.name,
         description: form.description || null,
         price: form.price !== "" ? form.price : null,
-        category: form.category || null,
+        canonical_category: form.canonical_category,
+        display_category_label: form.display_category_label || null,
       });
       setItems(prev => [...prev, d.item]);
       setShowAddItem(false);
@@ -267,7 +334,8 @@ export default function OperatorMenuEditor() {
         name: form.name,
         description: form.description || null,
         price: form.price !== "" ? form.price : null,
-        category: form.category || null,
+        canonical_category: form.canonical_category,
+        display_category_label: form.display_category_label || null,
       });
       const published = await api.publishMenuItem(rid, editingItem.id);
       setItems(prev => prev.map(i => i.id === editingItem.id ? published.item : i));
@@ -306,9 +374,35 @@ export default function OperatorMenuEditor() {
     }
   }
 
-  // Group items by category
+  // Paste text submit — sends raw menu text to intake pipeline
+  async function handlePasteSubmit() {
+    if (!pasteText.trim() || !rid) return;
+    setPasteBusy(true);
+    try {
+      const res = await fetch("/api/operator/intake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ restaurant_id: rid, text: pasteText.trim(), source: "paste" }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Submission failed");
+      }
+      setPasteText("");
+      setShowPasteForm(false);
+      setPasteSuccess(true);
+      setTimeout(() => setPasteSuccess(false), 6000);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setPasteBusy(false);
+    }
+  }
+
+  // Canonical category drives controlled classification; display label is presentation-only.
   const grouped = items.reduce((acc, item) => {
-    const key = item.category || "Uncategorized";
+    const key = item.display_category_label || item.canonical_category || "Uncategorized";
     if (!acc[key]) acc[key] = [];
     acc[key].push(item);
     return acc;
@@ -351,17 +445,28 @@ export default function OperatorMenuEditor() {
           </button>
         )}
 
-        <button style={BTN("muted")} onClick={() => setShowNewMenuForm(v => !v)}>
-          + New menu
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+          <button style={BTN("muted")} onClick={() => setShowNewMenuForm(v => !v)}>
+            + New menu
+          </button>
+          <span style={{ fontSize: 10, color: "#b0bbc8" }}>Multiple menus on paid plans</span>
+        </div>
 
         {menus.length > 0 && (
-          <button
-            style={{ ...BTN("primary"), marginLeft: "auto" }}
-            onClick={() => { setShowAddItem(v => !v); setEditingItem(null); }}
-          >
-            + Add item
-          </button>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <button
+              style={BTN("ghost")}
+              onClick={() => navigate(`/restaurant/spreadsheet-upload?restaurantId=${rid}`)}
+            >
+              Upload menu
+            </button>
+            <button
+              style={BTN("primary")}
+              onClick={() => { setShowAddItem(v => !v); setEditingItem(null); }}
+            >
+              Add item manually
+            </button>
+          </div>
         )}
       </div>
 
@@ -407,6 +512,16 @@ export default function OperatorMenuEditor() {
         </div>
       )}
 
+      {/* Paste success banner */}
+      {pasteSuccess && (
+        <div style={{
+          background: "#d1fae5", border: "1px solid #6ee7b7", borderRadius: 10,
+          padding: "10px 14px", color: "#065f46", fontSize: 13, marginBottom: 16,
+        }}>
+          Menu text received. Menuply will structure it for review shortly.
+        </div>
+      )}
+
       {/* Add item form */}
       {showAddItem && (
         <div style={{ marginBottom: 20 }}>
@@ -418,28 +533,119 @@ export default function OperatorMenuEditor() {
         </div>
       )}
 
-      {/* Items list */}
+      {/* ── Items area ───────────────────────────────────────────────── */}
       {loadingItems ? (
         <p style={{ color: "#8a9ab0", fontSize: 13 }}>Loading items…</p>
       ) : !selectedMenuId ? (
+
+        /* No menu selected */
         <div style={{
           background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14,
           padding: "40px 32px", textAlign: "center",
         }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>☰</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720", marginBottom: 8 }}>No menu selected</div>
-          <div style={{ fontSize: 13, color: "#8a9ab0" }}>Create your first menu above to get started.</div>
+          <div style={{ fontSize: 13, color: "#8a9ab0", marginBottom: 20 }}>
+            Create a menu above, then upload your existing menu to get started quickly.
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            <button
+              style={BTN("ghost")}
+              onClick={() => navigate(`/restaurant/spreadsheet-upload?restaurantId=${rid}`)}
+            >
+              Upload spreadsheet
+            </button>
+            <button style={BTN("muted")} onClick={() => setShowNewMenuForm(true)}>
+              + New menu
+            </button>
+          </div>
         </div>
+
       ) : items.length === 0 ? (
+
+        /* Empty menu — upload-first */
         <div style={{
           background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14,
-          padding: "40px 32px", textAlign: "center",
+          padding: "36px 32px",
         }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>🍽</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720", marginBottom: 8 }}>No items yet</div>
-          <div style={{ fontSize: 13, color: "#8a9ab0", marginBottom: 20 }}>Add your first menu item using the button above.</div>
-          <button style={BTN("primary")} onClick={() => setShowAddItem(true)}>+ Add first item</button>
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720", marginBottom: 6 }}>
+              Upload your existing menu
+            </div>
+            <div style={{ fontSize: 13, color: "#8a9ab0" }}>
+              Upload your menu to let Menuply structure it for review. You can edit items after processing.
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
+            <UploadCard
+              icon="📄"
+              label="PDF Menu"
+              sub="Upload a PDF or image"
+              onClick={() => navigate(`/restaurant/pdf-upload?restaurantId=${rid}`)}
+            />
+            <UploadCard
+              icon="📊"
+              label="MKS Spreadsheet"
+              sub="Upload .xlsx or .csv"
+              onClick={() => navigate(`/restaurant/spreadsheet-upload?restaurantId=${rid}`)}
+            />
+            <UploadCard
+              icon="📷"
+              label="Menu Photos"
+              sub="Upload photos of your menu"
+              onClick={() => navigate(`/restaurant/ocr-upload?restaurantId=${rid}`)}
+            />
+            <UploadCard
+              icon="📋"
+              label="Paste Menu Text"
+              sub="Copy-paste from any source"
+              onClick={() => setShowPasteForm(v => !v)}
+            />
+          </div>
+
+          {showPasteForm && (
+            <div style={{
+              background: "#f8faf9", border: "1.5px solid #1F4E3D", borderRadius: 12,
+              padding: "16px 18px", marginBottom: 20,
+            }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 6 }}>
+                Paste your menu text below
+              </label>
+              <textarea
+                value={pasteText}
+                onChange={e => setPasteText(e.target.value)}
+                placeholder="Paste menu items, sections, prices — any format is fine."
+                rows={6}
+                style={{ ...INPUT, width: "100%", resize: "vertical", lineHeight: 1.5 }}
+              />
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 10 }}>
+                <button style={BTN("muted")} onClick={() => setShowPasteForm(false)} type="button">Cancel</button>
+                <button
+                  style={{ ...BTN("primary"), opacity: (pasteBusy || !pasteText.trim()) ? 0.6 : 1 }}
+                  disabled={pasteBusy || !pasteText.trim()}
+                  onClick={handlePasteSubmit}
+                  type="button"
+                >
+                  {pasteBusy ? "Sending…" : "Send to Menuply"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+            <div style={{ flex: 1, height: 1, background: "#e4e9f0" }} />
+            <span style={{ fontSize: 12, color: "#b0bbc8" }}>or add items one by one</span>
+            <div style={{ flex: 1, height: 1, background: "#e4e9f0" }} />
+          </div>
+
+          <div style={{ textAlign: "center" }}>
+            <button style={BTN("muted")} onClick={() => setShowAddItem(true)}>
+              Add single item manually
+            </button>
+          </div>
         </div>
+
       ) : (
         Object.entries(grouped).map(([section, sectionItems]) => (
           <div key={section} style={{ marginBottom: 28 }}>
