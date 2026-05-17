@@ -51,7 +51,7 @@ const DEAL_TYPES = [
   { value: "amount_off",   label: "$ Off" },
   { value: "bogo",         label: "BOGO" },
   { value: "fixed_price",  label: "Fixed Price" },
-  { value: "bundle",       label: "Bundle" },
+  { value: "combo",        label: "Combo" },
   { value: "other",        label: "Other" },
 ];
 
@@ -79,7 +79,7 @@ function formatDiscount(deal) {
   if (deal.deal_type === "fixed_price" && deal.fixed_price_cents)
     return `$${(deal.fixed_price_cents / 100).toFixed(2)} fixed`;
   if (deal.deal_type === "bogo") return "BOGO";
-  if (deal.deal_type === "bundle") return "Bundle";
+  if (deal.deal_type === "combo" || deal.deal_type === "bundle") return "Combo";
   return deal.deal_type;
 }
 
@@ -95,7 +95,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
   const [form, setForm] = useState({
     title: initial.title || "",
     description: initial.description || "",
-    deal_type: initial.deal_type || "percent_off",
+    deal_type: (initial.deal_type === "bundle" ? "combo" : initial.deal_type) || "percent_off",
     discount_percent: initial.discount_percent || "",
     discount_amount_cents: initial.discount_amount_cents
       ? (initial.discount_amount_cents / 100).toString()
