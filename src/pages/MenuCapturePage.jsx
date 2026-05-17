@@ -99,19 +99,16 @@ function inputStyle() {
 }
 
 /**
- * Phases: identity | optional_info_photo | menu | review | success
+ * Phases: identity | menu | review | success
  */
 export default function MenuCapturePage() {
   const navigate = useNavigate();
-  const step1InputRef = useRef(null);
   const menuInputRef = useRef(null);
 
   const [phase, setPhase] = useState("identity");
   const [captureSessionId, setCaptureSessionId] = useState("");
   const [sessionStartError, setSessionStartError] = useState("");
   const [nextPageNumber, setNextPageNumber] = useState(1);
-  const [hasRestaurantInfoPhoto, setHasRestaurantInfoPhoto] = useState(false);
-  const [ocrHintsFromPhoto, setOcrHintsFromPhoto] = useState(null);
   const [menuPageCount, setMenuPageCount] = useState(0);
   const [menuThumbUrls, setMenuThumbUrls] = useState([]);
 
@@ -171,6 +168,10 @@ export default function MenuCapturePage() {
     }
     setErrorMsg("");
     setSessionStartError("");
+    if (captureSessionId) {
+      setPhase("menu");
+      return;
+    }
     setSavingPhoto(true);
     try {
       const res = await fetch(`${API}/menus-claim-upload-clean/capture-session/start`, {
@@ -193,10 +194,8 @@ export default function MenuCapturePage() {
         return;
       }
       setCaptureSessionId(data.capture_session_id);
-      setHasRestaurantInfoPhoto(false);
       setNextPageNumber(1);
-      setOcrHintsFromPhoto(null);
-      setPhase("optional_info_photo");
+      setPhase("menu");
     } catch {
       setSessionStartError("Could not start upload session.");
     } finally {
@@ -211,37 +210,6 @@ export default function MenuCapturePage() {
       return `File too large (max 25 MB). Yours is ${(f.size / 1024 / 1024).toFixed(1)} MB.`;
     }
     return "";
-  }
-
-  async function onRestaurantPhotoChosen(e) {
-    const f = e.target.files?.[0];
-    e.target.value = "";
-    const v = validateImageFile(f);
-    if (v) {
-      setErrorMsg(v);
-      return;
-    }
-    if (!captureSessionId) {
-      setErrorMsg(sessionStartError || "Session not ready. Go back and continue from restaurant details.");
-      return;
-    }
-    setErrorMsg("");
-    const pn = 1;
-    try {
-      await postPage(f, "restaurant_info", pn);
-      setHasRestaurantInfoPhoto(true);
-      setNextPageNumber(2);
-      setPhase("menu");
-    } catch (err) {
-      setErrorMsg(formatFlowError(err.message, err.status));
-    }
-  }
-
-  function skipOptionalRestaurantPhoto() {
-    setErrorMsg("");
-    setHasRestaurantInfoPhoto(false);
-    setNextPageNumber(1);
-    setPhase("menu");
   }
 
   async function onMenuPhotoChosen(e) {
@@ -270,7 +238,7 @@ export default function MenuCapturePage() {
 
   function goReview() {
     if (menuPageCount < 1) {
-      setErrorMsg("Add at least one photo of a menu page (text and prices).");
+      setErrorMsg("Add at least one photo of a menu page showing item names and prices.");
       return;
     }
     setErrorMsg("");
@@ -361,15 +329,6 @@ export default function MenuCapturePage() {
     };
   }, [phase, captureSessionId]);
 
-  const mergedHintsDisplay = ocrHintsFromPhoto
-    ? [
-        ocrHintsFromPhoto.name && `Name (from photo): ${ocrHintsFromPhoto.name}`,
-        ocrHintsFromPhoto.phone && `Phone (from photo): ${ocrHintsFromPhoto.phone}`,
-        ocrHintsFromPhoto.address && `Address (from photo): ${ocrHintsFromPhoto.address}`,
-        ocrHintsFromPhoto.website && `Website (from photo): ${ocrHintsFromPhoto.website}`,
-      ].filter(Boolean)
-    : [];
-
   const progressCard = savingPhoto ? (
     <div
       style={{
@@ -413,8 +372,7 @@ export default function MenuCapturePage() {
           </h1>
           <p style={{ fontSize: 15, color: "#475569", margin: "0 0 16px", lineHeight: 1.65 }}>
             <strong>{restaurantName.trim()}</strong>: we received{" "}
-            <strong>{menuPageCount}</strong> menu page{menuPageCount !== 1 ? "s" : ""}
-            {hasRestaurantInfoPhoto ? " plus your optional restaurant-details photo" : ""}. Photos are processing in
+            <strong>{menuPageCount}</strong> menu page{menuPageCount !== 1 ? "s" : ""}. Photos are processing in
             the background — items may take a few minutes to appear in search. Thank you for contributing!
           </p>
           {captureStatus?.session_status === "failed" && (
@@ -534,16 +492,7 @@ export default function MenuCapturePage() {
         </h1>
         <p style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>
           Step{" "}
-          {phase === "identity"
-            ? "1"
-            : phase === "optional_info_photo"
-              ? "2"
-              : phase === "menu"
-                ? "3"
-                : phase === "review"
-                  ? "4"
-                  : "—"}{" "}
-          of 4
+          {phase === "identity" ? "1" : phase === "menu" ? "2" : phase === "review" ? "3" : "—"} of 3
         </p>
 
         {sessionStartError && phase === "identity" && (
@@ -563,69 +512,6 @@ export default function MenuCapturePage() {
         )}
 
         {progressCard}
-
-        {phase === "optional_info_photo" && (
-          <>
-            <p style={{ fontSize: 15, color: "#334155", lineHeight: 1.6, marginBottom: 8 }}>
-              Optional: add a photo of the <strong>restaurant name or address</strong> from the menu cover or window
-              card. Text will be read after you submit (in the background).
-            </p>
-            <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6, marginBottom: 20 }}>
-              You can skip this if you already entered the details on the previous step.
-            </p>
-            <input
-              ref={step1InputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={onRestaurantPhotoChosen}
-              style={{ display: "none" }}
-            />
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button
-                type="button"
-                disabled={!captureSessionId || savingPhoto}
-                onClick={() => step1InputRef.current?.click()}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  width: "100%",
-                  height: 52,
-                  border: "2px dashed #cbd5e1",
-                  borderRadius: 10,
-                  background: "#f8fafc",
-                  cursor: !captureSessionId || savingPhoto ? "not-allowed" : "pointer",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: "#334155",
-                }}
-              >
-                <span style={{ fontSize: 22 }}>📸</span>
-                Take photo / upload image
-              </button>
-              <button
-                type="button"
-                disabled={!captureSessionId || savingPhoto}
-                onClick={skipOptionalRestaurantPhoto}
-                style={{
-                  width: "100%",
-                  height: 46,
-                  background: "#fff",
-                  color: "#475569",
-                  border: "1.5px solid #e2e8f0",
-                  borderRadius: 10,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: !captureSessionId || savingPhoto ? "not-allowed" : "pointer",
-                }}
-              >
-                Skip — go to menu pages
-              </button>
-            </div>
-          </>
-        )}
 
         {phase === "identity" && (
           <>
@@ -711,8 +597,13 @@ export default function MenuCapturePage() {
 
         {phase === "menu" && (
           <>
-            <p style={{ fontSize: 15, color: "#334155", lineHeight: 1.6, marginBottom: 16 }}>
-              Now take photos of the <strong>menu listings</strong> (dish names and prices on the printed menu—not photos of food).
+            <p style={{ fontSize: 15, color: "#334155", lineHeight: 1.6, marginBottom: 10 }}>
+              Photograph the <strong>printed menu pages</strong>. We only need the menu text: item names, descriptions,
+              and prices.
+            </p>
+            <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6, marginBottom: 16 }}>
+              Photos of individual dishes are <strong>not</strong> needed—just clear shots where the menu wording and
+              prices are readable.
             </p>
             <input
               ref={menuInputRef}
@@ -776,7 +667,7 @@ export default function MenuCapturePage() {
                 marginBottom: 10,
               }}
             >
-              + Add menu page photo
+              + Add menu page (text and prices)
             </button>
             <button
               type="button"
@@ -800,7 +691,7 @@ export default function MenuCapturePage() {
               type="button"
               onClick={() => {
                 setErrorMsg("");
-                setPhase("optional_info_photo");
+                setPhase("identity");
               }}
               style={{
                 marginTop: 12,
@@ -814,7 +705,7 @@ export default function MenuCapturePage() {
                 textDecoration: "underline",
               }}
             >
-              ← Back
+              ← Edit restaurant details
             </button>
           </>
         )}
@@ -848,14 +739,8 @@ export default function MenuCapturePage() {
                 { label: "State", value: stateField.trim() || "—" },
                 { label: "Phone", value: phone.trim() || "—" },
                 { label: "Website", value: website.trim() || "—" },
-                ...(address.trim()
-                  ? [{ label: "Address (from photo)", value: address.trim() }]
-                  : []),
-                { label: "Menu photos", value: String(menuPageCount) },
-                {
-                  label: "Restaurant info photo",
-                  value: hasRestaurantInfoPhoto ? "Yes (used for matching, not menu items)" : "No (manual / skipped)",
-                },
+                ...(address.trim() ? [{ label: "Address", value: address.trim() }] : []),
+                { label: "Menu page photos", value: String(menuPageCount) },
               ].map((row, i, arr) => (
                 <div
                   key={row.label}
@@ -881,38 +766,11 @@ export default function MenuCapturePage() {
                 </div>
               ))}
             </div>
-            {mergedHintsDisplay.length > 0 && (
-              <div
-                style={{
-                  fontSize: 13,
-                  color: "#475569",
-                  background: "#f8fafc",
-                  borderRadius: 10,
-                  padding: "12px 14px",
-                  marginBottom: 16,
-                  lineHeight: 1.5,
-                }}
-              >
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Detected from restaurant photo</div>
-                <ul style={{ margin: 0, paddingLeft: 18 }}>
-                  {mergedHintsDisplay.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-                <div style={{ marginTop: 8, fontSize: 12, color: "#94a3b8" }}>
-                  Values you entered above take priority when we save the menu.
-                </div>
-              </div>
-            )}
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <Field
                 label="Restaurant name (confirm)"
                 required
-                hint={
-                  hasRestaurantInfoPhoto
-                    ? "Required to submit. Add or fix the name if needed."
-                    : "Required to submit. City and state must also be filled in (from the previous step)."
-                }
+                hint="Required to submit. City and state must also be filled in (from step 1)."
               >
                 <input
                   type="text"

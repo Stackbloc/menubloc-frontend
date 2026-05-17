@@ -53,7 +53,6 @@ export default function TakeoutMenuTemplate(ctx) {
     shareAnalyticsContext,
     franchiseSlot,
     intakeBannerSlot,
-    uvMenuBannerSlot,
     filterChipsSlot,
     onOpenFilters,
     displaySections,
@@ -196,7 +195,6 @@ export default function TakeoutMenuTemplate(ctx) {
       ) : null}
 
       {intakeBannerSlot}
-      {uvMenuBannerSlot}
       {filterChipsSlot}
 
       {typeof cartLineCount === "number" && cartLineCount > 0 ? (

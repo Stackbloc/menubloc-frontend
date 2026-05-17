@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { isRestaurantVerifiedMenuStatus, MENU_UV_I18N } from "../../lib/menuVerificationLabels.js";
+import { isRestaurantVerifiedMenuStatus } from "../../lib/menuVerificationLabels.js";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 
 function buildMergedSearch(search, extraParams) {
@@ -374,26 +374,7 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80", flexShrink: 0, boxShadow: "0 0 5px #4ade80" }} />
             {t("browse.liveMenu")}
           </div>
-        ) : (
-          <div
-            title={t(MENU_UV_I18N.explanationTitle)}
-            aria-label={t(MENU_UV_I18N.explanation)}
-            style={{
-              position: "absolute", top: 12, right: 12, zIndex: 4,
-              display: "inline-flex", alignItems: "center", gap: 4,
-              padding: "3px 9px",
-              borderRadius: 999,
-              fontSize: 9, fontWeight: 800, letterSpacing: 0.8,
-              background: "rgba(0,0,0,0.30)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              color: "rgba(255,255,255,0.75)",
-            }}
-          >
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#facc15", flexShrink: 0 }} />
-            {t("browse.unverified")}
-          </div>
-        )}
+        ) : null}
 
         {allergens.length ? (
           <div

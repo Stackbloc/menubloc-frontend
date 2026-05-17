@@ -167,7 +167,7 @@ function getMenuTierLabel(menuData) {
 
   if (status === "verified") return "Verified Menu";
   if (status === "pro") return "Pro Menu";
-  return "UV";
+  return null;
 }
 
 // ── Data fetching ──────────────────────────────────────────────────────────
@@ -372,7 +372,9 @@ function MenuBoard({ menuData, pages, dealItems, dealIdSet, settings, accent, cl
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 7, height: 7, borderRadius: "50%", background: accent, animation: "livePulse 2.5s ease-in-out infinite" }} />
-          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>{menuTierLabel}</span>
+          {menuTierLabel ? (
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)" }}>{menuTierLabel}</span>
+          ) : null}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           {pages.length > 1 && <PageIndicator total={pages.length} current={page} accent={accent} />}

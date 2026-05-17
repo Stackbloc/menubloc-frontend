@@ -40,10 +40,6 @@ function lower(v) {
   return safeText(v).toLowerCase();
 }
 
-function pendingBannerText(menuData) {
-  return safeText(menuData?.menu_banner || menuData?.pending_banner || "");
-}
-
 // Haversine distance (miles)
 function haversineMiles(lat1, lon1, lat2, lon2) {
   const toRad = (d) => (d * Math.PI) / 180;
@@ -442,8 +438,6 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
   }, [restaurant, userGeo, rLatLng]);
 
   const profileRestaurantId = safeText(restaurant?.id || restaurantId);
-  const bannerText = pendingBannerText(raw);
-
   // ✅ Link to Restaurant Public Page (slug preferred, id fallback)
   const publicLink = restaurant?.slug
     ? `/r/${restaurant.slug}`
@@ -551,25 +545,6 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
               {theme === "dark" ? "Light mode" : "Dark mode"}
             </button>
           </div>
-          {bannerText ? (
-            <div
-              style={{
-                marginTop: 10,
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "8px 12px",
-                borderRadius: 10,
-                background: "#fff3cd",
-                color: "#7c2d12",
-                border: "1px solid #facc15",
-                fontSize: 12,
-                fontWeight: 900,
-                letterSpacing: 0.2,
-              }}
-            >
-              {bannerText}
-            </div>
-          ) : null}
         </div>
       </div>
 

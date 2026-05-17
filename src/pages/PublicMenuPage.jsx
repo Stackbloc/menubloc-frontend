@@ -45,7 +45,6 @@ function useIsMobile(breakpoint = 900) {
   return isMobile;
 }
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
-import UvMenuNotice from "../components/UvMenuNotice.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand } from "../components/menu-templates/restaurantMenuBrand.js";
@@ -161,45 +160,6 @@ function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap) {
       return { ...sec, title, items };
     })
     .filter((sec) => sec.items.length > 0);
-}
-
-function UnverifiedBanner({ show, onClaim }) {
-  const { t } = useLanguage();
-  if (!show) return null;
-
-  return (
-    <button
-      onClick={onClaim}
-      style={{
-        marginTop: 12,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "9px 18px",
-        borderRadius: 10,
-        background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-        color: "#0B0F0C",
-        border: "none",
-        fontSize: 12,
-        fontWeight: 800,
-        letterSpacing: 0.3,
-        cursor: "pointer",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-        transition: "background 160ms ease, box-shadow 160ms ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "#2d6a4f";
-        e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.22)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "#16A34A";
-        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.18)";
-      }}
-    >
-      <span style={{ fontSize: 11, opacity: 0.7 }}>●</span>
-      {t("publicMenu.unverified")}
-    </button>
-  );
 }
 
 function IntakePreviewBanner({ show }) {
@@ -1230,10 +1190,6 @@ export default function PublicMenuPage() {
           shareAnalyticsContext,
           franchiseSlot,
           intakeBannerSlot: <IntakePreviewBanner show={isIntakePreview} />,
-          uvMenuBannerSlot:
-            data?.is_authoritative === false ? (
-              <UvMenuNotice show variant="banner" menuBanner={data?.menu_banner} />
-            ) : null,
           filterChipsSlot,
           onOpenFilters: () => setIsFilterDrawerOpen(true),
           displaySections,
