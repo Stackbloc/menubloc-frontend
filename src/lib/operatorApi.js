@@ -167,6 +167,8 @@ export const createQrKitOrder = (rid, body) => post(`/operator/restaurants/${rid
 export const getQrKitOrder = (rid, orderId) => get(`/operator/restaurants/${rid}/qr-kit-orders/${orderId}`);
 
 // ── Stripe Platform Billing ───────────────────────────────────────────────
+export const getCheckoutPlans = () =>
+  get("/api/stripe/platform/plans");
 export const createPlatformPaymentIntent = (body) =>
   post("/api/stripe/platform/payment-intents", body);
 export const createPlatformCheckoutSession = (body) =>

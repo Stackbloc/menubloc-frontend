@@ -3,31 +3,26 @@ import { useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
-import { validateDiscountCode } from "../../lib/operatorApi.js";
+import { validateDiscountCode, getCheckoutPlans } from "../../lib/operatorApi.js";
 import {
   formatMoney,
   getSubscriptionPlanLabel,
   getSubscriptionStatusLabel,
 } from "../../components/payments/paymentHelpers.js";
 
-const PLAN_OPTIONS = [
-  {
-    code: "pro_monthly",
-    title: "Pro Monthly",
-    priceCents: 2999,
-    billing: "/month",
-    description:
-      "Flexible monthly billing for restaurants that want direct ordering, stronger branding, and Stripe-backed billing without annual commitment.",
-  },
-  {
-    code: "pro_annual",
-    title: "Pro Annual",
-    priceCents: 29999,
-    billing: "/year",
-    description:
-      "Lower annual effective rate for restaurants ready to lock in Menuply Pro for the year.",
-  },
-];
+// TODO: replace with CK-backed taxonomy when available
+const PLAN_DESCRIPTIONS = {
+  pro_monthly:
+    "Flexible monthly billing for restaurants that want direct ordering, stronger branding, and Stripe-backed billing without annual commitment.",
+  pro_annual:
+    "Lower annual effective rate for restaurants ready to lock in Menuply Pro for the year.",
+};
+
+function billingLabel(interval) {
+  if (interval === "month") return "/month";
+  if (interval === "year") return "/year";
+  return "";
+}
 
 function cardStyle(active) {
   return {
@@ -61,6 +56,7 @@ function StatusRow({ label, value }) {
 export default function OperatorSubscription() {
   const { selectedRestaurant } = useOperator();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [planOptions, setPlanOptions] = useState([]);
   const [subscription, setSubscription] = useState(null);
   const [selectedPlanCode, setSelectedPlanCode] = useState("pro_monthly");
   const [loading, setLoading] = useState(false);
@@ -71,6 +67,23 @@ export default function OperatorSubscription() {
   const [discountValidation, setDiscountValidation] = useState(null);
   const [discountLoading, setDiscountLoading] = useState(false);
   const [discountError, setDiscountError] = useState("");
+
+  useEffect(() => {
+    getCheckoutPlans()
+      .then((data) => {
+        const filtered = (data.plans || []).filter((p) =>
+          ["pro_monthly", "pro_annual"].includes(p.code)
+        );
+        if (filtered.length) setPlanOptions(filtered);
+      })
+      .catch(() => {
+        // Fallback to service-defined amounts if fetch fails
+        setPlanOptions([
+          { code: "pro_monthly", checkout_label: "Pro Partner Monthly", amount_cents: 3999, billing_interval: "month" },
+          { code: "pro_annual",  checkout_label: "Pro Partner Annual",  amount_cents: 29900, billing_interval: "year" },
+        ]);
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle return from Stripe Checkout
   const checkoutResult = searchParams.get("checkout");
@@ -228,7 +241,7 @@ export default function OperatorSubscription() {
         </section>
 
         <section style={{ marginTop: 24, display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-          {PLAN_OPTIONS.map((plan) => {
+          {planOptions.map((plan) => {
             const active = selectedPlanCode === plan.code;
             const current = currentPlanCode === plan.code;
 
@@ -246,10 +259,10 @@ export default function OperatorSubscription() {
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 800, color: "#475467", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                      {plan.code === "pro_annual" ? "Annual" : "Monthly"}
+                      {plan.billing_interval === "year" ? "Annual" : "Monthly"}
                     </div>
                     <h2 style={{ margin: "8px 0 0", fontSize: 28, color: "#0f1720", letterSpacing: "-0.05em" }}>
-                      {plan.title}
+                      {plan.checkout_label}
                     </h2>
                   </div>
                   {current ? (
@@ -271,11 +284,13 @@ export default function OperatorSubscription() {
                 </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                   <div style={{ fontSize: 38, fontWeight: 800, color: "#b45309", letterSpacing: "-0.05em" }}>
-                    {formatMoney(plan.priceCents)}
+                    {formatMoney(plan.amount_cents)}
                   </div>
-                  <div style={{ fontSize: 15, color: "#475467", fontWeight: 600 }}>{plan.billing}</div>
+                  <div style={{ fontSize: 15, color: "#475467", fontWeight: 600 }}>{billingLabel(plan.billing_interval)}</div>
                 </div>
-                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.65, color: "#475467" }}>{plan.description}</p>
+                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.65, color: "#475467" }}>
+                  {PLAN_DESCRIPTIONS[plan.code] || ""}
+                </p>
               </button>
             );
           })}
