@@ -239,6 +239,11 @@ export default function OperatorMenuEditor() {
   const [pasteBusy, setPasteBusy]         = useState(false);
   const [pasteSuccess, setPasteSuccess]   = useState(false);
 
+  const [renamingMenuId, setRenamingMenuId] = useState(null);
+  const [renameValue, setRenameValue]       = useState("");
+  const [renameBusy, setRenameBusy]         = useState(false);
+  const [deletingMenuId, setDeletingMenuId] = useState(null);
+
   const selectedMenu = menus.find(m => m.id === selectedMenuId);
 
   // Load menus
@@ -400,6 +405,41 @@ export default function OperatorMenuEditor() {
     }
   }
 
+  // Rename menu
+  async function handleRenameMenu() {
+    if (!renameValue.trim() || !renamingMenuId) return;
+    setRenameBusy(true);
+    try {
+      const d = await api.updateMenu(rid, renamingMenuId, { name: renameValue.trim() });
+      setMenus(prev => prev.map(m => m.id === renamingMenuId ? { ...m, name: d.menu?.name ?? renameValue.trim() } : m));
+      setRenamingMenuId(null);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setRenameBusy(false);
+    }
+  }
+
+  // Delete menu
+  async function handleDeleteMenu(menuId) {
+    const menu = menus.find(m => m.id === menuId);
+    if (!window.confirm(`Delete "${menu?.name}"? This cannot be undone.`)) return;
+    setDeletingMenuId(menuId);
+    try {
+      await api.deleteMenu(rid, menuId);
+      const remaining = menus.filter(m => m.id !== menuId);
+      setMenus(remaining);
+      if (selectedMenuId === menuId) {
+        setSelectedMenuId(remaining.length ? remaining[0].id : null);
+        setItems([]);
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDeletingMenuId(null);
+    }
+  }
+
   // Canonical category drives controlled classification; display label is presentation-only.
   const grouped = items.reduce((acc, item) => {
     const key = item.display_category_label || item.canonical_category || "Uncategorized";
@@ -437,6 +477,41 @@ export default function OperatorMenuEditor() {
               </option>
             ))}
           </select>
+        )}
+
+        {selectedMenu && renamingMenuId === selectedMenuId ? (
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <input
+              style={{ ...INPUT, minWidth: 180 }}
+              value={renameValue}
+              onChange={e => setRenameValue(e.target.value)}
+              autoFocus
+              onKeyDown={e => {
+                if (e.key === "Enter") handleRenameMenu();
+                if (e.key === "Escape") setRenamingMenuId(null);
+              }}
+            />
+            <button style={{ ...BTN("primary"), padding: "8px 12px" }} onClick={handleRenameMenu} disabled={renameBusy || !renameValue.trim()}>
+              {renameBusy ? "…" : "Save"}
+            </button>
+            <button style={{ ...BTN("muted"), padding: "8px 10px" }} onClick={() => setRenamingMenuId(null)}>✕</button>
+          </div>
+        ) : selectedMenu && (
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              style={{ ...BTN("ghost"), padding: "6px 10px", fontSize: 12 }}
+              onClick={() => { setRenamingMenuId(selectedMenuId); setRenameValue(selectedMenu.name); }}
+            >
+              Rename
+            </button>
+            <button
+              style={{ ...BTN("danger"), padding: "6px 10px", fontSize: 12 }}
+              disabled={deletingMenuId === selectedMenuId}
+              onClick={() => handleDeleteMenu(selectedMenuId)}
+            >
+              {deletingMenuId === selectedMenuId ? "…" : "Delete"}
+            </button>
+          </div>
         )}
 
         {selectedMenu?.status === "draft" && (
