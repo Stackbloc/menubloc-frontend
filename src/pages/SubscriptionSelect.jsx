@@ -385,7 +385,7 @@ export default function SubscriptionSelect() {
       const saved = JSON.parse(window.sessionStorage.getItem(ONBOARDING_STATE_KEY) || "null");
       if (saved?.restaurant_id && (BYPASS_MODE || saved?.owner_token)) {
         window.sessionStorage.removeItem(ONBOARDING_STATE_KEY);
-        nav("/restaurant/design-select", {
+        nav("/restaurant/qr-upsell", {
           state: {
             ...saved,
             plan: returnedPlanCode === "pro_annual" ? "pro_annual" : "pro_monthly",
@@ -397,22 +397,35 @@ export default function SubscriptionSelect() {
     }
   }, [checkoutSuccess, returnedPlanCode, nav]);
 
-  function continueToDesign(planCode, extra = {}) {
-    nav("/restaurant/design-select", {
-      state: {
-        restaurant_id,
-        restaurant_name,
-        email,
-        owner_token,
-        city,
-        state,
-        phone,
-        menu_choice,
-        plan: planCode,
-        ingestion_method,
-        ...extra,
-      },
-    });
+  async function continueToDesign(planCode, extra = {}) {
+    const nextState = {
+      restaurant_id,
+      restaurant_name,
+      email,
+      owner_token,
+      city,
+      state,
+      phone,
+      menu_choice,
+      plan: planCode,
+      ingestion_method,
+      ...extra,
+    };
+
+    let qr_token = null;
+    try {
+      const r = await fetch(`${API}/owner/qr/primary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurant_id, email, owner_token }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (j.ok && j.token) qr_token = j.token;
+    } catch {
+      // QR failure is non-blocking — onboarding continues regardless
+    }
+
+    nav("/restaurant/qr-upsell", { state: { ...nextState, qr_token } });
   }
 
   function chooseVerified() {
