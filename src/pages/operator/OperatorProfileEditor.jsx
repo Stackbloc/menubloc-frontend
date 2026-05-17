@@ -18,6 +18,114 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 
+// TODO: replace with CK-backed taxonomy API when available
+const CUISINE_OPTIONS = [
+  "American", "Italian", "Mexican", "Chinese", "Japanese",
+  "Thai", "Korean", "Mediterranean", "Indian", "Vegan",
+  "Barbecue", "Seafood", "French", "Greek", "Middle Eastern",
+  "Vietnamese", "Caribbean", "Latin American", "Pizza", "Burgers",
+];
+
+// TODO: replace with CK-backed taxonomy API when available
+const CATEGORY_OPTIONS = [
+  "Fast Food", "Fast Casual", "Casual Dining", "Fine Dining",
+  "Cafe", "Bakery", "Food Truck", "Dessert Shop", "Bar",
+  "Ghost Kitchen", "Buffet", "Deli", "Juice Bar", "Catering",
+];
+
+function parseCuisine(str) {
+  return String(str || "").split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+function MultiCuisineSelect({ value, onChange }) {
+  const selected = parseCuisine(value);
+  const unknowns = selected.filter((v) => !CUISINE_OPTIONS.includes(v));
+
+  function toggle(option) {
+    const next = selected.includes(option)
+      ? selected.filter((v) => v !== option)
+      : [...selected, option];
+    onChange(next.join(", "));
+  }
+
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+      {CUISINE_OPTIONS.map((opt) => {
+        const checked = selected.includes(opt);
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => toggle(opt)}
+            style={{
+              padding: "5px 11px",
+              borderRadius: 999,
+              fontSize: 12,
+              fontWeight: 700,
+              border: checked ? "1.5px solid #1F4E3D" : "1.5px solid #d7deea",
+              background: checked ? "#edf7f2" : "#fff",
+              color: checked ? "#1F4E3D" : "#475467",
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {opt}
+          </button>
+        );
+      })}
+      {unknowns.map((u) => (
+        <button
+          key={u}
+          type="button"
+          onClick={() => toggle(u)}
+          style={{
+            padding: "5px 11px",
+            borderRadius: 999,
+            fontSize: 12,
+            fontWeight: 700,
+            border: "1.5px solid #1F4E3D",
+            background: "#edf7f2",
+            color: "#1F4E3D",
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+        >
+          {u}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CategorySelect({ value, onChange }) {
+  const isKnown = !value || CATEGORY_OPTIONS.includes(value);
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        width: "100%",
+        padding: "10px 13px",
+        fontSize: 13,
+        border: "1.5px solid #e4e9f0",
+        borderRadius: 9,
+        outline: "none",
+        color: value ? "#0f1720" : "#8a9ab0",
+        background: "#fff",
+        fontFamily: "inherit",
+        boxSizing: "border-box",
+        appearance: "auto",
+      }}
+    >
+      <option value="">Select a category…</option>
+      {!isKnown && <option value={value}>{value}</option>}
+      {CATEGORY_OPTIONS.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+  );
+}
+
 const INPUT = {
   width: "100%",
   padding: "10px 13px",
@@ -231,13 +339,19 @@ export default function OperatorProfileEditor() {
               <Label>Restaurant name</Label>
               <input style={INPUT} value={form.restaurant_name} onChange={f("restaurant_name")} />
             </div>
-            <div>
+            <div style={{ gridColumn: "1 / -1" }}>
               <Label>Cuisine</Label>
-              <input style={INPUT} value={form.cuisine} onChange={f("cuisine")} placeholder="e.g. American, Italian" />
+              <MultiCuisineSelect
+                value={form.cuisine}
+                onChange={(v) => setForm((p) => ({ ...p, cuisine: v }))}
+              />
             </div>
             <div>
               <Label>Category</Label>
-              <input style={INPUT} value={form.category} onChange={f("category")} placeholder="e.g. Casual Dining, Fast Food" />
+              <CategorySelect
+                value={form.category}
+                onChange={(v) => setForm((p) => ({ ...p, category: v }))}
+              />
             </div>
             <div>
               <Label>Phone</Label>

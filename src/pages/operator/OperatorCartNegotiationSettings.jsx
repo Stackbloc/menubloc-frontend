@@ -4,7 +4,7 @@
  * File: OperatorCartNegotiationSettings.jsx
  * Date: 2026-04-06
  * Purpose:
- *   Restaurant settings page for GrubBid Bid-Free Bidding™.
+ *   Restaurant settings page for Menuply Bid-Free Bidding™.
  * ============================================================
  */
 
@@ -235,7 +235,7 @@ export default function OperatorCartNegotiationSettings() {
         <div style={CARD}>
           <div style={{ fontSize: 28, fontWeight: 900, color: "#0f1720", marginBottom: 8 }}>Bid-Free Bidding™</div>
           <div style={{ fontSize: 15, color: "#344054", lineHeight: 1.6, marginBottom: 10 }}>
-            Bid-Free Bidding™ lets GrubBid apply occasional, controlled savings to qualifying orders—within the limits you set.
+            Bid-Free Bidding™ lets Menuply apply occasional, controlled savings to qualifying orders—within the limits you set.
           </div>
           <div style={{ fontSize: 14, color: "#667085", lineHeight: 1.6, marginBottom: 16 }}>
             It never applies to items already on deal and always stays within your pricing protections.
@@ -243,7 +243,7 @@ export default function OperatorCartNegotiationSettings() {
           <div style={{ background: "#f8fafc", borderRadius: 14, padding: "16px 18px", border: "1px solid #e4e9f0", marginBottom: 16 }}>
             <div style={{ fontWeight: 800, color: "#0f1720", marginBottom: 6 }}>Bid-Free Bidding™</div>
             <div style={{ fontSize: 14, color: "#344054", lineHeight: 1.6 }}>
-              Let GrubBid apply occasional, controlled savings to qualifying orders—within the limits you set.
+              Let Menuply apply occasional, controlled savings to qualifying orders—within the limits you set.
             </div>
             <div style={{ fontSize: 14, color: "#344054", lineHeight: 1.6 }}>
               Increase order opportunities while protecting your margins.
@@ -266,7 +266,7 @@ export default function OperatorCartNegotiationSettings() {
                 Apply occasional, controlled savings to qualifying orders—within the limits you set.
               </div>
               <div style={{ fontSize: 13, color: "#667085", lineHeight: 1.5, marginTop: 6 }}>
-                GrubBid can automatically apply small savings to select qualifying orders based on the settings you choose. It never applies to items already on deal and always respects your pricing protections.
+                Menuply can automatically apply small savings to select qualifying orders based on the settings you choose. It never applies to items already on deal and always respects your pricing protections.
               </div>
             </div>
             <Toggle
@@ -278,7 +278,7 @@ export default function OperatorCartNegotiationSettings() {
             Enable Bid-Free Bidding™
           </div>
           <div style={{ fontSize: 12, color: "#98a2b3", marginTop: 4 }}>
-            Allow GrubBid to occasionally apply controlled savings to qualifying orders.
+            Allow Menuply to occasionally apply controlled savings to qualifying orders.
           </div>
         </div>
 
@@ -560,7 +560,7 @@ export default function OperatorCartNegotiationSettings() {
             <div>
               <div style={{ fontWeight: 800, color: "#0f1720", marginBottom: 4 }}>What is Bid-Free Bidding™?</div>
               <div style={{ fontSize: 14, color: "#475467", lineHeight: 1.6 }}>
-                Bid-Free Bidding™ lets GrubBid apply occasional, controlled savings to qualifying orders—within the limits you set.
+                Bid-Free Bidding™ lets Menuply apply occasional, controlled savings to qualifying orders—within the limits you set.
               </div>
             </div>
             <div>
