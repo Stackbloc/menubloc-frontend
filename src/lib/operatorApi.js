@@ -302,6 +302,7 @@ export const getAdobeUsageSummary = (rid) =>
   get(`/operator/restaurants/${rid}/adobe-usage`);
 
 // ── Support ───────────────────────────────────────────────────────────────
+export const getHelpKnownIssues = () => get("/operator/help/known-issues");
 export const getTickets = () => get("/operator/support/tickets");
 export const createTicket = (body) => post("/operator/support/tickets", body);
 export const replyTicket = (tid, message) => post(`/operator/support/tickets/${tid}/messages`, { message });

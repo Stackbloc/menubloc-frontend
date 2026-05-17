@@ -33,6 +33,7 @@ const MENU_NAV = [
   { to: "/operator/menu",              label: "Menu Editor",        icon: "☰" },
   { to: "/operator/deals",             label: "Deals",              icon: "⊹" },
   { to: "/operator/hours",             label: "Hours",              icon: "⏰" },
+  { to: "/operator/help",              label: "Operations Center",  icon: "?" },
   { to: "/operator/bid-free-bidding",  label: "Bid-Free Bidding™",  icon: "◇" },
   { to: "/operator/design",            label: "Adobe Studio",       icon: "▣", benefitKey: "design_exports" },
   { to: "/operator/display-settings",  label: "Display Board",      icon: "⊞", benefitKey: "tv_menu_board" },
@@ -45,6 +46,7 @@ const STAFF_MENU_NAV = [
   { to: "/operator/menu",   label: "Menu Editor",  icon: "☰" },
   { to: "/operator/deals",  label: "Deals",        icon: "⊹" },
   { to: "/operator/hours",  label: "Hours",        icon: "⏰" },
+  { to: "/operator/help",   label: "Operations Center",  icon: "?" },
 ];
 
 const BUSINESS_NAV = [
