@@ -3,24 +3,17 @@
  *
  * Menu Editor — select a menu, manage its items.
  *
- * GUARDRAIL: Upload paths (PDF, MKS Spreadsheet, photos, paste) are the primary
+ * GUARDRAIL: Upload paths (PDF, MKS Spreadsheet, paste) are the primary
  * onboarding workflow. Manual single-item entry is the secondary correction
  * workflow. Do NOT promote manual entry above upload actions in the empty state.
- * Upload your existing menu to let Menuply structure it for review.
- *
- * Features:
- *   • Upload-first empty state: PDF / MKS Spreadsheet / Photos / Paste text
- *   • Menu selector dropdown + "New Menu" button
- *   • Items grouped by category/section
- *   • Add, inline-edit, publish, delete items
- *   • Status badge per item (draft / active)
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+import { API_BASE } from "../../lib/operatorApi.js";
 
 const CANONICAL_MENU_CATEGORIES = [
   "Appetizers",
@@ -68,7 +61,7 @@ function StatusBadge({ status }) {
   const s = map[status] || { bg: "#f1f5f9", color: "#475569" };
   return (
     <span style={{ background: s.bg, color: s.color, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>
-      {status}
+      {status || "draft"}
     </span>
   );
 }
@@ -112,7 +105,7 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
             ))}
           </select>
           <div style={{ fontSize: 11, color: "#8a9ab0", marginTop: 4 }}>
-            Canonical item categories are controlled by Common Knowledge. Restaurant display labels are presentation-only synonyms.
+            Canonical categories are controlled by Common Knowledge. Display labels are presentation-only.
           </div>
         </div>
         <div>
@@ -121,7 +114,7 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
         </div>
         <div>
           <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Display label</label>
-          <input style={{ ...INPUT, width: "100%" }} value={form.display_category_label} onChange={f("display_category_label")} placeholder="Optional menu label, e.g. Mains or Starters" />
+          <input style={{ ...INPUT, width: "100%" }} value={form.display_category_label} onChange={f("display_category_label")} placeholder="e.g. Mains or Starters" />
         </div>
       </div>
       <div className="operator-responsive-card-actions" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -140,7 +133,20 @@ function ItemForm({ initial = {}, onSave, onCancel, busy }) {
 }
 
 // ── Item row ───────────────────────────────────────────────────────────────
-function ItemRow({ item, onEdit, onPublish, onDelete, actionBusy }) {
+function ItemRow({ item, photoUrl, onEdit, onPublish, onDelete, onPhotoUpload, actionBusy }) {
+  const fileRef = useRef(null);
+  const [uploadBusy, setUploadBusy] = useState(false);
+
+  function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadBusy(true);
+    onPhotoUpload(item, file).finally(() => {
+      setUploadBusy(false);
+      e.target.value = "";
+    });
+  }
+
   return (
     <div className="operator-responsive-row" style={{
       display: "flex",
@@ -151,7 +157,24 @@ function ItemRow({ item, onEdit, onPublish, onDelete, actionBusy }) {
       border: "1px solid #e4e9f0",
       borderRadius: 10,
     }}>
-      <div style={{ fontSize: 11, color: "#b0bbc8", fontWeight: 600, minWidth: 68 }}>
+      {/* Photo thumbnail */}
+      {photoUrl ? (
+        <img
+          src={photoUrl}
+          alt=""
+          style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }}
+        />
+      ) : (
+        <div style={{
+          width: 40, height: 40, borderRadius: 6, background: "#f1f5f9",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 16, flexShrink: 0, color: "#b0bbc8",
+        }}>
+          🍽
+        </div>
+      )}
+
+      <div style={{ fontSize: 11, color: "#b0bbc8", fontWeight: 600, minWidth: 52 }}>
         {item.item_number || "—"}
       </div>
       <div style={{ flex: 1 }}>
@@ -164,12 +187,29 @@ function ItemRow({ item, onEdit, onPublish, onDelete, actionBusy }) {
         {item.price != null ? `$${Number(item.price).toFixed(2)}` : ""}
       </div>
       <StatusBadge status={item.status} />
-      <div className="operator-responsive-card-actions" style={{ display: "flex", gap: 6 }}>
-        {item.status === "draft" && (
-          <button style={BTN("publish")} disabled={actionBusy} onClick={() => onPublish(item)}>
-            Publish
-          </button>
-        )}
+
+      <div className="operator-responsive-card-actions" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        {/* Photo upload */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
+        <button
+          style={{ ...BTN("muted"), fontSize: 12, padding: "5px 10px", opacity: uploadBusy ? 0.6 : 1 }}
+          disabled={uploadBusy || actionBusy}
+          onClick={() => fileRef.current?.click()}
+          title="Add photo"
+        >
+          {uploadBusy ? "…" : "📷"}
+        </button>
+
+        {/* Publish — always available */}
+        <button style={BTN("publish")} disabled={actionBusy} onClick={() => onPublish(item)}>
+          Publish
+        </button>
         <button style={{ ...BTN("ghost"), fontSize: 12, padding: "5px 10px" }} onClick={() => onEdit(item)}>
           Edit
         </button>
@@ -222,9 +262,11 @@ export default function OperatorMenuEditor() {
   const [menus, setMenus]             = useState([]);
   const [selectedMenuId, setSelectedMenuId] = useState(null);
   const [items, setItems]             = useState([]);
+  const [itemPhotos, setItemPhotos]   = useState({});
   const [loadingMenus, setLoadingMenus] = useState(false);
   const [loadingItems, setLoadingItems] = useState(false);
   const [error, setError]             = useState("");
+  const [upgradePrompt, setUpgradePrompt] = useState(false);
 
   const [showNewMenuForm, setShowNewMenuForm] = useState(false);
   const [newMenuName, setNewMenuName]         = useState("");
@@ -283,6 +325,7 @@ export default function OperatorMenuEditor() {
   async function handleCreateMenu() {
     if (!newMenuName.trim()) return;
     setNewMenuBusy(true);
+    setUpgradePrompt(false);
     try {
       const d = await api.createMenu(rid, { name: newMenuName.trim(), is_primary: menus.length === 0 });
       const updated = [...menus, d.menu];
@@ -291,7 +334,12 @@ export default function OperatorMenuEditor() {
       setNewMenuName("");
       setShowNewMenuForm(false);
     } catch (e) {
-      setError(e.message);
+      if (e.status === 403 && e.payload?.upgrade_required) {
+        setUpgradePrompt(true);
+        setShowNewMenuForm(false);
+      } else {
+        setError(e.message);
+      }
     } finally {
       setNewMenuBusy(false);
     }
@@ -303,7 +351,7 @@ export default function OperatorMenuEditor() {
     setActionBusy(true);
     try {
       const d = await api.publishMenu(rid, selectedMenuId);
-      setMenus(menus.map(m => m.id === selectedMenuId ? { ...m, status: d.menu.status } : m));
+      setMenus(menus.map(m => m.id === selectedMenuId ? { ...m, status: d.menu?.status } : m));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -379,7 +427,26 @@ export default function OperatorMenuEditor() {
     }
   }
 
-  // Paste text submit — sends raw menu text to intake pipeline
+  // Upload photo for an item
+  async function handlePhotoUpload(item, file) {
+    const fd = new FormData();
+    fd.append("photo", file);
+    try {
+      const res = await fetch(`${API_BASE}/operator/menu-items/${item.id}/photo`, {
+        method: "POST",
+        credentials: "include",
+        body: fd,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "Photo upload failed");
+      const url = json.photo?.photo_url;
+      if (url) setItemPhotos(prev => ({ ...prev, [item.id]: url }));
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  // Paste text submit
   async function handlePasteSubmit() {
     if (!pasteText.trim() || !rid) return;
     setPasteBusy(true);
@@ -440,7 +507,6 @@ export default function OperatorMenuEditor() {
     }
   }
 
-  // Canonical category drives controlled classification; display label is presentation-only.
   const grouped = items.reduce((acc, item) => {
     const key = item.display_category_label || item.canonical_category || "Uncategorized";
     if (!acc[key]) acc[key] = [];
@@ -458,8 +524,10 @@ export default function OperatorMenuEditor() {
 
   return (
     <OperatorLayout title="Menu Editor">
-      {/* ── Top bar ──────────────────────────────────────────────────── */}
-      <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+      {/* ── Top bar: New → Edit → Publish → Delete ───────────────── */}
+      <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
+
+        {/* Menu selector */}
         {loadingMenus ? (
           <span style={{ color: "#8a9ab0", fontSize: 13 }}>Loading menus…</span>
         ) : menus.length === 0 ? (
@@ -479,54 +547,63 @@ export default function OperatorMenuEditor() {
           </select>
         )}
 
-        {selectedMenu && renamingMenuId === selectedMenuId ? (
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <input
-              style={{ ...INPUT, minWidth: 180 }}
-              value={renameValue}
-              onChange={e => setRenameValue(e.target.value)}
-              autoFocus
-              onKeyDown={e => {
-                if (e.key === "Enter") handleRenameMenu();
-                if (e.key === "Escape") setRenamingMenuId(null);
-              }}
-            />
-            <button style={{ ...BTN("primary"), padding: "8px 12px" }} onClick={handleRenameMenu} disabled={renameBusy || !renameValue.trim()}>
-              {renameBusy ? "…" : "Save"}
-            </button>
-            <button style={{ ...BTN("muted"), padding: "8px 10px" }} onClick={() => setRenamingMenuId(null)}>✕</button>
-          </div>
-        ) : selectedMenu && (
-          <div style={{ display: "flex", gap: 6 }}>
-            <button
-              style={{ ...BTN("ghost"), padding: "6px 10px", fontSize: 12 }}
-              onClick={() => { setRenamingMenuId(selectedMenuId); setRenameValue(selectedMenu.name); }}
-            >
-              Rename
-            </button>
-            <button
-              style={{ ...BTN("danger"), padding: "6px 10px", fontSize: 12 }}
-              disabled={deletingMenuId === selectedMenuId}
-              onClick={() => handleDeleteMenu(selectedMenuId)}
-            >
-              {deletingMenuId === selectedMenuId ? "…" : "Delete"}
-            </button>
-          </div>
+        {/* New — always first */}
+        <button style={BTN("muted")} onClick={() => { setShowNewMenuForm(v => !v); setUpgradePrompt(false); }}>
+          + New
+        </button>
+
+        {/* Edit / Publish / Delete — for selected menu */}
+        {selectedMenu && (
+          renamingMenuId === selectedMenuId ? (
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input
+                style={{ ...INPUT, minWidth: 180 }}
+                value={renameValue}
+                onChange={e => setRenameValue(e.target.value)}
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === "Enter") handleRenameMenu();
+                  if (e.key === "Escape") setRenamingMenuId(null);
+                }}
+              />
+              <button
+                style={{ ...BTN("primary"), padding: "8px 12px" }}
+                onClick={handleRenameMenu}
+                disabled={renameBusy || !renameValue.trim()}
+              >
+                {renameBusy ? "…" : "Save"}
+              </button>
+              <button style={{ ...BTN("muted"), padding: "8px 10px" }} onClick={() => setRenamingMenuId(null)}>
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                style={BTN("ghost")}
+                onClick={() => { setRenamingMenuId(selectedMenuId); setRenameValue(selectedMenu.name); }}
+              >
+                Edit
+              </button>
+              <button
+                style={BTN("ghost")}
+                onClick={handlePublishMenu}
+                disabled={actionBusy}
+              >
+                Publish
+              </button>
+              <button
+                style={BTN("danger")}
+                disabled={deletingMenuId === selectedMenuId}
+                onClick={() => handleDeleteMenu(selectedMenuId)}
+              >
+                {deletingMenuId === selectedMenuId ? "…" : "Delete"}
+              </button>
+            </>
+          )
         )}
 
-        {selectedMenu?.status === "draft" && (
-          <button style={BTN("ghost")} onClick={handlePublishMenu} disabled={actionBusy}>
-            Publish menu
-          </button>
-        )}
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-          <button style={BTN("muted")} onClick={() => setShowNewMenuForm(v => !v)}>
-            + New menu
-          </button>
-          <span style={{ fontSize: 10, color: "#b0bbc8" }}>Multiple menus on paid plans</span>
-        </div>
-
+        {/* Right side: upload + add item */}
         {menus.length > 0 && (
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
             <button
@@ -539,7 +616,7 @@ export default function OperatorMenuEditor() {
               style={BTN("primary")}
               onClick={() => { setShowAddItem(v => !v); setEditingItem(null); }}
             >
-              Add item manually
+              Add item
             </button>
           </div>
         )}
@@ -553,11 +630,12 @@ export default function OperatorMenuEditor() {
           borderRadius: 12,
           padding: "16px 18px",
           marginBottom: 20,
-          display: "grid",
+          display: "flex",
           gap: 10,
           alignItems: "flex-end",
+          flexWrap: "wrap",
         }}>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
             <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Menu name</label>
             <input
               style={{ ...INPUT, width: "100%" }}
@@ -572,6 +650,26 @@ export default function OperatorMenuEditor() {
             {newMenuBusy ? "Creating…" : "Create"}
           </button>
           <button style={BTN("muted")} onClick={() => setShowNewMenuForm(false)}>Cancel</button>
+        </div>
+      )}
+
+      {/* Upgrade prompt */}
+      {upgradePrompt && (
+        <div style={{
+          background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10,
+          padding: "12px 16px", fontSize: 13, marginBottom: 16,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+        }}>
+          <span style={{ color: "#92400e" }}>
+            Multiple menus require a paid plan.{" "}
+            <button
+              onClick={() => navigate("/operator/subscription")}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#1F4E3D", fontWeight: 700, fontSize: 13, padding: 0, textDecoration: "underline" }}
+            >
+              Upgrade to Pro →
+            </button>
+          </span>
+          <button onClick={() => setUpgradePrompt(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#92400e", fontWeight: 700 }}>✕</button>
         </div>
       )}
 
@@ -638,7 +736,7 @@ export default function OperatorMenuEditor() {
 
       ) : items.length === 0 ? (
 
-        /* Empty menu — upload-first */
+        /* Empty menu — upload-first (no Menu Photos card) */
         <div style={{
           background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14,
           padding: "36px 32px",
@@ -664,12 +762,6 @@ export default function OperatorMenuEditor() {
               label="MKS Spreadsheet"
               sub="Upload .xlsx or .csv"
               onClick={() => navigate(`/restaurant/spreadsheet-upload?restaurantId=${rid}`)}
-            />
-            <UploadCard
-              icon="📷"
-              label="Menu Photos"
-              sub="Upload photos of your menu"
-              onClick={() => navigate(`/restaurant/ocr-upload?restaurantId=${rid}`)}
             />
             <UploadCard
               icon="📋"
@@ -741,9 +833,11 @@ export default function OperatorMenuEditor() {
                   <ItemRow
                     key={item.id}
                     item={item}
+                    photoUrl={itemPhotos[item.id] || null}
                     onEdit={setEditingItem}
                     onPublish={handlePublish}
                     onDelete={handleDelete}
+                    onPhotoUpload={handlePhotoUpload}
                     actionBusy={actionBusy}
                   />
                 )
