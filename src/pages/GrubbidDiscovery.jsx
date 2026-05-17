@@ -673,7 +673,12 @@ export default function GrubbidDiscovery() {
       params.set("radius", String(LOCAL_RADIUS_MILES));
     } else if (appliedLocation) {
       const loc = parseLocation(appliedLocation);
-      if (loc.city) params.set("city", loc.city);
+      if (loc.zip && !loc.city && !loc.state) {
+        setFeedMenus([]);
+        return;
+      }
+      if (loc.zip)   params.set("zip",   loc.zip);
+      if (loc.city)  params.set("city",  loc.city);
       if (loc.state) params.set("state", loc.state);
     }
 
