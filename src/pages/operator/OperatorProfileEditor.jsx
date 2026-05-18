@@ -18,7 +18,8 @@
 // The backend src/lib/restaurantTaxonomy.js is the single source of truth.
 // Hardcoding options here silently diverges from backend validation rules.
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -84,7 +85,9 @@ function Section({ title, sub, children }) {
 
 export default function OperatorProfileEditor() {
   const { selectedRestaurant } = useOperator();
+  const location = useLocation();
   const rid = selectedRestaurant?.id;
+  const setup = location.search.includes("setup=");
 
   const [profile, setProfile]   = useState(null);
   const [benefits, setBenefits] = useState({});
@@ -100,6 +103,10 @@ export default function OperatorProfileEditor() {
   const [categoryOptions, setCategoryOptions] = useState([]); // [{value, label}] from API
 
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
+  const publicProfileHref = useMemo(() => {
+    const slugOrId = profile?.slug || rid;
+    return slugOrId ? `/restaurants/${encodeURIComponent(String(slugOrId))}` : null;
+  }, [profile?.slug, rid]);
 
   // Load taxonomy from backend — single source of truth
   useEffect(() => {
@@ -138,7 +145,7 @@ export default function OperatorProfileEditor() {
         setForm({
           restaurant_name: p.restaurant_name || "",
           cuisine:         p.cuisine || "",
-          category:        p.category || "",
+          category:        p.category === "restaurant" ? "" : (p.category || ""),
           phone:           p.phone || "",
           website_url:     p.website_url || "",
           instagram:       p.instagram || "",
@@ -154,10 +161,7 @@ export default function OperatorProfileEditor() {
 
   const hasBenefit = (key) => benefits[key]?.is_enabled === true;
 
-  async function handleSave() {
-    setSaving(true);
-    setSaved(false);
-    setError("");
+  async function saveProfileDraft() {
     try {
       const payload = {
         restaurant_name: form.restaurant_name,
@@ -186,9 +190,21 @@ export default function OperatorProfileEditor() {
         const itemId = form.featured_menu_item_id || null;
         await api.setFeaturedDish(rid, itemId);
       }
+    } catch (e) {
+      throw e;
+    }
+  }
 
+  async function handleSave() {
+    setSaving(true);
+    setSaved(false);
+    setPublished(false);
+    setError("");
+    try {
+      await saveProfileDraft();
       setSaved(true);
     } catch (e) {
+      console.error("[operator-profile] save failed", e);
       setError(e.message);
     } finally {
       setSaving(false);
@@ -198,12 +214,39 @@ export default function OperatorProfileEditor() {
   async function handlePublish() {
     setPublishing(true);
     setPublished(false);
+    setSaved(false);
     setError("");
     try {
-      await handleSave(); // save to draft first
-      await api.publishProfile(rid);
+      await saveProfileDraft();
+      const publishResult = await api.publishProfile(rid);
+      const refreshed = await api.getProfile(rid);
+      const refreshedProfile = refreshed.profile || publishResult.profile || null;
+      const slugOrId = refreshedProfile?.slug || rid;
+      const publicRes = await fetch(`${API_BASE}/public/restaurants/${encodeURIComponent(String(slugOrId))}`);
+      const publicData = await publicRes.json().catch(() => ({}));
+      if (!publicRes.ok) {
+        throw new Error(publicData.error || "Public profile could not be reloaded after publish.");
+      }
+
+      const mismatches = [];
+      if ((refreshedProfile?.restaurant_name || "").trim() !== (publicData.restaurant_name || "").trim()) mismatches.push("name");
+      if ((refreshedProfile?.category || "").trim() !== (publicData.category || "").trim()) mismatches.push("type");
+      if ((refreshedProfile?.phone || "").trim() !== (publicData.phone || "").trim()) mismatches.push("phone");
+      if ((refreshedProfile?.bio || refreshedProfile?.about_us || "").trim() !== (publicData.bio || publicData.about_us || "").trim()) mismatches.push("bio");
+      if ((refreshedProfile?.instagram || "").trim() !== (publicData.instagram || "").trim()) mismatches.push("social");
+      if (mismatches.length) {
+        console.error("[operator-profile] publish verification mismatch", {
+          mismatches,
+          draft: refreshedProfile,
+          public: publicData,
+        });
+        throw new Error(`Publish completed, but the public profile did not update for: ${mismatches.join(", ")}.`);
+      }
+
+      setProfile(refreshedProfile);
       setPublished(true);
     } catch (e) {
+      console.error("[operator-profile] publish failed", e);
       setError(e.message);
     } finally {
       setPublishing(false);
@@ -221,6 +264,11 @@ export default function OperatorProfileEditor() {
   return (
     <OperatorLayout title="Profile">
       <div style={{ maxWidth: 680 }}>
+        {setup && (
+          <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#1d4ed8", marginBottom: 20 }}>
+            Complete your profile, then publish it to make your public page live.
+          </div>
+        )}
 
         {/* Error */}
         {error && (
@@ -243,7 +291,12 @@ export default function OperatorProfileEditor() {
         )}
         {published && (
           <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#16a34a", marginBottom: 20 }}>
-            Profile published — changes are now live.
+            Profile published — changes are now live.{" "}
+            {publicProfileHref && (
+              <a href={publicProfileHref} target="_blank" rel="noreferrer" style={{ color: "#166534", fontWeight: 700 }}>
+                View Public Profile ↗
+              </a>
+            )}
           </div>
         )}
 
@@ -309,7 +362,7 @@ export default function OperatorProfileEditor() {
         </Section>
 
         {/* ── About Us ────────────────────────────────────────────────── */}
-        <Section title="About Us" sub="A richer description shown on your menu page (Starter plan and above).">
+        <Section title="About Us" sub="Add a fuller restaurant description for your public profile. Available on paid plans.">
           {hasBenefit("about_us") ? (
             <textarea
               style={{ ...TEXTAREA, minHeight: 130 }}
@@ -414,7 +467,7 @@ export default function OperatorProfileEditor() {
             {publishing ? "Publishing…" : "Publish changes"}
           </button>
           <a
-            href={`/public/restaurants/${rid}/menu`}
+            href={publicProfileHref || "#"}
             target="_blank"
             rel="noreferrer"
             style={{
@@ -424,7 +477,7 @@ export default function OperatorProfileEditor() {
               textDecoration: "none",
             }}
           >
-            Preview public menu ↗
+            Preview Public Profile ↗
           </a>
         </div>
       </div>
