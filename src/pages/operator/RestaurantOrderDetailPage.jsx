@@ -135,8 +135,24 @@ export default function RestaurantOrderDetailPage() {
               <DetailRow label="Fulfillment" value={state.order.fulfillment_type} />
               <DetailRow label="Payment status" value={state.order.payment_status} />
               <DetailRow label="Order status" value={state.order.order_status} />
+              <DetailRow label="Subtotal" value={formatMoney(state.order.subtotal_cents)} />
+              <DetailRow label="Tax" value={formatMoney(state.order.tax_cents)} />
+              {Number(state.order.delivery_provider_fee_cents || 0) > 0 ? (
+                <DetailRow label="Provider delivery fee" value={formatMoney(state.order.delivery_provider_fee_cents)} />
+              ) : null}
+              {Number(state.order.delivery_fee_cents || 0) > 0 ? (
+                <DetailRow
+                  label={state.order.delivery_payload_json?.delivery_fee_label || "Delivery fee"}
+                  value={formatMoney(state.order.delivery_fee_cents)}
+                />
+              ) : null}
               <DetailRow label="Latest event" value={formatDateTime(state.order.latest_event_at)} />
               <DetailRow label="Notes" value={state.order.notes || "None"} />
+              {state.order.delivery_payload_json?.delivery_fee_disclosure ? (
+                <div style={{ marginTop: 12, fontSize: 12, color: "#5b6675", lineHeight: 1.5 }}>
+                  {state.order.delivery_payload_json.delivery_fee_disclosure}
+                </div>
+              ) : null}
               {state.order.fulfillment_type === "delivery" ? (
                 <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 14, background: "#f8fafc", border: "1px solid #d9e0ea" }}>
                   <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#64748b" }}>

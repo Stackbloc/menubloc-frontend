@@ -1275,6 +1275,23 @@ export default function CheckoutPage() {
                     <span style={{ color: "#9CA3AF" }}>Tax</span>
                     <strong>{formatMoney(previewState.data.tax_cents)}</strong>
                   </div>
+                  {Number(previewState.data.provider_delivery_fee_cents || 0) > 0 ? (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                      <span style={{ color: "#9CA3AF" }}>Provider delivery fee</span>
+                      <strong>{formatMoney(previewState.data.provider_delivery_fee_cents)}</strong>
+                    </div>
+                  ) : null}
+                  {Number(previewState.data.delivery_fee_cents || 0) > 0 ? (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                      <span style={{ color: "#9CA3AF" }}>{previewState.data.delivery_fee_label || "Delivery fee"}</span>
+                      <strong>{formatMoney(previewState.data.delivery_fee_cents)}</strong>
+                    </div>
+                  ) : null}
+                  {previewState.data.delivery_fee_disclosure ? (
+                    <div style={{ fontSize: 12, color: "#9CA3AF", lineHeight: 1.5 }}>
+                      {previewState.data.delivery_fee_disclosure}
+                    </div>
+                  ) : null}
                   {previewState.data.coins?.applied ? (
                     <div
                       style={{
@@ -1292,6 +1309,11 @@ export default function CheckoutPage() {
                   {previewState.data.coins?.enabled && !previewState.data.coins?.applied && previewState.data.coins?.can_redeem ? (
                     <div style={{ fontSize: 12, color: "#9CA3AF" }}>
                       Up to {formatMoney(previewState.data.coins.max_redeemable_cents)} available this order.
+                    </div>
+                  ) : null}
+                  {fulfillmentType === "delivery" && Number(previewState.data.delivery_fee_cents || 0) === 0 && Number(previewState.data.provider_delivery_fee_cents || 0) > 0 ? (
+                    <div style={{ fontSize: 12, color: "#9CA3AF", lineHeight: 1.5 }}>
+                      A provider delivery fee is already included, so Menuply did not add a second restaurant delivery fee.
                     </div>
                   ) : null}
                   <div style={{ fontSize: 12, lineHeight: 1.6, color: "#9CA3AF" }}>

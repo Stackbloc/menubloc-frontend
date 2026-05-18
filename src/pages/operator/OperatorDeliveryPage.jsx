@@ -67,6 +67,26 @@ function providerStateFromAccount(account, provider) {
   };
 }
 
+function formatMoneyInputFromCents(cents) {
+  return (Number(cents || 0) / 100).toFixed(2);
+}
+
+function formatPercentInputFromBps(bps) {
+  return (Number(bps || 0) / 100).toFixed(2);
+}
+
+function normalizeMoneyInputToCents(value) {
+  const amount = Number.parseFloat(String(value || "0").trim());
+  if (!Number.isFinite(amount) || amount < 0) return 0;
+  return Math.round(amount * 100);
+}
+
+function normalizePercentInputToBps(value) {
+  const amount = Number.parseFloat(String(value || "0").trim());
+  if (!Number.isFinite(amount) || amount < 0) return 0;
+  return Math.round(amount * 100);
+}
+
 function StatusPill({ value }) {
   const normalized = String(value || "").toLowerCase();
   const style =
@@ -344,6 +364,20 @@ export default function OperatorDeliveryPage() {
       await updateDeliverySettings(selectedRestaurant.id, {
         deliveryEnabled: state.settings.delivery_enabled,
         defaultDeliveryProvider: state.settings.default_delivery_provider || "",
+        deliveryFeeEnabled: state.settings.delivery_fee_enabled === true,
+        deliveryFeeType: state.settings.delivery_fee_type || "flat",
+        deliveryFeeAmountCents:
+          state.settings.delivery_fee_type === "percentage"
+            ? 0
+            : Number(state.settings.delivery_fee_amount_cents || 0),
+        deliveryFeePercentageBps:
+          state.settings.delivery_fee_type === "percentage"
+            ? Number(state.settings.delivery_fee_percentage_bps || 0)
+            : 0,
+        deliveryFeeLabel: state.settings.delivery_fee_label || "Delivery fee",
+        deliveryFeeAppliesTo:
+          state.settings.delivery_fee_applies_to || "menuply_delivery_without_provider_fee",
+        deliveryFeeDisclosure: state.settings.delivery_fee_disclosure || "",
       });
       await reloadSettings("Restaurant delivery settings updated.");
     } catch (error) {
@@ -373,6 +407,9 @@ export default function OperatorDeliveryPage() {
             </div>
             <div style={{ marginTop: 8, color: "#5b6675", lineHeight: 1.6, maxWidth: 760 }}>
               Delivery is restaurant-managed. A restaurant can stay pickup-only, connect Uber Direct, connect DoorDash Drive, or connect both and pick a default dispatch provider.
+            </div>
+            <div style={{ marginTop: 10, color: "#5b6675", lineHeight: 1.6, maxWidth: 760, fontSize: 14 }}>
+              Delivery fees are calculated on the backend. Menuply should not add a second restaurant fee when a provider already passes through its own customer-facing delivery fee unless you intentionally apply the fee to all delivery orders.
             </div>
 
             {state.error ? (
@@ -430,6 +467,140 @@ export default function OperatorDeliveryPage() {
 
               <div style={{ fontSize: 13, color: "#667085" }}>
                 Active providers: {activeProviders.length ? activeProviders.join(", ") : "none"}
+              </div>
+
+              <div style={{ marginTop: 8, borderTop: "1px solid #e4e9f0", paddingTop: 16, display: "grid", gap: 14 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#0f1720" }}>Delivery fee</div>
+                <label style={checkLabelStyle}>
+                  <input
+                    type="checkbox"
+                    checked={state.settings?.delivery_fee_enabled === true}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        settings: {
+                          ...(prev.settings || {}),
+                          delivery_fee_enabled: event.target.checked,
+                        },
+                      }))
+                    }
+                  />
+                  Enable a restaurant-configured delivery fee
+                </label>
+
+                <div className="operator-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={labelStyle}>Fee type</span>
+                    <select
+                      value={state.settings?.delivery_fee_type || "flat"}
+                      onChange={(event) =>
+                        setState((prev) => ({
+                          ...prev,
+                          settings: {
+                            ...(prev.settings || {}),
+                            delivery_fee_type: event.target.value,
+                          },
+                        }))
+                      }
+                      style={inputStyle}
+                    >
+                      <option value="flat">Flat</option>
+                      <option value="percentage">Percentage</option>
+                    </select>
+                  </label>
+                  {state.settings?.delivery_fee_type === "percentage" ? (
+                    <label style={{ display: "grid", gap: 6 }}>
+                      <span style={labelStyle}>Percentage</span>
+                      <input
+                        value={formatPercentInputFromBps(state.settings?.delivery_fee_percentage_bps)}
+                        onChange={(event) =>
+                          setState((prev) => ({
+                            ...prev,
+                            settings: {
+                              ...(prev.settings || {}),
+                              delivery_fee_percentage_bps: normalizePercentInputToBps(event.target.value),
+                            },
+                          }))
+                        }
+                        style={inputStyle}
+                        inputMode="decimal"
+                      />
+                    </label>
+                  ) : (
+                    <label style={{ display: "grid", gap: 6 }}>
+                      <span style={labelStyle}>Flat amount</span>
+                      <input
+                        value={formatMoneyInputFromCents(state.settings?.delivery_fee_amount_cents)}
+                        onChange={(event) =>
+                          setState((prev) => ({
+                            ...prev,
+                            settings: {
+                              ...(prev.settings || {}),
+                              delivery_fee_amount_cents: normalizeMoneyInputToCents(event.target.value),
+                            },
+                          }))
+                        }
+                        style={inputStyle}
+                        inputMode="decimal"
+                      />
+                    </label>
+                  )}
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={labelStyle}>Label</span>
+                    <input
+                      value={state.settings?.delivery_fee_label || "Delivery fee"}
+                      onChange={(event) =>
+                        setState((prev) => ({
+                          ...prev,
+                          settings: {
+                            ...(prev.settings || {}),
+                            delivery_fee_label: event.target.value,
+                          },
+                        }))
+                      }
+                      style={inputStyle}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={labelStyle}>Applies to</span>
+                    <select
+                      value={state.settings?.delivery_fee_applies_to || "menuply_delivery_without_provider_fee"}
+                      onChange={(event) =>
+                        setState((prev) => ({
+                          ...prev,
+                          settings: {
+                            ...(prev.settings || {}),
+                            delivery_fee_applies_to: event.target.value,
+                          },
+                        }))
+                      }
+                      style={inputStyle}
+                    >
+                      <option value="restaurant_delivery">Restaurant delivery</option>
+                      <option value="menuply_delivery_without_provider_fee">Menuply delivery without provider fee</option>
+                      <option value="all_delivery_orders">All delivery orders</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={labelStyle}>Disclosure</span>
+                  <textarea
+                    value={state.settings?.delivery_fee_disclosure || ""}
+                    onChange={(event) =>
+                      setState((prev) => ({
+                        ...prev,
+                        settings: {
+                          ...(prev.settings || {}),
+                          delivery_fee_disclosure: event.target.value,
+                        },
+                      }))
+                    }
+                    rows={3}
+                    style={{ ...inputStyle, resize: "vertical" }}
+                    placeholder="Optional customer-facing disclosure shown with the fee."
+                  />
+                </label>
               </div>
 
               <div className="operator-responsive-card-actions">

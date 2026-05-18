@@ -126,6 +126,33 @@ export default function OrderConfirmationPage() {
                   <strong style={{ textTransform: "capitalize" }}>{state.order.order_status}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                  <span style={{ color: "#9CA3AF", fontWeight: 700 }}>Subtotal</span>
+                  <strong>{formatMoney(state.order.subtotal_cents)}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                  <span style={{ color: "#9CA3AF", fontWeight: 700 }}>Tax</span>
+                  <strong>{formatMoney(state.order.tax_cents)}</strong>
+                </div>
+                {Number(state.order.delivery_provider_fee_cents || 0) > 0 ? (
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <span style={{ color: "#9CA3AF", fontWeight: 700 }}>Provider delivery fee</span>
+                    <strong>{formatMoney(state.order.delivery_provider_fee_cents)}</strong>
+                  </div>
+                ) : null}
+                {Number(state.order.delivery_fee_cents || 0) > 0 ? (
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <span style={{ color: "#9CA3AF", fontWeight: 700 }}>
+                      {state.order.delivery_payload_json?.delivery_fee_label || "Delivery fee"}
+                    </span>
+                    <strong>{formatMoney(state.order.delivery_fee_cents)}</strong>
+                  </div>
+                ) : null}
+                {state.order.delivery_payload_json?.delivery_fee_disclosure ? (
+                  <div style={{ fontSize: 12, color: "#9CA3AF", lineHeight: 1.5 }}>
+                    {state.order.delivery_payload_json.delivery_fee_disclosure}
+                  </div>
+                ) : null}
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                   <span style={{ color: "#9CA3AF", fontWeight: 700 }}>Total</span>
                   <strong>{formatMoney(state.order.total_cents)}</strong>
                 </div>

@@ -83,13 +83,17 @@ function getBillingIntervalLabel(planCode) {
   return "Free";
 }
 
-function getPlanPriceLabel(planCode, foundersPlan) {
-  if (planCode === "pro_annual") return "$399/year";
-  if (planCode === "pro_monthly") return "$49/month";
-  if (planCode === "founders_annual") {
-    return foundersPlan ? `${formatMoney(foundersPlan.amount_cents)}/year` : "Founder annual";
-  }
-  return "Free";
+function getPlanPriceLabel(planCode, planOptions) {
+  if (!planCode || planCode === "verified") return "Free";
+  const plan = planOptions.find((entry) => entry.code === planCode);
+  if (!plan) return "—";
+  const interval =
+    plan.billing_interval === "year"
+      ? "/year"
+      : plan.billing_interval === "month"
+        ? "/month"
+        : "";
+  return `${formatMoney(plan.amount_cents)}${interval}`;
 }
 
 function StatusRow({ label, value }) {
@@ -328,10 +332,19 @@ export default function OperatorSubscription() {
             <h3 style={{ margin: "0 0 14px", fontSize: 16, fontWeight: 800, color: "#0f1720" }}>Subscription status</h3>
             <div style={{ display: "grid", gap: 2 }}>
               <StatusRow label="Current plan" value={getSubscriptionPlanLabel(currentPlanCode)} />
-              <StatusRow label="Billing interval" value={getBillingIntervalLabel(currentPlanCode)} />
+              <StatusRow
+                label="Billing interval"
+                value={
+                  subscription?.billing_interval === "year"
+                    ? "Annual"
+                    : subscription?.billing_interval === "month"
+                      ? "Monthly"
+                      : getBillingIntervalLabel(currentPlanCode)
+                }
+              />
               <StatusRow label="Subscription status" value={loading ? "Loading…" : getSubscriptionStatusLabel(subscription?.status)} />
               <StatusRow label="Next billing / renewal" value={loading ? "Loading…" : currentPeriodEnd} />
-              <StatusRow label="Price" value={getPlanPriceLabel(currentPlanCode, foundersPlan)} />
+              <StatusRow label="Price" value={getPlanPriceLabel(currentPlanCode, planOptions)} />
               <StatusRow label="Auto Renew" value={loading ? "Loading…" : getAutoRenewLabel(subscription)} />
               <StatusRow label="Marketplace Setup" value={loading ? "Loading…" : getMarketplaceSetupStatus(subscription)} />
             </div>

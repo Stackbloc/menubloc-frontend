@@ -248,6 +248,8 @@ function PrintTicket({ order }) {
       <div style={{ textAlign: "right", marginTop: 8 }}>
         <div>Subtotal: {fmt$(order.subtotal_cents)}</div>
         <div>Tax: {fmt$(order.tax_cents)}</div>
+        {Number(order.delivery_provider_fee_cents || 0) > 0 && <div>Provider delivery fee: {fmt$(order.delivery_provider_fee_cents)}</div>}
+        {Number(order.delivery_fee_cents || 0) > 0 && <div>{order.delivery_payload_json?.delivery_fee_label || "Delivery fee"}: {fmt$(order.delivery_fee_cents)}</div>}
         <div style={{ fontWeight: 900, fontSize: 16 }}>Total: {fmt$(order.total_cents)}</div>
       </div>
       <div style={{ borderTop: "2px dashed #000", margin: "12px 0", textAlign: "center", fontSize: 11, color: "#475467" }}>
@@ -874,6 +876,16 @@ export default function RestaurantOrdersPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#475467", marginBottom: 6 }}>
                     <span>Tax</span><span>{fmt$(selectedIncoming.tax_cents)}</span>
                   </div>
+                  {Number(selectedIncoming.delivery_provider_fee_cents || 0) > 0 ? (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#475467", marginBottom: 6 }}>
+                      <span>Provider delivery fee</span><span>{fmt$(selectedIncoming.delivery_provider_fee_cents)}</span>
+                    </div>
+                  ) : null}
+                  {Number(selectedIncoming.delivery_fee_cents || 0) > 0 ? (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#475467", marginBottom: 6 }}>
+                      <span>{selectedIncoming.delivery_payload_json?.delivery_fee_label || "Delivery fee"}</span><span>{fmt$(selectedIncoming.delivery_fee_cents)}</span>
+                    </div>
+                  ) : null}
                   <div style={{
                     display: "flex", justifyContent: "space-between",
                     fontSize: 18, fontWeight: 900, color: "#0f1720",
