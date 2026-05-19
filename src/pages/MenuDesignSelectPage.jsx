@@ -4,6 +4,7 @@ import { DESIGN_STYLES } from "../services/designEngine.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import {
   RESTAURANT_SIGNUP_RESTART_ROUTE,
+  buildRestaurantOnboardingSearch,
   navigateWithRestaurantOnboardingState,
   persistRestaurantOnboardingState,
   resolveRestaurantOnboardingState,
@@ -12,7 +13,7 @@ import {
 const BYPASS_MODE = import.meta.env.VITE_ALLOW_OWNER_TOKEN_BYPASS === "true";
 const UPLOAD_ROUTES = {
   pdf: "/restaurant/pdf-upload",
-  later: "/restaurant/menu-upload-choice",
+  later: "/restaurant/design-select",
   spreadsheet: "/restaurant/spreadsheet-upload",
   ocr: "/restaurant/ocr-upload",
 };
@@ -201,6 +202,75 @@ const s = {
     fontWeight: 700,
     textDecoration: "none",
   },
+  completionCard: {
+    background: "#f8fbf8",
+    border: "1px solid #cfe0d8",
+    borderRadius: 18,
+    padding: "22px 24px",
+    marginBottom: 34,
+  },
+  completionLabel: {
+    fontSize: 11,
+    fontWeight: 800,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: "#1F4E3D",
+    marginBottom: 10,
+  },
+  completionHeading: {
+    fontSize: 24,
+    fontWeight: 800,
+    marginBottom: 10,
+    lineHeight: 1.25,
+  },
+  completionCopy: {
+    fontSize: 14,
+    lineHeight: 1.65,
+    color: "#344054",
+    marginBottom: 16,
+  },
+  completionList: {
+    margin: "0 0 18px",
+    paddingLeft: 18,
+    color: "#344054",
+    fontSize: 14,
+    lineHeight: 1.7,
+  },
+  completionActions: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  completionBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    padding: "0 18px",
+    borderRadius: 12,
+    background: "#111",
+    color: "#fff",
+    fontWeight: 800,
+    textDecoration: "none",
+    border: 0,
+    cursor: "pointer",
+    fontFamily: FONT,
+  },
+  completionBtnAlt: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    padding: "0 18px",
+    borderRadius: 12,
+    background: "#fff",
+    color: "#111",
+    fontWeight: 700,
+    textDecoration: "none",
+    border: "1px solid #d0d5dd",
+    cursor: "pointer",
+    fontFamily: FONT,
+  },
 };
 
 const PREVIEW_ITEMS = [
@@ -301,7 +371,11 @@ export default function MenuDesignSelectPage() {
     owner_token = "",
     plan = "verified",
     ingestion_method,
+    design_style = null,
   } = flowState;
+  const searchParams = new URLSearchParams(location.search || "");
+  const isUploadLater = ingestion_method === "later";
+  const uploadLaterReady = isUploadLater && searchParams.get("upload_later_ready") === "1";
 
   const isPro =
     plan === "pro_monthly" ||
@@ -313,11 +387,22 @@ export default function MenuDesignSelectPage() {
   const missingState = !restaurant_id || !email || (!owner_token && !BYPASS_MODE);
 
   function navigateNext(designStyle) {
-    const uploadRoute = UPLOAD_ROUTES[ingestion_method] || "/restaurant/signup-complete";
-    navigateWithRestaurantOnboardingState(nav, uploadRoute, {
+    const nextState = persistRestaurantOnboardingState({
       ...flowState,
       design_style: designStyle,
     });
+
+    if (isUploadLater) {
+      const onboardingSearch = buildRestaurantOnboardingSearch(nextState);
+      nav({
+        pathname: "/restaurant/design-select",
+        search: `${onboardingSearch}${onboardingSearch ? "&" : "?"}upload_later_ready=1`,
+      });
+      return;
+    }
+
+    const uploadRoute = UPLOAD_ROUTES[ingestion_method] || "/restaurant/menu-upload-choice";
+    navigateWithRestaurantOnboardingState(nav, uploadRoute, nextState);
   }
 
   if (missingState) {
@@ -334,6 +419,40 @@ export default function MenuDesignSelectPage() {
           <Link to={RESTAURANT_SIGNUP_RESTART_ROUTE} style={s.restartBtn}>
             Restart restaurant signup
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (uploadLaterReady) {
+    const chosenStyle = DESIGN_STYLES.find((style) => style.id === (design_style ?? selectedStyle));
+    return (
+      <div style={s.page}>
+        <BrandLockup
+          subtitle="for Restaurants"
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+        />
+
+        <div style={s.completionCard}>
+          <div style={s.completionLabel}>Setup saved</div>
+          <div style={s.completionHeading}>Your restaurant account is ready for you to return later.</div>
+          <div style={s.completionCopy}>
+            We saved your restaurant details and {chosenStyle ? `${chosenStyle.name} design style` : "basic menu layout"}.
+            You can sign in to My Account any time to upload your menu, check review status, and continue setup.
+          </div>
+          <ul style={s.completionList}>
+            <li>Your restaurant account has been created.</li>
+            <li>Your menu style choice has been saved.</li>
+            <li>No menu upload is required right now.</li>
+          </ul>
+          <div style={s.completionActions}>
+            <Link to="/operator/login" style={s.completionBtn}>
+              Sign in to My Account
+            </Link>
+            <button type="button" style={s.completionBtnAlt} onClick={() => nav("/")}>
+              Finish for now
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -445,7 +564,7 @@ export default function MenuDesignSelectPage() {
         </button>
 
         <button style={s.skipLink} onClick={() => navigateNext(null)}>
-          Skip for now and keep the basic menu layout
+          {isUploadLater ? "Save this setup and finish for now" : "Skip for now and keep the basic menu layout"}
         </button>
       </div>
     </div>

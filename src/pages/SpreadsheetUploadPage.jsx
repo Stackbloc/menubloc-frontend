@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import OperatorLayout from "./operator/OperatorLayout.jsx";
+import { useOperator } from "../context/OperatorContext.jsx";
 import {
   RESTAURANT_SIGNUP_RESTART_ROUTE,
   persistRestaurantOnboardingState,
@@ -478,18 +480,29 @@ function BoolDot({ val }) {
 
 export default function SpreadsheetUploadPage() {
   const location = useLocation();
+  const { operator, selectedRestaurant } = useOperator();
+  const isOperatorFlow = location.pathname.startsWith("/operator/");
   const recovery = useMemo(
     () => resolveRestaurantOnboardingState({ routeState: location.state, search: location.search }),
     [location.state, location.search]
   );
 
   useEffect(() => {
-    if (recovery.hasAnyData) {
+    if (!isOperatorFlow && recovery.hasAnyData) {
       persistRestaurantOnboardingState(recovery.state);
     }
-  }, [recovery]);
+  }, [isOperatorFlow, recovery]);
 
-  const state = recovery.state || {};
+  const recoveryState = recovery.state || {};
+  const state = isOperatorFlow
+    ? {
+        restaurant_id: selectedRestaurant?.id || null,
+        restaurant_name: selectedRestaurant?.restaurant_name || "Your restaurant",
+        email: operator?.email || "",
+        owner_token: "",
+        plan: "",
+      }
+    : recoveryState;
   const {
     restaurant_id,
     restaurant_name = "Your restaurant",
@@ -508,7 +521,7 @@ export default function SpreadsheetUploadPage() {
   const [uploadErr, setUploadErr] = useState("");
   const [result, setResult] = useState(null);
 
-  const missingState = recovery.missing;
+  const missingState = isOperatorFlow ? !selectedRestaurant?.id : recovery.missing;
 
   function validateAndSetFile(chosen) {
     setFileError("");
@@ -588,6 +601,7 @@ export default function SpreadsheetUploadPage() {
     try {
       const res = await fetch(`${API}/menu-upload/spreadsheet`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           restaurant_id,
@@ -611,6 +625,14 @@ export default function SpreadsheetUploadPage() {
     }
   }
 
+  if (missingState && isOperatorFlow) {
+    return (
+      <OperatorLayout title="Upload Menu">
+        <p style={{ color: "#8a9ab0" }}>Select a restaurant from the operator sidebar before uploading a spreadsheet.</p>
+      </OperatorLayout>
+    );
+  }
+
   if (missingState) {
     return (
       <div style={s.page}>
@@ -631,12 +653,14 @@ export default function SpreadsheetUploadPage() {
   }
 
   if (result) {
-    return (
+    const content = (
       <div style={s.page}>
-        <BrandLockup
-          subtitle="for Restaurants"
-          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
-        />
+        {!isOperatorFlow && (
+          <BrandLockup
+            subtitle="for Restaurants"
+            logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+          />
+        )}
 
         <div style={s.successBox}>
           <div style={s.successIcon}>✓</div>
@@ -645,27 +669,43 @@ export default function SpreadsheetUploadPage() {
             {result.items_inserted} menu item{result.items_inserted !== 1 ? "s" : ""} uploaded and pending review.
             Once approved, your menu will appear on your Menuply profile.
           </p>
-          <Link to={`/restaurant-profile/${restaurant_id}`} style={s.profileLink}>
-            Go to your restaurant profile
+          <Link to={isOperatorFlow ? "/operator/menu" : "/operator/login"} style={s.profileLink}>
+            {isOperatorFlow ? "Open My Account" : "Sign in to My Account"}
           </Link>
+          {!isOperatorFlow ? (
+            <Link
+              to={`/restaurant-profile/${restaurant_id}`}
+              style={{ ...s.profileLink, marginTop: 10, background: "#fff", color: "#111", border: "1px solid #d0d5dd" }}
+            >
+              View restaurant profile
+            </Link>
+          ) : null}
           <div style={s.pendingNote}>
             {result.items_inserted} items saved · {result.items_skipped > 0 ? `${result.items_skipped} skipped · ` : ""}
             Menu status: <strong>pending review</strong>
           </div>
+          <div style={{ ...s.pendingNote, marginTop: 12, lineHeight: 1.6 }}>
+            What happens next: Menuply reviews this import before it appears publicly. You can return through My
+            Account to manage your menu and continue restaurant setup.
+          </div>
         </div>
       </div>
     );
+    return isOperatorFlow ? <OperatorLayout title="Upload Menu">{content}</OperatorLayout> : content;
   }
 
   const submitDisabled = uploading || !items || items.length === 0;
 
-  return (
+  const content = (
     <div style={s.page}>
-      <BrandLockup
-        subtitle="for Restaurants"
-        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
-      />
+      {!isOperatorFlow && (
+        <BrandLockup
+          subtitle="for Restaurants"
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+        />
+      )}
 
+      {!isOperatorFlow && (
       <div style={s.steps}>
         <div style={s.step(false, true)}>1. Account</div>
         <div style={s.stepDivider} />
@@ -675,6 +715,7 @@ export default function SpreadsheetUploadPage() {
         <div style={s.stepDivider} />
         <div style={s.step(true, false)}>4. Upload menu</div>
       </div>
+      )}
 
       <div style={s.heading}>Upload your menu via spreadsheet</div>
       <div style={s.subheading}>
@@ -799,4 +840,6 @@ export default function SpreadsheetUploadPage() {
       </form>
     </div>
   );
+
+  return isOperatorFlow ? <OperatorLayout title="Upload Menu">{content}</OperatorLayout> : content;
 }

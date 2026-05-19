@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import OperatorLayout from "./operator/OperatorLayout.jsx";
+import { useOperator } from "../context/OperatorContext.jsx";
 import {
   RESTAURANT_SIGNUP_RESTART_ROUTE,
   navigateWithRestaurantOnboardingState,
@@ -89,6 +91,28 @@ function OcrProgressSpinner() {
         />
       </g>
     </svg>
+  );
+}
+
+function CompletionNextSteps({ isOperatorFlow, restaurantId }) {
+  return (
+    <div style={s.nextStepsBox}>
+      <div style={s.nextStepsTitle}>What happens next</div>
+      <p style={s.nextStepsCopy}>
+        Your upload is saved and pending review. Use My Account to return to menu management and continue your
+        restaurant setup from the operational side.
+      </p>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+        <Link to={isOperatorFlow ? "/operator/menu" : "/operator/login"} style={s.profileLink}>
+          {isOperatorFlow ? "Open My Account" : "Sign in to My Account"}
+        </Link>
+        {!isOperatorFlow ? (
+          <Link to={`/restaurant-profile/${restaurantId}`} style={s.secondaryAction}>
+            View restaurant profile
+          </Link>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -350,11 +374,42 @@ const s = {
     fontSize: 14,
     textDecoration: "none",
   },
+  secondaryAction: {
+    display: "inline-block",
+    padding: "12px 24px",
+    borderRadius: 12,
+    background: "#fff",
+    color: "#111",
+    border: "1px solid #d0d5dd",
+    fontWeight: 700,
+    fontSize: 14,
+    textDecoration: "none",
+  },
   pendingNote: {
     marginTop: 16,
     fontSize: 12,
     color: "#777",
     lineHeight: 1.5,
+  },
+  nextStepsBox: {
+    marginTop: 18,
+    padding: "14px 16px",
+    borderRadius: 14,
+    background: "#f8fafc",
+    border: "1px solid #dbe4ee",
+    textAlign: "left",
+  },
+  nextStepsTitle: {
+    fontSize: 13,
+    fontWeight: 800,
+    color: "#101828",
+    marginBottom: 8,
+  },
+  nextStepsCopy: {
+    fontSize: 13,
+    lineHeight: 1.6,
+    color: "#475467",
+    margin: 0,
   },
   ingestionReviewHint: {
     marginTop: 14,
@@ -542,18 +597,30 @@ function buildPreviewUrl(file) {
 export default function PdfUploadPage() {
   const location = useLocation();
   const nav = useNavigate();
+  const { selectedRestaurant, operator } = useOperator();
+  const isOperatorFlow = location.pathname.startsWith("/operator/");
   const recovery = useMemo(
     () => resolveRestaurantOnboardingState({ routeState: location.state, search: location.search }),
     [location.state, location.search]
   );
 
   useEffect(() => {
-    if (recovery.hasAnyData) {
+    if (!isOperatorFlow && recovery.hasAnyData) {
       persistRestaurantOnboardingState(recovery.state);
     }
-  }, [recovery]);
+  }, [isOperatorFlow, recovery]);
 
-  const state = recovery.state || {};
+  const state = isOperatorFlow
+    ? {
+        restaurant_id: selectedRestaurant?.id || "",
+        restaurant_name: selectedRestaurant?.restaurant_name || "Your restaurant",
+        email: operator?.email || "",
+        owner_token: "",
+        plan: "",
+        design_style: null,
+        ingestion_method: location.pathname.endsWith("/photo") ? "ocr" : "pdf",
+      }
+    : (recovery.state || {});
   const {
     restaurant_id,
     restaurant_name = "Your restaurant",
@@ -592,12 +659,13 @@ export default function PdfUploadPage() {
   /** Per-page Finish processing progress (deferred Adobe ingestion). */
   const [finishProgress, setFinishProgress] = useState({ processed: 0, total: 0 });
 
-  const missingState = recovery.missing;
+  const missingState = isOperatorFlow ? !selectedRestaurant?.id : recovery.missing;
   const chosenStyle = design_style
     ? DESIGN_STYLES.find((entry) => entry.id === design_style) || null
     : null;
   const isOcrRoute =
-    typeof location.pathname === "string" && location.pathname.endsWith("/ocr-upload");
+    typeof location.pathname === "string" &&
+    (location.pathname.endsWith("/ocr-upload") || location.pathname.endsWith("/operator/menu/upload/photo"));
   const isOcrFlow = ingestion_method === "ocr" || isOcrRoute;
   const accept = isOcrFlow ? "image/*" : "application/pdf,.pdf";
 
@@ -646,6 +714,7 @@ export default function PdfUploadPage() {
 
     const res = await fetch(`${API}/uploads/menu-session/start`, {
       method: "POST",
+      credentials: "include",
       body: formData,
     });
     const data = await res.json().catch(() => null);
@@ -683,6 +752,7 @@ export default function PdfUploadPage() {
 
       const res = await fetch(`${API}/uploads/menu-session/${sessionId}/page`, {
         method: "POST",
+        credentials: "include",
         body: formData,
       });
       const data = await res.json().catch(() => null);
@@ -801,6 +871,7 @@ export default function PdfUploadPage() {
 
         const startRes = await fetch(`${API}/uploads/menu-session/${sessionForFinish}/finish`, {
           method: "POST",
+          credentials: "include",
           body: formData,
         });
         const startData = await startRes.json().catch(() => null);
@@ -817,7 +888,7 @@ export default function PdfUploadPage() {
             (Number(startData.result.updated_items) || 0);
           if (itemsSaved <= 0) {
             throw new Error(
-              "Upload finished but no menu items were saved. Try clearer photos or contact support."
+              "Upload finished but no imported menu items were saved. Try a clearer PDF, clearer menu photos, or contact support."
             );
           }
           setResult(startData.result);
@@ -843,7 +914,7 @@ export default function PdfUploadPage() {
             throw new Error("Menu processing is taking longer than expected. Please refresh and try again.");
           }
           await new Promise((r) => setTimeout(r, 1500));
-          const r = await fetch(statusUrl.toString(), { method: "GET" });
+          const r = await fetch(statusUrl.toString(), { method: "GET", credentials: "include" });
           const j = await r.json().catch(() => null);
           if (!r.ok || !j?.ok) {
             const err = new Error(j?.error || `Status check failed (${r.status})`);
@@ -873,7 +944,7 @@ export default function PdfUploadPage() {
           (Number(pollResult.inserted_items) || 0) + (Number(pollResult.updated_items) || 0);
         if (itemsSaved <= 0) {
           throw new Error(
-            "Upload finished but no menu items were saved. Try clearer photos or contact support."
+            "Upload finished but no imported menu items were saved. Try a clearer PDF, clearer menu photos, or contact support."
           );
         }
 
@@ -918,6 +989,7 @@ export default function PdfUploadPage() {
 
       const res = await fetch(`${API}/menu-upload/pdf`, {
         method: "POST",
+        credentials: "include",
         body: formData,
       });
       const data = await res.json().catch(() => null);
@@ -939,6 +1011,15 @@ export default function PdfUploadPage() {
   }
 
   if (missingState) {
+    if (isOperatorFlow) {
+      return (
+        <OperatorLayout title="Upload Menu">
+          <div style={{ ...s.error, marginTop: 8 }}>
+            Select a restaurant from the operator sidebar to start a menu upload.
+          </div>
+        </OperatorLayout>
+      );
+    }
     return (
       <div style={s.page}>
         <BrandLockup
@@ -958,6 +1039,40 @@ export default function PdfUploadPage() {
   }
 
   if (result) {
+    if (isOperatorFlow) {
+      return (
+        <OperatorLayout title="Upload Menu">
+          <div style={s.page}>
+            <div style={s.successBox}>
+              <div style={s.successIcon}>✓</div>
+              {(() => {
+                const pageCount = Number(result.page_count || result.pages || 0) || 0;
+                const itemsProcessed =
+                  (Number(result.inserted_items) || 0) + (Number(result.updated_items) || 0);
+                const summaryParts = [];
+                if (pageCount > 0) summaryParts.push(`${pageCount} page${pageCount === 1 ? "" : "s"}`);
+                if (itemsProcessed > 0) {
+                  summaryParts.push(`${itemsProcessed} menu item${itemsProcessed === 1 ? "" : "s"} successfully imported`);
+                }
+                const dash = summaryParts.length ? ` — ${summaryParts.join(", ")}` : "";
+                return (
+                  <>
+                    <div style={s.successTitle}>{`Menu uploaded successfully${dash}.`}</div>
+                    <p style={s.successSub}>
+                      Your menu is being reviewed. Once approved, it will appear on your Menuply public profile.
+                    </p>
+                  </>
+                );
+              })()}
+              <Link to="/operator/menu" style={s.profileLink}>
+                Back to menu
+              </Link>
+              <CompletionNextSteps isOperatorFlow restaurantId={restaurant_id} />
+            </div>
+          </div>
+        </OperatorLayout>
+      );
+    }
     return (
       <div style={s.page}>
         <BrandLockup
@@ -974,7 +1089,7 @@ export default function PdfUploadPage() {
             const summaryParts = [];
             if (pageCount > 0) summaryParts.push(`${pageCount} page${pageCount === 1 ? "" : "s"}`);
             if (itemsProcessed > 0) {
-              summaryParts.push(`${itemsProcessed} item${itemsProcessed === 1 ? "" : "s"} processed`);
+              summaryParts.push(`${itemsProcessed} menu item${itemsProcessed === 1 ? "" : "s"} successfully imported`);
             }
             const dash = summaryParts.length ? ` — ${summaryParts.join(", ")}` : "";
             return (
@@ -986,9 +1101,6 @@ export default function PdfUploadPage() {
               </>
             );
           })()}
-          <Link to={`/restaurant-profile/${restaurant_id}`} style={s.profileLink}>
-            Go to your restaurant profile
-          </Link>
           <div style={s.pendingNote}>
             {result.text_length > 0 && `${result.text_length.toLocaleString()} characters extracted · `}
             {(Number(result.inserted_items) > 0 || Number(result.updated_items) > 0) && (
@@ -1046,7 +1158,7 @@ export default function PdfUploadPage() {
 
             return (
               <div style={s.ingestionReviewHint} role="status">
-                <strong>Quick check recommended:</strong> automatic parsing flagged uncertainty on parts of this menu
+                <strong>Quick check recommended:</strong> automatic import flagged uncertainty on parts of this menu
                 {low ? ` (${low} lower-confidence lines)` : ""}
                 {sus ? ` (${sus} unusual patterns)` : ""}
                 {holdLine}
@@ -1055,6 +1167,7 @@ export default function PdfUploadPage() {
               </div>
             );
           })()}
+          <CompletionNextSteps isOperatorFlow={false} restaurantId={restaurant_id} />
         </div>
 
         {chosenStyle ? (
@@ -1119,7 +1232,7 @@ export default function PdfUploadPage() {
       </div>
       <div style={s.subheading}>
         {isOcrFlow
-          ? "Photograph printed menu wording and prices—one page at a time. Not for photos of food."
+          ? "Photograph printed menu wording and prices one menu page at a time. Not for food photos."
           : "Upload a PDF menu. Multi-page PDFs are supported."}
       </div>
 
@@ -1135,6 +1248,20 @@ export default function PdfUploadPage() {
             {chosenStyle.name}
           </span>
         ) : null}
+      </div>
+      <div style={{
+        marginTop: 14,
+        marginBottom: 18,
+        borderRadius: 14,
+        border: "1px solid #d9e0ea",
+        background: "#f8faf9",
+        padding: "14px 16px",
+        fontSize: 13,
+        lineHeight: 1.6,
+        color: "#475467",
+      }}>
+        Upload only menu PDFs, menu photos, and descriptions you are authorized to submit for this restaurant.
+        Imported menu items remain pending review until approved.
       </div>
 
       <form onSubmit={handleSubmit} noValidate aria-busy={uploading ? "true" : "false"}>
@@ -1215,7 +1342,7 @@ export default function PdfUploadPage() {
           </div>
           <div style={s.dropSub}>
             {isOcrFlow
-              ? "On phones, the camera opens when supported. Add one menu page per photo—show prices and dish names, not plated food."
+              ? "On phones, the camera opens when supported. Add one menu page per menu photo—show prices and dish names, not plated food."
               : "Select a PDF from your device or drag it into this box. Multi-page PDFs are supported."}
           </div>
           <div style={s.dropHint}>

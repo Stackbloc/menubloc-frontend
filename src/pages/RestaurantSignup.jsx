@@ -275,6 +275,7 @@ export default function RestaurantSignup() {
   const [menuChoice, setMenuChoice] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverError, setServerError] = useState("");
+  const [serverErrorDetail, setServerErrorDetail] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   function handleChange(event) {
@@ -287,6 +288,45 @@ export default function RestaurantSignup() {
     const { name, checked } = event.target;
     setAgreements((current) => ({ ...current, [name]: checked }));
     setFieldErrors((current) => ({ ...current, [name]: "" }));
+  }
+
+  function describeSignupFailure(error) {
+    const rawMessage = String(error?.message || "").trim();
+    const lower = rawMessage.toLowerCase();
+    const status = Number(error?.status) || 0;
+
+    if (/failed to fetch|networkerror|load failed|network request failed/i.test(rawMessage)) {
+      return {
+        title: "We could not reach Menuply right now.",
+        detail: "Check your connection or retry in a moment. Your restaurant details are still here.",
+      };
+    }
+
+    if (status === 400 || status === 409 || status === 422) {
+      return {
+        title: rawMessage || "We need a few details corrected before we can create this restaurant account.",
+        detail: "Review the fields above, make any needed corrections, and try again.",
+      };
+    }
+
+    if (status >= 500) {
+      return {
+        title: "Menuply could not finish creating this restaurant account.",
+        detail: "Nothing was cleared from the form. Please retry in a moment.",
+      };
+    }
+
+    if (/required|invalid|already exists|must/i.test(lower)) {
+      return {
+        title: rawMessage || "Some restaurant details still need attention.",
+        detail: "Review the form and try again. Your entered information has been preserved.",
+      };
+    }
+
+    return {
+      title: rawMessage || t("signup.error.signupFailed"),
+      detail: "Please retry. Your entered information is still available on this page.",
+    };
   }
 
   function validate() {
@@ -312,6 +352,7 @@ export default function RestaurantSignup() {
   async function handleSubmit(event) {
     event.preventDefault();
     setServerError("");
+    setServerErrorDetail("");
 
     const errors = validate();
     if (Object.keys(errors).length > 0) {
@@ -351,7 +392,9 @@ export default function RestaurantSignup() {
 
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.ok) {
-        throw new Error(data?.error || `Signup failed (${res.status})`);
+        const signupError = new Error(data?.error || `Signup failed (${res.status})`);
+        signupError.status = res.status;
+        throw signupError;
       }
 
       const { restaurant, owner_token } = data;
@@ -396,7 +439,9 @@ export default function RestaurantSignup() {
         },
       });
     } catch (error) {
-      setServerError(error.message || t("signup.error.signupFailed"));
+      const failure = describeSignupFailure(error);
+      setServerError(failure.title);
+      setServerErrorDetail(failure.detail);
     } finally {
       setSubmitting(false);
     }
@@ -425,9 +470,17 @@ export default function RestaurantSignup() {
             </Link>
           </div>
         ) : null}
+        <div style={{ ...styles.helperText, marginTop: 10 }}>
+          Optional setup modules such as QR starter kit, equipment readiness, and launch deals stay optional later in onboarding.
+        </div>
       </div>
 
-      {serverError ? <div style={styles.errorBanner}>{serverError}</div> : null}
+      {serverError ? (
+        <div style={styles.errorBanner}>
+          <div style={{ fontWeight: 700, marginBottom: serverErrorDetail ? 4 : 0 }}>{serverError}</div>
+          {serverErrorDetail ? <div>{serverErrorDetail}</div> : null}
+        </div>
+      ) : null}
       {!selectedPlanLabel ? (
         <div style={styles.errorBanner}>
           Choose a plan first to start restaurant signup. <Link to={PLAN_ENTRY_ROUTE}>Go to pricing</Link>
@@ -566,6 +619,10 @@ export default function RestaurantSignup() {
 
         <div style={styles.section}>
           <div style={styles.sectionTitle}>Menu timing</div>
+          <div style={{ ...styles.helperText, marginBottom: 14, lineHeight: 1.6 }}>
+            Upload only menus, menu photos, and descriptions you are authorized to submit for this restaurant.
+            The restaurant remains responsible for permissions, pricing accuracy, and final review before publication.
+          </div>
 
           <div
             style={styles.optionCard(menuChoice === "pdf_now")}

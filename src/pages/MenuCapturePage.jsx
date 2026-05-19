@@ -409,7 +409,7 @@ export default function MenuCapturePage() {
                 {captureStatus.menu_completeness_status === "partial" ||
                 captureStatus.menu_completeness_status === "review_pending" ? (
                   <>
-                    Some items from your photos are still under review
+                    Some imported menu items from your menu photos are still under review
                     {Number(captureStatus.review_pending_count) > 0
                       ? ` (${captureStatus.review_pending_count} held for quality check)`
                       : ""}
@@ -450,9 +450,44 @@ export default function MenuCapturePage() {
                 fontSize: 13,
               }}
             >
-              Still processing your photos…
+              Still processing your menu photos…
             </div>
           )}
+          <div
+            style={{
+              marginBottom: 16,
+              padding: "12px 14px",
+              borderRadius: 8,
+              background: "#f8fafc",
+              border: "1px solid #dbe4ee",
+              color: "#334155",
+              fontSize: 13,
+              lineHeight: 1.6,
+            }}
+          >
+            What happens next: your upload stays connected to this restaurant while review continues. Sign in to My
+            Account to manage menu setup, or check your public restaurant profile for published updates.
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+            <button
+              type="button"
+              onClick={() => navigate("/operator/login")}
+              style={{
+                display: "block",
+                width: "100%",
+                height: 46,
+                background: "#111827",
+                color: "#fff",
+                border: "none",
+                borderRadius: 10,
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Sign in to My Account
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => navigate("/")}

@@ -17,8 +17,13 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import {
+  navigateWithRestaurantOnboardingState,
+  persistRestaurantOnboardingState,
+  resolveRestaurantOnboardingState,
+} from "../lib/restaurantOnboardingState.js";
 
 const API = (
   import.meta.env.VITE_API_BASE_URL ||
@@ -28,8 +33,13 @@ const API = (
 export default function RestaurantQrUpsell() {
   const location = useLocation();
   const nav = useNavigate();
-  const state = location.state || {};
+  const recovery = resolveRestaurantOnboardingState({
+    routeState: location.state,
+    search: location.search,
+  });
+  const state = recovery.state || {};
   const { restaurant_id, email, owner_token, qr_token: initialToken } = state;
+  const hasOnboardingContext = Boolean(restaurant_id && email && owner_token);
 
   const [qrToken, setQrToken] = useState(initialToken || null);
   const [assetsReady, setAssetsReady] = useState(Boolean(initialToken));
@@ -38,11 +48,17 @@ export default function RestaurantQrUpsell() {
   const imageSvgUrl = qrToken ? `${API}/qr/${qrToken}/image?format=svg` : null;
 
   useEffect(() => {
+    if (recovery.hasAnyData) {
+      persistRestaurantOnboardingState(state);
+    }
+  }, [recovery.hasAnyData, state]);
+
+  useEffect(() => {
     if (qrToken) {
       setAssetsReady(true);
       return;
     }
-    if (!restaurant_id || !email || !owner_token) return;
+    if (!hasOnboardingContext) return;
 
     (async () => {
       try {
@@ -60,10 +76,13 @@ export default function RestaurantQrUpsell() {
         // non-blocking — operator can skip regardless
       }
     })();
-  }, []);
+  }, [qrToken, hasOnboardingContext, restaurant_id, email, owner_token]);
 
   function goToDesign() {
-    nav("/restaurant/design-select", { state: { ...state, qr_token: qrToken } });
+    navigateWithRestaurantOnboardingState(nav, "/restaurant/design-select", {
+      ...state,
+      qr_token: qrToken,
+    });
   }
 
   function goToKitOrder() {
@@ -92,31 +111,59 @@ export default function RestaurantQrUpsell() {
 
         {/* Free assets */}
         <section style={s.freeCard}>
-          <div style={s.checkRow}>
-            <span style={s.checkMark}>&#10003;</span>
-            <span style={s.freeLabel}>Your free downloadable QR materials are ready.</span>
-          </div>
-          {assetsReady ? (
-            <div style={s.downloadRow}>
-              <a href={imageUrl} download="menuply-qr.png" style={s.downloadBtn}>
-                Download QR Code (.png)
-              </a>
-              <a href={imageSvgUrl} download="menuply-qr.svg" style={s.downloadBtnOutline}>
-                Download QR Code (.svg)
-              </a>
-            </div>
+          {hasOnboardingContext ? (
+            <>
+              <div style={s.checkRow}>
+                <span style={s.checkMark}>&#10003;</span>
+                <span style={s.freeLabel}>
+                  {assetsReady ? "Your QR starter kit is ready." : "We are preparing your QR starter kit."}
+                </span>
+              </div>
+              <div style={{ fontSize: 14, lineHeight: 1.6, color: "#475467", marginBottom: 18 }}>
+                QR codes are direct ordering infrastructure and customer access infrastructure for your restaurant.
+              </div>
+              {assetsReady ? (
+                <div style={s.downloadRow}>
+                  <a href={imageUrl} download="menuply-qr.png" style={s.downloadBtn}>
+                    Download QR Code (.png)
+                  </a>
+                  <a href={imageSvgUrl} download="menuply-qr.svg" style={s.downloadBtnOutline}>
+                    Download QR Code (.svg)
+                  </a>
+                </div>
+              ) : (
+                <div style={s.downloadRow}>
+                  <span style={s.preparingText}>Preparing your QR materials&hellip;</span>
+                </div>
+              )}
+            </>
           ) : (
-            <div style={s.downloadRow}>
-              <span style={s.preparingText}>Preparing your QR materials&hellip;</span>
-            </div>
+            <>
+              <div style={s.checkRow}>
+                <span style={{ ...s.checkMark, background: "#98a2b3" }}>!</span>
+                <span style={s.freeLabel}>We could not recover your restaurant onboarding session.</span>
+              </div>
+              <div style={{ fontSize: 14, lineHeight: 1.6, color: "#475467", marginBottom: 18 }}>
+                Restart restaurant signup or sign in to My Account before continuing with QR setup. Menuply only
+                generates QR assets after the restaurant onboarding context is restored.
+              </div>
+              <div style={s.downloadRow}>
+                <Link to="/restaurant/signup" style={s.downloadBtn}>
+                  Restart restaurant signup
+                </Link>
+                <Link to="/operator/login" style={s.downloadBtnOutline}>
+                  Sign in to My Account
+                </Link>
+              </div>
+            </>
           )}
         </section>
 
         {/* Paid upsell */}
-        <section style={s.upsellCard}>
-          <div style={s.upsellHeading}>Help customers access your menu faster.</div>
+        <section style={{ ...s.upsellCard, opacity: hasOnboardingContext ? 1 : 0.72 }}>
+          <div style={s.upsellHeading}>Optional QR starter kit</div>
           <div style={s.upsellBody}>
-            Want professionally printed QR stickers shipped directly to your restaurant?
+            Use QR placement to give customers faster direct menu and ordering access. Printed materials are optional operational support, not required hardware.
           </div>
           <ul style={s.bulletList}>
             {["Doors & windows", "Counter & pickup area", "Table sets", "Takeout areas"].map(
@@ -128,12 +175,14 @@ export default function RestaurantQrUpsell() {
               )
             )}
           </ul>
-          <button type="button" style={s.ctaBtn} onClick={goToKitOrder}>
-            Add QR Sticker Package &mdash; $9.99
+          <button type="button" style={s.ctaBtn} onClick={goToKitOrder} disabled={!hasOnboardingContext}>
+            Add QR Starter Kit &mdash; $9.99
           </button>
-          <button type="button" style={s.skipBtn} onClick={goToDesign}>
-            Skip for now &rarr;
-          </button>
+          {hasOnboardingContext ? (
+            <button type="button" style={s.skipBtn} onClick={goToDesign}>
+              Skip for now &rarr;
+            </button>
+          ) : null}
         </section>
       </div>
     </div>

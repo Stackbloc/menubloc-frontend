@@ -134,6 +134,11 @@ export default function OperatorEmailVerification() {
         </div>
 
         {info ? <div style={{ ...styles.footer, color: "#1F4E3D" }}>{info}</div> : null}
+        {onboarding?.restaurant_id ? (
+          <div style={{ ...styles.footer, color: "#475467", marginBottom: 12 }}>
+            After verification, we will return you to restaurant onboarding and keep your setup progress in place.
+          </div>
+        ) : null}
         <FormError error={formError} />
 
         <button
