@@ -16,13 +16,17 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { LEGAL_VERSIONS } from "../content/legal.js";
+import {
+  fetchRestaurantOnboardingProgress,
+  navigateWithRestaurantOnboardingState,
+  resolveRestaurantOnboardingState,
+  syncRestaurantOnboardingProgress,
+} from "../lib/restaurantOnboardingState.js";
 
 const API = (
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.DEV ? "http://localhost:3001" : "")
 ).replace(/\/$/, "");
-const ONBOARDING_STATE_KEY = "grubbid.onboarding.state";
-const BYPASS_MODE = import.meta.env.VITE_ALLOW_OWNER_TOKEN_BYPASS === "true";
 
 const PLAN_LABELS = {
   verified: "Verified",
@@ -83,26 +87,6 @@ const PLAN_CARDS = {
       "Early partner introductory rate applies for the first 24 months. After 24 months, commission reverts to the standard marketplace partner rate. Cancel anytime. If you switch to Pro Partner, an early conversion or equipment recovery fee may apply.",
   },
 };
-
-function normalizeOnboardingState(raw) {
-  if (!raw || typeof raw !== "object") return null;
-
-  const normalized = {
-    restaurant_id: raw.restaurant_id ?? null,
-    restaurant_name: raw.restaurant_name ?? "",
-    email: raw.email ?? "",
-    owner_token: raw.owner_token ?? "",
-    ingestion_method: raw.ingestion_method ?? "",
-    city: raw.city ?? "",
-    state: raw.state ?? "",
-    phone: raw.phone ?? "",
-    menu_choice: raw.menu_choice ?? "",
-    selected_plan: raw.selected_plan ?? raw.plan ?? "",
-  };
-
-  if (BYPASS_MODE) return normalized.restaurant_id ? normalized : null;
-  return normalized.restaurant_id && normalized.owner_token ? normalized : null;
-}
 
 const s = {
   page: {
@@ -323,21 +307,11 @@ export default function SubscriptionSelect() {
   const checkoutSuccess = searchParams.get("checkout_success") === "1";
   const returnedPlanCode = searchParams.get("plan_code") || "";
   const checkoutCancelled = searchParams.get("checkout_cancelled") === "1";
-
-  const [onboardingState, setOnboardingState] = useState(() => {
-    const stateFromNavigation = normalizeOnboardingState(location.state);
-    if (stateFromNavigation) return stateFromNavigation;
-
-    if (!checkoutSuccess && !checkoutCancelled) return null;
-
-    try {
-      return normalizeOnboardingState(
-        JSON.parse(window.sessionStorage.getItem(ONBOARDING_STATE_KEY) || "null")
-      );
-    } catch {
-      return null;
-    }
+  const recovered = resolveRestaurantOnboardingState({
+    routeState: location.state,
+    search: location.search,
   });
+  const [onboardingState, setOnboardingState] = useState(recovered.state || null);
 
   const [proInterval, setProInterval] = useState("monthly");
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
@@ -354,23 +328,19 @@ export default function SubscriptionSelect() {
     phone,
     menu_choice,
     selected_plan,
+    intake_path,
+    requested_location_count,
   } = onboardingState || {};
 
-  const hasOnboardingContext = BYPASS_MODE
-    ? Boolean(restaurant_id)
-    : Boolean(restaurant_id && owner_token);
+  const hasOnboardingContext = Boolean(restaurant_id && owner_token);
 
   useEffect(() => {
-    const stateFromNavigation = normalizeOnboardingState(location.state);
-    if (!stateFromNavigation) return;
-
-    setOnboardingState(stateFromNavigation);
-    try {
-      window.sessionStorage.setItem(ONBOARDING_STATE_KEY, JSON.stringify(stateFromNavigation));
-    } catch {
-      // optional
-    }
-  }, [location.state]);
+    const next = resolveRestaurantOnboardingState({
+      routeState: location.state,
+      search: location.search,
+    });
+    setOnboardingState(next.state || null);
+  }, [location.state, location.search]);
 
   useEffect(() => {
     if (selected_plan === "pro_annual") {
@@ -379,36 +349,78 @@ export default function SubscriptionSelect() {
   }, [selected_plan]);
 
   useEffect(() => {
-    if (!checkoutSuccess) return;
+    let cancelled = false;
+    if (!hasOnboardingContext) return undefined;
 
-    try {
-      const saved = JSON.parse(window.sessionStorage.getItem(ONBOARDING_STATE_KEY) || "null");
-      if (saved?.restaurant_id && (BYPASS_MODE || saved?.owner_token)) {
-        window.sessionStorage.removeItem(ONBOARDING_STATE_KEY);
-        nav("/restaurant/qr-upsell", {
-          state: {
-            ...saved,
-            plan: returnedPlanCode === "pro_annual" ? "pro_annual" : "pro_monthly",
-          },
-        });
+    fetchRestaurantOnboardingProgress(onboardingState)
+      .then((stateValue) => {
+        if (!cancelled && stateValue) setOnboardingState(stateValue);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasOnboardingContext, restaurant_id, owner_token]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!checkoutSuccess || !hasOnboardingContext || !onboardingState) return undefined;
+
+    (async () => {
+      const planCode = returnedPlanCode === "pro_annual" ? "pro_annual" : "pro_monthly";
+      const nextState = await syncRestaurantOnboardingProgress(onboardingState, {
+        current_step_key: "basic_public_profile",
+        completed_step_keys: ["choose_plan", "subscription_checkout"],
+        intake_path: intake_path || "independent_single_location",
+        requested_location_count: requested_location_count || 1,
+        selected_plan_code: planCode,
+        manual_review_required: false,
+        draft_payload: {
+          temporary_selections: { selected_plan_code: planCode },
+        },
+      });
+      if (cancelled) return;
+      setOnboardingState(nextState);
+      navigateWithRestaurantOnboardingState(nav, "/restaurant/qr-upsell", {
+        ...nextState,
+        plan: planCode,
+      });
+    })().catch((err) => {
+      if (!cancelled) {
+        setPlanError(err.message || "Unable to restore onboarding after checkout.");
       }
-    } catch {
-      // optional
-    }
-  }, [checkoutSuccess, returnedPlanCode, nav]);
+    });
 
-  async function continueToDesign(planCode, extra = {}) {
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    checkoutSuccess,
+    returnedPlanCode,
+    hasOnboardingContext,
+    onboardingState,
+    intake_path,
+    requested_location_count,
+    nav,
+  ]);
+
+  async function continueToDesign(planCode, extra = {}, sourceState = onboardingState) {
     const nextState = {
-      restaurant_id,
-      restaurant_name,
-      email,
-      owner_token,
-      city,
-      state,
-      phone,
-      menu_choice,
+      restaurant_id: sourceState?.restaurant_id ?? restaurant_id,
+      restaurant_name: sourceState?.restaurant_name ?? restaurant_name,
+      email: sourceState?.email ?? email,
+      owner_token: sourceState?.owner_token ?? owner_token,
+      city: sourceState?.city ?? city,
+      state: sourceState?.state ?? state,
+      phone: sourceState?.phone ?? phone,
+      menu_choice: sourceState?.menu_choice ?? menu_choice,
       plan: planCode,
-      ingestion_method,
+      selected_plan: planCode,
+      selected_plan_code: planCode,
+      intake_path: sourceState?.intake_path ?? intake_path,
+      requested_location_count: sourceState?.requested_location_count ?? requested_location_count,
+      ingestion_method: sourceState?.ingestion_method ?? ingestion_method,
       ...extra,
     };
 
@@ -417,7 +429,11 @@ export default function SubscriptionSelect() {
       const r = await fetch(`${API}/owner/qr/primary`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurant_id, email, owner_token }),
+        body: JSON.stringify({
+          restaurant_id: sourceState?.restaurant_id ?? restaurant_id,
+          email: sourceState?.email ?? email,
+          owner_token: sourceState?.owner_token ?? owner_token,
+        }),
       });
       const j = await r.json().catch(() => ({}));
       if (j.ok && j.token) qr_token = j.token;
@@ -425,7 +441,10 @@ export default function SubscriptionSelect() {
       // QR failure is non-blocking — onboarding continues regardless
     }
 
-    nav("/restaurant/qr-upsell", { state: { ...nextState, qr_token } });
+    navigateWithRestaurantOnboardingState(nav, "/restaurant/qr-upsell", {
+      ...nextState,
+      qr_token,
+    });
   }
 
   function chooseVerified() {
@@ -433,7 +452,24 @@ export default function SubscriptionSelect() {
       nav("/restaurant/signup");
       return;
     }
-    continueToDesign("verified");
+    syncRestaurantOnboardingProgress(onboardingState, {
+      current_step_key: "basic_public_profile",
+      completed_step_keys: ["choose_plan", "subscription_checkout"],
+      intake_path: intake_path || "independent_single_location",
+      requested_location_count: requested_location_count || 1,
+      selected_plan_code: "verified",
+      manual_review_required: false,
+      draft_payload: {
+        temporary_selections: { selected_plan_code: "verified" },
+      },
+    })
+      .then((stateValue) => {
+        setOnboardingState(stateValue);
+        continueToDesign("verified", {}, stateValue);
+      })
+      .catch((err) => {
+        setPlanError(err.message || "Unable to continue.");
+      });
   }
 
   async function submitRestaurantPlan(planCode) {
@@ -446,29 +482,28 @@ export default function SubscriptionSelect() {
     setPlanError("");
 
     try {
-      window.sessionStorage.setItem(
-        ONBOARDING_STATE_KEY,
-        JSON.stringify({
-          restaurant_id,
-          restaurant_name,
-          email,
-          owner_token,
-          city,
-          state,
-          phone,
-          menu_choice,
-          ingestion_method,
-        })
-      );
-    } catch {
-      // optional
-    }
+      const syncedState = await syncRestaurantOnboardingProgress(onboardingState, {
+        current_step_key: "subscription_checkout",
+        completed_step_keys: ["choose_plan"],
+        intake_path: intake_path || "independent_single_location",
+        requested_location_count: requested_location_count || 1,
+        selected_plan_code: planCode,
+        manual_review_required: false,
+        draft_payload: {
+          temporary_selections: { selected_plan_code: planCode },
+        },
+      });
+      setOnboardingState(syncedState);
 
-    const origin = window.location.origin;
-    const successUrl = `${origin}/restaurant/subscription?checkout_success=1&plan_code=${planCode}`;
-    const cancelUrl = `${origin}/restaurant/subscription?checkout_cancelled=1`;
+      const origin = window.location.origin;
+      const successParams = new URLSearchParams({
+        checkout_success: "1",
+        plan_code: planCode,
+      });
+      const cancelParams = new URLSearchParams({ checkout_cancelled: "1" });
+      const successUrl = `${origin}/restaurant/subscription?${successParams.toString()}`;
+      const cancelUrl = `${origin}/restaurant/subscription?${cancelParams.toString()}`;
 
-    try {
       const res = await fetch(`${API}/owner/subscription/checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -492,21 +527,45 @@ export default function SubscriptionSelect() {
       }
 
       if (json.no_checkout_plan === true) {
+        const nextState = await syncRestaurantOnboardingProgress(syncedState, {
+          current_step_key: "basic_public_profile",
+          completed_step_keys: ["choose_plan", "subscription_checkout"],
+          intake_path: intake_path || "independent_single_location",
+          requested_location_count: requested_location_count || 1,
+          selected_plan_code: planCode,
+          manual_review_required: false,
+          draft_payload: {
+            temporary_selections: { selected_plan_code: planCode },
+          },
+        });
+        setOnboardingState(nextState);
         continueToDesign(planCode, {
           billing_mode: "no_upfront_platform_fee",
-        });
+        }, nextState);
         return;
       }
 
       if (json.evaluation_mode) {
         continueToDesign(planCode, {
           billing_mode: "evaluation",
-        });
+        }, syncedState);
         return;
       }
 
       if (json.already_active) {
-        continueToDesign(planCode);
+        const nextState = await syncRestaurantOnboardingProgress(syncedState, {
+          current_step_key: "basic_public_profile",
+          completed_step_keys: ["choose_plan", "subscription_checkout"],
+          intake_path: intake_path || "independent_single_location",
+          requested_location_count: requested_location_count || 1,
+          selected_plan_code: planCode,
+          manual_review_required: false,
+          draft_payload: {
+            temporary_selections: { selected_plan_code: planCode },
+          },
+        });
+        setOnboardingState(nextState);
+        continueToDesign(planCode, {}, nextState);
         return;
       }
 

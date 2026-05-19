@@ -15,8 +15,8 @@ import { useOperator } from "../context/OperatorContext.jsx";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { LEGAL_VERSIONS } from "../content/legal.js";
 import {
-  navigateWithRestaurantOnboardingState,
   persistRestaurantOnboardingState,
+  syncRestaurantOnboardingProgress,
 } from "../lib/restaurantOnboardingState.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -355,7 +355,7 @@ export default function RestaurantSignup() {
       }
 
       const { restaurant, owner_token } = data;
-      const draftState = persistRestaurantOnboardingState({
+      const baseState = persistRestaurantOnboardingState({
         restaurant_id: restaurant.id,
         restaurant_name: form.restaurant_name.trim(),
         email: form.email.trim(),
@@ -366,6 +366,24 @@ export default function RestaurantSignup() {
         ingestion_method: menuChoice === "pdf_now" ? "pdf" : "later",
         menu_choice: menuChoice,
         selected_plan: selectedPlan,
+      });
+      const draftState = await syncRestaurantOnboardingProgress(baseState, {
+        current_step_key: selectedPlan === "verified" ? "basic_public_profile" : "choose_plan",
+        completed_step_keys: ["create_operator_account", "public_restaurant_information"],
+        intake_path: "independent_single_location",
+        requested_location_count: 1,
+        selected_plan_code: selectedPlan || null,
+        manual_review_required: false,
+        draft_payload: {
+          temporary_selections: {
+            selected_plan_code: selectedPlan || null,
+            menu_upload_mode: menuChoice === "pdf_now" ? "menu_photos" : "upload_later",
+          },
+          optional_modules: {
+            qr_starter_kit: { status: "not_started" },
+            equipment_readiness: { status: "not_started" },
+          },
+        },
       });
 
       nav("/operator/verify-email", {

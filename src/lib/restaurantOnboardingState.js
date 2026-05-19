@@ -1,6 +1,7 @@
 const STORAGE_KEY = "grubbid.onboarding.state";
 const BACKUP_STORAGE_KEY = "grubbid.onboarding.state.backup";
 const BYPASS_MODE = import.meta.env.VITE_ALLOW_OWNER_TOKEN_BYPASS === "true";
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 export const RESTAURANT_SIGNUP_RESTART_ROUTE = "/restaurant/signup";
 
@@ -28,6 +29,22 @@ export function normalizeRestaurantOnboardingState(raw) {
     menu_choice: normalizeString(raw.menu_choice),
     selected_plan: normalizeString(raw.selected_plan || raw.plan),
     plan: normalizeString(raw.plan || raw.selected_plan),
+    onboarding_progress_id: normalizeRestaurantId(raw.onboarding_progress_id ?? raw.progress_id ?? raw.id),
+    onboarding_version: normalizeString(raw.onboarding_version) || "v1",
+    current_step_key: normalizeString(raw.current_step_key),
+    completed_step_keys: Array.isArray(raw.completed_step_keys) ? raw.completed_step_keys : [],
+    intake_path: normalizeString(raw.intake_path),
+    requested_location_count: (() => {
+      const numeric = Number(raw.requested_location_count);
+      return Number.isInteger(numeric) && numeric > 0 ? numeric : 1;
+    })(),
+    selected_plan_code: normalizeString(raw.selected_plan_code),
+    manual_review_required: Boolean(raw.manual_review_required),
+    manual_review_reason: normalizeString(raw.manual_review_reason),
+    draft_payload:
+      raw.draft_payload && typeof raw.draft_payload === "object" && !Array.isArray(raw.draft_payload)
+        ? raw.draft_payload
+        : {},
     design_style: raw.design_style ?? null,
     restored_from: normalizeString(raw.restored_from),
   };
@@ -194,6 +211,73 @@ export function buildRestaurantOnboardingSearch(raw) {
 
   const query = params.toString();
   return query ? `?${query}` : "";
+}
+
+function applyProgress(rawState, progress) {
+  if (!progress || typeof progress !== "object") {
+    return normalizeRestaurantOnboardingState(rawState);
+  }
+
+  return normalizeRestaurantOnboardingState({
+    ...rawState,
+    onboarding_progress_id: progress.id,
+    onboarding_version: progress.onboarding_version,
+    current_step_key: progress.current_step_key,
+    completed_step_keys: progress.completed_step_keys,
+    intake_path: progress.intake_path,
+    requested_location_count: progress.requested_location_count,
+    selected_plan_code: progress.selected_plan_code,
+    selected_plan: progress.selected_plan_code || rawState?.selected_plan || rawState?.plan,
+    plan: rawState?.plan || progress.selected_plan_code || rawState?.selected_plan,
+    manual_review_required: progress.manual_review_required,
+    manual_review_reason: progress.manual_review_reason,
+    draft_payload: progress.draft_payload || {},
+  });
+}
+
+export async function fetchRestaurantOnboardingProgress(rawState) {
+  const state = normalizeRestaurantOnboardingState(rawState);
+  if (!canResumeRestaurantOnboarding(state)) return state;
+
+  const params = new URLSearchParams({
+    restaurant_id: String(state.restaurant_id),
+    email: state.email,
+  });
+
+  const res = await fetch(`${API}/owner/onboarding/progress?${params.toString()}`, {
+    credentials: "include",
+    headers: { "x-owner-token": state.owner_token },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !json?.ok || !json?.progress) return state;
+
+  return persistRestaurantOnboardingState(applyProgress(state, json.progress));
+}
+
+export async function syncRestaurantOnboardingProgress(rawState, patch) {
+  const state = normalizeRestaurantOnboardingState(rawState);
+  if (!canResumeRestaurantOnboarding(state)) return state;
+
+  const res = await fetch(`${API}/owner/onboarding/progress`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      "x-owner-token": state.owner_token,
+    },
+    body: JSON.stringify({
+      restaurant_id: state.restaurant_id,
+      email: state.email,
+      owner_token: state.owner_token,
+      ...patch,
+    }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !json?.ok) {
+    throw new Error(json?.error || `Onboarding progress sync failed (${res.status})`);
+  }
+
+  return persistRestaurantOnboardingState(applyProgress(state, json.progress));
 }
 
 export function navigateWithRestaurantOnboardingState(navigate, pathname, rawState) {
