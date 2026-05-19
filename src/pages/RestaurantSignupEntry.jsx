@@ -19,13 +19,13 @@ const PLAN_OPTIONS = [
     code: "verified",
     name: "Verified",
     price: "$0",
-    description: "A simple verified restaurant presence on Menuply.",
+    description: "A simple verified restaurant presence with public menu access on Menuply.",
     cta: "Continue with Verified",
     featured: false,
     features: [
       "Basic restaurant profile",
       "1 editable menu listing",
-      "QR code for your menu",
+      "QR menu access for customers",
       "Menu visibility on Menuply",
     ],
   },
@@ -34,7 +34,7 @@ const PLAN_OPTIONS = [
     name: "Pro Partner",
     price: "$39.99/month or $299/year",
     description:
-      "For restaurants that want advanced tools, ordering, sharing, and stronger customer engagement.",
+      "For restaurants that want stronger customer pricing, direct ordering tools, and deeper customer engagement on a lower-cost platform.",
     cta: "Continue with Pro Partner",
     featured: true,
     features: [
@@ -45,7 +45,7 @@ const PLAN_OPTIONS = [
       "Follow functionality",
       "Deals and promotions",
       "Online ordering",
-      "Lower transaction-based pricing when eligible",
+      "Built for lower-cost direct ordering operations",
     ],
   },
   {
@@ -53,7 +53,7 @@ const PLAN_OPTIONS = [
     name: "Performance Partner",
     price: "$0 upfront platform fee",
     description:
-      "For restaurants that want full ordering and promotional capabilities with no upfront platform fee.",
+      "For restaurants that want full ordering, promotional capabilities, and launch support with no upfront platform fee.",
     cta: "Continue with Performance Partner",
     featured: false,
     features: [
@@ -264,6 +264,19 @@ export default function RestaurantSignupEntry() {
           <div style={styles.heading}>Choose your Menuply restaurant plan before you create your account.</div>
           <div style={styles.subheading}>
             Pick Verified, Pro Partner, or Performance Partner first. On the next step you will create your restaurant account and we will keep your selected plan attached to the onboarding flow.
+          </div>
+          <div style={{
+            marginTop: 18,
+            borderRadius: 18,
+            border: "1px solid #d9e0ea",
+            background: "#f8faf9",
+            padding: "16px 18px",
+            maxWidth: 760,
+            color: "#475467",
+            fontSize: 14,
+            lineHeight: 1.6,
+          }}>
+            Menuply was intentionally designed as a lower-cost platform so restaurants can maintain normal margins while offering stronger customer pricing than higher-cost marketplaces. Thoughtful pricing helps restaurants deliver stronger customer value on Menuply, which in turn benefits restaurants, diners, and the platform.
           </div>
 
           <div style={styles.steps}>

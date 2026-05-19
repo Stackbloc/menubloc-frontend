@@ -41,22 +41,40 @@ const PRO_INTERVALS = {
   annual: { planCode: "pro_annual", priceLabel: "$299/year" },
 };
 
+const OPTIONAL_ONBOARDING_MODULES = [
+  {
+    title: "QR starter kit",
+    body:
+      "QR codes are direct ordering infrastructure and customer access infrastructure. Free downloadable QR materials are prepared during onboarding, and printed kits stay optional.",
+  },
+  {
+    title: "Equipment readiness",
+    body:
+      "Review tablet placement, power, alerts, printer or pickup workflow, and internet reliability. This is about operational readiness, not forced hardware.",
+  },
+  {
+    title: "Launch deal",
+    body:
+      "Deals are simple launch offers that can help first-time customers try your restaurant. You can skip this now and decide later. Would you like to create a launch deal?",
+  },
+];
+
 const PLAN_CARDS = {
   verified: {
     title: "Verified",
     price: "$0",
-    description: "A simple verified restaurant presence on Menuply.",
+    description: "A simple verified restaurant presence with public menu access on Menuply.",
     features: [
       "Basic restaurant profile",
       "1 editable menu listing",
-      "QR code for your menu",
+      "QR menu access for customers",
       "Menu visibility on Menuply",
     ],
   },
   pro_partner: {
     title: "Pro Partner",
     description:
-      "For restaurants that want advanced tools, ordering, sharing, and stronger customer engagement.",
+      "For restaurants that want stronger customer pricing, direct ordering tools, and deeper customer engagement on a lower-cost platform.",
     features: [
       "Unlimited menus for time of day, events, seasonal menus, happy hour, and specials",
       "Advanced restaurant profile with logo, featured meal, and restaurant bio",
@@ -65,14 +83,15 @@ const PLAN_CARDS = {
       "Follow functionality",
       "Deals and promotions",
       "Online ordering",
-      "Lower transaction-based pricing when eligible",
+      "Built for lower-cost direct ordering operations",
+      "Annual option with a lower effective monthly cost",
     ],
   },
   performance_partner: {
     title: "Performance Partner",
     price: "$0 upfront platform fee",
     description:
-      "For restaurants that want full ordering and promotional capabilities with no upfront platform fee.",
+      "For restaurants that want full ordering, promotional capabilities, and launch support with no upfront platform fee.",
     features: [
       "Tablet included",
       "Full online ordering capabilities",
@@ -297,6 +316,75 @@ const s = {
     color: "#1F4E3D",
     fontWeight: 800,
     textDecoration: "none",
+  },
+  noteCard: {
+    marginTop: 18,
+    borderRadius: 18,
+    border: "1px solid #d9e0ea",
+    background: "#f8faf9",
+    padding: "16px 18px",
+    color: "#475467",
+    fontSize: 14,
+    lineHeight: 1.65,
+    maxWidth: 760,
+  },
+  annualNote: {
+    marginTop: -4,
+    marginBottom: 16,
+    fontSize: 12,
+    lineHeight: 1.6,
+    color: "rgba(255,255,255,0.88)",
+  },
+  optionalSection: {
+    marginTop: 26,
+    padding: "22px",
+    borderRadius: 24,
+    border: "1px solid #d9e0ea",
+    background: "#ffffff",
+    boxShadow: "0 12px 30px rgba(15, 23, 32, 0.04)",
+  },
+  optionalHeading: {
+    fontSize: 20,
+    fontWeight: 900,
+    letterSpacing: "-0.02em",
+    marginBottom: 8,
+  },
+  optionalSubheading: {
+    fontSize: 14,
+    lineHeight: 1.6,
+    color: "#667085",
+    marginBottom: 16,
+    maxWidth: 760,
+  },
+  optionalGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: 14,
+  },
+  optionalCard: {
+    borderRadius: 18,
+    border: "1px solid #eaecf0",
+    background: "#f8faf9",
+    padding: "16px 16px 15px",
+  },
+  optionalKicker: {
+    fontSize: 11,
+    fontWeight: 900,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#1F4E3D",
+    marginBottom: 8,
+  },
+  optionalTitle: {
+    fontSize: 16,
+    fontWeight: 800,
+    color: "#101828",
+    marginBottom: 6,
+  },
+  optionalBody: {
+    fontSize: 13,
+    lineHeight: 1.6,
+    color: "#475467",
   },
 };
 
@@ -626,7 +714,12 @@ export default function SubscriptionSelect() {
 
           <div style={s.heading}>Choose your restaurant plan</div>
           <div style={s.subheading}>
-            Clear restaurant plans for getting listed, growing your brand, and enabling ordering on Menuply.
+            Choose the plan that fits how you want to launch, price, and operate on Menuply.
+          </div>
+          <div style={s.noteCard}>
+            Menuply was intentionally designed as a lower-cost platform so restaurants can maintain normal margins while offering stronger customer pricing than higher-cost marketplaces. Thoughtful pricing helps restaurants deliver stronger customer value on Menuply, which in turn benefits restaurants, diners, and the platform.
+            <br /><br />
+            Paid plan checkout keeps Menuply's existing Stripe-powered restaurant banking flow in place. Restaurant deposits and direct restaurant deposits stay tied to that restaurant banking setup when enabled.
           </div>
         </section>
 
@@ -693,6 +786,11 @@ export default function SubscriptionSelect() {
               </button>
             </div>
             <div style={s.priceValue}>{PRO_INTERVALS[proInterval].priceLabel}</div>
+            <div style={s.annualNote}>
+              {proInterval === "annual"
+                ? "Annual lowers your effective monthly cost. Founder annual pricing includes a 2-year introductory rate commitment."
+                : "Monthly keeps launch costs flexible. You can move to annual later if it better fits your rollout."}
+            </div>
 
             <ul style={s.featureList}>
               {PLAN_CARDS.pro_partner.features.map((feature) => (
@@ -743,6 +841,22 @@ export default function SubscriptionSelect() {
               Choose Performance Partner
             </button>
           </article>
+        </section>
+
+        <section style={s.optionalSection}>
+          <div style={s.optionalHeading}>Optional onboarding modules</div>
+          <div style={s.optionalSubheading}>
+            These are guidance cards only. They do not add required steps, new schema, or new backend behavior.
+          </div>
+          <div style={s.optionalGrid}>
+            {OPTIONAL_ONBOARDING_MODULES.map((module) => (
+              <article key={module.title} style={s.optionalCard}>
+                <div style={s.optionalKicker}>Optional</div>
+                <div style={s.optionalTitle}>{module.title}</div>
+                <div style={s.optionalBody}>{module.body}</div>
+              </article>
+            ))}
+          </div>
         </section>
 
         <div style={s.legalNotice}>

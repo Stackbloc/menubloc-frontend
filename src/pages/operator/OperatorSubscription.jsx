@@ -83,17 +83,13 @@ function getBillingIntervalLabel(planCode) {
   return "Free";
 }
 
-function getPlanPriceLabel(planCode, planOptions) {
-  if (!planCode || planCode === "verified") return "Free";
-  const plan = planOptions.find((entry) => entry.code === planCode);
-  if (!plan) return "—";
-  const interval =
-    plan.billing_interval === "year"
-      ? "/year"
-      : plan.billing_interval === "month"
-        ? "/month"
-        : "";
-  return `${formatMoney(plan.amount_cents)}${interval}`;
+function getPlanPriceLabel(planCode, foundersPlan) {
+  if (planCode === "pro_annual") return "$399/year";
+  if (planCode === "pro_monthly") return "$34.99/month";
+  if (planCode === "founders_annual") {
+    return foundersPlan ? `${formatMoney(foundersPlan.amount_cents)}/year` : "Founder annual";
+  }
+  return "Free";
 }
 
 function StatusRow({ label, value }) {
@@ -151,18 +147,16 @@ export default function OperatorSubscription() {
   const currentPlanCode = subscription?.plan_code || null;
   const currentTier = getPlanTier(currentPlanCode);
   const normalizedStatus = String(subscription?.status || "").toLowerCase();
-  const hasActivePlan = Boolean(
-    currentPlanCode && (
-      currentTier === "verified" ||
-      ["active", "trialing", "past_due", "canceling"].includes(normalizedStatus)
-    )
+  const hasPaidSubscription = Boolean(
+    currentPlanCode &&
+    currentTier !== "verified" &&
+    ["active", "trialing", "past_due", "canceling"].includes(normalizedStatus)
   );
+  const hasVerifiedAccess = currentTier === "verified" || !currentPlanCode;
+  const shouldShowAccountManagement = hasPaidSubscription;
 
-  const hasActiveStripeSubscription = Boolean(
-    subscription?.stripe_subscription_id && subscription?.current_period_end
-  );
   const canCancel =
-    hasActiveStripeSubscription &&
+    Boolean(subscription?.stripe_subscription_id && subscription?.current_period_end) &&
     ["active", "trialing", "past_due"].includes(normalizedStatus) &&
     !subscription?.cancel_at_period_end;
 
@@ -210,9 +204,9 @@ export default function OperatorSubscription() {
 
   useEffect(() => {
     if (!loading) {
-      setShowPlanSelection(!hasActivePlan);
+      setShowPlanSelection(!shouldShowAccountManagement);
     }
-  }, [loading, hasActivePlan]);
+  }, [loading, shouldShowAccountManagement]);
 
   const checkoutResult = searchParams.get("checkout");
   useEffect(() => {
@@ -230,7 +224,7 @@ export default function OperatorSubscription() {
   async function handleSelectVerified() {
     setError("");
     setMessage("");
-    if (currentTier === "verified") {
+    if (hasVerifiedAccess) {
       navigate("/operator/menu");
       return;
     }
@@ -295,18 +289,6 @@ export default function OperatorSubscription() {
     }
   }
 
-  async function handleManageBilling() {
-    setError("");
-    setMessage("");
-    setLoading(true);
-    try {
-      await refreshSubscription();
-      setMessage("Billing details refreshed.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <OperatorLayout title="Subscription">
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
@@ -322,29 +304,20 @@ export default function OperatorSubscription() {
           </h2>
           <p style={{ margin: "6px 0 0", fontSize: 14, color: "#6b7280" }}>
             {showPlanSelection
-              ? "Choose Plan → Checkout if paid → Operator Profile → Upload Menu → Publish Public Profile"
+              ? "Choose a plan and complete your restaurant setup."
               : "Review your current subscription and billing details before changing plans."}
           </p>
         </div>
 
-        {!showPlanSelection && hasActivePlan && (
+        {!showPlanSelection && shouldShowAccountManagement && (
           <div style={{ maxWidth: 520, background: "#fff", border: "1px solid #eaecf0", borderRadius: 16, padding: 22, marginBottom: 32 }}>
             <h3 style={{ margin: "0 0 14px", fontSize: 16, fontWeight: 800, color: "#0f1720" }}>Subscription status</h3>
             <div style={{ display: "grid", gap: 2 }}>
               <StatusRow label="Current plan" value={getSubscriptionPlanLabel(currentPlanCode)} />
-              <StatusRow
-                label="Billing interval"
-                value={
-                  subscription?.billing_interval === "year"
-                    ? "Annual"
-                    : subscription?.billing_interval === "month"
-                      ? "Monthly"
-                      : getBillingIntervalLabel(currentPlanCode)
-                }
-              />
+              <StatusRow label="Billing interval" value={getBillingIntervalLabel(currentPlanCode)} />
               <StatusRow label="Subscription status" value={loading ? "Loading…" : getSubscriptionStatusLabel(subscription?.status)} />
               <StatusRow label="Next billing / renewal" value={loading ? "Loading…" : currentPeriodEnd} />
-              <StatusRow label="Price" value={getPlanPriceLabel(currentPlanCode, planOptions)} />
+              <StatusRow label="Price" value={getPlanPriceLabel(currentPlanCode, foundersPlan)} />
               <StatusRow label="Auto Renew" value={loading ? "Loading…" : getAutoRenewLabel(subscription)} />
               <StatusRow label="Marketplace Setup" value={loading ? "Loading…" : getMarketplaceSetupStatus(subscription)} />
             </div>
@@ -356,42 +329,30 @@ export default function OperatorSubscription() {
             )}
 
             <div style={{ marginTop: 16, display: "grid", gap: 8 }}>
-              <button
-                type="button"
-                style={planBtn("primary", GREEN)}
-                onClick={() => navigate("/operator/menu")}
-              >
-                Go to Dashboard →
+              <button type="button" style={planBtn("muted", GREEN)} onClick={() => navigate("/operator/menu")}>
+                Go to Dashboard
               </button>
-              <button
-                type="button"
-                style={planBtn("muted", GREEN)}
-                onClick={() => setShowPlanSelection(true)}
-              >
+              <button type="button" style={planBtn("primary", GREEN)} onClick={() => setShowPlanSelection(true)}>
                 Change Plan
               </button>
               <button
                 type="button"
-                style={planBtn("muted", GREEN)}
-                onClick={handleManageBilling}
-                disabled={loading}
+                disabled
+                style={{ ...planBtn("muted", GREEN), opacity: 0.6, cursor: "not-allowed" }}
               >
-                {loading ? "Loading…" : "Manage Billing"}
+                Manage Billing
               </button>
-              {!subscription?.cancel_at_period_end && canCancel && (
-                <button
-                  type="button"
-                  style={{
-                    ...planBtn("muted", GREEN),
-                    background: "#fff5f5",
-                    color: "#b42318",
-                    border: "1px solid #fecaca",
-                  }}
-                  onClick={handleCancelSubscription}
-                >
-                  Cancel Subscription
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleCancelSubscription}
+                disabled={!canCancel}
+                style={{ ...planBtn("muted", GREEN), opacity: canCancel ? 1 : 0.5, cursor: canCancel ? "pointer" : "not-allowed" }}
+              >
+                Cancel Subscription
+              </button>
+              <div style={{ fontSize: 12, color: "#8a9ab0", textAlign: "center" }}>
+                Billing portal access is not available yet.
+              </div>
             </div>
           </div>
         )}
@@ -410,7 +371,7 @@ export default function OperatorSubscription() {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Verified</span>
-                  {currentTier === "verified" && <span style={currentBadge(GREEN)}>Current plan</span>}
+                  {hasVerifiedAccess && <span style={currentBadge(GREEN)}>Current access</span>}
                 </div>
                 <div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.04em" }}>Free</div>
@@ -429,7 +390,7 @@ export default function OperatorSubscription() {
                     </li>
                   ))}
                 </ul>
-                <button type="button" style={currentTier === "verified" ? planBtn("primary", GREEN) : planBtn("muted", GREEN)} onClick={handleSelectVerified} disabled={isCheckingOut}>
+                <button type="button" style={hasVerifiedAccess ? planBtn("primary", GREEN) : planBtn("muted", GREEN)} onClick={handleSelectVerified} disabled={isCheckingOut}>
                   Select Verified
                 </button>
                 <p style={{ margin: 0, fontSize: 11, color: "#8a9ab0", textAlign: "center" }}>
@@ -446,7 +407,7 @@ export default function OperatorSubscription() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {[
-                    { key: "monthly", plan: monthlyPlan, label: "Monthly", sub: null },
+                    { key: "monthly", plan: monthlyPlan, label: "Monthly", sub: "$34.99/month" },
                     { key: "annual", plan: annualPlan, label: "Annual", sub: "$399/year" },
                   ].map(({ key, plan, label, sub }) => (
                     <button
@@ -473,7 +434,7 @@ export default function OperatorSubscription() {
                         <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${proInterval === key ? GREEN : "#d1d5db"}`, background: proInterval === key ? GREEN : "transparent", flexShrink: 0 }} />
                         <span style={{ fontSize: 13, fontWeight: 700, color: proInterval === key ? GREEN : "#374151" }}>
                           {label}
-                          {sub && <span style={{ fontSize: 11, fontWeight: 600, color: "#059669", marginLeft: 6 }}>{sub}</span>}
+                          <span style={{ fontSize: 11, fontWeight: 600, color: "#059669", marginLeft: 6 }}>{sub}</span>
                         </span>
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 800, color: "#0f1720" }}>
@@ -527,7 +488,7 @@ export default function OperatorSubscription() {
                 style={{ ...planCard("#fffbeb", "#fcd34d", selectedPlanCode === (foundersPlan?.code || "founders_annual")), cursor: "pointer" }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: AMBER }}>Founders</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: AMBER }}>Founder</span>
                   {currentTier === "founders"
                     ? <span style={currentBadge(AMBER)}>Current plan</span>
                     : <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, background: "#fef3c7", color: AMBER }}>Limited time</span>}
@@ -565,7 +526,7 @@ export default function OperatorSubscription() {
                     <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#8a9ab0", width: "55%" }}>Feature</th>
                     <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN, width: 90 }}>Verified</th>
                     <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 800, color: GREEN, width: 90, background: "#f0f7f4" }}>Pro</th>
-                    <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: AMBER, width: 90 }}>Founders</th>
+                    <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: AMBER, width: 90 }}>Founder</th>
                   </tr>
                 </thead>
                 <tbody>

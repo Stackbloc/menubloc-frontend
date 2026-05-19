@@ -106,8 +106,8 @@ const OPTIONS = [
     key: "ocr",
     title: "Photograph the menu page (OCR)",
     description:
-      "Clear photos of printed menu text and prices work best. This path is for menu pages, not photos of dishes. PDFs work too.",
-    meta: "Camera or gallery: capture the menu sheet so we can read wording and prices—not food photography.",
+      "Clear menu photos of printed text and prices work best. This path is for menu pages, not dish photos. PDFs work too.",
+    meta: "Camera or gallery: capture menu pages so we can read wording and prices, not plated food.",
   },
 ];
 
@@ -173,7 +173,19 @@ export default function MenuUploadChoicePage() {
 
       <div style={styles.heading}>Choose how to add your menu</div>
       <div style={styles.subheading}>
-        Refresh-safe recovery is enabled here, so your signup session survives page reloads and mobile camera handoffs.
+        Choose the fastest way to import your menu. Refresh-safe recovery is enabled here, so your signup session survives page reloads and mobile camera handoffs.
+      </div>
+      <div style={{
+        border: "1px solid #e5e7eb",
+        borderRadius: 14,
+        background: "#fafafa",
+        padding: "14px 16px",
+        marginBottom: 24,
+        fontSize: 13,
+        lineHeight: 1.6,
+        color: "#475467",
+      }}>
+        Upload only menu PDFs, menu photos, and descriptions you are authorized to use for this restaurant.
       </div>
 
       <div style={styles.summary}>
