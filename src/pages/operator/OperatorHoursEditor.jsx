@@ -244,15 +244,6 @@ export default function OperatorHoursEditor() {
           )}
         </div>
 
-        {/* Save button */}
-        <button
-          onClick={handleSave}
-          disabled={saving || loading}
-          style={{ ...BTN("primary"), opacity: saving ? 0.65 : 1, marginBottom: 40 }}
-        >
-          {saving ? "Saving…" : "Save hours"}
-        </button>
-
         {/* ── Exceptions ──────────────────────────────────────────── */}
         <div className="operator-responsive-row" style={{ marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
@@ -335,6 +326,15 @@ export default function OperatorHoursEditor() {
             ))}
           </div>
         )}
+
+        {/* Save button */}
+        <button
+          onClick={handleSave}
+          disabled={saving || loading}
+          style={{ ...BTN("primary"), opacity: saving ? 0.65 : 1, marginTop: 24, marginBottom: 40 }}
+        >
+          {saving ? "Saving…" : "Save hours"}
+        </button>
       </div>
     </OperatorLayout>
   );
