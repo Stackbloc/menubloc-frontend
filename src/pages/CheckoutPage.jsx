@@ -247,6 +247,7 @@ export default function CheckoutPage() {
   });
   const [paymentSession, setPaymentSession] = useState(null);
   const [submitError, setSubmitError] = useState("");
+  const [availabilityError, setAvailabilityError] = useState(null);
   const [creatingIntent, setCreatingIntent] = useState(false);
   const [creatingBmt, setCreatingBmt] = useState(false);
   const [showBmtConfirm, setShowBmtConfirm] = useState(false);
@@ -459,6 +460,7 @@ export default function CheckoutPage() {
   async function handleCreatePaymentIntent(event) {
     event.preventDefault();
     setSubmitError("");
+    setAvailabilityError(null);
     setShowBmtConfirm(false);
 
     if (!stripePublishableKey || !stripePromise) {
@@ -521,6 +523,14 @@ export default function CheckoutPage() {
         itemCount: getItemCount(items),
       });
     } catch (error) {
+      if (error?.code === "restaurant_unavailable") {
+        setAvailabilityError({
+          status: error.availability_status || null,
+          reasonCode: error.reason_code || null,
+          note: error.note || null,
+          message: error.message || "This restaurant is not accepting orders right now.",
+        });
+      }
       setSubmitError(
         toConsumerErrorMessage(error, "We couldn't start payment for this order.")
       );
@@ -787,11 +797,42 @@ export default function CheckoutPage() {
                 </div>
               ) : null}
 
+              {availabilityError ? (
+                <div
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: 14,
+                    background:
+                      availabilityError.status === "closed"
+                        ? "rgba(153,27,27,0.18)"
+                        : "rgba(146,64,14,0.18)",
+                    color: "#f9fafb",
+                    fontSize: 13,
+                    fontWeight: 700,
+                  }}
+                >
+                  <div>{availabilityError.message}</div>
+                  {availabilityError.reasonCode ? (
+                    <div style={{ marginTop: 6, fontWeight: 600 }}>
+                      Reason: {String(availabilityError.reasonCode).replaceAll("_", " ")}
+                    </div>
+                  ) : null}
+                  {availabilityError.note ? (
+                    <div style={{ marginTop: 6, fontWeight: 500 }}>{availabilityError.note}</div>
+                  ) : null}
+                </div>
+              ) : null}
+
               {!paymentSession ? (
                 <div style={{ display: "grid", gap: 10 }}>
                   <button
                     type="submit"
-                    disabled={creatingIntent || creatingBmt || previewState.status === "loading"}
+                    disabled={
+                      creatingIntent ||
+                      creatingBmt ||
+                      previewState.status === "loading" ||
+                      !!availabilityError
+                    }
                     style={{
                       width: "100%",
                       border: "none",

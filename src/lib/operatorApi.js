@@ -61,7 +61,6 @@ export const resetOperatorPassword = (token, password) =>
 export const getSubscription = () => get("/operator/subscription");
 export const getPlans = () => get("/operator/subscription/plans");
 export const upgradeSubscription = (body) => post("/operator/subscription/upgrade", body);
-export const validateDiscountCode = (code) => get(`/operator/subscription/validate-discount?code=${encodeURIComponent(code)}`);
 export const getBillingOverview = (rid) => get(`/operator/restaurants/${rid}/billing/overview`);
 export const startBillingCheckout = (rid, body) => post(`/operator/restaurants/${rid}/billing/checkout`, body);
 export const syncAdobeUsageCharge = (rid) => post(`/operator/restaurants/${rid}/billing/usage/adobe/sync`, {});
@@ -233,19 +232,37 @@ export const updateRestaurantOrderStatus = (orderId, orderStatus) =>
 export const getLiveOrders = (rid) =>
   get(`/operator/restaurants/${rid}/orders/live`);
 
+export const getOrderAvailability = (rid) =>
+  get(`/operator/restaurants/${rid}/orders/availability`);
+
+export const updateOrderAvailability = (rid, body) =>
+  patch(`/operator/restaurants/${rid}/orders/availability`, body);
+
 export const getOperatorOrderDetail = (rid, orderId) =>
   get(`/operator/restaurants/${rid}/orders/${orderId}`);
 
+export const acceptOrder = (rid, orderId) =>
+  post(`/operator/restaurants/${rid}/orders/${orderId}/accept`, {});
+
 export const confirmOrder = (rid, orderId) =>
-  post(`/operator/restaurants/${rid}/orders/${orderId}/confirm`, {});
+  acceptOrder(rid, orderId);
 
 export const cancelOrder = (rid, orderId, reason = "") =>
   post(`/operator/restaurants/${rid}/orders/${orderId}/cancel`, {
     cancellation_reason: reason,
   });
 
+export const declineOrder = (rid, orderId, body = {}) =>
+  post(`/operator/restaurants/${rid}/orders/${orderId}/decline`, body);
+
+export const markOrderPreparing = (rid, orderId) =>
+  post(`/operator/restaurants/${rid}/orders/${orderId}/prepare`, {});
+
 export const markOrderReady = (rid, orderId) =>
   post(`/operator/restaurants/${rid}/orders/${orderId}/ready`, {});
+
+export const markOrderCompleted = (rid, orderId) =>
+  post(`/operator/restaurants/${rid}/orders/${orderId}/complete`, {});
 
 export const confirmDeliveryPickup = (rid, orderId) =>
   post(`/operator/restaurants/${rid}/orders/${orderId}/picked-up`, {});

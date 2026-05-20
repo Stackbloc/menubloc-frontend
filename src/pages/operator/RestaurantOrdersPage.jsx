@@ -4,12 +4,16 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import {
   API_BASE,
-  cancelOrder,
+  acceptOrder,
   confirmDeliveryPickup,
-  confirmOrder,
+  declineOrder,
   getLiveOrders,
+  getOrderAvailability,
   getOrderHistory,
+  markOrderCompleted,
+  markOrderPreparing,
   markOrderReady,
+  updateOrderAvailability,
 } from "../../lib/operatorApi.js";
 
 // ── Audio ─────────────────────────────────────────────────────────────────
@@ -93,6 +97,9 @@ function StatusPill({ value }) {
   const text = String(value || "").toLowerCase();
   const map = {
     paid:      { bg: "#fef3c7", color: "#92400e" },
+    merchant_acceptance_pending: { bg: "#ffedd5", color: "#9a3412" },
+    accepted:  { bg: "#dcfce7", color: "#166534" },
+    rejected:  { bg: "#fee2e2", color: "#991b1b" },
     preparing: { bg: "#dbeafe", color: "#1d4ed8" },
     ready:     { bg: "#dcfce7", color: "#166534" },
     completed: { bg: "#e5e7eb", color: "#374151" },
@@ -110,6 +117,41 @@ function StatusPill({ value }) {
       background: s.bg, color: s.color, textTransform: "capitalize",
     }}>
       {text.replace(/_/g, " ")}
+    </span>
+  );
+}
+
+function RefundPendingBanner() {
+  return (
+    <div style={{
+      marginTop: 12,
+      padding: "10px 12px",
+      borderRadius: 12,
+      background: "#fff7ed",
+      border: "1px solid #fdba74",
+      color: "#9a3412",
+      fontSize: 13,
+      fontWeight: 800,
+    }}>
+      Refund pending — customer has not yet been fully refunded.
+    </div>
+  );
+}
+
+function LegacyPaidBadge() {
+  return (
+    <span style={{
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "4px 10px",
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 900,
+      background: "#ede9fe",
+      color: "#5b21b6",
+      textTransform: "none",
+    }}>
+      Legacy Paid Order
     </span>
   );
 }
@@ -261,7 +303,7 @@ function PrintTicket({ order }) {
 
 // ── Pending order card ────────────────────────────────────────────────────
 
-function PendingCard({ order, onReady, onPickedUp, busy }) {
+function PendingCard({ order, onPreparing, onReady, onCompleted, onPickedUp, busy }) {
   const isDelivery = order.fulfillment_type === "delivery";
   const deliveryPickedUp = order.delivery_status === "picked_up";
   return (
@@ -287,6 +329,20 @@ function PendingCard({ order, onReady, onPickedUp, busy }) {
         </div>
       </div>
       <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {order.order_status === "accepted" && (
+          <button
+            type="button"
+            disabled={!!busy}
+            onClick={() => onPreparing(order.id)}
+            style={{
+              minHeight: 44, padding: "10px 18px", borderRadius: 12,
+              border: "none", background: "#14532d", color: "#fff",
+              fontSize: 14, fontWeight: 800, cursor: "pointer",
+            }}
+          >
+            {busy === "preparing" ? "Updating…" : "Start Preparing"}
+          </button>
+        )}
         {order.order_status === "preparing" && (
           <button
             type="button"
@@ -319,6 +375,20 @@ function PendingCard({ order, onReady, onPickedUp, busy }) {
           <span style={{ fontSize: 13, color: "#16a34a", fontWeight: 700, alignSelf: "center" }}>
             ✓ Delivery Picked Up
           </span>
+        )}
+        {order.order_status === "ready" && (
+          <button
+            type="button"
+            disabled={!!busy}
+            onClick={() => onCompleted(order.id)}
+            style={{
+              minHeight: 44, padding: "10px 18px", borderRadius: 12,
+              border: "none", background: "#111827", color: "#fff",
+              fontSize: 14, fontWeight: 800, cursor: "pointer",
+            }}
+          >
+            {busy === "completed" ? "Updating…" : "Mark Completed"}
+          </button>
         )}
       </div>
     </div>
@@ -386,8 +456,16 @@ export default function RestaurantOrdersPage() {
 
   // Cancel modal
   const [cancelTarget, setCancelTarget] = useState(null);
-  const [cancelReason, setCancelReason] = useState("");
+  const [declineReasonCode, setDeclineReasonCode] = useState("");
+  const [declineNote, setDeclineNote] = useState("");
   const [cancelBusy, setCancelBusy] = useState(false);
+  const [availability, setAvailability] = useState(null);
+  const [availabilityBusy, setAvailabilityBusy] = useState(false);
+  const [availabilityDraft, setAvailabilityDraft] = useState({
+    reason_code: "",
+    note: "",
+  });
+  const [availabilityConfirm, setAvailabilityConfirm] = useState(null);
 
   // Print ticket
   const [printOrder, setPrintOrder] = useState(null);
@@ -398,8 +476,12 @@ export default function RestaurantOrdersPage() {
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   // ── Derived queues ───────────────────────────────────────────────────────
-  const incomingOrders = liveOrders.filter((o) => o.order_status === "paid");
-  const pendingOrders = liveOrders.filter((o) => ["preparing", "ready"].includes(o.order_status));
+  const incomingOrders = liveOrders.filter((o) =>
+    ["paid", "merchant_acceptance_pending"].includes(o.order_status)
+  );
+  const pendingOrders = liveOrders.filter((o) =>
+    ["accepted", "preparing", "ready"].includes(o.order_status)
+  );
   const hasIncoming = incomingOrders.length > 0;
   const selectedIncoming = incomingOrders[0] ?? null;
 
@@ -439,12 +521,27 @@ export default function RestaurantOrdersPage() {
     }
   }, []);
 
+  const loadAvailability = useCallback(async (restaurantId) => {
+    if (!restaurantId) return;
+    try {
+      const data = await getOrderAvailability(restaurantId);
+      setAvailability(data.availability || null);
+      setAvailabilityDraft({
+        reason_code: data.availability?.order_acceptance_reason_code || "",
+        note: data.availability?.order_acceptance_note || "",
+      });
+    } catch (_) {
+      // Keep the previous availability state if refresh fails.
+    }
+  }, []);
+
   // ── SSE + 15-s polling fallback ───────────────────────────────────────────
   useEffect(() => {
     if (!rid) return;
 
     // Immediate fetch on mount or restaurant change
     loadLive(rid);
+    loadAvailability(rid);
 
     // Polling fallback — guarantees data even if SSE is down
     const pollId = setInterval(() => loadLive(rid), 15000);
@@ -483,7 +580,7 @@ export default function RestaurantOrdersPage() {
       clearInterval(pollId);
       setSseStatus("disconnected");
     };
-  }, [rid, loadLive]);
+  }, [rid, loadLive, loadAvailability]);
 
   // Re-load on manual refresh
   useEffect(() => {
@@ -540,35 +637,54 @@ export default function RestaurantOrdersPage() {
   }
 
   // ── Order actions ─────────────────────────────────────────────────────────
-  async function handleConfirm(orderId) {
-    setBusyOrder(`${orderId}:confirm`);
+  async function handleAccept(orderId) {
+    setBusyOrder(`${orderId}:accept`);
     try {
-      const data = await confirmOrder(rid, orderId);
+      const data = await acceptOrder(rid, orderId);
       setPrintOrder(data.order);
       refresh();
     } catch (err) {
-      window.alert(err.message || "Unable to confirm order. It may have already been processed.");
+      window.alert(err.message || "Unable to accept order.");
     } finally {
       setBusyOrder(null);
     }
   }
 
-  function openCancelModal(orderId) {
+  function openDeclineModal(orderId) {
     setCancelTarget(orderId);
-    setCancelReason("");
+    setDeclineReasonCode("");
+    setDeclineNote("");
   }
 
-  async function handleCancelSubmit() {
+  async function handleDeclineSubmit() {
     if (!cancelTarget) return;
     setCancelBusy(true);
     try {
-      await cancelOrder(rid, cancelTarget, cancelReason);
+      const response = await declineOrder(rid, cancelTarget, {
+        reason_code: declineReasonCode || undefined,
+        note: declineNote || undefined,
+      });
       setCancelTarget(null);
       refresh();
+      if (response?.order?.refund_error) {
+        window.alert(`Order declined, but refund is pending: ${response.order.refund_error}`);
+      }
     } catch (err) {
-      window.alert(err.message || "Unable to cancel order.");
+      window.alert(err.message || "Unable to decline order.");
     } finally {
       setCancelBusy(false);
+    }
+  }
+
+  async function handlePreparing(orderId) {
+    setBusyOrder(`${orderId}:preparing`);
+    try {
+      await markOrderPreparing(rid, orderId);
+      refresh();
+    } catch (err) {
+      window.alert(err.message || "Unable to move order to preparing.");
+    } finally {
+      setBusyOrder(null);
     }
   }
 
@@ -579,6 +695,18 @@ export default function RestaurantOrdersPage() {
       refresh();
     } catch (err) {
       window.alert(err.message || "Unable to mark order ready.");
+    } finally {
+      setBusyOrder(null);
+    }
+  }
+
+  async function handleCompleted(orderId) {
+    setBusyOrder(`${orderId}:completed`);
+    try {
+      await markOrderCompleted(rid, orderId);
+      refresh();
+    } catch (err) {
+      window.alert(err.message || "Unable to mark order completed.");
     } finally {
       setBusyOrder(null);
     }
@@ -596,6 +724,34 @@ export default function RestaurantOrdersPage() {
     }
   }
 
+  async function handleAvailabilityUpdate(status) {
+    setAvailabilityBusy(true);
+    try {
+      const data = await updateOrderAvailability(rid, {
+        status,
+        reason_code: status === "accepting_orders" ? undefined : availabilityDraft.reason_code || undefined,
+        note: status === "accepting_orders" ? undefined : availabilityDraft.note || undefined,
+      });
+      setAvailability(data.availability || null);
+      setAvailabilityDraft({
+        reason_code: data.availability?.order_acceptance_reason_code || "",
+        note: data.availability?.order_acceptance_note || "",
+      });
+    } catch (err) {
+      window.alert(err.message || "Unable to update availability.");
+    } finally {
+      setAvailabilityBusy(false);
+    }
+  }
+
+  function requestAvailabilityUpdate(status) {
+    if (status === "paused" || status === "closed") {
+      setAvailabilityConfirm(status);
+      return;
+    }
+    handleAvailabilityUpdate(status);
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   const connLost = sseStatus === "reconnecting" || sseStatus === "disconnected";
@@ -608,6 +764,12 @@ export default function RestaurantOrdersPage() {
     sseStatus === "connected" ? "#16a34a"
     : sseStatus === "connecting" ? "#d97706"
     : "#dc2626";
+  const availabilityStatus = availability?.order_acceptance_status || "accepting_orders";
+  const availabilityStyles = {
+    accepting_orders: { bg: "#ecfdf3", border: "#86efac", color: "#166534", label: "Accepting Orders" },
+    paused: { bg: "#fffbeb", border: "#fcd34d", color: "#92400e", label: "Orders Paused" },
+    closed: { bg: "#fef2f2", border: "#fca5a5", color: "#991b1b", label: "Orders Closed" },
+  }[availabilityStatus];
 
   return (
     <OperatorLayout title="Incoming Orders">
@@ -717,6 +879,96 @@ export default function RestaurantOrdersPage() {
             </div>
           </div>
 
+          <div style={{
+            marginTop: 14, padding: "16px 18px", borderRadius: 16,
+            background: availabilityStyles.bg,
+            border: `2px solid ${availabilityStyles.border}`,
+            color: availabilityStyles.color,
+          }}>
+            <div style={{ fontSize: 16, fontWeight: 900 }}>{availabilityStyles.label}</div>
+            <div style={{ marginTop: 6, fontSize: 13 }}>
+              {availabilityStatus === "accepting_orders"
+                ? "Customers can place new orders."
+                : "Orders currently paused. Customers can still browse menus but cannot place new orders."}
+            </div>
+            {(availability?.order_acceptance_reason_code || availability?.order_acceptance_note) && (
+              <div style={{ marginTop: 8, fontSize: 13 }}>
+                {availability?.order_acceptance_reason_code
+                  ? `Reason: ${String(availability.order_acceptance_reason_code).replaceAll("_", " ")}`
+                  : null}
+                {availability?.order_acceptance_note ? ` ${availability.order_acceptance_note}` : null}
+              </div>
+            )}
+            <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  disabled={availabilityBusy}
+                  onClick={() => requestAvailabilityUpdate("accepting_orders")}
+                  style={{
+                    minHeight: 42, padding: "10px 14px", borderRadius: 12,
+                    border: "none", background: "#166534", color: "#fff",
+                    fontWeight: 800, cursor: "pointer",
+                  }}
+                >
+                  {availabilityStatus === "accepting_orders" ? "Accepting Orders" : "Resume Orders"}
+                </button>
+                <button
+                  type="button"
+                  disabled={availabilityBusy}
+                  onClick={() => requestAvailabilityUpdate("paused")}
+                  style={{
+                    minHeight: 42, padding: "10px 14px", borderRadius: 12,
+                    border: "none", background: "#d97706", color: "#fff",
+                    fontWeight: 800, cursor: "pointer",
+                  }}
+                >
+                  Pause Orders
+                </button>
+                <button
+                  type="button"
+                  disabled={availabilityBusy}
+                  onClick={() => requestAvailabilityUpdate("closed")}
+                  style={{
+                    minHeight: 42, padding: "10px 14px", borderRadius: 12,
+                    border: "none", background: "#b91c1c", color: "#fff",
+                    fontWeight: 800, cursor: "pointer",
+                  }}
+                >
+                  Close Orders
+                </button>
+              </div>
+              <select
+                value={availabilityDraft.reason_code}
+                onChange={(e) => setAvailabilityDraft((current) => ({ ...current, reason_code: e.target.value }))}
+                style={{
+                  minHeight: 42, maxWidth: 320, padding: "8px 12px", borderRadius: 10,
+                  border: "1px solid #d0d5dd", background: "#fff",
+                }}
+              >
+                <option value="">Optional reason</option>
+                <option value="too_busy">Too busy</option>
+                <option value="kitchen_backlog">Kitchen backlog</option>
+                <option value="staff_shortage">Staff shortage</option>
+                <option value="sold_out">Sold out</option>
+                <option value="equipment_issue">Equipment issue</option>
+                <option value="closing_early">Closing early</option>
+                <option value="other">Other</option>
+              </select>
+              <textarea
+                value={availabilityDraft.note}
+                onChange={(e) => setAvailabilityDraft((current) => ({ ...current, note: e.target.value }))}
+                rows={2}
+                placeholder="Optional note"
+                style={{
+                  width: "100%", maxWidth: 520, padding: "10px 12px", borderRadius: 10,
+                  border: "1px solid #d0d5dd", background: "#fff", resize: "vertical",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+            </div>
+          </div>
+
           {/* ── NEW ORDER flash banner ─────────────────────────────────── */}
           {hasIncoming && (
             <div style={{
@@ -781,6 +1033,7 @@ export default function RestaurantOrdersPage() {
                             <div style={{ marginTop: 6, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                               <StatusPill value={order.fulfillment_type} />
                               <StatusPill value={order.order_status} />
+                              {order.order_status === "paid" ? <LegacyPaidBadge /> : null}
                               <ElapsedBadge createdAt={order.created_at} now={now} />
                             </div>
                           </div>
@@ -808,24 +1061,28 @@ export default function RestaurantOrdersPage() {
                           </div>
                         )}
 
+                        {order.payment_status === "payment_refund_pending" ? (
+                          <RefundPendingBanner />
+                        ) : null}
+
                         {/* Confirm / Cancel (always shown — sidebar duplicates on wide screens) */}
                         <div style={{ marginTop: 18, display: "flex", gap: 12, flexWrap: "wrap" }}>
                           <button
                             type="button"
-                            disabled={busyOrder === `${order.id}:confirm`}
-                            onClick={() => handleConfirm(order.id)}
+                            disabled={busyOrder === `${order.id}:accept`}
+                            onClick={() => handleAccept(order.id)}
                             style={{
                               flex: 1, minHeight: 56, minWidth: 140, borderRadius: 14,
                               border: "none", background: "#16a34a", color: "#fff",
                               fontSize: 18, fontWeight: 900, cursor: "pointer",
-                              opacity: busyOrder === `${order.id}:confirm` ? 0.7 : 1,
+                              opacity: busyOrder === `${order.id}:accept` ? 0.7 : 1,
                             }}
                           >
-                            {busyOrder === `${order.id}:confirm` ? "Confirming…" : "✓ Confirm Order"}
+                            {busyOrder === `${order.id}:accept` ? "Accepting…" : "✓ Accept Order"}
                           </button>
                           <button
                             type="button"
-                            onClick={() => openCancelModal(order.id)}
+                            onClick={() => openDeclineModal(order.id)}
                             disabled={!!busyOrder}
                             style={{
                               flex: 1, minHeight: 56, minWidth: 140, borderRadius: 14,
@@ -833,7 +1090,7 @@ export default function RestaurantOrdersPage() {
                               fontSize: 18, fontWeight: 900, cursor: "pointer",
                             }}
                           >
-                            ✕ Cancel Order
+                            ✕ Decline Order
                           </button>
                         </div>
                       </div>
@@ -898,23 +1155,23 @@ export default function RestaurantOrdersPage() {
                 {/* Confirm */}
                 <button
                   type="button"
-                  disabled={busyOrder === `${selectedIncoming.id}:confirm`}
-                  onClick={() => handleConfirm(selectedIncoming.id)}
+                  disabled={busyOrder === `${selectedIncoming.id}:accept`}
+                  onClick={() => handleAccept(selectedIncoming.id)}
                   style={{
                     minHeight: 64, width: "100%", borderRadius: 16,
                     border: "none", background: "#16a34a", color: "#fff",
                     fontSize: 20, fontWeight: 900, cursor: "pointer",
                     boxShadow: "0 4px 14px rgba(22,163,74,0.3)",
-                    opacity: busyOrder === `${selectedIncoming.id}:confirm` ? 0.7 : 1,
+                    opacity: busyOrder === `${selectedIncoming.id}:accept` ? 0.7 : 1,
                   }}
                 >
-                  {busyOrder === `${selectedIncoming.id}:confirm` ? "Confirming…" : "✓ Confirm Order"}
+                  {busyOrder === `${selectedIncoming.id}:accept` ? "Accepting…" : "✓ Accept Order"}
                 </button>
 
                 {/* Cancel */}
                 <button
                   type="button"
-                  onClick={() => openCancelModal(selectedIncoming.id)}
+                  onClick={() => openDeclineModal(selectedIncoming.id)}
                   disabled={!!busyOrder}
                   style={{
                     minHeight: 56, width: "100%", borderRadius: 16,
@@ -922,7 +1179,7 @@ export default function RestaurantOrdersPage() {
                     fontSize: 18, fontWeight: 900, cursor: "pointer",
                   }}
                 >
-                  ✕ Cancel Order
+                  ✕ Decline Order
                 </button>
 
                 {selectedIncoming.fulfillment_type === "delivery" && (
@@ -934,6 +1191,10 @@ export default function RestaurantOrdersPage() {
                     Delivery order — confirm pickup after courier collects.
                   </div>
                 )}
+
+                {selectedIncoming.payment_status === "payment_refund_pending" ? (
+                  <RefundPendingBanner />
+                ) : null}
               </div>
             )}
           </div>
@@ -945,7 +1206,7 @@ export default function RestaurantOrdersPage() {
               background: "#f0fdf4", border: "2px solid #16a34a",
             }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: "#166534", marginBottom: 10 }}>
-                ✓ Order #{printOrder.id} confirmed
+                ✓ Order #{printOrder.id} accepted
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <button
@@ -1018,7 +1279,9 @@ export default function RestaurantOrdersPage() {
                       <PendingCard
                         key={order.id}
                         order={order}
+                        onPreparing={handlePreparing}
                         onReady={handleReady}
+                        onCompleted={handleCompleted}
                         onPickedUp={handlePickedUp}
                         busy={orderBusy}
                       />
@@ -1075,9 +1338,10 @@ export default function RestaurantOrdersPage() {
                       label: "Status", value: historyFilter.status,
                       onChange: (v) => setHistoryFilter((f) => ({ ...f, status: v })),
                       options: [
-                        ["", "All Statuses"], ["paid", "Paid (New)"], ["preparing", "Preparing"],
+                        ["", "All Statuses"], ["paid", "Paid (Legacy)"], ["merchant_acceptance_pending", "Awaiting Acceptance"],
+                        ["accepted", "Accepted"], ["preparing", "Preparing"],
                         ["ready", "Ready"], ["completed", "Completed"],
-                        ["canceled", "Cancelled"], ["refunded", "Refunded"],
+                        ["rejected", "Rejected"], ["canceled", "Cancelled"], ["refunded", "Refunded"],
                       ],
                     },
                     {
@@ -1155,15 +1419,33 @@ export default function RestaurantOrdersPage() {
             width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
           }}>
             <div style={{ fontSize: 20, fontWeight: 900, color: "#0f1720", marginBottom: 6 }}>
-              Cancel Order #{cancelTarget}?
+              Decline Order #{cancelTarget}?
             </div>
             <div style={{ fontSize: 14, color: "#5b6675", marginBottom: 16 }}>
-              This cannot be undone. Add an optional reason.
+              This will reject the order. If payment was captured, refund handling will start immediately.
             </div>
+            <select
+              value={declineReasonCode}
+              onChange={(e) => setDeclineReasonCode(e.target.value)}
+              style={{
+                width: "100%", padding: "10px 12px", borderRadius: 10,
+                border: "1px solid #d0d5dd", fontSize: 14, boxSizing: "border-box",
+                marginBottom: 12,
+              }}
+            >
+              <option value="">Optional decline reason</option>
+              <option value="too_busy">Too busy</option>
+              <option value="kitchen_backlog">Kitchen backlog</option>
+              <option value="staff_shortage">Staff shortage</option>
+              <option value="sold_out">Sold out</option>
+              <option value="equipment_issue">Equipment issue</option>
+              <option value="closing_early">Closing early</option>
+              <option value="other">Other</option>
+            </select>
             <textarea
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="Reason (optional)"
+              value={declineNote}
+              onChange={(e) => setDeclineNote(e.target.value)}
+              placeholder="Optional note"
               rows={3}
               style={{
                 width: "100%", padding: "10px 12px", borderRadius: 10,
@@ -1175,14 +1457,14 @@ export default function RestaurantOrdersPage() {
               <button
                 type="button"
                 disabled={cancelBusy}
-                onClick={handleCancelSubmit}
+                onClick={handleDeclineSubmit}
                 style={{
                   flex: 1, minHeight: 52, borderRadius: 14, border: "none",
                   background: "#dc2626", color: "#fff",
                   fontSize: 16, fontWeight: 900, cursor: "pointer",
                 }}
               >
-                {cancelBusy ? "Cancelling…" : "Yes, Cancel Order"}
+                {cancelBusy ? "Declining…" : "Yes, Decline Order"}
               </button>
               <button
                 type="button"
@@ -1195,6 +1477,56 @@ export default function RestaurantOrdersPage() {
                 }}
               >
                 Keep Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {availabilityConfirm && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 9999, padding: 20,
+        }}>
+          <div style={{
+            background: "#fff", borderRadius: 20, padding: "28px 24px",
+            width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+          }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: "#0f1720", marginBottom: 6 }}>
+              {availabilityConfirm === "paused" ? "Pause new incoming orders?" : "Stop accepting new orders?"}
+            </div>
+            <div style={{ fontSize: 14, color: "#5b6675", marginBottom: 16 }}>
+              Customers will still be able to browse your menu.
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                disabled={availabilityBusy}
+                onClick={async () => {
+                  const nextStatus = availabilityConfirm;
+                  setAvailabilityConfirm(null);
+                  await handleAvailabilityUpdate(nextStatus);
+                }}
+                style={{
+                  flex: 1, minHeight: 52, borderRadius: 14, border: "none",
+                  background: availabilityConfirm === "closed" ? "#b91c1c" : "#d97706",
+                  color: "#fff", fontSize: 16, fontWeight: 900, cursor: "pointer",
+                }}
+              >
+                {availabilityBusy ? "Updating…" : availabilityConfirm === "closed" ? "Yes, Stop Orders" : "Yes, Pause Orders"}
+              </button>
+              <button
+                type="button"
+                disabled={availabilityBusy}
+                onClick={() => setAvailabilityConfirm(null)}
+                style={{
+                  flex: 1, minHeight: 52, borderRadius: 14,
+                  border: "1px solid #d0d5dd", background: "#fff",
+                  fontSize: 15, fontWeight: 700, cursor: "pointer", color: "#374151",
+                }}
+              >
+                Keep Accepting Orders
               </button>
             </div>
           </div>

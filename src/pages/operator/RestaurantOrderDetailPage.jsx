@@ -2,14 +2,20 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import {
+  acceptOrder,
+  declineOrder,
   getRestaurantOrderDetail,
-  updateRestaurantOrderStatus,
+  markOrderCompleted,
+  markOrderPreparing,
+  markOrderReady,
 } from "../../lib/operatorApi.js";
 
 const ACTIONS = {
-  paid: ["preparing", "canceled"],
-  preparing: ["ready", "canceled"],
-  ready: ["completed", "canceled"],
+  paid: ["accept", "decline"],
+  merchant_acceptance_pending: ["accept", "decline"],
+  accepted: ["preparing"],
+  preparing: ["ready"],
+  ready: ["completed"],
 };
 
 function formatMoney(cents) {
@@ -32,10 +38,48 @@ function DetailRow({ label, value }) {
   );
 }
 
+function RefundPendingBanner() {
+  return (
+    <div style={{
+      marginTop: 12,
+      padding: "10px 12px",
+      borderRadius: 12,
+      background: "#fff7ed",
+      border: "1px solid #fdba74",
+      color: "#9a3412",
+      fontSize: 13,
+      fontWeight: 800,
+      lineHeight: 1.5,
+    }}>
+      Refund pending — customer has not yet been fully refunded.
+    </div>
+  );
+}
+
+function LegacyPaidBadge() {
+  return (
+    <div style={{
+      marginTop: 10,
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "6px 10px",
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 900,
+      background: "#ede9fe",
+      color: "#5b21b6",
+    }}>
+      Legacy Order (Pre-Acceptance Upgrade)
+    </div>
+  );
+}
+
 export default function RestaurantOrderDetailPage() {
   const { orderId } = useParams();
   const [state, setState] = useState({ status: "loading", order: null, error: "" });
   const [busyStatus, setBusyStatus] = useState("");
+  const [declineReasonCode, setDeclineReasonCode] = useState("");
+  const [declineNote, setDeclineNote] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -60,7 +104,24 @@ export default function RestaurantOrderDetailPage() {
   async function handleStatusUpdate(nextStatus) {
     try {
       setBusyStatus(nextStatus);
-      await updateRestaurantOrderStatus(orderId, nextStatus);
+      const restaurantId = state.order.restaurant_id;
+      if (nextStatus === "accept") {
+        await acceptOrder(restaurantId, orderId);
+      } else if (nextStatus === "decline") {
+        const declineResponse = await declineOrder(restaurantId, orderId, {
+          reason_code: declineReasonCode || undefined,
+          note: declineNote || undefined,
+        });
+        if (declineResponse?.order?.refund_error) {
+          window.alert(`Order declined, but refund is pending: ${declineResponse.order.refund_error}`);
+        }
+      } else if (nextStatus === "preparing") {
+        await markOrderPreparing(restaurantId, orderId);
+      } else if (nextStatus === "ready") {
+        await markOrderReady(restaurantId, orderId);
+      } else if (nextStatus === "completed") {
+        await markOrderCompleted(restaurantId, orderId);
+      }
       const response = await getRestaurantOrderDetail(orderId);
       setState({ status: "ready", order: response.order, error: "" });
     } catch (error) {
@@ -89,6 +150,7 @@ export default function RestaurantOrderDetailPage() {
               <div style={{ marginTop: 6, fontSize: 14, color: "#5b6675" }}>
                 {formatDateTime(state.order.created_at)}
               </div>
+              {state.order.order_status === "paid" ? <LegacyPaidBadge /> : null}
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 28, fontWeight: 900, color: "#0f1720" }}>{formatMoney(state.order.total_cents)}</div>
@@ -135,6 +197,9 @@ export default function RestaurantOrderDetailPage() {
               <DetailRow label="Fulfillment" value={state.order.fulfillment_type} />
               <DetailRow label="Payment status" value={state.order.payment_status} />
               <DetailRow label="Order status" value={state.order.order_status} />
+              <DetailRow label="Decline reason" value={state.order.decline_reason_code || "—"} />
+              <DetailRow label="Refund requested" value={formatDateTime(state.order.refund_requested_at)} />
+              <DetailRow label="Refund completed" value={formatDateTime(state.order.refund_completed_at)} />
               <DetailRow label="Subtotal" value={formatMoney(state.order.subtotal_cents)} />
               <DetailRow label="Tax" value={formatMoney(state.order.tax_cents)} />
               {Number(state.order.delivery_provider_fee_cents || 0) > 0 ? (
@@ -153,6 +218,9 @@ export default function RestaurantOrderDetailPage() {
                   {state.order.delivery_payload_json.delivery_fee_disclosure}
                 </div>
               ) : null}
+              {state.order.payment_status === "payment_refund_pending" ? (
+                <RefundPendingBanner />
+              ) : null}
               {state.order.fulfillment_type === "delivery" ? (
                 <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 14, background: "#f8fafc", border: "1px solid #d9e0ea" }}>
                   <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#64748b" }}>
@@ -170,6 +238,32 @@ export default function RestaurantOrderDetailPage() {
                 </div>
               ) : null}
 
+              {["paid", "merchant_acceptance_pending"].includes(state.order.order_status) ? (
+                <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+                  <select
+                    value={declineReasonCode}
+                    onChange={(e) => setDeclineReasonCode(e.target.value)}
+                    style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #d0d5dd" }}
+                  >
+                    <option value="">Optional decline reason</option>
+                    <option value="too_busy">Too busy</option>
+                    <option value="kitchen_backlog">Kitchen backlog</option>
+                    <option value="staff_shortage">Staff shortage</option>
+                    <option value="sold_out">Sold out</option>
+                    <option value="equipment_issue">Equipment issue</option>
+                    <option value="closing_early">Closing early</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <textarea
+                    value={declineNote}
+                    onChange={(e) => setDeclineNote(e.target.value)}
+                    rows={3}
+                    placeholder="Optional note"
+                    style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #d0d5dd", resize: "vertical", fontFamily: "inherit" }}
+                  />
+                </div>
+              ) : null}
+
               <div style={{ marginTop: 18, display: "grid", gap: 8 }}>
                 {(ACTIONS[state.order.order_status] || []).map((nextStatus) => (
                   <button
@@ -180,15 +274,21 @@ export default function RestaurantOrderDetailPage() {
                     style={{
                       border: "none",
                       borderRadius: 12,
-                      background: nextStatus === "canceled" ? "#fee2e2" : "#1F4E3D",
-                      color: nextStatus === "canceled" ? "#991b1b" : "#fff",
+                      background: nextStatus === "decline" ? "#fee2e2" : "#1F4E3D",
+                      color: nextStatus === "decline" ? "#991b1b" : "#fff",
                       padding: "11px 14px",
                       fontSize: 13,
                       fontWeight: 800,
                       cursor: "pointer",
                     }}
                   >
-                    {busyStatus === nextStatus ? "Updating..." : `Mark ${nextStatus}`}
+                    {busyStatus === nextStatus
+                      ? "Updating..."
+                      : nextStatus === "accept"
+                        ? "Accept Order"
+                        : nextStatus === "decline"
+                          ? "Decline Order"
+                          : `Mark ${nextStatus}`}
                   </button>
                 ))}
               </div>

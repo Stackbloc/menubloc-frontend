@@ -27,6 +27,10 @@ async function safeJson(res) {
 }
 
 export function toConsumerErrorMessage(error, fallbackMessage) {
+  if (error?.code === "restaurant_unavailable" && error?.message) {
+    return String(error.message);
+  }
+
   const message = String(error?.message || error || "").trim();
   const normalized = message.toLowerCase();
 
@@ -71,7 +75,11 @@ export async function apiPost(path, body) {
   const data = await safeJson(res);
   if (!res.ok) {
     const msg = (data && (data.error || data.message)) || `POST ${url} failed (${res.status})`;
-    throw new Error(msg);
+    const error = new Error(msg);
+    if (data && typeof data === "object") {
+      Object.assign(error, data);
+    }
+    throw error;
   }
   return data;
 }
@@ -87,7 +95,11 @@ export async function apiPatch(path, body) {
   const data = await safeJson(res);
   if (!res.ok) {
     const msg = (data && (data.error || data.message)) || `PATCH ${url} failed (${res.status})`;
-    throw new Error(msg);
+    const error = new Error(msg);
+    if (data && typeof data === "object") {
+      Object.assign(error, data);
+    }
+    throw error;
   }
   return data;
 }
