@@ -62,7 +62,13 @@ export const getSubscription = () => get("/operator/subscription");
 export const getPlans = () => get("/operator/subscription/plans");
 export const upgradeSubscription = (body) => post("/operator/subscription/upgrade", body);
 export const getBillingOverview = (rid) => get(`/operator/restaurants/${rid}/billing/overview`);
-export const startBillingCheckout = (rid, body) => post(`/operator/restaurants/${rid}/billing/checkout`, body);
+export const openBillingPortal = async (rid, body = {}) => {
+  const result = await post(`/operator/restaurants/${rid}/billing/portal`, body);
+  if (result?.portal_url && typeof window !== "undefined") {
+    window.location.assign(result.portal_url);
+  }
+  return result;
+};
 export const syncAdobeUsageCharge = (rid) => post(`/operator/restaurants/${rid}/billing/usage/adobe/sync`, {});
 export const createUsageInvoice = (rid, usageChargeId) =>
   post(`/operator/restaurants/${rid}/billing/usage/${usageChargeId}/invoice`, {});
