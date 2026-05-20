@@ -25,6 +25,7 @@ const SIDEBAR_W = 230;
 // ── Navigation section definitions ───────────────────────────────────────
 
 const OPERATIONS_NAV = [
+  { to: "/operator",           label: "My Account",    icon: "⌂" },
   { to: "/operator/orders",    label: "Orders",        icon: "☷" },
   { to: "/operator/delivery",  label: "Delivery",      icon: "⇄" },
   { to: "/operator/orders?tab=history", label: "Order History", icon: "⊡" },
@@ -413,7 +414,7 @@ export default function OperatorLayout({ title, children }) {
               <NavLink
                 key={to}
                 to={to}
-                end={to === "/operator/orders"}
+                end={to === "/operator" || to === "/operator/orders"}
                 style={({ isActive }) => ({
                   display: "flex", alignItems: "center", gap: 9,
                   padding: "10px 16px",
