@@ -76,6 +76,11 @@ export default function TakeoutMenuTemplate(ctx) {
     cartLineCount,
     onGoCheckout,
     brand,
+    menus = [],
+    selectedMenuId,
+    onSelectMenu,
+    tabLoading,
+    menuPresentation = {},
   } = ctx;
 
   const deals = Array.isArray(dealItems) ? dealItems : [];
@@ -196,6 +201,43 @@ export default function TakeoutMenuTemplate(ctx) {
 
       {intakeBannerSlot}
       {filterChipsSlot}
+
+      {menuPresentation?.tabs_allowed_for_public_view && menus.length > 1 && (
+        <div style={{
+          display: "flex",
+          gap: 8,
+          overflowX: "auto",
+          paddingBottom: 12,
+          marginBottom: 4,
+          scrollbarWidth: "none",
+        }}>
+          {menus.map(menu => {
+            const isSelected = menu.id === selectedMenuId;
+            return (
+              <button
+                key={menu.id}
+                type="button"
+                onClick={() => onSelectMenu(menu.id)}
+                disabled={tabLoading}
+                style={{
+                  flexShrink: 0,
+                  padding: "6px 16px",
+                  borderRadius: 999,
+                  border: isSelected ? "1.5px solid #22c55e" : "1px solid #374151",
+                  background: isSelected ? "rgba(34,197,94,0.10)" : "#111827",
+                  color: isSelected ? "#86efac" : "#9CA3AF",
+                  fontWeight: isSelected ? 800 : 600,
+                  fontSize: 13,
+                  cursor: tabLoading ? "wait" : "pointer",
+                  opacity: tabLoading && !isSelected ? 0.5 : 1,
+                }}
+              >
+                {menu.tab_label || menu.display_name || menu.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {typeof cartLineCount === "number" && cartLineCount > 0 ? (
         <button

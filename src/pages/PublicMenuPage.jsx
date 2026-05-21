@@ -15,7 +15,7 @@
  * ============================================================
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
@@ -52,6 +52,7 @@ import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.
 import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
+import TasteIndexBadge from "../components/TasteIndexBadge.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
 
@@ -490,6 +491,11 @@ function ItemDetailSheet({
                 {item?.is_gluten_free && <Badge label="GF" bg="#1c1a0a" color="#FCD34D" border="1px solid #44400a" />}
               </div>
             )}
+            {item?.id && (
+              <div style={{ marginTop: 8 }}>
+                <TasteIndexBadge menuItemId={item.id} accent={accent} />
+              </div>
+            )}
           </div>
 
           {/* Price */}
@@ -719,6 +725,13 @@ export default function PublicMenuPage() {
   const [addedConfirmation, setAddedConfirmation] = useState(null);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState(null);
+  // Multi-menu tab state
+  const [selectedMenuId, setSelectedMenuId] = useState(null);
+  // tabSections stores { menuId, sections } — separate from selectedMenuId so current content
+  // stays visible during a background fetch for a new tab (never blank on switch).
+  const [tabSections, setTabSections] = useState(null);
+  const [tabLoading, setTabLoading] = useState(false);
+  const userSelectedTabRef = useRef(false);
   const [resolvedRouteState, setResolvedRouteState] = useState({
     status: "loading",
     restaurantId: "",
@@ -961,6 +974,40 @@ export default function PublicMenuPage() {
     return () => { cancelled = true; };
   }, [apiUrl, routeState.restaurantId, routeState.status, isMenuTemplatePreview]);
 
+  // Set default selected menu from initial API response.
+  // Only fires on first load; once the user manually picks a tab, userSelectedTabRef
+  // blocks this effect from overriding their choice.
+  useEffect(() => {
+    const d = pageState.data;
+    if (d?.selected_menu_id && !userSelectedTabRef.current) {
+      setSelectedMenuId(d.selected_menu_id);
+    }
+  }, [pageState.data]);
+
+  // Tab switch handler — never blanks the currently visible menu.
+  // Highlights new tab immediately, fetches sections in background, swaps atomically on success.
+  const handleSelectMenu = useCallback(async (menuId) => {
+    if (menuId === selectedMenuId) return;
+    const prevMenuId = selectedMenuId;
+    userSelectedTabRef.current = true;
+    setSelectedMenuId(menuId);
+    setTabLoading(true);
+    try {
+      const rid = encodeURIComponent(asStr(routeState.restaurantId).trim());
+      const res = await fetch(`${API}/public/restaurants/${rid}/menu?menu=${menuId}`);
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.ok) {
+        setTabSections({ menuId, sections: normalizeSections(json) });
+      } else {
+        setSelectedMenuId(prevMenuId);
+      }
+    } catch {
+      setSelectedMenuId(prevMenuId);
+    } finally {
+      setTabLoading(false);
+    }
+  }, [selectedMenuId, routeState.restaurantId]);
+
   const dealMap = useMemo(() => {
     const m = new Map();
     for (const d of pageState.data?.deal_items || []) {
@@ -1017,7 +1064,10 @@ export default function PublicMenuPage() {
   const addressLine2    = buildAddressLocalityLine(data?.city, data?.state, data?.zip);
   const addressLine     = asStr(data?.address_line).trim() || [addressLine1, addressLine2].filter(Boolean).join(", ");
   const directionsHref  = buildGoogleMapsDirectionsUrl(addressLine);
-  const sections        = normalizeSections(data);
+  // Use tabSections if a tab was explicitly switched to; fall back to initial page data.
+  // tabSections?.sections may still show a prior menu's content during a background fetch —
+  // this is intentional: never blank the display while waiting for a new tab to load.
+  const sections        = tabSections?.sections ?? normalizeSections(data);
   const displaySections = getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap);
   const displayableItemCount = displaySections.reduce(
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
@@ -1214,6 +1264,11 @@ export default function PublicMenuPage() {
           cartLineCount: basketMatchesCurrentRestaurant ? itemCount : 0,
           onGoCheckout: openCheckout,
           brand: menuBrand,
+          menus: data?.menus || [],
+          selectedMenuId,
+          onSelectMenu: handleSelectMenu,
+          tabLoading,
+          menuPresentation: data?.menu_presentation || data?.presentation || {},
         }
       : null;
 
