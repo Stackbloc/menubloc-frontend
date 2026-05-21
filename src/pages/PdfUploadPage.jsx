@@ -599,6 +599,7 @@ export default function PdfUploadPage() {
   const nav = useNavigate();
   const { selectedRestaurant, operator } = useOperator();
   const isOperatorFlow = location.pathname.startsWith("/operator/");
+  const isAuthenticatedOperator = Boolean(operator?.id && selectedRestaurant?.id);
   const recovery = useMemo(
     () => resolveRestaurantOnboardingState({ routeState: location.state, search: location.search }),
     [location.state, location.search]
@@ -610,7 +611,7 @@ export default function PdfUploadPage() {
     }
   }, [isOperatorFlow, recovery]);
 
-  const state = isOperatorFlow
+  const state = (isOperatorFlow || isAuthenticatedOperator)
     ? {
         restaurant_id: selectedRestaurant?.id || "",
         restaurant_name: selectedRestaurant?.restaurant_name || "Your restaurant",
@@ -659,7 +660,7 @@ export default function PdfUploadPage() {
   /** Per-page Finish processing progress (deferred Adobe ingestion). */
   const [finishProgress, setFinishProgress] = useState({ processed: 0, total: 0 });
 
-  const missingState = isOperatorFlow ? !selectedRestaurant?.id : recovery.missing;
+  const missingState = (isOperatorFlow || isAuthenticatedOperator) ? !selectedRestaurant?.id : recovery.missing;
   const chosenStyle = design_style
     ? DESIGN_STYLES.find((entry) => entry.id === design_style) || null
     : null;
