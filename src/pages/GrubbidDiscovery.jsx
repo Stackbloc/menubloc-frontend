@@ -687,6 +687,7 @@ export default function GrubbidDiscovery() {
       if (value) params.set(key, String(value));
     }
 
+    setFeedMenus([]);
     setFeedLoading(true);
     const feedUrl = `${API}/menus/browse?${params.toString()}`;
     console.log("[Discovery] fetch URL:", feedUrl);
