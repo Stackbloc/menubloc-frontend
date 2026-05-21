@@ -193,6 +193,26 @@ export async function fetchCompareItems(baseItemId, candidateItemId, lat, lng, o
   return apiGet(`/menu-items/compare?${params.toString()}`);
 }
 
+/**
+ * Fetch item-specific similar dishes for one menu item.
+ * Search-card Similar must use the backend route rather than page-level grouped items.
+ */
+export async function fetchSimilarItems(menuItemId, options = {}) {
+  const params = new URLSearchParams();
+  if (options.lat != null) params.set("lat", String(options.lat));
+  if (options.lng != null) params.set("lng", String(options.lng));
+
+  if (options.filters && typeof options.filters === "object") {
+    for (const [key, value] of Object.entries(options.filters)) {
+      if (value === null || value === undefined || value === "") continue;
+      params.set(key, String(value));
+    }
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return apiGet(`/menu-items/${encodeURIComponent(String(menuItemId))}/similar${suffix}`);
+}
+
 export default {
   apiGet,
   apiPost,
@@ -210,4 +230,5 @@ export default {
   toConsumerErrorMessage,
   fetchCompareEligibility,
   fetchCompareItems,
+  fetchSimilarItems,
 };

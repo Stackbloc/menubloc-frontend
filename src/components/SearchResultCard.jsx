@@ -9,7 +9,7 @@
  * ============================================================
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   buildWhyMatchLabel,
@@ -31,6 +31,7 @@ import { getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
 import { trackBillboardClick } from "../lib/analytics.js";
+import { fetchSimilarItems } from "../lib/api.js";
 import {
   getQualitativeLabel,
   getNutritionSummary,
@@ -38,6 +39,12 @@ import {
 } from "../lib/nutritionInsights.js";
 
 const MATCH_LABEL = "Match:";
+const SEARCH_CARD_NO_SIMILAR_TEXT = "No close similar items found nearby";
+const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
+  "vegan", "vegetarian", "gluten_free", "dairy_free",
+  "diabetic_friendly", "low_fat", "low_sodium", "keto",
+]);
+const searchCardSimilarCache = new Map();
 
 /* ---- Billboard banner (compact, search-surface) ---- */
 
@@ -213,6 +220,41 @@ function fmtPrice(row) {
   const cents = getConsumerDisplayPrice(row) ?? getConsumerDisplayPrice(row?.item);
   if (cents != null) return "$" + Math.round(cents / 100);
   return "";
+}
+
+function buildSimilarItemsLabel(meta) {
+  if (!meta) return null;
+  if (meta.used_broad_fallback) return "Showing broader matches because nearby similar dishes were limited";
+  if (meta.radius_used_miles != null && Number(meta.radius_used_miles) > 25) return "Expanded nearby search";
+  return null;
+}
+
+function buildSearchCardSimilarFilters(search) {
+  const routeParams = new URLSearchParams(search || "");
+  const filters = {};
+  for (const key of SIMILAR_DIET_FILTER_KEYS) {
+    const value = routeParams.get(key);
+    if (value === "1" || value === "true") filters[key] = "1";
+  }
+  return filters;
+}
+
+function groupSimilarResultsByRestaurant(items) {
+  const grouped = new Map();
+  for (const item of Array.isArray(items) ? items : []) {
+    const restaurantId = asStr(item?.restaurant_id);
+    const restaurantName = asStr(item?.restaurant_name) || "Nearby restaurant";
+    const key = restaurantId || restaurantName;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        restaurant_id: restaurantId || null,
+        restaurant_name: restaurantName,
+        items: [],
+      });
+    }
+    grouped.get(key).items.push(item);
+  }
+  return Array.from(grouped.values());
 }
 
 function escRe(s) {
@@ -728,7 +770,7 @@ function CompactScoreSummary({ presentation, breadScore }) {
 
 /* ---- Detail panel content ---- */
 
-function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
+function DetailPanel({ tab, row, similarState, onFindSimilar, labels }) {
   const chips = resolveChips(row);
   const nutChip = chips?.nutrition_chip || {};
   const indulgencePresentation = resolveIndulgencePresentation({ chips });
@@ -761,9 +803,23 @@ function DetailPanel({ tab, row, similarItems, onFindSimilar, labels }) {
   }
 
   if (tab === "similar") {
-    const groups = Array.isArray(similarItems) ? similarItems : [];
+    if (similarState?.status === "loading") {
+      return (
+        <div style={wrap}>
+          <span style={muted}>Loading similar items...</span>
+        </div>
+      );
+    }
+
+    const groups = groupSimilarResultsByRestaurant(similarState?.items || []);
+    const helperLabel = buildSimilarItemsLabel(similarState?.meta || null);
     return (
       <div style={wrap}>
+        {helperLabel ? (
+          <div style={{ marginBottom: 10, fontSize: 12, fontWeight: 800, color: "#9CA3AF" }}>
+            {helperLabel}
+          </div>
+        ) : null}
         {groups.length > 0 ? (
           <div style={{ display: "grid", gap: 14 }}>
             {groups.map(({ restaurant_id, restaurant_name, items: siItems }) => (
@@ -923,14 +979,20 @@ function ItemRow({
   query,
   queryMeta,
   matchContext,
-  similarItems,
   labels,
   language,
   geo,
+  similarRequest,
   restaurantSummary = null,
   venueRenderedAbove = false,
 }) {
   const [openTab, setOpenTab] = useState(null);
+  const [similarState, setSimilarState] = useState({
+    status: "idle",
+    items: [],
+    meta: null,
+  });
+  const similarRequestRef = useRef(0);
 
   const mid = getItemId(row);
   const name = getItemName(row, language);
@@ -1002,14 +1064,60 @@ function ItemRow({
     insightScores.proteinStrength !== null ||
     insightScores.glycemicImpact  !== null ||
     insightScores.sodiumRisk      !== null;
-  const similarComparableCount = Array.isArray(similarItems)
-    ? similarItems.reduce((n, g) => n + (Array.isArray(g.items) ? g.items.length : 0), 0)
-    : 0;
-  /** Require at least two eligible dishes elsewhere — modifiers are pre-filtered upstream */
-  const hasSimilar = similarComparableCount >= 2;
+  const hasSimilar = Boolean(mid);
+  const similarCacheKey = useMemo(() => {
+    if (!mid) return "";
+    return `${mid}::${similarRequest?.cacheKey || ""}`;
+  }, [mid, similarRequest]);
+
+  useEffect(() => {
+    setOpenTab(null);
+    setSimilarState({ status: "idle", items: [], meta: null });
+  }, [similarCacheKey]);
+
+  async function loadSimilarForRow() {
+    if (!mid || !similarCacheKey) return;
+    if (searchCardSimilarCache.has(similarCacheKey)) {
+      setSimilarState(searchCardSimilarCache.get(similarCacheKey));
+      return;
+    }
+
+    const requestId = similarRequestRef.current + 1;
+    similarRequestRef.current = requestId;
+    setSimilarState({ status: "loading", items: [], meta: null });
+
+    try {
+      const json = await fetchSimilarItems(mid, {
+        lat: similarRequest?.lat ?? null,
+        lng: similarRequest?.lng ?? null,
+        filters: similarRequest?.filters || {},
+      });
+      if (similarRequestRef.current !== requestId) return;
+      const nextState = {
+        status: "ready",
+        items: Array.isArray(json?.similar) ? json.similar : [],
+        meta: json?.meta || null,
+      };
+      searchCardSimilarCache.set(similarCacheKey, nextState);
+      setSimilarState(nextState);
+    } catch {
+      if (similarRequestRef.current !== requestId) return;
+      const nextState = { status: "failed", items: [], meta: null };
+      searchCardSimilarCache.set(similarCacheKey, nextState);
+      setSimilarState(nextState);
+    }
+  }
 
   function toggle(tab) {
-    setOpenTab((prev) => (prev === tab ? null : tab));
+    setOpenTab((prev) => {
+      const next = prev === tab ? null : tab;
+      if (next === "similar") {
+        // Guardrail: search-card Similar must come from the backend item route only.
+        // Never substitute page-level restaurant groups or sibling search rows here.
+        void loadSimilarForRow();
+      }
+      return next;
+    });
   }
 
   return (
@@ -1198,21 +1306,21 @@ function ItemRow({
             onClick={() => toggle("insights")}
           />
         ) : null}
-        {hasSimilar && (
+        {hasSimilar ? (
           <Chip
             label={labels.showSimilar}
             active={openTab === "similar"}
             available={true}
             onClick={() => toggle("similar")}
           />
-        )}
+        ) : null}
       </div>
 
       {openTab && (
         <DetailPanel
           tab={openTab}
           row={row}
-          similarItems={similarItems}
+          similarState={similarState}
           onFindSimilar={() => toggle("similar")}
           labels={labels}
         />
@@ -1360,7 +1468,7 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
 
 /* ---- Main export ---- */
 
-export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, crossRestaurantItems, geo }) {
+export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, geo }) {
   const location = useLocation();
   const { language, t } = useLanguage();
   const contextSearch = location.search || "";
@@ -1368,10 +1476,25 @@ export default function SearchResultCard({ restaurant, items, item, query, query
     nutrition: t("common.nutrition", "Nutrition"),
     insights: t("common.insights", "Insights"),
     showSimilar: t("common.showSimilar", "Show Similar"),
-    noSimilar: t("common.noSimilarNearby", "No similar items found nearby."),
+    noSimilar: t("common.noSimilarNearby", SEARCH_CARD_NO_SIMILAR_TEXT),
     viewMenu: t("common.viewMenu"),
   };
   const grouped = Array.isArray(items) && items.length > 0;
+  const similarRequest = useMemo(() => {
+    const filters = buildSearchCardSimilarFilters(contextSearch);
+    return {
+      lat: geo?.lat ?? null,
+      lng: geo?.lng ?? null,
+      filters,
+      cacheKey: JSON.stringify({
+        query: query || "",
+        search: contextSearch,
+        lat: geo?.lat ?? null,
+        lng: geo?.lng ?? null,
+        filters,
+      }),
+    };
+  }, [contextSearch, geo?.lat, geo?.lng, query]);
 
   if (grouped) {
     const restId = asStr(restaurant?.restaurant_id || restaurant?.id);
@@ -1385,10 +1508,6 @@ export default function SearchResultCard({ restaurant, items, item, query, query
     const menuHref = restId
       ? buildCanonicalMenuPath({ restaurantSlug: restSlug, restaurantId: restId }) + contextSearch
       : null;
-
-    const similarItems = Array.isArray(crossRestaurantItems)
-      ? crossRestaurantItems.filter((x) => asStr(x.restaurant_id) !== restId)
-      : [];
 
     const restaurantSummary = {
       id: restId,
@@ -1473,10 +1592,10 @@ export default function SearchResultCard({ restaurant, items, item, query, query
                 query={query}
                 queryMeta={queryMeta}
                 matchContext={matchContext}
-                similarItems={similarItems}
                 labels={labels}
                 language={language}
                 geo={geo}
+                similarRequest={similarRequest}
                 restaurantSummary={restaurantSummary}
                 venueRenderedAbove
               />
@@ -1525,9 +1644,6 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const menuHrefS = restIdS
     ? buildCanonicalMenuPath({ restaurantSlug: restSlugS, restaurantId: restIdS }) + contextSearch
     : null;
-  const similarItemsS = Array.isArray(crossRestaurantItems)
-    ? crossRestaurantItems.filter((x) => asStr(x.restaurant_id) !== restIdS)
-    : [];
 
   if (isItemRow) {
     return (
@@ -1537,10 +1653,10 @@ export default function SearchResultCard({ restaurant, items, item, query, query
           query={query}
           queryMeta={queryMeta}
           matchContext={matchContext}
-          similarItems={similarItemsS}
           labels={labels}
           language={language}
           geo={geo}
+          similarRequest={similarRequest}
           restaurantSummary={null}
         />
         {menuHrefS && (

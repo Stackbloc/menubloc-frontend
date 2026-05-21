@@ -34,7 +34,6 @@ import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.
 import { parseFiltersFromUrl, filtersToUrlParams } from "../lib/filterUtils.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackSearchPerformed } from "../lib/analytics.js";
-import { filterEligibleSimilarMenuItems } from "../lib/similarItemsEligibility.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
@@ -1301,17 +1300,6 @@ export default function GrubbidSearchResults() {
     navigate("?" + nextParams.toString(), { replace: true });
   }
 
-  const crossRestaurantItems = useMemo(() => {
-    return restaurantGroups
-      .filter((g) => g.items.length > 0)
-      .map((g) => ({
-        restaurant_id: asString(g.restaurant_id),
-        restaurant_name: g.restaurant_name,
-        items: filterEligibleSimilarMenuItems(g.items),
-      }))
-      .filter((g) => g.items.length > 0);
-  }, [restaurantGroups]);
-
   const hasMenuMatches = restaurantGroups.length > 0;
   const waiterResultCount = waiterFilteredRows.length;
   const showWaiter =
@@ -1498,7 +1486,6 @@ export default function GrubbidSearchResults() {
                   wantsNearby: searchMeta?.wants_nearby === true,
                   coordinateSearchActive: hasGeoFilter === true,
                 }}
-                crossRestaurantItems={crossRestaurantItems}
                 geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
               />
             ))}
@@ -1550,7 +1537,6 @@ export default function GrubbidSearchResults() {
                       wantsNearby: searchMeta?.wants_nearby === true,
                       coordinateSearchActive: hasGeoFilter === true,
                     }}
-                    crossRestaurantItems={crossRestaurantItems}
                     geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
                   />
               );
