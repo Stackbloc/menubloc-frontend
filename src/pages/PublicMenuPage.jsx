@@ -525,8 +525,8 @@ function ItemDetailSheet({
             </div>
           ) : null}
 
-          {/* Allergen */}
-          {item?.chips?.nutrition_chip?.allergen_alert ? (
+          {/* Allergen — only shown when allergen context is active (filter, profile, search term) */}
+          {allergenContextActive && item?.chips?.nutrition_chip?.allergen_alert ? (
             <div style={{ marginBottom: 14 }}>
               <span style={{
                 display: "inline-flex",
@@ -731,6 +731,7 @@ export default function PublicMenuPage() {
   // stays visible during a background fetch for a new tab (never blank on switch).
   const [tabSections, setTabSections] = useState(null);
   const [tabLoading, setTabLoading] = useState(false);
+  const [tabError, setTabError] = useState(null);
   const userSelectedTabRef = useRef(false);
   const [resolvedRouteState, setResolvedRouteState] = useState({
     status: "loading",
@@ -756,6 +757,11 @@ export default function PublicMenuPage() {
   };
   const dealsFilter = searchParams.get("deals") === "1";
   const filtersActive = Object.values(dietPrefs).some(Boolean) || dealsFilter;
+  // Allergen-relevant filter keys — extend this array as new allergen filters are added.
+  // Future contexts (user allergen profile, allergen search terms, explicit allergen interactions)
+  // should be OR-ed into allergenContextActive without changing the render conditions below.
+  const ALLERGEN_FILTER_KEYS = ["dairy_free", "gluten_free"];
+  const allergenContextActive = ALLERGEN_FILTER_KEYS.some(k => dietPrefs[k]);
   const activeFilterChips = [
     ...DIET_CHIPS
       .filter(({ key }) => dietPrefs[key])
@@ -986,23 +992,34 @@ export default function PublicMenuPage() {
 
   // Tab switch handler — never blanks the currently visible menu.
   // Highlights new tab immediately, fetches sections in background, swaps atomically on success.
+  // On fetch failure or empty response, reverts tab highlight and shows a non-blocking message.
   const handleSelectMenu = useCallback(async (menuId) => {
     if (menuId === selectedMenuId) return;
     const prevMenuId = selectedMenuId;
     userSelectedTabRef.current = true;
     setSelectedMenuId(menuId);
+    setTabError(null);
     setTabLoading(true);
     try {
       const rid = encodeURIComponent(asStr(routeState.restaurantId).trim());
       const res = await fetch(`${API}/public/restaurants/${rid}/menu?menu=${menuId}`);
       const json = await res.json().catch(() => null);
       if (res.ok && json?.ok) {
-        setTabSections({ menuId, sections: normalizeSections(json) });
+        const newSections = normalizeSections(json);
+        if (newSections.length > 0) {
+          setTabSections({ menuId, sections: newSections });
+        } else {
+          // Zero sections: preserve prior visible menu; show lightweight non-blocking message.
+          setSelectedMenuId(prevMenuId);
+          setTabError("Unable to load menu section.");
+        }
       } else {
         setSelectedMenuId(prevMenuId);
+        setTabError("Unable to load menu section.");
       }
     } catch {
       setSelectedMenuId(prevMenuId);
+      setTabError("Unable to load menu section.");
     } finally {
       setTabLoading(false);
     }
@@ -1268,6 +1285,7 @@ export default function PublicMenuPage() {
           selectedMenuId,
           onSelectMenu: handleSelectMenu,
           tabLoading,
+          tabError,
           menuPresentation: data?.menu_presentation || data?.presentation || {},
         }
       : null;

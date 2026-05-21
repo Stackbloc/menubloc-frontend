@@ -99,9 +99,6 @@ export default function DiscoveryCard({
   const itemCount = menu?.menu_item_count || 0;
   const isVerified = menu?.menu_status === "published";
   const chips = (menu?.preview_items || []).slice(0, 3);
-  const allergens = normalizeAllergens(
-    menu?.allergens || menu?.preview_allergens || menu?.chips?.nutrition_chip?.allergens
-  );
   const phone = menu?.phone || null;
 
   const href = `/public/restaurants/${id}/menu${buildMergedSearch(location.search, activeFilterParams)}`;
@@ -306,12 +303,6 @@ export default function DiscoveryCard({
           </div>
         )}
 
-        {/* Allergen indicator */}
-        {allergens.length > 0 && (
-          <div style={{ marginTop: 5, fontSize: 11, fontWeight: 700, color: "#FCA5A5" }}>
-            ⚠️ {allergens.join(", ")}
-          </div>
-        )}
       </div>
     </Link>
     {showChainSheet && chainId != null && (

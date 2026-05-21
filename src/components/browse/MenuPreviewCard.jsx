@@ -278,14 +278,6 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
   const cuisine = localizeCanonicalLabel(menu?.cuisine, "cuisine", t) || null;
   const emoji = getCuisineEmoji(restaurantName, menu?.cuisine || menu?.category);
   const itemCount = menu?.menu_item_count || 0;
-  const allergens = normalizeAllergenList(
-    menu?.allergens || menu?.preview_allergens || menu?.chips?.nutrition_chip?.allergens
-  );
-  const allergenSource = normalizeAllergenSource(
-    menu?.source || menu?.allergen_source || menu?.chips?.nutrition_chip?.source
-  );
-  const allergenTone = getAllergenTone(allergenSource);
-  const isEstimatedAllergen = allergenSource === "reference_dataset";
   const itemCountLabel = itemCount > 0
     ? activeFilterLabel
       ? `${itemCount} ${activeFilterLabel} ${t(itemCount === 1 ? "common.itemSingular" : "common.itemPlural")}`
@@ -376,56 +368,6 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
           </div>
         ) : null}
 
-        {allergens.length ? (
-          <div
-            style={{
-              position: "absolute",
-              top: isVerified ? 44 : 12,
-              left: 12,
-              zIndex: 4,
-              maxWidth: "calc(100% - 24px)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 6,
-              padding: "8px 10px",
-              borderRadius: 14,
-              background: allergenTone.background,
-              border: allergenTone.border,
-              backdropFilter: "blur(12px)",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 11,
-                lineHeight: 1.35,
-                fontWeight: 800,
-                color: allergenTone.color,
-                textShadow: "0 1px 3px rgba(0,0,0,0.25)",
-              }}
-            >
-              {`⚠️ ${t("common.allergensContains", "Contains")}: ${allergens.join(", ")}`}
-            </div>
-            {isEstimatedAllergen ? (
-              <div
-                style={{
-                  alignSelf: "flex-start",
-                  borderRadius: 999,
-                  padding: "3px 7px",
-                  background: allergenTone.tagBackground,
-                  color: allergenTone.tagColor,
-                  fontSize: 10,
-                  lineHeight: 1,
-                  fontWeight: 900,
-                  letterSpacing: 0.4,
-                  textTransform: "uppercase",
-                }}
-              >
-                {t("common.estimated")}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
 
         {/* Center content — emoji + name + meta */}
         <div style={{
