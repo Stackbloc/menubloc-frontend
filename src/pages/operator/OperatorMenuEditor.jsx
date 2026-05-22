@@ -649,7 +649,7 @@ export default function OperatorMenuEditor() {
                 style={BTN("ghost")}
                 onClick={() => { setRenamingMenuId(selectedMenuId); setRenameValue(selectedMenu.name); }}
               >
-                Edit
+                Rename
               </button>
               <button
                 style={BTN("ghost")}
@@ -765,7 +765,7 @@ export default function OperatorMenuEditor() {
         }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720", marginBottom: 6 }}>Upload Menu</div>
           <div style={{ fontSize: 13, color: "#8a9ab0", marginBottom: 18 }}>
-            Choose how you want to bring your menu into Menuply. All upload routes stay inside your operator account.
+            Choose how you want to bring your menu into Menuply. Items will appear in your menu editor after Menuply processes the upload.
           </div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <UploadCard

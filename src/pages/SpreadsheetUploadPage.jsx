@@ -670,7 +670,7 @@ export default function SpreadsheetUploadPage() {
             Once approved, your menu will appear on your Menuply profile.
           </p>
           <Link to={isOperatorFlow ? "/operator/menu" : "/operator/login"} style={s.profileLink}>
-            {isOperatorFlow ? "Open My Account" : "Sign in to My Account"}
+            {isOperatorFlow ? "Back to Menu Editor" : "Sign in to My Account"}
           </Link>
           {!isOperatorFlow ? (
             <Link
@@ -685,8 +685,7 @@ export default function SpreadsheetUploadPage() {
             Menu status: <strong>pending review</strong>
           </div>
           <div style={{ ...s.pendingNote, marginTop: 12, lineHeight: 1.6 }}>
-            What happens next: Menuply reviews this import before it appears publicly. You can return through My
-            Account to manage your menu and continue restaurant setup.
+            Menuply will review this import. Items will appear in your Menu Editor once approved.
           </div>
         </div>
       </div>
