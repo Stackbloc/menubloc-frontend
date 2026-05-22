@@ -37,8 +37,8 @@ const PLAN_LABELS = {
 };
 
 const PRO_INTERVALS = {
-  monthly: { planCode: "pro_monthly", priceLabel: "$39.99/month" },
-  annual: { planCode: "pro_annual", priceLabel: "$299/year" },
+  monthly: { planCode: "pro_monthly", priceLabel: "$49/month" },
+  annual: { planCode: "pro_annual", priceLabel: "$399/year" },
 };
 
 const OPTIONAL_ONBOARDING_MODULES = [

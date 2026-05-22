@@ -33,7 +33,7 @@ const PLAN_OPTIONS = [
   {
     code: "pro_partner",
     name: "Pro Partner",
-    price: "$39.99/month or $299/year",
+    price: "$49/month or $399/year",
     description:
       "For restaurants that want stronger customer pricing, direct ordering tools, and deeper customer engagement on a lower-cost platform.",
     cta: "Continue with Pro Partner",

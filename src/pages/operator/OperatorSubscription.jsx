@@ -175,7 +175,7 @@ export default function OperatorSubscription() {
       })
       .catch(() => {
         setPlanOptions([
-          { code: "pro_monthly", checkout_label: "Pro Monthly", amount_cents: 3499, billing_interval: "month" },
+          { code: "pro_monthly", checkout_label: "Pro Monthly", amount_cents: 4900, billing_interval: "month" },
           { code: "pro_annual", checkout_label: "Pro Annual", amount_cents: 39900, billing_interval: "year" },
           { code: "founders_annual", checkout_label: "Founder Annual", amount_cents: 29900, billing_interval: "year" },
         ]);
