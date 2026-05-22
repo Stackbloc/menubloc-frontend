@@ -229,6 +229,47 @@ const styles = {
     display: "grid",
     gap: 12,
   },
+  faqSectionToggle: (expanded) => ({
+    width: "100%",
+    border: "none",
+    background: "transparent",
+    padding: 0,
+    cursor: "pointer",
+    textAlign: "left",
+    fontFamily: "inherit",
+    color: "#101828",
+  }),
+  faqSectionToggleRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+  faqSectionToggleCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  faqSectionToggleLabel: {
+    fontSize: 14,
+    lineHeight: 1.6,
+    color: "#1F4E3D",
+    fontWeight: 800,
+  },
+  faqSectionToggleIcon: (expanded) => ({
+    flexShrink: 0,
+    width: 36,
+    height: 36,
+    borderRadius: "50%",
+    border: expanded ? "1px solid #cfe0d8" : "1px solid #d0d5dd",
+    background: expanded ? "#eef6f1" : "#ffffff",
+    color: "#1F4E3D",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 20,
+    fontWeight: 700,
+    lineHeight: 1,
+  }),
   faqItem: (expanded) => ({
     borderRadius: 18,
     border: expanded ? "1px solid #cfe0d8" : "1px solid #eaecf0",
@@ -406,7 +447,8 @@ const styles = {
 
 export default function RestaurantSignupEntry() {
   const navigate = useNavigate();
-  const [expandedFaqIndex, setExpandedFaqIndex] = useState(0);
+  const [faqOpen, setFaqOpen] = useState(false);
+  const [expandedFaqIndex, setExpandedFaqIndex] = useState(-1);
 
   function handlePlanSelect(selectedPlan) {
     navigate(ACCOUNT_ROUTE, {
@@ -457,46 +499,66 @@ export default function RestaurantSignupEntry() {
         </section>
 
         <section style={styles.faqSection}>
-          <div style={styles.faqEyebrow}>Restaurant FAQ</div>
-          <div style={styles.faqTitle}>Common questions before you choose a Menuply plan</div>
-          <div style={styles.faqIntro}>
-            Practical answers for restaurants that want to understand cost, growth expectations, and fit before moving deeper into onboarding.
-          </div>
+          <button
+            type="button"
+            onClick={() => setFaqOpen((current) => !current)}
+            aria-expanded={faqOpen}
+            aria-controls="restaurant-signup-faq-section"
+            style={styles.faqSectionToggle(faqOpen)}
+          >
+            <div style={styles.faqSectionToggleRow}>
+              <div style={styles.faqSectionToggleCopy}>
+                <div style={styles.faqEyebrow}>Restaurant FAQ</div>
+                <div style={styles.faqTitle}>Questions about Menuply?</div>
+                <div style={styles.faqIntro}>
+                  Practical answers about cost, growth expectations, and fit before moving deeper into onboarding.
+                </div>
+                <div style={styles.faqSectionToggleLabel}>
+                  {faqOpen ? "Hide FAQ" : "View FAQ"}
+                </div>
+              </div>
+              <span aria-hidden="true" style={styles.faqSectionToggleIcon(faqOpen)}>
+                {faqOpen ? "\u2212" : "+"}
+              </span>
+            </div>
+          </button>
 
-          <div style={styles.faqList}>
-            {FAQ_ITEMS.map((item, index) => {
-              const expanded = expandedFaqIndex === index;
-              const panelId = `restaurant-signup-faq-panel-${index}`;
-              return (
-                <article key={item.question} style={styles.faqItem(expanded)}>
-                  <button
-                    type="button"
-                    onClick={() => setExpandedFaqIndex(expanded ? -1 : index)}
-                    aria-expanded={expanded}
-                    aria-controls={panelId}
-                    style={styles.faqButton}
-                  >
-                    <div style={styles.faqQuestionWrap}>
-                      <p style={styles.faqQuestion}>{item.question}</p>
-                    </div>
-                    <span aria-hidden="true" style={styles.faqToggle(expanded)}>
-                      {expanded ? "\u2212" : "+"}
-                    </span>
-                  </button>
+          {faqOpen ? (
+            <div id="restaurant-signup-faq-section" style={styles.faqList}>
+              {FAQ_ITEMS.map((item, index) => {
+                const expanded = expandedFaqIndex === index;
+                const panelId = `restaurant-signup-faq-panel-${index}`;
+                return (
+                  <article key={item.question} style={styles.faqItem(expanded)}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedFaqIndex(expanded ? -1 : index)}
+                      aria-expanded={expanded}
+                      aria-controls={panelId}
+                      style={styles.faqButton}
+                    >
+                      <div style={styles.faqQuestionWrap}>
+                        <p style={styles.faqQuestion}>{item.question}</p>
+                      </div>
+                      <span aria-hidden="true" style={styles.faqToggle(expanded)}>
+                        {expanded ? "\u2212" : "+"}
+                      </span>
+                    </button>
 
-                  {expanded ? (
-                    <div id={panelId} style={styles.faqAnswer}>
-                      {item.answer.map((paragraph) => (
-                        <p key={paragraph} style={styles.faqAnswerParagraph}>
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
-                  ) : null}
-                </article>
-              );
-            })}
-          </div>
+                    {expanded ? (
+                      <div id={panelId} style={styles.faqAnswer}>
+                        {item.answer.map((paragraph) => (
+                          <p key={paragraph} style={styles.faqAnswerParagraph}>
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          ) : null}
         </section>
 
         <section style={{
