@@ -165,9 +165,12 @@ export default function RestaurantPhilosophy() {
         <p style={styles.body}>
           Menuply was designed with a lower-cost, restaurant-centered structure intended to give
           restaurants greater flexibility to offer diners better day-to-day pricing, meaningful
-          deals, richer menu information, and more direct engagement. The platform is built around
-          the belief that lower structural costs can create stronger long-term value for both
-          restaurants and diners.
+          deals, richer menu information, and more direct engagement. Menuply is a fully
+          self-service platform built without the heavy sales, onboarding, and operational overhead
+          common in traditional delivery marketplaces. By keeping structural costs low, restaurants
+          can operate more efficiently on the platform and offer diners more competitive pricing and
+          better overall value. The platform is built around the belief that lower structural costs
+          can create stronger long-term value for both restaurants and diners.
         </p>
 
         <p style={styles.body}>
