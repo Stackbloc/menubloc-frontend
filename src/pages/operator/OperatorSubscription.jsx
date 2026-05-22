@@ -19,6 +19,7 @@ const MATRIX = [
       { label: "QR code & public menu sharing", v: true, p: true },
       { label: "Diners Social Share Menu and Menu Items", v: false, p: true },
       { label: "Followers", v: false, p: true },
+      { label: "Place Billboard ads on Profile Screen with option to display in User Search Results", v: false, p: true },
     ],
   },
   {
@@ -41,7 +42,6 @@ const MATRIX = [
     rows: [
       { label: "Bulk price adjustments", v: false, p: true },
       { label: "Post Restaurant Created Deals on Deals Page Free of Charge", v: false, p: true },
-      { label: "Place Billboard ads on Profile Screen with option to display in User Search Results", v: false, p: true },
     ],
   },
   {
