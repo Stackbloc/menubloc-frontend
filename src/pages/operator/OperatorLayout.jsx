@@ -25,7 +25,7 @@ const SIDEBAR_W = 230;
 // ── Navigation section definitions ───────────────────────────────────────
 
 const OPERATIONS_NAV = [
-  { to: "/operator",           label: "My Account",    icon: "⌂" },
+  { to: "/operator",           label: "Home",          icon: "⌂" },
   { to: "/operator/orders",    label: "Orders",        icon: "☷" },
   { to: "/operator/delivery",  label: "Delivery",      icon: "⇄" },
   { to: "/operator/orders?tab=history", label: "Order History", icon: "⊡" },
@@ -50,7 +50,8 @@ const STAFF_MENU_NAV = [
 ];
 
 const SUPPORT_NAV = [
-  { to: "/operator/help", label: "Knowledge Base", icon: "?" },
+  { to: "/operator/my-account", label: "My Account",    icon: "◈" },
+  { to: "/operator/help",       label: "Knowledge Base", icon: "?" },
 ];
 
 const BUSINESS_NAV = [

@@ -57,6 +57,7 @@ import OperatorClaimSearch from "./pages/operator/OperatorClaimSearch.jsx";
 import OperatorProfileEditor from "./pages/operator/OperatorProfileEditor.jsx";
 import OperatorHoursEditor from "./pages/operator/OperatorHoursEditor.jsx";
 import OperatorSubscription from "./pages/operator/OperatorSubscription.jsx";
+import OperatorMyAccount from "./pages/operator/OperatorMyAccount.jsx";
 import OperatorAdobeStudio from "./pages/operator/OperatorAdobeStudio.jsx";
 import OperatorQrKitOrder from "./pages/operator/OperatorQrKitOrder.jsx";
 import OperatorDisplaySettings from "./pages/operator/OperatorDisplaySettings.jsx";
@@ -568,6 +569,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/bid-free-bidding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorCartNegotiationSettings /></OperatorRoute>} />
         <Route path="/operator/qr-kits/order" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorQrKitOrder /></OperatorRoute>} />
         <Route path="/operator/subscription" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorSubscription /></OperatorRoute>} />
+        <Route path="/operator/my-account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMyAccount /></OperatorRoute>} />
         <Route path="/operator/display-settings" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDisplaySettings /></OperatorRoute>} />
         <Route path="/operator/menu-studio" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuStudio /></OperatorRoute>} />
         <Route path="/operator/brand" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorBrandSettings /></OperatorRoute>} />
