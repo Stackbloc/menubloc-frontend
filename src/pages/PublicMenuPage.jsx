@@ -491,11 +491,7 @@ function ItemDetailSheet({
                 {item?.is_gluten_free && <Badge label="GF" bg="#1c1a0a" color="#FCD34D" border="1px solid #44400a" />}
               </div>
             )}
-            {item?.id && (
-              <div style={{ marginTop: 8 }}>
-                <TasteIndexBadge menuItemId={item.id} accent={accent} />
-              </div>
-            )}
+            {item?.id && <TasteIndexBadge menuItemId={item.id} accent={accent} />}
           </div>
 
           {/* Price */}

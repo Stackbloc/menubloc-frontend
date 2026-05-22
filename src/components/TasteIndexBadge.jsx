@@ -17,9 +17,15 @@ function getScoreLabel(score) {
 
 /**
  * Displays the Menuply Taste Index badge for a menu item.
- * - Fetches from /api/menu-items/:menuItemId/taste-index (non-blocking)
- * - Renders nothing if display_state is 'pending' or score label not met
- * - Renders an early_signal badge or full established badge
+ *
+ * Public display rules (MVP):
+ *   - Only renders when display_state === "established"
+ *   - Only renders when rating_count >= 10
+ *   - Only renders when score exists and has a qualifying label (>= 95)
+ *   - Returns null in ALL other cases — no placeholder, no pending state, no gap
+ *
+ * early_signal (3–9 ratings) is collected in the database but NOT shown publicly.
+ * pending (< 3 ratings) is never shown.
  *
  * Props:
  *   menuItemId  — numeric menu item id
@@ -42,33 +48,10 @@ export default function TasteIndexBadge({ menuItemId, accent = "#22C55E" }) {
     return () => { cancelled = true; };
   }, [menuItemId]);
 
-  if (!data || data.display_state === "pending") return null;
-
-  const softBg = `rgba(34,197,94,0.1)`;
-  const border = `1px solid rgba(34,197,94,0.25)`;
-
-  if (data.display_state === "early_signal") {
-    return (
-      <div
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 4,
-          padding: "3px 8px",
-          borderRadius: 6,
-          background: softBg,
-          border,
-          fontSize: 11,
-          color: accent,
-          fontWeight: 700,
-          letterSpacing: "0.01em",
-        }}
-      >
-        <span style={{ fontSize: 13 }}>◆</span>
-        Early data · Rated {data.rating_count}×
-      </div>
-    );
-  }
+  if (!data) return null;
+  if (data.display_state !== "established") return null;
+  if (!data.score) return null;
+  if ((data.rating_count || 0) < 10) return null;
 
   const label = getScoreLabel(data.score);
   if (!label) return null;
@@ -83,10 +66,11 @@ export default function TasteIndexBadge({ menuItemId, accent = "#22C55E" }) {
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
+        marginTop: 8,
         padding: "4px 10px",
         borderRadius: 8,
-        background: softBg,
-        border,
+        background: "rgba(34,197,94,0.1)",
+        border: "1px solid rgba(34,197,94,0.25)",
         fontSize: 12,
         color: accent,
         fontWeight: 700,
