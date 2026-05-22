@@ -945,17 +945,6 @@ function MissingNutritionState() {
 
 // ── Explore Similar Dishes ───────────────────────────────────
 
-function buildSimilarItemsLabel(meta) {
-  if (!meta) return null;
-  if (meta.used_broad_fallback) {
-    return "Showing broader matches because nearby similar dishes were limited";
-  }
-  if (meta.radius_used_miles != null && Number(meta.radius_used_miles) > 25) {
-    return "Expanded nearby search";
-  }
-  return null;
-}
-
 const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
   "vegan",
   "vegetarian",
@@ -971,7 +960,6 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
   const navigate = useNavigate();
   const { itemCount } = useOrderCart();
   const [similar, setSimilar] = useState(null);
-  const [similarMeta, setSimilarMeta] = useState(null);
   const [failed, setFailed] = useState(false);
 
   function buildSimilarLink(entry) {
@@ -1014,7 +1002,6 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
       .then((json) => {
         if (!cancelled) {
           setSimilar(Array.isArray(json?.similar) ? json.similar : []);
-          setSimilarMeta(json?.meta || null);
         }
       })
       .catch(() => {
@@ -1055,8 +1042,6 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
   if (itemCount > 0) return null;
   if (failed || similar === null || similar.length === 0) return null;
 
-  const helperLabel = buildSimilarItemsLabel(similarMeta);
-
   return (
     <>
       <SectionCard
@@ -1065,21 +1050,6 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
         style={{ marginTop: 24 }}
       >
         <div style={{ display: "grid", gap: 14 }}>
-          {helperLabel && (
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 800,
-                color: "#9CA3AF",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid #1F2937",
-                borderRadius: 12,
-                padding: "10px 12px",
-              }}
-            >
-              {helperLabel}
-            </div>
-          )}
           {similar.map((entry) => (
             <div key={entry.id} style={{ borderRadius: 18, border: "1px solid #1F2937", background: "#121A14", padding: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
