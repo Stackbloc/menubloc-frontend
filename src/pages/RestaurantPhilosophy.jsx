@@ -157,25 +157,30 @@ export default function RestaurantPhilosophy() {
         </h1>
 
         <p style={styles.body}>
-          Many restaurants operating on higher-cost third-party delivery platforms have had to
-          increase menu prices to help absorb the structural costs associated with those platforms.
-          These higher-cost models have often created challenges for both restaurants and diners.
+          Many restaurants have had to increase menu prices to help absorb the structural costs
+          associated with operating on traditional third-party delivery platforms. These
+          higher-cost marketplace models have often created challenges for both restaurants and diners.
         </p>
 
         <p style={styles.body}>
           Menuply was designed with a lower-cost, restaurant-centered structure intended to give
           restaurants greater flexibility to offer diners better day-to-day pricing, meaningful
           deals, richer menu information, and more direct engagement. The platform is built around
-          the idea that lower structural costs can create better long-term value for both restaurants
-          and diners. Prospective restaurant partners are encouraged to keep this principle in mind
-          when joining the platform, as it represents a core Menuply value and reflects the broader
-          operational and marketplace philosophy on which Menuply was built.
+          the belief that lower structural costs can create stronger long-term value for both
+          restaurants and diners.
+        </p>
+
+        <p style={styles.body}>
+          Prospective restaurant partners are encouraged to keep this principle in mind when joining
+          the platform, as it reflects a core Menuply philosophy: sustainable restaurant growth
+          should come from delivering greater value - not simply increasing costs without improving
+          the customer experience.
         </p>
 
         <p style={styles.body}>
           When restaurants and diners come together around a shared ecosystem focused on value,
-          sustainability, and informed decision making — powered by thousands of intelligently
-          connected menus — the collective power of those menus multiplies.
+          transparency, and informed decision-making - powered by thousands of intelligently
+          connected menus - the collective value of the platform multiplies.
         </p>
 
         <p style={styles.goalIntro}>Our goal is simple:</p>
@@ -183,20 +188,20 @@ export default function RestaurantPhilosophy() {
         <ul style={styles.bulletList}>
           <li style={styles.bulletItem}>
             <span style={styles.bulletDot} aria-hidden="true" />
-            <span>Help restaurants better serve their patrons and ensure long-term success</span>
+            <span>Help restaurants better serve their patrons and strengthen long-term success.</span>
           </li>
           <li style={styles.bulletItem}>
             <span style={styles.bulletDot} aria-hidden="true" />
-            <span>Help diners better navigate their dining options and experience greater value</span>
+            <span>Help diners better navigate their dining options and experience greater value.</span>
           </li>
         </ul>
 
         <div style={styles.multiplierBox}>
           <p style={styles.multiplierText}>
-            While restaurants always control their own pricing, Menuply seeks to partner with
+            Restaurants always control their own pricing. However, Menuply seeks to partner with
             restaurants that prioritize customer value without compromising quality. These are the
             kinds of restaurants we call{" "}
-            <span style={styles.multiplierHighlight}>&ldquo;Multipliers&rdquo;</span> — restaurants
+            <span style={styles.multiplierHighlight}>&ldquo;Multipliers&rdquo;</span> - restaurants
             that strengthen the ecosystem by contributing stronger value, meaningful deals, richer
             menu information, and a better dining discovery experience.
           </p>
