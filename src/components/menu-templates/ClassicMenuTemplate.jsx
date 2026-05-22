@@ -252,6 +252,8 @@ export default function ClassicMenuTemplate(ctx) {
               }}>
                 {menus.map(menu => {
                   const isSelected = menu.id === selectedMenuId;
+                  const hasSchedule = !!(menu.start_time || menu.end_time || menu.schedule_days);
+                  const isActiveBySchedule = hasSchedule && menu.is_currently_active === true;
                   return (
                     <button
                       key={menu.id}
@@ -271,7 +273,12 @@ export default function ClassicMenuTemplate(ctx) {
                         opacity: tabLoading && !isSelected ? 0.5 : 1,
                       }}
                     >
-                      {menu.tab_label || menu.display_name || menu.name}
+                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        {menu.tab_label || menu.display_name || menu.name}
+                        {isActiveBySchedule && !isSelected ? (
+                          <span aria-hidden="true" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+                        ) : null}
+                      </span>
                     </button>
                   );
                 })}
