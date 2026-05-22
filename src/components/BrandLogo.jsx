@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 
 const MENUPLY_LOGO_SCALE = 1.12;
 
-export const MENUPLY_LOGO_SRC = "/menuply-logo-dark.png";
+export const MENUPLY_LOGO_SRC = "/menuply-logo.png";
 
 export function BrandLogo({
   to = "/",
@@ -38,7 +38,7 @@ export function BrandLogo({
         alignItems: "center",
         justifyContent: "center",
         borderRadius: radius,
-        background: matchPageBackground ? "transparent" : pageColor,
+        background: "transparent",
         lineHeight: 0,
       }}
     >
