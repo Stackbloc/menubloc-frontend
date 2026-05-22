@@ -201,7 +201,37 @@ export default function OperatorMyAccount() {
               </div>
             )}
 
-            {/* Actions */}
+            {/* Account settings nav */}
+            <div style={{
+              background: "#fff", border: "1px solid #e4e9f0",
+              borderRadius: 12, marginBottom: 20, overflow: "hidden",
+            }}>
+              <div style={{ padding: "10px 16px 4px", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8a9ab0" }}>
+                Account Settings
+              </div>
+              {[
+                { label: "Restaurant Profile", to: "/operator/profile" },
+                { label: "Manage Subscription", to: "/operator/subscription" },
+              ].map(({ label, to }, i, arr) => (
+                <button
+                  key={to}
+                  type="button"
+                  onClick={() => navigate(to)}
+                  style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    width: "100%", padding: "14px 16px",
+                    background: "none", border: "none",
+                    borderTop: i === 0 ? "none" : "1px solid #f0f4f8",
+                    cursor: "pointer", textAlign: "left", fontFamily: "inherit",
+                  }}
+                >
+                  <span style={{ fontSize: 13, color: "#0f1720", fontWeight: 600 }}>{label}</span>
+                  <span style={{ fontSize: 16, color: "#c4cdd6" }}>›</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Subscription actions */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <button
                 type="button"

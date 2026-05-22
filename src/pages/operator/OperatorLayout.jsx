@@ -50,13 +50,11 @@ const STAFF_MENU_NAV = [
 ];
 
 const SUPPORT_NAV = [
-  { to: "/operator/my-account", label: "My Account",    icon: "◈" },
-  { to: "/operator/help",       label: "Knowledge Base", icon: "?" },
+  { to: "/operator/help", label: "Knowledge Base", icon: "?" },
 ];
 
 const BUSINESS_NAV = [
-  { to: "/operator/profile",       label: "Restaurant Profile",  icon: "◷", sensitive: true },
-  { to: "/operator/subscription",  label: "Subscription",        icon: "◈", sensitive: true },
+  { to: "/operator/my-account", label: "My Account", icon: "◈" },
 ];
 
 // ── PIN gate modal ────────────────────────────────────────────────────────
