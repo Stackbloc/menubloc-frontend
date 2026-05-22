@@ -37,6 +37,7 @@ export default function BoldCasualMenuTemplate(ctx) {
     restaurantName,
     restaurantProfileHref,
     menuTypeLabel,
+    scheduledActiveMenuLabel,
     addressLine1,
     addressLine2,
     addressLine,
@@ -200,7 +201,27 @@ export default function BoldCasualMenuTemplate(ctx) {
               </div>
             ) : null}
 
-            {menuTypeLabel ? (
+            {scheduledActiveMenuLabel ? (
+              <div style={{ marginTop: 6 }}>
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: accentBold,
+                  border: `1px solid ${accent}`,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: accent,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                }}>
+                  <span aria-hidden="true" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+                  {scheduledActiveMenuLabel}
+                </span>
+              </div>
+            ) : menuTypeLabel ? (
               <div style={{ marginTop: 6 }}>
                 <span style={{
                   display: "inline-flex",

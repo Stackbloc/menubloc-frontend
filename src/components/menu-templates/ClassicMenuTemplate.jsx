@@ -49,6 +49,7 @@ export default function ClassicMenuTemplate(ctx) {
     restaurantName,
     restaurantProfileHref,
     menuTypeLabel,
+    scheduledActiveMenuLabel,
     addressLine1,
     addressLine2,
     addressLine,
@@ -210,7 +211,25 @@ export default function ClassicMenuTemplate(ctx) {
             ) : null}
 
             <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              {menuTypeLabel ? (
+              {scheduledActiveMenuLabel ? (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                    background: "#1A2419",
+                    border: "1px solid #1F2937",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "#9CA3AF",
+                  }}
+                >
+                  <span aria-hidden="true" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+                  {scheduledActiveMenuLabel}
+                </div>
+              ) : menuTypeLabel ? (
                 <div
                   style={{
                     display: "inline-flex",

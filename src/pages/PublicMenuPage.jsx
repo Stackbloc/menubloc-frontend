@@ -1077,6 +1077,15 @@ export default function PublicMenuPage() {
     data?.menu_label ||
     ""
   ).trim() || null;
+  // Clock-based "now serving" label — independent of which tab the user has selected.
+  // Only set when a menu with a real day+time schedule is currently active.
+  const _scheduledActiveMenu = _allMenus.find(m => {
+    const days = Array.isArray(m.schedule_days) ? m.schedule_days : [];
+    return !!(m.start_time && m.end_time && days.length > 0 && days.length < 7) && m.is_currently_active === true;
+  }) || null;
+  const scheduledActiveMenuLabel = _scheduledActiveMenu
+    ? asStr(_scheduledActiveMenu.tab_label || _scheduledActiveMenu.display_name || _scheduledActiveMenu.name).trim() || null
+    : null;
   const isFoodTruck =
     isFoodTruckCategory(data?.category) ||
     isFoodTruckCategory(data?.restaurant_category) ||
@@ -1259,6 +1268,7 @@ export default function PublicMenuPage() {
           restaurantName,
           restaurantProfileHref,
           menuTypeLabel,
+          scheduledActiveMenuLabel,
           addressLine1,
           addressLine2,
           addressLine,

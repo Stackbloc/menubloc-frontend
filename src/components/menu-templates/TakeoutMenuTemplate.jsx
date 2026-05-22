@@ -76,6 +76,7 @@ export default function TakeoutMenuTemplate(ctx) {
     cartLineCount,
     onGoCheckout,
     brand,
+    scheduledActiveMenuLabel,
     menus = [],
     selectedMenuId,
     onSelectMenu,
@@ -141,8 +142,17 @@ export default function TakeoutMenuTemplate(ctx) {
                 {restaurantName}
               </div>
             )}
-            <div style={{ marginTop: 4, fontSize: 11, fontWeight: 700, color: "#6b7280" }}>
-              {t("menuTemplates.v3.subtitle", "Order ahead — tap items to add")}
+            <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {scheduledActiveMenuLabel ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "#6b7280" }}>
+                  <span aria-hidden="true" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+                  {scheduledActiveMenuLabel}
+                </span>
+              ) : (
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280" }}>
+                  {t("menuTemplates.v3.subtitle", "Order ahead — tap items to add")}
+                </span>
+              )}
             </div>
           </div>
           <ShareButton

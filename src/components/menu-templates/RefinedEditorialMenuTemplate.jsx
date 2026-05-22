@@ -38,6 +38,7 @@ export default function RefinedEditorialMenuTemplate(ctx) {
     restaurantName,
     restaurantProfileHref,
     menuTypeLabel,
+    scheduledActiveMenuLabel,
     addressLine1,
     addressLine2,
     addressLine,
@@ -177,7 +178,21 @@ export default function RefinedEditorialMenuTemplate(ctx) {
                 </div>
               ) : null}
 
-              {menuTypeLabel ? (
+              {scheduledActiveMenuLabel ? (
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "rgba(255,255,255,0.35)",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}>
+                  <span aria-hidden="true" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+                  {scheduledActiveMenuLabel}
+                </span>
+              ) : menuTypeLabel ? (
                 <span style={{
                   fontSize: 11,
                   fontWeight: 600,
