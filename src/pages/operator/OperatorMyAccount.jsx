@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
-import { getSubscriptionStatusLabel } from "../../components/payments/paymentHelpers.js";
+import { getSubscriptionStatusLabel, formatMoney } from "../../components/payments/paymentHelpers.js";
 
 function getPlanTier(planCode) {
   if (!planCode) return "verified";
@@ -67,24 +67,28 @@ function StatusBadge({ status }) {
 }
 
 export default function OperatorMyAccount() {
-  const { selectedRestaurant } = useOperator();
+  const { operator, selectedRestaurant } = useOperator();
   const navigate = useNavigate();
 
   const [subscription, setSubscription] = useState(null);
+  const [billingOverview, setBillingOverview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
 
-  async function loadSubscription(rid) {
+  async function loadData(rid) {
     setLoading(true);
     setError("");
     try {
-      const data = await api.getPlatformSubscriptionStatus(rid);
-      setSubscription(data);
-    } catch (err) {
-      setError("Unable to load subscription details.");
+      const [subData, billingData] = await Promise.allSettled([
+        api.getPlatformSubscriptionStatus(rid),
+        api.getBillingOverview(rid),
+      ]);
+      setSubscription(subData.status === "fulfilled" ? subData.value : null);
+      setBillingOverview(billingData.status === "fulfilled" ? billingData.value : null);
+      if (subData.status === "rejected") setError("Unable to load subscription details.");
     } finally {
       setLoading(false);
     }
@@ -92,9 +96,10 @@ export default function OperatorMyAccount() {
 
   useEffect(() => {
     if (selectedRestaurant?.id) {
-      loadSubscription(selectedRestaurant.id);
+      loadData(selectedRestaurant.id);
     } else {
       setSubscription(null);
+      setBillingOverview(null);
     }
   }, [selectedRestaurant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -121,7 +126,7 @@ export default function OperatorMyAccount() {
       await api.cancelPlatformSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
       setCancelMessage("Cancellation scheduled. Your plan remains active until the end of the billing period.");
       setCancelConfirm(false);
-      await loadSubscription(selectedRestaurant.id);
+      await loadData(selectedRestaurant.id);
     } catch (err) {
       setCancelMessage("Unable to process cancellation. Please try again.");
     } finally {
@@ -143,6 +148,11 @@ export default function OperatorMyAccount() {
           {selectedRestaurant?.name && (
             <p style={{ margin: "6px 0 0", fontSize: 14, color: "#8a9ab0" }}>
               {selectedRestaurant.name}{locationLine ? ` · ${locationLine}` : ""}
+            </p>
+          )}
+          {operator?.email && (
+            <p style={{ margin: "4px 0 0", fontSize: 13, color: "#aab4c0" }}>
+              {operator.email}
             </p>
           )}
         </div>
@@ -201,6 +211,42 @@ export default function OperatorMyAccount() {
               </div>
             )}
 
+            {/* Billing details (non-duplicate fields from billing overview) */}
+            {billingOverview && (
+              <div style={{
+                background: "#fff", border: "1px solid #e4e9f0",
+                borderRadius: 12, padding: "4px 20px 4px",
+                marginBottom: 20,
+              }}>
+                {billingOverview.subscription?.subscription_fee_amount_cents != null && (
+                  <Row
+                    label="Subscription fee"
+                    value={formatMoney(billingOverview.subscription.subscription_fee_amount_cents)}
+                  />
+                )}
+                {billingOverview.payment_method?.present && (
+                  <Row
+                    label="Payment method"
+                    value={
+                      billingOverview.payment_method.brand
+                        ? `${billingOverview.payment_method.brand.charAt(0).toUpperCase()}${billingOverview.payment_method.brand.slice(1)} ···· ${billingOverview.payment_method.last4}`
+                        : "On file"
+                    }
+                  />
+                )}
+                {billingOverview.marketplace?.effective_commission_rate_percent != null && (
+                  <Row
+                    label="Commission rate"
+                    value={`${billingOverview.marketplace.effective_commission_rate_percent}%`}
+                  />
+                )}
+                <Row
+                  label="Marketplace setup"
+                  value={billingOverview.stripe_connect?.onboarding_complete ? "Complete" : "Not complete"}
+                />
+              </div>
+            )}
+
             {/* Account settings nav */}
             <div style={{
               background: "#fff", border: "1px solid #e4e9f0",
@@ -212,6 +258,7 @@ export default function OperatorMyAccount() {
               {[
                 { label: "Restaurant Profile", to: "/operator/profile" },
                 { label: "Manage Subscription", to: "/operator/subscription" },
+                { label: "Delivery Settings", to: "/operator/delivery" },
               ].map(({ label, to }, i, arr) => (
                 <button
                   key={to}

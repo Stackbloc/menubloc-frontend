@@ -27,7 +27,6 @@ const SIDEBAR_W = 230;
 const OPERATIONS_NAV = [
   { to: "/operator",           label: "Home",          icon: "⌂" },
   { to: "/operator/orders",    label: "Orders",        icon: "☷" },
-  { to: "/operator/delivery",  label: "Delivery",      icon: "⇄" },
   { to: "/operator/orders?tab=history", label: "Order History", icon: "⊡" },
 ];
 
