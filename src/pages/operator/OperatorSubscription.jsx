@@ -5,7 +5,6 @@ import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { getCheckoutPlans } from "../../lib/operatorApi.js";
 import {
-  formatMoney,
   getSubscriptionPlanLabel,
   getSubscriptionStatusLabel,
 } from "../../components/payments/paymentHelpers.js";
@@ -55,6 +54,13 @@ const MATRIX = [
 const GREEN = "#1F4E3D";
 const AMBER = "#92400e";
 
+function formatWholeDollarAmount(cents) {
+  if (cents == null) return "";
+  const amount = Number(cents);
+  const dollars = Number.isFinite(amount) ? Math.round(amount / 100) : 0;
+  return `$${dollars}`;
+}
+
 function getPlanTier(planCode) {
   if (!planCode) return "verified";
   if (planCode === "founders_annual") return "founders";
@@ -84,7 +90,7 @@ function getPlanPriceLabel(planCode, foundersPlan) {
   if (planCode === "pro_annual") return "$399/year";
   if (planCode === "pro_monthly") return "$49/month";
   if (planCode === "founders_annual") {
-    return foundersPlan ? `${formatMoney(foundersPlan.amount_cents)}/year` : "Founder annual";
+    return foundersPlan ? `${formatWholeDollarAmount(foundersPlan.amount_cents)}/year` : "Founder annual";
   }
   return "Free";
 }
@@ -447,7 +453,7 @@ export default function OperatorSubscription() {
                         </span>
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 800, color: "#0f1720" }}>
-                        {plan ? formatMoney(plan.amount_cents) : "—"}
+                        {plan ? formatWholeDollarAmount(plan.amount_cents) : "—"}
                         <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7280" }}>
                           {key === "monthly" ? "/mo" : "/yr"}
                         </span>
@@ -504,7 +510,7 @@ export default function OperatorSubscription() {
                 </div>
                 <div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.04em" }}>
-                    {foundersPlan ? <>{formatMoney(foundersPlan.amount_cents)}<span style={{ fontSize: 14, fontWeight: 600, color: "#6b7280" }}>/yr</span></> : "—"}
+                    {foundersPlan ? <>{formatWholeDollarAmount(foundersPlan.amount_cents)}<span style={{ fontSize: 14, fontWeight: 600, color: "#6b7280" }}>/yr</span></> : "—"}
                   </div>
                   <div style={{ fontSize: 12, color: "#8a9ab0", marginTop: 2 }}>24-month price guarantee</div>
                 </div>
