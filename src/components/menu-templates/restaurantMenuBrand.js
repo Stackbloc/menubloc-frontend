@@ -108,9 +108,12 @@ function hslCss(h, s, l) {
  *   accentSoftBg: string,
  *   accentBorder: string,
  *   accentBorderStrong: string,
+ *   accentBold: string,
  *   pageBackground: string,
  *   onAccent: string,
  *   heroBackdrop: string,
+ *   tagline: string|null,
+ *   fontPreset: string,
  * }}
  */
 export function buildRestaurantMenuBrand(menuPayload, restaurantName) {
@@ -146,8 +149,24 @@ export function buildRestaurantMenuBrand(menuPayload, restaurantName) {
     accentSoftBg: rgbaCss(accentRgb, 0.14),
     accentBorder: rgbaCss(accentRgb, 0.35),
     accentBorderStrong: rgbaCss(accentRgb, 0.5),
+    accentBold: rgbaCss(accentRgb, 0.22),
     pageBackground: pageBg,
     onAccent,
     heroBackdrop,
+    tagline: menuPayload?.tagline || null,
+    fontPreset: menuPayload?.font_preset || "default",
   };
+}
+
+const FONT_STACKS = {
+  default: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+  modern:  '"Inter", ui-sans-serif, sans-serif',
+  classic: '"Georgia", ui-serif, serif',
+  bold:    '"Impact", ui-sans-serif, sans-serif',
+  serif:   '"Palatino Linotype", Georgia, serif',
+  script:  '"Segoe Print", "Bradley Hand", cursive',
+};
+
+export function fontStackForPreset(preset) {
+  return FONT_STACKS[preset] || FONT_STACKS.default;
 }

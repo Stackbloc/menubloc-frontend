@@ -118,10 +118,19 @@ export default function PublicMenuItemCard({
   const inCartCount = cartState.totalQuantity;
 
   const pad =
-    density === "cinematic" ? "14px 16px" : density === "takeout" ? "8px 12px" : "10px 14px";
-  const radius = density === "cinematic" ? 20 : density === "takeout" ? 12 : 16;
-  const titleSize = density === "cinematic" ? 17 : 14;
-  const descSize = density === "cinematic" ? 13 : density === "takeout" ? 11 : 12;
+    density === "cinematic" ? "14px 16px" :
+    density === "takeout" ? "8px 12px" :
+    density === "bold-casual" ? "12px 16px" :
+    density === "refined-editorial" ? "14px 0" :
+    "10px 14px";
+  const radius =
+    density === "cinematic" ? 20 :
+    density === "takeout" ? 12 :
+    density === "refined-editorial" ? 0 :
+    density === "bold-casual" ? 14 :
+    16;
+  const titleSize = density === "cinematic" ? 17 : density === "bold-casual" ? 16 : density === "refined-editorial" ? 15 : 14;
+  const descSize = density === "cinematic" ? 13 : density === "takeout" ? 11 : density === "refined-editorial" ? 13 : 12;
 
   function openSheet() {
     setItemSheet({
@@ -173,13 +182,21 @@ export default function PublicMenuItemCard({
       }}
       style={{
         border:
-          inCartCount > 0 ? `1px solid ${softBorder}` : "1px solid var(--gb-color-border)",
+          density === "refined-editorial"
+            ? inCartCount > 0 ? `1px solid ${softBorder}` : "none"
+            : density === "bold-casual"
+              ? inCartCount > 0 ? `1px solid ${softBorder}` : "none"
+              : inCartCount > 0 ? `1px solid ${softBorder}` : "1px solid var(--gb-color-border)",
+        borderLeft: density === "bold-casual" ? `4px solid ${accent}` : undefined,
         borderRadius: radius,
-        background: !itemIsOrderable
-          ? "#121A14"
-          : inCartCount > 0
-            ? softBg
-            : "var(--gb-color-surface-strong)",
+        background:
+          density === "refined-editorial"
+            ? inCartCount > 0 ? softBg : "transparent"
+            : !itemIsOrderable
+              ? "#121A14"
+              : inCartCount > 0
+                ? softBg
+                : "var(--gb-color-surface-strong)",
         padding: pad,
         boxShadow: density === "cinematic" ? "0 8px 28px rgba(0,0,0,0.35)" : "var(--gb-shadow-card)",
         cursor: "pointer",
@@ -193,7 +210,7 @@ export default function PublicMenuItemCard({
           <span
             style={{
               fontSize: titleSize,
-              fontWeight: density === "cinematic" ? 800 : 600,
+              fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : 600,
               color: "#FFFFFF",
               lineHeight: 1.2,
               minWidth: 0,

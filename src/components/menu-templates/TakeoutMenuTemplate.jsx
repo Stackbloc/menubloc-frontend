@@ -97,7 +97,7 @@ export default function TakeoutMenuTemplate(ctx) {
       <div
         style={{
           position: "sticky",
-          top: 88,
+          top: "var(--sph-h, 88px)",
           zIndex: 50,
           background: "rgba(11, 15, 12, 0.97)",
           backdropFilter: "blur(10px)",

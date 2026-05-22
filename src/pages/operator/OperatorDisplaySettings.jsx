@@ -37,6 +37,7 @@ export default function OperatorDisplaySettings() {
     show_descriptions: true,
     highlight_deals:  true,
     accent_color:     null,
+    menu_style:       "v1",
   });
   const [loading,  setLoading]  = useState(true);
   const [saving,   setSaving]   = useState(false);
@@ -284,6 +285,58 @@ export default function OperatorDisplaySettings() {
                     border: "1px solid rgba(0,0,0,0.1)",
                     flexShrink: 0,
                   }} />
+                </div>
+              </Field>
+
+              {/* Menu presentation style */}
+              <Field label="Menu Presentation Style">
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[
+                    { value: "v1", label: "Classic", desc: "Clean list layout — works for any restaurant type." },
+                    { value: "v2", label: "Modern", desc: "Hero image header, featured items carousel." },
+                    { value: "v3", label: "Express", desc: "Compact, conversion-focused layout for fast ordering." },
+                    { value: "v4", label: "Bold Casual", desc: "Strong typography, deal banner, color-blocked sections. Best for sports bars, burgers, BBQ." },
+                    { value: "v5", label: "Refined Editorial", desc: "Elegant spacing, tagline slot, editorial tone. Best for steakhouses, upscale casual, chef-driven." },
+                  ].map(({ value, label, desc }) => {
+                    const isSelected = (settings.menu_style || "v1") === value;
+                    return (
+                      <div
+                        key={value}
+                        onClick={() => setSettings((s) => ({ ...s, menu_style: value }))}
+                        style={{
+                          border: `2px solid ${isSelected ? "#1F4E3D" : "#e4e9f0"}`,
+                          borderRadius: 10,
+                          padding: "10px 14px",
+                          background: isSelected ? "#edf7f2" : "#fff",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 10,
+                        }}
+                      >
+                        <div style={{
+                          width: 18, height: 18, borderRadius: "50%", flexShrink: 0, marginTop: 2,
+                          border: `2px solid ${isSelected ? "#1F4E3D" : "#d1d5db"}`,
+                          background: isSelected ? "#1F4E3D" : "transparent",
+                        }} />
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1720" }}>{label}</div>
+                          <div style={{ fontSize: 12, color: "#5b6675", marginTop: 2 }}>{desc}</div>
+                        </div>
+                        {isSelected && rid ? (
+                          <a
+                            href={`/restaurants/${rid}/menu?menuStyle=${value}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ marginLeft: "auto", fontSize: 12, color: "#1F4E3D", fontWeight: 600, flexShrink: 0, whiteSpace: "nowrap", textDecoration: "underline" }}
+                          >
+                            Preview
+                          </a>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               </Field>
 

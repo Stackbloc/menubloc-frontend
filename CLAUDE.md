@@ -258,6 +258,8 @@ All files below MUST be committed as a unit. Committing `PublicMenuPage.jsx` cha
 - `src/components/menu-templates/ClassicMenuTemplate.jsx`
 - `src/components/menu-templates/CinematicMenuTemplate.jsx`
 - `src/components/menu-templates/TakeoutMenuTemplate.jsx`
+- `src/components/menu-templates/BoldCasualMenuTemplate.jsx`
+- `src/components/menu-templates/RefinedEditorialMenuTemplate.jsx`
 - `src/components/menu-templates/PublicMenuItemCard.jsx`
 - `src/components/menu-templates/menuPresentationUtils.js`
 - `src/components/menu-templates/restaurantMenuBrand.js`

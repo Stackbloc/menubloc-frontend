@@ -1221,7 +1221,7 @@ export default function PublicMenuPage() {
   }
 
   const menuPresentationStyle = normalizeMenuStyle(
-    searchParams.get("menuStyle") || searchParams.get("previewStyle")
+    searchParams.get("menuStyle") || searchParams.get("previewStyle") || pageState.data?.menu_style
   );
 
   const filterChipsSlot = filtersActive ? (
@@ -1383,7 +1383,7 @@ export default function PublicMenuPage() {
           >
             {t(
               "menuTemplates.previewBanner",
-              "Preview mode — sample data only. Use ?previewStyle=v1|v2|v3. On a live menu add ?menuStyle=v2."
+              "Preview mode — sample data only. Use ?previewStyle=v1|v2|v3|v4|v5. On a live menu add ?menuStyle=v4."
             )}
           </div>
         ) : null}

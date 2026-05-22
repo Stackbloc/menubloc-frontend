@@ -1,6 +1,8 @@
 import ClassicMenuTemplate from "./ClassicMenuTemplate.jsx";
 import CinematicMenuTemplate from "./CinematicMenuTemplate.jsx";
 import TakeoutMenuTemplate from "./TakeoutMenuTemplate.jsx";
+import BoldCasualMenuTemplate from "./BoldCasualMenuTemplate.jsx";
+import RefinedEditorialMenuTemplate from "./RefinedEditorialMenuTemplate.jsx";
 import { normalizeMenuStyle } from "./menuPresentationUtils.js";
 
 /**
@@ -11,5 +13,7 @@ export default function PublicMenuMainContent({ menuStyle: rawStyle, templateCon
 
   if (menuStyle === "v2") return <CinematicMenuTemplate {...ctx} />;
   if (menuStyle === "v3") return <TakeoutMenuTemplate {...ctx} />;
+  if (menuStyle === "v4") return <BoldCasualMenuTemplate {...ctx} />;
+  if (menuStyle === "v5") return <RefinedEditorialMenuTemplate {...ctx} />;
   return <ClassicMenuTemplate {...ctx} />;
 }
