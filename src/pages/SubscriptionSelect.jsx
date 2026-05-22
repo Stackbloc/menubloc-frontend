@@ -328,6 +328,31 @@ const s = {
     lineHeight: 1.65,
     maxWidth: 760,
   },
+  noteKicker: {
+    fontSize: 11,
+    fontWeight: 900,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#1F4E3D",
+    marginBottom: 8,
+  },
+  noteSectionTitle: {
+    fontSize: 13,
+    fontWeight: 800,
+    color: "#101828",
+    marginBottom: 6,
+  },
+  noteParagraph: {
+    marginBottom: 12,
+  },
+  noteCallout: {
+    borderRadius: 14,
+    border: "1px solid #cfe0d8",
+    background: "#eef6f1",
+    padding: "12px 14px",
+    color: "#1F4E3D",
+    marginBottom: 12,
+  },
   annualNote: {
     marginTop: -4,
     marginBottom: 16,
@@ -712,14 +737,26 @@ export default function SubscriptionSelect() {
             logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
           />
 
-          <div style={s.heading}>Choose your restaurant plan</div>
+          <div style={s.heading}>Built for Better Value</div>
           <div style={s.subheading}>
-            Choose the plan that fits how you want to launch, price, and operate on Menuply.
+            Choose the plan that fits how you want to launch on a lean platform designed to create better outcomes for restaurants and diners.
           </div>
           <div style={s.noteCard}>
-            Menuply was intentionally designed as a lower-cost platform so restaurants can maintain normal margins while offering stronger customer pricing than higher-cost marketplaces. Thoughtful pricing helps restaurants deliver stronger customer value on Menuply, which in turn benefits restaurants, diners, and the platform.
-            <br /><br />
-            Paid plan checkout keeps Menuply's existing Stripe-powered restaurant banking flow in place. Restaurant deposits and direct restaurant deposits stay tied to that restaurant banking setup when enabled.
+            <div style={s.noteKicker}>Menuply Partner Expectation</div>
+            <div style={s.noteSectionTitle}>Why Menuply Exists</div>
+            <div style={s.noteParagraph}>
+              Many restaurants on higher-cost third-party platforms have had to raise menu prices simply to absorb platform fees. Menuply was built to help break that cycle with a fully self-service operating model and significantly lower platform costs.
+            </div>
+            <div style={s.noteSectionTitle}>Our Partner Expectation</div>
+            <div style={s.noteParagraph}>
+              Restaurants always control their own pricing. Menuply is designed for partners who choose to turn lower platform costs into better everyday pricing, meaningful deals, richer menu information, and more direct engagement for diners.
+            </div>
+            <div style={s.noteCallout}>
+              <strong>Multipliers</strong> are restaurants aligned with that approach. They are central to the Menuply ecosystem, and restaurants that more closely reflect those principles may receive increased visibility opportunities within the platform.
+            </div>
+            <div>
+              Paid plan checkout keeps Menuply's existing Stripe-powered restaurant banking flow in place. Restaurant deposits stay tied to that restaurant banking setup when enabled.
+            </div>
           </div>
         </section>
 

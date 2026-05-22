@@ -132,6 +132,26 @@ const styles = {
   },
   fieldError: { fontSize: 12, color: "#c00", marginTop: 5 },
   helperText: { fontSize: 12, color: "#667085", marginTop: 6 },
+  expectationCard: {
+    marginTop: 12,
+    padding: "14px 16px",
+    borderRadius: 14,
+    background: "#f8faf9",
+    border: "1px solid #d9e0ea",
+  },
+  expectationTitle: {
+    fontSize: 12,
+    fontWeight: 800,
+    color: "#1F4E3D",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  expectationBody: {
+    fontSize: 13,
+    lineHeight: 1.6,
+    color: "#475467",
+  },
   planSummary: {
     display: "flex",
     justifyContent: "space-between",
@@ -470,6 +490,12 @@ export default function RestaurantSignup() {
             </Link>
           </div>
         ) : null}
+        <div style={styles.expectationCard}>
+          <div style={styles.expectationTitle}>Menuply Partner Expectation</div>
+          <div style={styles.expectationBody}>
+            Restaurants always control their own pricing. Menuply is built for partners aligned with real diner value through better pricing, meaningful deals, richer menu information, and more direct engagement.
+          </div>
+        </div>
         <div style={{ ...styles.helperText, marginTop: 10 }}>
           Optional setup modules such as QR starter kit, equipment readiness, and launch deals stay optional later in onboarding.
         </div>
