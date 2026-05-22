@@ -14,43 +14,40 @@ const MATRIX = [
   {
     category: "Discovery & Presence",
     rows: [
-      { label: "Searchable listing", v: true, p: true, f: true },
-      { label: "Public restaurant profile", v: true, p: true, f: true },
-      { label: "QR code & public menu sharing", v: true, p: true, f: true },
-      { label: "Social sharing", v: false, p: true, f: true },
-      { label: "Followers", v: false, p: true, f: true },
+      { label: "Searchable listing", v: true, p: true },
+      { label: "Public restaurant profile", v: true, vNote: "(Limited)", p: true },
+      { label: "QR code & public menu sharing", v: true, p: true },
+      { label: "Diners Social Share Menu and Menu Items", v: false, p: true },
+      { label: "Followers", v: false, p: true },
     ],
   },
   {
     category: "Menu Management",
     rows: [
-      { label: "Single menu + unlimited items", v: true, p: true, f: true },
-      { label: "PDF, spreadsheet & photo upload", v: true, p: true, f: true },
-      { label: "Paste menu text", v: true, p: true, f: true },
-      { label: "Edit, publish & delete items", v: true, p: true, f: true },
-      { label: "Multiple menus", v: false, p: true, f: true },
+      { label: "Single menu + unlimited items", v: true, p: true },
+      { label: "Edit, publish & delete items", v: true, p: true },
+      { label: "Unlimited menus with scheduled display", v: true, vNote: "(Limited to one menu)", p: true },
     ],
   },
   {
     category: "Menu Intelligence",
     rows: [
-      { label: "Nutrition enrichment", v: false, p: true, f: true },
-      { label: "Ingredient intelligence", v: false, p: true, f: true },
-      { label: "Advanced menu attributes", v: false, p: true, f: true },
+      { label: "Ingredient rich, fully searchable menu content", v: false, p: true },
+      { label: "Option to include Menu Item Photos", v: false, p: true },
     ],
   },
   {
     category: "Pricing & Deals",
     rows: [
-      { label: "Bulk price adjustments", v: false, p: true, f: true },
-      { label: "Deals & billboard deals", v: false, p: true, f: true },
+      { label: "Bulk price adjustments", v: false, p: true },
+      { label: "Post Restaurant Created Deals on Deals Page Free of Charge", v: false, p: true },
+      { label: "Place Billboard ads on Profile Screen with option to display in User Search Results", v: false, p: true },
     ],
   },
   {
     category: "Marketplace & Commerce",
     rows: [
-      { label: "Marketplace ordering", v: false, p: true, f: true },
-      { label: "Direct ordering", v: false, p: true, f: true },
+      { label: "Marketplace Ordering (pickup and delivery options)", v: false, p: true },
     ],
   },
 ];
@@ -85,7 +82,7 @@ function getBillingIntervalLabel(planCode) {
 
 function getPlanPriceLabel(planCode, foundersPlan) {
   if (planCode === "pro_annual") return "$399/year";
-  if (planCode === "pro_monthly") return "$34.99/month";
+  if (planCode === "pro_monthly") return "$49/month";
   if (planCode === "founders_annual") {
     return foundersPlan ? `${formatMoney(foundersPlan.amount_cents)}/year` : "Founder annual";
   }
@@ -104,23 +101,27 @@ function StatusRow({ label, value }) {
 function CategoryHeader({ label }) {
   return (
     <tr>
-      <td colSpan={4} style={{ padding: "18px 16px 8px", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8a9ab0", background: "#f8faf9", borderTop: "1px solid #e4e9f0" }}>
+      <td colSpan={3} style={{ padding: "18px 16px 8px", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8a9ab0", background: "#f8faf9", borderTop: "1px solid #e4e9f0" }}>
         {label}
       </td>
     </tr>
   );
 }
 
-function FeatureRow({ label, v, p, f, shade }) {
-  const check = (flag) => flag
-    ? <span style={{ color: GREEN, fontWeight: 800, fontSize: 15 }}>✓</span>
-    : <span style={{ color: "#d1d5db", fontSize: 15 }}>—</span>;
+function FeatureRow({ label, v, vNote, p, shade }) {
+  const check = (flag, note) => flag ? (
+    <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+      <span style={{ color: GREEN, fontWeight: 800, fontSize: 15 }}>✓</span>
+      {note && <span style={{ fontSize: 10, color: "#8a9ab0", fontWeight: 500, whiteSpace: "nowrap" }}>{note}</span>}
+    </span>
+  ) : (
+    <span style={{ color: "#d1d5db", fontSize: 15 }}>—</span>
+  );
   return (
     <tr style={{ background: shade ? "#f8faf9" : "#fff" }}>
       <td style={{ padding: "11px 16px", fontSize: 13, color: "#374151", fontWeight: 500, borderRight: "1px solid #f0f4f8" }}>{label}</td>
-      <td style={{ padding: "11px 0", textAlign: "center", width: 90 }}>{check(v)}</td>
+      <td style={{ padding: "11px 0", textAlign: "center", width: 90 }}>{check(v, vNote)}</td>
       <td style={{ padding: "11px 0", textAlign: "center", width: 90, background: shade ? "#f0f7f4" : "#f8fdf9" }}>{check(p)}</td>
-      <td style={{ padding: "11px 0", textAlign: "center", width: 90 }}>{check(f)}</td>
     </tr>
   );
 }
@@ -398,7 +399,15 @@ export default function OperatorSubscription() {
                 </p>
               </div>
 
-              <div style={planCard("#fff", GREEN, selectedPlanCode === "pro_monthly" || selectedPlanCode === "pro_annual")}>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedPlanCode(proInterval === "annual" ? "pro_annual" : "pro_monthly")}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") setSelectedPlanCode(proInterval === "annual" ? "pro_annual" : "pro_monthly");
+                }}
+                style={{ ...planCard("#fff", GREEN, selectedPlanCode === "pro_monthly" || selectedPlanCode === "pro_annual"), cursor: "pointer" }}
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Pro</span>
                   {currentTier === "pro"
@@ -407,7 +416,7 @@ export default function OperatorSubscription() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {[
-                    { key: "monthly", plan: monthlyPlan, label: "Monthly", sub: "$34.99/month" },
+                    { key: "monthly", plan: monthlyPlan, label: "Monthly", sub: "$49/month" },
                     { key: "annual", plan: annualPlan, label: "Annual", sub: "$399/year" },
                   ].map(({ key, plan, label, sub }) => (
                     <button
@@ -523,10 +532,9 @@ export default function OperatorSubscription() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: "#f8faf9", borderBottom: "2px solid #e4e9f0" }}>
-                    <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#8a9ab0", width: "55%" }}>Feature</th>
-                    <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN, width: 90 }}>Verified</th>
-                    <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 800, color: GREEN, width: 90, background: "#f0f7f4" }}>Pro</th>
-                    <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: AMBER, width: 90 }}>Founder</th>
+                    <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#8a9ab0", width: "65%" }}>Feature</th>
+                    <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN, width: 110 }}>Verified</th>
+                    <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 800, color: GREEN, width: 110, background: "#f0f7f4" }}>Pro</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -534,7 +542,7 @@ export default function OperatorSubscription() {
                     <Fragment key={section.category}>
                       <CategoryHeader label={section.category} />
                       {section.rows.map((row, idx) => (
-                        <FeatureRow key={row.label} label={row.label} v={row.v} p={row.p} f={row.f} shade={idx % 2 === 1} />
+                        <FeatureRow key={row.label} label={row.label} v={row.v} vNote={row.vNote} p={row.p} shade={idx % 2 === 1} />
                       ))}
                     </Fragment>
                   ))}
