@@ -67,7 +67,7 @@ function StatusBadge({ status }) {
 }
 
 export default function OperatorMyAccount() {
-  const { operator, selectedRestaurant } = useOperator();
+  const { operator, selectedRestaurant, subscription: contextSubscription } = useOperator();
   const navigate = useNavigate();
 
   const [subscription, setSubscription] = useState(null);
@@ -103,7 +103,11 @@ export default function OperatorMyAccount() {
     }
   }, [selectedRestaurant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const planCode = subscription?.plan_code || null;
+  // Stripe platform subscription is primary; internal context subscription is fallback
+  const planCode = subscription?.plan_code || contextSubscription?.plan_slug || null;
+  const planDisplayOverride = !subscription?.plan_code && contextSubscription?.plan_name
+    ? contextSubscription.plan_name
+    : null;
   const tier = getPlanTier(planCode);
   const isFreeTier = tier === "verified";
   const normalizedStatus = String(subscription?.status || "").toLowerCase();
@@ -145,14 +149,20 @@ export default function OperatorMyAccount() {
           <h1 style={{ fontSize: 22, fontWeight: 800, color: "#0f1720", margin: 0 }}>
             My Account
           </h1>
-          {selectedRestaurant?.name && (
-            <p style={{ margin: "6px 0 0", fontSize: 14, color: "#8a9ab0" }}>
-              {selectedRestaurant.name}{locationLine ? ` · ${locationLine}` : ""}
+          {operator?.full_name && (
+            <p style={{ margin: "6px 0 0", fontSize: 14, color: "#344054", fontWeight: 600 }}>
+              {operator.full_name}
             </p>
           )}
           {operator?.email && (
-            <p style={{ margin: "4px 0 0", fontSize: 13, color: "#aab4c0" }}>
+            <p style={{ margin: "4px 0 0", fontSize: 13, color: "#8a9ab0" }}>
               {operator.email}
+            </p>
+          )}
+          {(selectedRestaurant?.restaurant_name || selectedRestaurant?.name) && (
+            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#aab4c0" }}>
+              {selectedRestaurant.restaurant_name || selectedRestaurant.name}
+              {locationLine ? ` · ${locationLine}` : ""}
             </p>
           )}
         </div>
@@ -173,10 +183,10 @@ export default function OperatorMyAccount() {
               borderRadius: 12, padding: "4px 20px 4px",
               marginBottom: 20,
             }}>
-              <Row label="Plan" value={getPlanDisplayName(planCode)} />
+              <Row label="Plan" value={planDisplayOverride || getPlanDisplayName(planCode)} />
               <Row
                 label="Status"
-                value={<StatusBadge status={subscription?.status || (isFreeTier ? "active" : null)} />}
+                value={<StatusBadge status={subscription?.status || contextSubscription?.status || (isFreeTier ? "active" : null)} />}
               />
               <Row label="Billing" value={getBillingIntervalLabel(planCode)} />
               <Row label="Renewal date" value={isFreeTier ? "—" : renewalDate} />

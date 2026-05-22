@@ -584,9 +584,6 @@ export default function OperatorMenuEditor() {
           >
             Upload Menu
           </button>
-          <button type="button" style={BTN("primary")} onClick={handleAddItemClick}>
-            Add Item
-          </button>
         </div>
       </div>
 
@@ -669,14 +666,11 @@ export default function OperatorMenuEditor() {
           )
         )}
 
-        {/* Right side: upload + add item */}
+        {/* Right side: add item */}
         {menus.length > 0 && (
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-            <button
-              style={BTN("primary")}
-              onClick={handleAddItemClick}
-            >
-              Add Item
+            <button style={BTN("primary")} onClick={handleAddItemClick}>
+              + Add Item
             </button>
           </div>
         )}
