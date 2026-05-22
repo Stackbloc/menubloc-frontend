@@ -20,6 +20,22 @@ const paragraphStyle = {
   lineHeight: 1.75,
 };
 
+const EMAIL_PATTERN = /([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/gi;
+
+function renderParagraphWithMailto(paragraph) {
+  const parts = String(paragraph || "").split(EMAIL_PATTERN);
+  return parts.map((part, index) => {
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(part)) {
+      return (
+        <a key={`${part}-${index}`} href={`mailto:${part}`} style={{ color: "var(--gb-color-accent)", fontWeight: 700 }}>
+          {part}
+        </a>
+      );
+    }
+    return <React.Fragment key={index}>{part}</React.Fragment>;
+  });
+}
+
 export default function LegalDocumentPage({ document, eyebrow }) {
   return (
     <>
@@ -45,7 +61,7 @@ export default function LegalDocumentPage({ document, eyebrow }) {
             <h2 style={headingStyle}>{section.heading}</h2>
             {section.paragraphs.map((paragraph, index) => (
               <p key={`${section.heading}-${index}`} style={paragraphStyle}>
-                {paragraph}
+                {renderParagraphWithMailto(paragraph)}
               </p>
             ))}
           </section>

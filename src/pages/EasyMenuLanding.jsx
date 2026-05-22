@@ -212,7 +212,7 @@ export default function EasyMenuLanding() {
             </div>
 
             <div style={{ fontSize: 14, color: "#5b6675", wordBreak: "break-word" }}>
-              Prefer email? Send your menu to <strong>menus@menuply.com</strong>.
+              Prefer email? Send your menu to <a href="mailto:menus@menuply.com" style={{ color: "#124ba3", fontWeight: 800 }}>menus@menuply.com</a>.
             </div>
           </div>
 
@@ -301,7 +301,7 @@ export default function EasyMenuLanding() {
               >
                 <strong>Email your menu</strong>
                 <div style={{ color: "#5b6675", wordBreak: "break-word" }}>
-                  Send attachments directly to <strong>menus@menuply.com</strong>.
+                  Send attachments directly to <a href="mailto:menus@menuply.com" style={{ color: "#124ba3", fontWeight: 800 }}>menus@menuply.com</a>.
                 </div>
               </div>
 
