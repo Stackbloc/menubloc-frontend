@@ -268,7 +268,8 @@ export default function BoldCasualMenuTemplate(ctx) {
               }}>
                 {menus.map(menu => {
                   const isSelected = menu.id === selectedMenuId;
-                  const hasSchedule = !!(menu.start_time || menu.end_time || menu.schedule_days);
+                  const scheduleDays = Array.isArray(menu.schedule_days) ? menu.schedule_days : [];
+                  const hasSchedule = !!(menu.start_time && menu.end_time && scheduleDays.length > 0 && scheduleDays.length < 7);
                   const isActiveBySchedule = hasSchedule && menu.is_currently_active === true;
                   return (
                     <button
