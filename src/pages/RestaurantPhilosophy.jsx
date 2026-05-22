@@ -180,7 +180,8 @@ export default function RestaurantPhilosophy() {
         <p style={styles.body}>
           When restaurants and diners come together around a shared ecosystem focused on value,
           transparency, and informed decision-making - powered by thousands of intelligently
-          connected menus - the collective value of the platform multiplies.
+          connected menus - the collective value of the platform multiplies. We like to think of
+          all participants, whether restaurants or diners, as &ldquo;multipliers.&rdquo;
         </p>
 
         <p style={styles.goalIntro}>Our goal is simple:</p>
@@ -197,17 +198,11 @@ export default function RestaurantPhilosophy() {
         </ul>
 
         <div style={styles.multiplierBox}>
-          <p style={styles.multiplierText}>
-            Restaurants always control their own pricing. However, Menuply seeks to partner with
-            restaurants that prioritize customer value without compromising quality. These are the
-            kinds of restaurants we call{" "}
-            <span style={styles.multiplierHighlight}>&ldquo;Multipliers&rdquo;</span> - restaurants
-            that strengthen the ecosystem by contributing stronger value, meaningful deals, richer
-            menu information, and a better dining discovery experience.
-          </p>
           <p style={styles.multiplierTextLast}>
-            Restaurants more closely aligned with these principles may receive increased visibility
-            opportunities within the Menuply platform experience.
+            Restaurants always control their own pricing. However, Menuply seeks to partner with
+            restaurants that prioritize customer value without compromising quality. Restaurants more
+            closely aligned with these principles may receive increased visibility opportunities within
+            the Menuply platform experience.
           </p>
         </div>
 
