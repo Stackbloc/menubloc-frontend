@@ -1065,7 +1065,18 @@ export default function PublicMenuPage() {
       getLocalizedField(data, "name", language) ||
       asStr(data?.restaurant_name || data?.name || `Restaurant ${id}`).trim()
     : "";
-  const menuTypeLabel = asStr(data?.menu_name || data?.menu_label || "").trim() || null;
+  // When multiple tabs are shown, keep the label in sync with the selected tab.
+  // For single-menu restaurants fall back to the API's menu_name/menu_label.
+  const _allMenus = Array.isArray(data?.menus) ? data.menus : [];
+  const _activeMenu = _allMenus.length > 1 && selectedMenuId != null
+    ? (_allMenus.find(m => m.id === selectedMenuId) ?? _allMenus[0])
+    : null;
+  const menuTypeLabel = asStr(
+    (_activeMenu ? (_activeMenu.tab_label || _activeMenu.display_name || _activeMenu.name) : null) ||
+    data?.menu_name ||
+    data?.menu_label ||
+    ""
+  ).trim() || null;
   const isFoodTruck =
     isFoodTruckCategory(data?.category) ||
     isFoodTruckCategory(data?.restaurant_category) ||
