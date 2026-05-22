@@ -315,31 +315,6 @@ function FilterChip({ label, active, onClick, fullWidth, brand }) {
   );
 }
 
-function ActiveFilterChip({ label, onRemove }) {
-  return (
-    <button
-      type="button"
-      onClick={onRemove}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        minHeight: 34,
-        padding: "0 12px",
-        borderRadius: 999,
-        border: "1px solid #1F2937",
-        background: "#1A2419",
-        color: "#D1D5DB",
-        fontSize: 12,
-        fontWeight: 800,
-        cursor: "pointer",
-      }}
-    >
-      <span>{label}</span>
-      <span aria-hidden="true" style={{ color: "#6B7280", fontSize: 13, lineHeight: 1 }}>×</span>
-    </button>
-  );
-}
 
 function FilterDrawer({ open, onClose, children }) {
   if (!open) return null;
@@ -758,22 +733,6 @@ export default function PublicMenuPage() {
   // should be OR-ed into allergenContextActive without changing the render conditions below.
   const ALLERGEN_FILTER_KEYS = ["dairy_free", "gluten_free"];
   const allergenContextActive = ALLERGEN_FILTER_KEYS.some(k => dietPrefs[k]);
-  const activeFilterChips = [
-    ...DIET_CHIPS
-      .filter(({ key }) => dietPrefs[key])
-      .map(({ key, label }) => ({
-        key,
-        label: t(`diet.${key}`, label),
-        onRemove: () => handleTogglePref(key),
-      })),
-    ...(dealsFilter
-      ? [{
-          key: "deals",
-          label: t("common.deals", "Deals"),
-          onRemove: () => handleTogglePref("deals"),
-        }]
-      : []),
-  ];
   const proximityLat = asFiniteNumber(searchParams.get("lat"));
   const proximityLng = asFiniteNumber(searchParams.get("lng"));
   const contextCity  = searchParams.get("city")  || null;
@@ -1229,22 +1188,6 @@ export default function PublicMenuPage() {
     searchParams.get("menuStyle") || searchParams.get("previewStyle") || pageState.data?.menu_style
   );
 
-  const filterChipsSlot = filtersActive ? (
-    <div
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 8,
-        padding: 0,
-        marginBottom: 16,
-      }}
-    >
-      {activeFilterChips.map(({ key, label, onRemove }) => (
-        <ActiveFilterChip key={key} label={label} onRemove={onRemove} />
-      ))}
-    </div>
-  ) : null;
-
   const franchiseSlot = franchiseGroup ? (
     <FranchiseBanner
       group={franchiseGroup}
@@ -1274,7 +1217,6 @@ export default function PublicMenuPage() {
           shareAnalyticsContext,
           franchiseSlot,
           intakeBannerSlot: <IntakePreviewBanner show={isIntakePreview} />,
-          filterChipsSlot,
           onOpenFilters: () => setIsFilterDrawerOpen(true),
           displaySections,
           displayableItemCount,

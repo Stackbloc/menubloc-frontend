@@ -59,7 +59,6 @@ export default function ClassicMenuTemplate(ctx) {
     shareAnalyticsContext,
     franchiseSlot,
     intakeBannerSlot,
-    filterChipsSlot,
     onOpenFilters,
     displaySections,
     displayableItemCount,
@@ -256,8 +255,6 @@ export default function ClassicMenuTemplate(ctx) {
       <div>
         <main style={{ minWidth: 0, width: "100%" }}>
           {intakeBannerSlot}
-
-          {filterChipsSlot}
 
           {menuPresentation?.tabs_allowed_for_public_view && menus.length > 1 && (
             <>

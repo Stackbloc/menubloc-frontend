@@ -48,7 +48,6 @@ export default function RefinedEditorialMenuTemplate(ctx) {
     shareAnalyticsContext,
     franchiseSlot,
     intakeBannerSlot,
-    filterChipsSlot,
     onOpenFilters,
     displaySections,
     displayableItemCount,
@@ -270,8 +269,6 @@ export default function RefinedEditorialMenuTemplate(ctx) {
               <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "24px 0 0" }} />
             </div>
           )}
-
-          {filterChipsSlot}
 
           {/* Multi-menu tabs */}
           {menuPresentation?.tabs_allowed_for_public_view && menus.length > 1 && (

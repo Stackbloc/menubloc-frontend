@@ -56,7 +56,6 @@ export default function CinematicMenuTemplate(ctx) {
     shareAnalyticsContext,
     franchiseSlot,
     intakeBannerSlot,
-    filterChipsSlot,
     onOpenFilters,
     displaySections,
     displayableItemCount,
@@ -186,7 +185,6 @@ export default function CinematicMenuTemplate(ctx) {
       </div>
 
       {intakeBannerSlot}
-      {filterChipsSlot}
 
       {menuPresentation?.tabs_allowed_for_public_view && menus.length > 1 && (
         <>

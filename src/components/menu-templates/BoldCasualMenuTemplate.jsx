@@ -47,7 +47,6 @@ export default function BoldCasualMenuTemplate(ctx) {
     shareAnalyticsContext,
     franchiseSlot,
     intakeBannerSlot,
-    filterChipsSlot,
     onOpenFilters,
     displaySections,
     displayableItemCount,
@@ -274,8 +273,6 @@ export default function BoldCasualMenuTemplate(ctx) {
               </div>
             </div>
           )}
-
-          {filterChipsSlot}
 
           {/* Multi-menu tabs */}
           {menuPresentation?.tabs_allowed_for_public_view && menus.length > 1 && (
