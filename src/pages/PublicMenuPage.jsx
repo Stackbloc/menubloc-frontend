@@ -47,7 +47,7 @@ function useIsMobile(breakpoint = 900) {
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templates/menuPresentationUtils.js";
-import { buildRestaurantMenuBrand } from "../components/menu-templates/restaurantMenuBrand.js";
+import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu-templates/restaurantMenuBrand.js";
 import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
 import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { toConsumerErrorMessage } from "../lib/api.js";
@@ -1292,6 +1292,7 @@ export default function PublicMenuPage() {
           cartLineCount: basketMatchesCurrentRestaurant ? itemCount : 0,
           onGoCheckout: openCheckout,
           brand: menuBrand,
+          fontStack: fontStackForPreset(menuBrand?.fontPreset),
           menus: data?.menus || [],
           selectedMenuId,
           onSelectMenu: handleSelectMenu,

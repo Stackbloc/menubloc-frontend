@@ -66,6 +66,7 @@ export default function BoldCasualMenuTemplate(ctx) {
     fmtMoney,
     getConsumerDisplayPrice,
     brand,
+    fontStack,
     menus = [],
     selectedMenuId,
     onSelectMenu,
@@ -224,7 +225,7 @@ export default function BoldCasualMenuTemplate(ctx) {
         </div>
       </div>
 
-      <div>
+      <div style={{ fontFamily: fontStack }}>
         <main style={{ minWidth: 0, width: "100%" }}>
           {intakeBannerSlot}
 
