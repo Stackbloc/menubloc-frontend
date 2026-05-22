@@ -298,3 +298,41 @@ Then identify the string, the file/line, and the user-facing condition that woul
 ### Scope
 
 Applies to all strings that may reach the user's screen: `throw new Error("...")` inside fetch functions whose catch block sets an error state, JSX text literals in error/empty-state branches, any prop assigned to an error or message label.
+
+---
+
+## 🔒 SIMILAR ITEMS — STRICT TRUST MODE
+
+**Established:** 2026-05-22
+**File:** `src/pages/MenuItemDetailPage.jsx` — `ExploreSimilarDishes` component
+
+### Core Rule
+
+If `similar.length === 0` the section must be invisible — no container, no banner, no placeholder.
+
+### What was removed (2026-05-22) — do NOT re-introduce
+
+- `buildSimilarItemsLabel` function — generated the "Showing broader matches because nearby similar dishes were limited" text
+- `helperLabel` variable and its conditional render block
+- The banner div that displayed `helperLabel` above result rows
+
+### Hard Restrictions
+
+- **Never** render any text explaining why Similar Items is empty or limited
+- **Never** render an empty Similar Items container (`SectionCard` with zero children)
+- **Never** add explanatory fallback text, placeholder rows, or "no results" messaging to this section
+- **Never** re-introduce `buildSimilarItemsLabel` or any function that generates "broader matches" language
+- The `similar === null || similar.length === 0` early return (line 1056) is the correct gate — do not weaken it
+
+### Permitted UI states
+
+| State | Behavior |
+|-------|----------|
+| `similar.length >= 1` | Render `SectionCard` with result rows and Compare buttons |
+| `similar.length === 0` | Return `null` — section entirely invisible |
+| `failed === true` | Return `null` — section entirely invisible |
+
+### Banner text that must never appear
+
+- `"Showing broader matches because nearby similar dishes were limited"`
+- Any equivalent text referencing result scarcity, expanded search, or limited local availability
