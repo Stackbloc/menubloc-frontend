@@ -12,6 +12,29 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
+/* ============================================================
+   STICKY CLEARANCE SYSTEM
+   --sph-h        live height of StickyPageHeader, set via ResizeObserver in StickyPageHeader.jsx
+   --bottom-nav-h live height of BottomNav, set via ResizeObserver in BottomNav.jsx
+
+   GUARDRAIL: never hardcode pixel offsets for elements that must clear these bars.
+   Use top: var(--sph-h, <fallback>) and padding-bottom: var(--bottom-nav-h, <fallback>)
+   so offsets adapt automatically when the bars change size (e.g. when title prop is set).
+
+   Utility classes:
+     .gb-sticky-below-sph     — sub-sticky element that must clear StickyPageHeader
+     .gb-bottom-nav-clearance — bottom padding equal to BottomNav height
+   ============================================================ */
+:root {
+  --sph-h: 73px;
+  --bottom-nav-h: 72px;
+}
+
+/* Use on any sticky element that must clear StickyPageHeader */
+.gb-sticky-below-sph {
+  top: var(--sph-h, 73px) !important;
+}
+
 :root {
   color-scheme: dark;
 
@@ -137,7 +160,7 @@ textarea:focus-visible {
 }
 
 .gb-bottom-nav-clearance {
-  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--bottom-nav-h, 72px) + 8px);
 }
 
 .gb-shell {

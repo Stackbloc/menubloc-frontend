@@ -29,7 +29,7 @@ export default function SiteFooter() {
         style={{
           maxWidth: 1450,
           margin: "0 auto",
-          padding: "18px 20px calc(80px + env(safe-area-inset-bottom, 0px))",
+          padding: "18px 20px calc(var(--bottom-nav-h, 72px) + 8px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",

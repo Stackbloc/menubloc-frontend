@@ -8,8 +8,9 @@ import { MKS_CATEGORIES, mapRawCategoryToMks } from "./mks/mksCategories.js";
 // Helpers
 // -----------------------------
 function money(x) {
+  if (x == null) return "";
   const n = Number(x);
-  if (!Number.isFinite(n)) return "";
+  if (!Number.isFinite(n) || n <= 0) return "";
   return `$${n.toFixed(2)}`;
 }
 

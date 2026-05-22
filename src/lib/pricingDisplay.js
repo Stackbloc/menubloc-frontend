@@ -14,7 +14,7 @@ function toCentsFromDollars(value) {
 function pickCents(item, keys) {
   for (const key of keys) {
     const value = toFiniteNumber(item?.[key]);
-    if (value != null) return Math.round(value);
+    if (value != null && value > 0) return Math.round(value);
   }
   return null;
 }
@@ -22,7 +22,7 @@ function pickCents(item, keys) {
 function pickDollarPrice(item, keys) {
   for (const key of keys) {
     const cents = toCentsFromDollars(item?.[key]);
-    if (cents != null) return cents;
+    if (cents != null && cents > 0) return cents;
   }
   return null;
 }
@@ -73,6 +73,18 @@ export function getBaseMenuPrice(item) {
 
 export function formatMoney(value) {
   return formatMoneyFromCents(value);
+}
+
+/**
+ * Format a cents value for MENU ITEM display only.
+ * Returns null (render nothing) for any value that is null, undefined, NaN, or <= 0.
+ * Use this everywhere a menu item price is shown to a consumer.
+ * Use formatMoney() (not this) for cart totals, order confirmations, and other
+ * financial amounts where zero cents is a valid confirmed value.
+ */
+export function formatMenuItemPrice(cents) {
+  if (cents == null || cents <= 0) return null;
+  return formatMoneyFromCents(cents);
 }
 
 // TODO(pricing): Prefer backend-sent fields as they roll out broadly:

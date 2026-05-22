@@ -65,7 +65,7 @@ function asNum(v) {
 }
 
 function moneyFromFloat(price) {
-  if (price == null || Number.isNaN(Number(price))) return null;
+  if (price == null || Number.isNaN(Number(price)) || Number(price) <= 0) return null;
   return Number(price).toLocaleString(undefined, { style: "currency", currency: "USD" });
 }
 
@@ -1252,8 +1252,8 @@ export default function MenuItemDetailPage() {
   }, [shareData]);
 
   const priceLabel =
-    item?.priceMinor != null ? formatMoney(item.priceMinor) :
-    item?.price      != null ? moneyFromFloat(item.price) : null;
+    (item?.priceMinor != null && item.priceMinor > 0) ? formatMoney(item.priceMinor) :
+    (item?.price      != null && Number(item.price) > 0) ? moneyFromFloat(item.price) : null;
 
   const fromItemId   = searchParams.get("fromItem");
   const fromItemName = searchParams.get("fromName");

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 
@@ -35,11 +36,27 @@ const TABS = [
 ];
 
 export default function BottomNav() {
+  const navRef = useRef(null);
   const { pathname } = useLocation();
   const { itemCount } = useOrderCart();
+
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const set = () =>
+      document.documentElement.style.setProperty("--bottom-nav-h", el.offsetHeight + "px");
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    set();
+    return () => {
+      ro.disconnect();
+      document.documentElement.style.removeProperty("--bottom-nav-h");
+    };
+  }, []);
   const basketBadge = itemCount > 9 ? "9+" : String(itemCount);
   return (
     <nav
+      ref={navRef}
       aria-label="Main navigation"
       style={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200,

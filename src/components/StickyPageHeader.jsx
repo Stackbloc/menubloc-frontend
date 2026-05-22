@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BrandLogo } from "./BrandLogo.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
@@ -18,7 +18,19 @@ export default function StickyPageHeader({
   dealsPillBorder,
   logoPageColor,
 }) {
+  const barRef = useRef(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const set = () =>
+      document.documentElement.style.setProperty("--sph-h", el.offsetHeight + "px");
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    set();
+    return () => ro.disconnect();
+  }, []);
   const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
 
   const [filters, setFilters] = useState(() => loadDietPrefs());
@@ -67,7 +79,7 @@ export default function StickyPageHeader({
       />
 
       {/* Full-width opaque bar so wide viewports do not show scrolling page content in the side gutters. */}
-      <div style={{
+      <div ref={barRef} style={{
         position: "sticky",
         top: 0,
         zIndex: 100,

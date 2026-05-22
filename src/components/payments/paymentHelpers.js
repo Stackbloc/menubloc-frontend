@@ -7,10 +7,12 @@ export function hasStripePublishableKey() {
 }
 
 export function formatMoney(cents, currency = "usd") {
+  if (cents == null) return "";
+  const n = Number(cents);
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: String(currency || "usd").toUpperCase(),
-  }).format((Number(cents || 0) || 0) / 100);
+  }).format((Number.isFinite(n) ? n : 0) / 100);
 }
 
 export function getQrProductCode(packageType) {

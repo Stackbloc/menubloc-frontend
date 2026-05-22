@@ -218,7 +218,7 @@ function asBool(v) {
 /* Whole dollars only — no cents on search cards */
 function fmtPrice(row) {
   const cents = getConsumerDisplayPrice(row) ?? getConsumerDisplayPrice(row?.item);
-  if (cents != null) return "$" + Math.round(cents / 100);
+  if (cents != null && cents > 0) return "$" + Math.round(cents / 100);
   return "";
 }
 

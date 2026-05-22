@@ -68,15 +68,18 @@ export default function MenuCard({ item, compact = false }) {
         >
           {name}
         </h4>
-        <div
-          style={{
-            color: price ? "var(--gb-color-ink-strong)" : "var(--gb-color-accent)",
-            fontSize: compact ? 14 : 15,
-            fontWeight: 800,
-          }}
-        >
-          {price || "Price unavailable"}
-        </div>
+        {price ? (
+          <div
+            style={{
+              color: "var(--gb-color-ink-strong)",
+              fontSize: compact ? 14 : 15,
+              fontWeight: 800,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {price}
+          </div>
+        ) : null}
       </div>
 
       {notes ? (
