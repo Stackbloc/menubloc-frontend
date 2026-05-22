@@ -1139,6 +1139,22 @@ export default function GrubbidDiscovery() {
               onChipClick={handleChipClick}
             />
           </div>
+
+          {/* Feed count + allergen status — sticky with header */}
+          {!feedLoading && !inlineError && (
+            <div style={{ padding: "6px 16px 0", fontSize: 12, fontWeight: 700, color: "#9ca3af", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              {hasVisibleMenus && (
+                <span>{displayMenus.length} {displayMenus.length === 1 ? "menu" : "menus"}</span>
+              )}
+              {hasNoneAllergenSelected ? (
+                <span style={{ color: "#667085", fontSize: 11, fontWeight: 800 }}>Allergen filter off</span>
+              ) : activeExcludedAllergens.length > 0 ? (
+                <span style={{ color: "#dc2626", fontSize: 11, fontWeight: 800 }}>
+                  ⚠ {activeExcludedAllergens.map((a) => formatDiscoveryAllergenLabel(a)).join(", ")} excluded
+                </span>
+              ) : null}
+            </div>
+          )}
         </div>
 
         {/* ── SCROLLABLE FEED CONTENT ────────────────────────────────────── */}
@@ -1275,24 +1291,6 @@ export default function GrubbidDiscovery() {
               <div style={{ fontSize: 13, color: "#9CA3AF" }}>
                 {t("discovery.tryDifferent", "Try a different search or location.")}
               </div>
-            </div>
-          )}
-
-          {/* Feed count + active filter status */}
-          {!feedLoading && !inlineError && (
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", marginBottom: 8, paddingLeft: 2, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              {hasVisibleMenus && (
-                <span>{displayMenus.length} {displayMenus.length === 1 ? "menu" : "menus"}</span>
-              )}
-              {hasNoneAllergenSelected ? (
-                <span style={{ color: "#667085", fontSize: 11, fontWeight: 800 }}>
-                  Allergen filter off
-                </span>
-              ) : activeExcludedAllergens.length > 0 ? (
-                <span style={{ color: "#dc2626", fontSize: 11, fontWeight: 800 }}>
-                  ⚠ {activeExcludedAllergens.map((a) => formatDiscoveryAllergenLabel(a)).join(", ")} excluded
-                </span>
-              ) : null}
             </div>
           )}
 
