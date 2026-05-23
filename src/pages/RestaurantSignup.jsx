@@ -27,7 +27,7 @@ const DESIGN_SELECTION_ROUTE = "/restaurant/design-select";
 const PLAN_LABELS = {
   verified: "Verified",
   pro_partner: "Pro Partner",
-  performance_partner: "Performance Partner",
+  founders_annual: "Founder",
   pro_monthly: "Pro Partner",
   pro_annual: "Pro Partner",
 };
@@ -744,8 +744,8 @@ export default function RestaurantSignup() {
             ? "Creating account..."
             : selectedPlan === "verified"
             ? "Create account and continue with Verified"
-            : selectedPlan === "performance_partner"
-            ? "Create account and continue with Performance Partner"
+            : selectedPlan === "founders_annual"
+            ? "Create account and continue with Founder"
             : "Create account and continue with Pro Partner"}
         </button>
       </form>

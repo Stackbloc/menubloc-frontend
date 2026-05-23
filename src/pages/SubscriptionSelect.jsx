@@ -6,8 +6,7 @@
  * Purpose:
  *   Onboarding step 2 — choose a restaurant plan after account
  *   creation. Verified stays free, Pro Partner uses Stripe
- *   checkout, and Performance Partner continues with no upfront
- *   platform fee.
+ *   checkout, and Founder uses annual Stripe checkout.
  * ============================================================
  */
 
@@ -31,7 +30,7 @@ const API = (
 const PLAN_LABELS = {
   verified: "Verified",
   pro_partner: "Pro Partner",
-  performance_partner: "Performance Partner",
+  founders_annual: "Founder",
   pro_monthly: "Pro Partner",
   pro_annual: "Pro Partner",
 };
@@ -40,6 +39,8 @@ const PRO_INTERVALS = {
   monthly: { planCode: "pro_monthly", priceLabel: "$49/month" },
   annual: { planCode: "pro_annual", priceLabel: "$399/year" },
 };
+
+const FOUNDERS_PLAN = { planCode: "founders_annual", priceLabel: "$299/year" };
 
 const OPTIONAL_ONBOARDING_MODULES = [
   {
@@ -87,23 +88,24 @@ const PLAN_CARDS = {
       "Annual option with a lower effective monthly cost",
     ],
   },
-  performance_partner: {
-    title: "Performance Partner",
-    price: "$0 upfront platform fee",
+  founders_annual: {
+    title: "Founder",
+    price: "$299/year",
     description:
-      "For restaurants that want full ordering, promotional capabilities, and launch support with no upfront platform fee.",
+      "Everything in Pro, with a 24-month price guarantee.",
     features: [
-      "Tablet included",
-      "Full online ordering capabilities",
+      "Everything included in Pro Partner",
+      "24-month price guarantee",
+      "Unlimited menus for time of day, events, seasonal menus, happy hour, and specials",
+      "Advanced restaurant profile with logo, featured meal, and restaurant bio",
       "Deals and promotions",
       "Follow functionality",
       "Shareable menus and dishes",
       "Billboard functionality",
-      "Reduced introductory marketplace commission rate for first 24 months",
-      "Cancel anytime",
+      "Online ordering",
     ],
     footnote:
-      "Early partner introductory rate applies for the first 24 months. After 24 months, commission reverts to the standard marketplace partner rate. Cancel anytime. If you switch to Pro Partner, an early conversion or equipment recovery fee may apply.",
+      "Founder annual pricing includes a 24-month price guarantee.",
   },
 };
 
@@ -706,8 +708,8 @@ export default function SubscriptionSelect() {
     await submitRestaurantPlan(selectedInterval.planCode);
   }
 
-  async function handlePerformancePartner() {
-    await submitRestaurantPlan("performance_partner");
+  async function handleFounder() {
+    await submitRestaurantPlan("founders_annual");
   }
 
   if (checkoutSuccess) {
@@ -849,15 +851,15 @@ export default function SubscriptionSelect() {
           </article>
 
           <article style={s.planCard(false)}>
-            <div style={s.planEyebrow}>Performance Partner</div>
-            <div style={s.planName}>Performance Partner</div>
+            <div style={s.planEyebrow}>Founder</div>
+            <div style={s.planName}>Founder</div>
             <div style={s.planDesc}>
-              {PLAN_CARDS.performance_partner.description}
+              {PLAN_CARDS.founders_annual.description}
             </div>
-            <div style={s.priceValue}>{PLAN_CARDS.performance_partner.price}</div>
+            <div style={s.priceValue}>{FOUNDERS_PLAN.priceLabel}</div>
 
             <ul style={s.featureList}>
-              {PLAN_CARDS.performance_partner.features.map((feature) => (
+              {PLAN_CARDS.founders_annual.features.map((feature) => (
                 <li key={feature} style={s.featureItem}>
                   <span style={s.featureMark(false)}>&#10003;</span>
                   <span>{feature}</span>
@@ -866,16 +868,16 @@ export default function SubscriptionSelect() {
             </ul>
 
             <div style={s.footnote}>
-              {PLAN_CARDS.performance_partner.footnote}
+              {PLAN_CARDS.founders_annual.footnote}
             </div>
 
             <button
               type="button"
               disabled={isSubmittingPlan}
               style={s.button(false, isSubmittingPlan)}
-              onClick={handlePerformancePartner}
+              onClick={handleFounder}
             >
-              Choose Performance Partner
+              {isSubmittingPlan ? "Preparing checkout..." : "Choose Founder"}
             </button>
           </article>
         </section>
