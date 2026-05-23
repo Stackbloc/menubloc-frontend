@@ -35,12 +35,13 @@ function startOfMonth(d) {
   return x;
 }
 
-function sumOrders(orders, since) {
+function sumOrders(orders, since, until) {
   return orders
     .filter(o => {
       const s = String(o.status || "").toLowerCase();
       if (!["completed", "confirmed", "ready", "preparing"].includes(s)) return false;
-      return new Date(o.created_at) >= since;
+      const t = new Date(o.created_at);
+      return t >= since && (!until || t < until);
     })
     .reduce((sum, o) => sum + (Number(o.subtotal_cents) || 0), 0);
 }
@@ -212,7 +213,7 @@ export default function OperatorDashboard() {
   const pendingCount    = liveOrders.filter(o => ["pending", "confirmed"].includes(String(o.status || "").toLowerCase())).length;
   const cancelledToday  = allOrders.filter(o => {
     const s = String(o.status || "").toLowerCase();
-    return s === "canceled" || s === "cancelled" && new Date(o.created_at) >= todayStart;
+    return (s === "canceled" || s === "cancelled") && new Date(o.created_at) >= todayStart;
   }).length;
 
   const salesToday     = fmt$(sumOrders(allOrders, todayStart));
