@@ -12,7 +12,7 @@
  *   • "Feature as Billboard" section — promotes a deal as a display billboard
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -186,6 +186,11 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
     cta_url:                    initialBillboard?.cta_url || "",
     is_primary_search_billboard: initialBillboard?.is_primary_search_billboard || false,
   });
+
+  const photoInputRef = useRef(null);
+  const [bbPhotoFile, setBbPhotoFile] = useState(null);
+  const [bbPhotoPreview, setBbPhotoPreview] = useState(null);
+  const [bbPhotoError, setBbPhotoError] = useState("");
 
   const f    = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
   const bb_f = (k) => (e) => setBb(p => ({ ...p, [k]: e.target.value }));
@@ -410,15 +415,74 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={LABEL}>
-                  Image URL{" "}
+                  Photo{" "}
                   <span style={{ fontWeight: 400, color: "#b0bbc8" }}>(optional)</span>
                 </label>
                 <input
-                  style={{ ...INPUT, width: "100%" }}
-                  value={bb.image_url}
-                  onChange={bb_f("image_url")}
-                  placeholder="https://…"
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  style={{ display: "none" }}
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (bbPhotoPreview) URL.revokeObjectURL(bbPhotoPreview);
+                    const previewUrl = URL.createObjectURL(file);
+                    setBbPhotoFile(file);
+                    setBbPhotoPreview(previewUrl);
+                    setBb(p => ({ ...p, image_url: "" }));
+                    setBbPhotoError("");
+                    e.target.value = "";
+                  }}
                 />
+                {bbPhotoPreview || bb.image_url ? (
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <div style={{
+                      width: 80, height: 80, borderRadius: 8, overflow: "hidden",
+                      border: "1.5px solid #e4e9f0", flexShrink: 0,
+                    }}>
+                      <img
+                        src={bbPhotoPreview || bb.image_url}
+                        alt="Billboard"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={() => setBbPhotoError("Could not load image")}
+                      />
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <button
+                        type="button"
+                        style={{ ...BTN("ghost"), fontSize: 12, padding: "4px 10px" }}
+                        onClick={() => photoInputRef.current?.click()}
+                      >
+                        Replace
+                      </button>
+                      <button
+                        type="button"
+                        style={{ ...BTN("danger"), fontSize: 12, padding: "4px 10px" }}
+                        onClick={() => {
+                          if (bbPhotoPreview) URL.revokeObjectURL(bbPhotoPreview);
+                          setBbPhotoFile(null);
+                          setBbPhotoPreview(null);
+                          setBb(p => ({ ...p, image_url: "" }));
+                          setBbPhotoError("");
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    style={{ ...BTN("ghost"), fontSize: 12, padding: "6px 14px" }}
+                    onClick={() => photoInputRef.current?.click()}
+                  >
+                    + Upload photo
+                  </button>
+                )}
+                {bbPhotoError && (
+                  <div style={{ fontSize: 12, color: "#b91c1c", marginTop: 4 }}>{bbPhotoError}</div>
+                )}
               </div>
               <div>
                 <label style={LABEL}>
@@ -455,6 +519,44 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
               />
               <span style={{ fontSize: 12, fontWeight: 600, color: "#0f1720" }}>Show in search results</span>
             </label>
+
+            {/* Billboard preview */}
+            {(bbPhotoPreview || bb.image_url || bb.headline_override || form.title) && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", marginBottom: 6 }}>Preview</div>
+                <div style={{
+                  width: 200, height: 200, borderRadius: 12, overflow: "hidden",
+                  position: "relative", border: "1.5px solid #e4e9f0", flexShrink: 0,
+                  background: bbPhotoPreview || bb.image_url
+                    ? `url(${encodeURI(bbPhotoPreview || bb.image_url)}) center/cover no-repeat`
+                    : "linear-gradient(135deg, #1F4E3D 0%, #3b7a68 100%)",
+                }}>
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)",
+                  }} />
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 12px 10px" }}>
+                    <div style={{
+                      color: "#fff", fontWeight: 800, fontSize: 13, lineHeight: 1.3,
+                      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}>
+                      {bb.headline_override || form.title || "Deal title"}
+                    </div>
+                    {bb.cta_label && (
+                      <div style={{
+                        marginTop: 6, display: "inline-block",
+                        background: "#fff", color: "#1F4E3D",
+                        borderRadius: 6, padding: "4px 10px",
+                        fontSize: 11, fontWeight: 700,
+                      }}>
+                        {bb.cta_label}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -464,7 +566,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
         <button
           style={{ ...BTN("primary"), opacity: (busy || !valid) ? 0.6 : 1 }}
           disabled={busy || !valid}
-          onClick={() => onSave(buildPayload(), buildBillboardPayload())}
+          onClick={() => onSave(buildPayload(), buildBillboardPayload(), bbPhotoFile)}
           type="button"
         >
           {busy ? "Saving…" : initial.id ? "Save changes" : "Create deal"}
@@ -588,13 +690,22 @@ export default function OperatorDealsEditor() {
     }).catch(() => {});
   }, [rid]);
 
-  async function handleCreate(payload, billboardPayload) {
+  async function handleCreate(payload, billboardPayload, pendingPhotoFile) {
     setBusy(true);
     try {
       const result = await api.createDeal(rid, payload);
       if (billboardPayload?.enabled && result.deal?.id) {
+        let finalBbPayload = { ...billboardPayload };
+        if (pendingPhotoFile) {
+          try {
+            const uploaded = await api.uploadBillboardPhoto(rid, result.deal.id, pendingPhotoFile);
+            if (uploaded?.photo_url) finalBbPayload.image_url = uploaded.photo_url;
+          } catch {
+            // Non-fatal — billboard saves without photo
+          }
+        }
         try {
-          await api.upsertDealBillboard(rid, result.deal.id, billboardPayload);
+          await api.upsertDealBillboard(rid, result.deal.id, finalBbPayload);
         } catch (billboardErr) {
           setError(`Deal created but billboard could not be saved: ${billboardErr.message}`);
         }
@@ -623,14 +734,23 @@ export default function OperatorDealsEditor() {
     }
   }
 
-  async function handleEditSave(payload, billboardPayload) {
+  async function handleEditSave(payload, billboardPayload, pendingPhotoFile) {
     setBusy(true);
     try {
       await api.updateDeal(rid, editingDeal.id, payload);
 
       if (billboardPayload?.enabled) {
+        let finalBbPayload = { ...billboardPayload };
+        if (pendingPhotoFile) {
+          try {
+            const uploaded = await api.uploadBillboardPhoto(rid, editingDeal.id, pendingPhotoFile);
+            if (uploaded?.photo_url) finalBbPayload.image_url = uploaded.photo_url;
+          } catch {
+            // Non-fatal
+          }
+        }
         try {
-          await api.upsertDealBillboard(rid, editingDeal.id, billboardPayload);
+          await api.upsertDealBillboard(rid, editingDeal.id, finalBbPayload);
         } catch (billboardErr) {
           setError(`Deal saved but billboard could not be updated: ${billboardErr.message}`);
         }
