@@ -857,23 +857,59 @@ export default function OperatorMenuEditor() {
 
       ) : items.length === 0 ? (
 
-        /* Empty menu — upload-first (no Menu Photos card) */
+        /* Empty menu — show upload cards inline */
         <div style={{
           background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14,
-          padding: "36px 32px",
+          padding: "28px 24px",
         }}>
-          <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720", marginBottom: 6 }}>
-              Start with Upload Menu or Add Item
+              Add your menu
             </div>
             <div style={{ fontSize: 13, color: "#8a9ab0" }}>
-              Use the action bar above to upload your menu or add items manually.
+              Upload your existing menu or add items one at a time.
             </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+            <UploadCard
+              icon="📋"
+              label="Paste menu text"
+              sub="Copy & paste your menu"
+              onClick={() => navigate("/operator/menu/upload/paste")}
+            />
+            <UploadCard
+              icon="📄"
+              label="Upload PDF"
+              sub="PDF menu file"
+              onClick={() => navigate("/operator/menu/upload/pdf")}
+            />
+            <UploadCard
+              icon="📊"
+              label="Spreadsheet"
+              sub=".xlsx or .csv"
+              onClick={() => navigate("/operator/menu/upload/spreadsheet")}
+            />
+            <UploadCard
+              icon="📷"
+              label="Photo / image"
+              sub="JPG, PNG, WEBP"
+              onClick={() => navigate("/operator/menu/upload/photo")}
+            />
+          </div>
+
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10, marginBottom: 16,
+            color: "#c4cdd6", fontSize: 12,
+          }}>
+            <div style={{ flex: 1, height: 1, background: "#e4e9f0" }} />
+            <span>or add a single item</span>
+            <div style={{ flex: 1, height: 1, background: "#e4e9f0" }} />
           </div>
 
           <div style={{ textAlign: "center" }}>
             <button type="button" style={BTN("muted")} onClick={handleAddItemClick}>
-              Add Item
+              + Add Item
             </button>
           </div>
         </div>

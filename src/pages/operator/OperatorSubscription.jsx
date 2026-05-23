@@ -13,40 +13,38 @@ const MATRIX = [
   {
     category: "Discovery & Presence",
     rows: [
-      { label: "Searchable listing", v: true, p: true },
-      { label: "Public restaurant profile", v: true, vNote: "(Limited)", p: true },
-      { label: "QR code & public menu sharing", v: true, p: true },
+      { label: "Fully searchable restaurant listing on Menuply", v: true, p: true },
+      { label: "Premiere hosted restaurant profile page, including logo, billboard, about us, featured dish", v: true, vNote: "(Limited)", p: true },
+      { label: "Dynamic QR Code & menus that are sharable by restaurant", v: true, p: true },
       { label: "Diners Social Share Menu and Menu Items", v: false, p: true },
-      { label: "Followers", v: false, p: true },
-      { label: "Place Billboard ads on Profile Screen with option to display in User Search Results", v: false, p: true },
+      { label: "Restaurant profile that diner may follow and receive restaurant offers and updates", v: false, p: true },
+      { label: "Place displayable billboards on profile page with optional display in search results (additional fee may apply)", v: false, p: true },
     ],
   },
   {
     category: "Menu Management",
     rows: [
-      { label: "Single menu + unlimited items", v: true, p: true },
-      { label: "Edit, publish & delete items", v: true, p: true },
-      { label: "Unlimited menus with scheduled display", v: true, vNote: "(Limited to one menu)", p: true },
+      { label: "Unlimited menus, unlimited menu items, with scheduled/timed menu display options", v: true, vNote: "(Limited to one menu)", p: true },
+      { label: "Edit menu, menu items, with advanced pricing tools", v: true, p: true },
+      { label: "Option to include Menu Item Photos", v: false, p: true },
     ],
   },
   {
     category: "Menu Intelligence",
     rows: [
       { label: "Ingredient rich, fully searchable menu content", v: false, p: true },
-      { label: "Option to include Menu Item Photos", v: false, p: true },
     ],
   },
   {
     category: "Pricing & Deals",
     rows: [
-      { label: "Bulk price adjustments", v: false, p: true },
-      { label: "Post Restaurant Created Deals on Deals Page Free of Charge", v: false, p: true },
+      { label: "Post restaurant created deals on deals page free of charge", v: false, p: true },
     ],
   },
   {
     category: "Marketplace & Commerce",
     rows: [
-      { label: "Marketplace Ordering (pickup and delivery options)", v: false, p: true },
+      { label: "Marketplace ordering (pickup and delivery options)", v: false, p: true },
     ],
   },
 ];
@@ -537,10 +535,14 @@ export default function OperatorSubscription() {
             <div style={{ background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14, overflow: "hidden", marginBottom: 32 }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
+                  <tr style={{ background: "#f8faf9", borderBottom: "1px solid #e4e9f0" }}>
+                    <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 13, fontWeight: 800, color: "#0f1720", width: "65%" }}>Feature</th>
+                    <th colSpan={2} style={{ padding: "12px 0", textAlign: "center", fontSize: 13, fontWeight: 800, color: "#0f1720" }}>Subscription</th>
+                  </tr>
                   <tr style={{ background: "#f8faf9", borderBottom: "2px solid #e4e9f0" }}>
-                    <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#8a9ab0", width: "65%" }}>Feature</th>
-                    <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN, width: 110 }}>Verified</th>
-                    <th style={{ padding: "12px 0", textAlign: "center", fontSize: 12, fontWeight: 800, color: GREEN, width: 110, background: "#f0f7f4" }}>Pro</th>
+                    <th style={{ padding: "6px 16px 10px", width: "65%" }} />
+                    <th style={{ padding: "6px 0 10px", textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN, width: 110 }}>Verified</th>
+                    <th style={{ padding: "6px 0 10px", textAlign: "center", fontSize: 12, fontWeight: 800, color: GREEN, width: 110, background: "#f0f7f4" }}>Pro</th>
                   </tr>
                 </thead>
                 <tbody>
