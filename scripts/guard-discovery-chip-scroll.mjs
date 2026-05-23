@@ -33,9 +33,16 @@ if (!rowSlice.includes("gb-discovery-chip-scroller")) {
   process.exit(1);
 }
 
-if (/overflowX:\s*["']auto["']/.test(rowSlice) || /overflowX:\s*['"]auto['"]/.test(rowSlice)) {
+if (/overflowX:\s*["']auto["']/.test(rowSlice)) {
   console.error(
     "guard-discovery-chip-scroll: Do not set overflowX:auto inline on DiscoveryChipRow — use index.css .gb-discovery-chip-scroller only."
+  );
+  process.exit(1);
+}
+
+if (/overflowX:\s*["']hidden["']/.test(rowSlice)) {
+  console.error(
+    "guard-discovery-chip-scroll: Do not set overflowX:hidden on any element inside DiscoveryChipRow — it clips the chip scroller and breaks desktop scrolling."
   );
   process.exit(1);
 }

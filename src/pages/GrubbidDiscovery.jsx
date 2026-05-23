@@ -95,7 +95,7 @@ function DiscoveryChipRow({ chips, filters, onChipClick }) {
   }, [chips.length]);
 
   return (
-    <div style={{ padding: "0 16px", minWidth: 0, width: "100%", overflowX: "hidden", overflowY: "visible" }}>
+    <div style={{ padding: "0 16px", minWidth: 0, width: "100%" }}>
       <div ref={scrollerRef} className="gb-discovery-chip-scroller">
         {chips.map((chip) => {
           const isActive = chip.filterKey ? !!filters[chip.filterKey] : false;
