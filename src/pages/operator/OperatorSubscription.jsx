@@ -532,6 +532,35 @@ export default function OperatorSubscription() {
               </div>
             </div>
 
+            {/* QR kit add-on callout */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              gap: 16, flexWrap: "wrap",
+              background: "#f0f7f4", border: "1.5px solid #a7d4c0",
+              borderRadius: 12, padding: "16px 20px", marginBottom: 28,
+            }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#1F4E3D", marginBottom: 4 }}>
+                  ▣ Add QR Menu Kits — print-ready & ready to scan
+                </div>
+                <div style={{ fontSize: 13, color: "#344054", lineHeight: 1.5 }}>
+                  Put your menu on every table. Menuply QR kits include custom-branded cards, stands, and stickers — printed and shipped. Pairs with any plan.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/operator/qr-kits/order")}
+                style={{
+                  background: "#1F4E3D", color: "#fff", border: "none",
+                  borderRadius: 8, padding: "10px 18px",
+                  fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  whiteSpace: "nowrap", fontFamily: "inherit",
+                }}
+              >
+                Shop QR Kits →
+              </button>
+            </div>
+
             <div style={{ background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14, overflow: "hidden", marginBottom: 32 }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
