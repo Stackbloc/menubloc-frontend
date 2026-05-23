@@ -425,7 +425,6 @@ export default function OperatorDashboard() {
             <QuickBtn icon="◷" label="Public Profile" onClick={() => window.open(`/restaurant-profile/${rid}`, "_blank")} />
             <QuickBtn icon="▣" label="Menu Editor" onClick={() => navigate("/operator/menu")} />
             <QuickBtn icon="🔥" label="Deals" onClick={() => navigate("/operator/deals")} />
-            <QuickBtn icon="📋" label="All Orders" onClick={() => navigate("/operator/orders")} />
             <QuickBtn icon="▣" label="QR Tools" onClick={() => navigate("/operator/qr-kits/order")} />
           </div>
         </div>

@@ -428,9 +428,11 @@ export default function RestaurantOrdersPage() {
   const [historyFilter, setHistoryFilter] = useState({ status: "", fulfillment_type: "", days: 21 });
   const [cancelledOrders, setCancelledOrders] = useState([]);
   const [cancelledLoading, setCancelledLoading] = useState(false);
+  const [completedOrders, setCompletedOrders] = useState([]);
+  const [completedLoading, setCompletedLoading] = useState(false);
 
   // UI tabs — support ?tab=history from sidebar link
-  const initialTab = ["pending", "cancelled", "history"].includes(searchParams.get("tab"))
+  const initialTab = ["pending", "completed", "cancelled", "history"].includes(searchParams.get("tab"))
     ? searchParams.get("tab")
     : "pending";
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -605,6 +607,16 @@ export default function RestaurantOrdersPage() {
       .then((data) => setCancelledOrders(data.orders || []))
       .catch(() => setCancelledOrders([]))
       .finally(() => setCancelledLoading(false));
+  }, [activeTab, rid, refreshKey]);
+
+  // ── Completed tab ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (activeTab !== "completed" || !rid) return;
+    setCompletedLoading(true);
+    getOrderHistory(rid, { days: 2, status: "completed" })
+      .then((data) => setCompletedOrders(data.orders || []))
+      .catch(() => setCompletedOrders([]))
+      .finally(() => setCompletedLoading(false));
   }, [activeTab, rid, refreshKey]);
 
   // ── Auto-print after confirm ───────────────────────────────────────────────
@@ -879,94 +891,44 @@ export default function RestaurantOrdersPage() {
             </div>
           </div>
 
-          <div style={{
-            marginTop: 14, padding: "16px 18px", borderRadius: 16,
-            background: availabilityStyles.bg,
-            border: `2px solid ${availabilityStyles.border}`,
-            color: availabilityStyles.color,
-          }}>
-            <div style={{ fontSize: 16, fontWeight: 900 }}>{availabilityStyles.label}</div>
-            <div style={{ marginTop: 6, fontSize: 13 }}>
-              {availabilityStatus === "accepting_orders"
-                ? "Customers can place new orders."
-                : "Orders currently paused. Customers can still browse menus but cannot place new orders."}
-            </div>
-            {(availability?.order_acceptance_reason_code || availability?.order_acceptance_note) && (
-              <div style={{ marginTop: 8, fontSize: 13 }}>
-                {availability?.order_acceptance_reason_code
-                  ? `Reason: ${String(availability.order_acceptance_reason_code).replaceAll("_", " ")}`
-                  : null}
-                {availability?.order_acceptance_note ? ` ${availability.order_acceptance_note}` : null}
-              </div>
-            )}
-            <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {/* ── Order Status Panel ────────────────────────────── */}
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            {[
+              { status: "accepting_orders", label: "Accepting Orders", dot: "#22c55e", activeText: "#166534", activeBg: "#dcfce7", activeBorder: "#86efac" },
+              { status: "paused",           label: "Pause Orders",     dot: "#f59e0b", activeText: "#92400e", activeBg: "#fffbeb", activeBorder: "#fcd34d" },
+              { status: "closed",           label: "Stop Orders",      dot: "#ef4444", activeText: "#991b1b", activeBg: "#fef2f2", activeBorder: "#fca5a5" },
+            ].map(({ status, label, dot, activeText, activeBg, activeBorder }) => {
+              const isActive = availabilityStatus === status;
+              return (
                 <button
+                  key={status}
                   type="button"
-                  disabled={availabilityBusy}
-                  onClick={() => requestAvailabilityUpdate("accepting_orders")}
+                  disabled={availabilityBusy || isActive}
+                  onClick={() => requestAvailabilityUpdate(status)}
                   style={{
-                    minHeight: 42, padding: "10px 14px", borderRadius: 12,
-                    border: "none", background: "#166534", color: "#fff",
-                    fontWeight: 800, cursor: "pointer",
+                    flex: 1, minHeight: 54, borderRadius: 12,
+                    border: isActive ? `2px solid ${activeBorder}` : "1.5px solid #e4e9f0",
+                    background: isActive ? activeBg : "#fff",
+                    cursor: isActive ? "default" : "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    padding: "10px 12px",
+                    transition: "all 0.12s",
+                    opacity: availabilityBusy && !isActive ? 0.6 : 1,
+                    fontFamily: "inherit",
                   }}
                 >
-                  {availabilityStatus === "accepting_orders" ? "Accepting Orders" : "Resume Orders"}
+                  <span style={{
+                    width: 11, height: 11, borderRadius: "50%",
+                    background: isActive ? dot : "#d0d5dd",
+                    flexShrink: 0, display: "inline-block",
+                    boxShadow: isActive ? `0 0 7px ${dot}` : "none",
+                  }} />
+                  <span style={{ fontSize: 13, fontWeight: 800, color: isActive ? activeText : "#8a9ab0" }}>
+                    {label}
+                  </span>
                 </button>
-                <button
-                  type="button"
-                  disabled={availabilityBusy}
-                  onClick={() => requestAvailabilityUpdate("paused")}
-                  style={{
-                    minHeight: 42, padding: "10px 14px", borderRadius: 12,
-                    border: "none", background: "#d97706", color: "#fff",
-                    fontWeight: 800, cursor: "pointer",
-                  }}
-                >
-                  Pause Orders
-                </button>
-                <button
-                  type="button"
-                  disabled={availabilityBusy}
-                  onClick={() => requestAvailabilityUpdate("closed")}
-                  style={{
-                    minHeight: 42, padding: "10px 14px", borderRadius: 12,
-                    border: "none", background: "#b91c1c", color: "#fff",
-                    fontWeight: 800, cursor: "pointer",
-                  }}
-                >
-                  Close Orders
-                </button>
-              </div>
-              <select
-                value={availabilityDraft.reason_code}
-                onChange={(e) => setAvailabilityDraft((current) => ({ ...current, reason_code: e.target.value }))}
-                style={{
-                  minHeight: 42, maxWidth: 320, padding: "8px 12px", borderRadius: 10,
-                  border: "1px solid #d0d5dd", background: "#fff",
-                }}
-              >
-                <option value="">Optional reason</option>
-                <option value="too_busy">Too busy</option>
-                <option value="kitchen_backlog">Kitchen backlog</option>
-                <option value="staff_shortage">Staff shortage</option>
-                <option value="sold_out">Sold out</option>
-                <option value="equipment_issue">Equipment issue</option>
-                <option value="closing_early">Closing early</option>
-                <option value="other">Other</option>
-              </select>
-              <textarea
-                value={availabilityDraft.note}
-                onChange={(e) => setAvailabilityDraft((current) => ({ ...current, note: e.target.value }))}
-                rows={2}
-                placeholder="Optional note"
-                style={{
-                  width: "100%", maxWidth: 520, padding: "10px 12px", borderRadius: 10,
-                  border: "1px solid #d0d5dd", background: "#fff", resize: "vertical",
-                  fontFamily: "inherit", boxSizing: "border-box",
-                }}
-              />
-            </div>
+              );
+            })}
           </div>
 
           {/* ── NEW ORDER flash banner ─────────────────────────────────── */}
@@ -1241,6 +1203,7 @@ export default function RestaurantOrdersPage() {
             <div style={{ display: "flex", gap: 4, borderBottom: "2px solid #e4e9f0", marginBottom: 20 }}>
               {[
                 { key: "pending",   label: `Pending Orders${pendingOrders.length > 0 ? ` (${pendingOrders.length})` : ""}` },
+                { key: "completed", label: "Completed Orders" },
                 { key: "cancelled", label: "Cancelled Orders" },
                 { key: "history",   label: "21-Day History" },
               ].map((tab) => (
@@ -1287,6 +1250,41 @@ export default function RestaurantOrdersPage() {
                       />
                     );
                   })}
+                </div>
+              )
+            )}
+
+            {/* Completed Orders */}
+            {activeTab === "completed" && (
+              completedLoading ? (
+                <div style={{ color: "#8a9ab0" }}>Loading…</div>
+              ) : completedOrders.length === 0 ? (
+                <div style={{ color: "#8a9ab0", padding: "24px 0", fontSize: 15 }}>
+                  No completed orders in the last 2 days.
+                </div>
+              ) : (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {completedOrders.map((order) => (
+                    <div key={order.id} style={{
+                      background: "#fff", borderRadius: 14, padding: "14px 16px",
+                      border: "1px solid #e4e9f0",
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: "#8a9ab0", textTransform: "uppercase" }}>#{order.id}</div>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: "#0f1720", marginTop: 2 }}>{order.customer_name}</div>
+                          <div style={{ fontSize: 13, color: "#5b6675", marginTop: 2 }}>{fmtTime(order.created_at)}</div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: "#0f1720" }}>{fmt$(order.total_cents)}</div>
+                          <div style={{ marginTop: 6, display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                            <StatusPill value={order.fulfillment_type} />
+                            <StatusPill value={order.order_status} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )
             )}
