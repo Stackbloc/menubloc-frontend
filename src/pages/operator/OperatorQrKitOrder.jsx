@@ -236,13 +236,13 @@ export default function OperatorQrKitOrder() {
           }}
         >
           <div style={{ display: "inline-flex", padding: "7px 12px", borderRadius: 999, background: "rgba(255,255,255,0.12)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16 }}>
-            Platform Payment
+            Add-On
           </div>
           <h1 style={{ margin: 0, fontSize: "clamp(32px, 5vw, 56px)", lineHeight: 0.96, letterSpacing: "-0.06em", maxWidth: 720 }}>
-            QR kits paid on the Menuply platform account
+            Turn every table into a direct connection to your menu
           </h1>
           <p style={{ margin: "14px 0 0", maxWidth: 760, fontSize: 17, lineHeight: 1.7, color: "rgba(255,255,255,0.88)" }}>
-            The QR kit is charged on the platform account with Stripe Elements, then fulfillment is created only after a verified successful payment intent exists in the backend ledger.
+            Your Menuply profile and ordering page are live — now make sure your guests can find them. QR kits put a scannable link right in front of every customer, driving follows, orders, and repeat visits from the moment they sit down.
           </p>
         </section>
 
