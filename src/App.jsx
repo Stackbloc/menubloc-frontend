@@ -558,6 +558,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/help" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantHelpCenter /></OperatorRoute>} />
         <Route path="/operator/profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorProfileEditor /></OperatorRoute>} />
         <Route path="/operator/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
+        <Route path="/operator/menu/:menuId/edit" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
         <Route path="/operator/menu/upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
         <Route path="/operator/menu/upload/paste" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
         <Route path="/operator/menu/upload/pdf" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><PdfUploadPage /></OperatorRoute>} />

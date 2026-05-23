@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -259,6 +259,8 @@ export default function OperatorMenuEditor() {
   const rid = selectedRestaurant?.id;
   const navigate = useNavigate();
   const location = useLocation();
+  const { menuId: routeMenuId } = useParams();
+  const routeIsEditMode = Boolean(routeMenuId);
 
   const [menus, setMenus]             = useState([]);
   const [selectedMenuId, setSelectedMenuId] = useState(null);
@@ -312,11 +314,16 @@ export default function OperatorMenuEditor() {
       .then(d => {
         const list = d.menus || [];
         setMenus(list);
-        if (list.length) setSelectedMenuId(list[0].id);
+        if (routeMenuId) {
+          const target = list.find(m => m.id === Number(routeMenuId));
+          setSelectedMenuId(target?.id ?? list[0]?.id ?? null);
+        } else if (list.length) {
+          setSelectedMenuId(list[0].id);
+        }
       })
       .catch(e => setError(e.message))
       .finally(() => setLoadingMenus(false));
-  }, [rid]);
+  }, [rid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load items when menu changes
   const loadItems = useCallback(async (menuId) => {
@@ -569,23 +576,54 @@ export default function OperatorMenuEditor() {
 
   return (
     <OperatorLayout title="Menu">
-      <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
-        <div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>Menu</div>
-          <div style={{ fontSize: 13, color: "#8a9ab0", marginTop: 4 }}>
-            Upload your menu, add items, and edit what appears on your public profile.
+      {routeIsEditMode ? (
+        /* ── Edit-mode header ───────────────────────────────────────── */
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              type="button"
+              onClick={() => navigate("/operator/menu")}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#8a9ab0", fontWeight: 700, padding: 0, fontFamily: "inherit" }}
+            >
+              ← Menus
+            </button>
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>
+                {selectedMenu ? `Editing: ${selectedMenu.name}` : "Edit Menu"}
+              </div>
+              <div style={{ fontSize: 13, color: "#8a9ab0", marginTop: 2 }}>
+                Add, edit, and manage items for this menu.
+              </div>
+            </div>
           </div>
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             type="button"
-            style={BTN(routeIsUploadHub || routeIsPasteFlow ? "primary" : "ghost")}
-            onClick={() => navigate("/operator/menu/upload")}
+            style={{ ...BTN("primary"), padding: "10px 20px" }}
+            onClick={() => navigate("/operator/menu")}
           >
-            Add via Upload
+            Done
           </button>
         </div>
-      </div>
+      ) : (
+        /* ── Overview header ────────────────────────────────────────── */
+        <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>Menu</div>
+            <div style={{ fontSize: 13, color: "#8a9ab0", marginTop: 4 }}>
+              Upload your menu, add items, and edit what appears on your public profile.
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              style={BTN(routeIsUploadHub || routeIsPasteFlow ? "primary" : "ghost")}
+              onClick={() => navigate("/operator/menu/upload")}
+            >
+              Add via Upload
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Top bar: New → Edit → Publish → Delete ───────────────── */}
       <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
@@ -642,12 +680,22 @@ export default function OperatorMenuEditor() {
             </div>
           ) : (
             <>
-              <button
-                style={BTN("ghost")}
-                onClick={() => { setRenamingMenuId(selectedMenuId); setRenameValue(selectedMenu.name); }}
-              >
-                Edit
-              </button>
+              {!routeIsEditMode && (
+                <button
+                  style={BTN("ghost")}
+                  onClick={() => navigate(`/operator/menu/${selectedMenuId}/edit`)}
+                >
+                  Edit
+                </button>
+              )}
+              {routeIsEditMode && (
+                <button
+                  style={BTN("ghost")}
+                  onClick={() => { setRenamingMenuId(selectedMenuId); setRenameValue(selectedMenu.name); }}
+                >
+                  Rename
+                </button>
+              )}
               <button
                 style={BTN("ghost")}
                 onClick={handlePublishMenu}
