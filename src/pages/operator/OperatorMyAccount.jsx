@@ -72,6 +72,8 @@ export default function OperatorMyAccount() {
 
   const [subscription, setSubscription] = useState(null);
   const [billingOverview, setBillingOverview] = useState(null);
+  const [menus, setMenus] = useState([]);
+  const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cancelConfirm, setCancelConfirm] = useState(false);
@@ -82,12 +84,16 @@ export default function OperatorMyAccount() {
     setLoading(true);
     setError("");
     try {
-      const [subData, billingData] = await Promise.allSettled([
+      const [subData, billingData, menusData, dealsData] = await Promise.allSettled([
         api.getPlatformSubscriptionStatus(rid),
         api.getBillingOverview(rid),
+        api.getMenus(rid),
+        api.getDeals(rid),
       ]);
       setSubscription(subData.status === "fulfilled" ? subData.value : null);
       setBillingOverview(billingData.status === "fulfilled" ? billingData.value : null);
+      setMenus(menusData.status === "fulfilled" ? menusData.value?.menus || [] : []);
+      setDeals(dealsData.status === "fulfilled" ? dealsData.value?.deals || [] : []);
       if (subData.status === "rejected") setError("Unable to load subscription details.");
     } finally {
       setLoading(false);
@@ -100,6 +106,8 @@ export default function OperatorMyAccount() {
     } else {
       setSubscription(null);
       setBillingOverview(null);
+      setMenus([]);
+      setDeals([]);
     }
   }, [selectedRestaurant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -177,6 +185,65 @@ export default function OperatorMyAccount() {
           </div>
         ) : (
           <>
+            {/* Restaurant stats */}
+            {(() => {
+              const totalItems = menus.reduce((sum, m) => sum + (Number(m.item_count) || 0), 0);
+              const activeDeals = deals.filter((d) => String(d.status || "").toLowerCase() === "active").length;
+              const liveMenus = menus.filter((m) => String(m.status || "").toLowerCase() === "published").length;
+              const menuStatusLabel = liveMenus > 0
+                ? `${liveMenus} menu${liveMenus === 1 ? "" : "s"} live`
+                : menus.length > 0 ? "No menus published" : "No menus yet";
+              return (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 20 }}>
+                  {[
+                    { label: "Menu items", value: totalItems },
+                    { label: "Active deals", value: activeDeals },
+                    { label: "Menu status", value: menuStatusLabel },
+                  ].map(({ label, value }) => (
+                    <div key={label} style={{
+                      background: "#fff", border: "1px solid #e4e9f0",
+                      borderRadius: 12, padding: "14px 16px",
+                    }}>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: "#0f1720", lineHeight: 1.1 }}>{value}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#8a9ab0", marginTop: 6 }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Quick actions */}
+            <div style={{
+              background: "#fff", border: "1px solid #e4e9f0",
+              borderRadius: 12, marginBottom: 20, overflow: "hidden",
+            }}>
+              <div style={{ padding: "10px 16px 4px", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8a9ab0" }}>
+                Quick Actions
+              </div>
+              {[
+                { label: "Open Menu Editor", action: () => navigate("/operator/menu") },
+                { label: "View Public Menu", action: () => window.open(`/public/restaurants/${selectedRestaurant.id}/menu`, "_blank") },
+                { label: "View Public Profile", action: () => window.open(`/restaurant-profile/${selectedRestaurant.id}`, "_blank") },
+                { label: "QR Tools", action: () => navigate("/operator/qr-kits/order") },
+              ].map(({ label, action }, i) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={action}
+                  style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    width: "100%", padding: "13px 16px",
+                    background: "none", border: "none",
+                    borderTop: i === 0 ? "none" : "1px solid #f0f4f8",
+                    cursor: "pointer", textAlign: "left", fontFamily: "inherit",
+                  }}
+                >
+                  <span style={{ fontSize: 13, color: "#0f1720", fontWeight: 600 }}>{label}</span>
+                  <span style={{ fontSize: 16, color: "#c4cdd6" }}>›</span>
+                </button>
+              ))}
+            </div>
+
             {/* Subscription summary card */}
             <div style={{
               background: "#fff", border: "1px solid #e4e9f0",
