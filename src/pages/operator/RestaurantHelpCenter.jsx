@@ -45,6 +45,253 @@ const TICKET_CATEGORIES = [
 
 const OPERATIONS_SECTIONS = [
   {
+    id: "portal-overview",
+    title: "Operator Portal Overview",
+    articles: [
+      {
+        id: "overview-home",
+        title: "Home Screen",
+        summary: "Live operational dashboard for the current shift.",
+        points: [
+          "Displays the live clock (updates every second) and today's date alongside the restaurant name and city — confirming which location is active at a glance.",
+          "Store status banner reflects one of three states: Accepting Orders (green), Orders Paused (amber), or Closed (red). The banner color and label update immediately when status changes.",
+          "Use the Pause Ordering dropdown to pause for 30 min, 1 hr, 3 hrs, or a custom number of minutes. The pause note is recorded and visible to the operations team.",
+          "Stats row shows Orders Today, Pending orders currently awaiting action, and Cancelled orders today. These are pulled live from the order queue.",
+          "Sales card shows Today, Yesterday, Week-to-Date (Sunday–Saturday), and Month-to-Date totals. Only completed, confirmed, preparing, and ready orders are counted — cancelled and declined orders are excluded.",
+          "An active alerts banner appears when orders are pending confirmation — click it to jump directly to the Orders screen's Pending tab.",
+          "Quick Access buttons navigate to Public Profile, Menu Editor, and Deals without returning to the sidebar.",
+          "Dashboard data auto-refreshes every 60 seconds. The clock is always live.",
+        ],
+      },
+      {
+        id: "overview-orders",
+        title: "Orders Screen",
+        summary: "Real-time order management for incoming, in-progress, and past orders.",
+        points: [
+          "Order Status Panel at the top has three lights: Accepting Orders (green), Pause Orders (amber), Stop Orders (red). The lit indicator shows the current state. Click any unlit button to change status — Pause and Stop show a confirmation dialog before committing.",
+          "When a new order arrives, a flashing red NEW ORDER banner appears and an alert beep sounds (once audio is activated). Each order card shows customer name, phone, items, totals, fulfillment type, and elapsed time.",
+          "Accept an order to confirm it and trigger an automatic print ticket. Decline opens a reason dialog; the customer's payment is refunded immediately on decline.",
+          "Order progression: Accept → Start Preparing → Mark Ready → Mark Completed. For delivery orders, a Confirm Picked Up step is added before completion.",
+          "Tabs: Pending Orders (accepted/preparing/ready in the current queue), Completed Orders (last 2 days), Cancelled Orders (last 2 days), Past Orders (up to 21 days with status, type, and date range filters).",
+          "The connection indicator in the top bar shows live stream status (Live / Connecting / Reconnecting). If connection drops, a warning banner appears — orders continue to be polled every 15 seconds automatically.",
+          "Alert volume can be set to Low, Med, High, or Max. Activate audio once per session with the Activate Alerts button, then adjust the level with the volume selector.",
+        ],
+      },
+      {
+        id: "overview-menu-editor",
+        title: "Menu Editor",
+        summary: "Create and manage all menus and menu items for the restaurant.",
+        points: [
+          "Overview mode lists all menus. From here, create a new menu with Add via Upload (PDF or image) or select a menu and click Edit to enter full edit mode.",
+          "Edit mode focuses on one menu. The header shows the menu name and provides a ← Menus back link and a Done button. All changes are saved in real time.",
+          "Within a menu, items are grouped into sections. Use + Add Item to add a new item. Items can have a name, price, description, modifiers, dietary flags (vegan, gluten-free, etc.), and an optional photo.",
+          "Multiple menus are supported — a breakfast menu, lunch menu, late-night menu, and more can all coexist. Scheduled display settings control which menu is active during which hours.",
+          "Menus marked as published are visible on the public profile. Unpublished menus are visible only inside the editor.",
+        ],
+      },
+      {
+        id: "overview-deals",
+        title: "Deals",
+        summary: "Create time-limited offers that appear on your public profile and in search.",
+        points: [
+          "Deals are customer-visible offers attached to your Menuply restaurant profile. They appear in search results and on your public profile page.",
+          "Each deal has a headline, description, optional discount amount or type, and an active date range. Expired deals are automatically hidden from the public profile.",
+          "Active deals signal promotions to customers who follow your profile and to new customers discovering you in search.",
+          "Only create deals the kitchen can reliably fulfill during the active period. A deal visible on the profile creates a customer expectation.",
+        ],
+      },
+      {
+        id: "overview-my-account",
+        title: "My Account",
+        summary: "Subscription status and plan details for this restaurant location.",
+        points: [
+          "Shows the active plan name (Verified, Pro Monthly, Pro Annual, or Founders), current status (Active, Trialing, Past Due), billing interval, next renewal date, and whether auto-renew is on.",
+          "Use Change Plan to navigate to the full plan picker. Use Cancel Subscription to end the plan at the current billing period end — the Cancel button only appears for active paid subscriptions not already set to cancel.",
+          "Subscription changes apply immediately on upgrade. Cancellations keep benefits active until the period end date shown.",
+        ],
+      },
+      {
+        id: "overview-qr-tools",
+        title: "QR Tools",
+        summary: "Order physical QR menu kits to connect every table to your Menuply profile.",
+        points: [
+          "QR kits are printed table cards that link customers directly to the restaurant's live Menuply ordering page and profile.",
+          "Orders are placed through the portal with a Stripe payment. Fulfillment begins only after payment is confirmed — no partial fulfillment.",
+          "Best placements: table tents, counter standees, takeout bags, and receipt inserts. The QR code links to your current public menu — no reprinting needed when you update items.",
+          "QR kits can be ordered as an add-on at any subscription level.",
+        ],
+      },
+      {
+        id: "overview-subscription-page",
+        title: "Subscription & Plan Selection",
+        summary: "Full plan comparison and upgrade flow — accessible to account owners.",
+        points: [
+          "Accessible from My Account → Change Plan, or from the Subscription item in the Business sidebar section (requires Owner PIN).",
+          "Shows the full feature comparison matrix across Verified (free), Pro Monthly, Pro Annual, and Founders plans.",
+          "Pro plans unlock advanced menu tools, unlimited menus, deal posting, billboard ads, and marketplace ordering. Founders plan is the best per-year value and is limited in availability.",
+          "The QR kit add-on callout appears above the feature table — order directly from the subscription screen.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "sidebar-navigation",
+    title: "Sidebar Navigation Reference",
+    articles: [
+      {
+        id: "nav-operations",
+        title: "Operations Section",
+        summary: "Core operational controls available to all logged-in staff.",
+        points: [
+          "Home — the live operational dashboard. Default landing screen. Shows store status, sales, order counts, and quick access.",
+          "Orders — real-time order queue with the status panel, incoming order acceptance, and order history tabs.",
+          "Menu — menu editor for all restaurant menus and items.",
+          "Deals — create and manage public-facing customer offers.",
+          "Hours — set weekly operating hours and holiday exceptions.",
+        ],
+      },
+      {
+        id: "nav-business",
+        title: "Business Section",
+        summary: "Owner-level settings protected by Owner PIN.",
+        points: [
+          "Subscription — full plan comparison and upgrade/cancellation flow. Requires Owner PIN for access.",
+          "QR Kits — order printed QR menu kits. Accessible at any subscription level.",
+          "Restaurant Profile — edit public-facing restaurant info: name, description, logo, billboard image, cuisine tags, and location.",
+          "Business section items are intentionally separated from daily operations so staff cannot accidentally change billing or profile details.",
+        ],
+      },
+      {
+        id: "nav-support",
+        title: "Support Section",
+        summary: "Account information and help resources.",
+        points: [
+          "My Account — subscription summary, renewal date, and plan change options. No PIN required.",
+          "Knowledge Base — this operations center. Setup guides, troubleshooting, hardware recommendations, and direct support ticket submission.",
+          "Support items are visible to all portal users. No elevated access required.",
+        ],
+      },
+      {
+        id: "nav-restaurant-switcher",
+        title: "Switching Restaurants",
+        summary: "Operators managing multiple locations can switch context from the sidebar.",
+        points: [
+          "The restaurant selector at the top of the sidebar shows the currently active location.",
+          "All dashboard data, orders, menus, and settings shown in the portal reflect the selected restaurant.",
+          "Switching restaurants immediately reloads all portal data for the new location — no page refresh needed.",
+          "Each restaurant has its own independent subscription, menu, and order history.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "dashboard-analytics",
+    title: "Dashboard & Sales Data",
+    articles: [
+      {
+        id: "reading-sales",
+        title: "Understanding Your Sales Totals",
+        summary: "How the Home screen sales figures are calculated.",
+        points: [
+          "Today — sum of all completed, confirmed, preparing, and ready orders placed since midnight local time.",
+          "Yesterday — same status filter applied to orders placed between yesterday midnight and today midnight.",
+          "Week to Date (WTD) — orders from the start of the current week (Sunday midnight) through now.",
+          "Month to Date (MTD) — orders from the first day of the current calendar month through now.",
+          "Cancelled and declined orders are excluded from all sales totals. Only orders with a forward-moving status count.",
+          "Totals are computed from subtotal amounts. Tax and delivery fees are not included in the sales figures shown on the dashboard.",
+        ],
+      },
+      {
+        id: "order-status-definitions",
+        title: "Order Status Definitions",
+        summary: "What each order status means in the Menuply system.",
+        points: [
+          "Pending / Awaiting Acceptance — customer has paid; restaurant must Accept or Decline. Time-sensitive: the elapsed badge turns amber at 5 minutes and red at 10 minutes.",
+          "Accepted — restaurant confirmed the order. Kitchen has been notified. Print ticket is generated at this step.",
+          "Preparing — kitchen has started the order. Customer is informed the food is being made.",
+          "Ready — order is complete and waiting for pickup or courier collection.",
+          "Completed — order has been picked up or delivered. This is the final positive status.",
+          "Cancelled / Declined — restaurant declined, or the order was cancelled. Payment is refunded automatically on decline.",
+          "Refunded — a refund was issued. This may appear on legacy or manually-refunded orders.",
+        ],
+      },
+      {
+        id: "store-status-guide",
+        title: "Store Status: When to Use Each Setting",
+        summary: "Guidance on choosing between Accepting, Paused, and Closed.",
+        points: [
+          "Accepting Orders — the default operational state. Customers can place new orders in real time.",
+          "Pause Orders — use when the kitchen is temporarily overwhelmed or short-staffed. Customers see a 'Temporarily Unavailable' message but can still browse the menu. Existing accepted orders continue normally.",
+          "Stop Orders — use when closing early or for an extended stoppage. Stronger signal than Pause. Also use the Hours settings to reflect any permanent schedule changes.",
+          "Pause has a built-in duration on the Home screen (30 min, 1 hr, 3 hrs, or custom). The Orders screen allows a free-form pause without a timer.",
+          "Status changes are immediate and visible to customers in real time. Resume Orders from the Orders screen status panel or from the Home screen resume button.",
+        ],
+      },
+      {
+        id: "pending-orders-priority",
+        title: "Pending Orders and Response Time",
+        summary: "Why fast response to incoming orders matters operationally.",
+        points: [
+          "The elapsed time badge on an incoming order turns amber at 5 minutes and red at 10 minutes — these are signals that the customer is waiting with an active order.",
+          "A repeating alert beep fires every 30 seconds while unconfirmed orders exist, as long as audio is activated.",
+          "Slow acceptance increases cancellation rates and customer dissatisfaction. Target acceptance within 2–3 minutes of order placement.",
+          "If the kitchen cannot fulfill an order, decline it promptly with a reason code so the customer's payment is refunded immediately.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "customer-facing",
+    title: "What Customers See",
+    articles: [
+      {
+        id: "public-profile-overview",
+        title: "Your Public Restaurant Profile",
+        summary: "What customers see when they find your restaurant on Menuply.",
+        points: [
+          "The public profile shows your restaurant name, logo, billboard image, about us description, cuisine tags, city/state, hours, and featured dish.",
+          "Active deals appear on the profile page with their headline and description.",
+          "Customers can follow your restaurant to receive updates when you post deals or make changes.",
+          "The public profile URL is /restaurant-profile/[your-restaurant-id]. Use the Public Profile quick-access button from the Home screen to preview it.",
+        ],
+      },
+      {
+        id: "public-menu-overview",
+        title: "Your Public Menu",
+        summary: "What the ordering menu looks like to customers.",
+        points: [
+          "The public menu is the customer-facing version of your active Menuply menu. It shows item names, descriptions, prices, photos, and dietary tags.",
+          "If multiple menus are published and scheduled, the menu that matches the current day and time is shown by default.",
+          "Customers can add items to a cart and place an order directly from the public menu. Payment is processed through Stripe.",
+          "The public menu URL is /restaurants/[id]/menu. Use the View Public Menu link from the My Account screen or the Public Profile quick-access button to preview it.",
+          "Menu updates made in the editor take effect immediately — no separate publish step is needed after saving.",
+        ],
+      },
+      {
+        id: "discovery-and-search",
+        title: "How Customers Find You",
+        summary: "How your restaurant appears in Menuply search and browse results.",
+        points: [
+          "Customers search by food type, cuisine, dish name, or dietary preference. Your restaurant appears in results when your menu items or profile match the query.",
+          "Location matters: results are filtered by city and state, or by the customer's detected location. Accurate address data in your profile ensures you appear in the right market.",
+          "Verified and Pro restaurants receive a fully searchable listing. Pro plans add billboard display in search results for additional visibility.",
+          "Active deals and dietary tags (vegan, gluten-free, etc.) increase the chance of appearing in filtered searches.",
+        ],
+      },
+      {
+        id: "follower-notifications",
+        title: "Followers & Restaurant Updates",
+        summary: "How the follower system works for customer retention.",
+        points: [
+          "Customers can follow your restaurant from your public profile page. Followers receive notifications when you post new deals.",
+          "The follow feature is available on Verified and Pro plans.",
+          "Follower count is visible on your public profile. Growing followers creates a direct channel to your repeat customers without requiring third-party marketing tools.",
+          "Post deals proactively before peak periods to engage your follower base before they decide where to order.",
+        ],
+      },
+    ],
+  },
+  {
     id: "getting-started",
     title: "Getting Started",
     articles: [
