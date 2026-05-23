@@ -582,7 +582,7 @@ export default function OperatorMenuEditor() {
             style={BTN(routeIsUploadHub || routeIsPasteFlow ? "primary" : "ghost")}
             onClick={() => navigate("/operator/menu/upload")}
           >
-            Upload Menu
+            Add via Upload
           </button>
         </div>
       </div>
@@ -646,7 +646,7 @@ export default function OperatorMenuEditor() {
                 style={BTN("ghost")}
                 onClick={() => { setRenamingMenuId(selectedMenuId); setRenameValue(selectedMenu.name); }}
               >
-                Rename
+                Edit
               </button>
               <button
                 style={BTN("ghost")}
@@ -666,8 +666,8 @@ export default function OperatorMenuEditor() {
           )
         )}
 
-        {/* Right side: add item */}
-        {menus.length > 0 && (
+        {/* Right side: add item — only when menu has existing items (empty state has its own button) */}
+        {items.length > 0 && (
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
             <button style={BTN("primary")} onClick={handleAddItemClick}>
               + Add Item
