@@ -58,6 +58,32 @@ Before touching any protected file, state all of the following or STOP:
 3. Which ONE change category this is
 4. Full diff shown and approved by user
 
+## 🔒 DISCOVERY CHIP SCROLL GUARDRAIL
+
+**Applies to:** Any change touching `GrubbidDiscovery.jsx` — including layout, sticky header, or feed structure changes.
+
+The two `DiscoveryChipRow` chip rows (food categories + intelligence filters) MUST remain horizontally scrollable on BOTH mobile AND desktop. This is enforced by `.gb-discovery-chip-scroller` in `index.css`.
+
+**Required after every GrubbidDiscovery.jsx change (before declaring done):**
+```bash
+npm run verify:discovery-chips
+```
+Must print: `verify:discovery-chips — chip row desktop scroll guard passed.`
+
+If it exits 1 → STOP. Do not push. Fix the chip scroll regression first.
+
+**What the guard checks:**
+- `DiscoveryChipRow` uses `className="gb-discovery-chip-scroller"` — no inline `overflowX: auto`
+- `index.css` defines `.gb-discovery-chip-scroller` with `flex-wrap: nowrap` and `overflow-x: auto`
+- Mobile (`max-width: 768px`) block has `touch-action: pan-x`
+
+**What the guard does NOT check (AI must verify manually):**
+- Parent container structural changes (e.g. sticky header reorganization) that could clip or constrain the chip scroller
+- Desktop scrollbar visibility — on desktop the native scrollbar is intentionally visible; do not suppress it outside the `max-width: 768px` block
+- Any new wrapper divs inserted between the sticky header and `DiscoveryChipRow` that add `overflow: hidden`
+
+**Hard rule:** Do NOT add `overflow: hidden` to any ancestor of `DiscoveryChipRow` without explicit user approval.
+
 ## Baseline pages (run before AND after every change)
 ```
 /                                         → auto-detects location, plain text input only
