@@ -152,9 +152,9 @@ export default function DiscoveryCard({
         color: "inherit",
         overflow: "hidden",
         borderRadius: 12,
-        border: "1px solid #1F2937",
-        background: "#121A14",
-        boxShadow: "0 4px 18px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3)",
+        border: "1px solid #243020",
+        background: "#141E15",
+        boxShadow: "0 6px 24px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.32)",
         transition: "box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease",
       }}
     >
@@ -173,7 +173,7 @@ export default function DiscoveryCard({
       }} />
 
       {/* Content */}
-      <div style={{ padding: "8px 12px 8px", background: "#121A14", flex: 1, minWidth: 0 }}>
+      <div style={{ padding: "9px 12px 9px", background: "#141E15", flex: 1, minWidth: 0 }}>
         {/* Name row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
