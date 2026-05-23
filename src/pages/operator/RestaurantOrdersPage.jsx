@@ -1205,7 +1205,7 @@ export default function RestaurantOrdersPage() {
                 { key: "pending",   label: `Pending Orders${pendingOrders.length > 0 ? ` (${pendingOrders.length})` : ""}` },
                 { key: "completed", label: "Completed Orders" },
                 { key: "cancelled", label: "Cancelled Orders" },
-                { key: "history",   label: "21-Day History" },
+                { key: "history",   label: "Past Orders" },
               ].map((tab) => (
                 <button
                   key={tab.key}
