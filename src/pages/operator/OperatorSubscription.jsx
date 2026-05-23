@@ -147,7 +147,7 @@ export default function OperatorSubscription() {
 
   const monthlyPlan = planOptions.find((p) => p.code === "pro_monthly");
   const annualPlan = planOptions.find((p) => p.code === "pro_annual");
-  const foundersPlan = planOptions.find((p) => p.code === "founders_annual") || annualPlan;
+  const foundersPlan = planOptions.find((p) => p.code === "founders_annual") || { code: "founders_annual", amount_cents: 29900, billing_interval: "year" };
 
   const currentPlanCode = subscription?.plan_code || null;
   const currentTier = getPlanTier(currentPlanCode);
