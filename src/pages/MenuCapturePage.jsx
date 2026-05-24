@@ -98,14 +98,131 @@ function inputStyle() {
   };
 }
 
+const CAPTURE_GUIDE_DOS = [
+  {
+    title: "Printed menu text only",
+    body: "Photograph the menu board or paper menu where item names and prices are printed—not photos of individual dishes.",
+  },
+  {
+    title: "Straight-on and well lit",
+    body: "Hold your phone parallel to the menu. Use even light and avoid glare or heavy shadows on the text.",
+  },
+  {
+    title: "Names and prices in frame",
+    body: "Each photo should show readable item names with their prices. Do not crop prices off the edge.",
+  },
+  {
+    title: "One section per photo when needed",
+    body: "Wide or multi-column boards work best when you capture one section at a time instead of one distant shot.",
+  },
+];
+
+const CAPTURE_GUIDE_DONTS = [
+  "Blurry, dark, or angled shots",
+  "Glare or reflections over the text",
+  "Food photos without a readable menu",
+  "Tiny text from too far away",
+];
+
+function CaptureQualityGuide({ onContinue }) {
+  return (
+    <>
+      <p style={{ fontSize: 14, color: "#64748b", marginBottom: 18, lineHeight: 1.6 }}>
+        A few seconds of setup helps us read the menu accurately and publish it faster.
+      </p>
+      <div
+        style={{
+          border: "1.5px solid #e2e8f0",
+          borderRadius: 12,
+          overflow: "hidden",
+          marginBottom: 18,
+        }}
+      >
+        <div
+          style={{
+            padding: "12px 14px",
+            background: "#f0fdf4",
+            borderBottom: "1px solid #bbf7d0",
+            fontSize: 13,
+            fontWeight: 800,
+            color: "#166534",
+            letterSpacing: 0.2,
+          }}
+        >
+          Do this
+        </div>
+        <ul style={{ margin: 0, padding: "8px 0 4px", listStyle: "none" }}>
+          {CAPTURE_GUIDE_DOS.map((item) => (
+            <li
+              key={item.title}
+              style={{
+                padding: "12px 14px",
+                borderBottom: "1px solid #f1f5f9",
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
+                {item.title}
+              </div>
+              <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.55 }}>{item.body}</div>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div
+        style={{
+          padding: "12px 14px",
+          borderRadius: 12,
+          background: "#fff7ed",
+          border: "1px solid #fed7aa",
+          marginBottom: 20,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 800, color: "#9a3412", marginBottom: 8 }}>Avoid</div>
+        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "#7c2d12", lineHeight: 1.6 }}>
+          {CAPTURE_GUIDE_DONTS.map((line) => (
+            <li key={line} style={{ marginBottom: 4 }}>
+              {line}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <button
+        type="button"
+        onClick={onContinue}
+        style={{
+          width: "100%",
+          height: 48,
+          background: "#111827",
+          color: "#fff",
+          border: "none",
+          borderRadius: 10,
+          fontSize: 15,
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        Continue
+      </button>
+    </>
+  );
+}
+
+function captureFlowStep(phase) {
+  if (phase === "guide") return 1;
+  if (phase === "identity") return 2;
+  if (phase === "menu") return 3;
+  if (phase === "review") return 4;
+  return null;
+}
+
 /**
- * Phases: identity | menu | review | success
+ * Phases: guide | identity | menu | review | success
  */
 export default function MenuCapturePage() {
   const navigate = useNavigate();
   const menuInputRef = useRef(null);
 
-  const [phase, setPhase] = useState("identity");
+  const [phase, setPhase] = useState("guide");
   const [captureSessionId, setCaptureSessionId] = useState("");
   const [sessionStartError, setSessionStartError] = useState("");
   const [nextPageNumber, setNextPageNumber] = useState(1);
@@ -523,11 +640,10 @@ export default function MenuCapturePage() {
         }}
       >
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px", color: "#0f172a" }}>
-          Add a menu
+          {phase === "guide" ? "How to photograph the menu" : "Add a menu"}
         </h1>
         <p style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>
-          Step{" "}
-          {phase === "identity" ? "1" : phase === "menu" ? "2" : phase === "review" ? "3" : "—"} of 3
+          {captureFlowStep(phase) != null ? `Step ${captureFlowStep(phase)} of 4` : null}
         </p>
 
         {sessionStartError && phase === "identity" && (
@@ -546,7 +662,9 @@ export default function MenuCapturePage() {
           </div>
         )}
 
-        {progressCard}
+        {phase !== "guide" && progressCard}
+
+        {phase === "guide" && <CaptureQualityGuide onContinue={() => setPhase("identity")} />}
 
         {phase === "identity" && (
           <>
@@ -626,19 +744,30 @@ export default function MenuCapturePage() {
               >
                 Continue
               </button>
+              <button
+                type="button"
+                onClick={() => setPhase("guide")}
+                style={{
+                  height: 40,
+                  background: "transparent",
+                  border: "none",
+                  color: "#64748b",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                ← Photo tips
+              </button>
             </div>
           </>
         )}
 
         {phase === "menu" && (
           <>
-            <p style={{ fontSize: 15, color: "#334155", lineHeight: 1.6, marginBottom: 10 }}>
-              Photograph the <strong>printed menu pages</strong>. We only need the menu text: item names, descriptions,
-              and prices.
-            </p>
             <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6, marginBottom: 16 }}>
-              Photos of individual dishes are <strong>not</strong> needed—just clear shots where the menu wording and
-              prices are readable.
+              Add one photo per menu section. Tap below when each shot is straight-on, in focus, and shows names with
+              prices.
             </p>
             <input
               ref={menuInputRef}
@@ -741,6 +870,22 @@ export default function MenuCapturePage() {
               }}
             >
               ← Edit restaurant details
+            </button>
+            <button
+              type="button"
+              onClick={() => setPhase("guide")}
+              style={{
+                width: "100%",
+                height: 36,
+                background: "transparent",
+                border: "none",
+                color: "#94a3b8",
+                fontSize: 12,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              View photo tips
             </button>
           </>
         )}
