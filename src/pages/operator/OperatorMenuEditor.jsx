@@ -500,11 +500,11 @@ export default function OperatorMenuEditor() {
     if (!pasteText.trim() || !rid) return;
     setPasteBusy(true);
     try {
-      const res = await fetch("/api/operator/intake", {
+      const res = await fetch(`/api/operator/restaurants/${rid}/menu-intake`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ restaurant_id: rid, text: pasteText.trim(), source: "paste" }),
+        body: JSON.stringify({ text: pasteText.trim() }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));

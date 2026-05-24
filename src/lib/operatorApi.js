@@ -160,6 +160,15 @@ export const deleteDeal = (rid, did) => del(`/operator/restaurants/${rid}/deals/
 export const getDealBillboard    = (rid, did)       => get(`/operator/restaurants/${rid}/deals/${did}/billboard`);
 export const upsertDealBillboard = (rid, did, body) => put(`/operator/restaurants/${rid}/deals/${did}/billboard`, body);
 export const removeDealBillboard = (rid, did)       => del(`/operator/restaurants/${rid}/deals/${did}/billboard`);
+export const uploadBillboardPhoto = (rid, did, file) => {
+  const fd = new FormData();
+  fd.append("photo", file);
+  return fetch(`${API}/operator/restaurants/${rid}/deals/${did}/billboard/photo`, {
+    method: "POST",
+    credentials: "include",
+    body: fd,
+  }).then(r => r.json());
+};
 
 // ── Restaurant: QR Kit Orders ─────────────────────────────────────────────
 export const getQrKitPreviewUrl = (rid, params = {}) => {

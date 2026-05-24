@@ -149,7 +149,8 @@ const US_STATE_ABBREVS = new Set([
   "va","wa","wv","wi","wy","dc",
 ]);
 
-const WAITER_MIN_RESULTS = 16;
+// TODO: experimental threshold reduction for refinement testing — revert to 16 after testing
+const WAITER_MIN_RESULTS = 8;
 /** General search: max dishes shown under one restaurant card (grouped UI). */
 const MAX_MENU_ITEMS_PER_RESTAURANT_GROUP = 3;
 const WAITER_MIN_ITEM_SIGNALS = 6;

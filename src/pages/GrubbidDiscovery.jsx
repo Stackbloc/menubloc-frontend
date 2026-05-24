@@ -31,6 +31,7 @@ import { captureEvent } from "../services/posthog.js";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import DiscoveryDrawer from "../components/grubbid/DiscoveryDrawer.jsx";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
+import FeaturedDiscoveryCard from "../components/discovery/FeaturedDiscoveryCard.jsx";
 import DiscoveryMoreSheet from "../components/grubbid/DiscoveryMoreSheet.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 
@@ -921,7 +922,7 @@ export default function GrubbidDiscovery() {
         .disc-search-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(34,197,94,0.35); }
         .disc-feed-skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
         @keyframes skelPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
-        .disc-feed-grid { display:flex; flex-direction:column; gap:6px; }
+        .disc-feed-grid { display:flex; flex-direction:column; gap:10px; }
       `}</style>
 
       <DiscoveryDrawer
@@ -1319,12 +1320,21 @@ export default function GrubbidDiscovery() {
           ) : (
             <div className="disc-feed-grid">
               {displayMenus.map((menu, i) => (
-                <DiscoveryCard
+                (i + 1) % 6 === 0 ? (
+                  <FeaturedDiscoveryCard
+                    key={menu.menu_id || `feed-featured-${i}`}
+                    menu={menu}
+                    activeFilterLabel={activeFilterLabel}
+                    activeFilterParams={activeFilterParams}
+                  />
+                ) : (
+                  <DiscoveryCard
                     key={menu.menu_id || `feed-${i}`}
                     menu={menu}
                     activeFilterLabel={activeFilterLabel}
                     activeFilterParams={activeFilterParams}
                   />
+                )
               ))}
             </div>
           )}

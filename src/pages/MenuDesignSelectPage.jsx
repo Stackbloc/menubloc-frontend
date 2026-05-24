@@ -381,7 +381,7 @@ export default function MenuDesignSelectPage() {
     plan === "pro_monthly" ||
     plan === "pro_annual" ||
     plan === "pro" ||
-    plan === "performance_partner";
+    plan === "founders_annual";
   const visibleStyles = isPro ? DESIGN_STYLES : DESIGN_STYLES.filter((style) => !style.proOnly);
   const [selectedStyle, setSelectedStyle] = useState(null);
   const missingState = !restaurant_id || !email || (!owner_token && !BYPASS_MODE);
