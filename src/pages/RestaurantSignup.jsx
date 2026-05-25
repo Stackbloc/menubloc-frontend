@@ -111,16 +111,6 @@ const styles = {
     fontWeight: 700,
     cursor: "pointer",
   },
-  optionCard: (selected) => ({
-    border: selected ? "2px solid #111" : "1px solid #d7dce5",
-    borderRadius: 14,
-    padding: "14px 16px",
-    marginBottom: 10,
-    cursor: "pointer",
-    background: selected ? "#fff" : "transparent",
-  }),
-  optionTitle: { fontWeight: 800, fontSize: 14, marginBottom: 4 },
-  optionDesc: { fontSize: 13, color: "#555", lineHeight: 1.5 },
   errorBanner: {
     background: "#fff0f0",
     border: "1px solid #f5c6c6",
@@ -292,7 +282,6 @@ export default function RestaurantSignup() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [menuChoice, setMenuChoice] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [serverErrorDetail, setServerErrorDetail] = useState("");
@@ -362,7 +351,6 @@ export default function RestaurantSignup() {
     if (!form.restaurant_name.trim()) errors.restaurant_name = t("signup.error.restaurantNameRequired");
     if (!form.city.trim()) errors.city = "City is required.";
     if (!form.state.trim()) errors.state = "State is required.";
-    if (!menuChoice) errors.menuChoice = "Choose whether you want to upload a PDF now or later.";
     if (!agreements.merchantTerms) errors.merchantTerms = "You must agree to the Merchant Terms of Service.";
     if (!agreements.privacyPolicy) errors.privacyPolicy = "You must agree to the Privacy Policy.";
 
@@ -426,8 +414,7 @@ export default function RestaurantSignup() {
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
         phone: form.phone.trim(),
-        ingestion_method: menuChoice === "pdf_now" ? "pdf" : "later",
-        menu_choice: menuChoice,
+        ingestion_method: "later",
         selected_plan: selectedPlan,
       });
       const draftState = await syncRestaurantOnboardingProgress(baseState, {
@@ -440,7 +427,7 @@ export default function RestaurantSignup() {
         draft_payload: {
           temporary_selections: {
             selected_plan_code: selectedPlan || null,
-            menu_upload_mode: menuChoice === "pdf_now" ? "menu_photos" : "upload_later",
+            menu_upload_mode: "upload_later",
           },
           optional_modules: {
             qr_starter_kit: { status: "not_started" },
@@ -641,62 +628,6 @@ export default function RestaurantSignup() {
               style={styles.input}
             />
           </div>
-        </div>
-
-        <div style={styles.section}>
-          <div style={styles.sectionTitle}>Menu timing</div>
-          <div style={{ ...styles.helperText, marginBottom: 14, lineHeight: 1.6 }}>
-            Upload only menus, menu photos, and descriptions you are authorized to submit for this restaurant.
-            The restaurant remains responsible for permissions, pricing accuracy, and final review before publication.
-          </div>
-
-          <div
-            style={styles.optionCard(menuChoice === "pdf_now")}
-            onClick={() => {
-              setMenuChoice("pdf_now");
-              setFieldErrors((current) => ({ ...current, menuChoice: "" }));
-            }}
-            role="radio"
-            aria-checked={menuChoice === "pdf_now"}
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                setMenuChoice("pdf_now");
-                setFieldErrors((current) => ({ ...current, menuChoice: "" }));
-              }
-            }}
-          >
-            <div style={styles.optionTitle}>Upload PDF now</div>
-            <div style={styles.optionDesc}>
-              Continue straight into PDF upload after account creation, plan confirmation, and design selection.
-            </div>
-          </div>
-
-          <div
-            style={styles.optionCard(menuChoice === "upload_later")}
-            onClick={() => {
-              setMenuChoice("upload_later");
-              setFieldErrors((current) => ({ ...current, menuChoice: "" }));
-            }}
-            role="radio"
-            aria-checked={menuChoice === "upload_later"}
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                setMenuChoice("upload_later");
-                setFieldErrors((current) => ({ ...current, menuChoice: "" }));
-              }
-            }}
-          >
-            <div style={styles.optionTitle}>Upload menu later</div>
-            <div style={styles.optionDesc}>
-              Finish account setup first and come back to your menu after plan confirmation.
-            </div>
-          </div>
-
-          {fieldErrors.menuChoice ? <div style={styles.fieldError}>{fieldErrors.menuChoice}</div> : null}
         </div>
 
         <div style={styles.section}>
