@@ -151,7 +151,6 @@ const US_STATE_ABBREVS = new Set([
 
 // TODO: experimental threshold reduction for refinement testing — revert to 16 after testing
 const WAITER_MIN_RESULTS = 8;
-/** General search: max dishes shown under one restaurant card (grouped UI). */
 const MAX_MENU_ITEMS_PER_RESTAURANT_GROUP = 3;
 const WAITER_MIN_ITEM_SIGNALS = 6;
 const WAITER_MIN_OPTION_COUNT = 3;
@@ -1275,23 +1274,29 @@ export default function GrubbidSearchResults() {
     return labels;
   }, [vegan, vegetarian, gluten_free, keto, low_fat, low_sodium, dairy_free, diabetic_friendly, glp1_friendly, high_protein]);
   const hasDietFilter = activeDietFilterLabels.length > 0;
+  const restaurantIntent = !!(
+    searchMeta?.restaurant_oriented ||
+    searchMeta?.restaurant_first ||
+    searchMeta?.direct_restaurant_name
+  );
+  const useRestaurantGroupedRendering = restaurantIntent;
 
   const relaxPerRestaurantItemCap = useMemo(() => {
+    if (!useRestaurantGroupedRendering) return false;
     if (hasDietFilter) return true;
     const n = normalizedQuery;
     return /\b(high[\s-]?protein|protein[\s-]?(rich|packed)|low[\s-]?carb|low[\s-]?sodium|keto|vegan|vegetarian|gluten[\s-]?free|diabetic|heart[\s-]?healthy)\b/i.test(
       n
     );
-  }, [hasDietFilter, normalizedQuery]);
+  }, [hasDietFilter, normalizedQuery, useRestaurantGroupedRendering]);
 
-  const restaurantGroups = useMemo(
-    () =>
-      buildRestaurantGroups(
-        dishRows,
-        relaxPerRestaurantItemCap ? Number.MAX_SAFE_INTEGER : MAX_MENU_ITEMS_PER_RESTAURANT_GROUP
-      ),
-    [dishRows, relaxPerRestaurantItemCap]
-  );
+  const restaurantGroups = useMemo(() => {
+    if (!useRestaurantGroupedRendering) return [];
+    return buildRestaurantGroups(
+      dishRows,
+      relaxPerRestaurantItemCap ? Number.MAX_SAFE_INTEGER : MAX_MENU_ITEMS_PER_RESTAURANT_GROUP
+    );
+  }, [dishRows, relaxPerRestaurantItemCap, useRestaurantGroupedRendering]);
 
   const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
 
@@ -1301,35 +1306,42 @@ export default function GrubbidSearchResults() {
     navigate("?" + nextParams.toString(), { replace: true });
   }
 
+  // GUARDRAIL:
+  // Ordinary food searches are dish-first experiences.
+  // Restaurant-first grouping, section splitting, or venue-grouped rendering may only activate when explicit restaurant intent is detected.
+  // Food-intent queries must prioritize individual menu-item relevance over restaurant grouping.
+  // Agents may not redesign search hierarchy, grouping, ranking, or result presentation without explicit user approval.
+  const visibleDishRows = useMemo(
+    () => (useRestaurantGroupedRendering ? [] : dishRows),
+    [dishRows, useRestaurantGroupedRendering]
+  );
   const hasMenuMatches = restaurantGroups.length > 0;
+  const hasDishMatches = visibleDishRows.length > 0;
   const waiterResultCount = waiterFilteredRows.length;
   const showWaiter =
     rows.length >= WAITER_MIN_RESULTS &&
     waiterState.inventory.length >= WAITER_MIN_ITEM_SIGNALS &&
     waiterState.options.length >= WAITER_MIN_OPTION_COUNT;
-  const restaurantIntent = !!(
-    searchMeta?.restaurant_oriented ||
-    searchMeta?.restaurant_first ||
-    searchMeta?.direct_restaurant_name
-  );
 
   const restaurantGroupsById = useMemo(() => {
+    if (!useRestaurantGroupedRendering) return new Set();
     const s = new Set();
     for (const g of restaurantGroups) {
       const id = asString(g.restaurant_id);
       if (id) s.add(id);
     }
     return s;
-  }, [restaurantGroups]);
+  }, [restaurantGroups, useRestaurantGroupedRendering]);
 
   const restaurantOnlyVisible = useMemo(() => {
+    if (!useRestaurantGroupedRendering) return [];
     if (!restaurantOnlyRows.length) return [];
     return restaurantOnlyRows.filter((r) => {
       const id = asString(pickFirst(r, ["restaurant_id", "id"], ""));
       if (!id) return true;
       return !restaurantGroupsById.has(id);
     });
-  }, [restaurantOnlyRows, restaurantGroupsById]);
+  }, [restaurantOnlyRows, restaurantGroupsById, useRestaurantGroupedRendering]);
 
   const minVisibleDistance = useMemo(() => {
     const distances = rows
@@ -1384,13 +1396,15 @@ export default function GrubbidSearchResults() {
       ? t("search.nearYou", "near you")
       : null,
     !loading && (() => {
-      if (hasMenuMatches) {
-        const totalDishes = restaurantGroups.reduce((acc, g) => acc + g.items.length, 0);
+      if (useRestaurantGroupedRendering ? hasMenuMatches : hasDishMatches) {
+        const totalDishes = useRestaurantGroupedRendering
+          ? restaurantGroups.reduce((acc, g) => acc + g.items.length, 0)
+          : visibleDishRows.length;
         return totalDishes === 1
           ? t("search.foundDish", "1 dish found", { count: totalDishes })
           : t("search.foundDishes", `${totalDishes} dishes found`, { count: totalDishes });
       }
-      if (!hasDietFilter && restaurantOnlyVisible.length) {
+      if (useRestaurantGroupedRendering && !hasDietFilter && restaurantOnlyVisible.length) {
         return restaurantOnlyVisible.length === 1
           ? t("search.foundRestaurant", "1 restaurant found", { count: restaurantOnlyVisible.length })
           : t("search.foundRestaurants", `${restaurantOnlyVisible.length} restaurants found`, { count: restaurantOnlyVisible.length });
@@ -1398,6 +1412,9 @@ export default function GrubbidSearchResults() {
       return null;
     })(),
   ].filter(Boolean).join(" · ");
+  const hasVisibleResults = useRestaurantGroupedRendering
+    ? hasMenuMatches || restaurantOnlyVisible.length > 0
+    : hasDishMatches;
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
@@ -1440,7 +1457,7 @@ export default function GrubbidSearchResults() {
 
       <ActiveFilterChips filters={activeFilters} onToggle={toggleSearchFilter} />
 
-      {!loading && !err && q && (hasMenuMatches || restaurantOnlyVisible.length > 0) ? (
+      {!loading && !err && q && hasVisibleResults ? (
         <SearchRefinementNudge displayQuery={displayQuery} locationLabel={locationLabel} />
       ) : null}
 
@@ -1459,7 +1476,7 @@ export default function GrubbidSearchResults() {
       {err && <StatusMessage>Error: {err}</StatusMessage>}
       {loading && <StatusMessage tone="muted">{t("common.loading")}</StatusMessage>}
 
-      {!loading && !err && !hasMenuMatches && hasDietFilter && (
+      {!loading && !err && !hasDishMatches && hasDietFilter && (
         <StatusMessage tone="muted">
           {t("search.noDietaryResults", `No menu items meet your preference for ${activeDietFilterLabels.join(", ")}.`, {
             filters: activeDietFilterLabels.join(", "),
@@ -1467,11 +1484,11 @@ export default function GrubbidSearchResults() {
         </StatusMessage>
       )}
 
-      {!loading && !err && q && !hasMenuMatches && !hasDietFilter && restaurantOnlyVisible.length === 0 && (
+      {!loading && !err && q && !hasVisibleResults && !hasDietFilter && (
         <StatusMessage tone="muted">{emptyMessage}</StatusMessage>
       )}
 
-      {!loading && !err && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
+      {!loading && !err && useRestaurantGroupedRendering && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
         <>
           <SectionTitle>{t("search.restaurants", "Restaurants")}</SectionTitle>
           <div style={styles.grid}>
@@ -1494,7 +1511,7 @@ export default function GrubbidSearchResults() {
         </>
       )}
 
-      {!loading && !err && hasMenuMatches && (
+      {!loading && !err && useRestaurantGroupedRendering && hasMenuMatches && (
         <>
           {!showWaiter && (
             <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>
@@ -1544,6 +1561,40 @@ export default function GrubbidSearchResults() {
           })}
           </div>
         </>
+      )}
+
+      {!loading && !err && !useRestaurantGroupedRendering && hasDishMatches && (
+        <div style={styles.grid}>
+          {showWaiter && (
+            <WaiterRefinementPrompt
+              displayQuery={displayQuery}
+              filteredResultCount={waiterResultCount}
+              refinementOptions={waiterState.options}
+              selectedRefinement={waiterSelection}
+              onSelectRefinement={setWaiterSelection}
+              onClearRefinements={() => setWaiterSelection(null)}
+            />
+          )}
+          {visibleDishRows.map((row) => {
+            const rowId = asString(pickFirst(row, ["menu_item_id", "id"], ""));
+            const rowName = asString(
+              pickFirst(row, ["search_display_name", "menu_item_name", "menuItemName", "name"], "")
+            );
+            return (
+              <SearchResultCard
+                key={`mi-${rowId || rowName}`}
+                item={row}
+                query={q}
+                queryMeta={queryMeta}
+                matchContext={{
+                  wantsNearby: searchMeta?.wants_nearby === true,
+                  coordinateSearchActive: hasGeoFilter === true,
+                }}
+                geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+              />
+            );
+          })}
+        </div>
       )}
       {/* Load More — search pagination */}
       {!loading && !err && searchHasMore && (
