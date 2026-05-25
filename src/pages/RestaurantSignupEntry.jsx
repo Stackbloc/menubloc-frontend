@@ -12,6 +12,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
 
@@ -24,10 +25,11 @@ const PLAN_OPTIONS = [
     cta: "Continue with Verified",
     featured: false,
     features: [
-      "Basic restaurant profile",
-      "1 editable menu listing",
-      "QR menu access for customers",
-      "Menu visibility on Menuply",
+      "Searchable restaurant listing on Menuply",
+      "Restaurant profile page with logo, about us, featured dish (limited)",
+      "One menu with unlimited menu items",
+      "Edit menu and menu items with pricing tools",
+      "Dynamic QR Code and shareable menus",
     ],
   },
   {
@@ -39,14 +41,15 @@ const PLAN_OPTIONS = [
     cta: "Continue with Pro Partner",
     featured: true,
     features: [
-      "Unlimited menus for time of day, events, seasonal menus, happy hour, and specials",
-      "Advanced restaurant profile with logo, featured meal, and restaurant bio",
-      "Billboard placement and functionality",
-      "Shareable menus and dishes",
-      "Follow functionality",
-      "Deals and promotions",
-      "Online ordering",
-      "Built for lower-cost direct ordering operations",
+      "Unlimited menus with scheduled/timed display options",
+      "Full restaurant profile with logo, billboard, about us, featured dish",
+      "Menu item photos",
+      "Ingredient-rich, fully searchable menu content",
+      "Diners can follow your profile and receive offers and updates",
+      "Social share for menus and menu items",
+      "Billboard placement in profile and search results",
+      "Deals and promotions page",
+      "Marketplace ordering (pickup and delivery)",
     ],
   },
   {
@@ -54,18 +57,12 @@ const PLAN_OPTIONS = [
     name: "Founder",
     price: "$299/year",
     description:
-      "Everything in Pro, with a 24-month price guarantee.",
+      "Everything in Pro Partner, with a 24-month price guarantee.",
     cta: "Continue with Founder",
     featured: false,
     features: [
       "Everything included in Pro Partner",
       "24-month price guarantee",
-      "Unlimited menus",
-      "Advanced restaurant profile",
-      "Deals and promotions",
-      "Billboard functionality",
-      "Online ordering",
-      "Shareable menus and dishes",
     ],
   },
 ];
@@ -134,58 +131,6 @@ const styles = {
     fontWeight: 800,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
-  },
-  heading: {
-    fontSize: "clamp(2.2rem, 5vw, 4.25rem)",
-    lineHeight: 0.95,
-    fontWeight: 900,
-    letterSpacing: "-0.04em",
-    marginBottom: 12,
-    maxWidth: 720,
-  },
-  subheading: {
-    fontSize: 17,
-    lineHeight: 1.6,
-    color: "#667085",
-    maxWidth: 720,
-    marginBottom: 22,
-  },
-  messageCard: {
-    marginTop: 18,
-    borderRadius: 18,
-    border: "1px solid #d9e0ea",
-    background: "#f8faf9",
-    padding: "18px 18px 16px",
-    maxWidth: 760,
-    color: "#475467",
-  },
-  messageKicker: {
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    color: "#1F4E3D",
-    marginBottom: 8,
-  },
-  messageSectionTitle: {
-    fontSize: 13,
-    fontWeight: 800,
-    color: "#101828",
-    marginBottom: 6,
-  },
-  messageText: {
-    fontSize: 14,
-    lineHeight: 1.65,
-    marginBottom: 12,
-  },
-  messageCallout: {
-    borderRadius: 14,
-    border: "1px solid #cfe0d8",
-    background: "#eef6f1",
-    padding: "12px 14px",
-    fontSize: 14,
-    lineHeight: 1.65,
-    color: "#1F4E3D",
   },
   faqSection: {
     marginBottom: 22,
@@ -471,24 +416,6 @@ export default function RestaurantSignupEntry() {
           />
 
           <div style={styles.eyebrow}>Restaurant Signup</div>
-          <div style={styles.heading}>Built for Better Value</div>
-          <div style={styles.subheading}>
-            Lower platform costs can create better outcomes for restaurants and diners when those savings show up in pricing, deals, and direct engagement.
-          </div>
-          <div style={styles.messageCard}>
-            <div style={styles.messageKicker}>Choose your plan first</div>
-            <div style={styles.messageSectionTitle}>Why Menuply Exists</div>
-            <div style={styles.messageText}>
-              Many restaurants on higher-cost third-party platforms have had to raise menu prices just to absorb platform fees. That cycle strains restaurants and costs diners more than they should pay. Menuply was built to help break that cycle with a lean, self-service model.
-            </div>
-            <div style={styles.messageSectionTitle}>Our Partner Expectation</div>
-            <div style={styles.messageText}>
-              Restaurants always control their own pricing. Menuply is built for restaurants that use lower platform costs to create real diner value through better everyday pricing, meaningful deals, and more direct engagement.
-            </div>
-            <div style={styles.messageCallout}>
-              <strong>Multipliers</strong> are restaurants aligned with that approach. They are the heart of the Menuply ecosystem, and restaurants that more closely reflect those principles may receive increased visibility opportunities within the platform.
-            </div>
-          </div>
 
           <div style={styles.steps}>
             <div style={styles.step(true)}>1. Choose plan</div>
@@ -631,6 +558,8 @@ export default function RestaurantSignupEntry() {
             </article>
           ))}
         </section>
+
+        <PlanComparisonTable />
       </div>
     </div>
   );
