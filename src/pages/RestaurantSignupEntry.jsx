@@ -93,27 +93,6 @@ const styles = {
     letterSpacing: "0.08em",
     textTransform: "uppercase",
   },
-  steps: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    flexWrap: "wrap",
-  },
-  step: (active) => ({
-    padding: "8px 14px",
-    borderRadius: 999,
-    background: active ? "#eef6f1" : "rgba(255,255,255,0.72)",
-    color: active ? "#1F4E3D" : "#98a2b3",
-    border: active ? "1px solid #cfe0d8" : "1px solid #d9e0ea",
-    whiteSpace: "nowrap",
-    fontSize: 12,
-    fontWeight: 800,
-  }),
-  stepDivider: {
-    flex: "0 0 10px",
-    height: 1,
-    background: "#d9e0ea",
-  },
   cardsGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
@@ -242,23 +221,10 @@ export default function RestaurantSignupEntry() {
             letterSpacing: "-0.03em",
             lineHeight: 1.1,
             color: "#101828",
-            margin: "10px 0 16px",
+            margin: "10px 0 0",
           }}>
             Pick the Subscription Right for Your Restaurant
           </h1>
-          <div style={styles.steps}>
-            <div style={styles.step(true)}>1. Choose plan</div>
-            <div style={styles.stepDivider} />
-            <div style={styles.step(false)}>2. Create account</div>
-            <div style={styles.stepDivider} />
-            <div style={styles.step(false)}>3. Finish onboarding</div>
-          </div>
-          <p style={{ margin: "14px 0 0", fontSize: 13, color: "#b0b8c4" }}>
-            Have a food truck?{" "}
-            <Link to="/foodtruck/signup" style={{ color: "#1F4E3D", fontWeight: 700, textDecoration: "none" }}>
-              Sign up here →
-            </Link>
-          </p>
         </header>
 
         <section style={styles.cardsGrid}>
@@ -292,6 +258,13 @@ export default function RestaurantSignupEntry() {
             </article>
           ))}
         </section>
+
+        <p style={{ margin: "0 0 20px", fontSize: 13, color: "#b0b8c4", display: "flex", alignItems: "center", gap: 6 }}>
+          🚚 Food Truck?{" "}
+          <Link to="/foodtruck/signup" style={{ color: "#667085", fontWeight: 400, textDecoration: "none" }}>
+            Sign up here.
+          </Link>
+        </p>
 
         <PlanComparisonTable />
       </div>
