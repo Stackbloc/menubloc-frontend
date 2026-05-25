@@ -9,6 +9,7 @@
  * ============================================================
  */
 
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
@@ -127,7 +128,7 @@ const styles = {
     gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: 18,
   },
-  card: (featured) => ({
+  card: (featured, hovered) => ({
     position: "relative",
     overflow: "hidden",
     borderRadius: 28,
@@ -137,12 +138,18 @@ const styles = {
       ? "linear-gradient(135deg, #0f1720 0%, #1f4e3d 48%, #eef6f1 100%)"
       : "#ffffff",
     color: featured ? "#ffffff" : "#101828",
-    boxShadow: featured
-      ? "0 24px 60px rgba(15, 23, 32, 0.16)"
-      : "0 12px 30px rgba(15, 23, 32, 0.04)",
+    boxShadow: hovered
+      ? featured
+        ? "0 28px 64px rgba(15, 23, 32, 0.22), 0 0 0 3px #1F4E3D"
+        : "0 16px 36px rgba(15, 23, 32, 0.10), 0 0 0 2px #1F4E3D"
+      : featured
+        ? "0 24px 60px rgba(15, 23, 32, 0.16)"
+        : "0 12px 30px rgba(15, 23, 32, 0.04)",
     display: "flex",
     flexDirection: "column",
     minHeight: 360,
+    cursor: "pointer",
+    transition: "box-shadow 0.15s ease",
   }),
   badge: {
     display: "inline-flex",
@@ -223,6 +230,7 @@ const styles = {
 
 export default function RestaurantSignupEntry() {
   const navigate = useNavigate();
+  const [hoveredPlan, setHoveredPlan] = useState(null);
 
   function handlePlanSelect(selectedPlan) {
     navigate(ACCOUNT_ROUTE, {
@@ -298,7 +306,17 @@ export default function RestaurantSignupEntry() {
 
         <section style={styles.cardsGrid}>
           {PLAN_OPTIONS.map((plan) => (
-            <article key={plan.code} style={styles.card(plan.featured)}>
+            <article
+              key={plan.code}
+              style={styles.card(plan.featured, hoveredPlan === plan.code)}
+              onClick={() => handlePlanSelect(plan.code)}
+              onMouseEnter={() => setHoveredPlan(plan.code)}
+              onMouseLeave={() => setHoveredPlan(null)}
+              tabIndex={0}
+              role="button"
+              aria-label={plan.cta}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePlanSelect(plan.code); } }}
+            >
               {plan.featured ? <div style={styles.badge}>Most Popular</div> : null}
               <div style={styles.planName}>{plan.name}</div>
               <div style={styles.price}>{plan.price}</div>
@@ -313,13 +331,7 @@ export default function RestaurantSignupEntry() {
                 ))}
               </ul>
 
-              <button
-                type="button"
-                style={styles.button(plan.featured)}
-                onClick={() => handlePlanSelect(plan.code)}
-              >
-                {plan.cta}
-              </button>
+              <div style={styles.button(plan.featured)}>{plan.cta}</div>
             </article>
           ))}
         </section>
