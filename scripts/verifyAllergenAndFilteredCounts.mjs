@@ -12,11 +12,13 @@ const files = {
   browseMenus: path.join(frontendRoot, "src/pages/BrowseMenus.jsx"),
   discovery: path.join(frontendRoot, "src/pages/GrubbidDiscovery.jsx"),
   searchResults: path.join(frontendRoot, "src/pages/GrubbidSearchResults.jsx"),
+  discoveryDrawer: path.join(frontendRoot, "src/components/grubbid/DiscoveryDrawer.jsx"),
   discoveryCard: path.join(frontendRoot, "src/components/discovery/DiscoveryCard.jsx"),
   featuredDiscoveryCard: path.join(frontendRoot, "src/components/discovery/FeaturedDiscoveryCard.jsx"),
   menuPreviewCard: path.join(frontendRoot, "src/components/browse/MenuPreviewCard.jsx"),
   searchResultCard: path.join(frontendRoot, "src/components/SearchResultCard.jsx"),
   countHelper: path.join(frontendRoot, "src/lib/publicCardCounts.js"),
+  liveVerifier: path.join(frontendRoot, "scripts/verifyAllergenAndFilteredCountsLive.mjs"),
   backendDiscoveryService: path.join(repoRoot, "menubloc-backend/src/services/discovery/discoveryService.js"),
 };
 
@@ -127,6 +129,36 @@ assert.match(
   source.discovery,
   /<DiscoveryCard[\s\S]*hasActiveFilters=\{hasActivePublicFilters\}/,
   "GrubbidDiscovery.jsx must pass active filter state to DiscoveryCard."
+);
+assert.match(
+  source.discoveryDrawer,
+  /testId="discovery-filter-dairy_free"/,
+  "DiscoveryDrawer.jsx must expose a stable dairy_free test id."
+);
+assert.match(
+  source.discoveryDrawer,
+  /testId="discovery-filter-gluten_free"/,
+  "DiscoveryDrawer.jsx must expose a stable gluten_free test id."
+);
+assert.match(
+  source.discoveryDrawer,
+  /testId="discovery-filter-vegan"/,
+  "DiscoveryDrawer.jsx must expose a stable vegan test id."
+);
+assert.match(
+  source.liveVerifier,
+  /for \(const filterKey of \["dairy_free", "gluten_free", "vegan"\]\)/,
+  "The live verifier must explicitly verify dairy_free, gluten_free, and vegan."
+);
+assert.match(
+  source.liveVerifier,
+  /page\.getByTestId\(`discovery-filter-\$\{filterKey\}`\)\.click\(\)/,
+  "The live verifier must use stable data-testid filter controls."
+);
+assert.match(
+  source.liveVerifier,
+  /parsedUrl\.searchParams\.get\(filterKey\), "1"/,
+  "The live verifier must prove the outgoing browse URL includes the intended filter param."
 );
 
 assert.match(

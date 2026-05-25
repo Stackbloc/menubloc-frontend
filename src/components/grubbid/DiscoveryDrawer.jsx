@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 
-function Toggle({ label, active, onToggle }) {
+function Toggle({ label, active, onToggle, testId = null }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -14,6 +14,7 @@ function Toggle({ label, active, onToggle }) {
         type="button"
         onClick={onToggle}
         aria-pressed={active}
+        data-testid={testId}
         style={{
           width: 44, height: 26, borderRadius: 13, border: "none",
           background: active ? "#1F4E3D" : "#e4e7ec",
@@ -118,14 +119,14 @@ export default function DiscoveryDrawer({
           {filters !== null && (
             <>
               <Section label="Dietary Preferences" />
-              <Toggle label="Vegan" active={!!filters.vegan} onToggle={() => setFilters((p) => ({ ...p, vegan: !p.vegan }))} />
-              <Toggle label="Vegetarian" active={!!filters.vegetarian} onToggle={() => setFilters((p) => ({ ...p, vegetarian: !p.vegetarian }))} />
-              <Toggle label="Gluten-Free" active={!!filters.gluten_free} onToggle={() => setFilters((p) => ({ ...p, gluten_free: !p.gluten_free }))} />
-              <Toggle label="Diabetic Friendly" active={!!filters.diabetic_friendly} onToggle={() => setFilters((p) => ({ ...p, diabetic_friendly: !p.diabetic_friendly }))} />
-              <Toggle label="Low Carb / Keto" active={!!filters.keto} onToggle={() => setFilters((p) => ({ ...p, keto: !p.keto }))} />
-              <Toggle label="Dairy-Free" active={!!filters.dairy_free} onToggle={() => setFilters((p) => ({ ...p, dairy_free: !p.dairy_free }))} />
-              <Toggle label="Low Fat" active={!!filters.low_fat} onToggle={() => setFilters((p) => ({ ...p, low_fat: !p.low_fat }))} />
-              <Toggle label="Low Sodium" active={!!filters.low_sodium} onToggle={() => setFilters((p) => ({ ...p, low_sodium: !p.low_sodium }))} />
+              <Toggle label="Vegan" active={!!filters.vegan} testId="discovery-filter-vegan" onToggle={() => setFilters((p) => ({ ...p, vegan: !p.vegan }))} />
+              <Toggle label="Vegetarian" active={!!filters.vegetarian} testId="discovery-filter-vegetarian" onToggle={() => setFilters((p) => ({ ...p, vegetarian: !p.vegetarian }))} />
+              <Toggle label="Gluten-Free" active={!!filters.gluten_free} testId="discovery-filter-gluten_free" onToggle={() => setFilters((p) => ({ ...p, gluten_free: !p.gluten_free }))} />
+              <Toggle label="Diabetic Friendly" active={!!filters.diabetic_friendly} testId="discovery-filter-diabetic_friendly" onToggle={() => setFilters((p) => ({ ...p, diabetic_friendly: !p.diabetic_friendly }))} />
+              <Toggle label="Low Carb / Keto" active={!!filters.keto} testId="discovery-filter-keto" onToggle={() => setFilters((p) => ({ ...p, keto: !p.keto }))} />
+              <Toggle label="Dairy-Free" active={!!filters.dairy_free} testId="discovery-filter-dairy_free" onToggle={() => setFilters((p) => ({ ...p, dairy_free: !p.dairy_free }))} />
+              <Toggle label="Low Fat" active={!!filters.low_fat} testId="discovery-filter-low_fat" onToggle={() => setFilters((p) => ({ ...p, low_fat: !p.low_fat }))} />
+              <Toggle label="Low Sodium" active={!!filters.low_sodium} testId="discovery-filter-low_sodium" onToggle={() => setFilters((p) => ({ ...p, low_sodium: !p.low_sodium }))} />
             </>
           )}
 
