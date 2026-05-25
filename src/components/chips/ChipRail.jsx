@@ -8,10 +8,24 @@ export default function ChipRail({ children, className = "", style = {}, ...prop
     if (!el) return undefined;
 
     const onWheel = (event) => {
-      if (el.scrollWidth <= el.clientWidth + 1) return;
-      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      const maxScrollLeft = el.scrollWidth - el.clientWidth;
+      if (maxScrollLeft <= 1) return;
+
+      const dominantDelta =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      if (!dominantDelta) return;
+
+      const nextScrollLeft = Math.min(
+        maxScrollLeft,
+        Math.max(0, el.scrollLeft + dominantDelta)
+      );
+
+      // Keep desktop trackpad swipes contained inside the rail so the browser
+      // does not interpret horizontal gestures as back/forward page navigation.
       event.preventDefault();
-      el.scrollLeft += event.deltaY;
+      if (nextScrollLeft !== el.scrollLeft) {
+        el.scrollLeft = nextScrollLeft;
+      }
     };
 
     el.addEventListener("wheel", onWheel, { passive: false });
