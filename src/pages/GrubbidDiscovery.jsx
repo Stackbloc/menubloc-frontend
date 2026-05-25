@@ -499,6 +499,8 @@ export default function GrubbidDiscovery() {
   const activeFilterParams = filtersToUrlParams(filters).toString();
   const hasNoneAllergenSelected = excludedAllergens.has(ALLERGEN_NONE_ID);
   const activeExcludedAllergens = [...excludedAllergens].filter((value) => value !== ALLERGEN_NONE_ID);
+  const hasActivePublicFilters =
+    Object.values(filters).some(Boolean) || activeExcludedAllergens.length > 0;
 
   const displayMenus = useMemo(() => {
     let menus = filterAndRankMenus(feedMenus, committedQuery);
@@ -1167,11 +1169,15 @@ export default function GrubbidDiscovery() {
               {hasVisibleMenus && (
                 <span>{displayMenus.length} {displayMenus.length === 1 ? "menu" : "menus"}</span>
               )}
+              {/* GUARDRAIL:
+                  Do not render broad allergen warning blocks on public discovery/browse/menu-list cards.
+                  Allergen alerts are contextual item-level signals only and must remain small/restrained
+                  unless the user explicitly opens an allergen/nutrition detail context. */}
               {hasNoneAllergenSelected ? (
                 <span style={{ color: "#667085", fontSize: 11, fontWeight: 800 }}>Allergen filter off</span>
               ) : activeExcludedAllergens.length > 0 ? (
-                <span style={{ color: "#dc2626", fontSize: 11, fontWeight: 800 }}>
-                  ⚠ {activeExcludedAllergens.map((a) => formatDiscoveryAllergenLabel(a)).join(", ")} excluded
+                <span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 700 }}>
+                  Allergen exclusions: {activeExcludedAllergens.map((a) => formatDiscoveryAllergenLabel(a)).join(", ")}
                 </span>
               ) : null}
             </div>
@@ -1344,6 +1350,7 @@ export default function GrubbidDiscovery() {
                   <FeaturedDiscoveryCard
                     key={menu.menu_id || `feed-featured-${i}`}
                     menu={menu}
+                    hasActiveFilters={hasActivePublicFilters}
                     activeFilterLabel={activeFilterLabel}
                     activeFilterParams={activeFilterParams}
                   />
@@ -1351,6 +1358,7 @@ export default function GrubbidDiscovery() {
                   <DiscoveryCard
                     key={menu.menu_id || `feed-${i}`}
                     menu={menu}
+                    hasActiveFilters={hasActivePublicFilters}
                     activeFilterLabel={activeFilterLabel}
                     activeFilterParams={activeFilterParams}
                   />

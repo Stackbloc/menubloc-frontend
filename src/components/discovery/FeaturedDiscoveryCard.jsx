@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ChainLocationsSheet from "./ChainLocationsSheet.jsx";
+import { getDisplayItemCount } from "../../lib/publicCardCounts.js";
 
 function buildMergedSearch(baseSearch, extra) {
   const params = new URLSearchParams(baseSearch || "");
@@ -90,6 +91,7 @@ export default function FeaturedDiscoveryCard({
   menu,
   activeFilterParams = "",
   activeFilterLabel = null,
+  hasActiveFilters = false,
 }) {
   const [showChainSheet, setShowChainSheet] = useState(false);
   const location = useLocation();
@@ -99,7 +101,7 @@ export default function FeaturedDiscoveryCard({
   const name = (menu?.restaurant_name || "Restaurant").replace(/^The\s+/i, "");
   const cuisine = menu?.cuisine || menu?.category || null;
   const distance = formatDistance(menu?.distance_miles);
-  const itemCount = menu?.menu_item_count || 0;
+  const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
   const isVerified = menu?.menu_status === "published";
   const hasDeals = menu?.has_deals || false;
   const chips = (menu?.preview_items || []).slice(0, 3);

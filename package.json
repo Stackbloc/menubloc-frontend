@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/prerender.mjs",
     "design-lock": "node scripts/check-design-lock.mjs && npm run verify:discovery-state-and-chip-rails",
+    "verify:allergen-and-filtered-counts": "node scripts/verifyAllergenAndFilteredCounts.mjs",
     "verify:discovery-chips": "node scripts/verifyDiscoveryStateAndChipRails.mjs",
     "verify:discovery-state-and-chip-rails": "node scripts/verifyDiscoveryStateAndChipRails.mjs",
     "lint": "eslint .",

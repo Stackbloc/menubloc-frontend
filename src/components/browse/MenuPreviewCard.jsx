@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { isRestaurantVerifiedMenuStatus } from "../../lib/menuVerificationLabels.js";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
+import { getDisplayItemCount } from "../../lib/publicCardCounts.js";
 
 function buildMergedSearch(search, extraParams) {
   const params = new URLSearchParams(search || "");
@@ -257,7 +258,13 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
   );
 }
 
-export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = null, activeFilterParams = "" }) {
+export default function MenuPreviewCard({
+  menu,
+  index = 0,
+  activeFilterLabel = null,
+  activeFilterParams = "",
+  hasActiveFilters = false,
+}) {
   const [hover, setHover] = useState(false);
   const [confirm, setConfirm] = useState(null); // null | "phone" | "order"
   const { language, t } = useLanguage();
@@ -277,7 +284,7 @@ export default function MenuPreviewCard({ menu, index = 0, activeFilterLabel = n
   ).replace(/^The\s+/i, "");
   const cuisine = localizeCanonicalLabel(menu?.cuisine, "cuisine", t) || null;
   const emoji = getCuisineEmoji(restaurantName, menu?.cuisine || menu?.category);
-  const itemCount = menu?.menu_item_count || 0;
+  const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
   const itemCountLabel = itemCount > 0
     ? activeFilterLabel
       ? `${itemCount} ${activeFilterLabel} ${t(itemCount === 1 ? "common.itemSingular" : "common.itemPlural")}`

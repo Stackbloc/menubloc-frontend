@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import ChainLocationsSheet from "./ChainLocationsSheet.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { followRestaurant, unfollowRestaurant } from "../../lib/consumerApi.js";
+import { getDisplayItemCount } from "../../lib/publicCardCounts.js";
 
 function buildMergedSearch(baseSearch, extra) {
   const params = new URLSearchParams(baseSearch || "");
@@ -82,6 +83,7 @@ export default function DiscoveryCard({
   onSave,
   activeFilterParams = "",
   activeFilterLabel = null,
+  hasActiveFilters = false,
 }) {
   const [showChainSheet, setShowChainSheet] = useState(false);
   const [followed, setFollowed] = useState(false);
@@ -96,7 +98,7 @@ export default function DiscoveryCard({
   const cuisine = menu?.cuisine || menu?.category || null;
   const distance = formatDistance(menu?.distance_miles);
   const locationCount = menu?.location_count || 1;
-  const itemCount = menu?.menu_item_count || 0;
+  const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
   const isVerified = menu?.menu_status === "published";
   const chips = (menu?.preview_items || []).slice(0, 3);
   const phone = menu?.phone || null;

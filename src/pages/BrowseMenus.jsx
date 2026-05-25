@@ -31,7 +31,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
-import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import {
@@ -40,7 +39,6 @@ import {
   SelectField,
   StatusMessage,
 } from "../components/grubbid/GrubbidPrimitives.jsx";
-import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { apiGet, getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
@@ -228,7 +226,6 @@ function getUserCoords() {
 
 export default function BrowseMenus() {
   const { t } = useLanguage();
-  const { isAuthenticated, allergenFilter: consumerAllergenFilter } = useConsumer();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { search } = useLocation();
@@ -249,7 +246,6 @@ export default function BrowseMenus() {
   const [browseOffset, setBrowseOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
-  const [responseAllergenFilter, setResponseAllergenFilter] = useState(null);
   const BROWSE_LIMIT = 24;
   // Seed from URL so a shared/bookmarked link shows the label immediately
   const [locationLabel, setLocationLabel] = useState(() => {
@@ -467,8 +463,6 @@ export default function BrowseMenus() {
         } else {
           setMenus((prev) => dedupeDiscoveryMenus([...prev, ...extractedMenus]));
         }
-        setResponseAllergenFilter(response?.allergen_filter || null);
-
         setTotalCount(newTotal);
         setBrowseOffset(newOffset);
         setHasMore(response?.pagination?.has_more ?? (newOffset < newTotal));
@@ -505,9 +499,6 @@ export default function BrowseMenus() {
   }, [urlCity, urlState, filters, radiusMiles, cuisineOptions, localFilters, browseScopeKey]);
 
   const showEmptyState = !loading && !error && menus.length === 0;
-  const effectiveAllergenFilter = isAuthenticated
-    ? (consumerAllergenFilter || responseAllergenFilter || null)
-    : null;
 
   // ── Alpha range computation ────────────────────────────────────
   // Derive the unique first letters present in loaded menus, then
@@ -641,9 +632,10 @@ export default function BrowseMenus() {
 
         <ActiveFilterChips filters={filters} onToggle={toggleFilter} />
 
-        {effectiveAllergenFilter ? (
-          <AllergenFilterStatusBanner allergenFilter={effectiveAllergenFilter} style={{ marginBottom: 14 }} />
-        ) : null}
+        {/* GUARDRAIL:
+            Do not render broad allergen warning blocks on public discovery/browse/menu-list cards.
+            Allergen alerts are contextual item-level signals only and must remain small/restrained
+            unless the user explicitly opens an allergen/nutrition detail context. */}
 
         <Card>
           <div
@@ -668,7 +660,7 @@ export default function BrowseMenus() {
               <span style={{ fontWeight: 800 }}>{t("browse.dietaryFiltersActive", "Dietary filters active:")}</span>{" "}
               {activeFilterList(filters).map((f) => f.label).join(", ")}
               <span style={{ color: "var(--gb-color-ink-soft)", fontWeight: 500, fontSize: 11 }}>
-                {` ${t("browse.dietaryFiltersNote", "— will filter items inside each restaurant's menu")}`}
+                {` ${t("browse.dietaryFiltersNote", "— counts reflect matching items inside each restaurant")}`}
               </span>
             </StatusMessage>
           )}
@@ -714,6 +706,7 @@ export default function BrowseMenus() {
                   <DiscoveryCard
                     key={String(menu?.menu_id ?? menu?.restaurant_id ?? index)}
                     menu={menu}
+                    hasActiveFilters={hasActiveFilters(filters)}
                     activeFilterLabel={activeFilterLabel}
                     activeFilterParams={activeFilterParams}
                   />
@@ -766,7 +759,6 @@ export default function BrowseMenus() {
                           const newTotal = response?.total_count ?? (browseOffset + more.length);
                           const newOffset = response?.pagination?.next_offset ?? (browseOffset + more.length);
                           setMenus((prev) => dedupeDiscoveryMenus([...prev, ...more]));
-                          setResponseAllergenFilter((prev) => response?.allergen_filter || prev);
                           setTotalCount(newTotal);
                           setBrowseOffset(newOffset);
                           setHasMore(response?.pagination?.has_more ?? (newOffset < newTotal));
