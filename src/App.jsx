@@ -35,6 +35,7 @@ import { OperatorProvider, useOperator } from "./context/OperatorContext.jsx";
 import { OwnerProvider, useOwner } from "./context/OwnerContext.jsx";
 import { CrmProvider, useCrm } from "./context/CrmContext.jsx";
 import { ConsumerProvider } from "./context/ConsumerContext.jsx";
+import { FoodInterestsProvider } from "./context/FoodInterestsContext.jsx";
 import ConsumerSignup from "./pages/consumer/ConsumerSignup.jsx";
 import ConsumerLogin from "./pages/consumer/ConsumerLogin.jsx";
 import AppleAuthCallback from "./pages/consumer/AppleAuthCallback.jsx";
@@ -77,6 +78,7 @@ import OperatorCartNegotiationSettings from "./pages/operator/OperatorCartNegoti
 import GrubbidDiscovery from "./pages/GrubbidDiscovery.jsx";
 import GrubbidHomeV1 from "./components/GrubbidHomeV1.jsx";
 import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
+import FoodInterestsPage from "./pages/FoodInterestsPage.jsx";
 
 import RestaurantSignup from "./pages/RestaurantSignup.jsx";
 import RestaurantSignupEntry from "./pages/RestaurantSignupEntry.jsx";
@@ -136,6 +138,7 @@ import CrmForgotPassword from "./pages/crm/CrmForgotPassword.jsx";
 import CrmResetPassword from "./pages/crm/CrmResetPassword.jsx";
 import CrmSubscriptions from "./pages/crm/CrmSubscriptions.jsx";
 import CrmCommissions from "./pages/crm/CrmCommissions.jsx";
+import FoodInterestAuthPrompt from "./components/food-interests/FoodInterestAuthPrompt.jsx";
 
 function OperatorRoute({ children }) {
   const { isAuthenticated, isEmailVerified, loading } = useOperator();
@@ -464,11 +467,13 @@ function AppShell({ easyMenu, crmHost }) {
       {crmHost ? null : <CartDrawer />}
       {crmHost ? null : <OrderCartDrawer />}
       {crmHost ? null : <BasketResumePrompt />}
+      {crmHost ? null : <FoodInterestAuthPrompt />}
 
       <Routes>
         <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <GrubbidDiscovery />} />
 
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
+        <Route path="/food-interests" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodInterestsPage />} />
         <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />
         <Route path="/top-picks" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TopPicksPage />} />
         <Route path="/top5/healthiest" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TopPicksPage />} />
@@ -616,21 +621,23 @@ export default function App() {
 
   return (
     <ConsumerProvider>
-      <OwnerProvider>
-        <CrmProvider>
-          <OperatorProvider>
-            <CartProvider>
-              <OrderCartProvider>
-                <LanguageProvider>
-                  <BrowserRouter>
-                    <AppShell easyMenu={easyMenu} crmHost={crmHost} />
-                  </BrowserRouter>
-                </LanguageProvider>
-              </OrderCartProvider>
-            </CartProvider>
-          </OperatorProvider>
-        </CrmProvider>
-      </OwnerProvider>
+      <FoodInterestsProvider>
+        <OwnerProvider>
+          <CrmProvider>
+            <OperatorProvider>
+              <CartProvider>
+                <OrderCartProvider>
+                  <LanguageProvider>
+                    <BrowserRouter>
+                      <AppShell easyMenu={easyMenu} crmHost={crmHost} />
+                    </BrowserRouter>
+                  </LanguageProvider>
+                </OrderCartProvider>
+              </CartProvider>
+            </OperatorProvider>
+          </CrmProvider>
+        </OwnerProvider>
+      </FoodInterestsProvider>
     </ConsumerProvider>
   );
 }
