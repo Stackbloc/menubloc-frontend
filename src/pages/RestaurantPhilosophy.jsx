@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import RestaurantFAQ from "../components/RestaurantFAQ.jsx";
 
 const PLAN_ROUTE = "/restaurant/signup";
 
@@ -208,6 +209,8 @@ export default function RestaurantPhilosophy() {
             the Menuply platform experience.
           </p>
         </div>
+
+        <RestaurantFAQ instanceId="restaurant-onboarding-faq" />
 
         <div style={styles.divider} />
 
