@@ -12,7 +12,6 @@
 import { useNavigate, Link } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
-import RestaurantFAQ from "../components/RestaurantFAQ.jsx";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
 
@@ -254,8 +253,6 @@ export default function RestaurantSignupEntry() {
             <div style={styles.step(false)}>3. Finish onboarding</div>
           </div>
         </section>
-
-        <RestaurantFAQ instanceId="restaurant-signup-faq" />
 
         <section style={{
           marginBottom: 22,
