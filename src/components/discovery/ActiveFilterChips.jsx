@@ -1,4 +1,5 @@
 import { FILTER_KEYS, FILTER_LABELS } from "../../lib/filterUtils.js";
+import ChipRail from "../chips/ChipRail.jsx";
 
 const chipBase = {
   display: "inline-flex",
@@ -34,7 +35,7 @@ export default function ActiveFilterChips({ filters, onToggle, showAll = false }
   if (!keys.length) return null;
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+    <ChipRail style={{ marginBottom: 12 }}>
       {keys.map((key) => {
         const active = filters[key];
         return (
@@ -49,6 +50,6 @@ export default function ActiveFilterChips({ filters, onToggle, showAll = false }
           </button>
         );
       })}
-    </div>
+    </ChipRail>
   );
 }

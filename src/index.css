@@ -444,14 +444,13 @@ textarea:focus-visible {
 }
 
 /*
- * Discovery diet / category chip rows (GrubbidDiscovery.jsx — DiscoveryChipRow).
- * All viewports: one horizontal line per row (no wrap) so discovery stays at two scrollable rows.
- * Desktop: overflow-x auto. Mobile: hide scrollbar + pan-x.
- * Guard: npm run verify:discovery-chips — do not set overflowX:auto inline on the scroller.
+ * Shared horizontal chip/filter/category rail.
+ * Desktop + mobile: one horizontal line only; chips never shrink or wrap.
+ * Guard: npm run verify:discovery-state-and-chip-rails.
  */
-.gb-discovery-chip-scroller {
+.gb-chip-rail {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -464,14 +463,19 @@ textarea:focus-visible {
   scroll-behavior: smooth;
 }
 
+.gb-chip-rail > * {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
-  .gb-discovery-chip-scroller {
+  .gb-chip-rail {
     scrollbar-width: none;
     -ms-overflow-style: none;
     touch-action: pan-x;
   }
 
-  .gb-discovery-chip-scroller::-webkit-scrollbar {
+  .gb-chip-rail::-webkit-scrollbar {
     display: none;
   }
 }

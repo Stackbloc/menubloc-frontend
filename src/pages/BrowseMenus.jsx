@@ -28,7 +28,7 @@
  * ============================================================
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
 import AllergenFilterStatusBanner from "../components/consumer/AllergenFilterStatusBanner.jsx";
@@ -48,6 +48,7 @@ import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.
 import { parseFiltersFromUrl, filtersToUrlParams, hasActiveFilters, activeFilterList } from "../lib/filterUtils.js";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { buildBrowseLocationParams, reverseGeocode } from "../lib/locationUtils.js";
+import { dedupeDiscoveryMenus } from "../lib/discoveryFeedGuardrails.js";
 
 
 function useIsMobile(breakpoint = 900) {
@@ -265,6 +266,7 @@ export default function BrowseMenus() {
   }));
   const [cuisineOptions, setCuisineOptions] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
+  const browseRequestRef = useRef(0);
   // radiusMiles: null = any distance (no radius cap).
   // In geo mode default to 10 miles. In city/state mode default to null (any).
   // When a non-null radius is selected in city/state mode, geolocation is requested
@@ -288,9 +290,18 @@ export default function BrowseMenus() {
   const localizedCategoryOptions = categoryOptions.map((option) =>
     localizeCanonicalOption(option, "category", t)
   );
+  const browseScopeKey = useMemo(
+    () => `${hasCityStateParams ? `${urlCity}|${urlState}` : "geo"}::${search}::${radiusMiles ?? "any"}`,
+    [hasCityStateParams, urlCity, urlState, search, radiusMiles]
+  );
+  const browseScopeRef = useRef(browseScopeKey);
 
   const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
     filters.dairy_free || filters.diabetic_friendly || filters.keto || filters.low_fat || filters.low_sodium || filters.deals;
+
+  useEffect(() => {
+    browseScopeRef.current = browseScopeKey;
+  }, [browseScopeKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -368,10 +379,14 @@ export default function BrowseMenus() {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+    const requestId = browseRequestRef.current + 1;
+    browseRequestRef.current = requestId;
 
     async function run(loadMoreOffset = 0) {
       if (loadMoreOffset === 0) {
         setLoading(true);
+        setMenus([]);
         setBrowseOffset(0);
         setHasMore(false);
       } else {
@@ -435,10 +450,12 @@ export default function BrowseMenus() {
         }
 
         // Always show restaurant cards — dietary filters apply within each restaurant's menu
-        const response = await getBrowseMenus(apiParams);
-        if (cancelled) return;
+          const response = await getBrowseMenus(apiParams, { signal: controller.signal });
+          if (cancelled || controller.signal.aborted || requestId !== browseRequestRef.current) return;
 
-        const extractedMenus = normalizeBrowseMenus(extractMenus(response), cuisineOptions);
+        const extractedMenus = dedupeDiscoveryMenus(
+          normalizeBrowseMenus(extractMenus(response), cuisineOptions)
+        );
         // Backend already returns results nearest-first (or alphabetical when no distance).
         // No client-side resort needed — preserve server order.
 
@@ -448,7 +465,7 @@ export default function BrowseMenus() {
         if (loadMoreOffset === 0) {
           setMenus(extractedMenus);
         } else {
-          setMenus((prev) => [...prev, ...extractedMenus]);
+          setMenus((prev) => dedupeDiscoveryMenus([...prev, ...extractedMenus]));
         }
         setResponseAllergenFilter(response?.allergen_filter || null);
 
@@ -466,10 +483,10 @@ export default function BrowseMenus() {
           void 0;
         }
       } catch (fetchError) {
-        if (cancelled) return;
+        if (cancelled || fetchError?.name === "AbortError" || requestId !== browseRequestRef.current) return;
         setError(readErrorMessage(fetchError));
       } finally {
-        if (!cancelled) {
+        if (!cancelled && requestId === browseRequestRef.current) {
           setLoading(false);
           setLoadingMore(false);
         }
@@ -480,11 +497,12 @@ export default function BrowseMenus() {
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   // Re-run when the URL location, filters, or radius changes.
   // radiusMiles only affects geo mode — city/state mode ignores it.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlCity, urlState, filters, radiusMiles, cuisineOptions, localFilters]);
+  }, [urlCity, urlState, filters, radiusMiles, cuisineOptions, localFilters, browseScopeKey]);
 
   const showEmptyState = !loading && !error && menus.length === 0;
   const effectiveAllergenFilter = isAuthenticated
@@ -710,6 +728,7 @@ export default function BrowseMenus() {
                     className={`gb-pill-button ${loadingMore ? "gb-pill-button--secondary" : "gb-pill-button--primary"}`}
                     onClick={() => {
                       (async () => {
+                        const requestScopeKey = browseScopeKey;
                         setLoadingMore(true);
                         setError("");
                         try {
@@ -740,10 +759,13 @@ export default function BrowseMenus() {
                             ...dietaryParams,
                           };
                           const response = await getBrowseMenus(apiParams);
-                          const more = normalizeBrowseMenus(extractMenus(response), cuisineOptions);
+                          if (requestScopeKey !== browseScopeRef.current) return;
+                          const more = dedupeDiscoveryMenus(
+                            normalizeBrowseMenus(extractMenus(response), cuisineOptions)
+                          );
                           const newTotal = response?.total_count ?? (browseOffset + more.length);
                           const newOffset = response?.pagination?.next_offset ?? (browseOffset + more.length);
-                          setMenus((prev) => [...prev, ...more]);
+                          setMenus((prev) => dedupeDiscoveryMenus([...prev, ...more]));
                           setResponseAllergenFilter((prev) => response?.allergen_filter || prev);
                           setTotalCount(newTotal);
                           setBrowseOffset(newOffset);

@@ -50,11 +50,12 @@ export function toConsumerErrorMessage(error, fallbackMessage) {
   return message;
 }
 
-export async function apiGet(path) {
+export async function apiGet(path, options = {}) {
   const url = `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
   const res = await fetch(url, {
     method: "GET",
     credentials: "include",
+    signal: options.signal,
   });
   const data = await safeJson(res);
   if (!res.ok) {
@@ -114,13 +115,13 @@ export async function getRestaurantMenu(restaurantId) {
   return apiGet(`/public/restaurants/${encodeURIComponent(String(restaurantId))}/menu`);
 }
 
-export async function getBrowseMenus(params = {}) {
+export async function getBrowseMenus(params = {}, options = {}) {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value === null || value === undefined || value === "") return;
     search.set(key, String(value));
   });
-  return apiGet(`/menus/browse?${search.toString()}`);
+  return apiGet(`/menus/browse?${search.toString()}`, options);
 }
 
 export async function getBrowseItems(params = {}) {

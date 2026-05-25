@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
+import ChipRail from "../chips/ChipRail.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 
@@ -258,14 +259,7 @@ export default function ClassicMenuTemplate(ctx) {
 
           {menuPresentation?.tabs_allowed_for_public_view && menus.length > 1 && (
             <>
-              <div style={{
-                display: "flex",
-                gap: 8,
-                overflowX: "auto",
-                paddingBottom: 12,
-                marginBottom: 4,
-                scrollbarWidth: "none",
-              }}>
+              <ChipRail style={{ paddingBottom: 12, marginBottom: 4 }}>
                 {menus.map(menu => {
                   const isSelected = menu.id === selectedMenuId;
                   const scheduleDays = Array.isArray(menu.schedule_days) ? menu.schedule_days : [];
@@ -299,7 +293,7 @@ export default function ClassicMenuTemplate(ctx) {
                     </button>
                   );
                 })}
-              </div>
+              </ChipRail>
               {tabError ? (
                 <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 8 }}>
                   {tabError}

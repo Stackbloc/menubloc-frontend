@@ -29,11 +29,17 @@ import {
 } from "../lib/locationUtils.js";
 import { captureEvent } from "../services/posthog.js";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
+import ChipRail from "../components/chips/ChipRail.jsx";
 import DiscoveryDrawer from "../components/grubbid/DiscoveryDrawer.jsx";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
 import FeaturedDiscoveryCard from "../components/discovery/FeaturedDiscoveryCard.jsx";
 import DiscoveryMoreSheet from "../components/grubbid/DiscoveryMoreSheet.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import {
+  buildDiscoveryFeedScopeKey,
+  buildDiscoveryLocationKey,
+  dedupeDiscoveryMenus,
+} from "../lib/discoveryFeedGuardrails.js";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -80,24 +86,9 @@ const INTELLIGENCE_CHIPS = [
 ];
 
 function DiscoveryChipRow({ chips, filters, onChipClick }) {
-  const scrollerRef = useRef(null);
-
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const onWheel = (e) => {
-      if (el.scrollWidth <= el.clientWidth + 1) return;
-      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-      e.preventDefault();
-      el.scrollLeft += e.deltaY;
-    };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, [chips.length]);
-
   return (
     <div style={{ padding: "0 16px", minWidth: 0, width: "100%" }}>
-      <div ref={scrollerRef} className="gb-discovery-chip-scroller">
+      <ChipRail>
         {chips.map((chip) => {
           const isActive = chip.filterKey ? !!filters[chip.filterKey] : false;
           return (
@@ -107,7 +98,7 @@ function DiscoveryChipRow({ chips, filters, onChipClick }) {
               onClick={() => onChipClick(chip)}
               style={{
                 height: 28, padding: "0 12px", borderRadius: 999,
-                flexShrink: 0, cursor: "pointer", whiteSpace: "nowrap",
+                cursor: "pointer",
                 border: isActive ? "1.5px solid #22C55E" : "1.5px solid #1F2937",
                 background: isActive ? "rgba(34,197,94,0.15)" : "#1A2419",
                 color: isActive ? "#22C55E" : "#D1D5DB",
@@ -118,7 +109,7 @@ function DiscoveryChipRow({ chips, filters, onChipClick }) {
             </button>
           );
         })}
-      </div>
+      </ChipRail>
     </div>
   );
 }
@@ -468,6 +459,8 @@ export default function GrubbidDiscovery() {
       return false;
     }
   });
+  const discoveryRequestRef = useRef(0);
+  const feedCacheRef = useRef({});
   const resolvedLocationLabel = useMemo(() => {
     if (appliedLocation) return appliedLocation;
     return autoLocation.label;
@@ -482,6 +475,14 @@ export default function GrubbidDiscovery() {
     autoLocation.lat != null && autoLocation.lng != null &&
     (!appliedLocation || autoLocationMatchesApplied) &&
     !locationManuallySet.current;
+  const locationKey = useMemo(
+    () => buildDiscoveryLocationKey({ shouldUseAutoGeo, autoLocation, appliedLocation }),
+    [shouldUseAutoGeo, autoLocation, appliedLocation]
+  );
+  const feedScopeKey = useMemo(
+    () => buildDiscoveryFeedScopeKey({ locationKey, filters }),
+    [locationKey, filters]
+  );
 
   const activeFilterLabel = (() => {
     if (filters.vegan) return "vegan";
@@ -688,23 +689,42 @@ export default function GrubbidDiscovery() {
       if (value) params.set(key, String(value));
     }
 
-    setFeedMenus([]);
+    const cachedMenus = feedCacheRef.current[feedScopeKey];
+    const controller = new AbortController();
+    const requestId = discoveryRequestRef.current + 1;
+    discoveryRequestRef.current = requestId;
+
+    // GUARDRAIL:
+    // Menu/discovery results are location-scoped. Never append or merge results across
+    // city/state/lat/lng location keys. On location key change, replace the result set
+    // and ignore stale async responses from prior locations.
+    setFeedMenus(Array.isArray(cachedMenus) ? cachedMenus : []);
     setFeedLoading(true);
     const feedUrl = `${API}/menus/browse?${params.toString()}`;
     console.log("[Discovery] fetch URL:", feedUrl);
-    fetch(feedUrl)
+    fetch(feedUrl, { signal: controller.signal })
       .then((r) => r.json())
       .then((json) => {
+        if (controller.signal.aborted || discoveryRequestRef.current !== requestId) return;
         const menus = Array.isArray(json?.menus)
           ? json.menus
           : Array.isArray(json?.rows?.[0]?.menus)
             ? json.rows[0].menus
             : [];
-        setFeedMenus(menus);
+        const nextMenus = dedupeDiscoveryMenus(menus);
+        feedCacheRef.current[feedScopeKey] = nextMenus;
+        setFeedMenus(nextMenus);
       })
-      .catch(() => {})
-      .finally(() => setFeedLoading(false));
-  }, [shouldUseAutoGeo, autoLocation.lat, autoLocation.lng, autoLocation.city, autoLocation.state, appliedLocation, filters]);
+      .catch((error) => {
+        if (error?.name === "AbortError") return;
+      })
+      .finally(() => {
+        if (controller.signal.aborted || discoveryRequestRef.current !== requestId) return;
+        setFeedLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [shouldUseAutoGeo, autoLocation.lat, autoLocation.lng, autoLocation.city, autoLocation.state, appliedLocation, filters, feedScopeKey]);
 
   // ── existing logic (unchanged) ──────────────────────────────────────────────
 
