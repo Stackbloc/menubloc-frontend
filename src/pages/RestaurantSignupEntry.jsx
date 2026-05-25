@@ -11,7 +11,6 @@
 
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { BrandLockup } from "../components/BrandLogo.jsx";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
@@ -78,14 +77,6 @@ const styles = {
   shell: {
     maxWidth: 1120,
     margin: "0 auto",
-  },
-  hero: {
-    border: "1px solid #d9e0ea",
-    borderRadius: 32,
-    background: "#ffffff",
-    boxShadow: "0 18px 40px rgba(15, 23, 32, 0.06)",
-    padding: "28px 24px 24px",
-    marginBottom: 22,
   },
   eyebrow: {
     display: "inline-flex",
@@ -243,16 +234,18 @@ export default function RestaurantSignupEntry() {
   return (
     <div style={styles.page}>
       <div style={styles.shell}>
-        <section style={styles.hero}>
-          <BrandLockup
-            subtitle="for Restaurants"
-            wrapperStyle={{ alignItems: "flex-start", marginBottom: 18 }}
-            subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
-            logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
-          />
-
+        <header style={{ marginBottom: 28 }}>
           <div style={styles.eyebrow}>Restaurant Signup</div>
-
+          <h1 style={{
+            fontSize: "clamp(1.7rem, 3.5vw, 2.6rem)",
+            fontWeight: 900,
+            letterSpacing: "-0.03em",
+            lineHeight: 1.1,
+            color: "#101828",
+            margin: "10px 0 16px",
+          }}>
+            Pick the Subscription Right for Your Restaurant
+          </h1>
           <div style={styles.steps}>
             <div style={styles.step(true)}>1. Choose plan</div>
             <div style={styles.stepDivider} />
@@ -260,49 +253,13 @@ export default function RestaurantSignupEntry() {
             <div style={styles.stepDivider} />
             <div style={styles.step(false)}>3. Finish onboarding</div>
           </div>
-        </section>
-
-        <section style={{
-          marginBottom: 22,
-          borderRadius: 20,
-          border: "1px solid #d9e0ea",
-          background: "#f8faf9",
-          padding: "20px 22px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 16,
-          flexWrap: "wrap",
-        }}>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#101828", marginBottom: 4 }}>
-              Do you have a food truck?
-            </div>
-            <div style={{ fontSize: 14, color: "#667085", lineHeight: 1.5 }}>
-              Food trucks have their own sign-up path with scheduling and location tools.
-            </div>
-          </div>
-          <Link
-            to="/foodtruck/signup"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              minHeight: 44,
-              padding: "0 20px",
-              borderRadius: 12,
-              border: "1.5px solid #1F4E3D",
-              background: "#ffffff",
-              color: "#1F4E3D",
-              fontSize: 14,
-              fontWeight: 800,
-              textDecoration: "none",
-              whiteSpace: "nowrap",
-            }}
-          >
-            🚚 Sign up as a Food Truck
-          </Link>
-        </section>
+          <p style={{ margin: "14px 0 0", fontSize: 13, color: "#b0b8c4" }}>
+            Have a food truck?{" "}
+            <Link to="/foodtruck/signup" style={{ color: "#1F4E3D", fontWeight: 700, textDecoration: "none" }}>
+              Sign up here →
+            </Link>
+          </p>
+        </header>
 
         <section style={styles.cardsGrid}>
           {PLAN_OPTIONS.map((plan) => (
