@@ -382,6 +382,28 @@ export default function FoodTruckSignup() {
 
       <form onSubmit={handleSubmit} noValidate>
 
+        {/* Plan */}
+        <div style={st.section}>
+          <div style={st.sectionTitle}>Your Plan</div>
+          <div style={st.planCard}>
+            <div style={st.planBadge}>Food Truck Verified</div>
+            <div style={st.planName}>Menuply Verified Listing</div>
+            <div>
+              <span style={st.planPrice}>$49</span>
+              <span style={st.planPer}>/ year</span>
+            </div>
+            <div style={st.planSavings}>Less than $5/month</div>
+            <ul style={st.planFeatures}>
+              {TRUCK_FEATURES.map((f) => (
+                <li key={f} style={st.planFeatureItem}>
+                  <span style={st.checkmark}>✓</span>
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
         {/* Account Information */}
         <div style={st.section}>
           <div style={st.sectionTitle}>Account Information</div>
@@ -528,28 +550,6 @@ export default function FoodTruckSignup() {
             <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>
               Neighborhoods or areas where you regularly operate.
             </div>
-          </div>
-        </div>
-
-        {/* Plan */}
-        <div style={st.section}>
-          <div style={st.sectionTitle}>Your Plan</div>
-          <div style={st.planCard}>
-            <div style={st.planBadge}>Food Truck Verified</div>
-            <div style={st.planName}>Menuply Verified Listing</div>
-            <div>
-              <span style={st.planPrice}>$49</span>
-              <span style={st.planPer}>/ year</span>
-            </div>
-            <div style={st.planSavings}>Less than $5/month</div>
-            <ul style={st.planFeatures}>
-              {TRUCK_FEATURES.map((f) => (
-                <li key={f} style={st.planFeatureItem}>
-                  <span style={st.checkmark}>✓</span>
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
 
