@@ -25,7 +25,7 @@ const DEFAULT_NEW_FOR_YOU = Object.freeze([
   { id: "spicy_nearby", title: "New spicy dishes nearby", body: "Fresh spicy finds can show up here." },
   { id: "high_protein_added", title: "High protein options added", body: "New higher-protein picks can show up here." },
   { id: "mediterranean_nearby", title: "Mediterranean dishes near you", body: "Nearby Mediterranean dishes can show up here." },
-  { id: "price_drops", title: "Price drops for dishes you follow", body: "Future price-change highlights can show up here." },
+  { id: "price_drops", title: "Price drops for dishes you are interested in", body: "Future price-change highlights can show up here." },
 ]);
 
 const FoodInterestsContext = createContext(null);

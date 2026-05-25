@@ -39,7 +39,7 @@ export default function FoodInterestsPage() {
   const { isAuthenticated } = useConsumer();
   const { interests, suggestions, loading, error } = useFoodInterests();
 
-  const following = useMemo(() => {
+  const interestGroups = useMemo(() => {
     const groups = {
       dish: [],
       cuisine: [],
@@ -75,7 +75,7 @@ export default function FoodInterestsPage() {
             Food Interests
           </div>
           <h1 style={{ margin: "10px 0 0", fontSize: 30, lineHeight: 1.05, letterSpacing: "-0.03em" }}>
-            Follow dishes, cuisines, and simple food traits.
+            Mark dishes, cuisines, and food traits you are interested in.
           </h1>
           <p style={{ margin: "12px 0 0", fontSize: 15, color: "#CBD5E1", lineHeight: 1.55, maxWidth: 560 }}>
             Keep this lightweight. Mark what you are into, then come back for simple “New For You” updates.
@@ -120,25 +120,25 @@ export default function FoodInterestsPage() {
 
         <div style={{ marginTop: 20, display: "grid", gap: 16 }}>
           <PanelSection
-            title="Following"
-            subtitle="Your dish, cuisine, and trait interests stay here."
+            title="Your Interests"
+            subtitle="Your dish, cuisine, and food trait interests stay here."
           >
             {loading ? (
               <div style={{ fontSize: 14, color: "#9CA3AF" }}>Loading interests…</div>
             ) : interests.length === 0 ? (
               <div style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.5 }}>
-                You are not following any food interests yet.
+                You have not marked any food interests yet.
               </div>
             ) : (
               <div style={{ display: "grid", gap: 12 }}>
                 {["dish", "cuisine", "trait"].map((type) => (
-                  following[type].length > 0 ? (
+                  interestGroups[type].length > 0 ? (
                     <div key={type}>
                       <div style={{ fontSize: 12, fontWeight: 800, color: "#86EFAC", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                        {type === "dish" ? "Dishes" : type === "cuisine" ? "Cuisines" : "Traits"}
+                        {type === "dish" ? "Dish Interests" : type === "cuisine" ? "Cuisine Interests" : "Food Traits"}
                       </div>
                       <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                        {following[type].map((interest) => (
+                        {interestGroups[type].map((interest) => (
                           <FoodInterestButton
                             key={`${interest.interest_type}:${interest.interest_key}`}
                             interest={interest}
