@@ -53,7 +53,7 @@ function CategoryHeader({ label }) {
   );
 }
 
-function FeatureRow({ label, v, vNote, p, f, shade }) {
+function FeatureRow({ label, v, vNote, p, shade }) {
   const check = (flag, note) => flag ? (
     <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
       <span style={{ color: GREEN, fontWeight: 800, fontSize: 15 }}>✓</span>
@@ -67,7 +67,7 @@ function FeatureRow({ label, v, vNote, p, f, shade }) {
       <td style={{ padding: "11px 16px", fontSize: 13, color: "#374151", fontWeight: 500, borderRight: "1px solid #f0f4f8" }}>{label}</td>
       <td style={{ padding: "11px 0", textAlign: "center", width: 90 }}>{check(v, vNote)}</td>
       <td style={{ padding: "11px 0", textAlign: "center", width: 90, background: shade ? "#f0f7f4" : "#f8fdf9" }}>{check(p)}</td>
-      <td style={{ padding: "11px 0", textAlign: "center", width: 90, background: shade ? "#fef9f0" : "#fffdf7" }}>{check(f)}</td>
+      <td style={{ padding: "11px 0", textAlign: "center", width: 90, background: shade ? "#fef9f0" : "#fffdf7" }} />
     </tr>
   );
 }
@@ -88,6 +88,7 @@ export default function PlanComparisonTable() {
             <th style={{ padding: "4px 8px 10px", textAlign: "center", width: 110 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: AMBER }}>Founder</div>
               <div style={{ fontSize: 10, fontWeight: 700, color: AMBER, background: "#fef3c7", borderRadius: 999, padding: "2px 7px", display: "inline-block", marginTop: 3, whiteSpace: "nowrap" }}>Limited Time</div>
+              <div style={{ fontSize: 10, color: AMBER, marginTop: 5, lineHeight: 1.35, fontWeight: 500 }}>Same features as Pro Plan, plus 24‑month pricing guarantee</div>
             </th>
           </tr>
         </thead>
@@ -96,7 +97,7 @@ export default function PlanComparisonTable() {
             <Fragment key={section.category}>
               <CategoryHeader label={section.category} />
               {section.rows.map((row, idx) => (
-                <FeatureRow key={row.label} label={row.label} v={row.v} vNote={row.vNote} p={row.p} f={row.f} shade={idx % 2 === 1} />
+                <FeatureRow key={row.label} label={row.label} v={row.v} vNote={row.vNote} p={row.p} shade={idx % 2 === 1} />
               ))}
             </Fragment>
           ))}

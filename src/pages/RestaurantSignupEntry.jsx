@@ -195,6 +195,10 @@ const styles = {
     fontFamily: "inherit",
     marginTop: "auto",
     boxShadow: featured ? "0 12px 24px rgba(31, 78, 61, 0.18)" : "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
   }),
 };
 
@@ -213,18 +217,40 @@ export default function RestaurantSignupEntry() {
   return (
     <div style={styles.page}>
       <div style={styles.shell}>
-        <header style={{ marginBottom: 28 }}>
-          <div style={styles.eyebrow}>Restaurant Signup</div>
-          <h1 style={{
-            fontSize: "clamp(1.7rem, 3.5vw, 2.6rem)",
-            fontWeight: 900,
-            letterSpacing: "-0.03em",
-            lineHeight: 1.1,
-            color: "#101828",
-            margin: "10px 0 0",
-          }}>
-            Pick the Subscription Right for Your Restaurant
-          </h1>
+        <header style={{ marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <div style={styles.eyebrow}>Restaurant Signup</div>
+            <h1 style={{
+              fontSize: "clamp(1.7rem, 3.5vw, 2.6rem)",
+              fontWeight: 900,
+              letterSpacing: "-0.03em",
+              lineHeight: 1.1,
+              color: "#101828",
+              margin: "10px 0 0",
+            }}>
+              Pick the Subscription Right for Your Restaurant
+            </h1>
+          </div>
+          <Link
+            to="/foodtruck/signup"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "10px 18px",
+              borderRadius: 12,
+              border: "1px solid #1F4E3D",
+              background: "#ffffff",
+              color: "#1F4E3D",
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+              marginTop: 4,
+            }}
+          >
+            🚚 Food Truck? Click here
+          </Link>
         </header>
 
         <section style={styles.cardsGrid}>
