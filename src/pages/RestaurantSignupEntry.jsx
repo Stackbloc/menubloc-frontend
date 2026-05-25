@@ -285,13 +285,6 @@ export default function RestaurantSignupEntry() {
           ))}
         </section>
 
-        <p style={{ margin: "0 0 20px", fontSize: 13, color: "#b0b8c4", display: "flex", alignItems: "center", gap: 6 }}>
-          🚚 Food Truck?{" "}
-          <Link to="/foodtruck/signup" style={{ color: "#667085", fontWeight: 400, textDecoration: "none" }}>
-            Sign up here.
-          </Link>
-        </p>
-
         <PlanComparisonTable />
       </div>
     </div>
