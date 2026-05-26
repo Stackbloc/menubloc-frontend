@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { getOwnerDashboardSummary } from "../../lib/ownerApi.js";
 
@@ -13,7 +14,9 @@ export default function OwnerDashboard() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    getOwnerDashboardSummary().then(setData).catch((err) => setError(err.message || "Unable to load dashboard"));
+    getOwnerDashboardSummary()
+      .then(setData)
+      .catch(() => setError("Owner dashboard data is temporarily unavailable."));
   }, []);
 
   const summary = data?.summary || {};
@@ -22,6 +25,8 @@ export default function OwnerDashboard() {
     <OwnerLayout title="Owner Dashboard">
       {error ? <ErrorBanner message={error} /> : null}
 
+      {/* Platform metrics */}
+      <SectionTitle title="Platform Overview" subtitle="Live platform metrics." />
       <div style={CARD_GRID}>
         {[
           ["Total Site Visits", summary.total_site_visits],
@@ -41,7 +46,46 @@ export default function OwnerDashboard() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 18, marginTop: 22 }}>
+      {/* Menu Upload metrics */}
+      <div style={{ marginTop: 28 }}>
+        <SectionTitle title="Menu Uploads" subtitle="Ingestion and upload activity across the platform." />
+        <div style={CARD_GRID}>
+          <MetricCard
+            label="Total Uploads"
+            value={summary.menu_uploads_total}
+            href="/owner/menu-uploads"
+          />
+          <MetricCard
+            label="Uploads Today"
+            value={summary.menu_uploads_today}
+            href="/owner/menu-uploads?status=today"
+          />
+          <MetricCard
+            label="Pending"
+            value={summary.menu_uploads_pending}
+            href="/owner/menu-uploads?status=pending"
+          />
+          <MetricCard
+            label="Failed"
+            value={summary.menu_uploads_failed}
+            href="/owner/menu-uploads?status=failed"
+            highlight={Number(summary.menu_uploads_failed) > 0}
+          />
+          <MetricCard
+            label="Needs Review"
+            value={summary.menu_uploads_needs_review}
+            href="/owner/menu-uploads?status=needs_review"
+            highlight={Number(summary.menu_uploads_needs_review) > 0}
+          />
+          <MetricCard
+            label="Published"
+            value={summary.menu_uploads_published}
+            href="/owner/menu-uploads?status=published"
+          />
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 18, marginTop: 28 }}>
         <PageCard style={{ padding: 22 }}>
           <SectionTitle title="Trends" subtitle="Last 7 days across the platform." />
           <div style={{ display: "grid", gap: 18 }}>
@@ -60,7 +104,9 @@ export default function OwnerDashboard() {
               {Object.entries(data.availability).map(([key, available]) => (
                 <div key={key} style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", borderRadius: 12, background: "#fff" }}>
                   <span style={{ textTransform: "capitalize" }}>{key.replaceAll("_", " ")}</span>
-                  <span style={{ color: available ? "#16794f" : OWNER_COLORS.muted, fontWeight: 700 }}>{available ? "Tracked" : "Not available"}</span>
+                  <span style={{ color: available ? "#16794f" : OWNER_COLORS.muted, fontWeight: 700 }}>
+                    {available ? "Tracked" : "Not available"}
+                  </span>
                 </div>
               ))}
             </div>
@@ -73,13 +119,33 @@ export default function OwnerDashboard() {
   );
 }
 
-function MetricCard({ label, value }) {
-  return (
-    <PageCard style={{ padding: 18 }}>
-      <div style={{ color: OWNER_COLORS.muted, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
-      <div style={{ marginTop: 10, fontSize: 28, fontWeight: 800, letterSpacing: "-0.05em" }}>{value ?? "N/A"}</div>
+function MetricCard({ label, value, href, highlight }) {
+  const card = (
+    <PageCard
+      style={{
+        padding: 18,
+        cursor: href ? "pointer" : "default",
+        border: highlight ? `1px solid ${OWNER_COLORS.accent}` : undefined,
+        transition: "box-shadow 0.15s",
+      }}
+    >
+      <div style={{ color: OWNER_COLORS.muted, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        {label}
+      </div>
+      <div style={{ marginTop: 10, fontSize: 28, fontWeight: 800, letterSpacing: "-0.05em", color: highlight ? OWNER_COLORS.accent : undefined }}>
+        {value ?? "N/A"}
+      </div>
     </PageCard>
   );
+
+  if (href) {
+    return (
+      <Link to={href} style={{ textDecoration: "none", display: "block" }}>
+        {card}
+      </Link>
+    );
+  }
+  return card;
 }
 
 function MiniSeries({ title, rows, valueKey, formatter = (value) => value }) {
@@ -104,7 +170,11 @@ function MiniSeries({ title, rows, valueKey, formatter = (value) => value }) {
 }
 
 function ErrorBanner({ message }) {
-  return <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 12, background: "#fff1ef", color: "#8b2e1a" }}>{message}</div>;
+  return (
+    <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 12, background: "#fff1ef", color: "#8b2e1a" }}>
+      {message}
+    </div>
+  );
 }
 
 function formatMoney(cents) {
