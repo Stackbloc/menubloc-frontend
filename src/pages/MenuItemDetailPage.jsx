@@ -353,38 +353,6 @@ function SectionCard({ title, eyebrow, children, style }) {
 
 // ── Hero sub-components ──────────────────────────────────────
 
-/** Short allergen notice — avoids the previous full-width light “card” banner. */
-function CompactAllergenAlert({ section, t }) {
-  if (!section?.items?.length) return null;
-  const allergens = section.items.map((entry) => translateAllergenValue(t, entry.label));
-  const disclosure = translateInsightText(t, section.disclosure || "");
-  return (
-    <div
-      style={{
-        marginTop: 12,
-        padding: "8px 12px",
-        borderRadius: 12,
-        border: "1px solid rgba(251, 191, 36, 0.22)",
-        background: "rgba(251, 191, 36, 0.05)",
-        maxWidth: 760,
-      }}
-    >
-      <div style={{ fontSize: 12, fontWeight: 700, color: "#FDE68A", lineHeight: 1.45 }}>
-        <span style={{ fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800, color: "rgba(253, 230, 138, 0.75)" }}>
-          {t("menuItemDetail.allergenNoticeShort", "Allergen")}
-        </span>
-        {" · "}
-        {t("menuItemDetail.likelyContainsAllergens", "Likely contains")} {allergens.join(", ")}
-      </div>
-      {disclosure ? (
-        <div style={{ marginTop: 6, fontSize: 11, lineHeight: 1.45, color: "#9CA3AF" }}>
-          {disclosure}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 function getVerdictTheme(label) {
   return VERDICT_THEMES[label] || VERDICT_THEMES["Best in moderation"];
 }
@@ -1552,8 +1520,6 @@ export default function MenuItemDetailPage() {
           </div>
         </Surface>
       ) : null}
-
-      {hasNutritionData ? <CompactAllergenAlert section={detailSystem?.allergen_alerts} t={t} /> : null}
 
       {hasNutritionData ? (
         <>
