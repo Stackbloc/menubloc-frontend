@@ -24,6 +24,7 @@ const put = (path, body) => req(path, { method: "PUT", body: JSON.stringify(body
 
 export const getOwnerSession = () => get("/api/owner/auth/me");
 export const loginOwner = (email, password) => post("/api/owner/auth/login", { email, password });
+export const verifyOwner2FA = (code) => post("/api/owner/auth/verify-2fa", { code });
 export const logoutOwner = () => post("/api/owner/auth/logout", {});
 
 export const getOwnerDashboardSummary = () => get("/api/owner/dashboard/summary");

@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { getOwnerSession, loginOwner, logoutOwner } from "../lib/ownerApi.js";
+import { getOwnerSession, loginOwner, verifyOwner2FA, logoutOwner } from "../lib/ownerApi.js";
 
 const OwnerContext = createContext(null);
 
@@ -29,7 +29,13 @@ export function OwnerProvider({ children }) {
   }, [loadMe]);
 
   const login = useCallback(async (email, password) => {
-    await loginOwner(email, password);
+    const result = await loginOwner(email, password);
+    if (result?.two_factor_required) return result;
+    return loadMe();
+  }, [loadMe]);
+
+  const verify2FA = useCallback(async (code) => {
+    await verifyOwner2FA(code);
     return loadMe();
   }, [loadMe]);
 
@@ -43,6 +49,7 @@ export function OwnerProvider({ children }) {
     loading,
     isAuthenticated: !!owner,
     login,
+    verify2FA,
     logout,
     refreshSession: loadMe,
   };
