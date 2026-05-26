@@ -245,6 +245,7 @@ export default function CheckoutPage() {
     data: null,
     error: "",
   });
+  const [staleCartError, setStaleCartError] = useState(false);
   const [paymentSession, setPaymentSession] = useState(null);
   const [submitError, setSubmitError] = useState("");
   const [availabilityError, setAvailabilityError] = useState(null);
@@ -327,6 +328,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     setPaymentSession(null);
     setShowBmtConfirm(false);
+    setStaleCartError(false);
   }, [apiItems, fulfillmentType, normalizedDeliveryAddress, applyCoins]);
 
   useEffect(() => {
@@ -374,14 +376,19 @@ export default function CheckoutPage() {
         setPreviewState({ status: "ready", data: response, error: "" });
       } catch (error) {
         if (cancelled) return;
-        setPreviewState({
-          status: "error",
-          data: null,
-          error: toConsumerErrorMessage(
-            error,
-            "We couldn't price this order right now. Please try again."
-          ),
-        });
+        if (error?.code === "menu_item_not_found") {
+          setStaleCartError(true);
+          setPreviewState({ status: "error", data: null, error: "" });
+        } else {
+          setPreviewState({
+            status: "error",
+            data: null,
+            error: toConsumerErrorMessage(
+              error,
+              "We couldn't price this order right now. Please try again."
+            ),
+          });
+        }
       }
     }
 
@@ -523,17 +530,22 @@ export default function CheckoutPage() {
         itemCount: getItemCount(items),
       });
     } catch (error) {
-      if (error?.code === "restaurant_unavailable") {
-        setAvailabilityError({
-          status: error.availability_status || null,
-          reasonCode: error.reason_code || null,
-          note: error.note || null,
-          message: error.message || "This restaurant is not accepting orders right now.",
-        });
+      if (error?.code === "menu_item_not_found") {
+        setStaleCartError(true);
+        setSubmitError("");
+      } else {
+        if (error?.code === "restaurant_unavailable") {
+          setAvailabilityError({
+            status: error.availability_status || null,
+            reasonCode: error.reason_code || null,
+            note: error.note || null,
+            message: error.message || "This restaurant is not accepting orders right now.",
+          });
+        }
+        setSubmitError(
+          toConsumerErrorMessage(error, "We couldn't start payment for this order.")
+        );
       }
-      setSubmitError(
-        toConsumerErrorMessage(error, "We couldn't start payment for this order.")
-      );
     } finally {
       setCreatingIntent(false);
     }
@@ -782,6 +794,41 @@ export default function CheckoutPage() {
                 </div>
               ) : null}
 
+              {staleCartError ? (
+                <div
+                  style={{
+                    padding: "14px 16px",
+                    borderRadius: 14,
+                    background: "rgba(234,179,8,0.08)",
+                    border: "1px solid rgba(234,179,8,0.3)",
+                    color: "#92400e",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    display: "grid",
+                    gap: 10,
+                  }}
+                >
+                  <div>This cart contains outdated items. Please re-add them from the current menu.</div>
+                  <button
+                    type="button"
+                    onClick={() => { clearCart(); navigate(menuPath); }}
+                    style={{
+                      border: "none",
+                      background: "#92400e",
+                      color: "#FFFFFF",
+                      borderRadius: 10,
+                      padding: "9px 14px",
+                      fontSize: 13,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      width: "fit-content",
+                    }}
+                  >
+                    Clear cart and return to menu
+                  </button>
+                </div>
+              ) : null}
+
               {submitError ? (
                 <div
                   style={{
@@ -830,6 +877,7 @@ export default function CheckoutPage() {
                     disabled={
                       creatingIntent ||
                       creatingBmt ||
+                      staleCartError ||
                       previewState.status === "loading" ||
                       !!availabilityError
                     }
@@ -837,12 +885,12 @@ export default function CheckoutPage() {
                       width: "100%",
                       border: "none",
                       borderRadius: 16,
-                      background: creatingIntent ? "#4B5563" : "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+                      background: (creatingIntent || staleCartError) ? "#4B5563" : "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
                       color: "#0B0F0C",
                       padding: "14px 16px",
                       fontSize: 15,
                       fontWeight: 900,
-                      cursor: creatingIntent ? "wait" : "pointer",
+                      cursor: (creatingIntent || staleCartError) ? "not-allowed" : "pointer",
                     }}
                   >
                     {creatingIntent ? "Preparing payment..." : "Continue to payment"}
