@@ -2,10 +2,10 @@
  * ============================================================
  * File: FoodTruckSignup.jsx
  * Path: menubloc-frontend/src/pages/FoodTruckSignup.jsx
- * Date: 2026-04-08
+ * Date: 2026-05-26
  * Purpose:
- *   Food truck owner signup — Step 1 of food truck onboarding.
- *   Collects account info and truck info.
+ *   Food truck owner signup — create the account first, then
+ *   collect operational details later from the operator dashboard.
  *
  *   On submit: calls POST /owner/profile with category='food_truck'
  *   Returns { restaurant, owner_token }.
@@ -22,107 +22,195 @@ import { BrandLockup } from "../components/BrandLogo.jsx";
 import { LEGAL_VERSIONS } from "../content/legal.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-
 const SESSION_KEY = "grubbid.foodtruck.signup";
 
-// TAXONOMY GUARDRAIL: Do not add local cuisine arrays here.
-// Options are loaded from /api/meta/cuisines (backend is the source of truth).
-
-const st = {
+const styles = {
   page: {
-    maxWidth: 600,
+    maxWidth: 640,
     margin: "40px auto",
-    padding: "0 20px 80px",
+    padding: "0 20px 60px",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
     color: "#111",
   },
-  brand:    { fontWeight: 800, fontSize: 18 },
-  subbrand: { fontSize: 12, color: "#666", marginBottom: 28 },
-  pageTitle:    { fontSize: 22, fontWeight: 700, marginTop: 20, marginBottom: 4 },
-  pageSubtitle: { fontSize: 14, color: "#666", marginBottom: 28 },
-
+  header: { marginBottom: 28 },
+  pageTitle: { fontSize: 28, fontWeight: 800, marginTop: 20, marginBottom: 6, letterSpacing: "-0.03em" },
+  pageSubtitle: { fontSize: 15, color: "#555", lineHeight: 1.6, maxWidth: 560 },
   section: {
     background: "#f7f7fb",
     border: "1px solid #efeff6",
-    borderRadius: 16,
-    padding: 18,
+    borderRadius: 18,
+    padding: 20,
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 12, fontWeight: 800, color: "#444",
-    marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.05em",
+    fontSize: 12,
+    fontWeight: 800,
+    color: "#444",
+    marginBottom: 14,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
   },
-
   fieldGroup: { marginBottom: 14 },
-  label: { display: "block", fontSize: 13, fontWeight: 600, marginBottom: 5, color: "#333" },
+  label: {
+    display: "block",
+    fontSize: 13,
+    fontWeight: 700,
+    marginBottom: 6,
+    color: "#333",
+  },
   required: { color: "#c00", marginLeft: 2 },
-
   input: {
-    width: "100%", height: 40, borderRadius: 10,
-    border: "1px solid #e5e5e5", padding: "0 12px",
-    fontSize: 14, background: "#fff", boxSizing: "border-box",
-    fontFamily: "ui-sans-serif, system-ui, sans-serif",
+    width: "100%",
+    height: 44,
+    borderRadius: 12,
+    border: "1px solid #d7dce5",
+    padding: "0 12px",
+    fontSize: 14,
+    background: "#fff",
+    boxSizing: "border-box",
   },
   inputError: {
-    width: "100%", height: 40, borderRadius: 10,
-    border: "1px solid #c00", padding: "0 12px",
-    fontSize: 14, background: "#fff", boxSizing: "border-box",
-    fontFamily: "ui-sans-serif, system-ui, sans-serif",
+    width: "100%",
+    height: 44,
+    borderRadius: 12,
+    border: "1px solid #c00",
+    padding: "0 12px",
+    fontSize: 14,
+    background: "#fff",
+    boxSizing: "border-box",
   },
-  select: {
-    width: "100%", height: 40, borderRadius: 10,
-    border: "1px solid #e5e5e5", padding: "0 12px",
-    fontSize: 14, background: "#fff", boxSizing: "border-box",
-    fontFamily: "ui-sans-serif, system-ui, sans-serif",
-    appearance: "none",
+  passwordWrap: {
+    position: "relative",
   },
-  textarea: {
-    width: "100%", borderRadius: 10,
-    border: "1px solid #e5e5e5", padding: "10px 12px",
-    fontSize: 14, background: "#fff", boxSizing: "border-box",
-    fontFamily: "ui-sans-serif, system-ui, sans-serif",
-    resize: "vertical", minHeight: 72,
+  passwordInput: {
+    paddingRight: 86,
   },
-  row2: { display: "flex", gap: 12 },
-  halfField: { flex: 1, marginBottom: 14 },
-  fieldError: { fontSize: 12, color: "#c00", marginTop: 4 },
-
+  passwordToggle: {
+    position: "absolute",
+    top: 7,
+    right: 8,
+    height: 30,
+    padding: "0 10px",
+    borderRadius: 999,
+    border: "1px solid #d0d5dd",
+    background: "#fff",
+    color: "#344054",
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
+  },
   errorBanner: {
-    background: "#fff0f0", border: "1px solid #f5c6c6",
-    borderRadius: 10, padding: "12px 16px",
-    marginBottom: 16, fontSize: 13, color: "#c00",
+    background: "#fff0f0",
+    border: "1px solid #f5c6c6",
+    borderRadius: 12,
+    padding: "12px 16px",
+    marginBottom: 16,
+    fontSize: 13,
+    color: "#c00",
   },
-
   successBanner: {
-    background: "#f0fdf4", border: "1px solid #86efac",
-    borderRadius: 10, padding: "16px 18px",
-    marginBottom: 16, fontSize: 14, color: "#166534", fontWeight: 600,
+    background: "#f0fdf4",
+    border: "1px solid #86efac",
+    borderRadius: 12,
+    padding: "16px 18px",
+    marginBottom: 16,
+    fontSize: 14,
+    color: "#166534",
+    fontWeight: 600,
   },
-
   cancelledBanner: {
-    background: "#fff7ed", border: "1px solid #fdba74",
-    borderRadius: 10, padding: "12px 16px",
-    marginBottom: 16, fontSize: 13, color: "#9a3412",
+    background: "#fff7ed",
+    border: "1px solid #fdba74",
+    borderRadius: 12,
+    padding: "12px 16px",
+    marginBottom: 16,
+    fontSize: 13,
+    color: "#9a3412",
   },
-
-  // Plan card
+  fieldError: { fontSize: 12, color: "#c00", marginTop: 5 },
+  helperText: { fontSize: 12, color: "#667085", marginTop: 6 },
+  expectationCard: {
+    marginTop: 12,
+    padding: "14px 16px",
+    borderRadius: 14,
+    background: "#f8faf9",
+    border: "1px solid #d9e0ea",
+  },
+  expectationTitle: {
+    fontSize: 12,
+    fontWeight: 800,
+    color: "#1F4E3D",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  expectationBody: {
+    fontSize: 13,
+    lineHeight: 1.6,
+    color: "#475467",
+  },
+  planSummary: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 12,
+    alignItems: "center",
+    flexWrap: "wrap",
+    padding: "14px 16px",
+    borderRadius: 14,
+    background: "#eef6f1",
+    border: "1px solid #cfe0d8",
+    marginTop: 18,
+  },
+  planSummaryLabel: {
+    fontSize: 12,
+    fontWeight: 800,
+    color: "#1F4E3D",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  planSummaryValue: {
+    fontSize: 16,
+    fontWeight: 800,
+    color: "#101828",
+  },
+  planSummaryNote: {
+    fontSize: 13,
+    color: "#475467",
+  },
   planCard: {
-    border: "2px solid #111", borderRadius: 16,
-    padding: "20px 20px 16px", background: "#fafafa",
-    marginBottom: 0,
+    borderRadius: 16,
+    background: "#fff",
+    border: "1px solid #d9e0ea",
+    overflow: "hidden",
   },
-  planBadge: {
-    display: "inline-block", fontSize: 10, fontWeight: 800,
-    background: "#d97706", color: "#fff",
-    borderRadius: 999, padding: "3px 10px", marginBottom: 10,
+  planChartHeader: {
+    display: "grid",
+    gridTemplateColumns: "1.2fr 0.8fr",
+    gap: 12,
+    padding: "12px 16px",
+    background: "#f3f4f6",
+    fontSize: 11,
+    fontWeight: 800,
+    color: "#444",
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
   },
-  planName:  { fontSize: 18, fontWeight: 900, marginBottom: 4 },
-  planPrice: { fontSize: 28, fontWeight: 900, color: "#111" },
-  planPer:   { fontSize: 13, color: "#666", marginLeft: 4 },
-  planSavings: { fontSize: 11, color: "#16a34a", fontWeight: 700, marginTop: 2, marginBottom: 12 },
-  planFeatures: { listStyle: "none", padding: 0, margin: "12px 0 0", fontSize: 13, color: "#333", lineHeight: 1.7 },
-  planFeatureItem: { display: "flex", gap: 8, alignItems: "flex-start" },
-  checkmark: { color: "#111", fontWeight: 900, marginTop: 1, flexShrink: 0 },
+  planChartRow: {
+    display: "grid",
+    gridTemplateColumns: "1.2fr 0.8fr",
+    gap: 12,
+    padding: "12px 16px",
+    borderTop: "1px solid #ececf2",
+    alignItems: "center",
+    fontSize: 13,
+    color: "#333",
+  },
+  planChartValue: {
+    fontWeight: 700,
+    color: "#111",
+    lineHeight: 1.5,
+  },
   checkboxRow: {
     display: "flex",
     gap: 10,
@@ -150,21 +238,63 @@ const st = {
 
 function submitBtnStyle(disabled) {
   return {
-    width: "100%", height: 46, borderRadius: 12, border: 0,
-    background: disabled ? "#ccc" : "#111",
-    color: "#fff", fontWeight: 700, fontSize: 15,
-    cursor: disabled ? "not-allowed" : "pointer", marginTop: 4,
-    fontFamily: "ui-sans-serif, system-ui, sans-serif",
+    width: "100%",
+    height: 48,
+    borderRadius: 14,
+    border: 0,
+    background: disabled ? "#98a2b3" : "#111",
+    color: "#fff",
+    fontWeight: 800,
+    fontSize: 15,
+    cursor: disabled ? "not-allowed" : "pointer",
+    marginTop: 4,
   };
 }
 
-const TRUCK_FEATURES = [
-  "Public food truck profile page",
-  "Upload and manage your menu",
-  "QR code with sticker for your menu",
-  "Update your live location and schedule",
-  "Appear in Menuply food truck discovery",
-  "Upcoming locations and events schedule page",
+function PasswordInput({
+  id,
+  name,
+  label,
+  value,
+  visible,
+  onChange,
+  onToggle,
+  error,
+}) {
+  return (
+    <div style={styles.fieldGroup}>
+      <label htmlFor={id} style={styles.label}>
+        {label}<span style={styles.required}>*</span>
+      </label>
+      <div style={styles.passwordWrap}>
+        <input
+          id={id}
+          name={name}
+          type={visible ? "text" : "password"}
+          autoComplete="new-password"
+          value={value}
+          onChange={onChange}
+          style={{
+            ...(error ? styles.inputError : styles.input),
+            ...styles.passwordInput,
+          }}
+        />
+        <button type="button" onClick={onToggle} style={styles.passwordToggle}>
+          {visible ? "Hide" : "Show"}
+        </button>
+      </div>
+      {error ? <div style={styles.fieldError}>{error}</div> : null}
+    </div>
+  );
+}
+
+const PLAN_DETAILS = [
+  { label: "Annual subscription", value: "$39 per year" },
+  { label: "Profile and online ordering", value: "Included" },
+  { label: "Menu management, deals, and QR tools", value: "Included" },
+  { label: "Analytics and menu uploads", value: "Included" },
+  { label: "Live location updates", value: "Included" },
+  { label: "Additional setup", value: "Complete later from your dashboard" },
 ];
 
 export default function FoodTruckSignup() {
@@ -176,34 +306,18 @@ export default function FoodTruckSignup() {
     password: "",
     confirmPassword: "",
     truck_name: "",
-    cuisine: "",
-    phone: "",
-    website_url: "",
-    instagram: "",
-    city: "",
-    state: "",
-    service_area: "",
   });
-
-  const [fieldErrors, setFieldErrors]  = useState({});
-  const [serverError, setServerError]  = useState("");
-  const [submitting,  setSubmitting]   = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [serverError, setServerError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreements, setAgreements] = useState({
     merchantTerms: false,
     privacyPolicy: false,
   });
-  const [cuisineOptions, setCuisineOptions] = useState([]); // [{value, label}] from API
 
-  // Load cuisine options from backend — single source of truth
-  useEffect(() => {
-    fetch(`${API}/api/meta/cuisines`)
-      .then(r => r.json())
-      .then(d => { if (d.ok && Array.isArray(d.cuisines)) setCuisineOptions(d.cuisines); })
-      .catch(() => {});
-  }, []);
-
-  // Handle return from Stripe Checkout
   useEffect(() => {
     if (checkoutResult === "success") {
       setCheckoutSuccess(true);
@@ -211,49 +325,53 @@ export default function FoodTruckSignup() {
       try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
     } else if (checkoutResult === "cancelled") {
       setSearchParams({}, { replace: true });
-      // Restore form state if available
       try {
         const saved = sessionStorage.getItem(SESSION_KEY);
-        if (saved) setForm(JSON.parse(saved));
-      } catch { /* ignore */ }
+        if (saved) {
+          setForm(JSON.parse(saved));
+        }
+      } catch {
+        /* ignore */
+      }
     }
   }, [checkoutResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+    setFieldErrors((current) => ({ ...current, [name]: "" }));
   }
 
-  function handleAgreementChange(e) {
-    const { name, checked } = e.target;
-    setAgreements((prev) => ({ ...prev, [name]: checked }));
-    if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  function handleAgreementChange(event) {
+    const { name, checked } = event.target;
+    setAgreements((current) => ({ ...current, [name]: checked }));
+    setFieldErrors((current) => ({ ...current, [name]: "" }));
   }
 
   function validate() {
     const errors = {};
-    if (!form.truck_name.trim()) errors.truck_name = "Truck name is required.";
-    if (!form.email.trim())      errors.email      = "Email is required.";
-    if (!form.city.trim())       errors.city       = "City is required.";
-    if (!form.state.trim())      errors.state      = "State is required.";
+
+    if (!form.email.trim()) errors.email = "Email is required.";
     if (!form.password) errors.password = "Password is required.";
     else if (form.password.length < 8) errors.password = "Password must be at least 8 characters.";
     if (!form.confirmPassword) errors.confirmPassword = "Confirm your password.";
-    if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
-      errors.confirmPassword = "Passwords do not match.";
-    }
+    else if (form.password !== form.confirmPassword) errors.confirmPassword = "Passwords do not match.";
+    if (!form.truck_name.trim()) errors.truck_name = "Truck name is required.";
     if (!agreements.merchantTerms) errors.merchantTerms = "You must agree to the Merchant Terms of Service.";
     if (!agreements.privacyPolicy) errors.privacyPolicy = "You must agree to the Privacy Policy.";
+
     return errors;
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
     setServerError("");
 
     const errors = validate();
-    if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
 
     setSubmitting(true);
 
@@ -262,17 +380,10 @@ export default function FoodTruckSignup() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email:           form.email.trim(),
-          password:        form.password,
+          email: form.email.trim(),
+          password: form.password,
           restaurant_name: form.truck_name.trim(),
-          phone:           form.phone.trim()       || null,
-          website_url:     form.website_url.trim() || null,
-          city:            form.city.trim()         || null,
-          state:           form.state.trim().toUpperCase() || null,
-          cuisine:         form.cuisine             || null,
-          instagram:       form.instagram.trim().replace(/^@/, "") || null,
-          service_area:    form.service_area.trim() || null,
-          category:        "food_truck",
+          category: "food_truck",
           legal_acceptances: [
             {
               document_key: "merchant_terms",
@@ -295,10 +406,8 @@ export default function FoodTruckSignup() {
       const email = form.email.trim();
       const origin = window.location.origin;
 
-      // Save form state so it can be restored if checkout is cancelled
       try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(form)); } catch { /* ignore */ }
 
-      // Create Stripe Checkout Session and redirect
       const checkoutRes = await fetch(`${API}/owner/subscription/checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -306,9 +415,9 @@ export default function FoodTruckSignup() {
           restaurant_id: restaurant.id,
           owner_token,
           email,
-          plan_code:   "foodtruck_verified_annual",
+          plan_code: "food_truck_annual",
           success_url: `${origin}/foodtruck/signup?checkout=success`,
-          cancel_url:  `${origin}/foodtruck/signup?checkout=cancelled`,
+          cancel_url: `${origin}/foodtruck/signup?checkout=cancelled`,
           legal_acceptance: {
             document_key: "merchant_terms",
             document_version: LEGAL_VERSIONS.merchantTerms,
@@ -326,31 +435,35 @@ export default function FoodTruckSignup() {
       }
 
       window.location.href = checkoutData.checkout_url;
-
     } catch (err) {
       setServerError(err.message || "Signup failed. Please try again.");
       setSubmitting(false);
     }
-    // Note: do not call setSubmitting(false) on success — browser is navigating away
   }
 
   if (checkoutSuccess) {
     return (
-      <div style={st.page}>
+      <div style={styles.page}>
         <BrandLockup
           subtitle="for Food Trucks"
           logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
         />
-        <div style={{ ...st.successBanner, marginTop: 28 }}>
+        <div style={{ ...styles.successBanner, marginTop: 28 }}>
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>You are listed!</div>
-          Your Menuply Food Truck Verified subscription is active. Your truck profile is now live and discoverable.
+          Your Menuply Food Truck Annual plan is active. You can finish your truck profile and operating details from the operator dashboard.
         </div>
         <a
           href="/foodtruck/dashboard"
           style={{
-            display: "block", textAlign: "center", marginTop: 16,
-            padding: "13px 0", borderRadius: 12, background: "#111",
-            color: "#fff", fontWeight: 700, fontSize: 15,
+            display: "block",
+            textAlign: "center",
+            marginTop: 16,
+            padding: "13px 0",
+            borderRadius: 12,
+            background: "#111",
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 15,
             textDecoration: "none",
           }}
         >
@@ -361,238 +474,179 @@ export default function FoodTruckSignup() {
   }
 
   return (
-    <div style={st.page}>
-      {/* Brand */}
-      <BrandLockup
-        subtitle="for Food Trucks"
-        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
-      />
-      <div style={st.pageTitle}>List your food truck</div>
-      <div style={st.pageSubtitle}>
-        Get discovered by customers looking for food trucks in your area.
+    <div style={styles.page}>
+      <div style={styles.header}>
+        <BrandLockup
+          subtitle="for Food Trucks"
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+          wrapperStyle={{ marginBottom: 6 }}
+        />
+        <div style={styles.pageTitle}>Create your food truck account</div>
+        <div style={styles.pageSubtitle}>
+          Create your account now and add your menu, service locations, hours, and profile details from the operator dashboard after signup.
+        </div>
+        <div style={styles.planSummary}>
+          <div>
+            <div style={styles.planSummaryLabel}>Food truck plan</div>
+            <div style={styles.planSummaryValue}>Annual plan for $39</div>
+          </div>
+          <div style={styles.planSummaryNote}>One plan built specifically for food trucks.</div>
+        </div>
+        <div style={styles.expectationCard}>
+          <div style={styles.expectationTitle}>Food Trucks on Menuply</div>
+          <div style={styles.expectationBody}>
+            Food trucks bring creativity, energy, and local character to the food industry. They introduce new flavors, serve communities in flexible ways, and often become the starting point for some of the most innovative restaurant concepts. We are proud to offer a plan designed specifically to reflect the unique role food trucks play in the restaurant industry every day.
+          </div>
+        </div>
+        <div style={{ ...styles.helperText, marginTop: 10 }}>
+          Only the essentials are needed here. You can add service areas, pickup locations, menu details, and profile information later from the operator dashboard.
+        </div>
       </div>
 
       {checkoutResult === "cancelled" && !serverError ? (
-        <div style={st.cancelledBanner}>
+        <div style={styles.cancelledBanner}>
           Checkout was cancelled. No charge was made. Complete your details below and try again.
         </div>
       ) : null}
 
-      {serverError && <div style={st.errorBanner}>{serverError}</div>}
+      {serverError ? <div style={styles.errorBanner}>{serverError}</div> : null}
 
       <form onSubmit={handleSubmit} noValidate>
-
-        {/* Plan */}
-        <div style={st.section}>
-          <div style={st.sectionTitle}>Your Plan</div>
-          <div style={st.planCard}>
-            <div style={st.planBadge}>Food Truck Verified</div>
-            <div style={st.planName}>Menuply Verified Listing</div>
-            <div>
-              <span style={st.planPrice}>$49</span>
-              <span style={st.planPer}>/ year</span>
+        <div style={styles.section}>
+          <div style={styles.sectionTitle}>Plan</div>
+          <div style={styles.planCard}>
+            <div style={styles.planChartHeader}>
+              <span>What is included</span>
+              <span>Details</span>
             </div>
-            <div style={st.planSavings}>Less than $5/month</div>
-            <ul style={st.planFeatures}>
-              {TRUCK_FEATURES.map((f) => (
-                <li key={f} style={st.planFeatureItem}>
-                  <span style={st.checkmark}>✓</span>
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
+            {PLAN_DETAILS.map((item) => (
+              <div key={item.label} style={styles.planChartRow}>
+                <span>{item.label}</span>
+                <span style={styles.planChartValue}>{item.value}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Account Information */}
-        <div style={st.section}>
-          <div style={st.sectionTitle}>Account Information</div>
+        <div style={styles.section}>
+          <div style={styles.sectionTitle}>Account</div>
 
-          <div style={st.fieldGroup}>
-            <label htmlFor="email" style={st.label}>
-              Email<span style={st.required}>*</span>
+          <div style={styles.fieldGroup}>
+            <label htmlFor="email" style={styles.label}>
+              Email<span style={styles.required}>*</span>
             </label>
             <input
-              id="email" name="email" type="email" autoComplete="email"
-              value={form.email} onChange={handleChange}
-              style={fieldErrors.email ? st.inputError : st.input}
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={handleChange}
+              style={fieldErrors.email ? styles.inputError : styles.input}
             />
-            {fieldErrors.email && <div style={st.fieldError}>{fieldErrors.email}</div>}
+            {fieldErrors.email ? <div style={styles.fieldError}>{fieldErrors.email}</div> : null}
           </div>
 
-          <div style={st.fieldGroup}>
-            <label htmlFor="password" style={st.label}>Password</label>
-            <input
-              id="password" name="password" type="password" autoComplete="new-password"
-              value={form.password} onChange={handleChange} style={st.input}
-            />
-          </div>
+          <PasswordInput
+            id="password"
+            name="password"
+            label="Password"
+            value={form.password}
+            visible={showPassword}
+            onChange={handleChange}
+            onToggle={() => setShowPassword((current) => !current)}
+            error={fieldErrors.password}
+          />
 
-          <div style={st.fieldGroup}>
-            <label htmlFor="confirmPassword" style={st.label}>Confirm Password</label>
-            <input
-              id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password"
-              value={form.confirmPassword} onChange={handleChange}
-              style={fieldErrors.confirmPassword ? st.inputError : st.input}
-            />
-            {fieldErrors.confirmPassword && <div style={st.fieldError}>{fieldErrors.confirmPassword}</div>}
-          </div>
+          <PasswordInput
+            id="confirmPassword"
+            name="confirmPassword"
+            label="Confirm password"
+            value={form.confirmPassword}
+            visible={showConfirmPassword}
+            onChange={handleChange}
+            onToggle={() => setShowConfirmPassword((current) => !current)}
+            error={fieldErrors.confirmPassword}
+          />
+
+          {!fieldErrors.confirmPassword && form.confirmPassword ? (
+            <div style={styles.helperText}>
+              {form.password === form.confirmPassword ? "Passwords match." : "Passwords do not match."}
+            </div>
+          ) : null}
         </div>
 
-        {/* Truck Information */}
-        <div style={st.section}>
-          <div style={st.sectionTitle}>Truck Information</div>
+        <div style={styles.section}>
+          <div style={styles.sectionTitle}>Food truck basics</div>
 
-          <div style={st.fieldGroup}>
-            <label htmlFor="truck_name" style={st.label}>
-              Truck Name<span style={st.required}>*</span>
+          <div style={styles.fieldGroup}>
+            <label htmlFor="truck_name" style={styles.label}>
+              Truck Name<span style={styles.required}>*</span>
             </label>
             <input
-              id="truck_name" name="truck_name" type="text" autoComplete="organization"
-              value={form.truck_name} onChange={handleChange}
-              style={fieldErrors.truck_name ? st.inputError : st.input}
+              id="truck_name"
+              name="truck_name"
+              type="text"
+              autoComplete="organization"
+              value={form.truck_name}
+              onChange={handleChange}
+              style={fieldErrors.truck_name ? styles.inputError : styles.input}
             />
-            {fieldErrors.truck_name && <div style={st.fieldError}>{fieldErrors.truck_name}</div>}
+            {fieldErrors.truck_name ? <div style={styles.fieldError}>{fieldErrors.truck_name}</div> : null}
           </div>
 
-          <div style={st.fieldGroup}>
-            <label htmlFor="cuisine" style={st.label}>Cuisine / Food Type</label>
-            <select
-              id="cuisine" name="cuisine"
-              value={form.cuisine} onChange={handleChange}
-              style={st.select}
-            >
-              <option value="">Select cuisine…</option>
-              {form.cuisine && !cuisineOptions.some(o => o.value === form.cuisine) && (
-                <option value={form.cuisine}>{form.cuisine} (legacy — please update)</option>
-              )}
-              {cuisineOptions.map(({ value, label }) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={st.fieldGroup}>
-            <label htmlFor="phone" style={st.label}>Phone</label>
-            <input
-              id="phone" name="phone" type="tel" autoComplete="tel"
-              value={form.phone} onChange={handleChange} style={st.input}
-            />
-          </div>
-
-          <div style={st.fieldGroup}>
-            <label htmlFor="website_url" style={st.label}>Website</label>
-            <input
-              id="website_url" name="website_url" type="url" autoComplete="url"
-              placeholder="yourtruck.com"
-              value={form.website_url} onChange={handleChange}
-              onBlur={() => {
-                const raw = form.website_url.trim();
-                if (raw && !/^https?:\/\//i.test(raw)) {
-                  setForm((prev) => ({ ...prev, website_url: "https://" + raw }));
-                }
-              }}
-              style={st.input}
-            />
-          </div>
-
-          <div style={st.fieldGroup}>
-            <label htmlFor="instagram" style={st.label}>Instagram</label>
-            <input
-              id="instagram" name="instagram" type="text"
-              placeholder="@yourtruck"
-              value={form.instagram} onChange={handleChange} style={st.input}
-            />
+          <div style={styles.helperText}>
+            After your account is created, you can add service locations, live pickup details, menu uploads, profile edits, and other operating information from the dashboard.
           </div>
         </div>
 
-        {/* Location */}
-        <div style={st.section}>
-          <div style={st.sectionTitle}>Base Location</div>
+        <div style={styles.section}>
+          <div style={styles.sectionTitle}>Legal</div>
 
-          <div style={st.row2}>
-            <div style={st.halfField}>
-              <label htmlFor="city" style={st.label}>
-                City<span style={st.required}>*</span>
-              </label>
-              <input
-                id="city" name="city" type="text" autoComplete="address-level2"
-                value={form.city} onChange={handleChange}
-                style={fieldErrors.city ? st.inputError : st.input}
-              />
-              {fieldErrors.city && <div style={st.fieldError}>{fieldErrors.city}</div>}
-            </div>
-
-            <div style={{ flex: "0 0 90px", marginBottom: 14 }}>
-              <label htmlFor="state" style={st.label}>
-                State<span style={st.required}>*</span>
-              </label>
-              <input
-                id="state" name="state" type="text" autoComplete="address-level1"
-                maxLength={2}
-                value={form.state} onChange={handleChange}
-                style={fieldErrors.state ? st.inputError : st.input}
-              />
-              {fieldErrors.state && <div style={st.fieldError}>{fieldErrors.state}</div>}
-            </div>
-          </div>
-
-          <div style={st.fieldGroup}>
-            <label htmlFor="service_area" style={st.label}>
-              Service Area <span style={{ fontWeight: 400, color: "#888" }}>(optional)</span>
-            </label>
-            <textarea
-              id="service_area" name="service_area"
-              placeholder="e.g. Downtown Miami, Wynwood, Brickell"
-              value={form.service_area} onChange={handleChange}
-              style={st.textarea}
-            />
-            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>
-              Neighborhoods or areas where you regularly operate.
-            </div>
-          </div>
-        </div>
-
-        <div style={st.section}>
-          <div style={st.sectionTitle}>Agreements</div>
-
-          <label style={st.checkboxRow}>
+          <label style={styles.checkboxRow}>
             <input
               type="checkbox"
               name="merchantTerms"
               checked={agreements.merchantTerms}
               onChange={handleAgreementChange}
-              style={st.checkbox}
+              style={styles.checkbox}
             />
-            <span style={st.checkboxLabel}>
-              I agree to the <Link to="/merchant-terms" style={st.legalLink}>Merchant Terms of Service</Link>.
+            <span style={styles.checkboxLabel}>
+              I agree to the{" "}
+              <Link to="/restaurant/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>
+                Merchant Terms of Service
+              </Link>
+              .
             </span>
           </label>
-          {fieldErrors.merchantTerms ? <div style={st.fieldError}>{fieldErrors.merchantTerms}</div> : null}
+          {fieldErrors.merchantTerms ? <div style={styles.fieldError}>{fieldErrors.merchantTerms}</div> : null}
 
-          <label style={st.checkboxRow}>
+          <label style={styles.checkboxRow}>
             <input
               type="checkbox"
               name="privacyPolicy"
               checked={agreements.privacyPolicy}
               onChange={handleAgreementChange}
-              style={st.checkbox}
+              style={styles.checkbox}
             />
-            <span style={st.checkboxLabel}>
-              I agree to the <Link to="/privacy" style={st.legalLink}>Privacy Policy</Link>.
+            <span style={styles.checkboxLabel}>
+              I agree to the{" "}
+              <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.legalLink}>
+                Privacy Policy
+              </Link>
+              .
             </span>
           </label>
-          {fieldErrors.privacyPolicy ? <div style={st.fieldError}>{fieldErrors.privacyPolicy}</div> : null}
+          {fieldErrors.privacyPolicy ? <div style={styles.fieldError}>{fieldErrors.privacyPolicy}</div> : null}
         </div>
 
         <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
-          {submitting ? "Redirecting to Stripe…" : "Continue to Payment →"}
+          {submitting ? "Redirecting to Stripe..." : "Create account and continue to payment"}
         </button>
 
-        <div style={{ fontSize: 11, color: "#94a3b8", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
-          You will be taken to Stripe to complete your $49/year subscription.
+        <div style={{ fontSize: 11, color: "#667085", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
+          You will be taken to Stripe to complete your $39/year subscription.
         </div>
-
       </form>
     </div>
   );
