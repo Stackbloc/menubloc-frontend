@@ -50,6 +50,7 @@ import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templat
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu-templates/restaurantMenuBrand.js";
 import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
 import { itemPassesDietFilter } from "../hooks/useDietPreferences";
+import { useConsumer } from "../context/ConsumerContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
 import TasteIndexBadge from "../components/TasteIndexBadge.jsx";
@@ -147,7 +148,35 @@ function getCartItemState(cartItems, menuItemId) {
   };
 }
 
-function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap) {
+const ALLERGEN_PROFILE_TO_EVIDENCE = {
+  peanuts:   ["peanuts"],
+  tree_nuts: ["tree nuts"],
+  dairy:     ["dairy"],
+  gluten:    ["wheat", "gluten"],
+  shellfish: ["shellfish"],
+  soy:       ["soy"],
+  eggs:      ["eggs", "egg"],
+  fish:      ["fish"],
+  sesame:    ["sesame"],
+  wheat:     ["wheat"],
+};
+
+function itemFailsAllergenFilter(item, enabledAllergenKeys) {
+  if (!enabledAllergenKeys || enabledAllergenKeys.size === 0) return false;
+  const chip = item?.chips?.nutrition_chip || {};
+  const evidence = new Set([
+    ...(Array.isArray(chip.allergens) ? chip.allergens : []),
+    ...(Array.isArray(chip.contains_allergens) ? chip.contains_allergens : []),
+  ].map((a) => String(a || "").toLowerCase().replace(/_/g, " ").trim()));
+  if (evidence.size === 0) return false;
+  for (const key of enabledAllergenKeys) {
+    const matches = ALLERGEN_PROFILE_TO_EVIDENCE[key] || [key.replace(/_/g, " ")];
+    if (matches.some((m) => evidence.has(m))) return true;
+  }
+  return false;
+}
+
+function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap, enabledAllergenKeys) {
   return (Array.isArray(sections) ? sections : [])
     .map((sec) => {
       const title = asStr(sec?.title || "Menu").trim() || "Menu";
@@ -156,11 +185,39 @@ function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap) {
         if (!isDisplayableMenuItem(it)) return false;
         if (!itemPassesDietFilter(it, dietPrefs)) return false;
         if (dealsFilter && dealMap.get(it?.id) == null) return false;
+        if (itemFailsAllergenFilter(it, enabledAllergenKeys)) return false;
         return true;
       });
       return { ...sec, title, items };
     })
     .filter((sec) => sec.items.length > 0);
+}
+
+function allergenKeyToLabel(key) {
+  return String(key || "").replace(/_/g, " ").split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+function AllergenFilterBanner({ active, enabledKeys }) {
+  if (!active || !enabledKeys || enabledKeys.size === 0) return null;
+  const labels = [...enabledKeys].map(allergenKeyToLabel).join(", ");
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "9px 14px",
+      borderRadius: 10,
+      background: "rgba(234, 179, 8, 0.08)",
+      border: "1px solid rgba(234, 179, 8, 0.22)",
+      color: "#92400e",
+      fontSize: 12,
+      fontWeight: 700,
+      marginBottom: 12,
+    }}>
+      <span aria-hidden="true" style={{ fontSize: 14 }}>⚠</span>
+      Allergen filter active — items containing {labels} are hidden
+    </div>
+  );
 }
 
 function IntakePreviewBanner({ show }) {
@@ -496,26 +553,6 @@ function ItemDetailSheet({
             </div>
           ) : null}
 
-          {/* Allergen — only shown when allergen context is active (filter, profile, search term) */}
-          {allergenContextActive && item?.chips?.nutrition_chip?.allergen_alert ? (
-            <div style={{ marginBottom: 14 }}>
-              <span style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                padding: "3px 10px",
-                background: "rgba(230,130,0,0.06)",
-                border: "1px solid rgba(230,130,0,0.18)",
-                borderRadius: 999,
-                fontSize: 11,
-                color: "#7c4a00",
-                fontWeight: 700,
-              }}>
-                <span aria-hidden="true">⚠</span>
-                {item.chips.nutrition_chip.allergen_alert}
-              </span>
-            </div>
-          ) : null}
 
           {/* Indulgence */}
           {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
@@ -690,6 +727,7 @@ export default function PublicMenuPage() {
     removeItem,
   } = useOrderCart();
   const isMobile = useIsMobile();
+  const { isAuthenticated, allergenPreferences } = useConsumer();
   const [searchParams, setSearchParams] = useSearchParams();
   const [modifierItem, setModifierItem] = useState(null);
   const [itemSheet, setItemSheet] = useState(null);
@@ -727,12 +765,12 @@ export default function PublicMenuPage() {
     vegetarian:        searchParams.get("vegetarian")        === "1",
   };
   const dealsFilter = searchParams.get("deals") === "1";
-  const filtersActive = Object.values(dietPrefs).some(Boolean) || dealsFilter;
-  // Allergen-relevant filter keys — extend this array as new allergen filters are added.
-  // Future contexts (user allergen profile, allergen search terms, explicit allergen interactions)
-  // should be OR-ed into allergenContextActive without changing the render conditions below.
-  const ALLERGEN_FILTER_KEYS = ["dairy_free", "gluten_free"];
-  const allergenContextActive = ALLERGEN_FILTER_KEYS.some(k => dietPrefs[k]);
+  const filtersActive = Object.values(dietPrefs).some(Boolean) || dealsFilter || allergenFilterActive;
+  const enabledAllergenKeys = useMemo(() => {
+    if (!isAuthenticated || !Array.isArray(allergenPreferences)) return new Set();
+    return new Set(allergenPreferences.filter((p) => p.is_enabled).map((p) => p.allergen_key));
+  }, [isAuthenticated, allergenPreferences]);
+  const allergenFilterActive = enabledAllergenKeys.size > 0;
   const proximityLat = asFiniteNumber(searchParams.get("lat"));
   const proximityLng = asFiniteNumber(searchParams.get("lng"));
   const contextCity  = searchParams.get("city")  || null;
@@ -1060,7 +1098,7 @@ export default function PublicMenuPage() {
   // tabSections?.sections may still show a prior menu's content during a background fetch —
   // this is intentional: never blank the display while waiting for a new tab to load.
   const sections        = tabSections?.sections ?? normalizeSections(data);
-  const displaySections = getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap);
+  const displaySections = getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap, enabledAllergenKeys);
   const displayableItemCount = displaySections.reduce(
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
     0
@@ -1217,6 +1255,7 @@ export default function PublicMenuPage() {
           shareAnalyticsContext,
           franchiseSlot,
           intakeBannerSlot: <IntakePreviewBanner show={isIntakePreview} />,
+          allergenBannerSlot: <AllergenFilterBanner active={allergenFilterActive} enabledKeys={enabledAllergenKeys} />,
           onOpenFilters: () => setIsFilterDrawerOpen(true),
           displaySections,
           displayableItemCount,

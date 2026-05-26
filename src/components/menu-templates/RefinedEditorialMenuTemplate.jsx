@@ -49,6 +49,7 @@ export default function RefinedEditorialMenuTemplate(ctx) {
     shareAnalyticsContext,
     franchiseSlot,
     intakeBannerSlot,
+    allergenBannerSlot,
     onOpenFilters,
     displaySections,
     displayableItemCount,
@@ -231,6 +232,7 @@ export default function RefinedEditorialMenuTemplate(ctx) {
       <div style={{ fontFamily: fontStack }}>
         <main style={{ minWidth: 0, width: "100%" }}>
           {intakeBannerSlot}
+          {allergenBannerSlot}
 
           {/* Chef's Picks — editorial 2-column grid, max 4 items */}
           {chefsPickItems.length > 0 && !filtersActive && (
