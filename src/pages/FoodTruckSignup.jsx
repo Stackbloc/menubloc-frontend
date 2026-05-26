@@ -174,42 +174,9 @@ const styles = {
     fontWeight: 800,
     color: "#101828",
   },
-  planSummaryNote: {
-    fontSize: 13,
-    color: "#475467",
-  },
-  planCard: {
-    borderRadius: 16,
-    background: "#fff",
-    border: "1px solid #d9e0ea",
-    overflow: "hidden",
-  },
-  planChartHeader: {
-    display: "grid",
-    gridTemplateColumns: "1.2fr 0.8fr",
-    gap: 12,
-    padding: "12px 16px",
-    background: "#f3f4f6",
-    fontSize: 11,
+  planSummaryMeta: {
+    color: "#1F4E3D",
     fontWeight: 800,
-    color: "#444",
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-  },
-  planChartRow: {
-    display: "grid",
-    gridTemplateColumns: "1.2fr 0.8fr",
-    gap: 12,
-    padding: "12px 16px",
-    borderTop: "1px solid #ececf2",
-    alignItems: "center",
-    fontSize: 13,
-    color: "#333",
-  },
-  planChartValue: {
-    fontWeight: 700,
-    color: "#111",
-    lineHeight: 1.5,
   },
   checkboxRow: {
     display: "flex",
@@ -287,15 +254,6 @@ function PasswordInput({
     </div>
   );
 }
-
-const PLAN_DETAILS = [
-  { label: "Annual subscription", value: "$39 per year" },
-  { label: "Profile and online ordering", value: "Included" },
-  { label: "Menu management, deals, and QR tools", value: "Included" },
-  { label: "Analytics and menu uploads", value: "Included" },
-  { label: "Live location updates", value: "Included" },
-  { label: "Additional setup", value: "Complete later from your dashboard" },
-];
 
 export default function FoodTruckSignup() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -483,14 +441,14 @@ export default function FoodTruckSignup() {
         />
         <div style={styles.pageTitle}>Create your food truck account</div>
         <div style={styles.pageSubtitle}>
-          Create your account now and add your menu, service locations, hours, and profile details from the operator dashboard after signup.
+          Enter your food truck account details to continue with your selected plan.
         </div>
         <div style={styles.planSummary}>
           <div>
-            <div style={styles.planSummaryLabel}>Food truck plan</div>
-            <div style={styles.planSummaryValue}>Annual plan for $39</div>
+            <div style={styles.planSummaryLabel}>Selected plan</div>
+            <div style={styles.planSummaryValue}>Food Truck Annual</div>
           </div>
-          <div style={styles.planSummaryNote}>One plan built specifically for food trucks.</div>
+          <div style={styles.planSummaryMeta}>$39/year</div>
         </div>
         <div style={styles.expectationCard}>
           <div style={styles.expectationTitle}>Food Trucks on Menuply</div>
@@ -512,22 +470,6 @@ export default function FoodTruckSignup() {
       {serverError ? <div style={styles.errorBanner}>{serverError}</div> : null}
 
       <form onSubmit={handleSubmit} noValidate>
-        <div style={styles.section}>
-          <div style={styles.sectionTitle}>Plan</div>
-          <div style={styles.planCard}>
-            <div style={styles.planChartHeader}>
-              <span>What is included</span>
-              <span>Details</span>
-            </div>
-            {PLAN_DETAILS.map((item) => (
-              <div key={item.label} style={styles.planChartRow}>
-                <span>{item.label}</span>
-                <span style={styles.planChartValue}>{item.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         <div style={styles.section}>
           <div style={styles.sectionTitle}>Account</div>
 
@@ -574,14 +516,10 @@ export default function FoodTruckSignup() {
               {form.password === form.confirmPassword ? "Passwords match." : "Passwords do not match."}
             </div>
           ) : null}
-        </div>
-
-        <div style={styles.section}>
-          <div style={styles.sectionTitle}>Food truck basics</div>
 
           <div style={styles.fieldGroup}>
             <label htmlFor="truck_name" style={styles.label}>
-              Truck Name<span style={styles.required}>*</span>
+              Food Truck Name<span style={styles.required}>*</span>
             </label>
             <input
               id="truck_name"
@@ -596,7 +534,7 @@ export default function FoodTruckSignup() {
           </div>
 
           <div style={styles.helperText}>
-            After your account is created, you can add service locations, live pickup details, menu uploads, profile edits, and other operating information from the dashboard.
+            Menus, service locations, live pickup details, hours, and profile information can all be added later from the operator dashboard.
           </div>
         </div>
 
