@@ -47,9 +47,6 @@ const styles = {
   },
   hero: {
     marginBottom: 28,
-    display: "flex",
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
   },
   heroContent: {
     maxWidth: 700,
@@ -160,14 +157,6 @@ const styles = {
     background: "#1F4E3D",
     color: "#ffffff",
     marginTop: 1,
-  },
-  planFootnote: {
-    marginTop: "auto",
-    paddingTop: 14,
-    borderTop: "1px solid #eaecf0",
-    fontSize: 13,
-    lineHeight: 1.6,
-    color: "#475467",
   },
   formStack: {
     minWidth: 0,
