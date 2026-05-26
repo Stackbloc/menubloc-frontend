@@ -445,78 +445,6 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   );
 }
 
-function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, priceLabel }) {
-  const verdict = detailSystem?.verdict || {};
-  const label = verdict.label;
-  const basis = Array.isArray(verdict.reasons)
-    ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 1)
-    : [];
-  const breadScore = detailSystem?.bread_score || null;
-  const fallbackText = breadScore?.band || t("menuItemDetail.confirmNutritionEstimate", "Nutrition estimate - confirm with restaurant");
-  if (isMobile) return null;
-  return (
-    <Surface
-      style={{
-        marginTop: 12,
-        padding: "10px 14px",
-        position: "sticky",
-        top: STICKY_ITEM_HERO_TOP_PX,
-        zIndex: 39,
-        background: "rgba(18,26,20,0.98)",
-        border: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
-        <div style={{ minWidth: 0, flex: "1 1 260px" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.1, color: "#FFFFFF" }}>
-              {itemName}
-            </div>
-            {priceLabel ? (
-              <div style={{ fontSize: 14, fontWeight: 900, color: "#22C55E" }}>
-                {priceLabel}
-              </div>
-            ) : null}
-          </div>
-          <div style={{ marginTop: 4, fontSize: 12, lineHeight: 1.35, color: "#D1D5DB", fontWeight: 700 }}>
-            {label ? (
-              <>
-                <span style={{ color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.08em", fontSize: 10, fontWeight: 900 }}>
-                  {t("menuItemDetail.verdict", "Verdict")}
-                </span>
-                {" "}
-                {label}
-                {basis.length ? ` · ${basis[0]}` : ""}
-              </>
-            ) : (
-              fallbackText
-            )}
-          </div>
-        </div>
-        <Link
-          to={fullMenuHref}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: 32,
-            padding: "0 12px",
-            borderRadius: 999,
-            background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-            color: "#0B0F0C",
-            textDecoration: "none",
-            fontSize: 12,
-            fontWeight: 800,
-            whiteSpace: "nowrap",
-          }}
-        >
-          View Full Menu
-        </Link>
-      </div>
-    </Surface>
-  );
-}
-
 function IndulgenceInline({ presentation }) {
   if (!presentation) return null;
   if (!presentation?.indulgence?.score && presentation?.indulgence?.score !== 0) {
@@ -1337,7 +1265,7 @@ export default function MenuItemDetailPage() {
   const isBrokenFranchiseLink = integrity?.status === "broken_franchise_link";
   const showRestaurantLogo = hasRenderableImage(item.restaurant.logoUrl);
   const showItemPhoto = hasRenderableImage(item.itemPhotoUrl);
-  const heroGridColumns = isMobile ? "1fr" : showItemPhoto ? "minmax(0, 1.4fr) minmax(280px, 0.95fr)" : "1fr";
+  const heroGridColumns = "1fr";
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
   const showStickyVerdict = !indulgencePresentation && !detailSystem?.bread_score && confidenceLevel(detailSystem) !== "low";
   const itemDescription = getLocalizedField(item, "description", language) || item.description;
@@ -1370,9 +1298,9 @@ export default function MenuItemDetailPage() {
       {/* ── 1. Hero / Item Identity ── */}
       <Surface style={{
         padding: isMobile ? 18 : 18,
-        position: isMobile ? "sticky" : "relative",
-        top: isMobile ? STICKY_ITEM_HERO_TOP_PX : undefined,
-        zIndex: isMobile ? 40 : "auto",
+        position: "sticky",
+        top: STICKY_ITEM_HERO_TOP_PX,
+        zIndex: 40,
         background: "rgba(18,26,20,0.98)",
         boxShadow: "0 16px 44px rgba(20,33,27,0.12), 0 8px 24px rgba(0,0,0,0.35)",
       }}>
@@ -1488,7 +1416,7 @@ export default function MenuItemDetailPage() {
               </div>
             ) : null}
 
-            {showStickyVerdict && isMobile ? (
+            {showStickyVerdict ? (
               <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} compact />
             ) : null}
 
@@ -1502,7 +1430,7 @@ export default function MenuItemDetailPage() {
 
           </div>
 
-        {showItemPhoto ? (
+        {showItemPhoto && isMobile ? (
           <div style={{ minHeight: isMobile ? 280 : 100, borderRadius: 22, overflow: "hidden", border: "1px solid #1F2937", background: "#1A2419" }}>
             <img src={item.itemPhotoUrl} alt={`${item.name} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </div>
@@ -1510,15 +1438,12 @@ export default function MenuItemDetailPage() {
         </div>
       </Surface>
 
-      {!isMobile ? (
-        <StickyVerdictRail
-          detailSystem={detailSystem}
-          t={t}
-          fullMenuHref={fullMenuHref}
-          isMobile={isMobile}
-          itemName={getLocalizedField(item, "name", language) || item.name}
-          priceLabel={priceLabel}
-        />
+      {!isMobile && showItemPhoto ? (
+        <Surface style={{ marginTop: 16, padding: 0, overflow: "hidden" }}>
+          <div style={{ minHeight: 320, borderRadius: 22, overflow: "hidden", border: "1px solid #1F2937", background: "#1A2419" }}>
+            <img src={item.itemPhotoUrl} alt={`${item.name} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </div>
+        </Surface>
       ) : null}
 
       {isBrokenFranchiseLink && (
