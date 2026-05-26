@@ -424,14 +424,15 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   );
 }
 
-function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile }) {
+function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, priceLabel }) {
   const verdict = detailSystem?.verdict || {};
   const label = verdict.label;
   const basis = Array.isArray(verdict.reasons)
     ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 1)
     : [];
-  if (!label || isMobile) return null;
-  const theme = getVerdictTheme(label);
+  const breadScore = detailSystem?.bread_score || null;
+  const fallbackText = breadScore?.band || t("menuItemDetail.confirmNutritionEstimate", "Nutrition estimate - confirm with restaurant");
+  if (isMobile) return null;
   return (
     <Surface
       style={{
@@ -446,17 +447,30 @@ function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile }) {
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
         <div style={{ minWidth: 0, flex: "1 1 260px" }}>
-          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: theme.eye }}>
-            {t("menuItemDetail.verdict", "Verdict")}
-          </div>
-          <div style={{ marginTop: 4, fontSize: 18, fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.02em", color: theme.label }}>
-            {label}
-          </div>
-          {basis.length ? (
-            <div style={{ marginTop: 4, fontSize: 12, lineHeight: 1.35, color: "#D1D5DB", fontWeight: 700 }}>
-              {basis[0]}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.1, color: "#FFFFFF" }}>
+              {itemName}
             </div>
-          ) : null}
+            {priceLabel ? (
+              <div style={{ fontSize: 14, fontWeight: 900, color: "#22C55E" }}>
+                {priceLabel}
+              </div>
+            ) : null}
+          </div>
+          <div style={{ marginTop: 4, fontSize: 12, lineHeight: 1.35, color: "#D1D5DB", fontWeight: 700 }}>
+            {label ? (
+              <>
+                <span style={{ color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.08em", fontSize: 10, fontWeight: 900 }}>
+                  {t("menuItemDetail.verdict", "Verdict")}
+                </span>
+                {" "}
+                {label}
+                {basis.length ? ` · ${basis[0]}` : ""}
+              </>
+            ) : (
+              fallbackText
+            )}
+          </div>
         </div>
         <Link
           to={fullMenuHref}
@@ -1392,12 +1406,14 @@ export default function MenuItemInfoPage() {
         </div>
       </Surface>
 
-      {showStickyVerdict ? (
+      {!isMobile ? (
         <StickyVerdictRail
           detailSystem={detailSystem}
           t={t}
           fullMenuHref={fullMenuHref}
           isMobile={isMobile}
+          itemName={getLocalizedField(item, "name", language) || item.name}
+          priceLabel={priceLabel}
         />
       ) : null}
 
