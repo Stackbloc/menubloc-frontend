@@ -71,6 +71,8 @@ import OwnerRestaurants from "./pages/owner/OwnerRestaurants.jsx";
 import OwnerRevenue from "./pages/owner/OwnerRevenue.jsx";
 import OwnerSupportTickets from "./pages/owner/OwnerSupportTickets.jsx";
 import OwnerTicketDetail from "./pages/owner/OwnerTicketDetail.jsx";
+import OwnerMenuUploads from "./pages/owner/OwnerMenuUploads.jsx";
+import OwnerMenuUploadDetail from "./pages/owner/OwnerMenuUploadDetail.jsx";
 import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
 import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
 import OperatorCartNegotiationSettings from "./pages/operator/OperatorCartNegotiationSettings.jsx";
@@ -590,6 +592,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/owner/revenue" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRevenue /></OwnerRoute>} />
         <Route path="/owner/support" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSupportTickets /></OwnerRoute>} />
         <Route path="/owner/support/:ticketId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTicketDetail /></OwnerRoute>} />
+        <Route path="/owner/menu-uploads" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploads /></OwnerRoute>} />
+        <Route path="/owner/menu-uploads/:uploadId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploadDetail /></OwnerRoute>} />
 
         <Route path="/crm/login" element={<CrmLogin />} />
         <Route path="/crm/forgot-password" element={<CrmForgotPassword />} />
