@@ -149,6 +149,49 @@ const styles = {
     lineHeight: 1.6,
     color: "#475467",
   },
+  featureListCard: {
+    marginTop: 12,
+    padding: "18px 18px 16px",
+    borderRadius: 14,
+    background: "#ffffff",
+    border: "1px solid #d9e0ea",
+  },
+  featureListTitle: {
+    fontSize: 12,
+    fontWeight: 800,
+    color: "#1F4E3D",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    marginBottom: 10,
+  },
+  featureList: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+    display: "grid",
+    gap: 10,
+  },
+  featureItem: {
+    display: "flex",
+    gap: 10,
+    alignItems: "flex-start",
+    fontSize: 14,
+    lineHeight: 1.5,
+    color: "#344054",
+  },
+  featureMark: {
+    flexShrink: 0,
+    width: 22,
+    height: 22,
+    borderRadius: "50%",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 12,
+    fontWeight: 900,
+    background: "#eef6f1",
+    color: "#1F4E3D",
+  },
   planSummary: {
     display: "flex",
     justifyContent: "space-between",
@@ -202,6 +245,17 @@ const styles = {
     textDecoration: "underline",
   },
 };
+
+const PLAN_FEATURES = [
+  "Public food truck profile page",
+  "Online ordering for your truck",
+  "Dynamic QR tools and shareable menu access",
+  "Deals and promotions",
+  "Billboard visibility tools",
+  "Menu uploads and multiple menus",
+  "Analytics dashboard",
+  "Live pickup and service location updates",
+];
 
 function submitBtnStyle(disabled) {
   return {
@@ -455,6 +509,17 @@ export default function FoodTruckSignup() {
           <div style={styles.expectationBody}>
             Food trucks bring creativity, energy, and local character to the food industry. They introduce new flavors, serve communities in flexible ways, and often become the starting point for some of the most innovative restaurant concepts. We are proud to offer a plan designed specifically to reflect the unique role food trucks play in the restaurant industry every day.
           </div>
+        </div>
+        <div style={styles.featureListCard}>
+          <div style={styles.featureListTitle}>Included with your plan</div>
+          <ul style={styles.featureList}>
+            {PLAN_FEATURES.map((feature) => (
+              <li key={feature} style={styles.featureItem}>
+                <span style={styles.featureMark}>&#10003;</span>
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
         </div>
         <div style={{ ...styles.helperText, marginTop: 10 }}>
           Only the essentials are needed here. You can add service areas, pickup locations, menu details, and profile information later from the operator dashboard.
