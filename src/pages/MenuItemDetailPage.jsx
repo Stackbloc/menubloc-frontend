@@ -477,6 +477,64 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   );
 }
 
+function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile }) {
+  const verdict = detailSystem?.verdict || {};
+  const label = verdict.label;
+  const basis = Array.isArray(verdict.reasons)
+    ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 1)
+    : [];
+  if (!label || isMobile) return null;
+  const theme = getVerdictTheme(label);
+  return (
+    <Surface
+      style={{
+        marginTop: 12,
+        padding: "10px 14px",
+        position: "sticky",
+        top: STICKY_ITEM_HERO_TOP_PX,
+        zIndex: 39,
+        background: "rgba(18,26,20,0.98)",
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0, flex: "1 1 260px" }}>
+          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: theme.eye }}>
+            {t("menuItemDetail.verdict", "Verdict")}
+          </div>
+          <div style={{ marginTop: 4, fontSize: 18, fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.02em", color: theme.label }}>
+            {label}
+          </div>
+          {basis.length ? (
+            <div style={{ marginTop: 4, fontSize: 12, lineHeight: 1.35, color: "#D1D5DB", fontWeight: 700 }}>
+              {basis[0]}
+            </div>
+          ) : null}
+        </div>
+        <Link
+          to={fullMenuHref}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 32,
+            padding: "0 12px",
+            borderRadius: 999,
+            background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+            color: "#0B0F0C",
+            textDecoration: "none",
+            fontSize: 12,
+            fontWeight: 800,
+            whiteSpace: "nowrap",
+          }}
+        >
+          View Full Menu
+        </Link>
+      </div>
+    </Surface>
+  );
+}
+
 function IndulgenceInline({ presentation }) {
   if (!presentation) return null;
   if (!presentation?.indulgence?.score && presentation?.indulgence?.score !== 0) {
@@ -1330,9 +1388,9 @@ export default function MenuItemDetailPage() {
       {/* ── 1. Hero / Item Identity ── */}
       <Surface style={{
         padding: isMobile ? 18 : 18,
-        position: "sticky",
-        top: STICKY_ITEM_HERO_TOP_PX,
-        zIndex: 40,
+        position: isMobile ? "sticky" : "relative",
+        top: isMobile ? STICKY_ITEM_HERO_TOP_PX : undefined,
+        zIndex: isMobile ? 40 : "auto",
         background: "rgba(18,26,20,0.98)",
         boxShadow: "0 16px 44px rgba(20,33,27,0.12), 0 8px 24px rgba(0,0,0,0.35)",
       }}>
@@ -1448,7 +1506,7 @@ export default function MenuItemDetailPage() {
               </div>
             ) : null}
 
-            {showStickyVerdict ? (
+            {showStickyVerdict && isMobile ? (
               <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} compact />
             ) : null}
 
@@ -1469,6 +1527,15 @@ export default function MenuItemDetailPage() {
         ) : null}
         </div>
       </Surface>
+
+      {showStickyVerdict ? (
+        <StickyVerdictRail
+          detailSystem={detailSystem}
+          t={t}
+          fullMenuHref={fullMenuHref}
+          isMobile={isMobile}
+        />
+      ) : null}
 
       {isBrokenFranchiseLink && (
         <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}>
