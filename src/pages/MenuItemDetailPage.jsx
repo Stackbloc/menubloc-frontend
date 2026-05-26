@@ -406,7 +406,7 @@ function toShortVerdictBasis(reason) {
   return simplified.charAt(0).toLowerCase() + simplified.slice(1);
 }
 
-function VerdictBlock({ detailSystem, isMobile, t }) {
+function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   const verdict = detailSystem?.verdict || {};
   const label = verdict.label;
   const basis = Array.isArray(verdict.reasons)
@@ -416,6 +416,41 @@ function VerdictBlock({ detailSystem, isMobile, t }) {
   if (!label) return null;
 
   const theme = getVerdictTheme(label);
+
+  if (compact) {
+    return (
+      <div
+        style={{
+          marginTop: 0,
+          padding: isMobile ? "14px 16px" : "16px 18px",
+          borderRadius: 18,
+          background: theme.bg,
+          color: "#f8f6ef",
+          border: "1px solid rgba(255,255,255,0.10)",
+        }}
+      >
+        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: theme.eye, marginBottom: 8 }}>
+          {t("menuItemDetail.verdict", "Verdict")}
+        </div>
+        <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", color: theme.label }}>
+          {label}
+        </div>
+        {basis.length ? (
+          <div
+            style={{
+              marginTop: 8,
+              color: "#fff8ee",
+              fontSize: 13,
+              fontWeight: 700,
+              lineHeight: 1.35,
+            }}
+          >
+            {basis.join(", ")}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <Surface style={{ marginTop: 20, padding: isMobile ? 22 : 28, background: theme.bg, color: "#f8f6ef" }}>
@@ -1264,6 +1299,7 @@ export default function MenuItemDetailPage() {
   const showItemPhoto = hasRenderableImage(item.itemPhotoUrl);
   const heroGridColumns = isMobile ? "1fr" : showItemPhoto ? "minmax(0, 1.4fr) minmax(280px, 0.95fr)" : "1fr";
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
+  const showStickyVerdict = !indulgencePresentation && !detailSystem?.bread_score && confidenceLevel(detailSystem) !== "low";
   const fullMenuHref = buildCanonicalMenuPath({
     restaurantSlug: item.restaurant.slug || null,
     restaurantId: item.restaurant.id || null,
@@ -1349,27 +1385,49 @@ export default function MenuItemDetailPage() {
                 >
                   {getLocalizedField(item, "name", language) || item.name}
                 </h1>
-                {shareData ? (
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 10, color: "#6b7280", flex: "0 0 auto" }}>
-                    <span style={{ fontSize: 12, opacity: 0.55 }}>•</span>
-                    <ShareButton
-                      variant="dish"
-                      label="Share item"
-                      modalTitle={`Share ${getLocalizedField(item, "name", language) || item.name}`}
-                      shareData={shareData}
-                      analyticsContext={{
-                        restaurantId: item.restaurant.id,
-                        restaurantSlug: item.restaurant.slug || null,
-                        menuItemId: item.id,
-                        menuItemName: getLocalizedField(item, "name", language) || item.name,
-                        pageType: "menu_item_detail",
-                        shareTarget: "dish",
-                      }}
-                      size="compact"
-                      tone="inline"
-                    />
-                  </div>
-                ) : null}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 10, color: "#6b7280", flex: "0 0 auto", flexWrap: "wrap" }}>
+                  {shareData ? (
+                    <>
+                      <span style={{ fontSize: 12, opacity: 0.55 }}>•</span>
+                      <ShareButton
+                        variant="dish"
+                        label="Share item"
+                        modalTitle={`Share ${getLocalizedField(item, "name", language) || item.name}`}
+                        shareData={shareData}
+                        analyticsContext={{
+                          restaurantId: item.restaurant.id,
+                          restaurantSlug: item.restaurant.slug || null,
+                          menuItemId: item.id,
+                          menuItemName: getLocalizedField(item, "name", language) || item.name,
+                          pageType: "menu_item_detail",
+                          shareTarget: "dish",
+                        }}
+                        size="compact"
+                        tone="inline"
+                      />
+                    </>
+                  ) : null}
+                  <Link
+                    to={fullMenuHref}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: 34,
+                      padding: "0 14px",
+                      borderRadius: 999,
+                      background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+                      color: "#0B0F0C",
+                      textDecoration: "none",
+                      fontSize: 12,
+                      fontWeight: 800,
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 10px 24px rgba(15, 23, 42, 0.10)",
+                    }}
+                  >
+                    View Full Menu
+                  </Link>
+                </div>
               </div>
               <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 {priceLabel ? (
@@ -1389,27 +1447,9 @@ export default function MenuItemDetailPage() {
               </div>
             ) : null}
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <Link
-                to={fullMenuHref}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  minHeight: 44,
-                  padding: "0 18px",
-                  borderRadius: 999,
-                  background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-                  color: "#0B0F0C",
-                  textDecoration: "none",
-                  fontSize: 14,
-                  fontWeight: 800,
-                  boxShadow: "0 10px 24px rgba(15, 23, 42, 0.10)",
-                }}
-              >
-                View Full Menu
-              </Link>
-            </div>
+            {showStickyVerdict ? (
+              <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} compact />
+            ) : null}
 
             {(item.badges.vegan || item.badges.glutenFree || item.badges.deal) && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -1440,9 +1480,6 @@ export default function MenuItemDetailPage() {
 
       {hasNutritionData ? (
         <>
-          {!indulgencePresentation && !detailSystem?.bread_score && confidenceLevel(detailSystem) !== "low" ? (
-            <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} />
-          ) : null}
           <PreparationCard detailSystem={detailSystem} t={t} />
           <NutritionInsightsCluster
             detailSystem={detailSystem}
