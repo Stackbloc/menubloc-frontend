@@ -8,7 +8,7 @@ const PLAN_ROUTE = "/restaurant/signup";
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#ffffff",
+    background: "linear-gradient(180deg, #f6f6f3 0%, #eef5f2 100%)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -149,7 +149,7 @@ export default function RestaurantPhilosophy() {
           subtitle="for Restaurants"
           wrapperStyle={{ alignItems: "flex-start", marginBottom: 4 }}
           subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
-          logoProps={{ width: 160, height: 100, radius: 22, pageColor: "#ffffff", imageStyle: { filter: "brightness(0)" } }}
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
         />
 
         <h1 style={styles.heading}>
