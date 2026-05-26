@@ -537,7 +537,7 @@ export default function FoodTruckSignup() {
       <div style={styles.shell}>
         <header style={styles.hero}>
           <div style={styles.heroContent}>
-            {/* Keep the signup entry aligned with the restaurant page shell. */}
+            {/* Keep the food-truck signup entry aligned with the restaurant shell. */}
             <BrandLockup
               logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
               wrapperStyle={{ marginBottom: 8 }}
