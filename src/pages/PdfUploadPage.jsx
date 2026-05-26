@@ -61,6 +61,9 @@ function formatOcrFlowError(rawMessage, httpStatus) {
     return msg || "Menu reading failed on our side. Please try again in a moment.";
   }
   if (status === 401 || status === 403) {
+    if (/access denied|authentication required/i.test(lower)) {
+      return msg || "Sign in to your operator account and select this restaurant from the sidebar, then try again.";
+    }
     return msg || "Your session is no longer valid. Restart signup and try again.";
   }
   return msg || "Something went wrong. Please try again.";
