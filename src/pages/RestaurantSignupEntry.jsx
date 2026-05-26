@@ -11,6 +11,7 @@
 
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { BrandLockup } from "../components/BrandLogo.jsx";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
@@ -77,6 +78,18 @@ const styles = {
   shell: {
     maxWidth: 1120,
     margin: "0 auto",
+  },
+  hero: {
+    marginBottom: 28,
+    display: "flex",
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+  },
+  heroContent: {
+    maxWidth: 700,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
   },
   eyebrow: {
     display: "inline-flex",
@@ -217,8 +230,33 @@ export default function RestaurantSignupEntry() {
   return (
     <div style={styles.page}>
       <div style={styles.shell}>
-        <header style={{ marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
-          <div>
+        <header style={styles.hero}>
+          <div style={styles.heroContent}>
+            <BrandLockup
+              logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+              wrapperStyle={{ marginBottom: 8 }}
+            />
+            <Link
+              to="/foodtruck/signup"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "10px 18px",
+                borderRadius: 12,
+                border: "1px solid #1F4E3D",
+                background: "#ffffff",
+                color: "#1F4E3D",
+                fontSize: 13,
+                fontWeight: 700,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+                marginTop: 6,
+                marginBottom: 14,
+              }}
+            >
+              Food Truck Signup
+            </Link>
             <div style={styles.eyebrow}>Restaurant Signup</div>
             <h1 style={{
               fontSize: "clamp(1.7rem, 3.5vw, 2.6rem)",
@@ -230,27 +268,16 @@ export default function RestaurantSignupEntry() {
             }}>
               Pick the Subscription Right for Your Restaurant
             </h1>
+            <div style={{
+              fontSize: 16,
+              lineHeight: 1.65,
+              color: "#667085",
+              maxWidth: 660,
+              marginTop: 12,
+            }}>
+              Create your restaurant account with Menuply, then continue with the plan that fits your operation.
+            </div>
           </div>
-          <Link
-            to="/foodtruck/signup"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "10px 18px",
-              borderRadius: 12,
-              border: "1px solid #1F4E3D",
-              background: "#ffffff",
-              color: "#1F4E3D",
-              fontSize: 13,
-              fontWeight: 700,
-              textDecoration: "none",
-              whiteSpace: "nowrap",
-              marginTop: 4,
-            }}
-          >
-            🚚 Food Truck? Click here
-          </Link>
         </header>
 
         <section style={styles.cardsGrid}>

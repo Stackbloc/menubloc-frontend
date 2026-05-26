@@ -8,7 +8,7 @@ export default function OwnerRevenue() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    getOwnerRevenueSummary(filters).then(setData).catch((err) => setError(err.message || "Unable to load revenue"));
+    getOwnerRevenueSummary(filters).then(setData).catch(() => setError("Owner dashboard data is temporarily unavailable."));
   }, [filters]);
 
   return (

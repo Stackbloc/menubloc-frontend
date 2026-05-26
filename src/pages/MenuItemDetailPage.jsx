@@ -390,8 +390,8 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
       <div
         style={{
           marginTop: 0,
-          padding: isMobile ? "14px 16px" : "16px 18px",
-          borderRadius: 18,
+          padding: isMobile ? "12px 14px" : "12px 14px",
+          borderRadius: 16,
           background: theme.bg,
           color: "#f8f6ef",
           border: "1px solid rgba(255,255,255,0.10)",
@@ -400,15 +400,15 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
         <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: theme.eye, marginBottom: 8 }}>
           {t("menuItemDetail.verdict", "Verdict")}
         </div>
-        <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", color: theme.label }}>
+        <div style={{ fontSize: isMobile ? 21 : 22, fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", color: theme.label }}>
           {label}
         </div>
         {basis.length ? (
           <div
             style={{
-              marginTop: 8,
+              marginTop: 6,
               color: "#fff8ee",
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 700,
               lineHeight: 1.35,
             }}
@@ -441,6 +441,78 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
           {basis.join(", ")}
         </div>
       ) : null}
+    </Surface>
+  );
+}
+
+function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, priceLabel }) {
+  const verdict = detailSystem?.verdict || {};
+  const label = verdict.label;
+  const basis = Array.isArray(verdict.reasons)
+    ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 1)
+    : [];
+  const breadScore = detailSystem?.bread_score || null;
+  const fallbackText = breadScore?.band || t("menuItemDetail.confirmNutritionEstimate", "Nutrition estimate - confirm with restaurant");
+  if (isMobile) return null;
+  return (
+    <Surface
+      style={{
+        marginTop: 12,
+        padding: "10px 14px",
+        position: "sticky",
+        top: STICKY_ITEM_HERO_TOP_PX,
+        zIndex: 39,
+        background: "rgba(18,26,20,0.98)",
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0, flex: "1 1 260px" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.1, color: "#FFFFFF" }}>
+              {itemName}
+            </div>
+            {priceLabel ? (
+              <div style={{ fontSize: 14, fontWeight: 900, color: "#22C55E" }}>
+                {priceLabel}
+              </div>
+            ) : null}
+          </div>
+          <div style={{ marginTop: 4, fontSize: 12, lineHeight: 1.35, color: "#D1D5DB", fontWeight: 700 }}>
+            {label ? (
+              <>
+                <span style={{ color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.08em", fontSize: 10, fontWeight: 900 }}>
+                  {t("menuItemDetail.verdict", "Verdict")}
+                </span>
+                {" "}
+                {label}
+                {basis.length ? ` · ${basis[0]}` : ""}
+              </>
+            ) : (
+              fallbackText
+            )}
+          </div>
+        </div>
+        <Link
+          to={fullMenuHref}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 32,
+            padding: "0 12px",
+            borderRadius: 999,
+            background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+            color: "#0B0F0C",
+            textDecoration: "none",
+            fontSize: 12,
+            fontWeight: 800,
+            whiteSpace: "nowrap",
+          }}
+        >
+          View Full Menu
+        </Link>
+      </div>
     </Surface>
   );
 }
@@ -1268,6 +1340,7 @@ export default function MenuItemDetailPage() {
   const heroGridColumns = isMobile ? "1fr" : showItemPhoto ? "minmax(0, 1.4fr) minmax(280px, 0.95fr)" : "1fr";
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
   const showStickyVerdict = !indulgencePresentation && !detailSystem?.bread_score && confidenceLevel(detailSystem) !== "low";
+  const itemDescription = getLocalizedField(item, "description", language) || item.description;
   const fullMenuHref = buildCanonicalMenuPath({
     restaurantSlug: item.restaurant.slug || null,
     restaurantId: item.restaurant.id || null,
@@ -1296,15 +1369,15 @@ export default function MenuItemDetailPage() {
 
       {/* ── 1. Hero / Item Identity ── */}
       <Surface style={{
-        padding: isMobile ? 18 : 24,
-        position: "sticky",
-        top: STICKY_ITEM_HERO_TOP_PX,
-        zIndex: 40,
+        padding: isMobile ? 18 : 18,
+        position: isMobile ? "sticky" : "relative",
+        top: isMobile ? STICKY_ITEM_HERO_TOP_PX : undefined,
+        zIndex: isMobile ? 40 : "auto",
         background: "rgba(18,26,20,0.98)",
         boxShadow: "0 16px 44px rgba(20,33,27,0.12), 0 8px 24px rgba(0,0,0,0.35)",
       }}>
-        <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 24, alignItems: "stretch" }}>
-          <div style={{ display: "grid", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 18, alignItems: "stretch" }}>
+          <div style={{ display: "grid", gap: isMobile ? 16 : 12 }}>
             <div>
               <Eyebrow>{t("menuItemDetail.menuItemIntelligence", "Menu Item Intelligence")}</Eyebrow>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -1353,7 +1426,7 @@ export default function MenuItemDetailPage() {
                 >
                   {getLocalizedField(item, "name", language) || item.name}
                 </h1>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 10, color: "#6b7280", flex: "0 0 auto", flexWrap: "wrap" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6b7280", flex: "0 0 auto", flexWrap: "wrap" }}>
                   {shareData ? (
                     <>
                       <span style={{ fontSize: 12, opacity: 0.55 }}>•</span>
@@ -1409,13 +1482,13 @@ export default function MenuItemDetailPage() {
               {!indulgencePresentation && detailSystem?.bread_score ? <BreadScoreInline detailSystem={detailSystem} /> : null}
             </div>
 
-            {(getLocalizedField(item, "description", language) || item.description) ? (
+            {isMobile && itemDescription ? (
               <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#D1D5DB", maxWidth: 760 }}>
-                {getLocalizedField(item, "description", language) || item.description}
+                {itemDescription}
               </div>
             ) : null}
 
-            {showStickyVerdict ? (
+            {showStickyVerdict && isMobile ? (
               <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} compact />
             ) : null}
 
@@ -1437,6 +1510,17 @@ export default function MenuItemDetailPage() {
         </div>
       </Surface>
 
+      {!isMobile ? (
+        <StickyVerdictRail
+          detailSystem={detailSystem}
+          t={t}
+          fullMenuHref={fullMenuHref}
+          isMobile={isMobile}
+          itemName={getLocalizedField(item, "name", language) || item.name}
+          priceLabel={priceLabel}
+        />
+      ) : null}
+
       {isBrokenFranchiseLink && (
         <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: "#22C55E", lineHeight: 1.5 }}>
@@ -1444,6 +1528,14 @@ export default function MenuItemDetailPage() {
           </div>
         </Surface>
       )}
+
+      {!isMobile && itemDescription ? (
+        <Surface style={{ marginTop: 16, padding: 18 }}>
+          <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#D1D5DB", maxWidth: 760 }}>
+            {itemDescription}
+          </div>
+        </Surface>
+      ) : null}
 
       {hasNutritionData ? (
         <>

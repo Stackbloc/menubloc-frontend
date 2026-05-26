@@ -9,7 +9,7 @@ export default function OwnerRestaurants() {
 
   useEffect(() => {
     const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ""));
-    getOwnerRestaurantSignups(params).then(setData).catch((err) => setError(err.message || "Unable to load restaurant signups"));
+    getOwnerRestaurantSignups(params).then(setData).catch(() => setError("Owner dashboard data is temporarily unavailable."));
   }, [filters]);
 
   return (
