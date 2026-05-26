@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { LEGAL_VERSIONS } from "../content/legal.js";
 
