@@ -89,7 +89,8 @@ const styles = {
     maxWidth: 700,
     display: "flex",
     flexDirection: "column",
-    alignItems: "flex-start",
+    alignItems: "center",
+    textAlign: "center",
   },
   eyebrow: {
     display: "inline-flex",
