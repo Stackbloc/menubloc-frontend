@@ -83,9 +83,9 @@ export default function ShareButton({
         : subtle
           ? "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(243,248,245,0.94) 100%)"
           : "linear-gradient(180deg, #ffffff 0%, #f5faf7 100%)",
-    color: inline ? "#506153" : iconOnly ? "#0f172a" : subtle ? "#1f4333" : "#11211a",
+    color: inline ? "#11211a" : iconOnly ? "#0f172a" : subtle ? "#1f4333" : "#11211a",
     fontSize: inline ? 13 : compact ? 12 : 14,
-    fontWeight: inline ? 700 : compact ? 700 : 800,
+    fontWeight: inline ? 800 : compact ? 700 : 800,
     cursor: "pointer",
     boxShadow: inline
       ? "none"
