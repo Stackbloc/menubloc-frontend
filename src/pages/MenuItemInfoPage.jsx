@@ -401,8 +401,8 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
       <div
         style={{
           marginTop: 0,
-          padding: isMobile ? "14px 16px" : "16px 18px",
-          borderRadius: 18,
+          padding: isMobile ? "12px 14px" : "12px 14px",
+          borderRadius: 16,
           background: theme.bg,
           color: "#f8f6ef",
           border: "1px solid rgba(255,255,255,0.10)",
@@ -411,15 +411,15 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
         <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: theme.eye, marginBottom: 8 }}>
           {t("menuItemDetail.verdict", "Verdict")}
         </div>
-        <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", color: theme.label }}>
+        <div style={{ fontSize: isMobile ? 21 : 22, fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", color: theme.label }}>
           {label}
         </div>
         {basis.length ? (
           <div
             style={{
-              marginTop: 8,
+              marginTop: 6,
               color: "#fff8ee",
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 700,
               lineHeight: 1.35,
             }}
@@ -1219,20 +1219,21 @@ export default function MenuItemInfoPage() {
   const heroGridColumns = isMobile ? "1fr" : showItemPhoto ? "minmax(0, 1.4fr) minmax(280px, 0.95fr)" : "1fr";
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
   const showStickyVerdict = !indulgencePresentation && !detailSystem?.bread_score && confidenceLevel(detailSystem) !== "low";
+  const itemDescription = getLocalizedField(item, "description", language) || item.description;
 
   return (
     <PageShell isMobile={isMobile}>
       {/* ── 1. Hero / Item Identity ── */}
       <Surface style={{
-        padding: isMobile ? 18 : 24,
+        padding: isMobile ? 18 : 18,
         position: "sticky",
         top: STICKY_ITEM_HERO_TOP_PX,
         zIndex: 40,
         background: "rgba(18,26,20,0.98)",
         boxShadow: "0 16px 44px rgba(20,33,27,0.12), 0 8px 24px rgba(0,0,0,0.35)",
       }}>
-        <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 24, alignItems: "stretch" }}>
-          <div style={{ display: "grid", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 18, alignItems: "stretch" }}>
+          <div style={{ display: "grid", gap: isMobile ? 16 : 12 }}>
             <div>
               <Eyebrow>{t("menuItemDetail.menuItemIntelligence", "Menu Item Intelligence")}</Eyebrow>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -1281,7 +1282,7 @@ export default function MenuItemInfoPage() {
                 >
                   {getLocalizedField(item, "name", language) || item.name}
                 </h1>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 10, color: "#6b7280", flex: "0 0 auto", flexWrap: "wrap" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6b7280", flex: "0 0 auto", flexWrap: "wrap" }}>
                   {shareData ? (
                     <>
                       <span style={{ fontSize: 12, opacity: 0.55 }}>•</span>
@@ -1336,9 +1337,9 @@ export default function MenuItemInfoPage() {
               {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
               {!indulgencePresentation && detailSystem?.bread_score ? <BreadScoreInline detailSystem={detailSystem} /> : null}
 
-              {(getLocalizedField(item, "description", language) || item.description) ? (
+              {isMobile && itemDescription ? (
                 <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#D1D5DB", maxWidth: 760 }}>
-                  {getLocalizedField(item, "description", language) || item.description}
+                  {itemDescription}
                 </div>
               ) : null}
 
@@ -1354,7 +1355,6 @@ export default function MenuItemInfoPage() {
                 </div>
               )}
 
-              {hasNutritionData ? <CompactAllergenAlert section={detailSystem?.allergen_alerts} t={t} /> : null}
             </div>
           </div>
 
@@ -1373,6 +1373,16 @@ export default function MenuItemInfoPage() {
           </div>
         </Surface>
       )}
+
+      {!isMobile && itemDescription ? (
+        <Surface style={{ marginTop: 16, padding: 18 }}>
+          <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#D1D5DB", maxWidth: 760 }}>
+            {itemDescription}
+          </div>
+        </Surface>
+      ) : null}
+
+      {hasNutritionData ? <CompactAllergenAlert section={detailSystem?.allergen_alerts} t={t} /> : null}
 
       {hasNutritionData ? (
         <>
