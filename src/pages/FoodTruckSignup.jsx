@@ -50,6 +50,25 @@ const styles = {
   },
   heroContent: {
     maxWidth: 700,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+  },
+  heroAction: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "10px 18px",
+    borderRadius: 12,
+    border: "1px solid #1F4E3D",
+    background: "#ffffff",
+    color: "#1F4E3D",
+    fontSize: 13,
+    fontWeight: 700,
+    textDecoration: "none",
+    whiteSpace: "nowrap",
+    marginTop: 6,
+    marginBottom: 14,
   },
   eyebrow: {
     display: "inline-flex",
@@ -538,6 +557,12 @@ export default function FoodTruckSignup() {
               logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
               wrapperStyle={{ marginBottom: 8 }}
             />
+            <Link
+              to="/restaurant/signup"
+              style={styles.heroAction}
+            >
+              Restaurant Signup
+            </Link>
             <div style={styles.eyebrow}>Food Truck Signup</div>
             <h1 style={styles.heading}>Launch Your Food Truck on Menuply</h1>
             <div style={styles.subheading}>
