@@ -87,6 +87,9 @@ const styles = {
   },
   heroContent: {
     maxWidth: 700,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
   },
   eyebrow: {
     display: "inline-flex",
@@ -233,6 +236,27 @@ export default function RestaurantSignupEntry() {
               logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
               wrapperStyle={{ marginBottom: 8 }}
             />
+            <Link
+              to="/foodtruck/signup"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "10px 18px",
+                borderRadius: 12,
+                border: "1px solid #1F4E3D",
+                background: "#ffffff",
+                color: "#1F4E3D",
+                fontSize: 13,
+                fontWeight: 700,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+                marginTop: 6,
+                marginBottom: 14,
+              }}
+            >
+              Food Truck Signup
+            </Link>
             <div style={styles.eyebrow}>Restaurant Signup</div>
             <h1 style={{
               fontSize: "clamp(1.7rem, 3.5vw, 2.6rem)",
@@ -253,26 +277,6 @@ export default function RestaurantSignupEntry() {
             }}>
               Create your restaurant account with Menuply, then continue with the plan that fits your operation.
             </div>
-            <Link
-              to="/foodtruck/signup"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "10px 18px",
-                borderRadius: 12,
-                border: "1px solid #1F4E3D",
-                background: "#ffffff",
-                color: "#1F4E3D",
-                fontSize: 13,
-                fontWeight: 700,
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-                marginTop: 18,
-              }}
-            >
-              Food Truck Signup
-            </Link>
           </div>
         </header>
 
