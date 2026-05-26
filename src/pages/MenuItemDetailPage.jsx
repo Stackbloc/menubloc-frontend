@@ -389,25 +389,24 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
     return (
       <div
         style={{
-          marginTop: 0,
-          padding: isMobile ? "12px 14px" : "12px 14px",
-          borderRadius: 16,
-          background: theme.bg,
+          marginTop: 2,
+          padding: 0,
+          background: "transparent",
           color: "#f8f6ef",
-          border: "1px solid rgba(255,255,255,0.10)",
+          border: "none",
         }}
       >
-        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: theme.eye, marginBottom: 8 }}>
+        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 4 }}>
           {t("menuItemDetail.verdict", "Verdict")}
         </div>
-        <div style={{ fontSize: isMobile ? 21 : 22, fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", color: theme.label }}>
+        <div style={{ fontSize: isMobile ? 20 : 22, fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.03em", color: theme.label }}>
           {label}
         </div>
         {basis.length ? (
           <div
             style={{
-              marginTop: 6,
-              color: "#fff8ee",
+              marginTop: 4,
+              color: "#D1D5DB",
               fontSize: 12,
               fontWeight: 700,
               lineHeight: 1.35,
