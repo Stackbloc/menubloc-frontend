@@ -64,6 +64,38 @@ function parseTodayClose(hoursSchedule) {
   return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
+function hasPickupLocation(location) {
+  if (!location || typeof location !== "object") return false;
+  return Boolean(
+    location.current_pickup_address ||
+      (Number.isFinite(Number(location.current_pickup_lat)) &&
+        Number.isFinite(Number(location.current_pickup_lng)))
+  );
+}
+
+function formatPickupLocation(location) {
+  if (!hasPickupLocation(location)) return "No current pickup location saved.";
+  const parts = [];
+  if (location.current_pickup_label) parts.push(location.current_pickup_label);
+  if (location.current_pickup_address) parts.push(location.current_pickup_address);
+  if (!location.current_pickup_address && location.current_pickup_lat != null && location.current_pickup_lng != null) {
+    parts.push(`${Number(location.current_pickup_lat).toFixed(5)}, ${Number(location.current_pickup_lng).toFixed(5)}`);
+  }
+  return parts.join(" • ");
+}
+
+function formatLocationTimestamp(value) {
+  if (!value) return "Not confirmed yet";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not confirmed yet";
+  return date.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────
 
 function StatCard({ label, value, sub }) {
@@ -133,6 +165,17 @@ export default function OperatorDashboard() {
   const [customMinutes, setCustomMinutes] = useState("");
   const [pauseBusy, setPauseBusy] = useState(false);
   const pauseRef = useRef(null);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [editingLocation, setEditingLocation] = useState(false);
+  const [locationBusy, setLocationBusy] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const [locationForm, setLocationForm] = useState({
+    current_pickup_address: "",
+    current_pickup_lat: "",
+    current_pickup_lng: "",
+    current_pickup_label: "",
+    current_pickup_instructions: "",
+  });
 
   useEffect(() => {
     function onClickOutside(e) {
@@ -164,6 +207,19 @@ export default function OperatorDashboard() {
     return () => clearInterval(interval);
   }, [rid, loadData]);
 
+  useEffect(() => {
+    const location = availability?.current_pickup_location;
+    setLocationForm({
+      current_pickup_address: location?.current_pickup_address || "",
+      current_pickup_lat:
+        location?.current_pickup_lat == null ? "" : String(location.current_pickup_lat),
+      current_pickup_lng:
+        location?.current_pickup_lng == null ? "" : String(location.current_pickup_lng),
+      current_pickup_label: location?.current_pickup_label || "",
+      current_pickup_instructions: location?.current_pickup_instructions || "",
+    });
+  }, [availability?.current_pickup_location]);
+
   async function handlePause(minutes) {
     if (!rid) return;
     setPauseBusy(true);
@@ -185,6 +241,12 @@ export default function OperatorDashboard() {
 
   async function handleResume() {
     if (!rid) return;
+    if (availability?.restaurant_type === "food_truck") {
+      setLocationError("");
+      setEditingLocation(!hasPickupLocation(availability?.current_pickup_location));
+      setLocationModalOpen(true);
+      return;
+    }
     setPauseBusy(true);
     try {
       await api.updateOrderAvailability(rid, { order_acceptance_status: "accepting_orders" });
@@ -196,11 +258,54 @@ export default function OperatorDashboard() {
     }
   }
 
+  async function handleConfirmFoodTruckOpen() {
+    if (!rid) return;
+    setLocationBusy(true);
+    setLocationError("");
+    try {
+      await api.updateOrderAvailability(rid, {
+        order_acceptance_status: "accepting_orders",
+        confirm_current_location: true,
+      });
+      setLocationModalOpen(false);
+      setEditingLocation(false);
+      await loadData(rid);
+    } catch (e) {
+      setLocationError(e.message || "Unable to open store.");
+    } finally {
+      setLocationBusy(false);
+    }
+  }
+
+  async function handleSaveFoodTruckLocation() {
+    if (!rid) return;
+    setLocationBusy(true);
+    setLocationError("");
+    try {
+      await api.updateFoodTruckCurrentLocation(rid, {
+        current_pickup_address: locationForm.current_pickup_address,
+        current_pickup_lat: locationForm.current_pickup_lat,
+        current_pickup_lng: locationForm.current_pickup_lng,
+        current_pickup_label: locationForm.current_pickup_label,
+        current_pickup_instructions: locationForm.current_pickup_instructions,
+        is_currently_serving: false,
+      });
+      await loadData(rid);
+      setEditingLocation(false);
+    } catch (e) {
+      setLocationError(e.message || "Unable to save pickup location.");
+    } finally {
+      setLocationBusy(false);
+    }
+  }
+
   // Derived values
   const availStatus = availability?.order_acceptance_status || "accepting_orders";
   const isAccepting = availStatus === "accepting_orders";
   const isPaused    = availStatus === "paused";
   const isClosed    = availStatus === "closed";
+  const isFoodTruck = availability?.restaurant_type === "food_truck";
+  const pickupLocation = availability?.current_pickup_location || null;
 
   const todayStart     = startOfDay(now);
   const yesterdayStart = new Date(todayStart); yesterdayStart.setDate(yesterdayStart.getDate() - 1);
@@ -267,6 +372,45 @@ export default function OperatorDashboard() {
         </div>
 
         {/* ── Store Status + Pause ────────────────────────────── */}
+        {isFoodTruck && (
+          <div style={{
+            background: "#fff",
+            border: `1px solid ${BORDER}`,
+            borderRadius: 14,
+            padding: "16px 20px",
+            marginBottom: 14,
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: "#8a9ab0", marginBottom: 6 }}>
+                  Current Pickup Location
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#0f1720" }}>
+                  {formatPickupLocation(pickupLocation)}
+                </div>
+                {pickupLocation?.current_pickup_instructions && (
+                  <div style={{ fontSize: 12, color: "#5b6675", marginTop: 6 }}>
+                    {pickupLocation.current_pickup_instructions}
+                  </div>
+                )}
+                <div style={{ fontSize: 12, color: "#8a9ab0", marginTop: 6 }}>
+                  Last confirmed: {formatLocationTimestamp(availability?.current_location_updated_at || pickupLocation?.current_location_updated_at)}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setLocationError("");
+                  setEditingLocation(true);
+                  setLocationModalOpen(true);
+                }}
+                style={{ ...ghostBtn, padding: "8px 14px", fontSize: 13 }}
+              >
+                Edit Location
+              </button>
+            </div>
+          </div>
+        )}
         <div style={{
           background: statusStyle.bg, border: `1px solid ${statusStyle.border}`,
           borderRadius: 14, padding: "16px 20px", marginBottom: 20,
@@ -297,7 +441,7 @@ export default function OperatorDashboard() {
                 disabled={pauseBusy}
                 style={{ ...primaryBtn, padding: "8px 16px", fontSize: 13 }}
               >
-                {pauseBusy ? "…" : "Resume Orders"}
+                {pauseBusy ? "…" : isFoodTruck ? "Open Store" : "Resume Orders"}
               </button>
             )}
             {isAccepting && (
@@ -430,6 +574,99 @@ export default function OperatorDashboard() {
         </div>
 
       </div>
+      {locationModalOpen && (
+        <div style={modalBackdrop}>
+          <div style={modalCard}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "#0f1720", marginBottom: 6 }}>
+              Confirm Pickup Location
+            </div>
+            <div style={{ fontSize: 14, color: "#5b6675", lineHeight: 1.6, marginBottom: 14 }}>
+              Confirm your current pickup location before opening.
+            </div>
+            {locationError && (
+              <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 10, background: "#fef2f2", color: "#b91c1c", fontSize: 13, fontWeight: 700 }}>
+                {locationError}
+              </div>
+            )}
+            {!editingLocation ? (
+              <div style={{ border: `1px solid ${BORDER}`, borderRadius: 12, padding: "12px 14px", background: "#f8fafc" }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#0f1720" }}>{formatPickupLocation(pickupLocation)}</div>
+                {pickupLocation?.current_pickup_instructions && (
+                  <div style={{ fontSize: 12, color: "#5b6675", marginTop: 6 }}>{pickupLocation.current_pickup_instructions}</div>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
+                <input
+                  value={locationForm.current_pickup_label}
+                  onChange={(e) => setLocationForm((prev) => ({ ...prev, current_pickup_label: e.target.value }))}
+                  placeholder="Location label"
+                  style={modalInput}
+                />
+                <input
+                  value={locationForm.current_pickup_address}
+                  onChange={(e) => setLocationForm((prev) => ({ ...prev, current_pickup_address: e.target.value }))}
+                  placeholder="Pickup address"
+                  style={modalInput}
+                />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <input
+                    value={locationForm.current_pickup_lat}
+                    onChange={(e) => setLocationForm((prev) => ({ ...prev, current_pickup_lat: e.target.value }))}
+                    placeholder="Latitude"
+                    style={modalInput}
+                  />
+                  <input
+                    value={locationForm.current_pickup_lng}
+                    onChange={(e) => setLocationForm((prev) => ({ ...prev, current_pickup_lng: e.target.value }))}
+                    placeholder="Longitude"
+                    style={modalInput}
+                  />
+                </div>
+                <textarea
+                  value={locationForm.current_pickup_instructions}
+                  onChange={(e) => setLocationForm((prev) => ({ ...prev, current_pickup_instructions: e.target.value }))}
+                  placeholder="Pickup instructions"
+                  style={{ ...modalInput, minHeight: 80, resize: "vertical", paddingTop: 10 }}
+                />
+              </div>
+            )}
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {editingLocation ? (
+                  <button type="button" onClick={handleSaveFoodTruckLocation} disabled={locationBusy} style={primaryBtn}>
+                    {locationBusy ? "Saving…" : "Save Location"}
+                  </button>
+                ) : (
+                  <button type="button" onClick={handleConfirmFoodTruckOpen} disabled={locationBusy} style={primaryBtn}>
+                    {locationBusy ? "Opening…" : "Confirm and Open Store"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setEditingLocation((prev) => !prev)}
+                  disabled={locationBusy}
+                  style={ghostBtn}
+                >
+                  {editingLocation ? "Back to Confirmation" : "Edit Location"}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setLocationModalOpen(false);
+                  setEditingLocation(false);
+                  setLocationError("");
+                }}
+                disabled={locationBusy}
+                style={ghostBtn}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </OperatorLayout>
   );
 }
@@ -445,5 +682,35 @@ const primaryBtn = {
 const ghostBtn = {
   background: "#fff", color: "#374151",
   border: `1px solid ${BORDER}`, borderRadius: 8,
-  fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+  fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", padding: "10px 18px",
+};
+
+const modalBackdrop = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(15, 23, 32, 0.45)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 18,
+  zIndex: 400,
+};
+
+const modalCard = {
+  width: "100%",
+  maxWidth: 560,
+  background: "#fff",
+  borderRadius: 16,
+  padding: 20,
+  boxShadow: "0 20px 60px rgba(15, 23, 32, 0.25)",
+};
+
+const modalInput = {
+  width: "100%",
+  borderRadius: 10,
+  border: `1px solid ${BORDER}`,
+  padding: "10px 12px",
+  fontSize: 14,
+  fontFamily: "inherit",
+  boxSizing: "border-box",
 };

@@ -230,6 +230,8 @@ export const saveDeliveryProviderAccount = (rid, provider, body) =>
   });
 export const disconnectDeliveryProviderAccount = (rid, provider) =>
   del(`/operator/restaurants/${rid}/delivery/providers/${provider}`);
+export const updateFoodTruckCurrentLocation = (rid, body) =>
+  patch(`/api/food-trucks/${rid}/current-location`, body);
 
 // ── Restaurant: Orders (existing endpoints — do not remove) ───────────────
 export const getRestaurantOrders = (rid, params = {}) => {
