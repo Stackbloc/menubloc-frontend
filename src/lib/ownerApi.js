@@ -48,7 +48,7 @@ export const getOwnerRevenueBySource = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/revenue/by-source${qs ? `?${qs}` : ""}`);
 };
-export const getOwnerAdmins = () => get("/api/owner/admins");
+export const getOwnerAdmins = () => get("/api/owner/support/admins");
 export const getOwnerSupportTickets = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/support/tickets${qs ? `?${qs}` : ""}`);
