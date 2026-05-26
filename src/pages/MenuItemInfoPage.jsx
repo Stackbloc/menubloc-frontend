@@ -332,10 +332,37 @@ function SectionCard({ title, eyebrow, children, style }) {
 
 // ── Hero sub-components ──────────────────────────────────────
 
-/** Short allergen notice — avoids the previous full-width light “card” banner. */
-function CompactAllergenAlert({ section, t }) {
+const ALLERGEN_KEY_LABELS = {
+  peanuts:   ["peanut", "peanuts"],
+  tree_nuts: ["tree nut", "tree nuts"],
+  dairy:     ["dairy", "milk"],
+  gluten:    ["gluten"],
+  shellfish: ["shellfish"],
+  soy:       ["soy", "soya"],
+  eggs:      ["egg", "eggs"],
+  fish:      ["fish"],
+  sesame:    ["sesame"],
+  wheat:     ["wheat"],
+};
+
+/** Short allergen notice — only shown when user's profile has a matching allergen enabled. */
+function CompactAllergenAlert({ section, t, userAllergenPreferences }) {
   if (!section?.items?.length) return null;
-  const allergens = section.items.map((entry) => translateAllergenValue(t, entry.label));
+
+  const enabledKeys = (userAllergenPreferences || [])
+    .filter((p) => p.is_enabled)
+    .map((p) => p.allergen_key);
+  if (enabledKeys.length === 0) return null;
+
+  const enabledLabels = new Set(
+    enabledKeys.flatMap((k) => ALLERGEN_KEY_LABELS[k] || [k.replace(/_/g, " ")])
+  );
+  const matchingItems = section.items.filter((entry) =>
+    enabledLabels.has((entry.label || "").toLowerCase())
+  );
+  if (matchingItems.length === 0) return null;
+
+  const allergens = matchingItems.map((entry) => translateAllergenValue(t, entry.label));
   const disclosure = translateInsightText(t, section.disclosure || "");
   return (
     <div
@@ -1065,7 +1092,7 @@ export default function MenuItemInfoPage() {
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const { language, t } = useLanguage();
-  const { isAuthenticated, allergenFilter } = useConsumer();
+  const { isAuthenticated, allergenFilter, allergenPreferences } = useConsumer();
 
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
@@ -1314,7 +1341,7 @@ export default function MenuItemInfoPage() {
                 </div>
               )}
 
-              {hasNutritionData ? <CompactAllergenAlert section={detailSystem?.allergen_alerts} t={t} /> : null}
+              {hasNutritionData ? <CompactAllergenAlert section={detailSystem?.allergen_alerts} t={t} userAllergenPreferences={isAuthenticated ? allergenPreferences : null} /> : null}
             </div>
           </div>
 
