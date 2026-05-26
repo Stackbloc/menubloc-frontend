@@ -40,6 +40,20 @@ const st = {
   subbrand: { fontSize: 12, color: "#666", marginBottom: 28 },
   pageTitle:    { fontSize: 22, fontWeight: 700, marginTop: 20, marginBottom: 4 },
   pageSubtitle: { fontSize: 14, color: "#666", marginBottom: 28 },
+  introBlock: {
+    marginBottom: 20,
+    padding: "16px 18px",
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "linear-gradient(180deg, rgba(17,17,17,0.92) 0%, rgba(32,32,32,0.9) 100%)",
+    boxShadow: "0 20px 40px rgba(0,0,0,0.14)",
+  },
+  introText: {
+    margin: 0,
+    fontSize: 14,
+    lineHeight: 1.7,
+    color: "rgba(255,255,255,0.9)",
+  },
 
   section: {
     background: "#f7f7fb",
@@ -120,6 +134,65 @@ const st = {
   planPrice: { fontSize: 28, fontWeight: 900, color: "#111" },
   planPer:   { fontSize: 13, color: "#666", marginLeft: 4 },
   planSavings: { fontSize: 11, color: "#16a34a", fontWeight: 700, marginTop: 2, marginBottom: 12 },
+  planSummaryGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+    gap: 10,
+    marginBottom: 14,
+  },
+  planSummaryItem: {
+    borderRadius: 12,
+    border: "1px solid #ececf2",
+    background: "#fff",
+    padding: "10px 12px",
+  },
+  planSummaryLabel: {
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "#78716c",
+    marginBottom: 4,
+  },
+  planSummaryValue: {
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#111",
+    lineHeight: 1.4,
+  },
+  planChart: {
+    borderRadius: 14,
+    overflow: "hidden",
+    border: "1px solid #ececf2",
+    background: "#fff",
+  },
+  planChartHeader: {
+    display: "grid",
+    gridTemplateColumns: "1fr auto",
+    gap: 12,
+    padding: "10px 14px",
+    background: "#f3f4f6",
+    fontSize: 11,
+    fontWeight: 800,
+    color: "#444",
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+  },
+  planChartRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr auto",
+    gap: 12,
+    padding: "11px 14px",
+    borderTop: "1px solid #ececf2",
+    alignItems: "center",
+    fontSize: 13,
+    color: "#333",
+  },
+  planChartValue: {
+    fontWeight: 800,
+    color: "#111",
+    whiteSpace: "nowrap",
+  },
   planFeatures: { listStyle: "none", padding: 0, margin: "12px 0 0", fontSize: 13, color: "#333", lineHeight: 1.7 },
   planFeatureItem: { display: "flex", gap: 8, alignItems: "flex-start" },
   checkmark: { color: "#111", fontWeight: 900, marginTop: 1, flexShrink: 0 },
@@ -165,6 +238,13 @@ const TRUCK_FEATURES = [
   "Update your live location and schedule",
   "Appear in Menuply food truck discovery",
   "Upcoming locations and events schedule page",
+];
+
+const PLAN_SUMMARY_ITEMS = [
+  { label: "Billing", value: "$39 yearly" },
+  { label: "Commission", value: "8% per order" },
+  { label: "Ordering", value: "Pickup + DoorDash" },
+  { label: "Tools", value: "Full operator access" },
 ];
 
 export default function FoodTruckSignup() {
@@ -306,7 +386,7 @@ export default function FoodTruckSignup() {
           restaurant_id: restaurant.id,
           owner_token,
           email,
-          plan_code:   "foodtruck_verified_annual",
+          plan_code:   "food_truck_annual",
           success_url: `${origin}/foodtruck/signup?checkout=success`,
           cancel_url:  `${origin}/foodtruck/signup?checkout=cancelled`,
           legal_acceptance: {
@@ -343,7 +423,7 @@ export default function FoodTruckSignup() {
         />
         <div style={{ ...st.successBanner, marginTop: 28 }}>
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>You are listed!</div>
-          Your Menuply Food Truck Verified subscription is active. Your truck profile is now live and discoverable.
+          Your Menuply Food Truck Annual plan is active. Your truck profile is now live and discoverable.
         </div>
         <a
           href="/foodtruck/dashboard"
@@ -371,6 +451,15 @@ export default function FoodTruckSignup() {
       <div style={st.pageSubtitle}>
         Get discovered by customers looking for food trucks in your area.
       </div>
+      <div style={st.introBlock}>
+        <p style={st.introText}>
+          Food trucks bring creativity, energy, and local character to the food industry.
+          They introduce new flavors, serve communities in flexible ways, and often become
+          the starting point for some of the most innovative restaurant concepts. We are
+          proud to offer a plan designed specifically to reflect the unique role food trucks
+          play in the restaurant industry every day.
+        </p>
+      </div>
 
       {checkoutResult === "cancelled" && !serverError ? (
         <div style={st.cancelledBanner}>
@@ -386,21 +475,33 @@ export default function FoodTruckSignup() {
         <div style={st.section}>
           <div style={st.sectionTitle}>Your Plan</div>
           <div style={st.planCard}>
-            <div style={st.planBadge}>Food Truck Verified</div>
-            <div style={st.planName}>Menuply Verified Listing</div>
+            <div style={st.planBadge}>Food Truck Annual</div>
+            <div style={st.planName}>Menuply Food Truck Plan</div>
             <div>
-              <span style={st.planPrice}>$49</span>
+              <span style={st.planPrice}>$39</span>
               <span style={st.planPer}>/ year</span>
             </div>
-            <div style={st.planSavings}>Less than $5/month</div>
-            <ul style={st.planFeatures}>
-              {TRUCK_FEATURES.map((f) => (
-                <li key={f} style={st.planFeatureItem}>
-                  <span style={st.checkmark}>✓</span>
-                  <span>{f}</span>
-                </li>
+            <div style={st.planSavings}>8% commission. Same core operator tools.</div>
+            <div style={st.planSummaryGrid}>
+              {PLAN_SUMMARY_ITEMS.map((item) => (
+                <div key={item.label} style={st.planSummaryItem}>
+                  <div style={st.planSummaryLabel}>{item.label}</div>
+                  <div style={st.planSummaryValue}>{item.value}</div>
+                </div>
               ))}
-            </ul>
+            </div>
+            <div style={st.planChart}>
+              <div style={st.planChartHeader}>
+                <span>Plan Details</span>
+                <span>Included</span>
+              </div>
+              {TRUCK_FEATURES.map((feature) => (
+                <div key={feature} style={st.planChartRow}>
+                  <span>{feature}</span>
+                  <span style={st.planChartValue}>Yes</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -590,7 +691,7 @@ export default function FoodTruckSignup() {
         </button>
 
         <div style={{ fontSize: 11, color: "#94a3b8", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
-          You will be taken to Stripe to complete your $49/year subscription.
+          You will be taken to Stripe to complete your $39/year subscription.
         </div>
 
       </form>
