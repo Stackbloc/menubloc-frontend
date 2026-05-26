@@ -671,13 +671,7 @@ export default function RestaurantSignup() {
         </div>
 
         <button type="submit" style={submitBtnStyle(submitting || !selectedPlanLabel || operatorLoading)} disabled={submitting || !selectedPlanLabel || operatorLoading}>
-          {submitting
-            ? "Creating account..."
-            : selectedPlan === "verified"
-            ? "Create account and continue with Verified"
-            : selectedPlan === "founders_annual"
-            ? "Create account and continue with Founder"
-            : "Create account and continue with Pro Partner"}
+          {submitting ? "Creating account..." : "Create account"}
         </button>
       </form>
     </div>

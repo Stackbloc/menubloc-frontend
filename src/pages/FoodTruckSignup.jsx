@@ -48,10 +48,8 @@ const styles = {
   hero: {
     marginBottom: 28,
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     alignItems: "flex-start",
-    gap: 18,
-    flexWrap: "wrap",
   },
   heroContent: {
     maxWidth: 700,
@@ -84,21 +82,6 @@ const styles = {
     lineHeight: 1.65,
     color: "#667085",
     maxWidth: 660,
-  },
-  heroAction: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6,
-    padding: "10px 18px",
-    borderRadius: 12,
-    border: "1px solid #1F4E3D",
-    background: "#ffffff",
-    color: "#1F4E3D",
-    fontSize: 13,
-    fontWeight: 700,
-    textDecoration: "none",
-    whiteSpace: "nowrap",
-    marginTop: 4,
   },
   contentGrid: {
     display: "grid",
@@ -304,26 +287,6 @@ const styles = {
   },
   fieldError: { fontSize: 12, color: "#c00", marginTop: 5 },
   helperText: { fontSize: 12, color: "#667085", marginTop: 6 },
-  expectationCard: {
-    marginBottom: 16,
-    padding: "14px 16px",
-    borderRadius: 14,
-    background: "#f8faf9",
-    border: "1px solid #d9e0ea",
-  },
-  expectationTitle: {
-    fontSize: 12,
-    fontWeight: 800,
-    color: "#1F4E3D",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    marginBottom: 6,
-  },
-  expectationBody: {
-    fontSize: 13,
-    lineHeight: 1.6,
-    color: "#475467",
-  },
   checkboxRow: {
     display: "flex",
     gap: 10,
@@ -547,14 +510,13 @@ export default function FoodTruckSignup() {
       <div style={styles.page}>
         <div style={styles.shell}>
           <BrandLockup
-            subtitle="for Food Trucks"
             logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
             wrapperStyle={{ marginBottom: 18 }}
           />
-          <div style={styles.successBanner}>
-            <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>You are listed!</div>
-            Your Menuply Food Truck Annual plan is active. You can finish your truck profile, menu, and live location details from the operator dashboard.
-          </div>
+        <div style={styles.successBanner}>
+          <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>You are listed!</div>
+          Your Menuply Food Truck Annual plan is active. You can finish your truck profile, menu, and live location details from the operator dashboard.
+        </div>
           <a
             href="/foodtruck/dashboard"
             style={{
@@ -584,7 +546,6 @@ export default function FoodTruckSignup() {
         <header style={styles.hero}>
           <div style={styles.heroContent}>
             <BrandLockup
-              subtitle="for Food Trucks"
               logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
               wrapperStyle={{ marginBottom: 8 }}
             />
@@ -594,9 +555,6 @@ export default function FoodTruckSignup() {
               Join Menuply with a food truck plan built for mobile operators. Create your account now, then add your live pickup location, menus, hours, and other truck details from the operator dashboard.
             </div>
           </div>
-          <Link to="/restaurant/signup" style={styles.heroAction}>
-            Restaurant signup
-          </Link>
         </header>
 
         {checkoutResult === "cancelled" && !serverError ? (
@@ -629,13 +587,6 @@ export default function FoodTruckSignup() {
           </aside>
 
           <div style={styles.formStack}>
-            <div style={styles.expectationCard}>
-              <div style={styles.expectationTitle}>Food Trucks on Menuply</div>
-              <div style={styles.expectationBody}>
-                Food trucks bring creativity, energy, and local character to the food industry. They introduce new flavors, serve communities in flexible ways, and often become the starting point for some of the most innovative restaurant concepts. We are proud to offer a plan designed specifically to reflect the unique role food trucks play in the restaurant industry every day.
-              </div>
-            </div>
-
             <div style={styles.formCard}>
               <div style={styles.formCardHeader}>
                 <h2 style={styles.formCardTitle}>Create your account</h2>
@@ -750,12 +701,8 @@ export default function FoodTruckSignup() {
                 </div>
 
                 <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
-                  {submitting ? "Redirecting to Stripe..." : "Create account and continue to payment"}
+                  {submitting ? "Redirecting to Stripe..." : "Create account"}
                 </button>
-
-                <div style={{ fontSize: 11, color: "#667085", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>
-                  You will be taken to Stripe to complete your $39/year subscription.
-                </div>
               </form>
             </div>
           </div>
