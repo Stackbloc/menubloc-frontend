@@ -1305,7 +1305,7 @@ export default function MenuItemInfoPage() {
               {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
               {!indulgencePresentation && detailSystem?.bread_score ? <BreadScoreInline detailSystem={detailSystem} /> : null}
 
-              {isMobile && itemDescription ? (
+              {itemDescription ? (
                 <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#D1D5DB", maxWidth: 760 }}>
                   {itemDescription}
                 </div>
@@ -1349,14 +1349,6 @@ export default function MenuItemInfoPage() {
           </div>
         </Surface>
       )}
-
-      {!isMobile && itemDescription ? (
-        <Surface style={{ marginTop: 16, padding: 18 }}>
-          <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#D1D5DB", maxWidth: 760 }}>
-            {itemDescription}
-          </div>
-        </Surface>
-      ) : null}
 
       {hasNutritionData ? (
         <>
