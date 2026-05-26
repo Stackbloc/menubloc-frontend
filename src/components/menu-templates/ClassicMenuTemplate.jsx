@@ -4,7 +4,7 @@ import ChipRail from "../chips/ChipRail.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 
-function RestaurantLogoSlot({ logoUrl, restaurantName, size = 52 }) {
+function RestaurantLogoSlot({ logoUrl, restaurantName, size = 56, accentBorder = "rgba(34,197,94,0.30)" }) {
   if (logoUrl) {
     return (
       <img
@@ -15,10 +15,11 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 52 }) {
         style={{
           width: size,
           height: size,
-          borderRadius: 14,
+          borderRadius: 16,
           objectFit: "cover",
           flexShrink: 0,
-          border: "1px solid rgba(31,41,55,0.9)",
+          border: `1.5px solid ${accentBorder}`,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
         }}
       />
     );
@@ -30,10 +31,10 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 52 }) {
       style={{
         width: size,
         height: size,
-        borderRadius: 14,
+        borderRadius: 16,
         flexShrink: 0,
         background: "#121A14",
-        border: "1px solid #1F2937",
+        border: `1.5px solid ${accentBorder}`,
       }}
     />
   );
@@ -56,6 +57,7 @@ export default function ClassicMenuTemplate(ctx) {
     addressLine,
     directionsHref,
     logoUrl,
+    heroImageUrl,
     shareData,
     shareAnalyticsContext,
     franchiseSlot,
@@ -90,23 +92,57 @@ export default function ClassicMenuTemplate(ctx) {
 
   return (
     <>
+      {heroImageUrl ? (
+        <div
+          aria-hidden
+          style={{
+            marginLeft: isMobile ? -12 : -20,
+            marginRight: isMobile ? -12 : -20,
+            height: isMobile ? 80 : 100,
+            overflow: "hidden",
+            position: "relative",
+            flexShrink: 0,
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: `url(${heroImageUrl})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center 35%",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(180deg, rgba(11,15,12,0.35) 0%, rgba(11,15,12,0.75) 100%)",
+            }}
+          />
+        </div>
+      ) : null}
       <div
         style={{
           position: "sticky",
           top: "var(--sph-h, 88px)",
           zIndex: 50,
-          background: "rgba(11, 15, 12, 0.95)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          borderBottom: "1px solid #1F2937",
-          marginBottom: isMobile ? 18 : 22,
+          background: "rgba(11, 15, 12, 0.97)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          borderBottom: `1px solid ${brand?.accentBorder ?? "rgba(34,197,94,0.20)"}`,
+          marginBottom: isMobile ? 20 : 24,
           marginLeft: isMobile ? -12 : -20,
           marginRight: isMobile ? -12 : -20,
-          padding: isMobile ? "10px 12px" : "12px 20px",
+          padding: isMobile ? "12px 12px" : "14px 20px",
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
-          <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />
+          <RestaurantLogoSlot
+            logoUrl={logoUrl}
+            restaurantName={restaurantName}
+            accentBorder={brand?.accentBorder ?? "rgba(34,197,94,0.30)"}
+          />
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", marginBottom: addressLine ? 2 : 0 }}>
               <div style={{ minWidth: 0, flex: "0 1 auto", display: "flex", alignItems: "center", gap: 6 }}>
@@ -115,10 +151,10 @@ export default function ClassicMenuTemplate(ctx) {
                     to={restaurantProfileHref}
                     title={`Open ${restaurantName} profile`}
                     style={{
-                      fontSize: isMobile ? 18 : 22,
-                      fontWeight: 900,
-                      letterSpacing: "-0.02em",
-                      lineHeight: 1.1,
+                      fontSize: isMobile ? 20 : 24,
+                      fontWeight: 800,
+                      letterSpacing: "-0.01em",
+                      lineHeight: 1.15,
                       color: "#FFFFFF",
                       textDecoration: "none",
                       minWidth: 0,
@@ -132,10 +168,10 @@ export default function ClassicMenuTemplate(ctx) {
                 ) : (
                   <div
                     style={{
-                      fontSize: isMobile ? 18 : 22,
-                      fontWeight: 900,
-                      letterSpacing: "-0.02em",
-                      lineHeight: 1.1,
+                      fontSize: isMobile ? 20 : 24,
+                      fontWeight: 800,
+                      letterSpacing: "-0.01em",
+                      lineHeight: 1.15,
                       color: "#FFFFFF",
                       minWidth: 0,
                       overflow: "hidden",
@@ -164,14 +200,15 @@ export default function ClassicMenuTemplate(ctx) {
                 onClick={onOpenFilters}
                 style={{
                   flexShrink: 0,
-                  border: "1px solid #1F2937",
-                  borderRadius: 999,
-                  background: "#1A2419",
-                  color: "#9CA3AF",
+                  border: `1px solid ${brand?.accentBorder ?? "rgba(34,197,94,0.30)"}`,
+                  borderRadius: 8,
+                  background: "transparent",
+                  color: brand?.accent ?? "#22C55E",
                   fontSize: 12,
-                  fontWeight: 800,
-                  padding: "6px 12px",
+                  fontWeight: 700,
+                  padding: "5px 11px",
                   cursor: "pointer",
+                  letterSpacing: "0.01em",
                 }}
               >
                 Filters
@@ -181,7 +218,7 @@ export default function ClassicMenuTemplate(ctx) {
             </div>
 
             {addressLine ? (
-              <div style={{ fontSize: 13, color: "#667085", fontWeight: 600 }}>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>
                 {directionsHref ? (
                   <a
                     href={directionsHref}
@@ -218,13 +255,10 @@ export default function ClassicMenuTemplate(ctx) {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 5,
-                    padding: "2px 8px",
-                    borderRadius: 999,
-                    background: "#1A2419",
-                    border: "1px solid #1F2937",
                     fontSize: 11,
-                    fontWeight: 700,
-                    color: "#9CA3AF",
+                    fontWeight: 600,
+                    color: "rgba(255,255,255,0.45)",
+                    letterSpacing: "0.02em",
                   }}
                 >
                   <span aria-hidden="true" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
@@ -235,13 +269,10 @@ export default function ClassicMenuTemplate(ctx) {
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    padding: "2px 8px",
-                    borderRadius: 999,
-                    background: "#1A2419",
-                    border: "1px solid #1F2937",
                     fontSize: 11,
-                    fontWeight: 700,
-                    color: "#9CA3AF",
+                    fontWeight: 600,
+                    color: "rgba(255,255,255,0.45)",
+                    letterSpacing: "0.02em",
                   }}
                 >
                   {menuTypeLabel}
@@ -341,22 +372,34 @@ export default function ClassicMenuTemplate(ctx) {
               const items = Array.isArray(sec?.items) ? sec.items : [];
 
               return (
-                <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 16 }}>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 900,
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                      color: "var(--gb-color-ink-muted)",
-                      marginTop: 16,
-                      marginBottom: 8,
-                    }}
-                  >
-                    {title}
+                <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        display: "inline-block",
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: brand?.accent ?? "#22C55E",
+                        flexShrink: 0,
+                        opacity: 0.7,
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 800,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: "rgba(255,255,255,0.6)",
+                      }}
+                    >
+                      {title}
+                    </span>
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {items.map((it, iIdx) => (
                       <PublicMenuItemCard
                         key={String(it?.id ?? `${sIdx}-${iIdx}`)}
