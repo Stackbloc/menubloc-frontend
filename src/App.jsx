@@ -636,13 +636,13 @@ export default function App() {
         <CrmProvider>
           <OperatorProvider>
             <CartProvider>
-              <OrderCartProvider>
-                <LanguageProvider>
+              <LanguageProvider>
+                <OrderCartProvider>
                   <BrowserRouter>
                     <AppShell easyMenu={easyMenu} crmHost={crmHost} />
                   </BrowserRouter>
-                </LanguageProvider>
-              </OrderCartProvider>
+                </OrderCartProvider>
+              </LanguageProvider>
             </CartProvider>
           </OperatorProvider>
         </CrmProvider>

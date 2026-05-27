@@ -40,6 +40,11 @@ import {
   buildDiscoveryLocationKey,
   dedupeDiscoveryMenus,
 } from "../lib/discoveryFeedGuardrails.js";
+import {
+  buildOutOfMarketJoinPath,
+  isOutOfMarketSearch,
+  resolveDiscoveryMarketLocation,
+} from "../lib/marketGate.js";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -767,8 +772,11 @@ export default function GrubbidDiscovery() {
 
   async function runSearch(queryValue = draftQuery) {
     console.log("[Discovery] search committed:", queryValue);
+    const locationOverride = getEffectiveSearchLocation();
+    if (redirectIfInactiveSearchMarket(locationOverride)) return;
+
     setCommittedQuery(queryValue.trim());
-    const params = buildSearchParams(queryValue, { locationOverride: getEffectiveSearchLocation() });
+    const params = buildSearchParams(queryValue, { locationOverride });
     setInlineError("");
     const qTerm = String(queryValue || "").trim();
     if (!qTerm) {
@@ -894,20 +902,28 @@ export default function GrubbidDiscovery() {
     consumerProfile?.location_source,
   ]);
 
-  useEffect(() => {
-    if (showBackendEmptyState) {
-      navigate("/join", { replace: true });
-    }
-  }, [showBackendEmptyState, navigate]);
-
   function getEffectiveSearchLocation() {
     const draft = locationInput.trim();
     if (showLocationEditor && draft) return draft;
     return appliedLocation;
   }
 
+  function redirectIfInactiveSearchMarket(locationOverride) {
+    const explicit = String(locationOverride ?? getEffectiveSearchLocation() ?? "").trim();
+    const marketLoc = resolveDiscoveryMarketLocation({
+      explicitLabel: explicit,
+      autoLocation,
+      useAutoGeo: shouldUseAutoGeo && !explicit,
+    });
+    if (!isOutOfMarketSearch(marketLoc)) return false;
+    navigate(buildOutOfMarketJoinPath(marketLoc));
+    return true;
+  }
+
   function handleChipClick(chip) {
-    const params = buildSearchParams(chip.query || "", { locationOverride: getEffectiveSearchLocation() });
+    const locationOverride = getEffectiveSearchLocation();
+    if (redirectIfInactiveSearchMarket(locationOverride)) return;
+    const params = buildSearchParams(chip.query || "", { locationOverride });
     if (chip.filterKey) {
       params.set(chip.filterKey, "true");
     }
@@ -1338,7 +1354,14 @@ export default function GrubbidDiscovery() {
                 height: 130, marginBottom: 10,
               }} />
             ))
-          ) : inlineError ? null : showBackendEmptyState ? null : showFilterEmptyState ? (
+          ) : inlineError ? null : showBackendEmptyState ? (
+            <div style={{
+              textAlign: "center", padding: "48px 20px",
+              color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
+            }}>
+              {"No menus found in this area yet. Try another city or search for food."}
+            </div>
+          ) : showFilterEmptyState ? (
             <div style={{
               textAlign: "center", padding: "48px 20px",
               color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
