@@ -128,12 +128,12 @@ export default function JoinPage() {
           <p style={styles.pricingLine}>Plans start at $299 annually or $49 monthly.</p>
 
           <div style={styles.ctaRow}>
-            <Link to="/restaurant/signup" style={styles.ctaPrimary}>
+            <Link to="/restaurant/join" style={styles.ctaPrimary}>
               Restaurant Signup
             </Link>
-            <a href="https://menuply.com/account/signup" style={styles.ctaSecondary}>
+            <Link to="/join/diners" style={styles.ctaSecondary}>
               Diner Signup
-            </a>
+            </Link>
           </div>
         </div>
       </div>
