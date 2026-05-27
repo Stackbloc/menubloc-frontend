@@ -1,4 +1,9 @@
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+const VITE_ENV = import.meta.env || {};
+const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
+const API = (
+  VITE_ENV.VITE_API_BASE_URL ||
+  (VITE_ENV.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
+).replace(/\/$/, "");
 
 async function req(path, opts = {}) {
   const res = await fetch(`${API}${path}`, {
@@ -48,7 +53,7 @@ export const getOwnerRevenueBySource = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/revenue/by-source${qs ? `?${qs}` : ""}`);
 };
-export const getOwnerAdmins = () => get("/api/owner/support/admins");
+export const getOwnerAdmins = () => get("/api/owner/admins");
 export const getOwnerSupportTickets = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/support/tickets${qs ? `?${qs}` : ""}`);
@@ -64,13 +69,3 @@ export const updateOwnerSupportTicketAssignment = (ticketId, assigned_to_user_id
   put(`/api/owner/support/tickets/${ticketId}/assign`, { assigned_to_user_id });
 export const updateOwnerSupportTicketPriority = (ticketId, priority) =>
   put(`/api/owner/support/tickets/${ticketId}/priority`, { priority });
-
-export const getOwnerMenuUploads = (params = {}) => {
-  const qs = new URLSearchParams(params).toString();
-  return get(`/api/owner/menu-uploads${qs ? `?${qs}` : ""}`);
-};
-export const getOwnerMenuUpload = (id) => get(`/api/owner/menu-uploads/${id}`);
-export const markOwnerMenuUploadReview = (id) => post(`/api/owner/menu-uploads/${id}/mark-review`, {});
-export const markOwnerMenuUploadReviewed = (id) => post(`/api/owner/menu-uploads/${id}/mark-reviewed`, {});
-export const retryOwnerMenuUpload = (id) => post(`/api/owner/menu-uploads/${id}/retry`, {});
-export const archiveOwnerMenuUpload = (id) => post(`/api/owner/menu-uploads/${id}/archive`, {});
