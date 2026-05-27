@@ -195,6 +195,42 @@ const styles = {
     color: featured ? "#1F4E3D" : "#ffffff",
     marginTop: 1,
   }),
+  foodTruckRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 14,
+    marginBottom: 4,
+  },
+  foodTruckPrompt: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#344054",
+    lineHeight: 1.4,
+  },
+  foodTruckLink: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    padding: "10px 18px",
+    borderRadius: 12,
+    border: "1px solid #1F4E3D",
+    background: "#ffffff",
+    color: "#1F4E3D",
+    fontSize: 13,
+    fontWeight: 700,
+    textDecoration: "none",
+    whiteSpace: "nowrap",
+  },
+  foodTruckIcon: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    color: "#1F4E3D",
+  },
   button: (featured) => ({
     width: "100%",
     minHeight: 50,
@@ -214,6 +250,21 @@ const styles = {
     textAlign: "center",
   }),
 };
+
+function FoodTruckIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M3 6h11v8H3V6zm11 2h3l3 3v3h-6V8zM6 17a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm9 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M14 8V6H3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export default function RestaurantSignupEntry() {
   const navigate = useNavigate();
@@ -236,28 +287,16 @@ export default function RestaurantSignupEntry() {
               logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
               wrapperStyle={{ marginBottom: 8 }}
             />
-            <Link
-              to="/foodtruck/signup"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "10px 18px",
-                borderRadius: 12,
-                border: "1px solid #1F4E3D",
-                background: "#ffffff",
-                color: "#1F4E3D",
-                fontSize: 13,
-                fontWeight: 700,
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-                marginTop: 6,
-                marginBottom: 14,
-              }}
-            >
-              Food Truck Signup
-            </Link>
             <div style={styles.eyebrow}>Restaurant Signup</div>
+            <div style={styles.foodTruckRow}>
+              <span style={styles.foodTruckIcon} aria-hidden>
+                <FoodTruckIcon />
+              </span>
+              <span style={styles.foodTruckPrompt}>Food Truck Owner?</span>
+              <Link to="/foodtruck/signup" style={styles.foodTruckLink}>
+                Signup
+              </Link>
+            </div>
             <h1 style={{
               fontSize: "clamp(1.7rem, 3.5vw, 2.6rem)",
               fontWeight: 900,

@@ -13,14 +13,17 @@ export default function OwnerRestaurants() {
   }, [filters]);
 
   return (
-    <OwnerLayout title="Restaurant Signups" actions={<Filters value={filters} onChange={setFilters} />}>
+    <OwnerLayout title="Restaurant Profile" actions={<Filters value={filters} onChange={setFilters} />}>
       {error ? <ErrorBanner message={error} /> : null}
       {!data?.available ? <EmptyState>{data?.reason || "Restaurant signup data is not available."}</EmptyState> : (
         <div style={{ display: "grid", gap: 18 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(180px, 1fr))", gap: 14 }}>
-            <MetricCard label="Total Signups" value={data?.summary?.total_signups} />
+            <MetricCard label="Total Profiles" value={data?.summary?.total_signups} />
             <MetricCard label="Claimed" value={data?.summary?.claimed_restaurants} />
-            <MetricCard label="Pro" value={data?.summary?.pro_signups} />
+            <PaidSubscribersCard
+              annual={data?.summary?.paid_subscribers_annual}
+              monthly={data?.summary?.paid_subscribers_monthly}
+            />
             <MetricCard label="Free / Verified" value={data?.summary?.non_pro_signups} />
           </div>
 
@@ -71,6 +74,17 @@ function Filters({ value, onChange }) {
 
 function MetricCard({ label, value }) {
   return <PageCard style={{ padding: 18 }}><div style={{ fontSize: 12, fontWeight: 700 }}>{label}</div><div style={{ fontSize: 28, fontWeight: 800, marginTop: 10 }}>{value ?? "N/A"}</div></PageCard>;
+}
+
+function PaidSubscribersCard({ annual, monthly }) {
+  return (
+    <PageCard style={{ padding: 18 }}>
+      <div style={{ fontSize: 12, fontWeight: 700 }}>Paid Subscribers</div>
+      <div style={{ fontSize: 16, fontWeight: 700, marginTop: 12, lineHeight: 1.5 }}>
+        Annual: {annual ?? "N/A"} / Monthly: {monthly ?? "N/A"}
+      </div>
+    </PageCard>
+  );
 }
 
 function SimpleTable({ rows, columns }) {

@@ -6,7 +6,7 @@ const NAV = [
   { to: "/owner", label: "Dashboard" },
   { to: "/owner/analytics", label: "Site Analytics" },
   { to: "/owner/search-analytics", label: "Search Analytics" },
-  { to: "/owner/restaurants", label: "Restaurants" },
+  { to: "/owner/restaurants", label: "Restaurant Profile" },
   { to: "/owner/revenue", label: "Revenue" },
   { to: "/owner/support", label: "Support Tickets" },
   { to: "/owner/menu-uploads", label: "Menu Uploads" },
