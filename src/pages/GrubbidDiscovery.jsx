@@ -36,6 +36,7 @@ import FeaturedDiscoveryCard from "../components/discovery/FeaturedDiscoveryCard
 import DiscoveryMoreSheet from "../components/grubbid/DiscoveryMoreSheet.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import {
+  appliedLocationMatchesGeoCityState,
   buildDiscoveryFeedScopeKey,
   buildDiscoveryLocationKey,
   dedupeDiscoveryMenus,
@@ -43,6 +44,7 @@ import {
 import {
   buildOutOfMarketJoinPath,
   isOutOfMarketSearch,
+  activeMarketsShareBrowseScope,
   resolveDiscoveryMarketLocation,
 } from "../lib/marketGate.js";
 
@@ -475,28 +477,56 @@ export default function GrubbidDiscovery() {
   const autoLocationMatchesApplied =
     Boolean(normalizedAppliedLocation) &&
     normalizedAppliedLocation === normalizedAutoLocationLabel;
-  const shouldUseAutoGeo =
+  const geoMarketLocation = useMemo(
+    () =>
+      resolveDiscoveryMarketLocation({
+        autoLocation,
+        useAutoGeo: autoLocation.status === "ready",
+      }),
+    [autoLocation]
+  );
+  const appliedMarketLocation = useMemo(
+    () =>
+      appliedLocation
+        ? resolveDiscoveryMarketLocation({ explicitLabel: appliedLocation })
+        : null,
+    [appliedLocation]
+  );
+  // Radius browse (stable ~8mi count): device geo in an active market AND the selected
+  // label is unset, matches geo label, same city/state, or another city in the same active
+  // market (e.g. re-pick "Los Angeles, CA" after visiting Dothan while still in LA County).
+  const shouldUseGeoBrowse =
     autoLocation.status === "ready" &&
-    autoLocation.lat != null && autoLocation.lng != null &&
-    (!appliedLocation || autoLocationMatchesApplied) &&
-    !locationManuallySet.current;
+    autoLocation.lat != null &&
+    autoLocation.lng != null &&
+    geoMarketLocation &&
+    (!appliedLocation ||
+      autoLocationMatchesApplied ||
+      appliedLocationMatchesGeoCityState(appliedLocation, autoLocation) ||
+      (appliedMarketLocation &&
+        activeMarketsShareBrowseScope(geoMarketLocation, appliedMarketLocation)));
   const locationKey = useMemo(
-    () => buildDiscoveryLocationKey({ shouldUseAutoGeo, autoLocation, appliedLocation }),
-    [shouldUseAutoGeo, autoLocation, appliedLocation]
+    () => buildDiscoveryLocationKey({ shouldUseGeoBrowse, autoLocation, appliedLocation }),
+    [shouldUseGeoBrowse, autoLocation, appliedLocation]
   );
   const joinInfoPath = useMemo(() => {
     const explicit = String(appliedLocation || "").trim();
     const marketLoc = resolveDiscoveryMarketLocation({
       explicitLabel: explicit,
       autoLocation,
-      useAutoGeo: shouldUseAutoGeo && !explicit,
+      useAutoGeo: shouldUseGeoBrowse && !explicit,
     });
     return buildOutOfMarketJoinPath(marketLoc || {});
-  }, [appliedLocation, shouldUseAutoGeo, autoLocation]);
+  }, [appliedLocation, shouldUseGeoBrowse, autoLocation]);
 
   const feedScopeKey = useMemo(
-    () => buildDiscoveryFeedScopeKey({ locationKey, filters }),
-    [locationKey, filters]
+    () =>
+      buildDiscoveryFeedScopeKey({
+        locationKey,
+        filters,
+        browseMode: shouldUseGeoBrowse ? "geo" : "city",
+      }),
+    [locationKey, filters, shouldUseGeoBrowse]
   );
 
   const activeFilterLabel = (() => {
@@ -579,7 +609,7 @@ export default function GrubbidDiscovery() {
   function buildApiLocationParams() {
     const requestedLocationValue = String(getEffectiveSearchLocation() || "").trim();
     const explicitLocationValue =
-      shouldUseAutoGeo && (!requestedLocationValue || normalizeLocationLabel(requestedLocationValue) === normalizedAutoLocationLabel)
+      shouldUseGeoBrowse && (!requestedLocationValue || normalizeLocationLabel(requestedLocationValue) === normalizedAutoLocationLabel)
         ? ""
         : requestedLocationValue;
     const params = buildSearchLocationParams({
@@ -676,17 +706,13 @@ export default function GrubbidDiscovery() {
   // Auto-load feed when location becomes available or changes
   useEffect(() => {
     const hasLocation =
-      shouldUseAutoGeo ||
+      shouldUseGeoBrowse ||
       appliedLocation;
     if (!hasLocation) return;
 
     const params = new URLSearchParams();
-    if (shouldUseAutoGeo) {
-      const hasAutoCityState = Boolean(autoLocation.city && autoLocation.state);
-      if (hasAutoCityState) {
-        params.set("city", String(autoLocation.city));
-        params.set("state", String(autoLocation.state));
-      }
+    if (shouldUseGeoBrowse) {
+      // Omit city/state so /menus/browse uses geo+radius (consistent local radius).
       params.set("lat", String(autoLocation.lat));
       params.set("lng", String(autoLocation.lng));
       params.set("radius", String(LOCAL_RADIUS_MILES));
@@ -744,7 +770,7 @@ export default function GrubbidDiscovery() {
       });
 
     return () => controller.abort();
-  }, [shouldUseAutoGeo, autoLocation.lat, autoLocation.lng, autoLocation.city, autoLocation.state, appliedLocation, filters, feedScopeKey, language]);
+  }, [shouldUseGeoBrowse, autoLocation.lat, autoLocation.lng, autoLocation.city, autoLocation.state, appliedLocation, filters, feedScopeKey, language]);
 
   // ── existing logic (unchanged) ──────────────────────────────────────────────
 
@@ -752,7 +778,7 @@ export default function GrubbidDiscovery() {
     const includeFilters = options.includeFilters !== false;
     const requestedLocationValue = String(options.locationOverride ?? appliedLocation ?? "").trim();
     const explicitLocationValue =
-      shouldUseAutoGeo && (!requestedLocationValue || normalizeLocationLabel(requestedLocationValue) === normalizedAutoLocationLabel)
+      shouldUseGeoBrowse && (!requestedLocationValue || normalizeLocationLabel(requestedLocationValue) === normalizedAutoLocationLabel)
         ? ""
         : requestedLocationValue;
     const params = buildSearchLocationParams({
@@ -761,7 +787,7 @@ export default function GrubbidDiscovery() {
       autoLocation,
       radiusMiles: LOCAL_RADIUS_MILES,
     });
-    if (shouldUseAutoGeo && autoLocation.label) {
+    if (shouldUseGeoBrowse && autoLocation.label) {
       params.set("location_label", autoLocation.label);
     }
     if (includeFilters) {
@@ -809,7 +835,7 @@ export default function GrubbidDiscovery() {
         setInlineError(t("discovery.noResultsFoundFor", `No results found for "${qTerm}"${nearText}`, { query: qTerm, nearText }));
       } else {
         const locationLabel = resolvedLocationLabel || "";
-        if (shouldUseAutoGeo) {
+        if (shouldUseGeoBrowse) {
           try {
             window.sessionStorage.removeItem(SESSION_LOCATION_KEY);
             window.sessionStorage.setItem(
@@ -826,7 +852,7 @@ export default function GrubbidDiscovery() {
       }
     } catch {
       const locationLabel = resolvedLocationLabel || "";
-      if (!shouldUseAutoGeo && locationLabel) {
+      if (!shouldUseGeoBrowse && locationLabel) {
         try { window.sessionStorage.setItem(SESSION_LOCATION_KEY, locationLabel); } catch {}
       }
       navigate(`/search?${params.toString()}`);
@@ -923,7 +949,7 @@ export default function GrubbidDiscovery() {
     const marketLoc = resolveDiscoveryMarketLocation({
       explicitLabel: explicit,
       autoLocation,
-      useAutoGeo: shouldUseAutoGeo && !explicit,
+      useAutoGeo: shouldUseGeoBrowse && !explicit,
     });
     if (!isOutOfMarketSearch(marketLoc)) return false;
     navigate(buildOutOfMarketJoinPath(marketLoc), { replace: true });
@@ -946,7 +972,7 @@ export default function GrubbidDiscovery() {
 
   function handleBrowse() {
     const p = new URLSearchParams();
-    if (shouldUseAutoGeo) {
+    if (shouldUseGeoBrowse) {
       if (autoLocation.city) p.set("city", autoLocation.city);
       if (autoLocation.state) p.set("state", autoLocation.state);
       p.set("lat", String(autoLocation.lat));
