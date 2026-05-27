@@ -62,7 +62,7 @@ export default function JoinPage() {
             Although Menuply is still expanding nationally, restaurants across the country can sign up and
             immediately begin using the platform&rsquo;s tools to promote their business, connect with
             customers, and accept direct online orders. Every restaurant that joins Menuply &mdash;
-            whether on a paid or free subscription &mdash; strengthens the network, expands local menu
+            whether on a <a href="https://menuply.com/restaurant/signup" style={{ color: "#1F4E3D", fontWeight: 600 }}>paid or free subscription</a> &mdash; strengthens the network, expands local menu
             visibility, and becomes part of a growing restaurant-powered ecosystem.
           </p>
 
