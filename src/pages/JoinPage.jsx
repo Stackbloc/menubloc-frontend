@@ -113,15 +113,13 @@ export default function JoinPage() {
           </p>
         </div>
 
-        <div style={styles.pricingCard}>
-          <div style={styles.ctaRow}>
-            <Link to="/restaurant/join" style={styles.ctaPrimary}>
-              Restaurant Signup
-            </Link>
-            <Link to="/join/diners" style={styles.ctaSecondary}>
-              Diner Signup
-            </Link>
-          </div>
+        <div style={styles.ctaRow}>
+          <Link to="/restaurant/join" style={styles.ctaPrimary}>
+            Restaurant Signup
+          </Link>
+          <Link to="/join/diners" style={styles.ctaSecondary}>
+            Diner Signup
+          </Link>
         </div>
       </div>
     </div>
@@ -272,12 +270,12 @@ const styles = {
     height: 52,
     padding: "0 28px",
     borderRadius: 16,
-    background: "rgba(255,255,255,0.12)",
-    color: "#fff",
+    background: "#fff",
+    color: "#1F4E3D",
     fontWeight: 700,
     fontSize: 15,
     textDecoration: "none",
-    border: "1px solid rgba(255,255,255,0.3)",
+    border: "1px solid #c7d9d2",
     cursor: "pointer",
     flexShrink: 0,
   },
