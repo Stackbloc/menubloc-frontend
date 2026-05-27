@@ -484,6 +484,16 @@ export default function GrubbidDiscovery() {
     () => buildDiscoveryLocationKey({ shouldUseAutoGeo, autoLocation, appliedLocation }),
     [shouldUseAutoGeo, autoLocation, appliedLocation]
   );
+  const joinInfoPath = useMemo(() => {
+    const explicit = String(appliedLocation || "").trim();
+    const marketLoc = resolveDiscoveryMarketLocation({
+      explicitLabel: explicit,
+      autoLocation,
+      useAutoGeo: shouldUseAutoGeo && !explicit,
+    });
+    return buildOutOfMarketJoinPath(marketLoc || {});
+  }, [appliedLocation, shouldUseAutoGeo, autoLocation]);
+
   const feedScopeKey = useMemo(
     () => buildDiscoveryFeedScopeKey({ locationKey, filters }),
     [locationKey, filters]
@@ -916,7 +926,7 @@ export default function GrubbidDiscovery() {
       useAutoGeo: shouldUseAutoGeo && !explicit,
     });
     if (!isOutOfMarketSearch(marketLoc)) return false;
-    navigate(buildOutOfMarketJoinPath(marketLoc));
+    navigate(buildOutOfMarketJoinPath(marketLoc), { replace: true });
     return true;
   }
 
@@ -1359,7 +1369,17 @@ export default function GrubbidDiscovery() {
               textAlign: "center", padding: "48px 20px",
               color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
             }}>
-              {"No menus found in this area yet. Try another city."}
+              {t("discovery.outOfMarketPrefix", "Please")}{" "}
+              <Link
+                to={joinInfoPath}
+                style={{ color: "#86EFAC", textDecoration: "underline", fontWeight: 700 }}
+              >
+                {t("discovery.outOfMarketLink", "click here")}
+              </Link>
+              {t(
+                "discovery.outOfMarketSuffix",
+                " for more information about Menuply in your area."
+              )}
             </div>
           ) : showFilterEmptyState ? (
             <div style={{
