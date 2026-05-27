@@ -24,13 +24,10 @@ const PLAN_SELECTION_ROUTE = "/restaurant/subscription";
 const PLAN_ENTRY_ROUTE = "/restaurant/signup";
 const DESIGN_SELECTION_ROUTE = "/restaurant/design-select";
 
-const PLAN_LABELS = {
-  verified: "Verified",
-  pro_partner: "Pro Partner",
-  founders_annual: "Founder",
-  pro_monthly: "Pro Partner",
-  pro_annual: "Pro Partner",
-};
+function planLabel(t, planCode) {
+  if (!planCode) return "";
+  return t(`signup.account.plan.${planCode}`, planCode);
+}
 
 const styles = {
   page: {
@@ -255,7 +252,7 @@ export default function RestaurantSignup() {
   const { t } = useLanguage();
   const { operator, isAuthenticated: isOperatorAuthenticated, loading: operatorLoading } = useOperator();
   const selectedPlan = location.state?.selected_plan || "";
-  const selectedPlanLabel = PLAN_LABELS[selectedPlan] || "";
+  const selectedPlanLabel = planLabel(t, selectedPlan);
 
   const [form, setForm] = useState({
     email: operator?.email || "",
@@ -462,29 +459,42 @@ export default function RestaurantSignup() {
           logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
           wrapperStyle={{ marginBottom: 6 }}
         />
-        <div style={styles.pageTitle}>Create your restaurant account</div>
+        <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your restaurant account")}</div>
         <div style={styles.pageSubtitle}>
-          Enter your restaurant details to continue with your selected plan.
+          {t(
+            "signup.account.pageSubtitleDetails",
+            "Enter your restaurant details to continue with your selected plan."
+          )}
         </div>
         {selectedPlanLabel ? (
           <div style={styles.planSummary}>
             <div>
-              <div style={styles.planSummaryLabel}>Selected plan</div>
+              <div style={styles.planSummaryLabel}>
+                {t("signup.account.selectedPlan", "Selected plan")}
+              </div>
               <div style={styles.planSummaryValue}>{selectedPlanLabel}</div>
             </div>
             <Link to={PLAN_ENTRY_ROUTE} style={styles.planSummaryLink}>
-              Change plan
+              {t("signup.account.changePlan", "Change plan")}
             </Link>
           </div>
         ) : null}
         <div style={styles.expectationCard}>
-          <div style={styles.expectationTitle}>Menuply Partner Expectation</div>
+          <div style={styles.expectationTitle}>
+            {t("signup.account.partnerExpectationTitle", "Menuply Partner Expectation")}
+          </div>
           <div style={styles.expectationBody}>
-            Restaurants always control their own pricing. Menuply is built for partners aligned with real diner value through better pricing, meaningful deals, richer menu information, and more direct engagement.
+            {t(
+              "signup.account.partnerExpectationBody",
+              "Restaurants always control their own pricing. Menuply is built for partners aligned with real diner value through better pricing, meaningful deals, richer menu information, and more direct engagement."
+            )}
           </div>
         </div>
         <div style={{ ...styles.helperText, marginTop: 10 }}>
-          Optional setup modules such as QR starter kit, equipment readiness, and launch deals stay optional later in onboarding.
+          {t(
+            "signup.account.optionalModulesNote",
+            "Optional setup modules such as QR starter kit, equipment readiness, and launch deals stay optional later in onboarding."
+          )}
         </div>
       </div>
 
@@ -496,17 +506,23 @@ export default function RestaurantSignup() {
       ) : null}
       {!selectedPlanLabel ? (
         <div style={styles.errorBanner}>
-          Choose a plan first to start restaurant signup. <Link to={PLAN_ENTRY_ROUTE}>Go to pricing</Link>
+          {t("signup.account.choosePlanFirst", "Choose a plan first to start restaurant signup.")}{" "}
+          <Link to={PLAN_ENTRY_ROUTE}>{t("signup.account.goToPricing", "Go to pricing")}</Link>
         </div>
       ) : null}
 
       <form onSubmit={handleSubmit} noValidate>
         <div style={styles.section}>
-          <div style={styles.sectionTitle}>Account</div>
+          <div style={styles.sectionTitle}>{t("signup.account.sectionAccount", "Account")}</div>
 
           {isOperatorAuthenticated ? (
             <div style={{ ...styles.helperText, marginBottom: 14 }}>
-              Signed in as <strong>{form.email || operator?.email}</strong>. This new listing will be attached to your existing operator account.
+              {t("signup.account.signedInAs", "Signed in as")}{" "}
+              <strong>{form.email || operator?.email}</strong>.{" "}
+              {t(
+                "signup.account.signedInAttachSuffix",
+                "This new listing will be attached to your existing operator account."
+              )}
             </div>
           ) : null}
 
@@ -532,7 +548,7 @@ export default function RestaurantSignup() {
               <PasswordInput
                 id="password"
                 name="password"
-                label="Password"
+                label={t("signup.password", "Password")}
                 value={form.password}
                 visible={showPassword}
                 onChange={handleChange}
@@ -543,7 +559,7 @@ export default function RestaurantSignup() {
               <PasswordInput
                 id="confirmPassword"
                 name="confirmPassword"
-                label="Confirm password"
+                label={t("signup.confirmPassword", "Confirm password")}
                 value={form.confirmPassword}
                 visible={showConfirmPassword}
                 onChange={handleChange}
@@ -553,7 +569,9 @@ export default function RestaurantSignup() {
 
               {!fieldErrors.confirmPassword && form.confirmPassword ? (
                 <div style={styles.helperText}>
-                  {form.password === form.confirmPassword ? "Passwords match." : "Passwords do not match."}
+                  {form.password === form.confirmPassword
+                    ? t("signup.account.passwordsMatch", "Passwords match.")
+                    : t("signup.account.passwordsNoMatch", "Passwords do not match.")}
                 </div>
               ) : null}
             </>
@@ -561,7 +579,9 @@ export default function RestaurantSignup() {
         </div>
 
         <div style={styles.section}>
-          <div style={styles.sectionTitle}>Restaurant basics</div>
+          <div style={styles.sectionTitle}>
+            {t("signup.account.sectionRestaurantBasics", "Restaurant basics")}
+          </div>
 
           <div style={styles.fieldGroup}>
             <label htmlFor="restaurant_name" style={styles.label}>
@@ -631,7 +651,7 @@ export default function RestaurantSignup() {
         </div>
 
         <div style={styles.section}>
-          <div style={styles.sectionTitle}>Legal</div>
+          <div style={styles.sectionTitle}>{t("signup.account.sectionLegal", "Legal")}</div>
 
           <label style={styles.checkboxRow}>
             <input
@@ -642,9 +662,9 @@ export default function RestaurantSignup() {
               style={styles.checkbox}
             />
             <span style={styles.checkboxLabel}>
-              I agree to the{" "}
+              {t("signup.account.agreeMerchantTermsPrefix", "I agree to the")}{" "}
               <Link to="/restaurant/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>
-                Merchant Terms of Service
+                {t("signup.account.merchantTermsLink", "Merchant Terms of Service")}
               </Link>
               .
             </span>
@@ -660,9 +680,9 @@ export default function RestaurantSignup() {
               style={styles.checkbox}
             />
             <span style={styles.checkboxLabel}>
-              I agree to the{" "}
+              {t("signup.account.agreePrivacyPrefix", "I agree to the")}{" "}
               <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.legalLink}>
-                Privacy Policy
+                {t("signup.account.privacyLink", "Privacy Policy")}
               </Link>
               .
             </span>
@@ -671,7 +691,9 @@ export default function RestaurantSignup() {
         </div>
 
         <button type="submit" style={submitBtnStyle(submitting || !selectedPlanLabel || operatorLoading)} disabled={submitting || !selectedPlanLabel || operatorLoading}>
-          {submitting ? "Creating account..." : "Create account"}
+          {submitting
+            ? t("signup.account.creatingAccount", "Creating account...")
+            : t("signup.account.createAccountButton", "Create account")}
         </button>
       </form>
     </div>

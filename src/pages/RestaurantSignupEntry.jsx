@@ -309,14 +309,14 @@ export default function RestaurantSignupEntry() {
               logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
               wrapperStyle={{ marginBottom: 8 }}
             />
-            <div style={styles.eyebrow}>Restaurant Signup</div>
+            <div style={styles.eyebrow}>{t("signup.entry.eyebrow", "Restaurant Signup")}</div>
             <div style={styles.foodTruckRow}>
               <span style={styles.foodTruckIcon} aria-hidden>
                 <FoodTruckIcon />
               </span>
-              <span style={styles.foodTruckPrompt}>Food Truck Owner?</span>
+              <span style={styles.foodTruckPrompt}>{t("signup.entry.foodTruckOwner", "Food Truck Owner?")}</span>
               <Link to="/foodtruck/signup" style={styles.foodTruckLink}>
-                Signup
+                {t("signup.entry.foodTruckSignup", "Signup")}
               </Link>
             </div>
             <h1 style={{
@@ -357,7 +357,9 @@ export default function RestaurantSignupEntry() {
               aria-label={plan.cta}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePlanSelect(plan.code); } }}
             >
-              {plan.featured ? <div style={styles.badge}>Most Popular</div> : null}
+              {plan.featured ? (
+                <div style={styles.badge}>{t("signup.entry.mostPopular", "Most Popular")}</div>
+              ) : null}
               <div style={styles.planName}>{plan.name}</div>
               <div style={styles.price}>{plan.price}</div>
               <div style={styles.description}>{plan.description}</div>
