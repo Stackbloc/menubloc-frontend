@@ -10,7 +10,12 @@
  * ============================================================
  */
 
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+const VITE_ENV = import.meta.env || {};
+const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
+const API = (
+  VITE_ENV.VITE_API_BASE_URL ||
+  (VITE_ENV.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
+).replace(/\/$/, "");
 
 // Exported for components that construct raw URLs (e.g. EventSource for SSE)
 export const API_BASE = API;

@@ -11,10 +11,11 @@
 // VITE_API_BASE_URL must be set in Vercel env vars for production.
 // In local dev it falls back to localhost:3001 automatically.
 const VITE_ENV = import.meta.env || {};
+const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
 
 const API_BASE = (
   VITE_ENV.VITE_API_BASE_URL ||
-  (VITE_ENV.DEV ? "http://localhost:3001" : "")
+  (VITE_ENV.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
 ).replace(/\/$/, "");
 
 async function safeJson(res) {
