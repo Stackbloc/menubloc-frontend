@@ -150,6 +150,8 @@ export const updateMenuItem = (rid, iid, body) => patch(`/operator/restaurants/$
 export const publishMenuItem = (rid, iid) => post(`/operator/restaurants/${rid}/menu-items/${iid}/publish`, {});
 export const deleteMenuItem = (rid, iid) => del(`/operator/restaurants/${rid}/menu-items/${iid}`);
 export const getPriceHistory = (rid, iid) => get(`/operator/restaurants/${rid}/menu-items/${iid}/price-history`);
+export const submitMenuIntake = (rid, text) =>
+  post(`/operator/restaurants/${rid}/menu-intake`, { text });
 
 // ── Restaurant: Deals ─────────────────────────────────────────────────────
 export const getDeals = (rid, params = {}) => {
@@ -235,8 +237,6 @@ export const saveDeliveryProviderAccount = (rid, provider, body) =>
   });
 export const disconnectDeliveryProviderAccount = (rid, provider) =>
   del(`/operator/restaurants/${rid}/delivery/providers/${provider}`);
-export const updateFoodTruckCurrentLocation = (rid, body) =>
-  patch(`/api/food-trucks/${rid}/current-location`, body);
 
 // ── Restaurant: Orders (existing endpoints — do not remove) ───────────────
 export const getRestaurantOrders = (rid, params = {}) => {

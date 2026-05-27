@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -258,9 +258,6 @@ export default function OperatorMenuEditor() {
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
   const navigate = useNavigate();
-  const location = useLocation();
-  const { menuId: routeMenuId } = useParams();
-  const routeIsEditMode = Boolean(routeMenuId);
 
   const [menus, setMenus]             = useState([]);
   const [selectedMenuId, setSelectedMenuId] = useState(null);
@@ -269,7 +266,9 @@ export default function OperatorMenuEditor() {
   const [loadingMenus, setLoadingMenus] = useState(false);
   const [loadingItems, setLoadingItems] = useState(false);
   const [error, setError]             = useState("");
+  const [statusMessage, setStatusMessage] = useState(null);
   const [upgradePrompt, setUpgradePrompt] = useState(false);
+  const [menuEditMode, setMenuEditMode] = useState(false);
 
   const [showNewMenuForm, setShowNewMenuForm] = useState(false);
   const [newMenuName, setNewMenuName]         = useState("");
@@ -291,19 +290,29 @@ export default function OperatorMenuEditor() {
   const [deletingMenuId, setDeletingMenuId] = useState(null);
 
   const selectedMenu = menus.find(m => m.id === selectedMenuId);
-  const routeIsUploadHub = location.pathname === "/operator/menu/upload";
-  const routeIsPasteFlow = location.pathname === "/operator/menu/upload/paste";
 
-  useEffect(() => {
-    if (routeIsPasteFlow) {
-      setShowPasteForm(true);
-      setShowAddItem(false);
-      setEditingItem(null);
-      return;
+  function clearStatus() {
+    setStatusMessage(null);
+  }
+
+  function showSuccess(text) {
+    setStatusMessage({ type: "success", text });
+    setError("");
+  }
+
+  function showFailure(text) {
+    setStatusMessage({ type: "error", text });
+  }
+
+  function exitMenuEditMode({ reload = false } = {}) {
+    setMenuEditMode(false);
+    setEditingItem(null);
+    setShowAddItem(false);
+    setEditLoadingItemId(null);
+    if (reload && selectedMenuId) {
+      loadItems(selectedMenuId);
     }
-    if (!routeIsUploadHub) return;
-    setShowPasteForm(false);
-  }, [routeIsPasteFlow, routeIsUploadHub]);
+  }
 
   // Load menus
   useEffect(() => {
@@ -314,16 +323,18 @@ export default function OperatorMenuEditor() {
       .then(d => {
         const list = d.menus || [];
         setMenus(list);
-        if (routeMenuId) {
-          const target = list.find(m => m.id === Number(routeMenuId));
-          setSelectedMenuId(target?.id ?? list[0]?.id ?? null);
-        } else if (list.length) {
-          setSelectedMenuId(list[0].id);
+        if (list.length) {
+          setSelectedMenuId((prev) => {
+            if (prev && list.some((m) => m.id === prev)) return prev;
+            return list[0].id;
+          });
+        } else {
+          setSelectedMenuId(null);
         }
       })
       .catch(e => setError(e.message))
       .finally(() => setLoadingMenus(false));
-  }, [rid]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rid]);
 
   // Load items when menu changes
   const loadItems = useCallback(async (menuId) => {
@@ -371,11 +382,15 @@ export default function OperatorMenuEditor() {
   async function handlePublishMenu() {
     if (!selectedMenuId) return;
     setActionBusy(true);
+    clearStatus();
     try {
       const d = await api.publishMenu(rid, selectedMenuId);
       setMenus(menus.map(m => m.id === selectedMenuId ? { ...m, status: d.menu?.status } : m));
+      showSuccess(`"${selectedMenu?.name || "Menu"}" published successfully.`);
     } catch (e) {
-      setError(e.message);
+      const msg = e.message || "Could not publish menu.";
+      setError(msg);
+      showFailure(msg);
     } finally {
       setActionBusy(false);
     }
@@ -398,7 +413,12 @@ export default function OperatorMenuEditor() {
       if (!data?.item) {
         throw new Error("Item data could not be loaded for editing.");
       }
-      setEditingItem(data.item);
+      const raw = data.item;
+      setEditingItem({
+        ...raw,
+        canonical_category: raw.canonical_category || raw.category || "",
+        display_category_label: raw.display_category_label || raw.display_category || "",
+      });
     } catch (e) {
       setError(e.message || "Item data could not be loaded for editing.");
     } finally {
@@ -418,9 +438,7 @@ export default function OperatorMenuEditor() {
       });
       setItems(prev => [...prev, d.item]);
       setShowAddItem(false);
-      if (routeIsPasteFlow) {
-        navigate("/operator/menu", { replace: true });
-      }
+      showSuccess(`Added "${form.name.trim()}".`);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -442,8 +460,9 @@ export default function OperatorMenuEditor() {
       const published = await api.publishMenuItem(rid, editingItem.id);
       setItems(prev => prev.map(i => i.id === editingItem.id ? published.item : i));
       setEditingItem(null);
+      showSuccess(`Saved changes to "${form.name.trim()}".`);
     } catch (e) {
-      setError(e.message);
+      setError(e.message || "Could not save item changes.");
     } finally {
       setActionBusy(false);
     }
@@ -455,8 +474,11 @@ export default function OperatorMenuEditor() {
     try {
       const d = await api.publishMenuItem(rid, item.id);
       setItems(prev => prev.map(i => i.id === item.id ? d.item : i));
+      showSuccess(`Published "${item.name}".`);
     } catch (e) {
-      setError(e.message);
+      const msg = e.message || "Could not publish item.";
+      setError(msg);
+      showFailure(msg);
     } finally {
       setActionBusy(false);
     }
@@ -469,8 +491,11 @@ export default function OperatorMenuEditor() {
     try {
       await api.deleteMenuItem(rid, item.id);
       setItems(prev => prev.filter(i => i.id !== item.id));
+      showSuccess(`Removed "${item.name}".`);
     } catch (e) {
-      setError(e.message);
+      const msg = e.message || "Could not remove item.";
+      setError(msg);
+      showFailure(msg);
     } finally {
       setActionBusy(false);
     }
@@ -499,26 +524,18 @@ export default function OperatorMenuEditor() {
   async function handlePasteSubmit() {
     if (!pasteText.trim() || !rid) return;
     setPasteBusy(true);
+    clearStatus();
     try {
-      const res = await fetch(`/api/operator/restaurants/${rid}/menu-intake`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ text: pasteText.trim() }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || "Submission failed");
-      }
+      await api.submitMenuIntake(rid, pasteText.trim());
       setPasteText("");
       setShowPasteForm(false);
       setPasteSuccess(true);
-      if (routeIsPasteFlow) {
-        navigate("/operator/menu", { replace: true });
-      }
+      showSuccess("Menu text received. Menuply will structure it for review shortly.");
       setTimeout(() => setPasteSuccess(false), 6000);
     } catch (e) {
-      setError(e.message);
+      const msg = e.message || "Could not submit menu text.";
+      setError(msg);
+      showFailure(msg);
     } finally {
       setPasteBusy(false);
     }
@@ -551,9 +568,13 @@ export default function OperatorMenuEditor() {
       if (selectedMenuId === menuId) {
         setSelectedMenuId(remaining.length ? remaining[0].id : null);
         setItems([]);
+        setMenuEditMode(false);
       }
+      showSuccess(`Deleted "${menu?.name || "menu"}".`);
     } catch (e) {
-      setError(e.message);
+      const msg = e.message || "Could not delete menu.";
+      setError(msg);
+      showFailure(msg);
     } finally {
       setDeletingMenuId(null);
     }
@@ -576,54 +597,14 @@ export default function OperatorMenuEditor() {
 
   return (
     <OperatorLayout title="Menu">
-      {routeIsEditMode ? (
-        /* ── Edit-mode header ───────────────────────────────────────── */
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button
-              type="button"
-              onClick={() => navigate("/operator/menu")}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#8a9ab0", fontWeight: 700, padding: 0, fontFamily: "inherit" }}
-            >
-              ← Menus
-            </button>
-            <div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>
-                {selectedMenu ? `Editing: ${selectedMenu.name}` : "Edit Menu"}
-              </div>
-              <div style={{ fontSize: 13, color: "#8a9ab0", marginTop: 2 }}>
-                Add, edit, and manage items for this menu.
-              </div>
-            </div>
-          </div>
-          <button
-            type="button"
-            style={{ ...BTN("primary"), padding: "10px 20px" }}
-            onClick={() => navigate("/operator/menu")}
-          >
-            Done
-          </button>
-        </div>
-      ) : (
-        /* ── Overview header ────────────────────────────────────────── */
-        <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>Menu</div>
-            <div style={{ fontSize: 13, color: "#8a9ab0", marginTop: 4 }}>
-              Upload your menu, add items, and edit what appears on your public profile.
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              style={BTN(routeIsUploadHub || routeIsPasteFlow ? "primary" : "ghost")}
-              onClick={() => navigate("/operator/menu/upload")}
-            >
-              Add via Upload
-            </button>
+      <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+        <div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>Menu</div>
+          <div style={{ fontSize: 13, color: "#8a9ab0", marginTop: 4 }}>
+            Upload your menu, add items, and edit what appears on your public profile.
           </div>
         </div>
-      )}
+      </div>
 
       {/* ── Top bar: New → Edit → Publish → Delete ───────────────── */}
       <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
@@ -678,28 +659,34 @@ export default function OperatorMenuEditor() {
                 Cancel
               </button>
             </div>
-          ) : (
+          ) : menuEditMode ? (
             <>
-              {!routeIsEditMode && (
-                <button
-                  style={BTN("ghost")}
-                  onClick={() => navigate(`/operator/menu/${selectedMenuId}/edit`)}
-                >
-                  Edit
-                </button>
-              )}
-              {routeIsEditMode && (
-                <button
-                  style={BTN("ghost")}
-                  onClick={() => { setRenamingMenuId(selectedMenuId); setRenameValue(selectedMenu.name); }}
-                >
-                  Rename
-                </button>
-              )}
+              <button
+                style={BTN("primary")}
+                onClick={() => exitMenuEditMode({ reload: true })}
+                type="button"
+              >
+                Save
+              </button>
+              <button
+                style={BTN("muted")}
+                onClick={() => exitMenuEditMode({ reload: true })}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                style={BTN("ghost")}
+                onClick={() => { setRenamingMenuId(selectedMenuId); setRenameValue(selectedMenu.name); }}
+                type="button"
+              >
+                Rename
+              </button>
               <button
                 style={BTN("ghost")}
                 onClick={handlePublishMenu}
                 disabled={actionBusy}
+                type="button"
               >
                 Publish
               </button>
@@ -707,6 +694,36 @@ export default function OperatorMenuEditor() {
                 style={BTN("danger")}
                 disabled={deletingMenuId === selectedMenuId}
                 onClick={() => handleDeleteMenu(selectedMenuId)}
+                type="button"
+              >
+                {deletingMenuId === selectedMenuId ? "…" : "Delete"}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                style={BTN("ghost")}
+                onClick={() => {
+                  clearStatus();
+                  setMenuEditMode(true);
+                }}
+                type="button"
+              >
+                Edit
+              </button>
+              <button
+                style={BTN("ghost")}
+                onClick={handlePublishMenu}
+                disabled={actionBusy}
+                type="button"
+              >
+                Publish
+              </button>
+              <button
+                style={BTN("danger")}
+                disabled={deletingMenuId === selectedMenuId}
+                onClick={() => handleDeleteMenu(selectedMenuId)}
+                type="button"
               >
                 {deletingMenuId === selectedMenuId ? "…" : "Delete"}
               </button>
@@ -787,6 +804,29 @@ export default function OperatorMenuEditor() {
         </div>
       )}
 
+      {statusMessage && (
+        <div style={{
+          background: statusMessage.type === "success" ? "#d1fae5" : "#fef2f2",
+          border: `1px solid ${statusMessage.type === "success" ? "#6ee7b7" : "#fecaca"}`,
+          borderRadius: 10,
+          padding: "10px 14px",
+          color: statusMessage.type === "success" ? "#065f46" : "#b91c1c",
+          fontSize: 13,
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "space-between",
+        }}>
+          {statusMessage.text}
+          <button
+            onClick={clearStatus}
+            style={{ background: "none", border: "none", cursor: "pointer", fontWeight: 700, color: "inherit" }}
+            type="button"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Paste success banner */}
       {pasteSuccess && (
         <div style={{
@@ -794,47 +834,6 @@ export default function OperatorMenuEditor() {
           padding: "10px 14px", color: "#065f46", fontSize: 13, marginBottom: 16,
         }}>
           Menu text received. Menuply will structure it for review shortly.
-        </div>
-      )}
-
-      {routeIsUploadHub && (
-        <div style={{
-          background: "#fff",
-          border: "1px solid #e4e9f0",
-          borderRadius: 14,
-          padding: "24px 22px",
-          marginBottom: 20,
-        }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720", marginBottom: 6 }}>Upload Menu</div>
-          <div style={{ fontSize: 13, color: "#8a9ab0", marginBottom: 18 }}>
-            Choose how you want to bring your menu into Menuply. Items will appear in your menu editor after Menuply processes the upload.
-          </div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <UploadCard
-              icon="📋"
-              label="Paste menu text"
-              sub="Copy-paste from any source"
-              onClick={() => navigate("/operator/menu/upload/paste")}
-            />
-            <UploadCard
-              icon="📄"
-              label="Upload PDF"
-              sub="Stay in the operator flow"
-              onClick={() => navigate("/operator/menu/upload/pdf")}
-            />
-            <UploadCard
-              icon="📊"
-              label="Upload spreadsheet"
-              sub="Upload .xlsx or .csv"
-              onClick={() => navigate("/operator/menu/upload/spreadsheet")}
-            />
-            <UploadCard
-              icon="📷"
-              label="Upload photo/image"
-              sub="Capture menu pages"
-              onClick={() => navigate("/operator/menu/upload/photo")}
-            />
-          </div>
         </div>
       )}
 
@@ -891,13 +890,15 @@ export default function OperatorMenuEditor() {
           <div style={{ fontSize: 32, marginBottom: 12 }}>☰</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720", marginBottom: 8 }}>No menu selected</div>
           <div style={{ fontSize: 13, color: "#8a9ab0", marginBottom: 20 }}>
-            Create a menu above, then use Upload Menu to bring in your current menu.
+            Create a menu above, then paste text, upload a PDF, or add items one at a time.
           </div>
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-            <button style={BTN("ghost")} onClick={() => navigate("/operator/menu/upload")}>
-              Upload Menu
-            </button>
-            <button style={BTN("muted")} onClick={() => setShowNewMenuForm(true)}>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginBottom: 16 }}>
+            <UploadCard icon="📋" label="Paste menu text" sub="Copy & paste your menu" onClick={() => setShowPasteForm(true)} />
+            <UploadCard icon="📄" label="Upload PDF" sub="PDF menu file" onClick={() => navigate("/operator/menu/upload/pdf")} />
+            <UploadCard icon="📷" label="Photo / image" sub="JPG, PNG, WEBP" onClick={() => navigate("/operator/menu/upload/photo")} />
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <button style={BTN("muted")} onClick={() => setShowNewMenuForm(true)} type="button">
               + New menu
             </button>
           </div>
@@ -920,30 +921,9 @@ export default function OperatorMenuEditor() {
           </div>
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
-            <UploadCard
-              icon="📋"
-              label="Paste menu text"
-              sub="Copy & paste your menu"
-              onClick={() => navigate("/operator/menu/upload/paste")}
-            />
-            <UploadCard
-              icon="📄"
-              label="Upload PDF"
-              sub="PDF menu file"
-              onClick={() => navigate("/operator/menu/upload/pdf")}
-            />
-            <UploadCard
-              icon="📊"
-              label="Spreadsheet"
-              sub=".xlsx or .csv"
-              onClick={() => navigate("/operator/menu/upload/spreadsheet")}
-            />
-            <UploadCard
-              icon="📷"
-              label="Photo / image"
-              sub="JPG, PNG, WEBP"
-              onClick={() => navigate("/operator/menu/upload/photo")}
-            />
+            <UploadCard icon="📋" label="Paste menu text" sub="Copy & paste your menu" onClick={() => setShowPasteForm(true)} />
+            <UploadCard icon="📄" label="Upload PDF" sub="PDF menu file" onClick={() => navigate("/operator/menu/upload/pdf")} />
+            <UploadCard icon="📷" label="Photo / image" sub="JPG, PNG, WEBP" onClick={() => navigate("/operator/menu/upload/photo")} />
           </div>
 
           <div style={{
@@ -962,6 +942,24 @@ export default function OperatorMenuEditor() {
           </div>
         </div>
 
+      ) : menuEditMode && items.length === 0 ? (
+        <div style={{
+          background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14,
+          padding: "28px 24px", textAlign: "center",
+        }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720", marginBottom: 8 }}>No items in this menu yet</div>
+          <div style={{ fontSize: 13, color: "#8a9ab0", marginBottom: 16 }}>
+            Paste menu text, upload a PDF or photo, or add a single item below.
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", marginBottom: 16 }}>
+            <UploadCard icon="📋" label="Paste menu text" sub="Copy & paste" onClick={() => setShowPasteForm(true)} />
+            <UploadCard icon="📄" label="Upload PDF" sub="PDF file" onClick={() => navigate("/operator/menu/upload/pdf")} />
+            <UploadCard icon="📷" label="Photo / image" sub="Menu photo" onClick={() => navigate("/operator/menu/upload/photo")} />
+          </div>
+          <button type="button" style={BTN("primary")} onClick={handleAddItemClick}>
+            + Add Item
+          </button>
+        </div>
       ) : (
         Object.entries(grouped).map(([section, sectionItems]) => (
           <div key={section} style={{ marginBottom: 28 }}>
