@@ -87,6 +87,8 @@ import RestaurantSignupEntry from "./pages/RestaurantSignupEntry.jsx";
 import RestaurantPhilosophy from "./pages/RestaurantPhilosophy.jsx";
 import RestaurantFoundersSignup from "./pages/RestaurantFoundersSignup.jsx";
 import FoodInterestsPage from "./pages/FoodInterestsPage.jsx";
+import JoinPage from "./pages/JoinPage.jsx";
+import JoinDinersPage from "./pages/JoinDinersPage.jsx";
 import ProfileSearchPage from "./pages/ProfileSearchPage.jsx";
 import RestaurantProfile from "./pages/RestaurantProfile.jsx";
 import RestaurantBillboard from "./pages/RestaurantBillboard.jsx";
@@ -504,6 +506,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/restaurant/signup/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
         <Route path="/restaurant/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFoundersSignup />} />
+        <Route path="/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage />} />
+        <Route path="/join/diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinDinersPage />} />
         <Route path="/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/pricing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
         <Route path="/profilesearch" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProfileSearchPage />} />
