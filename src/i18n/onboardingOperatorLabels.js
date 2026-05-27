@@ -164,6 +164,57 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.founder.cta": "Continue with Founder",
     "signup.account.pageTitle": "Create your restaurant account",
     "signup.account.pageSubtitle": "You selected the {plan} plan. Complete your account to continue.",
+    "onboarding.philosophy.heading":
+      "Restaurants and diners alike deserve a platform built around rich, dynamic menu information, diner value, and long-term sustainability.",
+    "onboarding.philosophy.body1":
+      "Many restaurants have had to increase menu prices to help absorb the structural costs associated with operating on traditional third-party delivery platforms. These higher-cost marketplace models have often created challenges for both restaurants and diners.",
+    "onboarding.philosophy.body2":
+      "Menuply was designed with a lower-cost, restaurant-centered structure intended to give restaurants greater flexibility to offer diners better day-to-day pricing, meaningful deals, richer menu information, and more direct engagement. Menuply is a fully self-service platform built without the heavy sales, onboarding, and operational overhead common in traditional delivery marketplaces. By keeping structural costs low, restaurants can operate more efficiently on the platform and offer diners more competitive pricing and better overall value. The platform is built around the belief that lower structural costs can create stronger long-term value for both restaurants and diners.",
+    "onboarding.philosophy.body3":
+      "Prospective restaurant partners are encouraged to keep this principle in mind when joining the platform, as it reflects a core Menuply philosophy: sustainable restaurant growth should come from delivering greater value - not simply increasing costs without improving the customer experience.",
+    "onboarding.philosophy.body4":
+      "When restaurants and diners come together around a shared ecosystem focused on value, transparency, and informed decision-making - powered by thousands of intelligently connected menus - the collective value of the platform multiplies. We like to think of all participants, whether restaurants or diners, as \"multipliers.\"",
+    "onboarding.philosophy.goalIntro": "Our goal is simple:",
+    "onboarding.philosophy.goal1": "Help restaurants better serve their patrons and strengthen long-term success.",
+    "onboarding.philosophy.goal2": "Help diners better navigate their dining options and experience greater value.",
+    "onboarding.philosophy.multiplierBox":
+      "Restaurants always control their own pricing. However, Menuply seeks to partner with restaurants that prioritize customer value without compromising quality. Restaurants more closely aligned with these principles may receive increased visibility opportunities within the Menuply platform experience.",
+    "onboarding.philosophy.agreeLabel": "I understand and agree with Menuply's core value philosophy.",
+    "onboarding.philosophy.continue": "Continue",
+    "onboarding.faq.eyebrow": "Restaurant FAQ",
+    "onboarding.faq.title": "Questions about Menuply?",
+    "onboarding.faq.intro":
+      "Practical answers about cost, growth expectations, and fit before moving deeper into onboarding.",
+    "onboarding.faq.view": "View FAQ",
+    "onboarding.faq.hide": "Hide FAQ",
+    "onboarding.faq.q1": "Why does Menuply charge a subscription fee?",
+    "onboarding.faq.q1.a1":
+      "Menuply charges a subscription fee because restaurants need more than just a listing. The platform provides restaurant profile pages, menu presentation, ordering tools, deal promotion, QR code support, customer discovery features, and self-service management tools.",
+    "onboarding.faq.q1.a2":
+      "At the same time, Menuply was intentionally designed to remain affordable and accessible for independent restaurants and local businesses. Restaurants that want to establish a presence on the platform at no cost can choose the Verified plan, which is 100% free and includes a public restaurant profile, a single menu with unlimited menu items, and QR code support.",
+    "onboarding.faq.q1.a3":
+      "Many restaurants already pay more for website hosting alone. Menuply is designed to give restaurants a practical online commerce presence at a lower overall cost than relying only on traditional delivery marketplaces or expensive custom website solutions.",
+    "onboarding.faq.q1.a4":
+      "Restaurants also play an important role in growing Menuply's reach and their own by using door QR codes, sharing their Menuply page on social media, linking to it from printed menus, and encouraging regular customers to order directly through Menuply.",
+    "onboarding.faq.q2":
+      "Menuply is not as well known as the major platforms. How will it generate business for my restaurant?",
+    "onboarding.faq.q2.a1":
+      "Menuply is new and growing, so restaurants should not expect the same instant traffic volume as the largest delivery marketplaces on day one.",
+    "onboarding.faq.q2.a2":
+      "The value is that Menuply helps restaurants build a lower-cost direct ordering and discovery channel over time. Restaurants can drive traffic through QR codes, social media, printed menus, customer referrals, deals, and their own existing customer base.",
+    "onboarding.faq.q2.a3":
+      "As more restaurants and diners use the platform, Menuply's discovery value increases. Restaurants that join early can help shape that local network while benefiting from a lower-cost structure.",
+    "onboarding.faq.q3":
+      "My restaurant sells indulgent food, comfort food, or items that are not considered healthy. Why would I want to be on Menuply?",
+    "onboarding.faq.q3.a1":
+      "Menuply is not designed only for healthy restaurants. It is designed to help diners better understand what they are ordering, whether that is a grilled salmon bowl, a plate of wings, a loaded burger, or a slice of cheesecake.",
+    "onboarding.faq.q3.a2":
+      "Many diners actively search for indulgent foods, comfort foods, desserts, wings, barbecue, burgers, and other craveable meals. Menuply helps restaurants showcase those items more effectively through stronger menu presentation, better organization, improved discovery tools, and visually engaging menu experiences.",
+    "onboarding.faq.q3.a3":
+      "The goal is not to judge restaurant menus. The goal is to help diners make informed decisions and help restaurants market and sell their food more effectively.",
+    "onboarding.faq.q3.a4":
+      "Menuply also recognizes that restaurants have different identities and customer bases. A sports bar, steakhouse, dessert shop, seafood restaurant, and vegan cafe should not all look or feel the same. The platform should support that diversity through menu presentation styles, promotional tools, and restaurant branding options.",
+    "onboarding.faq.q3.a5": "Menuply is a restaurant commerce and discovery platform, not a diet app.",
     "foodTruck.signup.title": "Food truck sign up",
     "foodTruck.signup.subtitle": "List your truck and share your live menu with diners.",
     "modifier.required": "Required",
@@ -337,6 +388,57 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.founder.cta": "Continuar con Founder",
     "signup.account.pageTitle": "Crea la cuenta de tu restaurante",
     "signup.account.pageSubtitle": "Seleccionaste el plan {plan}. Completa tu cuenta para continuar.",
+    "onboarding.philosophy.heading":
+      "Restaurantes y comensales merecen una plataforma basada en información de menú rica y dinámica, valor para el comensal y sostenibilidad a largo plazo.",
+    "onboarding.philosophy.body1":
+      "Muchos restaurantes han tenido que subir precios para absorber los costes estructurales de operar en plataformas tradicionales de delivery. Esos modelos de mayor coste suelen crear retos tanto para restaurantes como para comensales.",
+    "onboarding.philosophy.body2":
+      "Menuply se diseñó con una estructura de menor coste centrada en el restaurante para ofrecer más flexibilidad en precios diarios, ofertas significativas, información de menú más rica y un engagement más directo. Es una plataforma totalmente autoservicio sin la gran carga comercial y operativa de los marketplaces tradicionales.",
+    "onboarding.philosophy.body3":
+      "Se anima a los socios potenciales a tener presente este principio: el crecimiento sostenible debe venir de ofrecer más valor, no solo de subir costes sin mejorar la experiencia del cliente.",
+    "onboarding.philosophy.body4":
+      "Cuando restaurantes y comensales se unen en un ecosistema de valor, transparencia y decisiones informadas, el valor colectivo de la plataforma se multiplica. Pensamos en todos los participantes como \"multiplicadores\".",
+    "onboarding.philosophy.goalIntro": "Nuestro objetivo es simple:",
+    "onboarding.philosophy.goal1": "Ayudar a los restaurantes a servir mejor a sus clientes y fortalecer el éxito a largo plazo.",
+    "onboarding.philosophy.goal2": "Ayudar a los comensales a navegar mejor sus opciones y obtener más valor.",
+    "onboarding.philosophy.multiplierBox":
+      "Los restaurantes siempre controlan sus precios. Menuply busca socios que prioricen el valor del cliente sin comprometer la calidad. Los restaurantes más alineados pueden recibir más visibilidad en la plataforma.",
+    "onboarding.philosophy.agreeLabel": "Entiendo y acepto la filosofía de valor central de Menuply.",
+    "onboarding.philosophy.continue": "Continuar",
+    "onboarding.faq.eyebrow": "Preguntas frecuentes para restaurantes",
+    "onboarding.faq.title": "¿Preguntas sobre Menuply?",
+    "onboarding.faq.intro":
+      "Respuestas prácticas sobre costes, expectativas de crecimiento y encaje antes de profundizar en el registro.",
+    "onboarding.faq.view": "Ver preguntas frecuentes",
+    "onboarding.faq.hide": "Ocultar preguntas frecuentes",
+    "onboarding.faq.q1": "¿Por qué Menuply cobra una cuota de suscripción?",
+    "onboarding.faq.q1.a1":
+      "Menuply cobra una suscripción porque los restaurantes necesitan más que un simple listado: perfiles, presentación de menú, pedidos, ofertas, códigos QR, descubrimiento y herramientas de autoservicio.",
+    "onboarding.faq.q1.a2":
+      "Al mismo tiempo, Menuply se diseñó para seguir siendo asequible. El plan Verified es 100 % gratuito e incluye perfil público, un menú con artículos ilimitados y soporte QR.",
+    "onboarding.faq.q1.a3":
+      "Muchos restaurantes ya pagan más solo por alojar un sitio web. Menuply ofrece presencia comercial en línea a un coste total menor que depender solo de marketplaces tradicionales o sitios a medida caros.",
+    "onboarding.faq.q1.a4":
+      "Los restaurantes también impulsan el alcance de Menuply y el suyo con códigos QR en la puerta, redes sociales, menús impresos y animando a clientes habituales a pedir directamente.",
+    "onboarding.faq.q2":
+      "Menuply no es tan conocida como las grandes plataformas. ¿Cómo generará negocio para mi restaurante?",
+    "onboarding.faq.q2.a1":
+      "Menuply es nueva y en crecimiento; no hay que esperar el mismo volumen instantáneo que los mayores marketplaces el primer día.",
+    "onboarding.faq.q2.a2":
+      "El valor es construir con el tiempo un canal de pedido y descubrimiento directo de menor coste mediante QR, redes, menús impresos, referidos, ofertas y su propia base de clientes.",
+    "onboarding.faq.q2.a3":
+      "A medida que más restaurantes y comensales usan la plataforma, aumenta el valor de descubrimiento. Quienes se unen pronto ayudan a formar la red local con una estructura de menor coste.",
+    "onboarding.faq.q3":
+      "Mi restaurante vende comida indulgente o de confort, no «saludable». ¿Por qué estar en Menuply?",
+    "onboarding.faq.q3.a1":
+      "Menuply no es solo para restaurantes «saludables». Ayuda a los comensales a entender lo que piden, ya sea un bowl de salmón, alitas, una hamburguesa cargada o un postre.",
+    "onboarding.faq.q3.a2":
+      "Muchos comensales buscan comida indulgente, postres, alitas, barbacoa y hamburguesas. Menuply ayuda a mostrar esos platos con mejor presentación, organización y herramientas de descubrimiento.",
+    "onboarding.faq.q3.a3":
+      "El objetivo no es juzgar menús, sino ayudar a decidir con información y ayudar a los restaurantes a vender mejor.",
+    "onboarding.faq.q3.a4":
+      "Menuply reconoce identidades distintas: bar deportivo, steakhouse, postres, mariscos o vegano no deben verse igual. La plataforma apoya esa diversidad con estilos de menú, promociones y marca.",
+    "onboarding.faq.q3.a5": "Menuply es una plataforma de comercio y descubrimiento para restaurantes, no una app de dieta.",
     "foodTruck.signup.title": "Registro de food truck",
     "foodTruck.signup.subtitle": "Publica tu truck y comparte tu menú en vivo.",
     "modifier.required": "Obligatorio",
@@ -502,6 +604,51 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.founder.cta": "继续使用 Founder",
     "signup.account.pageTitle": "创建餐厅账户",
     "signup.account.pageSubtitle": "你选择了 {plan} 方案。请完成账户信息以继续。",
+    "onboarding.philosophy.heading":
+      "餐厅与食客都值得一个围绕丰富动态菜单信息、食客价值和长期可持续性构建的平台。",
+    "onboarding.philosophy.body1":
+      "许多餐厅不得不提高菜单价格以吸收在传统第三方外卖平台上的结构性成本。这些高成本模式常常给餐厅和食客都带来挑战。",
+    "onboarding.philosophy.body2":
+      "Menuply 采用更低成本、以餐厅为中心的结构，让餐厅能更灵活地提供日常更优价格、有意义优惠、更丰富的菜单信息和更直接的互动。这是一个完全自助的平台，没有传统外卖市场常见的高销售与运营负担。",
+    "onboarding.philosophy.body3":
+      "我们鼓励潜在合作伙伴牢记这一原则：可持续增长应来自提供更大价值，而不是在不改善顾客体验的情况下单纯提高成本。",
+    "onboarding.philosophy.body4":
+      "当餐厅与食客在注重价值、透明和知情决策的生态中携手——由数千互联菜单驱动——平台集体价值会倍增。我们把所有参与者视为“倍增者”。",
+    "onboarding.philosophy.goalIntro": "我们的目标很简单：",
+    "onboarding.philosophy.goal1": "帮助餐厅更好地服务顾客并巩固长期成功。",
+    "onboarding.philosophy.goal2": "帮助食客更好地浏览用餐选择并获得更大价值。",
+    "onboarding.philosophy.multiplierBox":
+      "餐厅始终自主定价。Menuply 希望与在不牺牲品质的前提下重视顾客价值的餐厅合作。更契合这些原则的餐厅可能在平台上获得更多曝光机会。",
+    "onboarding.philosophy.agreeLabel": "我理解并同意 Menuply 的核心价值理念。",
+    "onboarding.philosophy.continue": "继续",
+    "onboarding.faq.eyebrow": "餐厅常见问题",
+    "onboarding.faq.title": "关于 Menuply 的疑问？",
+    "onboarding.faq.intro": "在深入注册前，关于费用、增长预期和平台契合度的实用解答。",
+    "onboarding.faq.view": "查看常见问题",
+    "onboarding.faq.hide": "隐藏常见问题",
+    "onboarding.faq.q1": "为什么 Menuply 收取订阅费？",
+    "onboarding.faq.q1.a1":
+      "Menuply 收取订阅费是因为餐厅需要的不仅是展示位：还包括资料页、菜单呈现、点餐工具、优惠推广、二维码、发现功能和自助管理工具。",
+    "onboarding.faq.q1.a2":
+      "同时，Menuply 有意保持对独立餐厅和小型企业可负担。Verified 方案完全免费，包含公开资料、一个菜单（菜品不限）和二维码支持。",
+    "onboarding.faq.q1.a3":
+      "许多餐厅仅网站托管的费用就更高。Menuply 旨在以低于仅依赖传统外卖平台或昂贵定制网站的总成本，提供实用的在线经营能力。",
+    "onboarding.faq.q1.a4":
+      "餐厅也通过门口二维码、社交媒体、印刷菜单链接以及鼓励熟客直接在 Menuply 下单，来扩大 Menuply 和自身的触达。",
+    "onboarding.faq.q2": "Menuply 不如大平台知名，如何为我的餐厅带来生意？",
+    "onboarding.faq.q2.a1": "Menuply 较新且在成长中，不应期待第一天就有与最大外卖平台相同的即时流量。",
+    "onboarding.faq.q2.a2":
+      "价值在于逐步建立更低成本的直订与发现渠道：二维码、社交、印刷菜单、推荐、优惠和现有客户群。",
+    "onboarding.faq.q2.a3": "随着更多餐厅和食客使用平台，发现价值会提升。早期加入者可在更低成本结构下参与塑造本地网络。",
+    "onboarding.faq.q3": "我的餐厅卖的是 indulgent/comfort 食物，不算健康菜，为什么要上 Menuply？",
+    "onboarding.faq.q3.a1":
+      "Menuply 并非只为“健康”餐厅设计，而是帮助食客了解所点内容——无论是烤三文鱼碗、鸡翅、重磅汉堡还是芝士蛋糕。",
+    "onboarding.faq.q3.a2":
+      "许多食客会主动搜索 indulgent 食物、甜点、鸡翅、烧烤和汉堡。Menuply 通过更好的菜单呈现、组织和发现工具帮助餐厅更有效展示这些菜品。",
+    "onboarding.faq.q3.a3": "目标不是评判菜单，而是帮助食客知情决策，并帮助餐厅更有效营销和销售。",
+    "onboarding.faq.q3.a4":
+      "Menuply 也认识到餐厅身份与客户群各不相同：体育酒吧、牛排馆、甜品店、海鲜馆和纯素咖啡馆不应千篇一律，平台通过菜单风格、促销和品牌选项支持多样性。",
+    "onboarding.faq.q3.a5": "Menuply 是餐厅商业与发现平台，不是节食应用。",
     "foodTruck.signup.title": "餐车注册",
     "foodTruck.signup.subtitle": "发布餐车并分享实时菜单。",
     "modifier.required": "必选",

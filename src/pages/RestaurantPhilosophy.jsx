@@ -148,68 +148,37 @@ export default function RestaurantPhilosophy() {
     <div style={styles.page}>
       <div style={styles.shell}>
         <BrandLockup
-          subtitle="for Restaurants"
+          subtitle={t("signup.forRestaurants", "for Restaurants")}
           wrapperStyle={{ alignItems: "flex-start", marginBottom: 4 }}
           subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
           logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
         />
 
-        <h1 style={styles.heading}>
-          Restaurants and diners alike deserve a platform built around rich, dynamic menu
-          information, diner value, and long-term sustainability.
-        </h1>
+        <h1 style={styles.heading}>{t("onboarding.philosophy.heading")}</h1>
 
-        <p style={styles.body}>
-          Many restaurants have had to increase menu prices to help absorb the structural costs
-          associated with operating on traditional third-party delivery platforms. These
-          higher-cost marketplace models have often created challenges for both restaurants and diners.
-        </p>
+        <p style={styles.body}>{t("onboarding.philosophy.body1")}</p>
 
-        <p style={styles.body}>
-          Menuply was designed with a lower-cost, restaurant-centered structure intended to give
-          restaurants greater flexibility to offer diners better day-to-day pricing, meaningful
-          deals, richer menu information, and more direct engagement. Menuply is a fully
-          self-service platform built without the heavy sales, onboarding, and operational overhead
-          common in traditional delivery marketplaces. By keeping structural costs low, restaurants
-          can operate more efficiently on the platform and offer diners more competitive pricing and
-          better overall value. The platform is built around the belief that lower structural costs
-          can create stronger long-term value for both restaurants and diners.
-        </p>
+        <p style={styles.body}>{t("onboarding.philosophy.body2")}</p>
 
-        <p style={styles.body}>
-          Prospective restaurant partners are encouraged to keep this principle in mind when joining
-          the platform, as it reflects a core Menuply philosophy: sustainable restaurant growth
-          should come from delivering greater value - not simply increasing costs without improving
-          the customer experience.
-        </p>
+        <p style={styles.body}>{t("onboarding.philosophy.body3")}</p>
 
-        <p style={styles.body}>
-          When restaurants and diners come together around a shared ecosystem focused on value,
-          transparency, and informed decision-making - powered by thousands of intelligently
-          connected menus - the collective value of the platform multiplies. We like to think of
-          all participants, whether restaurants or diners, as &ldquo;multipliers.&rdquo;
-        </p>
+        <p style={styles.body}>{t("onboarding.philosophy.body4")}</p>
 
-        <p style={styles.goalIntro}>Our goal is simple:</p>
+        <p style={styles.goalIntro}>{t("onboarding.philosophy.goalIntro")}</p>
 
         <ul style={styles.bulletList}>
           <li style={styles.bulletItem}>
             <span style={styles.bulletDot} aria-hidden="true" />
-            <span>Help restaurants better serve their patrons and strengthen long-term success.</span>
+            <span>{t("onboarding.philosophy.goal1")}</span>
           </li>
           <li style={styles.bulletItem}>
             <span style={styles.bulletDot} aria-hidden="true" />
-            <span>Help diners better navigate their dining options and experience greater value.</span>
+            <span>{t("onboarding.philosophy.goal2")}</span>
           </li>
         </ul>
 
         <div style={styles.multiplierBox}>
-          <p style={styles.multiplierTextLast}>
-            Restaurants always control their own pricing. However, Menuply seeks to partner with
-            restaurants that prioritize customer value without compromising quality. Restaurants more
-            closely aligned with these principles may receive increased visibility opportunities within
-            the Menuply platform experience.
-          </p>
+          <p style={styles.multiplierTextLast}>{t("onboarding.philosophy.multiplierBox")}</p>
         </div>
 
         <RestaurantFAQ instanceId="restaurant-onboarding-faq" />
@@ -225,9 +194,7 @@ export default function RestaurantPhilosophy() {
             onChange={(e) => setAgreed(e.target.checked)}
             onClick={(e) => e.stopPropagation()}
           />
-          <span style={styles.checkLabel}>
-            I understand and agree with Menuply&apos;s core value philosophy.
-          </span>
+          <span style={styles.checkLabel}>{t("onboarding.philosophy.agreeLabel")}</span>
         </label>
 
         <button
@@ -236,7 +203,7 @@ export default function RestaurantPhilosophy() {
           disabled={!agreed}
           onClick={() => navigate(PLAN_ROUTE)}
         >
-          Continue
+          {t("onboarding.philosophy.continue")}
         </button>
       </div>
     </div>
