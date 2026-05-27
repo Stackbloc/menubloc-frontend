@@ -50,9 +50,9 @@ const API = (
 ).replace(/\/$/, "");
 
 const defaultContactRows = [
-  { key: "menus", label: "Menu submissions", email: "menus@menuply.com" },
-  { key: "support", label: "Support related issues", email: "support@menuply.com" },
-  { key: "inquiries", label: "All other inquiries", email: "inquiries@menuply.com" },
+  { key: "menus", label: "contact.menuSubmissions", email: "menus@menuply.com" },
+  { key: "support", label: "contact.supportIssues", email: "support@menuply.com" },
+  { key: "inquiries", label: "contact.otherInquiries", email: "inquiries@menuply.com" },
 ];
 
 const fieldStyle = {
@@ -112,9 +112,9 @@ export default function Contact() {
         if (!response.ok || !data?.ok || cancelled) return;
 
         setContactRows([
-          { key: "menus", label: "Menu submissions", email: data.contact?.menus_email || "menus@menuply.com" },
-          { key: "support", label: "Support related issues", email: data.contact?.support_email || "support@menuply.com" },
-          { key: "inquiries", label: "All other inquiries", email: data.contact?.inquiries_email || "inquiries@menuply.com" },
+          { key: "menus", label: "contact.menuSubmissions", email: data.contact?.menus_email || "menus@menuply.com" },
+          { key: "support", label: "contact.supportIssues", email: data.contact?.support_email || "support@menuply.com" },
+          { key: "inquiries", label: "contact.otherInquiries", email: data.contact?.inquiries_email || "inquiries@menuply.com" },
         ]);
       } catch {
         // Keep fallback addresses when the API is unavailable.
@@ -154,10 +154,10 @@ export default function Contact() {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok || !data?.ok) {
-        throw new Error(data?.error || "Unable to send your message right now.");
+        throw new Error(data?.error || t("contact.submitError", "Unable to send your message right now."));
       }
 
-      setSubmitSuccess(data.message || "Your message was sent.");
+      setSubmitSuccess(data.message || t("contact.submitSuccess", "Your message was sent."));
       setFormState((current) => ({
         ...current,
         name: "",
@@ -167,7 +167,7 @@ export default function Contact() {
         message: "",
       }));
     } catch (error) {
-      setSubmitError(error?.message || "Unable to send your message right now.");
+      setSubmitError(error?.message || t("contact.submitError", "Unable to send your message right now."));
     } finally {
       setSubmitting(false);
     }
@@ -192,7 +192,7 @@ export default function Contact() {
 
       <div style={{ maxWidth: 720 }}>
         <p style={introStyle}>
-          Use the contact options below so your message goes to the right place.
+          {t("contact.intro", "Use the contact options below so your message goes to the right place.")}
         </p>
 
         <div>
@@ -206,7 +206,7 @@ export default function Contact() {
                   : "none",
               }}
             >
-              <div style={labelStyle}>{row.label}</div>
+              <div style={labelStyle}>{t(row.label, row.label)}</div>
               <a href={`mailto:${row.email}`} style={linkStyle}>
                 {row.email}
               </a>
@@ -220,36 +220,36 @@ export default function Contact() {
 
           <form onSubmit={onSubmit} style={{ display: "grid", gap: 14 }}>
             <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>Inquiry type</div>
+              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.inquiryType", "Inquiry type")}</div>
               <select value={formState.topic} onChange={(event) => onChange("topic", event.target.value)} style={fieldStyle}>
-                <option value="inquiries">General inquiry</option>
-                <option value="support">Support issue</option>
-                <option value="menus">Menu submission</option>
+                <option value="inquiries">{t("contact.inquiry.general", "General inquiry")}</option>
+                <option value="support">{t("contact.inquiry.support", "Support issue")}</option>
+                <option value="menus">{t("contact.inquiry.menu", "Menu submission")}</option>
               </select>
             </div>
 
             <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>Name</div>
+              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.nameField", "Name")}</div>
               <input value={formState.name} onChange={(event) => onChange("name", event.target.value)} style={fieldStyle} />
             </div>
 
             <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>Email</div>
+              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.emailField", "Email")}</div>
               <input type="email" value={formState.email} onChange={(event) => onChange("email", event.target.value)} style={fieldStyle} />
             </div>
 
             <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>Restaurant name (optional)</div>
+              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.restaurantField", "Restaurant name (optional)")}</div>
               <input value={formState.restaurantName} onChange={(event) => onChange("restaurantName", event.target.value)} style={fieldStyle} />
             </div>
 
             <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>Subject (optional)</div>
+              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.subjectField", "Subject (optional)")}</div>
               <input value={formState.subject} onChange={(event) => onChange("subject", event.target.value)} style={fieldStyle} />
             </div>
 
             <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>Message</div>
+              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.messageField", "Message")}</div>
               <textarea
                 value={formState.message}
                 onChange={(event) => onChange("message", event.target.value)}
@@ -273,7 +273,7 @@ export default function Contact() {
                 opacity: submitting ? 0.7 : 1,
               }}
             >
-              {submitting ? "Sending..." : "Send message"}
+              {submitting ? t("contact.sending", "Sending…") : t("contact.sendMessage", "Send message")}
             </button>
           </form>
         </div>

@@ -5,5 +5,11 @@ import { TERMS_DOCUMENT } from "../content/legal.js";
 
 export default function Terms() {
   const { t } = useLanguage();
-  return <LegalDocumentPage eyebrow="Terms" document={TERMS_DOCUMENT} />;
+  return (
+    <LegalDocumentPage
+      eyebrow={t("terms.title", "Terms of use")}
+      titleKey="terms.title"
+      document={TERMS_DOCUMENT}
+    />
+  );
 }

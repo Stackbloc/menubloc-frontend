@@ -37,8 +37,9 @@ function renderParagraphWithMailto(paragraph) {
   });
 }
 
-export default function LegalDocumentPage({ document, eyebrow }) {
+export default function LegalDocumentPage({ document, eyebrow, titleKey }) {
   const { t } = useLanguage();
+  const localizedTitle = titleKey ? t(titleKey, document.title) : document.title;
   return (
     <>
     <StickyPageHeader />
@@ -47,13 +48,13 @@ export default function LegalDocumentPage({ document, eyebrow }) {
       <Breadcrumbs
         items={[
           { label: t("legal.discovery", "Discovery"), to: "/" },
-          { label: document.title },
+          { label: localizedTitle },
         ]}
       />
 
       <PageHero
         eyebrow={eyebrow}
-        title={document.title}
+        title={localizedTitle}
         description={`${document.description} ${t("legal.effectiveDate", "Effective Date:")} ${LEGAL_EFFECTIVE_DATE}.`}
       />
 
