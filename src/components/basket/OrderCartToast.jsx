@@ -1,6 +1,4 @@
-import { useLanguage } from "../../context/LanguageContext.jsx";
 export default function OrderCartToast({ notice, onDismiss, onAction, bottomOffset = 84 }) {
-  const { t } = useLanguage();
   if (!notice?.message) return null;
 
   const isWarning = notice.tone === "warning";

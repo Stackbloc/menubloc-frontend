@@ -40,6 +40,11 @@ import {
   buildDiscoveryLocationKey,
   dedupeDiscoveryMenus,
 } from "../lib/discoveryFeedGuardrails.js";
+import {
+  buildOutOfMarketJoinPath,
+  isOutOfMarketSearch,
+  resolveDiscoveryMarketLocation,
+} from "../lib/marketGate.js";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -767,8 +772,11 @@ export default function GrubbidDiscovery() {
 
   async function runSearch(queryValue = draftQuery) {
     console.log("[Discovery] search committed:", queryValue);
+    const locationOverride = getEffectiveSearchLocation();
+    if (redirectIfInactiveSearchMarket(locationOverride)) return;
+
     setCommittedQuery(queryValue.trim());
-    const params = buildSearchParams(queryValue, { locationOverride: getEffectiveSearchLocation() });
+    const params = buildSearchParams(queryValue, { locationOverride });
     setInlineError("");
     const qTerm = String(queryValue || "").trim();
     if (!qTerm) {
@@ -900,8 +908,22 @@ export default function GrubbidDiscovery() {
     return appliedLocation;
   }
 
+  function redirectIfInactiveSearchMarket(locationOverride) {
+    const explicit = String(locationOverride ?? getEffectiveSearchLocation() ?? "").trim();
+    const marketLoc = resolveDiscoveryMarketLocation({
+      explicitLabel: explicit,
+      autoLocation,
+      useAutoGeo: shouldUseAutoGeo && !explicit,
+    });
+    if (!isOutOfMarketSearch(marketLoc)) return false;
+    navigate(buildOutOfMarketJoinPath(marketLoc));
+    return true;
+  }
+
   function handleChipClick(chip) {
-    const params = buildSearchParams(chip.query || "", { locationOverride: getEffectiveSearchLocation() });
+    const locationOverride = getEffectiveSearchLocation();
+    if (redirectIfInactiveSearchMarket(locationOverride)) return;
+    const params = buildSearchParams(chip.query || "", { locationOverride });
     if (chip.filterKey) {
       params.set(chip.filterKey, "true");
     }

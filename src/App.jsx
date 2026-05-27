@@ -115,6 +115,9 @@ import RestaurantMerchantTerms from "./pages/RestaurantMerchantTerms.jsx";
 import RestaurantSubscriptionTerms from "./pages/RestaurantSubscriptionTerms.jsx";
 import AboutMenuply from "./pages/AboutMenuply.jsx";
 import Contact from "./pages/Contact.jsx";
+import JoinPage from "./pages/JoinPage.jsx";
+import JoinDinersPage from "./pages/JoinDinersPage.jsx";
+import RestaurantFoundersSignup from "./pages/RestaurantFoundersSignup.jsx";
 
 import QrCodesPage from "./pages/QrCodesPage.jsx";
 import PdfUploadPage from "./pages/PdfUploadPage.jsx";
@@ -493,6 +496,9 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant-profile/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantProfile />} />
 
         <Route path="/restaurant/onboarding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantPhilosophy />} />
+        <Route path="/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage />} />
+        <Route path="/join/diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinDinersPage />} />
+        <Route path="/restaurant/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFoundersSignup />} />
         <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/restaurant/signup/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
         <Route path="/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
@@ -620,13 +626,13 @@ export default function App() {
         <CrmProvider>
           <OperatorProvider>
             <CartProvider>
-              <OrderCartProvider>
-                <LanguageProvider>
+              <LanguageProvider>
+                <OrderCartProvider>
                   <BrowserRouter>
                     <AppShell easyMenu={easyMenu} crmHost={crmHost} />
                   </BrowserRouter>
-                </LanguageProvider>
-              </OrderCartProvider>
+                </OrderCartProvider>
+              </LanguageProvider>
             </CartProvider>
           </OperatorProvider>
         </CrmProvider>
