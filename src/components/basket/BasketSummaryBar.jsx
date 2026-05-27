@@ -1,3 +1,4 @@
+import { useLanguage } from "../../context/LanguageContext.jsx";
 function formatMoney(cents) {
   return `$${(Number(cents || 0) / 100).toFixed(2)}`;
 }
@@ -13,6 +14,7 @@ export default function BasketSummaryBar({
   ctaLabel = "View Cart",
   onClear,
 }) {
+  const { t } = useLanguage();
   if (!itemCount) return null;
 
   const itemLabel = itemCount === 1 ? "1 item" : `${itemCount} items`;

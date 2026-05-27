@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { normalizeModifierGroups } from "./modifierModel.js";
 
 function formatMoney(cents) {
@@ -10,6 +11,7 @@ function hasSelectionError(group, selectedIds) {
 }
 
 export default function ModifierSheet({ item, open, onClose, onConfirm }) {
+  const { t } = useLanguage();
   const groups = useMemo(() => normalizeModifierGroups(item), [item]);
   const [selectedByGroup, setSelectedByGroup] = useState({});
 
@@ -82,7 +84,7 @@ export default function ModifierSheet({ item, open, onClose, onConfirm }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`Customize ${item.name || "item"}`}
+        aria-label={`${t("modifier.customize", "Customize")} ${item.name || "item"}`}
         style={{
           position: "fixed",
           left: 12,
@@ -102,7 +104,7 @@ export default function ModifierSheet({ item, open, onClose, onConfirm }) {
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
             <div>
               <div style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7, color: "#667085" }}>
-                Customize item
+                {t("modifier.customize", "Customize")}
               </div>
               <div style={{ marginTop: 6, fontSize: 22, fontWeight: 900, color: "#11211a" }}>
                 {item.name}
@@ -155,7 +157,7 @@ export default function ModifierSheet({ item, open, onClose, onConfirm }) {
                           fontWeight: 800,
                         }}
                       >
-                        Required
+                        {t("modifier.required", "Required")}
                       </span>
                     ) : null}
                   </div>
@@ -231,7 +233,7 @@ export default function ModifierSheet({ item, open, onClose, onConfirm }) {
               cursor: hasErrors ? "not-allowed" : "pointer",
             }}
           >
-            Add to basket
+            {t("modifier.addToBasket", "Add to basket")}
           </button>
           <button
             type="button"
@@ -246,7 +248,7 @@ export default function ModifierSheet({ item, open, onClose, onConfirm }) {
               cursor: "pointer",
             }}
           >
-            Cancel
+            {t("modifier.cancel", "Cancel")}
           </button>
         </div>
       </div>

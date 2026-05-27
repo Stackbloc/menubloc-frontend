@@ -15,6 +15,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -53,6 +54,7 @@ const INPUT = {
 
 export default function OperatorClaimSearch() {
   const { refreshRestaurants, operator } = useOperator();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const createListingHref = "/restaurant/onboarding";
 
@@ -126,11 +128,13 @@ export default function OperatorClaimSearch() {
         }}>
           <div style={{ fontSize: 48, marginBottom: 18 }}>🎉</div>
           <h2 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#1F4E3D" }}>
-            You're in!
+            {t("operator.claim.successTitle", "You're in!")}
           </h2>
           <p style={{ margin: "0 0 28px", fontSize: 14, color: "#5b6675", lineHeight: 1.6 }}>
-            <strong>{success}</strong> is now linked to your account.
-            You can start editing your menu and creating deals.
+            {t(
+              "operator.claim.successBody",
+              "{name} is now linked to your account. You can start editing your menu and creating deals.",
+            ).replace("{name}", success)}
           </p>
           <button
             onClick={() => navigate("/operator", { replace: true })}
@@ -140,7 +144,7 @@ export default function OperatorClaimSearch() {
               fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
             }}
           >
-            Go to Dashboard →
+            {t("operator.claim.goDashboard", "Go to Dashboard →")}
           </button>
         </div>
       </div>
@@ -163,19 +167,20 @@ export default function OperatorClaimSearch() {
           Menuply
         </div>
         <h1 style={{ margin: "0 0 10px", fontSize: 26, fontWeight: 800, color: "#0f1720" }}>
-          Find your restaurant
+          {t("operator.claim.title", "Find your restaurant")}
         </h1>
         <p style={{ margin: 0, fontSize: 14, color: "#5b6675", maxWidth: 360 }}>
-          Search for your listing. We'll link your account so you can start managing your menu.
+          {t("operator.claim.subtitle", "Search for your listing. We'll link your account so you can start managing your menu.")}
         </p>
         {operator && (
           <div style={{ marginTop: 12, fontSize: 12, color: "#8a9ab0" }}>
-            Signed in as <strong>{operator.email}</strong>
+            {t("operator.claim.signedInAs", "Signed in as")}{" "}
+            <strong>{operator.email}</strong>
             <button
               onClick={() => navigate("/operator")}
               style={{ marginLeft: 8, background: "none", border: "none", color: "#1F4E3D", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
             >
-              Skip →
+              {t("operator.claim.skip", "Skip →")}
             </button>
           </div>
         )}
@@ -194,7 +199,7 @@ export default function OperatorClaimSearch() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, marginBottom: 20 }}>
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: "#5b6675", display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Restaurant name
+              {t("operator.claim.restaurantName", "Restaurant name")}
             </label>
             <input
               style={{ ...INPUT, width: "100%" }}
@@ -206,7 +211,7 @@ export default function OperatorClaimSearch() {
           </div>
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: "#5b6675", display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              City
+              {t("operator.claim.city", "City")}
             </label>
             <input
               style={{ ...INPUT, width: 130 }}
@@ -230,7 +235,9 @@ export default function OperatorClaimSearch() {
 
         {/* Loading */}
         {searching && (
-          <div style={{ color: "#8a9ab0", fontSize: 13, padding: "8px 0" }}>Searching…</div>
+          <div style={{ color: "#8a9ab0", fontSize: 13, padding: "8px 0" }}>
+            {t("operator.claim.searching", "Searching…")}
+          </div>
         )}
 
         {/* Results */}
@@ -238,16 +245,16 @@ export default function OperatorClaimSearch() {
           <div style={{ textAlign: "center", padding: "24px 0", color: "#8a9ab0" }}>
             <div style={{ fontSize: 28, marginBottom: 10 }}>🔍</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: "#5b6675", marginBottom: 6 }}>
-              No listings found
+              {t("operator.claim.noResults", "No listings found")}
             </div>
             <div style={{ fontSize: 13 }}>
-              Try a different name or city. If your restaurant isn't listed yet,{" "}
+              {t("operator.claim.tryDifferent", "Try a different name or city. If your restaurant isn't listed yet,")}{" "}
               <button
                 type="button"
                 onClick={() => navigate(createListingHref)}
                 style={{ background: "none", border: "none", padding: 0, color: "#1F4E3D", fontWeight: 600, cursor: "pointer", font: "inherit" }}
               >
-                create a new listing
+                {t("operator.claim.createListing", "create a new listing")}
               </button>.
             </div>
           </div>
@@ -284,11 +291,11 @@ export default function OperatorClaimSearch() {
                 {/* Status + action */}
                 {r.already_linked ? (
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a", background: "#dcfce7", borderRadius: 999, padding: "4px 10px" }}>
-                    ✓ Linked
+                    ✓ {t("operator.claim.linked", "Linked")}
                   </span>
                 ) : r.claimed_by_other ? (
                   <span style={{ fontSize: 12, color: "#8a9ab0", background: "#f4f3ef", borderRadius: 999, padding: "4px 10px", fontWeight: 600 }}>
-                    Claimed
+                    {t("operator.claim.claimed", "Claimed")}
                   </span>
                 ) : (
                   <button
@@ -304,7 +311,9 @@ export default function OperatorClaimSearch() {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {claiming === r.id ? "Claiming…" : "Claim this listing"}
+                    {claiming === r.id
+                      ? t("operator.claim.claiming", "Claiming…")
+                      : t("operator.claim.claimButton", "Claim this listing")}
                   </button>
                 )}
               </div>
@@ -316,13 +325,13 @@ export default function OperatorClaimSearch() {
         {searched && (
           <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid #f0f0ec", textAlign: "center" }}>
             <span style={{ fontSize: 13, color: "#8a9ab0" }}>
-              Don't see your restaurant?{" "}
+              {t("operator.claim.notListed", "Don't see your restaurant?")}{" "}
               <button
                 type="button"
                 onClick={() => navigate(createListingHref)}
                 style={{ background: "none", border: "none", padding: 0, color: "#1F4E3D", fontWeight: 700, textDecoration: "none", cursor: "pointer", font: "inherit" }}
               >
-                Create a new listing →
+                {t("operator.claim.createNewListing", "Create a new listing →")}
               </button>
             </span>
           </div>

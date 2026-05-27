@@ -1,3 +1,8 @@
+import { ONBOARDING_OPERATOR_LABELS } from "./onboardingOperatorLabels.js";
+import { SITE_LABELS } from "./siteLabels.js";
+import { FULL_COVERAGE_LABELS } from "./fullCoverageLabels.js";
+import { REMAINING_COVERAGE_LABELS } from "./remainingCoverageLabels.js";
+
 export const UI_LABELS = {
   en: {
     "language.english": "English",
@@ -87,6 +92,8 @@ export const UI_LABELS = {
     "discovery.allCategories": "All Categories",
     "discovery.tryDifferent": "Try a different search term or location.",
     "discovery.noResultsFoundFor": "No results found for \"{query}\"{nearText}",
+    "discovery.locationCountNearby": "{count} locations nearby",
+    "discovery.locationCountArea": "{count} locations in this area",
     "discovery.footer.signup": "Restaurant Sign Up",
     "discovery.footer.signin": "Restaurant Sign In",
     "discovery.footer.deals": "Restaurant Deals",
@@ -289,6 +296,10 @@ export const UI_LABELS = {
     "menuItemDetail.allergen.dairy": "Dairy",
     "menuItemDetail.allergen.gluten": "Gluten",
     "menuItemDetail.allergen.wheat": "Wheat",
+    ...SITE_LABELS.en,
+    ...FULL_COVERAGE_LABELS.en,
+    ...REMAINING_COVERAGE_LABELS.en,
+    ...ONBOARDING_OPERATOR_LABELS.en,
   },
   es: {
     "language.english": "English",
@@ -378,6 +389,8 @@ export const UI_LABELS = {
     "discovery.allCategories": "Todas las categorías",
     "discovery.tryDifferent": "Prueba con otro término de búsqueda o ubicación.",
     "discovery.noResultsFoundFor": "No se encontraron resultados para \"{query}\"{nearText}",
+    "discovery.locationCountNearby": "{count} ubicaciones cercanas",
+    "discovery.locationCountArea": "{count} ubicaciones en esta zona",
     "discovery.footer.signup": "Registro de restaurantes",
     "discovery.footer.signin": "Inicio de sesión para restaurantes",
     "discovery.footer.deals": "Ofertas de restaurantes",
@@ -580,6 +593,10 @@ export const UI_LABELS = {
     "menuItemDetail.allergen.dairy": "Lácteo",
     "menuItemDetail.allergen.gluten": "Gluten",
     "menuItemDetail.allergen.wheat": "Trigo",
+    ...SITE_LABELS.es,
+    ...FULL_COVERAGE_LABELS.es,
+    ...REMAINING_COVERAGE_LABELS.es,
+    ...ONBOARDING_OPERATOR_LABELS.es,
   },
   zh: {
     "language.english": "English",
@@ -669,6 +686,8 @@ export const UI_LABELS = {
     "discovery.allCategories": "全部类别",
     "discovery.tryDifferent": "请尝试其他搜索词或位置。",
     "discovery.noResultsFoundFor": "没有找到“{query}”的结果{nearText}",
+    "discovery.locationCountNearby": "附近 {count} 个地点",
+    "discovery.locationCountArea": "该区域 {count} 个地点",
     "discovery.footer.signup": "餐厅注册",
     "discovery.footer.signin": "餐厅登录",
     "discovery.footer.deals": "餐厅优惠",
@@ -869,6 +888,10 @@ export const UI_LABELS = {
     "menuItemDetail.allergen.dairy": "乳制品",
     "menuItemDetail.allergen.gluten": "麸质",
     "menuItemDetail.allergen.wheat": "小麦",
+    ...SITE_LABELS.zh,
+    ...FULL_COVERAGE_LABELS.zh,
+    ...REMAINING_COVERAGE_LABELS.zh,
+    ...ONBOARDING_OPERATOR_LABELS.zh,
   },
 };
 

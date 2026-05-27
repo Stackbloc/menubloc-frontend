@@ -1,5 +1,6 @@
 // menubloc-frontend/src/GrubbidMenuView.jsx
 import React, { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "./context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import { MOCK_MENU } from "./mockMenu.js";
 import { MKS_CATEGORIES, mapRawCategoryToMks } from "./mks/mksCategories.js";
@@ -271,6 +272,7 @@ function computeDistanceLabel(r) {
 // Component
 // -----------------------------
 export default function GrubbidMenuView({ restaurantId = null, menuData = null }) {
+  const { t } = useLanguage();
   const usingMock = !menuData;
   const raw = menuData || MOCK_MENU;
 

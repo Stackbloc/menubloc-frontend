@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useCrm } from "../../context/CrmContext.jsx";
 import { AuthPageFrame, FormError, PasswordField, styles } from "../../components/consumer/ConsumerAuthShared.jsx";
 
 export default function CrmLogin() {
+  const { t } = useLanguage();
   const { login, loading, isAuthenticated } = useCrm();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -35,7 +37,7 @@ export default function CrmLogin() {
 
   return (
     <AuthPageFrame
-      title="CRM sign in"
+      title={t("crm.login.title", "CRM sign in")}
       subtitle="Internal Menuply team access only."
       footer={<p style={styles.footer}><Link to="/crm/forgot-password" style={styles.link}>Forgot password?</Link></p>}
     >

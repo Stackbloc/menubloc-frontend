@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link, useParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import {
@@ -75,6 +76,7 @@ function LegacyPaidBadge() {
 }
 
 export default function RestaurantOrderDetailPage() {
+  const { t } = useLanguage();
   const { orderId } = useParams();
   const [state, setState] = useState({ status: "loading", order: null, error: "" });
   const [busyStatus, setBusyStatus] = useState("");

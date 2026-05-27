@@ -16,6 +16,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useParams, Link } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
@@ -103,6 +104,7 @@ function Skel({ w = 160, h = 14, isDark }) {
 }
 
 export default function FoodTruckSchedulePage() {
+  const { t } = useLanguage();
   const { slugOrId } = useParams();
   const isMobile = useIsMobile();
 

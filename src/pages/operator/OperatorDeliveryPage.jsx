@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import {
@@ -230,6 +231,7 @@ function ProviderCard({
 }
 
 export default function OperatorDeliveryPage() {
+  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const [state, setState] = useState({ status: "idle", settings: null, error: "", message: "" });
   const [forms, setForms] = useState({});

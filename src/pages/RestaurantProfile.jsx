@@ -1,5 +1,6 @@
 // menubloc-frontend/src/pages/RestaurantProfile.jsx
 import React, { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 
@@ -15,6 +16,7 @@ function useQuery() {
 }
 
 export default function RestaurantProfile() {
+  const { t } = useLanguage();
   const nav = useNavigate();
   const qs = useQuery();
   const { id: routeId } = useParams();

@@ -14,6 +14,7 @@ import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const introStyle = {
   margin: "0 0 24px",
@@ -87,6 +88,7 @@ const bannerStyles = {
 };
 
 export default function Contact() {
+  const { t } = useLanguage();
   const [contactRows, setContactRows] = useState(defaultContactRows);
   const [formState, setFormState] = useState({
     topic: "inquiries",
@@ -178,14 +180,14 @@ export default function Contact() {
       <PageNav back />
       <Breadcrumbs
         items={[
-          { label: "Discovery", to: "/" },
-          { label: "Contact" },
+          { label: t("legal.discovery", "Discovery"), to: "/" },
+          { label: t("contact.heroTitle", "Contact") },
         ]}
       />
 
       <PageHero
-        title="Contact Us"
-        description="Use the form or email the right Menuply inbox directly."
+        title={t("contact.heroTitle", "Contact")}
+        description={t("contact.heroSubtitle", "Reach the Menuply team for menu, support, and partnership questions.")}
       />
 
       <div style={{ maxWidth: 720 }}>

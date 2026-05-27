@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 
 const S = {
@@ -213,6 +214,7 @@ export default function FoundersAccountStep({
   onAgreementChange,
   onSubmit,
 }) {
+  const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 

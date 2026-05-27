@@ -401,7 +401,7 @@ function useAutoLocation() {
 }
 
 export default function GrubbidDiscovery() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const {
     isAuthenticated: consumerLoggedIn,
     loading: consumerLoading,
@@ -702,6 +702,9 @@ export default function GrubbidDiscovery() {
     // and ignore stale async responses from prior locations.
     setFeedMenus(Array.isArray(cachedMenus) ? cachedMenus : []);
     setFeedLoading(true);
+    if (language && language !== "en") {
+      params.set("lang", language);
+    }
     const feedUrl = `${API}/menus/browse?${params.toString()}`;
     console.log("[Discovery] fetch URL:", feedUrl);
     fetch(feedUrl, { signal: controller.signal })
@@ -726,7 +729,7 @@ export default function GrubbidDiscovery() {
       });
 
     return () => controller.abort();
-  }, [shouldUseAutoGeo, autoLocation.lat, autoLocation.lng, autoLocation.city, autoLocation.state, appliedLocation, filters, feedScopeKey]);
+  }, [shouldUseAutoGeo, autoLocation.lat, autoLocation.lng, autoLocation.city, autoLocation.state, appliedLocation, filters, feedScopeKey, language]);
 
   // ── existing logic (unchanged) ──────────────────────────────────────────────
 

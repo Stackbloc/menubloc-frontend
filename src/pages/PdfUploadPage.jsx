@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
@@ -597,6 +598,7 @@ function buildPreviewUrl(file) {
 }
 
 export default function PdfUploadPage() {
+  const { t } = useLanguage();
   const location = useLocation();
   const nav = useNavigate();
   const { selectedRestaurant, operator } = useOperator();

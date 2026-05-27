@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 
 export default function SmsAuthModal({ open, onClose, onSuccess }) {
+  const { t } = useLanguage();
   const { sendSmsCode, verifySmsCode } = useConsumer();
   const [step, setStep] = useState("phone");
   const [phoneNumber, setPhoneNumber] = useState("");

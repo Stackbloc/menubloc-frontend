@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -17,6 +18,7 @@ const MENUPLY_PRICE_DISCLOSURE =
   "Prices shown on Menuply may differ from in-store prices and may include Menuply’s service component. Taxes and optional tips are shown separately before you place your order.";
 
 export default function BuyMeThisPage() {
+  const { t } = useLanguage();
   const { token } = useParams();
   const [searchParams] = useSearchParams();
   const [state, setState] = useState({

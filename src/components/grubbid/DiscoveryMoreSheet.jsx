@@ -1,6 +1,8 @@
 import React, { useEffect } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 export default function DiscoveryMoreSheet({ open, menu, onClose }) {
+  const { t } = useLanguage();
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };

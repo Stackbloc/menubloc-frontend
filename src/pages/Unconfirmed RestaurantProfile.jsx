@@ -10,6 +10,7 @@
  */
 
 import React from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useLocation, useParams } from "react-router-dom";
 
 function readRestaurantName(locationState, params) {
@@ -43,6 +44,7 @@ function FieldRow({ label, value, lockedMessage = "" }) {
 }
 
 export default function UnconfirmedRestaurantProfile() {
+  const { t } = useLanguage();
   const location = useLocation();
   const params = useParams();
 

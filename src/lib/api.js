@@ -1,3 +1,5 @@
+import { appendLanguageParam, readStoredLanguage, withLanguageHeaders } from "./languageApi.js";
+
 // ============================================================
 // Path: menubloc-frontend/src/lib/api.js
 // File: api.js
@@ -52,11 +54,14 @@ export function toConsumerErrorMessage(error, fallbackMessage) {
 }
 
 export async function apiGet(path, options = {}) {
-  const url = `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+  const language = options.language || readStoredLanguage();
+  const localizedPath = appendLanguageParam(path, language);
+  const url = `${API_BASE}${localizedPath.startsWith("/") ? "" : "/"}${localizedPath}`;
   const res = await fetch(url, {
     method: "GET",
     credentials: "include",
     signal: options.signal,
+    headers: withLanguageHeaders(options.headers, language),
   });
   const data = await safeJson(res);
   if (!res.ok) {

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "./context/LanguageContext.jsx";
 
 const API_BASE = "http://localhost:3001";
 
 export default function MenuList({ onGoUpload, onOpenMenu }) {
+  const { t } = useLanguage();
   const [menus, setMenus] = useState([]);
   const [cuisines, setCuisines] = useState([]);
   const [selectedCuisine, setSelectedCuisine] = useState("all");

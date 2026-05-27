@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useOwner } from "../../context/OwnerContext.jsx";
 import { AuthPageFrame, FormError, PasswordField, styles } from "../../components/consumer/ConsumerAuthShared.jsx";
@@ -6,6 +7,7 @@ import { AuthPageFrame, FormError, PasswordField, styles } from "../../component
 const GENERIC_ERROR = "Unable to sign in. Please check your credentials and try again.";
 
 export default function OwnerLogin() {
+  const { t } = useLanguage();
   const { login, verify2FA, isAuthenticated, loading } = useOwner();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -86,7 +88,7 @@ export default function OwnerLogin() {
 
   return (
     <AuthPageFrame
-      title="Owner sign in"
+      title={t("owner.login.title", "Owner sign in")}
       subtitle="Platform control and system-wide administrative access."
     >
       <form onSubmit={handleSubmit} noValidate style={styles.form}>

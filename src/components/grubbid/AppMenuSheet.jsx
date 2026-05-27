@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 
 const NAV_ITEMS = [
@@ -44,6 +45,7 @@ function Divider() {
 }
 
 export default function AppMenuSheet({ open, onClose }) {
+  const { t } = useLanguage();
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };

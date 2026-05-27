@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import {
   getCrmConversionsReport,
   getCrmFollowupsReport,
@@ -8,6 +9,7 @@ import {
 import { CrmCard, CrmPage, DataTable, ErrorBanner } from "./CrmShared.jsx";
 
 export default function CrmReports() {
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 

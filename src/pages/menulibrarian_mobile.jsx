@@ -17,6 +17,7 @@
 // ============================================================
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { apiGet, apiPost } from "../lib/api";
 
 // ── Constants ────────────────────────────────────────────────
@@ -460,6 +461,7 @@ function allRequiredFilled(form) {
 
 // ── Component ─────────────────────────────────────────────────
 export default function OperatorIntakePage() {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     restaurant_name: "",
     city: DEFAULT_CITY,

@@ -13,9 +13,10 @@
  * After successful verify, a 15-min server-side session is granted.
  */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { getSensitiveSession, verifyOwnerPin } from "../../lib/operatorApi.js";
 import "./operatorResponsive.css";
 
@@ -59,6 +60,7 @@ const BUSINESS_NAV = [
 // ── PIN gate modal ────────────────────────────────────────────────────────
 
 function PinGateModal({ restaurantId, onSuccess, onClose }) {
+  const { t } = useLanguage();
   const [digits, setDigits] = useState(["", "", "", ""]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -93,7 +95,7 @@ function PinGateModal({ restaurantId, onSuccess, onClose }) {
   async function submitPin(pinOverride) {
     const pin = pinOverride ?? digits.join("");
     if (pin.length !== 4) {
-      setError("Enter all 4 digits.");
+      setError(t("auth.pinEnterAllDigits", "Enter all 4 digits."));
       return;
     }
     setBusy(true);
@@ -106,7 +108,7 @@ function PinGateModal({ restaurantId, onSuccess, onClose }) {
         setLocked(true);
         setRetryIn(err?.payload?.retry_after_seconds || 300);
       }
-      setError(err.message || "Incorrect PIN.");
+      setError(err.message || t("auth.pinIncorrect", "Incorrect PIN. Try again."));
       setDigits(["", "", "", ""]);
       setTimeout(() => document.getElementById("pin-digit-0")?.focus(), 50);
     } finally {
@@ -127,10 +129,10 @@ function PinGateModal({ restaurantId, onSuccess, onClose }) {
       }}>
         <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
         <div style={{ fontSize: 20, fontWeight: 900, color: "#0f1720", marginBottom: 6 }}>
-          Owner Access Required
+          {t("auth.pinGateTitle", "Owner verification")}
         </div>
         <div style={{ fontSize: 14, color: "#5b6675", marginBottom: 24 }}>
-          Enter your 4-digit Owner PIN to continue.
+          {t("auth.pinGateSubtitle", "Enter your 4-digit owner PIN to continue.")}
         </div>
 
         {/* 4-digit PIN entry */}
@@ -197,7 +199,7 @@ function PinGateModal({ restaurantId, onSuccess, onClose }) {
             fontSize: 14, fontWeight: 600, color: "#5b6675", cursor: "pointer",
           }}
         >
-          Cancel
+          {t("auth.cancel", "Cancel")}
         </button>
       </div>
     </div>
@@ -265,6 +267,31 @@ function SectionHeader({ label, accent }) {
   );
 }
 
+const OPERATOR_PAGE_TITLE_KEYS = {
+  Home: "operator.nav.home",
+  Menu: "operator.nav.menuEditor",
+  "Knowledge Base": "operator.nav.knowledgeBase",
+  Subscription: "operator.subscription.title",
+  "Incoming Orders": "operator.orders.title",
+  Deals: "operator.deals.title",
+  "Order QR Code Kit": "operator.qrKit.title",
+  "Display Board": "operator.nav.displayBoard",
+  Hours: "operator.hours.title",
+  "Order Detail": "operator.orders.detailTitle",
+  "Delivery Accounts": "operator.delivery.title",
+  Profile: "operator.profile.title",
+  "Bid-Free Bidding™": "operator.nav.bidFree",
+  "Adobe Studio": "operator.nav.adobeStudio",
+  "Menu Studio": "operator.nav.menuStudio",
+  "Brand Settings": "operator.nav.brandSettings",
+};
+
+function resolveOperatorTitle(title, t) {
+  if (!title) return "";
+  const key = OPERATOR_PAGE_TITLE_KEYS[title];
+  return key ? t(key, title) : title;
+}
+
 // ── Main layout ───────────────────────────────────────────────────────────
 
 export default function OperatorLayout({ title, children }) {
@@ -272,8 +299,36 @@ export default function OperatorLayout({ title, children }) {
     operator, selectedRestaurant, restaurants,
     setSelectedRestaurant, logout, hasBenefit,
   } = useOperator();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const operationsNav = useMemo(() => ([
+    { to: "/operator", label: t("operator.nav.home", "Home"), icon: "⌂" },
+    { to: "/operator/orders", label: t("operator.nav.orders", "Orders"), icon: "☷" },
+    { to: "/operator/orders?tab=history", label: t("operator.nav.orderHistory", "Order History"), icon: "⊡" },
+  ]), [t]);
+
+  const menuNavBase = useMemo(() => ([
+    { to: "/operator/menu", label: t("operator.nav.menuEditor", "Menu Editor"), icon: "☰" },
+    { to: "/operator/deals", label: t("operator.nav.deals", "Deals"), icon: "⊹" },
+    { to: "/operator/hours", label: t("operator.nav.hours", "Hours"), icon: "⏰" },
+    { to: "/operator/bid-free-bidding", label: t("operator.nav.bidFree", "Bid-Free Bidding™"), icon: "◇" },
+    { to: "/operator/design", label: t("operator.nav.adobeStudio", "Adobe Studio"), icon: "▣", benefitKey: "design_exports" },
+    { to: "/operator/display-settings", label: t("operator.nav.displayBoard", "Display Board"), icon: "⊞", benefitKey: "tv_menu_board" },
+    { to: "/operator/menu-studio", label: t("operator.nav.menuStudio", "Menu Studio"), icon: "✦", benefitKey: "menu_outputs" },
+    { to: "/operator/brand", label: t("operator.nav.brandSettings", "Brand Settings"), icon: "◉", benefitKey: "brand_customization" },
+  ]), [t]);
+
+  const staffMenuNav = useMemo(() => menuNavBase.slice(0, 3), [menuNavBase]);
+
+  const supportNav = useMemo(() => ([
+    { to: "/operator/help", label: t("operator.nav.knowledgeBase", "Knowledge Base"), icon: "?" },
+  ]), [t]);
+
+  const businessNav = useMemo(() => ([
+    { to: "/operator/my-account", label: t("operator.nav.myAccount", "My Account"), icon: "◈" },
+  ]), [t]);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // PIN gate state
@@ -284,7 +339,7 @@ export default function OperatorLayout({ title, children }) {
   const rid = selectedRestaurant?.id;
 
   // Determine which menu nav items are visible
-  const menuNav = role === "staff" ? STAFF_MENU_NAV : MENU_NAV;
+  const menuNav = role === "staff" ? staffMenuNav : menuNavBase;
   const visibleMenuNav = menuNav.filter((item) => !item.benefitKey || hasBenefit(item.benefitKey));
 
   // Business section only shown to owners and managers
@@ -407,8 +462,8 @@ export default function OperatorLayout({ title, children }) {
         {/* ── OPERATIONS section ─────────────────────────────────── */}
         <nav style={{ flex: 1 }}>
           <div style={{ background: "#1F4E3D", paddingBottom: 4 }}>
-            <SectionHeader label="Operations" accent />
-            {OPERATIONS_NAV.map(({ to, label, icon }) => (
+            <SectionHeader label={t("operator.section.operations", "Operations")} accent />
+            {operationsNav.map(({ to, label, icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -432,7 +487,7 @@ export default function OperatorLayout({ title, children }) {
           {/* ── MENU & CUSTOMER section ──────────────────────────── */}
           {visibleMenuNav.length > 0 && (
             <div style={{ borderBottom: "1px solid #f0f0ec" }}>
-              <SectionHeader label="Menu & Customer" />
+              <SectionHeader label={t("operator.section.menuCustomer", "Menu & Customer")} />
               {visibleMenuNav.map(({ to, label, icon }) => (
                 <SideNavLink key={to} to={to} label={label} icon={icon} />
               ))}
@@ -442,8 +497,8 @@ export default function OperatorLayout({ title, children }) {
           {/* ── OWNER / BUSINESS section ─────────────────────────── */}
           {showBusiness && (
             <div>
-              <SectionHeader label="Owner / Business" />
-              {BUSINESS_NAV.map(({ to, label, icon, sensitive }) => (
+              <SectionHeader label={t("operator.section.business", "Owner / Business")} />
+              {businessNav.map(({ to, label, icon, sensitive }) => (
                 <SideNavLink
                   key={to}
                   to={to}
@@ -475,8 +530,8 @@ export default function OperatorLayout({ title, children }) {
 
           {/* ── SUPPORT section ───────────────────────────────────── */}
           <div style={{ borderTop: "1px solid #f0f0ec" }}>
-            <SectionHeader label="Support" />
-            {SUPPORT_NAV.map(({ to, label, icon }) => (
+            <SectionHeader label={t("operator.section.support", "Support")} />
+            {supportNav.map(({ to, label, icon }) => (
               <SideNavLink key={to} to={to} label={label} icon={icon} />
             ))}
           </div>
@@ -526,7 +581,7 @@ export default function OperatorLayout({ title, children }) {
             </button>
             <div className="operator-shell__title-wrap">
               <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f1720" }}>
-                {title}
+                {resolveOperatorTitle(title, t)}
               </h1>
               {selectedRestaurant?.restaurant_name ? (
                 <div className="operator-shell__mobile-restaurant">

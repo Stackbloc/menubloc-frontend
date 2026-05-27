@@ -1,3 +1,4 @@
+import { useLanguage } from "../context/LanguageContext.jsx";
 const TYPE_META = {
   deal:         { label: "Deal",    grad: "linear-gradient(135deg,#92400e,#b45309)" },
   event:        { label: "Event",   grad: "linear-gradient(135deg,#4c1d95,#6d28d9)" },
@@ -331,6 +332,7 @@ function BillboardCard({ post, isDark }) {
 
 // ── Strip ──────────────────────────────────────────────────────────────────
 export default function RestaurantBillboardStrip({ posts, isDark, isMobile, muted }) {
+  const { t } = useLanguage();
   const all = (posts || []).slice(0, 6);
 
   if (all.length === 0) {

@@ -4,6 +4,7 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { apiGet, toConsumerErrorMessage } from "../lib/api.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 function formatMoney(cents) {
   return `$${(Number(cents || 0) / 100).toFixed(2)}`;
@@ -14,6 +15,7 @@ function shouldPoll(order) {
 }
 
 export default function OrderConfirmationPage() {
+  const { t } = useLanguage();
   const { orderId } = useParams();
   const { restaurant, clearCart } = useOrderCart();
   const [state, setState] = useState({
@@ -51,7 +53,7 @@ export default function OrderConfirmationPage() {
           order: null,
           error: toConsumerErrorMessage(
             error,
-            "We couldn't load your order confirmation."
+            t("order.confirmation.loadError", "We couldn't load your order confirmation.")
           ),
         });
       }
@@ -73,7 +75,7 @@ export default function OrderConfirmationPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
-      <StickyPageHeader title="Order Confirmation" />
+      <StickyPageHeader title={t("order.confirmation.title", "Order confirmed")} />
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 18px 80px" }}>
 
         <div

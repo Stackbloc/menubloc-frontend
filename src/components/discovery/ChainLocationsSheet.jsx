@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -15,6 +16,7 @@ function readGeo() {
 }
 
 export default function ChainLocationsSheet({ chainId, currentRestaurantId, onClose }) {
+  const { t } = useLanguage();
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

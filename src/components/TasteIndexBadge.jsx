@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
 
@@ -32,6 +33,7 @@ function getScoreLabel(score) {
  *   accent      — brand accent color (optional, defaults to green)
  */
 export default function TasteIndexBadge({ menuItemId, accent = "#22C55E" }) {
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
 
   useEffect(() => {

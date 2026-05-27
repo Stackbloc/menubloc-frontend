@@ -17,6 +17,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import {
@@ -31,6 +32,7 @@ const API = (
 ).replace(/\/$/, "");
 
 export default function RestaurantQrUpsell() {
+  const { t } = useLanguage();
   const location = useLocation();
   const nav = useNavigate();
   const recovery = resolveRestaurantOnboardingState({

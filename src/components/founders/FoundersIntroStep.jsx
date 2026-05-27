@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 const S = {
   stepLabel: {
@@ -93,6 +94,7 @@ function continueBtn(enabled) {
 }
 
 export default function FoundersIntroStep({ onContinue }) {
+  const { t } = useLanguage();
   const [agreed, setAgreed] = useState(false);
 
   return (

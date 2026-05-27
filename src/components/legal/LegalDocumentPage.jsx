@@ -5,6 +5,7 @@ import { PageHero, PageShell } from "../grubbid/GrubbidPrimitives.jsx";
 import { LEGAL_CONTACT, LEGAL_EFFECTIVE_DATE } from "../../content/legal.js";
 import StickyPageHeader from "../StickyPageHeader.jsx";
 import BottomNav from "../BottomNav.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 const headingStyle = {
   margin: "32px 0 10px",
@@ -37,6 +38,7 @@ function renderParagraphWithMailto(paragraph) {
 }
 
 export default function LegalDocumentPage({ document, eyebrow }) {
+  const { t } = useLanguage();
   return (
     <>
     <StickyPageHeader />
@@ -44,7 +46,7 @@ export default function LegalDocumentPage({ document, eyebrow }) {
       <PageNav back />
       <Breadcrumbs
         items={[
-          { label: "Discovery", to: "/" },
+          { label: t("legal.discovery", "Discovery"), to: "/" },
           { label: document.title },
         ]}
       />
@@ -52,7 +54,7 @@ export default function LegalDocumentPage({ document, eyebrow }) {
       <PageHero
         eyebrow={eyebrow}
         title={document.title}
-        description={`${document.description} Effective Date: ${LEGAL_EFFECTIVE_DATE}.`}
+        description={`${document.description} ${t("legal.effectiveDate", "Effective Date:")} ${LEGAL_EFFECTIVE_DATE}.`}
       />
 
       <div style={{ maxWidth: 760 }}>
@@ -68,8 +70,10 @@ export default function LegalDocumentPage({ document, eyebrow }) {
         ))}
 
         <section>
-          <h2 style={headingStyle}>Legal entity</h2>
-          <p style={paragraphStyle}>Menuply is operated by {LEGAL_CONTACT.company}.</p>
+          <h2 style={headingStyle}>{t("legal.legalEntity", "Legal entity")}</h2>
+          <p style={paragraphStyle}>
+            {t("legal.operatedBy", "Menuply is operated by {company}.").replace("{company}", LEGAL_CONTACT.company)}
+          </p>
         </section>
       </div>
     </PageShell>

@@ -8,6 +8,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -109,6 +110,7 @@ function ToggleField({ label: fieldLabel, name, value, onChange }) {
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function OperatorBrandSettings() {
+  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
 

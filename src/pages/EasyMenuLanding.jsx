@@ -17,6 +17,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(() => {
@@ -40,6 +41,7 @@ function useIsMobile(breakpoint = 768) {
 }
 
 export default function EasyMenuLanding() {
+  const { t } = useLanguage();
   const isMobile = useIsMobile();
 
   const cardShadow = "0 10px 30px rgba(16,24,40,0.08)";

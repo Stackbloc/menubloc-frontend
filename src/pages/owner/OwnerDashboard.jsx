@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { getOwnerDashboardSummary } from "../../lib/ownerApi.js";
@@ -10,6 +11,7 @@ const CARD_GRID = {
 };
 
 export default function OwnerDashboard() {
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 

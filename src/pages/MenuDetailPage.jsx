@@ -15,6 +15,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useParams } from "react-router-dom";
 import { PageNav } from "../components/NavButton.jsx";
 import MenuSection from "../components/MenuSection";
@@ -48,6 +49,7 @@ function useIsMobile(breakpoint = 768) {
 }
 
 export default function MenuDetailPage() {
+  const { t } = useLanguage();
   const { id } = useParams();
   const isMobile = useIsMobile();
 

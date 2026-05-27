@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "./context/LanguageContext.jsx";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
@@ -15,6 +16,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 export default function RestaurantList({ onSelectRestaurant }) {
+  const { t } = useLanguage();
   const [status, setStatus] = useState("Loading...");
   const [error, setError] = useState(null);
   const [restaurants, setRestaurants] = useState([]);

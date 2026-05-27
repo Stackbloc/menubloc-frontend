@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useCrm } from "../../context/CrmContext.jsx";
 
@@ -13,6 +14,7 @@ const NAV = [
 ];
 
 export default function CrmLayout({ title, actions = null, children }) {
+  const { t } = useLanguage();
   const { operator, logout } = useCrm();
   const navigate = useNavigate();
 

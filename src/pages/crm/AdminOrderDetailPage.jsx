@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link, useParams } from "react-router-dom";
 import { getCrmOrderDetail } from "../../lib/crmApi.js";
 import {
@@ -21,6 +22,7 @@ function formatDateTime(value) {
 }
 
 export default function AdminOrderDetailPage() {
+  const { t } = useLanguage();
   const { orderId } = useParams();
   const [state, setState] = useState({ status: "loading", order: null, error: "" });
 

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import OwnerLayout, { EmptyState, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { getOwnerRevenueSummary } from "../../lib/ownerApi.js";
 
 export default function OwnerRevenue() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState(() => defaultRange());
   const [data, setData] = useState(null);
   const [error, setError] = useState("");

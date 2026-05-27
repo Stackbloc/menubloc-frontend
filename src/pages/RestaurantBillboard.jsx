@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -162,6 +163,7 @@ function BillboardSection({ title, emptyCopy, posts }) {
 }
 
 export default function RestaurantBillboard() {
+  const { t } = useLanguage();
   const { slugOrId } = useParams();
   const trackedBillboardViewRef = useRef(new Set());
   const [loading, setLoading] = useState(true);

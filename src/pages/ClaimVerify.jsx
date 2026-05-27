@@ -12,9 +12,11 @@
  */
 
 import React, { useEffect } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useSearchParams, Link } from "react-router-dom";
 
 export default function ClaimVerify() {
+  const { t } = useLanguage();
   const [params] = useSearchParams();
   const token = params.get("token");
 

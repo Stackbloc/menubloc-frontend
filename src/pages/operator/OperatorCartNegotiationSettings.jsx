@@ -9,6 +9,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -117,6 +118,7 @@ function Toggle({ checked, onChange }) {
 }
 
 export default function OperatorCartNegotiationSettings() {
+  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
   const [settings, setSettings] = useState({

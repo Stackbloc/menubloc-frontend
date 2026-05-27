@@ -1,4 +1,5 @@
 import { FILTER_KEYS, FILTER_LABELS } from "../../lib/filterUtils.js";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import ChipRail from "../chips/ChipRail.jsx";
 
 const chipBase = {
@@ -28,6 +29,7 @@ const inactiveStyle = {
 };
 
 export default function ActiveFilterChips({ filters, onToggle, showAll = false }) {
+  const { t } = useLanguage();
   const keys = showAll
     ? FILTER_KEYS
     : FILTER_KEYS.filter((k) => filters[k]);

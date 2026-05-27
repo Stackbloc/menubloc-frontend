@@ -21,6 +21,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { API_BASE } from "../../lib/operatorApi.js";
@@ -84,6 +85,7 @@ function Section({ title, sub, children }) {
 }
 
 export default function OperatorProfileEditor() {
+  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const location = useLocation();
   const rid = selectedRestaurant?.id;
@@ -254,11 +256,19 @@ export default function OperatorProfileEditor() {
   }
 
   if (!rid) {
-    return <OperatorLayout title="Profile"><p style={{ color: "#8a9ab0" }}>Select a restaurant to edit its profile.</p></OperatorLayout>;
+    return (
+      <OperatorLayout title="Profile">
+        <p style={{ color: "#8a9ab0" }}>{t("operator.selectRestaurantProfile", "Select a restaurant to edit its profile.")}</p>
+      </OperatorLayout>
+    );
   }
 
   if (loading) {
-    return <OperatorLayout title="Profile"><p style={{ color: "#8a9ab0" }}>Loading…</p></OperatorLayout>;
+    return (
+      <OperatorLayout title="Profile">
+        <p style={{ color: "#8a9ab0" }}>{t("operator.loading", "Loading…")}</p>
+      </OperatorLayout>
+    );
   }
 
   return (

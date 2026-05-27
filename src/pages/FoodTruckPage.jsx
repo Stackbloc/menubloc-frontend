@@ -21,6 +21,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useParams, useSearchParams } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
@@ -1204,6 +1205,7 @@ function AboutSection({ profile, isDark, c }) {
 /* ─── Page ────────────────────────────────────────────────── */
 
 export default function FoodTruckPage() {
+  const { t } = useLanguage();
   const { slugOrId } = useParams();
   const [searchParams] = useSearchParams();
   const isQrScan = searchParams.get("ref") === "qr";

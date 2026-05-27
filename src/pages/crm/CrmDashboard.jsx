@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import { getCrmDashboard } from "../../lib/crmApi.js";
 import {
@@ -13,6 +14,7 @@ import {
 } from "./CrmShared.jsx";
 
 export default function CrmDashboard() {
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 

@@ -23,6 +23,7 @@
  */
 
 import { useState, useRef } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const CARD_COUNT = 7;
 const PEEK_FULL    = 22; // px of adjacent card visible in full mode
@@ -637,6 +638,7 @@ function EmptyState({ compact }) {
    ============================================================ */
 
 export default function InsightsRolodex({ data, compact = false, itemName = "" }) {
+  const { t } = useLanguage();
   const [activeIdx, setActiveIdx] = useState(0);
   const touchStartX = useRef(null);
 

@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useOwner } from "../../context/OwnerContext.jsx";
 
@@ -59,6 +60,7 @@ export function EmptyState({ children }) {
 }
 
 export default function OwnerLayout({ title, children, actions = null }) {
+  const { t } = useLanguage();
   const { owner, logout } = useOwner();
   const navigate = useNavigate();
 

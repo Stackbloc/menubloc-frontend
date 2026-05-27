@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { getOwnerSupportTickets } from "../../lib/ownerApi.js";
 
 export default function OwnerSupportTickets() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState({ status: "", priority: "", category: "" });
   const [data, setData] = useState(null);
   const [error, setError] = useState("");

@@ -17,6 +17,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useParams } from "react-router-dom";
 import { BackButton } from "../components/NavButton.jsx";
 import { apiGet, apiPost, apiPatch } from "../lib/api.js";
@@ -217,6 +218,7 @@ function QrImageModal({ imageUrl, token, onClose }) {
 }
 
 export default function QrCodesPage() {
+  const { t } = useLanguage();
   const { id: restaurantId } = useParams();
 
   const [codes, setCodes] = useState([]);

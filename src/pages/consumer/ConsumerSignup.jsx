@@ -4,6 +4,7 @@ import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import {
   AuthPageFrame,
   FormError,
@@ -17,6 +18,7 @@ import {
 
 export default function ConsumerSignup() {
   const { signup, loginWithGoogle, loginWithApple } = useConsumer();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = useMemo(() => {
@@ -45,16 +47,20 @@ export default function ConsumerSignup() {
     const nextErrors = {};
     const checklist = getPasswordChecklist(fields.password);
 
-    if (!fields.email.trim()) nextErrors.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email.trim())) nextErrors.email = "Enter a valid email address";
-
-    if (!fields.password) nextErrors.password = "Password is required";
-    else if (!(checklist.minLength && checklist.number && checklist.uppercase)) {
-      nextErrors.password = "Password must be at least 8 characters and include 1 uppercase letter and 1 number";
+    if (!fields.email.trim()) nextErrors.email = t("auth.emailRequired", "Email is required");
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email.trim())) {
+      nextErrors.email = t("auth.validEmailRequired", "Enter a valid email address");
     }
 
-    if (!fields.confirm_password) nextErrors.confirm_password = "Confirm your password";
-    else if (fields.password !== fields.confirm_password) nextErrors.confirm_password = "Passwords do not match";
+    if (!fields.password) nextErrors.password = t("auth.passwordRequired", "Password is required");
+    else if (!(checklist.minLength && checklist.number && checklist.uppercase)) {
+      nextErrors.password = t("auth.passwordRules", "Password must be at least 8 characters and include 1 uppercase letter and 1 number");
+    }
+
+    if (!fields.confirm_password) nextErrors.confirm_password = t("auth.confirmPasswordRequired", "Confirm your password");
+    else if (fields.password !== fields.confirm_password) {
+      nextErrors.confirm_password = t("auth.passwordsDoNotMatch", "Passwords do not match");
+    }
 
     return nextErrors;
   }
@@ -67,7 +73,7 @@ export default function ConsumerSignup() {
     setSocialError("");
 
     if (Object.values(nextErrors).some(Boolean)) {
-      setFormError("Fix the highlighted fields and try again.");
+      setFormError(t("auth.fixHighlightedFields", "Fix the highlighted fields and try again."));
       return;
     }
 
@@ -82,7 +88,7 @@ export default function ConsumerSignup() {
       navigate(redirectTo, { replace: true });
     } catch (error) {
       const payload = error?.payload || {};
-      setFormError(error.message || "Sign up failed. Please try again.");
+      setFormError(error.message || t("auth.signUpFailed", "Sign up failed. Please try again."));
       setFieldErrors(payload.field_errors || {});
     } finally {
       setLoading(false);
@@ -97,7 +103,7 @@ export default function ConsumerSignup() {
       await loginWithGoogle(credential);
       navigate(redirectTo, { replace: true });
     } catch (error) {
-      setSocialError(error.message || "Google sign-in failed. Please try again.");
+      setSocialError(error.message || t("auth.googleSignInFailed", "Google sign-in failed. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -111,7 +117,7 @@ export default function ConsumerSignup() {
       await loginWithApple(payload);
       navigate(redirectTo, { replace: true });
     } catch (error) {
-      setSocialError(error.message || "Apple sign-in failed. Please try again.");
+      setSocialError(error.message || t("auth.appleSignInFailed", "Apple sign-in failed. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -122,18 +128,18 @@ export default function ConsumerSignup() {
     <StickyPageHeader />
     <AuthPageFrame
       showLogo={false}
-      title="Create account"
-      subtitle="Save your food preferences and favorite locations."
+      title={t("auth.consumerSignUpTitle", "Create your account")}
+      subtitle={t("auth.consumerSignUpPageSubtitle", "Save your food preferences and favorite locations.")}
       footer={(
         <p style={styles.footer}>
-          Already have an account?{" "}
-          <Link to="/account/login" style={styles.link}>Log in</Link>
+          {t("auth.alreadyHaveAccount", "Already have an account?")}{" "}
+          <Link to="/account/login" style={styles.link}>{t("auth.signIn", "Sign in")}</Link>
         </p>
       )}
     >
       <form onSubmit={handleSubmit} noValidate style={styles.form}>
         <div style={styles.fieldGroup}>
-          <label htmlFor="consumer-signup-email" style={styles.label}>Email</label>
+          <label htmlFor="consumer-signup-email" style={styles.label}>{t("auth.email", "Email")}</label>
           <input
             id="consumer-signup-email"
             type="email"
@@ -141,7 +147,7 @@ export default function ConsumerSignup() {
             value={fields.email}
             onChange={(event) => setField("email", event.target.value)}
             style={{ ...styles.input, ...(fieldErrors.email ? styles.inputError : null) }}
-            placeholder="you@example.com"
+            placeholder={t("auth.consumerEmailPlaceholder", "you@example.com")}
             aria-invalid={fieldErrors.email ? "true" : "false"}
             aria-describedby={fieldErrors.email ? "consumer-signup-email-error" : undefined}
             required
@@ -151,11 +157,11 @@ export default function ConsumerSignup() {
 
         <PasswordField
           id="consumer-signup-password"
-          label="Password"
+          label={t("auth.password", "Password")}
           autoComplete="new-password"
           value={fields.password}
           onChange={(event) => setField("password", event.target.value)}
-          placeholder="Create a strong password"
+          placeholder={t("auth.createStrongPassword", "Create a strong password")}
           error={fieldErrors.password}
           describedBy={[
             fieldErrors.password ? "consumer-signup-password-error" : null,
@@ -169,11 +175,11 @@ export default function ConsumerSignup() {
 
         <PasswordField
           id="consumer-signup-confirm-password"
-          label="Confirm password"
+          label={t("auth.confirmPassword", "Confirm password")}
           autoComplete="new-password"
           value={fields.confirm_password}
           onChange={(event) => setField("confirm_password", event.target.value)}
-          placeholder="Repeat password"
+          placeholder={t("auth.repeatPassword", "Repeat password")}
           error={fieldErrors.confirm_password}
           describedBy={fieldErrors.confirm_password ? "consumer-signup-confirm-password-error" : undefined}
         />
@@ -185,7 +191,8 @@ export default function ConsumerSignup() {
 
         <div style={styles.fieldGroup}>
           <label htmlFor="consumer-signup-display-name" style={styles.label}>
-            Display name <span style={styles.optional}>(optional)</span>
+            {t("auth.displayName", "Display name")}{" "}
+            <span style={styles.optional}>{t("auth.displayNameOptional", "(optional)")}</span>
           </label>
           <input
             id="consumer-signup-display-name"
@@ -194,7 +201,7 @@ export default function ConsumerSignup() {
             value={fields.display_name}
             onChange={(event) => setField("display_name", event.target.value)}
             style={styles.input}
-            placeholder="How you want to be known"
+            placeholder={t("auth.displayNamePlaceholder", "How you want to be known")}
           />
         </div>
 
@@ -205,7 +212,7 @@ export default function ConsumerSignup() {
           disabled={loading}
           style={{ ...styles.submitButton, ...(loading ? styles.submitButtonDisabled : null) }}
         >
-          {loading ? "Creating account..." : "Create account"}
+          {loading ? t("auth.signingUp", "Creating account…") : t("auth.createAccount", "Create account")}
         </button>
       </form>
 
@@ -224,7 +231,7 @@ export default function ConsumerSignup() {
           onClick={() => setSmsOpen(true)}
           style={{ background: "none", border: "none", color: "#1F4E3D", fontWeight: 800, fontSize: 14, cursor: "pointer", textDecoration: "underline" }}
         >
-          Sign up with phone number
+          {t("auth.signUpWithPhone", "Sign up with phone number")}
         </button>
       </div>
     </AuthPageFrame>

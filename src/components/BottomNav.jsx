@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 function buildSearchHref() {
   try {
@@ -28,17 +29,18 @@ function buildSearchHref() {
   return "/search";
 }
 
-const TABS = [
-  { label: "Home",      icon: "🏠", to: "/" },
-  { label: "Explore",   icon: "🔍", to: "/food-interests" },
-  { label: "Following", icon: "F",  to: "/account/following" },
-  { label: "Basket",    icon: "🛒", to: "/checkout" },
-];
-
 export default function BottomNav() {
+  const { t } = useLanguage();
   const navRef = useRef(null);
   const { pathname } = useLocation();
   const { itemCount } = useOrderCart();
+
+  const tabs = useMemo(() => [
+    { label: t("nav.home", "Home"), icon: "🏠", to: "/" },
+    { label: t("nav.explore", "Explore"), icon: "🔍", to: "/food-interests" },
+    { label: t("nav.following", "Following"), icon: "F", to: "/account/following" },
+    { label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
+  ], [t]);
 
   useEffect(() => {
     const el = navRef.current;
@@ -57,7 +59,7 @@ export default function BottomNav() {
   return (
     <nav
       ref={navRef}
-      aria-label="Main navigation"
+      aria-label={t("nav.mainAria", "Main navigation")}
       style={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200,
         background: "#fff",
@@ -67,7 +69,7 @@ export default function BottomNav() {
         boxShadow: "0 -2px 12px rgba(0,0,0,0.06)",
       }}
     >
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const isCheckout = tab.to === "/checkout";
         const active =
           isCheckout
@@ -79,7 +81,11 @@ export default function BottomNav() {
           <Link
             key={tab.to}
             to={tab.buildHref ? tab.buildHref() : tab.to}
-            aria-label={tab.to === "/checkout" && itemCount > 0 ? `Basket with ${itemCount} items` : tab.label}
+            aria-label={
+              tab.to === "/checkout" && itemCount > 0
+                ? t("nav.basketWithCount", "Basket with {count} items").replace("{count}", String(itemCount))
+                : tab.label
+            }
             style={{
               display: "flex", flexDirection: "column", alignItems: "center",
               gap: 2, textDecoration: "none", minWidth: 56,
@@ -102,7 +108,7 @@ export default function BottomNav() {
               <span aria-hidden="true">{tab.icon}</span>
               {showBadge ? (
                 <span
-                  aria-label={`${itemCount} items in basket`}
+                  aria-label={t("nav.basketItems", "{count} items in basket").replace("{count}", String(itemCount))}
                   style={{
                     position: "absolute",
                     top: -4,
@@ -118,14 +124,13 @@ export default function BottomNav() {
                     lineHeight: "16px",
                     textAlign: "center",
                     boxSizing: "border-box",
-                    pointerEvents: "none",
                   }}
                 >
                   {basketBadge}
                 </span>
               ) : null}
             </span>
-            <span style={{ letterSpacing: "0.01em" }}>{tab.label}</span>
+            <span>{tab.label}</span>
           </Link>
         );
       })}

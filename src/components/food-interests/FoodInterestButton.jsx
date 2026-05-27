@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useFoodInterests } from "../../context/FoodInterestsContext.jsx";
 
 export default function FoodInterestButton({
@@ -8,6 +9,7 @@ export default function FoodInterestButton({
   inactiveLabel = "Interested",
   activeLabel = "✓ Interested",
 }) {
+  const { t } = useLanguage();
   const { isFollowing, isSavingInterest, toggleInterest } = useFoodInterests();
   const followed = isFollowing(interest);
   const saving = isSavingInterest(interest);

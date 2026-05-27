@@ -1,3 +1,5 @@
+import { useLanguage } from "../../context/LanguageContext.jsx";
+
 const backdropStyle = {
   position: "fixed",
   inset: 0,
@@ -43,25 +45,48 @@ const secondaryButtonStyle = {
 };
 
 export default function ReplaceCartModal({ open, currentRestaurantName, nextRestaurantName, onKeep, onReplace }) {
+  const { t } = useLanguage();
   if (!open) return null;
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Start a new order" style={backdropStyle}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("basket.replace.aria", "Start a new order")}
+      style={backdropStyle}
+    >
       <div style={sheetStyle}>
         <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ fontSize: 22, fontWeight: 900, color: "#11211a" }}>Start a new order?</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: "#11211a" }}>
+            {t("basket.replace.title", "Start a new order?")}
+          </div>
           <div style={{ fontSize: 14, lineHeight: 1.6, color: "#475467" }}>
-            Your cart already contains items from another restaurant.
-            Menuply supports one restaurant per order.
+            {t(
+              "basket.replace.body",
+              "Your cart already contains items from another restaurant. Menuply supports one restaurant per order."
+            )}
           </div>
           <div style={{ fontSize: 13, color: "#667085" }}>
-            Current cart: <strong style={{ color: "#11211a" }}>{currentRestaurantName || "another restaurant"}</strong>
-            {nextRestaurantName ? <>{" · "}New item: <strong style={{ color: "#11211a" }}>{nextRestaurantName}</strong></> : null}
+            {t("basket.replace.current", "Current cart:")}{" "}
+            <strong style={{ color: "#11211a" }}>
+              {currentRestaurantName || t("basket.replace.anotherRestaurant", "another restaurant")}
+            </strong>
+            {nextRestaurantName ? (
+              <>
+                {" · "}
+                {t("basket.replace.newItem", "New item:")}{" "}
+                <strong style={{ color: "#11211a" }}>{nextRestaurantName}</strong>
+              </>
+            ) : null}
           </div>
         </div>
         <div style={{ display: "grid", gap: 10 }}>
-          <button type="button" onClick={onKeep} style={secondaryButtonStyle}>Keep current cart</button>
-          <button type="button" onClick={onReplace} style={primaryButtonStyle}>Clear cart and add item</button>
+          <button type="button" onClick={onKeep} style={secondaryButtonStyle}>
+            {t("basket.replace.keep", "Keep current cart")}
+          </button>
+          <button type="button" onClick={onReplace} style={primaryButtonStyle}>
+            {t("basket.replace.clear", "Clear cart and add item")}
+          </button>
         </div>
       </div>
     </div>

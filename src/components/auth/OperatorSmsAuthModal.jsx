@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 export default function OperatorSmsAuthModal({ open, onClose, onSuccess, sendSmsCode, verifySmsCode }) {
+  const { t } = useLanguage();
   const [step, setStep] = useState("phone");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [code, setCode] = useState("");

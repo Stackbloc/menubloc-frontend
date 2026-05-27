@@ -9,8 +9,9 @@
  * ============================================================
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 
@@ -266,9 +267,29 @@ function FoodTruckIcon() {
   );
 }
 
+function planTranslationKey(code) {
+  if (code === "pro_partner") return "pro";
+  if (code === "founders_annual") return "founder";
+  return "verified";
+}
 export default function RestaurantSignupEntry() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [hoveredPlan, setHoveredPlan] = useState(null);
+
+  const localizedPlans = useMemo(
+    () => PLAN_OPTIONS.map((plan) => {
+      const key = planTranslationKey(plan.code);
+      return {
+        ...plan,
+        name: t(`signup.entry.plan.${key}.name`, plan.name),
+        price: t(`signup.entry.plan.${key}.price`, plan.price),
+        description: t(`signup.entry.plan.${key}.description`, plan.description),
+        cta: t(`signup.entry.plan.${key}.cta`, plan.cta),
+      };
+    }),
+    [t]
+  );
 
   function handlePlanSelect(selectedPlan) {
     navigate(ACCOUNT_ROUTE, {
@@ -305,7 +326,7 @@ export default function RestaurantSignupEntry() {
               color: "#101828",
               margin: "16px 0 0",
             }}>
-              Pick the Subscription Right for Your Restaurant
+              {t("signup.entry.title", "Choose your Menuply plan")}
             </h1>
             <div style={{
               fontSize: 16,
@@ -314,13 +335,16 @@ export default function RestaurantSignupEntry() {
               maxWidth: 660,
               marginTop: 12,
             }}>
-              Create your restaurant account with Menuply, then continue with the plan that fits your operation.
+              {t(
+                "signup.entry.subtitle",
+                "Select the plan that fits how you want diners to discover and order from your menu."
+              )}
             </div>
           </div>
         </header>
 
         <section style={styles.cardsGrid}>
-          {PLAN_OPTIONS.map((plan) => (
+          {localizedPlans.map((plan) => (
             <article
               key={plan.code}
               style={styles.card(plan.featured, hoveredPlan === plan.code)}

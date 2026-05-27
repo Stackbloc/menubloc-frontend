@@ -816,7 +816,7 @@ function FilterToggle({ label, active, onClick, isMobile }) {
 }
 
 export default function GrubbidSearchResults() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const params = useQueryParams();
   const navigate = useNavigate();
   const geo = useGeolocation();
@@ -958,6 +958,9 @@ export default function GrubbidSearchResults() {
       if (requestNear) u.searchParams.set("near", requestNear);
     }
     u.searchParams.set("limit", String(SEARCH_LIMIT));
+    if (language && language !== "en") {
+      u.searchParams.set("lang", language);
+    }
 
     // Save the base URL (no geo) for fallback use
     const baseUrl = u.toString();
@@ -1006,6 +1009,7 @@ export default function GrubbidSearchResults() {
     geo.lng,
     routeCuisine,
     routeCategory,
+    language,
   ]);
 
   const [geoFallbackUsed, setGeoFallbackUsed] = useState(false);

@@ -444,6 +444,77 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   );
 }
 
+function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, priceLabel }) {
+  const verdict = detailSystem?.verdict || {};
+  const label = verdict.label;
+  const basis = Array.isArray(verdict.reasons)
+    ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 1)
+    : [];
+  const breadScore = detailSystem?.bread_score || null;
+  const fallbackText = breadScore?.band || t("menuItemDetail.confirmNutritionEstimate", "Nutrition estimate - confirm with restaurant");
+  if (isMobile) return null;
+  return (
+    <Surface
+      style={{
+        marginTop: 12,
+        padding: "10px 14px",
+        position: "sticky",
+        top: STICKY_ITEM_HERO_TOP_PX,
+        zIndex: 39,
+        background: "rgba(18,26,20,0.98)",
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0, flex: "0 1 auto" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.1, color: "#FFFFFF" }}>
+              {itemName}
+            </div>
+            {priceLabel ? (
+              <div style={{ fontSize: 14, fontWeight: 900, color: "#22C55E" }}>
+                {priceLabel}
+              </div>
+            ) : null}
+          </div>
+          <div style={{ marginTop: 4, fontSize: 12, lineHeight: 1.35, color: "#D1D5DB", fontWeight: 700 }}>
+            {label ? (
+              <>
+                <span style={{ color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.08em", fontSize: 10, fontWeight: 900 }}>
+                  {t("menuItemDetail.verdict", "Verdict")}
+                </span>
+                {" "}
+                {label}
+                {basis.length ? ` · ${basis[0]}` : ""}
+              </>
+            ) : (
+              fallbackText
+            )}
+          </div>
+        </div>
+        <Link
+          to={fullMenuHref}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 32,
+            padding: "0 12px",
+            borderRadius: 999,
+            background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+            color: "#0B0F0C",
+            textDecoration: "none",
+            fontSize: 12,
+            fontWeight: 800,
+            whiteSpace: "nowrap",
+          }}
+        >
+          View Full Menu
+        </Link>
+      </div>
+    </Surface>
+  );
+}
 function IndulgenceInline({ presentation }) {
   if (!presentation) return null;
   if (!presentation?.indulgence?.score && presentation?.indulgence?.score !== 0) {
@@ -988,15 +1059,13 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
   useEffect(() => {
     if (!itemId) return undefined;
     let cancelled = false;
+    // Geo context only — search filters (diet, price) are NOT forwarded.
+    // Similar candidates are drawn from the full local family pool regardless
+    // of what filters were active on the search page.
     const params = new URLSearchParams();
     if (geoLat && geoLng) {
       params.set("lat", geoLat);
       params.set("lng", geoLng);
-    }
-    for (const key of SIMILAR_DIET_FILTER_KEYS) {
-      if (activeSearchParams?.get(key) === "1") {
-        params.set(key, "1");
-      }
     }
     const suffix = params.toString() ? `?${params.toString()}` : "";
     fetch(`${BACKEND_BASE}/menu-items/${encodeURIComponent(itemId)}/similar${suffix}`, { credentials: "include" })
@@ -1012,7 +1081,7 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
     return () => {
       cancelled = true;
     };
-  }, [activeSearchParams, geoLat, geoLng, itemId]);
+  }, [geoLat, geoLng, itemId]);
 
   function handleCompare(similarEntry) {
     if (!isSimilarRowCompareEligible(similarEntry)) return;
@@ -1348,7 +1417,7 @@ export default function MenuItemDetailPage() {
                     color: "#FFFFFF",
                     maxWidth: 760,
                     minWidth: 0,
-                    flex: "1 1 320px",
+                    flex: "0 1 auto",
                   }}
                 >
                   {getLocalizedField(item, "name", language) || item.name}

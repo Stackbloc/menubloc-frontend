@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 // FAQ items tailored to the founders / national-rollout audience.
 // Distinct from RestaurantFAQ.jsx which serves the existing onboarding flow.
@@ -106,6 +107,7 @@ const S = {
 };
 
 export default function FoundersFaqAccordion({ instanceId = "founders-faq" }) {
+  const { t } = useLanguage();
   const [expandedIndex, setExpandedIndex] = useState(-1);
 
   return (

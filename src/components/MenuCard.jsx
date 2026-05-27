@@ -6,6 +6,7 @@
    ============================================================ */
 
 import React from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 function formatPrice(value) {
   if (value === null || value === undefined || value === "") return null;
@@ -43,6 +44,7 @@ function Chip({ label, value }) {
 }
 
 export default function MenuCard({ item, compact = false }) {
+  const { t } = useLanguage();
   const name = item?.name || item?.title || "Untitled Item";
   const price = formatPrice(item?.price);
   const notes = String(item?.notes || item?.description || "").trim();

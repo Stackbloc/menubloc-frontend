@@ -10,6 +10,7 @@ mkdir -p "$FRONTEND/src/components"
 
 cat > "$DEST" << 'COMPONENT'
 import { useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const restaurants = [
   {
@@ -104,6 +105,7 @@ function StarRating({ rating }) {
 }
 
 export default function GrubbidHomeV1() {
+  const { t } = useLanguage();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchFocused, setSearchFocused] = useState(false);
   const [activeTab, setActiveTab] = useState("home");

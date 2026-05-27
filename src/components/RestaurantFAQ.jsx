@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const FAQ_ITEMS = [
   {
@@ -163,6 +164,7 @@ const styles = {
 };
 
 export default function RestaurantFAQ({ instanceId = "restaurant-faq" }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState(-1);
 

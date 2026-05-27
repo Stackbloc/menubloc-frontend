@@ -22,6 +22,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 
@@ -286,6 +287,7 @@ function formatAddress(r) {
 /* ---- Main component ---- */
 
 export default function ProfileSearchPage() {
+  const { t } = useLanguage();
   const nav      = useNavigate();
   const location = useLocation();
 

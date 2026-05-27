@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import OwnerLayout, { EmptyState, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { getOwnerRestaurantSignups } from "../../lib/ownerApi.js";
 
 export default function OwnerRestaurants() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState(() => ({ ...defaultRange(), city: "", state: "", claimed: "0" }));
   const [data, setData] = useState(null);
   const [error, setError] = useState("");

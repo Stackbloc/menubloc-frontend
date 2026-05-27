@@ -15,6 +15,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useNavigate } from "react-router-dom";
 
 const THEME_KEY = "grubbid_theme"; // "light" | "dark"
@@ -41,6 +42,7 @@ function getInitialTheme() {
 }
 
 export default function GrubbidDiscovery() {
+  const { t } = useLanguage();
   const nav = useNavigate();
   const areaInputRef = useRef(null);
 

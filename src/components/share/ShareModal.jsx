@@ -21,16 +21,17 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildShareLinks, copyText, trackShareEvent } from "./shareUtils.js";
 import { trackMenuShare } from "../../lib/analytics.js";
 
-const ACTIONS = [
-  { key: "copy", label: "Copy Link" },
-  { key: "sms", label: "SMS/Text" },
-  { key: "email", label: "Email" },
-  { key: "facebook", label: "Facebook" },
-  { key: "x", label: "X" },
-  { key: "whatsapp", label: "WhatsApp" },
+const ACTION_KEYS = [
+  { key: "copy", labelKey: "share.copyLink", fallback: "Copy Link" },
+  { key: "sms", labelKey: "share.sms", fallback: "SMS/Text" },
+  { key: "email", labelKey: "share.email", fallback: "Email" },
+  { key: "facebook", labelKey: "share.facebook", fallback: "Facebook" },
+  { key: "x", labelKey: "share.x", fallback: "X" },
+  { key: "whatsapp", labelKey: "share.whatsapp", fallback: "WhatsApp" },
 ];
 
 function eventNameForAction(variant, action) {
@@ -59,9 +60,15 @@ export default function ShareModal({
   shareData,
   analyticsContext,
   variant = "menu",
-  modalTitle = "Share Menu",
+  modalTitle,
 }) {
+  const { t } = useLanguage();
   const [copyState, setCopyState] = useState("idle");
+  const resolvedTitle = modalTitle || t("share.title", "Share");
+  const actions = ACTION_KEYS.map((a) => ({
+    key: a.key,
+    label: t(a.labelKey, a.fallback),
+  }));
   const links = useMemo(() => buildShareLinks(shareData), [shareData]);
   const entityLabel = variant === "dish" ? "dish" : "menu";
 
@@ -170,20 +177,20 @@ export default function ShareModal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={modalTitle}
+        aria-label={resolvedTitle}
         style={cardStyle}
         onClick={(event) => event.stopPropagation()}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "#11211a" }}>{modalTitle}</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "#11211a" }}>{resolvedTitle}</div>
             <div style={{ marginTop: 4, fontSize: 13, color: "#667085", lineHeight: 1.45 }}>
               {`Share the canonical Menuply ${entityLabel} link.`}
             </div>
           </div>
           <button
             type="button"
-            aria-label="Close share options"
+            aria-label={t("share.close", "Close")}
             onClick={() => onClose?.()}
             style={{
               width: 38,
@@ -203,7 +210,7 @@ export default function ShareModal({
         </div>
 
         <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
-          {ACTIONS.map((action) => {
+          {actions.map((action) => {
             if (action.key === "copy") {
               return (
                 <button
@@ -212,7 +219,7 @@ export default function ShareModal({
                   onClick={handleCopy}
                   style={actionStyle}
                 >
-                  {copyState === "success" ? "Copied" : action.label}
+                  {copyState === "success" ? t("share.copied", "Link copied") : action.label}
                 </button>
               );
             }

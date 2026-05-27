@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 const wrapperStyle = {
   display: "flex",
@@ -22,10 +23,11 @@ const currentStyle = {
 };
 
 export default function Breadcrumbs({ items = [] }) {
+  const { t } = useLanguage();
   if (!Array.isArray(items) || items.length === 0) return null;
 
   return (
-    <nav aria-label="Breadcrumb" style={wrapperStyle}>
+    <nav aria-label={t("breadcrumb.aria", "Breadcrumb")} style={wrapperStyle}>
       {items.map((item, index) => {
         const key = `${item.label}-${index}`;
         const isLast = index === items.length - 1;

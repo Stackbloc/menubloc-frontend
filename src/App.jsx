@@ -121,7 +121,7 @@ import Terms from "./pages/Terms.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
 import RestaurantMerchantTerms from "./pages/RestaurantMerchantTerms.jsx";
 import RestaurantSubscriptionTerms from "./pages/RestaurantSubscriptionTerms.jsx";
-import AboutGrubbid from "./pages/AboutGrubbid.jsx";
+import AboutMenuply from "./pages/AboutMenuply.jsx";
 import Contact from "./pages/Contact.jsx";
 
 import QrCodesPage from "./pages/QrCodesPage.jsx";
@@ -521,7 +521,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/privacy" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PrivacyPolicy />} />
         <Route path="/restaurant/terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantMerchantTerms />} />
         <Route path="/restaurant/subscription-terms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSubscriptionTerms />} />
-        <Route path="/about" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AboutGrubbid />} />
+        <Route path="/about" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AboutMenuply />} />
         <Route path="/contact" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Contact />} />
 
         <Route path="/restaurant/pdf-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PdfUploadPage />} />

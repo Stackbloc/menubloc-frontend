@@ -2,8 +2,11 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ChainLocationsSheet from "./ChainLocationsSheet.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { followRestaurant, unfollowRestaurant } from "../../lib/consumerApi.js";
 import { getDisplayItemCount } from "../../lib/publicCardCounts.js";
+import { getLocalizedField, getLocalizedPreviewLabel } from "../../utils/getLocalizedField.js";
+import { appendLanguageParam } from "../../lib/languageApi.js";
 
 function buildMergedSearch(baseSearch, extra) {
   const params = new URLSearchParams(baseSearch || "");
@@ -92,18 +95,31 @@ export default function DiscoveryCard({
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useConsumer();
+  const { language, t } = useLanguage();
   const id = menu?.restaurant_id;
   const chainId = menu?.chain_id ?? null;
-  const name = (menu?.restaurant_name || "Restaurant").replace(/^The\s+/i, "");
+  const localizedName =
+    getLocalizedField(menu, "restaurant_name", language) ||
+    getLocalizedField(menu, "name", language) ||
+    menu?.restaurant_name ||
+    menu?.name ||
+    t("common.restaurant", "Restaurant");
+  const name = localizedName.replace(/^The\s+/i, "");
   const cuisine = menu?.cuisine || menu?.category || null;
   const distance = formatDistance(menu?.distance_miles);
   const locationCount = menu?.location_count || 1;
   const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
   const isVerified = menu?.menu_status === "published";
-  const chips = (menu?.preview_items || []).slice(0, 3);
+  const previewSource = Array.isArray(menu?.preview_menu_items) && menu.preview_menu_items.length
+    ? menu.preview_menu_items
+    : menu?.preview_items || [];
+  const chips = previewSource.slice(0, 3).map((item) => getLocalizedPreviewLabel(item, language));
   const phone = menu?.phone || null;
 
-  const href = `/public/restaurants/${id}/menu${buildMergedSearch(location.search, activeFilterParams)}`;
+  const href = appendLanguageParam(
+    `/public/restaurants/${id}/menu${buildMergedSearch(location.search, activeFilterParams)}`,
+    language
+  );
 
   async function handleFollow(e) {
     e.preventDefault();
@@ -125,13 +141,16 @@ export default function DiscoveryCard({
     setFollowLoading(false);
   }
 
+  const itemWord = t(itemCount === 1 ? "common.itemSingular" : "common.itemPlural", itemCount === 1 ? "item" : "items");
   const itemCountLabel = itemCount > 0
-    ? (activeFilterLabel ? `${itemCount} ${activeFilterLabel} items` : `${itemCount} items`)
+    ? (activeFilterLabel ? `${itemCount} ${activeFilterLabel} ${itemWord}` : `${itemCount} ${itemWord}`)
     : null;
 
   const hasGeoContext = menu?.distance_miles != null;
   const locationCountLabel = locationCount > 1
-    ? `${locationCount} location${locationCount === 1 ? "" : "s"} ${hasGeoContext ? "nearby" : "in this area"}`
+    ? (hasGeoContext
+      ? t("discovery.locationCountNearby", "{count} locations nearby", { count: locationCount })
+      : t("discovery.locationCountArea", "{count} locations in this area", { count: locationCount }))
     : null;
 
   const metaItems = [

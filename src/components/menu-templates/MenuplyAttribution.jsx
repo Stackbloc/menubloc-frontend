@@ -1,8 +1,10 @@
+import { useLanguage } from "../../context/LanguageContext.jsx";
 /**
  * Subtle platform attribution — restaurant branding stays primary.
  */
 
 export default function MenuplyAttribution({ label = "Menus by Menuply" }) {
+  const { t } = useLanguage();
   return (
     <div
       style={{

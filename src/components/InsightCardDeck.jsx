@@ -24,6 +24,7 @@
  */
 
 import { useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 /* ---- Chip resolver ---- */
 
@@ -272,6 +273,7 @@ const CSS_COLORS = {
 /* ---- Component ---- */
 
 export default function InsightCardDeck({ item, colors }) {
+  const { t } = useLanguage();
   const [idx, setIdx] = useState(0);
 
   const cards = buildInsightCards(item);

@@ -17,6 +17,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -61,6 +62,7 @@ function saveBlob(blob, filename) {
 }
 
 export default function OperatorAdobeStudio() {
+  const { t } = useLanguage();
   const { selectedRestaurant, hasBenefit } = useOperator();
   const rid = selectedRestaurant?.id;
   const designAllowed = hasBenefit("design_exports");

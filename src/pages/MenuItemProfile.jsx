@@ -15,6 +15,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useParams } from "react-router-dom";
 
 function useIsMobile(breakpoint = 768) {
@@ -39,6 +40,7 @@ function useIsMobile(breakpoint = 768) {
 }
 
 export default function MenuItemProfile() {
+  const { t } = useLanguage();
   const { restaurantId, menuItemId } = useParams();
   const isMobile = useIsMobile();
 

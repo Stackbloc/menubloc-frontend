@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { BrandLogo } from "../BrandLogo.jsx";
 
 const GOOGLE_SCRIPT = "https://accounts.google.com/gsi/client";
@@ -77,7 +78,10 @@ export function PasswordField({
   error,
   describedBy,
 }) {
+  const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
+  const showLabel = t("auth.showPassword", "Show");
+  const hideLabel = t("auth.hidePassword", "Hide");
 
   return (
     <div style={styles.fieldGroup}>
@@ -103,10 +107,10 @@ export function PasswordField({
           type="button"
           onClick={() => setVisible((current) => !current)}
           style={styles.passwordToggle}
-          aria-label={`${visible ? "Hide" : "Show"} ${label.toLowerCase()}`}
+          aria-label={`${visible ? hideLabel : showLabel} ${label.toLowerCase()}`}
           aria-pressed={visible}
         >
-          {visible ? "Hide" : "Show"}
+          {visible ? hideLabel : showLabel}
         </button>
       </div>
       {error ? <div id={`${id}-error`} style={styles.fieldError}>{error}</div> : null}
@@ -115,16 +119,17 @@ export function PasswordField({
 }
 
 export function PasswordChecklist({ password }) {
+  const { t } = useLanguage();
   const checklist = useMemo(() => getPasswordChecklist(password), [password]);
   const items = [
-    { key: "minLength", label: "At least 8 characters" },
-    { key: "number", label: "At least 1 number" },
-    { key: "uppercase", label: "At least 1 uppercase letter" },
+    { key: "minLength", label: t("auth.checklist.minLength", "At least 8 characters") },
+    { key: "number", label: t("auth.checklist.number", "At least 1 number") },
+    { key: "uppercase", label: t("auth.checklist.uppercase", "At least 1 uppercase letter") },
   ];
 
   return (
     <div style={styles.statusCard} aria-live="polite">
-      <div style={styles.statusHeading}>Password requirements</div>
+      <div style={styles.statusHeading}>{t("auth.passwordRequirements", "Password requirements")}</div>
       <ul style={styles.statusList}>
         {items.map((item) => (
           <li key={item.key} style={styles.statusListItem}>
@@ -138,6 +143,7 @@ export function PasswordChecklist({ password }) {
 }
 
 export function PasswordMatchStatus({ password, confirmPassword }) {
+  const { t } = useLanguage();
   if (!confirmPassword) return null;
 
   const matches = password === confirmPassword && Boolean(password);
@@ -146,7 +152,9 @@ export function PasswordMatchStatus({ password, confirmPassword }) {
       style={matches ? styles.successNote : styles.warningNote}
       aria-live="polite"
     >
-      {matches ? "Passwords match" : "Passwords do not match"}
+      {matches
+        ? t("auth.passwordsMatch", "Passwords match")
+        : t("auth.passwordsDoNotMatch", "Passwords do not match")}
     </div>
   );
 }
@@ -157,10 +165,11 @@ export function FormError({ error }) {
 }
 
 export function Divider() {
+  const { t } = useLanguage();
   return (
     <div style={styles.dividerRow} aria-hidden="true">
       <span style={styles.dividerLine} />
-      <span style={styles.dividerText}>or continue with</span>
+      <span style={styles.dividerText}>{t("auth.orContinueWith", "or continue with")}</span>
       <span style={styles.dividerLine} />
     </div>
   );
@@ -176,6 +185,7 @@ function GoogleButtonFallback({ onClick, disabled, label }) {
 }
 
 export function GoogleSignInButton({ onCredential, onError, disabled, contextLabel }) {
+  const { t } = useLanguage();
   const buttonRef = useRef(null);
   const clientId = String(import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim();
 
@@ -212,7 +222,7 @@ export function GoogleSignInButton({ onCredential, onError, disabled, contextLab
           logo_alignment: "left",
         });
       })
-      .catch(() => onError?.("Google sign-in could not be loaded"));
+      .catch(() => onError?.(t("auth.googleLoadFailed", "Google sign-in could not be loaded")));
 
     return () => {
       cancelled = true;
@@ -222,7 +232,7 @@ export function GoogleSignInButton({ onCredential, onError, disabled, contextLab
   if (!clientId) {
     return (
       <GoogleButtonFallback
-        label="Continue with Google"
+        label={t("auth.continueGoogle", "Continue with Google")}
         disabled
       />
     );
@@ -231,23 +241,30 @@ export function GoogleSignInButton({ onCredential, onError, disabled, contextLab
   if (disabled) {
     return (
       <GoogleButtonFallback
-        label="Continue with Google"
+        label={t("auth.continueGoogle", "Continue with Google")}
         disabled
       />
     );
   }
 
-  return <div ref={buttonRef} style={styles.googleButtonMount} aria-label="Continue with Google" />;
+  return (
+    <div
+      ref={buttonRef}
+      style={styles.googleButtonMount}
+      aria-label={t("auth.continueGoogle", "Continue with Google")}
+    />
+  );
 }
 
 export function AppleSignInButton({ onSuccess, onError, disabled }) {
+  const { t } = useLanguage();
   const clientId = String(import.meta.env.VITE_APPLE_CLIENT_ID || "").trim();
   const redirectURI = String(import.meta.env.VITE_APPLE_REDIRECT_URI || "").trim();
 
   async function handleClick() {
     if (disabled) return;
     if (!clientId || !redirectURI) {
-      onError?.("Apple sign-in is not configured for this environment");
+      onError?.(t("auth.appleNotConfigured", "Apple sign-in is not configured for this environment"));
       return;
     }
 
@@ -279,7 +296,7 @@ export function AppleSignInButton({ onSuccess, onError, disabled }) {
       if (String(error?.error || "").toLowerCase() === "popup_closed_by_user") {
         return;
       }
-      onError?.("Apple sign-in could not be completed");
+      onError?.(t("auth.appleFailed", "Apple sign-in could not be completed"));
     }
   }
 
@@ -291,7 +308,7 @@ export function AppleSignInButton({ onSuccess, onError, disabled }) {
       style={{ ...styles.oauthButton, ...styles.appleButton, ...(disabled ? styles.oauthButtonDisabled : null) }}
     >
       <span style={styles.appleLogo} aria-hidden="true">Apple</span>
-      <span>Continue with Apple</span>
+      <span>{t("auth.continueApple", "Continue with Apple")}</span>
     </button>
   );
 }

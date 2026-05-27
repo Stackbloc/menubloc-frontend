@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import {
@@ -112,6 +113,7 @@ const OPTIONS = [
 ];
 
 export default function MenuUploadChoicePage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const recovery = useMemo(

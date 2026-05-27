@@ -13,9 +13,11 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+import { useOperatorLabels } from "../../i18n/useOperatorLabels.js";
 
 // ── Shared styles ─────────────────────────────────────────────────────────
 const INPUT = {
@@ -55,7 +57,7 @@ const DEAL_TYPES = [
   { value: "other",        label: "Other" },
 ];
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, t }) {
   const map = {
     active:  { bg: "#d1fae5", color: "#065f46" },
     draft:   { bg: "#fef9c3", color: "#854d0e" },
@@ -66,7 +68,7 @@ function StatusBadge({ status }) {
   const s = map[status] || { bg: "#f1f5f9", color: "#475569" };
   return (
     <span style={{ background: s.bg, color: s.color, borderRadius: 999, padding: "3px 9px", fontSize: 11, fontWeight: 700 }}>
-      {status}
+      {t ? t(`operator.deals.status.${status}`, status) : status}
     </span>
   );
 }
@@ -577,7 +579,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
 }
 
 // ── Deal row ───────────────────────────────────────────────────────────────
-function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy }) {
+function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy, labels }) {
   const isFeatured = deal.billboard_status === "active";
   return (
     <div className="operator-responsive-row" style={{
@@ -616,25 +618,25 @@ function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy }) {
       </div>
 
       <div className="operator-responsive-status" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-        <StatusBadge status={deal.status} />
+        <StatusBadge status={deal.status} t={labels.t} />
         <div className="operator-responsive-card-actions" style={{ display: "flex", gap: 6 }}>
           {deal.status === "draft" && (
             <button style={BTN("sm")} onClick={() => onPublish(deal)} disabled={busy}>
-              Publish
+              {labels.publish}
             </button>
           )}
           {deal.status === "active" && (
             <button style={{ ...BTN("sm", { background: "#f59e0b", color: "#fff" }) }} onClick={() => onPause(deal)} disabled={busy}>
-              Pause
+              {labels.pause}
             </button>
           )}
           {deal.status === "paused" && (
             <button style={BTN("sm")} onClick={() => onPublish(deal)} disabled={busy}>
-              Resume
+              {labels.publish}
             </button>
           )}
           <button style={{ ...BTN("ghost"), fontSize: 12, padding: "4px 10px" }} onClick={() => onEdit(deal)} disabled={busy}>
-            Edit
+            {labels.edit}
           </button>
           <button style={{ ...BTN("danger"), fontSize: 12, padding: "4px 10px" }} onClick={() => onDelete(deal)} disabled={busy}>
             ✕
@@ -646,7 +648,16 @@ function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy }) {
 }
 
 // ── Main page ──────────────────────────────────────────────────────────────
+const FILTER_LABEL_KEYS = {
+  all: "filterAll",
+  active: "filterActive",
+  draft: "filterDraft",
+  paused: "filterPaused",
+  expired: "filterExpired",
+};
+
 export default function OperatorDealsEditor() {
+  const labels = useOperatorLabels();
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
 
@@ -813,8 +824,10 @@ export default function OperatorDealsEditor() {
 
   if (!rid) {
     return (
-      <OperatorLayout title="Deals">
-        <p style={{ color: "#8a9ab0" }}>Select a restaurant to manage deals.</p>
+      <OperatorLayout title={labels.t("operator.deals.title", "Deals")}>
+        <p style={{ color: "#8a9ab0" }}>
+          {labels.t("operator.selectRestaurantFirst", "Select a restaurant first.")}
+        </p>
       </OperatorLayout>
     );
   }
@@ -822,7 +835,7 @@ export default function OperatorDealsEditor() {
   const STATUS_FILTERS = ["all", "active", "draft", "paused", "expired"];
 
   return (
-    <OperatorLayout title="Deals">
+    <OperatorLayout title={labels.t("operator.deals.title", "Deals")}>
       {/* ── Top bar ──────────────────────────────────────────────────── */}
       <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 6 }}>
@@ -843,7 +856,7 @@ export default function OperatorDealsEditor() {
                 color: statusFilter === s ? "#fff" : "#5b6675",
               }}
             >
-              {s.charAt(0).toUpperCase() + s.slice(1)}
+              {labels[FILTER_LABEL_KEYS[s]] || s}
             </button>
           ))}
         </div>
@@ -852,7 +865,7 @@ export default function OperatorDealsEditor() {
           style={{ ...BTN("primary"), marginLeft: "auto" }}
           onClick={() => { setShowForm(v => !v); setEditingDeal(null); setEditingBillboard(null); }}
         >
-          + New deal
+          + {labels.newDeal}
         </button>
       </div>
 
@@ -892,7 +905,7 @@ export default function OperatorDealsEditor() {
 
       {/* Deals list */}
       {loading ? (
-        <p style={{ color: "#8a9ab0", fontSize: 13 }}>Loading deals…</p>
+        <p style={{ color: "#8a9ab0", fontSize: 13 }}>{labels.loading}</p>
       ) : deals.length === 0 ? (
         <div style={{
           background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14,
@@ -900,7 +913,7 @@ export default function OperatorDealsEditor() {
         }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>⊹</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "#0f1720", marginBottom: 8 }}>
-            {statusFilter === "all" ? "No deals yet" : `No ${statusFilter} deals`}
+            {statusFilter === "all" ? labels.noDeals : `${labels.noDeals} (${labels.statusLabel(statusFilter)})`}
           </div>
           {statusFilter === "all" && (
             <div style={{ fontSize: 13, color: "#8a9ab0" }}>
@@ -919,6 +932,7 @@ export default function OperatorDealsEditor() {
               onPause={handlePause}
               onDelete={handleDelete}
               busy={busy}
+              labels={labels}
             />
           ))}
         </div>

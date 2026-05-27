@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useLocation } from "react-router-dom";
 import { useOrderCart } from "../../context/OrderCartContext.jsx";
 import ResumeCartModal from "./ResumeCartModal.jsx";
@@ -9,6 +10,7 @@ const CART_PROMPT_SHOWN_KEY = "cart_prompt_shown";
 const ELIGIBLE_PATHS = new Set(["/", "/deals", "/checkout"]);
 
 export default function BasketResumePrompt() {
+  const { t } = useLanguage();
   const location = useLocation();
   const { restaurant, items, updatedAt, clearCart } = useOrderCart();
   const [visible, setVisible] = useState(false);

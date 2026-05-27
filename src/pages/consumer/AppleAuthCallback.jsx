@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 const styles = {
   page: {
@@ -33,6 +34,7 @@ const styles = {
 };
 
 export default function AppleAuthCallback() {
+  const { t } = useLanguage();
   return (
     <div style={styles.page}>
       <div style={styles.card}>

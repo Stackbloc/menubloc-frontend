@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useParams, Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
@@ -17,6 +18,7 @@ const STATUS_STYLE = {
 };
 
 export default function OwnerMenuUploadDetail() {
+  const { t } = useLanguage();
   const { uploadId } = useParams();
   const [upload, setUpload] = useState(null);
   const [error, setError] = useState("");

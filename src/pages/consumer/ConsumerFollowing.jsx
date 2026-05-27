@@ -4,6 +4,7 @@ import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { getFollowedRestaurants } from "../../lib/consumerApi.js";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 function formatFollowedDate(value) {
   if (!value) return "Following";
@@ -72,6 +73,7 @@ function formatBillboardDateRange(startsAt, endsAt) {
 }
 
 export default function ConsumerFollowing() {
+  const { t } = useLanguage();
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const navigate = useNavigate();
 
@@ -113,7 +115,7 @@ export default function ConsumerFollowing() {
   if (authLoading || loading) {
     return (
       <>
-      <StickyPageHeader title="Following" />
+      <StickyPageHeader title={t("consumer.following.title", "Following")} />
       <div style={styles.page}>
         <div style={styles.card}>
           <p style={styles.helperText}>Loading your following feed…</p>
@@ -126,13 +128,13 @@ export default function ConsumerFollowing() {
 
   return (
     <>
-    <StickyPageHeader title="Following" />
+    <StickyPageHeader title={t("consumer.following.title", "Following")} />
     <div style={styles.page}>
       <div style={styles.pageInner}>
 
         <div style={styles.header}>
           <div>
-            <h1 style={styles.pageTitle}>Following</h1>
+            <h1 style={styles.pageTitle}>{t("consumer.following.title", "Following")}</h1>
             <p style={styles.pageSubtitle}>{headingCopy}</p>
           </div>
           <Link to="/browse-menus" style={styles.browseLink}>Browse restaurants</Link>

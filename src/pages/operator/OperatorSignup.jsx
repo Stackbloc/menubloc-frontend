@@ -11,6 +11,7 @@
 import React, { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import {
   AuthPageFrame,
   FormError,
@@ -23,6 +24,7 @@ import {
 
 export default function OperatorSignup() {
   const { register, isAuthenticated, isEmailVerified, loading, operator, restaurants } = useOperator();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [fields, setFields] = useState({
@@ -50,21 +52,21 @@ export default function OperatorSignup() {
     const checklist = getPasswordChecklist(fields.password);
 
     if (!fields.email.trim()) {
-      errors.email = "Email is required";
+      errors.email = t("auth.emailRequired", "Email is required");
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email.trim())) {
-      errors.email = "Enter a valid email address";
+      errors.email = t("auth.validEmailRequired", "Enter a valid email address");
     }
 
     if (!fields.password) {
-      errors.password = "Password is required";
+      errors.password = t("auth.passwordRequired", "Password is required");
     } else if (!(checklist.minLength && checklist.number && checklist.uppercase)) {
-      errors.password = "Password must be at least 8 characters and include 1 uppercase letter and 1 number";
+      errors.password = t("auth.passwordRules", "Password must be at least 8 characters and include 1 uppercase letter and 1 number");
     }
 
     if (!fields.confirm_password) {
-      errors.confirm_password = "Confirm your password";
+      errors.confirm_password = t("auth.confirmPasswordRequired", "Confirm your password");
     } else if (fields.password !== fields.confirm_password) {
-      errors.confirm_password = "Passwords do not match";
+      errors.confirm_password = t("auth.passwordsDoNotMatch", "Passwords do not match");
     }
 
     return errors;
@@ -77,7 +79,7 @@ export default function OperatorSignup() {
     setFormError("");
 
     if (Object.values(errors).some(Boolean)) {
-      setFormError("Fix the highlighted fields and try again.");
+      setFormError(t("auth.fixHighlightedFields", "Fix the highlighted fields and try again."));
       return;
     }
 
@@ -98,7 +100,7 @@ export default function OperatorSignup() {
       }
       navigate(dest, { replace: true });
     } catch (err) {
-      setFormError(err.message || "Account creation failed. Please try again.");
+      setFormError(err.message || t("auth.signUpFailed", "Sign up failed. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -106,12 +108,12 @@ export default function OperatorSignup() {
 
   return (
     <AuthPageFrame
-      title="Create operator account"
-      subtitle="List and manage your restaurant on Menuply."
+      title={t("auth.operatorSignUpTitle", "Create operator account")}
+      subtitle={t("auth.operatorSignUpSubtitle", "Start managing your restaurant on Menuply.")}
       footer={(
         <p style={styles.footer}>
-          Already have an account?{" "}
-          <Link to="/operator/login" style={styles.link}>Sign in</Link>
+          {t("auth.alreadyHaveAccount", "Already have an account?")}{" "}
+          <Link to="/operator/login" style={styles.link}>{t("auth.signIn", "Sign in")}</Link>
         </p>
       )}
     >
@@ -133,7 +135,7 @@ export default function OperatorSignup() {
         </div>
 
         <div style={styles.fieldGroup}>
-          <label htmlFor="operator-signup-email" style={styles.label}>Email</label>
+          <label htmlFor="operator-signup-email" style={styles.label}>{t("auth.email", "Email")}</label>
           <input
             id="operator-signup-email"
             type="email"
@@ -150,7 +152,7 @@ export default function OperatorSignup() {
 
         <PasswordField
           id="operator-signup-password"
-          label="Password"
+          label={t("auth.password", "Password")}
           autoComplete="new-password"
           value={fields.password}
           onChange={(e) => setField("password", e.target.value)}
@@ -162,7 +164,7 @@ export default function OperatorSignup() {
 
         <PasswordField
           id="operator-signup-confirm-password"
-          label="Confirm password"
+          label={t("auth.confirmPassword", "Confirm password")}
           autoComplete="new-password"
           value={fields.confirm_password}
           onChange={(e) => setField("confirm_password", e.target.value)}
@@ -182,7 +184,7 @@ export default function OperatorSignup() {
           disabled={busy}
           style={{ ...styles.submitButton, ...(busy ? styles.submitButtonDisabled : null) }}
         >
-          {busy ? "Creating account..." : "Create account"}
+          {busy ? t("auth.signingUp", "Creating account...") : t("auth.createAccount", "Create account")}
         </button>
       </form>
     </AuthPageFrame>
