@@ -1331,10 +1331,43 @@ export default function GrubbidDiscovery() {
             ))
           ) : inlineError ? null : showBackendEmptyState ? (
             <div style={{
-              textAlign: "center", padding: "48px 20px",
-              color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
+              background: "#111827", borderRadius: 20, padding: "36px 28px",
+              marginTop: 8, border: "1px solid rgba(255,255,255,0.07)",
             }}>
-              {"No menus found in this area yet. Try another city."}
+              <div style={{
+                fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+                textTransform: "uppercase", color: "#6ee7b7", marginBottom: 12,
+              }}>
+                Coming Soon to Your Area
+              </div>
+              <div style={{
+                fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 12,
+                lineHeight: 1.3,
+              }}>
+                Introducing Menuply
+              </div>
+              <p style={{ fontSize: 14, color: "#9ca3af", lineHeight: 1.65, margin: "0 0 24px" }}>
+                Menuply is a restaurant-first ordering and discovery platform expanding
+                nationally. Restaurants in your area can sign up now and diners can create
+                a free account to get notified as local coverage grows.
+              </p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <Link to="/join" style={{
+                  display: "inline-flex", alignItems: "center", height: 44,
+                  padding: "0 22px", borderRadius: 14, background: "#1F4E3D",
+                  color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none",
+                }}>
+                  Restaurant Signup
+                </Link>
+                <a href="https://menuply.com/account/signup" style={{
+                  display: "inline-flex", alignItems: "center", height: 44,
+                  padding: "0 22px", borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  color: "#e5e7eb", fontWeight: 700, fontSize: 13, textDecoration: "none",
+                }}>
+                  Diner Signup
+                </a>
+              </div>
             </div>
           ) : showFilterEmptyState ? (
             <div style={{
