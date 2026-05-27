@@ -1,32 +1,28 @@
 import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
-const FAQ_ITEMS = [
+const FAQ_DEFS = [
   {
-    question: "Why does Menuply charge a subscription fee?",
-    answer: [
-      "Menuply charges a subscription fee because restaurants need more than just a listing. The platform provides restaurant profile pages, menu presentation, ordering tools, deal promotion, QR code support, customer discovery features, and self-service management tools.",
-      "At the same time, Menuply was intentionally designed to remain affordable and accessible for independent restaurants and local businesses. Restaurants that want to establish a presence on the platform at no cost can choose the Verified plan, which is 100% free and includes a public restaurant profile, a single menu with unlimited menu items, and QR code support.",
-      "Many restaurants already pay more for website hosting alone. Menuply is designed to give restaurants a practical online commerce presence at a lower overall cost than relying only on traditional delivery marketplaces or expensive custom website solutions.",
-      "Restaurants also play an important role in growing Menuply's reach and their own by using door QR codes, sharing their Menuply page on social media, linking to it from printed menus, and encouraging regular customers to order directly through Menuply.",
+    questionKey: "onboarding.faq.q1",
+    answerKeys: [
+      "onboarding.faq.q1.a1",
+      "onboarding.faq.q1.a2",
+      "onboarding.faq.q1.a3",
+      "onboarding.faq.q1.a4",
     ],
   },
   {
-    question: "Menuply is not as well known as the major platforms. How will it generate business for my restaurant?",
-    answer: [
-      "Menuply is new and growing, so restaurants should not expect the same instant traffic volume as the largest delivery marketplaces on day one.",
-      "The value is that Menuply helps restaurants build a lower-cost direct ordering and discovery channel over time. Restaurants can drive traffic through QR codes, social media, printed menus, customer referrals, deals, and their own existing customer base.",
-      "As more restaurants and diners use the platform, Menuply's discovery value increases. Restaurants that join early can help shape that local network while benefiting from a lower-cost structure.",
-    ],
+    questionKey: "onboarding.faq.q2",
+    answerKeys: ["onboarding.faq.q2.a1", "onboarding.faq.q2.a2", "onboarding.faq.q2.a3"],
   },
   {
-    question: "My restaurant sells indulgent food, comfort food, or items that are not considered healthy. Why would I want to be on Menuply?",
-    answer: [
-      "Menuply is not designed only for healthy restaurants. It is designed to help diners better understand what they are ordering, whether that is a grilled salmon bowl, a plate of wings, a loaded burger, or a slice of cheesecake.",
-      "Many diners actively search for indulgent foods, comfort foods, desserts, wings, barbecue, burgers, and other craveable meals. Menuply helps restaurants showcase those items more effectively through stronger menu presentation, better organization, improved discovery tools, and visually engaging menu experiences.",
-      "The goal is not to judge restaurant menus. The goal is to help diners make informed decisions and help restaurants market and sell their food more effectively.",
-      "Menuply also recognizes that restaurants have different identities and customer bases. A sports bar, steakhouse, dessert shop, seafood restaurant, and vegan cafe should not all look or feel the same. The platform should support that diversity through menu presentation styles, promotional tools, and restaurant branding options.",
-      "Menuply is a restaurant commerce and discovery platform, not a diet app.",
+    questionKey: "onboarding.faq.q3",
+    answerKeys: [
+      "onboarding.faq.q3.a1",
+      "onboarding.faq.q3.a2",
+      "onboarding.faq.q3.a3",
+      "onboarding.faq.q3.a4",
+      "onboarding.faq.q3.a5",
     ],
   },
 ];
@@ -179,12 +175,17 @@ export default function RestaurantFAQ({ instanceId = "restaurant-faq" }) {
       >
         <div style={styles.toggleRow}>
           <div style={styles.toggleCopy}>
-            <div style={styles.eyebrow}>Restaurant FAQ</div>
-            <div style={styles.title}>Questions about Menuply?</div>
+            <div style={styles.eyebrow}>{t("onboarding.faq.eyebrow", "Restaurant FAQ")}</div>
+            <div style={styles.title}>{t("onboarding.faq.title", "Questions about Menuply?")}</div>
             <div style={styles.intro}>
-              Practical answers about cost, growth expectations, and fit before moving deeper into onboarding.
+              {t(
+                "onboarding.faq.intro",
+                "Practical answers about cost, growth expectations, and fit before moving deeper into onboarding."
+              )}
             </div>
-            <div style={styles.toggleLabel}>{open ? "Hide FAQ" : "View FAQ"}</div>
+            <div style={styles.toggleLabel}>
+              {open ? t("onboarding.faq.hide", "Hide FAQ") : t("onboarding.faq.view", "View FAQ")}
+            </div>
           </div>
           <span aria-hidden="true" style={styles.toggleIcon(open)}>
             {open ? "−" : "+"}
@@ -194,11 +195,12 @@ export default function RestaurantFAQ({ instanceId = "restaurant-faq" }) {
 
       {open ? (
         <div id={`${instanceId}-list`} style={styles.list}>
-          {FAQ_ITEMS.map((item, index) => {
+          {FAQ_DEFS.map((item, index) => {
             const expanded = expandedIndex === index;
             const panelId = `${instanceId}-panel-${index}`;
+            const question = t(item.questionKey);
             return (
-              <article key={item.question} style={styles.item(expanded)}>
+              <article key={item.questionKey} style={styles.item(expanded)}>
                 <button
                   type="button"
                   onClick={() => setExpandedIndex(expanded ? -1 : index)}
@@ -207,7 +209,7 @@ export default function RestaurantFAQ({ instanceId = "restaurant-faq" }) {
                   style={styles.itemButton}
                 >
                   <div style={styles.questionWrap}>
-                    <p style={styles.question}>{item.question}</p>
+                    <p style={styles.question}>{question}</p>
                   </div>
                   <span aria-hidden="true" style={styles.itemToggle(expanded)}>
                     {expanded ? "−" : "+"}
@@ -216,9 +218,9 @@ export default function RestaurantFAQ({ instanceId = "restaurant-faq" }) {
 
                 {expanded ? (
                   <div id={panelId} style={styles.answer}>
-                    {item.answer.map((paragraph) => (
-                      <p key={paragraph} style={styles.answerParagraph}>
-                        {paragraph}
+                    {item.answerKeys.map((answerKey) => (
+                      <p key={answerKey} style={styles.answerParagraph}>
+                        {t(answerKey)}
                       </p>
                     ))}
                   </div>
