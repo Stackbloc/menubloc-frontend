@@ -34,8 +34,11 @@ const FOUNDER_FAQ = [
   {
     question: "Can I use my own delivery drivers?",
     answer: [
-      "Yes. Menuply supports direct online ordering with your own fulfillment — you're not required to use any third-party delivery fleet.",
-      "The platform supports pickup, in-house delivery, and marketplace ordering as independent options. You control which channels you enable.",
+      "Yes. Menuply supports direct online ordering with your own fulfillment — you are not required to use any third-party delivery fleet.",
+      { label: "Restaurants can use:", items: ["Pickup", "In-house delivery", "Third-party delivery providers"] },
+      "Importantly, restaurants can also use traditional third-party delivery platforms strictly for delivery fulfillment while still accepting orders directly through Menuply. This allows restaurants to avoid the high third-party marketplace sales commissions typically associated with traditional delivery apps.",
+      { label: "Restaurants may choose to:", items: ["Absorb the delivery cost", "Partially subsidize it", "Pass the delivery fee directly to the diner"] },
+      "This gives restaurants substantially more flexibility and control over pricing, margins, customer relationships, and fulfillment strategy.",
     ],
   },
   {
@@ -126,9 +129,20 @@ export default function FoundersFaqAccordion({ instanceId = "founders-faq" }) {
             </button>
             {expanded ? (
               <div id={`${instanceId}-panel-${index}`} style={S.answer}>
-                {item.answer.map((para) => (
-                  <p key={para} style={S.paragraph}>{para}</p>
-                ))}
+                {item.answer.map((para, i) =>
+                  typeof para === "object" ? (
+                    <div key={i}>
+                      <p style={{ ...S.paragraph, fontWeight: 600, marginBottom: 4 }}>{para.label}</p>
+                      <ul style={{ margin: "0 0 0 18px", padding: 0, display: "grid", gap: 3 }}>
+                        {para.items.map((li) => (
+                          <li key={li} style={S.paragraph}>{li}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p key={i} style={S.paragraph}>{para}</p>
+                  )
+                )}
               </div>
             ) : null}
           </article>
