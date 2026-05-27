@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
@@ -350,6 +351,7 @@ function StylePreview({ preview }) {
 }
 
 export default function MenuDesignSelectPage() {
+  const { t } = useLanguage();
   const nav = useNavigate();
   const location = useLocation();
   const recovery = useMemo(

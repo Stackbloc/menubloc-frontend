@@ -1,9 +1,11 @@
 import React from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useNavigate } from "react-router-dom";
 import { useFoodInterests } from "../../context/FoodInterestsContext.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 
 export default function FoodInterestAuthPrompt() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { isAuthenticated } = useConsumer();
   const { authPromptVisible, dismissAuthPrompt } = useFoodInterests();

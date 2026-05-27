@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useNavigate } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import {
@@ -219,6 +220,7 @@ function captureFlowStep(phase) {
  * Phases: guide | identity | menu | review | success
  */
 export default function MenuCapturePage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const menuInputRef = useRef(null);
 

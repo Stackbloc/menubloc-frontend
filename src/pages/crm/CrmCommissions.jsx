@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import CrmLayout from "./CrmLayout.jsx";
 import { getCrmCommissionRates, updateCrmCommissionRate, getCrmDiscountCodes, createCrmDiscountCode, updateCrmDiscountCode } from "../../lib/crmApi.js";
 
@@ -250,6 +251,7 @@ function DiscountCodesTable({ codes, onToggle }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function CrmCommissions() {
+  const { t } = useLanguage();
   const [codes, setCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

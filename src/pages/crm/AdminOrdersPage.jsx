@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import { getCrmOrders, getCrmBilling, getCrmSubscriptions } from "../../lib/crmApi.js";
 import {
@@ -271,6 +272,7 @@ function FoodOrdersTab() {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function AdminOrdersPage() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState("billing");
 
   return (

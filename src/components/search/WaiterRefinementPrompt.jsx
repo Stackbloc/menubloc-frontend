@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 export default function WaiterRefinementPrompt({
   displayQuery,
@@ -8,6 +9,7 @@ export default function WaiterRefinementPrompt({
   onSelectRefinement,
   onClearRefinements,
 }) {
+  const { t } = useLanguage();
   const optionLine = refinementOptions
     .slice(0, 3)
     .map((option) => option.label)

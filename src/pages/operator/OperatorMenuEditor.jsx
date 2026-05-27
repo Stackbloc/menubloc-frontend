@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -255,6 +256,7 @@ function UploadCard({ icon, label, sub, onClick }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function OperatorMenuEditor() {
+  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
   const navigate = useNavigate();

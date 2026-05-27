@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import InsightCardDeck, { buildInsightCards } from "../InsightCardDeck.jsx";
 import NutritionCard from "../NutritionCard.jsx";
 
@@ -33,6 +34,7 @@ export function itemHasInsightsData(item) {
 }
 
 export default function ItemInsightsSheet({ item, name, price, onClose, onViewDetails }) {
+  const { t } = useLanguage();
   useEffect(() => {
     document.body.style.overflow = item ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };

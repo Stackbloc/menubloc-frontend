@@ -28,6 +28,7 @@
  */
 
 import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import NutritionCard from "./NutritionCard.jsx";
 
 // ---------------------
@@ -109,6 +110,7 @@ const DEFAULT_COLORS = {
 // Main export
 // ---------------------
 export default function MenuItemInsightsPanel({ item, colors }) {
+  const { t } = useLanguage();
   const C = colors || DEFAULT_COLORS;
 
   const nutChip     = resolveNutritionChip(item);

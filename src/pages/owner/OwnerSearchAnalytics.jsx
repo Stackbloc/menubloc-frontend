@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import OwnerLayout, { EmptyState, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { getOwnerSearchAnalytics } from "../../lib/ownerApi.js";
 
 export default function OwnerSearchAnalytics() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState(() => defaultRange());
   const [data, setData] = useState(null);
   const [error, setError] = useState("");

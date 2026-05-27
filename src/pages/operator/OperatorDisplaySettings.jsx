@@ -15,6 +15,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -29,6 +30,7 @@ const ACCENT_PRESETS = [
 ];
 
 export default function OperatorDisplaySettings() {
+  const { t } = useLanguage();
   const { selectedRestaurant, hasBenefit } = useOperator();
   const rid = selectedRestaurant?.id;
 

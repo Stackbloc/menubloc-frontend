@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useParams } from "react-router-dom";
 import OwnerLayout, { EmptyState, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
@@ -13,6 +14,7 @@ import {
 import { useOwner } from "../../context/OwnerContext.jsx";
 
 export default function OwnerTicketDetail() {
+  const { t } = useLanguage();
   const { ticketId } = useParams();
   const { owner } = useOwner();
   const [data, setData] = useState(null);

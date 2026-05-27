@@ -27,6 +27,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import FoundersProgressBar from "../components/founders/FoundersProgressBar.jsx";
@@ -40,6 +41,7 @@ import { useFoundersSignupFlow } from "../hooks/useFoundersSignupFlow.js";
 const FULL_SIGNUP_ROUTE = "/restaurant/signup";
 
 export default function RestaurantFoundersSignup() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 

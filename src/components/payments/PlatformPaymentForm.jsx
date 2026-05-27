@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 
 export default function PlatformPaymentForm({
@@ -6,6 +7,7 @@ export default function PlatformPaymentForm({
   returnUrl,
   onConfirmed,
 }) {
+  const { t } = useLanguage();
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);

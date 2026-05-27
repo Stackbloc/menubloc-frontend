@@ -10,8 +10,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
-
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+import { useLanguage } from "../context/LanguageContext.jsx";
+import { buildLocalizedApiUrl, withLanguageHeaders } from "../lib/languageApi.js";
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -74,6 +74,7 @@ function daysUntil(isoDate) {
 // ── Page ─────────────────────────────────────────────────────
 
 export default function DealDetailPage() {
+  const { t, language } = useLanguage();
   const { dealId } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useOrderCart();
@@ -89,10 +90,13 @@ export default function DealDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${API}/deals/${dealId}`);
+        const res = await fetch(
+          buildLocalizedApiUrl(`/deals/${dealId}`, language),
+          { headers: withLanguageHeaders({}, language) },
+        );
         const json = await res.json().catch(() => ({}));
         if (cancelled) return;
-        if (!json.ok) throw new Error(json.error || "Deal not found");
+        if (!json.ok) throw new Error(json.error || t("dealDetail.notFound", "Deal not found"));
         setDeal(json.deal);
       } catch (err) {
         if (!cancelled) setError(err.message);
@@ -102,7 +106,7 @@ export default function DealDetailPage() {
     }
     load();
     return () => { cancelled = true; };
-  }, [dealId]);
+  }, [dealId, language, t]);
 
   function handleAddToOrder() {
     if (!deal) return;
@@ -123,7 +127,7 @@ export default function DealDetailPage() {
         basePriceCents: dealPriceCents ?? menuPriceCents ?? 0,
         originalBasePriceCents: hasDealPrice ? menuPriceCents : (dealPriceCents ?? 0),
         pricingType: hasDealPrice ? "deal" : "",
-        pricingLabel: hasDealPrice ? "Deal applied" : "",
+        pricingLabel: hasDealPrice ? t("basket.dealApplied", "Deal applied") : "",
       },
     });
     setAdded(true);
@@ -143,7 +147,7 @@ export default function DealDetailPage() {
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
-      <StickyPageHeader title="Deal details" />
+      <StickyPageHeader title={t("dealDetail.terms", "Deal terms")} />
 
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "16px 16px 100px" }}>
 

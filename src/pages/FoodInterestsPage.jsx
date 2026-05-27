@@ -4,6 +4,7 @@ import BottomNav from "../components/BottomNav.jsx";
 import FoodInterestButton from "../components/food-interests/FoodInterestButton.jsx";
 import { useFoodInterests } from "../context/FoodInterestsContext.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 function sectionTitleStyle() {
   return {
@@ -35,6 +36,7 @@ function PanelSection({ title, subtitle, children }) {
 }
 
 export default function FoodInterestsPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { isAuthenticated } = useConsumer();
   const { interests, suggestions, loading, error } = useFoodInterests();
@@ -72,13 +74,13 @@ export default function FoodInterestsPage() {
           }}
         >
           <div style={{ fontSize: 13, fontWeight: 800, color: "#86EFAC", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            Food Interests
+            {t("explore.eyebrow", "Food Interests")}
           </div>
           <h1 style={{ margin: "10px 0 0", fontSize: 30, lineHeight: 1.05, letterSpacing: "-0.03em" }}>
-            Mark dishes, cuisines, and food traits you are interested in.
+            {t("explore.headline", "Mark dishes, cuisines, and food traits you are interested in.")}
           </h1>
           <p style={{ margin: "12px 0 0", fontSize: 15, color: "#CBD5E1", lineHeight: 1.55, maxWidth: 560 }}>
-            Keep this lightweight. Mark what you are into, then come back for simple “New For You” updates.
+            {t("explore.lead", "Keep this lightweight. Mark what you are into, then come back for simple updates.")}
           </p>
           {!isAuthenticated && (
             <div
@@ -95,7 +97,7 @@ export default function FoodInterestsPage() {
               }}
             >
               <div style={{ fontSize: 13, color: "#DCFCE7", lineHeight: 1.45 }}>
-                Your selections can work locally now. Sign in to save them to your Menuply account.
+                {t("explore.localHint", "Your selections can work locally now. Sign in to save them to your Menuply account.")}
               </div>
               <button
                 type="button"
@@ -112,7 +114,7 @@ export default function FoodInterestsPage() {
                   whiteSpace: "nowrap",
                 }}
               >
-                Sign in
+                {t("auth.signIn", "Sign in")}
               </button>
             </div>
           )}
@@ -120,14 +122,14 @@ export default function FoodInterestsPage() {
 
         <div style={{ marginTop: 20, display: "grid", gap: 16 }}>
           <PanelSection
-            title="Your Interests"
-            subtitle="Your dish, cuisine, and food trait interests stay here."
+            title={t("explore.yourInterests", "Your interests")}
+            subtitle={t("explore.subtitle", "Pick food interests to personalize discovery and search.")}
           >
             {loading ? (
-              <div style={{ fontSize: 14, color: "#9CA3AF" }}>Loading interests…</div>
+              <div style={{ fontSize: 14, color: "#9CA3AF" }}>{t("explore.loadingInterests", "Loading interests…")}</div>
             ) : interests.length === 0 ? (
               <div style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.5 }}>
-                You have not marked any food interests yet.
+                {t("explore.noInterests", "You have not marked any food interests yet.")}
               </div>
             ) : (
               <div style={{ display: "grid", gap: 12 }}>
@@ -135,15 +137,19 @@ export default function FoodInterestsPage() {
                   interestGroups[type].length > 0 ? (
                     <div key={type}>
                       <div style={{ fontSize: 12, fontWeight: 800, color: "#86EFAC", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                        {type === "dish" ? "Dish Interests" : type === "cuisine" ? "Cuisine Interests" : "Food Traits"}
+                        {type === "dish"
+                          ? t("explore.dishInterests", "Dish Interests")
+                          : type === "cuisine"
+                            ? t("explore.cuisineInterests", "Cuisine Interests")
+                            : t("explore.foodTraits", "Food Traits")}
                       </div>
                       <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 10 }}>
                         {interestGroups[type].map((interest) => (
                           <FoodInterestButton
                             key={`${interest.interest_type}:${interest.interest_key}`}
                             interest={interest}
-                            activeLabel="✓ Interested"
-                            inactiveLabel="Interested"
+                            activeLabel={t("explore.interestedActive", "✓ Interested")}
+                            inactiveLabel={t("explore.interested", "Interested")}
                           />
                         ))}
                       </div>
@@ -155,8 +161,8 @@ export default function FoodInterestsPage() {
           </PanelSection>
 
           <PanelSection
-            title="Suggested Interests"
-            subtitle="Start with simple cuisines and food traits."
+            title={t("explore.suggestedInterests", "Suggested Interests")}
+            subtitle={t("explore.suggestedSubtitle", "Start with simple cuisines and food traits.")}
           >
             <div style={{ display: "grid", gap: 18 }}>
               <div>

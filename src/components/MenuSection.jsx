@@ -15,6 +15,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import MenuCard from "./MenuCard";
 
 function useIsMobile(breakpoint = 768) {
@@ -39,6 +40,7 @@ function useIsMobile(breakpoint = 768) {
 }
 
 export default function MenuSection({ section, compact = false }) {
+  const { t } = useLanguage();
   const isMobile = useIsMobile();
 
   const title = section?.title || section?.name || "Menu";

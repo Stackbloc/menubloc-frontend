@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { LEGAL_VERSIONS } from "../content/legal.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_KEY = "grubbid.foodtruck.signup";
@@ -355,6 +356,7 @@ function PasswordInput({
 }
 
 export default function FoodTruckSignup() {
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const checkoutResult = searchParams.get("checkout");
 
@@ -538,8 +540,8 @@ export default function FoodTruckSignup() {
               logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
               wrapperStyle={{ marginBottom: 8 }}
             />
-            <div style={styles.eyebrow}>Food Truck Signup</div>
-            <h1 style={styles.heading}>Launch Your Food Truck on Menuply</h1>
+            <div style={styles.eyebrow}>{t("foodTruck.signup.title", "Food truck sign up")}</div>
+            <h1 style={styles.heading}>{t("foodTruck.signup.subtitle", "List your truck and share your live menu with diners.")}</h1>
             <div style={styles.subheading}>
               Join Menuply with a food truck plan built for mobile operators. Create your account now, then add your live pickup location, menus, hours, and other truck details from the operator dashboard.
             </div>

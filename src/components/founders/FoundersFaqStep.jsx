@@ -1,4 +1,5 @@
 import FoundersFaqAccordion from "./FoundersFaqAccordion.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 const S = {
   backBtn: {
@@ -53,6 +54,7 @@ const S = {
 };
 
 export default function FoundersFaqStep({ onContinue, onBack }) {
+  const { t } = useLanguage();
   return (
     <>
       <button type="button" style={S.backBtn} onClick={onBack}>

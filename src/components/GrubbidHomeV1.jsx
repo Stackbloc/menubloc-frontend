@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useNavigate, useLocation } from "react-router-dom";
 import { parseLocation, reverseGeocode } from "../lib/locationUtils.js";
 import { forwardGeocode } from "../lib/geocodeUtils.js";
@@ -74,6 +75,7 @@ function useAutoLocation() {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function GrubbidHomeV1() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const autoLocation = useAutoLocation();

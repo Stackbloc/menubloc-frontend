@@ -1,3 +1,4 @@
+import { useLanguage } from "../../context/LanguageContext.jsx";
 const segmentStyle = (active, done) => ({
   flex: 1,
   height: 4,
@@ -8,6 +9,7 @@ const segmentStyle = (active, done) => ({
 });
 
 export default function FoundersProgressBar({ step }) {
+  const { t } = useLanguage();
   return (
     <div style={{ display: "flex", gap: 6, margin: "10px 0 32px" }}>
       {[1, 2, 3].map((n) => (

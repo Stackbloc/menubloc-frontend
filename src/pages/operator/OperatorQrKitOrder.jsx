@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -65,6 +66,7 @@ function InfoTile({ label, value }) {
 }
 
 export default function OperatorQrKitOrder() {
+  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const [packageType, setPackageType] = useState("starter");
   const [profile, setProfile] = useState(null);

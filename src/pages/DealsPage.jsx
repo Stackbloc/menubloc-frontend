@@ -11,8 +11,8 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
 import { parseLocation } from "../lib/locationUtils.js";
 import { trackDealClick } from "../lib/analytics.js";
-
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+import { useLanguage } from "../context/LanguageContext.jsx";
+import { buildLocalizedApiUrl, withLanguageHeaders } from "../lib/languageApi.js";
 
 // ── Utility ──────────────────────────────────────────────────
 
@@ -193,6 +193,7 @@ function DealRow({ deal, restaurantUrl, onShare, onDealClick }) {
 // ── Page ──────────────────────────────────────────────────────
 
 export default function DealsPage() {
+  const { t, language } = useLanguage();
   const { search } = useLocation();
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(search);
@@ -252,9 +253,13 @@ export default function DealsPage() {
           params.set("lat", userLat);
           params.set("lng", userLng);
         }
-        const response = await fetch(`${API_BASE}/deals?${params.toString()}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `${buildLocalizedApiUrl(`/deals?${params.toString()}`, language)}`,
+          {
+            signal: controller.signal,
+            headers: withLanguageHeaders({}, language),
+          },
+        );
         const data = await response.json().catch(() => ({}));
         if (controller.signal.aborted || requestId !== requestIdRef.current) return;
         if (!data.ok && data.error) throw new Error(data.error);
@@ -269,7 +274,7 @@ export default function DealsPage() {
     }
     fetchDeals();
     return () => { controller.abort(); };
-  }, [effectiveCity, effectiveState, userLat, userLng]);
+  }, [effectiveCity, effectiveState, userLat, userLng, language]);
 
   const filteredDeals = useMemo(() => {
     if (!searchQuery.trim()) return deals;
@@ -349,7 +354,7 @@ export default function DealsPage() {
           <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0" }}>
             <input
               type="search"
-              placeholder="Search deals or restaurants…"
+              placeholder={t("deals.searchPlaceholder", "Search deals or restaurants…")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -366,7 +371,10 @@ export default function DealsPage() {
           {/* Page title row */}
           <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0", textAlign: "center" }}>
             <span style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.02em" }}>
-              🔥 Deals Near {locationLabel || "You"}
+              🔥 {t("deals.nearYou", "Deals Near {location}").replace(
+                "{location}",
+                locationLabel || t("discovery.you", "You"),
+              )}
             </span>
           </div>
         </div>
@@ -391,7 +399,7 @@ export default function DealsPage() {
             border: "1px solid #450a0a", background: "#1c0a0a",
             fontSize: 14, fontWeight: 700, color: "#fca5a5",
           }}>
-            Could not load deals: {error}
+            {t("deals.loadError", "Could not load deals: {error}").replace("{error}", error)}
           </div>
         )}
 
@@ -401,7 +409,7 @@ export default function DealsPage() {
             textAlign: "center", padding: "48px 20px",
             color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
           }}>
-            No deals found nearby. Check back soon.
+            {t("deals.emptyNearby", "No deals found nearby. Check back soon.")}
           </div>
         )}
 
@@ -409,7 +417,10 @@ export default function DealsPage() {
         {!loading && !error && groupedDeals.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", paddingLeft: 2, marginBottom: 2 }}>
-              {groupedDeals.length} {groupedDeals.length === 1 ? "deal" : "deals"}
+              {groupedDeals.length}{" "}
+              {groupedDeals.length === 1
+                ? t("deals.countSingular", "deal")
+                : t("deals.countPlural", "deals")}
             </div>
 
             {groupedDeals.map((group) => {

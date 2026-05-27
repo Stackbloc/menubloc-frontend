@@ -13,6 +13,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -817,6 +818,7 @@ const TABS = [
 ];
 
 export default function OperatorMenuStudio() {
+  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const [tab, setTab] = useState("menus");
   const [usageSummary, setUsageSummary]   = useState(null);

@@ -1,6 +1,8 @@
 import React from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 export default function ShareIcon({ size = 16, stroke = "currentColor", strokeWidth = 2 }) {
+  const { t } = useLanguage();
   return (
     <svg
       aria-hidden="true"

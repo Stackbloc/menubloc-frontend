@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import CrmLayout from "./CrmLayout.jsx";
 import { getCrmSubscriptions } from "../../lib/crmApi.js";
 
@@ -22,6 +23,7 @@ function priceCents(cents) {
 const PLAN_ORDER = { enterprise: 0, pro: 1, starter: 2, verified: 3, public: 4, free: 5 };
 
 export default function CrmSubscriptions() {
+  const { t } = useLanguage();
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

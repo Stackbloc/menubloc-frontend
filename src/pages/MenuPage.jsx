@@ -14,6 +14,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useLocation, useParams } from "react-router-dom";
 import { HomeButton } from "../components/NavButton.jsx";
 import GrubbidMenuView from "../GrubbidMenuView.jsx";
@@ -46,6 +47,7 @@ function useIsMobile(breakpoint = 768) {
 }
 
 export default function MenuPage() {
+  const { t } = useLanguage();
   const { restaurantId } = useParams();
   const { search } = useLocation();
   const rid = safeText(restaurantId);

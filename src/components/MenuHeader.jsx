@@ -15,6 +15,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 
 function nameOf(r) {
@@ -65,6 +66,7 @@ function useIsMobile(breakpoint = 768) {
 }
 
 export default function MenuHeader({ restaurant }) {
+  const { t } = useLanguage();
   const isMobile = useIsMobile();
 
   const r = restaurant || {};

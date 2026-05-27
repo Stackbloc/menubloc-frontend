@@ -25,6 +25,12 @@ export function getLocalizedField(record, baseField, language = "en", fallback =
   const source = asString(record?.[baseField]);
   if (language === "en") return source || fallback;
 
+  const topLevelValue = asString(record?.[baseField]);
+  const originalValue = asString(record?.[`${baseField}_original`]);
+  if (topLevelValue && originalValue && topLevelValue !== originalValue) {
+    return topLevelValue;
+  }
+
   const direct = asString(record?.[`${baseField}_${language}`]);
   if (direct) return direct;
 
@@ -32,4 +38,10 @@ export function getLocalizedField(record, baseField, language = "en", fallback =
   if (nested) return nested;
 
   return source || fallback;
+}
+
+export function getLocalizedPreviewLabel(item, language = "en") {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+  return getLocalizedField(item, "name", language, item.name || "");
 }

@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
+import { useLanguage } from "./context/LanguageContext.jsx";
 import { BrandLogo } from "./components/BrandLogo.jsx";
 
 export default function Header({ title = "Menuply", subtitle = "Restaurants" }) {
+  const { t } = useLanguage();
   return (
     <div
       style={{

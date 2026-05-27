@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -57,6 +58,7 @@ function buildLocationLabel({ city, state, lat, lng }) {
 }
 
 export default function FoodTrucksPage() {
+  const { t } = useLanguage();
   const { search } = useLocation();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);

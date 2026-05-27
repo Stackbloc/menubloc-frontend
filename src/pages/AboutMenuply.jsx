@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { PageNav } from "../components/NavButton.jsx";
 import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
@@ -25,30 +26,38 @@ const listStyle = {
   marginBottom: 22,
 };
 
-export default function AboutGrubbid() {
+export default function AboutMenuply() {
+  const { t } = useLanguage();
+  const pageTitle = t("about.title", "About Menuply");
+
   return (
     <>
-    <StickyPageHeader />
+    <StickyPageHeader title={pageTitle} />
     <PageShell width="reading">
       <PageNav back />
       <Breadcrumbs
         items={[
-          { label: "Discovery", to: "/" },
-          { label: "About" },
+          { label: t("nav.discovery", "Discovery"), to: "/" },
+          { label: t("about.breadcrumb", "About") },
         ]}
       />
 
       <PageHero
-        title="About Menuply"
-        description="Food intelligence built to make restaurant choices clearer, not more judgmental."
+        title={pageTitle}
+        description={t(
+          "about.hero",
+          "Food intelligence built to make restaurant choices clearer, not more judgmental."
+        )}
       />
 
       <div style={{ maxWidth: 720 }}>
 
         {/* ── New platform intro ── */}
         <p style={{ ...paragraphStyle, fontSize: "17px", fontWeight: 700, color: "var(--gb-color-ink-strong)", marginBottom: 12 }}>
-          Menuply — we know, the name is a little different. But we are building a different kind
-          of restaurant platform.
+          {t(
+            "about.intro",
+            "Menuply — we know, the name is a little different. But we are building a different kind of restaurant platform."
+          )}
         </p>
 
         <p style={paragraphStyle}>

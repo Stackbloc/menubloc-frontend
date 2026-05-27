@@ -11,6 +11,7 @@
  */
 
 import React from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const LEVEL_META = {
   light:     { label: "Light treat",  color: "#22c55e" }, // green-500
@@ -20,6 +21,7 @@ const LEVEL_META = {
 };
 
 export default function IndulgenceMeter({ indulgence }) {
+  const { t } = useLanguage();
   if (!indulgence || indulgence.score == null) return null;
 
   const { score, level, drivers = [] } = indulgence;

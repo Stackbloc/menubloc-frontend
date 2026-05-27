@@ -55,7 +55,7 @@ export default function DiscoveryDrawer({
   onAllergenToggle = null,
 }) {
   const { isAuthenticated: loggedIn } = useConsumer();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -88,7 +88,7 @@ export default function DiscoveryDrawer({
           position: "sticky", top: 0, background: "#fff", zIndex: 1,
         }}>
           <span style={{ fontSize: 17, fontWeight: 900, color: "#101828" }}>Menuply</span>
-          <button type="button" onClick={onClose} aria-label="Close" style={{
+          <button type="button" onClick={onClose} aria-label={t("drawer.close", "Close")} style={{
             border: "none", background: "transparent",
             fontSize: 20, color: "#667085", cursor: "pointer", padding: 4, lineHeight: 1,
           }}>✕</button>
@@ -96,43 +96,43 @@ export default function DiscoveryDrawer({
 
         <div style={{ padding: "0 20px 48px", flex: 1 }}>
 
-          <Section label="Account" />
+          <Section label={t("drawer.account", "Account")} />
           {loggedIn ? (
             <Link to="/account" onClick={onClose} style={{
               display: "block", padding: "12px 0",
               fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
-            }}>My Account</Link>
+            }}>{t("nav.myAccount", "My account")}</Link>
           ) : (
             <div style={{ paddingTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
               <Link to="/account/login" onClick={onClose} style={{
                 fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
-              }}>Sign In</Link>
+              }}>{t("auth.signIn", "Sign in")}</Link>
               <Link to="/account/signup" onClick={onClose} style={{
                 display: "block", textAlign: "center",
                 fontSize: 14, fontWeight: 800, color: "#fff",
                 background: "#1F4E3D", borderRadius: 10,
                 padding: "10px 16px", textDecoration: "none",
-              }}>Create Account</Link>
+              }}>{t("auth.createAccount", "Create account")}</Link>
             </div>
           )}
 
           {filters !== null && (
             <>
-              <Section label="Dietary Preferences" />
-              <Toggle label="Vegan" active={!!filters.vegan} testId="discovery-filter-vegan" onToggle={() => setFilters((p) => ({ ...p, vegan: !p.vegan }))} />
-              <Toggle label="Vegetarian" active={!!filters.vegetarian} testId="discovery-filter-vegetarian" onToggle={() => setFilters((p) => ({ ...p, vegetarian: !p.vegetarian }))} />
-              <Toggle label="Gluten-Free" active={!!filters.gluten_free} testId="discovery-filter-gluten_free" onToggle={() => setFilters((p) => ({ ...p, gluten_free: !p.gluten_free }))} />
-              <Toggle label="Diabetic Friendly" active={!!filters.diabetic_friendly} testId="discovery-filter-diabetic_friendly" onToggle={() => setFilters((p) => ({ ...p, diabetic_friendly: !p.diabetic_friendly }))} />
-              <Toggle label="Low Carb / Keto" active={!!filters.keto} testId="discovery-filter-keto" onToggle={() => setFilters((p) => ({ ...p, keto: !p.keto }))} />
-              <Toggle label="Dairy-Free" active={!!filters.dairy_free} testId="discovery-filter-dairy_free" onToggle={() => setFilters((p) => ({ ...p, dairy_free: !p.dairy_free }))} />
-              <Toggle label="Low Fat" active={!!filters.low_fat} testId="discovery-filter-low_fat" onToggle={() => setFilters((p) => ({ ...p, low_fat: !p.low_fat }))} />
-              <Toggle label="Low Sodium" active={!!filters.low_sodium} testId="discovery-filter-low_sodium" onToggle={() => setFilters((p) => ({ ...p, low_sodium: !p.low_sodium }))} />
+              <Section label={t("drawer.dietaryPreferences", "Dietary preferences")} />
+              <Toggle label={t("diet.vegan", "Vegan")} active={!!filters.vegan} testId="discovery-filter-vegan" onToggle={() => setFilters((p) => ({ ...p, vegan: !p.vegan }))} />
+              <Toggle label={t("diet.vegetarian", "Vegetarian")} active={!!filters.vegetarian} testId="discovery-filter-vegetarian" onToggle={() => setFilters((p) => ({ ...p, vegetarian: !p.vegetarian }))} />
+              <Toggle label={t("diet.gluten_free", "Gluten Free")} active={!!filters.gluten_free} testId="discovery-filter-gluten_free" onToggle={() => setFilters((p) => ({ ...p, gluten_free: !p.gluten_free }))} />
+              <Toggle label={t("diet.diabetic_friendly", "Diabetic Friendly")} active={!!filters.diabetic_friendly} testId="discovery-filter-diabetic_friendly" onToggle={() => setFilters((p) => ({ ...p, diabetic_friendly: !p.diabetic_friendly }))} />
+              <Toggle label={t("diet.keto", "Keto")} active={!!filters.keto} testId="discovery-filter-keto" onToggle={() => setFilters((p) => ({ ...p, keto: !p.keto }))} />
+              <Toggle label={t("diet.dairy_free", "Dairy Free")} active={!!filters.dairy_free} testId="discovery-filter-dairy_free" onToggle={() => setFilters((p) => ({ ...p, dairy_free: !p.dairy_free }))} />
+              <Toggle label={t("diet.low_fat", "Low Fat")} active={!!filters.low_fat} testId="discovery-filter-low_fat" onToggle={() => setFilters((p) => ({ ...p, low_fat: !p.low_fat }))} />
+              <Toggle label={t("diet.low_sodium", "Low Sodium")} active={!!filters.low_sodium} testId="discovery-filter-low_sodium" onToggle={() => setFilters((p) => ({ ...p, low_sodium: !p.low_sodium }))} />
             </>
           )}
 
           {onAllergenToggle !== null && (
             <>
-              <Section label="Exclude Allergens" />
+              <Section label={t("drawer.excludeAllergens", "Exclude allergens")} />
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 8, paddingBottom: 4 }}>
                 <button
                   type="button"
@@ -147,17 +147,20 @@ export default function DiscoveryDrawer({
                     transition: "background 160ms ease, color 160ms ease",
                   }}
                 >
-                  {allergenNoneSelected ? "✓ None" : "None"}
+                  {allergenNoneSelected
+                    ? t("drawer.allergen.noneSelected", "✓ None")
+                    : t("drawer.allergen.none", "None")}
                 </button>
                 {[
-                  { id: "nuts",      label: "Nuts" },
-                  { id: "dairy",     label: "Dairy" },
-                  { id: "shellfish", label: "Shellfish" },
-                  { id: "gluten",    label: "Gluten" },
-                  { id: "soy",       label: "Soy" },
-                  { id: "eggs",      label: "Eggs" },
-                  { id: "fish",      label: "Fish" },
-                ].map(({ id, label }) => {
+                  { id: "nuts", labelKey: "allergen.nuts" },
+                  { id: "dairy", labelKey: "allergen.dairy" },
+                  { id: "shellfish", labelKey: "allergen.shellfish" },
+                  { id: "gluten", labelKey: "allergen.gluten" },
+                  { id: "soy", labelKey: "allergen.soy" },
+                  { id: "eggs", labelKey: "allergen.eggs" },
+                  { id: "fish", labelKey: "allergen.fish" },
+                ].map(({ id, labelKey }) => {
+                  const label = t(labelKey, id);
                   const active = excludedAllergens.has(id);
                   const disabled = allergenNoneSelected;
                   return (
@@ -185,7 +188,7 @@ export default function DiscoveryDrawer({
             </>
           )}
 
-          <Section label="Language" />
+          <Section label={t("drawer.language", "Language")} />
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
@@ -196,9 +199,9 @@ export default function DiscoveryDrawer({
               padding: "0 10px", cursor: "pointer", width: "100%",
             }}
           >
-            <option value="en">English</option>
-            <option value="es">Español</option>
-            <option value="zh">中文</option>
+            <option value="en">{t("language.english", "English")}</option>
+            <option value="es">{t("language.spanish", "Español")}</option>
+            <option value="zh">{t("language.chinese", "中文")}</option>
           </select>
 
         </div>

@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const GREEN = "#1F4E3D";
 const AMBER = "#92400e";
@@ -73,6 +74,7 @@ function FeatureRow({ label, v, vNote, p, shade }) {
 }
 
 export default function PlanComparisonTable() {
+  const { t } = useLanguage();
   return (
     <div style={{ background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14, overflow: "hidden", marginBottom: 32 }}>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>

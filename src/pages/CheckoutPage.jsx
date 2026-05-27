@@ -23,6 +23,7 @@ import { buildCheckoutItems } from "../context/orderCartModel.js";
 import { apiPost, createBmtSession, toConsumerErrorMessage } from "../lib/api.js";
 import { trackCheckoutCompleted, trackCheckoutStarted } from "../lib/analytics.js";
 import { formatMoney } from "../lib/pricingDisplay.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
@@ -107,8 +108,11 @@ function hasUnavailablePricing(cartItems) {
   return (Array.isArray(cartItems) ? cartItems : []).some((item) => getCartLineBasePriceCents(item) <= 0);
 }
 
-function unavailablePricingMessage() {
-  return "This item is not currently available for checkout because pricing is unavailable.";
+function unavailablePricingMessage(t) {
+  return t(
+    "checkout.pricingUnavailable",
+    "This item is not currently available for checkout because pricing is unavailable.",
+  );
 }
 
 function getItemCount(items) {
@@ -116,6 +120,7 @@ function getItemCount(items) {
 }
 
 function PaymentStep({ orderId, onSuccess }) {
+  const { t } = useLanguage();
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -142,7 +147,7 @@ function PaymentStep({ orderId, onSuccess }) {
     setSubmitting(false);
 
     if (result.error) {
-      setErrorMessage(result.error.message || "Payment confirmation failed.");
+      setErrorMessage(result.error.message || t("checkout.paymentFailed", "Payment confirmation failed."));
       return;
     }
 
@@ -185,7 +190,7 @@ function PaymentStep({ orderId, onSuccess }) {
           cursor: submitting ? "wait" : "pointer",
         }}
       >
-        {submitting ? "Confirming payment..." : "Pay now"}
+        {submitting ? t("checkout.confirmingPayment", "Confirming payment…") : t("checkout.payNow", "Pay now")}
       </button>
       <div
         style={{
@@ -195,13 +200,13 @@ function PaymentStep({ orderId, onSuccess }) {
           color: "#9CA3AF",
         }}
       >
-        By placing your order, you agree to the{" "}
+        {t("checkout.agreeTerms", "By placing your order, you agree to the")}{" "}
         <Link to="/terms" style={{ color: "#14532d", fontWeight: 800, textDecoration: "none" }}>
-          Terms of Use
+          {t("checkout.termsOfUse", "Terms of Use")}
         </Link>{" "}
-        and{" "}
+        {t("checkout.and", "and")}{" "}
         <Link to="/privacy" style={{ color: "#14532d", fontWeight: 800, textDecoration: "none" }}>
-          Privacy Policy
+          {t("checkout.privacyPolicy", "Privacy Policy")}
         </Link>
         .
       </div>
@@ -210,6 +215,7 @@ function PaymentStep({ orderId, onSuccess }) {
 }
 
 export default function CheckoutPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { consumer, isAuthenticated, authToast, clearAuthToast } = useConsumer();
@@ -429,7 +435,7 @@ export default function CheckoutPage() {
       setPreviewState({ status: "ready", data: response, error: "" });
     } catch (error) {
       setUserBidError(
-        toConsumerErrorMessage(error, "Unable to check for a better price right now.")
+        toConsumerErrorMessage(error, t("checkout.bidError", "Unable to check for a better price right now."))
       );
     } finally {
       setUserBidLoading(false);
@@ -439,7 +445,7 @@ export default function CheckoutPage() {
   if (!restaurant || items.length === 0) {
     return (
       <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
-        <StickyPageHeader title="Checkout" />
+        <StickyPageHeader title={t("checkout.title", "Checkout")} />
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "14px 18px 80px" }}>
           <div
             style={{
@@ -451,12 +457,14 @@ export default function CheckoutPage() {
               boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
             }}
           >
-            <h1 style={{ fontSize: 28, margin: 0 }}>Your basket is empty</h1>
+            <h1 style={{ fontSize: 28, margin: 0 }}>{t("checkout.emptyTitle", "Your basket is empty")}</h1>
             <p style={{ marginTop: 10, color: "#9CA3AF", fontSize: 15, lineHeight: 1.6 }}>
-              Add items from a menu to start an order.
+              {t("checkout.emptyHint", "Add items from a menu to start an order.")}
             </p>
             <Link to={menuPath} style={{ color: "#14532d", fontWeight: 800 }}>
-              {restaurant?.restaurantName ? `← Back to ${restaurant.restaurantName}` : "← Back to home"}
+              {restaurant?.restaurantName
+                ? t("checkout.backToRestaurant", "← Back to {name}").replace("{name}", restaurant.restaurantName)
+                : t("checkout.backHome", "← Back to home")}
             </Link>
           </div>
         </div>
@@ -471,22 +479,22 @@ export default function CheckoutPage() {
     setShowBmtConfirm(false);
 
     if (!stripePublishableKey || !stripePromise) {
-      setSubmitError("VITE_STRIPE_PUBLISHABLE_KEY is not configured.");
+      setSubmitError(t("checkout.stripeMissing", "VITE_STRIPE_PUBLISHABLE_KEY is not configured."));
       return;
     }
 
     if (!customerName.trim()) {
-      setSubmitError("Customer name is required.");
+      setSubmitError(t("checkout.nameRequired", "Customer name is required."));
       return;
     }
 
     if (!customerPhone.trim()) {
-      setSubmitError("Customer phone is required.");
+      setSubmitError(t("checkout.phoneRequired", "Customer phone is required."));
       return;
     }
 
     if (hasUnavailablePricing(items)) {
-      setSubmitError(unavailablePricingMessage());
+      setSubmitError(unavailablePricingMessage(t));
       return;
     }
 
@@ -497,7 +505,7 @@ export default function CheckoutPage() {
         !normalizedDeliveryAddress.state ||
         !normalizedDeliveryAddress.postalCode
       ) {
-        setSubmitError("Delivery address line 1, city, state, and postal code are required.");
+        setSubmitError(t("checkout.addressRequired", "Delivery address line 1, city, state, and postal code are required."));
         return;
       }
     }
@@ -600,7 +608,7 @@ export default function CheckoutPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
-      <StickyPageHeader title="Checkout" />
+      <StickyPageHeader title={t("checkout.title", "Checkout")} />
       <div style={{ maxWidth: 1120, margin: "0 auto", padding: "14px 18px 80px" }}>
 
         <div
@@ -622,7 +630,7 @@ export default function CheckoutPage() {
 
             <form onSubmit={handleCreatePaymentIntent} style={{ marginTop: 24, display: "grid", gap: 16 }}>
               <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Customer name</label>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.customerName", "Customer name")}</label>
                 <input
                   value={customerName}
                   onChange={(event) => setCustomerName(event.target.value)}
@@ -632,7 +640,7 @@ export default function CheckoutPage() {
 
               <div style={{ display: "grid", gap: 14, gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Phone</label>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.phone", "Phone")}</label>
                   <input
                     value={customerPhone}
                     onChange={(event) => setCustomerPhone(event.target.value)}
@@ -640,7 +648,7 @@ export default function CheckoutPage() {
                   />
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Email (optional)</label>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.emailOptional", "Email (optional)")}</label>
                   <input
                     value={customerEmail}
                     onChange={(event) => setCustomerEmail(event.target.value)}
@@ -650,7 +658,7 @@ export default function CheckoutPage() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 10 }}>Fulfillment</label>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 10 }}>{t("checkout.fulfillment", "Fulfillment")}</label>
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                   {availableFulfillmentTypes.map((value) => {
                     const active = fulfillmentType === value;
@@ -670,7 +678,7 @@ export default function CheckoutPage() {
                           cursor: "pointer",
                         }}
                       >
-                        <span>{value === "pickup" ? "Pickup" : "Delivery"}</span>
+                        <span>{value === "pickup" ? t("checkout.pickup", "Pickup") : t("checkout.delivery", "Delivery")}</span>
                       </button>
                     );
                   })}
@@ -680,7 +688,7 @@ export default function CheckoutPage() {
               {fulfillmentType === "delivery" ? (
                 <div style={{ display: "grid", gap: 14, gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
                   <div style={{ gridColumn: "1 / -1" }}>
-                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Delivery name</label>
+                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.deliveryName", "Delivery name")}</label>
                     <input
                       value={deliveryAddress.name}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, name: event.target.value }))}
@@ -688,7 +696,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
-                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Address line 1</label>
+                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.addressLine1", "Address line 1")}</label>
                     <input
                       value={deliveryAddress.line1}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, line1: event.target.value }))}
@@ -696,7 +704,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
-                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Address line 2</label>
+                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.addressLine2", "Address line 2")}</label>
                     <input
                       value={deliveryAddress.line2}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, line2: event.target.value }))}
@@ -704,7 +712,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>City</label>
+                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.city", "City")}</label>
                     <input
                       value={deliveryAddress.city}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, city: event.target.value }))}
@@ -712,7 +720,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>State</label>
+                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.state", "State")}</label>
                     <input
                       value={deliveryAddress.state}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, state: event.target.value }))}
@@ -720,7 +728,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Postal code</label>
+                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.postalCode", "Postal code")}</label>
                     <input
                       value={deliveryAddress.postalCode}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, postalCode: event.target.value }))}
@@ -728,7 +736,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Delivery notes</label>
+                    <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.deliveryNotes", "Delivery notes")}</label>
                     <input
                       value={deliveryAddress.instructions}
                       onChange={(event) => setDeliveryAddress((prev) => ({ ...prev, instructions: event.target.value }))}
@@ -739,7 +747,7 @@ export default function CheckoutPage() {
               ) : null}
 
               <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>Order notes</label>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{t("checkout.orderNotes", "Order notes")}</label>
                 <textarea
                   value={notes}
                   onChange={(event) => setNotes(event.target.value)}
@@ -784,7 +792,7 @@ export default function CheckoutPage() {
                         )
                       }
                     />
-                    <span>Apply G-Coins</span>
+                    <span>{t("checkout.applyGCoins", "Apply G-Coins")}</span>
                   </label>
                   {!previewState.data?.coins?.can_redeem && !previewState.data?.coins?.applied && previewState.data?.coins?.user_message ? (
                     <div style={{ marginTop: 8, fontSize: 12, color: "#9CA3AF" }}>
@@ -808,7 +816,7 @@ export default function CheckoutPage() {
                     gap: 10,
                   }}
                 >
-                  <div>This cart contains outdated items. Please re-add them from the current menu.</div>
+                  <div>{t("checkout.staleCart", "This cart contains outdated items. Please re-add them from the current menu.")}</div>
                   <button
                     type="button"
                     onClick={() => { clearCart(); navigate(menuPath); }}
@@ -1228,13 +1236,13 @@ export default function CheckoutPage() {
 
             <div style={{ marginTop: 20, borderTop: "1px solid #1F2937", paddingTop: 16, display: "grid", gap: 10 }}>
               {previewState.status === "loading" ? (
-                <div style={{ fontSize: 14, color: "#9CA3AF" }}>Calculating server-side totals…</div>
+                <div style={{ fontSize: 14, color: "#9CA3AF" }}>{t("checkout.calculatingTotals", "Calculating server-side totals…")}</div>
               ) : previewState.status === "error" ? (
                 <div style={{ fontSize: 14, color: "#991b1b", lineHeight: 1.6 }}>{previewState.error}</div>
               ) : previewState.data ? (
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                    <span style={{ color: "#9CA3AF" }}>Items subtotal</span>
+                    <span style={{ color: "#9CA3AF" }}>{t("checkout.itemsSubtotal", "Items subtotal")}</span>
                     <strong>{formatMoney(previewState.data.subtotal_cents)}</strong>
                   </div>
                   {totalDealsDiscountCents > 0 ? (
@@ -1409,7 +1417,7 @@ export default function CheckoutPage() {
                     {MENUPLY_PRICE_DISCLOSURE}
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18 }}>
-                    <span style={{ color: "#FFFFFF", fontWeight: 900 }}>Total</span>
+                    <span style={{ color: "#FFFFFF", fontWeight: 900 }}>{t("checkout.total", "Total")}</span>
                     <strong>{formatMoney(previewState.data.total_cents)}</strong>
                   </div>
                 </>

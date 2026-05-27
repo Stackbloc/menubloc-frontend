@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import { createCrmLead, getCrmLeads } from "../../lib/crmApi.js";
 import {
@@ -26,6 +27,7 @@ const DEFAULT_FILTERS = {
 };
 
 export default function CrmLeadList() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [data, setData] = useState({ leads: [], pagination: { page: 1, total: 0, page_size: 25 } });
   const [error, setError] = useState("");

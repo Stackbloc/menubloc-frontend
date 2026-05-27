@@ -13,6 +13,7 @@
  */
 
 import { useEffect } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -417,6 +418,7 @@ export default function CompareItemsModal({
   onSwap,
   baseLabel = "Current",
 }) {
+  const { t } = useLanguage();
   useEffect(() => {
     if (!open) return undefined;
     const prev = document.body.style.overflow;

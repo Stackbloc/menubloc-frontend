@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 
 const GREEN = "#1F4E3D";
@@ -142,6 +143,7 @@ const PAUSE_OPTIONS = [
 ];
 
 export default function OperatorDashboard() {
+  const { t } = useLanguage();
   const { selectedRestaurant, restaurants } = useOperator();
   const rid = selectedRestaurant?.id;
   const navigate = useNavigate();
@@ -331,9 +333,9 @@ export default function OperatorDashboard() {
   const noRestaurant = restaurants.length === 0;
 
   const statusStyle = isAccepting
-    ? { bg: "#ecfdf3", border: "#86efac", color: "#166534", dot: "#22c55e", label: "Accepting Orders" }
+    ? { bg: "#ecfdf3", border: "#86efac", color: "#166534", dot: "#22c55e", label: t("operator.dashboard.acceptingOrders", "Accepting Orders") }
     : isPaused
-    ? { bg: "#fffbeb", border: "#fcd34d", color: "#92400e", dot: "#f59e0b", label: "Orders Paused" }
+    ? { bg: "#fffbeb", border: "#fcd34d", color: "#92400e", dot: "#f59e0b", label: t("operator.dashboard.ordersPaused", "Orders Paused") }
     : { bg: "#fef2f2", border: "#fecaca", color: "#b91c1c", dot: "#ef4444", label: "Closed" };
 
   if (noRestaurant) {
@@ -356,7 +358,7 @@ export default function OperatorDashboard() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 22 }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900, color: "#0f1720", letterSpacing: "-0.03em" }}>
-              {selectedRestaurant?.restaurant_name || selectedRestaurant?.name || "My Restaurant"}
+              {selectedRestaurant?.restaurant_name || selectedRestaurant?.name || t("operator.dashboard.myRestaurant", "My Restaurant")}
             </h1>
             {locationLine && <div style={{ fontSize: 13, color: "#8a9ab0", marginTop: 4 }}>{locationLine}</div>}
           </div>
@@ -441,7 +443,7 @@ export default function OperatorDashboard() {
                 disabled={pauseBusy}
                 style={{ ...primaryBtn, padding: "8px 16px", fontSize: 13 }}
               >
-                {pauseBusy ? "…" : isFoodTruck ? "Open Store" : "Resume Orders"}
+                {pauseBusy ? "…" : isFoodTruck ? t("operator.dashboard.openStore", "Open Store") : t("operator.dashboard.resumeOrders", "Resume Orders")}
               </button>
             )}
             {isAccepting && (
@@ -531,11 +533,11 @@ export default function OperatorDashboard() {
 
         {/* ── Orders Today ────────────────────────────────────── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 20 }}>
-          <StatCard label="Orders Today" value={loading ? "…" : ordersToday} />
-          <StatCard label="Pending" value={loading ? "…" : pendingCount}
+          <StatCard label={t("operator.dashboard.ordersToday", "Orders Today")} value={loading ? "…" : ordersToday} />
+          <StatCard label={t("operator.dashboard.pending", "Pending")} value={loading ? "…" : pendingCount}
             sub={pendingCount > 0 ? <span style={{ color: "#92400e", fontWeight: 700 }}>Action needed</span> : null}
           />
-          <StatCard label="Cancelled Today" value={loading ? "…" : cancelledToday} />
+          <StatCard label={t("operator.dashboard.cancelledToday", "Cancelled Today")} value={loading ? "…" : cancelledToday} />
         </div>
 
         {/* ── Sales ───────────────────────────────────────────── */}
@@ -544,10 +546,10 @@ export default function OperatorDashboard() {
             Sales
           </div>
           {[
-            { label: "Today", value: loading ? "…" : salesToday },
-            { label: "Yesterday", value: loading ? "…" : salesYesterday },
-            { label: "Week to Date", value: loading ? "…" : salesWTD },
-            { label: "Month to Date", value: loading ? "…" : salesMTD },
+            { label: t("operator.dashboard.salesToday", "Today"), value: loading ? "…" : salesToday },
+            { label: t("operator.dashboard.salesYesterday", "Yesterday"), value: loading ? "…" : salesYesterday },
+            { label: t("operator.dashboard.salesWtd", "Week to Date"), value: loading ? "…" : salesWTD },
+            { label: t("operator.dashboard.salesMtd", "Month to Date"), value: loading ? "…" : salesMTD },
           ].map(({ label, value }, i, arr) => (
             <div key={label} style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -566,9 +568,9 @@ export default function OperatorDashboard() {
             Quick Access
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <QuickBtn icon="◷" label="Public Profile" onClick={() => window.open(`/restaurant-profile/${rid}`, "_blank")} />
-            <QuickBtn icon="▣" label="Menu Editor" onClick={() => navigate("/operator/menu")} />
-            <QuickBtn icon="🔥" label="Deals" onClick={() => navigate("/operator/deals")} />
+            <QuickBtn icon="◷" label={t("operator.dashboard.publicProfile", "Public Profile")} onClick={() => window.open(`/restaurant-profile/${rid}`, "_blank")} />
+            <QuickBtn icon="▣" label={t("operator.dashboard.menuEditor", "Menu Editor")} onClick={() => navigate("/operator/menu")} />
+            <QuickBtn icon="🔥" label={t("operator.dashboard.deals", "Deals")} onClick={() => navigate("/operator/deals")} />
             <QuickBtn icon="▣" label="QR Tools" onClick={() => navigate("/operator/qr-kits/order")} />
           </div>
         </div>
@@ -635,7 +637,7 @@ export default function OperatorDashboard() {
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {editingLocation ? (
                   <button type="button" onClick={handleSaveFoodTruckLocation} disabled={locationBusy} style={primaryBtn}>
-                    {locationBusy ? "Saving…" : "Save Location"}
+                    {locationBusy ? t("auth.sending", "Sending…") : t("operator.dashboard.saveLocation", "Save Location")}
                   </button>
                 ) : (
                   <button type="button" onClick={handleConfirmFoodTruckOpen} disabled={locationBusy} style={primaryBtn}>

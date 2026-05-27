@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 export default function ChipRail({ children, className = "", style = {}, ...props }) {
+  const { t } = useLanguage();
   const scrollerRef = useRef(null);
 
   useEffect(() => {

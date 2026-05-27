@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect } from "react";
 import OperatorLayout from "./OperatorLayout.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 
@@ -49,6 +50,7 @@ function buildDefaultSchedule() {
 }
 
 export default function OperatorHoursEditor() {
+  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
 
@@ -145,7 +147,11 @@ export default function OperatorHoursEditor() {
   }
 
   if (!rid) {
-    return <OperatorLayout title="Hours"><p style={{ color: "#8a9ab0" }}>Select a restaurant to manage its hours.</p></OperatorLayout>;
+    return (
+      <OperatorLayout title="Hours">
+        <p style={{ color: "#8a9ab0" }}>{t("operator.selectRestaurant", "Select a restaurant to manage its hours.")}</p>
+      </OperatorLayout>
+    );
   }
 
   return (

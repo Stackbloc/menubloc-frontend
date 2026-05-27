@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -65,6 +66,7 @@ function StatusRow({ label, value }) {
 
 
 export default function OperatorSubscription() {
+  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();

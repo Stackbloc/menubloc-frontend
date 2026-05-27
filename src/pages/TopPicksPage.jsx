@@ -13,65 +13,22 @@ import { Link, useLocation } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { Card } from "../components/grubbid/GrubbidPrimitives.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 const CATEGORIES = [
-  {
-    emoji: "🥗",
-    title: "Smart Health Picks",
-    description: "Ranked by protein, fiber, glycemic impact, and sodium.",
-    query: "healthy",
-  },
-  {
-    emoji: "🔥",
-    title: "Low Calorie Favorites",
-    description: "Satisfying options that keep calories in check.",
-    query: "low calorie",
-  },
-  {
-    emoji: "💪",
-    title: "High Protein Picks",
-    description: "Top dishes for muscle recovery and lasting fullness.",
-    query: "high protein",
-  },
-  {
-    emoji: "💸",
-    title: "Best Bang for the Buck",
-    description: "Great food at prices that won't break the budget.",
-    query: "best value",
-  },
-  {
-    emoji: "🌱",
-    title: "Top Vegan Options",
-    description: "Plant-based dishes worth ordering again and again.",
-    query: "vegan",
-  },
-  {
-    emoji: "🍔",
-    title: "Most Popular Near You",
-    description: "The dishes everyone is talking about right now.",
-    query: "popular",
-  },
-  {
-    emoji: "⚡",
-    title: "Best Quick Meals",
-    description: "Fast prep and takeout-friendly picks for busy days.",
-    query: "quick meal",
-  },
-  {
-    emoji: "🧂",
-    title: "Low Sodium Choices",
-    description: "Heart-friendly dishes with minimal added salt.",
-    query: "low sodium",
-  },
-  {
-    emoji: "🍬",
-    title: "Low Sugar Options",
-    description: "Tasty picks that keep your sugar intake in check.",
-    query: "low sugar",
-  },
+  { emoji: "🥗", titleKey: "topPicks.smartHealth", descKey: "topPicks.smartHealthDesc", query: "healthy" },
+  { emoji: "🔥", titleKey: "topPicks.lowCalorie", descKey: "topPicks.lowCalorieDesc", query: "low calorie" },
+  { emoji: "💪", titleKey: "topPicks.highProtein", descKey: "topPicks.highProteinDesc", query: "high protein" },
+  { emoji: "💸", titleKey: "topPicks.bestValue", descKey: "topPicks.bestValueDesc", query: "best value" },
+  { emoji: "🌱", titleKey: "topPicks.vegan", descKey: "topPicks.veganDesc", query: "vegan" },
+  { emoji: "🍔", titleKey: "topPicks.popular", descKey: "topPicks.popularDesc", query: "popular" },
+  { emoji: "⚡", titleKey: "topPicks.quick", descKey: "topPicks.quickDesc", query: "quick meal" },
+  { emoji: "🧂", titleKey: "topPicks.lowSodium", descKey: "topPicks.lowSodiumDesc", query: "low sodium" },
+  { emoji: "🍬", titleKey: "topPicks.lowSugar", descKey: "topPicks.lowSugarDesc", query: "low sugar" },
 ];
 
 export default function TopPicksPage() {
+  const { t } = useLanguage();
   const { search } = useLocation();
   const urlParams = new URLSearchParams(search);
   const city = urlParams.get("city") || "";
@@ -88,7 +45,9 @@ export default function TopPicksPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
-      <StickyPageHeader title={`Top Picks${locationLabel ? ` in ${locationLabel}` : ""}`} />
+      <StickyPageHeader
+        title={`${t("topPicks.title", "Top picks")}${locationLabel ? ` · ${locationLabel}` : ""}`}
+      />
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 14px 80px" }}>
 
       <div
@@ -117,7 +76,7 @@ export default function TopPicksPage() {
                       letterSpacing: "-0.01em",
                     }}
                   >
-                    {category.title}
+                    {t(category.titleKey, category.titleKey)}
                   </div>
                   <div
                     style={{
@@ -126,7 +85,7 @@ export default function TopPicksPage() {
                       lineHeight: 1.45,
                     }}
                   >
-                    {category.description}
+                    {t(category.descKey, category.descKey)}
                   </div>
                 </div>
                 <span

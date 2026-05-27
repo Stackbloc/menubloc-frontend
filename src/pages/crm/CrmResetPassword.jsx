@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useCrm } from "../../context/CrmContext.jsx";
 import { verifyCrmResetToken, resetCrmPassword } from "../../lib/crmApi.js";
@@ -8,6 +9,7 @@ import {
 } from "../../components/consumer/ConsumerAuthShared.jsx";
 
 export default function CrmResetPassword() {
+  const { t } = useLanguage();
   const { loading, isAuthenticated, refreshSession } = useCrm();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import { completeCrmTask, getCrmTasks } from "../../lib/crmApi.js";
 import {
@@ -12,6 +13,7 @@ import {
 } from "./CrmShared.jsx";
 
 export default function CrmTasks() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState({ overdue_only: "true", status: "", due_today: "", page: 1, page_size: 25 });
   const [data, setData] = useState({ tasks: [], pagination: { page: 1, total: 0, page_size: 25 } });
   const [error, setError] = useState("");

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import {
   resendOperatorEmailCode,
   sendOperatorEmailCode,
@@ -17,6 +18,7 @@ import {
 } from "../../components/consumer/ConsumerAuthShared.jsx";
 
 export default function OperatorEmailVerification() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const { operator, restaurants, isAuthenticated, isEmailVerified, refreshSession } = useOperator();
@@ -64,9 +66,9 @@ export default function OperatorEmailVerification() {
     setFormError("");
     try {
       await sender(email);
-      setInfo("Check your email for your verification code.");
+      setInfo(t("auth.checkEmailCode", "Check your email for your verification code."));
     } catch (error) {
-      setFormError(error.message || "Unable to send verification code.");
+      setFormError(error.message || t("auth.unableSendCode", "Unable to send verification code."));
     } finally {
       setSending(false);
     }
@@ -75,7 +77,7 @@ export default function OperatorEmailVerification() {
   async function handleVerify(event) {
     event.preventDefault();
     if (!email) {
-      setFormError("Email is required to verify this account.");
+      setFormError(t("auth.emailRequiredVerify", "Email is required to verify this account."));
       return;
     }
     setBusy(true);
@@ -91,7 +93,7 @@ export default function OperatorEmailVerification() {
       }
       navigate(nextPath, { replace: true });
     } catch (error) {
-      setFormError(error.message || "Verification failed.");
+      setFormError(error.message || t("auth.verificationFailed", "Verification failed."));
     } finally {
       setBusy(false);
     }
@@ -99,17 +101,22 @@ export default function OperatorEmailVerification() {
 
   return (
     <AuthPageFrame
-      title="Verify your email"
-      subtitle="Check your email for your verification code. If you don’t see it, check spam or resend the code."
+      title={t("auth.verifyEmailTitle", "Verify your email")}
+      subtitle={t(
+        "auth.verifyEmailLongSubtitle",
+        "Check your email for your verification code. If you don't see it, check spam or resend the code.",
+      )}
       footer={(
         <p style={styles.footer}>
-          <Link to="/operator/login" style={styles.link}>Back to sign in</Link>
+          <Link to="/operator/login" style={styles.link}>
+            {t("auth.backToSignIn", "Back to sign in")}
+          </Link>
         </p>
       )}
     >
       <form onSubmit={handleVerify} noValidate style={styles.form}>
         <div style={styles.fieldGroup}>
-          <label htmlFor="operator-verify-email" style={styles.label}>Email</label>
+          <label htmlFor="operator-verify-email" style={styles.label}>{t("auth.email", "Email")}</label>
           <input
             id="operator-verify-email"
             type="email"
@@ -120,7 +127,9 @@ export default function OperatorEmailVerification() {
         </div>
 
         <div style={styles.fieldGroup}>
-          <label htmlFor="operator-verify-code" style={styles.label}>Verification code</label>
+          <label htmlFor="operator-verify-code" style={styles.label}>
+            {t("auth.verificationCode", "Verification code")}
+          </label>
           <input
             id="operator-verify-code"
             inputMode="numeric"
@@ -136,7 +145,10 @@ export default function OperatorEmailVerification() {
         {info ? <div style={{ ...styles.footer, color: "#1F4E3D" }}>{info}</div> : null}
         {onboarding?.restaurant_id ? (
           <div style={{ ...styles.footer, color: "#475467", marginBottom: 12 }}>
-            After verification, we will return you to restaurant onboarding and keep your setup progress in place.
+            {t(
+              "auth.onboardingReturnNote",
+              "After verification, we will return you to restaurant onboarding and keep your setup progress in place.",
+            )}
           </div>
         ) : null}
         <FormError error={formError} />
@@ -146,7 +158,7 @@ export default function OperatorEmailVerification() {
           disabled={busy}
           style={{ ...styles.submitButton, ...(busy ? styles.submitButtonDisabled : null) }}
         >
-          {busy ? "Verifying..." : "Verify email"}
+          {busy ? t("auth.verifying", "Verifying…") : t("auth.verifyEmailButton", "Verify email")}
         </button>
 
         <button
@@ -155,7 +167,7 @@ export default function OperatorEmailVerification() {
           onClick={() => handleSendCode(resendOperatorEmailCode)}
           style={{ ...styles.submitButton, marginTop: 12, background: "#ffffff", color: "#101828", border: "1px solid #d0d5dd" }}
         >
-          {sending ? "Sending..." : "Resend code"}
+          {sending ? t("auth.sending", "Sending…") : t("auth.resendCode", "Resend code")}
         </button>
       </form>
     </AuthPageFrame>

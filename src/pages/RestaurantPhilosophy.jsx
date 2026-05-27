@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import RestaurantFAQ from "../components/RestaurantFAQ.jsx";
@@ -139,6 +140,7 @@ function continueBtn(enabled) {
 }
 
 export default function RestaurantPhilosophy() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [agreed, setAgreed] = useState(false);
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildShareLinks, copyText } from "../share/shareUtils.js";
 
 export default function BuyMeThisShareModal({
@@ -10,6 +11,7 @@ export default function BuyMeThisShareModal({
   expiresAt,
   shareMessage,
 }) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
   const shareData = useMemo(() => ({

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -414,6 +415,7 @@ function HistoryRow({ order }) {
 // ── Main page ─────────────────────────────────────────────────────────────
 
 export default function RestaurantOrdersPage() {
+  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
   const [searchParams] = useSearchParams();

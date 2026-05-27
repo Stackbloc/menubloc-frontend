@@ -1,3 +1,5 @@
+import { useLanguage } from "../../context/LanguageContext.jsx";
+
 const backdropStyle = {
   position: "fixed",
   inset: 0,
@@ -43,21 +45,36 @@ const secondaryButtonStyle = {
 };
 
 export default function ResumeCartModal({ open, restaurantName, onKeep, onClear }) {
+  const { t } = useLanguage();
   if (!open) return null;
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Resume your order" style={backdropStyle}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("basket.resume.title", "Resume your order?")}
+      style={backdropStyle}
+    >
       <div style={sheetStyle}>
         <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ fontSize: 22, fontWeight: 900, color: "#11211a" }}>Resume your order?</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: "#11211a" }}>
+            {t("basket.resume.title", "Resume your order?")}
+          </div>
           <div style={{ fontSize: 14, lineHeight: 1.6, color: "#475467" }}>
-            You still have items in your cart from <strong style={{ color: "#11211a" }}>{restaurantName}</strong>.
-            Would you like to continue your order or start fresh?
+            {t(
+              "basket.resume.bodyNamed",
+              "You still have items in your cart from {name}. Would you like to continue your order or start fresh?",
+              { name: restaurantName }
+            )}
           </div>
         </div>
         <div style={{ display: "grid", gap: 10 }}>
-          <button type="button" onClick={onKeep} style={primaryButtonStyle}>Keep my cart</button>
-          <button type="button" onClick={onClear} style={secondaryButtonStyle}>Clear cart</button>
+          <button type="button" onClick={onKeep} style={primaryButtonStyle}>
+            {t("basket.resume.keepCart", "Keep my cart")}
+          </button>
+          <button type="button" onClick={onClear} style={secondaryButtonStyle}>
+            {t("basket.resume.clearCart", "Clear cart")}
+          </button>
         </div>
       </div>
     </div>

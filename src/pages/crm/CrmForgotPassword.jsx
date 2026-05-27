@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link, Navigate } from "react-router-dom";
 import { useCrm } from "../../context/CrmContext.jsx";
 import { forgotCrmPassword } from "../../lib/crmApi.js";
 import { AuthPageFrame, FormError, styles } from "../../components/consumer/ConsumerAuthShared.jsx";
 
 export default function CrmForgotPassword() {
+  const { t } = useLanguage();
   const { loading, isAuthenticated } = useCrm();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);

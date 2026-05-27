@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BrandLogo } from "./BrandLogo.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import DiscoveryDrawer from "./grubbid/DiscoveryDrawer.jsx";
 import { loadDietPrefs, saveDietPrefs } from "../hooks/useDietPreferences.js";
 
@@ -32,6 +33,7 @@ export default function StickyPageHeader({
     return () => ro.disconnect();
   }, []);
   const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
+  const { t } = useLanguage();
 
   const [filters, setFilters] = useState(() => loadDietPrefs());
   const [excludedAllergens, setExcludedAllergens] = useState(() => {
@@ -97,7 +99,7 @@ export default function StickyPageHeader({
             <button
               type="button"
               onClick={() => setDrawerOpen(true)}
-              aria-label="Open menu"
+              aria-label={t("nav.openMenu", "Open menu")}
               style={{
                 border: "none", background: "transparent",
                 fontSize: 22, color: "#9CA3AF", cursor: "pointer",
@@ -118,11 +120,11 @@ export default function StickyPageHeader({
                   color: accent, fontSize: 13, fontWeight: 800,
                   textDecoration: "none", whiteSpace: "nowrap", letterSpacing: "0.01em",
                 }}
-              >🔥 Deals</Link>
+              >🔥 {t("nav.deals", "Deals")}</Link>
               {!consumerLoading && (
                 consumerLoggedIn
-                  ? <Link to="/account" style={{ fontSize: 22, textDecoration: "none" }}>👤</Link>
-                  : <Link to="/account/login" style={{ fontSize: 13, fontWeight: 700, color: accent, textDecoration: "none" }}>Sign in</Link>
+                  ? <Link to="/account" aria-label={t("nav.myAccount", "My account")} style={{ fontSize: 22, textDecoration: "none" }}>👤</Link>
+                  : <Link to="/account/login" style={{ fontSize: 13, fontWeight: 700, color: accent, textDecoration: "none" }}>{t("nav.signIn", "Sign in")}</Link>
               )}
             </div>
           </div>

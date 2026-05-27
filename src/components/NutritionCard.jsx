@@ -34,6 +34,7 @@
  */
 
 import React from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 /* ---- Helpers ---- */
 
@@ -116,6 +117,7 @@ function NutritionRow({ label, value }) {
 /* ---- Main export ---- */
 
 export default function NutritionCard({ chip, colors }) {
+  const { t } = useLanguage();
   const C = colors || CSS_COLORS;
   const hasColors = Boolean(colors);
 

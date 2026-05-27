@@ -11,6 +11,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
@@ -416,6 +417,7 @@ const s = {
 };
 
 export default function SubscriptionSelect() {
+  const { t } = useLanguage();
   const nav = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);

@@ -1017,9 +1017,10 @@ export default function PublicMenuPage() {
     }
     if (contextCity)  params.set("city",  contextCity);
     if (contextState) params.set("state", contextState);
+    if (language && language !== "en") params.set("lang", language);
     const qs = params.toString();
     return `${API}/public/restaurants/${rid}/menu${qs ? `?${qs}` : ""}`;
-  }, [routeState.restaurantId, proximityLat, proximityLng, contextCity, contextState]);
+  }, [routeState.restaurantId, proximityLat, proximityLng, contextCity, contextState, language]);
 
   useEffect(() => {
     if (isMenuTemplatePreview) return;

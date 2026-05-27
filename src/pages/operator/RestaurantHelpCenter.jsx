@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -689,6 +690,7 @@ function formatTicketDate(value) {
 }
 
 export default function RestaurantHelpCenter() {
+  const { t } = useLanguage();
   const { selectedRestaurant, restaurants } = useOperator();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");

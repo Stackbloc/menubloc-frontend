@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { formatMoney } from "../lib/pricingDisplay.js";
 
-const MENUPLY_PRICE_DISCLOSURE =
-  "Prices shown on Menuply may differ from in-store prices and may include Menuply’s service component. Taxes and optional tips are shown separately before you place your order.";
-
 export default function OrderCartDrawer() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [fulfillmentType, setFulfillmentType] = useState("delivery");
   const {
@@ -96,15 +95,16 @@ export default function OrderCartDrawer() {
                   letterSpacing: 0.6,
                 }}
               >
-                Basket
+                {t("basket.title", "Basket")}
               </div>
               <div style={{ fontSize: 22, fontWeight: 900, color: "#11211a", marginTop: 4 }}>
-                {restaurant?.restaurantName || "Your order"}
+                {restaurant?.restaurantName || t("checkout.yourOrder", "Your order")}
               </div>
             </div>
             <button
               type="button"
               onClick={closeCart}
+              aria-label={t("common.close", "Close")}
               style={{
                 border: "1px solid rgba(17,33,26,0.12)",
                 background: "#fff",
@@ -119,7 +119,6 @@ export default function OrderCartDrawer() {
             </button>
           </div>
 
-          {/* Pickup / Delivery selector */}
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             {["pickup", "delivery"].map((type) => {
               const active = fulfillmentType === type;
@@ -138,7 +137,7 @@ export default function OrderCartDrawer() {
                     transition: "background 150ms ease, border-color 150ms ease",
                   }}
                 >
-                  {type === "pickup" ? "Pickup" : "Delivery"}
+                  {type === "pickup" ? t("checkout.pickup", "Pickup") : t("checkout.delivery", "Delivery")}
                 </button>
               );
             })}
@@ -148,7 +147,7 @@ export default function OrderCartDrawer() {
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 22px" }}>
           {items.length === 0 ? (
             <div style={{ color: "#667085", fontSize: 14, lineHeight: 1.6 }}>
-              Add menu items from one restaurant to start checkout.
+              {t("basket.emptyHint", "Add menu items from one restaurant to start checkout.")}
             </div>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
@@ -182,9 +181,9 @@ export default function OrderCartDrawer() {
                       ) : null}
                       {item.pricingType === "deal" ? (
                         <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: "#166534" }}>
-                          {item.pricingLabel || "Deal applied"}
+                          {item.pricingLabel || t("basket.dealApplied", "Deal applied")}
                           {item.originalBasePriceCents > item.basePriceCents
-                            ? ` · Was ${formatMoney(item.originalBasePriceCents)}`
+                            ? ` · ${t("basket.wasPrice", "Was {price}").replace("{price}", formatMoney(item.originalBasePriceCents))}`
                             : ""}
                         </div>
                       ) : null}
@@ -192,90 +191,58 @@ export default function OrderCartDrawer() {
                         <div style={{ marginTop: 6, display: "grid", gap: 4 }}>
                           {item.modifiers.map((modifier) => (
                             <div
-                              key={`${item.lineId}-${modifier.groupId}-${modifier.optionId}`}
-                              style={{ fontSize: 12, color: "#475467" }}
+                              key={`${modifier.groupId}-${modifier.optionId}`}
+                              style={{ fontSize: 12, color: "#667085" }}
                             >
-                              {modifier.name}
-                              {modifier.priceDeltaCents > 0 ? ` (+${formatMoney(modifier.priceDeltaCents)})` : ""}
+                              + {modifier.optionName}
+                              {modifier.priceDeltaCents > 0
+                                ? ` (${formatMoney(modifier.priceDeltaCents)})`
+                                : ""}
                             </div>
                           ))}
                         </div>
                       ) : null}
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: "#11211a", whiteSpace: "nowrap" }}>
-                      {formatMoney(item.lineTotalCents)}
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginTop: 14,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 10,
-                        border: "1px solid rgba(17,33,26,0.10)",
-                        borderRadius: 999,
-                        padding: "4px 6px",
-                        background: "#f8fafc",
-                      }}
-                    >
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 900, color: "#11211a" }}>
+                        {formatMoney(item.lineTotalCents)}
+                      </div>
+                      <div style={{ display: "flex", gap: 6, marginTop: 8, justifyContent: "flex-end" }}>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.lineId, item.quantity - 1)}
+                          style={qtyBtnStyle}
+                        >
+                          −
+                        </button>
+                        <span style={{ fontSize: 13, fontWeight: 800, minWidth: 20, textAlign: "center" }}>
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.lineId, item.quantity + 1)}
+                          style={qtyBtnStyle}
+                        >
+                          +
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.lineId, item.quantity - 1)}
+                        onClick={() => removeItem(item.lineId)}
                         style={{
+                          marginTop: 8,
                           border: "none",
-                          background: "#fff",
-                          width: 30,
-                          height: 30,
-                          borderRadius: 999,
+                          background: "transparent",
+                          color: "#b42318",
+                          fontSize: 12,
+                          fontWeight: 800,
                           cursor: "pointer",
-                          fontSize: 16,
-                          fontWeight: 900,
+                          padding: 0,
                         }}
                       >
-                        −
-                      </button>
-                      <span style={{ minWidth: 18, textAlign: "center", fontSize: 14, fontWeight: 800 }}>
-                        {item.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => updateQuantity(item.lineId, item.quantity + 1)}
-                        style={{
-                          border: "none",
-                          background: "#fff",
-                          width: 30,
-                          height: 30,
-                          borderRadius: 999,
-                          cursor: "pointer",
-                          fontSize: 16,
-                          fontWeight: 900,
-                        }}
-                      >
-                        +
+                        {t("cart.remove", "Remove")}
                       </button>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => removeItem(item.lineId)}
-                      style={{
-                        border: "none",
-                        background: "transparent",
-                        color: "#991b1b",
-                        fontSize: 12,
-                        fontWeight: 800,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Remove
-                    </button>
                   </div>
                 </div>
               ))}
@@ -285,25 +252,22 @@ export default function OrderCartDrawer() {
 
         <div
           style={{
-            padding: "18px 22px 22px",
+            padding: "16px 22px calc(16px + env(safe-area-inset-bottom, 0px))",
             borderTop: "1px solid rgba(17,33,26,0.08)",
-            background: "#fff",
+            background: "#fffef8",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 14,
-            }}
-          >
-            <span style={{ fontSize: 14, color: "#667085", fontWeight: 700 }}>Items subtotal</span>
-            <strong style={{ fontSize: 18, color: "#11211a" }}>{formatMoney(subtotalCents)}</strong>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#667085" }}>
+              {t("basket.subtotal", "Subtotal")}
+            </span>
+            <span style={{ fontSize: 16, fontWeight: 900, color: "#11211a" }}>
+              {formatMoney(subtotalCents)}
+            </span>
           </div>
-          <div style={{ marginBottom: 14, fontSize: 12, lineHeight: 1.55, color: "#667085" }}>
-            {MENUPLY_PRICE_DISCLOSURE}
-          </div>
+          <p style={{ margin: "0 0 12px", fontSize: 11, lineHeight: 1.5, color: "#667085" }}>
+            {t("checkout.priceDisclosure", "Prices shown on Menuply may differ from in-store prices and may include Menuply's service component. Taxes and optional tips are shown separately before you place your order.")}
+          </p>
           <button
             type="button"
             disabled={items.length === 0}
@@ -316,34 +280,47 @@ export default function OrderCartDrawer() {
               border: "none",
               borderRadius: 16,
               background: items.length === 0 ? "#cbd5e1" : "#11211a",
-              color: "#f8fafc",
+              color: "#fff",
               padding: "14px 16px",
               fontSize: 15,
               fontWeight: 900,
               cursor: items.length === 0 ? "not-allowed" : "pointer",
             }}
           >
-            Continue to checkout
+            {t("basket.checkout", "Checkout")}
           </button>
-          <button
-            type="button"
-              onClick={() => clearCart({ announce: true })}
-            disabled={items.length === 0}
-            style={{
-              width: "100%",
-              border: "none",
-              background: "transparent",
-              color: "#667085",
-              padding: "12px 16px 0",
-              fontSize: 13,
-              fontWeight: 800,
-              cursor: items.length === 0 ? "not-allowed" : "pointer",
-            }}
-          >
-            Clear cart
-          </button>
+          {items.length > 0 ? (
+            <button
+              type="button"
+              onClick={clearCart}
+              style={{
+                width: "100%",
+                marginTop: 10,
+                border: "none",
+                background: "transparent",
+                color: "#667085",
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              {t("basket.clear", "Clear basket")}
+            </button>
+          ) : null}
         </div>
       </aside>
     </>
   );
 }
+
+const qtyBtnStyle = {
+  width: 28,
+  height: 28,
+  borderRadius: 8,
+  border: "1px solid #d0d5dd",
+  background: "#fff",
+  fontSize: 16,
+  fontWeight: 800,
+  cursor: "pointer",
+  lineHeight: 1,
+};

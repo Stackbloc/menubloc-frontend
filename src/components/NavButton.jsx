@@ -5,14 +5,16 @@
    ============================================================ */
 
 import { Link } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import GlobalHeader from "./layout/GlobalHeader.jsx";
 import SiteBackButton from "./ui/BackButton.jsx";
 import { PillButton } from "./grubbid/GrubbidPrimitives.jsx";
 
 export function HomeButton() {
+  const { t } = useLanguage();
   return (
     <PillButton as={Link} to="/" tone="secondary">
-      Home
+      {t("nav.home", "Home")}
     </PillButton>
   );
 }

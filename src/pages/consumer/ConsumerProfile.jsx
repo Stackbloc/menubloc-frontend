@@ -17,6 +17,7 @@ import {
   updateConsumerProfile,
   updatePreferences,
 } from "../../lib/consumerApi.js";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 const DIETARY_OPTIONS = [
   { key: "vegetarian", label: "Vegetarian" },
@@ -86,6 +87,7 @@ function formatMoney(cents) {
 }
 
 export default function ConsumerProfile() {
+  const { t } = useLanguage();
   const { consumer, logout, isAuthenticated, loading: authLoading, refreshSession } = useConsumer();
   const navigate = useNavigate();
 
@@ -225,7 +227,7 @@ export default function ConsumerProfile() {
   if (authLoading || pageLoading) {
     return (
       <>
-      <StickyPageHeader title="Account" />
+      <StickyPageHeader title={t("consumer.profile.title", "My account")} />
       <div style={styles.page}>
         <div style={styles.card}>
           <p style={styles.subheading}>Loading your account…</p>
@@ -239,7 +241,7 @@ export default function ConsumerProfile() {
   if (pageError) {
     return (
       <>
-      <StickyPageHeader title="Account" />
+      <StickyPageHeader title={t("consumer.profile.title", "My account")} />
       <div style={styles.page}>
         <div style={styles.card}>
           <p style={styles.errorBlock}>{pageError}</p>
@@ -261,7 +263,7 @@ export default function ConsumerProfile() {
 
   return (
     <>
-    <StickyPageHeader title="Account" />
+    <StickyPageHeader title={t("consumer.profile.title", "My account")} />
     <div style={styles.page}>
       <div style={styles.pageInner}>
         <h1 style={styles.pageTitle}>Account Settings</h1>
@@ -425,7 +427,7 @@ export default function ConsumerProfile() {
             </div>
           ) : null}
         </Section>
-        <Section title="Sign out">
+        <Section title={t("consumer.profile.signOut", "Sign out")}>
           <button type="button" onClick={handleLogout} style={styles.logoutBtn}>Log out</button>
         </Section>
       </div>

@@ -27,6 +27,7 @@ export function LanguageProvider({ children }) {
     if (typeof window === "undefined") return;
     try {
       window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+      document.documentElement.lang = language;
     } catch {
       // ignore storage errors
     }

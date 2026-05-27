@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import MenuPreviewCard from "./MenuPreviewCard.jsx";
 
 export default function MenuPreviewRow({
@@ -7,6 +8,7 @@ export default function MenuPreviewRow({
   emptyLabel = "No menus in this row yet.",
   heroFirstCard = false,
 }) {
+  const { t } = useLanguage();
   return (
     <section style={{ marginTop: 28 }}>
       <div

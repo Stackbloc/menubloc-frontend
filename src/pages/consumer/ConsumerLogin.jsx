@@ -4,6 +4,7 @@ import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import {
   AuthPageFrame,
   FormError,
@@ -16,6 +17,7 @@ const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").
 
 export default function ConsumerLogin() {
   const { refreshSession, loginWithGoogle, loginWithApple } = useConsumer();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = useMemo(() => {
@@ -36,8 +38,8 @@ export default function ConsumerLogin() {
 
     const trimmedEmail = email.trim();
     const nextErrors = {};
-    if (!trimmedEmail) nextErrors.email = "Email is required";
-    if (!password) nextErrors.password = "Password is required";
+    if (!trimmedEmail) nextErrors.email = t("auth.emailRequired", "Email is required");
+    if (!password) nextErrors.password = t("auth.passwordRequired", "Password is required");
 
     setFieldErrors(nextErrors);
     setFormError("");
@@ -48,7 +50,7 @@ export default function ConsumerLogin() {
         hasEmail: Boolean(trimmedEmail),
         hasPassword: Boolean(password),
       });
-      setFormError("Email and password are required.");
+      setFormError(t("auth.emailAndPasswordRequired", "Email and password are required."));
       return;
     }
 
@@ -90,7 +92,7 @@ export default function ConsumerLogin() {
       navigate(redirectTo, { replace: true });
     } catch (err) {
       console.error("LOGIN ERROR", err);
-      setFormError(err?.message || "Login failed. Please try again.");
+      setFormError(err?.message || t("auth.signInFailed", "Sign in failed. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -105,7 +107,7 @@ export default function ConsumerLogin() {
       navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error("GOOGLE LOGIN ERROR", error);
-      setSocialError(error.message || "Google sign-in failed. Please try again.");
+      setSocialError(error.message || t("auth.googleSignInFailed", "Google sign-in failed. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -120,7 +122,7 @@ export default function ConsumerLogin() {
       navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error("APPLE LOGIN ERROR", error);
-      setSocialError(error.message || "Apple sign-in failed. Please try again.");
+      setSocialError(error.message || t("auth.appleSignInFailed", "Apple sign-in failed. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -131,23 +133,27 @@ export default function ConsumerLogin() {
       <StickyPageHeader />
       <AuthPageFrame
         showLogo={false}
-        title="Log in"
-        subtitle="Use your Menuply account, Google, or Apple."
+        title={t("auth.consumerLoginTitle", "Log in")}
+        subtitle={t("auth.consumerLoginSubtitle", "Welcome back to Menuply.")}
         footer={(
           <>
             <p style={styles.footer}>
-              <Link to="/account/forgot-password" style={styles.link}>Forgot password?</Link>
+              <Link to="/account/forgot-password" style={styles.link}>
+                {t("auth.forgotPassword", "Forgot password?")}
+              </Link>
             </p>
             <p style={{ ...styles.footer, marginTop: "12px" }}>
-              New to Menuply?{" "}
-              <Link to="/account/signup" style={styles.link}>Create account</Link>
+              {t("auth.newToMenuply", "New to Menuply?")}{" "}
+              <Link to="/account/signup" style={styles.link}>
+                {t("auth.createAccount", "Create account")}
+              </Link>
             </p>
           </>
         )}
       >
         <form onSubmit={handleSubmit} noValidate style={styles.form}>
           <div style={styles.fieldGroup}>
-            <label htmlFor="consumer-login-email" style={styles.label}>Email</label>
+            <label htmlFor="consumer-login-email" style={styles.label}>{t("auth.email", "Email")}</label>
             <input
               id="consumer-login-email"
               type="email"
@@ -158,7 +164,7 @@ export default function ConsumerLogin() {
                 setFieldErrors((current) => ({ ...current, email: undefined }));
               }}
               style={{ ...styles.input, ...(fieldErrors.email ? styles.inputError : null) }}
-              placeholder="you@example.com"
+              placeholder={t("auth.consumerEmailPlaceholder", "you@example.com")}
               aria-invalid={fieldErrors.email ? "true" : "false"}
               aria-describedby={fieldErrors.email ? "consumer-login-email-error" : undefined}
               required
@@ -168,14 +174,14 @@ export default function ConsumerLogin() {
 
           <PasswordField
             id="consumer-login-password"
-            label="Password"
+            label={t("auth.password", "Password")}
             autoComplete="current-password"
             value={password}
             onChange={(event) => {
               setPassword(event.target.value);
               setFieldErrors((current) => ({ ...current, password: undefined }));
             }}
-            placeholder="Your password"
+            placeholder={t("auth.passwordPlaceholder", "Your password")}
             error={fieldErrors.password}
             describedBy={fieldErrors.password ? "consumer-login-password-error" : undefined}
           />
@@ -187,7 +193,7 @@ export default function ConsumerLogin() {
             disabled={loading}
             style={{ ...styles.submitButton, ...(loading ? styles.submitButtonDisabled : null) }}
           >
-            {loading ? "Logging in..." : "Log in"}
+            {loading ? t("auth.loggingIn", "Logging in…") : t("auth.signIn", "Sign in")}
           </button>
         </form>
 
@@ -206,7 +212,7 @@ export default function ConsumerLogin() {
             onClick={() => setSmsOpen(true)}
             style={{ background: "none", border: "none", color: "#1F4E3D", fontWeight: 800, fontSize: 14, cursor: "pointer", textDecoration: "underline" }}
           >
-            Sign in with phone number
+            {t("auth.signInWithPhone", "Sign in with phone number")}
           </button>
         </div>
       </AuthPageFrame>

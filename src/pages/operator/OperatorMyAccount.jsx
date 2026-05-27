@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -69,6 +70,7 @@ function StatusBadge({ status }) {
 }
 
 export default function OperatorMyAccount() {
+  const { t } = useLanguage();
   const { operator, selectedRestaurant, subscription: contextSubscription } = useOperator();
   const navigate = useNavigate();
 

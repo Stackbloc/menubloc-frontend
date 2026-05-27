@@ -4,6 +4,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from "react";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useParams } from "react-router-dom";
 import { getMenuVerificationSession, postMenuVerificationAnswers } from "../lib/menuVerificationApi.js";
 
@@ -48,6 +49,7 @@ function ChoiceOptions({ question, value, onChange, disabled }) {
 }
 
 export default function MenuVerificationPage() {
+  const { t } = useLanguage();
   const { token } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

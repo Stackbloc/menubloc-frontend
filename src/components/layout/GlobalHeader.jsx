@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../BrandLogo.jsx";
 import AppMenuSheet from "../grubbid/AppMenuSheet.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const SESSION_GEO_KEY = "grubbid.discovery.geo";
@@ -111,6 +112,7 @@ function buildNavLinkStyle(isActive) {
 }
 
 export default function GlobalHeader() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, loading, profile, consumer } = useConsumer();
@@ -124,7 +126,7 @@ export default function GlobalHeader() {
     profile?.display_name ||
     [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") ||
     consumer?.email ||
-    "Profile";
+    t("global.profile", "Profile");
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -169,7 +171,7 @@ export default function GlobalHeader() {
           <button
             type="button"
             onClick={() => setAppMenuOpen(true)}
-            aria-label="Open menu"
+            aria-label={t("global.openMenu", "Open menu")}
             style={{
               border: "none",
               background: "transparent",
@@ -184,14 +186,14 @@ export default function GlobalHeader() {
             ☰
           </button>
 
-          <Link to="/" aria-label="Go to home" style={{ display: "inline-flex", textDecoration: "none" }}>
+          <Link to="/" aria-label={t("global.goHome", "Go to home")} style={{ display: "inline-flex", textDecoration: "none" }}>
             <BrandLogo width={136} height={58} radius={16} pageColor="#0B0F0C" />
           </Link>
 
           {showDealsNav ? (
-            <nav aria-label="Primary" style={navStyle}>
+            <nav aria-label={t("global.primaryNav", "Primary")} style={navStyle}>
               <NavLink to="/deals" style={({ isActive }) => buildNavLinkStyle(isActive)}>
-                Deals
+                {t("global.deals", "Deals")}
               </NavLink>
             </nav>
           ) : null}
@@ -202,12 +204,18 @@ export default function GlobalHeader() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search dishes, ingredients, cuisines, or restaurants..."
-            aria-label="Search dishes, ingredients, cuisines, or restaurants"
+            placeholder={t(
+              "global.searchPlaceholder",
+              "Search dishes, ingredients, cuisines, or restaurants..."
+            )}
+            aria-label={t(
+              "global.searchAria",
+              "Search dishes, ingredients, cuisines, or restaurants"
+            )}
             style={searchInputStyle}
           />
           <button type="submit" style={searchButtonStyle}>
-            Search
+            {t("common.search", "Search")}
           </button>
         </form>
 
@@ -215,11 +223,11 @@ export default function GlobalHeader() {
           {!loading ? (
             isAuthenticated ? (
               <Link to="/account" style={authLinkStyle}>
-                {isAccountPage ? profileLabel : "Account"}
+                {isAccountPage ? profileLabel : t("global.account", "Account")}
               </Link>
             ) : (
               <Link to="/account/login" style={authLinkStyle}>
-                Sign in
+                {t("global.signIn", "Sign in")}
               </Link>
             )
           ) : null}

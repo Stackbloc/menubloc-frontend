@@ -1,4 +1,6 @@
+import { useLanguage } from "./context/LanguageContext.jsx";
 export default function VerifySuccess({ onNext }) {
+  const { t } = useLanguage();
   return (
     <div style={{ padding: 40, maxWidth: 700, margin: "0 auto" }}>
       <h2>Email verified ✅</h2>

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { getStripePublishableKey } from "./paymentHelpers.js";
@@ -7,6 +8,7 @@ const stripePublishableKey = getStripePublishableKey();
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 export default function StripeElementsProvider({ clientSecret, children }) {
+  const { t } = useLanguage();
   const options = useMemo(
     () => ({
       clientSecret,

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link, useParams } from "react-router-dom";
 import {
   createCrmLeadActivity,
@@ -24,6 +25,7 @@ import {
 const STAGES = ["new", "qualified", "outreach", "engaged", "demo", "trial", "negotiation", "won", "lost"];
 
 export default function CrmLeadDetail() {
+  const { t } = useLanguage();
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");

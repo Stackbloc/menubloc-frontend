@@ -15,6 +15,7 @@
  */
 
 import React, { useState } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import ShareModal from "./ShareModal.jsx";
 import ShareIcon from "./ShareIcon.jsx";
 import { trackShareEvent } from "./shareUtils.js";
@@ -51,6 +52,7 @@ export default function ShareButton({
   size = "default",
   tone = "default",
 }) {
+  const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const normalizedVariant = variant === "dish" ? "dish" : "menu";
   const resolvedLabel = label || (normalizedVariant === "dish" ? "Share Dish" : "Share Menu");

@@ -10,6 +10,8 @@
  * ============================================================
  */
 
+import { appendLanguageParam, readStoredLanguage, withLanguageHeaders } from "./languageApi.js";
+
 const VITE_ENV = import.meta.env || {};
 const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
 const API = (
@@ -21,9 +23,14 @@ const API = (
 export const API_BASE = API;
 
 async function req(path, opts = {}) {
-  const res = await fetch(`${API}${path}`, {
+  const language = opts.language || readStoredLanguage();
+  const localizedPath = appendLanguageParam(path, language);
+  const res = await fetch(`${API}${localizedPath}`, {
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+    headers: withLanguageHeaders(
+      { "Content-Type": "application/json", ...(opts.headers || {}) },
+      language,
+    ),
     ...opts,
   });
 

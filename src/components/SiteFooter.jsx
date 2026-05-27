@@ -61,10 +61,10 @@ export default function SiteFooter() {
             {t("discovery.footer.terms")}
           </Link>
           <Link to="/privacy" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
-            Privacy Policy
+            {t("footer.privacy", "Privacy Policy")}
           </Link>
           <Link to="/about" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
-            About Menuply
+            {t("footer.about", "About Menuply")}
           </Link>
           <Link to="/contact" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.contact")}
