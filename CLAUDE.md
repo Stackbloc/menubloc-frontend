@@ -1,4 +1,148 @@
-# Frontend Guardrails — full rules in /Users/andrebarber/Desktop/menubloc/CLAUDE.md
+# GUARDRAIL: LOW-COST AUDIT-FIRST WORKFLOW
+
+Objective:
+Prevent speculative rewrites, unnecessary token/credit usage, production regressions, and architecture drift caused by agents implementing changes before understanding the existing system.
+
+Mandatory workflow guardrail:
+Agents MUST begin in the lowest-cost planning/audit mode available before making edits or implementations.
+
+Examples:
+- Claude → Plan Mode / audit-first mode
+- Cursor → analysis/audit before edit mode
+- Codex/agents → inspect/report before modifying files
+
+Hard requirements:
+
+1. Audit Before Edit
+No implementation changes may begin until the agent:
+- audits current architecture
+- identifies affected routes/files/services
+- identifies schema assumptions
+- identifies environment variable dependencies
+- identifies migrations required
+- identifies frontend/backend contract dependencies
+- identifies rollback risk
+- identifies production risk
+
+2. Report Before Implementation
+Agent must produce a concise implementation report BEFORE editing files:
+- current behavior
+- root cause
+- smallest safe fix
+- exact files/routes affected
+- whether deployment/migration required
+- whether production env vars required
+
+3. Smallest Safe Fix Guardrail
+Agents must prefer:
+- smallest safe fix
+over:
+- broad rewrites
+- speculative refactors
+- architecture replacement
+
+No unnecessary rewrites of working systems.
+
+4. No Production Push Without Verification
+Before push/deploy:
+- npm run build
+- npm run test:routes
+- npm run test:e2e (if applicable)
+- route probe verification
+- affected UI verification
+
+Required route probes for backend changes:
+- /api/orders/preview
+- /api/orders/create-payment-intent
+- /operator/auth/login
+- /api/checkout/session
+- affected feature routes
+
+5. Route Contract Guardrail
+Frontend may not reference routes/endpoints that do not exist in the backend route manifest.
+
+Backend route contract tests are mandatory for:
+- auth
+- orders
+- checkout
+- menu editor
+- food trucks
+- similar/compare/search
+- operator APIs
+
+6. Shared Logic Guardrail
+Agents may not create duplicate business logic systems for:
+- food classification
+- nutrition identity
+- similar/compare identity
+- menu item lineage
+- auth/session resolution
+
+Shared resolvers/services must be reused.
+
+7. Feature Flag Guardrail
+Optional systems must not affect unrelated runtime paths.
+
+Examples:
+- Apple auth
+- Google auth
+- experimental AI systems
+- future delivery providers
+
+Must be gated behind explicit ENABLE_* flags.
+
+8. No Silent Startup Degradation
+Production startup may:
+- fail loudly for core required infrastructure
+OR
+- continue with explicit optional-feature warnings
+
+Never:
+"validation failed — continuing startup"
+for core systems.
+
+9. Branch Protection Guardrail
+Agents must not push directly to production main branches for large or risky changes.
+
+Use:
+- feature/*
+- fix/*
+- staging
+
+then merge after verification.
+
+10. Concurrent Agent Guardrail
+Before editing:
+- inspect git status
+- inspect uncommitted changes
+- identify overlapping work
+
+Agents must not overwrite or refactor active unrelated workstreams.
+
+11. End-to-End Verification Guardrail
+No feature may be marked fixed unless:
+- frontend action works
+- backend route exists
+- backend logic succeeds
+- database writes succeed
+- production-like runtime verified
+
+Local-only proof is insufficient.
+
+12. Logging Guardrail
+Critical systems must emit explicit logs for:
+- route mounting
+- rejected Similar/Compare candidates
+- missing env vars
+- startup validation
+- route registration failures
+
+Goal:
+Reduce token waste, reduce regression frequency, prevent route drift, prevent architecture fragmentation, and stop agents from implementing speculative fixes without understanding the live Menuply architecture.
+
+---
+
+# Frontend Guardrails
 
 ---
 
