@@ -364,3 +364,61 @@ export const verifyOwnerPin = (rid, pin) =>
   post(`/operator/restaurants/${rid}/security/pin/verify`, { pin });
 export const resetOwnerPin = (rid) =>
   post(`/operator/restaurants/${rid}/security/pin/reset`, {});
+
+// ── Camera menu upload (page-by-page OCR + owner review) ───────────────────
+async function reqForm(path, formData, { method = "POST" } = {}) {
+  const language = readStoredLanguage();
+  const localizedPath = appendLanguageParam(path, language);
+  const res = await fetch(`${API}${localizedPath}`, {
+    method,
+    credentials: "include",
+    headers: withLanguageHeaders({}, language),
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(json.error || json.message || `Request failed (${res.status})`);
+    error.status = res.status;
+    error.payload = json;
+    throw error;
+  }
+  return json;
+}
+
+export const createMenuCameraSession = (restaurantId) =>
+  post("/operator/menu-camera-upload/sessions", { restaurant_id: restaurantId });
+
+export const getMenuCameraSession = (sessionId, restaurantId) =>
+  get(
+    `/operator/menu-camera-upload/sessions/${encodeURIComponent(sessionId)}?restaurant_id=${restaurantId}`
+  );
+
+export const uploadMenuCameraPage = (sessionId, restaurantId, pageNumber, formData) => {
+  formData.set("restaurant_id", String(restaurantId));
+  formData.set("page_number", String(pageNumber));
+  return reqForm(`/operator/menu-camera-upload/sessions/${encodeURIComponent(sessionId)}/pages`, formData);
+};
+
+export const processMenuCameraPage = (sessionId, restaurantId, pageNumber) =>
+  post(
+    `/operator/menu-camera-upload/sessions/${encodeURIComponent(sessionId)}/pages/${pageNumber}/process`,
+    { restaurant_id: restaurantId }
+  );
+
+export const updateMenuCameraPageItems = (sessionId, restaurantId, pageNumber, items) =>
+  patch(
+    `/operator/menu-camera-upload/sessions/${encodeURIComponent(sessionId)}/pages/${pageNumber}`,
+    { restaurant_id: restaurantId, items }
+  );
+
+export const confirmMenuCameraPage = (sessionId, restaurantId, pageNumber) =>
+  post(
+    `/operator/menu-camera-upload/sessions/${encodeURIComponent(sessionId)}/pages/${pageNumber}/confirm`,
+    { restaurant_id: restaurantId }
+  );
+
+export const finalizeMenuCameraSession = (sessionId, restaurantId) =>
+  post(
+    `/operator/menu-camera-upload/sessions/${encodeURIComponent(sessionId)}/finalize`,
+    { restaurant_id: restaurantId }
+  );
