@@ -5,5 +5,11 @@ import { SUBSCRIPTION_TERMS_DOCUMENT } from "../content/legal.js";
 
 export default function RestaurantSubscriptionTerms() {
   const { t } = useLanguage();
-  return <LegalDocumentPage eyebrow="Restaurant billing" document={SUBSCRIPTION_TERMS_DOCUMENT} />;
+  return (
+    <LegalDocumentPage
+      eyebrow={t("subscriptionTerms.title", "Subscription terms")}
+      titleKey="subscriptionTerms.title"
+      document={SUBSCRIPTION_TERMS_DOCUMENT}
+    />
+  );
 }

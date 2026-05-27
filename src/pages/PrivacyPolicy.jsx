@@ -5,5 +5,11 @@ import { PRIVACY_DOCUMENT } from "../content/legal.js";
 
 export default function PrivacyPolicy() {
   const { t } = useLanguage();
-  return <LegalDocumentPage eyebrow="Privacy" document={PRIVACY_DOCUMENT} />;
+  return (
+    <LegalDocumentPage
+      eyebrow={t("privacy.title", "Privacy policy")}
+      titleKey="privacy.title"
+      document={PRIVACY_DOCUMENT}
+    />
+  );
 }

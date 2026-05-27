@@ -5,5 +5,11 @@ import { MERCHANT_TERMS_DOCUMENT } from "../content/legal.js";
 
 export default function RestaurantMerchantTerms() {
   const { t } = useLanguage();
-  return <LegalDocumentPage eyebrow="Restaurant legal" document={MERCHANT_TERMS_DOCUMENT} />;
+  return (
+    <LegalDocumentPage
+      eyebrow={t("merchantTerms.title", "Merchant terms")}
+      titleKey="merchantTerms.title"
+      document={MERCHANT_TERMS_DOCUMENT}
+    />
+  );
 }
