@@ -445,8 +445,8 @@ function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, 
         border: "1px solid rgba(255,255,255,0.08)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
-        <div style={{ minWidth: 0, flex: "1 1 260px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0, flex: "0 1 auto" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
             <div style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.1, color: "#FFFFFF" }}>
               {itemName}
