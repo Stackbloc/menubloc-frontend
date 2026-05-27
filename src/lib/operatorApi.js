@@ -357,3 +357,7 @@ export const verifyOwnerPin = (rid, pin) =>
   post(`/operator/restaurants/${rid}/security/pin/verify`, { pin });
 export const resetOwnerPin = (rid) =>
   post(`/operator/restaurants/${rid}/security/pin/reset`, {});
+
+// ── Food Truck: Current Location ──────────────────────────────────────────
+export const updateFoodTruckCurrentLocation = (id, data) =>
+  patch(`/api/food-trucks/${id}/current-location`, data);
