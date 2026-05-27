@@ -167,7 +167,7 @@ const OPERATIONS_SECTIONS = [
         summary: "Account information and help resources.",
         points: [
           "My Account — subscription summary, renewal date, and plan change options. No PIN required.",
-          "Knowledge Base — this operations center. Setup guides, troubleshooting, hardware recommendations, and direct support ticket submission.",
+          "Knowledge Base — setup guides, troubleshooting, hardware recommendations, and direct support ticket submission.",
           "Support items are visible to all portal users. No elevated access required.",
         ],
       },
@@ -489,7 +489,7 @@ const OPERATIONS_SECTIONS = [
         summary: "Reserve sensitive settings for deliberate owner access.",
         points: [
           "Owner PIN protects business settings, not normal order handling.",
-          "The Restaurant Operations Center itself should remain available without an Owner PIN prompt.",
+          "The Knowledge Base itself should remain available without an Owner PIN prompt.",
           "Train the team on which tasks require elevated access and which do not.",
         ],
       },
@@ -725,7 +725,7 @@ export default function RestaurantHelpCenter() {
     setTicketLoadError("");
 
     loadKnownIssues()
-      .catch((err) => setPageError(err.message || "Unable to load Restaurant Operations Center."))
+      .catch((err) => setPageError(err.message || "Unable to load Knowledge Base."))
       .finally(() => setLoading(false));
 
     loadTickets().catch((err) => {
@@ -833,12 +833,12 @@ export default function RestaurantHelpCenter() {
 
   if (!restaurants.length) {
     return (
-      <OperatorLayout title="Restaurant Operations Center">
+      <OperatorLayout title="Knowledge Base">
         <div style={{ ...cardStyle, maxWidth: 560 }}>
           <SectionTitle
             eyebrow="Operations"
             title="Claim or link a restaurant first"
-            subcopy="The Operations Center is available only inside the authenticated operator portal and support requests need a linked restaurant."
+            subcopy="The Knowledge Base is available only inside the authenticated operator portal and support requests need a linked restaurant."
           />
           <p style={{ margin: 0, color: "#5b6675", lineHeight: 1.6 }}>
             Once a restaurant is linked to this account, the operations articles and support flow will attach to the selected location.
@@ -849,7 +849,7 @@ export default function RestaurantHelpCenter() {
   }
 
   return (
-    <OperatorLayout title="Restaurant Operations Center">
+    <OperatorLayout title="Knowledge Base">
       <div style={{ display: "grid", gap: 20 }}>
         <section
           style={{
@@ -865,7 +865,7 @@ export default function RestaurantHelpCenter() {
                 Operator Portal
               </div>
               <h1 style={{ margin: 0, fontSize: "clamp(30px, 4vw, 46px)", lineHeight: 0.98, letterSpacing: "-0.05em" }}>
-                Restaurant Operations Center
+                Knowledge Base
               </h1>
               <p style={{ margin: "14px 0 0", maxWidth: 760, fontSize: 15, lineHeight: 1.7, color: "rgba(255,255,255,0.84)" }}>
                 Set up Menuply, manage common restaurant workflows, and get help when needed.
