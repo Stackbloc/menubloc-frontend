@@ -1061,15 +1061,13 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
   useEffect(() => {
     if (!itemId) return undefined;
     let cancelled = false;
+    // Geo context only — search filters (diet, price) are NOT forwarded.
+    // Similar candidates are drawn from the full local family pool regardless
+    // of what filters were active on the search page.
     const params = new URLSearchParams();
     if (geoLat && geoLng) {
       params.set("lat", geoLat);
       params.set("lng", geoLng);
-    }
-    for (const key of SIMILAR_DIET_FILTER_KEYS) {
-      if (activeSearchParams?.get(key) === "1") {
-        params.set(key, "1");
-      }
     }
     const suffix = params.toString() ? `?${params.toString()}` : "";
     fetch(`${BACKEND_BASE}/menu-items/${encodeURIComponent(itemId)}/similar${suffix}`, { credentials: "include" })
@@ -1085,7 +1083,7 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
     return () => {
       cancelled = true;
     };
-  }, [activeSearchParams, geoLat, geoLng, itemId]);
+  }, [geoLat, geoLng, itemId]);
 
   function handleCompare(similarEntry) {
     if (!isSimilarRowCompareEligible(similarEntry)) return;
