@@ -150,6 +150,8 @@ export const updateMenuItem = (rid, iid, body) => patch(`/operator/restaurants/$
 export const publishMenuItem = (rid, iid) => post(`/operator/restaurants/${rid}/menu-items/${iid}/publish`, {});
 export const deleteMenuItem = (rid, iid) => del(`/operator/restaurants/${rid}/menu-items/${iid}`);
 export const getPriceHistory = (rid, iid) => get(`/operator/restaurants/${rid}/menu-items/${iid}/price-history`);
+export const submitMenuIntake = (rid, text) =>
+  post(`/operator/restaurants/${rid}/menu-intake`, { text });
 
 // ── Restaurant: Deals ─────────────────────────────────────────────────────
 export const getDeals = (rid, params = {}) => {
