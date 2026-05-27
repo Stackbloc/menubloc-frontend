@@ -114,19 +114,6 @@ export default function JoinPage() {
         </div>
 
         <div style={styles.pricingCard}>
-          <p style={styles.pricingEyebrow}>Founder&rsquo;s Plan — Limited Time</p>
-          <p style={styles.body}>
-            As Menuply continues rolling out nationally, we are offering a special Founder&rsquo;s Plan
-            for a limited time. Restaurants now have an opportunity to help build a lower-cost,
-            restaurant-first ecosystem designed around better pricing, stronger customer relationships,
-            and more sustainable long-term economics for both restaurants and diners.
-          </p>
-          <p style={{ ...styles.body, marginBottom: 20 }}>
-            Join Menuply today and begin building a more direct, lower-cost relationship with your
-            customers.
-          </p>
-          <p style={styles.pricingLine}>Plans start at $299 annually or $49 monthly.</p>
-
           <div style={styles.ctaRow}>
             <Link to="/restaurant/join" style={styles.ctaPrimary}>
               Restaurant Signup
