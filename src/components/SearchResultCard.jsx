@@ -18,6 +18,7 @@ import {
 } from "../lib/searchResultEnrichment.js";
 import IndulgenceMeter from "./IndulgenceMeter.jsx";
 import ShareButton from "./share/ShareButton.jsx";
+import FoodInterestButton from "./food-interests/FoodInterestButton.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
@@ -1175,6 +1176,17 @@ function ItemRow({
             }}
             iconOnly
             stopPropagation
+          />
+        ) : null}
+        {mid ? (
+          <FoodInterestButton
+            compact
+            interest={{
+              interest_type: "dish",
+              interest_key: `menu_item_${mid}`,
+              display_label: name,
+              source_menu_item_id: mid,
+            }}
           />
         ) : null}
       </div>

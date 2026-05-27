@@ -50,6 +50,7 @@ import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templat
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu-templates/restaurantMenuBrand.js";
 import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
 import { itemPassesDietFilter } from "../hooks/useDietPreferences";
+import { useConsumer } from "../context/ConsumerContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
 import TasteIndexBadge from "../components/TasteIndexBadge.jsx";
@@ -147,7 +148,35 @@ function getCartItemState(cartItems, menuItemId) {
   };
 }
 
-function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap) {
+const ALLERGEN_PROFILE_TO_EVIDENCE = {
+  peanuts:   ["peanuts"],
+  tree_nuts: ["tree nuts"],
+  dairy:     ["dairy"],
+  gluten:    ["wheat", "gluten"],
+  shellfish: ["shellfish"],
+  soy:       ["soy"],
+  eggs:      ["eggs", "egg"],
+  fish:      ["fish"],
+  sesame:    ["sesame"],
+  wheat:     ["wheat"],
+};
+
+function itemFailsAllergenFilter(item, enabledAllergenKeys) {
+  if (!enabledAllergenKeys || enabledAllergenKeys.size === 0) return false;
+  const chip = item?.chips?.nutrition_chip || {};
+  const evidence = new Set([
+    ...(Array.isArray(chip.allergens) ? chip.allergens : []),
+    ...(Array.isArray(chip.contains_allergens) ? chip.contains_allergens : []),
+  ].map((a) => String(a || "").toLowerCase().replace(/_/g, " ").trim()));
+  if (evidence.size === 0) return false;
+  for (const key of enabledAllergenKeys) {
+    const matches = ALLERGEN_PROFILE_TO_EVIDENCE[key] || [key.replace(/_/g, " ")];
+    if (matches.some((m) => evidence.has(m))) return true;
+  }
+  return false;
+}
+
+function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap, enabledAllergenKeys) {
   return (Array.isArray(sections) ? sections : [])
     .map((sec) => {
       const title = asStr(sec?.title || "Menu").trim() || "Menu";
@@ -156,11 +185,39 @@ function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap) {
         if (!isDisplayableMenuItem(it)) return false;
         if (!itemPassesDietFilter(it, dietPrefs)) return false;
         if (dealsFilter && dealMap.get(it?.id) == null) return false;
+        if (itemFailsAllergenFilter(it, enabledAllergenKeys)) return false;
         return true;
       });
       return { ...sec, title, items };
     })
     .filter((sec) => sec.items.length > 0);
+}
+
+function allergenKeyToLabel(key) {
+  return String(key || "").replace(/_/g, " ").split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+function AllergenFilterBanner({ active, enabledKeys }) {
+  if (!active || !enabledKeys || enabledKeys.size === 0) return null;
+  const labels = [...enabledKeys].map(allergenKeyToLabel).join(", ");
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "9px 14px",
+      borderRadius: 10,
+      background: "rgba(234, 179, 8, 0.08)",
+      border: "1px solid rgba(234, 179, 8, 0.22)",
+      color: "#92400e",
+      fontSize: 12,
+      fontWeight: 700,
+      marginBottom: 12,
+    }}>
+      <span aria-hidden="true" style={{ fontSize: 14 }}>⚠</span>
+      Allergen filter active — items containing {labels} are hidden
+    </div>
+  );
 }
 
 function IntakePreviewBanner({ show }) {
@@ -188,101 +245,219 @@ function IntakePreviewBanner({ show }) {
   );
 }
 
-function FranchiseBanner({ group, currentRestaurantId, onPrevious, onNext, brand }) {
-  const accent = brand?.accent ?? "#22C55E";
-  const { t } = useLanguage();
-  const locations = (Array.isArray(group?.locations) ? group.locations : []).filter(
-    (location) => location?.is_displayable !== false && location?.restaurant_id
-  );
-  const totalLocations = locations.length;
-  const derivedIndex = locations.findIndex((location) => Number(location.restaurant_id) === Number(currentRestaurantId));
-  const fallbackIndex = Number.isFinite(Number(group?.current_index)) ? Number(group.current_index) : 0;
-  const currentIndex = derivedIndex >= 0 ? derivedIndex : fallbackIndex;
-  const currentLocation = locations[currentIndex] || group?.current_location || null;
-  const hasPrevious = currentIndex > 0 && currentIndex < locations.length;
-  const hasNext = currentIndex >= 0 && currentIndex < locations.length - 1;
-  const previousLocation = hasPrevious ? locations[currentIndex - 1] : null;
-  const nextLocation = hasNext ? locations[currentIndex + 1] : null;
-  const currentLabel = asStr(currentLocation?.label || currentLocation?.restaurant_name).trim();
-  const brandName = asStr(group?.brand_name || currentLocation?.restaurant_name).trim();
-
-  if (totalLocations <= 1 || !currentLabel) return null;
-
+function FranchiseLocationSheet({ locations, currentRestaurantId, brandName, onSelect, onClose, accent }) {
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${brandName} locations`}
       style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 300,
         display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        flexWrap: "wrap",
-        marginTop: 12,
-        padding: "12px 14px",
-        borderRadius: 16,
-        background: "#eef6ff",
-        border: "1px solid rgba(37, 99, 235, 0.18)",
-        color: "#1e3a8a",
+        flexDirection: "column",
+        justifyContent: "flex-end",
       }}
     >
-      <div style={{ fontSize: 13, lineHeight: 1.45, fontWeight: 700 }}>
-        {t("publicMenu.closest", `Showing ${brandName} (${totalLocations} locations). Closest: ${currentLabel}.`, {
-          brand: brandName,
-          count: totalLocations,
-          location: currentLabel,
-        })}
-        {previousLocation || nextLocation
-          ? ` ${t("publicMenu.navigateClosest", "", {
-              arrows: `${nextLocation ? "→" : ""}${nextLocation && previousLocation ? " / " : ""}${previousLocation ? "←" : ""}`,
-              direction: nextLocation && previousLocation
-                ? t("publicMenu.next") + " / " + t("publicMenu.previous")
-                : nextLocation
-                ? t("publicMenu.next")
-                : t("publicMenu.previous"),
-              brand: brandName,
-            })}`
-          : null}
-      </div>
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-        {hasPrevious ? (
+      {/* Backdrop */}
+      <div
+        aria-hidden="true"
+        onClick={onClose}
+        style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.65)" }}
+      />
+
+      {/* Panel */}
+      <div
+        style={{
+          position: "relative",
+          background: "#111816",
+          borderRadius: "20px 20px 0 0",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderBottom: "none",
+          maxHeight: "55vh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        {/* Handle */}
+        <div style={{ display: "flex", justifyContent: "center", paddingTop: 8, paddingBottom: 2, flexShrink: 0 }}>
+          <div style={{ width: 32, height: 3, borderRadius: 999, background: "rgba(255,255,255,0.15)" }} />
+        </div>
+
+        {/* Header */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "6px 16px 10px",
+          flexShrink: 0,
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>
+            {brandName}
+            <span style={{ marginLeft: 6, fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.4)" }}>
+              · {locations.length} locations
+            </span>
+          </div>
           <button
             type="button"
-            onClick={onPrevious}
-            aria-label={`Show previous closest ${brandName}`}
+            onClick={onClose}
+            aria-label="Close locations"
             style={{
-              border: "1px solid #1F2937",
-              borderRadius: 8,
-              background: "#121A14",
-              color: accent,
-              fontSize: 12,
-              fontWeight: 800,
-              padding: "5px 10px",
+              background: "rgba(255,255,255,0.07)",
+              border: "none",
+              borderRadius: 999,
+              width: 24,
+              height: 24,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               cursor: "pointer",
+              color: "rgba(255,255,255,0.5)",
+              fontSize: 14,
+              lineHeight: 1,
             }}
           >
-            Prev
+            ×
           </button>
-        ) : null}
-        {hasNext ? (
-          <button
-            type="button"
-            onClick={onNext}
-            aria-label={`Show next closest ${brandName}`}
-            style={{
-              border: "1px solid #1F2937",
-              borderRadius: 8,
-              background: "#121A14",
-              color: accent,
-              fontSize: 12,
-              fontWeight: 800,
-              padding: "5px 10px",
-              cursor: "pointer",
-            }}
-          >
-            Next
-          </button>
-        ) : null}
+        </div>
+
+        {/* Location list */}
+        <div style={{ overflowY: "auto", padding: "4px 0 16px" }}>
+          {locations.map((loc, idx) => {
+            const isCurrent = Number(loc.restaurant_id) === Number(currentRestaurantId);
+            const name = asStr(loc.restaurant_name || loc.label).trim();
+            const addressLine = asStr(loc.address_line || loc.address_line1 || loc.address).trim();
+            const cityState = [asStr(loc.city).trim(), asStr(loc.state).trim()].filter(Boolean).join(", ");
+            const secondaryLine = addressLine || cityState || null;
+            const distanceMiles = Number.isFinite(Number(loc.distance_miles)) ? Number(loc.distance_miles) : null;
+
+            return (
+              <button
+                key={loc.restaurant_id ?? idx}
+                type="button"
+                onClick={() => !isCurrent && onSelect(loc)}
+                disabled={isCurrent}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "9px 16px",
+                  background: isCurrent ? "rgba(255,255,255,0.04)" : "transparent",
+                  border: "none",
+                  borderBottom: "1px solid rgba(255,255,255,0.05)",
+                  cursor: isCurrent ? "default" : "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: isCurrent ? 700 : 600,
+                    color: isCurrent ? accent : "#FFFFFF",
+                    lineHeight: 1.3,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {name}
+                    {isCurrent ? (
+                      <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: accent, opacity: 0.8 }}>
+                        current
+                      </span>
+                    ) : null}
+                  </div>
+                  {secondaryLine ? (
+                    <div style={{
+                      fontSize: 11,
+                      color: "rgba(255,255,255,0.38)",
+                      marginTop: 1,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {secondaryLine}
+                    </div>
+                  ) : null}
+                </div>
+                <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 6 }}>
+                  {distanceMiles != null ? (
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.32)", fontWeight: 500 }}>
+                      {distanceMiles < 0.1 ? "< 0.1 mi" : `${distanceMiles.toFixed(1)} mi`}
+                    </span>
+                  ) : null}
+                  {!isCurrent ? (
+                    <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>›</span>
+                  ) : null}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
+  );
+}
+
+function FranchiseBanner({ group, currentRestaurantId, onSelectLocation, brand }) {
+  const accent = brand?.accent ?? "#22C55E";
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const locations = (Array.isArray(group?.locations) ? group.locations : []).filter(
+    (loc) => loc?.is_displayable !== false && loc?.restaurant_id
+  );
+  const currentIndex = locations.findIndex((loc) => Number(loc.restaurant_id) === Number(currentRestaurantId));
+  const fallbackIndex = Number.isFinite(Number(group?.current_index)) ? Number(group.current_index) : 0;
+  const resolvedIndex = currentIndex >= 0 ? currentIndex : fallbackIndex;
+  const currentLocation = locations[resolvedIndex] || group?.current_location || null;
+  const brandName = asStr(group?.brand_name || currentLocation?.restaurant_name).trim();
+  const currentAddress = asStr(
+    currentLocation?.address_line1 || currentLocation?.address_line || currentLocation?.address || currentLocation?.label
+  ).trim();
+
+  if (locations.length <= 1 || !currentLocation) return null;
+
+  return (
+    <>
+      <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>
+          Closest location: {currentAddress || brandName}
+        </span>
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          style={{
+            background: "none",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+            fontSize: 12,
+            color: accent,
+            fontWeight: 600,
+            textDecoration: "underline",
+            textUnderlineOffset: 2,
+          }}
+        >
+          See all {locations.length} locations →
+        </button>
+      </div>
+
+      {sheetOpen ? (
+        <FranchiseLocationSheet
+          locations={locations}
+          currentRestaurantId={currentRestaurantId}
+          brandName={brandName}
+          accent={accent}
+          onSelect={(loc) => {
+            setSheetOpen(false);
+            onSelectLocation(loc.restaurant_id, loc.slug);
+          }}
+          onClose={() => setSheetOpen(false)}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -496,26 +671,6 @@ function ItemDetailSheet({
             </div>
           ) : null}
 
-          {/* Allergen — only shown when allergen context is active (filter, profile, search term) */}
-          {allergenContextActive && item?.chips?.nutrition_chip?.allergen_alert ? (
-            <div style={{ marginBottom: 14 }}>
-              <span style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                padding: "3px 10px",
-                background: "rgba(230,130,0,0.06)",
-                border: "1px solid rgba(230,130,0,0.18)",
-                borderRadius: 999,
-                fontSize: 11,
-                color: "#7c4a00",
-                fontWeight: 700,
-              }}>
-                <span aria-hidden="true">⚠</span>
-                {item.chips.nutrition_chip.allergen_alert}
-              </span>
-            </div>
-          ) : null}
 
           {/* Indulgence */}
           {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
@@ -690,6 +845,7 @@ export default function PublicMenuPage() {
     removeItem,
   } = useOrderCart();
   const isMobile = useIsMobile();
+  const { isAuthenticated, allergenPreferences } = useConsumer();
   const [searchParams, setSearchParams] = useSearchParams();
   const [modifierItem, setModifierItem] = useState(null);
   const [itemSheet, setItemSheet] = useState(null);
@@ -727,12 +883,12 @@ export default function PublicMenuPage() {
     vegetarian:        searchParams.get("vegetarian")        === "1",
   };
   const dealsFilter = searchParams.get("deals") === "1";
-  const filtersActive = Object.values(dietPrefs).some(Boolean) || dealsFilter;
-  // Allergen-relevant filter keys — extend this array as new allergen filters are added.
-  // Future contexts (user allergen profile, allergen search terms, explicit allergen interactions)
-  // should be OR-ed into allergenContextActive without changing the render conditions below.
-  const ALLERGEN_FILTER_KEYS = ["dairy_free", "gluten_free"];
-  const allergenContextActive = ALLERGEN_FILTER_KEYS.some(k => dietPrefs[k]);
+  const enabledAllergenKeys = useMemo(() => {
+    if (!isAuthenticated || !Array.isArray(allergenPreferences)) return new Set();
+    return new Set(allergenPreferences.filter((p) => p.is_enabled).map((p) => p.allergen_key));
+  }, [isAuthenticated, allergenPreferences]);
+  const allergenFilterActive = enabledAllergenKeys.size > 0;
+  const filtersActive = Object.values(dietPrefs).some(Boolean) || dealsFilter || allergenFilterActive;
   const proximityLat = asFiniteNumber(searchParams.get("lat"));
   const proximityLng = asFiniteNumber(searchParams.get("lng"));
   const contextCity  = searchParams.get("city")  || null;
@@ -1060,7 +1216,7 @@ export default function PublicMenuPage() {
   // tabSections?.sections may still show a prior menu's content during a background fetch —
   // this is intentional: never blank the display while waiting for a new tab to load.
   const sections        = tabSections?.sections ?? normalizeSections(data);
-  const displaySections = getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap);
+  const displaySections = getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap, enabledAllergenKeys);
   const displayableItemCount = displaySections.reduce(
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
     0
@@ -1134,29 +1290,6 @@ export default function PublicMenuPage() {
     });
   }
 
-  function handlePreviousClosestLocation() {
-    const locations = (Array.isArray(franchiseGroup?.locations) ? franchiseGroup.locations : []).filter(
-      (location) => location?.is_displayable !== false && location?.restaurant_id
-    );
-    const currentIndex = locations.findIndex((location) => Number(location.restaurant_id) === Number(currentRestaurantId));
-    const previousRestaurantId =
-      currentIndex > 0 ? locations[currentIndex - 1]?.restaurant_id : null;
-    const previousRestaurantSlug =
-      currentIndex > 0 ? locations[currentIndex - 1]?.slug : null;
-    navigateToFranchiseLocation(previousRestaurantId, previousRestaurantSlug);
-  }
-
-  function handleNextClosestLocation() {
-    const locations = (Array.isArray(franchiseGroup?.locations) ? franchiseGroup.locations : []).filter(
-      (location) => location?.is_displayable !== false && location?.restaurant_id
-    );
-    const currentIndex = locations.findIndex((location) => Number(location.restaurant_id) === Number(currentRestaurantId));
-    const nextRestaurantId =
-      currentIndex >= 0 && currentIndex + 1 < locations.length ? locations[currentIndex + 1]?.restaurant_id : null;
-    const nextRestaurantSlug =
-      currentIndex >= 0 && currentIndex + 1 < locations.length ? locations[currentIndex + 1]?.slug : null;
-    navigateToFranchiseLocation(nextRestaurantId, nextRestaurantSlug);
-  }
 
   function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = []) {
     return addMenuItem({
@@ -1192,8 +1325,7 @@ export default function PublicMenuPage() {
     <FranchiseBanner
       group={franchiseGroup}
       currentRestaurantId={currentRestaurantId}
-      onPrevious={handlePreviousClosestLocation}
-      onNext={handleNextClosestLocation}
+      onSelectLocation={navigateToFranchiseLocation}
       brand={menuBrand}
     />
   ) : null;
@@ -1217,6 +1349,7 @@ export default function PublicMenuPage() {
           shareAnalyticsContext,
           franchiseSlot,
           intakeBannerSlot: <IntakePreviewBanner show={isIntakePreview} />,
+          allergenBannerSlot: <AllergenFilterBanner active={allergenFilterActive} enabledKeys={enabledAllergenKeys} />,
           onOpenFilters: () => setIsFilterDrawerOpen(true),
           displaySections,
           displayableItemCount,

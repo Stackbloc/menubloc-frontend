@@ -8,7 +8,7 @@ export default function OwnerSiteAnalytics() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    getOwnerTrafficAnalytics(filters).then(setData).catch((err) => setError(err.message || "Unable to load traffic analytics"));
+    getOwnerTrafficAnalytics(filters).then(setData).catch(() => setError("Owner dashboard data is temporarily unavailable."));
   }, [filters]);
 
   return (

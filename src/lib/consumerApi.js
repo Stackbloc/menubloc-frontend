@@ -53,6 +53,10 @@ export const getFollowedRestaurants = ()    => get("/api/consumer/followed-resta
 // ── Preferences ───────────────────────────────────────────────────────────
 export const getPreferences        = ()     => get("/api/consumer/profile/preferences");
 export const updatePreferences     = (body) => put("/api/consumer/profile/preferences", body);
+export const getFoodInterests      = ()     => get("/api/consumer/food-interests");
+export const getFoodInterestSuggestions = () => get("/api/consumer/food-interests/suggestions");
+export const followFoodInterest    = (body) => post("/api/consumer/food-interests/follow", body);
+export const unfollowFoodInterest  = (body) => post("/api/consumer/food-interests/unfollow", body);
 
 // ── Saved Locations ───────────────────────────────────────────────────────
 export const getLocations          = ()         => get("/api/consumer/profile/locations");

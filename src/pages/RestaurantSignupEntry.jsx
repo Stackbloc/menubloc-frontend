@@ -294,7 +294,7 @@ export default function RestaurantSignupEntry() {
               </span>
               <span style={styles.foodTruckPrompt}>Food Truck Owner?</span>
               <Link to="/foodtruck/signup" style={styles.foodTruckLink}>
-                Food Truck Signup
+                Signup
               </Link>
             </div>
             <h1 style={{

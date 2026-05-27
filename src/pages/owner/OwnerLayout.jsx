@@ -9,6 +9,7 @@ const NAV = [
   { to: "/owner/restaurants", label: "Restaurant Profile" },
   { to: "/owner/revenue", label: "Revenue" },
   { to: "/owner/support", label: "Support Tickets" },
+  { to: "/owner/menu-uploads", label: "Menu Uploads" },
 ];
 
 export const OWNER_COLORS = {

@@ -17,7 +17,9 @@ function getPlanDisplayName(planCode) {
   if (planCode === "pro_monthly") return "Pro Partner — Monthly";
   if (planCode === "pro_annual") return "Pro Partner — Annual";
   if (planCode === "founders_annual") return "Founders — Annual";
-  if (planCode === "foodtruck_verified_annual") return "Food Truck Verified — Annual";
+  if (planCode === "foodtruck_verified_annual" || planCode === "food_truck_annual") {
+    return "Food Truck Annual";
+  }
   return planCode;
 }
 

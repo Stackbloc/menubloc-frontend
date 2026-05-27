@@ -1,4 +1,5 @@
 import ShareButton from "../share/ShareButton.jsx";
+import FoodInterestButton from "../food-interests/FoodInterestButton.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
 import { itemHasInsightsData } from "../basket/ItemInsightsSheet.jsx";
@@ -122,14 +123,14 @@ export default function PublicMenuItemCard({
     density === "takeout" ? "8px 12px" :
     density === "bold-casual" ? "12px 16px" :
     density === "refined-editorial" ? "14px 0" :
-    "10px 14px";
+    "12px 16px";
   const radius =
     density === "cinematic" ? 20 :
     density === "takeout" ? 12 :
     density === "refined-editorial" ? 0 :
     density === "bold-casual" ? 14 :
-    16;
-  const titleSize = density === "cinematic" ? 17 : density === "bold-casual" ? 16 : density === "refined-editorial" ? 15 : 14;
+    18;
+  const titleSize = density === "cinematic" ? 17 : density === "bold-casual" ? 16 : density === "refined-editorial" ? 15 : 15;
   const descSize = density === "cinematic" ? 13 : density === "takeout" ? 11 : density === "refined-editorial" ? 13 : 12;
 
   function openSheet() {
@@ -186,7 +187,9 @@ export default function PublicMenuItemCard({
             ? inCartCount > 0 ? `1px solid ${softBorder}` : "none"
             : density === "bold-casual"
               ? inCartCount > 0 ? `1px solid ${softBorder}` : "none"
-              : inCartCount > 0 ? `1px solid ${softBorder}` : "1px solid var(--gb-color-border)",
+              : density === "classic"
+                ? inCartCount > 0 ? `1px solid ${softBorder}` : "1px solid #252F3D"
+                : inCartCount > 0 ? `1px solid ${softBorder}` : "1px solid var(--gb-color-border)",
         borderLeft: density === "bold-casual" ? `4px solid ${accent}` : undefined,
         borderRadius: radius,
         background:
@@ -198,7 +201,10 @@ export default function PublicMenuItemCard({
                 ? softBg
                 : "var(--gb-color-surface-strong)",
         padding: pad,
-        boxShadow: density === "cinematic" ? "0 8px 28px rgba(0,0,0,0.35)" : "var(--gb-shadow-card)",
+        boxShadow:
+          density === "cinematic" ? "0 8px 28px rgba(0,0,0,0.35)" :
+          density === "classic" ? "0 2px 12px rgba(0,0,0,0.28), 0 1px 3px rgba(0,0,0,0.18)" :
+          "var(--gb-shadow-card)",
         cursor: "pointer",
         opacity: itemIsOrderable ? 1 : 0.78,
         transition: "background 120ms ease, border-color 120ms ease",
@@ -210,7 +216,7 @@ export default function PublicMenuItemCard({
           <span
             style={{
               fontSize: titleSize,
-              fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : 600,
+              fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : density === "classic" ? 700 : 600,
               color: "#FFFFFF",
               lineHeight: 1.2,
               minWidth: 0,
@@ -237,6 +243,19 @@ export default function PublicMenuItemCard({
                 size="compact"
                 tone="subtle"
                 iconOnly
+              />
+            </div>
+          ) : null}
+          {canNavigate ? (
+            <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0 }}>
+              <FoodInterestButton
+                compact
+                interest={{
+                  interest_type: "dish",
+                  interest_key: `menu_item_${it.id}`,
+                  display_label: name,
+                  source_menu_item_id: it.id,
+                }}
               />
             </div>
           ) : null}
@@ -309,7 +328,12 @@ export default function PublicMenuItemCard({
       ) : null}
 
       {desc ? (
-        <div style={{ marginTop: 3, fontSize: descSize, color: "#9CA3AF", lineHeight: 1.35 }}>{desc}</div>
+        <div style={{
+          marginTop: density === "classic" ? 4 : 3,
+          fontSize: descSize,
+          color: density === "classic" ? "rgba(156,163,175,0.82)" : "#9CA3AF",
+          lineHeight: density === "classic" ? 1.4 : 1.35,
+        }}>{desc}</div>
       ) : null}
 
       {density !== "takeout" && canNavigate && itemHasInsightsData(it) ? (

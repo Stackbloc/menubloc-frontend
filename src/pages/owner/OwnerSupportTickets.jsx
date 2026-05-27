@@ -10,7 +10,7 @@ export default function OwnerSupportTickets() {
 
   useEffect(() => {
     const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ""));
-    getOwnerSupportTickets(params).then(setData).catch((err) => setError(err.message || "Unable to load tickets"));
+    getOwnerSupportTickets(params).then(setData).catch(() => setError("Owner dashboard data is temporarily unavailable."));
   }, [filters]);
 
   return (

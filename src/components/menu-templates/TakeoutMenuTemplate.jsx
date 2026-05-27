@@ -54,6 +54,7 @@ export default function TakeoutMenuTemplate(ctx) {
     shareAnalyticsContext,
     franchiseSlot,
     intakeBannerSlot,
+    allergenBannerSlot,
     onOpenFilters,
     displaySections,
     displayableItemCount,
@@ -211,6 +212,7 @@ export default function TakeoutMenuTemplate(ctx) {
       ) : null}
 
       {intakeBannerSlot}
+      {allergenBannerSlot}
 
       {menuPresentation?.tabs_allowed_for_public_view && menus.length > 1 && (
         <>

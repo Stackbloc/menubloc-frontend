@@ -31,7 +31,7 @@ export default function OwnerTicketDetail() {
   }, [ticketId]);
 
   useEffect(() => {
-    load().catch((err) => setError(err.message || "Unable to load ticket"));
+    load().catch(() => setError("Owner dashboard data is temporarily unavailable."));
   }, [load]);
 
   async function sendReply() {

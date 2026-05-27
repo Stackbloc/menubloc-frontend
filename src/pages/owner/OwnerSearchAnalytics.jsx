@@ -8,7 +8,7 @@ export default function OwnerSearchAnalytics() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    getOwnerSearchAnalytics(filters).then(setData).catch((err) => setError(err.message || "Unable to load search analytics"));
+    getOwnerSearchAnalytics(filters).then(setData).catch(() => setError("Owner dashboard data is temporarily unavailable."));
   }, [filters]);
 
   return (

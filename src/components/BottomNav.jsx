@@ -30,7 +30,7 @@ function buildSearchHref() {
 
 const TABS = [
   { label: "Home",      icon: "🏠", to: "/" },
-  { label: "Explore",   icon: "🔍", to: "/search", buildHref: buildSearchHref },
+  { label: "Explore",   icon: "🔍", to: "/food-interests" },
   { label: "Following", icon: "F",  to: "/account/following" },
   { label: "Basket",    icon: "🛒", to: "/checkout" },
 ];

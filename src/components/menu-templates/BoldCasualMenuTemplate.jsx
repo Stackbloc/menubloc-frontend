@@ -48,6 +48,7 @@ export default function BoldCasualMenuTemplate(ctx) {
     shareAnalyticsContext,
     franchiseSlot,
     intakeBannerSlot,
+    allergenBannerSlot,
     onOpenFilters,
     displaySections,
     displayableItemCount,
@@ -249,6 +250,7 @@ export default function BoldCasualMenuTemplate(ctx) {
       <div style={{ fontFamily: fontStack }}>
         <main style={{ minWidth: 0, width: "100%" }}>
           {intakeBannerSlot}
+          {allergenBannerSlot}
 
           {/* Deal banner strip */}
           {hasDealBanner && (
