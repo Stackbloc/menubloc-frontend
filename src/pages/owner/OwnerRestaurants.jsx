@@ -8,18 +8,28 @@ export default function OwnerRestaurants() {
   const [filters, setFilters] = useState(() => ({ ...defaultRange(), city: "", state: "", claimed: "0" }));
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
+    setError("");
     const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ""));
-    getOwnerRestaurantSignups(params).then(setData).catch(() => setError("Owner dashboard data is temporarily unavailable."));
+    getOwnerRestaurantSignups(params)
+      .then(setData)
+      .catch(() => setError("Restaurant data is temporarily unavailable."))
+      .finally(() => setLoading(false));
   }, [filters]);
 
   return (
-    <OwnerLayout title="Restaurant Profile" actions={<Filters value={filters} onChange={setFilters} />}>
+    <OwnerLayout title="Restaurant Profiles" actions={<Filters value={filters} onChange={setFilters} />}>
       {error ? <ErrorBanner message={error} /> : null}
-      {!data?.available ? <EmptyState>{data?.reason || "Restaurant signup data is not available."}</EmptyState> : (
+      {loading ? (
+        <div style={{ padding: 40, textAlign: "center", color: "#667085", fontSize: 14 }}>Loading restaurant data…</div>
+      ) : !data?.available ? (
+        <EmptyState>No restaurant profiles found in the selected date range.</EmptyState>
+      ) : (
         <div style={{ display: "grid", gap: 18 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(180px, 1fr))", gap: 14 }}>
+          <div className="owner-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(180px, 1fr))", gap: 14 }}>
             <MetricCard label="Total Profiles" value={data?.summary?.total_signups} />
             <MetricCard label="Claimed" value={data?.summary?.claimed_restaurants} />
             <PaidSubscribersCard

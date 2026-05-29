@@ -44,6 +44,10 @@
   min-width: 0;
 }
 
+.owner-responsive-grid-3 {
+  min-width: 0;
+}
+
 @media (max-width: 767px) {
   .owner-shell {
     display: block;

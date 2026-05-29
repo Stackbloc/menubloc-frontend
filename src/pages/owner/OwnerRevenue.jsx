@@ -8,17 +8,27 @@ export default function OwnerRevenue() {
   const [filters, setFilters] = useState(() => defaultRange());
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getOwnerRevenueSummary(filters).then(setData).catch(() => setError("Owner dashboard data is temporarily unavailable."));
+    setLoading(true);
+    setError("");
+    getOwnerRevenueSummary(filters)
+      .then(setData)
+      .catch(() => setError("Revenue data is temporarily unavailable."))
+      .finally(() => setLoading(false));
   }, [filters]);
 
   return (
     <OwnerLayout title="Revenue" actions={<DateFilters value={filters} onChange={setFilters} />}>
       {error ? <ErrorBanner message={error} /> : null}
-      {!data?.available ? <EmptyState>{data?.reason || "Revenue data is not available."}</EmptyState> : (
+      {loading ? (
+        <div style={{ padding: 40, textAlign: "center", color: "#667085", fontSize: 14 }}>Loading revenue data…</div>
+      ) : !data?.available ? (
+        <EmptyState>No billing records found for this period. Revenue data will appear here once paid subscriptions are active.</EmptyState>
+      ) : (
         <div style={{ display: "grid", gap: 18 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(150px, 1fr))", gap: 14 }}>
+          <div className="owner-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(150px, 1fr))", gap: 14 }}>
             <MetricCard label="Total Revenue" value={formatMoney(data?.summary?.total_revenue_cents)} />
             <MetricCard label="Booked Revenue" value={formatMoney(data?.summary?.booked_revenue_cents)} />
             <MetricCard label="MRR" value={formatMoney(data?.summary?.mrr_cents)} />
@@ -26,7 +36,7 @@ export default function OwnerRevenue() {
             <MetricCard label="Failed Payments" value={data?.summary?.failed_payments} />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
             <PageCard style={{ padding: 22 }}>
               <SectionTitle title="Revenue Trend" subtitle="Billing history grouped by month." />
               <SimpleTable rows={data?.revenue_trend || []} columns={[["Month", "month"], ["Amount", "amount_cents"]]} formatters={{ amount_cents: formatMoney }} />
@@ -39,7 +49,9 @@ export default function OwnerRevenue() {
 
           <PageCard style={{ padding: 22 }}>
             <SectionTitle title="Recent Payments" subtitle="Latest billing records captured by the backend." />
-            <SimpleTable rows={data?.recent_payments || []} columns={[["Date", "billing_date"], ["Plan", "plan_name"], ["Operator", "operator_id"], ["Status", "status"], ["Amount", "amount_cents"], ["Description", "description"]]} formatters={{ amount_cents: formatMoney }} />
+            <div style={{ overflowX: "auto" }}>
+              <SimpleTable rows={data?.recent_payments || []} columns={[["Date", "billing_date"], ["Plan", "plan_name"], ["Operator", "operator_id"], ["Status", "status"], ["Amount", "amount_cents"], ["Description", "description"]]} formatters={{ amount_cents: formatMoney }} />
+            </div>
           </PageCard>
         </div>
       )}

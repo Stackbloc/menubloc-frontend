@@ -8,18 +8,29 @@ export default function OwnerSearchAnalytics() {
   const [filters, setFilters] = useState(() => defaultRange());
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getOwnerSearchAnalytics(filters).then(setData).catch(() => setError("Owner dashboard data is temporarily unavailable."));
+    setLoading(true);
+    setError("");
+    getOwnerSearchAnalytics(filters)
+      .then(setData)
+      .catch(() => setError("Search analytics data is temporarily unavailable."))
+      .finally(() => setLoading(false));
   }, [filters]);
 
   return (
     <OwnerLayout title="Search Analytics" actions={<DateFilters value={filters} onChange={setFilters} />}>
       {error ? <ErrorBanner message={error} /> : null}
-      {!data?.available ? <EmptyState>{data?.reason || "Search analytics are not available yet."}</EmptyState> : (
+      {loading ? (
+        <div style={{ padding: 40, textAlign: "center", color: "#667085", fontSize: 14 }}>Loading search analytics…</div>
+      ) : !data?.available ? (
+        <EmptyState>{data?.reason || "No search data recorded yet. Search activity will appear here once users begin searching."}</EmptyState>
+      ) : (
         <div style={{ display: "grid", gap: 18 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(220px, 1fr))", gap: 14 }}>
+          <div className="owner-responsive-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(180px, 1fr))", gap: 14 }}>
             <MetricCard label="Total Searches" value={data?.totals?.total_searches} />
+            <MetricCard label="Unique Searchers" value={data?.totals?.unique_searchers} />
             <MetricCard label="Zero-Result Searches" value={data?.totals?.zero_result_searches} />
           </div>
 
@@ -28,7 +39,7 @@ export default function OwnerSearchAnalytics() {
             <SimpleTable rows={data?.searches_by_day || []} columns={[["Day", "day"], ["Searches", "searches"]]} />
           </PageCard>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
             <PageCard style={{ padding: 22 }}>
               <SectionTitle title="Top Queries" subtitle="Most common searches across the platform." />
               <SimpleTable rows={data?.top_queries || []} columns={[["Query", "query"], ["Count", "count"]]} />
@@ -39,7 +50,7 @@ export default function OwnerSearchAnalytics() {
             </PageCard>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
             <PageCard style={{ padding: 22 }}>
               <SectionTitle title="Searches by Session" subtitle="Anonymous session visibility where tracked." />
               <SimpleTable rows={data?.searches_by_session || []} columns={[["Session", "session_id"], ["Count", "count"]]} />
