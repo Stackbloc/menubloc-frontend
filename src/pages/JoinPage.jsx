@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 
 export default function JoinPage() {
   useEffect(() => {
@@ -26,9 +27,14 @@ export default function JoinPage() {
   return (
     <main style={styles.page}>
       <div style={styles.wrap}>
-        <Link to="/" style={styles.logo} aria-label="Go to Menuply home">
-          <span style={styles.logoWordmark}>Menuply</span>
-        </Link>
+        <BrandLogo
+          width={130}
+          height={52}
+          radius={0}
+          pageColor="#0D0D0D"
+          linkStyle={styles.logo}
+          imageStyle={styles.logoImage}
+        />
 
         <div style={styles.eyebrow}>For Restaurant Owners</div>
 
@@ -94,9 +100,8 @@ const styles = {
     marginBottom: 56,
     color: "#FFF",
   },
-  logoWordmark: {
-    fontSize: "1.4rem",
-    fontWeight: 700,
+  logoImage: {
+    filter: "none",
   },
   eyebrow: {
     display: "inline-block",
