@@ -45,6 +45,7 @@ import {
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantFollow, trackRestaurantView } from "../lib/analytics.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
+import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -784,11 +785,7 @@ export default function RestaurantPublicPage() {
   const featuredItem = rawFeaturedItem
     ? {
         ...rawFeaturedItem,
-        name:
-          getLocalizedField(rawFeaturedItem, "name", language) ||
-          getLocalizedField(rawFeaturedItem, "menu_item_name", language) ||
-          rawFeaturedItem.name ||
-          "",
+        name: getDisplayMenuItemName(rawFeaturedItem, language, rawFeaturedItem.name || ""),
         description:
           getLocalizedField(rawFeaturedItem, "description", language) ||
           rawFeaturedItem.description ||

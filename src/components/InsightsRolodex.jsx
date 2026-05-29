@@ -24,6 +24,7 @@
 
 import { useState, useRef } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 
 const CARD_COUNT = 7;
 const PEEK_FULL    = 22; // px of adjacent card visible in full mode
@@ -638,6 +639,7 @@ function EmptyState({ compact }) {
    ============================================================ */
 
 export default function InsightsRolodex({ data, compact = false, itemName = "" }) {
+  const displayItemName = formatMenuItemName(itemName);
   const { t } = useLanguage();
   const [activeIdx, setActiveIdx] = useState(0);
   const touchStartX = useRef(null);
@@ -653,7 +655,7 @@ export default function InsightsRolodex({ data, compact = false, itemName = "" }
 
   if (!hasData) return <EmptyState compact={compact} />;
 
-  const cards = deriveCards(data, itemName);
+  const cards = deriveCards(data, displayItemName);
 
   function goTo(idx) {
     setActiveIdx(Math.max(0, Math.min(CARD_COUNT - 1, idx)));

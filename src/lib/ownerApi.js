@@ -69,3 +69,13 @@ export const updateOwnerSupportTicketAssignment = (ticketId, assigned_to_user_id
   put(`/api/owner/support/tickets/${ticketId}/assign`, { assigned_to_user_id });
 export const updateOwnerSupportTicketPriority = (ticketId, priority) =>
   put(`/api/owner/support/tickets/${ticketId}/priority`, { priority });
+
+export const getOwnerMenuUploads = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/menu-uploads${qs ? `?${qs}` : ""}`);
+};
+export const getOwnerMenuUpload = (id) => get(`/api/owner/menu-uploads/${id}`);
+export const markOwnerMenuUploadReview = (id) => post(`/api/owner/menu-uploads/${id}/mark-review`, {});
+export const markOwnerMenuUploadReviewed = (id) => post(`/api/owner/menu-uploads/${id}/mark-reviewed`, {});
+export const retryOwnerMenuUpload = (id) => post(`/api/owner/menu-uploads/${id}/retry`, {});
+export const archiveOwnerMenuUpload = (id) => post(`/api/owner/menu-uploads/${id}/archive`, {});

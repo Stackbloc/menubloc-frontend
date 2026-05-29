@@ -11,6 +11,7 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { buildLocalizedApiUrl, withLanguageHeaders } from "../lib/languageApi.js";
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -121,7 +122,11 @@ export default function DealDetailPage() {
       },
       item: {
         menuItemId: deal.menu_item_id,
-        name: deal.menu_item_name || deal.title || "Deal item",
+        name: getDisplayMenuItemName(
+          { name: deal.menu_item_name, menu_item_name: deal.menu_item_name },
+          language,
+          deal.title || "Deal item"
+        ),
         description: deal.description || "",
         quantity: 1,
         basePriceCents: dealPriceCents ?? menuPriceCents ?? 0,
@@ -301,7 +306,11 @@ export default function DealDetailPage() {
                   Includes
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF" }}>
-                  {deal.menu_item_name}
+                  {getDisplayMenuItemName(
+                    { name: deal.menu_item_name, menu_item_name: deal.menu_item_name },
+                    language,
+                    deal.menu_item_name
+                  )}
                 </div>
                 {deal.menu_item_description && (
                   <div style={{ fontSize: 13, color: "#667085", marginTop: 4, lineHeight: 1.5 }}>

@@ -21,6 +21,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
+import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 
 // ── TV Scaling ─────────────────────────────────────────────────────────────
 // Everything is designed at 1920×1080. CSS transform scales to fill any screen.
@@ -449,11 +450,7 @@ function ListSection({ section, dealIdSet, settings, accent, language }) {
 function ListItem({ item, isDeal, settings, accent, language }) {
   const showDeal = isDeal && settings.highlight_deals;
   const priceText = formatPrice(item.price);
-  const itemName =
-    getTranslatedField(item, "name", language) ||
-    getTranslatedField(item, "menu_item_name", language) ||
-    item?.name ||
-    "";
+  const itemName = getDisplayMenuItemName(item, language, "");
   const itemDescription =
     getTranslatedField(item, "description", language) ||
     getTranslatedField(item, "notes", language) ||
@@ -529,11 +526,7 @@ function GridSection({ section, dealIdSet, settings, accent, language }) {
 function GridItem({ item, isDeal, settings, accent, language }) {
   const showDeal = isDeal && settings.highlight_deals;
   const priceText = formatPrice(item.price);
-  const itemName =
-    getTranslatedField(item, "name", language) ||
-    getTranslatedField(item, "menu_item_name", language) ||
-    item?.name ||
-    "";
+  const itemName = getDisplayMenuItemName(item, language, "");
   return (
     <div style={{
       display: "flex",
@@ -613,13 +606,7 @@ function DealsBanner({ dealItems, language }) {
         {dealItems.slice(0, 6).map((item, i) => (
           <div key={item.id || i} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
             <span style={{ fontSize: 22, fontWeight: 600, color: "#f0f0f0" }}>
-              {truncate(
-                getTranslatedField(item, "name", language) ||
-                  getTranslatedField(item, "menu_item_name", language) ||
-                  item?.name ||
-                  "",
-                28
-              )}
+              {truncate(getDisplayMenuItemName(item, language, ""), 28)}
             </span>
             <span style={{ fontSize: 22, fontWeight: 700, color: formatPrice(item.price) ? "#f59e0b" : "#60a5fa" }}>
               {formatPrice(item.price) || "Price unavailable"}

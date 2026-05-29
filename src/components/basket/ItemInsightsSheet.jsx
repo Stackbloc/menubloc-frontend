@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import InsightCardDeck, { buildInsightCards } from "../InsightCardDeck.jsx";
 import NutritionCard from "../NutritionCard.jsx";
+import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
 
 function resolveNutritionChip(item) {
   const chip = item?.chips?.nutrition_chip;
@@ -78,7 +79,7 @@ export default function ItemInsightsSheet({ item, name, price, onClose, onViewDe
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
               <span style={{ fontSize: 19, fontWeight: 900, color: "#11211a", lineHeight: 1.2 }}>
-                {name}
+                {formatMenuItemName(name)}
               </span>
               {price ? (
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#374151" }}>{price}</span>

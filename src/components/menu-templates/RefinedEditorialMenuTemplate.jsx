@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
 import ChipRail from "../chips/ChipRail.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
+import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import MenuplyAttribution from "./MenuplyAttribution.jsx";
 import { pickFeaturedMenuItems } from "./menuTemplateFeatured.js";
@@ -246,7 +247,7 @@ export default function RefinedEditorialMenuTemplate(ctx) {
                 gap: 10,
               }}>
                 {chefsPickItems.map((it, iIdx) => {
-                  const name = String(it?.name || it?.menu_item_name || "Item").trim();
+                  const name = getDisplayMenuItemName(it, language, "Item");
                   const price = fmtMoney(it);
                   return (
                     <div

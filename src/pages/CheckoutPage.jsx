@@ -23,6 +23,7 @@ import { buildCheckoutItems } from "../context/orderCartModel.js";
 import { apiPost, createBmtSession, toConsumerErrorMessage } from "../lib/api.js";
 import { trackCheckoutCompleted, trackCheckoutStarted } from "../lib/analytics.js";
 import { formatMoney } from "../lib/pricingDisplay.js";
+import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
@@ -1080,7 +1081,7 @@ export default function CheckoutPage() {
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 900 }}>{item.name}</div>
+                      <div style={{ fontSize: 14, fontWeight: 900 }}>{formatMenuItemName(item.name)}</div>
                       <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 4 }}>
                         Qty {item.quantity}
                       </div>

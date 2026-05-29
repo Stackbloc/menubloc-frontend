@@ -38,7 +38,7 @@ export default function OwnerSupportTickets() {
               <tbody>
                 {data.tickets.map((ticket) => (
                   <tr key={ticket.id}>
-                    <td style={tdStyle}><Link to={`/owner/support/${ticket.id}`} style={linkStyle}>#{ticket.id}</Link></td>
+                    <td style={tdStyle}><Link to={`/owner/support/${ticket.id}`} style={linkStyle}>{ticket.ticket_number || `#${ticket.id}`}</Link></td>
                     <td style={tdStyle}>{ticket.subject}</td>
                     <td style={tdStyle}>{ticket.restaurant_name || "Unlinked"}</td>
                     <td style={tdStyle}>{ticket.status}</td>

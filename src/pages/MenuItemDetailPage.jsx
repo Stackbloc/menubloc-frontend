@@ -48,6 +48,8 @@ import { fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
+import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
+import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 
@@ -1145,7 +1147,7 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
                     minWidth: 0,
                   }}
                 >
-                  {entry.name}
+                  {formatMenuItemName(entry.name)}
                 </Link>
                 {isSimilarRowCompareEligible(entry) ? (
                   <button
@@ -1225,6 +1227,10 @@ export default function MenuItemDetailPage() {
   const [rawItem,  setRawItem]  = useState(null);
 
   const item = useMemo(() => (rawItem ? normalizeResultItem(rawItem) : null), [rawItem]);
+  const displayItemName = useMemo(
+    () => getDisplayMenuItemName(item, language, item?.name || "Untitled Item"),
+    [item, language]
+  );
   const shareData = useMemo(() => {
     if (!item) return null;
     return buildDishShareData({
@@ -1232,10 +1238,10 @@ export default function MenuItemDetailPage() {
       menuItem: {
         ...item,
         id: item.id,
-        name: item.name,
+        name: displayItemName,
       },
     });
-  }, [item]);
+  }, [item, displayItemName]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1422,7 +1428,7 @@ export default function MenuItemDetailPage() {
                     flex: "0 1 auto",
                   }}
                 >
-                  {getLocalizedField(item, "name", language) || item.name}
+                  {displayItemName}
                 </h1>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6b7280", flex: "0 0 auto", flexWrap: "wrap" }}>
                   {shareData ? (
@@ -1431,13 +1437,13 @@ export default function MenuItemDetailPage() {
                       <ShareButton
                         variant="dish"
                         label="Share item"
-                        modalTitle={`Share ${getLocalizedField(item, "name", language) || item.name}`}
+                        modalTitle={`Share ${displayItemName}`}
                         shareData={shareData}
                         analyticsContext={{
                           restaurantId: item.restaurant.id,
                           restaurantSlug: item.restaurant.slug || null,
                           menuItemId: item.id,
-                          menuItemName: getLocalizedField(item, "name", language) || item.name,
+                          menuItemName: displayItemName,
                           pageType: "menu_item_detail",
                           shareTarget: "dish",
                         }}
@@ -1502,7 +1508,7 @@ export default function MenuItemDetailPage() {
 
         {showItemPhoto ? (
           <div style={{ minHeight: isMobile ? 280 : 100, borderRadius: 22, overflow: "hidden", border: "1px solid #1F2937", background: "#1A2419" }}>
-            <img src={item.itemPhotoUrl} alt={`${item.name} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            <img src={item.itemPhotoUrl} alt={`${displayItemName} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </div>
         ) : null}
         </div>
@@ -1514,7 +1520,7 @@ export default function MenuItemDetailPage() {
           t={t}
           fullMenuHref={fullMenuHref}
           isMobile={isMobile}
-          itemName={getLocalizedField(item, "name", language) || item.name}
+          itemName={displayItemName}
           priceLabel={priceLabel}
         />
       ) : null}
@@ -1551,7 +1557,7 @@ export default function MenuItemDetailPage() {
 
       <ExploreSimilarDishes
         itemId={item.id}
-        itemName={getLocalizedField(item, "name", language) || item.name}
+        itemName={displayItemName}
         currentSlug={item.restaurant.slug || null}
         geoLat={geoLat}
         geoLng={geoLng}

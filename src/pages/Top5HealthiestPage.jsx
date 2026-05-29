@@ -11,6 +11,7 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 
@@ -108,7 +109,7 @@ function DishCard({ dish, rank, isMobile }) {
             textDecoration: "none",
           }}
         >
-          {dish.name}
+          {formatMenuItemName(dish.name)}
         </Link>
 
         <div

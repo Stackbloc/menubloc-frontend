@@ -44,3 +44,25 @@ export function buildOutOfMarketJoinPath(location) {
   const qs = params.toString();
   return qs ? `/join?${qs}` : "/join";
 }
+
+/**
+ * True when two resolved locations should share the same discovery browse scope.
+ * LA County cities share one scope (radius around device). Dothan only matches Dothan.
+ */
+export function activeMarketsShareBrowseScope(locationA, locationB) {
+  const cityA = String(locationA?.city || "").trim().toLowerCase();
+  const stateA = String(locationA?.state || "").trim().toUpperCase();
+  const cityB = String(locationB?.city || "").trim().toLowerCase();
+  const stateB = String(locationB?.state || "").trim().toUpperCase();
+  if (!cityA || !stateA || !cityB || !stateB) return false;
+
+  const locA = { city: cityA, state: stateA };
+  const locB = { city: cityB, state: stateB };
+  if (!isActiveMarket(locA) || !isActiveMarket(locB)) return false;
+  if (stateA !== stateB) return false;
+
+  if (stateA === "AL") return cityA === cityB;
+  if (stateA === "CA") return true;
+
+  return cityA === cityB;
+}

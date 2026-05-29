@@ -1,17 +1,40 @@
 import { parseLocation } from "./locationUtils.js";
 
+function normalizeCityToken(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function normalizeStateToken(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
+/** True when a manually picked label is the same city/state as device geolocation. */
+export function appliedLocationMatchesGeoCityState(appliedLocation = "", autoLocation = null) {
+  const parsed = parseLocation(appliedLocation);
+  const appliedCity = normalizeCityToken(parsed.city);
+  const geoCity = normalizeCityToken(autoLocation?.city);
+  if (!appliedCity || !geoCity || appliedCity !== geoCity) return false;
+
+  const appliedState = normalizeStateToken(parsed.state);
+  const geoState = normalizeStateToken(autoLocation?.state);
+  if (appliedState && geoState) return appliedState === geoState;
+  return true;
+}
+
 export function buildDiscoveryLocationKey({
-  shouldUseAutoGeo = false,
+  shouldUseGeoBrowse = false,
   autoLocation = null,
   appliedLocation = "",
 }) {
-  if (shouldUseAutoGeo) {
-    const city = String(autoLocation?.city || "").trim().toLowerCase();
-    const state = String(autoLocation?.state || "").trim().toLowerCase();
+  if (shouldUseGeoBrowse) {
     const lat = Number(autoLocation?.lat);
     const lng = Number(autoLocation?.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return `geo:${lat.toFixed(4)},${lng.toFixed(4)}`;
+    }
+    const city = normalizeCityToken(autoLocation?.city);
+    const state = normalizeStateToken(autoLocation?.state).toLowerCase();
     if (city && state) return `city:${city}|state:${state}`;
-    if (Number.isFinite(lat) && Number.isFinite(lng)) return `coords:${lat.toFixed(4)},${lng.toFixed(4)}`;
   }
 
   const parsedApplied = parseLocation(appliedLocation);
@@ -32,8 +55,9 @@ export function buildDiscoveryFilterKey(filters = {}) {
     .join("|");
 }
 
-export function buildDiscoveryFeedScopeKey({ locationKey, filters = {} }) {
-  return `${locationKey}::${buildDiscoveryFilterKey(filters)}`;
+export function buildDiscoveryFeedScopeKey({ locationKey, filters = {}, browseMode = "city" }) {
+  const mode = browseMode === "geo" ? "geo" : "city";
+  return `${locationKey}::${mode}::${buildDiscoveryFilterKey(filters)}`;
 }
 
 export function dedupeDiscoveryMenus(menus) {
