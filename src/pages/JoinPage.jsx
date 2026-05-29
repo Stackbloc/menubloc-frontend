@@ -121,10 +121,11 @@ const styles = {
     lineHeight: 1.15,
     letterSpacing: "-.025em",
     margin: "0 0 28px",
+    color: "#FFFFFF",
   },
   paragraph: {
-    fontSize: ".95rem",
-    color: "#888",
+    fontSize: "1rem",
+    color: "rgba(255, 255, 255, 0.88)",
     lineHeight: 1.75,
     margin: "0 0 16px",
   },
@@ -143,17 +144,19 @@ const styles = {
   },
   reassurance: {
     margin: "12px 0 0",
-    fontSize: ".77rem",
-    color: "#444",
+    fontSize: ".85rem",
+    fontWeight: 500,
+    color: "rgba(255, 255, 255, 0.72)",
     lineHeight: 1.75,
   },
   footer: {
     marginTop: 52,
-    fontSize: ".75rem",
-    color: "#444",
+    fontSize: ".8rem",
+    fontWeight: 500,
+    color: "rgba(255, 255, 255, 0.65)",
   },
   footerLink: {
-    color: "inherit",
+    color: "rgba(255, 255, 255, 0.85)",
     textDecoration: "none",
   },
 };
