@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { LEGAL_VERSIONS } from "../content/legal.js";
-import { resolveJoinMarket } from "../lib/joinMarketConfig.js";
+import { resolveJoinMarketForSignup } from "../lib/joinMarketConfig.js";
 import {
   persistRestaurantOnboardingState,
   syncRestaurantOnboardingProgress,
@@ -50,10 +50,7 @@ function describeSignupFailure(error) {
 export default function RestaurantFreeProfileSignup() {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
-  const market = useMemo(
-    () => resolveJoinMarket(searchParams.get("market")),
-    [searchParams]
-  );
+  const market = useMemo(() => resolveJoinMarketForSignup(searchParams), [searchParams]);
   const [form, setForm] = useState({
     email: "",
     restaurant_name: "",
@@ -249,7 +246,6 @@ export default function RestaurantFreeProfileSignup() {
     return (
       <div style={styles.page}>
         <BrandLockup
-          subtitle="for Restaurants"
           logoProps={{ width: 160, height: 96, radius: 20, pageColor: "#f6f6f3" }}
           wrapperStyle={{ marginBottom: 24 }}
         />
@@ -274,7 +270,6 @@ export default function RestaurantFreeProfileSignup() {
   return (
     <div style={styles.page}>
       <BrandLockup
-        subtitle="for Restaurants"
         logoProps={{ width: 160, height: 96, radius: 20, pageColor: "#f6f6f3" }}
         wrapperStyle={{ marginBottom: 24 }}
       />
@@ -283,7 +278,7 @@ export default function RestaurantFreeProfileSignup() {
 
       <h1 style={styles.pageTitle}>Join the Menuply Network</h1>
       <p style={styles.pageSubtitle}>
-        Create your free Verified restaurant profile. No credit card required.
+        Create your 100% free Verified restaurant profile.
       </p>
 
       {serverError ? (

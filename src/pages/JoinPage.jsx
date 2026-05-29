@@ -1,10 +1,71 @@
-import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
-import { resolveJoinMarket } from "../lib/joinMarketConfig.js";
+import { reverseGeocode } from "../lib/locationUtils.js";
+import { resolveJoinMarketForLanding } from "../lib/joinMarketConfig.js";
+
+const SESSION_LOCATION_KEY = "grubbid.discovery.location";
+const SESSION_GEO_KEY = "grubbid.discovery.geo";
 
 export default function JoinPage({ marketKey = "generic" }) {
-  const market = resolveJoinMarket(marketKey);
+  const location = useLocation();
+  const [geoRevision, setGeoRevision] = useState(0);
+
+  const market = useMemo(
+    () => resolveJoinMarketForLanding({ marketKey, pathname: location.pathname }),
+    [marketKey, location.pathname, geoRevision]
+  );
+
+  useEffect(() => {
+    if (marketKey && marketKey !== "generic") return;
+    if (location.pathname !== "/join") return;
+
+    const refresh = () => setGeoRevision((n) => n + 1);
+    refresh();
+
+    const onStorage = (event) => {
+      if (!event.key || event.key === SESSION_LOCATION_KEY || event.key === SESSION_GEO_KEY) {
+        refresh();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
+    if (!navigator?.geolocation) {
+      return () => window.removeEventListener("storage", onStorage);
+    }
+
+    let cancelled = false;
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        if (cancelled) return;
+        const lat = Number(pos?.coords?.latitude);
+        const lng = Number(pos?.coords?.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+        try {
+          window.sessionStorage.setItem(SESSION_GEO_KEY, JSON.stringify({ lat, lng }));
+        } catch { /* ignore */ }
+
+        try {
+          const geo = await reverseGeocode(lat, lng);
+          const label = String(geo?.label || "").trim()
+            || [geo?.city, geo?.state].filter(Boolean).join(", ");
+          if (label) {
+            window.sessionStorage.setItem(SESSION_LOCATION_KEY, label);
+          }
+        } catch { /* ignore */ }
+
+        refresh();
+      },
+      () => {},
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+    );
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [marketKey, location.pathname]);
 
   useEffect(() => {
     const preconnectId = "menuply-dm-sans-preconnect";
