@@ -112,8 +112,7 @@ export default function JoinPage({ marketKey = "generic" }) {
         </p>
         <p style={styles.paragraph}>
           Menuply is a self-service, lower-cost alternative that helps restaurants keep more revenue and
-          offer better value to diners. Every menu is transformed into an intelligent digital menu designed
-          to improve discoverability across the Menuply network.
+          offer better value to diners.
         </p>
         <p style={{ ...styles.paragraph, marginBottom: 0 }}>
           Join us as we build a better deal for restaurants and diners alike.

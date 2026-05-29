@@ -224,8 +224,8 @@ export default function RestaurantFreeProfileSignup() {
       } catch (uploadError) {
         setUploadNotice(
           uploadError?.message
-            ? `Your profile was started, but the PDF upload did not finish: ${uploadError.message}`
-            : "Your profile was started, but the PDF upload did not finish."
+            ? `Your profile was created, but the PDF upload did not finish: ${uploadError.message}`
+            : "Your profile was created, but the PDF upload did not finish."
         );
       }
 
@@ -253,7 +253,7 @@ export default function RestaurantFreeProfileSignup() {
           />
         </div>
         <div style={styles.successCard}>
-          <div style={styles.pageTitle}>Your free restaurant profile has been started.</div>
+          <div style={styles.pageTitle}>Your free restaurant profile has been created.</div>
           <div style={styles.pageSubtitle}>
             We&apos;ll use your restaurant information and menu to prepare your Menuply profile. If you uploaded
             a menu, we&apos;ll review it before publication and follow up when it&apos;s ready.
@@ -288,7 +288,7 @@ export default function RestaurantFreeProfileSignup() {
 
       <h1 style={styles.pageTitle}>Join the Menuply Network</h1>
       <p style={styles.pageSubtitle}>
-        Create your 100% free Verified restaurant profile.
+        Create your free restaurant profile.
       </p>
 
       {serverError ? (
@@ -341,7 +341,7 @@ export default function RestaurantFreeProfileSignup() {
             style={styles.fileInput}
           />
           <div style={styles.helperText}>
-            Have your menu ready? Upload a PDF now, or skip this step and add it later.
+            Upload a menu now or add it later.
           </div>
           {fieldErrors.menuFile ? <div style={styles.fieldError}>{fieldErrors.menuFile}</div> : null}
         </div>
