@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useOwner } from "../../context/OwnerContext.jsx";
+import "./ownerResponsive.css";
 
 const NAV = [
   { to: "/owner", label: "Dashboard" },
@@ -63,16 +64,29 @@ export default function OwnerLayout({ title, children, actions = null }) {
   const { t } = useLanguage();
   const { owner, logout } = useOwner();
   const navigate = useNavigate();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   async function handleLogout() {
     await logout();
     navigate("/owner/login", { replace: true });
   }
 
+  function closeSidebar() {
+    setMobileNavOpen(false);
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: OWNER_COLORS.page, fontFamily: '"Instrument Sans", "Avenir Next", sans-serif', color: OWNER_COLORS.ink }}>
-      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh" }}>
-        <aside style={{ borderRight: `1px solid ${OWNER_COLORS.line}`, padding: "28px 18px", background: "rgba(255,250,243,0.86)", backdropFilter: "blur(10px)" }}>
+      <div
+        className={`owner-shell__backdrop${mobileNavOpen ? " owner-shell__backdrop--visible" : ""}`}
+        onClick={closeSidebar}
+        aria-hidden="true"
+      />
+      <div className="owner-shell">
+        <aside
+          className={`owner-shell__sidebar${mobileNavOpen ? " owner-shell__sidebar--open" : ""}`}
+          style={{ borderRight: `1px solid ${OWNER_COLORS.line}`, padding: "28px 18px", background: "rgba(255,250,243,0.97)", backdropFilter: "blur(10px)" }}
+        >
           <div style={{ marginBottom: 28 }}>
             <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.04em", color: OWNER_COLORS.accent }}>menuply</div>
             <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: OWNER_COLORS.muted, marginTop: 6 }}>
@@ -86,6 +100,7 @@ export default function OwnerLayout({ title, children, actions = null }) {
                 key={item.to}
                 to={item.to}
                 end={item.to === "/owner"}
+                onClick={closeSidebar}
                 style={({ isActive }) => ({
                   padding: "12px 14px",
                   borderRadius: 14,
@@ -124,17 +139,38 @@ export default function OwnerLayout({ title, children, actions = null }) {
           </div>
         </aside>
 
-        <main style={{ padding: "30px 34px 40px" }}>
-          <header style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 26 }}>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: OWNER_COLORS.muted, marginBottom: 8 }}>
-                Platform Admin
+        <main className="owner-shell__main">
+          <header
+            className="owner-shell__header"
+            style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", padding: "30px 34px 0", marginBottom: 26 }}
+          >
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, minWidth: 0 }}>
+              <button
+                className="owner-shell__menu-button"
+                onClick={() => setMobileNavOpen((v) => !v)}
+                aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+                aria-expanded={mobileNavOpen}
+                style={{
+                  border: `1px solid ${OWNER_COLORS.line}`,
+                  background: "#fff",
+                  color: OWNER_COLORS.ink,
+                  marginTop: 4,
+                }}
+              >
+                {mobileNavOpen ? "✕" : "☰"}
+              </button>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: OWNER_COLORS.muted, marginBottom: 8 }}>
+                  Platform Admin
+                </div>
+                <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.05, letterSpacing: "-0.04em" }}>{title}</h1>
               </div>
-              <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.05, letterSpacing: "-0.04em" }}>{title}</h1>
             </div>
             {actions}
           </header>
-          {children}
+          <div className="owner-shell__content" style={{ padding: "26px 34px 40px" }}>
+            {children}
+          </div>
         </main>
       </div>
     </div>

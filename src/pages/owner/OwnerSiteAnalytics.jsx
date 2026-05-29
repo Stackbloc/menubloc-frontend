@@ -8,15 +8,25 @@ export default function OwnerSiteAnalytics() {
   const [filters, setFilters] = useState(() => defaultRange());
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getOwnerTrafficAnalytics(filters).then(setData).catch(() => setError("Owner dashboard data is temporarily unavailable."));
+    setLoading(true);
+    setError("");
+    getOwnerTrafficAnalytics(filters)
+      .then(setData)
+      .catch(() => setError("Analytics data is temporarily unavailable."))
+      .finally(() => setLoading(false));
   }, [filters]);
 
   return (
     <OwnerLayout title="Site Analytics" actions={<DateFilters value={filters} onChange={setFilters} />}>
       {error ? <ErrorBanner message={error} /> : null}
-      {!data?.available ? <EmptyState>{data?.reason || "Traffic data is not available yet."}</EmptyState> : (
+      {loading ? (
+        <div style={{ padding: 40, textAlign: "center", color: "#667085", fontSize: 14 }}>Loading analytics…</div>
+      ) : !data?.available ? (
+        <EmptyState>Analytics collection hasn&rsquo;t started yet. Visit data will appear here once the platform begins receiving traffic.</EmptyState>
+      ) : (
         <div style={{ display: "grid", gap: 18 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14 }}>
             <MetricCard label="Total Visits" value={data?.totals?.total_visits} />
@@ -40,7 +50,7 @@ export default function OwnerSiteAnalytics() {
             <SimpleTable rows={data?.series || []} columns={[["Day", "day"], ["Visits", "visits"]]} />
           </PageCard>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 18 }}>
+          <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 18 }}>
             <PageCard style={{ padding: 22 }}>
               <SectionTitle title="Top Pages" subtitle="Most visited paths in the selected window." />
               <SimpleTable rows={data?.top_pages || []} columns={[["Path", "path"], ["Visits", "visits"]]} />
@@ -51,7 +61,7 @@ export default function OwnerSiteAnalytics() {
             </PageCard>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(240px, 1fr))", gap: 18 }}>
+          <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(240px, 1fr))", gap: 18 }}>
             <PageCard style={{ padding: 22 }}>
               <SectionTitle title="Devices" subtitle="Basic device-type summary from captured visits." />
               <SimpleTable rows={data?.device_summary || []} columns={[["Device", "device_type"], ["Visits", "visits"]]} />

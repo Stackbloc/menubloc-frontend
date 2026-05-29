@@ -9,46 +9,62 @@ export default function OwnerSupportTickets() {
   const [filters, setFilters] = useState({ status: "", priority: "", category: "" });
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
+    setError("");
     const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ""));
-    getOwnerSupportTickets(params).then(setData).catch(() => setError("Owner dashboard data is temporarily unavailable."));
+    getOwnerSupportTickets(params)
+      .then(setData)
+      .catch(() => setError("Support ticket data is temporarily unavailable."))
+      .finally(() => setLoading(false));
   }, [filters]);
+
+  const unavailable = !loading && !error && data?.available === false;
 
   return (
     <OwnerLayout title="Support Tickets" actions={<Filters value={filters} onChange={setFilters} admins={data?.admins || []} />}>
       {error ? <ErrorBanner message={error} /> : null}
       <div style={{ display: "grid", gap: 18 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(160px, 1fr))", gap: 14 }}>
-          <MetricCard label="Total" value={data?.summary?.total_tickets} />
-          <MetricCard label="Open" value={data?.summary?.open_tickets} />
-          <MetricCard label="Resolved" value={data?.summary?.resolved_tickets} />
-          <MetricCard label="Closed" value={data?.summary?.closed_tickets} />
+        <div className="owner-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(160px, 1fr))", gap: 14 }}>
+          <MetricCard label="Total" value={loading ? null : data?.summary?.total_tickets} />
+          <MetricCard label="Open" value={loading ? null : data?.summary?.open_tickets} />
+          <MetricCard label="Resolved" value={loading ? null : data?.summary?.resolved_tickets} />
+          <MetricCard label="Closed" value={loading ? null : data?.summary?.closed_tickets} />
         </div>
 
         <PageCard style={{ padding: 22 }}>
           <SectionTitle title="Ticket Queue" subtitle="Owner/admin management view across all platform support requests." />
-          {!data?.tickets?.length ? <EmptyState>No tickets match the current filters.</EmptyState> : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  {["Ticket", "Subject", "Restaurant", "Status", "Priority", "Assigned", "Updated"].map((label) => <th key={label} style={thStyle}>{label}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {data.tickets.map((ticket) => (
-                  <tr key={ticket.id}>
-                    <td style={tdStyle}><Link to={`/owner/support/${ticket.id}`} style={linkStyle}>{ticket.ticket_number || `#${ticket.id}`}</Link></td>
-                    <td style={tdStyle}>{ticket.subject}</td>
-                    <td style={tdStyle}>{ticket.restaurant_name || "Unlinked"}</td>
-                    <td style={tdStyle}>{ticket.status}</td>
-                    <td style={tdStyle}>{ticket.priority}</td>
-                    <td style={tdStyle}>{ticket.assigned_to_name || ticket.assigned_to_email || "Unassigned"}</td>
-                    <td style={tdStyle}>{formatDate(ticket.updated_at)}</td>
+          {loading ? (
+            <div style={{ padding: 32, textAlign: "center", color: "#667085", fontSize: 14 }}>Loading tickets…</div>
+          ) : unavailable ? (
+            <EmptyState>No support tickets have been created yet.</EmptyState>
+          ) : !data?.tickets?.length ? (
+            <EmptyState>No tickets match the current filters.</EmptyState>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    {["Ticket", "Subject", "Restaurant", "Status", "Priority", "Assigned", "Updated"].map((label) => <th key={label} style={thStyle}>{label}</th>)}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.tickets.map((ticket) => (
+                    <tr key={ticket.id}>
+                      <td style={tdStyle}><Link to={`/owner/support/${ticket.id}`} style={linkStyle}>{ticket.ticket_number || `#${ticket.id}`}</Link></td>
+                      <td style={tdStyle}>{ticket.subject}</td>
+                      <td style={tdStyle}>{ticket.restaurant_name || "Unlinked"}</td>
+                      <td style={tdStyle}>{ticket.status}</td>
+                      <td style={tdStyle}>{ticket.priority}</td>
+                      <td style={tdStyle}>{ticket.assigned_to_name || ticket.assigned_to_email || "Unassigned"}</td>
+                      <td style={tdStyle}>{formatDate(ticket.updated_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </PageCard>
       </div>

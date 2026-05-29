@@ -46,10 +46,28 @@ export default function OwnerMenuUploads() {
       params.status = activeFilter;
     }
 
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        setLoading(false);
+        setError("The request took too long. Please refresh to try again.");
+      }
+    }, 15000);
+
     getOwnerMenuUploads(params)
-      .then(setData)
-      .catch(() => setError("Owner dashboard data is temporarily unavailable."))
-      .finally(() => setLoading(false));
+      .then((result) => { if (!settled) setData(result); })
+      .catch(() => { if (!settled) setError("Upload data is temporarily unavailable."); })
+      .finally(() => {
+        settled = true;
+        clearTimeout(timeout);
+        setLoading(false);
+      });
+
+    return () => {
+      settled = true;
+      clearTimeout(timeout);
+    };
   }, [activeFilter]);
 
   function setFilter(key) {

@@ -1,0 +1,104 @@
+/* Owner dashboard shell — structural layout only (colors/typography stay inline) */
+
+.owner-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.owner-shell__sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  transition: transform 160ms ease;
+}
+
+.owner-shell__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.owner-shell__menu-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.owner-shell__backdrop {
+  display: none;
+}
+
+/* Responsive grid utilities used by individual pages */
+.owner-responsive-grid-2,
+.owner-responsive-grid-3,
+.owner-responsive-grid-4 {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .owner-shell {
+    display: block;
+  }
+
+  .owner-shell__sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 40;
+    transform: translateX(-100%);
+    width: min(88vw, 280px) !important;
+    box-shadow: 0 24px 48px rgba(86, 47, 29, 0.22);
+  }
+
+  .owner-shell__sidebar--open {
+    transform: translateX(0);
+  }
+
+  .owner-shell__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 32, 0.42);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease;
+    z-index: 30;
+  }
+
+  .owner-shell__backdrop--visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .owner-shell__main {
+    width: 100%;
+  }
+
+  .owner-shell__header {
+    padding: 12px 16px !important;
+  }
+
+  .owner-shell__menu-button {
+    display: inline-flex;
+  }
+
+  .owner-shell__content {
+    padding: 16px !important;
+  }
+
+  .owner-responsive-grid-2,
+  .owner-responsive-grid-3,
+  .owner-responsive-grid-4 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
