@@ -898,6 +898,7 @@ export default function OperatorMenuEditor() {
             <UploadCard icon="📋" label="Paste menu text" sub="Copy & paste your menu" onClick={() => setShowPasteForm(true)} />
             <UploadCard icon="📄" label="Upload PDF" sub="PDF menu file" onClick={() => navigate("/operator/menu/upload/pdf")} />
             <UploadCard icon="📷" label="Photo / image" sub="JPG, PNG, WEBP" onClick={() => navigate("/operator/menu/upload/photo")} />
+            <UploadCard icon="📸" label="Camera upload" sub="Page-by-page review" onClick={() => navigate("/operator/menu/camera-upload")} />
           </div>
           <div style={{ textAlign: "center" }}>
             <button style={BTN("muted")} onClick={() => setShowNewMenuForm(true)} type="button">
@@ -926,6 +927,7 @@ export default function OperatorMenuEditor() {
             <UploadCard icon="📋" label="Paste menu text" sub="Copy & paste your menu" onClick={() => setShowPasteForm(true)} />
             <UploadCard icon="📄" label="Upload PDF" sub="PDF menu file" onClick={() => navigate("/operator/menu/upload/pdf")} />
             <UploadCard icon="📷" label="Photo / image" sub="JPG, PNG, WEBP" onClick={() => navigate("/operator/menu/upload/photo")} />
+            <UploadCard icon="📸" label="Camera upload" sub="Page-by-page review" onClick={() => navigate("/operator/menu/camera-upload")} />
           </div>
 
           <div style={{
@@ -957,6 +959,7 @@ export default function OperatorMenuEditor() {
             <UploadCard icon="📋" label="Paste menu text" sub="Copy & paste" onClick={() => setShowPasteForm(true)} />
             <UploadCard icon="📄" label="Upload PDF" sub="PDF file" onClick={() => navigate("/operator/menu/upload/pdf")} />
             <UploadCard icon="📷" label="Photo / image" sub="Menu photo" onClick={() => navigate("/operator/menu/upload/photo")} />
+            <UploadCard icon="📸" label="Camera upload" sub="Page-by-page review" onClick={() => navigate("/operator/menu/camera-upload")} />
           </div>
           <button type="button" style={BTN("primary")} onClick={handleAddItemClick}>
             + Add Item

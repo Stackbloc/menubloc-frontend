@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -197,7 +198,7 @@ export default function BuyMeThisPage() {
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                       <div>
-                        <div style={{ fontWeight: 900 }}>{item.name}</div>
+                        <div style={{ fontWeight: 900 }}>{formatMenuItemName(item.name)}</div>
                         <div style={{ fontSize: 13, color: "#9CA3AF" }}>Qty {item.quantity}</div>
                         {(item.modifiers || []).map((modifier) => (
                           <div

@@ -76,7 +76,7 @@ export const getOwnerMenuUploads = (params = {}) => {
 };
 export const getOwnerMenuUpload = (uploadId) => get(`/api/owner/menu-uploads/${uploadId}`);
 export const markOwnerMenuUploadReview = (uploadId) =>
-  post(`/api/owner/menu-uploads/${uploadId}/flag-review`, {});
+  post(`/api/owner/menu-uploads/${uploadId}/mark-review`, {});
 export const markOwnerMenuUploadReviewed = (uploadId) =>
   post(`/api/owner/menu-uploads/${uploadId}/mark-reviewed`, {});
 export const retryOwnerMenuUpload = (uploadId) =>

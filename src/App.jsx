@@ -54,6 +54,7 @@ import OperatorDeliveryPage from "./pages/operator/OperatorDeliveryPage.jsx";
 import RestaurantOrdersPage from "./pages/operator/RestaurantOrdersPage.jsx";
 import RestaurantOrderDetailPage from "./pages/operator/RestaurantOrderDetailPage.jsx";
 import OperatorMenuEditor from "./pages/operator/OperatorMenuEditor.jsx";
+import OperatorMenuCameraUpload from "./pages/operator/OperatorMenuCameraUpload.jsx";
 import OperatorDealsEditor from "./pages/operator/OperatorDealsEditor.jsx";
 import OperatorClaimSearch from "./pages/operator/OperatorClaimSearch.jsx";
 import OperatorProfileEditor from "./pages/operator/OperatorProfileEditor.jsx";
@@ -123,6 +124,9 @@ import RestaurantMerchantTerms from "./pages/RestaurantMerchantTerms.jsx";
 import RestaurantSubscriptionTerms from "./pages/RestaurantSubscriptionTerms.jsx";
 import AboutMenuply from "./pages/AboutMenuply.jsx";
 import Contact from "./pages/Contact.jsx";
+import JoinPage from "./pages/JoinPage.jsx";
+import JoinDinersPage from "./pages/JoinDinersPage.jsx";
+import RestaurantFoundersSignup from "./pages/RestaurantFoundersSignup.jsx";
 
 import QrCodesPage from "./pages/QrCodesPage.jsx";
 import PdfUploadPage from "./pages/PdfUploadPage.jsx";
@@ -503,6 +507,9 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant-profile/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantProfile />} />
 
         <Route path="/restaurant/onboarding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantPhilosophy />} />
+        <Route path="/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage />} />
+        <Route path="/join/diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinDinersPage />} />
+        <Route path="/restaurant/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFoundersSignup />} />
         <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/restaurant/signup/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
         <Route path="/restaurant/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFoundersSignup />} />
@@ -571,6 +578,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/help" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantHelpCenter /></OperatorRoute>} />
         <Route path="/operator/profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorProfileEditor /></OperatorRoute>} />
         <Route path="/operator/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
+        <Route path="/operator/menu/camera-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuCameraUpload /></OperatorRoute>} />
         <Route path="/operator/menu/:menuId/edit" element={<Navigate to="/operator/menu" replace />} />
         <Route path="/operator/menu/upload" element={<Navigate to="/operator/menu" replace />} />
         <Route path="/operator/menu/upload/paste" element={<Navigate to="/operator/menu" replace />} />

@@ -1,6 +1,7 @@
 import ShareButton from "../share/ShareButton.jsx";
 import FoodInterestButton from "../food-interests/FoodInterestButton.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
+import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
 import { itemHasInsightsData } from "../basket/ItemInsightsSheet.jsx";
 import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
@@ -85,12 +86,7 @@ export default function PublicMenuItemCard({
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
   const softBorder = brand?.accentBorder ?? "rgba(34,197,94,0.32)";
   const itemKey = String(it?.id ?? `${sIdx}-${iIdx}`);
-  const name = String(
-    getLocalizedField(it, "name", language) ||
-      getLocalizedField(it, "menu_item_name", language) ||
-      it?.name ||
-      "Item"
-  ).trim();
+  const name = getDisplayMenuItemName(it, language, "Item");
   const desc = String(
     getLocalizedField(it, "description", language) ||
       getLocalizedField(it, "notes", language) ||

@@ -30,6 +30,7 @@ import {
 } from "./share/shareUtils.js";
 import { getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
+import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
 import { trackBillboardClick } from "../lib/analytics.js";
 import { fetchSimilarItems } from "../lib/api.js";
@@ -298,20 +299,7 @@ function getRestName(row, language = "en") {
   );
 }
 function getItemName(row, language = "en") {
-  const record = row?.item && typeof row.item === "object" ? row.item : row;
-  return (
-    getLocalizedField(record, "search_display_name", language) ||
-    getLocalizedField(record, "menu_item_name", language) ||
-    getLocalizedField(record, "item_name", language) ||
-    getLocalizedField(record, "name", language) ||
-    asStr(
-      pick(
-        row,
-        ["search_display_name", "menu_item_name", "menuItemName", "item_name", "dish", "name"],
-        "Menu item"
-      )
-    )
-  );
+  return getDisplayMenuItemName(row, language, "Menu item");
 }
 
 function normalizeTier(raw) {

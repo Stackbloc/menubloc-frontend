@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { formatMoney } from "../lib/pricingDisplay.js";
+import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 
 export default function OrderCartDrawer() {
   const { t } = useLanguage();
@@ -172,7 +173,7 @@ export default function OrderCartDrawer() {
                   >
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 900, color: "#11211a" }}>
-                        {item.name}
+                        {formatMenuItemName(item.name)}
                       </div>
                       {item.description ? (
                         <div style={{ fontSize: 12, color: "#667085", marginTop: 4, lineHeight: 1.5 }}>

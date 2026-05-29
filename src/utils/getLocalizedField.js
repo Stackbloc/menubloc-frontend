@@ -1,3 +1,5 @@
+import { getDisplayMenuItemName } from "./getDisplayMenuItemName.js";
+
 function asString(value) {
   return value === undefined || value === null ? "" : String(value).trim();
 }
@@ -41,7 +43,5 @@ export function getLocalizedField(record, baseField, language = "en", fallback =
 }
 
 export function getLocalizedPreviewLabel(item, language = "en") {
-  if (!item) return "";
-  if (typeof item === "string") return item;
-  return getLocalizedField(item, "name", language, item.name || "");
+  return getDisplayMenuItemName(item, language, "");
 }

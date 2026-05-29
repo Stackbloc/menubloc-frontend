@@ -5,6 +5,7 @@ import BottomNav from "../components/BottomNav.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { apiGet, toConsumerErrorMessage } from "../lib/api.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 
 function formatMoney(cents) {
   return `$${(Number(cents || 0) / 100).toFixed(2)}`;
@@ -199,7 +200,7 @@ export default function OrderConfirmationPage() {
                       }}
                     >
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 900 }}>{item.name_snapshot}</div>
+                        <div style={{ fontSize: 14, fontWeight: 900 }}>{formatMenuItemName(item.name_snapshot)}</div>
                         <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 4 }}>
                           Qty {item.quantity}
                         </div>

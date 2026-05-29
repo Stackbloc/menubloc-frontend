@@ -116,6 +116,8 @@ export default function RestaurantFoundersSignup() {
     <div style={pageStyle}>
       <div style={shellStyle}>
         <BrandLockup
+          to="/"
+          ariaLabel="Go to Menuply home"
           subtitle="for Restaurants"
           wrapperStyle={{ alignItems: "flex-start", marginBottom: 4 }}
           subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}

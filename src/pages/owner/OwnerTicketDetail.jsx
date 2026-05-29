@@ -51,7 +51,7 @@ export default function OwnerTicketDetail() {
   const ticket = data?.ticket;
 
   return (
-    <OwnerLayout title={`Support Ticket #${ticketId}`}>
+    <OwnerLayout title={`Support Ticket ${ticket?.ticket_number || `#${ticketId}`}`}>
       {error ? <ErrorBanner message={error} /> : null}
       {!ticket ? <EmptyState>Loading ticket details.</EmptyState> : (
         <div style={{ display: "grid", gap: 18 }}>

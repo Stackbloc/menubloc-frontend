@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { normalizeModifierGroups } from "./modifierModel.js";
+import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
 
 function formatMoney(cents) {
   return `$${(Number(cents || 0) / 100).toFixed(2)}`;
@@ -84,7 +85,7 @@ export default function ModifierSheet({ item, open, onClose, onConfirm }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`${t("modifier.customize", "Customize")} ${item.name || "item"}`}
+        aria-label={`${t("modifier.customize", "Customize")} ${formatMenuItemName(item.name) || "item"}`}
         style={{
           position: "fixed",
           left: 12,
@@ -107,7 +108,7 @@ export default function ModifierSheet({ item, open, onClose, onConfirm }) {
                 {t("modifier.customize", "Customize")}
               </div>
               <div style={{ marginTop: 6, fontSize: 22, fontWeight: 900, color: "#11211a" }}>
-                {item.name}
+                {formatMenuItemName(item.name)}
               </div>
               {item.description ? (
                 <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1.5, color: "#475467" }}>

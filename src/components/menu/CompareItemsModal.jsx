@@ -14,6 +14,7 @@
 
 import { useEffect } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
+import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -245,7 +246,7 @@ function ItemHeader({ item, label, emphasized }) {
       </div>
 
       <div style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.25 }}>
-        {item?.name || "—"}
+        {formatMenuItemName(item?.name) || "—"}
       </div>
 
       <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.78, lineHeight: 1.4 }}>
@@ -449,8 +450,8 @@ export default function CompareItemsModal({
     ? candidateRestaurantName.split(" ").slice(0, 2).join(" ")
     : "Compare";
 
-  const baseActionLabel = `View ${abbreviateLabel(base?.name, "Current item")}`;
-  const candidateActionLabel = `View ${abbreviateLabel(candidate?.name, "Compared item")}`;
+  const baseActionLabel = `View ${abbreviateLabel(formatMenuItemName(base?.name), "Current item")}`;
+  const candidateActionLabel = `View ${abbreviateLabel(formatMenuItemName(candidate?.name), "Compared item")}`;
 
   const baseVerdictLabel = base?.verdict?.label || null;
   const candVerdictLabel = candidate?.verdict?.label || null;
@@ -706,7 +707,7 @@ export default function CompareItemsModal({
             style={{ ...BTN_BASE, background: "rgba(20,33,27,0.08)", color: "#23352d" }}
             onClick={onClose}
             disabled={loading}
-            title={base?.name || "Current item"}
+            title={formatMenuItemName(base?.name) || "Current item"}
           >
             {baseActionLabel}
           </button>
@@ -720,7 +721,7 @@ export default function CompareItemsModal({
             }}
             onClick={() => candidate && !loading && onSwap && onSwap(candidate)}
             disabled={!candidate || loading}
-            title={candidate?.name || "Compared item"}
+            title={formatMenuItemName(candidate?.name) || "Compared item"}
           >
             {candidateActionLabel}
           </button>

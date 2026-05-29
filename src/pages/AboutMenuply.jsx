@@ -45,7 +45,6 @@ export default function AboutMenuply() {
       />
 
       <div style={{ maxWidth: 720 }}>
-
         <p style={{ ...paragraphStyle, fontSize: "17px", fontWeight: 700, color: "var(--gb-color-ink-strong)", marginBottom: 12 }}>
           {t("about.intro", "Menuply — we know, the name is a little different. But we are building a different kind of restaurant platform.")}
         </p>

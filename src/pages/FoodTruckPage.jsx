@@ -28,6 +28,7 @@ import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import BottomNav from "../components/BottomNav.jsx";
+import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -977,7 +978,7 @@ const DARK_PANEL = {
   chipBg: "rgba(255,255,255,0.04)",
 };
 
-function MenuInline({ menuData, isDark, c, isMobile }) {
+function MenuInline({ menuData, isDark, c, isMobile, language = "en" }) {
   const sections = normalizeSections(menuData);
 
   const dealMap = useMemo(() => {
@@ -1025,7 +1026,7 @@ function MenuInline({ menuData, isDark, c, isMobile }) {
             <div style={{ display: "flex", flexDirection: "column" }}>
               {items.map((it, iIdx) => {
                 const itemKey = String(it?.id ?? `${sIdx}-${iIdx}`);
-                const itemName = asStr(it?.name || "Item").trim();
+                const itemName = getDisplayMenuItemName(it, language, "Item");
                 const desc = asStr(it?.description || it?.notes || "").trim();
                 const price = fmtMoney(it?.price);
                 const hasDeal = it?.id != null ? !!dealMap.get(it.id) : false;
@@ -1205,7 +1206,7 @@ function AboutSection({ profile, isDark, c }) {
 /* ─── Page ────────────────────────────────────────────────── */
 
 export default function FoodTruckPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { slugOrId } = useParams();
   const [searchParams] = useSearchParams();
   const isQrScan = searchParams.get("ref") === "qr";
@@ -1455,7 +1456,7 @@ export default function FoodTruckPage() {
             {menuState.error}
           </div>
         ) : menuState.data ? (
-          <MenuInline menuData={menuState.data} isDark={isDark} c={c} isMobile={isMobile} />
+          <MenuInline menuData={menuState.data} isDark={isDark} c={c} isMobile={isMobile} language={language} />
         ) : null}
       </div>
 

@@ -16,6 +16,8 @@
  * ============================================================
  */
 
+import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
+
 const DEFAULT_PUBLIC_ORIGIN = "https://menuply.com";
 const DEFAULT_SHARE_IMAGE_PATH = "/menuply-share-default.svg";
 
@@ -134,12 +136,14 @@ export function buildDishShareData({
     menuItem?.restaurant?.restaurant_name,
     "this restaurant"
   );
-  const dishName = pickFirstText(
-    menuItem?.name,
-    menuItem?.menu_item_name,
-    menuItem?.item_name,
-    menuItem?.title,
-    "this dish"
+  const dishName = formatMenuItemName(
+    pickFirstText(
+      menuItem?.name,
+      menuItem?.menu_item_name,
+      menuItem?.item_name,
+      menuItem?.title,
+      "this dish"
+    )
   );
   const canonicalUrl = asText(url) || getCanonicalMenuItemUrl({ restaurant, menuItem, origin });
   const image = resolveShareImageUrl({

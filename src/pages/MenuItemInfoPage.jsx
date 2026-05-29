@@ -31,6 +31,8 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
+import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
+import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
@@ -1092,7 +1094,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
                   to={`${getCanonicalMenuItemPath({ restaurant: { slug: entry.restaurant_slug || null, id: entry.restaurant_id || null }, menuItem: { id: entry.id } })}${searchSuffix}`}
                   style={{ textDecoration: "none", color: "#22C55E", fontWeight: 800, fontSize: 15, lineHeight: 1.35, flex: "1 1 0", minWidth: 0 }}
                 >
-                  {entry.name}
+                  {formatMenuItemName(entry.name)}
                 </Link>
                 {isSimilarRowCompareEligible(entry) ? (
                   <button
@@ -1148,6 +1150,10 @@ export default function MenuItemInfoPage() {
   const [rawItem,  setRawItem]  = useState(null);
 
   const item = useMemo(() => (rawItem ? normalizeResultItem(rawItem) : null), [rawItem]);
+  const displayItemName = useMemo(
+    () => getDisplayMenuItemName(item, language, item?.name || "Untitled Item"),
+    [item, language]
+  );
   const shareData = useMemo(() => {
     if (!item) return null;
     return buildDishShareData({
@@ -1155,10 +1161,10 @@ export default function MenuItemInfoPage() {
       menuItem: {
         ...item,
         id: item.id,
-        name: item.name,
+        name: displayItemName,
       },
     });
-  }, [item]);
+  }, [item, displayItemName]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1318,7 +1324,7 @@ export default function MenuItemInfoPage() {
                     flex: "0 1 auto",
                   }}
                 >
-                  {getLocalizedField(item, "name", language) || item.name}
+                  {displayItemName}
                 </h1>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6b7280", flex: "0 0 auto", flexWrap: "wrap" }}>
                   {shareData ? (
@@ -1327,13 +1333,13 @@ export default function MenuItemInfoPage() {
                       <ShareButton
                         variant="dish"
                         label="Share item"
-                        modalTitle={`Share ${getLocalizedField(item, "name", language) || item.name}`}
+                        modalTitle={`Share ${displayItemName}`}
                         shareData={shareData}
                         analyticsContext={{
                           restaurantId: item.restaurant.id,
                           restaurantSlug: item.restaurant.slug || null,
                           menuItemId: item.id,
-                          menuItemName: getLocalizedField(item, "name", language) || item.name,
+                          menuItemName: displayItemName,
                           pageType: "menu_item_info",
                           shareTarget: "dish",
                         }}
@@ -1398,18 +1404,21 @@ export default function MenuItemInfoPage() {
 
           {showItemPhoto && isMobile ? (
             <div style={{ minHeight: isMobile ? 280 : 100, borderRadius: 22, overflow: "hidden", border: "1px solid #1F2937", background: "#efe9dc" }}>
-              <img src={item.itemPhotoUrl} alt={`${item.name} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              <img src={item.itemPhotoUrl} alt={`${displayItemName} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             </div>
           ) : null}
         </div>
       </Surface>
 
-      {!isMobile && showItemPhoto ? (
-        <Surface style={{ marginTop: 16, padding: 0, overflow: "hidden" }}>
-          <div style={{ minHeight: 320, borderRadius: 22, overflow: "hidden", border: "1px solid #1F2937", background: "#efe9dc" }}>
-            <img src={item.itemPhotoUrl} alt={`${item.name} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          </div>
-        </Surface>
+      {!isMobile ? (
+        <StickyVerdictRail
+          detailSystem={detailSystem}
+          t={t}
+          fullMenuHref={fullMenuHref}
+          isMobile={isMobile}
+          itemName={displayItemName}
+          priceLabel={priceLabel}
+        />
       ) : null}
 
       {isBrokenFranchiseLink && (
