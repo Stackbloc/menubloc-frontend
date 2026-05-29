@@ -1,8 +1,11 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
+import { resolveJoinMarket } from "../lib/joinMarketConfig.js";
 
-export default function JoinPage() {
+export default function JoinPage({ marketKey = "generic" }) {
+  const market = resolveJoinMarket(marketKey);
+
   useEffect(() => {
     const preconnectId = "menuply-dm-sans-preconnect";
     const fontId = "menuply-dm-sans-font";
@@ -39,7 +42,7 @@ export default function JoinPage() {
         <div style={styles.eyebrow}>For Restaurant Owners</div>
 
         <h1 style={styles.heading}>
-          Be among the first restaurants in your area on the Menuply network.
+          Be among the first restaurants in {market.headlineLocation} on the Menuply network.
         </h1>
 
         <p style={styles.paragraph}>
@@ -48,17 +51,18 @@ export default function JoinPage() {
         </p>
         <p style={styles.paragraph}>
           Menuply is a self-service, lower-cost alternative that helps restaurants keep more revenue and
-          offer better value to diners.
+          offer better value to diners. Every menu is transformed into an intelligent digital menu designed
+          to improve discoverability across the Menuply network.
+        </p>
+        <p style={styles.paragraph}>
+          Every menu is reviewed before publication to help ensure accuracy and quality.
         </p>
         <p style={{ ...styles.paragraph, marginBottom: 0 }}>
           Join us as we build a better deal for restaurants and diners alike.
         </p>
 
         <div style={styles.actions}>
-          <Link
-            to="/restaurant/signup/free-profile"
-            style={styles.cta}
-          >
+          <Link to={market.signupHref} style={styles.cta}>
             Join the Network →
           </Link>
           <p style={styles.reassurance}>No credit card · No commitment · Free to start</p>

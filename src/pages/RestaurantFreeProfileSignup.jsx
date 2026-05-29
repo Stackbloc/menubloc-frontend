@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { LEGAL_VERSIONS } from "../content/legal.js";
+import { resolveJoinMarket } from "../lib/joinMarketConfig.js";
 import {
   persistRestaurantOnboardingState,
   syncRestaurantOnboardingProgress,
@@ -48,6 +49,11 @@ function describeSignupFailure(error) {
 
 export default function RestaurantFreeProfileSignup() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const market = useMemo(
+    () => resolveJoinMarket(searchParams.get("market")),
+    [searchParams]
+  );
   const [form, setForm] = useState({
     email: "",
     restaurant_name: "",
@@ -151,11 +157,13 @@ export default function RestaurantFreeProfileSignup() {
         restaurant_name: form.restaurant_name.trim(),
         address_line1: form.address_line1.trim(),
         manager_name: form.restaurant_name.trim(),
+        city: market.city || null,
+        state: market.state_code || null,
         selected_plan: "verified",
         plan: "verified",
         plan_type: "free",
         payment_required: false,
-        signup_source: "free_profile_signup",
+        signup_source: market.signup_source,
         profile_status: "pending",
         legal_acceptances: [
           {
@@ -188,6 +196,8 @@ export default function RestaurantFreeProfileSignup() {
         restaurant_name: form.restaurant_name.trim(),
         email: form.email.trim(),
         owner_token,
+        city: market.city || "",
+        state: market.state_code || "",
         ingestion_method: menuFile ? "pdf_upload" : "later",
         selected_plan: "verified",
         plan: "verified",
@@ -201,9 +211,11 @@ export default function RestaurantFreeProfileSignup() {
         selected_plan_code: "verified",
         manual_review_required: Boolean(menuFile),
         draft_payload: {
-          signup_source: "free_profile_signup",
+          signup_source: market.signup_source,
+          market: market.market,
           payment_required: false,
           plan_type: "free",
+          profile_status: "pending",
           menu_upload_mode: menuFile ? "pdf_now" : "upload_later",
         },
       }).catch(() => null);
@@ -244,7 +256,8 @@ export default function RestaurantFreeProfileSignup() {
         <div style={styles.successCard}>
           <div style={styles.pageTitle}>Your free restaurant profile has been started.</div>
           <div style={styles.pageSubtitle}>
-            We’ll use your restaurant information{successState.uploaded ? " and menu" : ""} to prepare your Menuply profile.
+            We&apos;ll use your restaurant information and menu to prepare your Menuply profile. If you uploaded
+            a menu, we&apos;ll review it before publication and follow up when it&apos;s ready.
           </div>
           {!successState.uploaded ? (
             <div style={styles.helperText}>You can upload your menu later from your restaurant account.</div>
@@ -266,9 +279,11 @@ export default function RestaurantFreeProfileSignup() {
         wrapperStyle={{ marginBottom: 24 }}
       />
 
-      <h1 style={styles.pageTitle}>Create Your Free Restaurant Profile</h1>
+      <div style={styles.eyebrow}>For Restaurants</div>
+
+      <h1 style={styles.pageTitle}>Join the Menuply Network</h1>
       <p style={styles.pageSubtitle}>
-        You&apos;re signing up for the 100% free Verified plan. No credit card required.
+        Create your free Verified restaurant profile. No credit card required.
       </p>
 
       {serverError ? (
@@ -327,9 +342,9 @@ export default function RestaurantFreeProfileSignup() {
         </div>
 
         <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
-          {submitting ? "Starting profile..." : "Start Free Profile"}
+          {submitting ? "Starting profile..." : "Join the Network →"}
         </button>
-        <p style={styles.footerNote}>No credit card • No commitment • Upload menu now or later</p>
+        <p style={styles.footerNote}>No credit card · No commitment · Upload menu now or later</p>
       </form>
     </div>
   );
@@ -393,6 +408,15 @@ const styles = {
     margin: "0 0 8px",
     letterSpacing: "-0.03em",
     lineHeight: 1.2,
+  },
+  eyebrow: {
+    display: "inline-block",
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#667085",
+    marginBottom: 10,
   },
   pageSubtitle: {
     fontSize: 15,

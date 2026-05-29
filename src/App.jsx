@@ -89,6 +89,7 @@ import RestaurantPhilosophy from "./pages/RestaurantPhilosophy.jsx";
 import RestaurantFoundersSignup from "./pages/RestaurantFoundersSignup.jsx";
 import JoinPage from "./pages/JoinPage.jsx";
 import JoinDinersPage from "./pages/JoinDinersPage.jsx";
+import { isJoinLandingPath } from "./lib/joinMarketConfig.js";
 import ProfileSearchPage from "./pages/ProfileSearchPage.jsx";
 import RestaurantProfile from "./pages/RestaurantProfile.jsx";
 import RestaurantBillboard from "./pages/RestaurantBillboard.jsx";
@@ -458,7 +459,7 @@ function CanonicalUpdater() {
 
 function AppShell({ easyMenu, crmHost }) {
   const location = useLocation();
-  const joinLandingRoute = location.pathname === "/join";
+  const joinLandingRoute = isJoinLandingPath(location.pathname);
   const joinSignupRoute = location.pathname === "/restaurant/signup/free-profile";
   const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute;
 
@@ -501,6 +502,9 @@ function AppShell({ easyMenu, crmHost }) {
 
         <Route path="/restaurant/onboarding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantPhilosophy />} />
         <Route path="/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage />} />
+        <Route path="/join/losangeles" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage marketKey="losangeles" />} />
+        <Route path="/join/los-angeles" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage marketKey="losangeles" />} />
+        <Route path="/join/dothan" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage marketKey="dothan" />} />
         <Route path="/join/diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinDinersPage />} />
         <Route path="/restaurant/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFoundersSignup />} />
         <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
