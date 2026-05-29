@@ -343,7 +343,7 @@ export default function RestaurantFreeProfileSignup() {
         <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
           {submitting ? "Starting profile..." : "Join the Network →"}
         </button>
-        <p style={styles.footerNote}>No credit card · No commitment · Upload menu now or later</p>
+        <p style={styles.footerNote}>No credit card · No commitment</p>
       </form>
     </div>
   );
