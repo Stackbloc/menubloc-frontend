@@ -32,7 +32,7 @@ let lastEventTs = 0;
  * Deduplicated within a 500ms window.
  *
  * @param {string|number} menuItemId
- * @param {"click"|"compare"|"similar_click"} eventType
+ * @param {"view_item"|"click"|"compare"|"compare_item"|"similar_click"|"open_insights"|"open_nutrition"|"open_pairings"|"open_similar_items"|"add_to_cart"|"start_checkout"|"complete_order"} eventType
  */
 function trackMenuItemInteraction(menuItemId, eventType) {
   const now = Date.now();
@@ -49,7 +49,7 @@ function trackMenuItemInteraction(menuItemId, eventType) {
           "Content-Type": "application/json",
           "x-session-id": getGrubbidSessionId() || "",
         },
-        body: JSON.stringify({ event_type: eventType }),
+        body: JSON.stringify({ event_type: eventType, activity_type: eventType }),
         keepalive: true,
       }
     ).catch(() => {});

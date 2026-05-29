@@ -3,6 +3,7 @@
 export const SITE_LABELS = {
   en: {
     "nav.home": "Home",
+    "nav.search": "Search",
     "nav.explore": "Explore",
     "nav.following": "Following",
     "nav.basket": "Basket",
@@ -121,6 +122,7 @@ export const SITE_LABELS = {
   },
   es: {
     "nav.home": "Inicio",
+    "nav.search": "Buscar",
     "nav.explore": "Explorar",
     "nav.following": "Siguiendo",
     "nav.basket": "Cesta",
@@ -235,6 +237,7 @@ export const SITE_LABELS = {
   },
   zh: {
     "nav.home": "首页",
+    "nav.search": "搜索",
     "nav.explore": "探索",
     "nav.following": "关注",
     "nav.basket": "购物车",

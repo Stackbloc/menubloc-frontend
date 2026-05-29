@@ -37,7 +37,7 @@ export default function BottomNav() {
 
   const tabs = useMemo(() => [
     { label: t("nav.home", "Home"), icon: "🏠", to: "/" },
-    { label: t("nav.explore", "Explore"), icon: "🔍", to: "/food-interests" },
+    { label: t("nav.search", "Search"), icon: "🔍", to: "/search", buildHref: buildSearchHref },
     { label: t("nav.following", "Following"), icon: "F", to: "/account/following" },
     { label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
   ], [t]);

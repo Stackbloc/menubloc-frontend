@@ -18,7 +18,6 @@ import {
 } from "../lib/searchResultEnrichment.js";
 import IndulgenceMeter from "./IndulgenceMeter.jsx";
 import ShareButton from "./share/ShareButton.jsx";
-import FoodInterestButton from "./food-interests/FoodInterestButton.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
@@ -1101,9 +1100,14 @@ function ItemRow({
     setOpenTab((prev) => {
       const next = prev === tab ? null : tab;
       if (next === "similar") {
+        trackMenuItemInteraction(mid, "open_similar_items");
         // Guardrail: search-card Similar must come from the backend item route only.
         // Never substitute page-level restaurant groups or sibling search rows here.
         void loadSimilarForRow();
+      } else if (next === "insights") {
+        trackMenuItemInteraction(mid, "open_insights");
+      } else if (next === "nutrition") {
+        trackMenuItemInteraction(mid, "open_nutrition");
       }
       return next;
     });
@@ -1164,17 +1168,6 @@ function ItemRow({
             }}
             iconOnly
             stopPropagation
-          />
-        ) : null}
-        {mid ? (
-          <FoodInterestButton
-            compact
-            interest={{
-              interest_type: "dish",
-              interest_key: `menu_item_${mid}`,
-              display_label: name,
-              source_menu_item_id: mid,
-            }}
           />
         ) : null}
       </div>

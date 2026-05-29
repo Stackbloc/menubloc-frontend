@@ -1,5 +1,4 @@
 import ShareButton from "../share/ShareButton.jsx";
-import FoodInterestButton from "../food-interests/FoodInterestButton.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
@@ -239,19 +238,6 @@ export default function PublicMenuItemCard({
                 size="compact"
                 tone="subtle"
                 iconOnly
-              />
-            </div>
-          ) : null}
-          {canNavigate ? (
-            <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0 }}>
-              <FoodInterestButton
-                compact
-                interest={{
-                  interest_type: "dish",
-                  interest_key: `menu_item_${it.id}`,
-                  display_label: name,
-                  source_menu_item_id: it.id,
-                }}
               />
             </div>
           ) : null}

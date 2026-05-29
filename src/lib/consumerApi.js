@@ -60,9 +60,13 @@ export const getFollowedRestaurants = ()    => get("/api/consumer/followed-resta
 // ── Preferences ───────────────────────────────────────────────────────────
 export const getPreferences        = ()     => get("/api/consumer/profile/preferences");
 export const updatePreferences     = (body) => put("/api/consumer/profile/preferences", body);
+/** @deprecated Food Interests UI removed — do not call from new code. */
 export const getFoodInterests      = ()     => get("/api/consumer/food-interests");
+/** @deprecated Food Interests UI removed — do not call from new code. */
 export const getFoodInterestSuggestions = () => get("/api/consumer/food-interests/suggestions");
+/** @deprecated Food Interests UI removed — do not call from new code. */
 export const followFoodInterest    = (body) => post("/api/consumer/food-interests/follow", body);
+/** @deprecated Food Interests UI removed — do not call from new code. */
 export const unfollowFoodInterest  = (body) => post("/api/consumer/food-interests/unfollow", body);
 
 // ── Saved Locations ───────────────────────────────────────────────────────
