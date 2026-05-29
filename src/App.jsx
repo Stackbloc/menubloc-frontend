@@ -456,14 +456,18 @@ function CanonicalUpdater() {
 }
 
 function AppShell({ easyMenu, crmHost }) {
+  const location = useLocation();
+  const joinLandingRoute = location.pathname === "/join";
+  const hidePublicChrome = crmHost || joinLandingRoute;
+
   return (
     <>
       <ScrollToTop />
       <CanonicalUpdater />
       <AnalyticsTracker />
-      {crmHost ? null : <CartDrawer />}
-      {crmHost ? null : <OrderCartDrawer />}
-      {crmHost ? null : <BasketResumePrompt />}
+      {hidePublicChrome ? null : <CartDrawer />}
+      {hidePublicChrome ? null : <OrderCartDrawer />}
+      {hidePublicChrome ? null : <BasketResumePrompt />}
 
       <Routes>
         <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <GrubbidDiscovery />} />
@@ -612,7 +616,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {crmHost ? null : <SiteFooter />}
+      {hidePublicChrome ? null : <SiteFooter />}
     </>
   );
 }
