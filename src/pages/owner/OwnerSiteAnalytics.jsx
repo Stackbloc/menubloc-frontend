@@ -27,6 +27,15 @@ export default function OwnerSiteAnalytics() {
           </div>
 
           <PageCard style={{ padding: 22 }}>
+            <SectionTitle title="Page Type Breakdown" subtitle="Visits split by page category within the selected date range." />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14, marginTop: 16 }}>
+              <MetricCard label="Restaurant Profile Views" value={data?.totals?.restaurant_profile_views} />
+              <MetricCard label="Menu Page Views" value={data?.totals?.menu_page_views} />
+              <MetricCard label="Menu Item Views" value={data?.totals?.menu_item_views} />
+            </div>
+          </PageCard>
+
+          <PageCard style={{ padding: 22 }}>
             <SectionTitle title="Visits by Day" subtitle="Tracked page visits over time." />
             <SimpleTable rows={data?.series || []} columns={[["Day", "day"], ["Visits", "visits"]]} />
           </PageCard>
