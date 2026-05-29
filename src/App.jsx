@@ -124,9 +124,6 @@ import RestaurantMerchantTerms from "./pages/RestaurantMerchantTerms.jsx";
 import RestaurantSubscriptionTerms from "./pages/RestaurantSubscriptionTerms.jsx";
 import AboutMenuply from "./pages/AboutMenuply.jsx";
 import Contact from "./pages/Contact.jsx";
-import JoinPage from "./pages/JoinPage.jsx";
-import JoinDinersPage from "./pages/JoinDinersPage.jsx";
-import RestaurantFoundersSignup from "./pages/RestaurantFoundersSignup.jsx";
 
 import QrCodesPage from "./pages/QrCodesPage.jsx";
 import PdfUploadPage from "./pages/PdfUploadPage.jsx";
@@ -468,16 +465,20 @@ function CanonicalUpdater() {
 }
 
 function AppShell({ easyMenu, crmHost }) {
+  const location = useLocation();
+  const joinLandingRoute = location.pathname === "/join";
+  const hidePublicChrome = crmHost || joinLandingRoute;
+
   return (
     <>
       <ScrollToTop />
       <CanonicalUpdater />
       <AnalyticsTracker />
-      {crmHost ? null : <CartDrawer />}
-      {crmHost ? null : <OrderCartDrawer />}
-      {crmHost ? null : <BasketResumePrompt />}
-      {crmHost ? null : <FoodInterestAuthPrompt />}
+      {hidePublicChrome ? null : <CartDrawer />}
+      {hidePublicChrome ? null : <OrderCartDrawer />}
+      {hidePublicChrome ? null : <BasketResumePrompt />}
 
+      {hidePublicChrome ? null : <FoodInterestAuthPrompt />}
       <Routes>
         <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <GrubbidDiscovery />} />
 
@@ -512,9 +513,6 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFoundersSignup />} />
         <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/restaurant/signup/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
-        <Route path="/restaurant/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFoundersSignup />} />
-        <Route path="/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage />} />
-        <Route path="/join/diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinDinersPage />} />
         <Route path="/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/pricing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
         <Route path="/profilesearch" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProfileSearchPage />} />
@@ -628,7 +626,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {crmHost ? null : <SiteFooter />}
+      {hidePublicChrome ? null : <SiteFooter />}
     </>
   );
 }
