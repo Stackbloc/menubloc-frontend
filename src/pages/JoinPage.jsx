@@ -56,8 +56,7 @@ export default function JoinPage() {
 
         <div style={styles.actions}>
           <Link
-            to="/restaurant/signup/account"
-            state={{ selected_plan: "verified" }}
+            to="/restaurant/signup/free-profile"
             style={styles.cta}
           >
             Join the Network →

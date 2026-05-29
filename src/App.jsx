@@ -85,6 +85,7 @@ import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
 
 import RestaurantSignup from "./pages/RestaurantSignup.jsx";
 import RestaurantSignupEntry from "./pages/RestaurantSignupEntry.jsx";
+import RestaurantFreeProfileSignup from "./pages/RestaurantFreeProfileSignup.jsx";
 import RestaurantPhilosophy from "./pages/RestaurantPhilosophy.jsx";
 import RestaurantFoundersSignup from "./pages/RestaurantFoundersSignup.jsx";
 import FoodInterestsPage from "./pages/FoodInterestsPage.jsx";
@@ -467,7 +468,8 @@ function CanonicalUpdater() {
 function AppShell({ easyMenu, crmHost }) {
   const location = useLocation();
   const joinLandingRoute = location.pathname === "/join";
-  const hidePublicChrome = crmHost || joinLandingRoute;
+  const joinSignupRoute = location.pathname === "/restaurant/signup/free-profile";
+  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute;
 
   return (
     <>
@@ -513,6 +515,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFoundersSignup />} />
         <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/restaurant/signup/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
+        <Route path="/restaurant/signup/free-profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFreeProfileSignup />} />
         <Route path="/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/pricing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
         <Route path="/profilesearch" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProfileSearchPage />} />
