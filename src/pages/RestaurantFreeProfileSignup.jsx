@@ -187,7 +187,7 @@ export default function RestaurantFreeProfileSignup() {
         throw signupError;
       }
 
-      const { restaurant, owner_token } = data;
+      const { restaurant, owner_token, password_setup_email_sent } = data;
       const baseState = persistRestaurantOnboardingState({
         restaurant_id: restaurant.id,
         restaurant_name: form.restaurant_name.trim(),
@@ -215,7 +215,7 @@ export default function RestaurantFreeProfileSignup() {
           profile_status: "pending",
           menu_upload_mode: menuFile ? "pdf_now" : "upload_later",
         },
-      }).catch(() => null);
+      });
 
       let uploaded = false;
       try {
@@ -232,6 +232,7 @@ export default function RestaurantFreeProfileSignup() {
       setSuccessState({
         uploaded,
         restaurantName: form.restaurant_name.trim(),
+        passwordSetupEmailSent: Boolean(password_setup_email_sent),
       });
     } catch (error) {
       const failure = describeSignupFailure(error);
@@ -259,6 +260,11 @@ export default function RestaurantFreeProfileSignup() {
           </div>
           {!successState.uploaded ? (
             <div style={styles.helperText}>You can upload your menu later from your restaurant account.</div>
+          ) : null}
+          {successState.passwordSetupEmailSent ? (
+            <div style={styles.helperText}>
+              Check your email for a link to set your operator password and access your account.
+            </div>
           ) : null}
           {uploadNotice ? <div style={styles.noticeBanner}>{uploadNotice}</div> : null}
           <button type="button" onClick={() => nav("/")} style={styles.secondaryButton}>
