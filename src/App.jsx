@@ -24,6 +24,7 @@ import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { useCanonical } from "./hooks/useCanonical.js";
 import { captureEvent, initPostHog } from "./services/posthog.js";
+import { getAnalyticsSessionId } from "./lib/analyticsPageVisitSend.js";
 import { CartProvider } from "./context/CartContext.jsx";
 import { OrderCartProvider } from "./context/OrderCartContext.jsx";
 import { LanguageProvider } from "./context/LanguageContext.jsx";
@@ -405,20 +406,13 @@ function AnalyticsTracker() {
       });
     }
 
+    // Restaurant pages own their analytics send so they can include restaurant_id
+    // after their data loads — even for slug-based URLs where the ID is not in the path.
+    const RESTAURANT_PREFIXES = ["/restaurants/", "/public/restaurants/"];
+    if (RESTAURANT_PREFIXES.some((p) => location.pathname.startsWith(p))) return;
+
     const api = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-    const key = "grubbid.analytics.session_id";
-    let sessionId = "";
-    try {
-      sessionId = String(window.sessionStorage.getItem(key) || "");
-      if (!sessionId) {
-        sessionId = typeof window.crypto?.randomUUID === "function"
-          ? window.crypto.randomUUID()
-          : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        window.sessionStorage.setItem(key, sessionId);
-      }
-    } catch {
-      sessionId = "";
-    }
+    const sessionId = getAnalyticsSessionId();
 
     fetch(`${api}/api/analytics/page-visit`, {
       method: "POST",

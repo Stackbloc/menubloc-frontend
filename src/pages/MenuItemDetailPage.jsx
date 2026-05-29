@@ -52,6 +52,7 @@ import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
+import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -1225,6 +1226,18 @@ export default function MenuItemDetailPage() {
   const [rawItem,  setRawItem]  = useState(null);
 
   const item = useMemo(() => (rawItem ? normalizeResultItem(rawItem) : null), [rawItem]);
+
+  useEffect(() => {
+    if (!item) return;
+    sendPageVisit({
+      path: window.location.pathname + window.location.search,
+      restaurant_id: item.restaurant?.id ? Number(item.restaurant.id) : null,
+      menu_item_id: id ? Number(id) : null,
+    });
+    // Intentionally fire once when item first loads for this id
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?.id, id]);
+
   const displayItemName = useMemo(
     () => getDisplayMenuItemName(item, language, item?.name || "Untitled Item"),
     [item, language]

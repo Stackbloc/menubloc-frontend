@@ -53,6 +53,7 @@ import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
+import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import TasteIndexBadge from "../components/TasteIndexBadge.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
@@ -1270,6 +1271,10 @@ export default function PublicMenuPage() {
       restaurantName,
       slug: data?.slug || routeRestaurantParam,
       source: "public_menu",
+    });
+    sendPageVisit({
+      path: window.location.pathname + window.location.search,
+      restaurant_id: Number(data.restaurant_id),
     });
   }, [pageState.status, data?.restaurant_id, data?.slug, restaurantName, routeRestaurantParam]);
 

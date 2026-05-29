@@ -44,6 +44,7 @@ import {
 } from "../lib/consumerApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantFollow, trackRestaurantView } from "../lib/analytics.js";
+import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 
@@ -670,6 +671,10 @@ export default function RestaurantPublicPage() {
       restaurantName: data?.restaurant_name || data?.name || "",
       slug: data?.slug || slugOrId,
       source: "restaurant_profile",
+    });
+    sendPageVisit({
+      path: window.location.pathname + window.location.search,
+      restaurant_id: Number(data.id),
     });
   }, [data?.id, data?.restaurant_name, data?.name, data?.slug, slugOrId, loading, err]);
 

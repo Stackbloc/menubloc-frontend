@@ -18,9 +18,12 @@ export default function OwnerSiteAnalytics() {
       {error ? <ErrorBanner message={error} /> : null}
       {!data?.available ? <EmptyState>{data?.reason || "Traffic data is not available yet."}</EmptyState> : (
         <div style={{ display: "grid", gap: 18 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(220px, 1fr))", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14 }}>
             <MetricCard label="Total Visits" value={data?.totals?.total_visits} />
             <MetricCard label="Unique Sessions" value={data?.totals?.unique_sessions} />
+            <MetricCard label="Unique Visitors Today" value={data?.totals?.unique_visitors_today} />
+            <MetricCard label="Unique Visitors (7d)" value={data?.totals?.unique_visitors_last_7_days} />
+            <MetricCard label="Unique Visitors (30d)" value={data?.totals?.unique_visitors_last_30_days} />
           </div>
 
           <PageCard style={{ padding: 22 }}>
