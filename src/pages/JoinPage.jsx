@@ -123,7 +123,7 @@ export default function JoinPage({ marketKey = "generic" }) {
           <Link to={market.signupHref} style={styles.cta}>
             Join the Network →
           </Link>
-          <p style={styles.reassurance}>No credit card · No commitment · Free to start</p>
+          <p style={styles.reassurance}>No credit card · No commitment · 100% Free Plan.</p>
         </div>
 
         <footer style={styles.footer}>
