@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import MenuThemeExamplesSection from "../components/menu-templates/MenuThemeExamplesSection.jsx";
-import { MENU_TEMPLATE_PREVIEW_SAMPLE, MENU_THEME_SAMPLES } from "../data/menuTemplatePreviewSample.js";
+import { KBC_DEFAULT_MENU_PREVIEW_SAMPLE, MENU_TEMPLATE_PREVIEW_SAMPLE, MENU_THEME_SAMPLES } from "../data/menuTemplatePreviewSample.js";
 import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu-templates/restaurantMenuBrand.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
@@ -25,6 +25,7 @@ function useIsMobile(breakpoint = 900) {
 function buildThemePayload(themeStyle) {
   const style = normalizeMenuStyle(themeStyle);
   const accents = {
+    v1: "#1F4E3D",
     v2: "#2f7d5b",
     v3: "#f97316",
     v4: "#b68b45",
@@ -32,20 +33,22 @@ function buildThemePayload(themeStyle) {
     v6: "#7a2b23",
   };
   const names = {
+    v1: "KBC Default Menu Sample",
     v2: "Modern Fast Casual Sample",
     v3: "Food Truck Sample",
     v4: "Dark Premium Sample",
     v5: "Family Diner Sample",
     v6: "Premium Bistro Sample",
   };
+  const basePayload = style === "v1" ? KBC_DEFAULT_MENU_PREVIEW_SAMPLE : MENU_TEMPLATE_PREVIEW_SAMPLE;
   return {
-    ...MENU_TEMPLATE_PREVIEW_SAMPLE,
-    restaurant_name: names[style] || MENU_TEMPLATE_PREVIEW_SAMPLE.restaurant_name,
-    name: names[style] || MENU_TEMPLATE_PREVIEW_SAMPLE.name,
+    ...basePayload,
+    restaurant_name: names[style] || basePayload.restaurant_name,
+    name: names[style] || basePayload.name,
     slug: `${style}-sample-menu`,
-    accent_color: accents[style] || MENU_TEMPLATE_PREVIEW_SAMPLE.accent_color,
+    accent_color: accents[style] || basePayload.accent_color,
     menu_style: style,
-    menu_name: "Sample Menu Design",
+    menu_name: style === "v1" ? "Default Menu Design" : "Sample Menu Design",
     selected_menu_id: null,
   };
 }
@@ -54,7 +57,7 @@ export default function MenuThemesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const selectedStyle = normalizeMenuStyle(searchParams.get("theme") || "v2");
+  const selectedStyle = normalizeMenuStyle(searchParams.get("theme") || "v1");
   const selectedTheme = MENU_THEME_SAMPLES.find((theme) => theme.style === selectedStyle) || MENU_THEME_SAMPLES[0];
   const [notice, setNotice] = useState("");
   const [hoveredItemId, setHoveredItemId] = useState(null);

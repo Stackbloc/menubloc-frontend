@@ -23,7 +23,7 @@ export const MENU_TEMPLATE_PREVIEW_SAMPLE = {
   menu_source: null,
   franchise_group: null,
   // Brand identity fields (populated by brand settings API in production)
-  tagline: "One sample restaurant, five visual menu directions.",
+  tagline: "One sample restaurant, multiple visual menu directions.",
   font_preset: "default",
   menu_presentation: { tabs_allowed_for_public_view: false },
   deal_items: [
@@ -164,7 +164,105 @@ export const MENU_TEMPLATE_PREVIEW_SAMPLE = {
   ],
 };
 
+export const KBC_DEFAULT_MENU_PREVIEW_SAMPLE = {
+  ...MENU_TEMPLATE_PREVIEW_SAMPLE,
+  restaurant_name: "KBC Butcher Block",
+  name: "KBC Butcher Block",
+  slug: "kbc-butcher-block",
+  accent_color: "#1F4E3D",
+  hero_image_url: null,
+  cover_image_url: null,
+  menu_name: "Main Menu",
+  address_line1: "151 N Foster St",
+  city: "Dothan",
+  state: "AL",
+  zip: "36303",
+  tagline: "Default Menuply menu sample based on a Dothan restaurant format.",
+  deal_items: [],
+  sections: [
+    {
+      title: "Appetizers",
+      items: [
+        {
+          id: 9001,
+          name: "Smoked Wings",
+          description: "Wood-smoked wings tossed in Alabama white sauce.",
+          price_minor_units: 1300,
+        },
+        {
+          id: 9002,
+          name: "Brisket Nachos",
+          description: "House chips, queso, smoked brisket, jalapenos, and pico.",
+          price_minor_units: 1450,
+        },
+      ],
+    },
+    {
+      title: "Salads",
+      items: [
+        {
+          id: 9003,
+          name: "Steakhouse Wedge",
+          description: "Iceberg wedge with bacon, tomato, blue cheese, and ranch.",
+          price_minor_units: 1100,
+        },
+      ],
+    },
+    {
+      title: "Sandwiches",
+      items: [
+        {
+          id: 9004,
+          name: "Butcher Block Burger",
+          description: "Double patty burger with cheddar, bacon jam, and fries.",
+          price_minor_units: 1550,
+        },
+      ],
+    },
+    {
+      title: "Entrees",
+      items: [
+        {
+          id: 9005,
+          name: "Smoked Ribeye",
+          description: "Hand-cut ribeye finished over live fire with mashed potatoes.",
+          price_minor_units: 2900,
+        },
+        {
+          id: 9006,
+          name: "BBQ Meatloaf",
+          description: "House meatloaf glazed with tangy barbecue sauce.",
+          price_minor_units: 1800,
+        },
+      ],
+    },
+    {
+      title: "Desserts and Drinks",
+      items: [
+        {
+          id: 9007,
+          name: "Banana Pudding",
+          description: "Classic banana pudding with vanilla wafers.",
+          price_minor_units: 700,
+        },
+        {
+          id: 9008,
+          name: "Fresh Lemonade",
+          description: "Fresh squeezed lemonade.",
+          price_minor_units: 350,
+        },
+      ],
+    },
+  ],
+};
+
 export const MENU_THEME_SAMPLES = [
+  {
+    style: "v1",
+    name: "Default Menu",
+    bestFit: "Default Menuply menu format, local restaurants, broad menus",
+    description: "The standard Menuply menu presentation using a KBC Butcher Block-style Dothan sample menu.",
+  },
   {
     style: "v2",
     name: "Modern Fast Casual",

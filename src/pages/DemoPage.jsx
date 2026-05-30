@@ -1,8 +1,13 @@
 import { Link } from "react-router-dom";
-import { BrandLogo } from "../components/BrandLogo.jsx";
 import { MENU_THEME_SAMPLES } from "../data/menuTemplatePreviewSample.js";
 
 const THEME_SWATCHES = {
+  v1: {
+    bg: "#0B0F0C",
+    panel: "#1F4E3D",
+    accent: "#3DD934",
+    lines: ["#1A2419", "#ffffff", "#e7f8e5"],
+  },
   v2: {
     bg: "#f8faf7",
     panel: "#ffffff",
@@ -83,15 +88,14 @@ export default function DemoPage() {
   return (
     <main style={styles.page}>
       <header style={styles.header}>
-        <BrandLogo width={132} height={52} radius={0} pageColor="#0b0f0c" linkStyle={styles.logo} />
-        <Link to="/restaurant/signup" style={styles.headerCta}>Create your menu</Link>
+        <div style={styles.demoMark}>Menuply Demo</div>
       </header>
 
       <section style={styles.hero}>
         <div style={styles.eyebrow}>Menuply demo</div>
         <h1 style={styles.title}>Choose a menu design to preview</h1>
         <p style={styles.copy}>
-          These sample windows open live Menuply menu theme previews. They use demo data only and are not real restaurants accepting orders.
+          These sample windows open live Menuply menu theme previews, including the default KBC-style menu sample. They use demo data only and are not real restaurants accepting orders.
         </p>
       </section>
 
@@ -120,22 +124,12 @@ const styles = {
     justifyContent: "space-between",
     gap: 16,
   },
-  logo: {
-    display: "inline-flex",
-    textDecoration: "none",
-  },
-  headerCta: {
-    minHeight: 44,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-    background: "#3DD934",
-    color: "#0B0F0C",
-    textDecoration: "none",
-    fontSize: 14,
-    fontWeight: 850,
-    padding: "0 16px",
+  demoMark: {
+    color: "#ffffff",
+    fontSize: 18,
+    lineHeight: 1,
+    fontWeight: 950,
+    letterSpacing: 0,
   },
   hero: {
     maxWidth: 980,
