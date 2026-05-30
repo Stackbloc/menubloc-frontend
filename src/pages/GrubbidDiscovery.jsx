@@ -23,6 +23,7 @@ import { filtersToUrlParams } from "../lib/filterUtils.js";
 import { BrandLogo, BrandLockup } from "../components/BrandLogo.jsx";
 import {
   buildSearchLocationParams,
+  formatLocationLabel,
   normalizeLocationLabel,
   parseLocation,
   reverseGeocode,
@@ -518,6 +519,27 @@ export default function GrubbidDiscovery() {
     });
     return buildOutOfMarketJoinPath(marketLoc || {});
   }, [appliedLocation, shouldUseGeoBrowse, autoLocation]);
+
+  /** Empty-state copy: "City, ST" when we know location, else "your area". */
+  const outOfMarketAreaLabel = useMemo(() => {
+    const explicit = String(appliedLocation || "").trim();
+    if (explicit) {
+      const normalized = normalizeLocationLabel(explicit);
+      if (normalized) return normalized;
+      const parsed = parseLocation(explicit);
+      const fromParsed = formatLocationLabel(parsed.city, parsed.state);
+      if (fromParsed) return fromParsed;
+    }
+    if (autoLocation.label) return autoLocation.label;
+    const fromGeo = formatLocationLabel(autoLocation.city, autoLocation.state);
+    if (fromGeo) return fromGeo;
+    return "your area";
+  }, [
+    appliedLocation,
+    autoLocation.label,
+    autoLocation.city,
+    autoLocation.state,
+  ]);
 
   const feedScopeKey = useMemo(
     () =>
@@ -1402,10 +1424,8 @@ export default function GrubbidDiscovery() {
               >
                 {t("discovery.outOfMarketLink", "click here")}
               </Link>
-              {t(
-                "discovery.outOfMarketSuffix",
-                " for more information about Menuply in your area."
-              )}
+              {t("discovery.outOfMarketMid", " for more information about Menuply in ")}
+              {outOfMarketAreaLabel}.
             </div>
           ) : showFilterEmptyState ? (
             <div style={{
