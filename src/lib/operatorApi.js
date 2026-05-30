@@ -196,6 +196,8 @@ export const getQrKitOrder = (rid, orderId) => get(`/operator/restaurants/${rid}
 
 // ── Restaurant: Sticker QR (/r/DOOR-...) ─────────────────────────────────
 export const getOperatorQrStickers = (rid) => get(`/operator/restaurants/${rid}/qr-stickers`);
+export const validateOperatorQrStickerActivation = (rid, body) =>
+  post(`/operator/restaurants/${rid}/qr-stickers/activate/validate`, body);
 export const activateOperatorQrSticker = (rid, body) =>
   post(`/operator/restaurants/${rid}/qr-stickers/activate`, body);
 export const generateOperatorQrStickerBatch = (body) =>
@@ -204,6 +206,8 @@ export const previewOperatorQrStickerUrl = (rid, qrCode) =>
   `${API}/operator/restaurants/${rid}/qr-stickers/${encodeURIComponent(qrCode)}/preview`;
 export const downloadOperatorQrStickerUrl = (rid, qrCode) =>
   `${API}/operator/restaurants/${rid}/qr-stickers/${encodeURIComponent(qrCode)}/download`;
+export const downloadOperatorQrStickerPngUrl = (rid, qrCode) =>
+  `${API}/operator/restaurants/${rid}/qr-stickers/${encodeURIComponent(qrCode)}/download-png`;
 export const deactivateOperatorQrSticker = (rid, qrCode) =>
   post(`/operator/restaurants/${rid}/qr-stickers/${encodeURIComponent(qrCode)}/deactivate`, {});
 export const replaceOperatorQrSticker = (rid, qrCode) =>

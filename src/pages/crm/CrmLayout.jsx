@@ -11,6 +11,7 @@ const NAV = [
   { to: "/crm/leads", label: "Leads" },
   { to: "/crm/tasks", label: "Tasks" },
   { to: "/crm/reports", label: "Reports" },
+  { to: "/crm/qr-inventory", label: "QR Inventory" },
 ];
 
 export default function CrmLayout({ title, actions = null, children }) {

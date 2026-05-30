@@ -1,5 +1,5 @@
 /**
- * Sticker QR — unclaimed inventory activated with QR ID + PIN (/r/DOOR-...).
+ * Sticker QR — unclaimed inventory activated with QR ID + PIN (/r/DOOR-... or /r/FOOD_TRUCK-...).
  */
 
 import React, { useCallback, useEffect, useState } from "react";
@@ -35,11 +35,15 @@ export default function QrStickerPanel({
   restaurantName,
   loadQrCodes,
   activateSticker,
+  validateActivation,
   previewUrl,
   downloadUrl,
+  downloadPngUrl,
   deactivateQr,
   replaceQr,
   canMutate = true,
+  isFoodTruck = false,
+  allowOperatorOverride = false,
 }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +54,9 @@ export default function QrStickerPanel({
   const [previewLoading, setPreviewLoading] = useState(false);
   const [qrId, setQrId] = useState("");
   const [activationPin, setActivationPin] = useState("");
+  const [validating, setValidating] = useState(false);
   const [activating, setActivating] = useState(false);
+  const [routeValidation, setRouteValidation] = useState(null);
 
   const refresh = useCallback(async () => {
     if (!restaurantId || !loadQrCodes) return;
@@ -101,27 +107,84 @@ export default function QrStickerPanel({
     };
   }, [previewCode, previewUrl]);
 
-  const hasActiveDoor = rows.some((r) => r.qr_type === "DOOR" && r.status === "active");
+  const primaryQrType = isFoodTruck ? "FOOD_TRUCK" : "DOOR";
+  const primaryQrExample = isFoodTruck ? "FOOD_TRUCK-7K42M9" : "DOOR-7K42M9";
+  const hasActivePrimary = rows.some((r) => r.qr_type === primaryQrType && r.status === "active");
+  const activePrimaryRow = rows.find((r) => r.qr_type === primaryQrType && r.status === "active");
+
+  function activationBody() {
+    const body = {
+      qr_code: qrId.trim(),
+      activation_pin: activationPin.trim(),
+    };
+    if (allowOperatorOverride) body.allow_operator_override = true;
+    return body;
+  }
+
+  async function handleValidateRoute(e) {
+    e?.preventDefault?.();
+    setMessage("");
+    setError("");
+    setRouteValidation(null);
+    if (!validateActivation) {
+      setError("Route validation is not available");
+      return;
+    }
+    if (!qrId.trim() || !activationPin.trim()) {
+      setError("Enter QR ID and activation PIN first");
+      return;
+    }
+    setValidating(true);
+    try {
+      const data = await validateActivation(activationBody());
+      const validation = data?.validation || data;
+      setRouteValidation(validation);
+      if (validation?.ok) {
+        setMessage(validation.message || "Route validation passed. You can activate now.");
+      } else {
+        setError(
+          validation?.errors?.[0]?.message ||
+            validation?.message ||
+            "Route validation failed. Activation is blocked."
+        );
+      }
+    } catch (err) {
+      const payload = err?.payload;
+      const validation = payload?.validation;
+      if (validation) setRouteValidation(validation);
+      setError(err?.message || payload?.error || "Route validation failed");
+    } finally {
+      setValidating(false);
+    }
+  }
 
   async function handleActivate(e) {
     e.preventDefault();
     setMessage("");
     setError("");
+    if (!routeValidation?.ok) {
+      setError("Test the scan route before activating. Activation is blocked until validation passes.");
+      return;
+    }
     setActivating(true);
     try {
-      const data = await activateSticker({
-        qr_code: qrId.trim(),
-        activation_pin: activationPin.trim(),
-      });
+      const data = await activateSticker(activationBody());
       setMessage(`Activated ${data?.sticker?.qr_code || qrId}`);
       setQrId("");
       setActivationPin("");
+      setRouteValidation(null);
       await refresh();
     } catch (err) {
-      setError(err?.message || "Activation failed");
+      const payload = err?.payload;
+      setError(err?.message || payload?.error || "Activation failed");
+      if (payload?.validation) setRouteValidation(payload.validation);
     } finally {
       setActivating(false);
     }
+  }
+
+  function resetValidationOnInput() {
+    if (routeValidation) setRouteValidation(null);
   }
 
   async function copyUrl(url) {
@@ -152,19 +215,24 @@ export default function QrStickerPanel({
         </div>
       ) : null}
 
-      {!hasActiveDoor ? (
+      {!hasActivePrimary ? (
         <PageCard style={{ marginBottom: 20 }}>
           <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>Activate Sticker</h3>
           <p style={{ margin: "0 0 14px", fontSize: 13, color: "#667085" }}>
-            Enter the QR ID and activation PIN printed on your Menuply sticker (e.g. DOOR-7K42M9 / PIN: 841226).
+            {isFoodTruck
+              ? "Enter the QR ID and PIN on your vehicle sticker. After activation, scans open your Menuply profile with today’s confirmed location (not a fixed address page)."
+              : "Enter the QR ID and activation PIN printed on your Menuply door sticker (e.g. DOOR-7K42M9 / PIN: 841226)."}
           </p>
           <form onSubmit={handleActivate} style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end" }}>
             <label style={fieldStyle}>
               QR ID
               <input
                 value={qrId}
-                onChange={(e) => setQrId(e.target.value)}
-                placeholder="DOOR-7K42M9"
+                onChange={(e) => {
+                  setQrId(e.target.value);
+                  resetValidationOnInput();
+                }}
+                placeholder={primaryQrExample}
                 style={inputStyle}
                 required
               />
@@ -173,25 +241,145 @@ export default function QrStickerPanel({
               Activation PIN
               <input
                 value={activationPin}
-                onChange={(e) => setActivationPin(e.target.value)}
+                onChange={(e) => {
+                  setActivationPin(e.target.value);
+                  resetValidationOnInput();
+                }}
                 placeholder="841226"
                 style={inputStyle}
                 inputMode="numeric"
                 required
               />
             </label>
-            <button type="submit" style={btnPrimary} disabled={activating}>
+            {validateActivation ? (
+              <button type="button" style={btn} onClick={handleValidateRoute} disabled={validating}>
+                {validating ? "Testing route…" : "Test scan route"}
+              </button>
+            ) : null}
+            <button
+              type="submit"
+              style={{
+                ...btnPrimary,
+                opacity: routeValidation?.ok ? 1 : 0.55,
+                cursor: routeValidation?.ok ? "pointer" : "not-allowed",
+              }}
+              disabled={activating || !routeValidation?.ok}
+            >
               {activating ? "Activating…" : "Activate Sticker"}
             </button>
           </form>
+          {routeValidation ? (
+            <div
+              style={{
+                marginTop: 14,
+                padding: 12,
+                borderRadius: 10,
+                background: routeValidation.ok ? "#ecfdf3" : "#fff1ef",
+                fontSize: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                {routeValidation.ok ? "Route validation passed" : "Route validation failed"}
+              </div>
+              <div>
+                <span style={{ color: "#667085" }}>Scan URL: </span>
+                <a href={routeValidation.test_scan_url} target="_blank" rel="noreferrer">
+                  {routeValidation.test_scan_url}
+                </a>
+              </div>
+              <div style={{ marginTop: 4 }}>
+                <span style={{ color: "#667085" }}>After activation: </span>
+                <a href={routeValidation.test_destination_url} target="_blank" rel="noreferrer">
+                  {routeValidation.test_destination_url}
+                </a>
+              </div>
+            </div>
+          ) : (
+            <p style={{ marginTop: 10, fontSize: 12, color: "#667085" }}>
+              Step 1: Enter QR ID and PIN. Step 2: Test scan route. Step 3: Activate (only after route passes).
+            </p>
+          )}
         </PageCard>
-      ) : (
-        <p style={{ fontSize: 13, color: "#16794f", marginBottom: 16, fontWeight: 600 }}>
-          Active door sticker linked. Additional stickers can be activated if you receive more inventory.
-        </p>
-      )}
+      ) : activePrimaryRow ? (
+        <PageCard style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#16794f", textTransform: "uppercase", marginBottom: 12 }}>
+            QR Status: Active
+          </div>
+          <div style={{ display: "grid", gap: 10, fontSize: 14 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#667085", fontWeight: 700 }}>QR ID</div>
+              <code>{activePrimaryRow.qr_code}</code>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "#667085", fontWeight: 700 }}>Public URL</div>
+              <a href={activePrimaryRow.public_url} target="_blank" rel="noreferrer">
+                {activePrimaryRow.public_url}
+              </a>
+            </div>
+          </div>
+          <div style={{ marginTop: 16, display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <button type="button" style={btn} onClick={() => copyUrl(activePrimaryRow.public_url)}>
+              Copy URL
+            </button>
+            {downloadPngUrl ? (
+              <button
+                type="button"
+                style={btn}
+                onClick={() => {
+                  const a = document.createElement("a");
+                  a.href = downloadPngUrl(activePrimaryRow.qr_code);
+                  a.download = `${activePrimaryRow.qr_code}-qr.png`;
+                  a.click();
+                }}
+              >
+                Download QR PNG
+              </button>
+            ) : null}
+            {downloadUrl ? (
+              <button
+                type="button"
+                style={btn}
+                onClick={async () => {
+                  const res = await fetch(downloadUrl(activePrimaryRow.qr_code), { credentials: "include" });
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${activePrimaryRow.qr_code}-sticker.svg`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                Download Sticker Artwork
+              </button>
+            ) : null}
+            {canMutate && replaceQr ? (
+              <button
+                type="button"
+                style={btnDanger}
+                onClick={async () => {
+                  if (
+                    !window.confirm(
+                      `Request replacement for ${activePrimaryRow.qr_code}? Your current sticker will stop working after replacement is processed. You will activate the new sticker with its PIN when it arrives.`
+                    )
+                  )
+                    return;
+                  const data = await replaceQr(activePrimaryRow.qr_code);
+                  setMessage(
+                    `Replacement requested. Activate new sticker when it arrives: ${data?.replacement_inventory?.qr_code || "see email"}`
+                  );
+                  refresh();
+                }}
+              >
+                Request Replacement
+              </button>
+            ) : null}
+          </div>
+        </PageCard>
+      ) : null}
 
-      {hasActiveDoor ? (
+      {hasActivePrimary ? (
         <details style={{ marginBottom: 16 }}>
           <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Activate another sticker</summary>
           <form onSubmit={handleActivate} style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 10 }}>

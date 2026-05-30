@@ -71,3 +71,30 @@ export const updateCrmDiscountCode = (id, body) => req(`/api/crm/discount-codes/
 export const forgotCrmPassword = (email) => post("/api/crm/auth/forgot", { email });
 export const verifyCrmResetToken = (token) => get(`/api/crm/auth/reset-password?token=${encodeURIComponent(token)}`);
 export const resetCrmPassword = (token, password) => post("/api/crm/auth/reset-password", { token, password });
+
+const QR_API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+
+export const getQrInventory = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")
+  ).toString();
+  return get(`/operator/qr-stickers/inventory${qs ? `?${qs}` : ""}`);
+};
+
+export const generateQrInventoryBatch = (body) =>
+  post("/operator/qr-stickers/generate-batch", body);
+
+export const validateQrInventoryCode = (qrCode) =>
+  get(`/operator/qr-stickers/validate/${encodeURIComponent(qrCode)}`);
+
+export const markQrInventoryReplaced = (qrCode, body = {}) =>
+  post(`/operator/qr-stickers/${encodeURIComponent(qrCode)}/mark-replaced`, body);
+
+export const markQrInventoryDamaged = (qrCode, body = {}) =>
+  post(`/operator/qr-stickers/${encodeURIComponent(qrCode)}/mark-damaged`, body);
+
+export const downloadQrBatchCsvUrl = (batchId) =>
+  `${QR_API}/operator/qr-stickers/batches/${encodeURIComponent(batchId)}/csv`;
+
+export const downloadQrBatchReportUrl = (batchId) =>
+  `${QR_API}/operator/qr-stickers/batches/${encodeURIComponent(batchId)}/report`;

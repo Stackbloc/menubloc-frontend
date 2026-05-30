@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import OwnerLayout, { EmptyState, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import QrStickerPanel from "../../components/qr/QrStickerPanel.jsx";
 import {
+  validateOwnerQrStickerActivation,
   activateOwnerQrSticker,
   deactivateOwnerQrSticker,
   downloadOwnerQrStickerUrl,
@@ -20,6 +21,7 @@ export default function OwnerQrStickers() {
   const [statusFilter, setStatusFilter] = useState("unclaimed");
   const [selectedRestaurantId, setSelectedRestaurantId] = useState("");
   const [batchQty, setBatchQty] = useState("10");
+  const [batchQrType, setBatchQrType] = useState("DOOR");
   const [batchMsg, setBatchMsg] = useState("");
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function OwnerQrStickers() {
     setError("");
     try {
       const data = await generateOwnerQrStickerBatch({
-        qr_type: "DOOR",
+        qr_type: batchQrType,
         quantity: Number(batchQty) || 10,
       });
       setBatchMsg(`Created batch ${data?.batch?.print_batch_id} (${data?.batch?.quantity} stickers)`);
@@ -55,8 +57,10 @@ export default function OwnerQrStickers() {
       title="Activate & manage stickers"
       restaurantId={selectedId}
       restaurantName={allRows.find((r) => r.restaurant_id === selectedId)?.restaurant_name}
+      allowOperatorOverride
       canMutate
       loadQrCodes={() => getOwnerQrStickersForRestaurant(selectedId)}
+      validateActivation={(body) => validateOwnerQrStickerActivation(selectedId, body)}
       activateSticker={(body) => activateOwnerQrSticker(selectedId, body)}
       previewUrl={(code) => previewOwnerQrStickerUrl(selectedId, code)}
       downloadUrl={(code) => downloadOwnerQrStickerUrl(selectedId, code)}
@@ -94,6 +98,10 @@ export default function OwnerQrStickers() {
           subtitle="Stickers print without a restaurant link. Restaurants activate with QR ID + PIN after delivery."
         />
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <select value={batchQrType} onChange={(e) => setBatchQrType(e.target.value)} style={inputStyle}>
+            <option value="DOOR">DOOR — storefront</option>
+            <option value="FOOD_TRUCK">FOOD_TRUCK — vehicle</option>
+          </select>
           <input
             type="number"
             min={1}

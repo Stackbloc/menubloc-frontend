@@ -142,6 +142,7 @@ import CrmLeadList from "./pages/crm/CrmLeadList.jsx";
 import CrmLeadDetail from "./pages/crm/CrmLeadDetail.jsx";
 import CrmTasks from "./pages/crm/CrmTasks.jsx";
 import CrmReports from "./pages/crm/CrmReports.jsx";
+import CrmQrInventory from "./pages/crm/CrmQrInventory.jsx";
 import CrmLogin from "./pages/crm/CrmLogin.jsx";
 import CrmForgotPassword from "./pages/crm/CrmForgotPassword.jsx";
 import CrmResetPassword from "./pages/crm/CrmResetPassword.jsx";
@@ -618,6 +619,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/crm/leads/:id" element={<CrmRoute><CrmLeadDetail /></CrmRoute>} />
         <Route path="/crm/tasks" element={<CrmRoute><CrmTasks /></CrmRoute>} />
         <Route path="/crm/reports" element={<CrmRoute><CrmReports /></CrmRoute>} />
+        <Route path="/crm/qr-inventory" element={<CrmRoute><CrmQrInventory /></CrmRoute>} />
         <Route path="/admin/crm" element={<CrmLegacyRedirect />} />
         <Route path="/admin/crm/leads" element={<CrmLegacyRedirect />} />
         <Route path="/admin/crm/leads/:id" element={<CrmLegacyRedirect />} />
