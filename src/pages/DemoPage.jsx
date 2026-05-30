@@ -8,29 +8,11 @@ const THEME_SWATCHES = {
     accent: "#3DD934",
     lines: ["#1A2419", "#ffffff", "#e7f8e5"],
   },
-  v2: {
-    bg: "#f8faf7",
-    panel: "#ffffff",
-    accent: "#2f7d5b",
-    lines: ["#dce7df", "#eef4ef", "#ffffff"],
-  },
-  v3: {
-    bg: "#17110b",
-    panel: "#f97316",
-    accent: "#111827",
-    lines: ["#fff7ed", "#fed7aa", "#ffedd5"],
-  },
   v4: {
     bg: "#070707",
     panel: "#17120d",
     accent: "#b68b45",
     lines: ["#2a2118", "#3a2b1b", "#b68b45"],
-  },
-  v5: {
-    bg: "#fff7ed",
-    panel: "#ffffff",
-    accent: "#2563eb",
-    lines: ["#dbeafe", "#f8fafc", "#ffffff"],
   },
   v6: {
     bg: "#171717",
@@ -41,7 +23,7 @@ const THEME_SWATCHES = {
 };
 
 function MenuWindow({ theme }) {
-  const swatch = THEME_SWATCHES[theme.style] || THEME_SWATCHES.v2;
+  const swatch = THEME_SWATCHES[theme.style] || THEME_SWATCHES.v1;
   return (
     <Link
       to={`/menu-themes?theme=${theme.style}`}

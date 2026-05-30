@@ -264,28 +264,10 @@ export const MENU_THEME_SAMPLES = [
     description: "The standard Menuply menu presentation using a KBC Butcher Block-style Dothan sample menu.",
   },
   {
-    style: "v2",
-    name: "Modern Fast Casual",
-    bestFit: "Bowls, salads, tacos, sandwiches, coffee, lunch concepts",
-    description: "Bright, clean, fast-scanning menu layout with clear sections and easy item browsing.",
-  },
-  {
-    style: "v3",
-    name: "Food Truck",
-    bestFit: "Tacos, BBQ trucks, burgers, wings, pop-ups",
-    description: "Bold mobile-first ordering surface with large tap targets and high-energy pacing.",
-  },
-  {
     style: "v4",
     name: "Steakhouse / Dark Premium",
     bestFit: "Steakhouses, cocktail lounges, upscale dinner, bourbon bars",
     description: "Dark, dramatic menu styling with strong contrast and premium spacing.",
-  },
-  {
-    style: "v5",
-    name: "Family / Diner",
-    bestFit: "Diners, breakfast spots, comfort food, family-owned restaurants",
-    description: "Readable, friendly presentation for familiar menus and broad audiences.",
   },
   {
     style: "v6",

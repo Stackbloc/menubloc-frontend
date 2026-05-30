@@ -1409,7 +1409,7 @@ export default function GrubbidDiscovery() {
               Preview clickable Menuply menu styles
             </div>
             <div style={{ fontSize: 13, lineHeight: 1.45, color: "#9CA3AF", fontWeight: 650 }}>
-              Open demo windows for the default KBC-style menu, fast casual, food truck, steakhouse, diner, and bistro menus.
+              Open demo windows for the default KBC-style menu, steakhouse, and premium bistro designs.
             </div>
           </Link>
 

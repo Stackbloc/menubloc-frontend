@@ -14,7 +14,7 @@ export default function MenuThemeExamplesSection({ compact = false, dark = false
       <div style={styles.headingWrap}>
         <h2 style={{ ...styles.heading, color: text }}>See how your menu could look</h2>
         <p style={{ ...styles.subheading, color: muted }}>
-          Menuply menus can be styled for different restaurant types — from fast casual to food trucks to premium dining.
+          Menuply menus can be styled for different restaurant types — from standard menus to premium dining.
         </p>
       </div>
       <div style={compact ? styles.compactGrid : styles.grid}>

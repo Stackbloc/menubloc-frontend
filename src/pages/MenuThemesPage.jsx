@@ -26,18 +26,12 @@ function buildThemePayload(themeStyle) {
   const style = normalizeMenuStyle(themeStyle);
   const accents = {
     v1: "#1F4E3D",
-    v2: "#2f7d5b",
-    v3: "#f97316",
     v4: "#b68b45",
-    v5: "#2563eb",
     v6: "#7a2b23",
   };
   const names = {
     v1: "KBC Default Menu Sample",
-    v2: "Modern Fast Casual Sample",
-    v3: "Food Truck Sample",
     v4: "Dark Premium Sample",
-    v5: "Family Diner Sample",
     v6: "Premium Bistro Sample",
   };
   const basePayload = style === "v1" ? KBC_DEFAULT_MENU_PREVIEW_SAMPLE : MENU_TEMPLATE_PREVIEW_SAMPLE;
