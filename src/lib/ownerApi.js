@@ -83,3 +83,20 @@ export const retryOwnerMenuUpload = (uploadId) =>
   post(`/api/owner/menu-uploads/${uploadId}/retry`, {});
 export const archiveOwnerMenuUpload = (uploadId) =>
   post(`/api/owner/menu-uploads/${uploadId}/archive`, {});
+
+export const getOwnerQrStickers = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/qr-stickers${qs ? `?${qs}` : ""}`);
+};
+export const getOwnerQrStickersForRestaurant = (restaurantId) =>
+  get(`/api/owner/qr-stickers/${restaurantId}`);
+export const createOwnerDoorQrSticker = (restaurantId) =>
+  post(`/api/owner/qr-stickers/${restaurantId}/door`, {});
+export const previewOwnerQrStickerUrl = (restaurantId, qrCode) =>
+  `${API}/api/owner/qr-stickers/${restaurantId}/${encodeURIComponent(qrCode)}/preview`;
+export const downloadOwnerQrStickerUrl = (restaurantId, qrCode) =>
+  `${API}/api/owner/qr-stickers/${restaurantId}/${encodeURIComponent(qrCode)}/download`;
+export const deactivateOwnerQrSticker = (restaurantId, qrCode) =>
+  post(`/api/owner/qr-stickers/${restaurantId}/${encodeURIComponent(qrCode)}/deactivate`, {});
+export const replaceOwnerQrSticker = (restaurantId, qrCode) =>
+  post(`/api/owner/qr-stickers/${restaurantId}/${encodeURIComponent(qrCode)}/replace`, {});

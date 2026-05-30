@@ -21,6 +21,10 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/r/:code",
+      "destination": "https://menubloc-backend-production.up.railway.app/r/:code"
+    },
     { "source": "/(.*)", "destination": "/" }
   ],
   "headers": [

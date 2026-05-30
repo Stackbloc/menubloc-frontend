@@ -194,6 +194,18 @@ export const getQrKitPreviewUrl = (rid, params = {}) => {
 export const createQrKitOrder = (rid, body) => post(`/operator/restaurants/${rid}/qr-kit-orders`, body);
 export const getQrKitOrder = (rid, orderId) => get(`/operator/restaurants/${rid}/qr-kit-orders/${orderId}`);
 
+// ── Restaurant: Sticker QR (/r/DOOR-...) ─────────────────────────────────
+export const getOperatorQrStickers = (rid) => get(`/operator/restaurants/${rid}/qr-stickers`);
+export const createOperatorDoorQrSticker = (rid) => post(`/operator/restaurants/${rid}/qr-stickers/door`, {});
+export const previewOperatorQrStickerUrl = (rid, qrCode) =>
+  `${API}/operator/restaurants/${rid}/qr-stickers/${encodeURIComponent(qrCode)}/preview`;
+export const downloadOperatorQrStickerUrl = (rid, qrCode) =>
+  `${API}/operator/restaurants/${rid}/qr-stickers/${encodeURIComponent(qrCode)}/download`;
+export const deactivateOperatorQrSticker = (rid, qrCode) =>
+  post(`/operator/restaurants/${rid}/qr-stickers/${encodeURIComponent(qrCode)}/deactivate`, {});
+export const replaceOperatorQrSticker = (rid, qrCode) =>
+  post(`/operator/restaurants/${rid}/qr-stickers/${encodeURIComponent(qrCode)}/replace`, {});
+
 // ── Stripe Platform Billing ───────────────────────────────────────────────
 export const getCheckoutPlans = () =>
   get("/api/stripe/platform/plans");

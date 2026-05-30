@@ -40,6 +40,7 @@ const MENU_NAV = [
   { to: "/operator/display-settings",  label: "Display Board",      icon: "⊞", benefitKey: "tv_menu_board" },
   { to: "/operator/menu-studio",       label: "Menu Studio",        icon: "✦", benefitKey: "menu_outputs" },
   { to: "/operator/brand",             label: "Brand Settings",     icon: "◉", benefitKey: "brand_customization" },
+  { to: "/operator/qr-stickers",       label: "QR Stickers",        icon: "▦" },
 ];
 
 // Staff only sees this subset of menu tools

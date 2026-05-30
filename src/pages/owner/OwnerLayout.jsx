@@ -12,6 +12,7 @@ const NAV = [
   { to: "/owner/revenue", label: "Revenue" },
   { to: "/owner/support", label: "Support Tickets" },
   { to: "/owner/menu-uploads", label: "Menu Uploads" },
+  { to: "/owner/qr-stickers", label: "QR Stickers" },
 ];
 
 export const OWNER_COLORS = {
