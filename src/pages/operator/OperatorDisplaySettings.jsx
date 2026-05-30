@@ -15,7 +15,6 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useLanguage } from "../../context/LanguageContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -30,7 +29,6 @@ const ACCENT_PRESETS = [
 ];
 
 export default function OperatorDisplaySettings() {
-  const { t } = useLanguage();
   const { selectedRestaurant, hasBenefit } = useOperator();
   const rid = selectedRestaurant?.id;
 
@@ -56,7 +54,7 @@ export default function OperatorDisplaySettings() {
       if (data.ok && data.settings) {
         setSettings((s) => ({ ...s, ...data.settings }));
       }
-    } catch (_) {
+    } catch {
       // Use defaults if load fails
     } finally {
       setLoading(false);
@@ -87,7 +85,7 @@ export default function OperatorDisplaySettings() {
       await navigator.clipboard.writeText(displayUrl);
       setCopyText("Copied!");
       setTimeout(() => setCopyText("Copy Display Link"), 2500);
-    } catch (_) {
+    } catch {
       setCopyText("Copy failed");
       setTimeout(() => setCopyText("Copy Display Link"), 2500);
     }
@@ -295,10 +293,11 @@ export default function OperatorDisplaySettings() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {[
                     { value: "v1", label: "Classic", desc: "Clean list layout — works for any restaurant type." },
-                    { value: "v2", label: "Modern", desc: "Hero image header, featured items carousel." },
-                    { value: "v3", label: "Express", desc: "Compact, conversion-focused layout for fast ordering." },
-                    { value: "v4", label: "Bold Casual", desc: "Strong typography, deal banner, color-blocked sections. Best for sports bars, burgers, BBQ." },
-                    { value: "v5", label: "Refined Editorial", desc: "Elegant spacing, tagline slot, editorial tone. Best for steakhouses, upscale casual, chef-driven." },
+                    { value: "v2", label: "Modern Fast Casual", desc: "Bright, clean, fast-scanning layout for bowls, salads, tacos, sandwiches, and lunch concepts." },
+                    { value: "v3", label: "Food Truck", desc: "Bold, mobile-first ordering layout with large tap targets for trucks, pop-ups, burgers, BBQ, and tacos." },
+                    { value: "v4", label: "Steakhouse / Dark Premium", desc: "Dark luxury styling, warm accents, and premium spacing for upscale dinner and cocktail concepts." },
+                    { value: "v5", label: "Family / Diner", desc: "Friendly, readable, accessible layout for diners, breakfast restaurants, and comfort food." },
+                    { value: "v6", label: "Premium Bistro", desc: "Dark branded header, collection buttons, decorative section headings, and a polished editorial menu panel." },
                   ].map(({ value, label, desc }) => {
                     const isSelected = (settings.menu_style || "v1") === value;
                     return (

@@ -8,6 +8,7 @@ export function normalizeMenuStyle(raw) {
   if (s === "v3" || s === "takeout" || s === "conversion") return "v3";
   if (s === "v4" || s === "bold-casual" || s === "bold_casual" || s === "casual") return "v4";
   if (s === "v5" || s === "refined-editorial" || s === "editorial" || s === "upscale") return "v5";
+  if (s === "v6" || s === "premium-bistro" || s === "premium_bistro" || s === "bistro") return "v6";
   if (s === "v1" || s === "classic") return "v1";
   return "v1";
 }

@@ -1,8 +1,9 @@
 import ClassicMenuTemplate from "./ClassicMenuTemplate.jsx";
-import CinematicMenuTemplate from "./CinematicMenuTemplate.jsx";
+import ModernFastCasualMenuTemplate from "./ModernFastCasualMenuTemplate.jsx";
 import TakeoutMenuTemplate from "./TakeoutMenuTemplate.jsx";
-import BoldCasualMenuTemplate from "./BoldCasualMenuTemplate.jsx";
-import RefinedEditorialMenuTemplate from "./RefinedEditorialMenuTemplate.jsx";
+import DarkPremiumMenuTemplate from "./DarkPremiumMenuTemplate.jsx";
+import FamilyDinerMenuTemplate from "./FamilyDinerMenuTemplate.jsx";
+import PremiumBistroMenuTemplate from "./PremiumBistroMenuTemplate.jsx";
 import { normalizeMenuStyle } from "./menuPresentationUtils.js";
 
 /**
@@ -11,9 +12,10 @@ import { normalizeMenuStyle } from "./menuPresentationUtils.js";
 export default function PublicMenuMainContent({ menuStyle: rawStyle, templateContext: ctx }) {
   const menuStyle = normalizeMenuStyle(rawStyle);
 
-  if (menuStyle === "v2") return <CinematicMenuTemplate {...ctx} />;
+  if (menuStyle === "v2") return <ModernFastCasualMenuTemplate {...ctx} />;
   if (menuStyle === "v3") return <TakeoutMenuTemplate {...ctx} />;
-  if (menuStyle === "v4") return <BoldCasualMenuTemplate {...ctx} />;
-  if (menuStyle === "v5") return <RefinedEditorialMenuTemplate {...ctx} />;
+  if (menuStyle === "v4") return <DarkPremiumMenuTemplate {...ctx} />;
+  if (menuStyle === "v5") return <FamilyDinerMenuTemplate {...ctx} />;
+  if (menuStyle === "v6") return <PremiumBistroMenuTemplate {...ctx} />;
   return <ClassicMenuTemplate {...ctx} />;
 }

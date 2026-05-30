@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
+import MenuThemeExamplesSection from "../components/menu-templates/MenuThemeExamplesSection.jsx";
 import { reverseGeocode } from "../lib/locationUtils.js";
 import { resolveJoinMarketForLanding } from "../lib/joinMarketConfig.js";
 
@@ -12,12 +13,14 @@ export default function JoinPage({ marketKey = "generic" }) {
   const [geoRevision, setGeoRevision] = useState(0);
 
   const market = useMemo(
-    () =>
-      resolveJoinMarketForLanding({
+    () => {
+      void geoRevision;
+      return resolveJoinMarketForLanding({
         marketKey,
         pathname: location.pathname,
         search: location.search,
-      }),
+      });
+    },
     [marketKey, location.pathname, location.search, geoRevision]
   );
 
@@ -141,6 +144,10 @@ export default function JoinPage({ marketKey = "generic" }) {
           </Link>
           <p style={styles.reassurance}>No credit card · No commitment · 100% Free Plan.</p>
         </div>
+
+        {(marketKey === "losangeles" || marketKey === "dothan") ? (
+          <MenuThemeExamplesSection compact dark />
+        ) : null}
 
         <footer style={styles.footer}>
           <Link to="/privacy" style={styles.footerLink}>Privacy</Link>
