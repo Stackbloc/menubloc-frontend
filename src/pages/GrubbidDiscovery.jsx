@@ -1388,6 +1388,31 @@ export default function GrubbidDiscovery() {
             onToggle={handleFilterToggle}
           />
 
+          <Link
+            to="/demo"
+            style={{
+              display: "block",
+              marginBottom: 12,
+              padding: "14px 16px",
+              borderRadius: 18,
+              border: "1px solid rgba(61,217,52,0.22)",
+              background: "linear-gradient(135deg, rgba(61,217,52,0.12), rgba(18,26,20,0.96))",
+              color: "#FFFFFF",
+              textDecoration: "none",
+              boxShadow: "0 14px 34px rgba(0,0,0,0.18)",
+            }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", color: "#3DD934", marginBottom: 6 }}>
+              Menu design demos
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.2, marginBottom: 5 }}>
+              Preview five clickable Menuply menu styles
+            </div>
+            <div style={{ fontSize: 13, lineHeight: 1.45, color: "#9CA3AF", fontWeight: 650 }}>
+              Open demo windows for fast casual, food truck, steakhouse, diner, and bistro menus.
+            </div>
+          </Link>
+
           {/* Inline search error */}
           {inlineError && (
             <div style={{

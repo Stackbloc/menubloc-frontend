@@ -104,6 +104,7 @@ import MenuItemInfoPage from "./pages/MenuItemInfoPage.jsx";
 import PublicMenuPage from "./pages/PublicMenuPage.jsx";
 import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
 import MenuThemesPage from "./pages/MenuThemesPage.jsx";
+import DemoPage from "./pages/DemoPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
 import BuyMeThisPage from "./pages/BuyMeThisPage.jsx";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage.jsx";
@@ -501,6 +502,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurants/:slugOrId/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/menu-template-preview" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/menu-themes" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuThemesPage />} />
+        <Route path="/demo" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DemoPage />} />
         <Route path="/restaurant/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSingularRedirect />} />
 
         <Route path="/restaurant-profile/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantProfile />} />
