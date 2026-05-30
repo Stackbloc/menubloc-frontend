@@ -4,8 +4,23 @@ const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const SESSION_GEO_KEY = "grubbid.discovery.geo";
 
 const STATE_CODE_TO_NAME = {
-  CA: "California",
   AL: "Alabama",
+  AZ: "Arizona",
+  CA: "California",
+  CO: "Colorado",
+  FL: "Florida",
+  GA: "Georgia",
+  IL: "Illinois",
+  MA: "Massachusetts",
+  MI: "Michigan",
+  NC: "North Carolina",
+  NY: "New York",
+  OH: "Ohio",
+  PA: "Pennsylvania",
+  TN: "Tennessee",
+  TX: "Texas",
+  VA: "Virginia",
+  WA: "Washington",
 };
 
 export const JOIN_MARKETS = {
@@ -162,26 +177,97 @@ function matchMarketFromCoords(lat, lng) {
   return null;
 }
 
-/** Infer join market from discovery geo/session (used on generic `/join`). */
+function titleCaseWords(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Display label for join headline, e.g. "Atlanta, Georgia". */
+export function formatHeadlineLocation(city, stateInput) {
+  const cityDisplay = titleCaseWords(city);
+  const stateRaw = String(stateInput || "").trim();
+  if (!cityDisplay && !stateRaw) return "your area";
+
+  const stateUpper = stateRaw.length === 2 ? stateRaw.toUpperCase() : "";
+  const stateDisplay = stateUpper
+    ? STATE_CODE_TO_NAME[stateUpper] || stateUpper
+    : titleCaseWords(stateRaw);
+
+  return [cityDisplay, stateDisplay].filter(Boolean).join(", ") || "your area";
+}
+
+function normalizeStateCode(stateInput) {
+  const raw = String(stateInput || "").trim();
+  if (!raw) return "";
+  if (raw.length === 2) return raw.toUpperCase();
+  const entry = Object.entries(STATE_CODE_TO_NAME).find(
+    ([, name]) => name.toLowerCase() === raw.toLowerCase()
+  );
+  return entry ? entry[0] : "";
+}
+
+/**
+ * Build join landing market from explicit city/state (URL or discovery preference).
+ * Launch markets (LA, Dothan) use branded buckets; others get a dynamic headline.
+ */
+export function buildMarketFromCityState(city, stateInput) {
+  const cityTrim = String(city || "").trim();
+  const stateTrim = String(stateInput || "").trim();
+  const stateCode = normalizeStateCode(stateTrim) || (stateTrim.length === 2 ? stateTrim.toUpperCase() : "");
+
+  const bucket = matchMarketFromCityState(cityTrim, stateCode || stateTrim);
+  if (bucket) return { ...bucket };
+
+  if (!cityTrim && !stateTrim) return { ...JOIN_MARKETS.generic };
+
+  const headlineLocation = formatHeadlineLocation(cityTrim, stateCode || stateTrim);
+  const params = new URLSearchParams();
+  if (cityTrim) params.set("city", cityTrim);
+  if (stateCode) params.set("state", stateCode);
+  else if (stateTrim) params.set("state", stateTrim);
+  const qs = params.toString();
+
+  return {
+    market: null,
+    city: cityTrim || null,
+    state: stateCode ? STATE_CODE_TO_NAME[stateCode] || stateTrim : stateTrim || null,
+    state_code: stateCode || null,
+    signup_source: "join_context",
+    headlineLocation,
+    signupHref: qs
+      ? `/restaurant/signup/free-profile?${qs}`
+      : JOIN_MARKETS.generic.signupHref,
+  };
+}
+
+function parseCityStateFromSearch(search) {
+  const raw = String(search || "").trim();
+  const params = new URLSearchParams(raw.startsWith("?") ? raw : raw ? `?${raw}` : "");
+  return {
+    city: String(params.get("city") || "").trim(),
+    state: String(params.get("state") || "").trim(),
+  };
+}
+
+/** Infer join market from discovery session (no live GPS on /join). */
 export function detectJoinMarketFromGeo() {
   const stored = readStoredDiscoveryLocation();
-  const fromLabel = matchMarketFromCityState(stored.city, stored.state);
-  if (fromLabel) return fromLabel;
+  if (stored.city && stored.state) {
+    return buildMarketFromCityState(stored.city, stored.state);
+  }
 
   const labelLower = stored.label.toLowerCase();
   if (labelLower.includes("dothan")) return JOIN_MARKETS.dothan;
   if (labelLower.includes("los angeles") || labelLower.includes("losangeles")) {
     return JOIN_MARKETS.losangeles;
   }
-  if (/\bca\b/.test(labelLower) || labelLower.includes("california")) {
-    return JOIN_MARKETS.losangeles;
-  }
-  if (/\bal\b/.test(labelLower) || labelLower.includes("alabama")) {
-    return JOIN_MARKETS.dothan;
-  }
 
   const { lat, lng } = readStoredDiscoveryCoords();
-  return matchMarketFromCoords(lat, lng);
+  const fromCoords = matchMarketFromCoords(lat, lng);
+  if (fromCoords) return fromCoords;
+
+  return null;
 }
 
 export function resolveJoinMarketFromPath(pathname) {
@@ -199,9 +285,9 @@ export function resolveJoinMarket(marketKey) {
 }
 
 /**
- * Resolve market for join landing: explicit route/prop first, then discovery geo, then generic.
+ * Resolve market for join landing: route/prop → URL city/state → session preference → coords → generic.
  */
-export function resolveJoinMarketForLanding({ marketKey, pathname }) {
+export function resolveJoinMarketForLanding({ marketKey, pathname, search = "" }) {
   const explicitKey = String(marketKey || "").trim().toLowerCase();
   if (explicitKey && explicitKey !== "generic") {
     return resolveJoinMarket(explicitKey);
@@ -210,6 +296,11 @@ export function resolveJoinMarketForLanding({ marketKey, pathname }) {
   const fromPath = resolveJoinMarketFromPath(pathname);
   if (fromPath) return fromPath;
 
+  const { city, state } = parseCityStateFromSearch(search);
+  if (city && state) {
+    return buildMarketFromCityState(city, state);
+  }
+
   const fromGeo = detectJoinMarketFromGeo();
   if (fromGeo) return fromGeo;
 
@@ -217,11 +308,17 @@ export function resolveJoinMarketForLanding({ marketKey, pathname }) {
 }
 
 /**
- * Resolve market for free-profile signup: query param first, then discovery geo.
+ * Resolve market for free-profile signup: market param → city/state → session → generic.
  */
 export function resolveJoinMarketForSignup(searchParams) {
   const fromQuery = searchParams?.get?.("market");
   if (fromQuery) return resolveJoinMarket(fromQuery);
+
+  const city = String(searchParams?.get?.("city") || "").trim();
+  const state = String(searchParams?.get?.("state") || "").trim();
+  if (city && state) {
+    return buildMarketFromCityState(city, state);
+  }
 
   const fromGeo = detectJoinMarketFromGeo();
   if (fromGeo) return fromGeo;

@@ -12,13 +12,22 @@ export default function JoinPage({ marketKey = "generic" }) {
   const [geoRevision, setGeoRevision] = useState(0);
 
   const market = useMemo(
-    () => resolveJoinMarketForLanding({ marketKey, pathname: location.pathname }),
-    [marketKey, location.pathname, geoRevision]
+    () =>
+      resolveJoinMarketForLanding({
+        marketKey,
+        pathname: location.pathname,
+        search: location.search,
+      }),
+    [marketKey, location.pathname, location.search, geoRevision]
   );
 
   useEffect(() => {
     if (marketKey && marketKey !== "generic") return;
     if (location.pathname !== "/join") return;
+
+    const params = new URLSearchParams(location.search);
+    const city = String(params.get("city") || "").trim();
+    const state = String(params.get("state") || "").trim();
 
     const refresh = () => setGeoRevision((n) => n + 1);
     refresh();
@@ -29,6 +38,14 @@ export default function JoinPage({ marketKey = "generic" }) {
       }
     };
     window.addEventListener("storage", onStorage);
+
+    // Discovery CTA passes ?city=&state= — honor that context; do not overwrite with GPS.
+    if (city && state) {
+      try {
+        window.sessionStorage.setItem(SESSION_LOCATION_KEY, `${city}, ${state}`);
+      } catch { /* ignore */ }
+      return () => window.removeEventListener("storage", onStorage);
+    }
 
     if (!navigator?.geolocation) {
       return () => window.removeEventListener("storage", onStorage);
@@ -65,7 +82,7 @@ export default function JoinPage({ marketKey = "generic" }) {
       cancelled = true;
       window.removeEventListener("storage", onStorage);
     };
-  }, [marketKey, location.pathname]);
+  }, [marketKey, location.pathname, location.search]);
 
   useEffect(() => {
     const preconnectId = "menuply-dm-sans-preconnect";

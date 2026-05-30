@@ -80,7 +80,7 @@ export default function OwnerMenuUploads() {
 
       <SectionTitle
         title="Upload Activity"
-        subtitle="Menu ingestion sessions submitted by restaurant owners."
+        subtitle="All restaurant menu imports (PDF, camera, multi-page) — filter by pending, needs review, or published."
       />
 
       {/* Filter bar */}
