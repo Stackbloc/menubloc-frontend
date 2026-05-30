@@ -3,7 +3,7 @@ import { useOperator } from "../../context/OperatorContext.jsx";
 import OperatorLayout from "./OperatorLayout.jsx";
 import QrStickerPanel from "../../components/qr/QrStickerPanel.jsx";
 import {
-  createOperatorDoorQrSticker,
+  activateOperatorQrSticker,
   deactivateOperatorQrSticker,
   downloadOperatorQrStickerUrl,
   getOperatorQrStickers,
@@ -40,7 +40,7 @@ export default function OperatorQrStickers() {
             : "View-only: ask an owner or manager to deactivate or replace sticker QRs."
         }
         loadQrCodes={() => getOperatorQrStickers(restaurantId)}
-        createDoorQr={() => createOperatorDoorQrSticker(restaurantId)}
+        activateSticker={(body) => activateOperatorQrSticker(restaurantId, body)}
         previewUrl={(code) => previewOperatorQrStickerUrl(restaurantId, code)}
         downloadUrl={(code) => downloadOperatorQrStickerUrl(restaurantId, code)}
         deactivateQr={(code) => deactivateOperatorQrSticker(restaurantId, code)}

@@ -1,5 +1,5 @@
 /**
- * Sticker QR admin panel — /r/DOOR-... system only (not legacy /qr/:token).
+ * Sticker QR — unclaimed inventory activated with QR ID + PIN (/r/DOOR-...).
  */
 
 import React, { useCallback, useEffect, useState } from "react";
@@ -30,17 +30,16 @@ function formatTs(value) {
 
 export default function QrStickerPanel({
   title = "QR Stickers",
-  subtitle = "Physical stickers use stable Menuply URLs (/r/DOOR-...). Legacy /qr/:token codes are separate.",
+  subtitle = "Activate your physical sticker when it arrives. Printed stickers ship unassigned until you enter the QR ID and PIN.",
   restaurantId,
   restaurantName,
   loadQrCodes,
-  createDoorQr,
+  activateSticker,
   previewUrl,
   downloadUrl,
   deactivateQr,
   replaceQr,
   canMutate = true,
-  showRestaurantColumn = false,
 }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,9 +48,12 @@ export default function QrStickerPanel({
   const [previewCode, setPreviewCode] = useState(null);
   const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [qrId, setQrId] = useState("");
+  const [activationPin, setActivationPin] = useState("");
+  const [activating, setActivating] = useState(false);
 
   const refresh = useCallback(async () => {
-    if (!restaurantId && !loadQrCodes) return;
+    if (!restaurantId || !loadQrCodes) return;
     setLoading(true);
     setError("");
     try {
@@ -99,19 +101,26 @@ export default function QrStickerPanel({
     };
   }, [previewCode, previewUrl]);
 
-  async function handleCreateDoor() {
+  const hasActiveDoor = rows.some((r) => r.qr_type === "DOOR" && r.status === "active");
+
+  async function handleActivate(e) {
+    e.preventDefault();
     setMessage("");
     setError("");
+    setActivating(true);
     try {
-      const data = await createDoorQr();
-      setMessage(
-        data?.sticker?.created
-          ? `Created door QR ${data.sticker.qr_code}`
-          : `Door QR already active: ${data?.sticker?.qr_code || "—"}`
-      );
+      const data = await activateSticker({
+        qr_code: qrId.trim(),
+        activation_pin: activationPin.trim(),
+      });
+      setMessage(`Activated ${data?.sticker?.qr_code || qrId}`);
+      setQrId("");
+      setActivationPin("");
       await refresh();
-    } catch (e) {
-      setError(e?.message || "Could not create door QR");
+    } catch (err) {
+      setError(err?.message || "Activation failed");
+    } finally {
+      setActivating(false);
     }
   }
 
@@ -124,15 +133,11 @@ export default function QrStickerPanel({
     }
   }
 
-  const hasActiveDoor = rows.some((r) => r.qr_type === "DOOR" && r.status === "active");
-
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ margin: 0, fontSize: 20 }}>{title}</h2>
-        {restaurantName ? (
-          <div style={{ marginTop: 6, fontWeight: 700 }}>{restaurantName}</div>
-        ) : null}
+        {restaurantName ? <div style={{ marginTop: 6, fontWeight: 700 }}>{restaurantName}</div> : null}
         <p style={{ margin: "8px 0 0", color: "#667085", fontSize: 13, lineHeight: 1.5 }}>{subtitle}</p>
       </div>
 
@@ -147,48 +152,84 @@ export default function QrStickerPanel({
         </div>
       ) : null}
 
-      <div style={{ marginBottom: 16 }}>
-        {!hasActiveDoor ? (
-          <button type="button" style={btnPrimary} onClick={handleCreateDoor}>
-            Create Door QR
-          </button>
-        ) : (
-          <span style={{ fontSize: 13, color: "#667085" }}>Active door QR present</span>
-        )}
-      </div>
+      {!hasActiveDoor ? (
+        <PageCard style={{ marginBottom: 20 }}>
+          <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>Activate Sticker</h3>
+          <p style={{ margin: "0 0 14px", fontSize: 13, color: "#667085" }}>
+            Enter the QR ID and activation PIN printed on your Menuply sticker (e.g. DOOR-7K42M9 / PIN: 841226).
+          </p>
+          <form onSubmit={handleActivate} style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end" }}>
+            <label style={fieldStyle}>
+              QR ID
+              <input
+                value={qrId}
+                onChange={(e) => setQrId(e.target.value)}
+                placeholder="DOOR-7K42M9"
+                style={inputStyle}
+                required
+              />
+            </label>
+            <label style={fieldStyle}>
+              Activation PIN
+              <input
+                value={activationPin}
+                onChange={(e) => setActivationPin(e.target.value)}
+                placeholder="841226"
+                style={inputStyle}
+                inputMode="numeric"
+                required
+              />
+            </label>
+            <button type="submit" style={btnPrimary} disabled={activating}>
+              {activating ? "Activating…" : "Activate Sticker"}
+            </button>
+          </form>
+        </PageCard>
+      ) : (
+        <p style={{ fontSize: 13, color: "#16794f", marginBottom: 16, fontWeight: 600 }}>
+          Active door sticker linked. Additional stickers can be activated if you receive more inventory.
+        </p>
+      )}
+
+      {hasActiveDoor ? (
+        <details style={{ marginBottom: 16 }}>
+          <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Activate another sticker</summary>
+          <form onSubmit={handleActivate} style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 10 }}>
+            <input value={qrId} onChange={(e) => setQrId(e.target.value)} placeholder="QR ID" style={inputStyle} />
+            <input
+              value={activationPin}
+              onChange={(e) => setActivationPin(e.target.value)}
+              placeholder="PIN"
+              style={inputStyle}
+            />
+            <button type="submit" style={btnPrimary} disabled={activating}>
+              Activate
+            </button>
+          </form>
+        </details>
+      ) : null}
 
       {loading ? (
-        <p style={{ color: "#667085" }}>Loading sticker QR records…</p>
+        <p style={{ color: "#667085" }}>Loading active stickers…</p>
       ) : rows.length === 0 ? (
-        <p style={{ color: "#667085" }}>No sticker QR codes yet. Create a Door QR to generate a printable /r/ URL.</p>
+        <p style={{ color: "#667085" }}>No active sticker QRs for this restaurant yet.</p>
       ) : (
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr style={{ textAlign: "left", borderBottom: "1px solid #ead9ce" }}>
-                {showRestaurantColumn ? <th style={th}>Restaurant</th> : null}
-                <th style={th}>Type</th>
-                <th style={th}>QR ID</th>
-                <th style={th}>Scan URL</th>
-                <th style={th}>Destination</th>
-                <th style={th}>Status</th>
-                <th style={th}>Scans</th>
-                <th style={th}>Last scan</th>
-                <th style={th}>Printer order</th>
-                <th style={th}>Tracking</th>
-                <th style={th}>Created</th>
-                <th style={th}>Actions</th>
+                {["Type", "QR ID", "Scan URL", "Destination", "Status", "Scans", "Last scan", "Activated", "Actions"].map(
+                  (h) => (
+                    <th key={h} style={th}>
+                      {h}
+                    </th>
+                  )
+                )}
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id || row.qr_code} style={{ borderBottom: "1px solid #f2f4f8" }}>
-                  {showRestaurantColumn ? (
-                    <td style={td}>
-                      {row.restaurant_name || "—"}
-                      <div style={{ color: "#98a2b3", fontSize: 11 }}>#{row.restaurant_id}</div>
-                    </td>
-                  ) : null}
                   <td style={td}>{row.qr_type}</td>
                   <td style={td}>
                     <code>{row.qr_code}</code>
@@ -199,53 +240,44 @@ export default function QrStickerPanel({
                     </a>
                   </td>
                   <td style={td}>
-                    <div>{row.destination_path || "—"}</div>
-                    <div style={{ fontSize: 11, color: "#98a2b3" }}>{row.resolved_destination_url}</div>
+                    <div style={{ fontSize: 11, color: "#98a2b3" }}>{row.resolved_destination_url || "—"}</div>
                   </td>
                   <td style={td}>{row.status}</td>
                   <td style={td}>{row.scan_count ?? 0}</td>
                   <td style={td}>{formatTs(row.last_scanned_at)}</td>
-                  <td style={td}>{row.printer_order_id || "—"}</td>
-                  <td style={td}>{row.tracking_number || "—"}</td>
-                  <td style={td}>{formatTs(row.created_at)}</td>
+                  <td style={td}>{formatTs(row.activated_at)}</td>
                   <td style={td}>
                     <button type="button" style={btn} onClick={() => copyUrl(row.public_url)}>
                       Copy Scan URL
                     </button>
-                    <button
-                      type="button"
-                      style={btn}
-                      onClick={() => setPreviewCode(previewCode === row.qr_code ? null : row.qr_code)}
-                    >
-                      Preview Sticker
-                    </button>
-                    <button
-                      type="button"
-                      style={btn}
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(downloadUrl(row.qr_code), { credentials: "include" });
-                          if (!res.ok) throw new Error("Download failed");
-                          const blob = await res.blob();
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = url;
-                          a.download = `${row.qr_code}-sticker.svg`;
-                          a.click();
-                          URL.revokeObjectURL(url);
-                        } catch {
-                          setError("Could not download sticker asset");
-                        }
-                      }}
-                    >
-                      Download Sticker Asset
-                    </button>
-                    {canMutate ? (
+                    {row.status === "active" ? (
+                      <>
+                        <button type="button" style={btn} onClick={() => setPreviewCode(row.qr_code)}>
+                          Preview
+                        </button>
+                        <button
+                          type="button"
+                          style={btn}
+                          onClick={async () => {
+                            const res = await fetch(downloadUrl(row.qr_code), { credentials: "include" });
+                            const blob = await res.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `${row.qr_code}-sticker.svg`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                        >
+                          Download
+                        </button>
+                      </>
+                    ) : null}
+                    {canMutate && row.status === "active" ? (
                       <>
                         <button
                           type="button"
                           style={btnDanger}
-                          disabled={row.status !== "active"}
                           onClick={async () => {
                             if (!window.confirm(`Deactivate ${row.qr_code}?`)) return;
                             await deactivateQr(row.qr_code);
@@ -258,11 +290,13 @@ export default function QrStickerPanel({
                         <button
                           type="button"
                           style={btn}
-                          disabled={row.status !== "active"}
                           onClick={async () => {
-                            if (!window.confirm(`Replace ${row.qr_code}? Old sticker scans will show replaced.`)) return;
+                            if (!window.confirm(`Replace ${row.qr_code}? A new unclaimed sticker will be issued for printing.`))
+                              return;
                             const data = await replaceQr(row.qr_code);
-                            setMessage(`Replaced with ${data?.sticker?.qr_code || "new code"}`);
+                            setMessage(
+                              `Replaced. New inventory: ${data?.replacement_inventory?.qr_code || "see admin manifest"}`
+                            );
                             refresh();
                           }}
                         >
@@ -278,25 +312,44 @@ export default function QrStickerPanel({
         </div>
       )}
 
-      {previewCode && restaurantId ? (
+      {previewCode ? (
         <div style={{ marginTop: 24, padding: 16, background: "#fff", borderRadius: 12, border: "1px solid #ead9ce" }}>
           <div style={{ fontWeight: 700, marginBottom: 12 }}>Sticker preview — {previewCode}</div>
           {previewLoading ? (
             <p style={{ color: "#667085" }}>Loading preview…</p>
           ) : previewBlobUrl ? (
-            <img
-              src={previewBlobUrl}
-              alt={`Sticker preview ${previewCode}`}
-              style={{ maxWidth: "100%", height: "auto", border: "1px solid #e4e9f0" }}
-            />
-          ) : (
-            <p style={{ color: "#667085" }}>Preview unavailable.</p>
-          )}
+            <img src={previewBlobUrl} alt="" style={{ maxWidth: "100%", border: "1px solid #e4e9f0" }} />
+          ) : null}
         </div>
       ) : null}
     </div>
   );
 }
 
+function PageCard({ children, style }) {
+  return (
+    <div
+      style={{
+        background: "#fffdf8",
+        border: "1px solid #ead9ce",
+        borderRadius: 14,
+        padding: 18,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+const fieldStyle = { display: "flex", flexDirection: "column", gap: 4, fontSize: 11, fontWeight: 700, color: "#667085" };
+const inputStyle = {
+  height: 34,
+  padding: "0 10px",
+  borderRadius: 8,
+  border: "1px solid #d7c5b8",
+  minWidth: 160,
+  fontSize: 14,
+};
 const th = { padding: "8px 10px", fontSize: 11, color: "#667085", fontWeight: 700, textTransform: "uppercase" };
 const td = { padding: "12px 10px", verticalAlign: "top" };

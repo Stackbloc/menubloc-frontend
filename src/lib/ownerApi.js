@@ -90,8 +90,12 @@ export const getOwnerQrStickers = (params = {}) => {
 };
 export const getOwnerQrStickersForRestaurant = (restaurantId) =>
   get(`/api/owner/qr-stickers/${restaurantId}`);
-export const createOwnerDoorQrSticker = (restaurantId) =>
-  post(`/api/owner/qr-stickers/${restaurantId}/door`, {});
+export const activateOwnerQrSticker = (restaurantId, body) =>
+  post(`/api/owner/qr-stickers/${restaurantId}/activate`, body);
+export const generateOwnerQrStickerBatch = (body) =>
+  post(`/api/owner/qr-stickers/generate-batch`, body);
+export const previewOwnerInventoryQrStickerUrl = (qrCode) =>
+  `${API}/api/owner/qr-stickers/inventory/${encodeURIComponent(qrCode)}/preview`;
 export const previewOwnerQrStickerUrl = (restaurantId, qrCode) =>
   `${API}/api/owner/qr-stickers/${restaurantId}/${encodeURIComponent(qrCode)}/preview`;
 export const downloadOwnerQrStickerUrl = (restaurantId, qrCode) =>
