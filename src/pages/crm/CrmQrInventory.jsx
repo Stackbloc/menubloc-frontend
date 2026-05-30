@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import CrmLayout, { CRM_COLORS, CrmCard } from "./CrmShared.jsx";
+import CrmLayout from "./CrmLayout.jsx";
+import { CRM_COLORS, CrmCard } from "./CrmShared.jsx";
 import {
   downloadQrBatchCsvUrl,
   downloadQrBatchReportUrl,
