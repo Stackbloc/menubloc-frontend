@@ -3,7 +3,7 @@ export const LEGAL_EFFECTIVE_DATE = "2026-05-06";
 export const LEGAL_VERSIONS = {
   consumerTerms: "consumer_terms_v2026_05_06",
   privacyPolicy: "privacy_policy_v2026_04_09",
-  merchantTerms: "merchant_terms_v2026_04_09",
+  merchantTerms: "merchant_terms_v2026_05_30",
   subscriptionTerms: "subscription_terms_v2026_04_09",
   orderTerms: "order_terms_v2026_04_09",
 };
@@ -272,6 +272,14 @@ export const MERCHANT_TERMS_DOCUMENT = {
       heading: "Content and license",
       paragraphs: [
         "You retain ownership of your restaurant name, logos, menu information, images, and other materials you submit. You grant Stackbloc Corporation a non-exclusive, worldwide, royalty-free license to host, copy, adapt, format, display, distribute, and use that content as needed to operate, market, improve, and support Menuply and your merchant presence on the platform.",
+      ],
+    },
+    {
+      heading: "Merchant Content and Intellectual Property Compliance",
+      paragraphs: [
+        "You represent and warrant that you own or have all necessary rights, licenses, and permissions to submit, display, and authorize Menuply's use of all content you provide through the platform, including your restaurant name, logos, images, menu items, descriptions, pricing, and any other materials (\"Merchant Content\"). You further represent and warrant that Merchant Content does not and will not infringe, misappropriate, or violate any third-party intellectual property rights, including copyrights, trademarks, trade dress, rights of publicity, trade secrets, or other proprietary rights, and does not violate any applicable law or regulation.",
+        "You will defend, indemnify, and hold harmless Stackbloc Corporation and its affiliates, officers, directors, employees, and agents from and against any and all claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys' fees) arising out of or relating to: (a) any claim that Merchant Content infringes, misappropriates, or violates any third-party intellectual property right or other proprietary right; (b) any breach of the representations and warranties in this section; or (c) any unauthorized use of third-party intellectual property in connection with your restaurant's listing, menu, or promotional materials on Menuply.",
+        "Without limiting the license granted in the Content and License section of these Merchant Terms, you grant Stackbloc Corporation a non-exclusive, worldwide, royalty-free, sublicensable license to host, display, format, adapt, reproduce, and distribute Merchant Content for the purpose of operating, maintaining, and promoting the Menuply platform and your merchant presence on it, including use in search results, browse listings, social media promotion, marketing materials, and other platform-related contexts.",
       ],
     },
     {
