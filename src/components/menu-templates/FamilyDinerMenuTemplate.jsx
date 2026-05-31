@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
+import { shouldShowItemImages } from "./menuThemeSettings.js";
 
 function DinerLogo({ logoUrl, restaurantName, accent }) {
   if (logoUrl) {
@@ -53,10 +54,12 @@ export default function FamilyDinerMenuTemplate(ctx) {
     getConsumerDisplayPrice,
     brand,
     fontStack,
+    menuThemeSettings = {},
   } = ctx;
 
   const accent = brand?.accent ?? "#2563eb";
   const soft = brand?.accentSoftBg ?? "rgba(37,99,235,0.12)";
+  const showItemImages = shouldShowItemImages(menuThemeSettings);
 
   return (
     <div
@@ -179,6 +182,8 @@ export default function FamilyDinerMenuTemplate(ctx) {
                       fmtMoney={fmtMoney}
                       getConsumerDisplayPrice={getConsumerDisplayPrice}
                       brand={brand}
+                      menuThemeSettings={menuThemeSettings}
+                      showImage={showItemImages}
                     />
                   ))}
                 </div>

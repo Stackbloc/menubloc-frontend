@@ -1,32 +1,33 @@
 import { Link } from "react-router-dom";
-import { MENU_THEME_SAMPLES } from "../data/menuTemplatePreviewSample.js";
+import { CURATED_MENU_DESIGN_LAB_THEMES } from "../data/menuDesignLabThemes.js";
 
-const THEME_SWATCHES = {
-  v1: {
-    bg: "#0B0F0C",
-    panel: "#1F4E3D",
-    accent: "#3DD934",
-    lines: ["#1A2419", "#ffffff", "#e7f8e5"],
-  },
-  v4: {
-    bg: "#070707",
-    panel: "#17120d",
-    accent: "#b68b45",
-    lines: ["#2a2118", "#3a2b1b", "#b68b45"],
-  },
-  v6: {
-    bg: "#171717",
-    panel: "#fffdf8",
-    accent: "#7a2b23",
-    lines: ["#f5eadb", "#ffffff", "#ece0cf"],
-  },
-};
+function collectPreviewImages(theme) {
+  const payload = theme?.previewPayload || {};
+  const images = [];
+  const push = (value) => {
+    const text = String(value || "").trim();
+    if (text && !images.includes(text)) images.push(text);
+  };
+
+  push(payload.hero_image_url);
+  push(payload.cover_image_url);
+
+  (Array.isArray(payload.sections) ? payload.sections : []).forEach((section) => {
+    push(section?.image_url);
+    (Array.isArray(section?.items) ? section.items : []).forEach((item) => push(item?.image_url));
+  });
+
+  return images.slice(0, 4);
+}
 
 function MenuWindow({ theme }) {
-  const swatch = THEME_SWATCHES[theme.style] || THEME_SWATCHES.v1;
+  const swatch = theme.swatch;
+  const previewImages = collectPreviewImages(theme);
+  const heroImage = previewImages[0] || null;
+  const thumbImages = previewImages.slice(1, 4);
   return (
     <Link
-      to={`/menu-themes?theme=${theme.style}`}
+      to={`/menu-design-lab?theme=${theme.style}`}
       style={styles.windowLink}
       aria-label={`Preview ${theme.name}`}
     >
@@ -45,6 +46,18 @@ function MenuWindow({ theme }) {
               <span style={{ ...styles.heroLine, background: swatch.lines[1], width: "46%" }} />
             </div>
           </div>
+          {heroImage ? (
+            <div style={styles.photoPanel}>
+              <div style={{ ...styles.heroPhoto, backgroundImage: `url(${heroImage})` }} />
+              {thumbImages.length ? (
+                <div style={styles.thumbRow}>
+                  {thumbImages.map((src, idx) => (
+                    <div key={`${src}-${idx}`} style={{ ...styles.thumb, backgroundImage: `url(${src})` }} />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           <div style={styles.menuPreviewGrid}>
             {[0, 1, 2, 3].map((idx) => (
               <div key={idx} style={{ ...styles.itemRow, background: swatch.lines[idx % swatch.lines.length] }}>
@@ -67,6 +80,9 @@ function MenuWindow({ theme }) {
 }
 
 export default function DemoPage() {
+  const featuredThemes = CURATED_MENU_DESIGN_LAB_THEMES.filter((theme) => ["v1", "v4", "v6"].includes(theme.style));
+  const additionalThemes = CURATED_MENU_DESIGN_LAB_THEMES.filter((theme) => ["v7", "v8", "v9"].includes(theme.style));
+
   return (
     <main style={styles.page}>
       <header style={styles.header}>
@@ -77,15 +93,67 @@ export default function DemoPage() {
         <div style={styles.eyebrow}>Menuply demo</div>
         <h1 style={styles.title}>Choose a menu design to preview</h1>
         <p style={styles.copy}>
-          These sample windows open live Menuply menu theme previews, including the default KBC-style menu sample. They use demo data only and are not real restaurants accepting orders.
+          These sample windows open live Menuply menu theme previews from the design lab. They use demo data only and are not real restaurants accepting orders.
         </p>
       </section>
 
-      <section style={styles.grid} aria-label="Menu design demos">
-        {MENU_THEME_SAMPLES.map((theme) => (
-          <MenuWindow key={theme.style} theme={theme} />
-        ))}
+      <section style={styles.section}>
+        <div style={styles.sectionHeading}>Featured menu designs</div>
+        <div style={styles.grid} aria-label="Featured menu design demos">
+          {featuredThemes.map((theme) => (
+            <MenuWindow
+              key={theme.style}
+              theme={{
+                ...theme,
+                swatch: {
+                  bg: theme.preset.colorDefaults.background,
+                  panel: theme.preset.colorDefaults.primary,
+                  accent: theme.preset.colorDefaults.accent,
+                  lines: [
+                    theme.preset.colorDefaults.background.startsWith("#f")
+                      ? "rgba(15,23,42,0.08)"
+                      : "rgba(255,255,255,0.08)",
+                    theme.preset.colorDefaults.background.startsWith("#f")
+                      ? "rgba(15,23,42,0.72)"
+                      : "rgba(255,255,255,0.72)",
+                    theme.preset.colorDefaults.background.startsWith("#f")
+                      ? "rgba(15,23,42,0.48)"
+                      : "rgba(255,255,255,0.48)",
+                  ],
+                },
+              }}
+            />
+          ))}
+        </div>
       </section>
+
+      <section style={styles.section}>
+        <div style={styles.sectionHeading}>Additional design directions</div>
+        <div style={styles.grid} aria-label="Additional menu design demos">
+          {additionalThemes.map((theme) => (
+            <MenuWindow key={theme.style} theme={{
+              ...theme,
+              swatch: {
+                bg: theme.preset.colorDefaults.background,
+                panel: theme.preset.colorDefaults.primary,
+                accent: theme.preset.colorDefaults.accent,
+                lines: [
+                  theme.preset.colorDefaults.background.startsWith("#f")
+                    ? "rgba(15,23,42,0.08)"
+                    : "rgba(255,255,255,0.08)",
+                  theme.preset.colorDefaults.background.startsWith("#f")
+                    ? "rgba(15,23,42,0.72)"
+                    : "rgba(255,255,255,0.72)",
+                  theme.preset.colorDefaults.background.startsWith("#f")
+                    ? "rgba(15,23,42,0.48)"
+                    : "rgba(255,255,255,0.48)",
+                ],
+              },
+            }} />
+          ))}
+        </div>
+      </section>
+
     </main>
   );
 }
@@ -141,6 +209,20 @@ const styles = {
     color: "rgba(255,255,255,0.74)",
     fontSize: 18,
     lineHeight: 1.55,
+  },
+  section: {
+    maxWidth: 1180,
+    margin: "0 auto",
+    padding: "0 22px 30px",
+    boxSizing: "border-box",
+  },
+  sectionHeading: {
+    marginBottom: 16,
+    color: "#3DD934",
+    fontSize: 12,
+    fontWeight: 850,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
   },
   grid: {
     maxWidth: 1180,
@@ -199,6 +281,31 @@ const styles = {
   },
   windowBody: {
     padding: 14,
+  },
+  photoPanel: {
+    padding: "0 14px 14px",
+    display: "grid",
+    gap: 10,
+  },
+  heroPhoto: {
+    height: 118,
+    borderRadius: 12,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    border: "1px solid rgba(255,255,255,0.1)",
+    boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
+  },
+  thumbRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: 8,
+  },
+  thumb: {
+    aspectRatio: "1 / 0.72",
+    borderRadius: 10,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    border: "1px solid rgba(255,255,255,0.1)",
   },
   heroStrip: {
     minHeight: 76,

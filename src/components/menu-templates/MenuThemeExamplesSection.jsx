@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { MENU_THEME_SAMPLES } from "../../data/menuTemplatePreviewSample.js";
+import { CURATED_MENU_DESIGN_LAB_THEMES } from "../../data/menuDesignLabThemes.js";
 
 export default function MenuThemeExamplesSection({ compact = false, dark = false }) {
-  const visibleThemes = MENU_THEME_SAMPLES;
+  const visibleThemes = CURATED_MENU_DESIGN_LAB_THEMES;
   const cardBg = dark ? "rgba(255,255,255,0.055)" : "#ffffff";
   const border = dark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #e4e9f0";
   const text = dark ? "#ffffff" : "#0f1720";
@@ -14,14 +14,14 @@ export default function MenuThemeExamplesSection({ compact = false, dark = false
       <div style={styles.headingWrap}>
         <h2 style={{ ...styles.heading, color: text }}>See how your menu could look</h2>
         <p style={{ ...styles.subheading, color: muted }}>
-          Menuply menus can be styled for different restaurant types — from standard menus to premium dining.
+          Choose a professionally designed Menuply layout, then customize it for your restaurant.
         </p>
       </div>
       <div style={compact ? styles.compactGrid : styles.grid}>
         {visibleThemes.map((theme) => (
           <Link
             key={theme.style}
-            to={`/menu-themes?theme=${theme.style}`}
+            to={`/menu-design-lab?theme=${theme.style}`}
             style={{
               ...styles.card,
               background: cardBg,
@@ -29,7 +29,7 @@ export default function MenuThemeExamplesSection({ compact = false, dark = false
               color: text,
               padding: compact ? "14px 14px" : "18px 18px",
             }}
-          >
+            >
             <div style={styles.sampleLabel}>Sample menu design</div>
             <div style={styles.cardTitle}>{theme.name}</div>
             <div style={{ ...styles.bestFit, color: subtle }}>{theme.bestFit}</div>

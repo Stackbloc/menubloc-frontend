@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
+import { shouldShowItemImages } from "./menuThemeSettings.js";
 
 export default function ModernFastCasualMenuTemplate(ctx) {
   const {
@@ -37,10 +38,12 @@ export default function ModernFastCasualMenuTemplate(ctx) {
     getConsumerDisplayPrice,
     brand,
     fontStack,
+    menuThemeSettings = {},
   } = ctx;
 
   const accent = brand?.accent ?? "#2f7d5b";
   const soft = brand?.accentSoftBg ?? "rgba(47,125,91,0.12)";
+  const showItemImages = shouldShowItemImages(menuThemeSettings);
 
   return (
     <div
@@ -153,6 +156,8 @@ export default function ModernFastCasualMenuTemplate(ctx) {
                       fmtMoney={fmtMoney}
                       getConsumerDisplayPrice={getConsumerDisplayPrice}
                       brand={brand}
+                      menuThemeSettings={menuThemeSettings}
+                      showImage={showItemImages}
                     />
                   ))}
                 </div>

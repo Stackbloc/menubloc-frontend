@@ -24,7 +24,9 @@ import BasketSummaryBar from "../components/basket/BasketSummaryBar.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ModifierSheet from "../components/basket/ModifierSheet.jsx";
 import { itemHasRequiredModifiers } from "../components/basket/modifierModel.js";
+import { itemHasInsightsData } from "../components/basket/ItemInsightsSheet.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
+import MenuItemInsightsPanel from "../components/MenuItemInsightsPanel.jsx";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import {
   applyDocumentSocialMetadata,
@@ -48,6 +50,7 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu-templates/restaurantMenuBrand.js";
+import { normalizeMenuThemeSettings } from "../components/menu-templates/menuThemeSettings.js";
 import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
 import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { useConsumer } from "../context/ConsumerContext.jsx";
@@ -593,6 +596,22 @@ function ItemDetailSheet({
   const softBorder = brand?.accentBorder ?? "1px solid rgba(34,197,94,0.3)";
   const primaryGradient = `linear-gradient(180deg, ${accent} 0%, ${accentStrong} 100%)`;
   const { item, name, desc, price, hasDeal, indulgencePresentation } = sheetData;
+  const nutritionChip = item?.chips?.nutrition_chip || null;
+  const hasItemInsightsContent = !!(
+    itemHasInsightsData(item) ||
+    (
+      nutritionChip &&
+      (
+        nutritionChip.calories_kcal != null ||
+        nutritionChip.protein_g != null ||
+        nutritionChip.fat_g != null ||
+        nutritionChip.sodium_mg != null ||
+        nutritionChip.sugar_g != null ||
+        (Array.isArray(nutritionChip.allergens) && nutritionChip.allergens.length > 0) ||
+        String(nutritionChip.allergen_alert || "").trim()
+      )
+    )
+  );
   const hasRequiredOptions = itemHasRequiredModifiers(item);
   const canAddToOrder = isItemOrderable(item);
   const cartState = getCartItemState(activeCartItems, item?.id);
@@ -653,6 +672,21 @@ function ItemDetailSheet({
           {/* Description */}
           {desc ? (
             <div style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.65, marginBottom: 16 }}>{desc}</div>
+          ) : null}
+
+          {hasItemInsightsContent ? (
+            <div style={{ marginBottom: 16 }}>
+              <MenuItemInsightsPanel
+                item={item}
+                colors={{
+                  panel2: "#141418",
+                  border: "rgba(255,255,255,0.08)",
+                  text: "rgba(255,255,255,0.92)",
+                  subtext: "rgba(255,255,255,0.65)",
+                  chipBg: "rgba(255,255,255,0.06)",
+                }}
+              />
+            </div>
           ) : null}
 
           {!canAddToOrder ? (
@@ -1173,6 +1207,7 @@ export default function PublicMenuPage() {
   }, [language, pageState.data, pageState.status, routeState.restaurantId, routeState.status]);
 
   const data = pageState.status === "ok" ? pageState.data : null;
+  const menuThemeSettings = normalizeMenuThemeSettings(data?.display_settings || data || {});
   const restaurantName = data
     ? getLocalizedField(data, "restaurant_name", language) ||
       getLocalizedField(data, "name", language) ||
@@ -1258,8 +1293,21 @@ export default function PublicMenuPage() {
     Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
   const activeCartItems = basketMatchesCurrentRestaurant ? cartItems || [] : [];
 
-  const menuBrand = data ? buildRestaurantMenuBrand(data, restaurantName) : null;
-  const pageShellStyle = { minHeight: "100vh", background: menuBrand?.pageBackground ?? "#0B0F0C" };
+  const menuBrand = data ? buildRestaurantMenuBrand({
+    ...data,
+    accent_color: menuThemeSettings.primary_color || menuThemeSettings.accent_color || data?.accent_color || null,
+    hero_image_url: menuThemeSettings.hero_enabled === false ? null : data?.hero_image_url || null,
+    font_preset: data?.font_preset || "default",
+  }, restaurantName) : null;
+  const pageShellStyle = {
+    minHeight: "100vh",
+    background:
+      menuThemeSettings.background_style === "light" ? "#f7f5ef" :
+      menuThemeSettings.background_style === "paper" ? "#f6efe3" :
+      menuThemeSettings.background_style === "chalkboard" ? "#111111" :
+      menuThemeSettings.background_style === "charcoal" ? "#0f1113" :
+      menuBrand?.pageBackground ?? "#0B0F0C",
+  };
 
   useEffect(() => {
     if (pageState.status !== "ok" || !data?.restaurant_id) return;
@@ -1375,7 +1423,8 @@ export default function PublicMenuPage() {
           commitMenuItemToBasket,
           fmtMoney,
           getConsumerDisplayPrice,
-          heroImageUrl: pickHeroImageUrl(data),
+          heroImageUrl: menuThemeSettings.hero_enabled === false ? null : pickHeroImageUrl(data),
+          menuThemeSettings,
           cartLineCount: basketMatchesCurrentRestaurant ? itemCount : 0,
           onGoCheckout: openCheckout,
           brand: menuBrand,
@@ -1471,7 +1520,7 @@ export default function PublicMenuPage() {
           >
             {t(
               "menuTemplates.previewBanner",
-              "Preview mode — sample data only. Use ?previewStyle=v1|v2|v3|v4|v5|v6. On a live menu add ?menuStyle=v6."
+              "Preview mode — sample data only. Use ?previewStyle=v1|v2|v3|v4|v5|v6|v7|v8|v9. On a live menu add ?menuStyle=v6."
             )}
           </div>
         ) : null}
@@ -1554,6 +1603,7 @@ export default function PublicMenuPage() {
           onRemoveItem={(lineId) => removeItem(lineId)}
           t={t}
           brand={menuBrand}
+          menuThemeSettings={menuThemeSettings}
         />
       ) : null}
 

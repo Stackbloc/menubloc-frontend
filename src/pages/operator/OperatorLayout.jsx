@@ -32,7 +32,7 @@ const OPERATIONS_NAV = [
 ];
 
 const MENU_NAV = [
-  { to: "/operator/menu",              label: "Menu Editor",        icon: "☰" },
+  { to: "/operator/menu",              label: "Menu Lab",           icon: "☰" },
   { to: "/operator/deals",             label: "Deals",              icon: "⊹" },
   { to: "/operator/hours",             label: "Hours",              icon: "⏰" },
   { to: "/operator/bid-free-bidding",  label: "Bid-Free Bidding™",  icon: "◇" },
@@ -45,7 +45,7 @@ const MENU_NAV = [
 
 // Staff only sees this subset of menu tools
 const STAFF_MENU_NAV = [
-  { to: "/operator/menu",   label: "Menu Editor",  icon: "☰" },
+  { to: "/operator/menu",   label: "Menu Lab",     icon: "☰" },
   { to: "/operator/deals",  label: "Deals",        icon: "⊹" },
   { to: "/operator/hours",  label: "Hours",        icon: "⏰" },
 ];
@@ -270,7 +270,7 @@ function SectionHeader({ label, accent }) {
 
 const OPERATOR_PAGE_TITLE_KEYS = {
   Home: "operator.nav.home",
-  Menu: "operator.nav.menuEditor",
+  "Menu Lab": "operator.nav.menuLab",
   "Knowledge Base": "operator.nav.knowledgeBase",
   Subscription: "operator.subscription.title",
   "Incoming Orders": "operator.orders.title",
@@ -311,7 +311,7 @@ export default function OperatorLayout({ title, children }) {
   ]), [t]);
 
   const menuNavBase = useMemo(() => ([
-    { to: "/operator/menu", label: t("operator.nav.menuEditor", "Menu Editor"), icon: "☰" },
+    { to: "/operator/menu", label: t("operator.nav.menuLab", "Menu Lab"), icon: "☰" },
     { to: "/operator/deals", label: t("operator.nav.deals", "Deals"), icon: "⊹" },
     { to: "/operator/hours", label: t("operator.nav.hours", "Hours"), icon: "⏰" },
     { to: "/operator/bid-free-bidding", label: t("operator.nav.bidFree", "Bid-Free Bidding™"), icon: "◇" },

@@ -79,7 +79,10 @@ export default function OperatorQrKitOrder() {
     shipping_postal_code: "",
     shipping_country: "US",
     receipt_email: "",
+    door_photo_url: "",
   });
+  const [doorPhotoPreview, setDoorPhotoPreview] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creatingIntent, setCreatingIntent] = useState(false);
   const [error, setError] = useState("");
@@ -118,23 +121,41 @@ export default function OperatorQrKitOrder() {
   const previewPlacements = useMemo(
     () => selectedPackage.placements.map((placement) => ({
       label: placement,
-      previewUrl: selectedRestaurant?.id
-        ? api.getQrKitPreviewUrl(selectedRestaurant.id, {
-            package_type: packageType,
-            placement:
-              placement === "Counter / Pickup"
-                ? "counter"
-                : placement === "Table Set"
-                  ? "table"
-                  : "door",
-          })
-        : "",
+      previewUrl: placement === "Door"
+        ? "/qr-door-preview.png"
+        : selectedRestaurant?.id
+          ? api.getQrKitPreviewUrl(selectedRestaurant.id, {
+              package_type: packageType,
+              placement:
+                placement === "Counter / Pickup"
+                  ? "counter"
+                  : placement === "Table Set"
+                    ? "table"
+                    : "door",
+            })
+          : "",
     })),
     [packageType, selectedPackage.placements, selectedRestaurant?.id]
   );
 
   function setField(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function handleDoorPhotoChange(event) {
+    const file = event.target.files?.[0];
+    if (!file || !selectedRestaurant?.id) return;
+    setDoorPhotoPreview(URL.createObjectURL(file));
+    setUploadingPhoto(true);
+    try {
+      const result = await api.uploadQrDoorPhoto(selectedRestaurant.id, file);
+      setField("door_photo_url", result.door_photo_url);
+    } catch (err) {
+      setError(err.message || "Photo upload failed.");
+      setDoorPhotoPreview(null);
+    } finally {
+      setUploadingPhoto(false);
+    }
   }
 
   function validateForm() {
@@ -203,6 +224,7 @@ export default function OperatorQrKitOrder() {
         shipping_postal_code: form.shipping_postal_code,
         shipping_country: form.shipping_country,
         stripe_payment_intent_id: paymentIntent.id,
+        door_photo_url: form.door_photo_url || undefined,
       });
 
       setConfirmation(result);
@@ -354,6 +376,43 @@ export default function OperatorQrKitOrder() {
               <div>
                 <label style={labelStyle()}>Receipt email</label>
                 <input value={form.receipt_email} onChange={(event) => setField("receipt_email", event.target.value)} style={inputStyle()} />
+              </div>
+
+              <div>
+                <label style={labelStyle()}>Door photo <span style={{ fontWeight: 400, textTransform: "none", color: "#667085" }}>(optional — photo of your door or entrance)</span></label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    cursor: "pointer",
+                    border: "1px dashed #d0d5dd",
+                    borderRadius: 12,
+                    padding: "12px 14px",
+                    background: "#f9fafb",
+                    fontSize: 14,
+                    color: "#475467",
+                    fontWeight: 500,
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleDoorPhotoChange}
+                    disabled={uploadingPhoto}
+                  />
+                  {uploadingPhoto ? (
+                    <span>Uploading…</span>
+                  ) : doorPhotoPreview ? (
+                    <>
+                      <img src={doorPhotoPreview} alt="Door preview" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
+                      <span>Change photo</span>
+                    </>
+                  ) : (
+                    <span>📷 Upload door photo</span>
+                  )}
+                </label>
               </div>
 
               {!paymentSession ? (
