@@ -27,10 +27,16 @@ function MenuWindow({ theme }) {
   const thumbImages = previewImages.slice(1, 4);
   return (
     <Link
-      to={`/menu-design-lab?theme=${theme.style}`}
+      to={`/menu-design-lab?theme=${theme.style}&demo=1`}
       style={styles.windowLink}
       aria-label={`Preview ${theme.name}`}
     >
+      <div style={styles.cardCopy}>
+        <div style={styles.sampleLabel}>Sample menu design</div>
+        <h2 style={styles.cardTitle}>{theme.name}</h2>
+        <p style={styles.bestFit}>{theme.bestFit}</p>
+        <span style={styles.previewCta}>View actual menu →</span>
+      </div>
       <div style={{ ...styles.window, background: swatch.bg }}>
         <div style={styles.browserBar}>
           <span style={styles.dot} />
@@ -68,12 +74,6 @@ function MenuWindow({ theme }) {
             ))}
           </div>
         </div>
-      </div>
-      <div style={styles.cardCopy}>
-        <div style={styles.sampleLabel}>Sample menu design</div>
-        <h2 style={styles.cardTitle}>{theme.name}</h2>
-        <p style={styles.bestFit}>{theme.bestFit}</p>
-        <span style={styles.previewCta}>View actual menu</span>
       </div>
     </Link>
   );
@@ -246,7 +246,7 @@ const styles = {
   },
   window: {
     minHeight: 248,
-    borderBottom: "1px solid rgba(255,255,255,0.1)",
+    borderTop: "1px solid rgba(255,255,255,0.1)",
   },
   browserBar: {
     height: 36,

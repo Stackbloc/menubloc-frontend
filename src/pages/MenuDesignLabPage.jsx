@@ -92,6 +92,7 @@ export default function MenuDesignLabPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const isDemo = searchParams.get("demo") === "1";
   const selectedStyle = normalizeMenuStyle(searchParams.get("theme") || "v1");
   const selectedTheme = getMenuDesignLabTheme(selectedStyle);
   const [notice, setNotice] = useState("");
@@ -215,7 +216,7 @@ export default function MenuDesignLabPage() {
 
   const shellStyle = {
     ...styles.shell,
-    gridTemplateColumns: isMobile ? "1fr" : "minmax(300px, 360px) minmax(0, 1fr)",
+    gridTemplateColumns: isMobile || isDemo ? "1fr" : "minmax(300px, 360px) minmax(0, 1fr)",
   };
   const controlGridStyle = {
     ...styles.controlGrid,
@@ -235,9 +236,9 @@ export default function MenuDesignLabPage() {
               color: isDarkShell ? "#fff" : "#0f1720",
             }}
           >
-            Demo windows
+            {isDemo ? "← Back to Demo" : "Demo windows"}
           </Link>
-          <Link to="/restaurant/signup" style={styles.headerCta}>Create your menu</Link>
+          {isDemo ? null : <Link to="/restaurant/signup" style={styles.headerCta}>Create your menu</Link>}
         </div>
       </header>
 
@@ -250,7 +251,7 @@ export default function MenuDesignLabPage() {
       </section>
 
       <section style={shellStyle}>
-        <aside style={styles.sidebar}>
+        {isDemo ? null : <aside style={styles.sidebar}>
           <div style={styles.sidebarSection}>
             <div style={styles.panelLabel}>Theme gallery</div>
             <div style={styles.themeGrid}>
@@ -372,7 +373,7 @@ export default function MenuDesignLabPage() {
               </Control>
             </div>
           </div>
-        </aside>
+        </aside>}
 
         <section style={styles.previewColumn}>
           <div style={styles.previewHeader}>
