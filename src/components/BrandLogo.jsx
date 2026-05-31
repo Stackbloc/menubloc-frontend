@@ -14,6 +14,15 @@ import { Link } from "react-router-dom";
 
 const MENUPLY_LOGO_SCALE = 1.12;
 
+function isDarkPageColor(value) {
+  const color = String(value || "").trim().toLowerCase();
+  if (!color) return false;
+  if (color === "#0b0f0c" || color === "#0b0f0cff" || color === "#101010") return true;
+  if (color.startsWith("#0") || color.startsWith("#1") || color.startsWith("#2")) return true;
+  if (color.includes("black") || color.includes("charcoal") || color.includes("slate") || color.includes("night")) return true;
+  return false;
+}
+
 export const MENUPLY_LOGO_SRC = "/menuply-logo.png";
 
 export function BrandLogo({
@@ -38,7 +47,7 @@ export function BrandLogo({
         alignItems: "center",
         justifyContent: "center",
         borderRadius: radius,
-        background: "transparent",
+        background: matchPageBackground ? pageColor : "transparent",
         lineHeight: 0,
       }}
     >
@@ -83,6 +92,9 @@ export function BrandLockup({
   to = "/",
   ariaLabel = "Go to Menuply home",
 }) {
+  const inferredDarkPage = isDarkPageColor(logoProps?.pageColor);
+  const resolvedSubtitleColor = inferredDarkPage ? "rgba(248,244,234,0.74)" : "#667085";
+
   return (
     <Link
       to={to}
@@ -102,12 +114,12 @@ export function BrandLockup({
           style={{
             fontSize: 11,
             fontWeight: 800,
-          color: "#667085",
-          letterSpacing: 1.4,
-          textTransform: "uppercase",
-          marginTop: 0,
-          textAlign: "center",
-          ...subtitleStyle,
+            color: resolvedSubtitleColor,
+            letterSpacing: 1.4,
+            textTransform: "uppercase",
+            marginTop: 0,
+            textAlign: "center",
+            ...subtitleStyle,
         }}
         >
           {subtitle}

@@ -16,7 +16,7 @@ const styles = {
     justifyContent: "center",
     padding: "48px 24px 80px",
     fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
-    color: "#101828",
+    color: "#F8F4EA",
   },
   shell: {
     maxWidth: 680,
@@ -56,7 +56,7 @@ const styles = {
     alignItems: "flex-start",
     fontSize: 15.5,
     lineHeight: 1.65,
-    color: "#344054",
+    color: "rgba(248,244,234,0.84)",
   },
   bulletDot: {
     flexShrink: 0,
@@ -91,7 +91,7 @@ const styles = {
   },
   divider: {
     height: 1,
-    background: "#e4e7ec",
+    background: "rgba(248,244,234,0.16)",
     margin: "8px 0 28px",
   },
   checkRow: {
@@ -211,7 +211,7 @@ export default function RestaurantPhilosophy() {
           </p>
         </div>
 
-        <RestaurantFAQ instanceId="restaurant-onboarding-faq" />
+        <RestaurantFAQ instanceId="restaurant-onboarding-faq" variant="dark" />
 
         <div style={styles.divider} />
 

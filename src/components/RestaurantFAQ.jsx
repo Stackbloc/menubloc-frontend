@@ -27,142 +27,157 @@ const FAQ_DEFS = [
   },
 ];
 
-const styles = {
-  section: {
-    marginBottom: 22,
-    borderRadius: 28,
-    border: "1px solid #d9e0ea",
-    background: "#ffffff",
-    boxShadow: "0 16px 36px rgba(15, 23, 32, 0.05)",
-    padding: "24px 22px",
-  },
-  eyebrow: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-    padding: "8px 12px",
-    borderRadius: 999,
-    background: "#f3f7f5",
-    border: "1px solid #d9e8df",
-    color: "#1F4E3D",
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-  },
-  title: {
-    fontSize: "clamp(1.65rem, 3vw, 2.35rem)",
-    lineHeight: 1.05,
-    fontWeight: 900,
-    letterSpacing: "-0.03em",
-    color: "#101828",
-    marginBottom: 10,
-    maxWidth: 760,
-  },
-  intro: {
-    fontSize: 15,
-    lineHeight: 1.65,
-    color: "#667085",
-    maxWidth: 760,
-    marginBottom: 18,
-  },
-  toggleLabel: {
-    fontSize: 14,
-    lineHeight: 1.6,
-    color: "#1F4E3D",
-    fontWeight: 800,
-  },
-  toggleRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
-  },
-  toggleCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  toggleIcon: (expanded) => ({
-    flexShrink: 0,
-    width: 36,
-    height: 36,
-    borderRadius: "50%",
-    border: expanded ? "1px solid #cfe0d8" : "1px solid #d0d5dd",
-    background: expanded ? "#eef6f1" : "#ffffff",
-    color: "#1F4E3D",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 20,
-    fontWeight: 700,
-    lineHeight: 1,
-  }),
-  list: {
-    display: "grid",
-    gap: 12,
-  },
-  item: (expanded) => ({
-    borderRadius: 18,
-    border: expanded ? "1px solid #cfe0d8" : "1px solid #eaecf0",
-    background: expanded ? "#f8fbf9" : "#ffffff",
-    overflow: "hidden",
-  }),
-  itemButton: {
-    width: "100%",
-    border: "none",
-    background: "transparent",
-    padding: "18px 18px 16px",
-    textAlign: "left",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 14,
-    color: "#101828",
-    fontFamily: "inherit",
-  },
-  questionWrap: {
-    flex: 1,
-  },
-  question: {
-    fontSize: 16,
-    lineHeight: 1.5,
-    fontWeight: 800,
-    margin: 0,
-  },
-  itemToggle: (expanded) => ({
-    flexShrink: 0,
-    width: 32,
-    height: 32,
-    borderRadius: "50%",
-    border: expanded ? "1px solid #cfe0d8" : "1px solid #d0d5dd",
-    background: expanded ? "#eef6f1" : "#ffffff",
-    color: "#1F4E3D",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 20,
-    fontWeight: 700,
-    lineHeight: 1,
-  }),
-  answer: {
-    padding: "0 18px 18px",
-    display: "grid",
-    gap: 12,
-  },
-  answerParagraph: {
-    margin: 0,
-    fontSize: 14,
-    lineHeight: 1.7,
-    color: "#475467",
-  },
-};
+function buildStyles(variant) {
+  const dark = variant === "dark";
+  const surface = dark ? "#121A14" : "#ffffff";
+  const surfaceAlt = dark ? "#0F1712" : "#f8fbf9";
+  const border = dark ? "rgba(61,217,52,0.16)" : "#d9e0ea";
+  const borderAlt = dark ? "rgba(61,217,52,0.12)" : "#eaecf0";
+  const text = dark ? "#F8F4EA" : "#101828";
+  const subtext = dark ? "rgba(248,244,234,0.76)" : "#667085";
+  const accent = "#1F4E3D";
+  const chipBg = dark ? "rgba(61,217,52,0.10)" : "#f3f7f5";
+  const chipBorder = dark ? "rgba(61,217,52,0.18)" : "#d9e8df";
+  const toggleSurface = dark ? "#0B0F0C" : "#ffffff";
 
-export default function RestaurantFAQ({ instanceId = "restaurant-faq" }) {
+  return {
+    section: {
+      marginBottom: 22,
+      borderRadius: 28,
+      border: `1px solid ${border}`,
+      background: surface,
+      boxShadow: dark ? "0 18px 40px rgba(0, 0, 0, 0.24)" : "0 16px 36px rgba(15, 23, 32, 0.05)",
+      padding: "24px 22px",
+    },
+    eyebrow: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 12,
+      padding: "8px 12px",
+      borderRadius: 999,
+      background: chipBg,
+      border: `1px solid ${chipBorder}`,
+      color: dark ? "#3DD934" : accent,
+      fontSize: 11,
+      fontWeight: 900,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+    },
+    title: {
+      fontSize: "clamp(1.65rem, 3vw, 2.35rem)",
+      lineHeight: 1.05,
+      fontWeight: 900,
+      letterSpacing: "-0.03em",
+      color: text,
+      marginBottom: 10,
+      maxWidth: 760,
+    },
+    intro: {
+      fontSize: 15,
+      lineHeight: 1.65,
+      color: subtext,
+      maxWidth: 760,
+      marginBottom: 18,
+    },
+    toggleLabel: {
+      fontSize: 14,
+      lineHeight: 1.6,
+      color: dark ? "#A7F3D0" : accent,
+      fontWeight: 800,
+    },
+    toggleRow: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 16,
+    },
+    toggleCopy: {
+      flex: 1,
+      minWidth: 0,
+    },
+    toggleIcon: (expanded) => ({
+      flexShrink: 0,
+      width: 36,
+      height: 36,
+      borderRadius: "50%",
+      border: expanded ? `1px solid ${chipBorder}` : `1px solid ${dark ? "rgba(248,244,234,0.18)" : "#d0d5dd"}`,
+      background: expanded ? chipBg : toggleSurface,
+      color: dark ? "#3DD934" : accent,
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: 20,
+      fontWeight: 700,
+      lineHeight: 1,
+    }),
+    list: {
+      display: "grid",
+      gap: 12,
+    },
+    item: (expanded) => ({
+      borderRadius: 18,
+      border: `1px solid ${expanded ? chipBorder : borderAlt}`,
+      background: expanded ? surfaceAlt : surface,
+      overflow: "hidden",
+    }),
+    itemButton: {
+      width: "100%",
+      border: "none",
+      background: "transparent",
+      padding: "18px 18px 16px",
+      textAlign: "left",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 14,
+      color: text,
+      fontFamily: "inherit",
+    },
+    questionWrap: {
+      flex: 1,
+    },
+    question: {
+      fontSize: 16,
+      lineHeight: 1.5,
+      fontWeight: 800,
+      margin: 0,
+    },
+    itemToggle: (expanded) => ({
+      flexShrink: 0,
+      width: 32,
+      height: 32,
+      borderRadius: "50%",
+      border: expanded ? `1px solid ${chipBorder}` : `1px solid ${dark ? "rgba(248,244,234,0.18)" : "#d0d5dd"}`,
+      background: expanded ? chipBg : toggleSurface,
+      color: dark ? "#3DD934" : accent,
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: 20,
+      fontWeight: 700,
+      lineHeight: 1,
+    }),
+    answer: {
+      padding: "0 18px 18px",
+      display: "grid",
+      gap: 12,
+    },
+    answerParagraph: {
+      margin: 0,
+      fontSize: 14,
+      lineHeight: 1.7,
+      color: subtext,
+    },
+  };
+}
+
+export default function RestaurantFAQ({ instanceId = "restaurant-faq", variant = "light" }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState(-1);
+  const styles = buildStyles(variant);
 
   return (
     <section style={styles.section}>
@@ -171,7 +186,7 @@ export default function RestaurantFAQ({ instanceId = "restaurant-faq" }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={`${instanceId}-list`}
-        style={{ width: "100%", border: "none", background: "transparent", padding: 0, cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: "#101828" }}
+        style={{ width: "100%", border: "none", background: "transparent", padding: 0, cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: styles.title.color }}
       >
         <div style={styles.toggleRow}>
           <div style={styles.toggleCopy}>
