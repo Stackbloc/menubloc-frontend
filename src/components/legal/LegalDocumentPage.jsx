@@ -22,18 +22,39 @@ const paragraphStyle = {
 };
 
 const EMAIL_PATTERN = /([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/gi;
+const LINK_PATTERN = /\[([^\]]+)\]\((\/[^)]+)\)/g;
 
 function renderParagraphWithMailto(paragraph) {
-  const parts = String(paragraph || "").split(EMAIL_PATTERN);
-  return parts.map((part, index) => {
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(part)) {
-      return (
-        <a key={`${part}-${index}`} href={`mailto:${part}`} style={{ color: "var(--gb-color-accent)", fontWeight: 700 }}>
-          {part}
-        </a>
-      );
+  const str = String(paragraph || "");
+  const segments = [];
+  let last = 0;
+  let m;
+  LINK_PATTERN.lastIndex = 0;
+  while ((m = LINK_PATTERN.exec(str)) !== null) {
+    if (m.index > last) segments.push({ type: "text", content: str.slice(last, m.index) });
+    segments.push({ type: "link", text: m[1], href: m[2] });
+    last = m.index + m[0].length;
+  }
+  if (last < str.length) segments.push({ type: "text", content: str.slice(last) });
+
+  return segments.flatMap((seg, i) => {
+    if (seg.type === "link") {
+      return [
+        <a key={`link-${i}`} href={seg.href} style={{ color: "var(--gb-color-accent)", fontWeight: 700 }}>
+          {seg.text}
+        </a>,
+      ];
     }
-    return <React.Fragment key={index}>{part}</React.Fragment>;
+    return seg.content.split(EMAIL_PATTERN).map((part, j) => {
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(part)) {
+        return (
+          <a key={`email-${i}-${j}`} href={`mailto:${part}`} style={{ color: "var(--gb-color-accent)", fontWeight: 700 }}>
+            {part}
+          </a>
+        );
+      }
+      return <React.Fragment key={`text-${i}-${j}`}>{part}</React.Fragment>;
+    });
   });
 }
 
@@ -67,6 +88,15 @@ export default function LegalDocumentPage({ document, eyebrow, titleKey }) {
                 {renderParagraphWithMailto(paragraph)}
               </p>
             ))}
+            {section.items && (
+              <ul style={{ margin: "0 0 14px", paddingLeft: 22 }}>
+                {section.items.map((item, index) => (
+                  <li key={`${section.heading}-item-${index}`} style={{ ...paragraphStyle, margin: "0 0 6px" }}>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         ))}
 
