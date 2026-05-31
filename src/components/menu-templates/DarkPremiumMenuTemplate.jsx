@@ -42,6 +42,7 @@ export default function DarkPremiumMenuTemplate(ctx) {
     addressLine2,
     directionsHref,
     logoUrl,
+    heroImageUrl,
     shareData,
     shareAnalyticsContext,
     franchiseSlot,
@@ -122,6 +123,26 @@ export default function DarkPremiumMenuTemplate(ctx) {
         {intakeBannerSlot}
         {allergenBannerSlot}
 
+        {heroImageUrl ? (
+          <div
+            aria-hidden="true"
+            style={{
+              marginBottom: 28,
+              borderRadius: 18,
+              overflow: "hidden",
+              border: `1px solid rgba(182,139,69,0.32)`,
+              boxShadow: "0 18px 42px rgba(0,0,0,0.34)",
+            }}
+          >
+            <img
+              src={heroImageUrl}
+              alt=""
+              loading="lazy"
+              style={{ width: "100%", height: isMobile ? 180 : 280, objectFit: "cover", display: "block" }}
+            />
+          </div>
+        ) : null}
+
         {displayableItemCount === 0 ? (
           <div style={{ color: muted, padding: "28px 0" }}>
             {filtersActive ? (
@@ -136,6 +157,7 @@ export default function DarkPremiumMenuTemplate(ctx) {
           displaySections.map((section, sIdx) => {
             const title = String(getLocalizedField(section, "title", language) || section?.title || "Menu").trim();
             const items = Array.isArray(section?.items) ? section.items : [];
+            const sectionImage = section?.image_url || null;
             return (
               <section key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 42 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 18 }}>
@@ -145,6 +167,25 @@ export default function DarkPremiumMenuTemplate(ctx) {
                   </h2>
                   <div style={{ height: 1, flex: 1, background: "rgba(182,139,69,0.35)" }} />
                 </div>
+                {sectionImage ? (
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      marginBottom: 16,
+                      borderRadius: 14,
+                      overflow: "hidden",
+                      border: "1px solid rgba(182,139,69,0.24)",
+                      boxShadow: "0 14px 34px rgba(0,0,0,0.24)",
+                    }}
+                  >
+                    <img
+                      src={sectionImage}
+                      alt=""
+                      loading="lazy"
+                      style={{ width: "100%", height: isMobile ? 128 : 176, objectFit: "cover", display: "block" }}
+                    />
+                  </div>
+                ) : null}
                 <div style={{ display: "grid", gap: 0 }}>
                   {items.map((it, iIdx) => (
                     <PublicMenuItemCard

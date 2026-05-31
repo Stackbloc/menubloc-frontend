@@ -170,8 +170,8 @@ export const KBC_DEFAULT_MENU_PREVIEW_SAMPLE = {
   name: "KBC Butcher Block",
   slug: "kbc-butcher-block",
   accent_color: "#1F4E3D",
-  hero_image_url: null,
-  cover_image_url: null,
+  hero_image_url: "https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=1600&q=80",
+  cover_image_url: "https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=1600&q=80",
   menu_name: "Main Menu",
   address_line1: "151 N Foster St",
   city: "Dothan",
@@ -196,6 +196,7 @@ export const KBC_DEFAULT_MENU_PREVIEW_SAMPLE = {
           name: "Brisket Nachos",
           description: "House chips, queso, smoked brisket, jalapenos, and pico.",
           price_minor_units: 1450,
+          image_url: "https://images.unsplash.com/photo-1546549032-9571cd6b7d2e?auto=format&fit=crop&w=900&q=80",
         },
       ],
     },
@@ -210,6 +211,13 @@ export const KBC_DEFAULT_MENU_PREVIEW_SAMPLE = {
           price_minor_units: 1100,
           image_url: "https://images.unsplash.com/photo-1546793665-c74683f339c1?auto=format&fit=crop&w=900&q=80",
         },
+        {
+          id: 9009,
+          name: "Harvest Salad",
+          description: "Greens, roasted squash, goat cheese, candied pecans.",
+          price_minor_units: 1150,
+          image_url: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80",
+        },
       ],
     },
     {
@@ -223,16 +231,25 @@ export const KBC_DEFAULT_MENU_PREVIEW_SAMPLE = {
           price_minor_units: 1550,
           image_url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80",
         },
+        {
+          id: 9010,
+          name: "Hot Chicken Sandwich",
+          description: "Crispy chicken, spicy glaze, pickles, slaw.",
+          price_minor_units: 1495,
+          image_url: "https://images.unsplash.com/photo-1606755962773-d324e3a0b7d4?auto=format&fit=crop&w=900&q=80",
+        },
       ],
     },
     {
       title: "Entrees",
+      image_url: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1400&q=80",
       items: [
         {
           id: 9005,
           name: "Smoked Ribeye",
           description: "Hand-cut ribeye finished over live fire with mashed potatoes.",
           price_minor_units: 2900,
+          image_url: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80",
         },
         {
           id: 9006,
@@ -244,18 +261,21 @@ export const KBC_DEFAULT_MENU_PREVIEW_SAMPLE = {
     },
     {
       title: "Desserts and Drinks",
+      image_url: "https://images.unsplash.com/photo-1505253716362-afaea4bde1dc?auto=format&fit=crop&w=1400&q=80",
       items: [
         {
           id: 9007,
           name: "Banana Pudding",
           description: "Classic banana pudding with vanilla wafers.",
           price_minor_units: 700,
+          image_url: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=900&q=80",
         },
         {
           id: 9008,
           name: "Fresh Lemonade",
           description: "Fresh squeezed lemonade.",
           price_minor_units: 350,
+          image_url: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80",
         },
       ],
     },

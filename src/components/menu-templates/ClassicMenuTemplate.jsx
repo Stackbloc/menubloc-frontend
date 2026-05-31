@@ -3,6 +3,7 @@ import ShareButton from "../share/ShareButton.jsx";
 import ChipRail from "../chips/ChipRail.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
+import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 
 function RestaurantLogoSlot({ logoUrl, restaurantName, size = 56, accentBorder = "rgba(34,197,94,0.30)" }) {
   if (logoUrl) {
@@ -370,6 +371,7 @@ export default function ClassicMenuTemplate(ctx) {
                 getLocalizedField(sec, "title", language) || sec?.title || t("publicMenu.menu")
               ).trim();
               const items = Array.isArray(sec?.items) ? sec.items : [];
+              const sectionImage = getMenuSectionImageUrl(sec);
 
               return (
                 <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 20 }}>
@@ -398,6 +400,31 @@ export default function ClassicMenuTemplate(ctx) {
                       {title}
                     </span>
                   </div>
+
+                  {sectionImage ? (
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        marginBottom: 12,
+                        borderRadius: 12,
+                        overflow: "hidden",
+                        border: "1px solid rgba(34,197,94,0.18)",
+                        boxShadow: "0 10px 24px rgba(0,0,0,0.18)",
+                      }}
+                    >
+                      <img
+                        src={sectionImage}
+                        alt=""
+                        loading="lazy"
+                        style={{
+                          width: "100%",
+                          height: isMobile ? 136 : 188,
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+                    </div>
+                  ) : null}
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {items.map((it, iIdx) => (
