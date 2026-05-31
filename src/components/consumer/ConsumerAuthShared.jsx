@@ -77,6 +77,7 @@ export function PasswordField({
   placeholder,
   error,
   describedBy,
+  hint,
 }) {
   const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
@@ -113,6 +114,7 @@ export function PasswordField({
           {visible ? hideLabel : showLabel}
         </button>
       </div>
+      {hint && !error ? <div style={styles.fieldHint}>{hint}</div> : null}
       {error ? <div id={`${id}-error`} style={styles.fieldError}>{error}</div> : null}
     </div>
   );
@@ -440,6 +442,11 @@ export const styles = {
   optional: {
     fontWeight: 500,
     color: "#6B7280",
+  },
+  fieldHint: {
+    fontSize: "12px",
+    color: "#6B7280",
+    lineHeight: 1.4,
   },
   fieldError: {
     fontSize: "13px",

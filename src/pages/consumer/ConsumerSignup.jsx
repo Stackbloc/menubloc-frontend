@@ -8,7 +8,6 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 import {
   AuthPageFrame,
   FormError,
-  PasswordChecklist,
   PasswordField,
   PasswordMatchStatus,
   SocialAuthSection,
@@ -163,15 +162,9 @@ export default function ConsumerSignup() {
           onChange={(event) => setField("password", event.target.value)}
           placeholder={t("auth.createStrongPassword", "Create a strong password")}
           error={fieldErrors.password}
-          describedBy={[
-            fieldErrors.password ? "consumer-signup-password-error" : null,
-            "consumer-signup-password-rules",
-          ].filter(Boolean).join(" ")}
+          hint="Min. 8 characters · 1 uppercase · 1 number"
+          describedBy={fieldErrors.password ? "consumer-signup-password-error" : undefined}
         />
-
-        <div id="consumer-signup-password-rules">
-          <PasswordChecklist password={fields.password} />
-        </div>
 
         <PasswordField
           id="consumer-signup-confirm-password"
