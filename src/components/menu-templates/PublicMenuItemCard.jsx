@@ -134,10 +134,7 @@ export default function PublicMenuItemCard({
     (themeSettings.intelligence_density === "standard" ||
       themeSettings.intelligence_density === "detailed" ||
       themeSettings.intelligence_density === "functional");
-  const showAllergenInline =
-    themeSettings.allergen_display !== "hidden" &&
-    hasAllergenData &&
-    themeSettings.intelligence_density !== "none";
+  const showAllergenInline = false;
   const showIndulgenceInline =
     themeSettings.indulgence_display !== "hidden" &&
     indulgencePresentation &&
@@ -397,14 +394,6 @@ export default function PublicMenuItemCard({
       {density !== "takeout" && (showInsightsInline || showNutritionInline || showAllergenInline || showIndulgenceInline) ? (
         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           {showNutritionInline ? <Badge label={t("common.nutrition", "Nutrition")} bg={softBg} color={accent} border={`1px solid ${softBorder}`} /> : null}
-          {showAllergenInline ? (
-            <Badge
-              label={themeSettings.allergen_display === "alert" ? "Allergen alert" : t("menu.allergens", "Allergens")}
-              bg="#1c1208"
-              color="#FCD34D"
-              border="1px solid #431407"
-            />
-          ) : null}
           {showIndulgenceInline && indulgencePresentation?.indulgence?.score != null ? (
             <Badge
               label={`Indulgence ${indulgencePresentation.indulgence.score}`}
