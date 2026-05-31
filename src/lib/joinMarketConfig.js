@@ -330,6 +330,7 @@ export function isJoinLandingPath(pathname) {
   const path = String(pathname || "");
   if (path === "/join") return true;
   if (path === "/join/losangeles" || path === "/join/los-angeles" || path === "/join/dothan") return true;
+  if (path === "/join/diners") return true;
   return false;
 }
 

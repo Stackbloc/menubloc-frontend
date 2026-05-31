@@ -520,6 +520,11 @@ export default function GrubbidDiscovery() {
     return buildOutOfMarketJoinPath(marketLoc || {});
   }, [appliedLocation, shouldUseGeoBrowse, autoLocation]);
 
+  const joinDinersPath = useMemo(() => {
+    const qs = joinInfoPath.includes("?") ? joinInfoPath.slice(joinInfoPath.indexOf("?")) : "";
+    return `/join/diners${qs}`;
+  }, [joinInfoPath]);
+
   /** Empty-state copy: "City, ST" when we know location, else "your area". */
   const outOfMarketAreaLabel = useMemo(() => {
     const explicit = String(appliedLocation || "").trim();
@@ -1028,6 +1033,8 @@ export default function GrubbidDiscovery() {
         .disc-feed-skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
         @keyframes skelPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
         .disc-feed-grid { display:flex; flex-direction:column; gap:10px; }
+        .disc-oom-buttons { display:flex; flex-direction:column; gap:12px; max-width:400px; margin:24px auto 0; }
+        @media (min-width:640px) { .disc-oom-buttons { flex-direction:row; justify-content:center; } }
       `}</style>
 
       <DiscoveryDrawer
@@ -1413,19 +1420,39 @@ export default function GrubbidDiscovery() {
               }} />
             ))
           ) : inlineError ? null : showBackendEmptyState ? (
-            <div style={{
-              textAlign: "center", padding: "48px 20px",
-              color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,
-            }}>
-              {t("discovery.outOfMarketPrefix", "Please")}{" "}
-              <Link
-                to={joinInfoPath}
-                style={{ color: "#86EFAC", textDecoration: "underline", fontWeight: 700 }}
-              >
-                {t("discovery.outOfMarketLink", "click here")}
-              </Link>
-              {t("discovery.outOfMarketMid", " for more information about Menuply in ")}
-              {outOfMarketAreaLabel}.
+            <div style={{ textAlign: "center", padding: "48px 20px 32px" }}>
+              <div style={{ color: "#E5E7EB", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+                Menuply is not yet available in {outOfMarketAreaLabel}.
+              </div>
+              <div style={{ color: "#9CA3AF", fontSize: 14 }}>
+                Learn more about what&apos;s coming.
+              </div>
+              <div className="disc-oom-buttons">
+                <Link
+                  to={joinInfoPath}
+                  style={{
+                    flex: 1, minWidth: 130,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    padding: "14px 24px", borderRadius: 10,
+                    background: "#22C55E", color: "#0B0F0C",
+                    fontWeight: 700, fontSize: 15, textDecoration: "none",
+                  }}
+                >
+                  Restaurants
+                </Link>
+                <Link
+                  to={joinDinersPath}
+                  style={{
+                    flex: 1, minWidth: 130,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    padding: "14px 24px", borderRadius: 10,
+                    background: "#22C55E", color: "#0B0F0C",
+                    fontWeight: 700, fontSize: 15, textDecoration: "none",
+                  }}
+                >
+                  Diners
+                </Link>
+              </div>
             </div>
           ) : showFilterEmptyState ? (
             <div style={{

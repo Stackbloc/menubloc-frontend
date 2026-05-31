@@ -1,224 +1,265 @@
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 
-const DISCOVER_ITEMS = [
-  "Restaurants",
-  "Dishes",
-  "Deals",
-  "Cuisines",
-  "Local food experiences",
+const GOALS = [
+  "Help diners save money through lower menu prices and better restaurant deals",
+  "Help diners find the foods they are looking for more easily",
+  "Provide diners with deeper insight into their dining choices",
 ];
 
-const FEATURES = [
-  "Beautiful digital restaurant menus",
-  "Unique menu item insights",
-  "Restaurant deals and promotions",
-  "QR menu and ordering access",
-  "Direct restaurant ordering",
-  "Easier restaurant and dish discovery",
-  "Free diner accounts",
-];
-
-const DINER_SIGNUP_URL = "https://menuply.com/account/signup";
+function readSessionLocationLabel() {
+  if (typeof window === "undefined") return null;
+  try {
+    return String(window.sessionStorage.getItem("grubbid.discovery.location") || "").trim() || null;
+  } catch {
+    return null;
+  }
+}
 
 export default function JoinDinersPage() {
+  const location = useLocation();
+  const [copied, setCopied] = useState(false);
+
+  const locationLabel = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const city = String(params.get("city") || "").trim();
+    const state = String(params.get("state") || "").trim();
+    if (city && state) return `${city}, ${state}`;
+    if (city) return city;
+    return readSessionLocationLabel();
+  }, [location.search]);
+
+  useEffect(() => {
+    const preconnectId = "menuply-dm-sans-preconnect";
+    const fontId = "menuply-dm-sans-font";
+    if (!document.getElementById(preconnectId)) {
+      const el = document.createElement("link");
+      el.id = preconnectId;
+      el.rel = "preconnect";
+      el.href = "https://fonts.googleapis.com";
+      document.head.appendChild(el);
+    }
+    if (!document.getElementById(fontId)) {
+      const el = document.createElement("link");
+      el.id = fontId;
+      el.rel = "stylesheet";
+      el.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap";
+      document.head.appendChild(el);
+    }
+  }, []);
+
+  async function handleShare() {
+    const shareText = "Join the movement to make dining out more affordable.";
+    const shareUrl = `${window.location.origin}/join/diners`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: shareText, url: shareUrl });
+      } catch {
+        // user cancelled or unsupported
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      } catch {
+        // silent fallback
+      }
+    }
+  }
+
   return (
-    <div style={styles.page}>
-      <div style={styles.shell}>
-        <BrandLockup
-          to="/"
-          ariaLabel="Go to Menuply home"
-          subtitle="for Diners"
-          wrapperStyle={{ alignItems: "flex-start", marginBottom: 4 }}
-          subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
-          logoProps={{
-            width: 160,
-            height: 100,
-            radius: 22,
-            pageColor: "#f9f9f7",
-            imageStyle: { filter: "brightness(0)" },
-          }}
+    <main style={styles.page}>
+      <div style={styles.wrap}>
+        <BrandLogo
+          width={130}
+          height={52}
+          radius={0}
+          pageColor="#0D0D0D"
+          linkStyle={styles.logo}
+          imageStyle={styles.logoImage}
         />
 
-        <h1 style={styles.heading}>Introducing Menuply</h1>
+        <div style={styles.eyebrow}>For Diners</div>
 
-        <div style={styles.card}>
-          <p style={styles.body}>
-            Menuply is a smarter way to discover restaurants, explore menus, and order food.
-          </p>
-          <p style={{ ...styles.body, marginBottom: 0 }}>
-            Browse beautifully presented digital menus, discover unique menu item insights, and connect
-            directly with restaurants through a platform designed around better value, better discovery,
-            and lower transaction costs.
-          </p>
+        <h1 style={styles.heading}>Join the Movement</h1>
+
+        <p style={styles.paragraph}>
+          Menuply is a new restaurant discovery and ordering platform. Our central premise is that
+          dining out is becoming too expensive for many consumers. Menuply seeks to drastically reduce
+          the cost of dining out by reducing the costs restaurants pay to reach diners.
+        </p>
+
+        <p style={styles.subheading}>
+          We&apos;re building a platform designed around three simple goals:
+        </p>
+
+        <ul style={styles.goals}>
+          {GOALS.map((g) => (
+            <li key={g} style={styles.goalItem}>
+              <span style={styles.dot} />
+              <span>{g}</span>
+            </li>
+          ))}
+        </ul>
+
+        <p style={styles.paragraph}>
+          We&apos;re building the Menuply network restaurant-by-restaurant and diner-by-diner across
+          the country so we can create a stronger, lower-cost food ecosystem.
+        </p>
+
+        <p style={{ ...styles.paragraph, marginBottom: 0 }}>
+          Create a free account today and join the movement. We&apos;ll notify you as restaurants,
+          menus, deals, and new features become available
+          {locationLabel ? ` in ${locationLabel}` : ""}.
+        </p>
+
+        <div style={styles.actions}>
+          <Link to="/account/signup" style={styles.ctaPrimary}>
+            Create Free Account
+          </Link>
+          <button type="button" onClick={handleShare} style={styles.ctaSecondary}>
+            {copied ? "Link Copied!" : "Invite Friends"}
+          </button>
         </div>
 
-        <div style={styles.card}>
-          <p style={styles.sectionLabel}>Menuply helps diners discover:</p>
-          <ul style={styles.featureList}>
-            {DISCOVER_ITEMS.map((item) => (
-              <li key={item} style={styles.featureItem}>
-                <span style={styles.bullet} />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-          <p style={{ ...styles.body, marginTop: 16, marginBottom: 0 }}>
-            All in one growing restaurant-powered discovery network.
-          </p>
-        </div>
-
-        <div style={styles.card}>
-          <p style={styles.body}>
-            Unlike traditional delivery marketplaces that often drive higher prices through excessive
-            commissions and fees, Menuply is built around a lower-cost model designed to support better
-            long-term value for both restaurants and diners.
-          </p>
-
-          <p style={styles.sectionLabel}>Features include:</p>
-          <ul style={styles.featureList}>
-            {FEATURES.map((f) => (
-              <li key={f} style={styles.featureItem}>
-                <span style={styles.bullet} />
-                <span>{f}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div style={styles.card}>
-          <p style={styles.body}>
-            Menuply is currently expanding market-by-market across the country. Every restaurant and
-            diner that joins helps strengthen the network and expand local restaurant discovery.
-          </p>
-          <p style={styles.body}>
-            By creating an account now, you become part of the early growth of a new restaurant-powered
-            ecosystem focused on better value, better restaurant relationships, and smarter food
-            discovery.
-          </p>
-          <p style={{ ...styles.body, marginBottom: 0 }}>
-            As more restaurants come online in your area, Menuply becomes increasingly useful and
-            personalized. We will notify you as restaurant participation grows in your market and new
-            features become available.
-          </p>
-        </div>
-
-        <div style={styles.ctaCard}>
-          <p style={styles.ctaTagline}>
-            Join the movement early and help shape a smarter future for restaurant discovery and online
-            ordering.
-          </p>
-          <p style={styles.freeLabel}>Menuply is free for diners.</p>
-          <p style={styles.ctaSubtext}>Create your free account today.</p>
-          <a href={DINER_SIGNUP_URL} style={styles.ctaButton}>
-            Diner Signup
-          </a>
-        </div>
+        <footer style={styles.footer}>
+          <Link to="/privacy" style={styles.footerLink}>Privacy</Link>
+          {" · "}
+          <Link to="/terms" style={styles.footerLink}>Terms</Link>
+        </footer>
       </div>
-    </div>
+    </main>
   );
 }
 
 const styles = {
   page: {
-    minHeight: "100vh",
-    background: "linear-gradient(180deg, #f9f9f7 0%, #eef5f2 100%)",
-    padding: "40px 20px 80px",
-    fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
-    color: "#101828",
+    boxSizing: "border-box",
+    minHeight: "100dvh",
+    background: "#0D0D0D",
+    color: "#FFF",
+    fontFamily: "'DM Sans', sans-serif",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "48px 24px",
   },
-  shell: {
-    maxWidth: 660,
-    margin: "0 auto",
+  wrap: {
+    boxSizing: "border-box",
+    width: "100%",
+    maxWidth: 480,
+  },
+  logo: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    textDecoration: "none",
+    marginBottom: 56,
+    color: "#FFF",
+  },
+  logoImage: {
+    filter: "none",
+  },
+  eyebrow: {
+    display: "inline-block",
+    background: "rgba(61,217,52,.1)",
+    color: "#3DD934",
+    fontSize: ".7rem",
+    fontWeight: 700,
+    letterSpacing: ".09em",
+    textTransform: "uppercase",
+    padding: "5px 13px",
+    borderRadius: 100,
+    border: "1px solid rgba(61,217,52,.2)",
+    marginBottom: 20,
   },
   heading: {
-    fontSize: 32,
-    fontWeight: 800,
-    color: "#1F4E3D",
-    marginTop: 28,
-    marginBottom: 24,
-    letterSpacing: "-0.01em",
-  },
-  card: {
-    background: "#fff",
-    border: "1px solid #e4e7ec",
-    borderRadius: 20,
-    padding: "24px 28px",
-    marginBottom: 18,
-  },
-  ctaCard: {
-    background: "#1F4E3D",
-    borderRadius: 20,
-    padding: "28px 28px 32px",
-    marginBottom: 18,
-    color: "#fff",
-  },
-  body: {
-    fontSize: 15,
-    lineHeight: 1.7,
-    color: "#374151",
-    margin: "0 0 14px",
-  },
-  sectionLabel: {
-    fontSize: 14,
+    fontSize: "clamp(1.6rem,4.5vw,2.2rem)",
     fontWeight: 700,
-    color: "#1F4E3D",
-    marginBottom: 14,
-    marginTop: 0,
+    lineHeight: 1.15,
+    letterSpacing: "-.025em",
+    margin: "0 0 28px",
+    color: "#FFFFFF",
   },
-  featureList: {
+  subheading: {
+    fontSize: "1rem",
+    fontWeight: 600,
+    color: "rgba(255,255,255,0.88)",
+    lineHeight: 1.75,
+    margin: "0 0 12px",
+  },
+  paragraph: {
+    fontSize: "1rem",
+    color: "rgba(255,255,255,0.88)",
+    lineHeight: 1.75,
+    margin: "0 0 16px",
+  },
+  goals: {
     listStyle: "none",
-    margin: 0,
+    margin: "0 0 20px",
     padding: 0,
     display: "flex",
     flexDirection: "column",
-    gap: 10,
+    gap: 8,
   },
-  featureItem: {
+  goalItem: {
     display: "flex",
     alignItems: "flex-start",
     gap: 10,
-    fontSize: 14,
-    lineHeight: 1.6,
-    color: "#374151",
+    fontSize: "1rem",
+    color: "rgba(255,255,255,0.88)",
+    lineHeight: 1.65,
   },
-  bullet: {
+  dot: {
     width: 7,
     height: 7,
     borderRadius: "50%",
-    background: "#1F4E3D",
+    background: "#3DD934",
     flexShrink: 0,
-    marginTop: 6,
+    marginTop: 7,
   },
-  ctaTagline: {
-    fontSize: 15,
-    lineHeight: 1.65,
-    color: "rgba(255,255,255,0.85)",
-    margin: "0 0 20px",
+  actions: {
+    marginTop: 36,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
   },
-  freeLabel: {
-    fontSize: 18,
-    fontWeight: 700,
-    color: "#fff",
-    margin: "0 0 6px",
-  },
-  ctaSubtext: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.75)",
-    margin: "0 0 22px",
-  },
-  ctaButton: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 52,
-    padding: "0 32px",
-    borderRadius: 16,
-    background: "#fff",
-    color: "#1F4E3D",
-    fontWeight: 700,
-    fontSize: 15,
+  ctaPrimary: {
+    display: "block",
+    background: "#3DD934",
+    color: "#0D0D0D",
     textDecoration: "none",
-    border: "none",
+    fontSize: "1rem",
+    fontWeight: 700,
+    padding: "14px 32px",
+    borderRadius: 8,
+    textAlign: "center",
+  },
+  ctaSecondary: {
+    display: "block",
+    background: "transparent",
+    color: "rgba(255,255,255,0.75)",
+    border: "1.5px solid rgba(255,255,255,0.2)",
+    fontSize: "1rem",
+    fontWeight: 600,
+    padding: "13px 32px",
+    borderRadius: 8,
+    textAlign: "center",
     cursor: "pointer",
+    fontFamily: "inherit",
+    width: "100%",
+    boxSizing: "border-box",
+  },
+  footer: {
+    marginTop: 52,
+    fontSize: ".8rem",
+    fontWeight: 500,
+    color: "rgba(255,255,255,0.65)",
+  },
+  footerLink: {
+    color: "rgba(255,255,255,0.85)",
+    textDecoration: "none",
   },
 };
