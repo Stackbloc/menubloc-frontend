@@ -63,7 +63,9 @@ export default function JoinDinersPage() {
         <div style={styles.eyebrow}>For Diners</div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
-          <h1 style={{ ...styles.heading, marginBottom: 0, flex: 1 }}>Join the Movement</h1>
+          <h1 style={{ ...styles.heading, marginBottom: 0, flex: 1 }}>
+            Join the Movement{locationLabel ? ` in ${locationLabel}` : ""}
+          </h1>
           <ShareButton
             iconOnly
             size="compact"
