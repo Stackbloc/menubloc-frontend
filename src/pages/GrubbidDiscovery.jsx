@@ -1389,7 +1389,7 @@ export default function GrubbidDiscovery() {
           />
 
           <Link
-            to="/demo"
+            to="/menu-design-lab"
             style={{
               display: "block",
               marginBottom: 12,
@@ -1406,10 +1406,10 @@ export default function GrubbidDiscovery() {
               Menu design demos
             </div>
             <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.2, marginBottom: 5 }}>
-              Preview clickable Menuply menu styles
+              Preview clickable Menuply menu themes
             </div>
             <div style={{ fontSize: 13, lineHeight: 1.45, color: "#9CA3AF", fontWeight: 650 }}>
-              Open demo windows for the default KBC-style menu, steakhouse, and premium bistro designs.
+              Open curated design lab presets for street food, steakhouse, premium bistro, Italian, and modern Asian layouts.
             </div>
           </Link>
 

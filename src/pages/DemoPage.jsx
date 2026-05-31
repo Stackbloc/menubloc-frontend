@@ -1,32 +1,11 @@
 import { Link } from "react-router-dom";
-import { MENU_THEME_SAMPLES } from "../data/menuTemplatePreviewSample.js";
-
-const THEME_SWATCHES = {
-  v1: {
-    bg: "#0B0F0C",
-    panel: "#1F4E3D",
-    accent: "#3DD934",
-    lines: ["#1A2419", "#ffffff", "#e7f8e5"],
-  },
-  v4: {
-    bg: "#070707",
-    panel: "#17120d",
-    accent: "#b68b45",
-    lines: ["#2a2118", "#3a2b1b", "#b68b45"],
-  },
-  v6: {
-    bg: "#171717",
-    panel: "#fffdf8",
-    accent: "#7a2b23",
-    lines: ["#f5eadb", "#ffffff", "#ece0cf"],
-  },
-};
+import { CURATED_MENU_DESIGN_LAB_THEMES } from "../data/menuDesignLabThemes.js";
 
 function MenuWindow({ theme }) {
-  const swatch = THEME_SWATCHES[theme.style] || THEME_SWATCHES.v1;
+  const swatch = theme.swatch;
   return (
     <Link
-      to={`/menu-themes?theme=${theme.style}`}
+      to={`/menu-design-lab?theme=${theme.style}`}
       style={styles.windowLink}
       aria-label={`Preview ${theme.name}`}
     >
@@ -77,13 +56,31 @@ export default function DemoPage() {
         <div style={styles.eyebrow}>Menuply demo</div>
         <h1 style={styles.title}>Choose a menu design to preview</h1>
         <p style={styles.copy}>
-          These sample windows open live Menuply menu theme previews, including the default KBC-style menu sample. They use demo data only and are not real restaurants accepting orders.
+          These sample windows open live Menuply menu theme previews from the design lab. They use demo data only and are not real restaurants accepting orders.
         </p>
       </section>
 
       <section style={styles.grid} aria-label="Menu design demos">
-        {MENU_THEME_SAMPLES.map((theme) => (
-          <MenuWindow key={theme.style} theme={theme} />
+        {CURATED_MENU_DESIGN_LAB_THEMES.map((theme) => (
+          <MenuWindow key={theme.style} theme={{
+            ...theme,
+            swatch: {
+              bg: theme.preset.colorDefaults.background,
+              panel: theme.preset.colorDefaults.primary,
+              accent: theme.preset.colorDefaults.accent,
+              lines: [
+                theme.preset.colorDefaults.background.startsWith("#f")
+                  ? "rgba(15,23,42,0.08)"
+                  : "rgba(255,255,255,0.08)",
+                theme.preset.colorDefaults.background.startsWith("#f")
+                  ? "rgba(15,23,42,0.72)"
+                  : "rgba(255,255,255,0.72)",
+                theme.preset.colorDefaults.background.startsWith("#f")
+                  ? "rgba(15,23,42,0.48)"
+                  : "rgba(255,255,255,0.48)",
+              ],
+            },
+          }} />
         ))}
       </section>
     </main>

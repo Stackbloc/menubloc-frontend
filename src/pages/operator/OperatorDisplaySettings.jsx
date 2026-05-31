@@ -18,6 +18,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+import { MENU_DESIGN_LAB_THEMES } from "../../data/menuDesignLabThemes.js";
 
 const ACCENT_PRESETS = [
   { label: "Green",   value: "#4ade80" },
@@ -38,6 +39,14 @@ export default function OperatorDisplaySettings() {
     highlight_deals:  true,
     accent_color:     null,
     menu_style:       "v1",
+    theme_preset:     "v1",
+    primary_color:    null,
+    secondary_color:  null,
+    background_style: "dark",
+    image_density:    "all",
+    hero_image_enabled: true,
+    section_heading_style: "default",
+    price_placement: "right",
   });
   const [loading,  setLoading]  = useState(true);
   const [saving,   setSaving]   = useState(false);
@@ -289,21 +298,23 @@ export default function OperatorDisplaySettings() {
               </Field>
 
               {/* Menu presentation style */}
-              <Field label="Menu Presentation Style">
+              <Field label="Menu Design Lab Presets">
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {[
-                    { value: "v1", label: "Classic", desc: "Clean list layout — works for any restaurant type." },
-                    { value: "v2", label: "Modern Fast Casual", desc: "Bright, clean, fast-scanning layout for bowls, salads, tacos, sandwiches, and lunch concepts." },
-                    { value: "v3", label: "Food Truck", desc: "Bold, mobile-first ordering layout with large tap targets for trucks, pop-ups, burgers, BBQ, and tacos." },
-                    { value: "v4", label: "Steakhouse / Dark Premium", desc: "Dark luxury styling, warm accents, and premium spacing for upscale dinner and cocktail concepts." },
-                    { value: "v5", label: "Family / Diner", desc: "Friendly, readable, accessible layout for diners, breakfast restaurants, and comfort food." },
-                    { value: "v6", label: "Premium Bistro", desc: "Dark branded header, collection buttons, decorative section headings, and a polished editorial menu panel." },
-                  ].map(({ value, label, desc }) => {
-                    const isSelected = (settings.menu_style || "v1") === value;
+                  {MENU_DESIGN_LAB_THEMES.map(({ style, name, bestFit, description, preset }) => {
+                    const isSelected = (settings.menu_style || "v1") === style;
                     return (
                       <div
-                        key={value}
-                        onClick={() => setSettings((s) => ({ ...s, menu_style: value }))}
+                        key={style}
+                        onClick={() => setSettings((s) => ({
+                          ...s,
+                          menu_style: style,
+                          theme_preset: style,
+                          primary_color: s.primary_color || preset?.colorDefaults?.primary || null,
+                          secondary_color: s.secondary_color || preset?.colorDefaults?.accent || null,
+                          background_style: s.background_style || "dark",
+                          section_heading_style: preset?.sectionHeadingStyle || s.section_heading_style || "default",
+                          price_placement: preset?.pricePlacement || s.price_placement || "right",
+                        }))}
                         style={{
                           border: `2px solid ${isSelected ? "#1F4E3D" : "#e4e9f0"}`,
                           borderRadius: 10,
@@ -321,12 +332,13 @@ export default function OperatorDisplaySettings() {
                           background: isSelected ? "#1F4E3D" : "transparent",
                         }} />
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1720" }}>{label}</div>
-                          <div style={{ fontSize: 12, color: "#5b6675", marginTop: 2 }}>{desc}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1720" }}>{name}</div>
+                          <div style={{ fontSize: 12, color: "#5b6675", marginTop: 2 }}>{bestFit}</div>
+                          <div style={{ fontSize: 12, color: "#8a9ab0", marginTop: 2 }}>{description}</div>
                         </div>
                         {isSelected && rid ? (
-                          <a
-                            href={`/restaurants/${rid}/menu?menuStyle=${value}`}
+                            <a
+                            href={`/restaurants/${rid}/menu?menuStyle=${style}`}
                             target="_blank"
                             rel="noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -338,6 +350,85 @@ export default function OperatorDisplaySettings() {
                       </div>
                     );
                   })}
+                </div>
+              </Field>
+
+              <Field label="Design Lab Controls">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+                  <Control label="Primary color">
+                    <input
+                      type="color"
+                      value={settings.primary_color || settings.accent_color || "#1F4E3D"}
+                      onChange={(e) => setSettings((s) => ({
+                        ...s,
+                        primary_color: e.target.value,
+                        accent_color: e.target.value,
+                      }))}
+                      style={colorInputStyle}
+                    />
+                  </Control>
+                  <Control label="Accent color">
+                    <input
+                      type="color"
+                      value={settings.secondary_color || settings.accent_color || "#1F4E3D"}
+                      onChange={(e) => setSettings((s) => ({ ...s, secondary_color: e.target.value }))}
+                      style={colorInputStyle}
+                    />
+                  </Control>
+                  <Control label="Background style">
+                    <select
+                      value={settings.background_style || "dark"}
+                      onChange={(e) => setSettings((s) => ({ ...s, background_style: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      <option value="dark">Dark</option>
+                      <option value="light">Light</option>
+                      <option value="paper">Paper</option>
+                      <option value="chalkboard">Chalkboard</option>
+                    </select>
+                  </Control>
+                  <Control label="Image density">
+                    <select
+                      value={settings.image_density || "all"}
+                      onChange={(e) => setSettings((s) => ({ ...s, image_density: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      <option value="all">All images</option>
+                      <option value="section">Section images</option>
+                      <option value="thumbnail">Item thumbnails</option>
+                      <option value="none">No images</option>
+                    </select>
+                  </Control>
+                  <Control label="Hero image">
+                    <Toggle
+                      label={settings.hero_image_enabled ? "Enabled" : "Disabled"}
+                      checked={settings.hero_image_enabled}
+                      onChange={(v) => setSettings((s) => ({ ...s, hero_image_enabled: v }))}
+                    />
+                  </Control>
+                  <Control label="Section headings">
+                    <select
+                      value={settings.section_heading_style || "default"}
+                      onChange={(e) => setSettings((s) => ({ ...s, section_heading_style: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      <option value="default">Default</option>
+                      <option value="lines">Lines</option>
+                      <option value="decorative">Decorative</option>
+                      <option value="block">Block</option>
+                    </select>
+                  </Control>
+                  <Control label="Price placement">
+                    <select
+                      value={settings.price_placement || "right"}
+                      onChange={(e) => setSettings((s) => ({ ...s, price_placement: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      <option value="right">Right aligned</option>
+                      <option value="below">Below item</option>
+                      <option value="inline">Inline</option>
+                    </select>
+                  </Control>
                 </div>
               </Field>
 
@@ -429,6 +520,15 @@ function Toggle({ label, checked, onChange }) {
   );
 }
 
+function Control({ label, children }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: "#0f1720" }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
 function btnStyle(bg, color, borderColor) {
   return {
     background: bg,
@@ -443,3 +543,26 @@ function btnStyle(bg, color, borderColor) {
     transition: "opacity 0.1s",
   };
 }
+
+const selectStyle = {
+  width: "100%",
+  minHeight: 40,
+  borderRadius: 10,
+  border: "1px solid #e4e9f0",
+  background: "#fff",
+  color: "#0f1720",
+  fontSize: 13,
+  padding: "0 12px",
+  boxSizing: "border-box",
+  fontFamily: "inherit",
+};
+
+const colorInputStyle = {
+  width: "100%",
+  height: 40,
+  borderRadius: 10,
+  border: "1px solid #e4e9f0",
+  padding: 0,
+  background: "#fff",
+  boxSizing: "border-box",
+};

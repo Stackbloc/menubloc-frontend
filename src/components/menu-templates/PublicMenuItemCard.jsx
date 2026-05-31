@@ -5,6 +5,7 @@ import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.
 import { itemHasInsightsData } from "../basket/ItemInsightsSheet.jsx";
 import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
 import { buildDishShareData } from "../share/shareUtils.js";
+import { getMenuItemImageUrl } from "./menuImageUtils.js";
 
 function Badge({ label, bg, color, border }) {
   return (
@@ -94,6 +95,7 @@ export default function PublicMenuItemCard({
       ""
   ).trim();
   const price = fmtMoney(it);
+  const imageUrl = getMenuItemImageUrl(it);
   const indulgencePresentation = resolveIndulgencePresentation({ chips: it?.chips });
   const deal = it?.id != null ? dealMap.get(it.id) : undefined;
   const hasDeal = !!deal;
@@ -206,108 +208,135 @@ export default function PublicMenuItemCard({
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1, flexWrap: "nowrap" }}>
-          <span
+      <div style={{ display: "flex", gap: imageUrl ? 12 : 0, alignItems: imageUrl ? "flex-start" : "baseline" }}>
+        {imageUrl ? (
+          <div
+            aria-hidden="true"
             style={{
-              fontSize: titleSize,
-              fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : density === "classic" ? 700 : 600,
-              color: "#FFFFFF",
-              lineHeight: 1.2,
-              minWidth: 0,
+              width: density === "cinematic" ? 100 : 72,
+              height: density === "cinematic" ? 72 : 72,
+              borderRadius: density === "refined-editorial" ? 14 : 12,
               overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: density === "takeout" ? "nowrap" : "normal",
+              flexShrink: 0,
+              background: "#0f1720",
+              border: "1px solid rgba(255,255,255,0.08)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+              marginTop: 2,
             }}
           >
-            {name}
-          </span>
-          {dishShareData ? (
-            <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0, whiteSpace: "nowrap" }}>
-              <ShareButton
-                variant="dish"
-                shareData={dishShareData}
-                analyticsContext={{
-                  restaurantId: currentRestaurantId,
-                  restaurantSlug: data?.slug || null,
-                  menuItemId: it.id,
-                  menuItemName: name,
-                  pageType: "public_menu",
-                  shareTarget: "dish",
+            <img
+              src={imageUrl}
+              alt=""
+              loading="lazy"
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+          </div>
+        ) : null}
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1, flexWrap: "nowrap" }}>
+              <span
+                style={{
+                  fontSize: titleSize,
+                  fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : density === "classic" ? 700 : 600,
+                  color: "#FFFFFF",
+                  lineHeight: 1.2,
+                  minWidth: 0,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: density === "takeout" ? "nowrap" : "normal",
                 }}
-                size="compact"
-                tone="subtle"
-                iconOnly
-              />
+              >
+                {name}
+              </span>
+              {dishShareData ? (
+                <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0, whiteSpace: "nowrap" }}>
+                  <ShareButton
+                    variant="dish"
+                    shareData={dishShareData}
+                    analyticsContext={{
+                      restaurantId: currentRestaurantId,
+                      restaurantSlug: data?.slug || null,
+                      menuItemId: it.id,
+                      menuItemName: name,
+                      pageType: "public_menu",
+                      shareTarget: "dish",
+                    }}
+                    size="compact"
+                    tone="subtle"
+                    iconOnly
+                  />
+                </div>
+              ) : null}
+            </div>
+            {price ? (
+              <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap" }}>{price}</span>
+            ) : null}
+          </div>
+
+          {inCartCount > 0 || hasDeal || it?.is_vegan || it?.is_gluten_free || !itemIsOrderable ? (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+              {inCartCount > 0 ? (
+                hoveredItemId === it.id ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeItem(cartState.simpleLine?.lineId);
+                      setHoveredItemId(null);
+                    }}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "#fca5a5",
+                      background: "#1c0a0a",
+                      borderRadius: 999,
+                      padding: "2px 7px",
+                      border: "none",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    × Remove from basket
+                  </button>
+                ) : (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: onAccent,
+                      background: accent,
+                      borderRadius: 999,
+                      padding: "2px 7px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {inCartCount} in order
+                  </span>
+                )
+              ) : null}
+              {!itemIsOrderable ? <Badge label="Unavailable" bg="#1c1208" color="#fb923c" border="1px solid #431407" /> : null}
+              {hasDeal && (
+                <Badge
+                  label={t("common.deals", "Deals")}
+                  bg={softBg}
+                  color={accent}
+                  border={`1px solid ${softBorder}`}
+                />
+              )}
+              {it?.is_vegan && (
+                <Badge
+                  label={t("diet.vegan", "Vegan")}
+                  bg={softBg}
+                  color={accent}
+                  border={`1px solid ${softBorder}`}
+                />
+              )}
+              {it?.is_gluten_free && <Badge label="GF" bg="#1c1a0a" color="#FCD34D" border="1px solid #44400a" />}
             </div>
           ) : null}
         </div>
-        {price ? (
-          <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap" }}>{price}</span>
-        ) : null}
       </div>
-
-      {inCartCount > 0 || hasDeal || it?.is_vegan || it?.is_gluten_free || !itemIsOrderable ? (
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
-          {inCartCount > 0 ? (
-            hoveredItemId === it.id ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeItem(cartState.simpleLine?.lineId);
-                  setHoveredItemId(null);
-                }}
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "#fca5a5",
-                  background: "#1c0a0a",
-                  borderRadius: 999,
-                  padding: "2px 7px",
-                  border: "none",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                × Remove from basket
-              </button>
-            ) : (
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: onAccent,
-                  background: accent,
-                  borderRadius: 999,
-                  padding: "2px 7px",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {inCartCount} in order
-              </span>
-            )
-          ) : null}
-          {!itemIsOrderable ? <Badge label="Unavailable" bg="#1c1208" color="#fb923c" border="1px solid #431407" /> : null}
-          {hasDeal && (
-            <Badge
-              label={t("common.deals", "Deals")}
-              bg={softBg}
-              color={accent}
-              border={`1px solid ${softBorder}`}
-            />
-          )}
-          {it?.is_vegan && (
-            <Badge
-              label={t("diet.vegan", "Vegan")}
-              bg={softBg}
-              color={accent}
-              border={`1px solid ${softBorder}`}
-            />
-          )}
-          {it?.is_gluten_free && <Badge label="GF" bg="#1c1a0a" color="#FCD34D" border="1px solid #44400a" />}
-        </div>
-      ) : null}
 
       {desc ? (
         <div style={{

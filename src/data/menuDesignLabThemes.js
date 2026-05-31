@@ -1,0 +1,367 @@
+import { MENU_THEME_PREVIEW_PAYLOADS } from "./menuTemplatePreviewSample.js";
+
+const CUSTOMIZATION_CONTROLS = [
+  "themePreset",
+  "primaryColor",
+  "accentColor",
+  "backgroundStyle",
+  "typographyStyle",
+  "logoPlacement",
+  "heroImageBehavior",
+  "sectionStyle",
+  "itemImageStyle",
+  "buttonStyle",
+  "pricePlacement",
+  "intelligenceDisplayStyle",
+];
+
+function makePreviewPayload(base, overrides = {}) {
+  return {
+    ...base,
+    ...overrides,
+    menu_presentation: {
+      ...(base.menu_presentation || {}),
+      ...(overrides.menu_presentation || {}),
+    },
+    sections: overrides.sections || base.sections || [],
+    deal_items: overrides.deal_items || base.deal_items || [],
+  };
+}
+
+const THEMES = [
+  {
+    style: "v1",
+    name: "Default Menu",
+    bestFit: "Local restaurants, broad menus, simple operators",
+    description: "The baseline Menuply menu system with the KBC-style Dothan sample data.",
+    visibleInGallery: true,
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
+      restaurant_name: "KBC Butcher Block",
+      name: "KBC Butcher Block",
+      slug: "kbc-butcher-block",
+      accent_color: "#1F4E3D",
+      menu_name: "Main Menu",
+    }),
+    preset: {
+      id: "v1",
+      layoutStyle: "classic list",
+      colorDefaults: {
+        primary: "#1F4E3D",
+        accent: "#3DD934",
+        background: "#0B0F0C",
+      },
+      typographyDefaults: {
+        heading: "classic",
+        body: "default",
+      },
+      imageRules: {
+        hero: "optional",
+        itemImages: "thumbnails",
+        sectionImages: "optional",
+      },
+      sectionHeadingStyle: "simple all-caps",
+      itemPresentationStyle: "compact rows",
+      buttonStyle: "outline",
+      pricePlacement: "right",
+      supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
+    },
+  },
+  {
+    style: "v2",
+    name: "Modern Fast Casual",
+    bestFit: "Bowls, salads, tacos, sandwiches, coffee, lunch concepts",
+    description: "Bright, clean, and functional for fast-scanning service brands.",
+    visibleInGallery: false,
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
+      restaurant_name: "Fast Casual Sample",
+      name: "Fast Casual Sample",
+      slug: "fast-casual-sample",
+      accent_color: "#2f7d5b",
+      menu_name: "Lunch Menu",
+    }),
+    preset: {
+      id: "v2",
+      layoutStyle: "bright fast casual",
+      colorDefaults: {
+        primary: "#2f7d5b",
+        accent: "#2f7d5b",
+        background: "#F8FAF7",
+      },
+      typographyDefaults: {
+        heading: "modern",
+        body: "system",
+      },
+      imageRules: {
+        hero: "optional",
+        itemImages: "thumbnails",
+        sectionImages: "optional",
+      },
+      sectionHeadingStyle: "large clean",
+      itemPresentationStyle: "dense rows",
+      buttonStyle: "outline",
+      pricePlacement: "right",
+      supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
+    },
+  },
+  {
+    style: "v3",
+    name: "Food Truck",
+    bestFit: "Street food, trucks, pop-ups, burgers, wings, tacos",
+    description: "Bold tap targets and quick scanning for ordering from a counter or window.",
+    visibleInGallery: false,
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
+      restaurant_name: "Street Food Sample",
+      name: "Street Food Sample",
+      slug: "street-food-sample",
+      accent_color: "#f97316",
+      menu_name: "Street Menu",
+    }),
+    preset: {
+      id: "v3",
+      layoutStyle: "street service",
+      colorDefaults: {
+        primary: "#f59e0b",
+        accent: "#f97316",
+        background: "#111111",
+      },
+      typographyDefaults: {
+        heading: "condensed",
+        body: "system",
+      },
+      imageRules: {
+        hero: "optional",
+        itemImages: "thumbnails",
+        sectionImages: "hero cards",
+      },
+      sectionHeadingStyle: "block labels",
+      itemPresentationStyle: "dense tap rows",
+      buttonStyle: "solid",
+      pricePlacement: "right",
+      supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
+    },
+  },
+  {
+    style: "v4",
+    name: "Steakhouse / Dark Premium",
+    bestFit: "Steakhouses, cocktail lounges, upscale dinner, bourbon bars",
+    description: "Dark luxury with warm metallic accents and sparse premium spacing.",
+    visibleInGallery: true,
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v4, {
+      restaurant_name: "Aurum Steakhouse",
+      name: "Aurum Steakhouse",
+      slug: "aurum-steakhouse",
+      accent_color: "#b68b45",
+      menu_name: "Dinner Menu",
+      font_preset: "serif",
+    }),
+    preset: {
+      id: "v4",
+      layoutStyle: "dark premium",
+      colorDefaults: {
+        primary: "#b68b45",
+        accent: "#b68b45",
+        background: "#070707",
+      },
+      typographyDefaults: {
+        heading: "serif",
+        body: "classic",
+      },
+      imageRules: {
+        hero: "large hero",
+        itemImages: "optional",
+        sectionImages: "subtle breaks",
+      },
+      sectionHeadingStyle: "centered luxury",
+      itemPresentationStyle: "elegant rows",
+      buttonStyle: "outline",
+      pricePlacement: "right",
+      supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
+    },
+  },
+  {
+    style: "v5",
+    name: "Family / Diner",
+    bestFit: "Diners, breakfast places, family-owned comfort food",
+    description: "Readable and trustworthy with generous spacing and friendly contrast.",
+    visibleInGallery: false,
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
+      restaurant_name: "Home Table Diner",
+      name: "Home Table Diner",
+      slug: "home-table-diner",
+      accent_color: "#2563eb",
+      menu_name: "All Day Menu",
+    }),
+    preset: {
+      id: "v5",
+      layoutStyle: "warm diner",
+      colorDefaults: {
+        primary: "#2563eb",
+        accent: "#2563eb",
+        background: "#fffaf0",
+      },
+      typographyDefaults: {
+        heading: "friendly serif",
+        body: "system",
+      },
+      imageRules: {
+        hero: "optional",
+        itemImages: "thumbnails",
+        sectionImages: "optional",
+      },
+      sectionHeadingStyle: "boxed headers",
+      itemPresentationStyle: "open rows",
+      buttonStyle: "filled",
+      pricePlacement: "right",
+      supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
+    },
+  },
+  {
+    style: "v6",
+    name: "Premium Bistro",
+    bestFit: "Bistros, chef-driven restaurants, date-night menus",
+    description: "Dark branded header, collection buttons, decorative section headings, and image breaks.",
+    visibleInGallery: true,
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v6, {
+      restaurant_name: "Urban Bistro",
+      name: "Urban Bistro",
+      slug: "urban-bistro",
+      accent_color: "#7a2b23",
+      menu_name: "Dinner Menu",
+      font_preset: "default",
+    }),
+    preset: {
+      id: "v6",
+      layoutStyle: "editorial bistro",
+      colorDefaults: {
+        primary: "#7a2b23",
+        accent: "#7a2b23",
+        background: "#171717",
+      },
+      typographyDefaults: {
+        heading: "editorial serif",
+        body: "system",
+      },
+      imageRules: {
+        hero: "hero and section breaks",
+        itemImages: "thumbnails",
+        sectionImages: "edge-to-edge",
+      },
+      sectionHeadingStyle: "decorative lines",
+      itemPresentationStyle: "editorial rows",
+      buttonStyle: "filled",
+      pricePlacement: "aligned",
+      supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
+    },
+  },
+  {
+    style: "v7",
+    name: "Chalkboard Street",
+    bestFit: "Food trucks, counters, wings, burgers, tacos, late-night service",
+    description: "A dark chalkboard menu inspired by fast-moving street food and hand-lettered signs.",
+    visibleInGallery: true,
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v7, {
+      font_preset: "bold",
+    }),
+    preset: {
+      id: "v7",
+      layoutStyle: "chalkboard street",
+      colorDefaults: {
+        primary: "#f6b21a",
+        accent: "#e94716",
+        background: "#151515",
+      },
+      typographyDefaults: {
+        heading: "condensed",
+        body: "system",
+      },
+      imageRules: {
+        hero: "optional",
+        itemImages: "thumbnails",
+        sectionImages: "breaks",
+      },
+      sectionHeadingStyle: "big chalk",
+      itemPresentationStyle: "high contrast rows",
+      buttonStyle: "solid",
+      pricePlacement: "right",
+      supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
+    },
+  },
+  {
+    style: "v8",
+    name: "Rustic Italian",
+    bestFit: "Pizza, pasta, trattorias, casual Italian, neighborhood dining",
+    description: "Warm parchment tones, red accents, and menu sections that feel like a pizzeria board.",
+    visibleInGallery: true,
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v8, {
+      font_preset: "serif",
+    }),
+    preset: {
+      id: "v8",
+      layoutStyle: "rustic italian",
+      colorDefaults: {
+        primary: "#b63c2f",
+        accent: "#b63c2f",
+        background: "#f7efe3",
+      },
+      typographyDefaults: {
+        heading: "serif",
+        body: "system",
+      },
+      imageRules: {
+        hero: "large hero",
+        itemImages: "thumbnails",
+        sectionImages: "feature strips",
+      },
+      sectionHeadingStyle: "line-divided",
+      itemPresentationStyle: "paragraph rows",
+      buttonStyle: "outline",
+      pricePlacement: "right",
+      supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
+    },
+  },
+  {
+    style: "v9",
+    name: "Modern Asian",
+    bestFit: "Sushi, ramen, bowls, shared plates, upscale casual Asian concepts",
+    description: "Photo-forward and minimal with calm spacing and elegant contrast.",
+    visibleInGallery: true,
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v9, {
+      font_preset: "default",
+    }),
+    preset: {
+      id: "v9",
+      layoutStyle: "modern asian",
+      colorDefaults: {
+        primary: "#c9a35b",
+        accent: "#c9a35b",
+        background: "#101418",
+      },
+      typographyDefaults: {
+        heading: "modern",
+        body: "system",
+      },
+      imageRules: {
+        hero: "hero and featured picks",
+        itemImages: "thumbnails",
+        sectionImages: "optional",
+      },
+      sectionHeadingStyle: "quiet uppercase",
+      itemPresentationStyle: "photo rows",
+      buttonStyle: "outline",
+      pricePlacement: "right",
+      supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
+    },
+  },
+];
+
+export const MENU_DESIGN_LAB_THEMES = THEMES;
+
+export const CURATED_MENU_DESIGN_LAB_THEMES = THEMES.filter((theme) => theme.visibleInGallery);
+
+export function getMenuDesignLabTheme(style) {
+  return THEMES.find((theme) => theme.style === style) || THEMES[0];
+}
+
+export function getMenuDesignLabThemePayload(style) {
+  return getMenuDesignLabTheme(style)?.previewPayload || MENU_THEME_PREVIEW_PAYLOADS.v1;
+}

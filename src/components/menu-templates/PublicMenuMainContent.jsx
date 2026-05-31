@@ -4,6 +4,9 @@ import TakeoutMenuTemplate from "./TakeoutMenuTemplate.jsx";
 import DarkPremiumMenuTemplate from "./DarkPremiumMenuTemplate.jsx";
 import FamilyDinerMenuTemplate from "./FamilyDinerMenuTemplate.jsx";
 import PremiumBistroMenuTemplate from "./PremiumBistroMenuTemplate.jsx";
+import ChalkboardMenuTemplate from "./ChalkboardMenuTemplate.jsx";
+import RusticItalianMenuTemplate from "./RusticItalianMenuTemplate.jsx";
+import ModernAsianMenuTemplate from "./ModernAsianMenuTemplate.jsx";
 import { normalizeMenuStyle } from "./menuPresentationUtils.js";
 
 /**
@@ -17,5 +20,8 @@ export default function PublicMenuMainContent({ menuStyle: rawStyle, templateCon
   if (menuStyle === "v4") return <DarkPremiumMenuTemplate {...ctx} />;
   if (menuStyle === "v5") return <FamilyDinerMenuTemplate {...ctx} />;
   if (menuStyle === "v6") return <PremiumBistroMenuTemplate {...ctx} />;
+  if (menuStyle === "v7") return <ChalkboardMenuTemplate {...ctx} />;
+  if (menuStyle === "v8") return <RusticItalianMenuTemplate {...ctx} />;
+  if (menuStyle === "v9") return <ModernAsianMenuTemplate {...ctx} />;
   return <ClassicMenuTemplate {...ctx} />;
 }

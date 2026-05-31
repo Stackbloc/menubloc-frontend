@@ -9,6 +9,9 @@ export function normalizeMenuStyle(raw) {
   if (s === "v4" || s === "bold-casual" || s === "bold_casual" || s === "casual") return "v4";
   if (s === "v5" || s === "refined-editorial" || s === "editorial" || s === "upscale") return "v5";
   if (s === "v6" || s === "premium-bistro" || s === "premium_bistro" || s === "bistro") return "v6";
+  if (s === "v7" || s === "chalkboard" || s === "street" || s === "food-truck") return "v7";
+  if (s === "v8" || s === "italian" || s === "pizza" || s === "rustic-italian") return "v8";
+  if (s === "v9" || s === "asian" || s === "sushi" || s === "modern-asian") return "v9";
   if (s === "v1" || s === "classic") return "v1";
   return "v1";
 }
