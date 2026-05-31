@@ -121,17 +121,19 @@ export default function OperatorQrKitOrder() {
   const previewPlacements = useMemo(
     () => selectedPackage.placements.map((placement) => ({
       label: placement,
-      previewUrl: selectedRestaurant?.id
-        ? api.getQrKitPreviewUrl(selectedRestaurant.id, {
-            package_type: packageType,
-            placement:
-              placement === "Counter / Pickup"
-                ? "counter"
-                : placement === "Table Set"
-                  ? "table"
-                  : "door",
-          })
-        : "",
+      previewUrl: placement === "Door"
+        ? "/qr-door-preview.png"
+        : selectedRestaurant?.id
+          ? api.getQrKitPreviewUrl(selectedRestaurant.id, {
+              package_type: packageType,
+              placement:
+                placement === "Counter / Pickup"
+                  ? "counter"
+                  : placement === "Table Set"
+                    ? "table"
+                    : "door",
+            })
+          : "",
     })),
     [packageType, selectedPackage.placements, selectedRestaurant?.id]
   );
