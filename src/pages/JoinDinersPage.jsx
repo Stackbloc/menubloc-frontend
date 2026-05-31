@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
+import ShareButton from "../components/share/ShareButton.jsx";
 
 const GOALS = [
   "Help diners save money through lower menu prices and better restaurant deals",
@@ -19,8 +20,6 @@ function readSessionLocationLabel() {
 
 export default function JoinDinersPage() {
   const location = useLocation();
-  const [copied, setCopied] = useState(false);
-
   const locationLabel = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const city = String(params.get("city") || "").trim();
@@ -49,26 +48,6 @@ export default function JoinDinersPage() {
     }
   }, []);
 
-  async function handleShare() {
-    const shareText = "Join the movement to make dining out more affordable.";
-    const shareUrl = `${window.location.origin}/join/diners`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ text: shareText, url: shareUrl });
-      } catch {
-        // user cancelled or unsupported
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
-      } catch {
-        // silent fallback
-      }
-    }
-  }
-
   return (
     <main style={styles.page}>
       <div style={styles.wrap}>
@@ -83,7 +62,20 @@ export default function JoinDinersPage() {
 
         <div style={styles.eyebrow}>For Diners</div>
 
-        <h1 style={styles.heading}>Join the Movement</h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
+          <h1 style={{ ...styles.heading, marginBottom: 0, flex: 1 }}>Join the Movement</h1>
+          <ShareButton
+            iconOnly
+            size="compact"
+            shareData={{
+              title: "Menuply",
+              text: "Join the movement to make dining out more affordable.",
+              url: typeof window !== "undefined" ? `${window.location.origin}/join/diners` : "https://menuply.com/join/diners",
+            }}
+            analyticsContext={{ source: "join_diners" }}
+            variant="menu"
+          />
+        </div>
 
         <p style={styles.paragraph}>
           Menuply is a new restaurant discovery and ordering platform. Our central premise is that
@@ -119,9 +111,6 @@ export default function JoinDinersPage() {
           <Link to="/account/signup" style={styles.ctaPrimary}>
             Create Free Account
           </Link>
-          <button type="button" onClick={handleShare} style={styles.ctaSecondary}>
-            {copied ? "Link Copied!" : "Invite Friends"}
-          </button>
         </div>
 
         <footer style={styles.footer}>
@@ -236,21 +225,6 @@ const styles = {
     padding: "14px 32px",
     borderRadius: 8,
     textAlign: "center",
-  },
-  ctaSecondary: {
-    display: "block",
-    background: "transparent",
-    color: "rgba(255,255,255,0.75)",
-    border: "1.5px solid rgba(255,255,255,0.2)",
-    fontSize: "1rem",
-    fontWeight: 600,
-    padding: "13px 32px",
-    borderRadius: 8,
-    textAlign: "center",
-    cursor: "pointer",
-    fontFamily: "inherit",
-    width: "100%",
-    boxSizing: "border-box",
   },
   footer: {
     marginTop: 52,
