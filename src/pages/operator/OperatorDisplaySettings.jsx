@@ -19,6 +19,7 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { MENU_DESIGN_LAB_THEMES } from "../../data/menuDesignLabThemes.js";
+import { normalizeMenuThemeSettings } from "../../components/menu-templates/menuThemeSettings.js";
 
 const ACCENT_PRESETS = [
   { label: "Green",   value: "#4ade80" },
@@ -28,6 +29,25 @@ const ACCENT_PRESETS = [
   { label: "Violet",  value: "#a78bfa" },
   { label: "White",   value: "#f0f0f0" },
 ];
+
+function inferBackgroundStyle(theme) {
+  const bg = String(theme?.preset?.colorDefaults?.background || "").trim().toLowerCase();
+  if (!bg) return "dark";
+  if (bg.startsWith("#fff") || bg.startsWith("#fef") || bg.startsWith("#f7efe3")) return "paper";
+  if (bg.startsWith("#f8") || bg.startsWith("#faf") || bg.startsWith("#f6")) return "light";
+  return "dark";
+}
+
+function inferImageDensity(theme) {
+  const itemImages = String(theme?.preset?.imageRules?.itemImages || "").trim().toLowerCase();
+  const sectionImages = String(theme?.preset?.imageRules?.sectionImages || "").trim().toLowerCase();
+  if (itemImages.includes("none")) return "none";
+  if (itemImages.includes("all")) return "all";
+  if (itemImages.includes("thumbnail") || itemImages.includes("thumbnails")) return "thumbnail";
+  if (sectionImages.includes("edge") || sectionImages.includes("break") || sectionImages.includes("hero")) return "section";
+  if (itemImages.includes("optional")) return "thumbnail";
+  return "all";
+}
 
 export default function OperatorDisplaySettings() {
   const { selectedRestaurant, hasBenefit } = useOperator();
@@ -39,14 +59,21 @@ export default function OperatorDisplaySettings() {
     highlight_deals:  true,
     accent_color:     null,
     menu_style:       "v1",
-    theme_preset:     "v1",
     primary_color:    null,
-    secondary_color:  null,
     background_style: "dark",
     image_density:    "all",
-    hero_image_enabled: true,
+    item_image_style: "auto",
+    hero_enabled: true,
     section_heading_style: "default",
     price_placement: "right",
+    intelligence_display_style: "subtle",
+    intelligence_density: "subtle",
+    nutrition_display: "compact",
+    allergen_display: "icon",
+    insight_display: "compact",
+    compare_enabled: true,
+    similar_enabled: true,
+    indulgence_display: "compact",
   });
   const [loading,  setLoading]  = useState(true);
   const [saving,   setSaving]   = useState(false);
@@ -61,7 +88,13 @@ export default function OperatorDisplaySettings() {
     try {
       const data = await api.getDisplaySettings(rid);
       if (data.ok && data.settings) {
-        setSettings((s) => ({ ...s, ...data.settings }));
+        const normalized = normalizeMenuThemeSettings(data.settings);
+        setSettings((s) => ({
+          ...s,
+          ...data.settings,
+          ...normalized,
+          item_image_style: data.settings.item_image_style || normalized.image_density,
+        }));
       }
     } catch {
       // Use defaults if load fails
@@ -77,7 +110,26 @@ export default function OperatorDisplaySettings() {
     setSaving(true);
     setSaved(false);
     try {
-      const data = await api.updateDisplaySettings(rid, settings);
+      const payload = {
+        ...settings,
+        menu_style: settings.menu_style || "v1",
+        primary_color: settings.primary_color || null,
+        accent_color: settings.accent_color || settings.primary_color || null,
+        hero_enabled: settings.hero_enabled !== false,
+        image_density: settings.image_density || "all",
+        item_image_style: settings.item_image_style || settings.image_density || "all",
+        section_heading_style: settings.section_heading_style || "default",
+        price_placement: settings.price_placement || "right",
+        intelligence_display_style: settings.intelligence_display_style || "subtle",
+        intelligence_density: settings.intelligence_density || "subtle",
+        nutrition_display: settings.nutrition_display || "compact",
+        allergen_display: settings.allergen_display || "icon",
+        insight_display: settings.insight_display || "compact",
+        compare_enabled: settings.compare_enabled !== false,
+        similar_enabled: settings.similar_enabled !== false,
+        indulgence_display: settings.indulgence_display || "compact",
+      };
+      const data = await api.updateDisplaySettings(rid, payload);
       if (data.ok && data.settings) setSettings((s) => ({ ...s, ...data.settings }));
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -98,6 +150,16 @@ export default function OperatorDisplaySettings() {
       setCopyText("Copy failed");
       setTimeout(() => setCopyText("Copy Display Link"), 2500);
     }
+  }
+
+  function openPreview() {
+    if (!rid) return;
+    window.open(`/menu-design-lab?theme=${encodeURIComponent(settings.menu_style || "v1")}`, "_blank", "noopener,noreferrer");
+  }
+
+  function openPublicMenu() {
+    if (!rid) return;
+    window.open(`/restaurants/${rid}/menu`, "_blank", "noopener,noreferrer");
   }
 
   if (!isPro) {
@@ -171,11 +233,18 @@ export default function OperatorDisplaySettings() {
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button
-              onClick={() => displayUrl && window.open(displayUrl, "_blank")}
-              disabled={!displayUrl}
+              onClick={openPreview}
+              disabled={!rid}
               style={btnStyle("#1F4E3D", "#fff")}
             >
-              Open Display
+              Preview
+            </button>
+            <button
+              onClick={openPublicMenu}
+              disabled={!rid}
+              style={btnStyle("#1F4E3D", "#fff")}
+            >
+              View Public Menu
             </button>
             <button
               onClick={handleCopyLink}
@@ -308,12 +377,22 @@ export default function OperatorDisplaySettings() {
                         onClick={() => setSettings((s) => ({
                           ...s,
                           menu_style: style,
-                          theme_preset: style,
-                          primary_color: s.primary_color || preset?.colorDefaults?.primary || null,
-                          secondary_color: s.secondary_color || preset?.colorDefaults?.accent || null,
-                          background_style: s.background_style || "dark",
-                          section_heading_style: preset?.sectionHeadingStyle || s.section_heading_style || "default",
-                          price_placement: preset?.pricePlacement || s.price_placement || "right",
+                          primary_color: preset?.colorDefaults?.primary || s.primary_color || null,
+                          accent_color: preset?.colorDefaults?.accent || s.accent_color || null,
+                          background_style: inferBackgroundStyle({ preset }),
+                          section_heading_style: preset?.sectionHeadingStyle || "default",
+                          price_placement: preset?.pricePlacement || "right",
+                          image_density: inferImageDensity({ preset }),
+                          item_image_style: inferImageDensity({ preset }),
+                          hero_enabled: true,
+                          intelligence_display_style: preset?.intelligence?.intelligenceDisplayStyle || "subtle",
+                          intelligence_density: preset?.intelligence?.intelligenceDensity || "subtle",
+                          nutrition_display: preset?.intelligence?.nutritionDisplay || "compact",
+                          allergen_display: preset?.intelligence?.allergenDisplay || "icon",
+                          insight_display: preset?.intelligence?.insightDisplay || "compact",
+                          compare_enabled: preset?.intelligence?.compareEnabled !== false,
+                          similar_enabled: preset?.intelligence?.similarEnabled !== false,
+                          indulgence_display: preset?.intelligence?.indulgenceDisplay || "compact",
                         }))}
                         style={{
                           border: `2px solid ${isSelected ? "#1F4E3D" : "#e4e9f0"}`,
@@ -370,8 +449,8 @@ export default function OperatorDisplaySettings() {
                   <Control label="Accent color">
                     <input
                       type="color"
-                      value={settings.secondary_color || settings.accent_color || "#1F4E3D"}
-                      onChange={(e) => setSettings((s) => ({ ...s, secondary_color: e.target.value }))}
+                      value={settings.accent_color || settings.primary_color || "#1F4E3D"}
+                      onChange={(e) => setSettings((s) => ({ ...s, accent_color: e.target.value }))}
                       style={colorInputStyle}
                     />
                   </Control>
@@ -390,7 +469,11 @@ export default function OperatorDisplaySettings() {
                   <Control label="Image density">
                     <select
                       value={settings.image_density || "all"}
-                      onChange={(e) => setSettings((s) => ({ ...s, image_density: e.target.value }))}
+                      onChange={(e) => setSettings((s) => ({
+                        ...s,
+                        image_density: e.target.value,
+                        item_image_style: e.target.value === "section" ? "section" : e.target.value,
+                      }))}
                       style={selectStyle}
                     >
                       <option value="all">All images</option>
@@ -399,11 +482,24 @@ export default function OperatorDisplaySettings() {
                       <option value="none">No images</option>
                     </select>
                   </Control>
+                  <Control label="Item image style">
+                    <select
+                      value={settings.item_image_style || "auto"}
+                      onChange={(e) => setSettings((s) => ({ ...s, item_image_style: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      <option value="auto">Auto</option>
+                      <option value="all">All images</option>
+                      <option value="section">Section images only</option>
+                      <option value="thumbnail">Item thumbnails</option>
+                      <option value="none">No item images</option>
+                    </select>
+                  </Control>
                   <Control label="Hero image">
                     <Toggle
-                      label={settings.hero_image_enabled ? "Enabled" : "Disabled"}
-                      checked={settings.hero_image_enabled}
-                      onChange={(v) => setSettings((s) => ({ ...s, hero_image_enabled: v }))}
+                      label={settings.hero_enabled ? "Enabled" : "Disabled"}
+                      checked={settings.hero_enabled}
+                      onChange={(v) => setSettings((s) => ({ ...s, hero_enabled: v }))}
                     />
                   </Control>
                   <Control label="Section headings">
@@ -432,6 +528,97 @@ export default function OperatorDisplaySettings() {
                 </div>
               </Field>
 
+              <Field label="Intelligence treatment">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+                  <Control label="Display style">
+                    <select
+                      value={settings.intelligence_display_style || "subtle"}
+                      onChange={(e) => setSettings((s) => ({ ...s, intelligence_display_style: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      <option value="subtle">Subtle</option>
+                      <option value="standard">Standard</option>
+                      <option value="detailed">Detailed</option>
+                      <option value="street">Street</option>
+                      <option value="functional">Functional</option>
+                    </select>
+                  </Control>
+                  <Control label="Density">
+                    <select
+                      value={settings.intelligence_density || "subtle"}
+                      onChange={(e) => setSettings((s) => ({ ...s, intelligence_density: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      <option value="subtle">Subtle</option>
+                      <option value="standard">Standard</option>
+                      <option value="detailed">Detailed</option>
+                      <option value="street">Street</option>
+                      <option value="functional">Functional</option>
+                      <option value="minimal">Minimal</option>
+                    </select>
+                  </Control>
+                  <Control label="Nutrition">
+                    <select
+                      value={settings.nutrition_display || "compact"}
+                      onChange={(e) => setSettings((s) => ({ ...s, nutrition_display: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      <option value="hidden">Hidden</option>
+                      <option value="compact">Compact</option>
+                      <option value="expanded">Expanded</option>
+                    </select>
+                  </Control>
+                  <Control label="Allergens">
+                    <select
+                      value={settings.allergen_display || "icon"}
+                      onChange={(e) => setSettings((s) => ({ ...s, allergen_display: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      <option value="hidden">Hidden</option>
+                      <option value="icon">Icon</option>
+                      <option value="label">Label</option>
+                      <option value="alert">Alert</option>
+                    </select>
+                  </Control>
+                  <Control label="Insights">
+                    <select
+                      value={settings.insight_display || "compact"}
+                      onChange={(e) => setSettings((s) => ({ ...s, insight_display: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      <option value="hidden">Hidden</option>
+                      <option value="compact">Compact</option>
+                      <option value="panel">Panel</option>
+                    </select>
+                  </Control>
+                  <Control label="Indulgence">
+                    <select
+                      value={settings.indulgence_display || "compact"}
+                      onChange={(e) => setSettings((s) => ({ ...s, indulgence_display: e.target.value }))}
+                      style={selectStyle}
+                    >
+                      <option value="hidden">Hidden</option>
+                      <option value="compact">Compact</option>
+                      <option value="meter">Meter</option>
+                    </select>
+                  </Control>
+                  <Control label="Similar items">
+                    <Toggle
+                      label={settings.similar_enabled ? "Enabled" : "Disabled"}
+                      checked={settings.similar_enabled}
+                      onChange={(v) => setSettings((s) => ({ ...s, similar_enabled: v }))}
+                    />
+                  </Control>
+                  <Control label="Compare">
+                    <Toggle
+                      label={settings.compare_enabled ? "Enabled" : "Disabled"}
+                      checked={settings.compare_enabled}
+                      onChange={(v) => setSettings((s) => ({ ...s, compare_enabled: v }))}
+                    />
+                  </Control>
+                </div>
+              </Field>
+
               {/* Save button */}
               <div style={{ marginTop: 24, display: "flex", alignItems: "center", gap: 12 }}>
                 <button
@@ -439,7 +626,7 @@ export default function OperatorDisplaySettings() {
                   disabled={saving}
                   style={btnStyle("#1F4E3D", "#fff")}
                 >
-                  {saving ? "Saving…" : "Save Settings"}
+                  {saving ? "Saving…" : "Save Design"}
                 </button>
                 {saved && (
                   <span style={{ fontSize: 13, color: "#065f46", fontWeight: 600 }}>

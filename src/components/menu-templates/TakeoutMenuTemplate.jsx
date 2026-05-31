@@ -3,6 +3,7 @@ import ShareButton from "../share/ShareButton.jsx";
 import ChipRail from "../chips/ChipRail.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
+import { shouldShowItemImages } from "./menuThemeSettings.js";
 
 function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
   if (logoUrl) {
@@ -84,6 +85,7 @@ export default function TakeoutMenuTemplate(ctx) {
     tabLoading,
     tabError,
     menuPresentation = {},
+    menuThemeSettings = {},
   } = ctx;
 
   const deals = Array.isArray(dealItems) ? dealItems : [];
@@ -93,6 +95,7 @@ export default function TakeoutMenuTemplate(ctx) {
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
   const dealPillBorder = `1px solid ${brand?.accentBorder ?? "rgba(34,197,94,0.35)"}`;
   const ctaGradient = `linear-gradient(180deg, ${accent} 0%, ${accentStrong} 100%)`;
+  const showItemImages = shouldShowItemImages(menuThemeSettings);
 
   return (
     <>
@@ -355,6 +358,8 @@ export default function TakeoutMenuTemplate(ctx) {
                     fmtMoney={fmtMoney}
                     getConsumerDisplayPrice={getConsumerDisplayPrice}
                     brand={brand}
+                    menuThemeSettings={menuThemeSettings}
+                    showImage={showItemImages}
                   />
                 ))}
               </div>

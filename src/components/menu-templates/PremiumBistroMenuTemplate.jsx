@@ -3,8 +3,10 @@ import ShareButton from "../share/ShareButton.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
+import { itemHasInsightsData } from "../basket/ItemInsightsSheet.jsx";
 import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
 import { buildDishShareData } from "../share/shareUtils.js";
+import { shouldShowSectionImages } from "./menuThemeSettings.js";
 
 function text(value) {
   return String(value || "").trim();
@@ -131,6 +133,7 @@ function PremiumMenuItem({
     commitMenuItemToBasket,
     fmtMoney,
     getConsumerDisplayPrice,
+    menuThemeSettings = {},
   } = ctx;
 
   const name = getDisplayMenuItemName(item, language, "Item");
@@ -149,6 +152,16 @@ function PremiumMenuItem({
   );
   const inCartCount = matchingCartLines.reduce((sum, line) => sum + Number(line?.quantity || 0), 0);
   const indulgencePresentation = resolveIndulgencePresentation({ chips: item?.chips });
+  const nutritionChip = item?.chips?.nutrition_chip || null;
+  const hasAllergenData = !!(
+    nutritionChip &&
+    (
+      (Array.isArray(nutritionChip.allergens) && nutritionChip.allergens.length > 0) ||
+      String(nutritionChip.allergen_alert || "").trim()
+    )
+  );
+  const showInsightsInline = menuThemeSettings?.intelligence_density !== "none" && itemHasInsightsData(item);
+  const showAllergenInline = menuThemeSettings?.allergen_display !== "hidden" && hasAllergenData;
   const dishShareData = canNavigate
     ? buildDishShareData({
         restaurant: {
@@ -259,6 +272,48 @@ function PremiumMenuItem({
           {desc}
         </div>
       ) : null}
+      {showInsightsInline || showAllergenInline ? (
+        <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {showAllergenInline ? (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                minHeight: 20,
+                padding: "0 8px",
+                borderRadius: 999,
+                fontSize: 11,
+                fontWeight: 800,
+                background: "rgba(122,43,35,0.08)",
+                color: "#7a2b23",
+                border: "1px solid rgba(122,43,35,0.2)",
+              }}
+            >
+              Allergens
+            </span>
+          ) : null}
+          {showInsightsInline ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openItem();
+              }}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: accent,
+                fontSize: 12,
+                fontWeight: 700,
+                padding: 0,
+                cursor: "pointer",
+              }}
+            >
+              Insights →
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -294,6 +349,7 @@ export default function PremiumBistroMenuTemplate(ctx) {
     tabLoading,
     tabError,
     cartLineCount,
+    menuThemeSettings = {},
   } = ctx;
 
   const accent = brand?.accentStrong ?? brand?.accent ?? "#6b211c";
@@ -301,6 +357,7 @@ export default function PremiumBistroMenuTemplate(ctx) {
   const cream = "#fbf7ee";
   const paper = "#fffdf8";
   const muted = "#74695f";
+  const showSectionImages = shouldShowSectionImages(menuThemeSettings);
   const collectionButtons =
     Array.isArray(menus) && menus.length > 1
       ? menus
@@ -542,7 +599,7 @@ export default function PremiumBistroMenuTemplate(ctx) {
                       />
                     ))}
                   </div>
-                  {imageUrl && sIdx < displaySections.length - 1 ? (
+                  {showSectionImages && imageUrl && sIdx < displaySections.length - 1 ? (
                     <div
                       style={{
                         margin: isMobile ? "28px -22px 4px" : "38px -56px 2px",

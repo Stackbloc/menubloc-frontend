@@ -3,6 +3,7 @@ import ShareButton from "../share/ShareButton.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { getMenuSectionImageUrl, getMenuItemImageUrl } from "./menuImageUtils.js";
+import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 
 function AsianItem({ item, ctx, accent }) {
   const {
@@ -10,6 +11,7 @@ function AsianItem({ item, ctx, accent }) {
     dealMap,
     setItemSheet,
     fmtMoney,
+    showImage = true,
   } = ctx;
 
   const name = getDisplayMenuItemName(item, language, "Item");
@@ -60,7 +62,7 @@ function AsianItem({ item, ctx, accent }) {
         boxShadow: "0 10px 28px rgba(0,0,0,0.16)",
       }}
     >
-      {imageUrl ? (
+      {showImage && imageUrl ? (
         <div
           aria-hidden="true"
           style={{
@@ -112,11 +114,14 @@ export default function ModernAsianMenuTemplate(ctx) {
     fmtMoney,
     brand,
     fontStack,
+    menuThemeSettings = {},
   } = ctx;
 
   const accent = brand?.accent ?? "#c9a35b";
   const restaurantName = data?.restaurant_name || data?.name || "";
   const heroImage = data?.hero_image_url || data?.cover_image_url || null;
+  const showItemImages = shouldShowItemImages(menuThemeSettings);
+  const showSectionImages = shouldShowSectionImages(menuThemeSettings);
 
   return (
     <div
@@ -239,13 +244,13 @@ export default function ModernAsianMenuTemplate(ctx) {
                         <AsianItem
                           key={String(item?.id || item?.name)}
                           item={item}
-                          ctx={{ ...ctx, dealMap, setItemSheet, fmtMoney }}
+                          ctx={{ ...ctx, dealMap, setItemSheet, fmtMoney, showImage: showItemImages }}
                           accent={accent}
                         />
                       ))}
                     </div>
                   </div>
-                  {sectionImage ? (
+                  {showSectionImages && sectionImage ? (
                     <img
                       src={sectionImage}
                       alt=""

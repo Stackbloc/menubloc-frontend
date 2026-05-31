@@ -4,6 +4,7 @@ import ChipRail from "../chips/ChipRail.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getMenuSectionImageUrl } from "./menuImageUtils.js";
+import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 
 function RestaurantLogoSlot({ logoUrl, restaurantName, size = 56, accentBorder = "rgba(34,197,94,0.30)" }) {
   if (logoUrl) {
@@ -89,7 +90,11 @@ export default function ClassicMenuTemplate(ctx) {
     tabLoading,
     tabError,
     menuPresentation = {},
+    menuThemeSettings = {},
   } = ctx;
+
+  const showItemImages = shouldShowItemImages(menuThemeSettings);
+  const showSectionImages = shouldShowSectionImages(menuThemeSettings);
 
   return (
     <>
@@ -401,7 +406,7 @@ export default function ClassicMenuTemplate(ctx) {
                     </span>
                   </div>
 
-                  {sectionImage ? (
+                  {showSectionImages && sectionImage ? (
                     <div
                       aria-hidden="true"
                       style={{
@@ -448,10 +453,12 @@ export default function ClassicMenuTemplate(ctx) {
                         setItemSheet={setItemSheet}
                         setAddedConfirmation={setAddedConfirmation}
                         commitMenuItemToBasket={commitMenuItemToBasket}
-                        fmtMoney={fmtMoney}
-                        getConsumerDisplayPrice={getConsumerDisplayPrice}
-                        brand={brand}
-                      />
+                      fmtMoney={fmtMoney}
+                      getConsumerDisplayPrice={getConsumerDisplayPrice}
+                      brand={brand}
+                      menuThemeSettings={menuThemeSettings}
+                      showImage={showItemImages}
+                    />
                     ))}
                   </div>
                 </div>

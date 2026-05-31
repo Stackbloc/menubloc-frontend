@@ -6,6 +6,7 @@ import { itemHasInsightsData } from "../basket/ItemInsightsSheet.jsx";
 import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
 import { buildDishShareData } from "../share/shareUtils.js";
 import { getMenuItemImageUrl } from "./menuImageUtils.js";
+import { normalizeMenuThemeSettings } from "./menuThemeSettings.js";
 
 function Badge({ label, bg, color, border }) {
   return (
@@ -60,6 +61,7 @@ function isItemOrderable(item, getConsumerDisplayPrice) {
  */
 export default function PublicMenuItemCard({
   density = "classic",
+  showImage = true,
   it,
   sIdx,
   iIdx,
@@ -80,7 +82,9 @@ export default function PublicMenuItemCard({
   fmtMoney,
   getConsumerDisplayPrice,
   brand,
+  menuThemeSettings = {},
 }) {
+  const themeSettings = normalizeMenuThemeSettings(menuThemeSettings);
   const accent = brand?.accent ?? "#22C55E";
   const onAccent = brand?.onAccent ?? "#0B0F0C";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
@@ -96,11 +100,54 @@ export default function PublicMenuItemCard({
   ).trim();
   const price = fmtMoney(it);
   const imageUrl = getMenuItemImageUrl(it);
+  const canNavigate = it?.id != null;
   const indulgencePresentation = resolveIndulgencePresentation({ chips: it?.chips });
+  const nutritionChip = it?.chips?.nutrition_chip || null;
+  const hasNutritionData = !!(
+    nutritionChip &&
+    (
+      nutritionChip.calories_kcal != null ||
+      nutritionChip.protein_g != null ||
+      nutritionChip.fat_g != null ||
+      nutritionChip.sodium_mg != null ||
+      nutritionChip.sugar_g != null ||
+      (Array.isArray(nutritionChip.allergens) && nutritionChip.allergens.length > 0) ||
+      String(nutritionChip.allergen_alert || "").trim()
+    )
+  );
+  const hasAllergenData = !!(
+    nutritionChip &&
+    (
+      (Array.isArray(nutritionChip.allergens) && nutritionChip.allergens.length > 0) ||
+      String(nutritionChip.allergen_alert || "").trim()
+    )
+  );
+  const showInsightsInline =
+    themeSettings.insight_display !== "hidden" &&
+    themeSettings.intelligence_density !== "none" &&
+    themeSettings.intelligence_density !== "minimal" &&
+    canNavigate &&
+    itemHasInsightsData(it);
+  const showNutritionInline =
+    themeSettings.nutrition_display !== "hidden" &&
+    hasNutritionData &&
+    (themeSettings.intelligence_density === "standard" ||
+      themeSettings.intelligence_density === "detailed" ||
+      themeSettings.intelligence_density === "functional");
+  const showAllergenInline =
+    themeSettings.allergen_display !== "hidden" &&
+    hasAllergenData &&
+    themeSettings.intelligence_density !== "none";
+  const showIndulgenceInline =
+    themeSettings.indulgence_display !== "hidden" &&
+    indulgencePresentation &&
+    themeSettings.intelligence_density !== "none" &&
+    (themeSettings.intelligence_density === "standard" ||
+      themeSettings.intelligence_density === "detailed" ||
+      themeSettings.intelligence_density === "functional");
   const deal = it?.id != null ? dealMap.get(it.id) : undefined;
   const hasDeal = !!deal;
   const itemIsOrderable = isItemOrderable(it, getConsumerDisplayPrice);
-  const canNavigate = it?.id != null;
   const dishShareData = canNavigate
     ? buildDishShareData({
         restaurant: {
@@ -209,7 +256,7 @@ export default function PublicMenuItemCard({
       }}
     >
       <div style={{ display: "flex", gap: imageUrl ? 12 : 0, alignItems: imageUrl ? "flex-start" : "baseline" }}>
-        {imageUrl ? (
+        {showImage && imageUrl ? (
           <div
             aria-hidden="true"
             style={{
@@ -347,41 +394,60 @@ export default function PublicMenuItemCard({
         }}>{desc}</div>
       ) : null}
 
-      {density !== "takeout" && canNavigate && itemHasInsightsData(it) ? (
+      {density !== "takeout" && (showInsightsInline || showNutritionInline || showAllergenInline || showIndulgenceInline) ? (
         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(
-                `/restaurants/${encodeURIComponent(data?.slug || currentRestaurantId)}/menu-item-info/${encodeURIComponent(it.id)}`
-              );
-            }}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              border: "none",
-              background: "transparent",
-              color: accent,
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              padding: 0,
-              lineHeight: 1,
-              transition: "all 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.textDecoration = "underline";
-              e.currentTarget.style.opacity = "0.85";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.textDecoration = "none";
-              e.currentTarget.style.opacity = "1";
-            }}
-          >
-            Insights →
-          </button>
+          {showNutritionInline ? <Badge label={t("common.nutrition", "Nutrition")} bg={softBg} color={accent} border={`1px solid ${softBorder}`} /> : null}
+          {showAllergenInline ? (
+            <Badge
+              label={themeSettings.allergen_display === "alert" ? "Allergen alert" : t("menu.allergens", "Allergens")}
+              bg="#1c1208"
+              color="#FCD34D"
+              border="1px solid #431407"
+            />
+          ) : null}
+          {showIndulgenceInline && indulgencePresentation?.indulgence?.score != null ? (
+            <Badge
+              label={`Indulgence ${indulgencePresentation.indulgence.score}`}
+              bg={softBg}
+              color={accent}
+              border={`1px solid ${softBorder}`}
+            />
+          ) : null}
+          {showInsightsInline ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(
+                  `/restaurants/${encodeURIComponent(data?.slug || currentRestaurantId)}/menu-item-info/${encodeURIComponent(it.id)}`
+                );
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                border: "none",
+                background: "transparent",
+                color: accent,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                padding: 0,
+                lineHeight: 1,
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.textDecoration = "underline";
+                e.currentTarget.style.opacity = "0.85";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.textDecoration = "none";
+                e.currentTarget.style.opacity = "1";
+              }}
+            >
+              Insights →
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

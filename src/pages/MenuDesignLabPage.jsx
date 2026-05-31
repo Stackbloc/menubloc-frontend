@@ -48,6 +48,25 @@ function cloneThemePreview(theme, controls) {
   };
 }
 
+function inferBackgroundStyle(theme) {
+  const bg = String(theme?.preset?.colorDefaults?.background || "").trim().toLowerCase();
+  if (!bg) return "dark";
+  if (bg.startsWith("#fff") || bg.startsWith("#fef") || bg.startsWith("#f7efe3")) return "paper";
+  if (bg.startsWith("#f8") || bg.startsWith("#faf") || bg.startsWith("#f6")) return "light";
+  return "dark";
+}
+
+function inferImageDensity(theme) {
+  const itemImages = String(theme?.preset?.imageRules?.itemImages || "").trim().toLowerCase();
+  const sectionImages = String(theme?.preset?.imageRules?.sectionImages || "").trim().toLowerCase();
+  if (itemImages.includes("none")) return "none";
+  if (itemImages.includes("all")) return "all";
+  if (itemImages.includes("thumbnail") || itemImages.includes("thumbnails")) return "thumbnail";
+  if (sectionImages.includes("edge") || sectionImages.includes("break") || sectionImages.includes("hero")) return "section";
+  if (itemImages.includes("optional")) return "thumbnail";
+  return "all";
+}
+
 export default function MenuDesignLabPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -59,8 +78,8 @@ export default function MenuDesignLabPage() {
     themePreset: selectedStyle,
     primaryColor: selectedTheme.preset?.colorDefaults?.primary || "#c45c26",
     accentColor: selectedTheme.preset?.colorDefaults?.accent || "#c45c26",
-    backgroundStyle: "dark",
-    imageDensity: "all",
+    backgroundStyle: inferBackgroundStyle(selectedTheme),
+    imageDensity: inferImageDensity(selectedTheme),
     heroEnabled: true,
   });
 
@@ -210,6 +229,9 @@ export default function MenuDesignLabPage() {
                         themePreset: theme.style,
                         primaryColor: theme.preset?.colorDefaults?.primary || current.primaryColor,
                         accentColor: theme.preset?.colorDefaults?.accent || current.accentColor,
+                        backgroundStyle: inferBackgroundStyle(theme),
+                        imageDensity: inferImageDensity(theme),
+                        heroEnabled: true,
                       }));
                     }}
                     style={{
@@ -245,6 +267,9 @@ export default function MenuDesignLabPage() {
                       themePreset: next,
                       primaryColor: theme?.preset?.colorDefaults?.primary || current.primaryColor,
                       accentColor: theme?.preset?.colorDefaults?.accent || current.accentColor,
+                      backgroundStyle: inferBackgroundStyle(theme),
+                      imageDensity: inferImageDensity(theme),
+                      heroEnabled: true,
                     }));
                   }}
                   style={styles.select}

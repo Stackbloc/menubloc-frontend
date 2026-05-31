@@ -5,6 +5,7 @@ import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
 import { buildDishShareData } from "../share/shareUtils.js";
 import { getMenuSectionImageUrl } from "./menuImageUtils.js";
+import { shouldShowSectionImages } from "./menuThemeSettings.js";
 
 function asText(value) {
   return String(value || "").trim();
@@ -122,10 +123,11 @@ function ChalkItem({ item, sectionIndex, itemIndex, ctx, accent }) {
 }
 
 function ChalkSection({ section, sectionIndex, ctx, accent }) {
-  const { language, t } = ctx;
+  const { language, t, menuThemeSettings = {} } = ctx;
   const title = asText(getLocalizedField(section, "title", language) || section?.title || t("publicMenu.menu", "Menu"));
   const items = Array.isArray(section?.items) ? section.items : [];
   const sectionImage = getMenuSectionImageUrl(section);
+  const showSectionImages = shouldShowSectionImages(menuThemeSettings);
   return (
     <section style={{ breakInside: "avoid", marginBottom: 28 }}>
       <h2
@@ -155,7 +157,7 @@ function ChalkSection({ section, sectionIndex, ctx, accent }) {
           />
         ))}
       </div>
-      {sectionImage ? (
+      {showSectionImages && sectionImage ? (
         <div
           aria-hidden="true"
           style={{

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
+import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 
 function LogoMark({ logoUrl, restaurantName, accent }) {
   if (logoUrl) {
@@ -68,10 +69,13 @@ export default function DarkPremiumMenuTemplate(ctx) {
     getConsumerDisplayPrice,
     brand,
     fontStack,
+    menuThemeSettings = {},
   } = ctx;
 
   const accent = brand?.accent ?? "#b68b45";
   const muted = "rgba(255,255,255,0.62)";
+  const showItemImages = shouldShowItemImages(menuThemeSettings);
+  const showSectionImages = shouldShowSectionImages(menuThemeSettings);
 
   return (
     <div style={{ fontFamily: fontStack, color: "#f8f4ea" }}>
@@ -167,7 +171,7 @@ export default function DarkPremiumMenuTemplate(ctx) {
                   </h2>
                   <div style={{ height: 1, flex: 1, background: "rgba(182,139,69,0.35)" }} />
                 </div>
-                {sectionImage ? (
+                {showSectionImages && sectionImage ? (
                   <div
                     aria-hidden="true"
                     style={{
@@ -211,6 +215,8 @@ export default function DarkPremiumMenuTemplate(ctx) {
                       fmtMoney={fmtMoney}
                       getConsumerDisplayPrice={getConsumerDisplayPrice}
                       brand={brand}
+                      menuThemeSettings={menuThemeSettings}
+                      showImage={showItemImages}
                     />
                   ))}
                 </div>
