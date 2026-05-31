@@ -194,6 +194,19 @@ export const getQrKitPreviewUrl = (rid, params = {}) => {
 export const createQrKitOrder = (rid, body) => post(`/operator/restaurants/${rid}/qr-kit-orders`, body);
 export const getQrKitOrder = (rid, orderId) => get(`/operator/restaurants/${rid}/qr-kit-orders/${orderId}`);
 
+export async function uploadQrDoorPhoto(rid, file) {
+  const formData = new FormData();
+  formData.append("photo", file);
+  const res = await fetch(`${API}/operator/restaurants/${rid}/qr-kit-orders/door-photo`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || `Upload failed (${res.status})`);
+  return json;
+}
+
 // ── Restaurant: Sticker QR (/r/DOOR-...) ─────────────────────────────────
 export const getOperatorQrStickers = (rid) => get(`/operator/restaurants/${rid}/qr-stickers`);
 export const validateOperatorQrStickerActivation = (rid, body) =>
