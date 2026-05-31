@@ -3,7 +3,7 @@ export const LEGAL_EFFECTIVE_DATE = "2026-05-06";
 export const LEGAL_VERSIONS = {
   consumerTerms: "consumer_terms_v2026_05_06",
   privacyPolicy: "privacy_policy_v2026_04_09",
-  merchantTerms: "merchant_terms_v2026_05_30",
+  merchantTerms: "merchant_terms_v2026_05_31",
   subscriptionTerms: "subscription_terms_v2026_04_09",
   orderTerms: "order_terms_v2026_04_09",
 };
@@ -283,6 +283,18 @@ export const MERCHANT_TERMS_DOCUMENT = {
       ],
     },
     {
+      heading: "Photo Standards and Content Quality",
+      paragraphs: [
+        "Merchants must submit professional-quality photos and visual content as part of their listing on Menuply.",
+        "Photos must accurately represent the merchant, menu item, product, service, or premises depicted.",
+        "Photos must comply with Menuply's [Photo Standards](/photo-standards). Menuply may update Photo Standards from time to time.",
+        "Menuply reserves the right, in its sole discretion, to reject, remove, crop, edit, replace, or decline to publish any photo or visual content submitted by a merchant.",
+        "Menuply may require replacement photos as a condition of approval or publication.",
+        "Menuply's decisions regarding photo acceptance, rejection, removal, or replacement are final.",
+        "Compliance with Menuply's Photo Standards does not guarantee that a photo will be published.",
+      ],
+    },
+    {
       heading: "Platform restrictions",
       paragraphs: [
         "You may not use Menuply to submit false or misleading information, infringe third-party rights, upload malicious code, interfere with the platform, scrape restricted platform data, or violate law.",
@@ -393,6 +405,60 @@ export const SUBSCRIPTION_TERMS_DOCUMENT = {
       heading: "Contact",
       paragraphs: [
         "Questions about restaurant plan billing may be sent to Stackbloc Corporation at inquiries@menuply.com.",
+      ],
+    },
+  ],
+};
+
+export const PHOTO_STANDARDS_DOCUMENT = {
+  title: "Photo Standards for Merchants",
+  description:
+    "Professional-quality photos help create a better diner experience and improve trust in Menuply restaurant pages.",
+  sections: [
+    {
+      heading: "Acceptable Photos",
+      paragraphs: [
+        "Menuply accepts photos and visual content that meet the following standards:",
+      ],
+      items: [
+        "Sharp, clear, and well-lit",
+        "High-resolution",
+        "Actual merchant food, products, staff, storefront, or premises",
+        "Clean presentation",
+        "Accurate and current",
+        "Professional photography preferred",
+      ],
+    },
+    {
+      heading: "Not Acceptable",
+      paragraphs: [
+        "The following types of photos will not be accepted and may be rejected or removed:",
+      ],
+      items: [
+        "Blurry or dark photos",
+        "Screenshots",
+        "Watermarked images",
+        "Images copied from other websites or third parties",
+        "Misleading images that do not accurately represent the merchant",
+        "Excessive text overlays",
+        "Outdated promotion or pricing images",
+        "Stock photos that do not accurately represent the merchant",
+        "AI-generated food images that do not accurately represent the merchant's real food",
+      ],
+    },
+    {
+      heading: "Menuply's Photo Decisions",
+      paragraphs: [
+        "Menuply reserves the right, in its sole discretion, to reject, remove, crop, edit, replace, or decline to publish any photo or visual content submitted by a merchant.",
+        "Menuply may require replacement photos as a condition of approval or publication. Menuply's decisions regarding photo acceptance, rejection, removal, or replacement are final.",
+        "Compliance with these Photo Standards does not guarantee publication. Photo Standards are subject to change and merchants are responsible for ensuring submitted photos continue to comply with current standards.",
+      ],
+    },
+    {
+      heading: "Need Professional Food Photography?",
+      paragraphs: [
+        "Menuply may maintain a directory of independent local food photographers to help merchants improve their menu presentation.",
+        "Photographers listed or linked by Menuply are independent businesses and are not employees, agents, or representatives of Menuply. Menuply does not guarantee their services, availability, pricing, or work product.",
       ],
     },
   ],
