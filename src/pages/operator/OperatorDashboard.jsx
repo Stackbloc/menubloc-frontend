@@ -195,7 +195,7 @@ export default function OperatorDashboard() {
       api.getOrderHistory(restaurantId, { days: 35 }),
       api.getHours(restaurantId),
     ]);
-    if (avail.status === "fulfilled") setAvailability(avail.value);
+    if (avail.status === "fulfilled") setAvailability(avail.value?.availability ?? avail.value);
     if (live.status === "fulfilled") setLiveOrders(live.value?.orders || []);
     if (history.status === "fulfilled") setHistoryOrders(history.value?.orders || []);
     if (hours.status === "fulfilled") setHoursSchedule(hours.value?.schedule || null);
