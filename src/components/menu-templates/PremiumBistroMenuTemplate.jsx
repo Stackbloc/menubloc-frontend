@@ -161,7 +161,7 @@ function PremiumMenuItem({
     )
   );
   const showInsightsInline = menuThemeSettings?.intelligence_density !== "none" && itemHasInsightsData(item);
-  const showAllergenInline = menuThemeSettings?.allergen_display !== "hidden" && hasAllergenData;
+  const showAllergenInline = false;
   const dishShareData = canNavigate
     ? buildDishShareData({
         restaurant: {
@@ -272,26 +272,8 @@ function PremiumMenuItem({
           {desc}
         </div>
       ) : null}
-      {showInsightsInline || showAllergenInline ? (
+      {showInsightsInline ? (
         <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {showAllergenInline ? (
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                minHeight: 20,
-                padding: "0 8px",
-                borderRadius: 999,
-                fontSize: 11,
-                fontWeight: 800,
-                background: "rgba(122,43,35,0.08)",
-                color: "#7a2b23",
-                border: "1px solid rgba(122,43,35,0.2)",
-              }}
-            >
-              Allergens
-            </span>
-          ) : null}
           {showInsightsInline ? (
             <button
               type="button"
