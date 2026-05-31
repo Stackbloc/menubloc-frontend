@@ -71,9 +71,9 @@ const PLAN_OPTIONS = [
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "linear-gradient(180deg, #f6f6f3 0%, #eef5f2 100%)",
+    background: "#0B0F0C",
     padding: "28px 18px 72px",
-    color: "#101828",
+    color: "#F8F4EA",
     fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
   },
   shell: {
@@ -305,7 +305,7 @@ export default function RestaurantSignupEntry() {
         <header style={styles.hero}>
           <div style={styles.heroContent}>
             <BrandLockup
-              logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+              logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#0B0F0C" }}
               wrapperStyle={{ marginBottom: 8 }}
             />
             <div style={styles.eyebrow}>{t("signup.entry.eyebrow", "Restaurant Signup")}</div>

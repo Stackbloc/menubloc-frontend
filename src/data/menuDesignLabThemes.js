@@ -52,9 +52,9 @@ function makePreviewPayload(base, overrides = {}) {
 const THEMES = [
   {
     style: "v1",
-    name: "Default Menu",
+    name: "Classic Restaurant",
     bestFit: "Local restaurants, broad menus, simple operators",
-    description: "The baseline Menuply menu system with the KBC-style Dothan sample data.",
+    description: "The baseline Menuply menu system with a KBC-style Dothan sample and multi-tab support.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
       restaurant_name: "KBC Butcher Block",

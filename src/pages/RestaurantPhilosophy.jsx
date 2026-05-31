@@ -9,7 +9,7 @@ const PLAN_ROUTE = "/restaurant/signup";
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "linear-gradient(180deg, #f6f6f3 0%, #eef5f2 100%)",
+    background: "#0B0F0C",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -29,18 +29,18 @@ const styles = {
     lineHeight: 1.2,
     marginBottom: 36,
     marginTop: 28,
-    color: "#101828",
+    color: "#F8F4EA",
   },
   body: {
     fontSize: 16,
     lineHeight: 1.85,
-    color: "#344054",
+    color: "rgba(248,244,234,0.78)",
     margin: "0 0 22px",
   },
   goalIntro: {
     fontSize: 16,
     lineHeight: 1.85,
-    color: "#344054",
+    color: "rgba(248,244,234,0.78)",
     margin: "0 0 14px",
   },
   bulletList: {
@@ -67,8 +67,8 @@ const styles = {
     background: "#1F4E3D",
   },
   multiplierBox: {
-    background: "#f8faf9",
-    border: "1.5px solid #cfe0d8",
+    background: "#121A14",
+    border: "1.5px solid rgba(61,217,52,0.18)",
     borderRadius: 18,
     padding: "24px 26px",
     marginBottom: 28,
@@ -76,13 +76,13 @@ const styles = {
   multiplierText: {
     fontSize: 15.5,
     lineHeight: 1.8,
-    color: "#344054",
+    color: "rgba(248,244,234,0.78)",
     margin: "0 0 14px",
   },
   multiplierTextLast: {
     fontSize: 15.5,
     lineHeight: 1.8,
-    color: "#344054",
+    color: "rgba(248,244,234,0.78)",
     margin: 0,
   },
   multiplierHighlight: {
@@ -101,8 +101,8 @@ const styles = {
     margin: "0 0 24px",
     padding: "20px 22px",
     borderRadius: 16,
-    border: "1.5px solid #cfe0d8",
-    background: "#f8faf9",
+    border: "1.5px solid rgba(61,217,52,0.18)",
+    background: "#121A14",
     cursor: "pointer",
   },
   checkbox: {
@@ -116,7 +116,7 @@ const styles = {
   checkLabel: {
     fontSize: 15,
     lineHeight: 1.6,
-    color: "#101828",
+    color: "#F8F4EA",
     cursor: "pointer",
     fontWeight: 600,
   },
@@ -151,7 +151,7 @@ export default function RestaurantPhilosophy() {
           subtitle={t("signup.forRestaurants", "for Restaurants")}
           wrapperStyle={{ alignItems: "flex-start", marginBottom: 4 }}
           subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
-          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#0B0F0C" }}
         />
 
         <h1 style={styles.heading}>

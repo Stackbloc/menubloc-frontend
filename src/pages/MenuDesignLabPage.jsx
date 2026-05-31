@@ -25,25 +25,46 @@ function useIsMobile(breakpoint = 900) {
   return isMobile;
 }
 
-function cloneThemePreview(theme, controls) {
+function normalizePreviewSections(sections, imageDensity) {
+  return Array.isArray(sections)
+    ? sections.map((section) => ({
+        ...section,
+        image_url: imageDensity === "all" || imageDensity === "section" ? section.image_url || null : null,
+        items: Array.isArray(section.items)
+          ? section.items.map((item) => ({
+              ...item,
+              image_url: imageDensity === "all" || imageDensity === "thumbnail" ? item.image_url || null : null,
+            }))
+          : [],
+      }))
+    : [];
+}
+
+function normalizePreviewMenus(menus, imageDensity) {
+  return Array.isArray(menus)
+    ? menus.map((menu) => ({
+        ...menu,
+        sections: normalizePreviewSections(menu.sections || [], imageDensity),
+      }))
+    : [];
+}
+
+function cloneThemePreview(theme, controls, selectedMenuId = null) {
   const base = theme?.previewPayload || {};
   const imageDensity = controls.imageDensity || "all";
   const heroEnabled = controls.heroEnabled !== false;
-
-  const sections = Array.isArray(base.sections) ? base.sections.map((section) => ({
-    ...section,
-    image_url: imageDensity === "all" || imageDensity === "section" ? section.image_url || null : null,
-    items: Array.isArray(section.items) ? section.items.map((item) => ({
-      ...item,
-      image_url: imageDensity === "all" || imageDensity === "thumbnail" ? item.image_url || null : null,
-    })) : [],
-  })) : [];
+  const menus = normalizePreviewMenus(base.menus || [], imageDensity);
+  const activeMenu = menus.length > 1 && selectedMenuId != null
+    ? menus.find((menu) => Number(menu.id) === Number(selectedMenuId)) || menus[0]
+    : menus[0] || null;
+  const sections = normalizePreviewSections(activeMenu?.sections || base.sections || [], imageDensity);
 
   return {
     ...base,
     accent_color: controls.primaryColor || base.accent_color || "#c45c26",
     hero_image_url: heroEnabled ? base.hero_image_url || null : null,
     cover_image_url: heroEnabled ? base.cover_image_url || null : null,
+    menus,
     sections,
   };
 }
@@ -74,6 +95,7 @@ export default function MenuDesignLabPage() {
   const selectedStyle = normalizeMenuStyle(searchParams.get("theme") || "v1");
   const selectedTheme = getMenuDesignLabTheme(selectedStyle);
   const [notice, setNotice] = useState("");
+  const [selectedPreviewMenuId, setSelectedPreviewMenuId] = useState(null);
   const [controls, setControls] = useState({
     themePreset: selectedStyle,
     primaryColor: selectedTheme.preset?.colorDefaults?.primary || "#c45c26",
@@ -83,7 +105,23 @@ export default function MenuDesignLabPage() {
     heroEnabled: true,
   });
 
-  const previewData = useMemo(() => cloneThemePreview(selectedTheme, controls), [selectedTheme, controls]);
+  const previewMenus = useMemo(
+    () => normalizePreviewMenus(selectedTheme.previewPayload?.menus || [], controls.imageDensity || "all"),
+    [selectedTheme, controls.imageDensity]
+  );
+  const previewData = useMemo(
+    () => cloneThemePreview(selectedTheme, controls, selectedPreviewMenuId),
+    [selectedTheme, controls, selectedPreviewMenuId]
+  );
+  const resolvedPreviewMenuId = useMemo(() => {
+    const hasCurrent = previewMenus.some((menu) => Number(menu.id) === Number(selectedPreviewMenuId));
+    return hasCurrent ? selectedPreviewMenuId : (previewMenus[0]?.id ?? null);
+  }, [previewMenus, selectedPreviewMenuId]);
+  const resolvedPreviewMenu = useMemo(() => (
+    previewData.menus?.length > 1 && resolvedPreviewMenuId != null
+      ? previewData.menus.find((menu) => Number(menu.id) === Number(resolvedPreviewMenuId)) || null
+      : null
+  ), [previewData.menus, resolvedPreviewMenuId]);
   const brand = useMemo(
     () => buildRestaurantMenuBrand(previewData, previewData.restaurant_name || previewData.name),
     [previewData]
@@ -111,7 +149,7 @@ export default function MenuDesignLabPage() {
     t: (_key, fallback = "") => fallback,
     restaurantName: previewData.restaurant_name || previewData.name,
     restaurantProfileHref: null,
-    menuTypeLabel: "Sample menu design",
+    menuTypeLabel: resolvedPreviewMenu?.tab_label || resolvedPreviewMenu?.display_name || resolvedPreviewMenu?.name || "Sample menu design",
     scheduledActiveMenuLabel: null,
     addressLine1: previewData.address_line1,
     addressLine2: [previewData.city, previewData.state, previewData.zip].filter(Boolean).join(", "),
@@ -161,9 +199,9 @@ export default function MenuDesignLabPage() {
     onGoCheckout: () => previewNotice(),
     brand: adjustedBrand,
     fontStack: fontStackForPreset(brand?.fontPreset),
-    menus: [],
-    selectedMenuId: null,
-    onSelectMenu: () => {},
+    menus: previewData.menus || [],
+    selectedMenuId: resolvedPreviewMenuId,
+    onSelectMenu: setSelectedPreviewMenuId,
     tabLoading: false,
     tabError: null,
     menuPresentation: previewData.menu_presentation || {},
@@ -204,7 +242,7 @@ export default function MenuDesignLabPage() {
       </header>
 
       <section style={styles.hero}>
-        <div style={styles.eyebrow}>Menu Design Lab</div>
+        <div style={styles.eyebrow}>Menu Lab</div>
         <h1 style={{ ...styles.title, color: isDarkShell ? "#fff" : "#0f1720" }}>Browse preset menu themes and tune the one that fits your restaurant.</h1>
         <p style={{ ...styles.copy, color: isDarkShell ? "rgba(255,255,255,0.78)" : "#475467" }}>
           The gallery below uses real sample menu data, not screenshots. Each preset can be customized from the operator page with colors, image density, and other display controls.

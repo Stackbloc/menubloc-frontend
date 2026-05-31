@@ -177,7 +177,8 @@ export const KBC_DEFAULT_MENU_PREVIEW_SAMPLE = {
   city: "Dothan",
   state: "AL",
   zip: "36303",
-  tagline: "Default Menuply menu sample based on a Dothan restaurant format.",
+  tagline: "Classic Menuply menu sample based on a Dothan restaurant format.",
+  menu_presentation: { tabs_allowed_for_public_view: true },
   deal_items: [],
   sections: [
     {
@@ -276,6 +277,247 @@ export const KBC_DEFAULT_MENU_PREVIEW_SAMPLE = {
           description: "Fresh squeezed lemonade.",
           price_minor_units: 350,
           image_url: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80",
+        },
+      ],
+    },
+  ],
+  menus: [
+    {
+      id: 101,
+      name: "Lunch",
+      display_name: "Lunch",
+      tab_label: "Lunch",
+      slug: "lunch",
+      is_primary: true,
+      sort_order: 10,
+      sections: [
+        {
+          title: "Appetizers",
+          image_url: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1400&q=80",
+          items: [
+            {
+              id: 9101,
+              name: "Smoked Wings",
+              description: "Wood-smoked wings tossed in Alabama white sauce.",
+              price_minor_units: 1300,
+              image_url: "https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&w=900&q=80",
+            },
+            {
+              id: 9102,
+              name: "Brisket Nachos",
+              description: "House chips, queso, smoked brisket, jalapenos, and pico.",
+              price_minor_units: 1450,
+              image_url: "https://images.unsplash.com/photo-1546549032-9571cd6b7d2e?auto=format&fit=crop&w=900&q=80",
+            },
+          ],
+        },
+        {
+          title: "Sandwiches",
+          image_url: "https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&w=1400&q=80",
+          items: [
+            {
+              id: 9103,
+              name: "Butcher Block Burger",
+              description: "Double patty burger with cheddar, bacon jam, and fries.",
+              price_minor_units: 1550,
+              image_url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80",
+            },
+            {
+              id: 9104,
+              name: "Hot Chicken Sandwich",
+              description: "Crispy chicken, spicy glaze, pickles, slaw.",
+              price_minor_units: 1495,
+              image_url: "https://images.unsplash.com/photo-1606755962773-d324e3a0b7d4?auto=format&fit=crop&w=900&q=80",
+            },
+          ],
+        },
+        {
+          title: "Salads",
+          image_url: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1400&q=80",
+          items: [
+            {
+              id: 9105,
+              name: "Steakhouse Wedge",
+              description: "Iceberg wedge with bacon, tomato, blue cheese, and ranch.",
+              price_minor_units: 1100,
+              image_url: "https://images.unsplash.com/photo-1546793665-c74683f339c1?auto=format&fit=crop&w=900&q=80",
+            },
+            {
+              id: 9106,
+              name: "Harvest Salad",
+              description: "Greens, roasted squash, goat cheese, candied pecans.",
+              price_minor_units: 1150,
+              image_url: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: 102,
+      name: "Dinner",
+      display_name: "Dinner",
+      tab_label: "Dinner",
+      slug: "dinner",
+      sort_order: 20,
+      sections: [
+        {
+          title: "Appetizers",
+          image_url: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1400&q=80",
+          items: [
+            {
+              id: 9201,
+              name: "Smoked Wings",
+              description: "Wood-smoked wings tossed in Alabama white sauce.",
+              price_minor_units: 1300,
+            },
+            {
+              id: 9202,
+              name: "Brisket Nachos",
+              description: "House chips, queso, smoked brisket, jalapenos, and pico.",
+              price_minor_units: 1450,
+            },
+          ],
+        },
+        {
+          title: "Entrees",
+          image_url: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1400&q=80",
+          items: [
+            {
+              id: 9203,
+              name: "Smoked Ribeye",
+              description: "Hand-cut ribeye finished over live fire with mashed potatoes.",
+              price_minor_units: 2900,
+              image_url: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80",
+            },
+            {
+              id: 9204,
+              name: "BBQ Meatloaf",
+              description: "House meatloaf glazed with tangy barbecue sauce.",
+              price_minor_units: 1800,
+            },
+          ],
+        },
+        {
+          title: "Desserts and Drinks",
+          image_url: "https://images.unsplash.com/photo-1505253716362-afaea4bde1dc?auto=format&fit=crop&w=1400&q=80",
+          items: [
+            {
+              id: 9205,
+              name: "Banana Pudding",
+              description: "Classic banana pudding with vanilla wafers.",
+              price_minor_units: 700,
+              image_url: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=900&q=80",
+            },
+            {
+              id: 9206,
+              name: "Fresh Lemonade",
+              description: "Fresh squeezed lemonade.",
+              price_minor_units: 350,
+              image_url: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: 103,
+      name: "Brunch",
+      display_name: "Brunch",
+      tab_label: "Brunch",
+      slug: "brunch",
+      sort_order: 15,
+      sections: [
+        {
+          title: "Breakfast Plates",
+          image_url: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1400&q=80",
+          items: [
+            {
+              id: 9301,
+              name: "Buttermilk Plate",
+              description: "Two eggs, bacon, grits, biscuit, and seasonal fruit.",
+              price_minor_units: 1195,
+            },
+            {
+              id: 9302,
+              name: "Chicken and Waffles",
+              description: "Crispy chicken, Belgian waffle, maple butter.",
+              price_minor_units: 1495,
+            },
+          ],
+        },
+        {
+          title: "Coffee and Sweets",
+          items: [
+            {
+              id: 9303,
+              name: "Pecan Praline Latte",
+              description: "Espresso, steamed milk, praline syrup.",
+              price_minor_units: 550,
+            },
+            {
+              id: 9304,
+              name: "Blueberry Pancakes",
+              description: "Stack of pancakes with blueberry compote.",
+              price_minor_units: 1095,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: 104,
+      name: "Bar",
+      display_name: "Bar",
+      tab_label: "Bar",
+      slug: "bar",
+      sort_order: 30,
+      sections: [
+        {
+          title: "Cocktails",
+          image_url: "https://images.unsplash.com/photo-1514361892635-eae31e1d3f81?auto=format&fit=crop&w=1400&q=80",
+          items: [
+            {
+              id: 9401,
+              name: "Smoked Old Fashioned",
+              description: "Bourbon, orange peel, cherry smoke.",
+              price_minor_units: 1295,
+            },
+            {
+              id: 9402,
+              name: "Gulf Coast Mule",
+              description: "Vodka, ginger, lime, mint.",
+              price_minor_units: 1195,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: 105,
+      name: "Catering",
+      display_name: "Catering",
+      tab_label: "Catering",
+      slug: "catering",
+      sort_order: 40,
+      sections: [
+        {
+          title: "Party Trays",
+          image_url: "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1400&q=80",
+          items: [
+            {
+              id: 9501,
+              name: "Brisket Tray",
+              description: "Serves 10-12 with rolls, pickles, and sauce.",
+              price_minor_units: 4995,
+            },
+            {
+              id: 9502,
+              name: "Slider Tray",
+              description: "Assorted sliders with fries and slaw.",
+              price_minor_units: 4295,
+            },
+          ],
         },
       ],
     },
