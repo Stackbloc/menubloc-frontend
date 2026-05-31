@@ -364,7 +364,7 @@ function MenusTab({ rid }) {
       </div>
 
       {menus.length === 0 && (
-        <p style={{ color: "#8a9ab0" }}>No menus yet. Create one in Menu Editor.</p>
+        <p style={{ color: "#8a9ab0" }}>No menus yet. Create one in Menu Lab.</p>
       )}
 
       {menus.map((m) => (

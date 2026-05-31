@@ -103,11 +103,11 @@ function CompletionNextSteps({ isOperatorFlow, restaurantId }) {
     <div style={s.nextStepsBox}>
       <div style={s.nextStepsTitle}>What happens next</div>
       <p style={s.nextStepsCopy}>
-        Your upload is saved. Menuply will process your menu — items will appear in Menu Editor once import and review are complete.
+        Your upload is saved. Menuply will process your menu — items will appear in Menu Lab once import and review are complete.
       </p>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
         <Link to={isOperatorFlow ? "/operator/menu" : "/operator/login"} style={s.profileLink}>
-          {isOperatorFlow ? "Back to Menu Editor" : "Sign in to My Account"}
+          {isOperatorFlow ? "Back to Menu Lab" : "Sign in to My Account"}
         </Link>
         {!isOperatorFlow ? (
           <Link to={`/restaurant-profile/${restaurantId}`} style={s.secondaryAction}>

@@ -60,7 +60,7 @@ const OPERATIONS_SECTIONS = [
           "Stats row shows Orders Today, Pending orders currently awaiting action, and Cancelled orders today. These are pulled live from the order queue.",
           "Sales card shows Today, Yesterday, Week-to-Date (Sunday–Saturday), and Month-to-Date totals. Only completed, confirmed, preparing, and ready orders are counted — cancelled and declined orders are excluded.",
           "An active alerts banner appears when orders are pending confirmation — click it to jump directly to the Orders screen's Pending tab.",
-          "Quick Access buttons navigate to Public Profile, Menu Editor, and Deals without returning to the sidebar.",
+          "Quick Access buttons navigate to Public Profile, Menu Lab, and Deals without returning to the sidebar.",
           "Dashboard data auto-refreshes every 60 seconds. The clock is always live.",
         ],
       },
@@ -80,7 +80,7 @@ const OPERATIONS_SECTIONS = [
       },
       {
         id: "overview-menu-editor",
-        title: "Menu Editor",
+        title: "Menu Lab",
         summary: "Create and manage all menus and menu items for the restaurant.",
         points: [
           "Overview mode lists all menus. From here, create a new menu with Add via Upload (PDF or image) or select a menu and click Edit to enter full edit mode.",

@@ -19,7 +19,10 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { MENU_DESIGN_LAB_THEMES } from "../../data/menuDesignLabThemes.js";
-import { normalizeMenuThemeSettings } from "../../components/menu-templates/menuThemeSettings.js";
+import {
+  buildMenuThemeSettingsFromPreset,
+  normalizeMenuThemeSettings,
+} from "../../components/menu-templates/menuThemeSettings.js";
 
 const ACCENT_PRESETS = [
   { label: "Green",   value: "#4ade80" },
@@ -29,25 +32,6 @@ const ACCENT_PRESETS = [
   { label: "Violet",  value: "#a78bfa" },
   { label: "White",   value: "#f0f0f0" },
 ];
-
-function inferBackgroundStyle(theme) {
-  const bg = String(theme?.preset?.colorDefaults?.background || "").trim().toLowerCase();
-  if (!bg) return "dark";
-  if (bg.startsWith("#fff") || bg.startsWith("#fef") || bg.startsWith("#f7efe3")) return "paper";
-  if (bg.startsWith("#f8") || bg.startsWith("#faf") || bg.startsWith("#f6")) return "light";
-  return "dark";
-}
-
-function inferImageDensity(theme) {
-  const itemImages = String(theme?.preset?.imageRules?.itemImages || "").trim().toLowerCase();
-  const sectionImages = String(theme?.preset?.imageRules?.sectionImages || "").trim().toLowerCase();
-  if (itemImages.includes("none")) return "none";
-  if (itemImages.includes("all")) return "all";
-  if (itemImages.includes("thumbnail") || itemImages.includes("thumbnails")) return "thumbnail";
-  if (sectionImages.includes("edge") || sectionImages.includes("break") || sectionImages.includes("hero")) return "section";
-  if (itemImages.includes("optional")) return "thumbnail";
-  return "all";
-}
 
 export default function OperatorDisplaySettings() {
   const { selectedRestaurant, hasBenefit } = useOperator();
@@ -374,25 +358,9 @@ export default function OperatorDisplaySettings() {
                     return (
                       <div
                         key={style}
-                        onClick={() => setSettings((s) => ({
+                      onClick={() => setSettings((s) => ({
                           ...s,
-                          menu_style: style,
-                          primary_color: preset?.colorDefaults?.primary || s.primary_color || null,
-                          accent_color: preset?.colorDefaults?.accent || s.accent_color || null,
-                          background_style: inferBackgroundStyle({ preset }),
-                          section_heading_style: preset?.sectionHeadingStyle || "default",
-                          price_placement: preset?.pricePlacement || "right",
-                          image_density: inferImageDensity({ preset }),
-                          item_image_style: inferImageDensity({ preset }),
-                          hero_enabled: true,
-                          intelligence_display_style: preset?.intelligence?.intelligenceDisplayStyle || "subtle",
-                          intelligence_density: preset?.intelligence?.intelligenceDensity || "subtle",
-                          nutrition_display: preset?.intelligence?.nutritionDisplay || "compact",
-                          allergen_display: preset?.intelligence?.allergenDisplay || "icon",
-                          insight_display: preset?.intelligence?.insightDisplay || "compact",
-                          compare_enabled: preset?.intelligence?.compareEnabled !== false,
-                          similar_enabled: preset?.intelligence?.similarEnabled !== false,
-                          indulgence_display: preset?.intelligence?.indulgenceDisplay || "compact",
+                          ...buildMenuThemeSettingsFromPreset({ style, preset }),
                         }))}
                         style={{
                           border: `2px solid ${isSelected ? "#1F4E3D" : "#e4e9f0"}`,

@@ -132,6 +132,80 @@ export function normalizeHexColor(value) {
   return HEX_RE.test(text) ? text : null;
 }
 
+function inferBackgroundStyleFromPreset(theme) {
+  const bg = String(theme?.preset?.colorDefaults?.background || "").trim().toLowerCase();
+  if (!bg) return "dark";
+  if (bg.startsWith("#fff") || bg.startsWith("#fef") || bg.startsWith("#f7efe3")) return "paper";
+  if (bg.startsWith("#f8") || bg.startsWith("#faf") || bg.startsWith("#f6")) return "light";
+  if (bg.includes("chalk")) return "chalkboard";
+  if (bg.includes("charcoal")) return "charcoal";
+  return "dark";
+}
+
+function inferImageDensityFromPreset(theme) {
+  const itemImages = String(theme?.preset?.imageRules?.itemImages || "").trim().toLowerCase();
+  const sectionImages = String(theme?.preset?.imageRules?.sectionImages || "").trim().toLowerCase();
+  if (itemImages.includes("none")) return "none";
+  if (itemImages.includes("all")) return "all";
+  if (itemImages.includes("thumbnail") || itemImages.includes("thumbnails")) return "thumbnail";
+  if (sectionImages.includes("edge") || sectionImages.includes("break") || sectionImages.includes("hero")) return "section";
+  if (itemImages.includes("optional")) return "thumbnail";
+  return "all";
+}
+
+function inferSectionHeadingStyleFromPreset(theme) {
+  const raw = String(theme?.preset?.sectionHeadingStyle || "").trim().toLowerCase();
+  if (!raw) return "default";
+  if (raw.includes("line")) return "lines";
+  if (raw.includes("decor") || raw.includes("luxury")) return "decorative";
+  if (raw.includes("box") || raw.includes("block") || raw.includes("chalk") || raw.includes("upper") || raw.includes("clean") || raw.includes("simple")) {
+    return "block";
+  }
+  return "default";
+}
+
+export function buildMenuThemeSettingsFromPreset(theme = {}) {
+  const menuStyle = normalizeMenuStyle(theme.style || theme?.preset?.id || "v1");
+  const preset = theme.preset || {};
+  const imageDensity = inferImageDensityFromPreset(theme);
+  const sectionHeadingStyle = inferSectionHeadingStyleFromPreset(theme);
+  const intensity = preset.intelligence || {};
+
+  return {
+    menu_style: menuStyle,
+    primary_color: normalizeHexColor(preset.colorDefaults?.primary || null),
+    accent_color: normalizeHexColor(preset.colorDefaults?.accent || preset.colorDefaults?.primary || null),
+    background_style: inferBackgroundStyleFromPreset(theme),
+    hero_enabled: true,
+    image_density: imageDensity,
+    section_heading_style: sectionHeadingStyle,
+    item_image_style: imageDensity === "all" ? "all" : imageDensity,
+    price_placement: PRICE_PLACEMENTS.has(String(preset.pricePlacement || "").trim())
+      ? String(preset.pricePlacement).trim()
+      : "right",
+    intelligence_display_style: INTELLIGENCE_DISPLAY_STYLES.has(String(intensity.intelligenceDisplayStyle || "").trim())
+      ? String(intensity.intelligenceDisplayStyle).trim()
+      : DEFAULT_MENU_THEME_SETTINGS.intelligence_display_style,
+    intelligence_density: INTELLIGENCE_DENSITIES.has(String(intensity.intelligenceDensity || "").trim())
+      ? String(intensity.intelligenceDensity).trim()
+      : DEFAULT_MENU_THEME_SETTINGS.intelligence_density,
+    nutrition_display: NUTRITION_DISPLAY_STYLES.has(String(intensity.nutritionDisplay || "").trim())
+      ? String(intensity.nutritionDisplay).trim()
+      : DEFAULT_MENU_THEME_SETTINGS.nutrition_display,
+    allergen_display: ALLERGEN_DISPLAY_STYLES.has(String(intensity.allergenDisplay || "").trim())
+      ? String(intensity.allergenDisplay).trim()
+      : DEFAULT_MENU_THEME_SETTINGS.allergen_display,
+    insight_display: INSIGHT_DISPLAY_STYLES.has(String(intensity.insightDisplay || "").trim())
+      ? String(intensity.insightDisplay).trim()
+      : DEFAULT_MENU_THEME_SETTINGS.insight_display,
+    compare_enabled: intensity.compareEnabled !== false,
+    similar_enabled: intensity.similarEnabled !== false,
+    indulgence_display: INDULGENCE_DISPLAY_STYLES.has(String(intensity.indulgenceDisplay || "").trim())
+      ? String(intensity.indulgenceDisplay).trim()
+      : DEFAULT_MENU_THEME_SETTINGS.indulgence_display,
+  };
+}
+
 export function normalizeMenuThemeSettings(source = {}) {
   const raw = source || {};
   const menuStyle = normalizeMenuStyle(raw.menu_style || raw.theme_preset || "v1");

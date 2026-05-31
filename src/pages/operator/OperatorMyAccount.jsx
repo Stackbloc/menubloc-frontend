@@ -225,7 +225,7 @@ export default function OperatorMyAccount() {
                 Quick Actions
               </div>
               {[
-                { label: "Open Menu Editor", action: () => navigate("/operator/menu") },
+                { label: "Open Menu Lab", action: () => navigate("/operator/menu") },
                 { label: "View Public Menu", action: () => window.open(`/public/restaurants/${selectedRestaurant.id}/menu`, "_blank") },
                 { label: "View Public Profile", action: () => window.open(`/restaurant-profile/${selectedRestaurant.id}`, "_blank") },
                 { label: "QR Tools", action: () => navigate("/operator/qr-kits/order") },

@@ -1,7 +1,7 @@
 /**
  * src/pages/operator/OperatorMenuEditor.jsx
  *
- * Menu Editor — select a menu, manage its items.
+ * Menu Lab — select a menu, manage its items.
  *
  * GUARDRAIL: Upload paths (PDF, MKS Spreadsheet, paste) are the primary
  * onboarding workflow. Manual single-item entry is the secondary correction
@@ -9,12 +9,19 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { API_BASE } from "../../lib/operatorApi.js";
+import {
+  MENU_DESIGN_LAB_THEMES,
+  getMenuDesignLabTheme,
+} from "../../data/menuDesignLabThemes.js";
+import {
+  buildMenuThemeSettingsFromPreset,
+  normalizeMenuThemeSettings,
+} from "../../components/menu-templates/menuThemeSettings.js";
 
 const CANONICAL_MENU_CATEGORIES = [
   "Appetizers",
@@ -254,9 +261,399 @@ function UploadCard({ icon, label, sub, onClick }) {
   );
 }
 
+function MenuLabPresetCard({ theme, selected, onSelect, onPreview }) {
+  const accent = theme?.preset?.colorDefaults?.accent || theme?.preset?.colorDefaults?.primary || "#1F4E3D";
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(theme)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect(theme);
+        }
+      }}
+      style={{
+        padding: "14px 14px 13px",
+        borderRadius: 14,
+        border: `1.5px solid ${selected ? accent : "#dbe3eb"}`,
+        background: selected ? `${accent}12` : "#fff",
+        boxShadow: selected ? `0 0 0 1px ${accent}22 inset` : "none",
+        textAlign: "left",
+        cursor: "pointer",
+        fontFamily: "inherit",
+        minHeight: 130,
+        display: "flex",
+        flexDirection: "column",
+        gap: 7,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: "#0f1720" }}>{theme.name}</div>
+        <div style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: selected ? accent : "#7b8794",
+          padding: "3px 8px",
+          borderRadius: 999,
+          background: selected ? `${accent}14` : "#f4f7fa",
+        }}>
+          {selected ? "Selected" : theme.style}
+        </div>
+      </div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: "#4b5563" }}>{theme.bestFit}</div>
+      <div style={{ fontSize: 12, lineHeight: 1.45, color: "#6b7280", flex: 1 }}>{theme.description}</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 2 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: accent }}>Preview</span>
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPreview(theme.style);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onPreview(theme.style);
+            }
+          }}
+          style={{
+            color: accent,
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+            textDecoration: "underline",
+          }}
+        >
+          Open
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MenuLabPanel({ rid }) {
+  const [settings, setSettings] = useState(() => ({
+    menu_style: "v1",
+    primary_color: null,
+    accent_color: null,
+    background_style: "dark",
+    hero_enabled: true,
+    image_density: "all",
+    section_heading_style: "default",
+    item_image_style: "auto",
+    price_placement: "right",
+    intelligence_display_style: "subtle",
+    intelligence_density: "subtle",
+    nutrition_display: "compact",
+    allergen_display: "icon",
+    insight_display: "compact",
+    compare_enabled: true,
+    similar_enabled: true,
+    indulgence_display: "compact",
+  }));
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [status, setStatus] = useState("");
+
+  const selectedTheme = getMenuDesignLabTheme(settings.menu_style || "v1");
+
+  const loadSettings = useCallback(async () => {
+    if (!rid) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await api.getDisplaySettings(rid);
+      if (data?.ok && data?.settings) {
+        const normalized = normalizeMenuThemeSettings(data.settings);
+        setSettings((current) => ({
+          ...current,
+          ...normalized,
+          menu_style: normalized.menu_style || current.menu_style || "v1",
+        }));
+      }
+    } catch {
+      // Keep defaults if loading fails.
+    } finally {
+      setLoading(false);
+    }
+  }, [rid]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  function applyPreset(theme) {
+    if (!theme) return;
+    setStatus("");
+    setSaved(false);
+    setSettings((current) => ({
+      ...current,
+      ...buildMenuThemeSettingsFromPreset(theme),
+    }));
+  }
+
+  async function saveDesign() {
+    if (!rid) return;
+    setSaving(true);
+    setStatus("");
+    setSaved(false);
+    try {
+      const payload = normalizeMenuThemeSettings({
+        ...settings,
+        menu_style: settings.menu_style || "v1",
+        primary_color: settings.primary_color || null,
+        accent_color: settings.accent_color || settings.primary_color || null,
+        background_style: settings.background_style || "dark",
+        hero_enabled: settings.hero_enabled !== false,
+        image_density: settings.image_density || "all",
+        section_heading_style: settings.section_heading_style || "default",
+        item_image_style: settings.item_image_style || settings.image_density || "auto",
+        price_placement: settings.price_placement || "right",
+        intelligence_display_style: settings.intelligence_display_style || "subtle",
+        intelligence_density: settings.intelligence_density || "subtle",
+        nutrition_display: settings.nutrition_display || "compact",
+        allergen_display: settings.allergen_display || "icon",
+        insight_display: settings.insight_display || "compact",
+        compare_enabled: settings.compare_enabled !== false,
+        similar_enabled: settings.similar_enabled !== false,
+        indulgence_display: settings.indulgence_display || "compact",
+      });
+      const data = await api.updateDisplaySettings(rid, payload);
+      if (data?.ok && data?.settings) {
+        const normalized = normalizeMenuThemeSettings(data.settings);
+        setSettings((current) => ({
+          ...current,
+          ...normalized,
+          item_image_style: data.settings.item_image_style || normalized.item_image_style,
+        }));
+      }
+      setSaved(true);
+      setStatus("Menu design saved.");
+      window.setTimeout(() => setSaved(false), 2600);
+    } catch (err) {
+      setStatus(err.message || "Failed to save menu design.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openPreview() {
+    window.open(`/menu-template-preview?previewStyle=${encodeURIComponent(settings.menu_style || "v1")}`, "_blank", "noopener,noreferrer");
+  }
+
+  function openPublicMenu() {
+    window.open(`/restaurants/${rid}/menu`, "_blank", "noopener,noreferrer");
+  }
+
+  const controlStyle = {
+    padding: "9px 10px",
+    fontSize: 13,
+    border: "1.5px solid #dbe3eb",
+    borderRadius: 10,
+    background: "#fff",
+    color: "#0f1720",
+    fontFamily: "inherit",
+    boxSizing: "border-box",
+    width: "100%",
+  };
+
+  return (
+    <section style={{
+      background: "#fff",
+      border: "1px solid #e4e9f0",
+      borderRadius: 16,
+      padding: "18px 18px 16px",
+      marginBottom: 22,
+      boxShadow: "0 12px 32px rgba(15, 23, 42, 0.04)",
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>Menu Lab</div>
+          <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4, lineHeight: 1.5, maxWidth: 760 }}>
+            Choose a preset menu design, tune the basic presentation, and save it to your public menu. The item and menu editing tools stay below this panel.
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <button type="button" style={BTN("ghost")} onClick={openPreview} disabled={!rid}>
+            Preview
+          </button>
+          <button type="button" style={BTN("primary")} onClick={saveDesign} disabled={saving || !rid}>
+            {saving ? "Saving…" : "Save Design"}
+          </button>
+          <button type="button" style={BTN("muted")} onClick={openPublicMenu} disabled={!rid}>
+            View Public Menu
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#1F4E3D", background: "#edf7f2", borderRadius: 999, padding: "4px 10px" }}>
+          {selectedTheme.name}
+        </div>
+        {saved ? (
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#065f46", background: "#d1fae5", borderRadius: 999, padding: "4px 10px" }}>
+            Saved
+          </div>
+        ) : null}
+        {status ? (
+          <div style={{ fontSize: 12, color: "#0f1720", padding: "4px 0" }}>{status}</div>
+        ) : null}
+      </div>
+
+      {loading ? (
+        <div style={{ color: "#8a9ab0", fontSize: 13 }}>Loading design settings…</div>
+      ) : (
+        <>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 12,
+            marginBottom: 16,
+          }}>
+            {MENU_DESIGN_LAB_THEMES.map((theme) => (
+              <MenuLabPresetCard
+                key={theme.style}
+                theme={theme}
+                selected={(settings.menu_style || "v1") === theme.style}
+                onSelect={applyPreset}
+                onPreview={(style) => window.open(`/menu-template-preview?previewStyle=${encodeURIComponent(style)}`, "_blank", "noopener,noreferrer")}
+              />
+            ))}
+          </div>
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: 10,
+          }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
+              Primary color
+              <input
+                type="color"
+                value={settings.primary_color || settings.accent_color || "#1F4E3D"}
+                onChange={(e) => setSettings((current) => ({
+                  ...current,
+                  primary_color: e.target.value,
+                  accent_color: e.target.value,
+                }))}
+                style={{ ...controlStyle, height: 44, padding: 6 }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
+              Accent color
+              <input
+                type="color"
+                value={settings.accent_color || settings.primary_color || "#1F4E3D"}
+                onChange={(e) => setSettings((current) => ({
+                  ...current,
+                  accent_color: e.target.value,
+                }))}
+                style={{ ...controlStyle, height: 44, padding: 6 }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
+              Background style
+              <select
+                value={settings.background_style || "dark"}
+                onChange={(e) => setSettings((current) => ({ ...current, background_style: e.target.value }))}
+                style={controlStyle}
+              >
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="paper">Paper</option>
+                <option value="chalkboard">Chalkboard</option>
+                <option value="charcoal">Charcoal</option>
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
+              Image density
+              <select
+                value={settings.image_density || "all"}
+                onChange={(e) => setSettings((current) => ({
+                  ...current,
+                  image_density: e.target.value,
+                  item_image_style: e.target.value === "section" ? "section" : e.target.value,
+                }))}
+                style={controlStyle}
+              >
+                <option value="all">All images</option>
+                <option value="section">Section images</option>
+                <option value="thumbnail">Item thumbnails</option>
+                <option value="none">No images</option>
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
+              Item image style
+              <select
+                value={settings.item_image_style || "auto"}
+                onChange={(e) => setSettings((current) => ({ ...current, item_image_style: e.target.value }))}
+                style={controlStyle}
+              >
+                <option value="auto">Auto</option>
+                <option value="all">All images</option>
+                <option value="section">Section images only</option>
+                <option value="thumbnail">Item thumbnails</option>
+                <option value="none">No item images</option>
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
+              Section headings
+              <select
+                value={settings.section_heading_style || "default"}
+                onChange={(e) => setSettings((current) => ({ ...current, section_heading_style: e.target.value }))}
+                style={controlStyle}
+              >
+                <option value="default">Default</option>
+                <option value="lines">Lines</option>
+                <option value="decorative">Decorative</option>
+                <option value="block">Block</option>
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
+              Price placement
+              <select
+                value={settings.price_placement || "right"}
+                onChange={(e) => setSettings((current) => ({ ...current, price_placement: e.target.value }))}
+                style={controlStyle}
+              >
+                <option value="right">Right</option>
+                <option value="below">Below</option>
+                <option value="inline">Inline</option>
+                <option value="aligned">Aligned</option>
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
+              Hero image
+              <button
+                type="button"
+                onClick={() => setSettings((current) => ({ ...current, hero_enabled: !current.hero_enabled }))}
+                style={{
+                  ...controlStyle,
+                  minHeight: 44,
+                  background: settings.hero_enabled ? "#edf7f2" : "#f4f7fa",
+                  borderColor: settings.hero_enabled ? "#1F4E3D" : "#dbe3eb",
+                  fontWeight: 700,
+                  textAlign: "left",
+                }}
+              >
+                {settings.hero_enabled ? "Enabled" : "Disabled"}
+              </button>
+            </label>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function OperatorMenuEditor() {
-  const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
   const navigate = useNavigate();
@@ -591,17 +988,19 @@ export default function OperatorMenuEditor() {
 
   if (!rid) {
     return (
-      <OperatorLayout title="Menu">
+      <OperatorLayout title="Menu Lab">
         <p style={{ color: "#8a9ab0" }}>Select a restaurant from the sidebar to manage its menu.</p>
       </OperatorLayout>
     );
   }
 
   return (
-    <OperatorLayout title="Menu">
+    <OperatorLayout title="Menu Lab">
+      <MenuLabPanel rid={rid} />
+
       <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
         <div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>Menu</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>Menu items</div>
           <div style={{ fontSize: 13, color: "#8a9ab0", marginTop: 4 }}>
             Upload your menu, add items, and edit what appears on your public profile.
           </div>
