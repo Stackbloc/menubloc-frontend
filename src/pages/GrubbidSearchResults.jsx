@@ -149,27 +149,19 @@ const US_STATE_ABBREVS = new Set([
   "va","wa","wv","wi","wy","dc",
 ]);
 
-// TODO: experimental threshold reduction for refinement testing — revert to 16 after testing
 const WAITER_MIN_RESULTS = 8;
+const WAITER_MIN_OPTIONS = 2;
+const WAITER_MAX_OPTIONS = 3;
 const MAX_MENU_ITEMS_PER_RESTAURANT_GROUP = 3;
 const WAITER_MIN_ITEM_SIGNALS = 6;
-const WAITER_MIN_OPTION_COUNT = 3;
-const WAITER_DOMINANT_TOPIC_MIN_COUNT = 3;
-const WAITER_DOMINANT_TOPIC_MIN_SHARE = 0.25;
-const WAITER_TOPICS = [
-  "pizza",
-  "chicken",
-  "sandwich",
-  "burger",
-  "taco",
-  "salad",
-  "pasta",
-  "bowl",
-  "wrap",
-  "breakfast",
-  "seafood",
-  "wings",
-];
+const WAITER_MIN_OPTION_MATCHES = 1;
+const WAITER_MIN_REMOVED_ITEMS = 1;
+const WAITER_STRONG_UTILITY = 0.3;
+const WAITER_MIN_INFORMATION_GAIN = 0.55;
+const WAITER_MIN_OPTION_SHARE = 0.1;
+const WAITER_TIER_FOOD = 3;
+const WAITER_TIER_NUTRITION = 2;
+const WAITER_TIER_COMMERCE = 1;
 const WAITER_STOP_WORDS = new Set([
   "the",
   "and",
@@ -195,70 +187,39 @@ const WAITER_STOP_WORDS = new Set([
   "fresh",
   "classic",
   "style",
+  "choice",
+  "available",
+  "served",
+  "includes",
+  "featuring",
+  "made",
+  "order",
+  "kitchen",
+  "demo",
 ]);
-const WAITER_PIZZA_RULES = [
-  {
-    id: "new_york",
-    label: "New York",
-    terms: ["new york", "ny style", "ny", "slice"],
-  },
-  {
-    id: "chicago",
-    label: "Chicago",
-    terms: ["chicago", "deep dish"],
-  },
-  {
-    id: "thin_crust",
-    label: "Thin Crust",
-    terms: ["thin crust", "hand tossed", "hand-tossed", "crispy crust"],
-  },
+const WAITER_ATTRIBUTE_KEY_PATTERNS = Object.freeze({
+  preparation: /(^|_)(preparation|prep|cooking_method|cook_method|method|temperature|serving_temperature)(_|$)/i,
+  ingredient: /(^|_)(ingredient|protein|base|filling|topping|sauce|flavor|bread_type|crust|cheese|common_knowledge|commonknowledge|mks|attribute|trait)(_|$)/i,
+  modifier: /(^|_)(modifier|option|choice|addon|add_on|variant|customization)(_|$)/i,
+  category: /(^|_)(strict_type|broad_category|category|section|primary_family|template|dish_type|item_type|course)(_|$)/i,
+});
+const WAITER_TEXT_ONLY_PREPARATION_SIGNALS = [
+  { key: "fried", label: "Fried", terms: ["fried", "crispy", "breaded", "battered", "tempura", "crunchy"] },
+  { key: "grilled", label: "Grilled", terms: ["grilled", "chargrilled", "char-grilled", "blackened"] },
+  { key: "roasted", label: "Roasted", terms: ["roasted", "roast"] },
+  { key: "baked", label: "Baked", terms: ["baked", "oven baked", "oven-baked"] },
+  { key: "smoked", label: "Smoked", terms: ["smoked", "smoky"] },
+  { key: "steamed", label: "Steamed", terms: ["steamed"] },
+  { key: "seared", label: "Seared", terms: ["seared"] },
+  { key: "spicy", label: "Spicy", terms: ["spicy", "hot", "buffalo", "nashville hot", "cajun"] },
+  { key: "iced", label: "Iced", terms: ["iced", "cold brew", "cold"] },
+  { key: "hot", label: "Hot", terms: ["hot"] },
 ];
-const WAITER_CHICKEN_RULES = [
-  {
-    id: "fried",
-    label: "Fried",
-    terms: ["fried", "crispy", "breaded", "hot chicken", "nashville hot"],
-  },
-  {
-    id: "grilled",
-    label: "Grilled",
-    terms: ["grilled", "blackened"],
-  },
-  {
-    id: "sandwich",
-    label: "Sandwich",
-    terms: ["sandwich", "sandwhich", "sandwitch", "slider", "wrap"],
-  },
-];
-const WAITER_MIXED_RULES = [
-  {
-    id: "under_15",
-    label: "Under $15",
-    predicateDescription: "Items priced under $15",
-    test: (row) => {
-      const price = getWaiterPriceDollars(row);
-      return price !== null && price < 15;
-    },
-  },
-  {
-    id: "high_protein",
-    label: "High Protein",
-    predicateDescription: "Items with at least 25g protein",
-    test: (row) => {
-      const protein = getWaiterProtein(row);
-      return protein !== null && protein >= 25;
-    },
-  },
-  {
-    id: "nearby",
-    label: "Nearby",
-    predicateDescription: "Items within 3 miles",
-    test: (row) => {
-      const distance = getDistanceMiles(row);
-      return distance !== null && distance <= 3;
-    },
-  },
-];
+const WAITER_TEXT_ONLY_PREPARATION_ALIASES = new Map(
+  WAITER_TEXT_ONLY_PREPARATION_SIGNALS.flatMap((signal) =>
+    signal.terms.map((term) => [normalizeWaiterValue(term), signal])
+  )
+);
 
 function parseLocation(rawValue) {
   const raw = String(rawValue || "").trim();
@@ -408,6 +369,22 @@ function normalizeKey(v) {
   return asString(v).toLowerCase().replace(/\s+/g, " ").trim();
 }
 
+function normalizeWaiterValue(value) {
+  return normalizeKey(value)
+    .replace(/[_/]+/g, " ")
+    .replace(/[^\w\s$.-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function titleCaseWaiterValue(value) {
+  return String(value || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function canonicalizeMenuItemName(v) {
   return normalizeKey(v)
     .replace(/\((?:\s*\d+\s*(?:pc|pcs|piece|pieces|count|ct)\s*)\)/g, " ")
@@ -456,6 +433,10 @@ function getWaiterProtein(row) {
   return chip !== null ? chip : null;
 }
 
+function getWaiterHasDeal(row) {
+  return row?.has_active_deal === true || row?.deal_active === true || row?.active_deal === true;
+}
+
 function getWaiterItemName(row) {
   return asString(
     pickFirst(
@@ -480,11 +461,21 @@ function getWaiterCategory(row) {
   );
 }
 
+function getWaiterDescription(row) {
+  return asString(
+    pickFirst(
+      row,
+      ["description", "menu_item_description", "item_description", "summary", "short_description"],
+      ""
+    )
+  );
+}
+
 function getWaiterText(row) {
   return normalizeKey(
     [
       getWaiterItemName(row),
-      getWaiterRestaurantName(row),
+      getWaiterDescription(row),
       getWaiterCategory(row),
       Array.isArray(row?.preview_items) ? row.preview_items.join(" ") : "",
     ].join(" ")
@@ -496,6 +487,90 @@ function tokenizeWaiterText(value) {
     .split(/[^a-z0-9]+/)
     .map((token) => singularizeWaiterToken(token))
     .filter((token) => token && !WAITER_STOP_WORDS.has(token));
+}
+
+function addWaiterValue(target, value) {
+  const normalized = normalizeWaiterValue(value);
+  if (!normalized || normalized.length < 3 || WAITER_STOP_WORDS.has(normalized)) return;
+  if (/^\d+$/.test(normalized)) return;
+  target.add(normalized);
+}
+
+function addWaiterValues(target, value) {
+  if (Array.isArray(value)) {
+    for (const entry of value) addWaiterValues(target, entry);
+    return;
+  }
+
+  if (value && typeof value === "object") {
+    const direct = value.label || value.name || value.value || value.key || value.attribute_id || value.attribute;
+    if (direct) addWaiterValue(target, direct);
+    return;
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    String(value)
+      .split(/[|,;]+/)
+      .forEach((part) => addWaiterValue(target, part));
+  }
+}
+
+function collectWaiterAttributes(value, out, depth = 0) {
+  if (!value || depth > 4) return;
+
+  if (Array.isArray(value)) {
+    for (const entry of value) collectWaiterAttributes(entry, out, depth + 1);
+    return;
+  }
+
+  if (typeof value !== "object") return;
+
+  for (const [key, nextValue] of Object.entries(value)) {
+    for (const [group, pattern] of Object.entries(WAITER_ATTRIBUTE_KEY_PATTERNS)) {
+      if (pattern.test(key)) addWaiterValues(out[group], nextValue);
+    }
+    collectWaiterAttributes(nextValue, out, depth + 1);
+  }
+}
+
+function buildQueryTokenSet(query) {
+  return new Set(tokenizeWaiterText(query));
+}
+
+function canonicalWaiterPreparation(value) {
+  const normalized = normalizeWaiterValue(value);
+  const alias = WAITER_TEXT_ONLY_PREPARATION_ALIASES.get(normalized);
+  if (alias) return { key: alias.key, label: alias.label };
+  return { key: normalized, label: titleCaseWaiterValue(normalized) };
+}
+
+function extractWaiterPreparationFromText(text) {
+  const out = new Map();
+  const haystack = normalizeWaiterValue(text);
+
+  for (const signal of WAITER_TEXT_ONLY_PREPARATION_SIGNALS) {
+    if (signal.terms.some((term) => haystack.includes(normalizeWaiterValue(term)))) {
+      out.set(signal.key, signal.label);
+    }
+  }
+
+  return out;
+}
+
+function extractWaiterTextFeatures(row, queryTokens) {
+  const text = getWaiterText(row);
+  const tokens = tokenizeWaiterText(text)
+    .filter((token) => !queryTokens.has(token))
+    .filter((token) => token.length >= 3);
+  const features = new Set(tokens);
+
+  for (let index = 0; index < tokens.length - 1; index += 1) {
+    const first = tokens[index];
+    const second = tokens[index + 1];
+    if (first && second && first !== second) features.add(`${first} ${second}`);
+  }
+
+  return features;
 }
 
 function buildWaiterInventory(rows) {
@@ -519,6 +594,19 @@ function buildWaiterInventory(rows) {
       if (seen.has(dedupeKey)) continue;
       seen.add(dedupeKey);
 
+      const attributes = {
+        preparation: new Set(),
+        ingredient: new Set(),
+        modifier: new Set(),
+        category: new Set(),
+      };
+      collectWaiterAttributes(row, attributes);
+
+      const itemText = [itemName, getWaiterDescription(row), getWaiterCategory(row)].join(" ");
+      for (const [key, label] of extractWaiterPreparationFromText(itemText)) {
+        attributes.preparation.add(key);
+      }
+
       inventory.push({
         ...row,
         item_name: itemName,
@@ -528,6 +616,8 @@ function buildWaiterInventory(rows) {
         price: getWaiterPriceDollars(row),
         protein_g: getWaiterProtein(row),
         distance_miles: getDistanceMiles(row),
+        __waiterAttributes: attributes,
+        __waiterText: itemText,
       });
     }
   }
@@ -539,84 +629,382 @@ function countWaiterMatches(rows, test) {
   return (Array.isArray(rows) ? rows : []).reduce((count, row) => count + (test(row) ? 1 : 0), 0);
 }
 
-function rowMatchesTerms(row, terms) {
-  const haystack = getWaiterText(row);
-  return terms.some((term) => haystack.includes(normalizeKey(term)));
-}
-
-function pickWaiterDominantTopic(inventory) {
-  const topicCounts = new Map();
-
-  for (const topic of WAITER_TOPICS) {
-    topicCounts.set(topic, 0);
-  }
-
-  for (const row of inventory) {
-    const text = getWaiterText(row);
-    for (const topic of WAITER_TOPICS) {
-      if (text.includes(topic)) {
-        topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1);
-      }
-    }
-  }
-
-  const ranked = Array.from(topicCounts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  const [topic, count] = ranked[0] || [];
-  const secondCount = ranked[1]?.[1] || 0;
-
-  if (!topic || count < WAITER_DOMINANT_TOPIC_MIN_COUNT) return null;
-  if (count / Math.max(inventory.length, 1) < WAITER_DOMINANT_TOPIC_MIN_SHARE) return null;
-  if (count - secondCount < 1 && secondCount >= WAITER_DOMINANT_TOPIC_MIN_COUNT) return null;
-
-  return topic;
-}
-
-function buildWaiterOptionRows(rows, specs) {
-  return specs
-    .map((spec) => ({
-      id: spec.id,
-      label: spec.label,
-      predicateDescription: spec.predicateDescription || `${spec.label} items`,
-      test: spec.test,
-      count: countWaiterMatches(rows, spec.test),
+function buildWaiterOptionRows(rows, dimension, candidates) {
+  const total = Array.isArray(rows) ? rows.length : 0;
+  return Array.from(candidates.values())
+    .map((candidate) => ({
+      id: `${dimension}:${candidate.key}`,
+      type: dimension,
+      key: candidate.key,
+      label: candidate.label,
+      predicateDescription: candidate.predicateDescription || `${candidate.label} items`,
+      commerceType: candidate.commerceType || null,
+      test: candidate.test,
+      count: countWaiterMatches(rows, candidate.test),
     }))
-    .filter((option) => option.count >= WAITER_MIN_OPTION_COUNT)
+    .filter((option) => (
+      option.count >= WAITER_MIN_OPTION_MATCHES &&
+      option.count < total &&
+      total - option.count >= WAITER_MIN_REMOVED_ITEMS
+    ))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
 
-function buildWaiterOptions(rows) {
+function scoreWaiterGroup(group) {
+  if (!group || group.options.length < WAITER_MIN_OPTIONS) return -1;
+  const totalCount = Math.max(group.totalCount || 0, 1);
+  const optionCounts = group.options.map((option) => option.count).filter((count) => count > 0);
+  if (optionCounts.length < WAITER_MIN_OPTIONS) return -1;
+
+  const coveredCount = Math.min(optionCounts.reduce((sum, count) => sum + count, 0), totalCount);
+  const residualCount = Math.max(totalCount - coveredCount, 0);
+  const buckets = residualCount > 0 ? [...optionCounts, residualCount] : optionCounts;
+  const bucketCount = buckets.length;
+  const entropy = buckets.reduce((sum, count) => {
+    const probability = count / totalCount;
+    return probability > 0 ? sum - probability * Math.log2(probability) : sum;
+  }, 0);
+  const informationGain = bucketCount > 1 ? entropy / Math.log2(bucketCount) : 0;
+  const coverageRatio = coveredCount / totalCount;
+  const averageRemovalRatio =
+    optionCounts.reduce((sum, count) => sum + ((totalCount - count) / totalCount), 0) /
+    optionCounts.length;
+  const smallestShare = Math.min(...optionCounts) / totalCount;
+  const optionVariety = Math.min(optionCounts.length, WAITER_MAX_OPTIONS) / WAITER_MAX_OPTIONS;
+
+  if (informationGain < WAITER_MIN_INFORMATION_GAIN) return -1;
+  if (smallestShare < WAITER_MIN_OPTION_SHARE) return -1;
+
+  return coverageRatio * (
+    informationGain * 0.5 +
+    averageRemovalRatio * 0.3 +
+    optionVariety * 0.2
+  );
+}
+
+function selectWaiterGroup(groups) {
+  const ranked = groups
+    .map((group) => ({
+      ...group,
+      utilityScore: scoreWaiterGroup(group),
+    }))
+    .filter((group) => group.utilityScore > 0)
+    .sort((a, b) =>
+      b.tier - a.tier ||
+      b.utilityScore - a.utilityScore ||
+      (b.priority || 0) - (a.priority || 0)
+    );
+
+  const foodAttributeGroup = ranked
+    .filter((group) => (
+      group.tier === WAITER_TIER_FOOD &&
+      group.dimension !== "text" &&
+      group.utilityScore >= WAITER_STRONG_UTILITY
+    ))
+    .sort((a, b) =>
+      (b.priority || 0) - (a.priority || 0) ||
+      b.utilityScore - a.utilityScore
+    )[0];
+  if (foodAttributeGroup) return foodAttributeGroup;
+
+  const textFoodGroup = ranked.find(
+    (group) => (
+      group.tier === WAITER_TIER_FOOD &&
+      group.dimension === "text" &&
+      group.utilityScore >= WAITER_STRONG_UTILITY
+    )
+  );
+  if (textFoodGroup) return textFoodGroup;
+
+  const nutritionGroup = ranked.find(
+    (group) => group.tier === WAITER_TIER_NUTRITION && group.utilityScore >= WAITER_STRONG_UTILITY
+  );
+  if (nutritionGroup) return nutritionGroup;
+
+  const commerceGroup = ranked.find(
+    (group) => group.tier === WAITER_TIER_COMMERCE && group.utilityScore >= WAITER_STRONG_UTILITY
+  );
+  if (commerceGroup) return commerceGroup;
+
+  return null;
+}
+
+function addCandidate(candidates, key, label, test, predicateDescription, metadata = {}) {
+  const normalizedKey = normalizeWaiterValue(key);
+  if (!normalizedKey) return;
+  candidates.set(normalizedKey, {
+    key: normalizedKey,
+    label: label || titleCaseWaiterValue(normalizedKey),
+    predicateDescription,
+    test,
+    ...metadata,
+  });
+}
+
+function buildAttributeCandidates(inventory, group, queryTokens) {
+  const candidates = new Map();
+  const valuesByRow = [];
+
+  for (const row of inventory) {
+    const values = row.__waiterAttributes?.[group];
+    const normalizedValues = [];
+    for (const rawValue of values || []) {
+      const value = group === "preparation"
+        ? canonicalWaiterPreparation(rawValue)
+        : { key: normalizeWaiterValue(rawValue), label: titleCaseWaiterValue(rawValue) };
+      if (!value.key) continue;
+      if (queryTokens.has(singularizeWaiterToken(value.key))) return candidates;
+      normalizedValues.push(value);
+    }
+    valuesByRow.push(normalizedValues);
+  }
+
+  for (const values of valuesByRow) {
+    for (const value of values) {
+      addCandidate(
+        candidates,
+        value.key,
+        value.label,
+        (candidateRow) => {
+          const rowValues = candidateRow.__waiterAttributes?.[group] || new Set();
+          if (group === "preparation") {
+            return Array.from(rowValues).some((entry) => canonicalWaiterPreparation(entry).key === value.key);
+          }
+          return rowValues.has(value.key);
+        },
+        `${value.label} matches`
+      );
+    }
+  }
+  return candidates;
+}
+
+function buildTextFeatureCandidates(inventory, queryTokens) {
+  const counts = new Map();
+  for (const row of inventory) {
+    for (const feature of extractWaiterTextFeatures(row, queryTokens)) {
+      counts.set(feature, (counts.get(feature) || 0) + 1);
+    }
+  }
+
+  const candidates = new Map();
+  for (const [feature, count] of counts) {
+    if (count < WAITER_MIN_OPTION_MATCHES) continue;
+    if (feature.split(" ").some((token) => queryTokens.has(token))) continue;
+    addCandidate(
+      candidates,
+      feature,
+      titleCaseWaiterValue(feature),
+      (row) => extractWaiterTextFeatures(row, queryTokens).has(feature),
+      `${titleCaseWaiterValue(feature)} matches`
+    );
+  }
+  return candidates;
+}
+
+function buildPriceCommerceCandidates(inventory) {
+  const candidates = new Map();
+  const priced = inventory.filter((row) => getWaiterPriceDollars(row) !== null);
+  if (priced.length >= WAITER_MIN_RESULTS) {
+    const prices = priced.map((row) => getWaiterPriceDollars(row)).sort((a, b) => a - b);
+    const median = prices[Math.floor(prices.length / 2)];
+    if (Number.isFinite(median) && median > 0) {
+      addCandidate(
+        candidates,
+        `under_${Math.ceil(median)}`,
+        `Under $${Math.ceil(median)}`,
+        (row) => {
+          const price = getWaiterPriceDollars(row);
+          return price !== null && price < Math.ceil(median);
+        },
+        `Items under $${Math.ceil(median)}`,
+        { commerceType: "price" }
+      );
+      addCandidate(
+        candidates,
+        `${Math.ceil(median)}_plus`,
+        `$${Math.ceil(median)}+`,
+        (row) => {
+          const price = getWaiterPriceDollars(row);
+          return price !== null && price >= Math.ceil(median);
+        },
+        `Items $${Math.ceil(median)} or above`,
+        { commerceType: "price" }
+      );
+    }
+  }
+
+  return candidates;
+}
+
+function buildDealCommerceCandidates(inventory) {
+  const candidates = new Map();
+  const dealCount = inventory.filter(getWaiterHasDeal).length;
+  if (dealCount > 0 && dealCount < inventory.length) {
+    addCandidate(
+      candidates,
+      "deals",
+      "Deals",
+      getWaiterHasDeal,
+      "Items with active deals",
+      { commerceType: "deal" }
+    );
+    addCandidate(
+      candidates,
+      "no_deals",
+      "No deals",
+      (row) => !getWaiterHasDeal(row),
+      "Items without active deals",
+      { commerceType: "deal" }
+    );
+  }
+
+  return candidates;
+}
+
+function buildDistanceCommerceCandidates(inventory) {
+  const candidates = new Map();
+  const withDistance = inventory.filter((row) => getDistanceMiles(row) !== null);
+  if (withDistance.length >= WAITER_MIN_RESULTS) {
+    const nearbyCount = withDistance.filter((row) => getDistanceMiles(row) <= 3).length;
+    if (nearbyCount > 0 && nearbyCount < withDistance.length) {
+      addCandidate(
+        candidates,
+        "nearby",
+        "Nearby",
+        (row) => {
+          const distance = getDistanceMiles(row);
+          return distance !== null && distance <= 3;
+        },
+        "Items within 3 miles",
+        { commerceType: "distance" }
+      );
+      addCandidate(
+        candidates,
+        "farther_out",
+        "Farther out",
+        (row) => {
+          const distance = getDistanceMiles(row);
+          return distance !== null && distance > 3;
+        },
+        "Items more than 3 miles away",
+        { commerceType: "distance" }
+      );
+    }
+  }
+
+  return candidates;
+}
+
+function buildNutritionCandidates(inventory) {
+  const candidates = new Map();
+  const proteins = inventory.map(getWaiterProtein).filter((value) => value !== null).sort((a, b) => a - b);
+  if (proteins.length >= WAITER_MIN_RESULTS) {
+    const median = proteins[Math.floor(proteins.length / 2)];
+    if (Number.isFinite(median) && median > 0) {
+      addCandidate(
+        candidates,
+        `protein_${Math.round(median)}g_plus`,
+        "Higher Protein",
+        (row) => {
+          const protein = getWaiterProtein(row);
+          return protein !== null && protein >= median;
+        },
+        `Items with at least ${Math.round(median)}g protein`
+      );
+    }
+  }
+  return candidates;
+}
+
+function buildWaiterOptions(rows, query) {
   const inventory = buildWaiterInventory(rows);
   if (inventory.length < WAITER_MIN_ITEM_SIGNALS) {
-    return { inventory, options: [], dominantTopic: null };
+    return { inventory, options: [], dimension: null };
   }
 
-  const dominantTopic = pickWaiterDominantTopic(inventory);
-  let options = [];
+  const queryTokens = buildQueryTokenSet(query);
+  const groups = [
+    {
+      dimension: "preparation",
+      tier: WAITER_TIER_FOOD,
+      priority: 60,
+      options: buildWaiterOptionRows(
+        inventory,
+        "preparation",
+        buildAttributeCandidates(inventory, "preparation", queryTokens)
+      ),
+    },
+    {
+      dimension: "ingredient",
+      tier: WAITER_TIER_FOOD,
+      priority: 50,
+      options: buildWaiterOptionRows(
+        inventory,
+        "ingredient",
+        buildAttributeCandidates(inventory, "ingredient", queryTokens)
+      ),
+    },
+    {
+      dimension: "modifier",
+      tier: WAITER_TIER_FOOD,
+      priority: 45,
+      options: buildWaiterOptionRows(
+        inventory,
+        "modifier",
+        buildAttributeCandidates(inventory, "modifier", queryTokens)
+      ),
+    },
+    {
+      dimension: "category",
+      tier: WAITER_TIER_FOOD,
+      priority: 35,
+      options: buildWaiterOptionRows(
+        inventory,
+        "category",
+        buildAttributeCandidates(inventory, "category", queryTokens)
+      ),
+    },
+    {
+      dimension: "text",
+      tier: WAITER_TIER_FOOD,
+      priority: 25,
+      options: buildWaiterOptionRows(
+        inventory,
+        "text",
+        buildTextFeatureCandidates(inventory, queryTokens)
+      ),
+    },
+    {
+      dimension: "nutrition",
+      tier: WAITER_TIER_NUTRITION,
+      priority: 15,
+      options: buildWaiterOptionRows(inventory, "nutrition", buildNutritionCandidates(inventory)),
+    },
+    ...[
+      { commerceType: "price", priority: 10, candidates: buildPriceCommerceCandidates(inventory) },
+      { commerceType: "deal", priority: 9, candidates: buildDealCommerceCandidates(inventory) },
+      { commerceType: "distance", priority: 8, candidates: buildDistanceCommerceCandidates(inventory) },
+    ].map((commerceGroup) => ({
+      dimension: "commerce",
+      commerceType: commerceGroup.commerceType,
+      tier: WAITER_TIER_COMMERCE,
+      priority: commerceGroup.priority,
+      options: buildWaiterOptionRows(inventory, "commerce", commerceGroup.candidates),
+    })),
+  ].map((group) => ({
+    ...group,
+    totalCount: inventory.length,
+    options: group.options.slice(0, WAITER_MAX_OPTIONS),
+  })).filter((group) => group.options.length >= WAITER_MIN_OPTIONS);
 
-  if (dominantTopic === "pizza") {
-    options = buildWaiterOptionRows(inventory, WAITER_PIZZA_RULES.map((rule) => ({
-      ...rule,
-      predicateDescription: `${rule.label} pizza items`,
-      test: (row) => rowMatchesTerms(row, rule.terms),
-    })));
-  } else if (dominantTopic === "chicken") {
-    options = buildWaiterOptionRows(inventory, WAITER_CHICKEN_RULES.map((rule) => ({
-      ...rule,
-      predicateDescription: `${rule.label} chicken items`,
-      test: (row) => rowMatchesTerms(row, rule.terms),
-    })));
-  } else {
-    options = buildWaiterOptionRows(inventory, WAITER_MIXED_RULES);
-  }
-
-  if (options.length < WAITER_MIN_OPTION_COUNT) {
-    return { inventory, options: [], dominantTopic };
-  }
+  const selectedGroup = selectWaiterGroup(groups);
+  if (!selectedGroup) return { inventory, options: [], dimension: null };
 
   return {
     inventory,
-    options: options.slice(0, 3),
-    dominantTopic,
+    options: selectedGroup.options,
+    dimension: selectedGroup.dimension,
   };
 }
 
@@ -910,7 +1298,7 @@ export default function GrubbidSearchResults() {
   const SEARCH_LIMIT = 24;
   const [waiterSelection, setWaiterSelection] = useState(null);
 
-  const waiterState = useMemo(() => buildWaiterOptions(rows), [rows]);
+  const waiterState = useMemo(() => buildWaiterOptions(rows, q), [rows, q]);
   const waiterOptionsSignature = useMemo(
     () => waiterState.options.map((option) => `${option.id}:${option.count}`).join("|"),
     [waiterState.options]
@@ -1321,11 +1709,14 @@ export default function GrubbidSearchResults() {
   );
   const hasMenuMatches = restaurantGroups.length > 0;
   const hasDishMatches = visibleDishRows.length > 0;
-  const waiterResultCount = waiterFilteredRows.length;
+  const visibleResultCountForWaiter = useRestaurantGroupedRendering
+    ? restaurantGroups.length || restaurantOnlyRows.length
+    : visibleDishRows.length;
   const showWaiter =
-    rows.length >= WAITER_MIN_RESULTS &&
+    !waiterSelection &&
+    visibleResultCountForWaiter >= WAITER_MIN_RESULTS &&
     waiterState.inventory.length >= WAITER_MIN_ITEM_SIGNALS &&
-    waiterState.options.length >= WAITER_MIN_OPTION_COUNT;
+    waiterState.options.length >= WAITER_MIN_OPTIONS;
 
   const restaurantGroupsById = useMemo(() => {
     if (!useRestaurantGroupedRendering) return new Set();
@@ -1517,20 +1908,17 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && useRestaurantGroupedRendering && hasMenuMatches && (
         <>
-          {!showWaiter && (
-            <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>
+          <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>
+          {showWaiter && (
+            <WaiterRefinementPrompt
+              displayQuery={displayQuery}
+              filteredResultCount={visibleResultCountForWaiter}
+              refinementOptions={waiterState.options}
+              selectedRefinement={waiterSelection}
+              onSelectRefinement={setWaiterSelection}
+            />
           )}
           <div style={styles.grid}>
-            {showWaiter && (
-              <WaiterRefinementPrompt
-                displayQuery={displayQuery}
-                filteredResultCount={waiterResultCount}
-                refinementOptions={waiterState.options}
-                selectedRefinement={waiterSelection}
-                onSelectRefinement={setWaiterSelection}
-                onClearRefinements={() => setWaiterSelection(null)}
-              />
-            )}
             {restaurantGroups.map((g) => {
               const rMeta = restaurantMetaMap.get(asString(g.restaurant_id));
               return (
@@ -1568,37 +1956,39 @@ export default function GrubbidSearchResults() {
       )}
 
       {!loading && !err && !useRestaurantGroupedRendering && hasDishMatches && (
-        <div style={styles.grid}>
+        <>
+          <SectionTitle>{t("common.results")}</SectionTitle>
           {showWaiter && (
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
-              filteredResultCount={waiterResultCount}
+              filteredResultCount={visibleResultCountForWaiter}
               refinementOptions={waiterState.options}
               selectedRefinement={waiterSelection}
               onSelectRefinement={setWaiterSelection}
-              onClearRefinements={() => setWaiterSelection(null)}
             />
           )}
-          {visibleDishRows.map((row) => {
-            const rowId = asString(pickFirst(row, ["menu_item_id", "id"], ""));
-            const rowName = asString(
-              pickFirst(row, ["search_display_name", "menu_item_name", "menuItemName", "name"], "")
-            );
-            return (
-              <SearchResultCard
-                key={`mi-${rowId || rowName}`}
-                item={row}
-                query={q}
-                queryMeta={queryMeta}
-                matchContext={{
-                  wantsNearby: searchMeta?.wants_nearby === true,
-                  coordinateSearchActive: hasGeoFilter === true,
-                }}
-                geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
-              />
-            );
-          })}
-        </div>
+          <div style={styles.grid}>
+            {visibleDishRows.map((row) => {
+              const rowId = asString(pickFirst(row, ["menu_item_id", "id"], ""));
+              const rowName = asString(
+                pickFirst(row, ["search_display_name", "menu_item_name", "menuItemName", "name"], "")
+              );
+              return (
+                <SearchResultCard
+                  key={`mi-${rowId || rowName}`}
+                  item={row}
+                  query={q}
+                  queryMeta={queryMeta}
+                  matchContext={{
+                    wantsNearby: searchMeta?.wants_nearby === true,
+                    coordinateSearchActive: hasGeoFilter === true,
+                  }}
+                  geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+                />
+              );
+            })}
+          </div>
+        </>
       )}
       {/* Load More — search pagination */}
       {!loading && !err && searchHasMore && (
