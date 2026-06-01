@@ -15,9 +15,9 @@ const PACKAGES = {
   starter: {
     key: "starter",
     name: "Starter Kit",
-    amountCents: 999,
-    description: "Door and front-counter QR coverage for a fast launch.",
-    placements: ["Door", "Counter / Pickup"],
+    amountCents: 1500,
+    description: "One door QR vinyl sticker (6.25\" × 5.25\"). Scannable link placed right at your entrance.",
+    placements: ["Door"],
   },
   full: {
     key: "full",
