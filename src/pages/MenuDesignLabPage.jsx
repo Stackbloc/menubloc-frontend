@@ -109,20 +109,24 @@ export default function MenuDesignLabPage() {
     backgroundStyle: inferBackgroundStyle(selectedTheme),
     imageDensity: inferImageDensity(selectedTheme),
     heroEnabled: true,
+    fontPreset: "default",
+    logoPlacement: "top-left",
   });
 
   // When entering edit mode via ?style= param, pre-apply the theme from URL
   useEffect(() => {
     if (!isEditMode) return;
     const theme = getMenuDesignLabTheme(selectedStyle);
-    setControls({
+    setControls((prev) => ({
+      ...prev,
       themePreset: selectedStyle,
       primaryColor: theme.preset?.colorDefaults?.primary || "#c45c26",
       accentColor: theme.preset?.colorDefaults?.accent || "#c45c26",
       backgroundStyle: inferBackgroundStyle(theme),
       imageDensity: inferImageDensity(theme),
       heroEnabled: true,
-    });
+      // preserve font and logo placement from loaded brand/display settings
+    }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStyle]);
 
@@ -137,40 +141,53 @@ export default function MenuDesignLabPage() {
   // Load existing display settings on mount so controls reflect what's live
   const loadExistingDesign = useCallback(() => {
     if (!rid) return;
-    api.getDisplaySettings(rid).then((data) => {
-      if (!data?.settings) return;
-      const s = data.settings;
+    Promise.allSettled([
+      api.getDisplaySettings(rid),
+      api.getBrandProfile(rid),
+    ]).then(([dispResult, brandResult]) => {
+      const s = dispResult.status === "fulfilled" ? (dispResult.value?.settings || {}) : {};
+      const b = brandResult.status === "fulfilled" ? (brandResult.value?.brand || brandResult.value || {}) : {};
       const style = s.menu_style || selectedStyle;
       const labTheme = getMenuDesignLabTheme(style);
-      if (!isEditMode) {
-        setSearchParams({ style });
-      }
+      if (!isEditMode) setSearchParams({ style });
       setControls({
         themePreset:     style,
-        primaryColor:    s.primary_color   || labTheme.preset?.colorDefaults?.primary || "#c45c26",
-        accentColor:     s.accent_color    || labTheme.preset?.colorDefaults?.accent  || "#c45c26",
+        primaryColor:    s.primary_color    || labTheme.preset?.colorDefaults?.primary || "#c45c26",
+        accentColor:     s.accent_color     || labTheme.preset?.colorDefaults?.accent  || "#c45c26",
         backgroundStyle: s.background_style || inferBackgroundStyle(labTheme),
         imageDensity:    s.image_density    || inferImageDensity(labTheme),
         heroEnabled:     s.hero_enabled    !== false,
+        fontPreset:      b.font_preset      || "default",
+        logoPlacement:   s.logo_placement   || "top-left",
       });
-    }).catch(() => {});
+    });
   }, [rid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadExistingDesign(); }, [loadExistingDesign]);
 
-  async function handleSave() {
-    if (!rid) return;
-    setSaving(true);
-    setEditorMsg("");
-    try {
-      await api.updateDisplaySettings(rid, {
+  async function persistDesign() {
+    await Promise.all([
+      api.updateDisplaySettings(rid, {
         menu_style:       controls.themePreset,
         primary_color:    controls.primaryColor  || null,
         accent_color:     controls.accentColor   || null,
         background_style: controls.backgroundStyle,
         hero_enabled:     controls.heroEnabled,
         image_density:    controls.imageDensity,
-      });
+        logo_placement:   controls.logoPlacement,
+      }),
+      api.updateBrandProfile(rid, {
+        font_preset: controls.fontPreset,
+      }),
+    ]);
+  }
+
+  async function handleSave() {
+    if (!rid) return;
+    setSaving(true);
+    setEditorMsg("");
+    try {
+      await persistDesign();
       setEditorMsg("Saved!");
       setTimeout(() => setEditorMsg(""), 2000);
     } catch (e) {
@@ -185,14 +202,7 @@ export default function MenuDesignLabPage() {
     setPublishing(true);
     setEditorMsg("");
     try {
-      await api.updateDisplaySettings(rid, {
-        menu_style:       controls.themePreset,
-        primary_color:    controls.primaryColor  || null,
-        accent_color:     controls.accentColor   || null,
-        background_style: controls.backgroundStyle,
-        hero_enabled:     controls.heroEnabled,
-        image_density:    controls.imageDensity,
-      });
+      await persistDesign();
       setPublished(true);
       setEditorMsg("Published — live on your menu!");
       setTimeout(() => setEditorMsg(""), 3000);
@@ -436,6 +446,25 @@ export default function MenuDesignLabPage() {
                       style={{ ...styles.toggleButton, background: controls.heroEnabled ? "#1F4E3D" : (isDarkShell ? "rgba(255,255,255,0.06)" : "#fff"), color: controls.heroEnabled ? "#fff" : (isDarkShell ? "#fff" : "#0f1720") }}>
                       {controls.heroEnabled ? "Enabled" : "Disabled"}
                     </button>
+                  </Control>
+                  <Control label="Font">
+                    <select value={controls.fontPreset}
+                      onChange={(e) => setControls((c) => ({ ...c, fontPreset: e.target.value }))} style={styles.select}>
+                      <option value="default">Default</option>
+                      <option value="modern">Modern</option>
+                      <option value="classic">Classic</option>
+                      <option value="bold">Bold</option>
+                      <option value="serif">Serif</option>
+                      <option value="script">Script</option>
+                    </select>
+                  </Control>
+                  <Control label="Logo placement">
+                    <select value={controls.logoPlacement}
+                      onChange={(e) => setControls((c) => ({ ...c, logoPlacement: e.target.value }))} style={styles.select}>
+                      <option value="top-left">Top left</option>
+                      <option value="center">Centered</option>
+                      <option value="hidden">Hidden</option>
+                    </select>
                   </Control>
                 </div>
               </div>
