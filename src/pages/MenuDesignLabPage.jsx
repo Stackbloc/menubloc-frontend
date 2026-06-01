@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
+import { useOperator } from "../context/OperatorContext.jsx";
+import * as api from "../lib/operatorApi.js";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import {
   CURATED_MENU_DESIGN_LAB_THEMES,
@@ -105,6 +107,89 @@ export default function MenuDesignLabPage() {
     imageDensity: inferImageDensity(selectedTheme),
     heroEnabled: true,
   });
+
+  // ── Operator theme editor state ──────────────────────────────────────────
+  const { selectedRestaurant } = useOperator() || {};
+  const rid = selectedRestaurant?.id || null;
+  const [activeSlot, setActiveSlot] = useState(1);
+  const [savedThemes, setSavedThemes] = useState([null, null]);
+  const [themeName, setThemeName] = useState("My Theme");
+  const [saving, setSaving] = useState(false);
+  const [activating, setActivating] = useState(false);
+  const [editorMsg, setEditorMsg] = useState("");
+
+  const loadThemes = useCallback(() => {
+    if (!rid) return;
+    api.getMenuThemes(rid).then((data) => {
+      if (!data?.themes) return;
+      setSavedThemes(data.themes);
+      const active = data.themes.find((t) => t?.is_active) || data.themes[0];
+      if (active) setThemeName(active.theme_name || "My Theme");
+    }).catch(() => {});
+  }, [rid]);
+
+  useEffect(() => { loadThemes(); }, [loadThemes]);
+
+  function applySlotToControls(slot) {
+    const theme = savedThemes.find((t) => t?.slot === slot);
+    if (!theme) return;
+    const style = theme.menu_style || "v1";
+    const labTheme = getMenuDesignLabTheme(style);
+    setSearchParams({ theme: style });
+    setControls({
+      themePreset:     style,
+      primaryColor:    theme.primary_color  || labTheme.preset?.colorDefaults?.primary || "#c45c26",
+      accentColor:     theme.accent_color   || labTheme.preset?.colorDefaults?.accent  || "#c45c26",
+      backgroundStyle: theme.background_style || inferBackgroundStyle(labTheme),
+      imageDensity:    theme.image_density   || inferImageDensity(labTheme),
+      heroEnabled:     theme.hero_enabled   !== false,
+    });
+    setThemeName(theme.theme_name || "My Theme");
+  }
+
+  async function handleSave() {
+    if (!rid) return;
+    setSaving(true);
+    setEditorMsg("");
+    try {
+      await api.saveMenuTheme(rid, activeSlot, {
+        theme_name:       themeName || "My Theme",
+        base_template:    controls.themePreset,
+        menu_style:       controls.themePreset,
+        primary_color:    controls.primaryColor  || null,
+        accent_color:     controls.accentColor   || null,
+        background_style: controls.backgroundStyle,
+        hero_enabled:     controls.heroEnabled,
+        image_density:    controls.imageDensity,
+      });
+      await loadThemes();
+      setEditorMsg("Saved!");
+      setTimeout(() => setEditorMsg(""), 2000);
+    } catch (e) {
+      setEditorMsg(e.message || "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleActivate() {
+    if (!rid) return;
+    setActivating(true);
+    setEditorMsg("");
+    try {
+      await api.activateMenuTheme(rid, activeSlot);
+      await loadThemes();
+      setEditorMsg("Applied to your menu!");
+      setTimeout(() => setEditorMsg(""), 2500);
+    } catch (e) {
+      setEditorMsg(e.message || "Activation failed");
+    } finally {
+      setActivating(false);
+    }
+  }
+
+  const currentSlotData = savedThemes.find((t) => t?.slot === activeSlot);
+  const isCurrentSlotActive = currentSlotData?.is_active === true;
 
   const previewMenus = useMemo(
     () => normalizePreviewMenus(selectedTheme.previewPayload?.menus || [], controls.imageDensity || "all"),
@@ -373,6 +458,91 @@ export default function MenuDesignLabPage() {
               </Control>
             </div>
           </div>
+
+          {rid && (
+            <div style={{ ...styles.sidebarSection, ...(isDarkShell ? styles.darkPanel : styles.lightPanel), borderTop: "1px solid rgba(148,163,184,0.15)", paddingTop: 18 }}>
+              <div style={styles.panelLabel}>My Saved Styles</div>
+
+              {/* Slot tabs */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+                {[1, 2].map((slot) => {
+                  const slotData = savedThemes.find((t) => t?.slot === slot);
+                  const isActive = slotData?.is_active === true;
+                  return (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => { setActiveSlot(slot); applySlotToControls(slot); }}
+                      style={{
+                        flex: 1,
+                        minHeight: 40,
+                        borderRadius: 10,
+                        border: activeSlot === slot ? "2px solid #1F4E3D" : "1px solid rgba(148,163,184,0.3)",
+                        background: activeSlot === slot ? (isDarkShell ? "rgba(255,255,255,0.10)" : "#f0fdf4") : "transparent",
+                        color: isDarkShell ? "#fff" : "#0f1720",
+                        fontFamily: "inherit",
+                        fontSize: 13,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                      }}
+                    >
+                      Style {slot}
+                      {isActive && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Theme name */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ ...styles.controlLabel, marginBottom: 6, color: isDarkShell ? "rgba(255,255,255,0.7)" : "#374151" }}>Style name</div>
+                <input
+                  type="text"
+                  value={themeName}
+                  onChange={(e) => setThemeName(e.target.value)}
+                  placeholder="e.g. Dinner Theme"
+                  maxLength={60}
+                  style={{ ...styles.select, minHeight: 40, width: "100%", boxSizing: "border-box", background: isDarkShell ? "rgba(255,255,255,0.06)" : "#fff", color: isDarkShell ? "#fff" : "#0f1720", border: "1px solid rgba(148,163,184,0.3)" }}
+                />
+              </div>
+
+              {/* Save + Activate */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || activating}
+                  style={{ minHeight: 40, borderRadius: 10, border: "1px solid #1F4E3D", background: "#1F4E3D", color: "#fff", fontFamily: "inherit", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
+                >
+                  {saving ? "Saving…" : "Save Style"}
+                </button>
+                {isCurrentSlotActive ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 0", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>
+                    <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+                    Active on your menu
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleActivate}
+                    disabled={saving || activating || !currentSlotData}
+                    style={{ minHeight: 40, borderRadius: 10, border: "1px solid rgba(34,197,94,0.5)", background: "transparent", color: isDarkShell ? "#22c55e" : "#166534", fontFamily: "inherit", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
+                  >
+                    {activating ? "Applying…" : "Apply to My Menu"}
+                  </button>
+                )}
+                {editorMsg && (
+                  <div style={{ fontSize: 12, fontWeight: 700, color: editorMsg.includes("fail") || editorMsg.includes("Failed") ? "#b91c1c" : "#166534", textAlign: "center" }}>
+                    {editorMsg}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </aside>}
 
         <section style={styles.previewColumn}>
