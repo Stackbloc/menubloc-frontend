@@ -22,7 +22,7 @@ const FOUNDER_FAQ = [
     question: "What does a paid plan include?",
     answer: [
       "Paid plans include unlimited menus, scheduled and timed menu display, menu item photos, ingredient-rich searchable content, customer follow and notifications, deals and promotions, marketplace ordering (pickup and delivery), and billboard placement in search results.",
-      "The Founder plan locks in the current price for 24 months — designed for restaurants joining the network early who want price stability as the platform grows.",
+      "The Founders plan locks in the current price for 24 months - designed for restaurants joining the network early who want price stability as the platform grows.",
     ],
   },
   {
