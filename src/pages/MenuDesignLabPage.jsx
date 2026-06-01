@@ -337,211 +337,253 @@ export default function MenuDesignLabPage() {
 
       <section style={shellStyle}>
         {isDemo ? null : <aside style={styles.sidebar}>
-          <div style={styles.sidebarSection}>
-            <div style={styles.panelLabel}>Theme gallery</div>
-            <div style={styles.themeGrid}>
-              {CURATED_MENU_DESIGN_LAB_THEMES.map((theme) => {
-                const active = theme.style === selectedStyle;
-                return (
-                  <button
-                    key={theme.style}
-                    type="button"
-                    onClick={() => {
-                      setSearchParams({ theme: theme.style });
-                      setControls((current) => ({
-                        ...current,
-                        themePreset: theme.style,
-                        primaryColor: theme.preset?.colorDefaults?.primary || current.primaryColor,
-                        accentColor: theme.preset?.colorDefaults?.accent || current.accentColor,
-                        backgroundStyle: inferBackgroundStyle(theme),
-                        imageDensity: inferImageDensity(theme),
-                        heroEnabled: true,
-                      }));
-                    }}
-                    style={{
-                      ...styles.themeCard,
-                      borderColor: active ? theme.preset.colorDefaults.accent : "rgba(148,163,184,0.2)",
-                      background: active ? (isDarkShell ? "rgba(255,255,255,0.06)" : "#fff") : (isDarkShell ? "rgba(255,255,255,0.03)" : "#fff"),
-                      color: isDarkShell ? "#fff" : "#0f1720",
-                    }}
-                  >
-                    <div style={styles.sampleLabel}>Sample menu design</div>
-                    <div style={styles.cardTitle}>{theme.name}</div>
-                    <div style={{ ...styles.bestFit, color: isDarkShell ? "rgba(255,255,255,0.7)" : "#5b6675" }}>{theme.bestFit}</div>
-                    <p style={{ ...styles.description, color: isDarkShell ? "rgba(255,255,255,0.72)" : "#667085" }}>{theme.description}</p>
-                    <span style={{ ...styles.previewLink, color: active ? theme.preset.colorDefaults.accent : (isDarkShell ? "#3DD934" : "#1F4E3D") }}>{rid ? "Customize →" : "Preview theme"}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{ ...styles.sidebarSection, ...(isDarkShell ? styles.darkPanel : styles.lightPanel) }}>
-            <div style={styles.panelLabel}>Customize preset</div>
-            <div style={controlGridStyle}>
-              <Control label="Theme preset">
-                <select
-                  value={controls.themePreset}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    setSearchParams({ theme: next });
-                    const theme = MENU_DESIGN_LAB_THEMES.find((entry) => entry.style === next);
-                    setControls((current) => ({
-                      ...current,
-                      themePreset: next,
-                      primaryColor: theme?.preset?.colorDefaults?.primary || current.primaryColor,
-                      accentColor: theme?.preset?.colorDefaults?.accent || current.accentColor,
-                      backgroundStyle: inferBackgroundStyle(theme),
-                      imageDensity: inferImageDensity(theme),
-                      heroEnabled: true,
-                    }));
-                  }}
-                  style={styles.select}
-                >
-                  {MENU_DESIGN_LAB_THEMES.map((theme) => (
-                    <option key={theme.style} value={theme.style}>{theme.name}</option>
-                  ))}
-                </select>
-              </Control>
-              <Control label="Primary color">
-                <input
-                  type="color"
-                  value={controls.primaryColor}
-                  onChange={(e) => setControls((c) => ({ ...c, primaryColor: e.target.value }))}
-                  style={styles.color}
-                />
-              </Control>
-              <Control label="Accent color">
-                <input
-                  type="color"
-                  value={controls.accentColor}
-                  onChange={(e) => setControls((c) => ({ ...c, accentColor: e.target.value }))}
-                  style={styles.color}
-                />
-              </Control>
-              <Control label="Background">
-                <select
-                  value={controls.backgroundStyle}
-                  onChange={(e) => setControls((c) => ({ ...c, backgroundStyle: e.target.value }))}
-                  style={styles.select}
-                >
-                  <option value="dark">Dark</option>
-                  <option value="light">Light</option>
-                  <option value="paper">Paper</option>
-                  <option value="chalkboard">Chalkboard</option>
-                </select>
-              </Control>
-              <Control label="Image density">
-                <select
-                  value={controls.imageDensity}
-                  onChange={(e) => setControls((c) => ({ ...c, imageDensity: e.target.value }))}
-                  style={styles.select}
-                >
-                  <option value="all">All images</option>
-                  <option value="section">Section images</option>
-                  <option value="thumbnail">Item thumbnails</option>
-                  <option value="none">No images</option>
-                </select>
-              </Control>
-              <Control label="Hero image">
-                <button
-                  type="button"
-                  onClick={() => setControls((c) => ({ ...c, heroEnabled: !c.heroEnabled }))}
-                  style={{
-                    ...styles.toggleButton,
-                    background: controls.heroEnabled ? "#1F4E3D" : (isDarkShell ? "rgba(255,255,255,0.06)" : "#fff"),
-                    color: controls.heroEnabled ? "#fff" : (isDarkShell ? "#fff" : "#0f1720"),
-                  }}
-                >
-                  {controls.heroEnabled ? "Enabled" : "Disabled"}
-                </button>
-              </Control>
-            </div>
-          </div>
-
-          {rid && (
-            <div style={{ ...styles.sidebarSection, ...(isDarkShell ? styles.darkPanel : styles.lightPanel), borderTop: "1px solid rgba(148,163,184,0.15)", paddingTop: 18 }}>
-              <div style={styles.panelLabel}>My Saved Styles</div>
-
-              {/* Slot tabs */}
-              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                {[1, 2].map((slot) => {
-                  const slotData = savedThemes.find((t) => t?.slot === slot);
-                  const isActive = slotData?.is_active === true;
-                  return (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => { setActiveSlot(slot); applySlotToControls(slot); }}
-                      style={{
-                        flex: 1,
-                        minHeight: 40,
-                        borderRadius: 10,
-                        border: activeSlot === slot ? "2px solid #1F4E3D" : "1px solid rgba(148,163,184,0.3)",
-                        background: activeSlot === slot ? (isDarkShell ? "rgba(255,255,255,0.10)" : "#f0fdf4") : "transparent",
-                        color: isDarkShell ? "#fff" : "#0f1720",
-                        fontFamily: "inherit",
-                        fontSize: 13,
-                        fontWeight: 800,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 6,
-                      }}
-                    >
-                      Style {slot}
-                      {isActive && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Theme name */}
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ ...styles.controlLabel, marginBottom: 6, color: isDarkShell ? "rgba(255,255,255,0.7)" : "#374151" }}>Style name</div>
+          {rid ? (
+            /* ── OPERATOR MODE: 3-step flow ─────────────────────────────── */
+            <>
+              {/* STEP 1 — Choose your style slot */}
+              <div style={styles.sidebarSection}>
+                <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>Step 1 · Choose which style to edit</div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  {[1, 2].map((slot) => {
+                    const slotData = savedThemes.find((t) => t?.slot === slot);
+                    const isActive = slotData?.is_active === true;
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => { setActiveSlot(slot); applySlotToControls(slot); }}
+                        style={{
+                          flex: 1, minHeight: 44, borderRadius: 10,
+                          border: activeSlot === slot ? "2px solid #1F4E3D" : "1px solid rgba(148,163,184,0.3)",
+                          background: activeSlot === slot ? (isDarkShell ? "rgba(255,255,255,0.10)" : "#f0fdf4") : "transparent",
+                          color: isDarkShell ? "#fff" : "#0f1720",
+                          fontFamily: "inherit", fontSize: 13, fontWeight: 800, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                        }}
+                      >
+                        Style {slot}
+                        {isActive && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />}
+                        {!slotData && <span style={{ fontSize: 10, opacity: 0.5 }}>(empty)</span>}
+                      </button>
+                    );
+                  })}
+                </div>
                 <input
                   type="text"
                   value={themeName}
                   onChange={(e) => setThemeName(e.target.value)}
-                  placeholder="e.g. Dinner Theme"
+                  placeholder="Name this style (e.g. Dinner Theme)"
                   maxLength={60}
                   style={{ ...styles.select, minHeight: 40, width: "100%", boxSizing: "border-box", background: isDarkShell ? "rgba(255,255,255,0.06)" : "#fff", color: isDarkShell ? "#fff" : "#0f1720", border: "1px solid rgba(148,163,184,0.3)" }}
                 />
               </div>
 
-              {/* Save + Activate */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving || activating}
-                  style={{ minHeight: 40, borderRadius: 10, border: "1px solid #1F4E3D", background: "#1F4E3D", color: "#fff", fontFamily: "inherit", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
-                >
-                  {saving ? "Saving…" : "Save Style"}
-                </button>
-                {isCurrentSlotActive ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 0", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>
-                    <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
-                    Active on your menu
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleActivate}
-                    disabled={saving || activating || !currentSlotData}
-                    style={{ minHeight: 40, borderRadius: 10, border: "1px solid rgba(34,197,94,0.5)", background: "transparent", color: isDarkShell ? "#22c55e" : "#166534", fontFamily: "inherit", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
-                  >
-                    {activating ? "Applying…" : "Apply to My Menu"}
-                  </button>
-                )}
-                {editorMsg && (
-                  <div style={{ fontSize: 12, fontWeight: 700, color: editorMsg.includes("fail") || editorMsg.includes("Failed") ? "#b91c1c" : "#166534", textAlign: "center" }}>
-                    {editorMsg}
-                  </div>
-                )}
+              {/* STEP 2 — Pick a template + customize */}
+              <div style={styles.sidebarSection}>
+                <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>Step 2 · Edit your menu design</div>
+                <div style={styles.themeGrid}>
+                  {CURATED_MENU_DESIGN_LAB_THEMES.map((theme) => {
+                    const active = theme.style === selectedStyle;
+                    return (
+                      <button
+                        key={theme.style}
+                        type="button"
+                        onClick={() => {
+                          setSearchParams({ theme: theme.style });
+                          setControls((current) => ({
+                            ...current,
+                            themePreset: theme.style,
+                            primaryColor: theme.preset?.colorDefaults?.primary || current.primaryColor,
+                            accentColor: theme.preset?.colorDefaults?.accent || current.accentColor,
+                            backgroundStyle: inferBackgroundStyle(theme),
+                            imageDensity: inferImageDensity(theme),
+                            heroEnabled: true,
+                          }));
+                        }}
+                        style={{
+                          ...styles.themeCard,
+                          borderColor: active ? theme.preset.colorDefaults.accent : "rgba(148,163,184,0.2)",
+                          background: active ? (isDarkShell ? "rgba(255,255,255,0.06)" : "#fff") : (isDarkShell ? "rgba(255,255,255,0.03)" : "#fff"),
+                          color: isDarkShell ? "#fff" : "#0f1720",
+                        }}
+                      >
+                        <div style={styles.cardTitle}>{theme.name}</div>
+                        <div style={{ ...styles.bestFit, color: isDarkShell ? "rgba(255,255,255,0.7)" : "#5b6675" }}>{theme.bestFit}</div>
+                        <span style={{ ...styles.previewLink, color: active ? theme.preset.colorDefaults.accent : (isDarkShell ? "#3DD934" : "#1F4E3D") }}>
+                          {active ? "✓ Selected" : "Use this style"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ ...controlGridStyle, marginTop: 14 }}>
+                  <Control label="Primary color">
+                    <input type="color" value={controls.primaryColor}
+                      onChange={(e) => setControls((c) => ({ ...c, primaryColor: e.target.value }))} style={styles.color} />
+                  </Control>
+                  <Control label="Accent color">
+                    <input type="color" value={controls.accentColor}
+                      onChange={(e) => setControls((c) => ({ ...c, accentColor: e.target.value }))} style={styles.color} />
+                  </Control>
+                  <Control label="Background">
+                    <select value={controls.backgroundStyle}
+                      onChange={(e) => setControls((c) => ({ ...c, backgroundStyle: e.target.value }))} style={styles.select}>
+                      <option value="dark">Dark</option>
+                      <option value="light">Light</option>
+                      <option value="paper">Paper</option>
+                      <option value="chalkboard">Chalkboard</option>
+                    </select>
+                  </Control>
+                  <Control label="Image density">
+                    <select value={controls.imageDensity}
+                      onChange={(e) => setControls((c) => ({ ...c, imageDensity: e.target.value }))} style={styles.select}>
+                      <option value="all">All images</option>
+                      <option value="section">Section images</option>
+                      <option value="thumbnail">Thumbnails</option>
+                      <option value="none">No images</option>
+                    </select>
+                  </Control>
+                  <Control label="Hero image">
+                    <button type="button"
+                      onClick={() => setControls((c) => ({ ...c, heroEnabled: !c.heroEnabled }))}
+                      style={{ ...styles.toggleButton, background: controls.heroEnabled ? "#1F4E3D" : (isDarkShell ? "rgba(255,255,255,0.06)" : "#fff"), color: controls.heroEnabled ? "#fff" : (isDarkShell ? "#fff" : "#0f1720") }}>
+                      {controls.heroEnabled ? "Enabled" : "Disabled"}
+                    </button>
+                  </Control>
+                </div>
               </div>
-            </div>
+
+              {/* STEP 3 — Save & Publish */}
+              <div style={{ ...styles.sidebarSection, ...(isDarkShell ? styles.darkPanel : styles.lightPanel) }}>
+                <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>Step 3 · Save &amp; Publish</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <button type="button" onClick={handleSave} disabled={saving || activating}
+                    style={{ minHeight: 44, borderRadius: 10, border: "1px solid #1F4E3D", background: "#1F4E3D", color: "#fff", fontFamily: "inherit", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+                    {saving ? "Saving…" : "Save"}
+                  </button>
+                  {isCurrentSlotActive ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: "rgba(34,197,94,0.1)", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>
+                      <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+                      Published — live on your menu
+                    </div>
+                  ) : (
+                    <button type="button" onClick={handleActivate} disabled={saving || activating || !currentSlotData}
+                      style={{ minHeight: 44, borderRadius: 10, border: "none", background: "#22c55e", color: "#14532d", fontFamily: "inherit", fontSize: 14, fontWeight: 900, cursor: currentSlotData ? "pointer" : "not-allowed", opacity: currentSlotData ? 1 : 0.5 }}>
+                      {activating ? "Publishing…" : "Publish to My Menu"}
+                    </button>
+                  )}
+                  {editorMsg && (
+                    <div style={{ fontSize: 12, fontWeight: 700, color: editorMsg.includes("fail") || editorMsg.includes("Failed") ? "#b91c1c" : "#166534", textAlign: "center" }}>
+                      {editorMsg}
+                    </div>
+                  )}
+                  {!currentSlotData && (
+                    <div style={{ fontSize: 12, color: isDarkShell ? "rgba(255,255,255,0.45)" : "#9ca3af", textAlign: "center" }}>
+                      Save first to enable publishing
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            /* ── PUBLIC/DEMO MODE: gallery + controls ───────────────────── */
+            <>
+              <div style={styles.sidebarSection}>
+                <div style={styles.panelLabel}>Theme gallery</div>
+                <div style={styles.themeGrid}>
+                  {CURATED_MENU_DESIGN_LAB_THEMES.map((theme) => {
+                    const active = theme.style === selectedStyle;
+                    return (
+                      <button
+                        key={theme.style}
+                        type="button"
+                        onClick={() => {
+                          setSearchParams({ theme: theme.style });
+                          setControls((current) => ({
+                            ...current,
+                            themePreset: theme.style,
+                            primaryColor: theme.preset?.colorDefaults?.primary || current.primaryColor,
+                            accentColor: theme.preset?.colorDefaults?.accent || current.accentColor,
+                            backgroundStyle: inferBackgroundStyle(theme),
+                            imageDensity: inferImageDensity(theme),
+                            heroEnabled: true,
+                          }));
+                        }}
+                        style={{
+                          ...styles.themeCard,
+                          borderColor: active ? theme.preset.colorDefaults.accent : "rgba(148,163,184,0.2)",
+                          background: active ? (isDarkShell ? "rgba(255,255,255,0.06)" : "#fff") : (isDarkShell ? "rgba(255,255,255,0.03)" : "#fff"),
+                          color: isDarkShell ? "#fff" : "#0f1720",
+                        }}
+                      >
+                        <div style={styles.sampleLabel}>Sample menu design</div>
+                        <div style={styles.cardTitle}>{theme.name}</div>
+                        <div style={{ ...styles.bestFit, color: isDarkShell ? "rgba(255,255,255,0.7)" : "#5b6675" }}>{theme.bestFit}</div>
+                        <p style={{ ...styles.description, color: isDarkShell ? "rgba(255,255,255,0.72)" : "#667085" }}>{theme.description}</p>
+                        <span style={{ ...styles.previewLink, color: active ? theme.preset.colorDefaults.accent : (isDarkShell ? "#3DD934" : "#1F4E3D") }}>Preview theme</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ ...styles.sidebarSection, ...(isDarkShell ? styles.darkPanel : styles.lightPanel) }}>
+                <div style={styles.panelLabel}>Customize preset</div>
+                <div style={controlGridStyle}>
+                  <Control label="Theme preset">
+                    <select value={controls.themePreset}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        setSearchParams({ theme: next });
+                        const theme = MENU_DESIGN_LAB_THEMES.find((entry) => entry.style === next);
+                        setControls((current) => ({
+                          ...current, themePreset: next,
+                          primaryColor: theme?.preset?.colorDefaults?.primary || current.primaryColor,
+                          accentColor: theme?.preset?.colorDefaults?.accent || current.accentColor,
+                          backgroundStyle: inferBackgroundStyle(theme),
+                          imageDensity: inferImageDensity(theme), heroEnabled: true,
+                        }));
+                      }} style={styles.select}>
+                      {MENU_DESIGN_LAB_THEMES.map((theme) => (
+                        <option key={theme.style} value={theme.style}>{theme.name}</option>
+                      ))}
+                    </select>
+                  </Control>
+                  <Control label="Primary color">
+                    <input type="color" value={controls.primaryColor}
+                      onChange={(e) => setControls((c) => ({ ...c, primaryColor: e.target.value }))} style={styles.color} />
+                  </Control>
+                  <Control label="Accent color">
+                    <input type="color" value={controls.accentColor}
+                      onChange={(e) => setControls((c) => ({ ...c, accentColor: e.target.value }))} style={styles.color} />
+                  </Control>
+                  <Control label="Background">
+                    <select value={controls.backgroundStyle}
+                      onChange={(e) => setControls((c) => ({ ...c, backgroundStyle: e.target.value }))} style={styles.select}>
+                      <option value="dark">Dark</option>
+                      <option value="light">Light</option>
+                      <option value="paper">Paper</option>
+                      <option value="chalkboard">Chalkboard</option>
+                    </select>
+                  </Control>
+                  <Control label="Image density">
+                    <select value={controls.imageDensity}
+                      onChange={(e) => setControls((c) => ({ ...c, imageDensity: e.target.value }))} style={styles.select}>
+                      <option value="all">All images</option>
+                      <option value="section">Section images</option>
+                      <option value="thumbnail">Item thumbnails</option>
+                      <option value="none">No images</option>
+                    </select>
+                  </Control>
+                  <Control label="Hero image">
+                    <button type="button"
+                      onClick={() => setControls((c) => ({ ...c, heroEnabled: !c.heroEnabled }))}
+                      style={{ ...styles.toggleButton, background: controls.heroEnabled ? "#1F4E3D" : (isDarkShell ? "rgba(255,255,255,0.06)" : "#fff"), color: controls.heroEnabled ? "#fff" : (isDarkShell ? "#fff" : "#0f1720") }}>
+                      {controls.heroEnabled ? "Enabled" : "Disabled"}
+                    </button>
+                  </Control>
+                </div>
+              </div>
+            </>
           )}
         </aside>}
 
@@ -707,6 +749,13 @@ const styles = {
     background: "rgba(255,255,255,0.04)",
     border: "1px solid rgba(255,255,255,0.08)",
     color: "#fff",
+  },
+  stepLabel: {
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    marginBottom: 12,
   },
   panelLabel: {
     fontSize: 11,
