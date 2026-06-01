@@ -632,9 +632,7 @@ export default function GrubbidDiscovery() {
     autoLocation.status !== "locating" &&
     hasBackendFeedData &&
     !hasVisibleMenus;
-  const showOutOfMarketPromo =
-    showBackendEmptyState ||
-    Boolean(rememberedOutOfMarketPromo?.joinInfoPath);
+  const showOutOfMarketPromo = showBackendEmptyState;
 
   useEffect(() => {
     if (!showBackendEmptyState) return;
