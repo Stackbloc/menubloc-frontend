@@ -150,10 +150,23 @@ export default function MenuDesignLabPage() {
 
   function applySlotToControls(slot) {
     const theme = savedThemes.find((t) => t?.slot === slot);
-    if (!theme) return;
+    if (!theme) {
+      // Empty slot — reset controls to the current template's defaults
+      const fallback = getMenuDesignLabTheme(selectedStyle);
+      setControls({
+        themePreset:     selectedStyle,
+        primaryColor:    fallback.preset?.colorDefaults?.primary || "#c45c26",
+        accentColor:     fallback.preset?.colorDefaults?.accent  || "#c45c26",
+        backgroundStyle: inferBackgroundStyle(fallback),
+        imageDensity:    inferImageDensity(fallback),
+        heroEnabled:     true,
+      });
+      setThemeName("My Theme");
+      return;
+    }
     const style = theme.menu_style || "v1";
     const labTheme = getMenuDesignLabTheme(style);
-    setSearchParams({ theme: style });
+    setSearchParams(isEditMode ? { style } : { theme: style });
     setControls({
       themePreset:     style,
       primaryColor:    theme.primary_color  || labTheme.preset?.colorDefaults?.primary || "#c45c26",
@@ -374,13 +387,17 @@ export default function MenuDesignLabPage() {
                 </div>
               )}
 
-              {/* STEP 1 — Choose your style slot */}
+              {/* STEP 1 — Choose saved theme slot */}
               <div style={styles.sidebarSection}>
-                <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>Step 1 · Choose which style to edit</div>
+                <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>Step 1 · Which saved theme?</div>
+                <div style={{ fontSize: 12, color: isDarkShell ? "rgba(255,255,255,0.45)" : "#9ca3af", marginBottom: 10, lineHeight: 1.5 }}>
+                  You can save 2 different themes per restaurant (e.g. Dinner + Lunch).
+                </div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
                   {[1, 2].map((slot) => {
                     const slotData = savedThemes.find((t) => t?.slot === slot);
                     const isActive = slotData?.is_active === true;
+                    const slotLabel = slotData?.theme_name || `Theme ${slot}`;
                     return (
                       <button
                         key={slot}
@@ -391,13 +408,15 @@ export default function MenuDesignLabPage() {
                           border: activeSlot === slot ? "2px solid #1F4E3D" : "1px solid rgba(148,163,184,0.3)",
                           background: activeSlot === slot ? (isDarkShell ? "rgba(255,255,255,0.10)" : "#f0fdf4") : "transparent",
                           color: isDarkShell ? "#fff" : "#0f1720",
-                          fontFamily: "inherit", fontSize: 13, fontWeight: 800, cursor: "pointer",
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                          fontFamily: "inherit", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
+                          padding: "8px 6px",
                         }}
                       >
-                        Style {slot}
-                        {isActive && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />}
-                        {!slotData && <span style={{ fontSize: 10, opacity: 0.5 }}>(empty)</span>}
+                        <span style={{ fontWeight: 800, fontSize: 13 }}>{slotLabel}</span>
+                        <span style={{ fontSize: 10, opacity: 0.6 }}>
+                          {isActive ? "● Published" : slotData ? "Saved" : "Empty"}
+                        </span>
                       </button>
                     );
                   })}
