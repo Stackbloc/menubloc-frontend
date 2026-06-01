@@ -27,7 +27,7 @@ function MenuWindow({ theme }) {
   const thumbImages = previewImages.slice(1, 4);
   return (
     <Link
-      to={`/menu-design-lab?theme=${theme.style}&demo=1`}
+      to={`/menu-template-preview?previewStyle=${theme.style}`}
       style={styles.windowLink}
       aria-label={`Preview ${theme.name}`}
     >
