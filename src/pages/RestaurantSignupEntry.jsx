@@ -149,20 +149,19 @@ const styles = {
     letterSpacing: "0.08em",
     textTransform: "uppercase",
   },
-  limitedBanner: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    background: "#b91c1c",
-    color: "#ffffff",
+  limitedBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    marginBottom: 16,
+    padding: "7px 12px",
+    borderRadius: 999,
+    background: "#eef6f1",
+    color: "#1F4E3D",
     fontSize: 11,
     fontWeight: 900,
-    letterSpacing: "0.1em",
+    letterSpacing: "0.08em",
     textTransform: "uppercase",
-    textAlign: "center",
-    padding: "9px 12px",
-    borderRadius: "28px 28px 0 0",
   },
   planName: {
     fontSize: 32,
@@ -384,9 +383,7 @@ export default function RestaurantSignupEntry() {
           {localizedPlans.map((plan) => (
             <article
               key={plan.code}
-              style={plan.code === "founders_annual"
-                ? { ...styles.card(plan.featured, hoveredPlan === plan.code), paddingTop: 52 }
-                : styles.card(plan.featured, hoveredPlan === plan.code)}
+              style={styles.card(plan.featured, hoveredPlan === plan.code)}
               onClick={() => handlePlanSelect(plan.code)}
               onMouseEnter={() => setHoveredPlan(plan.code)}
               onMouseLeave={() => setHoveredPlan(null)}
@@ -399,7 +396,7 @@ export default function RestaurantSignupEntry() {
                 <div style={styles.badge}>{t("signup.entry.mostPopular", "Most Popular")}</div>
               ) : null}
               {plan.code === "founders_annual" ? (
-                <div style={styles.limitedBanner}>{t("signup.entry.limitedAvailability", "Limited Availability")}</div>
+                <div style={styles.limitedBadge}>{t("signup.entry.limitedAvailability", "Limited Availability")}</div>
               ) : null}
               <div style={styles.planName}>{plan.name}</div>
               <PlanPrice plan={plan} />
