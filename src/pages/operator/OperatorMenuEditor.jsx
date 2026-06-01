@@ -327,7 +327,7 @@ function MenuLabPresetCard({ theme, selected, onSelect, onPreview }) {
             textDecoration: "underline",
           }}
         >
-          Open
+          Edit
         </span>
       </div>
     </div>
