@@ -176,6 +176,8 @@ function fatPass(backendScores, fatG) {
 
 /**
  * Up to 3 compact nutrition / intent chips; omit missing data (no "unavailable").
+ * Returns [{ label: string, primary: boolean }]. The primary chip is the one matching
+ * the user's search intent — rendered first and highlighted in green.
  */
 export function buildNutritionPreviewChips(row, queryMeta) {
   const parsed = queryMeta && typeof queryMeta === "object" ? queryMeta : {};
@@ -212,34 +214,38 @@ export function buildNutritionPreviewChips(row, queryMeta) {
   const backendScores = row?.chips?.insights?.scores || row?.item?.chips?.insights?.scores;
 
   const out = [];
-  const push = (label) => {
+  const push = (label, primary = false) => {
     if (!label || out.length >= 3) return;
-    out.push(label);
+    out.push({ label, primary });
   };
 
-  if (cal != null) push(`${Math.round(cal)} cal`);
-  if (pro != null) push(`${Math.round(pro)}g protein`);
-
+  // Intent chips go first so the matched attribute is prominent
   if (wantsProtein) {
     const ok = proteinPass(backendScores, pro);
-    push(ok ? "High protein ✓" : "High protein —");
+    if (pro != null) push(`${Math.round(pro)}g protein`, true);
+    else push(ok ? "High protein ✓" : "High protein —", true);
   }
 
-  if (wantsSodium && out.length < 3) {
-    if (sodium != null) push(`${Math.round(sodium)}mg sodium`);
-    else push(sodiumPass(backendScores, sodium) ? "Low sodium ✓" : "Sodium —");
+  if (wantsSodium) {
+    if (sodium != null) push(`${Math.round(sodium)}mg sodium`, true);
+    else push(sodiumPass(backendScores, sodium) ? "Low sodium ✓" : "Sodium —", true);
   }
 
-  if (wantsFat && out.length < 3 && fat != null) push(`${Math.round(fat)}g fat`);
-  if (wantsFat && out.length < 3 && fat == null) {
-    push(fatPass(backendScores, fat) ? "Low fat ✓" : "Low fat —");
+  if (wantsFat) {
+    if (fat != null) push(`${Math.round(fat)}g fat`, true);
+    else push(fatPass(backendScores, fat) ? "Low fat ✓" : "Low fat —", true);
   }
 
-  if (wantsCarbs && out.length < 3 && carbs != null) {
+  if (wantsCarbs && carbs != null) {
     const net =
       fiber != null ? Math.max(0, Math.round((carbs - fiber) * 10) / 10) : Math.round(carbs * 10) / 10;
-    push(`${net}g net carbs`);
+    push(`${net}g net carbs`, true);
   }
+
+  // Fill remaining slots with cal / protein (if not already shown)
+  const alreadyHasProtein = out.some((c) => c.label.includes("protein"));
+  if (cal != null) push(`${Math.round(cal)} cal`);
+  if (pro != null && !alreadyHasProtein) push(`${Math.round(pro)}g protein`);
 
   return out.slice(0, 3);
 }
