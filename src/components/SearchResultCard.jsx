@@ -32,7 +32,9 @@ import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
 import { trackBillboardClick } from "../lib/analytics.js";
-import { fetchSimilarItems } from "../lib/api.js";
+import { fetchSimilarItems, fetchCompareItems } from "../lib/api.js";
+import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
+import CompareItemsModal from "./menu/CompareItemsModal.jsx";
 import {
   getQualitativeLabel,
   getNutritionSummary,
@@ -835,7 +837,7 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, labels }) {
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
-                          alignItems: "baseline",
+                          alignItems: "center",
                           gap: 10,
                         }}
                       >
@@ -845,6 +847,7 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, labels }) {
                             fontWeight: 600,
                             color: "#FFFFFF",
                             minWidth: 0,
+                            flex: "1 1 0",
                           }}
                         >
                           {siHref ? (
@@ -869,19 +872,39 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, labels }) {
                             </div>
                           ) : null}
                         </div>
-                        {siPrice ? (
-                          <span
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: 800,
-                              whiteSpace: "nowrap",
-                              color: "#22C55E",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {siPrice}
-                          </span>
-                        ) : null}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                          {siPrice ? (
+                            <span
+                              style={{
+                                fontSize: "14px",
+                                fontWeight: 800,
+                                whiteSpace: "nowrap",
+                                color: "#22C55E",
+                              }}
+                            >
+                              {siPrice}
+                            </span>
+                          ) : null}
+                          {isSimilarRowCompareEligible(si) ? (
+                            <button
+                              type="button"
+                              onClick={() => handleCompare(si)}
+                              style={{
+                                background: "rgba(34,197,94,0.09)",
+                                border: "1px solid rgba(34,197,94,0.2)",
+                                borderRadius: 999,
+                                padding: "4px 10px",
+                                fontSize: 11,
+                                fontWeight: 800,
+                                color: "#22C55E",
+                                cursor: "pointer",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              Compare
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
                     );
                   })}
@@ -981,6 +1004,10 @@ function ItemRow({
     meta: null,
   });
   const similarRequestRef = useRef(0);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareData, setCompareData] = useState(null);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareError, setCompareError] = useState(null);
 
   const mid = getItemId(row);
   const name = getItemName(row, language);
@@ -1094,6 +1121,19 @@ function ItemRow({
       searchCardSimilarCache.set(similarCacheKey, nextState);
       setSimilarState(nextState);
     }
+  }
+
+  function handleCompare(similarEntry) {
+    if (!isSimilarRowCompareEligible(similarEntry) || !mid) return;
+    setCompareData(null);
+    setCompareError(null);
+    setCompareLoading(true);
+    setCompareOpen(true);
+    fetchCompareItems(mid, similarEntry.id, geo?.lat ?? null, geo?.lng ?? null, {
+      skipEligibilityCheck: true,
+    })
+      .then((data) => { setCompareData(data); setCompareLoading(false); })
+      .catch((err) => { setCompareError(String(err?.message || "Compare failed")); setCompareLoading(false); });
   }
 
   function toggle(tab) {
@@ -1316,6 +1356,16 @@ function ItemRow({
           similarState={similarState}
           onFindSimilar={() => toggle("similar")}
           labels={labels}
+        />
+      )}
+
+      {compareOpen && (
+        <CompareItemsModal
+          open={compareOpen}
+          loading={compareLoading}
+          error={compareError}
+          data={compareData}
+          onClose={() => setCompareOpen(false)}
         />
       )}
     </div>
