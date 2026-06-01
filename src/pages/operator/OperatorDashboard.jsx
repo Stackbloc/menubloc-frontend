@@ -227,13 +227,15 @@ export default function OperatorDashboard() {
     setPauseBusy(true);
     const note = minutes ? `Paused for ${minutes < 60 ? minutes + " minutes" : minutes / 60 + " hour" + (minutes / 60 > 1 ? "s" : "")}` : "Orders paused";
     try {
-      await api.updateOrderAvailability(rid, {
+      const result = await api.updateOrderAvailability(rid, {
         order_acceptance_status: "paused",
         order_acceptance_note: note,
       });
+      const updated = result?.availability ?? result;
+      setAvailability((prev) => ({ ...prev, ...updated }));
       setPauseOpen(false);
       setCustomMinutes("");
-      await loadData(rid);
+      loadData(rid);
     } catch (e) {
       window.alert(e.message || "Unable to pause orders.");
     } finally {
@@ -251,8 +253,10 @@ export default function OperatorDashboard() {
     }
     setPauseBusy(true);
     try {
-      await api.updateOrderAvailability(rid, { order_acceptance_status: "accepting_orders" });
-      await loadData(rid);
+      const result = await api.updateOrderAvailability(rid, { order_acceptance_status: "accepting_orders" });
+      const updated = result?.availability ?? result;
+      setAvailability((prev) => ({ ...prev, ...updated }));
+      loadData(rid);
     } catch (e) {
       window.alert(e.message || "Unable to resume orders.");
     } finally {
