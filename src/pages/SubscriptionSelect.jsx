@@ -212,20 +212,19 @@ const s = {
     letterSpacing: "0.08em",
     textTransform: "uppercase",
   },
-  limitedBanner: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    background: "#b91c1c",
-    color: "#ffffff",
+  limitedBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    marginBottom: 16,
+    padding: "7px 12px",
+    borderRadius: 999,
+    background: "#eef6f1",
+    color: "#1F4E3D",
     fontSize: 11,
     fontWeight: 900,
-    letterSpacing: "0.1em",
+    letterSpacing: "0.08em",
     textTransform: "uppercase",
-    textAlign: "center",
-    padding: "9px 12px",
-    borderRadius: "28px 28px 0 0",
   },
   planEyebrow: {
     fontSize: 12,
@@ -872,8 +871,8 @@ export default function SubscriptionSelect() {
             </button>
           </article>
 
-          <article style={{ ...s.planCard(false), position: "relative", overflow: "hidden", paddingTop: 52 }}>
-            <div style={s.limitedBanner}>Limited Availability</div>
+          <article style={s.planCard(false)}>
+            <div style={s.limitedBadge}>Limited Availability</div>
             <div style={s.planEyebrow}>Founders</div>
             <div style={s.planName}>Founders</div>
             <div style={s.planDesc}>
