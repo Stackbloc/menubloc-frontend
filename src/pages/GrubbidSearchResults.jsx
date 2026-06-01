@@ -807,28 +807,32 @@ function buildPriceCommerceCandidates(inventory) {
   const priced = inventory.filter((row) => getWaiterPriceDollars(row) !== null);
   if (priced.length >= WAITER_MIN_RESULTS) {
     const prices = priced.map((row) => getWaiterPriceDollars(row)).sort((a, b) => a - b);
-    const median = prices[Math.floor(prices.length / 2)];
-    if (Number.isFinite(median) && median > 0) {
+    const midpointIndex = Math.floor(prices.length / 2);
+    const threshold = prices.length % 2 === 0
+      ? (prices[midpointIndex - 1] + prices[midpointIndex]) / 2
+      : prices[midpointIndex];
+    const displayThreshold = Math.ceil(threshold);
+    if (Number.isFinite(threshold) && threshold > 0 && Number.isFinite(displayThreshold)) {
       addCandidate(
         candidates,
-        `under_${Math.ceil(median)}`,
-        `Under $${Math.ceil(median)}`,
+        `under_${displayThreshold}`,
+        `Under $${displayThreshold}`,
         (row) => {
           const price = getWaiterPriceDollars(row);
-          return price !== null && price < Math.ceil(median);
+          return price !== null && price < threshold;
         },
-        `Items under $${Math.ceil(median)}`,
+        `Items under $${displayThreshold}`,
         { commerceType: "price" }
       );
       addCandidate(
         candidates,
-        `${Math.ceil(median)}_plus`,
-        `$${Math.ceil(median)}+`,
+        `${displayThreshold}_plus`,
+        `$${displayThreshold}+`,
         (row) => {
           const price = getWaiterPriceDollars(row);
-          return price !== null && price >= Math.ceil(median);
+          return price !== null && price >= threshold;
         },
-        `Items $${Math.ceil(median)} or above`,
+        `Items $${displayThreshold} or above`,
         { commerceType: "price" }
       );
     }

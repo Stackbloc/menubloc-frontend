@@ -497,22 +497,26 @@ function buildPriceCommerceGroup(entries, selectedRefinements) {
 
   if (pricedEntries.length >= PRICE_MIN_RESULTS) {
     const prices = pricedEntries.map((entry) => entry.classification.commerce.priceDollars).sort((a, b) => a - b);
-    const median = prices[Math.floor(prices.length / 2)];
-    if (Number.isFinite(median) && median > 0) {
+    const midpointIndex = Math.floor(prices.length / 2);
+    const threshold = prices.length % 2 === 0
+      ? (prices[midpointIndex - 1] + prices[midpointIndex]) / 2
+      : prices[midpointIndex];
+    const displayThreshold = Math.ceil(threshold);
+    if (Number.isFinite(threshold) && threshold > 0 && Number.isFinite(displayThreshold)) {
       candidates.push(
         {
-          key: `under_${Math.ceil(median)}`,
-          label: `Under $${Math.ceil(median)}`,
-          predicateDescription: `Items under $${Math.ceil(median)}`,
+          key: `under_${displayThreshold}`,
+          label: `Under $${displayThreshold}`,
+          predicateDescription: `Items under $${displayThreshold}`,
           commerceType: "price",
-          test: (entry) => entry.classification?.commerce?.priceDollars != null && entry.classification.commerce.priceDollars < Math.ceil(median),
+          test: (entry) => entry.classification?.commerce?.priceDollars != null && entry.classification.commerce.priceDollars < threshold,
         },
         {
-          key: `${Math.ceil(median)}_plus`,
-          label: `$${Math.ceil(median)}+`,
-          predicateDescription: `Items $${Math.ceil(median)} or above`,
+          key: `${displayThreshold}_plus`,
+          label: `$${displayThreshold}+`,
+          predicateDescription: `Items $${displayThreshold} or above`,
           commerceType: "price",
-          test: (entry) => entry.classification?.commerce?.priceDollars != null && entry.classification.commerce.priceDollars >= Math.ceil(median),
+          test: (entry) => entry.classification?.commerce?.priceDollars != null && entry.classification.commerce.priceDollars >= threshold,
         }
       );
     }
