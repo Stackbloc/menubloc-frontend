@@ -760,7 +760,7 @@ function CompactScoreSummary({ presentation, breadScore }) {
 
 /* ---- Detail panel content ---- */
 
-function DetailPanel({ tab, row, similarState, onFindSimilar, labels }) {
+function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels }) {
   const chips = resolveChips(row);
   const nutChip = chips?.nutrition_chip || {};
   const indulgencePresentation = resolveIndulgencePresentation({ chips });
@@ -888,7 +888,7 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, labels }) {
                           {isSimilarRowCompareEligible(si) ? (
                             <button
                               type="button"
-                              onClick={() => handleCompare(si)}
+                              onClick={() => onCompare(si)}
                               style={{
                                 background: "rgba(34,197,94,0.09)",
                                 border: "1px solid rgba(34,197,94,0.2)",
@@ -962,23 +962,27 @@ function NutritionPreviewStrip({ chips }) {
   if (!Array.isArray(chips) || !chips.length) return null;
   return (
     <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
-      {chips.map((c) => (
-        <span
-          key={c}
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: "#D1D5DB",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 999,
-            padding: "4px 10px",
-            lineHeight: 1.2,
-          }}
-        >
-          {c}
-        </span>
-      ))}
+      {chips.map((c) => {
+        const label = typeof c === "string" ? c : c.label;
+        const primary = typeof c === "object" && c.primary === true;
+        return (
+          <span
+            key={label}
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: primary ? "#22C55E" : "#D1D5DB",
+              background: primary ? "rgba(34,197,94,0.10)" : "rgba(255,255,255,0.06)",
+              border: primary ? "1px solid rgba(34,197,94,0.28)" : "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 999,
+              padding: "4px 10px",
+              lineHeight: 1.2,
+            }}
+          >
+            {label}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -1355,6 +1359,7 @@ function ItemRow({
           row={row}
           similarState={similarState}
           onFindSimilar={() => toggle("similar")}
+          onCompare={handleCompare}
           labels={labels}
         />
       )}

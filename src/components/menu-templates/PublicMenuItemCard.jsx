@@ -391,7 +391,33 @@ export default function PublicMenuItemCard({
 
       {density !== "takeout" && (showInsightsInline || showNutritionInline || showAllergenInline || showIndulgenceInline) ? (
         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          {showNutritionInline ? <Badge label={t("common.nutrition", "Nutrition")} bg={softBg} color={accent} border={`1px solid ${softBorder}`} /> : null}
+          {showNutritionInline ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openSheet();
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                height: 18,
+                padding: "0 7px",
+                borderRadius: 999,
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: 0.3,
+                background: softBg,
+                color: accent,
+                border: `1px solid ${softBorder}`,
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                cursor: "pointer",
+              }}
+            >
+              {t("common.nutrition", "Nutrition")}
+            </button>
+          ) : null}
           {showIndulgenceInline && indulgencePresentation?.indulgence?.score != null ? (
             <Badge
               label={`Indulgence ${indulgencePresentation.indulgence.score}`}

@@ -506,3 +506,63 @@ If `similar.length === 0` the section must be invisible — no container, no ban
 
 - `"Showing broader matches because nearby similar dishes were limited"`
 - Any equivalent text referencing result scarcity, expanded search, or limited local availability
+
+---
+
+## 🔒 INTELLIGENCE CHIP / BUTTON GUARDRAILS
+
+**Established:** 2026-06-01
+**Files:** `src/components/menu-templates/PublicMenuItemCard.jsx`, `src/components/SearchResultCard.jsx`, `src/lib/searchResultEnrichment.js`
+
+### Nutrition button on public menu (PublicMenuItemCard)
+
+The "Nutrition" button MUST be a `<button>` element with `e.stopPropagation()` calling `openSheet()`.
+
+**Never** render it as a `<span>` or `<Badge>` — a non-interactive element lets clicks bubble to the card's `commitMenuItemToBasket()` handler, adding the item to the basket instead of showing nutrition.
+
+```jsx
+// CORRECT — stops propagation before card's onClick fires
+<button type="button" onClick={(e) => { e.stopPropagation(); openSheet(); }}>
+  Nutrition
+</button>
+
+// WRONG — click bubbles to card and adds item to basket
+<Badge label="Nutrition" ... />
+```
+
+### Compare button scope (SearchResultCard / DetailPanel)
+
+`handleCompare` is defined inside `ItemRow`. `DetailPanel` is a separate component — it MUST receive it as the `onCompare` prop.
+
+**Never** call `handleCompare(si)` directly inside `DetailPanel` — it is out of scope and throws `ReferenceError` at runtime, silently breaking Compare for every user.
+
+```jsx
+// CORRECT
+<DetailPanel onCompare={handleCompare} ... />
+// inside DetailPanel: onClick={() => onCompare(si)}
+
+// WRONG — ReferenceError, Compare never works
+// inside DetailPanel: onClick={() => handleCompare(si)}
+```
+
+### Nutrition preview chips — intent-first ordering (searchResultEnrichment)
+
+`buildNutritionPreviewChips` MUST return `[{ label: string, primary: boolean }]` objects, NOT plain strings.
+
+When the user's search has a detected intent (low fat, low sodium, high protein, low carb), the matching chip MUST be `primary: true` and pushed FIRST, before calories and protein fill the remaining slots.
+
+`NutritionPreviewStrip` MUST render `primary: true` chips in green (`#22C55E`) with a green border — visually distinguishing the query-matched attribute.
+
+**Never** push intent chips after calories/protein — that buries or drops the matched attribute when the 3-chip limit is hit.
+
+```js
+// CORRECT — intent first, then fill with cal/protein
+if (wantsFat) push(fat != null ? `${fat}g fat` : "Low fat ✓", true);  // primary
+push(`${cal} cal`);
+push(`${pro}g protein`);
+
+// WRONG — intent chip arrives 3rd and gets cut off
+push(`${cal} cal`);
+push(`${pro}g protein`);
+if (wantsFat) push(`${fat}g fat`);  // often never shown
+```
