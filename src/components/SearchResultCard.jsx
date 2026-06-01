@@ -1364,7 +1364,7 @@ function ItemRow({
           open={compareOpen}
           loading={compareLoading}
           error={compareError}
-          data={compareData}
+          comparison={compareData}
           onClose={() => setCompareOpen(false)}
         />
       )}
