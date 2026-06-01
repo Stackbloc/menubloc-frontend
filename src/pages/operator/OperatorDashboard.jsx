@@ -230,6 +230,7 @@ export default function OperatorDashboard() {
       const result = await api.updateOrderAvailability(rid, {
         order_acceptance_status: "paused",
         order_acceptance_note: note,
+        pause_minutes: minutes || 0,
       });
       const updated = result?.availability ?? result;
       setAvailability((prev) => ({ ...prev, ...updated }));
@@ -312,6 +313,14 @@ export default function OperatorDashboard() {
   const isClosed    = availStatus === "closed";
   const isFoodTruck = availability?.restaurant_type === "food_truck";
   const pickupLocation = availability?.current_pickup_location || null;
+
+  // Countdown: minutes remaining on timed pause
+  const pauseExpiresAt = availability?.order_pause_expires_at
+    ? new Date(availability.order_pause_expires_at)
+    : null;
+  const pauseMinsRemaining = (isPaused && pauseExpiresAt)
+    ? Math.max(0, Math.ceil((pauseExpiresAt - now) / 60_000))
+    : null;
 
   const todayStart     = startOfDay(now);
   const yesterdayStart = new Date(todayStart); yesterdayStart.setDate(yesterdayStart.getDate() - 1);
@@ -434,6 +443,12 @@ export default function OperatorDashboard() {
               {(isPaused || isClosed) && availability?.order_acceptance_note && (
                 <div style={{ fontSize: 12, color: statusStyle.color, opacity: 0.8, marginTop: 2 }}>
                   {availability.order_acceptance_note}
+                  {pauseMinsRemaining != null && pauseMinsRemaining > 0 && (
+                    <span style={{ marginLeft: 6 }}>· resumes in {pauseMinsRemaining} min</span>
+                  )}
+                  {pauseMinsRemaining === 0 && (
+                    <span style={{ marginLeft: 6 }}>· resuming…</span>
+                  )}
                 </div>
               )}
             </div>
