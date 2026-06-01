@@ -12,10 +12,18 @@ import {
 } from "../../components/payments/paymentHelpers.js";
 
 const TABLE_QTY_OPTIONS = [
-  { qty: 5,  amountCents: 3000,  label: "5 signs — $30.00" },
-  { qty: 10, amountCents: 5500,  label: "10 signs — $55.00" },
-  { qty: 20, amountCents: 10000, label: "20 signs — $100.00" },
-  { qty: 30, amountCents: 14000, label: "30 signs — $140.00" },
+  { qty: 10,    amountCents:   3750, label: "10 signs    — $37.50     ($3.75/sign)" },
+  { qty: 25,    amountCents:   8750, label: "25 signs    — $87.50     ($3.50/sign)" },
+  { qty: 50,    amountCents:  13750, label: "50 signs    — $137.50    ($2.75/sign)" },
+  { qty: 100,   amountCents:  25000, label: "100 signs   — $250.00    ($2.50/sign)" },
+  { qty: 250,   amountCents:  50000, label: "250 signs   — $500.00    ($2.00/sign)" },
+  { qty: 500,   amountCents:  75000, label: "500 signs   — $750.00    ($1.50/sign)" },
+  { qty: 1000,  amountCents: 100000, label: "1,000 signs — $1,000.00  ($1.00/sign)" },
+  { qty: 1500,  amountCents: 112500, label: "1,500 signs — $1,125.00  ($0.75/sign)" },
+  { qty: 2000,  amountCents: 150000, label: "2,000 signs — $1,500.00  ($0.75/sign)" },
+  { qty: 2500,  amountCents: 187500, label: "2,500 signs — $1,875.00  ($0.75/sign)" },
+  { qty: 5000,  amountCents: 250000, label: "5,000 signs — $2,500.00  ($0.50/sign)" },
+  { qty: 10000, amountCents: 500000, label: "10,000 signs — $5,000.00 ($0.50/sign)" },
 ];
 
 const PACKAGES = {
