@@ -52,8 +52,8 @@ const PACKAGES = {
   full: {
     key: "full",
     name: "Complete QR Signage Bundle",
-    amountCents: 6000,
-    description: "Door/window vinyl sticker + counter acrylic sign + table acrylic sign. Full restaurant coverage.",
+    amountCents: 10350,
+    description: "Door/window sticker + acrylic counter sign + 20 table tent signs. Save 10% vs buying separately.",
     placements: ["Door", "Counter / Pickup", "Table Set"],
   },
 };
