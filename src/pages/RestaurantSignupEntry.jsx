@@ -99,9 +99,9 @@ const styles = {
     marginBottom: 16,
     padding: "8px 12px",
     borderRadius: 999,
-    background: "#eef6f1",
-    border: "1px solid #cfe0d8",
-    color: "#1F4E3D",
+    background: "rgba(110,231,183,0.12)",
+    border: "1px solid rgba(110,231,183,0.3)",
+    color: "#6EE7B7",
     fontSize: 11,
     fontWeight: 800,
     letterSpacing: "0.08em",
@@ -207,12 +207,12 @@ const styles = {
   foodTruckPrompt: {
     fontSize: 14,
     fontWeight: 700,
-    color: "#344054",
+    color: "rgba(248,244,234,0.8)",
     lineHeight: 1.4,
   },
   foodTruckLink: {
     display: "inline",
-    color: "#1F4E3D",
+    color: "#6EE7B7",
     fontSize: 13,
     fontWeight: 800,
     textDecoration: "none",
@@ -226,7 +226,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    color: "#1F4E3D",
+    color: "#6EE7B7",
   },
   button: (featured) => ({
     width: "100%",
@@ -319,7 +319,7 @@ export default function RestaurantSignupEntry() {
               fontWeight: 900,
               letterSpacing: "-0.03em",
               lineHeight: 1.1,
-              color: "#101828",
+              color: "#F8F4EA",
               margin: "16px 0 0",
             }}>
               {t("signup.entry.title", "Choose your Menuply plan")}
@@ -327,7 +327,7 @@ export default function RestaurantSignupEntry() {
             <div style={{
               fontSize: 16,
               lineHeight: 1.65,
-              color: "#667085",
+              color: "rgba(248,244,234,0.72)",
               maxWidth: 660,
               marginTop: 12,
             }}>
