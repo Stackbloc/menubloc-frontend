@@ -1033,66 +1033,43 @@ export default function GrubbidDiscovery() {
         .disc-feed-skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
         @keyframes skelPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
         .disc-feed-grid { display:flex; flex-direction:column; gap:10px; }
-        .disc-oom-grid {
-          display:grid;
-          grid-template-columns: 1fr;
-          gap:24px;
-          max-width:560px;
-          margin:24px auto 0;
-          padding: 0 4px;
-        }
-        @media (min-width:760px) { .disc-oom-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        .disc-oom-card {
-          display:flex;
-          flex-direction:column;
-          gap:12px;
-          padding:18px;
-          border-radius:18px;
-          border:1px solid rgba(61,217,52,0.18);
-          background: linear-gradient(180deg, rgba(17,24,20,0.98), rgba(11,15,12,0.98));
-          box-shadow: 0 18px 38px rgba(0,0,0,0.24);
-          min-width:0;
-        }
-        .disc-oom-icon {
-          display:inline-flex;
-          align-items:center;
-          justify-content:center;
-          width:40px;
-          height:40px;
-          border-radius:12px;
-          background: rgba(61,217,52,0.10);
-          border:1px solid rgba(61,217,52,0.18);
-          font-size:20px;
-          flex-shrink:0;
-        }
-        .disc-oom-title {
-          font-size:17px;
-          font-weight:800;
-          color:#F8F4EA;
-          line-height:1.25;
-          margin:0;
-        }
         .disc-oom-copy {
-          font-size:13px;
-          line-height:1.6;
-          color:rgba(248,244,234,0.76);
-          margin:0;
+          max-width: 560px;
+          margin: 0 auto;
+          font-size: 14px;
+          line-height: 1.65;
+          color: #E5E7EB;
         }
-        .disc-oom-cta {
-          display:inline-flex;
-          align-items:center;
-          justify-content:center;
-          min-height:40px;
-          padding:10px 14px;
-          border-radius:12px;
-          background:#22C55E;
-          color:#0B0F0C;
-          font-size:13px;
-          font-weight:800;
-          text-decoration:none;
-          width:max-content;
+        .disc-oom-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          max-width: 400px;
+          margin: 24px auto 0;
         }
-        .disc-oom-cta:hover { filter: brightness(1.02); }
+        @media (min-width: 760px) {
+          .disc-oom-actions {
+            flex-direction: row;
+            max-width: 520px;
+          }
+        }
+        .disc-oom-button {
+          flex: 1 1 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 46px;
+          padding: 12px 20px;
+          border-radius: 12px;
+          background: #22C55E;
+          color: #0B0F0C;
+          font-weight: 800;
+          font-size: 15px;
+          text-decoration: none;
+          white-space: nowrap;
+          box-shadow: 0 10px 20px rgba(34, 197, 94, 0.18);
+        }
+        .disc-oom-button:hover { filter: brightness(1.03); }
       `}</style>
 
       <DiscoveryDrawer
@@ -1479,38 +1456,16 @@ export default function GrubbidDiscovery() {
             ))
           ) : inlineError ? null : showBackendEmptyState ? (
             <div style={{ textAlign: "center", padding: "48px 20px 32px" }}>
-              <div style={{ color: "#E5E7EB", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
-                Menuply is not yet available in {outOfMarketAreaLabel}.
+              <div style={{ color: "#E5E7EB", fontSize: 16, fontWeight: 700, lineHeight: 1.55, maxWidth: 640, margin: "0 auto" }}>
+                As the cost of dining continues to rise, Menuply is building a lower-cost alternative that enables restaurants to offer better value to diners - {outOfMarketAreaLabel}. Click below to learn more.
               </div>
-              <div style={{ color: "#9CA3AF", fontSize: 14 }}>
-                Learn more about what&apos;s coming.
-              </div>
-              <div className="disc-oom-grid">
-                <div className="disc-oom-card">
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                    <span className="disc-oom-icon" aria-hidden="true">🏪</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <h3 className="disc-oom-title">Restaurants</h3>
-                      <p className="disc-oom-copy">Create a free restaurant profile and join the movement.</p>
-                    </div>
-                  </div>
-                  <Link to={joinInfoPath} className="disc-oom-cta">
-                    Join Free
-                  </Link>
-                </div>
-
-                <div className="disc-oom-card">
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                    <span className="disc-oom-icon" aria-hidden="true">🍽</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <h3 className="disc-oom-title">Diners</h3>
-                      <p className="disc-oom-copy">Discover local restaurants and support lower prices.</p>
-                    </div>
-                  </div>
-                  <Link to={joinDinersPath} className="disc-oom-cta">
-                    Join Free
-                  </Link>
-                </div>
+              <div className="disc-oom-actions">
+                <Link to={joinInfoPath} className="disc-oom-button">
+                  Restaurants
+                </Link>
+                <Link to={joinDinersPath} className="disc-oom-button">
+                  Diners
+                </Link>
               </div>
             </div>
           ) : showFilterEmptyState ? (
