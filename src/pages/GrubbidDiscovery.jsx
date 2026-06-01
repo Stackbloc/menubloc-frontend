@@ -1319,7 +1319,7 @@ export default function GrubbidDiscovery() {
             </button>
           </div>
 
-          <div style={{ display: "grid", gap: 8, padding: "8px 0 0", minWidth: 0 }}>
+          <div style={{ display: "grid", gap: 10, padding: "12px 0 4px", minWidth: 0 }}>
             <DiscoveryChipRow
               chips={FOOD_CATEGORY_CHIPS}
               filters={filters}
@@ -1499,7 +1499,7 @@ export default function GrubbidDiscovery() {
               }} />
             ))
           ) : inlineError ? null : showOutOfMarketPromo ? (
-            <div style={{ textAlign: "left", padding: "48px 20px 32px" }}>
+            <div style={{ textAlign: "left", padding: "24px 4px 32px" }}>
               <div style={{ color: "#E5E7EB", fontSize: 16, fontWeight: 700, lineHeight: 1.55, width: "100%", maxWidth: 760, margin: 0, textAlign: "left" }}>
                 As the cost of dining continues to rise, Menuply is building a lower-cost alternative that enables restaurants to offer better value to diners in {outOfMarketAreaLabel}. Click below to learn more.
               </div>
