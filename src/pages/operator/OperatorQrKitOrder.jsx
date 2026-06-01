@@ -14,16 +14,30 @@ import {
 const PACKAGES = {
   starter: {
     key: "starter",
-    name: "Starter Kit",
+    name: "Door / Window QR Sticker",
     amountCents: 1500,
     description: "One door QR vinyl sticker (6.25\" × 5.25\"). Scannable link placed right at your entrance.",
     placements: ["Door"],
   },
+  table: {
+    key: "table",
+    name: "Acrylic Table Sign",
+    amountCents: 3000,
+    description: "Clear acrylic table sign, 7\" × 5\", white print. QR code at every table for direct ordering.",
+    placements: ["Table Set"],
+  },
+  counter: {
+    key: "counter",
+    name: "Counter / Pickup Acrylic QR Sign",
+    amountCents: 3000,
+    description: "Clear acrylic counter sign, 7\" × 5\", white print. QR code at your counter or pickup window.",
+    placements: ["Counter / Pickup"],
+  },
   full: {
     key: "full",
-    name: "Full Setup Kit",
-    amountCents: 2999,
-    description: "Door, counter, and table placements for full-service coverage.",
+    name: "Complete QR Signage Bundle",
+    amountCents: 6000,
+    description: "Door/window vinyl sticker + counter acrylic sign + table acrylic sign. Full restaurant coverage.",
     placements: ["Door", "Counter / Pickup", "Table Set"],
   },
 };
@@ -260,13 +274,13 @@ export default function OperatorQrKitOrder() {
           }}
         >
           <div style={{ display: "inline-flex", padding: "7px 12px", borderRadius: 999, background: "rgba(255,255,255,0.12)", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16 }}>
-            Add-On
+            QR Code Signage
           </div>
-          <h1 style={{ margin: 0, fontSize: "clamp(32px, 5vw, 56px)", lineHeight: 0.96, letterSpacing: "-0.06em", maxWidth: 720 }}>
-            Turn every table into a direct connection to your menu
+          <h1 style={{ margin: 0, fontSize: "clamp(28px, 4vw, 48px)", lineHeight: 1.05, letterSpacing: "-0.04em", maxWidth: 720 }}>
+            Put your menu in front of every guest
           </h1>
-          <p style={{ margin: "14px 0 0", maxWidth: 760, fontSize: 17, lineHeight: 1.7, color: "rgba(255,255,255,0.88)" }}>
-            Your Menuply profile and ordering page are live — now make sure your guests can find them. QR kits put a scannable link right in front of every customer, driving follows, orders, and repeat visits from the moment they sit down.
+          <p style={{ margin: "14px 0 0", maxWidth: 720, fontSize: 16, lineHeight: 1.7, color: "rgba(255,255,255,0.88)" }}>
+            Choose the sign that fits your location. Each piece ships with your unique QR code — guests scan to view your menu and order directly. Door vinyl sticker, counter acrylic sign, or table acrylic sign.
           </p>
         </section>
 
@@ -299,7 +313,7 @@ export default function OperatorQrKitOrder() {
               <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
                 Step 1
               </div>
-              <h2 style={{ margin: 0, fontSize: 26, color: "#101828", letterSpacing: "-0.04em" }}>Choose your QR code kit</h2>
+              <h2 style={{ margin: 0, fontSize: 26, color: "#101828", letterSpacing: "-0.04em" }}>Choose your signage</h2>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginTop: 18 }}>
                 {Object.values(PACKAGES).map((pkg) => {
                   const active = packageType === pkg.key;
@@ -318,7 +332,7 @@ export default function OperatorQrKitOrder() {
                       }}
                     >
                       <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                        {pkg.key === "full" ? "Full Coverage" : "Starter"}
+                        {pkg.key === "full" ? "Best Value" : pkg.key === "table" ? "Acrylic" : pkg.key === "counter" ? "Acrylic" : "Vinyl"}
                       </div>
                       <div style={{ marginTop: 8, fontSize: 24, fontWeight: 800, color: "#101828", letterSpacing: "-0.04em" }}>
                         {pkg.name}
