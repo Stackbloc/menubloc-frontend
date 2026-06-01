@@ -369,7 +369,7 @@ export default function MenuDesignLabPage() {
                     <div style={styles.cardTitle}>{theme.name}</div>
                     <div style={{ ...styles.bestFit, color: isDarkShell ? "rgba(255,255,255,0.7)" : "#5b6675" }}>{theme.bestFit}</div>
                     <p style={{ ...styles.description, color: isDarkShell ? "rgba(255,255,255,0.72)" : "#667085" }}>{theme.description}</p>
-                    <span style={{ ...styles.previewLink, color: active ? theme.preset.colorDefaults.accent : (isDarkShell ? "#3DD934" : "#1F4E3D") }}>Preview theme</span>
+                    <span style={{ ...styles.previewLink, color: active ? theme.preset.colorDefaults.accent : (isDarkShell ? "#3DD934" : "#1F4E3D") }}>{rid ? "Customize →" : "Preview theme"}</span>
                   </button>
                 );
               })}
@@ -553,18 +553,24 @@ export default function MenuDesignLabPage() {
               <p style={{ ...styles.previewCopy, color: isDarkShell ? "rgba(255,255,255,0.72)" : "#667085" }}>{selectedTheme.bestFit}</p>
             </div>
             <div style={styles.previewMeta}>
-              <span style={styles.sampleLabel}>Sample menu design</span>
-              <button
-                type="button"
-                onClick={() => window.open(`/menu-template-preview?previewStyle=${selectedStyle}`, "_blank", "noopener,noreferrer")}
-                style={{
-                  ...styles.previewButton,
-                  background: controls.primaryColor || "#1F4E3D",
-                  borderColor: controls.primaryColor || "#1F4E3D",
-                }}
-              >
-                Open preview
-              </button>
+              {!rid && <span style={styles.sampleLabel}>Sample menu design</span>}
+              {rid ? (
+                <div style={{ fontSize: 12, color: isDarkShell ? "rgba(255,255,255,0.6)" : "#667085", fontStyle: "italic" }}>
+                  Customize in the panel → then Save Style
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => window.open(`/menu-template-preview?previewStyle=${selectedStyle}`, "_blank", "noopener,noreferrer")}
+                  style={{
+                    ...styles.previewButton,
+                    background: controls.primaryColor || "#1F4E3D",
+                    borderColor: controls.primaryColor || "#1F4E3D",
+                  }}
+                >
+                  Open preview
+                </button>
+              )}
             </div>
           </div>
 
