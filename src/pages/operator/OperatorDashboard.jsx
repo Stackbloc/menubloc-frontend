@@ -588,7 +588,7 @@ export default function OperatorDashboard() {
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <QuickBtn icon="◷" label={t("operator.dashboard.publicProfile", "Public Profile")} onClick={() => window.open(`/restaurant-profile/${rid}`, "_blank")} />
-            <QuickBtn icon="▣" label={t("operator.dashboard.menuLab", "Menu Lab")} onClick={() => navigate("/operator/menu")} />
+            <QuickBtn icon="▣" label={t("operator.dashboard.menuLab", "Menu Lab")} onClick={() => navigate("/operator/menulab")} />
             <QuickBtn icon="🔥" label={t("operator.dashboard.deals", "Deals")} onClick={() => navigate("/operator/deals")} />
             <QuickBtn icon="▣" label="QR Tools" onClick={() => navigate("/operator/qr-kits/order")} />
           </div>

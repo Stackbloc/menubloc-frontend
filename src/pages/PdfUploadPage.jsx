@@ -106,7 +106,7 @@ function CompletionNextSteps({ isOperatorFlow, restaurantId }) {
         Your upload is saved. Menuply will process your menu — items will appear in Menu Lab once import and review are complete.
       </p>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-        <Link to={isOperatorFlow ? "/operator/menu" : "/operator/login"} style={s.profileLink}>
+        <Link to={isOperatorFlow ? "/operator/menulab" : "/operator/login"} style={s.profileLink}>
           {isOperatorFlow ? "Back to Menu Lab" : "Sign in to My Account"}
         </Link>
         {!isOperatorFlow ? (
@@ -1069,7 +1069,7 @@ export default function PdfUploadPage() {
                   </>
                 );
               })()}
-              <Link to="/operator/menu" style={s.profileLink}>
+              <Link to="/operator/menulab" style={s.profileLink}>
                 Back to menu
               </Link>
               <CompletionNextSteps isOperatorFlow restaurantId={restaurant_id} />
