@@ -32,12 +32,12 @@ const OPERATIONS_NAV = [
 ];
 
 const MENU_NAV = [
-  { to: "/operator/menu",              label: "Menu Lab",           icon: "☰" },
+  { to: "/operator/menulab",           label: "Menu Lab",           icon: "☰" },
+  { to: "/operator/menudesign",        label: "Menu Design",        icon: "◈" },
   { to: "/operator/deals",             label: "Deals",              icon: "⊹" },
   { to: "/operator/hours",             label: "Hours",              icon: "⏰" },
   { to: "/operator/bid-free-bidding",  label: "Bid-Free Bidding™",  icon: "◇" },
   { to: "/operator/design",            label: "Adobe Studio",       icon: "▣", benefitKey: "design_exports" },
-  { to: "/operator/menulab",            label: "Menu Lab",           icon: "◈" },
   { to: "/operator/display-settings",  label: "Display Board",      icon: "⊞", benefitKey: "tv_menu_board" },
   { to: "/operator/menu-studio",       label: "Menu Studio",        icon: "✦", benefitKey: "menu_outputs" },
   { to: "/operator/brand",             label: "Brand Settings",     icon: "◉", benefitKey: "brand_customization" },
@@ -46,7 +46,7 @@ const MENU_NAV = [
 
 // Staff only sees this subset of menu tools
 const STAFF_MENU_NAV = [
-  { to: "/operator/menu",   label: "Menu Lab",     icon: "☰" },
+  { to: "/operator/menulab",   label: "Menu Lab",     icon: "☰" },
   { to: "/operator/deals",  label: "Deals",        icon: "⊹" },
   { to: "/operator/hours",  label: "Hours",        icon: "⏰" },
 ];
@@ -312,12 +312,12 @@ export default function OperatorLayout({ title, children }) {
   ]), [t]);
 
   const menuNavBase = useMemo(() => ([
-    { to: "/operator/menu", label: t("operator.nav.menuLab", "Menu Lab"), icon: "☰" },
+    { to: "/operator/menulab", label: t("operator.nav.menuLab", "Menu Lab"), icon: "☰" },
     { to: "/operator/deals", label: t("operator.nav.deals", "Deals"), icon: "⊹" },
     { to: "/operator/hours", label: t("operator.nav.hours", "Hours"), icon: "⏰" },
     { to: "/operator/bid-free-bidding", label: t("operator.nav.bidFree", "Bid-Free Bidding™"), icon: "◇" },
     { to: "/operator/design", label: t("operator.nav.adobeStudio", "Adobe Studio"), icon: "▣", benefitKey: "design_exports" },
-    { to: "/operator/menulab", label: t("operator.nav.menuLab", "Menu Lab"), icon: "◈" },
+    { to: "/operator/menudesign", label: t("operator.nav.menuDesign", "Menu Design"), icon: "◈" },
     { to: "/operator/display-settings", label: t("operator.nav.displayBoard", "Display Board"), icon: "⊞", benefitKey: "tv_menu_board" },
     { to: "/operator/menu-studio", label: t("operator.nav.menuStudio", "Menu Studio"), icon: "✦", benefitKey: "menu_outputs" },
     { to: "/operator/brand", label: t("operator.nav.brandSettings", "Brand Settings"), icon: "◉", benefitKey: "brand_customization" },

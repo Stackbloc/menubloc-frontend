@@ -586,12 +586,13 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/delivery" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDeliveryPage /></OperatorRoute>} />
         <Route path="/operator/help" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantHelpCenter /></OperatorRoute>} />
         <Route path="/operator/profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorProfileEditor /></OperatorRoute>} />
-        <Route path="/operator/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
+        <Route path="/operator/menulab" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
+        <Route path="/operator/menu" element={<Navigate to="/operator/menulab" replace />} />
         <Route path="/operator/menu/camera-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuCameraUpload /></OperatorRoute>} />
-        <Route path="/operator/menu/:menuId/edit" element={<Navigate to="/operator/menu" replace />} />
-        <Route path="/operator/menu/upload" element={<Navigate to="/operator/menu" replace />} />
-        <Route path="/operator/menu/upload/paste" element={<Navigate to="/operator/menu" replace />} />
-        <Route path="/operator/menu/upload/spreadsheet" element={<Navigate to="/operator/menu" replace />} />
+        <Route path="/operator/menu/:menuId/edit" element={<Navigate to="/operator/menulab" replace />} />
+        <Route path="/operator/menu/upload" element={<Navigate to="/operator/menulab" replace />} />
+        <Route path="/operator/menu/upload/paste" element={<Navigate to="/operator/menulab" replace />} />
+        <Route path="/operator/menu/upload/spreadsheet" element={<Navigate to="/operator/menulab" replace />} />
         <Route path="/operator/menu/upload/pdf" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><PdfUploadPage /></OperatorRoute>} />
         <Route path="/operator/menu/upload/photo" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><PdfUploadPage /></OperatorRoute>} />
         <Route path="/operator/design" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorAdobeStudio /></OperatorRoute>} />
@@ -604,7 +605,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/my-account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMyAccount /></OperatorRoute>} />
         <Route path="/operator/display-settings" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDisplaySettings /></OperatorRoute>} />
         <Route path="/operator/menu-studio" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuStudio /></OperatorRoute>} />
-        <Route path="/operator/menulab" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><MenuDesignLabPage /></OperatorRoute>} />
+        <Route path="/operator/menudesign" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><MenuDesignLabPage /></OperatorRoute>} />
         <Route path="/operator/brand" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorBrandSettings /></OperatorRoute>} />
 
         <Route path="/owner/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerLogin />} />
