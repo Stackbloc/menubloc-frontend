@@ -16,7 +16,10 @@ export function formatMoney(cents, currency = "usd") {
 }
 
 export function getQrProductCode(packageType) {
-  return packageType === "full" ? "qr_full" : "qr_basic";
+  if (packageType === "full") return "qr_full";
+  if (packageType === "table") return "qr_table";
+  if (packageType === "counter") return "qr_counter";
+  return "qr_basic";
 }
 
 export function getSubscriptionPlanLabel(planCode) {
