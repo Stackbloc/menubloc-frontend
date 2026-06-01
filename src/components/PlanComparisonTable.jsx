@@ -88,8 +88,8 @@ export default function PlanComparisonTable() {
             <th style={{ padding: "6px 0 10px", textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN, width: 90 }}>Verified</th>
             <th style={{ padding: "6px 0 10px", textAlign: "center", fontSize: 12, fontWeight: 800, color: GREEN, width: 90, background: "#f0f7f4" }}>Pro</th>
             <th style={{ padding: "4px 8px 10px", textAlign: "center", width: 110 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: AMBER }}>Founder</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: AMBER, background: "#fef3c7", borderRadius: 999, padding: "2px 7px", display: "inline-block", marginTop: 3, whiteSpace: "nowrap" }}>Limited Time</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: AMBER }}>Founders</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#b42318", background: "#fee2e2", borderRadius: 999, padding: "2px 7px", display: "inline-block", marginTop: 3, whiteSpace: "nowrap" }}>Limited Availability</div>
               <div style={{ fontSize: 10, color: AMBER, marginTop: 5, lineHeight: 1.35, fontWeight: 500 }}>Same features as Pro Plan, plus 24‑month pricing guarantee</div>
             </th>
           </tr>

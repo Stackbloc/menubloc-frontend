@@ -6,7 +6,7 @@
  * Purpose:
  *   Onboarding step 2 — choose a restaurant plan after account
  *   creation. Verified stays free, Pro Partner uses Stripe
- *   checkout, and Founder uses annual Stripe checkout.
+ *   checkout, and the Founders plan uses annual Stripe checkout.
  * ============================================================
  */
 
@@ -31,7 +31,7 @@ const API = (
 const PLAN_LABELS = {
   verified: "Verified",
   pro_partner: "Pro Partner",
-  founders_annual: "Founder",
+  founders_annual: "Founders",
   pro_monthly: "Pro Partner",
   pro_annual: "Pro Partner",
 };
@@ -90,7 +90,7 @@ const PLAN_CARDS = {
     ],
   },
   founders_annual: {
-    title: "Founder",
+    title: "Founders",
     price: "$299/year",
     description:
       "Everything in Pro, with a 24-month price guarantee.",
@@ -106,7 +106,7 @@ const PLAN_CARDS = {
       "Online ordering",
     ],
     footnote:
-      "Founder annual pricing includes a 24-month price guarantee.",
+      "Founders annual pricing includes a 24-month price guarantee.",
   },
 };
 
@@ -212,6 +212,21 @@ const s = {
     letterSpacing: "0.08em",
     textTransform: "uppercase",
   },
+  limitedBanner: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    background: "#b91c1c",
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: 900,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    textAlign: "center",
+    padding: "9px 12px",
+    borderRadius: "28px 28px 0 0",
+  },
   planEyebrow: {
     fontSize: 12,
     fontWeight: 900,
@@ -240,7 +255,8 @@ const s = {
     border: "1px solid rgba(255,255,255,0.22)",
     borderRadius: 999,
     gap: 6,
-    marginBottom: 16,
+    marginBottom: 12,
+    marginTop: 4,
   },
   intervalButton: (active) => ({
     border: 0,
@@ -357,11 +373,15 @@ const s = {
     marginBottom: 12,
   },
   annualNote: {
-    marginTop: -4,
-    marginBottom: 16,
+    marginTop: 10,
+    marginBottom: 18,
     fontSize: 12,
-    lineHeight: 1.6,
-    color: "rgba(255,255,255,0.88)",
+    lineHeight: 1.7,
+    color: "rgba(255,255,255,0.78)",
+    padding: "10px 12px",
+    borderRadius: 10,
+    background: "rgba(255,255,255,0.07)",
+    border: "1px solid rgba(255,255,255,0.12)",
   },
   optionalSection: {
     marginTop: 26,
@@ -829,7 +849,7 @@ export default function SubscriptionSelect() {
             <div style={s.priceValue}>{PRO_INTERVALS[proInterval].priceLabel}</div>
             <div style={s.annualNote}>
               {proInterval === "annual"
-                ? "Annual lowers your effective monthly cost. Founder annual pricing includes a 2-year introductory rate commitment."
+                ? "Annual lowers your effective monthly cost. Founders annual pricing includes a 2-year introductory rate commitment."
                 : "Monthly keeps launch costs flexible. You can move to annual later if it better fits your rollout."}
             </div>
 
@@ -852,9 +872,10 @@ export default function SubscriptionSelect() {
             </button>
           </article>
 
-          <article style={s.planCard(false)}>
-            <div style={s.planEyebrow}>Founder</div>
-            <div style={s.planName}>Founder</div>
+          <article style={{ ...s.planCard(false), position: "relative", overflow: "hidden", paddingTop: 52 }}>
+            <div style={s.limitedBanner}>Limited Availability</div>
+            <div style={s.planEyebrow}>Founders</div>
+            <div style={s.planName}>Founders</div>
             <div style={s.planDesc}>
               {PLAN_CARDS.founders_annual.description}
             </div>
@@ -879,7 +900,7 @@ export default function SubscriptionSelect() {
               style={s.button(false, isSubmittingPlan)}
               onClick={handleFounder}
             >
-              {isSubmittingPlan ? "Preparing checkout..." : "Choose Founder"}
+              {isSubmittingPlan ? "Preparing checkout..." : "Choose Founders"}
             </button>
           </article>
         </section>

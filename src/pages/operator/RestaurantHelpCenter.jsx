@@ -129,7 +129,7 @@ const OPERATIONS_SECTIONS = [
         points: [
           "Accessible from My Account → Change Plan, or from the Subscription item in the Business sidebar section (requires Owner PIN).",
           "Shows the full feature comparison matrix across Verified (free), Pro Monthly, Pro Annual, and Founders plans.",
-          "Pro plans unlock advanced menu tools, unlimited menus, deal posting, billboard ads, and marketplace ordering. Founders plan is the best per-year value and is limited in availability.",
+          "Pro plans unlock advanced menu tools, unlimited menus, deal posting, billboard ads, and marketplace ordering. Founders plan is the best per-year value and has limited availability.",
           "The QR kit add-on callout appears above the feature table — order directly from the subscription screen.",
         ],
       },

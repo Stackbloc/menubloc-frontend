@@ -55,11 +55,11 @@ const PLAN_OPTIONS = [
   },
   {
     code: "founders_annual",
-    name: "Founder",
+    name: "Founders",
     price: "$299/year",
     description:
       "Everything in Pro Partner, with a 24-month price guarantee.",
-    cta: "Continue with Founder",
+    cta: "Continue with Founders",
     featured: false,
     features: [
       "Everything included in Pro Partner",
@@ -149,6 +149,21 @@ const styles = {
     letterSpacing: "0.08em",
     textTransform: "uppercase",
   },
+  limitedBanner: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    background: "#b91c1c",
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: 900,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    textAlign: "center",
+    padding: "9px 12px",
+    borderRadius: "28px 28px 0 0",
+  },
   planName: {
     fontSize: 32,
     fontWeight: 900,
@@ -159,8 +174,19 @@ const styles = {
   price: {
     fontSize: 28,
     fontWeight: 900,
-    letterSpacing: "-0.03em",
+    letterSpacing: 0,
+    lineHeight: 1.12,
     marginBottom: 10,
+  },
+  priceStack: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 3,
+  },
+  priceSecondary: {
+    fontSize: 22,
+    fontWeight: 850,
+    opacity: 0.9,
   },
   description: {
     fontSize: 15,
@@ -268,6 +294,21 @@ function planTranslationKey(code) {
   if (code === "founders_annual") return "founder";
   return "verified";
 }
+
+function PlanPrice({ plan }) {
+  if (plan.code === "pro_partner") {
+    const [monthly, annual] = plan.price.split(/\s+(?:or|o|或)\s+/i);
+    return (
+      <div style={{ ...styles.price, ...styles.priceStack }}>
+        <span>{monthly || "$49/month"}</span>
+        <span style={styles.priceSecondary}>{annual || "$399/year"}</span>
+      </div>
+    );
+  }
+
+  return <div style={styles.price}>{plan.price}</div>;
+}
+
 export default function RestaurantSignupEntry() {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -322,7 +363,7 @@ export default function RestaurantSignupEntry() {
               color: "#F8F4EA",
               margin: "16px 0 0",
             }}>
-              {t("signup.entry.title", "Choose your Menuply plan")}
+              {t("signup.entry.title", "Choose your plan")}
             </h1>
             <div style={{
               fontSize: 16,
@@ -343,7 +384,9 @@ export default function RestaurantSignupEntry() {
           {localizedPlans.map((plan) => (
             <article
               key={plan.code}
-              style={styles.card(plan.featured, hoveredPlan === plan.code)}
+              style={plan.code === "founders_annual"
+                ? { ...styles.card(plan.featured, hoveredPlan === plan.code), paddingTop: 52 }
+                : styles.card(plan.featured, hoveredPlan === plan.code)}
               onClick={() => handlePlanSelect(plan.code)}
               onMouseEnter={() => setHoveredPlan(plan.code)}
               onMouseLeave={() => setHoveredPlan(null)}
@@ -355,8 +398,11 @@ export default function RestaurantSignupEntry() {
               {plan.featured ? (
                 <div style={styles.badge}>{t("signup.entry.mostPopular", "Most Popular")}</div>
               ) : null}
+              {plan.code === "founders_annual" ? (
+                <div style={styles.limitedBanner}>{t("signup.entry.limitedAvailability", "Limited Availability")}</div>
+              ) : null}
               <div style={styles.planName}>{plan.name}</div>
-              <div style={styles.price}>{plan.price}</div>
+              <PlanPrice plan={plan} />
               <div style={styles.description}>{plan.description}</div>
 
               <ul style={styles.featureList}>

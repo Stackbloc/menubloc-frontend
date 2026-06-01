@@ -50,7 +50,7 @@ function getPlanPriceLabel(planCode, foundersPlan) {
   if (planCode === "pro_annual") return "$399/year";
   if (planCode === "pro_monthly") return "$49/month";
   if (planCode === "founders_annual") {
-    return foundersPlan ? `${formatWholeDollarAmount(foundersPlan.amount_cents)}/year` : "Founder annual";
+    return foundersPlan ? `${formatWholeDollarAmount(foundersPlan.amount_cents)}/year` : "Founders annual";
   }
   return "Free";
 }
@@ -117,7 +117,7 @@ export default function OperatorSubscription() {
         setPlanOptions([
           { code: "pro_monthly", checkout_label: "Pro Monthly", amount_cents: 4900, billing_interval: "month" },
           { code: "pro_annual", checkout_label: "Pro Annual", amount_cents: 39900, billing_interval: "year" },
-          { code: "founders_annual", checkout_label: "Founder Annual", amount_cents: 29900, billing_interval: "year" },
+          { code: "founders_annual", checkout_label: "Founders Annual", amount_cents: 29900, billing_interval: "year" },
         ]);
       });
   }, []);
@@ -437,10 +437,10 @@ export default function OperatorSubscription() {
                 style={{ ...planCard("#fffbeb", "#fcd34d", selectedPlanCode === (foundersPlan?.code || "founders_annual")), cursor: "pointer" }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: AMBER }}>Founder</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: AMBER }}>Founders</span>
                   {currentTier === "founders"
                     ? <span style={currentBadge(AMBER)}>Current plan</span>
-                    : <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, background: "#fef3c7", color: AMBER }}>Limited time</span>}
+                    : <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, background: "#fee2e2", color: "#b42318" }}>Limited Availability</span>}
                 </div>
                 <div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.04em" }}>
@@ -458,11 +458,11 @@ export default function OperatorSubscription() {
                     disabled={isCheckingOut}
                     onClick={() => handleStripeCheckout(foundersPlan?.code || "founders_annual")}
                   >
-                    {isCheckingOut ? "Redirecting…" : "Choose Founder Plan"}
+                    {isCheckingOut ? "Redirecting…" : "Choose Founders Plan"}
                   </button>
                 ) : (
                   <div style={{ padding: "10px 12px", borderRadius: 10, background: "#fef3c7", textAlign: "center", fontSize: 13, fontWeight: 700, color: AMBER }}>
-                    ✓ You're a Founder
+                    ✓ You're a Founders member
                   </div>
                 )}
               </div>
