@@ -95,7 +95,10 @@ export default function MenuDesignLabPage() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const isDemo = searchParams.get("demo") === "1";
-  const selectedStyle = normalizeMenuStyle(searchParams.get("theme") || "v1");
+  // ?style= comes from operator/menulab Edit button; ?theme= is the public lab param
+  const styleParam = searchParams.get("style") || searchParams.get("theme");
+  const isEditMode = Boolean(styleParam && !isDemo); // came from Edit button — single-template mode
+  const selectedStyle = normalizeMenuStyle(styleParam || "v1");
   const selectedTheme = getMenuDesignLabTheme(selectedStyle);
   const [notice, setNotice] = useState("");
   const [selectedPreviewMenuId, setSelectedPreviewMenuId] = useState(null);
@@ -107,6 +110,21 @@ export default function MenuDesignLabPage() {
     imageDensity: inferImageDensity(selectedTheme),
     heroEnabled: true,
   });
+
+  // When entering edit mode via ?style= param, pre-apply the theme from URL
+  useEffect(() => {
+    if (!isEditMode) return;
+    const theme = getMenuDesignLabTheme(selectedStyle);
+    setControls({
+      themePreset: selectedStyle,
+      primaryColor: theme.preset?.colorDefaults?.primary || "#c45c26",
+      accentColor: theme.preset?.colorDefaults?.accent || "#c45c26",
+      backgroundStyle: inferBackgroundStyle(theme),
+      imageDensity: inferImageDensity(theme),
+      heroEnabled: true,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStyle]);
 
   // ── Operator theme editor state ──────────────────────────────────────────
   const { selectedRestaurant } = useOperator() || {};
@@ -340,6 +358,22 @@ export default function MenuDesignLabPage() {
           {rid ? (
             /* ── OPERATOR MODE: 3-step flow ─────────────────────────────── */
             <>
+              {/* Back link when in single-template edit mode */}
+              {isEditMode && (
+                <div style={{ padding: "10px 16px 0" }}>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/operator/menulab")}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: isDarkShell ? "rgba(255,255,255,0.6)" : "#667085", fontSize: 13, fontFamily: "inherit", padding: 0, display: "flex", alignItems: "center", gap: 6 }}
+                  >
+                    ← Back to Menu Lab
+                  </button>
+                  <div style={{ marginTop: 8, marginBottom: 4, fontSize: 16, fontWeight: 800, color: isDarkShell ? "#fff" : "#0f1720" }}>
+                    Editing: {selectedTheme.name}
+                  </div>
+                </div>
+              )}
+
               {/* STEP 1 — Choose your style slot */}
               <div style={styles.sidebarSection}>
                 <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>Step 1 · Choose which style to edit</div>
@@ -380,8 +414,11 @@ export default function MenuDesignLabPage() {
 
               {/* STEP 2 — Pick a template + customize */}
               <div style={styles.sidebarSection}>
-                <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>Step 2 · Edit your menu design</div>
-                <div style={styles.themeGrid}>
+                <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>
+                  {isEditMode ? "Step 2 · Customize" : "Step 2 · Edit your menu design"}
+                </div>
+                {/* Gallery hidden in single-template edit mode — template already chosen */}
+                {!isEditMode && <div style={styles.themeGrid}>
                   {CURATED_MENU_DESIGN_LAB_THEMES.map((theme) => {
                     const active = theme.style === selectedStyle;
                     return (
@@ -415,7 +452,7 @@ export default function MenuDesignLabPage() {
                       </button>
                     );
                   })}
-                </div>
+                </div>}
                 <div style={{ ...controlGridStyle, marginTop: 14 }}>
                   <Control label="Primary color">
                     <input type="color" value={controls.primaryColor}

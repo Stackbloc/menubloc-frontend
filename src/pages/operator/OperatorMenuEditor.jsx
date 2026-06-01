@@ -261,19 +261,10 @@ function UploadCard({ icon, label, sub, onClick }) {
   );
 }
 
-function MenuLabPresetCard({ theme, selected, onSelect, onPreview }) {
+function MenuLabPresetCard({ theme, selected, onPreview, onEdit }) {
   const accent = theme?.preset?.colorDefaults?.accent || theme?.preset?.colorDefaults?.primary || "#1F4E3D";
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onSelect(theme)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect(theme);
-        }
-      }}
       style={{
         padding: "14px 14px 13px",
         borderRadius: 14,
@@ -281,7 +272,6 @@ function MenuLabPresetCard({ theme, selected, onSelect, onPreview }) {
         background: selected ? `${accent}12` : "#fff",
         boxShadow: selected ? `0 0 0 1px ${accent}22 inset` : "none",
         textAlign: "left",
-        cursor: "pointer",
         fontFamily: "inherit",
         minHeight: 130,
         display: "flex",
@@ -291,50 +281,36 @@ function MenuLabPresetCard({ theme, selected, onSelect, onPreview }) {
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: "#0f1720" }}>{theme.name}</div>
-        <div style={{
-          fontSize: 11,
-          fontWeight: 700,
-          color: selected ? accent : "#7b8794",
-          padding: "3px 8px",
-          borderRadius: 999,
-          background: selected ? `${accent}14` : "#f4f7fa",
-        }}>
-          {selected ? "Selected" : theme.style}
-        </div>
+        {selected && (
+          <div style={{ fontSize: 11, fontWeight: 700, color: accent, padding: "3px 8px", borderRadius: 999, background: `${accent}14` }}>
+            Active
+          </div>
+        )}
       </div>
       <div style={{ fontSize: 12, fontWeight: 700, color: "#4b5563" }}>{theme.bestFit}</div>
       <div style={{ fontSize: 12, lineHeight: 1.45, color: "#6b7280", flex: 1 }}>{theme.description}</div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 2 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: accent }}>Preview</span>
-        <span
-          role="button"
-          tabIndex={0}
-          onClick={(e) => {
-            e.stopPropagation();
-            onPreview(theme.style);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onPreview(theme.style);
-            }
-          }}
-          style={{
-            color: accent,
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: "pointer",
-            textDecoration: "underline",
-          }}
+      <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+        <button
+          type="button"
+          onClick={() => onPreview(theme.style)}
+          style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: `1px solid ${accent}44`, background: "transparent", color: accent, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+        >
+          View
+        </button>
+        <button
+          type="button"
+          onClick={() => onEdit(theme.style)}
+          style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", background: accent, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}
         >
           Edit
-        </span>
+        </button>
       </div>
     </div>
   );
 }
 
 function MenuLabPanel({ rid }) {
+  const navigate = useNavigate();
   const [settings, setSettings] = useState(() => ({
     menu_style: "v1",
     primary_color: null,
@@ -521,8 +497,8 @@ function MenuLabPanel({ rid }) {
                 key={theme.style}
                 theme={theme}
                 selected={(settings.menu_style || "v1") === theme.style}
-                onSelect={applyPreset}
                 onPreview={(style) => window.open(`/menu-template-preview?previewStyle=${encodeURIComponent(style)}`, "_blank", "noopener,noreferrer")}
+                onEdit={(style) => navigate(`/operator/menudesign?style=${encodeURIComponent(style)}`)}
               />
             ))}
           </div>
