@@ -777,7 +777,7 @@ export default function RestaurantHelpCenter() {
     { id: "test-print", label: "Test Print", action: () => openArticle("printer-test-ticket", "hardware-setup") },
     { id: "alert-volume", label: "Change Alert Volume", action: () => openArticle("order-alerts-volume", "orders-delivery") },
     { id: "incoming-orders", label: "View Incoming Orders", action: () => navigate("/operator/orders") },
-    { id: "edit-menu", label: "Edit Menu", action: () => navigate("/operator/menu") },
+    { id: "edit-menu", label: "Edit Menu", action: () => navigate("/operator/menulab") },
     { id: "manage-deals", label: "Manage Deals", action: () => navigate("/operator/deals") },
     { id: "staff-owner-pin", label: "Add Staff / Owner PIN", action: () => openArticle("owner-pin", "staff-access") },
     { id: "support-ticket", label: "Submit Support Ticket", action: jumpToSupport },

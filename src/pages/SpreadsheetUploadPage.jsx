@@ -671,7 +671,7 @@ export default function SpreadsheetUploadPage() {
             {result.items_inserted} menu item{result.items_inserted !== 1 ? "s" : ""} uploaded and pending review.
             Once approved, your menu will appear on your Menuply profile.
           </p>
-          <Link to={isOperatorFlow ? "/operator/menu" : "/operator/login"} style={s.profileLink}>
+          <Link to={isOperatorFlow ? "/operator/menulab" : "/operator/login"} style={s.profileLink}>
             {isOperatorFlow ? "Back to Menu Lab" : "Sign in to My Account"}
           </Link>
           {!isOperatorFlow ? (

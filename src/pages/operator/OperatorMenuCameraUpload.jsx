@@ -334,7 +334,7 @@ export default function OperatorMenuCameraUpload() {
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "16px 16px 80px", fontFamily: FONT }}>
         <button
           type="button"
-          onClick={() => navigate("/operator/menu")}
+          onClick={() => navigate("/operator/menulab")}
           style={{ background: "none", border: "none", color: "#1F4E3D", fontWeight: 600, marginBottom: 8, cursor: "pointer" }}
         >
           ← Menu editor
@@ -364,7 +364,7 @@ export default function OperatorMenuCameraUpload() {
             </p>
             <button
               type="button"
-              onClick={() => navigate("/operator/menu")}
+              onClick={() => navigate("/operator/menulab")}
               style={{
                 marginTop: 14,
                 padding: "12px 18px",

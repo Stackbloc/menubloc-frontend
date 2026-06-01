@@ -155,7 +155,7 @@ export default function OperatorSubscription() {
       setMessage("Your plan is active. Upload your menu to complete your public profile.");
       setSearchParams({}, { replace: true });
       refreshSubscription().then(() => {
-        setTimeout(() => navigate("/operator/menu"), 2000);
+        setTimeout(() => navigate("/operator/menulab"), 2000);
       });
     } else if (checkoutResult === "cancelled") {
       setSearchParams({}, { replace: true });
@@ -166,7 +166,7 @@ export default function OperatorSubscription() {
     setError("");
     setMessage("");
     if (hasVerifiedAccess) {
-      navigate("/operator/menu");
+      navigate("/operator/menulab");
       return;
     }
     if (!selectedRestaurant?.id) {
@@ -177,7 +177,7 @@ export default function OperatorSubscription() {
       await api.cancelPlatformSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
       setMessage("Verified selected. Your menu and data are preserved.");
       await refreshSubscription();
-      setTimeout(() => navigate("/operator/menu"), 1500);
+      setTimeout(() => navigate("/operator/menulab"), 1500);
     } catch (err) {
       setError(err.message || "Unable to switch to Verified.");
     }
@@ -202,7 +202,7 @@ export default function OperatorSubscription() {
       if (result.already_active) {
         setMessage("Plan active. Taking you to menu setup…");
         await refreshSubscription();
-        setTimeout(() => navigate("/operator/menu"), 1500);
+        setTimeout(() => navigate("/operator/menulab"), 1500);
         setIsCheckingOut(false);
         return;
       }
@@ -270,7 +270,7 @@ export default function OperatorSubscription() {
             )}
 
             <div style={{ marginTop: 16, display: "grid", gap: 8 }}>
-              <button type="button" style={planBtn("muted", GREEN)} onClick={() => navigate("/operator/menu")}>
+              <button type="button" style={planBtn("muted", GREEN)} onClick={() => navigate("/operator/menulab")}>
                 Go to Dashboard
               </button>
               <button type="button" style={planBtn("primary", GREEN)} onClick={() => setShowPlanSelection(true)}>
