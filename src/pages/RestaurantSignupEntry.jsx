@@ -211,19 +211,15 @@ const styles = {
     lineHeight: 1.4,
   },
   foodTruckLink: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    padding: "10px 18px",
-    borderRadius: 12,
-    border: "1px solid #1F4E3D",
-    background: "#ffffff",
+    display: "inline",
     color: "#1F4E3D",
     fontSize: 13,
-    fontWeight: 700,
+    fontWeight: 800,
     textDecoration: "none",
     whiteSpace: "nowrap",
+    padding: 0,
+    border: "none",
+    background: "transparent",
   },
   foodTruckIcon: {
     display: "inline-flex",
@@ -315,7 +311,7 @@ export default function RestaurantSignupEntry() {
               </span>
               <span style={styles.foodTruckPrompt}>{t("signup.entry.foodTruckOwner", "Food Truck Owner?")}</span>
               <Link to="/foodtruck/signup" style={styles.foodTruckLink}>
-                {t("signup.entry.foodTruckSignup", "Signup")}
+                {t("signup.entry.foodTruckSignup", "Sign up")}
               </Link>
             </div>
             <h1 style={{
