@@ -366,7 +366,7 @@ export default function OperatorQrKitOrder() {
                         {pkg.name}
                       </div>
                       <div style={{ marginTop: 6, fontSize: 22, fontWeight: 800, color: "#1f4e3d" }}>
-                        {pkg.key === "table" ? `from ${formatMoney(TABLE_QTY_OPTIONS[0].amountCents)}` : formatMoney(pkg.amountCents)}
+                        {pkg.key === "table" ? `From ${formatMoney(TABLE_QTY_OPTIONS[0].amountCents)}, qty ${TABLE_QTY_OPTIONS[0].qty}` : formatMoney(pkg.amountCents)}
                       </div>
                       <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.6, color: "#475467" }}>
                         {pkg.description}
