@@ -11,6 +11,13 @@ import {
   hasStripePublishableKey,
 } from "../../components/payments/paymentHelpers.js";
 
+const TABLE_QTY_OPTIONS = [
+  { qty: 5,  amountCents: 3000,  label: "5 signs — $30.00" },
+  { qty: 10, amountCents: 5500,  label: "10 signs — $55.00" },
+  { qty: 20, amountCents: 10000, label: "20 signs — $100.00" },
+  { qty: 30, amountCents: 14000, label: "30 signs — $140.00" },
+];
+
 const PACKAGES = {
   starter: {
     key: "starter",
@@ -21,10 +28,11 @@ const PACKAGES = {
   },
   table: {
     key: "table",
-    name: "Acrylic Table Sign",
-    amountCents: 3000,
-    description: "Clear acrylic table sign, 7\" × 5\", white print. QR code at every table for direct ordering.",
+    name: "Table Tent QR Sign",
+    amountCents: TABLE_QTY_OPTIONS[0].amountCents,
+    description: "Folded tent card table sign. QR code at every table for direct ordering. Select quantity.",
     placements: ["Table Set"],
+    qtyOptions: TABLE_QTY_OPTIONS,
   },
   counter: {
     key: "counter",
@@ -83,6 +91,7 @@ export default function OperatorQrKitOrder() {
   const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const [packageType, setPackageType] = useState("starter");
+  const [tableQtyIndex, setTableQtyIndex] = useState(0);
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({
     shipping_name: "",
@@ -104,6 +113,8 @@ export default function OperatorQrKitOrder() {
   const [confirmation, setConfirmation] = useState(null);
 
   const selectedPackage = PACKAGES[packageType];
+  const tableQtyOption = TABLE_QTY_OPTIONS[tableQtyIndex] || TABLE_QTY_OPTIONS[0];
+  const effectiveAmountCents = packageType === "table" ? tableQtyOption.amountCents : selectedPackage.amountCents;
 
   useEffect(() => {
     if (!selectedRestaurant?.id) {
@@ -209,8 +220,10 @@ export default function OperatorQrKitOrder() {
         restaurantId: selectedRestaurant.id,
         productCode: getQrProductCode(packageType),
         receiptEmail: form.receipt_email || undefined,
+        amountCents: effectiveAmountCents,
         metadata: {
           source: "operator_qr_kit_order",
+          qty: packageType === "table" ? tableQtyOption.qty : 1,
         },
       });
 
@@ -331,18 +344,39 @@ export default function OperatorQrKitOrder() {
                         cursor: "pointer",
                       }}
                     >
+                      {pkg.key === "table" && (
+                        <img
+                          src="/qr-table-tent-sign.png"
+                          alt="Table tent QR sign"
+                          style={{ width: "100%", maxHeight: 140, objectFit: "contain", borderRadius: 10, marginBottom: 12 }}
+                        />
+                      )}
                       <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                        {pkg.key === "full" ? "Best Value" : pkg.key === "table" ? "Acrylic" : pkg.key === "counter" ? "Acrylic" : "Vinyl"}
+                        {pkg.key === "full" ? "Best Value" : pkg.key === "table" ? "Tent Card" : pkg.key === "counter" ? "Acrylic" : "Vinyl"}
                       </div>
                       <div style={{ marginTop: 8, fontSize: 24, fontWeight: 800, color: "#101828", letterSpacing: "-0.04em" }}>
                         {pkg.name}
                       </div>
                       <div style={{ marginTop: 6, fontSize: 22, fontWeight: 800, color: "#1f4e3d" }}>
-                        {formatMoney(pkg.amountCents)}
+                        {pkg.key === "table" ? `from ${formatMoney(TABLE_QTY_OPTIONS[0].amountCents)}` : formatMoney(pkg.amountCents)}
                       </div>
                       <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.6, color: "#475467" }}>
                         {pkg.description}
                       </p>
+                      {pkg.key === "table" && active && (
+                        <div style={{ marginTop: 12 }} onClick={(e) => e.stopPropagation()}>
+                          <label style={{ fontSize: 12, fontWeight: 700, color: "#344054", display: "block", marginBottom: 6 }}>Quantity</label>
+                          <select
+                            value={tableQtyIndex}
+                            onChange={(e) => setTableQtyIndex(Number(e.target.value))}
+                            style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d0d5dd", fontSize: 14, fontFamily: "inherit", background: "#fff", color: "#101828" }}
+                          >
+                            {TABLE_QTY_OPTIONS.map((opt, i) => (
+                              <option key={opt.qty} value={i}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -463,7 +497,7 @@ export default function OperatorQrKitOrder() {
                 <div style={{ marginTop: 16 }}>
                   <StripeElementsProvider clientSecret={paymentSession.client_secret}>
                     <PlatformPaymentForm
-                      submitLabel={`Pay ${formatMoney(selectedPackage.amountCents)}`}
+                      submitLabel={`Pay ${formatMoney(effectiveAmountCents)}`}
                       returnUrl={`${window.location.origin}/operator/qr-kit-order`}
                       onConfirmed={handlePaymentConfirmed}
                     />
@@ -478,9 +512,12 @@ export default function OperatorQrKitOrder() {
               <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                 Selected package
               </div>
-              <h3 style={{ margin: "8px 0 0", fontSize: 28, color: "#101828", letterSpacing: "-0.05em" }}>{selectedPackage.name}</h3>
+              <h3 style={{ margin: "8px 0 0", fontSize: 28, color: "#101828", letterSpacing: "-0.05em" }}>
+                {selectedPackage.name}
+                {packageType === "table" && <span style={{ fontSize: 16, fontWeight: 600, color: "#667085", marginLeft: 8 }}>× {tableQtyOption.qty}</span>}
+              </h3>
               <div style={{ marginTop: 8, fontSize: 34, fontWeight: 800, color: "#1f4e3d", letterSpacing: "-0.05em" }}>
-                {formatMoney(selectedPackage.amountCents)}
+                {formatMoney(effectiveAmountCents)}
               </div>
               <p style={{ margin: "12px 0 0", fontSize: 14, lineHeight: 1.65, color: "#475467" }}>
                 {selectedPackage.description}
