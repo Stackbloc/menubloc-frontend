@@ -57,9 +57,9 @@ const THEMES = [
     description: "The baseline Menuply menu system with a KBC-style Dothan sample and multi-tab support.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
-      restaurant_name: "KBC Butcher Block",
-      name: "KBC Butcher Block",
-      slug: "kbc-butcher-block",
+      restaurant_name: "Iron Fork Demo House",
+      name: "Iron Fork Demo House",
+      slug: "iron-fork-demo-house",
       accent_color: "#1F4E3D",
       menu_name: "Main Menu",
     }),
