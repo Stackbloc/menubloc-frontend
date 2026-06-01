@@ -59,8 +59,35 @@ const MAX_RECENT_LOCATIONS = 3;
 const DIET_PREFS_STORAGE_KEY = "grubbid.diet.prefs";
 const ALLERGEN_KEY = "grubbid.allergen.exclusions";
 const ALLERGEN_NONE_ID = "none";
+const OUT_OF_MARKET_PROMO_KEY = "grubbid.discovery.outOfMarketPromo";
 const FILTER_HEALTH_CHECKED_KEY = "grubbid.filterHealthChecked";
 const FILTER_HEALTH_BROKEN_KEY = "grubbid.filterHealthBroken";
+
+function loadStoredOutOfMarketPromo() {
+  if (typeof window === "undefined") return null;
+  for (const storage of [window.localStorage, window.sessionStorage]) {
+    try {
+      const raw = storage.getItem(OUT_OF_MARKET_PROMO_KEY);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.locationKey) return parsed;
+    } catch {
+      // ignore storage read issues
+    }
+  }
+  return null;
+}
+
+function saveStoredOutOfMarketPromo(payload) {
+  if (typeof window === "undefined") return;
+  for (const storage of [window.localStorage, window.sessionStorage]) {
+    try {
+      storage.setItem(OUT_OF_MARKET_PROMO_KEY, JSON.stringify(payload));
+    } catch {
+      // ignore storage write issues
+    }
+  }
+}
 
 const ALLERGENS = [
   { id: "nuts",      label: "Nuts" },
@@ -443,6 +470,7 @@ export default function GrubbidDiscovery() {
   const [filters, setFilters] = useState(() => loadDietPrefs());
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [rememberedOutOfMarketPromo, setRememberedOutOfMarketPromo] = useState(() => loadStoredOutOfMarketPromo());
 
   // ── new state ───────────────────────────────────────────────────────────────
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -604,6 +632,23 @@ export default function GrubbidDiscovery() {
     autoLocation.status !== "locating" &&
     hasBackendFeedData &&
     !hasVisibleMenus;
+  const showOutOfMarketPromo =
+    showBackendEmptyState ||
+    Boolean(rememberedOutOfMarketPromo?.joinInfoPath);
+
+  useEffect(() => {
+    if (!showBackendEmptyState) return;
+
+    const payload = {
+      locationKey,
+      label: outOfMarketAreaLabel,
+      joinInfoPath,
+      joinDinersPath,
+      seenAt: Date.now(),
+    };
+    setRememberedOutOfMarketPromo(payload);
+    saveStoredOutOfMarketPromo(payload);
+  }, [showBackendEmptyState, locationKey, outOfMarketAreaLabel, joinInfoPath, joinDinersPath]);
 
   // Persist dietary prefs whenever they change
   useEffect(() => { saveDietPrefs(filters); }, [filters]);
@@ -1034,23 +1079,24 @@ export default function GrubbidDiscovery() {
         @keyframes skelPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
         .disc-feed-grid { display:flex; flex-direction:column; gap:10px; }
         .disc-oom-copy {
-          max-width: 560px;
-          margin: 0 auto;
+          max-width: 620px;
+          margin: 0;
           font-size: 14px;
           line-height: 1.65;
           color: #E5E7EB;
+          text-align: left;
         }
         .disc-oom-actions {
           display: flex;
           flex-direction: column;
           gap: 24px;
-          max-width: 400px;
-          margin: 24px auto 0;
+          max-width: 320px;
+          margin: 24px 0 0;
         }
         @media (min-width: 760px) {
           .disc-oom-actions {
             flex-direction: row;
-            max-width: 520px;
+            max-width: 360px;
           }
         }
         .disc-oom-button {
@@ -1058,13 +1104,13 @@ export default function GrubbidDiscovery() {
           display: flex;
           align-items: center;
           justify-content: center;
-          min-height: 46px;
-          padding: 12px 20px;
+          min-height: 42px;
+          padding: 10px 14px;
           border-radius: 12px;
           background: #22C55E;
           color: #0B0F0C;
           font-weight: 800;
-          font-size: 15px;
+          font-size: 14px;
           text-decoration: none;
           white-space: nowrap;
           box-shadow: 0 10px 20px rgba(34, 197, 94, 0.18);
@@ -1454,10 +1500,10 @@ export default function GrubbidDiscovery() {
                 height: 130, marginBottom: 10,
               }} />
             ))
-          ) : inlineError ? null : showBackendEmptyState ? (
-            <div style={{ textAlign: "center", padding: "48px 20px 32px" }}>
-              <div style={{ color: "#E5E7EB", fontSize: 16, fontWeight: 700, lineHeight: 1.55, maxWidth: 640, margin: "0 auto" }}>
-                As the cost of dining continues to rise, Menuply is building a lower-cost alternative that enables restaurants to offer better value to diners - {outOfMarketAreaLabel}. Click below to learn more.
+          ) : inlineError ? null : showOutOfMarketPromo ? (
+            <div style={{ textAlign: "left", padding: "48px 20px 32px" }}>
+              <div style={{ color: "#E5E7EB", fontSize: 16, fontWeight: 700, lineHeight: 1.55, width: "100%", maxWidth: 760, margin: 0, textAlign: "left" }}>
+                As the cost of dining continues to rise, Menuply is building a lower-cost alternative that enables restaurants to offer better value to diners in {outOfMarketAreaLabel}. Click below to learn more.
               </div>
               <div className="disc-oom-actions">
                 <Link to={joinInfoPath} className="disc-oom-button">
