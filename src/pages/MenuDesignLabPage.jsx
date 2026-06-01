@@ -352,13 +352,15 @@ export default function MenuDesignLabPage() {
         </div>
       </header>
 
-      <section style={styles.hero}>
-        <div style={styles.eyebrow}>Menu Lab</div>
-        <h1 style={{ ...styles.title, color: isDarkShell ? "#fff" : "#0f1720" }}>Browse preset menu themes and tune the one that fits your restaurant.</h1>
-        <p style={{ ...styles.copy, color: isDarkShell ? "rgba(255,255,255,0.78)" : "#475467" }}>
-          The gallery below uses real sample menu data, not screenshots. Each preset can be customized from the operator page with colors, image density, and other display controls.
-        </p>
-      </section>
+      {!rid && (
+        <section style={styles.hero}>
+          <div style={styles.eyebrow}>Menu Lab</div>
+          <h1 style={{ ...styles.title, color: isDarkShell ? "#fff" : "#0f1720" }}>Browse preset menu themes and tune the one that fits your restaurant.</h1>
+          <p style={{ ...styles.copy, color: isDarkShell ? "rgba(255,255,255,0.78)" : "#475467" }}>
+            The gallery below uses real sample menu data, not screenshots. Each preset can be customized from the operator page with colors, image density, and other display controls.
+          </p>
+        </section>
+      )}
 
       <section style={shellStyle}>
         {isDemo ? null : <aside style={styles.sidebar}>
@@ -594,33 +596,25 @@ export default function MenuDesignLabPage() {
         </aside>}
 
         <section style={styles.previewColumn}>
-          <div style={styles.previewHeader}>
-            <div>
-              <div style={styles.previewEyebrow}>Currently previewing</div>
-              <h2 style={{ ...styles.previewTitle, color: isDarkShell ? "#fff" : "#0f1720" }}>{selectedTheme.name}</h2>
-              <p style={{ ...styles.previewCopy, color: isDarkShell ? "rgba(255,255,255,0.72)" : "#667085" }}>{selectedTheme.bestFit}</p>
-            </div>
-            <div style={styles.previewMeta}>
-              {!rid && <span style={styles.sampleLabel}>Sample menu design</span>}
-              {rid ? (
-                <div style={{ fontSize: 12, color: isDarkShell ? "rgba(255,255,255,0.6)" : "#667085", fontStyle: "italic" }}>
-                  Customize in the panel → then Save Style
-                </div>
-              ) : (
+          {!rid && (
+            <div style={styles.previewHeader}>
+              <div>
+                <div style={styles.previewEyebrow}>Currently previewing</div>
+                <h2 style={{ ...styles.previewTitle, color: isDarkShell ? "#fff" : "#0f1720" }}>{selectedTheme.name}</h2>
+                <p style={{ ...styles.previewCopy, color: isDarkShell ? "rgba(255,255,255,0.72)" : "#667085" }}>{selectedTheme.bestFit}</p>
+              </div>
+              <div style={styles.previewMeta}>
+                <span style={styles.sampleLabel}>Sample menu design</span>
                 <button
                   type="button"
                   onClick={() => window.open(`/menu-template-preview?previewStyle=${selectedStyle}`, "_blank", "noopener,noreferrer")}
-                  style={{
-                    ...styles.previewButton,
-                    background: controls.primaryColor || "#1F4E3D",
-                    borderColor: controls.primaryColor || "#1F4E3D",
-                  }}
+                  style={{ ...styles.previewButton, background: controls.primaryColor || "#1F4E3D", borderColor: controls.primaryColor || "#1F4E3D" }}
                 >
                   Open preview
                 </button>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
           {notice ? <div style={styles.notice}>{notice}</div> : null}
 
