@@ -130,10 +130,8 @@ export default function PublicMenuItemCard({
     itemHasInsightsData(it);
   const showNutritionInline =
     themeSettings.nutrition_display !== "hidden" &&
-    hasNutritionData &&
-    (themeSettings.intelligence_density === "standard" ||
-      themeSettings.intelligence_density === "detailed" ||
-      themeSettings.intelligence_density === "functional");
+    themeSettings.intelligence_density !== "none" &&
+    hasNutritionData;
   const showAllergenInline = false;
   const showIndulgenceInline =
     themeSettings.indulgence_display !== "hidden" &&
@@ -407,14 +405,11 @@ export default function PublicMenuItemCard({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(
-                  `/restaurants/${encodeURIComponent(data?.slug || currentRestaurantId)}/menu-item-info/${encodeURIComponent(it.id)}`
-                );
+                openSheet();
               }}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 4,
                 border: "none",
                 background: "transparent",
                 color: accent,
@@ -434,7 +429,7 @@ export default function PublicMenuItemCard({
                 e.currentTarget.style.opacity = "1";
               }}
             >
-              Insights →
+              Insights
             </button>
           ) : null}
         </div>
