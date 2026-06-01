@@ -534,13 +534,17 @@ export default function OperatorQrKitOrder() {
 
             <div style={{ background: "#fff", border: "1px solid #eaecf0", borderRadius: 22, padding: 22 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: "#667085", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>
-                Preview placements
+                Product options
               </div>
               <div style={{ display: "grid", gap: 14 }}>
-                {previewPlacements.map((placement) => (
-                  <div key={placement.label} style={{ border: "1px solid #eaecf0", borderRadius: 18, overflow: "hidden", background: "#f8fafc" }}>
-                    <img src={placement.previewUrl} alt={placement.label} style={{ display: "block", width: "100%", aspectRatio: "4 / 3", objectFit: "cover" }} />
-                    <div style={{ padding: 14, fontSize: 14, fontWeight: 800, color: "#101828" }}>{placement.label}</div>
+                {[
+                  { label: "Door / Window QR Sticker",       img: "/qr-door-preview.png" },
+                  { label: "Acrylic Counter / Table Sign",    img: "/qr-acrylic-sign.png" },
+                  { label: "Table Tent QR Sign",              img: "/qr-table-tent-sign.png" },
+                ].map(({ label, img }) => (
+                  <div key={label} style={{ border: "1px solid #eaecf0", borderRadius: 18, overflow: "hidden", background: "#f8fafc" }}>
+                    <img src={img} alt={label} style={{ display: "block", width: "100%", aspectRatio: "4 / 3", objectFit: "cover" }} />
+                    <div style={{ padding: 14, fontSize: 14, fontWeight: 800, color: "#101828" }}>{label}</div>
                   </div>
                 ))}
               </div>
