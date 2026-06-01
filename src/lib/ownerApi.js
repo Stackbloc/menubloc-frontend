@@ -84,6 +84,12 @@ export const retryOwnerMenuUpload = (uploadId) =>
 export const archiveOwnerMenuUpload = (uploadId) =>
   post(`/api/owner/menu-uploads/${uploadId}/archive`, {});
 
+export const getOwnerMarketExpansion = () => get("/api/owner/market-expansion/summary");
+export const getOwnerMarketExpansionByZip = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/market-expansion/by-zip${qs ? `?${qs}` : ""}`);
+};
+
 export const getOwnerQrStickers = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/qr-stickers${qs ? `?${qs}` : ""}`);
