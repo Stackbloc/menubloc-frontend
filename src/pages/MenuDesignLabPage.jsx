@@ -418,7 +418,7 @@ export default function MenuDesignLabPage() {
                     </div>
                   </>
                 )}
-                <div style={{ ...controlGridStyle, marginTop: isEditMode ? 0 : 14 }}>
+                <div style={{ ...controlGridStyle, marginTop: isEditMode ? 0 : 14, color: isDarkShell ? "rgba(255,255,255,0.8)" : "#374151" }}>
                   <Control label="Primary color">
                     <input type="color" value={controls.primaryColor}
                       onChange={(e) => setControls((c) => ({ ...c, primaryColor: e.target.value }))} style={styles.color} />
