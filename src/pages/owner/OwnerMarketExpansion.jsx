@@ -125,6 +125,7 @@ export default function OwnerMarketExpansion() {
 
   const markets = data?.markets || [];
   const thresholds = data?.thresholds || { diner_threshold: DINER_THRESHOLD_DEFAULT, restaurant_threshold: RESTAURANT_THRESHOLD_DEFAULT };
+  const restaurantTrackingEnabled = data?.restaurant_tracking_enabled ?? false;
   const activeMarkets = markets.filter((m) => m.is_active_launch_market);
   const pendingMarkets = markets.filter((m) => !m.is_active_launch_market);
 
@@ -140,6 +141,12 @@ export default function OwnerMarketExpansion() {
         title="Market Expansion"
         subtitle={`Active when a market reaches ${thresholds.diner_threshold} diners and ${thresholds.restaurant_threshold} restaurants.`}
       />
+
+      {data && !restaurantTrackingEnabled ? (
+        <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 10, background: "#fff8ee", border: "1px solid #f0ad4e", color: "#856404", fontSize: 13 }}>
+          Restaurant signup tracking not yet enabled. Restaurant counts will show 0 until tracking is activated.
+        </div>
+      ) : null}
 
       {/* Summary cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 28 }}>
