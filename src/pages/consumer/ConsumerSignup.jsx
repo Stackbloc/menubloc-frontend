@@ -84,7 +84,7 @@ export default function ConsumerSignup() {
         confirm_password: fields.confirm_password,
         display_name: fields.display_name.trim() || undefined,
       });
-      navigate(redirectTo, { replace: true });
+      navigate("/account/welcome", { replace: true, state: { redirectTo } });
     } catch (error) {
       const payload = error?.payload || {};
       setFormError(error.message || t("auth.signUpFailed", "Sign up failed. Please try again."));
