@@ -129,63 +129,41 @@ export default function MenuDesignLabPage() {
   // ── Operator theme editor state ──────────────────────────────────────────
   const { selectedRestaurant } = useOperator() || {};
   const rid = selectedRestaurant?.id || null;
-  const [activeSlot, setActiveSlot] = useState(1);
-  const [savedThemes, setSavedThemes] = useState([null, null]);
-  const [themeName, setThemeName] = useState("My Theme");
+  const [published, setPublished] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [activating, setActivating] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [editorMsg, setEditorMsg] = useState("");
 
-  const loadThemes = useCallback(() => {
+  // Load existing display settings on mount so controls reflect what's live
+  const loadExistingDesign = useCallback(() => {
     if (!rid) return;
-    api.getMenuThemes(rid).then((data) => {
-      if (!data?.themes) return;
-      setSavedThemes(data.themes);
-      const active = data.themes.find((t) => t?.is_active) || data.themes[0];
-      if (active) setThemeName(active.theme_name || "My Theme");
-    }).catch(() => {});
-  }, [rid]);
-
-  useEffect(() => { loadThemes(); }, [loadThemes]);
-
-  function applySlotToControls(slot) {
-    const theme = savedThemes.find((t) => t?.slot === slot);
-    if (!theme) {
-      // Empty slot — reset controls to the current template's defaults
-      const fallback = getMenuDesignLabTheme(selectedStyle);
+    api.getDisplaySettings(rid).then((data) => {
+      if (!data?.settings) return;
+      const s = data.settings;
+      const style = s.menu_style || selectedStyle;
+      const labTheme = getMenuDesignLabTheme(style);
+      if (!isEditMode) {
+        setSearchParams({ style });
+      }
       setControls({
-        themePreset:     selectedStyle,
-        primaryColor:    fallback.preset?.colorDefaults?.primary || "#c45c26",
-        accentColor:     fallback.preset?.colorDefaults?.accent  || "#c45c26",
-        backgroundStyle: inferBackgroundStyle(fallback),
-        imageDensity:    inferImageDensity(fallback),
-        heroEnabled:     true,
+        themePreset:     style,
+        primaryColor:    s.primary_color   || labTheme.preset?.colorDefaults?.primary || "#c45c26",
+        accentColor:     s.accent_color    || labTheme.preset?.colorDefaults?.accent  || "#c45c26",
+        backgroundStyle: s.background_style || inferBackgroundStyle(labTheme),
+        imageDensity:    s.image_density    || inferImageDensity(labTheme),
+        heroEnabled:     s.hero_enabled    !== false,
       });
-      setThemeName("My Theme");
-      return;
-    }
-    const style = theme.menu_style || "v1";
-    const labTheme = getMenuDesignLabTheme(style);
-    setSearchParams(isEditMode ? { style } : { theme: style });
-    setControls({
-      themePreset:     style,
-      primaryColor:    theme.primary_color  || labTheme.preset?.colorDefaults?.primary || "#c45c26",
-      accentColor:     theme.accent_color   || labTheme.preset?.colorDefaults?.accent  || "#c45c26",
-      backgroundStyle: theme.background_style || inferBackgroundStyle(labTheme),
-      imageDensity:    theme.image_density   || inferImageDensity(labTheme),
-      heroEnabled:     theme.hero_enabled   !== false,
-    });
-    setThemeName(theme.theme_name || "My Theme");
-  }
+    }).catch(() => {});
+  }, [rid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { loadExistingDesign(); }, [loadExistingDesign]);
 
   async function handleSave() {
     if (!rid) return;
     setSaving(true);
     setEditorMsg("");
     try {
-      await api.saveMenuTheme(rid, activeSlot, {
-        theme_name:       themeName || "My Theme",
-        base_template:    controls.themePreset,
+      await api.updateDisplaySettings(rid, {
         menu_style:       controls.themePreset,
         primary_color:    controls.primaryColor  || null,
         accent_color:     controls.accentColor   || null,
@@ -193,7 +171,6 @@ export default function MenuDesignLabPage() {
         hero_enabled:     controls.heroEnabled,
         image_density:    controls.imageDensity,
       });
-      await loadThemes();
       setEditorMsg("Saved!");
       setTimeout(() => setEditorMsg(""), 2000);
     } catch (e) {
@@ -203,24 +180,28 @@ export default function MenuDesignLabPage() {
     }
   }
 
-  async function handleActivate() {
+  async function handlePublish() {
     if (!rid) return;
-    setActivating(true);
+    setPublishing(true);
     setEditorMsg("");
     try {
-      await api.activateMenuTheme(rid, activeSlot);
-      await loadThemes();
-      setEditorMsg("Applied to your menu!");
-      setTimeout(() => setEditorMsg(""), 2500);
+      await api.updateDisplaySettings(rid, {
+        menu_style:       controls.themePreset,
+        primary_color:    controls.primaryColor  || null,
+        accent_color:     controls.accentColor   || null,
+        background_style: controls.backgroundStyle,
+        hero_enabled:     controls.heroEnabled,
+        image_density:    controls.imageDensity,
+      });
+      setPublished(true);
+      setEditorMsg("Published — live on your menu!");
+      setTimeout(() => setEditorMsg(""), 3000);
     } catch (e) {
-      setEditorMsg(e.message || "Activation failed");
+      setEditorMsg(e.message || "Publish failed");
     } finally {
-      setActivating(false);
+      setPublishing(false);
     }
   }
-
-  const currentSlotData = savedThemes.find((t) => t?.slot === activeSlot);
-  const isCurrentSlotActive = currentSlotData?.is_active === true;
 
   const previewMenus = useMemo(
     () => normalizePreviewMenus(selectedTheme.previewPayload?.menus || [], controls.imageDensity || "all"),
@@ -369,110 +350,60 @@ export default function MenuDesignLabPage() {
       <section style={shellStyle}>
         {isDemo ? null : <aside style={styles.sidebar}>
           {rid ? (
-            /* ── OPERATOR MODE: 3-step flow ─────────────────────────────── */
+            /* ── OPERATOR MODE ───────────────────────────────────────────── */
             <>
-              {/* Back link when in single-template edit mode */}
+              {/* Back link in single-template edit mode */}
               {isEditMode && (
-                <div style={{ padding: "10px 16px 0" }}>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/operator/menulab")}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: isDarkShell ? "rgba(255,255,255,0.6)" : "#667085", fontSize: 13, fontFamily: "inherit", padding: 0, display: "flex", alignItems: "center", gap: 6 }}
-                  >
+                <div style={{ padding: "12px 16px 0" }}>
+                  <button type="button" onClick={() => navigate("/operator/menulab")}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: isDarkShell ? "rgba(255,255,255,0.6)" : "#667085", fontSize: 13, fontFamily: "inherit", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
                     ← Back to Menu Lab
                   </button>
-                  <div style={{ marginTop: 8, marginBottom: 4, fontSize: 16, fontWeight: 800, color: isDarkShell ? "#fff" : "#0f1720" }}>
+                  <div style={{ marginTop: 8, marginBottom: 2, fontSize: 16, fontWeight: 800, color: isDarkShell ? "#fff" : "#0f1720" }}>
                     Editing: {selectedTheme.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#6b7280", marginBottom: 4 }}>
+                    This design applies to all your menus.
                   </div>
                 </div>
               )}
 
-              {/* STEP 1 — Choose saved theme slot */}
+              {/* Customize controls */}
               <div style={styles.sidebarSection}>
-                <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>Step 1 · Which saved theme?</div>
-                <div style={{ fontSize: 12, color: isDarkShell ? "rgba(255,255,255,0.45)" : "#9ca3af", marginBottom: 10, lineHeight: 1.5 }}>
-                  You can save 2 different themes per restaurant (e.g. Dinner + Lunch).
-                </div>
-                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                  {[1, 2].map((slot) => {
-                    const slotData = savedThemes.find((t) => t?.slot === slot);
-                    const isActive = slotData?.is_active === true;
-                    const slotLabel = slotData?.theme_name || `Theme ${slot}`;
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        onClick={() => { setActiveSlot(slot); applySlotToControls(slot); }}
-                        style={{
-                          flex: 1, minHeight: 44, borderRadius: 10,
-                          border: activeSlot === slot ? "2px solid #1F4E3D" : "1px solid rgba(148,163,184,0.3)",
-                          background: activeSlot === slot ? (isDarkShell ? "rgba(255,255,255,0.10)" : "#f0fdf4") : "transparent",
-                          color: isDarkShell ? "#fff" : "#0f1720",
-                          fontFamily: "inherit", fontSize: 12, fontWeight: 700, cursor: "pointer",
-                          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
-                          padding: "8px 6px",
-                        }}
-                      >
-                        <span style={{ fontWeight: 800, fontSize: 13 }}>{slotLabel}</span>
-                        <span style={{ fontSize: 10, opacity: 0.6 }}>
-                          {isActive ? "● Published" : slotData ? "Saved" : "Empty"}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <input
-                  type="text"
-                  value={themeName}
-                  onChange={(e) => setThemeName(e.target.value)}
-                  placeholder="Name this style (e.g. Dinner Theme)"
-                  maxLength={60}
-                  style={{ ...styles.select, minHeight: 40, width: "100%", boxSizing: "border-box", background: isDarkShell ? "rgba(255,255,255,0.06)" : "#fff", color: isDarkShell ? "#fff" : "#0f1720", border: "1px solid rgba(148,163,184,0.3)" }}
-                />
-              </div>
-
-              {/* STEP 2 — Pick a template + customize */}
-              <div style={styles.sidebarSection}>
-                <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>
-                  {isEditMode ? "Step 2 · Customize" : "Step 2 · Edit your menu design"}
-                </div>
-                {/* Gallery hidden in single-template edit mode — template already chosen */}
-                {!isEditMode && <div style={styles.themeGrid}>
-                  {CURATED_MENU_DESIGN_LAB_THEMES.map((theme) => {
-                    const active = theme.style === selectedStyle;
-                    return (
-                      <button
-                        key={theme.style}
-                        type="button"
-                        onClick={() => {
-                          setSearchParams({ theme: theme.style });
-                          setControls((current) => ({
-                            ...current,
-                            themePreset: theme.style,
-                            primaryColor: theme.preset?.colorDefaults?.primary || current.primaryColor,
-                            accentColor: theme.preset?.colorDefaults?.accent || current.accentColor,
-                            backgroundStyle: inferBackgroundStyle(theme),
-                            imageDensity: inferImageDensity(theme),
-                            heroEnabled: true,
-                          }));
-                        }}
-                        style={{
-                          ...styles.themeCard,
-                          borderColor: active ? theme.preset.colorDefaults.accent : "rgba(148,163,184,0.2)",
-                          background: active ? (isDarkShell ? "rgba(255,255,255,0.06)" : "#fff") : (isDarkShell ? "rgba(255,255,255,0.03)" : "#fff"),
-                          color: isDarkShell ? "#fff" : "#0f1720",
-                        }}
-                      >
-                        <div style={styles.cardTitle}>{theme.name}</div>
-                        <div style={{ ...styles.bestFit, color: isDarkShell ? "rgba(255,255,255,0.7)" : "#5b6675" }}>{theme.bestFit}</div>
-                        <span style={{ ...styles.previewLink, color: active ? theme.preset.colorDefaults.accent : (isDarkShell ? "#3DD934" : "#1F4E3D") }}>
-                          {active ? "✓ Selected" : "Use this style"}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>}
-                <div style={{ ...controlGridStyle, marginTop: 14 }}>
+                {!isEditMode && (
+                  <>
+                    <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>Choose a template</div>
+                    <div style={styles.themeGrid}>
+                      {CURATED_MENU_DESIGN_LAB_THEMES.map((theme) => {
+                        const active = theme.style === selectedStyle;
+                        return (
+                          <button key={theme.style} type="button"
+                            onClick={() => {
+                              setSearchParams({ style: theme.style });
+                              setControls((current) => ({
+                                ...current, themePreset: theme.style,
+                                primaryColor: theme.preset?.colorDefaults?.primary || current.primaryColor,
+                                accentColor: theme.preset?.colorDefaults?.accent || current.accentColor,
+                                backgroundStyle: inferBackgroundStyle(theme),
+                                imageDensity: inferImageDensity(theme), heroEnabled: true,
+                              }));
+                            }}
+                            style={{ ...styles.themeCard,
+                              borderColor: active ? theme.preset.colorDefaults.accent : "rgba(148,163,184,0.2)",
+                              background: active ? (isDarkShell ? "rgba(255,255,255,0.06)" : "#fff") : (isDarkShell ? "rgba(255,255,255,0.03)" : "#fff"),
+                              color: isDarkShell ? "#fff" : "#0f1720" }}>
+                            <div style={styles.cardTitle}>{theme.name}</div>
+                            <div style={{ ...styles.bestFit, color: isDarkShell ? "rgba(255,255,255,0.7)" : "#5b6675" }}>{theme.bestFit}</div>
+                            <span style={{ ...styles.previewLink, color: active ? theme.preset.colorDefaults.accent : (isDarkShell ? "#3DD934" : "#1F4E3D") }}>
+                              {active ? "✓ Selected" : "Use this"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+                <div style={{ ...controlGridStyle, marginTop: isEditMode ? 0 : 14 }}>
                   <Control label="Primary color">
                     <input type="color" value={controls.primaryColor}
                       onChange={(e) => setControls((c) => ({ ...c, primaryColor: e.target.value }))} style={styles.color} />
@@ -509,33 +440,20 @@ export default function MenuDesignLabPage() {
                 </div>
               </div>
 
-              {/* STEP 3 — Save & Publish */}
+              {/* Save & Publish */}
               <div style={{ ...styles.sidebarSection, ...(isDarkShell ? styles.darkPanel : styles.lightPanel) }}>
-                <div style={{ ...styles.stepLabel, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#9ca3af" }}>Step 3 · Save &amp; Publish</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <button type="button" onClick={handleSave} disabled={saving || activating}
+                  <button type="button" onClick={handleSave} disabled={saving || publishing}
                     style={{ minHeight: 44, borderRadius: 10, border: "1px solid #1F4E3D", background: "#1F4E3D", color: "#fff", fontFamily: "inherit", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
                     {saving ? "Saving…" : "Save"}
                   </button>
-                  {isCurrentSlotActive ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: "rgba(34,197,94,0.1)", fontSize: 13, fontWeight: 700, color: "#22c55e" }}>
-                      <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
-                      Published — live on your menu
-                    </div>
-                  ) : (
-                    <button type="button" onClick={handleActivate} disabled={saving || activating || !currentSlotData}
-                      style={{ minHeight: 44, borderRadius: 10, border: "none", background: "#22c55e", color: "#14532d", fontFamily: "inherit", fontSize: 14, fontWeight: 900, cursor: currentSlotData ? "pointer" : "not-allowed", opacity: currentSlotData ? 1 : 0.5 }}>
-                      {activating ? "Publishing…" : "Publish to My Menu"}
-                    </button>
-                  )}
+                  <button type="button" onClick={handlePublish} disabled={saving || publishing}
+                    style={{ minHeight: 44, borderRadius: 10, border: "none", background: "#22c55e", color: "#14532d", fontFamily: "inherit", fontSize: 14, fontWeight: 900, cursor: "pointer" }}>
+                    {publishing ? "Publishing…" : published ? "✓ Published" : "Publish to My Menu"}
+                  </button>
                   {editorMsg && (
                     <div style={{ fontSize: 12, fontWeight: 700, color: editorMsg.includes("fail") || editorMsg.includes("Failed") ? "#b91c1c" : "#166534", textAlign: "center" }}>
                       {editorMsg}
-                    </div>
-                  )}
-                  {!currentSlotData && (
-                    <div style={{ fontSize: 12, color: isDarkShell ? "rgba(255,255,255,0.45)" : "#9ca3af", textAlign: "center" }}>
-                      Save first to enable publishing
                     </div>
                   )}
                 </div>
