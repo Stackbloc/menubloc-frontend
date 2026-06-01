@@ -264,6 +264,14 @@ export const getDisplaySettings = (rid) =>
 export const updateDisplaySettings = (rid, body) =>
   patch(`/operator/restaurants/${rid}/display-settings`, body);
 
+// ── Restaurant: Menu Themes (Design Lab) ──────────────────────────────────
+export const getMenuThemes = (rid) =>
+  get(`/operator/restaurants/${rid}/menu-themes`);
+export const saveMenuTheme = (rid, slot, body) =>
+  req(`/operator/restaurants/${rid}/menu-themes/${slot}`, { method: "PUT", body: JSON.stringify(body) });
+export const activateMenuTheme = (rid, slot) =>
+  req(`/operator/restaurants/${rid}/menu-themes/${slot}/activate`, { method: "PATCH", body: "{}" });
+
 // ── Restaurant: Delivery Accounts ─────────────────────────────────────────
 export const getDeliverySettings = (rid) =>
   get(`/operator/restaurants/${rid}/delivery`);
