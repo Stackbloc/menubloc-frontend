@@ -514,6 +514,49 @@ If `similar.length === 0` the section must be invisible — no container, no ban
 **Established:** 2026-06-01
 **Files:** `src/components/menu-templates/PublicMenuItemCard.jsx`, `src/components/SearchResultCard.jsx`, `src/lib/searchResultEnrichment.js`
 
+---
+
+## 🚫 NO UNSOLICITED UI / DESIGN CHANGES (ABSOLUTE RULE)
+
+Agents MUST NOT make any UI, layout, visual, or design changes that were not explicitly requested by the user.
+
+This includes but is not limited to:
+- Color changes, font changes, spacing changes
+- Adding, removing, or restyling badges, banners, pills, icons
+- Reordering or restructuring layout elements
+- Adding new UI states, modals, overlays, or animations
+
+If a code task touches a file that contains unrelated UI — leave the UI untouched. The task is the task. Nothing more.
+
+**Violation examples from this project:**
+- Adding a red full-width absolute banner (`position: absolute`, `background: #b91c1c`) to a plan card when asked only to "add a Limited Availability label" — wrong. Match existing page style exactly.
+- Changing padding, negative marginTop, or any spacing as a "while I'm in here" improvement — wrong. Only change what was asked.
+
+---
+
+## 🔒 PUBLIC MENU ITEM NAVIGATION — DO NOT REPLACE (CRITICAL)
+
+**Files:** `src/pages/PublicMenuPage.jsx`, `src/components/menu-templates/PublicMenuItemCard.jsx`
+
+### The navigation contract
+
+1. Tapping a menu item card on the public menu opens `ItemDetailSheet` (the bottom ordering sheet).
+2. Inside `ItemDetailSheet`, a **"View full item details →"** link navigates to `/menu-items/${item.id}` — the full `MenuItemDetailPage` with Nutrition, Insights, and Similar tabs.
+
+**This two-level navigation MUST be preserved.** Do NOT:
+- Remove the "View full item details →" link from `ItemDetailSheet`
+- Replace `ItemDetailSheet` with inline detail rendering
+- Navigate directly to `/menu-items/:id` on card tap (that bypasses the order flow)
+- Remove the `navigate` prop threading from the parent to `ItemDetailSheet`
+
+The `navigate` prop flows: `PublicMenuPage (useNavigate)` → `ItemDetailSheet` prop → `onClick` handler.
+
+### What broke it before
+
+A previous agent replaced the full-page navigation with a bottom sheet and removed the link to `MenuItemDetailPage`, making the full Nutrition/Insights/Similar detail page completely inaccessible from the public menu.
+
+---
+
 ### Nutrition button on public menu (PublicMenuItemCard)
 
 The "Nutrition" button MUST be a `<button>` element with `e.stopPropagation()` calling `openSheet()`.

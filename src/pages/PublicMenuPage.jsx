@@ -588,6 +588,7 @@ function ItemDetailSheet({
   onRemoveItem,
   t,
   brand,
+  navigate,
 }) {
   const accent = brand?.accent ?? "#22C55E";
   const accentStrong = brand?.accentStrong ?? "#16A34A";
@@ -595,7 +596,7 @@ function ItemDetailSheet({
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
   const softBorder = brand?.accentBorder ?? "1px solid rgba(34,197,94,0.3)";
   const primaryGradient = `linear-gradient(180deg, ${accent} 0%, ${accentStrong} 100%)`;
-  const { item, name, desc, price, hasDeal, indulgencePresentation } = sheetData;
+  const { item, name, desc, price, hasDeal, indulgencePresentation, canNavigate } = sheetData;
   const nutritionChip = item?.chips?.nutrition_chip || null;
   const hasItemInsightsContent = !!(
     itemHasInsightsData(item) ||
@@ -709,6 +710,30 @@ function ItemDetailSheet({
 
           {/* Indulgence */}
           {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
+
+          {/* Full detail page link */}
+          {canNavigate && navigate ? (
+            <button
+              type="button"
+              onClick={() => { onClose(); navigate(`/menu-items/${item.id}`); }}
+              style={{
+                display: "block",
+                width: "100%",
+                marginTop: 16,
+                padding: "10px 0",
+                background: "transparent",
+                border: "none",
+                color: "rgba(34,197,94,0.75)",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                textAlign: "center",
+                letterSpacing: "0.01em",
+              }}
+            >
+              View full item details →
+            </button>
+          ) : null}
 
           {/* Add to order / quantity controls */}
           <div style={{ marginTop: 22 }}>
@@ -1604,6 +1629,7 @@ export default function PublicMenuPage() {
           t={t}
           brand={menuBrand}
           menuThemeSettings={menuThemeSettings}
+          navigate={navigate}
         />
       ) : null}
 
