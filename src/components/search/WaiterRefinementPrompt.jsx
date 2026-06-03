@@ -66,15 +66,15 @@ export default function WaiterRefinementPrompt({
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          width: 20,
-          height: 20,
+          width: 32,
+          height: 32,
           borderRadius: 999,
           background: "#FFFFFF",
           color: "#0B0F0C",
           flexShrink: 0,
         }}
       >
-        <WaiterQuestionIcon size={16} />
+        <WaiterQuestionIcon size={27} />
       </span>
       <span
         style={{
