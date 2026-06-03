@@ -8,6 +8,7 @@ import {
   linkCrmLeadRestaurant,
   updateCrmLead,
   updateCrmLeadStage,
+  updateCrmLeadStatus,
   completeCrmTask,
 } from "../../lib/crmApi.js";
 import {
@@ -23,6 +24,17 @@ import {
 } from "./CrmShared.jsx";
 
 const STAGES = ["new", "qualified", "outreach", "engaged", "demo", "trial", "negotiation", "won", "lost"];
+const MENUPLY_STATUSES = [
+  "prospect",
+  "started_signup",
+  "menu_uploaded",
+  "profile_published",
+  "verified_free",
+  "pro_subscriber",
+  "marketplace_only",
+  "inactive",
+  "disqualified",
+];
 
 export default function CrmLeadDetail() {
   const { t } = useLanguage();
@@ -32,6 +44,7 @@ export default function CrmLeadDetail() {
   const [success, setSuccess] = useState("");
   const [leadForm, setLeadForm] = useState(null);
   const [stageForm, setStageForm] = useState({ pipeline_stage: "engaged", change_reason: "", loss_reason: "" });
+  const [statusForm, setStatusForm] = useState({ lead_status: "prospect", summary: "" });
   const [activityForm, setActivityForm] = useState({ activity_type: "call", direction: "outbound", subject: "", body: "", follow_up_at: "" });
   const [taskForm, setTaskForm] = useState({ title: "", task_type: "follow_up_call", priority: "normal", due_at: "" });
   const [linkRestaurantId, setLinkRestaurantId] = useState("");
@@ -64,6 +77,7 @@ export default function CrmLeadDetail() {
         next_follow_up_at: toInputDateTime(json.lead?.next_follow_up_at),
       });
       setStageForm((current) => ({ ...current, pipeline_stage: json.lead?.pipeline_stage || "new" }));
+      setStatusForm((current) => ({ ...current, lead_status: inferMenuplyStatus(json.lead) }));
     } catch (err) {
       setError(err.message || "Unable to load lead");
     }
@@ -90,6 +104,22 @@ export default function CrmLeadDetail() {
       loadLead();
     } catch (err) {
       setError(err.message || "Unable to update stage");
+    }
+  }
+
+  async function handleStatusChange(event) {
+    event.preventDefault();
+    try {
+      setError("");
+      await updateCrmLeadStatus(id, {
+        lead_status: statusForm.lead_status,
+        summary: statusForm.summary || `Manual status update to ${statusForm.lead_status}`,
+      });
+      setSuccess("Lead status updated.");
+      setStatusForm((current) => ({ ...current, summary: "" }));
+      loadLead();
+    } catch (err) {
+      setError(err.message || "Unable to update status");
     }
   }
 
@@ -144,6 +174,9 @@ export default function CrmLeadDetail() {
   }
 
   const lead = data?.lead;
+  const marketLabel = [lead?.market_name, lead?.market_code ? `(${lead.market_code})` : ""].filter(Boolean).join(" ") || "—";
+  const hasReferral = Boolean(lead?.referral_code || lead?.referred_by);
+  const hasFounder = Boolean(lead?.founder_joined_at || lead?.founder_expiration_at || lead?.founder_price);
 
   return (
     <CrmPage
@@ -164,7 +197,10 @@ export default function CrmLeadDetail() {
                 <Field label="Restaurant" value={lead.restaurant_name || "—"} />
                 <Field label="Address" value={[lead.account_address, lead.account_city, lead.account_state, lead.account_postal_code].filter(Boolean).join(", ") || "—"} />
                 <Field label="City / State" value={`${fieldValue(lead.account_city)} / ${fieldValue(lead.account_state)}`} />
+                <Field label="Market" value={marketLabel} />
                 <Field label="Source" value={lead.source} />
+                <Field label="First touch" value={lead.first_touch_source} />
+                <Field label="Last touch" value={lead.last_touch_source} />
                 <Field label="Assigned user" value={lead.assigned_user} />
                 <Field label="Next follow-up" value={formatDateTime(lead.next_follow_up_at)} />
               </div>
@@ -182,10 +218,17 @@ export default function CrmLeadDetail() {
                 <Field label="Subscription" value={<Badge type="account" value={lead.subscription_status} />} />
                 <Field label="Plan" value={fieldValue(lead.subscription_plan)} />
                 <Field label="Onboarding" value={<Badge type="account" value={lead.onboarding_status} />} />
+                <Field label="Signup started" value={formatDateTime(lead.signup_started_at)} />
+                <Field label="First menu upload" value={formatDateTime(lead.first_menu_upload_at)} />
+                <Field label="Profile published" value={formatDateTime(lead.profile_published_at)} />
+                <Field label="Paid subscriber" value={formatDateTime(lead.paid_subscriber_at)} />
                 <Field label="Menus" value={`${lead.menu_count || 0} menus / ${lead.menu_item_count || 0} items`} />
                 <Field label="Recent activity" value={fieldValue(lead.recent_activity_count)} />
                 <Field label="Open tasks" value={fieldValue(lead.open_task_count)} />
                 <Field label="Search demand" value={fieldValue(lead.search_demand_count)} />
+                {hasReferral ? <Field label="Referral" value={[lead.referral_code, lead.referred_by ? `from ${lead.referred_by}` : ""].filter(Boolean).join(" / ")} /> : null}
+                {hasFounder ? <Field label="Founder" value={[formatDateTime(lead.founder_joined_at), lead.founder_expiration_at ? `expires ${formatDateTime(lead.founder_expiration_at)}` : "", lead.founder_price].filter(Boolean).join(" / ")} /> : null}
+                {lead.supplier_name ? <Field label="Supplier" value={lead.supplier_name} /> : null}
               </div>
               {lead.restaurant_slug ? (
                 <a href={`/restaurants/${lead.restaurant_slug}`} target="_blank" rel="noreferrer" style={inlineLinkStyle}>
@@ -242,6 +285,15 @@ export default function CrmLeadDetail() {
                   <input value={stageForm.loss_reason} onChange={(e) => setStageForm({ ...stageForm, loss_reason: e.target.value })} placeholder="Loss reason" style={inputStyle} />
                 ) : null}
                 <button type="submit" style={primaryButtonStyle}>Update stage</button>
+              </form>
+
+              <form onSubmit={handleStatusChange} style={{ display: "grid", gap: 10, marginBottom: 18 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1720" }}>Menuply status</div>
+                <select value={statusForm.lead_status} onChange={(e) => setStatusForm({ ...statusForm, lead_status: e.target.value })} style={inputStyle}>
+                  {MENUPLY_STATUSES.map((value) => <option key={value} value={value}>{value}</option>)}
+                </select>
+                <input value={statusForm.summary} onChange={(e) => setStatusForm({ ...statusForm, summary: e.target.value })} placeholder="Optional status note" style={inputStyle} />
+                <button type="submit" style={secondaryButtonStyle}>Save status</button>
               </form>
 
               <form onSubmit={handleLinkRestaurant} style={{ display: "grid", gap: 10 }}>
@@ -334,10 +386,35 @@ export default function CrmLeadDetail() {
               </div>
             </CrmCard>
           </div>
+
+          <CrmCard title="MailerLite Sync Log" subtitle="Outbound email automation history">
+            <TimelineSection title="MailerLite events" items={data.mailerlite_sync_history || []} renderItem={(item) => (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ fontWeight: 700 }}>{item.event_name}</div>
+                  <Badge type="account" value={item.status} />
+                </div>
+                <div style={{ marginTop: 4, color: "#64748b" }}>{item.group_name || "No group"}</div>
+                {item.error_message ? <div style={{ marginTop: 4, color: "#b91c1c" }}>{item.error_message}</div> : null}
+                <div style={{ marginTop: 4, fontSize: 12, color: "#94a3b8" }}>{formatDateTime(item.created_at)}</div>
+              </div>
+            )} />
+          </CrmCard>
         </>
       )}
     </CrmPage>
   );
+}
+
+function inferMenuplyStatus(lead) {
+  if (!lead) return "prospect";
+  if (lead.subscription_status === "active" || lead.subscription_plan) return "pro_subscriber";
+  if (lead.is_verified_profile || lead.claim_status === "claimed") return "verified_free";
+  if (lead.has_live_menu || lead.onboarding_status === "menu_uploaded") return "menu_uploaded";
+  if (lead.pipeline_stage === "qualified" || lead.status === "interested") return "started_signup";
+  if (lead.status === "inactive") return "inactive";
+  if (lead.status === "lost") return "disqualified";
+  return "prospect";
 }
 
 function Field({ label, value }) {

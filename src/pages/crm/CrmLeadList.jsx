@@ -115,21 +115,21 @@ export default function CrmLeadList() {
           columns={[
             {
               key: "lead_name",
-              label: "Lead",
+              label: "Restaurant",
               render: (row) => (
                 <div>
-                  <Link to={`/admin/crm/leads/${row.id}`} style={{ color: "#194b3a", fontWeight: 700, textDecoration: "none" }}>{row.lead_name}</Link>
-                  <div style={{ marginTop: 4, fontSize: 12, color: "#64748b" }}>{row.restaurant_name || "Unlinked restaurant"}</div>
+                  <Link to={`/crm/leads/${row.id}`} style={{ color: "#194b3a", fontWeight: 700, textDecoration: "none" }}>{row.restaurant_name || row.lead_name}</Link>
+                  <div style={{ marginTop: 4, fontSize: 12, color: "#64748b" }}>{row.lead_name}</div>
                 </div>
               ),
             },
-            { key: "pipeline_stage", label: "Stage", render: (row) => <Badge type="stage" value={row.pipeline_stage} /> },
+            { key: "email", label: "Contact email", render: (row) => row.email || "—" },
+            { key: "market", label: "Market", render: (row) => row.market_name || row.market_code || "—" },
             { key: "status", label: "Status", render: (row) => <Badge type="status" value={row.status} /> },
-            { key: "priority", label: "Priority", render: (row) => <Badge type="priority" value={row.priority} /> },
             { key: "source", label: "Source" },
-            { key: "subscription_status", label: "Subscription", render: (row) => <Badge type="account" value={row.subscription_status} /> },
+            { key: "last_activity_at", label: "Last activity", render: (row) => formatDateTime(row.last_activity_at || row.updated_at) },
             { key: "next_follow_up_at", label: "Next follow-up", render: (row) => formatDateTime(row.next_follow_up_at) },
-            { key: "updated_at", label: "Updated", render: (row) => formatDateTime(row.updated_at) },
+            { key: "subscription_plan", label: "Plan", render: (row) => row.subscription_plan || row.subscription_plan_code || "—" },
           ]}
           emptyLabel="No CRM leads found for the current filters."
         />
