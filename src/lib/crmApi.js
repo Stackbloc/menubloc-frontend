@@ -37,6 +37,7 @@ export const getCrmLead = (leadId) => get(`/api/crm/leads/${leadId}`);
 export const createCrmLead = (body) => post("/api/crm/leads", body);
 export const updateCrmLead = (leadId, body) => put(`/api/crm/leads/${leadId}`, body);
 export const updateCrmLeadStage = (leadId, body) => post(`/api/crm/leads/${leadId}/stage`, body);
+export const updateCrmLeadStatus = (leadId, body) => post(`/api/crm/leads/${leadId}/status`, body);
 export const linkCrmLeadRestaurant = (leadId, restaurant_id) => post(`/api/crm/leads/${leadId}/link-restaurant`, { restaurant_id });
 export const createCrmLeadActivity = (leadId, body) => post(`/api/crm/leads/${leadId}/activities`, body);
 export const createCrmLeadTask = (leadId, body) => post(`/api/crm/leads/${leadId}/tasks`, body);

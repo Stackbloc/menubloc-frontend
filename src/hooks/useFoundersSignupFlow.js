@@ -105,6 +105,7 @@ export function useFoundersSignupFlow({ urlCity = "", urlState = "" } = {}) {
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
         phone: form.phone.trim() || null,
+        signup_source: "founders_national",
         legal_acceptances: [
           { document_key: "merchant_terms", document_version: LEGAL_VERSIONS.merchantTerms },
           { document_key: "privacy_policy", document_version: LEGAL_VERSIONS.privacyPolicy },
