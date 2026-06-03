@@ -650,7 +650,7 @@ function ItemDetailSheet({
           <div style={{ width: 36, height: 4, borderRadius: 2, background: "#374151" }} />
         </div>
 
-        <div style={{ padding: "4px 20px 48px" }}>
+        <div style={{ padding: "4px 20px 96px" }}>
 
           {/* Name + badges */}
           <div style={{ marginBottom: 6 }}>
