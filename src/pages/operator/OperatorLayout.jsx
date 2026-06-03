@@ -18,6 +18,8 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { getSensitiveSession, verifyOwnerPin } from "../../lib/operatorApi.js";
+import HelpSearchButton from "../../components/helpSearch/HelpSearchButton.jsx";
+import HelpSearchDrawer from "../../components/helpSearch/HelpSearchDrawer.jsx";
 import "./operatorResponsive.css";
 
 // ── Sidebar width ────────────────────────────────────────────────────────
@@ -333,10 +335,10 @@ export default function OperatorLayout({ title, children }) {
     { to: "/operator/my-account", label: t("operator.nav.myAccount", "My Account"), icon: "◈" },
   ]), [t]);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [helpSearchOpen, setHelpSearchOpen] = useState(false);
 
   // PIN gate state
   const [pinTarget, setPinTarget] = useState(null);   // route string to navigate to after PIN
-  const [sensitiveReady, setSensitiveReady] = useState(false); // optimistic cache
 
   const role = selectedRestaurant?.role || "staff";
   const rid = selectedRestaurant?.id;
@@ -349,6 +351,7 @@ export default function OperatorLayout({ title, children }) {
   const showBusiness = role === "owner" || role === "manager";
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMobileNavOpen(false);
   }, [location.pathname, location.search]);
 
@@ -367,7 +370,7 @@ export default function OperatorLayout({ title, children }) {
         navigate(targetRoute);
         return;
       }
-    } catch (_) {
+    } catch {
       // Fall through to PIN gate
     }
     setPinTarget(targetRoute);
@@ -376,7 +379,6 @@ export default function OperatorLayout({ title, children }) {
   function handlePinSuccess() {
     const target = pinTarget;
     setPinTarget(null);
-    setSensitiveReady(true);
     if (target) navigate(target);
   }
 
@@ -607,6 +609,8 @@ export default function OperatorLayout({ title, children }) {
           onClose={() => setPinTarget(null)}
         />
       )}
+      <HelpSearchButton onClick={() => setHelpSearchOpen(true)} />
+      <HelpSearchDrawer isOpen={helpSearchOpen} onClose={() => setHelpSearchOpen(false)} />
     </div>
   );
 }

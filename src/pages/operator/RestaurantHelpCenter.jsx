@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
@@ -8,6 +7,12 @@ import {
   getHelpKnownIssues,
   getTickets,
 } from "../../lib/operatorApi.js";
+import {
+  logKnowledgeBaseArticleClick,
+  logKnowledgeBaseEscalation,
+  searchKnowledgeBase,
+  submitKnowledgeBaseFeedback,
+} from "../../lib/knowledgeBaseApi.js";
 
 const cardStyle = {
   background: "#fff",
@@ -33,6 +38,17 @@ const textareaStyle = {
   ...inputStyle,
   minHeight: 120,
   resize: "vertical",
+};
+
+const feedbackButtonStyle = {
+  border: "1px solid #d7deea",
+  borderRadius: 999,
+  background: "#fff",
+  color: "#475467",
+  padding: "7px 11px",
+  fontSize: 12,
+  fontWeight: 800,
+  cursor: "pointer",
 };
 
 const TICKET_CATEGORIES = [
@@ -666,6 +682,10 @@ function flattenArticles(sections) {
   );
 }
 
+function normalizeArticleKey(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 function SectionTitle({ eyebrow, title, subcopy }) {
   return (
     <div style={{ marginBottom: 16 }}>
@@ -690,10 +710,15 @@ function formatTicketDate(value) {
 }
 
 export default function RestaurantHelpCenter() {
-  const { t } = useLanguage();
   const { selectedRestaurant, restaurants } = useOperator();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchId, setSearchId] = useState(null);
+  const [searchMessage, setSearchMessage] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [searchFeedbackSent, setSearchFeedbackSent] = useState(false);
   const [issues, setIssues] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -757,6 +782,11 @@ export default function RestaurantHelpCenter() {
     return filteredArticles.find((article) => article.id === activeArticleId) || filteredArticles[0] || null;
   }, [activeArticleId, filteredArticles]);
 
+  const articleByTitle = useMemo(() => {
+    const entries = flattenArticles(OPERATIONS_SECTIONS).map((article) => [normalizeArticleKey(article.title), article]);
+    return new Map(entries);
+  }, []);
+
   const openTickets = useMemo(
     () => tickets.filter((ticket) => !["closed", "resolved"].includes(String(ticket.status || "").toLowerCase())),
     [tickets]
@@ -770,6 +800,50 @@ export default function RestaurantHelpCenter() {
     setActiveArticleId(articleId);
     if (sectionId) setExpandedSectionId(sectionId);
     document.getElementById("operations-article-view")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function handleKnowledgeBaseSearch(event) {
+    event.preventDefault();
+    const searchText = query.trim();
+    if (!searchText || searchLoading) return;
+
+    setSearchLoading(true);
+    setSearchError("");
+    setSearchResults([]);
+    setSearchId(null);
+    setSearchMessage("");
+    setSearchFeedbackSent(false);
+
+    try {
+      const response = await searchKnowledgeBase(searchText);
+      setSearchResults(response.articles || []);
+      setSearchId(response.search_id || null);
+      setSearchMessage(response.message || "");
+    } catch (err) {
+      setSearchError(err.message || "Knowledge Base search is temporarily unavailable.");
+    } finally {
+      setSearchLoading(false);
+    }
+  }
+
+  async function handleSearchFeedback(feedback) {
+    if (!searchId || searchFeedbackSent) return;
+    setSearchFeedbackSent(true);
+    try {
+      await submitKnowledgeBaseFeedback(searchId, feedback);
+    } catch {
+      setSearchFeedbackSent(false);
+    }
+  }
+
+  async function handleArticleResultClick(article) {
+    if (!searchId || !article?.slug) return;
+    await logKnowledgeBaseArticleClick(searchId, article.slug).catch(() => {});
+  }
+
+  async function handleSearchEscalation() {
+    if (searchId) await logKnowledgeBaseEscalation(searchId).catch(() => {});
+    jumpToSupport();
   }
 
   const quickActions = [
@@ -896,17 +970,109 @@ export default function RestaurantHelpCenter() {
 
         <section style={cardStyle}>
           <SectionTitle
-            eyebrow="Search"
+            eyebrow="Help Search"
             title="Search the operations center"
-            subcopy="Find setup guidance, workflows, troubleshooting, and hardware recommendations fast."
+            subcopy="Search Menuply help articles. Matching manual Knowledge Base content still appears below."
           />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search orders, printer setup, owner PIN, menu tools, or troubleshooting"
-            style={inputStyle}
-          />
+          <form onSubmit={handleKnowledgeBaseSearch} style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search uploading menus, pausing orders, QR stickers, deals, or billing"
+              style={inputStyle}
+              maxLength={400}
+            />
+            <button
+              type="submit"
+              disabled={searchLoading || !query.trim()}
+              style={{
+                border: "none",
+                borderRadius: 12,
+                background: "#1F4E3D",
+                color: "#fff",
+                padding: "0 18px",
+                fontSize: 14,
+                fontWeight: 800,
+                cursor: searchLoading || !query.trim() ? "default" : "pointer",
+                opacity: searchLoading || !query.trim() ? 0.65 : 1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {searchLoading ? "Searching..." : "Search"}
+            </button>
+          </form>
+          {searchError ? (
+            <div style={{ marginTop: 14, border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 12, padding: "12px 14px", fontSize: 13 }}>
+              {searchError}
+            </div>
+          ) : null}
+          {searchMessage ? (
+            <div style={{ marginTop: 14, border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 12, padding: "12px 14px", fontSize: 13 }}>
+              {searchMessage}
+            </div>
+          ) : null}
+          {searchResults.length ? (
+            <div style={{ marginTop: 16, border: "1px solid #d7deea", background: "#fbfcfd", borderRadius: 14, padding: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: "#1F4E3D", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+                Matching Articles
+              </div>
+              <div style={{ display: "grid", gap: 10 }}>
+                {searchResults.map((article) => {
+                  const localArticle = articleByTitle.get(normalizeArticleKey(article.title));
+                  return (
+                    <div key={article.slug || article.title} style={{ border: "1px solid #e4e9f0", background: "#fff", borderRadius: 12, padding: 12 }}>
+                      <div style={{ fontSize: 12, color: "#667085", fontWeight: 800, marginBottom: 4 }}>{article.category}</div>
+                      {localArticle ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleArticleResultClick(article);
+                            openArticle(localArticle.id, localArticle.sectionId);
+                          }}
+                          style={{
+                            border: "none",
+                            padding: 0,
+                            background: "transparent",
+                            color: "#1F4E3D",
+                            fontSize: 15,
+                            fontWeight: 900,
+                            cursor: "pointer",
+                            textAlign: "left",
+                          }}
+                        >
+                          {article.title}
+                        </button>
+                      ) : (
+                        <div style={{ color: "#0f1720", fontSize: 15, fontWeight: 900 }}>{article.title}</div>
+                      )}
+                      {article.summary ? (
+                        <div style={{ fontSize: 13, lineHeight: 1.5, color: "#475467", marginTop: 6 }}>{article.summary}</div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 14 }}>
+                <button type="button" onClick={() => handleSearchFeedback("up")} disabled={!searchId || searchFeedbackSent} style={feedbackButtonStyle}>
+                  Helpful
+                </button>
+                <button type="button" onClick={() => handleSearchFeedback("down")} disabled={!searchId || searchFeedbackSent} style={feedbackButtonStyle}>
+                  Not helpful
+                </button>
+                <button type="button" onClick={handleSearchEscalation} style={{ ...feedbackButtonStyle, color: "#1F4E3D" }}>
+                  Contact Support
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {!searchResults.length && searchId ? (
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 14 }}>
+              <button type="button" onClick={handleSearchEscalation} style={{ ...feedbackButtonStyle, color: "#1F4E3D" }}>
+                Contact Support
+              </button>
+            </div>
+          ) : null}
         </section>
 
         <section style={cardStyle}>
