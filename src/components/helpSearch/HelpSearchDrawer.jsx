@@ -1,9 +1,9 @@
 import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  answerKnowledgeBase,
   logKnowledgeBaseArticleClick,
   logKnowledgeBaseEscalation,
-  searchKnowledgeBase,
   submitKnowledgeBaseFeedback,
 } from "../../lib/knowledgeBaseApi.js";
 
@@ -51,8 +51,10 @@ function ArticleResult({ article, searchId }) {
 export default function HelpSearchDrawer({ isOpen, onClose }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  const [answer, setAnswer] = useState("");
   const [searchId, setSearchId] = useState(null);
   const [message, setMessage] = useState("");
+  const [escalated, setEscalated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const feedbackSent = useRef(false);
@@ -65,15 +67,19 @@ export default function HelpSearchDrawer({ isOpen, onClose }) {
     setError("");
     setMessage("");
     setResults([]);
+    setAnswer("");
     setSearchId(null);
+    setEscalated(false);
     feedbackSent.current = false;
     setIsLoading(true);
 
     try {
-      const response = await searchKnowledgeBase(text);
+      const response = await answerKnowledgeBase(text);
       setSearchId(response.search_id || null);
       setResults(response.articles || []);
+      setAnswer(response.answer || "");
       setMessage(response.message || "");
+      setEscalated(Boolean(response.escalated));
     } catch (err) {
       setError(
         err?.status >= 500
@@ -148,17 +154,24 @@ export default function HelpSearchDrawer({ isOpen, onClose }) {
         <div style={{ overflowY: "auto", padding: 18, display: "grid", alignContent: "start", gap: 12 }}>
           {isLoading ? <div style={{ fontSize: 13, color: "#667085" }}>Searching the Knowledge Base...</div> : null}
           {error ? <div style={{ fontSize: 13, color: "#991b1b" }}>{error}</div> : null}
+          {answer ? (
+            <div style={{ border: "1px solid #cfe7da", background: "#f3fbf7", color: "#163f31", borderRadius: 12, padding: "12px 14px", fontSize: 13, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: "#1F4E3D", marginBottom: 6 }}>AI Answer</div>
+              {answer}
+            </div>
+          ) : null}
           {message ? (
             <div style={{ border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", borderRadius: 12, padding: "12px 14px", fontSize: 13, lineHeight: 1.5 }}>
               {message}
             </div>
           ) : null}
+          {results.length ? <div style={{ fontSize: 12, fontWeight: 900, color: "#1F4E3D", marginTop: 2 }}>Source Articles</div> : null}
           {results.map((article) => <ArticleResult key={article.slug} article={article} searchId={searchId} />)}
           {searchId ? (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
               <button type="button" onClick={() => handleFeedback("up")} style={feedbackButtonStyle}>Helpful</button>
               <button type="button" onClick={() => handleFeedback("down")} style={feedbackButtonStyle}>Not helpful</button>
-              <Link to={SUPPORT_PATH} onClick={handleEscalation} style={{ ...feedbackButtonStyle, color: "#1F4E3D", textDecoration: "none" }}>
+              <Link to={SUPPORT_PATH} onClick={handleEscalation} style={{ ...feedbackButtonStyle, color: escalated ? "#991b1b" : "#1F4E3D", textDecoration: "none" }}>
                 Contact Support
               </Link>
             </div>
