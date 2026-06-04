@@ -647,6 +647,8 @@ function buildWaiterOptionRows(rows, dimension, candidates) {
       option.count < total &&
       total - option.count >= WAITER_MIN_REMOVED_ITEMS
     ))
+    // Block raw numeric values (e.g. protein grams leaked from chips.nutrition_chip)
+    .filter((option) => !/^\$?\d+(\.\d+)?(g|mg|kcal|cal|ml|oz)?$/i.test(String(option.label).trim()))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
 
