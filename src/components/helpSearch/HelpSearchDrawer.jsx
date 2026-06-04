@@ -75,7 +75,11 @@ export default function HelpSearchDrawer({ isOpen, onClose }) {
       setResults(response.articles || []);
       setMessage(response.message || "");
     } catch (err) {
-      setError(err.message || "Knowledge Base search is temporarily unavailable.");
+      setError(
+        err?.status >= 500
+          ? "Knowledge Base search is temporarily unavailable. Please contact Menuply support."
+          : err.message || "Knowledge Base search is temporarily unavailable."
+      );
     } finally {
       setIsLoading(false);
     }

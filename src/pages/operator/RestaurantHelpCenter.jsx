@@ -820,7 +820,11 @@ export default function RestaurantHelpCenter() {
       setSearchId(response.search_id || null);
       setSearchMessage(response.message || "");
     } catch (err) {
-      setSearchError(err.message || "Knowledge Base search is temporarily unavailable.");
+      setSearchError(
+        err?.status >= 500
+          ? "Knowledge Base search is temporarily unavailable. Please contact Menuply support."
+          : err.message || "Knowledge Base search is temporarily unavailable."
+      );
     } finally {
       setSearchLoading(false);
     }
