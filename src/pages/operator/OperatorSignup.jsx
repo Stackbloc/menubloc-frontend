@@ -12,6 +12,7 @@ import React, { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
+import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
 import {
   AuthPageFrame,
   FormError,
@@ -33,6 +34,7 @@ export default function OperatorSignup() {
     password: "",
     confirm_password: "",
   });
+  const [legalConsent, setLegalConsent] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -68,6 +70,9 @@ export default function OperatorSignup() {
     } else if (fields.password !== fields.confirm_password) {
       errors.confirm_password = t("auth.passwordsDoNotMatch", "Passwords do not match");
     }
+    if (!legalConsent) {
+      errors.legalConsent = "You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.";
+    }
 
     return errors;
   }
@@ -89,6 +94,7 @@ export default function OperatorSignup() {
         fields.email.trim(),
         fields.password,
         fields.full_name.trim() || undefined,
+        buildLegalConsentPayload(),
       );
       const dest = result.restaurants?.length === 0 ? "/operator/claim" : "/operator";
       if (result.operator?.email_verified !== true) {
@@ -176,6 +182,30 @@ export default function OperatorSignup() {
           password={fields.password}
           confirmPassword={fields.confirm_password}
         />
+
+        <label style={styles.checkboxRow}>
+          <input
+            type="checkbox"
+            checked={legalConsent}
+            onChange={(event) => {
+              setLegalConsent(event.target.checked);
+              setFieldErrors((cur) => ({ ...cur, legalConsent: undefined }));
+            }}
+            style={styles.checkbox}
+          />
+          <span style={styles.checkboxLabel}>
+            I agree to the{" "}
+            <Link to="/terms" target="_blank" rel="noreferrer" style={styles.link}>
+              Terms of Use
+            </Link>
+            {" "}and{" "}
+            <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.link}>
+              Privacy Policy
+            </Link>
+            {" "}and consent to receive electronic communications from Menuply regarding my account, orders, services, and important updates.
+          </span>
+        </label>
+        {fieldErrors.legalConsent ? <div style={styles.fieldError}>{fieldErrors.legalConsent}</div> : null}
 
         <FormError error={formError} />
 

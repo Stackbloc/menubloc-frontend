@@ -13,7 +13,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { BrandLockup } from "../components/BrandLogo.jsx";
-import { LEGAL_VERSIONS } from "../content/legal.js";
+import { buildLegalConsentPayload } from "../lib/legalConsent.js";
 import {
   persistRestaurantOnboardingState,
   syncRestaurantOnboardingProgress,
@@ -267,10 +267,7 @@ export default function RestaurantSignup() {
     state: "",
     phone: "",
   });
-  const [agreements, setAgreements] = useState({
-    merchantTerms: false,
-    privacyPolicy: false,
-  });
+  const [agreements, setAgreements] = useState({ legalConsent: false });
 
   // Sync email from operator once the async session resolves.
   // useState initializer runs before the session loads, so form.email
@@ -352,8 +349,9 @@ export default function RestaurantSignup() {
     if (!form.restaurant_name.trim()) errors.restaurant_name = t("signup.error.restaurantNameRequired");
     if (!form.city.trim()) errors.city = "City is required.";
     if (!form.state.trim()) errors.state = "State is required.";
-    if (!agreements.merchantTerms) errors.merchantTerms = "You must agree to the Merchant Terms of Service.";
-    if (!agreements.privacyPolicy) errors.privacyPolicy = "You must agree to the Privacy Policy.";
+    if (!agreements.legalConsent) {
+      errors.legalConsent = "You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.";
+    }
 
     return errors;
   }
@@ -378,16 +376,7 @@ export default function RestaurantSignup() {
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
         phone: form.phone.trim() || null,
-        legal_acceptances: [
-          {
-            document_key: "merchant_terms",
-            document_version: LEGAL_VERSIONS.merchantTerms,
-          },
-          {
-            document_key: "privacy_policy",
-            document_version: LEGAL_VERSIONS.privacyPolicy,
-          },
-        ],
+        ...buildLegalConsentPayload(),
       };
       if (!isOperatorAuthenticated) {
         payload.password = form.password;
@@ -660,38 +649,24 @@ export default function RestaurantSignup() {
           <label style={styles.checkboxRow}>
             <input
               type="checkbox"
-              name="merchantTerms"
-              checked={agreements.merchantTerms}
+              name="legalConsent"
+              checked={agreements.legalConsent}
               onChange={handleAgreementChange}
               style={styles.checkbox}
             />
             <span style={styles.checkboxLabel}>
-              {t("signup.account.agreeMerchantTermsPrefix", "I agree to the")}{" "}
-              <Link to="/restaurant/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>
-                {t("signup.account.merchantTermsLink", "Merchant Terms of Service")}
+              I agree to the{" "}
+              <Link to="/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>
+                Terms of Use
               </Link>
-              .
-            </span>
-          </label>
-          {fieldErrors.merchantTerms ? <div style={styles.fieldError}>{fieldErrors.merchantTerms}</div> : null}
-
-          <label style={styles.checkboxRow}>
-            <input
-              type="checkbox"
-              name="privacyPolicy"
-              checked={agreements.privacyPolicy}
-              onChange={handleAgreementChange}
-              style={styles.checkbox}
-            />
-            <span style={styles.checkboxLabel}>
-              {t("signup.account.agreePrivacyPrefix", "I agree to the")}{" "}
+              {" "}and{" "}
               <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.legalLink}>
-                {t("signup.account.privacyLink", "Privacy Policy")}
+                Privacy Policy
               </Link>
-              .
+              {" "}and consent to receive electronic communications from Menuply regarding my account, orders, services, and important updates.
             </span>
           </label>
-          {fieldErrors.privacyPolicy ? <div style={styles.fieldError}>{fieldErrors.privacyPolicy}</div> : null}
+          {fieldErrors.legalConsent ? <div style={styles.fieldError}>{fieldErrors.legalConsent}</div> : null}
         </div>
 
         <button type="submit" style={submitBtnStyle(submitting || !selectedPlanLabel || operatorLoading)} disabled={submitting || !selectedPlanLabel || operatorLoading}>

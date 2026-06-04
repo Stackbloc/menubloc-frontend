@@ -54,8 +54,8 @@ const put = (path, body) => req(path, { method: "PUT", body: JSON.stringify(body
 // ── Auth / Session ────────────────────────────────────────────────────────
 export const getOperatorSession = () => get("/operator/auth/me");
 export const loginOperator = (email, password) => post("/operator/auth/login", { email, password });
-export const registerOperator = (email, password, full_name) =>
-  post("/operator/auth/register", { email, password, full_name });
+export const registerOperator = (email, password, full_name, consent = {}) =>
+  post("/operator/auth/register", { email, password, full_name, ...consent });
 export const logoutOperator = () => post("/operator/auth/logout", {});
 export const sendOperatorEmailCode = (email) =>
   post("/restaurant-auth/send-email-code", { email });

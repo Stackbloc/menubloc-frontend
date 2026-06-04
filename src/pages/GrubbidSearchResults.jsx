@@ -702,6 +702,7 @@ function buildWaiterInventory(rows) {
 
       inventory.push({
         ...row,
+        __waiterSourceRow: row,
         item_name: itemName,
         search_display_name: itemName,
         restaurant_name: restaurantName || row?.restaurant_name || "",
@@ -1757,8 +1758,17 @@ export default function GrubbidSearchResults() {
 
   const waiterFilteredRows = useMemo(() => {
     if (!waiterSelection) return rows;
-    return rows.filter((row) => waiterSelection.test(row));
-  }, [rows, waiterSelection]);
+    const matchingRows = new Set(
+      waiterState.inventory
+        .filter((row) => waiterSelection.test(row))
+        .map((row) => row.__waiterSourceRow)
+        .filter(Boolean)
+    );
+    return rows.filter((row) => matchingRows.has(row));
+  }, [rows, waiterSelection, waiterState.inventory]);
+
+  const waiterDisplayOptions = waiterState.options;
+
   const dishRows = useMemo(() => waiterFilteredRows.filter(isDishRow), [waiterFilteredRows]);
   const restaurantOnlyRows = useMemo(() => waiterFilteredRows.filter((r) => !isDishRow(r)), [waiterFilteredRows]);
 
@@ -2020,7 +2030,7 @@ export default function GrubbidSearchResults() {
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
               filteredResultCount={visibleResultCountForWaiter}
-              refinementOptions={waiterState.options}
+              refinementOptions={waiterDisplayOptions}
               selectedRefinement={waiterSelection}
               onSelectRefinement={setWaiterSelection}
             />
@@ -2069,7 +2079,7 @@ export default function GrubbidSearchResults() {
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
               filteredResultCount={visibleResultCountForWaiter}
-              refinementOptions={waiterState.options}
+              refinementOptions={waiterDisplayOptions}
               selectedRefinement={waiterSelection}
               onSelectRefinement={setWaiterSelection}
             />

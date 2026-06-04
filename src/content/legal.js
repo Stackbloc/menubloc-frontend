@@ -1,7 +1,7 @@
-export const LEGAL_EFFECTIVE_DATE = "2026-05-06";
+export const LEGAL_EFFECTIVE_DATE = "2026-06-03";
 
 export const LEGAL_VERSIONS = {
-  consumerTerms: "consumer_terms_v2026_05_06",
+  consumerTerms: "terms_of_use_v2026_06_03",
   privacyPolicy: "privacy_policy_v2026_04_09",
   merchantTerms: "merchant_terms_v2026_05_31",
   subscriptionTerms: "subscription_terms_v2026_04_09",
@@ -70,6 +70,16 @@ export const TERMS_DOCUMENT = {
         "When you submit an order through Menuply, you authorize the applicable restaurant to charge you for the items, taxes, and other disclosed amounts associated with that order.",
         "Payment processing is provided through Stripe and related payment service providers. By completing a purchase, you also authorize the processing, settlement, and related fraud-prevention steps required to complete the transaction.",
         "Displayed menu availability, pricing, and item details may change before a restaurant accepts and fulfills your order. A restaurant may reject, modify, or cancel an order if an item is unavailable, pricing is incorrect, or the order cannot be fulfilled.",
+      ],
+    },
+    {
+      heading: "Consent to Electronic Communications",
+      paragraphs: [
+        "By creating an account, submitting your information, joining a waitlist, claiming a restaurant profile, placing an order, subscribing to a service, or otherwise using Menuply, you consent to receive communications from Menuply electronically.",
+        "These communications may include account and security notifications, order confirmations and updates, restaurant profile and menu management notices, billing and payment communications, customer support responses, product updates, service-related alerts, operational notices, and other communications related to your use of Menuply.",
+        "You agree that electronic communications, including emails, text messages, in-app notifications, and website notices, satisfy any legal requirement that such communications be provided in writing.",
+        "You may opt out of promotional marketing communications at any time by using the unsubscribe link contained in marketing emails or by adjusting your communication preferences where available. However, Menuply may continue to send transactional, operational, legal, security, billing, and account-related communications that are necessary to provide the service.",
+        "Message and data rates may apply to SMS or mobile communications depending on your mobile carrier and service plan.",
       ],
     },
     {

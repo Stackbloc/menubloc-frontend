@@ -8,9 +8,9 @@ import {
   getTickets,
 } from "../../lib/operatorApi.js";
 import {
+  answerKnowledgeBase,
   logKnowledgeBaseArticleClick,
   logKnowledgeBaseEscalation,
-  searchKnowledgeBase,
   submitKnowledgeBaseFeedback,
 } from "../../lib/knowledgeBaseApi.js";
 
@@ -714,8 +714,10 @@ export default function RestaurantHelpCenter() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [searchAnswer, setSearchAnswer] = useState("");
   const [searchId, setSearchId] = useState(null);
   const [searchMessage, setSearchMessage] = useState("");
+  const [searchEscalated, setSearchEscalated] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [searchFeedbackSent, setSearchFeedbackSent] = useState(false);
@@ -810,15 +812,19 @@ export default function RestaurantHelpCenter() {
     setSearchLoading(true);
     setSearchError("");
     setSearchResults([]);
+    setSearchAnswer("");
     setSearchId(null);
     setSearchMessage("");
+    setSearchEscalated(false);
     setSearchFeedbackSent(false);
 
     try {
-      const response = await searchKnowledgeBase(searchText);
+      const response = await answerKnowledgeBase(searchText);
       setSearchResults(response.articles || []);
+      setSearchAnswer(response.answer || "");
       setSearchId(response.search_id || null);
       setSearchMessage(response.message || "");
+      setSearchEscalated(Boolean(response.escalated));
     } catch (err) {
       setSearchError(
         err?.status >= 500
@@ -1016,10 +1022,18 @@ export default function RestaurantHelpCenter() {
               {searchMessage}
             </div>
           ) : null}
+          {searchAnswer ? (
+            <div style={{ marginTop: 16, border: "1px solid #cfe7da", background: "#f3fbf7", color: "#163f31", borderRadius: 14, padding: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: "#1F4E3D", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+                AI Answer
+              </div>
+              <div style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{searchAnswer}</div>
+            </div>
+          ) : null}
           {searchResults.length ? (
             <div style={{ marginTop: 16, border: "1px solid #d7deea", background: "#fbfcfd", borderRadius: 14, padding: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 900, color: "#1F4E3D", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
-                Matching Articles
+                Source Articles
               </div>
               <div style={{ display: "grid", gap: 10 }}>
                 {searchResults.map((article) => {
@@ -1064,7 +1078,7 @@ export default function RestaurantHelpCenter() {
                 <button type="button" onClick={() => handleSearchFeedback("down")} disabled={!searchId || searchFeedbackSent} style={feedbackButtonStyle}>
                   Not helpful
                 </button>
-                <button type="button" onClick={handleSearchEscalation} style={{ ...feedbackButtonStyle, color: "#1F4E3D" }}>
+                <button type="button" onClick={handleSearchEscalation} style={{ ...feedbackButtonStyle, color: searchEscalated ? "#991b1b" : "#1F4E3D" }}>
                   Contact Support
                 </button>
               </div>

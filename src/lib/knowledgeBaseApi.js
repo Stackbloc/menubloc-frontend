@@ -23,6 +23,10 @@ export function searchKnowledgeBase(query, limit = 5) {
   return post("/operator/help/search", { query, limit });
 }
 
+export function answerKnowledgeBase(query, limit = 5) {
+  return post("/operator/help/answer", { query, limit });
+}
+
 export function logKnowledgeBaseArticleClick(searchId, articleSlug) {
   return post(`/operator/help/search/${searchId}/click`, { article_slug: articleSlug });
 }

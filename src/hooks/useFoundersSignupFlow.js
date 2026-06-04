@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LEGAL_VERSIONS } from "../content/legal.js";
+import { buildLegalConsentPayload } from "../lib/legalConsent.js";
 import {
   persistRestaurantOnboardingState,
   syncRestaurantOnboardingProgress,
@@ -40,8 +40,9 @@ function validate(form, agreements) {
   else if (form.password !== form.confirmPassword) errors.confirmPassword = "Passwords do not match.";
   if (!form.city.trim()) errors.city = "City is required.";
   if (!form.state.trim()) errors.state = "State is required.";
-  if (!agreements.merchantTerms) errors.merchantTerms = "You must agree to the Merchant Terms of Service.";
-  if (!agreements.privacyPolicy) errors.privacyPolicy = "You must agree to the Privacy Policy.";
+  if (!agreements.legalConsent) {
+    errors.legalConsent = "You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.";
+  }
   return errors;
 }
 
@@ -63,10 +64,7 @@ export function useFoundersSignupFlow({ urlCity = "", urlState = "" } = {}) {
     state: urlState,
     phone: "",
   });
-  const [agreements, setAgreements] = useState({
-    merchantTerms: false,
-    privacyPolicy: false,
-  });
+  const [agreements, setAgreements] = useState({ legalConsent: false });
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [serverErrorDetail, setServerErrorDetail] = useState("");
@@ -106,10 +104,7 @@ export function useFoundersSignupFlow({ urlCity = "", urlState = "" } = {}) {
         state: form.state.trim().toUpperCase(),
         phone: form.phone.trim() || null,
         signup_source: "founders_national",
-        legal_acceptances: [
-          { document_key: "merchant_terms", document_version: LEGAL_VERSIONS.merchantTerms },
-          { document_key: "privacy_policy", document_version: LEGAL_VERSIONS.privacyPolicy },
-        ],
+        ...buildLegalConsentPayload(),
       };
 
       const res = await fetch(`${API}/owner/profile`, {
