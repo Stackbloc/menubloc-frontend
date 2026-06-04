@@ -555,6 +555,23 @@ export const styles = {
     opacity: 0.7,
     cursor: "wait",
   },
+  checkboxRow: {
+    display: "grid",
+    gridTemplateColumns: "18px 1fr",
+    gap: "10px",
+    alignItems: "start",
+  },
+  checkbox: {
+    width: "16px",
+    height: "16px",
+    marginTop: "2px",
+    accentColor: "#22C55E",
+  },
+  checkboxLabel: {
+    fontSize: "13px",
+    lineHeight: 1.5,
+    color: "#4B5563",
+  },
   footer: {
     textAlign: "center",
     fontSize: "14px",

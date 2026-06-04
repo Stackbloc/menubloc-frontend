@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
+import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
 import {
   AuthPageFrame,
   FormError,
@@ -22,6 +23,7 @@ export default function ConsumerSignup() {
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
+  const [legalConsent, setLegalConsent] = useState(false);
   const [formError, setFormError] = useState("");
   const [socialError, setSocialError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,10 +37,14 @@ export default function ConsumerSignup() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setFormError(t("auth.validEmailRequired", "Enter a valid email address.")); return; }
     if (!password) { setFormError(t("auth.passwordRequired", "Password is required.")); return; }
     if (password.length < 8) { setFormError("Password must be at least 8 characters."); return; }
+    if (!legalConsent) {
+      setFormError("You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.");
+      return;
+    }
 
     setLoading(true);
     try {
-      await signup({ email: email.trim(), password, confirm_password: password });
+      await signup({ email: email.trim(), password, confirm_password: password, ...buildLegalConsentPayload() });
       navigate("/account/welcome", { replace: true, state: { redirectTo } });
     } catch (error) {
       setFormError(error.message || t("auth.signUpFailed", "Sign up failed. Please try again."));
@@ -52,7 +58,11 @@ export default function ConsumerSignup() {
     setFormError("");
     setSocialError("");
     try {
-      await loginWithGoogle(credential);
+      if (!legalConsent) {
+        setSocialError("You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.");
+        return;
+      }
+      await loginWithGoogle(credential, buildLegalConsentPayload());
       navigate(redirectTo, { replace: true });
     } catch (error) {
       setSocialError(error.message || t("auth.googleSignInFailed", "Google sign-in failed. Please try again."));
@@ -96,6 +106,26 @@ export default function ConsumerSignup() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Min. 8 characters"
         />
+
+        <label style={styles.checkboxRow}>
+          <input
+            type="checkbox"
+            checked={legalConsent}
+            onChange={(event) => setLegalConsent(event.target.checked)}
+            style={styles.checkbox}
+          />
+          <span style={styles.checkboxLabel}>
+            I agree to the{" "}
+            <Link to="/terms" target="_blank" rel="noreferrer" style={styles.link}>
+              Terms of Use
+            </Link>
+            {" "}and{" "}
+            <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.link}>
+              Privacy Policy
+            </Link>
+            {" "}and consent to receive electronic communications from Menuply regarding my account, orders, services, and important updates.
+          </span>
+        </label>
 
         <FormError error={formError} />
 

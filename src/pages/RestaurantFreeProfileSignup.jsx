@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
-import { LEGAL_VERSIONS } from "../content/legal.js";
 import { resolveJoinMarketForSignup } from "../lib/joinMarketConfig.js";
+import { buildLegalConsentPayload } from "../lib/legalConsent.js";
 import {
   persistRestaurantOnboardingState,
   syncRestaurantOnboardingProgress,
@@ -63,6 +63,7 @@ export default function RestaurantFreeProfileSignup() {
   const [uploadNotice, setUploadNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [successState, setSuccessState] = useState(null);
+  const [legalConsent, setLegalConsent] = useState(false);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -104,6 +105,9 @@ export default function RestaurantFreeProfileSignup() {
     if (!form.address_line1.trim()) errors.address_line1 = "Street address is required.";
     if (!form.email.trim()) errors.email = "Owner email is required.";
     if (menuFile && !isPdfFile(menuFile)) errors.menuFile = "Please choose a PDF file.";
+    if (!legalConsent) {
+      errors.legalConsent = "You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.";
+    }
 
     return errors;
   }
@@ -162,16 +166,7 @@ export default function RestaurantFreeProfileSignup() {
         payment_required: false,
         signup_source: market.signup_source,
         profile_status: "pending",
-        legal_acceptances: [
-          {
-            document_key: "merchant_terms",
-            document_version: LEGAL_VERSIONS.merchantTerms,
-          },
-          {
-            document_key: "privacy_policy",
-            document_version: LEGAL_VERSIONS.privacyPolicy,
-          },
-        ],
+        ...buildLegalConsentPayload(),
       };
 
       const res = await fetch(`${API}/owner/profile`, {
@@ -346,6 +341,30 @@ export default function RestaurantFreeProfileSignup() {
           {fieldErrors.menuFile ? <div style={styles.fieldError}>{fieldErrors.menuFile}</div> : null}
         </div>
 
+        <label style={styles.checkboxRow}>
+          <input
+            type="checkbox"
+            checked={legalConsent}
+            onChange={(event) => {
+              setLegalConsent(event.target.checked);
+              setFieldErrors((current) => ({ ...current, legalConsent: "" }));
+            }}
+            style={styles.checkbox}
+          />
+          <span style={styles.checkboxLabel}>
+            I agree to the{" "}
+            <Link to="/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>
+              Terms of Use
+            </Link>
+            {" "}and{" "}
+            <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.legalLink}>
+              Privacy Policy
+            </Link>
+            {" "}and consent to receive electronic communications from Menuply regarding my account, orders, services, and important updates.
+          </span>
+        </label>
+        {fieldErrors.legalConsent ? <div style={styles.fieldError}>{fieldErrors.legalConsent}</div> : null}
+
         <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
           {submitting ? "Starting profile..." : "Join the Network →"}
         </button>
@@ -486,6 +505,28 @@ const styles = {
   },
   fieldError: { fontSize: 12, color: "#fca5a5", marginTop: 5 },
   helperText: { fontSize: 13, color: "rgba(255, 255, 255, 0.72)", marginTop: 8, lineHeight: 1.5 },
+  checkboxRow: {
+    display: "grid",
+    gridTemplateColumns: "18px 1fr",
+    gap: 10,
+    alignItems: "start",
+    margin: "0 0 18px",
+  },
+  checkbox: {
+    width: 16,
+    height: 16,
+    marginTop: 2,
+    accentColor: "#22C55E",
+  },
+  checkboxLabel: {
+    fontSize: 13,
+    lineHeight: 1.5,
+    color: "rgba(255, 255, 255, 0.82)",
+  },
+  legalLink: {
+    color: "#86EFAC",
+    fontWeight: 700,
+  },
   footerNote: {
     fontSize: 12,
     color: "rgba(255, 255, 255, 0.72)",

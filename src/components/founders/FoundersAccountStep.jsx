@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 
 const S = {
@@ -214,7 +213,6 @@ export default function FoundersAccountStep({
   onAgreementChange,
   onSubmit,
 }) {
-  const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -389,38 +387,22 @@ export default function FoundersAccountStep({
           <label style={S.checkboxRow}>
             <input
               type="checkbox"
-              name="merchantTerms"
-              checked={agreements.merchantTerms}
+              name="legalConsent"
+              checked={agreements.legalConsent}
               onChange={onAgreementChange}
               style={S.checkbox}
             />
             <span style={S.checkboxLabel}>
               I agree to the{" "}
               <Link
-                to="/restaurant/terms"
+                to="/terms"
                 target="_blank"
                 rel="noreferrer"
                 style={S.legalLink}
               >
-                Merchant Terms of Service
+                Terms of Use
               </Link>
-              .
-            </span>
-          </label>
-          {fieldErrors.merchantTerms ? (
-            <div style={S.fieldError}>{fieldErrors.merchantTerms}</div>
-          ) : null}
-
-          <label style={S.checkboxRow}>
-            <input
-              type="checkbox"
-              name="privacyPolicy"
-              checked={agreements.privacyPolicy}
-              onChange={onAgreementChange}
-              style={S.checkbox}
-            />
-            <span style={S.checkboxLabel}>
-              I agree to the{" "}
+              {" "}and{" "}
               <Link
                 to="/privacy"
                 target="_blank"
@@ -429,11 +411,11 @@ export default function FoundersAccountStep({
               >
                 Privacy Policy
               </Link>
-              .
+              {" "}and consent to receive electronic communications from Menuply regarding my account, orders, services, and important updates.
             </span>
           </label>
-          {fieldErrors.privacyPolicy ? (
-            <div style={S.fieldError}>{fieldErrors.privacyPolicy}</div>
+          {fieldErrors.legalConsent ? (
+            <div style={S.fieldError}>{fieldErrors.legalConsent}</div>
           ) : null}
         </div>
 

@@ -21,6 +21,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import { LEGAL_VERSIONS } from "../content/legal.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { buildLegalConsentPayload } from "../lib/legalConsent.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_KEY = "grubbid.foodtruck.signup";
@@ -375,10 +376,7 @@ export default function FoodTruckSignup() {
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreements, setAgreements] = useState({
-    merchantTerms: false,
-    privacyPolicy: false,
-  });
+  const [agreements, setAgreements] = useState({ legalConsent: false });
 
   useEffect(() => {
     if (checkoutResult === "success") {
@@ -416,8 +414,9 @@ export default function FoodTruckSignup() {
     if (!form.confirmPassword) errors.confirmPassword = "Confirm your password.";
     else if (form.password !== form.confirmPassword) errors.confirmPassword = "Passwords do not match.";
     if (!form.truck_name.trim()) errors.truck_name = "Truck name is required.";
-    if (!agreements.merchantTerms) errors.merchantTerms = "You must agree to the Merchant Terms of Service.";
-    if (!agreements.privacyPolicy) errors.privacyPolicy = "You must agree to the Privacy Policy.";
+    if (!agreements.legalConsent) {
+      errors.legalConsent = "You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.";
+    }
     return errors;
   }
 
@@ -442,16 +441,7 @@ export default function FoodTruckSignup() {
           password: form.password,
           restaurant_name: form.truck_name.trim(),
           category: "food_truck",
-          legal_acceptances: [
-            {
-              document_key: "merchant_terms",
-              document_version: LEGAL_VERSIONS.merchantTerms,
-            },
-            {
-              document_key: "privacy_policy",
-              document_version: LEGAL_VERSIONS.privacyPolicy,
-            },
-          ],
+          ...buildLegalConsentPayload(),
         }),
       });
 
@@ -661,38 +651,24 @@ export default function FoodTruckSignup() {
                   <label style={styles.checkboxRow}>
                     <input
                       type="checkbox"
-                      name="merchantTerms"
-                      checked={agreements.merchantTerms}
+                      name="legalConsent"
+                      checked={agreements.legalConsent}
                       onChange={handleAgreementChange}
                       style={styles.checkbox}
                     />
                     <span style={styles.checkboxLabel}>
                       I agree to the{" "}
-                      <Link to="/restaurant/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>
-                        Merchant Terms of Service
+                      <Link to="/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>
+                        Terms of Use
                       </Link>
-                      .
-                    </span>
-                  </label>
-                  {fieldErrors.merchantTerms ? <div style={styles.fieldError}>{fieldErrors.merchantTerms}</div> : null}
-
-                  <label style={styles.checkboxRow}>
-                    <input
-                      type="checkbox"
-                      name="privacyPolicy"
-                      checked={agreements.privacyPolicy}
-                      onChange={handleAgreementChange}
-                      style={styles.checkbox}
-                    />
-                    <span style={styles.checkboxLabel}>
-                      I agree to the{" "}
+                      {" "}and{" "}
                       <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.legalLink}>
                         Privacy Policy
                       </Link>
-                      .
+                      {" "}and consent to receive electronic communications from Menuply regarding my account, orders, services, and important updates.
                     </span>
                   </label>
-                  {fieldErrors.privacyPolicy ? <div style={styles.fieldError}>{fieldErrors.privacyPolicy}</div> : null}
+                  {fieldErrors.legalConsent ? <div style={styles.fieldError}>{fieldErrors.legalConsent}</div> : null}
                 </div>
 
                 <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>

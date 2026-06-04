@@ -82,8 +82,8 @@ export function OperatorProvider({ children }) {
     return { operator: me.operator, restaurants: me.restaurants || [] };
   }, [loadMe]);
 
-  const register = useCallback(async (email, password, full_name) => {
-    await registerOperator(email, password, full_name);
+  const register = useCallback(async (email, password, full_name, consent) => {
+    await registerOperator(email, password, full_name, consent);
     const me = await loadMe();
     return { operator: me.operator, restaurants: me.restaurants || [] };
   }, [loadMe]);

@@ -83,8 +83,8 @@ export function ConsumerProvider({ children }) {
     return data;
   }, [loadMe]);
 
-  const loginWithGoogle = useCallback(async (credential) => {
-    await loginConsumerWithGoogle(credential);
+  const loginWithGoogle = useCallback(async (credential, consent) => {
+    await loginConsumerWithGoogle(credential, consent);
     const data = await loadMe();
     return data;
   }, [loadMe]);

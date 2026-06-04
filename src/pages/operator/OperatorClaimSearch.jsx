@@ -16,6 +16,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
+import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -29,11 +30,12 @@ async function searchListings(q, city) {
   return json.results || [];
 }
 
-async function claimRestaurant(restaurantId) {
+async function claimRestaurant(restaurantId, consent) {
   const res = await fetch(`${API}/operator/claim/${restaurantId}`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(consent),
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error || "Claim failed");
@@ -66,6 +68,7 @@ export default function OperatorClaimSearch() {
   const [claiming, setClaiming] = useState(null); // restaurant id being claimed
   const [error, setError]     = useState("");
   const [success, setSuccess] = useState(null);   // claimed restaurant name
+  const [legalConsent, setLegalConsent] = useState(false);
 
   const debounceRef = useRef(null);
 
@@ -93,10 +96,14 @@ export default function OperatorClaimSearch() {
   }, [query, city]);
 
   async function handleClaim(restaurantId) {
+    if (!legalConsent) {
+      setError("Agree to the Terms of Use and Privacy Policy and consent to electronic communications before claiming a listing.");
+      return;
+    }
     setClaiming(restaurantId);
     setError("");
     try {
-      const data = await claimRestaurant(restaurantId);
+      const data = await claimRestaurant(restaurantId, buildLegalConsentPayload());
       setSuccess(data.restaurant.restaurant_name);
       await refreshRestaurants();
     } catch (e) {
@@ -233,6 +240,38 @@ export default function OperatorClaimSearch() {
           </div>
         )}
 
+        <label style={{
+          display: "grid",
+          gridTemplateColumns: "18px 1fr",
+          gap: 10,
+          alignItems: "start",
+          color: "#475467",
+          fontSize: 13,
+          lineHeight: 1.45,
+          marginBottom: 14,
+        }}>
+          <input
+            type="checkbox"
+            checked={legalConsent}
+            onChange={(event) => {
+              setLegalConsent(event.target.checked);
+              setError("");
+            }}
+            style={{ width: 16, height: 16, marginTop: 2, accentColor: "#1F4E3D" }}
+          />
+          <span>
+            I agree to the{" "}
+            <a href="/terms" target="_blank" rel="noreferrer" style={{ color: "#1F4E3D", fontWeight: 800 }}>
+              Terms of Use
+            </a>
+            {" "}and{" "}
+            <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: "#1F4E3D", fontWeight: 800 }}>
+              Privacy Policy
+            </a>
+            {" "}and consent to receive electronic communications from Menuply regarding my account, orders, services, and important updates.
+          </span>
+        </label>
+
         {/* Loading */}
         {searching && (
           <div style={{ color: "#8a9ab0", fontSize: 13, padding: "8px 0" }}>
@@ -300,13 +339,13 @@ export default function OperatorClaimSearch() {
                 ) : (
                   <button
                     onClick={() => handleClaim(r.id)}
-                    disabled={claiming === r.id}
+                    disabled={claiming === r.id || !legalConsent}
                     style={{
                       background: "#1F4E3D", color: "#fff",
                       border: "none", borderRadius: 8,
                       padding: "8px 16px", fontSize: 13, fontWeight: 700,
-                      cursor: claiming === r.id ? "not-allowed" : "pointer",
-                      opacity: claiming === r.id ? 0.65 : 1,
+                      cursor: claiming === r.id || !legalConsent ? "not-allowed" : "pointer",
+                      opacity: claiming === r.id || !legalConsent ? 0.65 : 1,
                       fontFamily: "inherit",
                       whiteSpace: "nowrap",
                     }}
