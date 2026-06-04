@@ -66,29 +66,10 @@ function useIsMobile(breakpoint = 768) {
 /* ---- Geolocation hook ---- */
 
 function SearchRefinementNudge({ displayQuery, locationLabel }) {
-  const { pathname, search } = useLocation();
-
-  function hrefFor(patch) {
-    const p = new URLSearchParams(search);
-    for (const [k, v] of Object.entries(patch)) {
-      if (v == null || v === "") p.delete(k);
-      else p.set(k, String(v));
-    }
-    const qs = p.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
-
   if (!displayQuery && !locationLabel) return null;
 
-  const refinements = [
-    { label: "Low Fat", patch: { low_fat: "true" } },
-    { label: "High Protein", patch: { high_protein: "1" } },
-    { label: "Low Sodium", patch: { low_sodium: "1" } },
-    { label: "Under $15", patch: { price_max: "15" } },
-  ];
-
   return (
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 12, lineHeight: 1.5, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 5 }}>
+    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 12, lineHeight: 1.5 }}>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
         Showing {displayQuery ? `“${displayQuery}”` : "results"}
         {locationLabel ? ` near ${locationLabel}` : ""}.
@@ -100,18 +81,6 @@ function SearchRefinementNudge({ displayQuery, locationLabel }) {
           <WaiterInsightIcon size={24} />
         </span>
       </span>
-      {refinements.map((r, i) => (
-        <React.Fragment key={r.label}>
-          {i > 0 ? ", " : null}
-          <Link
-            to={hrefFor(r.patch)}
-            style={{ color: "#22C55E", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}
-          >
-            {r.label}
-          </Link>
-        </React.Fragment>
-      ))}
-      .
     </div>
   );
 }
