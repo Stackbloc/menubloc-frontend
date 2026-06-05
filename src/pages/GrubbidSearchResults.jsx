@@ -1127,6 +1127,41 @@ function compareNullableNumbers(a, b) {
   return 0;
 }
 
+function sortByWaiterRefinement(filteredRows, refinement) {
+  if (!refinement) return filteredRows;
+  const sorted = [...filteredRows];
+
+  if (refinement.type === "nutrition" && refinement.key.includes("protein")) {
+    sorted.sort((a, b) => {
+      const pa = getWaiterProtein(a) ?? -1;
+      const pb = getWaiterProtein(b) ?? -1;
+      return pb - pa;
+    });
+  } else if (refinement.type === "commerce") {
+    if (refinement.key === "nearby") {
+      sorted.sort((a, b) => {
+        const da = getDistanceMiles(a) ?? Infinity;
+        const db = getDistanceMiles(b) ?? Infinity;
+        return da - db;
+      });
+    } else if (refinement.key === "farther_out") {
+      sorted.sort((a, b) => {
+        const da = getDistanceMiles(a) ?? -Infinity;
+        const db = getDistanceMiles(b) ?? -Infinity;
+        return db - da;
+      });
+    } else if (refinement.key.startsWith("under_") || /^\d+_plus$/.test(refinement.key)) {
+      sorted.sort((a, b) => {
+        const pa = getWaiterPriceDollars(a) ?? Infinity;
+        const pb = getWaiterPriceDollars(b) ?? Infinity;
+        return pa - pb;
+      });
+    }
+  }
+
+  return sorted;
+}
+
 function isBetterRestaurantRepresentative(nextRow, currentRow) {
   const nextDistance = getDistanceMiles(nextRow);
   const currentDistance = getDistanceMiles(currentRow);
@@ -1764,7 +1799,8 @@ export default function GrubbidSearchResults() {
         .map((row) => row.__waiterSourceRow)
         .filter(Boolean)
     );
-    return rows.filter((row) => matchingRows.has(row));
+    const filtered = rows.filter((row) => matchingRows.has(row));
+    return sortByWaiterRefinement(filtered, waiterSelection);
   }, [rows, waiterSelection, waiterState.inventory]);
 
   const waiterDisplayOptions = waiterState.options;
@@ -1792,7 +1828,16 @@ export default function GrubbidSearchResults() {
     searchMeta?.restaurant_first ||
     searchMeta?.direct_restaurant_name
   );
-  const useRestaurantGroupedRendering = restaurantIntent;
+  // Dish-first rule: grouped restaurant rendering only activates when the
+  // backend explicitly suppressed menu items (confirmed restaurant-name search)
+  // OR when restaurantIntent is set but there are no actual dish rows (cuisine
+  // keyword with no local item data — fall back to restaurant bucket cards).
+  // This prevents food queries like "pizza" or "Italian" from suppressing
+  // individual dish cards just because the query word is also a cuisine type.
+  const useRestaurantGroupedRendering = !!(
+    searchMeta?.suppress_menu_items ||
+    (restaurantIntent && dishRows.length === 0)
+  );
 
   const relaxPerRestaurantItemCap = useMemo(() => {
     if (!useRestaurantGroupedRendering) return false;
@@ -1969,10 +2014,6 @@ export default function GrubbidSearchResults() {
 
       <ActiveFilterChips filters={activeFilters} onToggle={toggleSearchFilter} />
 
-      {!loading && !err && q && hasVisibleResults ? (
-        <SearchRefinementNudge displayQuery={displayQuery} locationLabel={locationLabel} />
-      ) : null}
-
       {geoFallbackUsed && (
         <StatusMessage tone="warning">
           {t("search.geoFallback", "No results found near your location — showing all matching results instead.")}
@@ -2065,6 +2106,7 @@ export default function GrubbidSearchResults() {
                       coordinateSearchActive: hasGeoFilter === true,
                     }}
                     geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+                    activeRefinement={waiterSelection}
                   />
               );
           })}
@@ -2101,6 +2143,7 @@ export default function GrubbidSearchResults() {
                     coordinateSearchActive: hasGeoFilter === true,
                   }}
                   geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+                  activeRefinement={waiterSelection}
                 />
               );
             })}
