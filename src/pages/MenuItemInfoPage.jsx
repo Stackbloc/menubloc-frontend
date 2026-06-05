@@ -1017,7 +1017,11 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t, a
   const [similar, setSimilar] = useState(null);
   const [similarMeta, setSimilarMeta] = useState(null);
   const [failed, setFailed] = useState(false);
-  const searchSuffix = activeSearchParams?.toString() ? `?${activeSearchParams.toString()}` : "";
+  const searchSuffix = (() => {
+    const p = new URLSearchParams(activeSearchParams?.toString() || "");
+    p.set("from", "menu");
+    return `?${p.toString()}`;
+  })();
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareData, setCompareData] = useState(null);

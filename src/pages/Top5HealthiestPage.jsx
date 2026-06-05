@@ -98,7 +98,7 @@ function DishCard({ dish, rank, isMobile }) {
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <Link
-          to={`/menu-items/${dish.id}`}
+          to={`/menu-items/${dish.id}?from=menu`}
           style={{
             fontSize: isMobile ? 18 : 21,
             fontWeight: 900,
