@@ -1249,6 +1249,7 @@ export default function MenuItemDetailPage() {
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
   const fromSearch = searchParams.get("from") === "search";
+  const fromMenu   = searchParams.get("from") === "menu";
 
   const [loading,  setLoading]  = useState(true);
   const [err,      setErr]      = useState("");
@@ -1312,7 +1313,7 @@ export default function MenuItemDetailPage() {
 
         if (!cancelled) {
           setRawItem(found);
-          if (!restaurantSlug && !fromSearch) {
+          if (!restaurantSlug && !fromSearch && !fromMenu) {
             const slug =
               found?.restaurant_slug || found?.restaurant?.slug ||
               toSlug(found?.restaurant_name || found?.restaurant?.name || found?.restaurant);
@@ -1328,7 +1329,7 @@ export default function MenuItemDetailPage() {
 
     load();
     return () => { cancelled = true; };
-  }, [id, navigate, restaurantSlug, fromSearch]);
+  }, [id, navigate, restaurantSlug, fromSearch, fromMenu]);
 
   useEffect(() => {
     if (!shareData) return undefined;
