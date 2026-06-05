@@ -447,7 +447,7 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   );
 }
 
-function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, priceLabel }) {
+function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, priceLabel, fromSearch, onBack }) {
   const verdict = detailSystem?.verdict || {};
   const label = verdict.label;
   const basis = Array.isArray(verdict.reasons)
@@ -495,25 +495,48 @@ function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, 
             )}
           </div>
         </div>
-        <Link
-          to={fullMenuHref}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: 32,
-            padding: "0 12px",
-            borderRadius: 999,
-            background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-            color: "#0B0F0C",
-            textDecoration: "none",
-            fontSize: 12,
-            fontWeight: 800,
-            whiteSpace: "nowrap",
-          }}
-        >
-          View Full Menu
-        </Link>
+        {fromSearch ? (
+          <button
+            onClick={onBack}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              minHeight: 32,
+              padding: "0 12px",
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.10)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              color: "#F9FAFB",
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 800,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span style={{ fontSize: 13 }}>←</span> Return to results
+          </button>
+        ) : (
+          <Link
+            to={fullMenuHref}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 32,
+              padding: "0 12px",
+              borderRadius: 999,
+              background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+              color: "#0B0F0C",
+              textDecoration: "none",
+              fontSize: 12,
+              fontWeight: 800,
+              whiteSpace: "nowrap",
+            }}
+          >
+            View Full Menu
+          </Link>
+        )}
       </div>
     </Surface>
   );
@@ -1051,6 +1074,7 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
     if (itemId) params.set("fromItem", String(itemId));
     if (itemName) params.set("fromName", itemName);
     if (currentSlug) params.set("fromSlug", currentSlug);
+    if (fromSearch) params.set("from", "search");
     return `${basePath}?${params.toString()}`;
   }
 
@@ -1224,6 +1248,7 @@ export default function MenuItemDetailPage() {
 
   const geoLat = searchParams.get("lat");
   const geoLng = searchParams.get("lng");
+  const fromSearch = searchParams.get("from") === "search";
 
   const [loading,  setLoading]  = useState(true);
   const [err,      setErr]      = useState("");
@@ -1467,26 +1492,49 @@ export default function MenuItemDetailPage() {
                       />
                     </>
                   ) : null}
-                  <Link
-                    to={fullMenuHref}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minHeight: 34,
-                      padding: "0 14px",
-                      borderRadius: 999,
-                      background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-                      color: "#0B0F0C",
-                      textDecoration: "none",
-                      fontSize: 12,
-                      fontWeight: 800,
-                      whiteSpace: "nowrap",
-                      boxShadow: "0 10px 24px rgba(15, 23, 42, 0.10)",
-                    }}
-                  >
-                    View Full Menu
-                  </Link>
+                  {fromSearch ? (
+                    <button
+                      onClick={() => navigate(-1)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 5,
+                        minHeight: 34,
+                        padding: "0 14px",
+                        borderRadius: 999,
+                        background: "rgba(255,255,255,0.10)",
+                        border: "1px solid rgba(255,255,255,0.18)",
+                        color: "#F9FAFB",
+                        cursor: "pointer",
+                        fontSize: 12,
+                        fontWeight: 800,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <span style={{ fontSize: 13 }}>←</span> Return to search results
+                    </button>
+                  ) : (
+                    <Link
+                      to={fullMenuHref}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minHeight: 34,
+                        padding: "0 14px",
+                        borderRadius: 999,
+                        background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
+                        color: "#0B0F0C",
+                        textDecoration: "none",
+                        fontSize: 12,
+                        fontWeight: 800,
+                        whiteSpace: "nowrap",
+                        boxShadow: "0 10px 24px rgba(15, 23, 42, 0.10)",
+                      }}
+                    >
+                      View Full Menu
+                    </Link>
+                  )}
                 </div>
               </div>
               <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -1537,6 +1585,8 @@ export default function MenuItemDetailPage() {
           isMobile={isMobile}
           itemName={displayItemName}
           priceLabel={priceLabel}
+          fromSearch={fromSearch}
+          onBack={() => navigate(-1)}
         />
       ) : null}
 

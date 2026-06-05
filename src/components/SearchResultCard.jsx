@@ -1430,11 +1430,14 @@ function ItemRow({
           onSwap={(candidateItem) => {
             setCompareOpen(false);
             const candidateId = candidateItem?.id || currentCompareCandidate?.id;
-            if (candidateId) navigate(`/menu-items/${candidateId}`);
+            if (candidateId) navigate(`/menu-items/${candidateId}?from=search`);
           }}
           onViewBase={() => {
             setCompareOpen(false);
-            if (href) navigate(href);
+            if (href) {
+              const sep = href.includes("?") ? "&" : "?";
+              navigate(`${href}${sep}from=search`);
+            }
           }}
         />
       )}

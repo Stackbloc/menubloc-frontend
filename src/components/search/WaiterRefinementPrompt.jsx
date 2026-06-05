@@ -1,22 +1,22 @@
 import React from "react";
 
-function BowTieIcon() {
+function WaiterFaceIcon() {
   return (
     <svg
-      viewBox="0 0 36 22"
-      width="36"
-      height="22"
-      fill="currentColor"
-      aria-hidden="true"
+      viewBox="0 0 40 46"
+      width="34"
+      height="39"
+      fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      style={{ display: "block", flexShrink: 0 }}
+      aria-hidden="true"
+      style={{ display: "block" }}
     >
-      {/* Left wing */}
-      <path d="M1 1 C0 1 0 21 1 21 L15 11 Z" />
-      {/* Right wing */}
-      <path d="M35 1 C36 1 36 21 35 21 L21 11 Z" />
-      {/* Center knot */}
-      <ellipse cx="18" cy="11" rx="4" ry="5.5" />
+      <circle cx="14" cy="11" r="2.3" fill="#111" />
+      <circle cx="26" cy="11" r="2.3" fill="#111" />
+      <path d="M 11 18 Q 20 28 29 18" stroke="#111" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M 1 32 L 17 38 L 1 44 Z" fill="#111" />
+      <path d="M 39 32 L 23 38 L 39 44 Z" fill="#111" />
+      <ellipse cx="20" cy="38" rx="4" ry="5" fill="#111" />
     </svg>
   );
 }
@@ -140,7 +140,7 @@ export default function WaiterRefinementPrompt({
           boxShadow: "0 0 0 1px rgba(255,255,255,0.18), 0 10px 26px rgba(0,0,0,0.28)",
         }}
       >
-        <BowTieIcon />
+        <WaiterFaceIcon />
       </span>
 
       {/* Inline question with clickable option words */}
