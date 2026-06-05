@@ -102,6 +102,7 @@ import RestaurantPublicPage from "./pages/RestaurantPublicPage.jsx";
 import MenuPage from "./pages/MenuPage.jsx";
 import MenuDetailPage from "./pages/MenuDetailPage.jsx";
 import MenuItemDetailPage from "./pages/MenuItemDetailPage.jsx";
+import ComparePage from "./pages/ComparePage.jsx";
 import MenuItemInfoPage from "./pages/MenuItemInfoPage.jsx";
 import PublicMenuPage from "./pages/PublicMenuPage.jsx";
 import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
@@ -485,6 +486,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <GrubbidDiscovery />} />
 
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
+        <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />
         <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />
         <Route path="/top-picks" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TopPicksPage />} />
         <Route path="/food-interests" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/search" replace />} />
