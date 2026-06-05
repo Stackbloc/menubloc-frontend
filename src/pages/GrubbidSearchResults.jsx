@@ -1435,6 +1435,7 @@ export default function GrubbidSearchResults() {
   const [searchTotalCount, setSearchTotalCount] = useState(0);
   const SEARCH_LIMIT = 24;
   const [waiterSelection, setWaiterSelection] = useState(null);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const waiterState = useMemo(() => buildWaiterOptions(rows, q, waiterIntentContext), [rows, q, waiterIntentContext]);
   const waiterOptionsSignature = useMemo(
@@ -1442,9 +1443,40 @@ export default function GrubbidSearchResults() {
     [waiterState.options]
   );
 
+  const waiterRestoredRef = useRef(false);
+
+  // Reset waiter only on query/location changes — not on results reload.
   useEffect(() => {
     setWaiterSelection(null);
-  }, [q, city, state, zip, near, waiterOptionsSignature]);
+    waiterRestoredRef.current = false;
+  }, [q, city, state, zip, near]);
+
+  // Keep ?waiter= in the URL in sync with the active selection (silent, no re-render).
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (waiterSelection?.id) {
+        url.searchParams.set("waiter", waiterSelection.id);
+      } else {
+        url.searchParams.delete("waiter");
+      }
+      window.history.replaceState({}, "", url.toString());
+    } catch (_) {}
+  }, [waiterSelection]);
+
+  // Restore waiter selection from URL after results load (supports shared links).
+  useEffect(() => {
+    if (loading || waiterRestoredRef.current) return;
+    if (!waiterState.options.length) return;
+    try {
+      const targetId = new URL(window.location.href).searchParams.get("waiter");
+      if (targetId) {
+        const match = waiterState.options.find((o) => o.id === targetId);
+        if (match) setWaiterSelection(match);
+      }
+    } catch (_) {}
+    waiterRestoredRef.current = true;
+  }, [loading, waiterState.options]);
 
   const { primaryUrl, fallbackUrl, hasGeoFilter } = useMemo(() => {
     const u = new URL(`${API}/search`);
@@ -1998,6 +2030,27 @@ export default function GrubbidSearchResults() {
               Near {locationLabel}
             </span>
           )}
+          <button
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(window.location.href);
+                setShareCopied(true);
+                setTimeout(() => setShareCopied(false), 2200);
+              } catch {
+                prompt("Copy this search link:", window.location.href);
+              }
+            }}
+            title="Share these search results"
+            style={{
+              marginLeft: "auto", border: "1px solid rgba(255,255,255,0.15)",
+              borderRadius: 999, background: shareCopied ? "rgba(34,197,94,0.14)" : "transparent",
+              color: shareCopied ? "#22C55E" : "#9CA3AF",
+              fontSize: 12, fontWeight: 800, cursor: "pointer",
+              padding: "3px 12px", whiteSpace: "nowrap", transition: "color 0.15s",
+            }}
+          >
+            {shareCopied ? "Copied!" : "Share"}
+          </button>
         </div>
       </div>
       {/* ── SCROLLABLE FEED ── */}
