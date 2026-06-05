@@ -2066,7 +2066,7 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && useRestaurantGroupedRendering && hasMenuMatches && (
         <>
-          <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>
+          {!showWaiter && <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>}
           {showWaiter && (
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
@@ -2116,7 +2116,7 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && !useRestaurantGroupedRendering && hasDishMatches && (
         <>
-          <SectionTitle>{t("common.results")}</SectionTitle>
+          {!showWaiter && <SectionTitle>{t("common.results")}</SectionTitle>}
           {showWaiter && (
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
