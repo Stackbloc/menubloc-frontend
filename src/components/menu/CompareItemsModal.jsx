@@ -417,6 +417,7 @@ export default function CompareItemsModal({
   loading,
   error,
   onSwap,
+  onViewBase,
   baseLabel = "Current",
 }) {
   const { t } = useLanguage();
@@ -705,7 +706,7 @@ export default function CompareItemsModal({
         <div style={FOOTER_STYLE}>
           <button
             style={{ ...BTN_BASE, background: "rgba(20,33,27,0.08)", color: "#23352d" }}
-            onClick={onClose}
+            onClick={onViewBase ? onViewBase : onClose}
             disabled={loading}
             title={formatMenuItemName(base?.name) || "Current item"}
           >
