@@ -1312,7 +1312,7 @@ export default function MenuItemDetailPage() {
 
         if (!cancelled) {
           setRawItem(found);
-          if (!restaurantSlug) {
+          if (!restaurantSlug && !fromSearch) {
             const slug =
               found?.restaurant_slug || found?.restaurant?.slug ||
               toSlug(found?.restaurant_name || found?.restaurant?.name || found?.restaurant);
@@ -1328,7 +1328,7 @@ export default function MenuItemDetailPage() {
 
     load();
     return () => { cancelled = true; };
-  }, [id, navigate, restaurantSlug]);
+  }, [id, navigate, restaurantSlug, fromSearch]);
 
   useEffect(() => {
     if (!shareData) return undefined;
