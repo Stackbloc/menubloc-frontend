@@ -396,7 +396,7 @@ export default function PublicMenuItemCard({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                openSheet();
+                if (it?.id && navigate) navigate(`/menu-items/${it.id}?from=menu`);
               }}
               style={{
                 display: "inline-flex",
