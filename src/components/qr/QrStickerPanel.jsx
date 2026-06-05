@@ -44,6 +44,7 @@ export default function QrStickerPanel({
   canMutate = true,
   isFoodTruck = false,
   allowOperatorOverride = false,
+  initialQrCode = "",
 }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +53,7 @@ export default function QrStickerPanel({
   const [previewCode, setPreviewCode] = useState(null);
   const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [qrId, setQrId] = useState("");
+  const [qrId, setQrId] = useState(initialQrCode);
   const [activationPin, setActivationPin] = useState("");
   const [validating, setValidating] = useState(false);
   const [activating, setActivating] = useState(false);

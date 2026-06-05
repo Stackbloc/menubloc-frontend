@@ -114,3 +114,7 @@ export const deactivateOwnerQrSticker = (restaurantId, qrCode) =>
   post(`/api/owner/qr-stickers/${restaurantId}/${encodeURIComponent(qrCode)}/deactivate`, {});
 export const replaceOwnerQrSticker = (restaurantId, qrCode) =>
   post(`/api/owner/qr-stickers/${restaurantId}/${encodeURIComponent(qrCode)}/replace`, {});
+
+export const searchOwnerRestaurantsForQr = (q) =>
+  get(`/api/owner/qr-stickers/restaurant-search?q=${encodeURIComponent(q)}`);
+
