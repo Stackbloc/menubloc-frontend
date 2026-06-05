@@ -26,6 +26,7 @@ import SearchResultCard from "../components/SearchResultCard";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
+import WaiterInsightIcon from "../components/icons/WaiterInsightIcon.jsx";
 import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -65,45 +66,21 @@ function useIsMobile(breakpoint = 768) {
 /* ---- Geolocation hook ---- */
 
 function SearchRefinementNudge({ displayQuery, locationLabel }) {
-  const { pathname, search } = useLocation();
-
-  function hrefFor(patch) {
-    const p = new URLSearchParams(search);
-    for (const [k, v] of Object.entries(patch)) {
-      if (v == null || v === "") p.delete(k);
-      else p.set(k, String(v));
-    }
-    const qs = p.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
-
   if (!displayQuery && !locationLabel) return null;
-
-  const refinements = [
-    { label: "Low Fat", patch: { low_fat: "true" } },
-    { label: "High Protein", patch: { high_protein: "1" } },
-    { label: "Low Sodium", patch: { low_sodium: "1" } },
-    { label: "Under $15", patch: { price_max: "15" } },
-  ];
 
   return (
     <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 12, lineHeight: 1.5 }}>
-      <span>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
         Showing {displayQuery ? `“${displayQuery}”` : "results"}
-        {locationLabel ? ` near ${locationLabel}` : ""}. Refine by:{" "}
+        {locationLabel ? ` near ${locationLabel}` : ""}.
+        <span
+          title="Refine results"
+          aria-label="Refine results"
+          style={{ display: "inline-flex", alignItems: "center", color: "#E5E7EB", transform: "translateY(1px)" }}
+        >
+          <WaiterInsightIcon size={24} />
+        </span>
       </span>
-      {refinements.map((r, i) => (
-        <React.Fragment key={r.label}>
-          {i > 0 ? ", " : null}
-          <Link
-            to={hrefFor(r.patch)}
-            style={{ color: "#22C55E", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}
-          >
-            {r.label}
-          </Link>
-        </React.Fragment>
-      ))}
-      .
     </div>
   );
 }
@@ -220,6 +197,20 @@ const WAITER_TEXT_ONLY_PREPARATION_ALIASES = new Map(
     signal.terms.map((term) => [normalizeWaiterValue(term), signal])
   )
 );
+const WAITER_INTENT_PHRASES = Object.freeze({
+  high_protein: ["high protein", "higher protein", "protein packed", "protein rich"],
+  low_sodium: ["low sodium", "lower sodium", "reduced sodium"],
+  low_fat: ["low fat", "lower fat"],
+  vegetarian: ["vegetarian", "veggie"],
+  vegan: ["vegan"],
+  gluten_free: ["gluten free", "gluten-free"],
+  dairy_free: ["dairy free", "dairy-free"],
+  keto: ["keto", "low carb", "low-carb"],
+  diabetic_friendly: ["diabetic friendly", "diabetic-friendly", "diabetic"],
+  glp1_friendly: ["glp 1", "glp-1", "glp1"],
+  deals: ["deal", "deals", "special", "specials", "discount", "discounts"],
+  nearby: ["nearby", "near me", "close by"],
+});
 
 function parseLocation(rawValue) {
   const raw = String(rawValue || "").trim();
@@ -383,6 +374,108 @@ function titleCaseWaiterValue(value) {
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function waiterTextIncludesPhrase(text, phrase) {
+  const normalizedText = ` ${normalizeWaiterValue(text)} `;
+  const normalizedPhrase = normalizeWaiterValue(phrase);
+  if (!normalizedPhrase) return false;
+  return normalizedText.includes(` ${normalizedPhrase} `);
+}
+
+function waiterCorrectionPair(value) {
+  if (value && typeof value === "object" && value?.from && value?.to) {
+    return { from: String(value.from).trim(), to: String(value.to).trim() };
+  }
+
+  const text = String(value || "").trim();
+  if (!text) return null;
+  const quoted = /["“]?([^"”]+)["”]?\s*(?:→|->| to )\s*["“]?([^"”]+)["”]?/i.exec(text);
+  if (quoted) return { from: quoted[1].trim(), to: quoted[2].trim() };
+  return null;
+}
+
+function applyWaiterDisplayCorrections(query, queryMeta) {
+  let display = String(query || "").replace(/\+/g, " ").replace(/\s+/g, " ").trim();
+  if (!display) return "";
+
+  const corrections = [
+    ...(Array.isArray(queryMeta?.typos_corrected) ? queryMeta.typos_corrected : []),
+    ...(Array.isArray(queryMeta?.smart?.typos_corrected) ? queryMeta.smart.typos_corrected : []),
+  ];
+
+  for (const rawCorrection of corrections) {
+    const pair = waiterCorrectionPair(rawCorrection);
+    if (!pair?.from || !pair?.to) continue;
+    display = display.replace(new RegExp(`\\b${escapeRegExp(pair.from)}\\b`, "gi"), pair.to);
+  }
+
+  return display;
+}
+
+function activeWaiterIntentKeys(context = {}) {
+  const text = [
+    context.query,
+    context.urlIntentText,
+    ...(Array.isArray(context.activeLabels) ? context.activeLabels : []),
+  ].join(" ");
+  const keys = new Set();
+
+  for (const [key, phrases] of Object.entries(WAITER_INTENT_PHRASES)) {
+    if (phrases.some((phrase) => waiterTextIncludesPhrase(text, phrase))) keys.add(key);
+  }
+
+  if (/\b(?:under|below|less than)\s*\$?\s*\d+/i.test(text)) keys.add("price");
+  if (context.activeFilters?.vegan) keys.add("vegan");
+  if (context.activeFilters?.vegetarian) keys.add("vegetarian");
+  if (context.activeFilters?.gluten_free) keys.add("gluten_free");
+  if (context.activeFilters?.dairy_free) keys.add("dairy_free");
+  if (context.activeFilters?.diabetic_friendly) keys.add("diabetic_friendly");
+  if (context.activeFilters?.glp1_friendly) keys.add("glp1_friendly");
+  if (context.activeFilters?.keto) keys.add("keto");
+  if (context.activeFilters?.low_fat) keys.add("low_fat");
+  if (context.activeFilters?.low_sodium) keys.add("low_sodium");
+  if (context.activeFilters?.deals) keys.add("deals");
+  if (context.high_protein) keys.add("high_protein");
+  if (context.priceMax) {
+    keys.add("price");
+    keys.add(`price_max:${context.priceMax}`);
+  }
+
+  return keys;
+}
+
+function waiterOptionRepeatsIntent(option, intentKeys) {
+  if (!option || !intentKeys?.size) return false;
+  const key = normalizeWaiterValue(option.key);
+  const label = normalizeWaiterValue(option.label);
+
+  if (option.type === "nutrition") {
+    if ((key.includes("protein") || label.includes("protein")) && intentKeys.has("high_protein")) return true;
+    if ((key.includes("sodium") || label.includes("sodium")) && intentKeys.has("low_sodium")) return true;
+    if ((key.includes("fat") || label.includes("fat")) && intentKeys.has("low_fat")) return true;
+  }
+
+  if (option.type === "commerce") {
+    if (option.commerceType === "deal" && intentKeys.has("deals")) return true;
+    if (option.commerceType === "distance" && intentKeys.has("nearby")) return true;
+    if (option.commerceType === "price" && intentKeys.has("price")) return true;
+    if (option.commerceType === "price") {
+      for (const intentKey of intentKeys) {
+        if (intentKey.startsWith("price_max:") && key.startsWith("under_")) return true;
+      }
+      if (waiterTextIncludesPhrase(label, "under") && waiterTextIncludesPhrase([...intentKeys].join(" "), "under")) return true;
+    }
+  }
+
+  const impliedPhrases = [...intentKeys].flatMap((intentKey) => WAITER_INTENT_PHRASES[intentKey] || []);
+  return impliedPhrases.some((phrase) =>
+    waiterTextIncludesPhrase(key, phrase) || waiterTextIncludesPhrase(label, phrase)
+  );
 }
 
 function canonicalizeMenuItemName(v) {
@@ -609,6 +702,7 @@ function buildWaiterInventory(rows) {
 
       inventory.push({
         ...row,
+        __waiterSourceRow: row,
         item_name: itemName,
         search_display_name: itemName,
         restaurant_name: restaurantName || row?.restaurant_name || "",
@@ -629,7 +723,7 @@ function countWaiterMatches(rows, test) {
   return (Array.isArray(rows) ? rows : []).reduce((count, row) => count + (test(row) ? 1 : 0), 0);
 }
 
-function buildWaiterOptionRows(rows, dimension, candidates) {
+function buildWaiterOptionRows(rows, dimension, candidates, intentKeys) {
   const total = Array.isArray(rows) ? rows.length : 0;
   return Array.from(candidates.values())
     .map((candidate) => ({
@@ -642,6 +736,7 @@ function buildWaiterOptionRows(rows, dimension, candidates) {
       test: candidate.test,
       count: countWaiterMatches(rows, candidate.test),
     }))
+    .filter((option) => !waiterOptionRepeatsIntent(option, intentKeys))
     .filter((option) => (
       option.count >= WAITER_MIN_OPTION_MATCHES &&
       option.count < total &&
@@ -923,13 +1018,14 @@ function buildNutritionCandidates(inventory) {
   return candidates;
 }
 
-function buildWaiterOptions(rows, query) {
+function buildWaiterOptions(rows, query, context = {}) {
   const inventory = buildWaiterInventory(rows);
   if (inventory.length < WAITER_MIN_ITEM_SIGNALS) {
     return { inventory, options: [], dimension: null };
   }
 
   const queryTokens = buildQueryTokenSet(query);
+  const intentKeys = activeWaiterIntentKeys({ ...context, query });
   const groups = [
     {
       dimension: "preparation",
@@ -938,7 +1034,8 @@ function buildWaiterOptions(rows, query) {
       options: buildWaiterOptionRows(
         inventory,
         "preparation",
-        buildAttributeCandidates(inventory, "preparation", queryTokens)
+        buildAttributeCandidates(inventory, "preparation", queryTokens),
+        intentKeys
       ),
     },
     {
@@ -948,7 +1045,8 @@ function buildWaiterOptions(rows, query) {
       options: buildWaiterOptionRows(
         inventory,
         "ingredient",
-        buildAttributeCandidates(inventory, "ingredient", queryTokens)
+        buildAttributeCandidates(inventory, "ingredient", queryTokens),
+        intentKeys
       ),
     },
     {
@@ -958,7 +1056,8 @@ function buildWaiterOptions(rows, query) {
       options: buildWaiterOptionRows(
         inventory,
         "modifier",
-        buildAttributeCandidates(inventory, "modifier", queryTokens)
+        buildAttributeCandidates(inventory, "modifier", queryTokens),
+        intentKeys
       ),
     },
     {
@@ -968,7 +1067,8 @@ function buildWaiterOptions(rows, query) {
       options: buildWaiterOptionRows(
         inventory,
         "category",
-        buildAttributeCandidates(inventory, "category", queryTokens)
+        buildAttributeCandidates(inventory, "category", queryTokens),
+        intentKeys
       ),
     },
     {
@@ -978,14 +1078,15 @@ function buildWaiterOptions(rows, query) {
       options: buildWaiterOptionRows(
         inventory,
         "text",
-        buildTextFeatureCandidates(inventory, queryTokens)
+        buildTextFeatureCandidates(inventory, queryTokens),
+        intentKeys
       ),
     },
     {
       dimension: "nutrition",
       tier: WAITER_TIER_NUTRITION,
       priority: 15,
-      options: buildWaiterOptionRows(inventory, "nutrition", buildNutritionCandidates(inventory)),
+      options: buildWaiterOptionRows(inventory, "nutrition", buildNutritionCandidates(inventory), intentKeys),
     },
     ...[
       { commerceType: "price", priority: 10, candidates: buildPriceCommerceCandidates(inventory) },
@@ -996,7 +1097,7 @@ function buildWaiterOptions(rows, query) {
       commerceType: commerceGroup.commerceType,
       tier: WAITER_TIER_COMMERCE,
       priority: commerceGroup.priority,
-      options: buildWaiterOptionRows(inventory, "commerce", commerceGroup.candidates),
+      options: buildWaiterOptionRows(inventory, "commerce", commerceGroup.candidates, intentKeys),
     })),
   ].map((group) => ({
     ...group,
@@ -1026,6 +1127,41 @@ function compareNullableNumbers(a, b) {
   if (a !== null && b === null) return -1;
   if (a === null && b !== null) return 1;
   return 0;
+}
+
+function sortByWaiterRefinement(filteredRows, refinement) {
+  if (!refinement) return filteredRows;
+  const sorted = [...filteredRows];
+
+  if (refinement.type === "nutrition" && refinement.key.includes("protein")) {
+    sorted.sort((a, b) => {
+      const pa = getWaiterProtein(a) ?? -1;
+      const pb = getWaiterProtein(b) ?? -1;
+      return pb - pa;
+    });
+  } else if (refinement.type === "commerce") {
+    if (refinement.key === "nearby") {
+      sorted.sort((a, b) => {
+        const da = getDistanceMiles(a) ?? Infinity;
+        const db = getDistanceMiles(b) ?? Infinity;
+        return da - db;
+      });
+    } else if (refinement.key === "farther_out") {
+      sorted.sort((a, b) => {
+        const da = getDistanceMiles(a) ?? -Infinity;
+        const db = getDistanceMiles(b) ?? -Infinity;
+        return db - da;
+      });
+    } else if (refinement.key.startsWith("under_") || /^\d+_plus$/.test(refinement.key)) {
+      sorted.sort((a, b) => {
+        const pa = getWaiterPriceDollars(a) ?? Infinity;
+        const pb = getWaiterPriceDollars(b) ?? Infinity;
+        return pa - pb;
+      });
+    }
+  }
+
+  return sorted;
 }
 
 function isBetterRestaurantRepresentative(nextRow, currentRow) {
@@ -1290,6 +1426,13 @@ export default function GrubbidSearchResults() {
   const sessionId = useMemo(() => getOrCreateSearchSessionId(), []);
   const trackedEventKeysRef = useRef(new Set());
   const sortMode = String(params.get("sort") || "default_relevance").trim() || "default_relevance";
+  const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
+  const waiterIntentContext = useMemo(() => ({
+    activeFilters,
+    high_protein,
+    priceMax: routePriceMax,
+    urlIntentText: Array.from(params.entries()).flat().join(" "),
+  }), [activeFilters, high_protein, params, routePriceMax]);
 
   const [rows, setRows] = useState([]);
   const [restaurantMetaMap, setRestaurantMetaMap] = useState(new Map());
@@ -1304,7 +1447,7 @@ export default function GrubbidSearchResults() {
   const SEARCH_LIMIT = 24;
   const [waiterSelection, setWaiterSelection] = useState(null);
 
-  const waiterState = useMemo(() => buildWaiterOptions(rows, q), [rows, q]);
+  const waiterState = useMemo(() => buildWaiterOptions(rows, q, waiterIntentContext), [rows, q, waiterIntentContext]);
   const waiterOptionsSignature = useMemo(
     () => waiterState.options.map((option) => `${option.id}:${option.count}`).join("|"),
     [waiterState.options]
@@ -1652,8 +1795,18 @@ export default function GrubbidSearchResults() {
 
   const waiterFilteredRows = useMemo(() => {
     if (!waiterSelection) return rows;
-    return rows.filter((row) => waiterSelection.test(row));
-  }, [rows, waiterSelection]);
+    const matchingRows = new Set(
+      waiterState.inventory
+        .filter((row) => waiterSelection.test(row))
+        .map((row) => row.__waiterSourceRow)
+        .filter(Boolean)
+    );
+    const filtered = rows.filter((row) => matchingRows.has(row));
+    return sortByWaiterRefinement(filtered, waiterSelection);
+  }, [rows, waiterSelection, waiterState.inventory]);
+
+  const waiterDisplayOptions = waiterState.options;
+
   const dishRows = useMemo(() => waiterFilteredRows.filter(isDishRow), [waiterFilteredRows]);
   const restaurantOnlyRows = useMemo(() => waiterFilteredRows.filter((r) => !isDishRow(r)), [waiterFilteredRows]);
 
@@ -1677,7 +1830,16 @@ export default function GrubbidSearchResults() {
     searchMeta?.restaurant_first ||
     searchMeta?.direct_restaurant_name
   );
-  const useRestaurantGroupedRendering = restaurantIntent;
+  // Dish-first rule: grouped restaurant rendering only activates when the
+  // backend explicitly suppressed menu items (confirmed restaurant-name search)
+  // OR when restaurantIntent is set but there are no actual dish rows (cuisine
+  // keyword with no local item data — fall back to restaurant bucket cards).
+  // This prevents food queries like "pizza" or "Italian" from suppressing
+  // individual dish cards just because the query word is also a cuisine type.
+  const useRestaurantGroupedRendering = !!(
+    searchMeta?.suppress_menu_items ||
+    (restaurantIntent && dishRows.length === 0)
+  );
 
   const relaxPerRestaurantItemCap = useMemo(() => {
     if (!useRestaurantGroupedRendering) return false;
@@ -1695,8 +1857,6 @@ export default function GrubbidSearchResults() {
       relaxPerRestaurantItemCap ? Number.MAX_SAFE_INTEGER : MAX_MENU_ITEMS_PER_RESTAURANT_GROUP
     );
   }, [dishRows, relaxPerRestaurantItemCap, useRestaurantGroupedRendering]);
-
-  const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
 
   function toggleSearchFilter(key) {
     const next = { ...activeFilters, [key]: !activeFilters[key] };
@@ -1719,10 +1879,9 @@ export default function GrubbidSearchResults() {
     ? restaurantGroups.length || restaurantOnlyRows.length
     : visibleDishRows.length;
   const showWaiter =
-    !waiterSelection &&
-    visibleResultCountForWaiter >= WAITER_MIN_RESULTS &&
     waiterState.inventory.length >= WAITER_MIN_ITEM_SIGNALS &&
-    waiterState.options.length >= WAITER_MIN_OPTIONS;
+    waiterState.options.length >= WAITER_MIN_OPTIONS &&
+    (waiterSelection || visibleResultCountForWaiter >= WAITER_MIN_RESULTS);
 
   const restaurantGroupsById = useMemo(() => {
     if (!useRestaurantGroupedRendering) return new Set();
@@ -1768,8 +1927,7 @@ export default function GrubbidSearchResults() {
     return `in ${locationLabel}`;
   }, [locationLabel]);
   const displayQuery = useMemo(() => {
-    const normalized = String(queryMeta?.normalized || "").trim();
-    return normalized || q;
+    return applyWaiterDisplayCorrections(q, queryMeta);
   }, [queryMeta, q]);
 
   const styles = {
@@ -1858,10 +2016,6 @@ export default function GrubbidSearchResults() {
 
       <ActiveFilterChips filters={activeFilters} onToggle={toggleSearchFilter} />
 
-      {!loading && !err && q && hasVisibleResults ? (
-        <SearchRefinementNudge displayQuery={displayQuery} locationLabel={locationLabel} />
-      ) : null}
-
       {geoFallbackUsed && (
         <StatusMessage tone="warning">
           {t("search.geoFallback", "No results found near your location — showing all matching results instead.")}
@@ -1914,12 +2068,12 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && useRestaurantGroupedRendering && hasMenuMatches && (
         <>
-          <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>
+          {!showWaiter && <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>}
           {showWaiter && (
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
               filteredResultCount={visibleResultCountForWaiter}
-              refinementOptions={waiterState.options}
+              refinementOptions={waiterDisplayOptions}
               selectedRefinement={waiterSelection}
               onSelectRefinement={setWaiterSelection}
             />
@@ -1954,6 +2108,7 @@ export default function GrubbidSearchResults() {
                       coordinateSearchActive: hasGeoFilter === true,
                     }}
                     geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+                    activeRefinement={waiterSelection}
                   />
               );
           })}
@@ -1963,12 +2118,12 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && !useRestaurantGroupedRendering && hasDishMatches && (
         <>
-          <SectionTitle>{t("common.results")}</SectionTitle>
+          {!showWaiter && <SectionTitle>{t("common.results")}</SectionTitle>}
           {showWaiter && (
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
               filteredResultCount={visibleResultCountForWaiter}
-              refinementOptions={waiterState.options}
+              refinementOptions={waiterDisplayOptions}
               selectedRefinement={waiterSelection}
               onSelectRefinement={setWaiterSelection}
             />
@@ -1990,6 +2145,7 @@ export default function GrubbidSearchResults() {
                     coordinateSearchActive: hasGeoFilter === true,
                   }}
                   geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+                  activeRefinement={waiterSelection}
                 />
               );
             })}

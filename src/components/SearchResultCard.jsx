@@ -10,7 +10,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   buildWhyMatchLabel,
   buildNutritionPreviewChips,
@@ -987,6 +987,30 @@ function NutritionPreviewStrip({ chips }) {
   );
 }
 
+function buildRefinementMatchLabel(row, refinement) {
+  if (!refinement) return null;
+  const chips = resolveChips(row);
+  const nutChip = chips?.nutrition_chip || {};
+
+  if (refinement.type === "nutrition" && refinement.key.includes("protein")) {
+    const protein = asNum(nutChip.protein_g);
+    if (protein !== null) return `${Math.round(protein)}g protein`;
+  }
+
+  if (refinement.type === "commerce") {
+    if (refinement.key === "nearby" || refinement.key === "farther_out") {
+      const dist = getDistanceMilesLike(row);
+      if (dist !== null) return `${dist.toFixed(1)} mi`;
+    }
+    if (refinement.key.startsWith("under_") || /^\d+_plus$/.test(refinement.key)) {
+      const price = fmtPrice(row);
+      if (price) return price;
+    }
+  }
+
+  return null;
+}
+
 /* ---- Single item row ---- */
 
 function ItemRow({
@@ -1000,7 +1024,9 @@ function ItemRow({
   similarRequest,
   restaurantSummary = null,
   venueRenderedAbove = false,
+  activeRefinement = null,
 }) {
+  const navigate = useNavigate();
   const [openTab, setOpenTab] = useState(null);
   const [similarState, setSimilarState] = useState({
     status: "idle",
@@ -1012,6 +1038,7 @@ function ItemRow({
   const [compareData, setCompareData] = useState(null);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState(null);
+  const [currentCompareCandidate, setCurrentCompareCandidate] = useState(null);
 
   const mid = getItemId(row);
   const name = getItemName(row, language);
@@ -1050,6 +1077,7 @@ function ItemRow({
   const matchLineText = whyLabel || (matchPreviewFallback && matchPreviewFallback.text) || "";
   const nutritionPreviewChips = buildNutritionPreviewChips(row, queryMeta);
   const pairingTeaser = formatPairingTeaser(row);
+  const refinementMatchLabel = buildRefinementMatchLabel(row, activeRefinement);
   const factsLine = venueRenderedAbove
     ? ""
     : buildKeyFactsLine({ row, restaurantSummary, matchContext });
@@ -1083,7 +1111,11 @@ function ItemRow({
     insightScores.proteinStrength !== null ||
     insightScores.glycemicImpact  !== null ||
     insightScores.sodiumRisk      !== null;
-  const hasSimilar = Boolean(mid);
+  const showSimilarChip = Boolean(mid) && (
+    similarState.status === "idle" ||
+    similarState.status === "loading" ||
+    (similarState.status === "ready" && similarState.items.length > 0)
+  );
   const similarCacheKey = useMemo(() => {
     if (!mid) return "";
     return `${mid}::${similarRequest?.cacheKey || ""}`;
@@ -1119,6 +1151,9 @@ function ItemRow({
       };
       searchCardSimilarCache.set(similarCacheKey, nextState);
       setSimilarState(nextState);
+      if (nextState.items.length === 0) {
+        setOpenTab(null);
+      }
     } catch {
       if (similarRequestRef.current !== requestId) return;
       const nextState = { status: "failed", items: [], meta: null };
@@ -1129,6 +1164,7 @@ function ItemRow({
 
   function handleCompare(similarEntry) {
     if (!isSimilarRowCompareEligible(similarEntry) || !mid) return;
+    setCurrentCompareCandidate(similarEntry);
     setCompareData(null);
     setCompareError(null);
     setCompareLoading(true);
@@ -1294,6 +1330,20 @@ function ItemRow({
         </div>
       ) : null}
 
+      {/* 4b. Active refinement match value */}
+      {refinementMatchLabel ? (
+        <div
+          style={{
+            marginTop: 4,
+            fontSize: "13px",
+            fontWeight: 800,
+            color: "#22C55E",
+          }}
+        >
+          Match: {refinementMatchLabel}
+        </div>
+      ) : null}
+
       {/* 5. Nutrition preview chips */}
       <NutritionPreviewStrip chips={nutritionPreviewChips} />
 
@@ -1330,20 +1380,26 @@ function ItemRow({
         {!indulgencePresentation ? (
           <Chip
             label={labels.nutrition}
-            active={openTab === "nutrition"}
+            active={false}
             available={hasNut}
-            onClick={() => toggle("nutrition")}
+            onClick={() => {
+              trackMenuItemInteraction(mid, "open_nutrition");
+              if (href) navigate(href);
+            }}
           />
         ) : null}
         {!indulgencePresentation && hasIns ? (
           <Chip
             label={labels.insights}
-            active={openTab === "insights"}
+            active={false}
             available={true}
-            onClick={() => toggle("insights")}
+            onClick={() => {
+              trackMenuItemInteraction(mid, "open_insights");
+              if (href) navigate(href);
+            }}
           />
         ) : null}
-        {hasSimilar ? (
+        {showSimilarChip ? (
           <Chip
             label={labels.showSimilar}
             active={openTab === "similar"}
@@ -1353,7 +1409,7 @@ function ItemRow({
         ) : null}
       </div>
 
-      {openTab && (
+      {openTab === "similar" && (
         <DetailPanel
           tab={openTab}
           row={row}
@@ -1371,6 +1427,15 @@ function ItemRow({
           error={compareError}
           comparison={compareData}
           onClose={() => setCompareOpen(false)}
+          onSwap={(candidateItem) => {
+            setCompareOpen(false);
+            const candidateId = candidateItem?.id || currentCompareCandidate?.id;
+            if (candidateId) navigate(`/menu-items/${candidateId}`);
+          }}
+          onViewBase={() => {
+            setCompareOpen(false);
+            if (href) navigate(href);
+          }}
         />
       )}
     </div>
@@ -1516,7 +1581,7 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
 
 /* ---- Main export ---- */
 
-export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, geo }) {
+export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, geo, activeRefinement }) {
   const location = useLocation();
   const { language, t } = useLanguage();
   const contextSearch = location.search || "";
@@ -1646,6 +1711,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
                 similarRequest={similarRequest}
                 restaurantSummary={restaurantSummary}
                 venueRenderedAbove
+                activeRefinement={activeRefinement}
               />
             );
           })}
@@ -1706,6 +1772,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
           geo={geo}
           similarRequest={similarRequest}
           restaurantSummary={null}
+          activeRefinement={activeRefinement}
         />
         {menuHrefS && (
           <div style={{ marginTop: 10 }}>

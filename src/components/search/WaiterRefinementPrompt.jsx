@@ -54,9 +54,9 @@ export default function WaiterRefinementPrompt({
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 8,
+        gap: 10,
         flexWrap: "wrap",
-        margin: "2px 0 12px",
+        margin: "2px 0 14px",
         color: "#F9FAFB",
       }}
     >
@@ -66,19 +66,20 @@ export default function WaiterRefinementPrompt({
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          width: 20,
-          height: 20,
+          width: 48,
+          height: 48,
           borderRadius: 999,
           background: "#FFFFFF",
           color: "#0B0F0C",
           flexShrink: 0,
+          boxShadow: "0 0 0 1px rgba(255,255,255,0.18), 0 10px 26px rgba(0,0,0,0.28)",
         }}
       >
-        <WaiterQuestionIcon size={16} />
+        <WaiterQuestionIcon size={41} />
       </span>
       <span
         style={{
-          fontSize: 13,
+          fontSize: 15,
           fontWeight: 800,
           lineHeight: 1.25,
           color: "#E5E7EB",
@@ -115,9 +116,9 @@ export default function WaiterRefinementPrompt({
                   : "rgba(255,255,255,0.05)",
                 color: isActive ? "rgba(249,250,251,0.35)" : "#F9FAFB",
                 borderRadius: 999,
-                padding: "5px 8px",
-                minHeight: 28,
-                fontSize: 12,
+                padding: "7px 10px",
+                minHeight: 34,
+                fontSize: 13,
                 fontWeight: 800,
                 lineHeight: 1,
                 cursor: isActive ? "not-allowed" : "pointer",

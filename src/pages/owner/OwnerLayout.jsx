@@ -26,9 +26,10 @@ export const OWNER_COLORS = {
   page: "linear-gradient(180deg, #f7f1ea 0%, #efe5db 100%)",
 };
 
-export function PageCard({ children, style = {} }) {
+export function PageCard({ children, style = {}, id }) {
   return (
     <section
+      id={id}
       style={{
         background: OWNER_COLORS.panel,
         border: `1px solid ${OWNER_COLORS.line}`,

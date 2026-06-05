@@ -1202,6 +1202,10 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
         loading={compareLoading}
         error={compareError}
         onSwap={handleSwap}
+        onViewBase={() => {
+          setCompareOpen(false);
+          navigate(buildSimilarLink({ id: itemId, restaurant_slug: currentSlug, restaurant_id: null }));
+        }}
         baseLabel="Current"
       />
     </>
