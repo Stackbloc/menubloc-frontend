@@ -609,3 +609,60 @@ push(`${cal} cal`);
 push(`${pro}g protein`);
 if (wantsFat) push(`${fat}g fat`);  // often never shown
 ```
+
+---
+
+## 🚨 SHOW SIMILAR & COMPARE GUARDRAIL (CRITICAL)
+
+**Established:** 2026-06-05  
+**Reference doc:** `docs/SEARCH_SIMILAR_COMPARE_REFERENCE.md` (at repo root)
+
+Any proposed change to the files, functions, components, or UI layout listed below **MUST** output this exact warning before proceeding:
+
+> **Per existing guardrail: the proposed change will modify [function name(s)] and change [file name(s)]. Explicit approval required before editing.**
+
+Then state:
+- Which function(s) or layout element(s) are affected
+- Which file(s) will be modified
+- Why the change is safe (does not violate the invariants listed below)
+- Get explicit user approval before writing any code
+
+### Protected files — frontend
+
+| File | Protected scope |
+|---|---|
+| `src/components/SearchResultCard.jsx` | `getItemId`, `handleCompare`, `loadSimilarForRow`, `DetailPanel`, similar panel item rendering, `onSwap`/`onViewBase` wiring to `CompareItemsModal`, `showSimilarChip` logic, `similarCacheKey` construction |
+| `src/components/menu/CompareItemsModal.jsx` | Modal layout, `onViewBase` button, `onSwap` button, `comparison.baseItem`/`comparison.candidateItem` rendering, footer navigation buttons |
+| `src/pages/MenuItemDetailPage.jsx` | `CompareItemsModal` mount, `onViewBase`/`onSwap` handlers, Similar chip |
+| `src/pages/GrubbidSearchResults.jsx` | `useRestaurantGroupedRendering` logic, `dishRows` derivation, waiter refinement rendering |
+| `src/lib/api.js` | `fetchSimilarItems`, `fetchCompareItems`, `fetchCompareEligibility` |
+| `src/lib/comparePolicy.js` | `isSimilarRowCompareEligible` |
+| `src/components/share/shareUtils.js` | `getCanonicalMenuItemPath` |
+
+### Hard invariants — any change that violates these is FORBIDDEN without explicit approval
+
+1. **`mid` is always a CK ID**: `getItemId(row)` reads `row.menu_item_id || row.menuItemId || row.id`. The result is always a `commonknowledge.menu_items` ID. Never pass a `public.menu_items` ID to `fetchSimilarItems` or `fetchCompareItems`.
+
+2. **Similar item navigation uses CK IDs**: `siHref = "/menu-items/" + siId` where `siId = getItemId(si) = si.id` (the CK ID from the backend similar result). Do not change this to a public ID or restaurant-scoped path without verifying the backend detail route handles it.
+
+3. **Compare "View" buttons navigate to correct schemas**: `onSwap` navigates to `/menu-items/${candidateItem.id}` (CK ID from `comparison.candidateItem.id`). `onViewBase` navigates to `href` (the base item's full URL). Do not break this navigation or substitute `currentCompareCandidate` where `candidateItem` is the correct source.
+
+4. **`skipEligibilityCheck: true` is correct when coming from Similar**: Similar rows with `compare_eligible === true` have already been vetted by the backend. Removing `skipEligibilityCheck: true` in `handleCompare` adds an unnecessary round-trip that can cause false rejections.
+
+5. **`isSimilarRowCompareEligible(si)` gates the Compare button**: The Compare CTA must only appear when `si.compare_eligible === true`. Never show Compare for all similar rows regardless of eligibility.
+
+6. **`useRestaurantGroupedRendering` must not depend on `restaurantIntent` alone**: The condition is `suppress_menu_items || (restaurantIntent && dishRows.length === 0)`. Setting it to `restaurantIntent` alone causes cuisine-word searches (pizza, BBQ, Italian) to suppress food results and show restaurant cards instead.
+
+7. **`CompareItemsModal` layout structure**: The two-column grid (base item left, candidate right) and the footer button order (View base left, View candidate right) must be preserved. Swapping them breaks user expectation after "Compare" is clicked from a similar item.
+
+### What triggers this guardrail
+
+Any edit to:
+- The `getItemId` function or how `mid` is derived
+- The `handleCompare` function or its arguments to `fetchCompareItems`
+- The `onSwap` or `onViewBase` handlers in `SearchResultCard` or `MenuItemDetailPage`
+- The footer buttons in `CompareItemsModal` (order, onClick, disabled logic)
+- The `siHref` construction in `DetailPanel`
+- The `isSimilarRowCompareEligible` check gating the Compare button
+- The `useRestaurantGroupedRendering` boolean expression
+- The `fetchSimilarItems` or `fetchCompareItems` function signatures in `api.js`

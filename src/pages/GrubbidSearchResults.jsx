@@ -1072,17 +1072,6 @@ function buildWaiterOptions(rows, query, context = {}) {
       ),
     },
     {
-      dimension: "text",
-      tier: WAITER_TIER_FOOD,
-      priority: 25,
-      options: buildWaiterOptionRows(
-        inventory,
-        "text",
-        buildTextFeatureCandidates(inventory, queryTokens),
-        intentKeys
-      ),
-    },
-    {
       dimension: "nutrition",
       tier: WAITER_TIER_NUTRITION,
       priority: 15,
