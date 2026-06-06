@@ -198,6 +198,17 @@ const WAITER_GENERIC_CATEGORY_PARENTS = new Set(["entree", "main", "main course"
 // MKS-provided specific types — if any of these are already in attributes.category, skip name inference
 const MKS_SPECIFIC_CATEGORY_KEYS = new Set(WAITER_SPECIFIC_CATEGORY_OVERRIDES.map((s) => s.key));
 
+// Kids meal detection — mirrors backend isKidsMealItem in pairComparabilityService.js
+const KIDS_NAME_RE    = /\b(kids?'?s?\b|junior\b|jr\.?\b|children'?s?\b|lil'?\b)/i;
+const KIDS_SECTION_RE = /\b(kid|child|junior|jr)\b/i;
+function isKidsMealRow(row) {
+  if (!row) return false;
+  const section = String(row.section_name || row.section_header || row.category || "");
+  if (KIDS_SECTION_RE.test(section)) return true;
+  const name = String(row.item_name || row.name || row.search_display_name || "");
+  return KIDS_NAME_RE.test(name);
+}
+
 const WAITER_TEXT_ONLY_PREPARATION_SIGNALS = [
   { key: "fried", label: "Fried", terms: ["fried", "crispy", "breaded", "battered", "tempura", "crunchy"] },
   { key: "grilled", label: "Grilled", terms: ["grilled", "chargrilled", "char-grilled", "blackened"] },
@@ -748,6 +759,7 @@ function buildWaiterInventory(rows) {
         distance_miles: getDistanceMiles(row),
         __waiterAttributes: attributes,
         __waiterText: itemText,
+        __isKidsMeal: isKidsMealRow({ ...row, item_name: itemName }),
       });
     }
   }
@@ -1024,9 +1036,22 @@ function buildNutritionCandidates(inventory) {
 }
 
 function buildWaiterOptions(rows, query, context = {}) {
-  const inventory = buildWaiterInventory(rows);
+  const rawInventory = buildWaiterInventory(rows);
+  if (rawInventory.length < WAITER_MIN_ITEM_SIGNALS) {
+    return { inventory: rawInventory, options: [], dimension: null };
+  }
+
+  // Kids meal boundary: waiter refines only within one context at a time.
+  // If the result set is all-kids → keep all. If mixed → keep only standard items
+  // so kids meals don't pollute adult refinement questions (and vice versa).
+  const kidsCount = rawInventory.filter((r) => r.__isKidsMeal).length;
+  const allKids = kidsCount === rawInventory.length;
+  const inventory = allKids
+    ? rawInventory
+    : rawInventory.filter((r) => !r.__isKidsMeal);
+
   if (inventory.length < WAITER_MIN_ITEM_SIGNALS) {
-    return { inventory, options: [], dimension: null };
+    return { inventory: rawInventory, options: [], dimension: null };
   }
 
   const queryTokens = buildQueryTokenSet(query);
