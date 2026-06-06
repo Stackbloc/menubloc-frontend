@@ -1079,7 +1079,6 @@ function buildWaiterOptions(rows, query, context = {}) {
     },
     ...[
       { commerceType: "price", priority: 10, candidates: buildPriceCommerceCandidates(inventory) },
-      { commerceType: "deal", priority: 9, candidates: buildDealCommerceCandidates(inventory) },
       { commerceType: "distance", priority: 8, candidates: buildDistanceCommerceCandidates(inventory) },
     ].map((commerceGroup) => ({
       dimension: "commerce",

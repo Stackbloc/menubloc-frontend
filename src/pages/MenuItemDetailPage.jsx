@@ -1074,7 +1074,7 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
     if (itemId) params.set("fromItem", String(itemId));
     if (itemName) params.set("fromName", itemName);
     if (currentSlug) params.set("fromSlug", currentSlug);
-    if (fromSearch) params.set("from", "search");
+    params.set("from", "menu");
     return `${basePath}?${params.toString()}`;
   }
 
