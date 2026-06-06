@@ -471,7 +471,8 @@ function AppShell({ easyMenu, crmHost }) {
   const location = useLocation();
   const joinLandingRoute = isJoinLandingPath(location.pathname);
   const joinSignupRoute = location.pathname === "/restaurant/signup/free-profile";
-  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute;
+  const restaurantOnboardingRoute = location.pathname === "/restaurant/onboarding";
+  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute || restaurantOnboardingRoute;
 
   return (
     <>
