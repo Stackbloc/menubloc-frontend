@@ -391,7 +391,7 @@ export default function PublicMenuItemCard({
 
       {density !== "takeout" && (showInsightsInline || showNutritionInline || showAllergenInline || showIndulgenceInline) ? (
         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          {(showNutritionInline || showInsightsInline) ? (
+          {showNutritionInline ? (
             <button
               type="button"
               onClick={(e) => {
@@ -416,7 +416,7 @@ export default function PublicMenuItemCard({
                 cursor: "pointer",
               }}
             >
-              Nutrition & Insights
+              {t("common.nutrition", "Nutrition")}
             </button>
           ) : null}
           {showIndulgenceInline && indulgencePresentation?.indulgence?.score != null ? (
@@ -426,6 +426,38 @@ export default function PublicMenuItemCard({
               color={accent}
               border={`1px solid ${softBorder}`}
             />
+          ) : null}
+          {showInsightsInline ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openSheet();
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                border: "none",
+                background: "transparent",
+                color: accent,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                padding: 0,
+                lineHeight: 1,
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.textDecoration = "underline";
+                e.currentTarget.style.opacity = "0.85";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.textDecoration = "none";
+                e.currentTarget.style.opacity = "1";
+              }}
+            >
+              Insights
+            </button>
           ) : null}
         </div>
       ) : null}
