@@ -798,7 +798,7 @@ function buildAttributeCandidates(inventory, group, queryTokens) {
         ? canonicalWaiterPreparation(rawValue)
         : { key: normalizeWaiterValue(rawValue), label: titleCaseWaiterValue(rawValue) };
       if (!value.key) continue;
-      if (queryTokens.has(singularizeWaiterToken(value.key))) return candidates;
+      if (queryTokens.has(singularizeWaiterToken(value.key))) continue;
       normalizedValues.push(value);
     }
     valuesByRow.push(normalizedValues);
@@ -820,6 +820,23 @@ function buildAttributeCandidates(inventory, group, queryTokens) {
         `${value.label} matches`
       );
     }
+  }
+  return candidates;
+}
+
+function buildCanonicalFamilyCandidates(inventory, queryTokens) {
+  const candidates = new Map();
+  for (const row of inventory) {
+    const family = normalizeWaiterValue(row.waiter_attributes?.context?.canonical_family || "");
+    if (!family || family.length < 3) continue;
+    if (queryTokens.has(singularizeWaiterToken(family))) continue;
+    addCandidate(
+      candidates,
+      family,
+      titleCaseWaiterValue(family),
+      (r) => normalizeWaiterValue(r.waiter_attributes?.context?.canonical_family || "") === family,
+      `${titleCaseWaiterValue(family)} items`
+    );
   }
   return candidates;
 }
@@ -976,6 +993,17 @@ function buildWaiterOptions(rows, query, context = {}) {
         inventory,
         "ingredient",
         buildAttributeCandidates(inventory, "ingredient", queryTokens),
+        intentKeys
+      ),
+    },
+    {
+      dimension: "canonical_family",
+      tier: WAITER_TIER_FOOD,
+      priority: 48,
+      options: buildWaiterOptionRows(
+        inventory,
+        "canonical_family",
+        buildCanonicalFamilyCandidates(inventory, queryTokens),
         intentKeys
       ),
     },
