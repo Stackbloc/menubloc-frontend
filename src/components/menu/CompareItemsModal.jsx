@@ -493,9 +493,40 @@ export default function CompareItemsModal({
             Compare Items
           </span>
 
-          <button style={CLOSE_BTN_STYLE} onClick={onClose} aria-label="Close compare">
-            ×
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {base && candidate && (
+              <button
+                onClick={async () => {
+                  const url = new URL("/compare", window.location.origin);
+                  url.searchParams.set("base", String(base.id));
+                  url.searchParams.set("candidate", String(candidate.id));
+                  try {
+                    await navigator.clipboard.writeText(url.toString());
+                    setShareCopied(true);
+                    setTimeout(() => setShareCopied(false), 2200);
+                  } catch {
+                    prompt("Copy this compare link:", url.toString());
+                  }
+                }}
+                style={{
+                  background: shareCopied ? "rgba(22,105,62,0.12)" : "rgba(20,33,27,0.04)",
+                  border: "1px solid rgba(20,33,27,0.15)",
+                  borderRadius: 999,
+                  padding: "6px 14px",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: shareCopied ? "#166a3e" : "#617167",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {shareCopied ? "✓ Copied!" : "Share Comparison"}
+              </button>
+            )}
+            <button style={CLOSE_BTN_STYLE} onClick={onClose} aria-label="Close compare">
+              ×
+            </button>
+          </div>
         </div>
 
         <div style={BODY_STYLE}>
@@ -706,34 +737,6 @@ export default function CompareItemsModal({
         </div>
 
         <div style={FOOTER_STYLE}>
-          {/* Share button — copies /compare?base=X&candidate=Y to clipboard */}
-          {base && candidate && (
-            <button
-              title={shareCopied ? "Link copied!" : "Share this comparison"}
-              onClick={async () => {
-                const url = new URL("/compare", window.location.origin);
-                url.searchParams.set("base", String(base.id));
-                url.searchParams.set("candidate", String(candidate.id));
-                try {
-                  await navigator.clipboard.writeText(url.toString());
-                  setShareCopied(true);
-                  setTimeout(() => setShareCopied(false), 2200);
-                } catch {
-                  prompt("Copy this compare link:", url.toString());
-                }
-              }}
-              style={{
-                flex: "0 0 auto", minHeight: 46, width: 46, borderRadius: 999,
-                border: "1px solid rgba(20,33,27,0.15)", cursor: "pointer",
-                background: shareCopied ? "rgba(22,105,62,0.12)" : "rgba(20,33,27,0.04)",
-                color: shareCopied ? "#166a3e" : "#617167",
-                fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
-              }}
-            >
-              {shareCopied ? "✓" : "⎋"}
-            </button>
-          )}
-
           <button
             style={{ ...BTN_BASE, background: "rgba(20,33,27,0.08)", color: "#23352d" }}
             onClick={onViewBase ? onViewBase : onClose}
