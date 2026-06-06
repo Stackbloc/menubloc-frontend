@@ -174,12 +174,6 @@ const WAITER_STOP_WORDS = new Set([
   "kitchen",
   "demo",
 ]);
-const WAITER_ATTRIBUTE_KEY_PATTERNS = Object.freeze({
-  preparation: /(^|_)(preparation|prep|cooking_method|cook_method|method|temperature|serving_temperature)(_|$)/i,
-  ingredient: /(^|_)(ingredient|protein|base|filling|topping|sauce|flavor|bread_type|crust|cheese|common_knowledge|commonknowledge|mks|attribute|trait)(_|$)/i,
-  modifier: /(^|_)(modifier|option|choice|addon|add_on|variant|customization)(_|$)/i,
-  category: /(^|_)(strict_type|broad_category|category|section|primary_family|template|dish_type|item_type|course)(_|$)/i,
-});
 // Kids meal detection — mirrors backend isKidsMealItem in pairComparabilityService.js
 const KIDS_NAME_RE    = /\b(kids?'?s?\b|junior\b|jr\.?\b|children'?s?\b|lil'?\b)/i;
 const KIDS_SECTION_RE = /\b(kid|child|junior|jr)\b/i;
@@ -593,50 +587,6 @@ function tokenizeWaiterText(value) {
     .filter((token) => token && !WAITER_STOP_WORDS.has(token));
 }
 
-function addWaiterValue(target, value) {
-  const normalized = normalizeWaiterValue(value);
-  if (!normalized || normalized.length < 3 || WAITER_STOP_WORDS.has(normalized)) return;
-  if (/^\d+$/.test(normalized)) return;
-  target.add(normalized);
-}
-
-function addWaiterValues(target, value) {
-  if (Array.isArray(value)) {
-    for (const entry of value) addWaiterValues(target, entry);
-    return;
-  }
-
-  if (value && typeof value === "object") {
-    const direct = value.label || value.name || value.value || value.key || value.attribute_id || value.attribute;
-    if (direct) addWaiterValue(target, direct);
-    return;
-  }
-
-  if (typeof value === "string" || typeof value === "number") {
-    String(value)
-      .split(/[|,;]+/)
-      .forEach((part) => addWaiterValue(target, part));
-  }
-}
-
-function collectWaiterAttributes(value, out, depth = 0) {
-  if (!value || depth > 4) return;
-
-  if (Array.isArray(value)) {
-    for (const entry of value) collectWaiterAttributes(entry, out, depth + 1);
-    return;
-  }
-
-  if (typeof value !== "object") return;
-
-  for (const [key, nextValue] of Object.entries(value)) {
-    for (const [group, pattern] of Object.entries(WAITER_ATTRIBUTE_KEY_PATTERNS)) {
-      if (pattern.test(key)) addWaiterValues(out[group], nextValue);
-    }
-    collectWaiterAttributes(nextValue, out, depth + 1);
-  }
-}
-
 function buildQueryTokenSet(query) {
   return new Set(tokenizeWaiterText(query));
 }
@@ -646,19 +596,6 @@ function canonicalWaiterPreparation(value) {
   const alias = WAITER_TEXT_ONLY_PREPARATION_ALIASES.get(normalized);
   if (alias) return { key: alias.key, label: alias.label };
   return { key: normalized, label: titleCaseWaiterValue(normalized) };
-}
-
-function extractWaiterPreparationFromText(text) {
-  const out = new Map();
-  const haystack = normalizeWaiterValue(text);
-
-  for (const signal of WAITER_TEXT_ONLY_PREPARATION_SIGNALS) {
-    if (signal.terms.some((term) => haystack.includes(normalizeWaiterValue(term)))) {
-      out.set(signal.key, signal.label);
-    }
-  }
-
-  return out;
 }
 
 function extractWaiterTextFeatures(row, queryTokens) {
@@ -698,18 +635,17 @@ function buildWaiterInventory(rows) {
       if (seen.has(dedupeKey)) continue;
       seen.add(dedupeKey);
 
+      // Read structured attributes supplied by the backend waiter_attributes payload.
+      // Each array entry is already a normalized string key from the backend.
+      const wa = row.waiter_attributes || {};
       const attributes = {
-        preparation: new Set(),
-        ingredient: new Set(),
-        modifier: new Set(),
-        category: new Set(),
+        preparation: new Set(Array.isArray(wa.preparations) ? wa.preparations : []),
+        ingredient:  new Set(Array.isArray(wa.ingredients)  ? wa.ingredients  : []),
+        modifier:    new Set(),
+        category:    new Set(Array.isArray(wa.categories)   ? wa.categories   : []),
       };
-      collectWaiterAttributes(row, attributes);
 
-      const itemText = [itemName, getWaiterDescription(row), getWaiterCategory(row)].join(" ");
-      for (const [key, label] of extractWaiterPreparationFromText(itemText)) {
-        attributes.preparation.add(key);
-      }
+      const itemText = [itemName, getWaiterDescription(row)].join(" ");
 
       inventory.push({
         ...row,
@@ -723,7 +659,7 @@ function buildWaiterInventory(rows) {
         distance_miles: getDistanceMiles(row),
         __waiterAttributes: attributes,
         __waiterText: itemText,
-        __isKidsMeal: isKidsMealRow({ ...row, item_name: itemName }),
+        __isKidsMeal: (wa.context?.kids_meal === true) || isKidsMealRow({ ...row, item_name: itemName }),
       });
     }
   }
