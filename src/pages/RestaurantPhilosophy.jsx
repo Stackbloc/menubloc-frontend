@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import RestaurantFAQ from "../components/RestaurantFAQ.jsx";
 
 const PLAN_ROUTE = "/restaurant/signup";
 const LOGO_SRC = "/menuplyofficialsmalllogo.png";
@@ -159,9 +158,6 @@ const styles = {
     lineHeight: 1,
     transition: "background 0.15s",
   },
-  faqExpanded: {
-    marginTop: 18,
-  },
   divider: {
     border: "none",
     borderTop: "1px solid rgba(255,255,255,0.07)",
@@ -227,32 +223,23 @@ function continueBtn(enabled) {
 }
 
 function RestaurantFaqCard() {
-  const [open, setOpen] = useState(false);
-
   return (
     <div style={styles.faqCard}>
       <button
         type="button"
         style={styles.expandBtn}
-        aria-label={open ? "Collapse FAQ" : "Expand FAQ"}
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
+        aria-label="Expand"
       >
-        {open ? "-" : "+"}
+        +
       </button>
       <div style={styles.faqBadge}>Restaurant FAQ</div>
       <h2 style={styles.faqTitle}>Questions about Menuply?</h2>
       <p style={styles.faqIntro}>
         Practical answers about cost, growth expectations, and fit before moving deeper into onboarding.
       </p>
-      <button type="button" style={styles.viewLink} onClick={() => setOpen((value) => !value)}>
-        {open ? "Hide FAQ" : "View FAQ"}
-      </button>
-      {open ? (
-        <div style={styles.faqExpanded}>
-          <RestaurantFAQ instanceId="restaurant-onboarding-faq" variant="dark" />
-        </div>
-      ) : null}
+      <a href="#" style={styles.viewLink}>
+        View FAQ
+      </a>
     </div>
   );
 }
