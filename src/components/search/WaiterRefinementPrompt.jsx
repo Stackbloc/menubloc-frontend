@@ -31,7 +31,7 @@ export default function WaiterRefinementPrompt({
   const visibleOptions = refinementOptions.slice(0, 3);
   const selectedId = selectedRefinement?.id ?? null;
 
-  if (visibleOptions.length < 2) return null;
+  if (visibleOptions.length < 1) return null;
 
   // Build the question sentence with inline clickable words.
   // The words themselves ARE the interactive elements — no separate chip row.
@@ -85,10 +85,19 @@ export default function WaiterRefinementPrompt({
     );
   }
 
-  // Renders: Word1 or Word2?   /   Word1, Word2, or Word3?
+  // Renders: Word1?  /  Word1 or Word2?  /  Word1, Word2, or Word3?
   function renderQuestion() {
     const [a, b, c] = visibleOptions;
     const plain = { fontWeight: 800, fontSize: 15, color: "#9CA3AF" };
+
+    if (visibleOptions.length === 1) {
+      return (
+        <span>
+          {renderOptionWord(a, 0)}
+          <span style={plain}>?</span>
+        </span>
+      );
+    }
 
     if (visibleOptions.length === 2) {
       return (

@@ -127,7 +127,7 @@ const US_STATE_ABBREVS = new Set([
 ]);
 
 const WAITER_MIN_RESULTS = 8;
-const WAITER_MIN_OPTIONS = 2;
+const WAITER_MIN_OPTIONS = 1;
 const WAITER_MAX_OPTIONS = 3;
 const MAX_MENU_ITEMS_PER_RESTAURANT_GROUP = 3;
 const WAITER_MIN_ITEM_SIGNALS = 6;
@@ -921,17 +921,6 @@ function buildPriceCommerceCandidates(inventory) {
         `Items under $${displayThreshold}`,
         { commerceType: "price" }
       );
-      addCandidate(
-        candidates,
-        `${displayThreshold}_plus`,
-        `$${displayThreshold}+`,
-        (row) => {
-          const price = getWaiterPriceDollars(row);
-          return price !== null && price >= threshold;
-        },
-        `Items $${displayThreshold} or above`,
-        { commerceType: "price" }
-      );
     }
   }
 
@@ -950,16 +939,7 @@ function buildDealCommerceCandidates(inventory) {
       "Items with active deals",
       { commerceType: "deal" }
     );
-    addCandidate(
-      candidates,
-      "no_deals",
-      "No deals",
-      (row) => !getWaiterHasDeal(row),
-      "Items without active deals",
-      { commerceType: "deal" }
-    );
   }
-
   return candidates;
 }
 
@@ -978,17 +958,6 @@ function buildDistanceCommerceCandidates(inventory) {
           return distance !== null && distance <= 3;
         },
         "Items within 3 miles",
-        { commerceType: "distance" }
-      );
-      addCandidate(
-        candidates,
-        "farther_out",
-        "Farther out",
-        (row) => {
-          const distance = getDistanceMiles(row);
-          return distance !== null && distance > 3;
-        },
-        "Items more than 3 miles away",
         { commerceType: "distance" }
       );
     }
@@ -1079,6 +1048,7 @@ function buildWaiterOptions(rows, query, context = {}) {
     },
     ...[
       { commerceType: "price", priority: 10, candidates: buildPriceCommerceCandidates(inventory) },
+      { commerceType: "deal", priority: 9, candidates: buildDealCommerceCandidates(inventory) },
       { commerceType: "distance", priority: 8, candidates: buildDistanceCommerceCandidates(inventory) },
     ].map((commerceGroup) => ({
       dimension: "commerce",
