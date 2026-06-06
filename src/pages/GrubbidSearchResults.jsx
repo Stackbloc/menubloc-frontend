@@ -184,10 +184,10 @@ const WAITER_ATTRIBUTE_KEY_PATTERNS = Object.freeze({
 // (like "entree") so the waiter can offer "Soup" or "Bowl" as distinct options.
 const WAITER_SPECIFIC_CATEGORY_OVERRIDES = [
   { key: "soup",      label: "Soup",      terms: ["soup", "bisque", "chowder", "stew", "broth", "gumbo", "bouillabaisse"] },
-  { key: "bowl",      label: "Bowl",      terms: ["bowl"] },
   { key: "salad",     label: "Salad",     terms: ["salad"] },
-  { key: "sandwich",  label: "Sandwich",  terms: ["sandwich", "sub", "hoagie", "panini", "club sandwich"] },
   { key: "wrap",      label: "Wrap",      terms: ["wrap", "quesadilla"] },
+  { key: "bowl",      label: "Bowl",      terms: ["bowl"] },
+  { key: "sandwich",  label: "Sandwich",  terms: ["sandwich", "sub", "hoagie", "panini", "club sandwich"] },
   { key: "pizza",     label: "Pizza",     terms: ["pizza", "flatbread"] },
   { key: "pasta",     label: "Pasta",     terms: ["pasta", "spaghetti", "linguine", "penne", "fettuccine", "lasagna", "ravioli", "gnocchi"] },
   { key: "burger",    label: "Burger",    terms: ["burger", "hamburger"] },
@@ -195,6 +195,8 @@ const WAITER_SPECIFIC_CATEGORY_OVERRIDES = [
 ];
 // Generic labels that specific dish types above should displace
 const WAITER_GENERIC_CATEGORY_PARENTS = new Set(["entree", "main", "main course", "main dish", "dinner", "lunch"]);
+// MKS-provided specific types — if any of these are already in attributes.category, skip name inference
+const MKS_SPECIFIC_CATEGORY_KEYS = new Set(WAITER_SPECIFIC_CATEGORY_OVERRIDES.map((s) => s.key));
 
 const WAITER_TEXT_ONLY_PREPARATION_SIGNALS = [
   { key: "fried", label: "Fried", terms: ["fried", "crispy", "breaded", "battered", "tempura", "crunchy"] },
@@ -716,16 +718,21 @@ function buildWaiterInventory(rows) {
         attributes.preparation.add(key);
       }
 
-      // Infer specific dish type from item name and displace generic parent categories.
-      // "Tomato Bisque Soup" tagged as "entree" → category becomes "soup" not "entree".
-      const nameText = normalizeWaiterValue([itemName, getWaiterDescription(row)].join(" "));
-      for (const signal of WAITER_SPECIFIC_CATEGORY_OVERRIDES) {
-        if (signal.terms.some((term) => nameText.includes(normalizeWaiterValue(term)))) {
-          for (const parent of WAITER_GENERIC_CATEGORY_PARENTS) {
-            attributes.category.delete(parent);
+      // If MKS already classified this item with a specific dish type, trust it.
+      // Only infer from item name when MKS only provided a generic category like "entree".
+      const hasMKSSpecificType = Array.from(attributes.category).some(
+        (cat) => MKS_SPECIFIC_CATEGORY_KEYS.has(normalizeWaiterValue(cat))
+      );
+      if (!hasMKSSpecificType) {
+        const nameText = normalizeWaiterValue([itemName, getWaiterDescription(row)].join(" "));
+        for (const signal of WAITER_SPECIFIC_CATEGORY_OVERRIDES) {
+          if (signal.terms.some((term) => nameText.includes(normalizeWaiterValue(term)))) {
+            for (const parent of WAITER_GENERIC_CATEGORY_PARENTS) {
+              attributes.category.delete(parent);
+            }
+            attributes.category.add(signal.key);
+            break;
           }
-          attributes.category.add(signal.key);
-          break;
         }
       }
 
