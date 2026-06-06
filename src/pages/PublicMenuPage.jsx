@@ -715,7 +715,7 @@ function ItemDetailSheet({
           {canNavigate && navigate ? (
             <button
               type="button"
-              onClick={() => { onClose(); navigate(`/menu-items/${item.id}?from=menu`); }}
+              onClick={() => { onClose(); navigate(`/menu-items/${item.canonical_menu_item_id || item.id}?from=menu`); }}
               style={{
                 display: "block",
                 width: "100%",
