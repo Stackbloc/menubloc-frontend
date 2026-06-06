@@ -1578,19 +1578,6 @@ export default function MenuItemDetailPage() {
         </div>
       </Surface>
 
-      {!isMobile ? (
-        <StickyVerdictRail
-          detailSystem={detailSystem}
-          t={t}
-          fullMenuHref={fullMenuHref}
-          isMobile={isMobile}
-          itemName={displayItemName}
-          priceLabel={priceLabel}
-          fromSearch={fromSearch}
-          onBack={() => navigate(-1)}
-        />
-      ) : null}
-
       {isBrokenFranchiseLink && (
         <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: "#22C55E", lineHeight: 1.5 }}>
