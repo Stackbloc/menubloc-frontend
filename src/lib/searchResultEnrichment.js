@@ -210,6 +210,10 @@ export function buildNutritionPreviewChips(row, queryMeta) {
     nutritionIntent.low_carb === true ||
     diet.low_carb === true ||
     diet.keto === true;
+  const wantsFiber =
+    constraints?.fiber?.direction === "high" ||
+    nutritionIntent.high_fiber === true ||
+    diet.high_fiber === true;
 
   const backendScores = row?.chips?.insights?.scores || row?.item?.chips?.insights?.scores;
 
@@ -240,6 +244,11 @@ export function buildNutritionPreviewChips(row, queryMeta) {
     const net =
       fiber != null ? Math.max(0, Math.round((carbs - fiber) * 10) / 10) : Math.round(carbs * 10) / 10;
     push(`${net}g net carbs`, true);
+  }
+
+  if (wantsFiber) {
+    if (fiber != null) push(`${Math.round(fiber)}g fiber`, true);
+    else push("Fiber —", true);
   }
 
   // Fill remaining slots with cal / protein (if not already shown)
