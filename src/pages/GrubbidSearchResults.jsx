@@ -180,6 +180,22 @@ const WAITER_ATTRIBUTE_KEY_PATTERNS = Object.freeze({
   modifier: /(^|_)(modifier|option|choice|addon|add_on|variant|customization)(_|$)/i,
   category: /(^|_)(strict_type|broad_category|category|section|primary_family|template|dish_type|item_type|course)(_|$)/i,
 });
+// When an item name signals a specific dish type, replace generic parent categories
+// (like "entree") so the waiter can offer "Soup" or "Bowl" as distinct options.
+const WAITER_SPECIFIC_CATEGORY_OVERRIDES = [
+  { key: "soup",      label: "Soup",      terms: ["soup", "bisque", "chowder", "stew", "broth", "gumbo", "bouillabaisse"] },
+  { key: "bowl",      label: "Bowl",      terms: ["bowl"] },
+  { key: "salad",     label: "Salad",     terms: ["salad"] },
+  { key: "sandwich",  label: "Sandwich",  terms: ["sandwich", "sub", "hoagie", "panini", "club sandwich"] },
+  { key: "wrap",      label: "Wrap",      terms: ["wrap", "quesadilla"] },
+  { key: "pizza",     label: "Pizza",     terms: ["pizza", "flatbread"] },
+  { key: "pasta",     label: "Pasta",     terms: ["pasta", "spaghetti", "linguine", "penne", "fettuccine", "lasagna", "ravioli", "gnocchi"] },
+  { key: "burger",    label: "Burger",    terms: ["burger", "hamburger"] },
+  { key: "taco",      label: "Taco",      terms: ["taco", "burrito"] },
+];
+// Generic labels that specific dish types above should displace
+const WAITER_GENERIC_CATEGORY_PARENTS = new Set(["entree", "main", "main course", "main dish", "dinner", "lunch"]);
+
 const WAITER_TEXT_ONLY_PREPARATION_SIGNALS = [
   { key: "fried", label: "Fried", terms: ["fried", "crispy", "breaded", "battered", "tempura", "crunchy"] },
   { key: "grilled", label: "Grilled", terms: ["grilled", "chargrilled", "char-grilled", "blackened"] },
@@ -698,6 +714,19 @@ function buildWaiterInventory(rows) {
       const itemText = [itemName, getWaiterDescription(row), getWaiterCategory(row)].join(" ");
       for (const [key, label] of extractWaiterPreparationFromText(itemText)) {
         attributes.preparation.add(key);
+      }
+
+      // Infer specific dish type from item name and displace generic parent categories.
+      // "Tomato Bisque Soup" tagged as "entree" → category becomes "soup" not "entree".
+      const nameText = normalizeWaiterValue([itemName, getWaiterDescription(row)].join(" "));
+      for (const signal of WAITER_SPECIFIC_CATEGORY_OVERRIDES) {
+        if (signal.terms.some((term) => nameText.includes(normalizeWaiterValue(term)))) {
+          for (const parent of WAITER_GENERIC_CATEGORY_PARENTS) {
+            attributes.category.delete(parent);
+          }
+          attributes.category.add(signal.key);
+          break;
+        }
       }
 
       inventory.push({
