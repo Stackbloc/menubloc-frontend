@@ -265,23 +265,49 @@ export default function RestaurantPhilosophy() {
           It will be built by restaurants that create more value for diners. Menuply was built to support that future.
         </p>
 
+        <p style={styles.bodyText}>
+          Many restaurants have had to increase menu prices to help absorb the structural costs associated with operating
+          on traditional third-party delivery platforms. These higher-cost marketplace models have often created
+          challenges for both restaurants and diners.
+        </p>
+        <p style={styles.bodyText}>
+          Menuply was designed with a lower-cost, restaurant-centered structure intended to give restaurants greater
+          flexibility to offer diners better day-to-day pricing, meaningful deals, richer menu information, and more
+          direct engagement. Menuply is a fully self-service platform built without the heavy sales, onboarding, and
+          operational overhead common in traditional delivery marketplaces. By keeping structural costs low, restaurants
+          can operate more efficiently on the platform and offer diners more competitive pricing and better overall value.
+          The platform is built around the belief that lower structural costs can create stronger long-term value for both
+          restaurants and diners.
+        </p>
+        <p style={styles.bodyText}>
+          Prospective restaurant partners are encouraged to keep this principle in mind when joining the platform, as it
+          reflects a core Menuply philosophy: sustainable restaurant growth should come from delivering greater value -
+          not simply increasing costs without improving the customer experience.
+        </p>
+        <p style={styles.bodyTextLast}>
+          When restaurants and diners come together around a shared ecosystem focused on value, transparency, and informed
+          decision-making - powered by thousands of intelligently connected menus - the collective value of the platform
+          multiplies. We like to think of all participants, whether restaurants or diners, as "multipliers."
+        </p>
+
         <div style={styles.goalSection}>
           <p style={styles.goalIntro}>Our goal is simple:</p>
           <ul style={styles.goalList}>
             <li style={styles.goalItem}>
               <span style={styles.goalDot} aria-hidden="true" />
-              <span>Help restaurants better serve their patrons and build long-term success.</span>
+              <span>Help restaurants better serve their patrons and strengthen long-term success.</span>
             </li>
             <li style={styles.goalItem}>
               <span style={styles.goalDot} aria-hidden="true" />
-              <span>Help diners navigate their options and experience better value.</span>
+              <span>Help diners better navigate their dining options and experience greater value.</span>
             </li>
           </ul>
         </div>
 
         <div style={styles.card}>
-          Restaurants always control their own pricing. Menuply partners with restaurants that prioritize customer value
-          — those aligned with this principle may receive increased visibility on the platform.
+          Restaurants always control their own pricing. However, Menuply seeks to partner with restaurants that prioritize
+          customer value without compromising quality. Restaurants more closely aligned with these principles may receive
+          increased visibility opportunities within the Menuply platform experience.
         </div>
 
         <RestaurantFaqCard />
