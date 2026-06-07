@@ -267,8 +267,7 @@ export default function RestaurantPhilosophy() {
         </h1>
 
         <p style={styles.heroSubhead}>
-          The future will be built by restaurants that create more value for diners, and Menuply was built to support
-          that future.
+          Built by restaurants that create more value for diners — and supported by Menuply.
         </p>
 
         <p style={styles.bodyText}>
