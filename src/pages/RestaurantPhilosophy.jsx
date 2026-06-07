@@ -257,18 +257,12 @@ export default function RestaurantPhilosophy() {
 
         <div style={styles.sectionLabel}>For Restaurants</div>
 
-        <h1 style={styles.heading}>A platform built around great menus, real value, and long-term success.</h1>
+        <h1 style={styles.heading}>
+          The future of the restaurant industry will not be built on higher prices alone.
+        </h1>
 
-        <p style={styles.bodyText}>
-          Traditional delivery platforms have pushed restaurants to raise prices just to cover platform fees — hurting
-          both restaurants and diners. Menuply is built differently.
-        </p>
-        <p style={styles.bodyText}>
-          We keep overhead low so restaurants can offer competitive pricing, richer menu details, and more direct
-          engagement — without the heavy cost structure.
-        </p>
         <p style={styles.bodyTextLast}>
-          Our philosophy: sustainable growth comes from delivering more value, not charging more for the same experience.
+          It will be built by restaurants that create more value for diners. Menuply was built to support that future.
         </p>
 
         <div style={styles.goalSection}>
