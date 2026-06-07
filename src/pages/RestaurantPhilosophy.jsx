@@ -275,31 +275,14 @@ export default function RestaurantPhilosophy() {
           both restaurants and diners. Menuply is built differently.
         </p>
         <p style={styles.bodyText}>
-          We keep overhead low so restaurants can offer competitive pricing, richer menu details, and more direct
-          engagement — without the heavy cost structure.
+          Menuply is a fully self-service platform built without the heavy sales, onboarding, and operational overhead
+          common in traditional delivery marketplaces.
         </p>
         <p style={styles.bodyTextLast}>
-          Our philosophy: sustainable growth comes from delivering more value, not charging more for the same experience.
+          By keeping structural costs low, restaurants can offer more competitive pricing, richer menu information, and
+          better overall value. Our philosophy is simple: sustainable growth comes from delivering more value, not
+          charging more for the same experience.
         </p>
-
-        <div style={styles.goalSection}>
-          <p style={styles.goalIntro}>Our goal is simple:</p>
-          <ul style={styles.goalList}>
-            <li style={styles.goalItem}>
-              <span style={styles.goalDot} aria-hidden="true" />
-              <span>Help restaurants better serve their patrons and build long-term success.</span>
-            </li>
-            <li style={styles.goalItem}>
-              <span style={styles.goalDot} aria-hidden="true" />
-              <span>Help diners navigate their options and experience better value.</span>
-            </li>
-          </ul>
-        </div>
-
-        <div style={styles.card}>
-          Restaurants always control their own pricing. Menuply partners with restaurants that prioritize customer value
-          — those aligned with this principle may receive increased visibility on the platform.
-        </div>
 
         <RestaurantFaqCard />
 
