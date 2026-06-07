@@ -267,22 +267,43 @@ export default function RestaurantPhilosophy() {
         </h1>
 
         <p style={styles.heroSubhead}>
-          It will be built by restaurants that create more value for diners. Menuply was built to support that future.
+          The future will be built by restaurants that create more value for diners, and Menuply was built to support
+          that future.
         </p>
 
         <p style={styles.bodyText}>
-          Traditional delivery platforms have pushed restaurants to raise prices just to cover platform fees — hurting
-          both restaurants and diners. Menuply is built differently.
+          Traditional delivery platforms have pushed restaurants to raise prices simply to cover platform fees. Menuply
+          is built differently.
         </p>
         <p style={styles.bodyText}>
           Menuply is a fully self-service platform built without the heavy sales, onboarding, and operational overhead
-          common in traditional delivery marketplaces.
+          common in traditional delivery marketplaces. By maintaining a lower-cost operating model, Menuply gives
+          restaurants greater flexibility to offer more competitive pricing, richer menu information, and better overall
+          value to diners.
         </p>
         <p style={styles.bodyTextLast}>
-          By keeping structural costs low, restaurants can offer more competitive pricing, richer menu information, and
-          better overall value. Our philosophy is simple: sustainable growth comes from delivering more value, not
-          charging more for the same experience.
+          Restaurants always control their own pricing, but Menuply is designed for restaurant partners who intend to use
+          the platform's lower-cost structure to create better value for diners.
         </p>
+
+        <div style={styles.goalSection}>
+          <p style={styles.goalIntro}>Our goal is simple:</p>
+          <ul style={styles.goalList}>
+            <li style={styles.goalItem}>
+              <span style={styles.goalDot} aria-hidden="true" />
+              <span>Help restaurants better serve their patrons and build long-term success.</span>
+            </li>
+            <li style={styles.goalItem}>
+              <span style={styles.goalDot} aria-hidden="true" />
+              <span>Help diners navigate their options and experience better value.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div style={styles.card}>
+          Menuply partners with restaurants that prioritize customer value without compromising quality. Restaurants
+          aligned with these principles may receive increased visibility opportunities throughout the platform.
+        </div>
 
         <RestaurantFaqCard />
 
