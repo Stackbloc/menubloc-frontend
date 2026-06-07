@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
-const FAQ_DEFS = [
+export const FAQ_DEFS = [
   {
     questionKey: "onboarding.faq.q1",
     answerKeys: [
