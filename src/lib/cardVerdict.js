@@ -1,6 +1,17 @@
 const FREQUENT_LABEL = "Suitable for Frequent Consumption";
 const OCCASIONAL_LABEL = "Suitable for Occasional Consumption";
 const INDULGENT_LABEL = "Indulgent";
+export const NOT_AVAILABLE_LABEL = "Not Available";
+
+export function toNullableNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function isKnownNumber(value) {
+  return toNullableNumber(value) !== null;
+}
 
 function asLower(value) {
   return String(value || "").trim().toLowerCase();
@@ -70,10 +81,45 @@ export function resolveCardVerdict(source = {}) {
   if (indulgenceLevel === "moderate") return OCCASIONAL_LABEL;
   if (indulgenceLevel === "light") return FREQUENT_LABEL;
 
-  return "";
+  const nutrition = chips?.nutrition_chip || detailSystem?.nutrition || source.nutrition_chip || null;
+  const calories = toNullableNumber(nutrition?.calories_kcal);
+  const sodium = toNullableNumber(nutrition?.sodium_mg);
+  const sugar = toNullableNumber(nutrition?.sugar_g);
+  const fat = toNullableNumber(nutrition?.fat_g);
+  const knownNutritionValues = [calories, sodium, sugar, fat].filter((value) => value !== null);
+
+  if (knownNutritionValues.length >= 2) {
+    if (
+      (calories !== null && calories >= 700) ||
+      (sodium !== null && sodium >= 1200) ||
+      (sugar !== null && sugar >= 35) ||
+      (fat !== null && fat >= 35)
+    ) {
+      return INDULGENT_LABEL;
+    }
+    if (
+      (calories !== null && calories >= 450) ||
+      (sodium !== null && sodium >= 700) ||
+      (sugar !== null && sugar >= 18) ||
+      (fat !== null && fat >= 20)
+    ) {
+      return OCCASIONAL_LABEL;
+    }
+    return FREQUENT_LABEL;
+  }
+
+  return NOT_AVAILABLE_LABEL;
 }
 
 export function getCardVerdictTone(label) {
+  if (label === NOT_AVAILABLE_LABEL) {
+    return {
+      background: "rgba(148,163,184,0.10)",
+      border: "rgba(148,163,184,0.24)",
+      label: "#CBD5E1",
+      text: "#E2E8F0",
+    };
+  }
   if (label === INDULGENT_LABEL) {
     return {
       background: "rgba(249,115,22,0.10)",
