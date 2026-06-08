@@ -360,7 +360,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           <p>Our goal is simple:</p>
           <ul className="goal-list">
             <li>Help restaurants better serve their patrons and build long-term success.</li>
-            <li>Help diners navigate their options and experience better value.</li>
+            <li>Help diners better navigate their dining options and experience increased value.</li>
           </ul>
         </div>
 
