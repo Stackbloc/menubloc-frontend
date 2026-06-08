@@ -26,6 +26,7 @@ const SIGNUP_PLAN_OPTIONS = [
     cta: "Continue with Verified",
     featured: false,
     features: [
+      "100% Free Profile with Fully Searchable, Verified Menu",
       "Searchable restaurant listing on Menuply",
       "Restaurant profile page with logo, about us, featured dish (limited)",
       "One menu with unlimited menu items",
