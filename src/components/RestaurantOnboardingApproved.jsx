@@ -353,7 +353,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         </p>
 
         <p className="body-text">
-          Restaurants always control their own pricing, but Menuply is designed for restaurant partners who intend to use the platform&apos;s lower-cost structure to create better value for diners.
+          While restaurants always control their own pricing, Menuply is designed for restaurant partners who share the platform&apos;s commitment to delivering better value to diners.
         </p>
 
         <div className="goal-section">
