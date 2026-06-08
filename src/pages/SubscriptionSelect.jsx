@@ -62,6 +62,7 @@ const PLAN_CARDS = {
     price: "$0",
     description: "A simple verified restaurant presence with public menu access on Menuply.",
     features: [
+      "100% Free Profile with Fully Searchable, Verified Menu",
       "Basic restaurant profile",
       "1 editable menu listing",
       "QR menu access for customers",
