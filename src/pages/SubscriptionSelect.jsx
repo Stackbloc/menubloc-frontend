@@ -72,14 +72,13 @@ const PLAN_CARDS = {
     title: "Founder's",
     price: "$299/year",
     description:
-      "Lock in early-bird Founder's pricing while availability remains open. Includes online ordering at 8% commission, premium menu tools, billboards, deals, and Founder's recognition.",
+      "Be among the first restaurants to join the movement and take back your restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
     features: [
-      "Online ordering at 8% commission",
-      "Optional second year at the same $299/year rate",
-      "Founder's recognition",
-      "Deals, billboards, and premium menu tools",
+      "All benefits in Verified, plus much more.",
+      "Guaranteed, no increase pricing for 24 months",
+      "Publish Deals free during first year (subject to quantity limits)",
+      "Premium menu tools",
     ],
-    footnote: "Includes online ordering at 8% commission.",
   },
 };
 
@@ -815,10 +814,6 @@ export default function SubscriptionSelect() {
                 </li>
               ))}
             </ul>
-
-            <div style={s.footnote}>
-              {PLAN_CARDS.founders_annual.footnote}
-            </div>
 
             <button
               type="button"

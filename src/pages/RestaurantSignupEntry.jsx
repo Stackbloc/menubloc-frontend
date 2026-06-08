@@ -38,14 +38,14 @@ const SIGNUP_PLAN_OPTIONS = [
     name: "Founder's",
     price: "$299/year",
     description:
-      "Lock in early-bird Founder's pricing while availability remains open. Includes online ordering at 8% commission, premium menu tools, billboards, deals, and Founder's recognition.",
+      "Be among the first restaurants to join the movement and take back your restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
     cta: "Continue with Founder's",
     featured: true,
     features: [
-      "Online ordering at 8% commission",
-      "Optional second year at the same $299/year rate",
-      "Founder's recognition",
-      "Deals, billboards, and premium menu tools",
+      "All benefits in Verified, plus much more.",
+      "Guaranteed, no increase pricing for 24 months",
+      "Publish Deals free during first year (subject to quantity limits)",
+      "Premium menu tools",
     ],
   },
 ];
@@ -392,9 +392,6 @@ export default function RestaurantSignupEntry() {
               aria-label={plan.cta}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePlanSelect(plan.code); } }}
             >
-              {plan.featured ? (
-                <div style={styles.badge}>{t("signup.entry.mostPopular", "Most Popular")}</div>
-              ) : null}
               {plan.code === "founders_annual" ? (
                 <div style={styles.limitedBadge}>{t("signup.entry.limitedAvailability", "Limited Availability")}</div>
               ) : null}

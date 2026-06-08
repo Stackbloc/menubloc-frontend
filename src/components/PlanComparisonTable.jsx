@@ -8,21 +8,18 @@ const MATRIX = [
   {
     category: "Founder's Membership",
     rows: [
-      { label: "Online ordering at 8% commission", v: false, f: true },
-      { label: "Optional second year at the same $299/year rate", v: false, f: true },
-      { label: "Founder's account designation", v: false, f: true },
-      { label: "Founder's badge/recognition on restaurant profile", v: false, f: true },
+      { label: "All benefits in Verified, plus much more.", v: false, f: true },
+      { label: "Guaranteed, no increase pricing for 24 months", v: false, f: true },
     ],
   },
   {
     category: "Discovery & Presence",
     rows: [
       { label: "Fully searchable restaurant listing on Menuply", v: true, f: true },
-      { label: "Premiere hosted restaurant profile page, including logo, billboard, about us, featured dish", v: true, vNote: "(Limited)", f: true },
+      { label: "Premiere hosted restaurant profile page, including logo, about us, featured dish", v: true, vNote: "(Limited)", f: true },
       { label: "Dynamic QR Code & menus that are sharable by restaurant", v: true, f: true },
       { label: "Diners Social Share Menu and Menu Items", v: false, f: true },
       { label: "Restaurant profile that diner may follow and receive restaurant offers and updates", v: false, f: true },
-      { label: "Place displayable billboards on profile page with optional display in search results (additional fee may apply)", v: false, f: true },
     ],
   },
   {
@@ -30,6 +27,7 @@ const MATRIX = [
     rows: [
       { label: "Unlimited menus, unlimited menu items, with scheduled/timed menu display options", v: true, vNote: "(Limited to one menu)", f: true },
       { label: "Edit menu, menu items, with advanced pricing tools", v: true, f: true },
+      { label: "Premium menu tools", v: false, f: true },
       { label: "Option to include Menu Item Photos", v: false, f: true },
     ],
   },
@@ -42,7 +40,7 @@ const MATRIX = [
   {
     category: "Pricing & Deals",
     rows: [
-      { label: "Post restaurant created deals on deals page free of charge", v: false, f: true },
+      { label: "Publish Deals free during first year (subject to quantity limits)", v: false, f: true },
     ],
   },
   {
@@ -100,7 +98,7 @@ export default function PlanComparisonTable() {
                 {t("signup.entry.limitedAvailability", "Limited Availability")}
               </div>
               <div style={{ fontSize: 10, color: AMBER, marginTop: 5, lineHeight: 1.35, fontWeight: 500 }}>
-                {t("signup.entry.plan.founder.price", "$299/year")} · 8% commission
+                {t("signup.entry.plan.founder.price", "$299/year")}
               </div>
             </th>
           </tr>

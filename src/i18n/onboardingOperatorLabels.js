@@ -161,7 +161,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.founder.name": "Founder's",
     "signup.entry.plan.founder.price": "$299/year",
     "signup.entry.plan.founder.description":
-      "Lock in early-bird Founder's pricing while availability remains open. Includes online ordering at 8% commission, premium menu tools, billboards, deals, and Founder's recognition.",
+      "Be among the first restaurants to join the movement and take back your restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
     "signup.entry.plan.founder.cta": "Continue with Founder's",
     "signup.entry.foundersNotice":
       "Founder's Membership is available for a limited time to early restaurant partners.",
@@ -423,7 +423,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.founder.name": "Founder's",
     "signup.entry.plan.founder.price": "$299/año",
     "signup.entry.plan.founder.description":
-      "Asegura el precio Founder's de lanzamiento mientras haya disponibilidad. Incluye pedidos en línea con 8% de comisión, herramientas premium de menú, billboards, ofertas y reconocimiento Founder's.",
+      "Sé de los primeros restaurantes en unirte al movimiento y recuperar la independencia de tu restaurante. Asegura el precio Founder's de lanzamiento mientras haya disponibilidad.",
     "signup.entry.plan.founder.cta": "Continuar con Founder's",
     "signup.entry.foundersNotice":
       "La membresía Founder's está disponible por tiempo limitado para restaurantes socios pioneros.",
@@ -677,7 +677,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.founder.name": "Founder's",
     "signup.entry.plan.founder.price": "$299/年",
     "signup.entry.plan.founder.description":
-      "在名额开放期间锁定 Founder's 早鸟定价。包含 8% 佣金的在线点餐、高级菜单工具、广告牌、优惠及 Founder's 专属识别。",
+      "成为首批加入这一运动的餐厅，夺回餐厅的独立权。在名额开放期间锁定 Founder's 早鸟定价。",
     "signup.entry.plan.founder.cta": "继续使用 Founder's",
     "signup.entry.foundersNotice": "Founder's 会员面向早期餐厅合作伙伴，名额有限。",
     "signup.account.pageTitle": "创建餐厅账户",
