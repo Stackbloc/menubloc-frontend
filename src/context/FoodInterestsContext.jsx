@@ -152,7 +152,11 @@ export function FoodInterestsProvider({ children }) {
         const localInterests = safeReadLocalInterests();
         if (localInterests.length > 0 && !syncedAnonymousRef.current) {
           for (const interest of localInterests) {
-            await followFoodInterestRequest(interest);
+            try {
+              await followFoodInterestRequest(interest);
+            } catch {
+              // Backend food-interest routes may be unavailable; keep local copy.
+            }
           }
           writeLocalInterests([]);
           syncedAnonymousRef.current = true;
@@ -161,9 +165,9 @@ export function FoodInterestsProvider({ children }) {
         const data = await getFoodInterests();
         if (!alive) return;
         setInterests(dedupeInterests(data?.interests || []));
-      } catch (err) {
+      } catch {
         if (!alive) return;
-        setError(err.message || "Unable to load food interests.");
+        setInterests(safeReadLocalInterests());
       } finally {
         if (alive) setLoading(false);
       }
@@ -209,17 +213,29 @@ export function FoodInterestsProvider({ children }) {
       try {
         if (alreadyFollowing) {
           await unfollowFoodInterestRequest(normalized);
-          setInterests((prev) => prev.filter((entry) => getInterestSignature(entry) !== signature));
+          setInterests((prev) => {
+            const next = prev.filter((entry) => getInterestSignature(entry) !== signature);
+            writeLocalInterests(next);
+            return next;
+          });
           return { followed: false, localOnly: false };
         }
 
         const data = await followFoodInterestRequest(normalized);
         const savedInterest = normalizeInterest(data?.interest || normalized);
-        setInterests((prev) => dedupeInterests([savedInterest, ...prev]));
+        setInterests((prev) => {
+          const next = dedupeInterests([savedInterest, ...prev]);
+          writeLocalInterests(next);
+          return next;
+        });
         return { followed: true, localOnly: false };
-      } catch (err) {
-        setError(err.message || "Unable to update food interests.");
-        throw err;
+      } catch {
+        const next = alreadyFollowing
+          ? interests.filter((entry) => getInterestSignature(entry) !== signature)
+          : dedupeInterests([normalized, ...interests]);
+        setInterests(next);
+        writeLocalInterests(next);
+        return { followed: !alreadyFollowing, localOnly: true };
       } finally {
         setSavingKeys((prev) => {
           const next = new Set(prev);

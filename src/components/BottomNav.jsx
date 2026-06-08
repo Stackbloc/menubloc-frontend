@@ -4,32 +4,6 @@ import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import WaiterFaceIcon from "./icons/WaiterFaceIcon.jsx";
 
-function buildSearchHref() {
-  try {
-    const raw = sessionStorage.getItem("grubbid.discovery.location") || "";
-    const parts = raw.split(",");
-    const city = parts.length >= 2 ? parts[0].trim() : raw.trim();
-    const state = parts.length >= 2 ? parts[1].trim() : "";
-    if (city) {
-      const p = new URLSearchParams();
-      p.set("city", city);
-      if (state) p.set("state", state);
-      return `/search?${p.toString()}`;
-    }
-    const rawGeo = sessionStorage.getItem("grubbid.discovery.geo") || "";
-    if (rawGeo) {
-      const geo = JSON.parse(rawGeo);
-      if (geo?.lat && geo?.lng) {
-        const p = new URLSearchParams();
-        p.set("lat", String(geo.lat));
-        p.set("lng", String(geo.lng));
-        return `/search?${p.toString()}`;
-      }
-    }
-  } catch { /* sessionStorage unavailable or parse failed */ }
-  return "/search";
-}
-
 export default function BottomNav() {
   const { t } = useLanguage();
   const navRef = useRef(null);
@@ -38,7 +12,7 @@ export default function BottomNav() {
 
   const tabs = useMemo(() => [
     { label: t("nav.home", "Home"), icon: "🏠", to: "/" },
-    { label: t("nav.search", "Search"), iconComponent: WaiterFaceIcon, to: "/search", buildHref: buildSearchHref },
+    { label: t("nav.interested", "Interested"), iconComponent: WaiterFaceIcon, to: "/food-interests" },
     { label: t("nav.following", "Following"), icon: "F", to: "/account/following" },
     { label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
   ], [t]);
