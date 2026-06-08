@@ -35,6 +35,7 @@ import { trackBillboardClick } from "../lib/analytics.js";
 import { fetchSimilarItems, fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "./menu/CompareItemsModal.jsx";
+import { getCardVerdictTone, resolveCardVerdict } from "../lib/cardVerdict.js";
 import {
   getQualitativeLabel,
   getNutritionSummary,
@@ -758,6 +759,33 @@ function CompactScoreSummary({ presentation, breadScore }) {
   );
 }
 
+function CardVerdictBox({ label }) {
+  if (!label) return null;
+  const tone = getCardVerdictTone(label);
+  return (
+    <div
+      style={{
+        position: "sticky",
+        top: 8,
+        zIndex: 2,
+        marginTop: 10,
+        padding: "10px 12px",
+        borderRadius: 12,
+        background: tone.background,
+        border: `1px solid ${tone.border}`,
+        maxWidth: 560,
+      }}
+    >
+      <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: tone.label }}>
+        Verdict
+      </div>
+      <div style={{ marginTop: 4, fontSize: 13.5, fontWeight: 850, lineHeight: 1.35, color: tone.text }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
 /* ---- Detail panel content ---- */
 
 function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels }) {
@@ -1045,6 +1073,7 @@ function ItemRow({
   const chips = resolveChips(row);
   const indulgencePresentation = resolveIndulgencePresentation({ chips });
   const breadScore = row?.detail_system?.bread_score || row?.chips?.bread_score || null;
+  const cardVerdict = resolveCardVerdict({ ...row, chips });
   const hrefBase = mid ? getCanonicalMenuItemPath({
     restaurant: {
       slug: (restaurantSummary && restaurantSummary.slug) || getRestSlug(row),
@@ -1375,6 +1404,8 @@ function ItemRow({
       {(indulgencePresentation || breadScore) ? (
         <CompactScoreSummary presentation={indulgencePresentation} breadScore={breadScore} />
       ) : null}
+
+      <CardVerdictBox label={cardVerdict} />
 
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
         {!indulgencePresentation ? (

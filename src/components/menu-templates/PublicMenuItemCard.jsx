@@ -7,6 +7,7 @@ import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
 import { buildDishShareData } from "../share/shareUtils.js";
 import { getMenuItemImageUrl } from "./menuImageUtils.js";
 import { normalizeMenuThemeSettings } from "./menuThemeSettings.js";
+import { getCardVerdictTone, resolveCardVerdict } from "../../lib/cardVerdict.js";
 
 function Badge({ label, bg, color, border }) {
   return (
@@ -53,6 +54,32 @@ function getCartItemStateForItem(cartItems, menuItemId) {
 
 function isItemOrderable(item, getConsumerDisplayPrice) {
   return (getConsumerDisplayPrice(item) ?? 0) > 0;
+}
+
+function VerdictBox({ label }) {
+  if (!label) return null;
+  const tone = getCardVerdictTone(label);
+  return (
+    <div
+      style={{
+        position: "sticky",
+        top: 8,
+        zIndex: 2,
+        marginTop: 8,
+        padding: "8px 10px",
+        borderRadius: 10,
+        background: tone.background,
+        border: `1px solid ${tone.border}`,
+      }}
+    >
+      <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: tone.label }}>
+        Verdict
+      </div>
+      <div style={{ marginTop: 3, fontSize: 12.5, fontWeight: 800, lineHeight: 1.35, color: tone.text }}>
+        {label}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -102,6 +129,7 @@ export default function PublicMenuItemCard({
   const imageUrl = getMenuItemImageUrl(it);
   const canNavigate = it?.id != null;
   const indulgencePresentation = resolveIndulgencePresentation({ chips: it?.chips });
+  const cardVerdict = resolveCardVerdict(it);
   const nutritionChip = it?.chips?.nutrition_chip || null;
   const hasNutritionData = !!(
     nutritionChip &&
@@ -388,6 +416,8 @@ export default function PublicMenuItemCard({
           lineHeight: density === "classic" ? 1.4 : 1.35,
         }}>{desc}</div>
       ) : null}
+
+      <VerdictBox label={cardVerdict} />
 
       {density !== "takeout" && (showInsightsInline || showNutritionInline || showAllergenInline || showIndulgenceInline) ? (
         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

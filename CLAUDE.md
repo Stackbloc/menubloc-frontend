@@ -573,6 +573,27 @@ The "Nutrition" button MUST be a `<button>` element with `e.stopPropagation()` c
 <Badge label="Nutrition" ... />
 ```
 
+### Protected menu item card elements
+
+Menu item card elements are protected across restaurant menu pages, search results, and shared card components.
+
+The following elements may not be removed, hidden, renamed, or made click-only without explicit approval:
+- Item name
+- Item price
+- Item description when available
+- Verdict box: `Suitable for Frequent Consumption`, `Suitable for Occasional Consumption`, or `Indulgent`
+- Nutrition action
+- Insights action
+- Share action
+
+Any change touching menu item cards, restaurant menu pages, search results, Nutrition, Insights, or verdict rendering MUST verify these protected elements still render on:
+- Mobile restaurant menu page
+- Desktop restaurant menu page
+- Mobile search results
+- Desktop search results
+
+The Verdict box is a protected primary intelligence element. It is not redundant with Insights. Insights explains why; Verdict tells the user the consumption-suitability conclusion.
+
 ### Compare button scope (SearchResultCard / DetailPanel)
 
 `handleCompare` is defined inside `ItemRow`. `DetailPanel` is a separate component — it MUST receive it as the `onCompare` prop.
