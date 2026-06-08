@@ -91,6 +91,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           color: #ded9d0;
           margin-bottom: 28px;
           font-weight: 500;
+          font-style: italic;
         }
 
         .restaurant-onboarding-page .goal-section {
@@ -340,8 +341,8 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
 
         <h1>The future of the restaurant industry will not be built on higher prices alone.</h1>
 
-        <p className="body-text hero-subhead">
-          Built by restaurants that create more value for diners — and supported by Menuply.
+        <p className="hero-subhead">
+          The future will be built by restaurants that create more value for diners. Menuply was built to support that future.
         </p>
 
         <p className="body-text">
