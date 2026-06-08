@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import WaiterFaceIcon from "./icons/WaiterFaceIcon.jsx";
 
 function buildSearchHref() {
   try {
@@ -37,7 +38,7 @@ export default function BottomNav() {
 
   const tabs = useMemo(() => [
     { label: t("nav.home", "Home"), icon: "🏠", to: "/" },
-    { label: t("nav.search", "Search"), icon: "🔍", to: "/search", buildHref: buildSearchHref },
+    { label: t("nav.search", "Search"), iconComponent: WaiterFaceIcon, to: "/search", buildHref: buildSearchHref },
     { label: t("nav.following", "Following"), icon: "F", to: "/account/following" },
     { label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
   ], [t]);
@@ -105,7 +106,11 @@ export default function BottomNav() {
                 lineHeight: 1,
               }}
             >
-              <span aria-hidden="true">{tab.icon}</span>
+              {tab.iconComponent ? (
+                <tab.iconComponent size={22} aria-hidden />
+              ) : (
+                <span aria-hidden="true">{tab.icon}</span>
+              )}
               {showBadge ? (
                 <span
                   aria-label={t("nav.basketItems", "{count} items in basket").replace("{count}", String(itemCount))}
