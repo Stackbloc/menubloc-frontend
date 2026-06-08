@@ -158,10 +158,13 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.pro.description":
       "For restaurants that want stronger customer pricing, direct ordering tools, and deeper customer engagement on a lower-cost platform.",
     "signup.entry.plan.pro.cta": "Continue with Pro Partner",
-    "signup.entry.plan.founder.name": "Founders",
+    "signup.entry.plan.founder.name": "Founder's",
     "signup.entry.plan.founder.price": "$299/year",
-    "signup.entry.plan.founder.description": "Everything in Pro Partner, with a 24-month price guarantee.",
-    "signup.entry.plan.founder.cta": "Continue with Founders",
+    "signup.entry.plan.founder.description":
+      "Lock in early-bird Founder's pricing while availability remains open. Includes online ordering at 8% commission, premium menu tools, billboards, deals, and Founder's recognition.",
+    "signup.entry.plan.founder.cta": "Continue with Founder's",
+    "signup.entry.foundersNotice":
+      "Founder's Membership is available for a limited time to early restaurant partners.",
     "signup.account.pageTitle": "Create your restaurant account",
     "signup.account.pageSubtitle": "You selected the {plan} plan. Complete your account to continue.",
     "signup.account.pageSubtitleDetails":
@@ -191,7 +194,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.account.passwordsNoMatch": "Passwords do not match.",
     "signup.account.plan.verified": "Verified",
     "signup.account.plan.pro_partner": "Pro Partner",
-    "signup.account.plan.founders_annual": "Founders",
+    "signup.account.plan.founders_annual": "Founder's",
     "signup.account.plan.pro_monthly": "Pro Partner",
     "signup.account.plan.pro_annual": "Pro Partner",
     "signup.entry.eyebrow": "Restaurant Signup",
@@ -417,10 +420,13 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.pro.description":
       "Para restaurantes que quieren mejores precios, pedidos directos y más engagement.",
     "signup.entry.plan.pro.cta": "Continuar con Pro Partner",
-    "signup.entry.plan.founder.name": "Founders",
+    "signup.entry.plan.founder.name": "Founder's",
     "signup.entry.plan.founder.price": "$299/año",
-    "signup.entry.plan.founder.description": "Todo lo de Pro Partner con precio garantizado 24 meses.",
-    "signup.entry.plan.founder.cta": "Continuar con Founders",
+    "signup.entry.plan.founder.description":
+      "Asegura el precio Founder's de lanzamiento mientras haya disponibilidad. Incluye pedidos en línea con 8% de comisión, herramientas premium de menú, billboards, ofertas y reconocimiento Founder's.",
+    "signup.entry.plan.founder.cta": "Continuar con Founder's",
+    "signup.entry.foundersNotice":
+      "La membresía Founder's está disponible por tiempo limitado para restaurantes socios pioneros.",
     "signup.account.pageTitle": "Crea la cuenta de tu restaurante",
     "signup.account.pageSubtitle": "Seleccionaste el plan {plan}. Completa tu cuenta para continuar.",
     "signup.account.pageSubtitleDetails":
@@ -450,7 +456,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.account.passwordsNoMatch": "Las contraseñas no coinciden.",
     "signup.account.plan.verified": "Verified",
     "signup.account.plan.pro_partner": "Pro Partner",
-    "signup.account.plan.founders_annual": "Founders",
+    "signup.account.plan.founders_annual": "Founder's",
     "signup.account.plan.pro_monthly": "Pro Partner",
     "signup.account.plan.pro_annual": "Pro Partner",
     "signup.entry.eyebrow": "Registro de restaurante",
@@ -668,10 +674,12 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.pro.price": "$49/月 或 $399/年",
     "signup.entry.plan.pro.description": "适合需要更强定价、直订工具和更深互动的餐厅。",
     "signup.entry.plan.pro.cta": "继续使用 Pro Partner",
-    "signup.entry.plan.founder.name": "Founders",
+    "signup.entry.plan.founder.name": "Founder's",
     "signup.entry.plan.founder.price": "$299/年",
-    "signup.entry.plan.founder.description": "包含 Pro Partner 全部功能，24 个月价格保障。",
-    "signup.entry.plan.founder.cta": "继续使用 Founders",
+    "signup.entry.plan.founder.description":
+      "在名额开放期间锁定 Founder's 早鸟定价。包含 8% 佣金的在线点餐、高级菜单工具、广告牌、优惠及 Founder's 专属识别。",
+    "signup.entry.plan.founder.cta": "继续使用 Founder's",
+    "signup.entry.foundersNotice": "Founder's 会员面向早期餐厅合作伙伴，名额有限。",
     "signup.account.pageTitle": "创建餐厅账户",
     "signup.account.pageSubtitle": "你选择了 {plan} 方案。请完成账户信息以继续。",
     "signup.account.pageSubtitleDetails": "填写餐厅信息以继续使用所选方案。",
@@ -699,7 +707,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.account.passwordsNoMatch": "两次密码不一致。",
     "signup.account.plan.verified": "Verified",
     "signup.account.plan.pro_partner": "Pro Partner",
-    "signup.account.plan.founders_annual": "Founders",
+    "signup.account.plan.founders_annual": "Founder's",
     "signup.account.plan.pro_monthly": "Pro Partner",
     "signup.account.plan.pro_annual": "Pro Partner",
     "signup.entry.eyebrow": "餐厅注册",

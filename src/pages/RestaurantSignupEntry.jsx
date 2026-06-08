@@ -17,7 +17,7 @@ import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
 
-const PLAN_OPTIONS = [
+const SIGNUP_PLAN_OPTIONS = [
   {
     code: "verified",
     name: "Verified",
@@ -34,36 +34,18 @@ const PLAN_OPTIONS = [
     ],
   },
   {
-    code: "pro_partner",
-    name: "Pro Partner",
-    price: "$49/month or $399/year",
-    description:
-      "For restaurants that want stronger customer pricing, direct ordering tools, and deeper customer engagement on a lower-cost platform.",
-    cta: "Continue with Pro Partner",
-    featured: true,
-    features: [
-      "Unlimited menus with scheduled/timed display options",
-      "Full restaurant profile with logo, billboard, about us, featured dish",
-      "Menu item photos",
-      "Ingredient-rich, fully searchable menu content",
-      "Diners can follow your profile and receive offers and updates",
-      "Social share for menus and menu items",
-      "Billboard placement in profile and search results",
-      "Deals and promotions page",
-      "Marketplace ordering (pickup and delivery)",
-    ],
-  },
-  {
     code: "founders_annual",
-    name: "Founders",
+    name: "Founder's",
     price: "$299/year",
     description:
-      "Everything in Pro Partner, with a 24-month price guarantee.",
-    cta: "Continue with Founders",
-    featured: false,
+      "Lock in early-bird Founder's pricing while availability remains open. Includes online ordering at 8% commission, premium menu tools, billboards, deals, and Founder's recognition.",
+    cta: "Continue with Founder's",
+    featured: true,
     features: [
-      "Everything included in Pro Partner",
-      "24-month price guarantee",
+      "Online ordering at 8% commission",
+      "Optional second year at the same $299/year rate",
+      "Founder's recognition",
+      "Deals, billboards, and premium menu tools",
     ],
   },
 ];
@@ -111,6 +93,17 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: 18,
+  },
+  foundersNotice: {
+    marginBottom: 18,
+    padding: "14px 16px",
+    borderRadius: 14,
+    border: "1px solid rgba(252, 211, 77, 0.35)",
+    background: "rgba(252, 211, 77, 0.08)",
+    color: "rgba(248,244,234,0.88)",
+    fontSize: 14,
+    lineHeight: 1.55,
+    fontWeight: 600,
   },
   card: (featured, hovered) => ({
     position: "relative",
@@ -314,7 +307,7 @@ export default function RestaurantSignupEntry() {
   const [hoveredPlan, setHoveredPlan] = useState(null);
 
   const localizedPlans = useMemo(
-    () => PLAN_OPTIONS.map((plan) => {
+    () => SIGNUP_PLAN_OPTIONS.map((plan) => {
       const key = planTranslationKey(plan.code);
       return {
         ...plan,
@@ -378,6 +371,13 @@ export default function RestaurantSignupEntry() {
             </div>
           </div>
         </header>
+
+        <div style={styles.foundersNotice}>
+          {t(
+            "signup.entry.foundersNotice",
+            "Founder's Membership is available for a limited time to early restaurant partners."
+          )}
+        </div>
 
         <section style={styles.cardsGrid}>
           {localizedPlans.map((plan) => (

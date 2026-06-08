@@ -446,10 +446,10 @@ export default function OperatorSubscription() {
                   <div style={{ fontSize: 28, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.04em" }}>
                     {foundersPlan ? <>{formatWholeDollarAmount(foundersPlan.amount_cents)}<span style={{ fontSize: 14, fontWeight: 600, color: "#6b7280" }}>/yr</span></> : "—"}
                   </div>
-                  <div style={{ fontSize: 12, color: "#8a9ab0", marginTop: 2 }}>24-month price guarantee</div>
+                  <div style={{ fontSize: 12, color: "#8a9ab0", marginTop: 2 }}>Optional second year at the same $299/year rate</div>
                 </div>
                 <p style={{ margin: 0, fontSize: 13, color: "#374151", lineHeight: 1.6 }}>
-                  Everything in Pro, with a 24-month price guarantee.
+                  Lock in Founder's pricing with an optional second year at the same annual rate.
                 </p>
                 {currentTier !== "founders" ? (
                   <button

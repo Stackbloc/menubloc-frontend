@@ -31,14 +31,9 @@ const API = (
 const PLAN_LABELS = {
   verified: "Verified",
   pro_partner: "Pro Partner",
-  founders_annual: "Founders",
+  founders_annual: "Founder's",
   pro_monthly: "Pro Partner",
   pro_annual: "Pro Partner",
-};
-
-const PRO_INTERVALS = {
-  monthly: { planCode: "pro_monthly", priceLabel: "$49/month" },
-  annual: { planCode: "pro_annual", priceLabel: "$399/year" },
 };
 
 const FOUNDERS_PLAN = { planCode: "founders_annual", priceLabel: "$299/year" };
@@ -73,40 +68,18 @@ const PLAN_CARDS = {
       "Menu visibility on Menuply",
     ],
   },
-  pro_partner: {
-    title: "Pro Partner",
-    description:
-      "For restaurants that want stronger customer pricing, direct ordering tools, and deeper customer engagement on a lower-cost platform.",
-    features: [
-      "Unlimited menus for time of day, events, seasonal menus, happy hour, and specials",
-      "Advanced restaurant profile with logo, featured meal, and restaurant bio",
-      "Billboard placement and functionality",
-      "Shareable menus and dishes",
-      "Follow functionality",
-      "Deals and promotions",
-      "Online ordering",
-      "Built for lower-cost direct ordering operations",
-      "Annual option with a lower effective monthly cost",
-    ],
-  },
   founders_annual: {
-    title: "Founders",
+    title: "Founder's",
     price: "$299/year",
     description:
-      "Everything in Pro, with a 24-month price guarantee.",
+      "Lock in early-bird Founder's pricing while availability remains open. Includes online ordering at 8% commission, premium menu tools, billboards, deals, and Founder's recognition.",
     features: [
-      "Everything included in Pro Partner",
-      "24-month price guarantee",
-      "Unlimited menus for time of day, events, seasonal menus, happy hour, and specials",
-      "Advanced restaurant profile with logo, featured meal, and restaurant bio",
-      "Deals and promotions",
-      "Follow functionality",
-      "Shareable menus and dishes",
-      "Billboard functionality",
-      "Online ordering",
+      "Online ordering at 8% commission",
+      "Optional second year at the same $299/year rate",
+      "Founder's recognition",
+      "Deals, billboards, and premium menu tools",
     ],
-    footnote:
-      "Founders annual pricing includes a 24-month price guarantee.",
+    footnote: "Includes online ordering at 8% commission.",
   },
 };
 
@@ -182,6 +155,17 @@ const s = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: 18,
+  },
+  foundersNotice: {
+    marginBottom: 18,
+    padding: "14px 16px",
+    borderRadius: 16,
+    border: "1px solid #fcd34d",
+    background: "#fffbeb",
+    color: "#92400e",
+    fontSize: 14,
+    lineHeight: 1.55,
+    fontWeight: 600,
   },
   planCard: (highlighted) => ({
     borderRadius: 28,
@@ -449,7 +433,6 @@ export default function SubscriptionSelect() {
   });
   const [onboardingState, setOnboardingState] = useState(recovered.state || null);
 
-  const [proInterval, setProInterval] = useState("monthly");
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
   const [planError, setPlanError] = useState("");
 
@@ -477,12 +460,6 @@ export default function SubscriptionSelect() {
     });
     setOnboardingState(next.state || null);
   }, [location.state, location.search]);
-
-  useEffect(() => {
-    if (selected_plan === "pro_annual") {
-      setProInterval("annual");
-    }
-  }, [selected_plan]);
 
   useEffect(() => {
     let cancelled = false;
@@ -724,11 +701,6 @@ export default function SubscriptionSelect() {
     }
   }
 
-  async function handleProPartner() {
-    const selectedInterval = PRO_INTERVALS[proInterval] || PRO_INTERVALS.monthly;
-    await submitRestaurantPlan(selectedInterval.planCode);
-  }
-
   async function handleFounder() {
     await submitRestaurantPlan("founders_annual");
   }
@@ -791,13 +763,17 @@ export default function SubscriptionSelect() {
 
         {selected_plan ? (
           <div style={s.banner("success")}>
-            Selected during signup: {PLAN_LABELS[selected_plan] || "Pro Partner"}.
+            Selected during signup: {PLAN_LABELS[selected_plan] || "Founder's"}.
           </div>
         ) : null}
 
         {planError ? (
           <div style={s.banner("error")}>{planError}</div>
         ) : null}
+
+        <div style={s.foundersNotice}>
+          Founder&apos;s Membership is available for a limited time to early restaurant partners.
+        </div>
 
         <section style={s.cardsGrid}>
           <article style={s.planCard(false)}>
@@ -823,58 +799,9 @@ export default function SubscriptionSelect() {
           </article>
 
           <article style={s.planCard(true)}>
-            <div style={s.planBadge}>Most Popular</div>
-            <div style={s.planEyebrow}>Pro Partner</div>
-            <div style={s.planName}>Pro Partner</div>
-            <div style={s.planDesc}>
-              {PLAN_CARDS.pro_partner.description}
-            </div>
-            <div style={s.intervalToggle}>
-              <button
-                type="button"
-                style={s.intervalButton(proInterval === "monthly")}
-                onClick={() => setProInterval("monthly")}
-              >
-                Monthly
-              </button>
-              <button
-                type="button"
-                style={s.intervalButton(proInterval === "annual")}
-                onClick={() => setProInterval("annual")}
-              >
-                Annual
-              </button>
-            </div>
-            <div style={s.priceValue}>{PRO_INTERVALS[proInterval].priceLabel}</div>
-            <div style={s.annualNote}>
-              {proInterval === "annual"
-                ? "Annual lowers your effective monthly cost. Founders annual pricing includes a 2-year introductory rate commitment."
-                : "Monthly keeps launch costs flexible. You can move to annual later if it better fits your rollout."}
-            </div>
-
-            <ul style={s.featureList}>
-              {PLAN_CARDS.pro_partner.features.map((feature) => (
-                <li key={feature} style={s.featureItem}>
-                  <span style={s.featureMark(true)}>&#10003;</span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              type="button"
-              disabled={isSubmittingPlan}
-              style={s.button(true, isSubmittingPlan)}
-              onClick={handleProPartner}
-            >
-              {isSubmittingPlan ? "Preparing checkout..." : "Choose Pro Partner"}
-            </button>
-          </article>
-
-          <article style={s.planCard(false)}>
             <div style={s.limitedBadge}>Limited Availability</div>
-            <div style={s.planEyebrow}>Founders</div>
-            <div style={s.planName}>Founders</div>
+            <div style={s.planEyebrow}>Founder&apos;s</div>
+            <div style={s.planName}>Founder&apos;s</div>
             <div style={s.planDesc}>
               {PLAN_CARDS.founders_annual.description}
             </div>
@@ -883,7 +810,7 @@ export default function SubscriptionSelect() {
             <ul style={s.featureList}>
               {PLAN_CARDS.founders_annual.features.map((feature) => (
                 <li key={feature} style={s.featureItem}>
-                  <span style={s.featureMark(false)}>&#10003;</span>
+                  <span style={s.featureMark(true)}>&#10003;</span>
                   <span>{feature}</span>
                 </li>
               ))}
@@ -896,10 +823,10 @@ export default function SubscriptionSelect() {
             <button
               type="button"
               disabled={isSubmittingPlan}
-              style={s.button(false, isSubmittingPlan)}
+              style={s.button(true, isSubmittingPlan)}
               onClick={handleFounder}
             >
-              {isSubmittingPlan ? "Preparing checkout..." : "Choose Founders"}
+              {isSubmittingPlan ? "Preparing checkout..." : "Continue with Founder's"}
             </button>
           </article>
         </section>
