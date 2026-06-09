@@ -35,7 +35,7 @@ import { trackBillboardClick } from "../lib/analytics.js";
 import { fetchSimilarItems, fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "./menu/CompareItemsModal.jsx";
-import { getCardVerdictTone, resolveCardVerdict } from "../lib/cardVerdict.js";
+import { getCardVerdictTone } from "../lib/cardVerdict.js";
 import {
   getQualitativeLabel,
   getNutritionSummary,
@@ -1073,7 +1073,6 @@ function ItemRow({
   const chips = resolveChips(row);
   const indulgencePresentation = resolveIndulgencePresentation({ chips });
   const breadScore = row?.detail_system?.bread_score || row?.chips?.bread_score || null;
-  const cardVerdict = resolveCardVerdict({ ...row, chips });
   const hrefBase = mid ? getCanonicalMenuItemPath({
     restaurant: {
       slug: (restaurantSummary && restaurantSummary.slug) || getRestSlug(row),
@@ -1426,11 +1425,6 @@ function ItemRow({
       {(indulgencePresentation || breadScore) ? (
         <CompactScoreSummary presentation={indulgencePresentation} breadScore={breadScore} />
       ) : null}
-
-      {/* Required card capabilities — do NOT remove during refactors:
-          CardVerdictBox (Verdict), Nutrition chip, Insights chip, Compare (via DetailPanel/Similar).
-          All four must render for items with sufficient data. */}
-      <CardVerdictBox label={cardVerdict} />
 
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
         {!indulgencePresentation ? (

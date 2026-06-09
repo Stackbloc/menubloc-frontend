@@ -44,7 +44,6 @@ import {
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
-import { resolveCardVerdict, NOT_AVAILABLE_LABEL } from "../lib/cardVerdict.js";
 import { fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
@@ -386,16 +385,7 @@ function toShortVerdictBasis(reason) {
 
 function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   const verdict = detailSystem?.verdict || {};
-  // Use backend verdict label when available; fall back to client-side computation
-  // so the block renders even when the backend omits a verdict for the item.
-  const backendLabel = verdict.label;
-  // detailSystem.nutrition uses `calories` not `calories_kcal`; normalize so
-  // resolveCardVerdict can read it as a fallback when the backend omits a verdict.
-  const normalizedNutrition = detailSystem?.nutrition
-    ? { ...detailSystem.nutrition, calories_kcal: detailSystem.nutrition.calories_kcal ?? detailSystem.nutrition.calories }
-    : null;
-  const fallbackVerdict = resolveCardVerdict({ detailSystem: { ...detailSystem, nutrition: normalizedNutrition } });
-  const label = backendLabel || (fallbackVerdict !== NOT_AVAILABLE_LABEL ? fallbackVerdict : null);
+  const label = verdict.label || null;
   const basis = Array.isArray(verdict.reasons)
     ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 2)
     : [];
@@ -1415,7 +1405,7 @@ export default function MenuItemDetailPage() {
   const showItemPhoto = hasRenderableImage(item.itemPhotoUrl);
   const heroGridColumns = "1fr";
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
-  const showStickyVerdict = !indulgencePresentation && !detailSystem?.bread_score && confidenceLevel(detailSystem) !== "low";
+  const showStickyVerdict = !indulgencePresentation && !detailSystem?.bread_score;
   const itemDescription = getLocalizedField(item, "description", language) || item.description;
   const fullMenuHref = buildCanonicalMenuPath({
     restaurantSlug: item.restaurant.slug || null,
