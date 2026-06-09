@@ -149,14 +149,23 @@ function DiscoveryChipRow({ chips, filters, onChipClick }) {
   );
 }
 
-function DiscoveryInlineSelect({ value, onChange, options, ariaLabel, disabled = false, prefix = "" }) {
+function DiscoveryInlineSelect({ value, onChange, options, ariaLabel, disabled = false, prefix = "", compact = false }) {
   return (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label={ariaLabel}
       disabled={disabled}
-      style={{
+      style={compact ? {
+        fontSize: 12,
+        fontWeight: 700,
+        color: "#9ca3af",
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        padding: "0 2px",
+        outline: "none",
+      } : {
         minHeight: 28,
         border: "1px solid rgba(156,163,175,0.25)",
         borderRadius: 999,
@@ -1462,6 +1471,7 @@ export default function GrubbidDiscovery() {
                       onChange={setSelectedCuisine}
                       options={[{ value: "", label: "All cuisines" }, ...feedCuisineOptions]}
                       ariaLabel="Filter by cuisine"
+                      compact
                     />
                   )
                 )}
