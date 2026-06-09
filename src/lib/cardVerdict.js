@@ -1,5 +1,5 @@
-const FREQUENT_LABEL = "Suitable for Frequent Consumption";
-const OCCASIONAL_LABEL = "Suitable for Occasional Consumption";
+const FREQUENT_LABEL = "Suitable for frequent consumption";
+const OCCASIONAL_LABEL = "Suitable for occasional consumption";
 const INDULGENT_LABEL = "Indulgent";
 export const NOT_AVAILABLE_LABEL = "Not Available";
 

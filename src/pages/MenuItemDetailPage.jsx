@@ -1120,12 +1120,19 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
       skipEligibilityCheck: true,
     })
       .then((data) => {
+        if (!data?.baseItem && !data?.candidateItem) {
+          setCompareOpen(false);
+          setCompareLoading(false);
+          return;
+        }
         setCompareData(data);
         setCompareLoading(false);
       })
-      .catch((err) => {
-        setCompareError(String(err?.message || "Compare failed"));
+      .catch(() => {
+        setCompareOpen(false);
         setCompareLoading(false);
+        setCompareData(null);
+        setCompareError(null);
       });
   }
 

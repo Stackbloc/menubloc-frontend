@@ -46,7 +46,7 @@ test("explicit zero nutrition remains valid measured data", () => {
         },
       },
     }),
-    "Suitable for Frequent Consumption"
+    "Suitable for frequent consumption"
   );
 });
 
