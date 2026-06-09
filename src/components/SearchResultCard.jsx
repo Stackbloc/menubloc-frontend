@@ -1140,11 +1140,10 @@ function ItemRow({
     insightScores.proteinStrength !== null ||
     insightScores.glycemicImpact  !== null ||
     insightScores.sodiumRisk      !== null;
-  const showSimilarChip = Boolean(mid) && (
-    similarState.status === "idle" ||
-    similarState.status === "loading" ||
-    (similarState.status === "ready" && similarState.items.length > 0)
-  );
+  // Chip is only shown once we know results exist — pre-fetch on mount resolves this silently.
+  const showSimilarChip = Boolean(mid) &&
+    similarState.status === "ready" &&
+    similarState.items.length > 0;
   const similarCacheKey = useMemo(() => {
     if (!mid) return "";
     return `${mid}::${similarRequest?.cacheKey || ""}`;
@@ -1153,6 +1152,17 @@ function ItemRow({
   useEffect(() => {
     setOpenTab(null);
     setSimilarState({ status: "idle", items: [], meta: null });
+  }, [similarCacheKey]);
+
+  // Pre-fetch similar items so the chip only appears when results are confirmed.
+  useEffect(() => {
+    if (!mid || !similarCacheKey) return;
+    if (searchCardSimilarCache.has(similarCacheKey)) {
+      setSimilarState(searchCardSimilarCache.get(similarCacheKey));
+      return;
+    }
+    void loadSimilarForRow();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [similarCacheKey]);
 
   async function loadSimilarForRow() {
