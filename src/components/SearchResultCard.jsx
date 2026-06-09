@@ -1191,6 +1191,15 @@ function ItemRow({
     }
   }
 
+  function markCompareIneligible(entry) {
+    setSimilarState((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        getItemId(item) === getItemId(entry) ? { ...item, compare_eligible: false } : item
+      ),
+    }));
+  }
+
   function handleCompare(similarEntry) {
     if (!isSimilarRowCompareEligible(similarEntry) || !mid) return;
     setCurrentCompareCandidate(similarEntry);
@@ -1202,17 +1211,19 @@ function ItemRow({
       skipEligibilityCheck: true,
     })
       .then((data) => {
-        if (!data?.baseItem && !data?.candidateItem) {
+        if (data?.eligible === false || (!data?.baseItem && !data?.candidateItem)) {
           setCompareOpen(false);
           setCompareLoading(false);
+          markCompareIneligible(similarEntry);
           return;
         }
         setCompareData(data);
         setCompareLoading(false);
       })
-      .catch((err) => {
-        setCompareError(String(err?.message || "Compare unavailable"));
+      .catch(() => {
+        setCompareOpen(false);
         setCompareLoading(false);
+        markCompareIneligible(similarEntry);
       });
   }
 

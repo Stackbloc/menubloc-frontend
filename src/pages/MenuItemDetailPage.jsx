@@ -1136,17 +1136,27 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
       skipEligibilityCheck: true,
     })
       .then((data) => {
-        if (!data?.baseItem && !data?.candidateItem) {
+        if (data?.eligible === false || (!data?.baseItem && !data?.candidateItem)) {
           setCompareOpen(false);
           setCompareLoading(false);
+          setSimilar((prev) =>
+            Array.isArray(prev)
+              ? prev.map((s) => s.id === similarEntry.id ? { ...s, compare_eligible: false } : s)
+              : prev
+          );
           return;
         }
         setCompareData(data);
         setCompareLoading(false);
       })
-      .catch((err) => {
-        setCompareError(String(err?.message || "Compare unavailable"));
+      .catch(() => {
+        setCompareOpen(false);
         setCompareLoading(false);
+        setSimilar((prev) =>
+          Array.isArray(prev)
+            ? prev.map((s) => s.id === similarEntry.id ? { ...s, compare_eligible: false } : s)
+            : prev
+        );
       });
   }
 
