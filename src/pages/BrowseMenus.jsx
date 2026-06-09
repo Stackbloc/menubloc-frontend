@@ -83,53 +83,12 @@ function extractMenus(response) {
   return Array.isArray(firstRow?.menus) ? firstRow.menus : [];
 }
 
-function normalizeCuisineValue(rawCuisine, canonicalCuisineSet) {
-  const cuisine = String(rawCuisine || "").trim().toLowerCase();
-  if (!cuisine) return null;
-  if (canonicalCuisineSet.has(cuisine)) return cuisine;
-
-  const remapToAmerican = new Set([
-    "southern",
-    "seafood",
-    "steakhouse",
-    "diner",
-    "breakfast",
-    "wings",
-    "burger",
-    "chicken",
-    "sandwich",
-    "salad",
-  ]);
-
-  if (cuisine === "pizza") {
-    if (canonicalCuisineSet.has("italian-american")) return "italian-american";
-    if (canonicalCuisineSet.has("italian")) return "italian";
-    return null;
-  }
-
-  if (remapToAmerican.has(cuisine) && canonicalCuisineSet.has("american")) {
-    return "american";
-  }
-
-  return null;
-}
-
-function normalizeBrowseMenus(menus, canonicalCuisineOptions) {
-  const cuisineLabelByValue = new Map(
-    (Array.isArray(canonicalCuisineOptions) ? canonicalCuisineOptions : []).map((option) => [
-      String(option?.value || "").trim().toLowerCase(),
-      option?.label || option?.value || "",
-    ])
-  );
-  const canonicalCuisineSet = new Set(cuisineLabelByValue.keys());
-
-  return (Array.isArray(menus) ? menus : []).map((menu) => {
-    const normalizedCuisine = normalizeCuisineValue(menu?.cuisine, canonicalCuisineSet);
-    return {
-      ...menu,
-      cuisine: normalizedCuisine ? cuisineLabelByValue.get(normalizedCuisine) || normalizedCuisine : null,
-    };
-  });
+function normalizeBrowseMenus(menus) {
+  return (Array.isArray(menus) ? menus : []).map((menu) => ({
+    ...menu,
+    cuisine: menu?.cuisine ? String(menu.cuisine).trim().toLowerCase() : null,
+    category: menu?.category ? String(menu.category).trim().toLowerCase() : null,
+  }));
 }
 
 function toTranslationSuffix(value) {
@@ -137,7 +96,7 @@ function toTranslationSuffix(value) {
     .trim()
     .toLowerCase()
     .replace(/&/g, "and")
-    .replace(/[\/\s-]+/g, "_")
+    .replace(/[/\s-]+/g, "_")
     .replace(/[^a-z0-9_]/g, "")
     .replace(/_+/g, "_")
     .replace(/^_+|_+$/g, "");
@@ -177,6 +136,35 @@ function FilterSelect({ label, options, value, onChange, allLabel = "All" }) {
           </option>
         ))}
       </SelectField>
+  );
+}
+
+function InlineSelect({ value, onChange, options, ariaLabel, disabled = false, prefix = "" }) {
+  return (
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      style={{
+        minHeight: 38,
+        maxWidth: "100%",
+        border: "1px solid var(--gb-color-border)",
+        borderRadius: 999,
+        background: disabled ? "rgba(255,255,255,0.06)" : "var(--gb-color-surface-strong)",
+        color: disabled ? "var(--gb-color-ink-muted)" : "var(--gb-color-ink)",
+        fontSize: 13,
+        fontWeight: 900,
+        padding: "0 32px 0 12px",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {prefix}{option.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -262,6 +250,9 @@ export default function BrowseMenus() {
   }));
   const [cuisineOptions, setCuisineOptions] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
+  const [browseCuisineFacets, setBrowseCuisineFacets] = useState([]);
+  const [marketplaceMenuCount, setMarketplaceMenuCount] = useState(0);
+  const [supportsNearbySort, setSupportsNearbySort] = useState(false);
   const browseRequestRef = useRef(0);
   // radiusMiles: null = any distance (no radius cap).
   // In geo mode default to 10 miles. In city/state mode default to null (any).
@@ -280,20 +271,41 @@ export default function BrowseMenus() {
         : t("browse.withinMiles", opt.label, { count: opt.value }),
     };
   });
-  const localizedCuisineOptions = cuisineOptions.map((option) =>
-    localizeCanonicalOption(option, "cuisine", t)
-  );
   const localizedCategoryOptions = categoryOptions.map((option) =>
     localizeCanonicalOption(option, "category", t)
   );
+  const localizedBrowseCuisineOptions = useMemo(() => {
+    const canonicalLabelByValue = new Map(
+      cuisineOptions.map((option) => [
+        String(option?.value || "").trim().toLowerCase(),
+        option?.label || option?.value || "",
+      ])
+    );
+
+    return browseCuisineFacets
+      .filter((facet) => Number(facet?.count || 0) > 0)
+      .map((facet) => {
+        const value = String(facet?.value || "").trim().toLowerCase();
+        const canonical = {
+          value,
+          label: canonicalLabelByValue.get(value) || facet?.label || value,
+        };
+        return {
+          ...localizeCanonicalOption(canonical, "cuisine", t),
+          count: Number(facet?.count || 0),
+        };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [browseCuisineFacets, cuisineOptions, t]);
+  const browseCuisineControlOptions = [
+    { value: "", label: t("browse.allCuisines", "All cuisines") },
+    ...localizedBrowseCuisineOptions,
+  ];
   const browseScopeKey = useMemo(
     () => `${hasCityStateParams ? `${urlCity}|${urlState}` : "geo"}::${search}::${radiusMiles ?? "any"}`,
     [hasCityStateParams, urlCity, urlState, search, radiusMiles]
   );
   const browseScopeRef = useRef(browseScopeKey);
-
-  const hasDietaryFilter = filters.vegan || filters.vegetarian || filters.gluten_free ||
-    filters.dairy_free || filters.diabetic_friendly || filters.keto || filters.low_fat || filters.low_sodium || filters.deals;
 
   useEffect(() => {
     browseScopeRef.current = browseScopeKey;
@@ -450,7 +462,7 @@ export default function BrowseMenus() {
           if (cancelled || controller.signal.aborted || requestId !== browseRequestRef.current) return;
 
         const extractedMenus = dedupeDiscoveryMenus(
-          normalizeBrowseMenus(extractMenus(response), cuisineOptions)
+          normalizeBrowseMenus(extractMenus(response))
         );
         // Backend already returns results nearest-first (or alphabetical when no distance).
         // No client-side resort needed — preserve server order.
@@ -464,6 +476,9 @@ export default function BrowseMenus() {
           setMenus((prev) => dedupeDiscoveryMenus([...prev, ...extractedMenus]));
         }
         setTotalCount(newTotal);
+        setMarketplaceMenuCount(Number(response?.marketplace_menu_count ?? newTotal ?? 0));
+        setBrowseCuisineFacets(Array.isArray(response?.facets?.cuisines) ? response.facets.cuisines : []);
+        setSupportsNearbySort(response?.supports?.sort_nearby === true);
         setBrowseOffset(newOffset);
         setHasMore(response?.pagination?.has_more ?? (newOffset < newTotal));
 
@@ -496,7 +511,7 @@ export default function BrowseMenus() {
   // Re-run when the URL location, filters, or radius changes.
   // radiusMiles only affects geo mode — city/state mode ignores it.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlCity, urlState, filters, radiusMiles, cuisineOptions, localFilters, browseScopeKey]);
+  }, [urlCity, urlState, filters, radiusMiles, localFilters, browseScopeKey]);
 
   const showEmptyState = !loading && !error && menus.length === 0;
 
@@ -522,6 +537,15 @@ export default function BrowseMenus() {
     }
     return true;
   });
+  const displayedMenuCount = totalCount || visibleMenus.length;
+  const useExpandedBrowseControls = marketplaceMenuCount > 25;
+  const browseSortOptions = [{ value: "nearby", label: "Nearby" }];
+
+  function updateCuisineFilter(value) {
+    const nextLocalFilters = { ...localFilters, cuisine: value };
+    setLocalFilters(nextLocalFilters);
+    updateBrowseQuery(nextLocalFilters);
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
@@ -564,17 +588,6 @@ export default function BrowseMenus() {
                 </div>
               ) : null}
 
-              <FilterSelect
-                label={t("browse.cuisine")}
-                options={localizedCuisineOptions}
-                value={localFilters.cuisine}
-                allLabel={t("common.all")}
-                onChange={(value) => {
-                  const nextLocalFilters = { ...localFilters, cuisine: value };
-                  setLocalFilters(nextLocalFilters);
-                  updateBrowseQuery(nextLocalFilters);
-                }}
-              />
               <FilterSelect
                 label={t("browse.category")}
                   options={localizedCategoryOptions}
@@ -649,9 +662,61 @@ export default function BrowseMenus() {
             }}
           >
             <div className="gb-count-label" style={{ whiteSpace: "nowrap" }}>
-              {visibleMenus.length === 1
-                ? t("browse.menuCountSingle", "1 menu", { count: visibleMenus.length })
-                : t("browse.menuCountPlural", `${visibleMenus.length} menus`, { count: visibleMenus.length })}
+              {displayedMenuCount === 1
+                ? t("browse.menuCountSingle", "1 menu", { count: displayedMenuCount })
+                : t("browse.menuCountPlural", `${displayedMenuCount} menus`, { count: displayedMenuCount })}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+                alignItems: "center",
+                width: isMobile ? "100%" : "auto",
+              }}
+            >
+              {useExpandedBrowseControls ? (
+                <>
+                  <InlineSelect
+                    value={localFilters.cuisine}
+                    onChange={updateCuisineFilter}
+                    options={browseCuisineControlOptions}
+                    ariaLabel={t("browse.cuisine", "Cuisine")}
+                  />
+                  <InlineSelect
+                    value="nearby"
+                    onChange={() => {}}
+                    options={browseSortOptions}
+                    ariaLabel="Sort"
+                    prefix="Sort: "
+                    disabled={!supportsNearbySort}
+                  />
+                  <button
+                    type="button"
+                    disabled
+                    title="Open Now is unavailable until public hours logic is available."
+                    style={{
+                      minHeight: 38,
+                      border: "1px solid var(--gb-color-border)",
+                      borderRadius: 999,
+                      background: "rgba(255,255,255,0.06)",
+                      color: "var(--gb-color-ink-muted)",
+                      fontSize: 13,
+                      fontWeight: 900,
+                      padding: "0 12px",
+                    }}
+                  >
+                    Open Now
+                  </button>
+                </>
+              ) : (
+                <InlineSelect
+                  value={localFilters.cuisine}
+                  onChange={updateCuisineFilter}
+                  options={browseCuisineControlOptions}
+                  ariaLabel={t("browse.cuisine", "Cuisine")}
+                />
+              )}
             </div>
           </div>
 
@@ -731,7 +796,11 @@ export default function BrowseMenus() {
                             ...buildRestaurantFilterQueryParams(localFilters),
                           };
                           let coords = { lat: null, lng: null };
-                          try { coords = await getUserCoords(); } catch (_) {}
+                          try {
+                            coords = await getUserCoords();
+                          } catch {
+                            coords = { lat: null, lng: null };
+                          }
                           const hasCoords = coords.lat !== null && coords.lng !== null;
                           const apiParams = {
                             ...buildBrowseLocationParams(
@@ -754,7 +823,7 @@ export default function BrowseMenus() {
                           const response = await getBrowseMenus(apiParams);
                           if (requestScopeKey !== browseScopeRef.current) return;
                           const more = dedupeDiscoveryMenus(
-                            normalizeBrowseMenus(extractMenus(response), cuisineOptions)
+                            normalizeBrowseMenus(extractMenus(response))
                           );
                           const newTotal = response?.total_count ?? (browseOffset + more.length);
                           const newOffset = response?.pagination?.next_offset ?? (browseOffset + more.length);
