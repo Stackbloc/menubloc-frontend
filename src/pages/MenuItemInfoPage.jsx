@@ -262,6 +262,7 @@ function confidenceLevel(detailSystem) {
 
 const VERDICT_THEMES = {
   "Compatible with a health-conscious diet":      { bg: "linear-gradient(135deg, rgba(30,86,63,0.95), rgba(45,106,79,0.88))",    label: "rgba(196,244,214,0.97)", eye: "rgba(196,244,214,0.62)" },
+  "Suitable for frequent consumption":            { bg: "linear-gradient(135deg, rgba(20,56,110,0.94), rgba(33,72,138,0.88))",   label: "rgba(184,216,255,0.97)", eye: "rgba(184,216,255,0.62)" },
   "Suitable for frequent/regular consumption":    { bg: "linear-gradient(135deg, rgba(20,56,110,0.94), rgba(33,72,138,0.88))",   label: "rgba(184,216,255,0.97)", eye: "rgba(184,216,255,0.62)" },
   "Solid nutritional profile — one consideration":{ bg: "linear-gradient(135deg, rgba(18,84,100,0.94), rgba(24,112,132,0.88))",  label: "rgba(182,240,252,0.97)", eye: "rgba(182,240,252,0.62)" },
   "Best in moderation":                           { bg: "linear-gradient(135deg, rgba(118,62,8,0.95), rgba(156,90,12,0.89))",    label: "rgba(255,220,155,0.97)", eye: "rgba(255,220,155,0.62)" },

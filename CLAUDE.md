@@ -640,10 +640,10 @@ if (wantsFat) push(`${fat}g fat`);  // often never shown
 
 Any proposed change to the files, functions, components, or UI layout listed below **MUST** output this exact warning before proceeding:
 
-> **Per existing guardrail: the proposed change will modify [function name(s)] and change [file name(s)]. Explicit approval required before editing.**
+> **warning the proposed changes with modify the layout because [description of the specific modification].**
 
 Then state:
-- Which function(s) or layout element(s) are affected
+- Which function(s), component(s), or layout element(s) are affected
 - Which file(s) will be modified
 - Why the change is safe (does not violate the invariants listed below)
 - Get explicit user approval before writing any code
@@ -655,6 +655,7 @@ Then state:
 | `src/components/SearchResultCard.jsx` | `getItemId`, `handleCompare`, `loadSimilarForRow`, `DetailPanel`, similar panel item rendering, `onSwap`/`onViewBase` wiring to `CompareItemsModal`, `showSimilarChip` logic, `similarCacheKey` construction |
 | `src/components/menu/CompareItemsModal.jsx` | Modal layout, `onViewBase` button, `onSwap` button, `comparison.baseItem`/`comparison.candidateItem` rendering, footer navigation buttons |
 | `src/pages/MenuItemDetailPage.jsx` | `CompareItemsModal` mount, `onViewBase`/`onSwap` handlers, Similar chip |
+| `src/pages/MenuItemInfoPage.jsx` | Similar-items section, compare actions, verdict block wiring, show similar behavior |
 | `src/pages/GrubbidSearchResults.jsx` | `useRestaurantGroupedRendering` logic, `dishRows` derivation, waiter refinement rendering |
 | `src/lib/api.js` | `fetchSimilarItems`, `fetchCompareItems`, `fetchCompareEligibility` |
 | `src/lib/comparePolicy.js` | `isSimilarRowCompareEligible` |

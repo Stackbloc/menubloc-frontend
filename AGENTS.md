@@ -33,6 +33,7 @@ Missing section → STOP. Any baseline FAIL → STOP. No user approval on diff �
 - `src/pages/GrubbidDiscovery.jsx`
 - `src/pages/BrowseMenus.jsx`
 - `src/pages/GrubbidSearchResults.jsx`
+- `src/pages/MenuItemInfoPage.jsx`
 - `src/lib/locationUtils.js`
 
 ## Last known good commit: `62039b5`
