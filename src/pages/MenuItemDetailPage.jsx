@@ -44,6 +44,7 @@ import {
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
+import { resolveCardVerdict, NOT_AVAILABLE_LABEL } from "../lib/cardVerdict.js";
 import { fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
@@ -379,7 +380,16 @@ function toShortVerdictBasis(reason) {
 
 function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   const verdict = detailSystem?.verdict || {};
-  const label = verdict.label;
+  // Use backend verdict label when available; fall back to client-side computation
+  // so the block renders even when the backend omits a verdict for the item.
+  const backendLabel = verdict.label;
+  // detailSystem.nutrition uses `calories` not `calories_kcal`; normalize so
+  // resolveCardVerdict can read it as a fallback when the backend omits a verdict.
+  const normalizedNutrition = detailSystem?.nutrition
+    ? { ...detailSystem.nutrition, calories_kcal: detailSystem.nutrition.calories_kcal ?? detailSystem.nutrition.calories }
+    : null;
+  const fallbackVerdict = resolveCardVerdict({ detailSystem: { ...detailSystem, nutrition: normalizedNutrition } });
+  const label = backendLabel || (fallbackVerdict !== NOT_AVAILABLE_LABEL ? fallbackVerdict : null);
   const basis = Array.isArray(verdict.reasons)
     ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 2)
     : [];
