@@ -20,7 +20,8 @@ function buildMergedSearch(search, extraParams) {
 function formatDistance(value) {
   if (value == null) return null;
   const n = Number(value);
-  if (!Number.isFinite(n)) return null;
+  // Suppress null-island distances (lat=0,lng=0 computes ~5600mi from any US city)
+  if (!Number.isFinite(n) || n > 3000) return null;
   return `${n.toFixed(1)} mi`;
 }
 

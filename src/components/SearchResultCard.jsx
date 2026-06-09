@@ -378,7 +378,8 @@ function getPostalCodeLike(x) {
 
 function getDistanceMilesLike(x) {
   const n = asNum(pick(x, ["distance_miles", "restaurant_distance_miles"], null));
-  return n === null ? null : n;
+  // Suppress null-island distances (lat=0,lng=0 computes ~5600mi from any US city)
+  return n === null || n > 3000 ? null : n;
 }
 
 function getProfileTierLike(x) {
