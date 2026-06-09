@@ -1202,8 +1202,6 @@ function ItemRow({
       skipEligibilityCheck: true,
     })
       .then((data) => {
-        // If the backend returned no usable comparison, close silently rather
-        // than showing a dead-end error screen.
         if (!data?.baseItem && !data?.candidateItem) {
           setCompareOpen(false);
           setCompareLoading(false);
@@ -1212,11 +1210,9 @@ function ItemRow({
         setCompareData(data);
         setCompareLoading(false);
       })
-      .catch(() => {
-        // Close modal silently — Compare button stays visible for retry.
-        setCompareOpen(false);
+      .catch((err) => {
+        setCompareError(String(err?.message || "Compare unavailable"));
         setCompareLoading(false);
-        setCompareData(null);
       });
   }
 
