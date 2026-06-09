@@ -26,9 +26,11 @@ function formatPreviewNumber(value) {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
+const MAX_DISPLAY_MILES = 50;
+
 export function formatDistancePart(value) {
   const miles = asNum(value);
-  if (miles === null || miles <= 0) return null;
+  if (miles === null || miles <= 0 || miles > MAX_DISPLAY_MILES) return null;
   return `${miles.toFixed(1)} mi away`;
 }
 

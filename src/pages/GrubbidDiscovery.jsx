@@ -510,6 +510,7 @@ export default function GrubbidDiscovery() {
   const [feedFacetCuisines, setFeedFacetCuisines] = useState([]);
   const [marketplaceMenuCount, setMarketplaceMenuCount] = useState(0);
   const [feedSupportsNearbySort, setFeedSupportsNearbySort] = useState(false);
+  const [canonicalCuisineOptions, setCanonicalCuisineOptions] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [rememberedOutOfMarketPromo, setRememberedOutOfMarketPromo] = useState(() => loadStoredOutOfMarketPromo());
 
@@ -674,29 +675,51 @@ export default function GrubbidDiscovery() {
   }, [feedMenus, committedQuery, activeExcludedAllergens, selectedCuisine, sortMode]);
 
   const feedCuisineOptions = useMemo(() => {
+    const canonicalLabelByValue = new Map(
+      canonicalCuisineOptions.map((opt) => [
+        String(opt?.value || "").trim().toLowerCase(),
+        opt?.label || opt?.value || "",
+      ])
+    );
     if (feedFacetCuisines.length > 0) {
       return feedFacetCuisines
         .filter((f) => Number(f?.count ?? 0) > 0)
         .map((f) => {
           const val = String(f.value || "").trim().toLowerCase();
-          return {
-            value: val,
-            label: f.label || (val.charAt(0).toUpperCase() + val.slice(1)),
-          };
+          const label = canonicalLabelByValue.get(val) || f.label || val;
+          return label ? { value: val, label } : null;
         })
+        .filter(Boolean)
         .sort((a, b) => a.label.localeCompare(b.label));
     }
+    // Fallback when facets not yet loaded: build from feedMenus but only include
+    // values that exist in the canonical taxonomy — no improvised labels.
+    if (canonicalCuisineOptions.length === 0) return [];
     const seen = new Set();
     const opts = [];
     for (const menu of feedMenus) {
-      const c = String(menu?.cuisine || "").trim().toLowerCase();
-      if (c && !seen.has(c)) {
-        seen.add(c);
-        opts.push({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) });
+      const val = String(menu?.cuisine || "").trim().toLowerCase();
+      const label = canonicalLabelByValue.get(val);
+      if (val && label && !seen.has(val)) {
+        seen.add(val);
+        opts.push({ value: val, label });
       }
     }
     return opts.sort((a, b) => a.label.localeCompare(b.label));
-  }, [feedFacetCuisines, feedMenus]);
+  }, [feedFacetCuisines, feedMenus, canonicalCuisineOptions]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API}/api/meta/cuisines`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((json) => {
+        if (!cancelled && Array.isArray(json?.cuisines)) {
+          setCanonicalCuisineOptions(json.cuisines);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     setSelectedCuisine("");

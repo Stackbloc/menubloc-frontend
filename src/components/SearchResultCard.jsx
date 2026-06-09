@@ -964,7 +964,7 @@ function buildKeyFactsLine({ row, restaurantSummary, matchContext, omitPrice = f
   const dist = getDistanceMilesLike(distSource);
   const showDist =
     matchContext?.coordinateSearchActive === true || matchContext?.wantsNearby === true;
-  if (showDist && dist != null) parts.push(`${dist.toFixed(1)} mi`);
+  if (showDist && dist != null && dist <= 50) parts.push(`${dist.toFixed(1)} mi`);
 
   const city = getCityLike(row);
   const state = getStateLike(row);
@@ -1028,7 +1028,7 @@ function buildRefinementMatchLabel(row, refinement) {
   if (refinement.type === "commerce") {
     if (refinement.key === "nearby" || refinement.key === "farther_out") {
       const dist = getDistanceMilesLike(row);
-      if (dist !== null) return `${dist.toFixed(1)} mi`;
+      if (dist !== null && dist <= 50) return `${dist.toFixed(1)} mi`;
     }
     if (refinement.key.startsWith("under_") || /^\d+_plus$/.test(refinement.key)) {
       const price = fmtPrice(row);

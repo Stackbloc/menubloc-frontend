@@ -16,10 +16,13 @@ function buildMergedSearch(baseSearch, extra) {
   return out ? `?${out}` : "";
 }
 
+const MAX_DISPLAY_MILES = 50;
+
 function formatDistance(value) {
   if (value == null) return null;
   const n = Number(value);
-  return Number.isFinite(n) ? `${n.toFixed(1)} mi` : null;
+  if (!Number.isFinite(n) || n > MAX_DISPLAY_MILES) return null;
+  return `${n.toFixed(1)} mi`;
 }
 
 function normalizeAllergens(raw) {
