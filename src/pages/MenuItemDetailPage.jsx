@@ -1136,7 +1136,7 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
       skipEligibilityCheck: true,
     })
       .then((data) => {
-        if (data?.eligible === false || (!data?.baseItem && !data?.candidateItem)) {
+        if (!data?.baseItem && !data?.candidateItem) {
           setCompareOpen(false);
           setCompareLoading(false);
           setSimilar((prev) =>

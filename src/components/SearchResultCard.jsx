@@ -1211,7 +1211,7 @@ function ItemRow({
       skipEligibilityCheck: true,
     })
       .then((data) => {
-        if (data?.eligible === false || (!data?.baseItem && !data?.candidateItem)) {
+        if (!data?.baseItem && !data?.candidateItem) {
           setCompareOpen(false);
           setCompareLoading(false);
           markCompareIneligible(similarEntry);
