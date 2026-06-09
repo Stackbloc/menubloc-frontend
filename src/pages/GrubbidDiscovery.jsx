@@ -616,8 +616,28 @@ export default function GrubbidDiscovery() {
         );
       });
     }
+    if (selectedCuisine) {
+      menus = menus.filter((m) => String(m?.cuisine || "").trim().toLowerCase() === selectedCuisine);
+    }
     return menus;
-  }, [feedMenus, committedQuery, activeExcludedAllergens]);
+  }, [feedMenus, committedQuery, activeExcludedAllergens, selectedCuisine]);
+
+  const feedCuisineOptions = useMemo(() => {
+    const seen = new Set();
+    const opts = [];
+    for (const menu of feedMenus) {
+      const c = String(menu?.cuisine || "").trim().toLowerCase();
+      if (c && !seen.has(c)) {
+        seen.add(c);
+        opts.push({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) });
+      }
+    }
+    return opts.sort((a, b) => a.label.localeCompare(b.label));
+  }, [feedMenus]);
+
+  useEffect(() => {
+    setSelectedCuisine("");
+  }, [feedScopeKey]);
 
   const hasBackendFeedData = feedMenus.length > 0;
   const hasVisibleMenus = displayMenus.length > 0;
@@ -1337,6 +1357,19 @@ export default function GrubbidDiscovery() {
             <div style={{ padding: "6px 16px 0", fontSize: 12, fontWeight: 700, color: "#9ca3af", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               {hasVisibleMenus && (
                 <span>{displayMenus.length} {displayMenus.length === 1 ? "menu" : "menus"}</span>
+              )}
+              {feedCuisineOptions.length > 0 && (
+                <select
+                  value={selectedCuisine}
+                  onChange={(e) => setSelectedCuisine(e.target.value)}
+                  aria-label="Filter by cuisine"
+                  style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", background: "transparent", border: "none", cursor: "pointer", padding: "0 2px", outline: "none" }}
+                >
+                  <option value="">All cuisines</option>
+                  {feedCuisineOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               )}
               {/* GUARDRAIL:
                   Do not render broad allergen warning blocks on public discovery/browse/menu-list cards.
