@@ -1201,8 +1201,23 @@ function ItemRow({
     fetchCompareItems(mid, similarEntry.id, geo?.lat ?? null, geo?.lng ?? null, {
       skipEligibilityCheck: true,
     })
-      .then((data) => { setCompareData(data); setCompareLoading(false); })
-      .catch((err) => { setCompareError(String(err?.message || "Compare failed")); setCompareLoading(false); });
+      .then((data) => {
+        // If the backend returned no usable comparison, close silently rather
+        // than showing a dead-end error screen.
+        if (!data?.baseItem && !data?.candidateItem) {
+          setCompareOpen(false);
+          setCompareLoading(false);
+          return;
+        }
+        setCompareData(data);
+        setCompareLoading(false);
+      })
+      .catch(() => {
+        // Close modal silently — Compare button stays visible for retry.
+        setCompareOpen(false);
+        setCompareLoading(false);
+        setCompareData(null);
+      });
   }
 
   function toggle(tab) {
@@ -1405,6 +1420,9 @@ function ItemRow({
         <CompactScoreSummary presentation={indulgencePresentation} breadScore={breadScore} />
       ) : null}
 
+      {/* Required card capabilities — do NOT remove during refactors:
+          CardVerdictBox (Verdict), Nutrition chip, Insights chip, Compare (via DetailPanel/Similar).
+          All four must render for items with sufficient data. */}
       <CardVerdictBox label={cardVerdict} />
 
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
