@@ -1416,16 +1416,6 @@ export default function MenuItemDetailPage() {
   const heroGridColumns = "1fr";
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
   const showStickyVerdict = !indulgencePresentation && !detailSystem?.bread_score && confidenceLevel(detailSystem) !== "low";
-  const inlineVerdictLabel = (() => {
-    if (!showStickyVerdict) return null;
-    const v = detailSystem?.verdict || {};
-    if (v.label) return v.label;
-    const n = detailSystem?.nutrition
-      ? { ...detailSystem.nutrition, calories_kcal: detailSystem.nutrition.calories_kcal ?? detailSystem.nutrition.calories }
-      : null;
-    const fb = resolveCardVerdict({ detailSystem: { ...detailSystem, nutrition: n } });
-    return fb !== NOT_AVAILABLE_LABEL ? fb : null;
-  })();
   const itemDescription = getLocalizedField(item, "description", language) || item.description;
   const fullMenuHref = buildCanonicalMenuPath({
     restaurantSlug: item.restaurant.slug || null,
@@ -1591,15 +1581,14 @@ export default function MenuItemDetailPage() {
               {!indulgencePresentation && detailSystem?.bread_score ? <BreadScoreInline detailSystem={detailSystem} /> : null}
             </div>
 
-            {(itemDescription || inlineVerdictLabel) ? (
+            {itemDescription ? (
               <div style={{ fontSize: 15.5, lineHeight: 1.65, color: "#D1D5DB", maxWidth: 760 }}>
-                {itemDescription ? <span>{itemDescription}</span> : null}
-                {inlineVerdictLabel ? (
-                  <div style={{ marginTop: itemDescription ? 8 : 0, fontSize: 13, color: "#9CA3AF", fontWeight: 700 }}>
-                    {inlineVerdictLabel}
-                  </div>
-                ) : null}
+                {itemDescription}
               </div>
+            ) : null}
+
+            {showStickyVerdict ? (
+              <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} compact />
             ) : null}
 
             {(item.badges.vegan || item.badges.glutenFree || item.badges.deal) && (
