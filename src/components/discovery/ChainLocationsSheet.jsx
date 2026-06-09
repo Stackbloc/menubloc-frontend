@@ -123,7 +123,7 @@ export default function ChainLocationsSheet({ chainId, currentRestaurantId, onCl
                     </div>
                   )}
                 </div>
-                {loc.distance_miles != null && (
+                {loc.distance_miles != null && loc.distance_miles <= 50 && (
                   <div style={{
                     fontSize: 13, fontWeight: 700, color: "#1F4E3D",
                     marginLeft: 12, flexShrink: 0,
