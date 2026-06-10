@@ -12,7 +12,7 @@ export default function BottomNav() {
 
   const tabs = useMemo(() => [
     { label: t("nav.home", "Home"), icon: "🏠", to: "/" },
-    { label: t("nav.waiter", "Waiter"), iconComponent: WaiterFaceIcon, to: "/food-interests" },
+    { label: t("nav.waiter", "Waiter"), iconComponent: WaiterFaceIcon, iconSize: 88, to: "/food-interests" },
     { label: t("nav.following", "Following"), icon: "F", to: "/account/following" },
     { label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
   ], [t]);
@@ -81,7 +81,7 @@ export default function BottomNav() {
               }}
             >
               {tab.iconComponent ? (
-                <tab.iconComponent size={22} aria-hidden />
+                <tab.iconComponent size={tab.iconSize || 22} aria-hidden />
               ) : (
                 <span aria-hidden="true">{tab.icon}</span>
               )}
