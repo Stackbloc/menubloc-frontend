@@ -53,6 +53,27 @@ const ATTRIBUTE_KEY_PATTERNS = Object.freeze({
   category: /(^|_)(strict_type|broad_category|category|section|primary_family|template|dish_type|item_type|course)(_|$)/i,
 });
 
+const FOOD_FORM_SIGNALS = [
+  { key: "burger",   label: "Burger",   terms: ["burger", "cheeseburger", "hamburger"] },
+  { key: "sandwich", label: "Sandwich", terms: ["sandwich", "sub", "hoagie", "hero", "po boy", "po-boy", "panini"] },
+  { key: "wrap",     label: "Wrap",     terms: ["wrap", "gyro", "pita wrap"] },
+  { key: "taco",     label: "Taco",     terms: ["taco", "tacos"] },
+  { key: "burrito",  label: "Burrito",  terms: ["burrito", "quesadilla", "enchilada"] },
+  { key: "salad",    label: "Salad",    terms: ["salad"] },
+  { key: "pizza",    label: "Pizza",    terms: ["pizza", "flatbread", "calzone"] },
+  { key: "pasta",    label: "Pasta",    terms: ["pasta", "spaghetti", "fettuccine", "penne", "rigatoni", "lasagna", "mac and cheese", "noodle", "ramen", "udon"] },
+  { key: "bowl",     label: "Bowl",     terms: ["bowl", "rice bowl", "grain bowl", "acai bowl", "poke bowl"] },
+  { key: "soup",     label: "Soup",     terms: ["soup", "bisque", "chowder", "stew"] },
+  { key: "dessert",  label: "Dessert",  terms: ["dessert", "ice cream", "sundae", "milkshake", "shake", "brownie", "cookie", "donut", "doughnut", "cheesecake", "sorbet", "gelato", "pudding", "mousse"] },
+  { key: "drink",    label: "Drink",    terms: ["drink", "beverage", "soda", "lemonade", "juice", "coffee", "tea", "smoothie", "beer", "wine", "cocktail", "cider"] },
+];
+
+const FOOD_FORM_ALIASES = new Map(
+  FOOD_FORM_SIGNALS.flatMap((signal) =>
+    signal.terms.map((term) => [normalizeText(term), signal])
+  )
+);
+
 const PREPARATION_SIGNALS = [
   { key: "fried", label: "Fried", terms: ["fried", "crispy", "breaded", "battered", "tempura", "crunchy"] },
   { key: "grilled", label: "Grilled", terms: ["grilled", "chargrilled", "char-grilled", "blackened"] },
@@ -220,6 +241,24 @@ function canonicalPreparation(value) {
   return { key: normalized, label: titleCase(normalized) };
 }
 
+function extractFormFromText(text) {
+  const out = new Map();
+  const haystack = normalizeText(text);
+  for (const signal of FOOD_FORM_SIGNALS) {
+    if (signal.terms.some((term) => haystack.includes(normalizeText(term)))) {
+      out.set(signal.key, signal.label);
+    }
+  }
+  return out;
+}
+
+function getCuisineKeys(item) {
+  const raw = item?.cuisine || item?.restaurant_cuisine || item?.restaurant_category || "";
+  const normalized = normalizeText(raw);
+  if (!normalized || normalized.length < 3 || WAITER_STOP_WORDS.has(normalized)) return [];
+  return [normalized];
+}
+
 function extractPreparationFromText(text) {
   const out = new Map();
   const haystack = normalizeText(text);
@@ -294,6 +333,7 @@ export function classifyMenuItemForRefinement(item, searchTerm = "") {
   }
 
   const textFeatures = extractTextFeatures(item, searchTerm);
+  const formMap = extractFormFromText(itemText(item));
 
   return {
     preparationKeys: Array.from(attributes.preparation).map((value) => canonicalPreparation(value).key),
@@ -301,6 +341,8 @@ export function classifyMenuItemForRefinement(item, searchTerm = "") {
     modifierKeys: Array.from(attributes.modifier),
     categoryKeys: Array.from(attributes.category),
     textKeys: Array.from(textFeatures),
+    formKeys: Array.from(formMap.keys()),
+    cuisineKeys: getCuisineKeys(item),
     nutrition: {
       protein: getNutritionValue(item, "protein_g"),
       calories: getNutritionValue(item, "calories_kcal"),
@@ -392,7 +434,18 @@ function selectGroup(groups) {
       (b.priority || 0) - (a.priority || 0)
     );
 
-  const foodAttributeGroup = ranked
+  // When the result set spans multiple food forms, asking a style/attribute question
+  // (grilled? fried? spicy?) is misleading — those attributes don't apply evenly across
+  // all forms. Suppress preparation/ingredient/modifier groups whenever form diversity
+  // is meaningful enough to be a useful first question.
+  const hasStrongFormGroup = ranked.some(
+    (group) => group.type === "form" && group.utilityScore >= STRONG_UTILITY
+  );
+  const effectiveRanked = hasStrongFormGroup
+    ? ranked.filter((group) => !["preparation", "ingredient", "modifier"].includes(group.type))
+    : ranked;
+
+  const foodAttributeGroup = effectiveRanked
     .filter((group) => (
       group.tier === TIER_FOOD &&
       group.type !== "text" &&
@@ -404,7 +457,7 @@ function selectGroup(groups) {
     )[0];
   if (foodAttributeGroup) return foodAttributeGroup;
 
-  const textFoodGroup = ranked.find(
+  const textFoodGroup = effectiveRanked.find(
     (group) => (
       group.tier === TIER_FOOD &&
       group.type === "text" &&
@@ -413,12 +466,12 @@ function selectGroup(groups) {
   );
   if (textFoodGroup) return textFoodGroup;
 
-  const nutritionGroup = ranked.find(
+  const nutritionGroup = effectiveRanked.find(
     (group) => group.tier === TIER_NUTRITION && group.utilityScore >= STRONG_UTILITY
   );
   if (nutritionGroup) return nutritionGroup;
 
-  const commerceGroup = ranked.find(
+  const commerceGroup = effectiveRanked.find(
     (group) => group.tier === TIER_COMMERCE && group.utilityScore >= STRONG_UTILITY
   );
   if (commerceGroup) return commerceGroup;
@@ -460,6 +513,63 @@ function buildKeyCandidates(entries, type, keysName, selectedRefinements, priori
     priority,
     totalCount: entries.length,
     options: buildOptionList(entries, type, selectedRefinements, Array.from(keys.values())),
+  };
+}
+
+function buildItemFormGroup(entries, selectedRefinements, searchTerm = "") {
+  const queryTokens = new Set(tokenize(searchTerm));
+  const formCandidates = new Map();
+
+  for (const entry of entries) {
+    for (const key of entry.classification?.formKeys || []) {
+      if (queryTokens.has(singularize(key))) continue;
+      if (!formCandidates.has(key)) {
+        const signal = FOOD_FORM_SIGNALS.find((s) => s.key === key);
+        const label = signal?.label || titleCase(key);
+        formCandidates.set(key, {
+          key,
+          label,
+          predicateDescription: `${label} items`,
+          test: (candidate) => (candidate.classification?.formKeys || []).includes(key),
+        });
+      }
+    }
+  }
+
+  return {
+    type: "form",
+    tier: TIER_FOOD,
+    priority: 70,
+    totalCount: entries.length,
+    options: buildOptionList(entries, "form", selectedRefinements, Array.from(formCandidates.values())),
+  };
+}
+
+function buildCuisineGroup(entries, selectedRefinements, searchTerm = "") {
+  const queryTokens = new Set(tokenize(searchTerm));
+  const cuisineCandidates = new Map();
+
+  for (const entry of entries) {
+    for (const key of entry.classification?.cuisineKeys || []) {
+      if (queryTokens.has(singularize(key))) continue;
+      if (!cuisineCandidates.has(key)) {
+        const label = titleCase(key);
+        cuisineCandidates.set(key, {
+          key,
+          label,
+          predicateDescription: `${label} cuisine`,
+          test: (candidate) => (candidate.classification?.cuisineKeys || []).includes(key),
+        });
+      }
+    }
+  }
+
+  return {
+    type: "cuisine",
+    tier: TIER_FOOD,
+    priority: 65,
+    totalCount: entries.length,
+    options: buildOptionList(entries, "cuisine", selectedRefinements, Array.from(cuisineCandidates.values())),
   };
 }
 
@@ -611,6 +721,8 @@ export function buildInventoryRefinementOptions(entries, searchTerm, selectedRef
   }));
 
   const candidateGroups = [
+    buildItemFormGroup(classifiedEntries, selectedRefinements, searchTerm),
+    buildCuisineGroup(classifiedEntries, selectedRefinements, searchTerm),
     buildKeyCandidates(classifiedEntries, "preparation", "preparationKeys", selectedRefinements, 60, searchTerm),
     buildKeyCandidates(classifiedEntries, "ingredient", "ingredientKeys", selectedRefinements, 50, searchTerm),
     buildKeyCandidates(classifiedEntries, "modifier", "modifierKeys", selectedRefinements, 45, searchTerm),
@@ -633,6 +745,8 @@ export function applyInventoryRefinement(entries, selectedRefinement) {
   if (!selectedRefinement?.type || !selectedRefinement?.key) return safeEntries;
 
   const keyNameByType = {
+    form: "formKeys",
+    cuisine: "cuisineKeys",
     preparation: "preparationKeys",
     ingredient: "ingredientKeys",
     modifier: "modifierKeys",
