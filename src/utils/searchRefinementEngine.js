@@ -395,7 +395,8 @@ function scoreGroup(group) {
   const optionCounts = group.options.map((option) => option.count).filter((count) => count > 0);
   if (optionCounts.length < WAITER_MIN_OPTIONS) return -1;
 
-  const coveredCount = Math.min(optionCounts.reduce((sum, count) => sum + count, 0), totalCount);
+  const sumCounts = optionCounts.reduce((sum, count) => sum + count, 0);
+  const coveredCount = Math.min(sumCounts, totalCount);
   const residualCount = Math.max(totalCount - coveredCount, 0);
   const buckets = residualCount > 0 ? [...optionCounts, residualCount] : optionCounts;
   const bucketCount = buckets.length;
@@ -414,7 +415,13 @@ function scoreGroup(group) {
   if (informationGain < MIN_INFORMATION_GAIN) return -1;
   if (smallestShare < MIN_OPTION_SHARE) return -1;
 
-  return coverageRatio * (
+  // When options overlap (one item counted in multiple options, sum > total),
+  // the apparent information gain is inflated. Penalize proportionally so that
+  // overlapping token groups (text bigrams, keyword lists) do not outrank
+  // clean partitioning groups (form, preparation, cuisine) whose options are exclusive.
+  const exclusivityFactor = Math.min(1, totalCount / sumCounts);
+
+  return exclusivityFactor * coverageRatio * (
     informationGain * 0.5 +
     averageRemovalRatio * 0.3 +
     optionVariety * 0.2
@@ -427,53 +434,29 @@ function selectGroup(groups) {
       ...group,
       utilityScore: scoreGroup(group),
     }))
-    .filter((group) => group.utilityScore > 0)
-    .sort((a, b) =>
-      b.tier - a.tier ||
-      b.utilityScore - a.utilityScore ||
-      (b.priority || 0) - (a.priority || 0)
-    );
+    .filter((group) => group.utilityScore > 0);
 
-  // When the result set spans multiple food forms, asking a style/attribute question
-  // (grilled? fried? spicy?) is misleading — those attributes don't apply evenly across
-  // all forms. Suppress preparation/ingredient/modifier groups whenever form diversity
-  // is meaningful enough to be a useful first question.
-  const hasStrongFormGroup = ranked.some(
-    (group) => group.type === "form" && group.utilityScore >= STRONG_UTILITY
-  );
-  const effectiveRanked = hasStrongFormGroup
-    ? ranked.filter((group) => !["preparation", "ingredient", "modifier"].includes(group.type))
-    : ranked;
+  // Select the highest-scoring question within each tier.
+  // Priority is a tiebreaker only — a lower-priority type (e.g. preparation) beats
+  // a higher-priority type (e.g. form) whenever it partitions the current result set
+  // more efficiently. Form-first is the default because form usually scores highest on
+  // broad searches, not because it is hardcoded to win.
+  const byScore = (a, b) =>
+    b.utilityScore - a.utilityScore || (b.priority || 0) - (a.priority || 0);
 
-  const foodAttributeGroup = effectiveRanked
-    .filter((group) => (
-      group.tier === TIER_FOOD &&
-      group.type !== "text" &&
-      group.utilityScore >= STRONG_UTILITY
-    ))
-    .sort((a, b) =>
-      (b.priority || 0) - (a.priority || 0) ||
-      b.utilityScore - a.utilityScore
-    )[0];
-  if (foodAttributeGroup) return foodAttributeGroup;
+  const foodGroup = ranked
+    .filter((group) => group.tier === TIER_FOOD && group.utilityScore >= STRONG_UTILITY)
+    .sort(byScore)[0];
+  if (foodGroup) return foodGroup;
 
-  const textFoodGroup = effectiveRanked.find(
-    (group) => (
-      group.tier === TIER_FOOD &&
-      group.type === "text" &&
-      group.utilityScore >= STRONG_UTILITY
-    )
-  );
-  if (textFoodGroup) return textFoodGroup;
-
-  const nutritionGroup = effectiveRanked.find(
-    (group) => group.tier === TIER_NUTRITION && group.utilityScore >= STRONG_UTILITY
-  );
+  const nutritionGroup = ranked
+    .filter((group) => group.tier === TIER_NUTRITION && group.utilityScore >= STRONG_UTILITY)
+    .sort(byScore)[0];
   if (nutritionGroup) return nutritionGroup;
 
-  const commerceGroup = effectiveRanked.find(
-    (group) => group.tier === TIER_COMMERCE && group.utilityScore >= STRONG_UTILITY
-  );
+  const commerceGroup = ranked
+    .filter((group) => group.tier === TIER_COMMERCE && group.utilityScore >= STRONG_UTILITY)
+    .sort(byScore)[0];
   if (commerceGroup) return commerceGroup;
 
   return null;
