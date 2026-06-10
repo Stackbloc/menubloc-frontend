@@ -891,9 +891,9 @@ export default function PublicMenuPage() {
   const { language, t } = useLanguage();
   const location = useLocation();
   const isMenuTemplatePreview = location.pathname === "/menu-template-preview";
-  const { id, slugOrId } = useParams();
+  const { id, slugOrId, restaurantSlug: routeRestaurantSlug } = useParams();
   const navigate = useNavigate();
-  const routeRestaurantParam = asStr(slugOrId || id).trim();
+  const routeRestaurantParam = asStr(slugOrId || id || routeRestaurantSlug).trim();
   const numericRouteRestaurantId = asFiniteNumber(routeRestaurantParam);
   const {
     addMenuItem,
