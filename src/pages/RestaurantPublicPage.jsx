@@ -96,6 +96,26 @@ function buildGoogleMapsDirectionsUrl(destination) {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s)}`;
 }
 
+function formatPhone(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  const digits = s.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11 && digits[0] === "1") {
+    return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  return s;
+}
+
+function buildTelHref(raw) {
+  const digits = String(raw || "").replace(/\D/g, "");
+  if (digits.length === 10) return `tel:+1${digits}`;
+  if (digits.length === 11 && digits[0] === "1") return `tel:+${digits}`;
+  return `tel:${String(raw || "").trim()}`;
+}
+
 function normalizeTier(profileTier, listingStatus) {
   for (const v of [profileTier, listingStatus]) {
     const s = String(v || "").toLowerCase();
@@ -225,7 +245,7 @@ function getTierTheme(tier, isDark) {
   };
 }
 
-function FieldRow({ label, value, placeholder, isDark }) {
+function FieldRow({ label, value, placeholder, href, isDark }) {
   const hasValue = Boolean(String(value || "").trim());
 
   return (
@@ -262,7 +282,17 @@ function FieldRow({ label, value, placeholder, isDark }) {
           fontStyle: hasValue ? "normal" : "italic",
         }}
       >
-        {hasValue ? value : placeholder}
+        {hasValue ? (
+          href ? (
+            <a href={href} style={{ color: "inherit", textDecoration: "none" }}>
+              {value}
+            </a>
+          ) : (
+            value
+          )
+        ) : (
+          placeholder
+        )}
         </div>
       </div>
   );
@@ -411,6 +441,14 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
             />
 
             <FieldRow label="Website" value={websiteRaw || website} placeholder={verifiedMessage} isDark={isDark} />
+            {phone ? (
+              <FieldRow
+                label="Phone"
+                value={formatPhone(phone)}
+                href={buildTelHref(phone)}
+                isDark={isDark}
+              />
+            ) : null}
             <FieldRow label="Cuisine" value={cuisine} placeholder={verifiedMessage} isDark={isDark} />
             <FieldRow
               label={isFoodTruck ? "Category / Format" : "Category"}
@@ -776,6 +814,7 @@ export default function RestaurantPublicPage() {
   const cityLine = [city, stateVal].filter(Boolean).join(", ") + (zipVal ? ` ${zipVal}` : "");
   const websiteRaw = data?.website || data?.website_url || "";
   const website = normalizeUrl(websiteRaw);
+  const phone = String(data?.phone || "").trim();
   const logoUrl = data?.logo_url || "";
   const distanceMi = data?.distance_miles;
   const distanceText = distanceMi != null ? `${Number(distanceMi).toFixed(1)} mi` : "";
@@ -1009,6 +1048,21 @@ export default function RestaurantPublicPage() {
                       }}
                     >
                       {websiteRaw || website} ↗
+                    </a>
+                  </div>
+                ) : null}
+
+                {phone ? (
+                  <div>
+                    <a
+                      href={buildTelHref(phone)}
+                      style={{
+                        color: "inherit",
+                        textDecoration: "none",
+                        fontSize: 13,
+                      }}
+                    >
+                      {formatPhone(phone)}
                     </a>
                   </div>
                 ) : null}
