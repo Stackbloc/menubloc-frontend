@@ -118,28 +118,38 @@ function injectedResponse(html) {
 export default async function middleware(request) {
   const { pathname } = new URL(request.url);
 
-  // --- /restaurants/:slug/menu ---
+  // --- /restaurants/:param/menu ---
   let m = RESTAURANT_MENU_RE.exec(pathname);
   if (m) {
-    const slug = m[1];
+    const param = m[1];
+    const isNumeric = /^\d+$/.test(param);
     const [shell, meta] = await Promise.all([
       fetchShell(request.url),
-      fetchMeta(`/public/meta/restaurants/${encodeURIComponent(slug)}`),
+      fetchMeta(`/public/meta/restaurants/${encodeURIComponent(param)}`),
     ]);
-    if (!shell || !meta || !meta.ok) return;
+    if (!meta || !meta.ok) return;
+    if (isNumeric && meta.data.slug) {
+      return Response.redirect(`${ORIGIN}/restaurants/${meta.data.slug}/menu`, 301);
+    }
+    if (!shell) return;
     const { title, description, canonical } = buildRestaurantMenuMeta(meta.data);
     return injectedResponse(injectMeta(shell, title, description, canonical));
   }
 
-  // --- /restaurants/:slug (profile) ---
+  // --- /restaurants/:param (profile) ---
   m = RESTAURANT_PROFILE_RE.exec(pathname);
   if (m) {
-    const slug = m[1];
+    const param = m[1];
+    const isNumeric = /^\d+$/.test(param);
     const [shell, meta] = await Promise.all([
       fetchShell(request.url),
-      fetchMeta(`/public/meta/restaurants/${encodeURIComponent(slug)}`),
+      fetchMeta(`/public/meta/restaurants/${encodeURIComponent(param)}`),
     ]);
-    if (!shell || !meta || !meta.ok) return;
+    if (!meta || !meta.ok) return;
+    if (isNumeric && meta.data.slug) {
+      return Response.redirect(`${ORIGIN}/restaurants/${meta.data.slug}`, 301);
+    }
+    if (!shell) return;
     const { title, description, canonical } = buildRestaurantProfileMeta(meta.data);
     return injectedResponse(injectMeta(shell, title, description, canonical));
   }
