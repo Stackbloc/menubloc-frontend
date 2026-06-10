@@ -1196,61 +1196,67 @@ export default function GrubbidDiscovery() {
           </div>
 
           <div style={{ padding: "0 16px" }}>
-            <div style={{ position: "relative" }}>
-              <input
-                ref={inputRef}
-                className="disc-search-input"
-                value={draftQuery}
-                onChange={(e) => {
-                  console.log("[Discovery] input changed:", e.target.value);
-                  setDraftQuery(e.target.value);
-                }}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
-                placeholder="Search dishes, ingredients, cuisines, or restaurants..."
-                style={{
-                  width: "100%",
-                  height: 52,
-                  borderRadius: 999,
-                  border: "1.5px solid #1F2937",
-                  background: "#121A14",
-                  paddingLeft: 22,
-                  paddingRight: 92,
-                  fontSize: 16,
-                  fontWeight: 600,
-                  color: "#FFFFFF",
-                  boxSizing: "border-box",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-                }}
-              />
-              <button
-                type="button"
-                aria-label="Search"
-                onClick={() => runSearch()}
-                style={{
-                  position: "absolute", right: 46, top: "50%",
-                  transform: "translateY(-50%)",
-                  border: "none", background: "transparent",
-                  fontSize: 18, color: "#9CA3AF", cursor: "pointer",
-                  padding: 4, lineHeight: 1,
-                }}
-              >
-                🔍
-              </button>
-              <button
-                type="button"
-                aria-label="Add photo of menu text"
-                onClick={() => navigate("/menu-capture")}
-                style={{
-                  position: "absolute", right: 14, top: "50%",
-                  transform: "translateY(-50%)",
-                  border: "none", background: "transparent",
-                  fontSize: 20, color: "#9CA3AF", cursor: "pointer",
-                  padding: 4, lineHeight: 1,
-                }}
-              >
-                📸
-              </button>
-            </div>
+            <form
+              role="search"
+              onSubmit={(e) => { e.preventDefault(); runSearch(); }}
+            >
+              <div style={{ position: "relative" }}>
+                <input
+                  ref={inputRef}
+                  className="disc-search-input"
+                  type="search"
+                  inputMode="search"
+                  enterKeyHint="search"
+                  value={draftQuery}
+                  onChange={(e) => {
+                    console.log("[Discovery] input changed:", e.target.value);
+                    setDraftQuery(e.target.value);
+                  }}
+                  placeholder="Search dishes, ingredients, cuisines, or restaurants..."
+                  style={{
+                    width: "100%",
+                    height: 52,
+                    borderRadius: 999,
+                    border: "1.5px solid #1F2937",
+                    background: "#121A14",
+                    paddingLeft: 22,
+                    paddingRight: 92,
+                    fontSize: 16,
+                    fontWeight: 600,
+                    color: "#FFFFFF",
+                    boxSizing: "border-box",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+                  }}
+                />
+                <button
+                  type="submit"
+                  aria-label="Search"
+                  style={{
+                    position: "absolute", right: 46, top: "50%",
+                    transform: "translateY(-50%)",
+                    border: "none", background: "transparent",
+                    fontSize: 18, color: "#9CA3AF", cursor: "pointer",
+                    padding: 4, lineHeight: 1,
+                  }}
+                >
+                  🔍
+                </button>
+                <button
+                  type="button"
+                  aria-label="Add photo of menu text"
+                  onClick={() => navigate("/menu-capture")}
+                  style={{
+                    position: "absolute", right: 14, top: "50%",
+                    transform: "translateY(-50%)",
+                    border: "none", background: "transparent",
+                    fontSize: 20, color: "#9CA3AF", cursor: "pointer",
+                    padding: 4, lineHeight: 1,
+                  }}
+                >
+                  📸
+                </button>
+              </div>
+            </form>
             {filterHealthBroken && (
               <div style={{
                 marginTop: 10,
