@@ -12,6 +12,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import {
   getConsumerSession,
   getPreferences,
+  getFoodsToAvoid,
   loginConsumer,
   loginConsumerWithApple,
   loginConsumerWithGoogle,
@@ -29,15 +30,17 @@ export function ConsumerProvider({ children }) {
   const [allergenFilter, setAllergenFilter] = useState(null);
   const [dietaryPreferences, setDietaryPreferences] = useState([]);
   const [allergenPreferences, setAllergenPreferences] = useState([]);
+  const [foodsToAvoid, setFoodsToAvoid] = useState([]);
   const [authToast, setAuthToast] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const applySession = useCallback((data, preferences = null) => {
+  const applySession = useCallback((data, preferences = null, avoidKeys = []) => {
     setConsumer(data?.consumer || null);
     setProfile(data?.profile || null);
     setAllergenFilter(preferences?.allergen_filter || data?.allergen_filter || null);
     setDietaryPreferences(Array.isArray(preferences?.dietary_preferences) ? preferences.dietary_preferences : []);
     setAllergenPreferences(Array.isArray(preferences?.allergen_preferences) ? preferences.allergen_preferences : []);
+    setFoodsToAvoid(Array.isArray(avoidKeys) ? avoidKeys : []);
   }, []);
 
   const clearSession = useCallback(() => {
@@ -46,6 +49,7 @@ export function ConsumerProvider({ children }) {
     setAllergenFilter(null);
     setDietaryPreferences([]);
     setAllergenPreferences([]);
+    setFoodsToAvoid([]);
     setAuthToast("");
   }, []);
 
@@ -58,12 +62,15 @@ export function ConsumerProvider({ children }) {
           return null;
         }),
       ]);
-      applySession(data, preferences);
+      const avoidData = await getFoodsToAvoid().catch(() => ({ foods_to_avoid: [] }));
+      const avoidKeys = Array.isArray(avoidData?.foods_to_avoid) ? avoidData.foods_to_avoid : [];
+      applySession(data, preferences, avoidKeys);
       return {
         ...data,
         dietary_preferences: preferences?.dietary_preferences || [],
         allergen_preferences: preferences?.allergen_preferences || [],
         allergen_filter: preferences?.allergen_filter || data?.allergen_filter || null,
+        foods_to_avoid: avoidKeys,
       };
     } catch (err) {
       if (err?.status === 401) clearSession();
@@ -127,6 +134,7 @@ export function ConsumerProvider({ children }) {
     allergenFilter,
     dietaryPreferences,
     allergenPreferences,
+    foodsToAvoid,
     isAuthenticated: !!consumer,
     loading,
     login,

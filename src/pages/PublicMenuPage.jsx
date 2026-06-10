@@ -23,6 +23,7 @@ import { getLocalizedField } from "../utils/getLocalizedField.js";
 import BasketSummaryBar from "../components/basket/BasketSummaryBar.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ModifierSheet from "../components/basket/ModifierSheet.jsx";
+import SmartCustomizationSheet, { isCustomizableItem } from "../components/basket/SmartCustomizationSheet.jsx";
 import { itemHasRequiredModifiers } from "../components/basket/modifierModel.js";
 import { itemHasInsightsData } from "../components/basket/ItemInsightsSheet.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
@@ -905,9 +906,11 @@ export default function PublicMenuPage() {
     removeItem,
   } = useOrderCart();
   const isMobile = useIsMobile();
-  const { isAuthenticated, allergenPreferences } = useConsumer();
+  const { isAuthenticated, allergenPreferences, foodsToAvoid = [] } = useConsumer();
   const [searchParams, setSearchParams] = useSearchParams();
   const [modifierItem, setModifierItem] = useState(null);
+  const [modifierInitialInstructions, setModifierInitialInstructions] = useState("");
+  const [smartSheetItem, setSmartSheetItem] = useState(null);
   const [itemSheet, setItemSheet] = useState(null);
   const [addedConfirmation, setAddedConfirmation] = useState(null);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
@@ -1370,7 +1373,7 @@ export default function PublicMenuPage() {
   }
 
 
-  function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = []) {
+  function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = [], specialInstructions = null) {
     return addMenuItem({
       restaurant: cartRestaurant,
       item: {
@@ -1380,6 +1383,7 @@ export default function PublicMenuPage() {
         basePriceCents: getConsumerDisplayPrice(item) ?? 0,
         originalBasePriceCents: getBaseMenuPrice(item) ?? getConsumerDisplayPrice(item) ?? 0,
         modifiers,
+        specialInstructions: specialInstructions || null,
       },
     });
   }
@@ -1388,12 +1392,21 @@ export default function PublicMenuPage() {
     navigate("/checkout");
   }
 
-  function openModifierFlow(item, itemName, itemDescription) {
+  function openModifierFlow(item, itemName, itemDescription, initialInstructions = "") {
+    setModifierInitialInstructions(initialInstructions);
     setModifierItem({
       ...item,
       name: itemName,
       description: itemDescription,
     });
+  }
+
+  function openSmartOrModifierFlow(item, itemName, itemDescription) {
+    if (isCustomizableItem(item)) {
+      setSmartSheetItem({ ...item, name: itemName, description: itemDescription });
+    } else {
+      openModifierFlow(item, itemName, itemDescription);
+    }
   }
 
   const menuPresentationStyle = normalizeMenuStyle(
@@ -1622,8 +1635,15 @@ export default function PublicMenuPage() {
           sheetData={itemSheet}
           activeCartItems={activeCartItems}
           onClose={() => setItemSheet(null)}
-          onAddSimple={(item, name, desc) => commitMenuItemToBasket(item, name, desc)}
-          onOpenModifiers={(item, name, desc) => openModifierFlow(item, name, desc)}
+          onAddSimple={(item, name, desc) => {
+            if (isCustomizableItem(item)) {
+              setItemSheet(null);
+              setSmartSheetItem({ ...item, name, description: desc });
+            } else {
+              commitMenuItemToBasket(item, name, desc);
+            }
+          }}
+          onOpenModifiers={(item, name, desc) => openSmartOrModifierFlow(item, name, desc)}
           onUpdateQuantity={(lineId, qty) => updateQuantity(lineId, qty)}
           onRemoveItem={(lineId) => removeItem(lineId)}
           t={t}
@@ -1636,16 +1656,34 @@ export default function PublicMenuPage() {
       <ModifierSheet
         open={!!modifierItem}
         item={modifierItem}
-        onClose={() => setModifierItem(null)}
-        onConfirm={(modifiers) => {
+        initialSpecialInstructions={modifierInitialInstructions}
+        onClose={() => { setModifierItem(null); setModifierInitialInstructions(""); }}
+        onConfirm={(modifiers, specialInstructions) => {
           if (!modifierItem) return;
           commitMenuItemToBasket(
             modifierItem,
             modifierItem.name,
             modifierItem.description,
-            modifiers
+            modifiers,
+            specialInstructions
           );
           setModifierItem(null);
+          setModifierInitialInstructions("");
+        }}
+      />
+
+      <SmartCustomizationSheet
+        open={!!smartSheetItem}
+        item={smartSheetItem}
+        foodsToAvoid={foodsToAvoid}
+        onClose={() => setSmartSheetItem(null)}
+        onAddToCart={(item, specialInstructions) => {
+          commitMenuItemToBasket(item, item.name, item.description, [], specialInstructions);
+          setSmartSheetItem(null);
+        }}
+        onCustomize={(item, initialInstructions) => {
+          setSmartSheetItem(null);
+          openModifierFlow(item, item.name, item.description, initialInstructions || "");
         }}
       />
 

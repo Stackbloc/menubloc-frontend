@@ -11,16 +11,18 @@ function hasSelectionError(group, selectedIds) {
   return selectedIds.length < group.minSelections || selectedIds.length > group.maxSelections;
 }
 
-export default function ModifierSheet({ item, open, onClose, onConfirm }) {
+export default function ModifierSheet({ item, open, onClose, onConfirm, initialSpecialInstructions = "" }) {
   const { t } = useLanguage();
   const groups = useMemo(() => normalizeModifierGroups(item), [item]);
   const [selectedByGroup, setSelectedByGroup] = useState({});
+  const [specialInstructions, setSpecialInstructions] = useState(initialSpecialInstructions);
 
   useEffect(() => {
     if (!open) {
       setSelectedByGroup({});
+      setSpecialInstructions(initialSpecialInstructions);
     }
-  }, [open, item]);
+  }, [open, item, initialSpecialInstructions]);
 
   if (!open || !item) return null;
 
@@ -66,8 +68,9 @@ export default function ModifierSheet({ item, open, onClose, onConfirm }) {
       return group.options.filter((option) => selectedIds.includes(option.optionId));
     });
 
-    onConfirm(modifiers);
+    onConfirm(modifiers, specialInstructions.trim() || null);
     setSelectedByGroup({});
+    setSpecialInstructions("");
   }
 
   return (
@@ -219,6 +222,33 @@ export default function ModifierSheet({ item, open, onClose, onConfirm }) {
             background: "#fff",
           }}
         >
+          <div>
+            <label
+              style={{ display: "block", fontSize: 12, fontWeight: 800, color: "#475467", marginBottom: 6 }}
+            >
+              {t("modifier.specialInstructions", "Special instructions")}
+            </label>
+            <textarea
+              value={specialInstructions}
+              onChange={(e) => setSpecialInstructions(e.target.value)}
+              maxLength={280}
+              rows={2}
+              placeholder={t("modifier.specialInstructionsPlaceholder", "Example: no onions, sauce on side, light mayo")}
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "10px 12px",
+                borderRadius: 12,
+                border: "1px solid rgba(17,33,26,0.15)",
+                fontSize: 13,
+                color: "#11211a",
+                resize: "none",
+                fontFamily: "inherit",
+                outline: "none",
+                background: "#f9fafb",
+              }}
+            />
+          </div>
           <button
             type="button"
             onClick={handleConfirm}

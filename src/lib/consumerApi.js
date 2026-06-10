@@ -71,6 +71,10 @@ export const addLocation           = (body)     => post("/api/consumer/profile/l
 export const updateLocation        = (id, body) => put(`/api/consumer/profile/locations/${id}`, body);
 export const deleteLocation        = (id)       => del(`/api/consumer/profile/locations/${id}`);
 
+// ── Foods To Avoid ────────────────────────────────────────────────────────
+export const getFoodsToAvoid     = ()     => get("/api/consumer/foods-to-avoid");
+export const updateFoodsToAvoid  = (keys) => put("/api/consumer/foods-to-avoid", { foods_to_avoid: keys });
+
 // ── Restaurant Follows ─────────────────────────────────────────────────────
 export const getRestaurantFollowStatus = (restaurantId) =>
   get(`/api/restaurants/${encodeURIComponent(String(restaurantId))}/follow-status`);

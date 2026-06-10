@@ -688,3 +688,13 @@ Any edit to:
 - The `isSimilarRowCompareEligible` check gating the Compare button
 - The `useRestaurantGroupedRendering` boolean expression
 - The `fetchSimilarItems` or `fetchCompareItems` function signatures in `api.js`
+
+---
+
+## 🗂️ MANDATORY HANDOFF PRESERVATION GUARDRAIL
+
+**Full rules in:** `/Users/andrebarber/Desktop/menubloc/CLAUDE.md` — section "MANDATORY HANDOFF PRESERVATION GUARDRAIL"
+
+For any non-trivial frontend task, maintain a handoff file at `docs/handoffs/YYYY-MM-DD_<topic>_handoff.md`.
+Index every handoff file in `docs/handoffs/README.md`.
+Update the handoff before ending any session with work in progress.

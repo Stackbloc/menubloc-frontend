@@ -28,6 +28,7 @@ import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import WaiterInsightIcon from "../components/icons/WaiterInsightIcon.jsx";
 import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
+
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";

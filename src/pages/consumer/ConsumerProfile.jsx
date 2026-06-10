@@ -16,6 +16,8 @@ import {
   getConsumerProfile,
   updateConsumerProfile,
   updatePreferences,
+  getFoodsToAvoid,
+  updateFoodsToAvoid,
 } from "../../lib/consumerApi.js";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 
@@ -48,6 +50,22 @@ const ALLERGEN_OPTIONS = [
   { key: "wheat", label: "Wheat" },
 ];
 const ALLERGEN_NONE_KEY = "__none__";
+
+const FOODS_TO_AVOID_OPTIONS = [
+  { key: "spicy_foods",  label: "Spicy Foods" },
+  { key: "mushrooms",    label: "Mushrooms" },
+  { key: "onions",       label: "Onions" },
+  { key: "tomatoes",     label: "Tomatoes" },
+  { key: "olives",       label: "Olives" },
+  { key: "cilantro",     label: "Cilantro" },
+  { key: "seafood",      label: "Seafood" },
+  { key: "anchovies",    label: "Anchovies" },
+  { key: "blue_cheese",  label: "Blue Cheese" },
+  { key: "coconut",      label: "Coconut" },
+  { key: "pickles",      label: "Pickles" },
+  { key: "organ_meats",  label: "Organ Meats" },
+  { key: "fried_foods",  label: "Fried Foods" },
+];
 
 function PreferenceToggle({ label, checked, onChange, disabled = false }) {
   return (
@@ -102,6 +120,7 @@ export default function ConsumerProfile() {
   const [dietPrefs, setDietPrefs] = useState({});
   const [allergenPrefs, setAllergenPrefs] = useState({});
   const [allergenNoneSelected, setAllergenNoneSelected] = useState(false);
+  const [foodsToAvoid, setFoodsToAvoid] = useState({});
   const [savedLocations, setSavedLocations] = useState([]);
   const [coinsWallet, setCoinsWallet] = useState({
     balance_cents: 0,
@@ -116,8 +135,17 @@ export default function ConsumerProfile() {
   const loadProfile = useCallback(async () => {
     try {
       setPageError(null);
-      const data = await getConsumerProfile();
+      const [data, avoidData] = await Promise.all([
+        getConsumerProfile(),
+        getFoodsToAvoid().catch(() => ({ foods_to_avoid: [] })),
+      ]);
       const { profile, dietary_preferences, allergen_preferences, saved_locations, coins_wallet } = data;
+
+      const avoidMap = {};
+      for (const key of avoidData?.foods_to_avoid || []) {
+        avoidMap[key] = true;
+      }
+      setFoodsToAvoid(avoidMap);
 
       setDisplayName(profile.display_name || "");
       setFirstName(profile.first_name || "");
@@ -168,6 +196,10 @@ export default function ConsumerProfile() {
     setDietPrefs((prev) => ({ ...prev, [key]: value }));
   }
 
+  function toggleFoodToAvoid(key, value) {
+    setFoodsToAvoid((prev) => ({ ...prev, [key]: value }));
+  }
+
   function toggleAllergen(key, value) {
     if (key === ALLERGEN_NONE_KEY) {
       setAllergenNoneSelected(value);
@@ -196,6 +228,9 @@ export default function ConsumerProfile() {
         key,
         is_enabled: allergenNoneSelected ? false : Boolean(allergenPrefs[key]),
       }));
+      const avoid_keys = FOODS_TO_AVOID_OPTIONS
+        .filter(({ key }) => Boolean(foodsToAvoid[key]))
+        .map(({ key }) => key);
 
       await Promise.all([
         updateConsumerProfile({
@@ -208,6 +243,7 @@ export default function ConsumerProfile() {
           dietary_preferences,
           allergen_preferences,
         }),
+        updateFoodsToAvoid(avoid_keys),
       ]);
 
       await refreshSession().catch(() => {});
@@ -338,6 +374,22 @@ export default function ConsumerProfile() {
                 label={label}
                 checked={Boolean(dietPrefs[key])}
                 onChange={(value) => toggleDiet(key, value)}
+              />
+            ))}
+          </div>
+        </Section>
+
+        <Section title="Foods I Avoid">
+          <p style={styles.sectionDesc}>
+            Tell Waiter what you usually do not want recommended. These are not hard filters — items are de-prioritized, not removed. Searching for a food you avoid will still show it.
+          </p>
+          <div style={styles.prefGrid}>
+            {FOODS_TO_AVOID_OPTIONS.map(({ key, label }) => (
+              <PreferenceToggle
+                key={key}
+                label={label}
+                checked={Boolean(foodsToAvoid[key])}
+                onChange={(value) => toggleFoodToAvoid(key, value)}
               />
             ))}
           </div>
