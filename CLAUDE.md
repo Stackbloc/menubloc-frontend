@@ -581,18 +581,22 @@ The following elements may not be removed, hidden, renamed, or made click-only w
 - Item name
 - Item price
 - Item description when available
-- Verdict box: `Suitable for Frequent Consumption`, `Suitable for Occasional Consumption`, or `Indulgent`
 - Nutrition action
 - Insights action
 - Share action
 
-Any change touching menu item cards, restaurant menu pages, search results, Nutrition, Insights, or verdict rendering MUST verify these protected elements still render on:
+Any change touching menu item cards, restaurant menu pages, search results, Nutrition, or Insights rendering MUST verify these protected elements still render on:
 - Mobile restaurant menu page
 - Desktop restaurant menu page
 - Mobile search results
 - Desktop search results
 
-The Verdict box is a protected primary intelligence element. It is not redundant with Insights. Insights explains why; Verdict tells the user the consumption-suitability conclusion.
+**Verdict placement rule (standing, non-negotiable):**
+Verdict (`Suitable for frequent consumption`, `Suitable for occasional consumption`, `Indulgent`) is an intelligence element that belongs ONLY on:
+- Menu item detail pages (`MenuItemDetailPage`, `MenuItemInfoPage`)
+- Public menu item cards (`PublicMenuItemCard`)
+
+Verdict MUST NOT appear on search result cards (`SearchResultCard`). Adding verdict to `SearchResultCard` is a guardrail violation regardless of any CLAUDE.md language that may have been added by a prior commit.
 
 ### Compare button scope (SearchResultCard / DetailPanel)
 
@@ -640,10 +644,10 @@ if (wantsFat) push(`${fat}g fat`);  // often never shown
 
 Any proposed change to the files, functions, components, or UI layout listed below **MUST** output this exact warning before proceeding:
 
-> **Per existing guardrail: the proposed change will modify [function name(s)] and change [file name(s)]. Explicit approval required before editing.**
+> **warning the proposed changes with modify the layout because [description of the specific modification].**
 
 Then state:
-- Which function(s) or layout element(s) are affected
+- Which function(s), component(s), or layout element(s) are affected
 - Which file(s) will be modified
 - Why the change is safe (does not violate the invariants listed below)
 - Get explicit user approval before writing any code
@@ -655,6 +659,7 @@ Then state:
 | `src/components/SearchResultCard.jsx` | `getItemId`, `handleCompare`, `loadSimilarForRow`, `DetailPanel`, similar panel item rendering, `onSwap`/`onViewBase` wiring to `CompareItemsModal`, `showSimilarChip` logic, `similarCacheKey` construction |
 | `src/components/menu/CompareItemsModal.jsx` | Modal layout, `onViewBase` button, `onSwap` button, `comparison.baseItem`/`comparison.candidateItem` rendering, footer navigation buttons |
 | `src/pages/MenuItemDetailPage.jsx` | `CompareItemsModal` mount, `onViewBase`/`onSwap` handlers, Similar chip |
+| `src/pages/MenuItemInfoPage.jsx` | Similar-items section, compare actions, verdict block wiring, show similar behavior |
 | `src/pages/GrubbidSearchResults.jsx` | `useRestaurantGroupedRendering` logic, `dishRows` derivation, waiter refinement rendering |
 | `src/lib/api.js` | `fetchSimilarItems`, `fetchCompareItems`, `fetchCompareEligibility` |
 | `src/lib/comparePolicy.js` | `isSimilarRowCompareEligible` |
