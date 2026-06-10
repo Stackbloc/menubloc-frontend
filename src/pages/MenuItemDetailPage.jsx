@@ -61,12 +61,6 @@ const STICKY_ITEM_HERO_TOP_PX = 72;
 
 // ── Utility ─────────────────────────────────────────────────
 
-function asNum(v) {
-  if (v === null || v === undefined || v === "") return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-
 function moneyFromFloat(price) {
   if (price == null || Number.isNaN(Number(price)) || Number(price) <= 0) return null;
   return Number(price).toLocaleString(undefined, { style: "currency", currency: "USD" });
@@ -203,37 +197,6 @@ function buildPortionEstimate(calories, caloriesPerOz) {
 
   if (options.some((option) => option.ounces == null)) return null;
   return options;
-}
-
-function toTranslationSuffix(value) {
-  return String(value || "").trim().toLowerCase()
-    .replace(/&/g, "and").replace(/[-/\s]+/g, "_")
-    .replace(/[^a-z0-9_]/g, "").replace(/_+/g, "_").replace(/^_+|_+$/g, "");
-}
-
-function translateInsightText(t, value) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  return t(`menuItemDetail.text.${toTranslationSuffix(raw)}`, raw);
-}
-
-function localizeCanonicalLabel(t, prefix, value) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  return t(`${prefix}.${toTranslationSuffix(raw)}`, raw);
-}
-
-function normalizeLabel(value) {
-  return String(value || "")
-    .trim().replace(/_/g, " ").replace(/\s+/g, " ").toLowerCase()
-    .split(" ").filter(Boolean)
-    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-    .join(" ");
-}
-
-function translateAllergenValue(t, value) {
-  const normalized = normalizeLabel(value);
-  return localizeCanonicalLabel(t, "menuItemDetail.allergen", normalized) || normalized;
 }
 
 function hasAnyNutritionData(detailSystem) {
@@ -386,9 +349,11 @@ function toShortVerdictBasis(reason) {
 function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   const verdict = detailSystem?.verdict || {};
   const label = verdict.label || null;
+  const reason = String(verdict.reason || "").trim();
   const basis = Array.isArray(verdict.reasons)
     ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 2)
     : [];
+  const reasonText = reason || basis[0] || "";
 
   if (!label) return null;
 
@@ -411,7 +376,7 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
         <div style={{ fontSize: isMobile ? 20 : 22, fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.03em", color: theme.label }}>
           {label}
         </div>
-        {basis.length ? (
+        {reasonText ? (
           <div
             style={{
               marginTop: 4,
@@ -421,7 +386,7 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
               lineHeight: 1.35,
             }}
           >
-            {basis.join(", ")}
+            {reasonText}
           </div>
         ) : null}
       </div>
@@ -456,9 +421,11 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
 function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, priceLabel, fromSearch, onBack }) {
   const verdict = detailSystem?.verdict || {};
   const label = verdict.label;
+  const reason = String(verdict.reason || "").trim();
   const basis = Array.isArray(verdict.reasons)
     ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 1)
     : [];
+  const reasonText = reason || basis[0] || "";
   const breadScore = detailSystem?.bread_score || null;
   const fallbackText = breadScore?.band || t("menuItemDetail.confirmNutritionEstimate", "Nutrition estimate - confirm with restaurant");
   if (isMobile) return null;
@@ -494,7 +461,7 @@ function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, 
                 </span>
                 {" "}
                 {label}
-                {basis.length ? ` · ${basis[0]}` : ""}
+                {reasonText ? ` · ${reasonText}` : ""}
               </>
             ) : (
               fallbackText
@@ -949,7 +916,7 @@ function IngredientFlagsCard({ detailSystem, t }) {
   );
 }
 
-function NutritionInsightsCluster({ detailSystem, isMobile, t, indulgencePresentation = null }) {
+function NutritionInsightsCluster({ detailSystem, isMobile, t }) {
   const category = detailCategory(detailSystem);
   const showInsights = category === "entree" && confidenceLevel(detailSystem) !== "low";
   return (
@@ -1061,7 +1028,7 @@ const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
   "keto",
 ]);
 
-function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, activeSearchParams, t, allergenFilter }) {
+function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, activeSearchParams, t }) {
   const navigate = useNavigate();
   const { itemCount } = useOrderCart();
   const [similar, setSimilar] = useState(null);
@@ -1327,7 +1294,9 @@ export default function MenuItemDetailPage() {
               found = json.item || json.menu_item;
               break;
             }
-          } catch {}
+          } catch (error) {
+            void error;
+          }
         }
 
         if (!found) throw new Error("");
@@ -1350,7 +1319,7 @@ export default function MenuItemDetailPage() {
 
     load();
     return () => { cancelled = true; };
-  }, [id, navigate, restaurantSlug, fromSearch, fromMenu]);
+  }, [id, navigate, restaurantSlug, fromSearch, fromMenu, geoLat, geoLng]);
 
   useEffect(() => {
     if (!shareData) return undefined;
