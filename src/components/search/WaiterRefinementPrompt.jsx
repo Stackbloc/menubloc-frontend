@@ -1,25 +1,5 @@
 import React from "react";
-
-function WaiterFaceIcon() {
-  return (
-    <svg
-      viewBox="0 0 40 46"
-      width="34"
-      height="39"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-      style={{ display: "block" }}
-    >
-      <circle cx="14" cy="11" r="2.3" fill="#111" />
-      <circle cx="26" cy="11" r="2.3" fill="#111" />
-      <path d="M 11 18 Q 20 28 29 18" stroke="#111" strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M 1 32 L 17 38 L 1 44 Z" fill="#111" />
-      <path d="M 39 32 L 23 38 L 39 44 Z" fill="#111" />
-      <ellipse cx="20" cy="38" rx="4" ry="5" fill="#111" />
-    </svg>
-  );
-}
+import WaiterFaceIcon from "../icons/WaiterFaceIcon.jsx";
 
 export default function WaiterRefinementPrompt({
   displayQuery,
@@ -149,7 +129,7 @@ export default function WaiterRefinementPrompt({
           boxShadow: "0 0 0 1px rgba(255,255,255,0.18), 0 10px 26px rgba(0,0,0,0.28)",
         }}
       >
-        <WaiterFaceIcon />
+        <WaiterFaceIcon size={34} />
       </span>
 
       {/* Inline question with clickable option words */}

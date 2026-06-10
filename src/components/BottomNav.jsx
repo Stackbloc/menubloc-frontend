@@ -2,32 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
-
-function buildSearchHref() {
-  try {
-    const raw = sessionStorage.getItem("grubbid.discovery.location") || "";
-    const parts = raw.split(",");
-    const city = parts.length >= 2 ? parts[0].trim() : raw.trim();
-    const state = parts.length >= 2 ? parts[1].trim() : "";
-    if (city) {
-      const p = new URLSearchParams();
-      p.set("city", city);
-      if (state) p.set("state", state);
-      return `/search?${p.toString()}`;
-    }
-    const rawGeo = sessionStorage.getItem("grubbid.discovery.geo") || "";
-    if (rawGeo) {
-      const geo = JSON.parse(rawGeo);
-      if (geo?.lat && geo?.lng) {
-        const p = new URLSearchParams();
-        p.set("lat", String(geo.lat));
-        p.set("lng", String(geo.lng));
-        return `/search?${p.toString()}`;
-      }
-    }
-  } catch { /* sessionStorage unavailable or parse failed */ }
-  return "/search";
-}
+import WaiterFaceIcon from "./icons/WaiterFaceIcon.jsx";
 
 export default function BottomNav() {
   const { t } = useLanguage();
@@ -37,7 +12,7 @@ export default function BottomNav() {
 
   const tabs = useMemo(() => [
     { label: t("nav.home", "Home"), icon: "🏠", to: "/" },
-    { label: t("nav.search", "Search"), icon: "🔍", to: "/search", buildHref: buildSearchHref },
+    { label: t("nav.interested", "Interested"), iconComponent: WaiterFaceIcon, to: "/food-interests" },
     { label: t("nav.following", "Following"), icon: "F", to: "/account/following" },
     { label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
   ], [t]);
@@ -105,7 +80,11 @@ export default function BottomNav() {
                 lineHeight: 1,
               }}
             >
-              <span aria-hidden="true">{tab.icon}</span>
+              {tab.iconComponent ? (
+                <tab.iconComponent size={22} aria-hidden />
+              ) : (
+                <span aria-hidden="true">{tab.icon}</span>
+              )}
               {showBadge ? (
                 <span
                   aria-label={t("nav.basketItems", "{count} items in basket").replace("{count}", String(itemCount))}

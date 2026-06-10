@@ -44,6 +44,7 @@ import {
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
+import { resolveCardVerdict, NOT_AVAILABLE_LABEL } from "../lib/cardVerdict.js";
 import { fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
@@ -247,6 +248,8 @@ const VERDICT_THEMES = {
   // Client-side computed labels from cardVerdict.js (sentence-case)
   "Suitable for frequent consumption":            { bg: "linear-gradient(135deg, rgba(20,56,110,0.94), rgba(33,72,138,0.88))",   label: "rgba(184,216,255,0.97)", eye: "rgba(184,216,255,0.62)" },
   "Suitable for frequent/regular consumption":    { bg: "linear-gradient(135deg, rgba(20,56,110,0.94), rgba(33,72,138,0.88))",   label: "rgba(184,216,255,0.97)", eye: "rgba(184,216,255,0.62)" },
+  // Client-side computed labels from cardVerdict.js (sentence-case)
+  "Suitable for frequent consumption":            { bg: "linear-gradient(135deg, rgba(20,56,110,0.94), rgba(33,72,138,0.88))",   label: "rgba(184,216,255,0.97)", eye: "rgba(184,216,255,0.62)" },
   "Solid nutritional profile — one consideration":{ bg: "linear-gradient(135deg, rgba(18,84,100,0.94), rgba(24,112,132,0.88))",  label: "rgba(182,240,252,0.97)", eye: "rgba(182,240,252,0.62)" },
   "Best in moderation":                           { bg: "linear-gradient(135deg, rgba(118,62,8,0.95), rgba(156,90,12,0.89))",    label: "rgba(255,220,155,0.97)", eye: "rgba(255,220,155,0.62)" },
   "Best suited for occasional consumption":       { bg: "linear-gradient(135deg, rgba(106,20,10,0.96), rgba(162,40,20,0.91))",  label: "rgba(255,192,174,0.97)", eye: "rgba(255,192,174,0.62)" },
@@ -348,7 +351,14 @@ function toShortVerdictBasis(reason) {
 
 function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   const verdict = detailSystem?.verdict || {};
-  const label = verdict.label || null;
+  // Use backend verdict label when available; fall back to client-side computation
+  // so the block renders even when the backend omits a verdict for the item.
+  const backendLabel = verdict.label;
+  const normalizedNutrition = detailSystem?.nutrition
+    ? { ...detailSystem.nutrition, calories_kcal: detailSystem.nutrition.calories_kcal ?? detailSystem.nutrition.calories }
+    : null;
+  const fallbackVerdict = resolveCardVerdict({ detailSystem: { ...detailSystem, nutrition: normalizedNutrition } });
+  const label = backendLabel || (fallbackVerdict !== NOT_AVAILABLE_LABEL ? fallbackVerdict : null);
   const reason = String(verdict.reason || "").trim();
   const basis = Array.isArray(verdict.reasons)
     ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 2)
@@ -1096,11 +1106,6 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
         if (!data?.baseItem && !data?.candidateItem) {
           setCompareOpen(false);
           setCompareLoading(false);
-          setSimilar((prev) =>
-            Array.isArray(prev)
-              ? prev.map((s) => s.id === similarEntry.id ? { ...s, compare_eligible: false } : s)
-              : prev
-          );
           return;
         }
         setCompareData(data);
@@ -1109,11 +1114,8 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
       .catch(() => {
         setCompareOpen(false);
         setCompareLoading(false);
-        setSimilar((prev) =>
-          Array.isArray(prev)
-            ? prev.map((s) => s.id === similarEntry.id ? { ...s, compare_eligible: false } : s)
-            : prev
-        );
+        setCompareData(null);
+        setCompareError(null);
       });
   }
 

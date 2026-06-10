@@ -18,6 +18,7 @@ import {
 } from "../lib/searchResultEnrichment.js";
 import IndulgenceMeter from "./IndulgenceMeter.jsx";
 import ShareButton from "./share/ShareButton.jsx";
+import FoodInterestButton from "./food-interests/FoodInterestButton.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
@@ -1221,19 +1222,21 @@ function ItemRow({
       skipEligibilityCheck: true,
     })
       .then((data) => {
+        // If the backend returned no usable comparison, close silently rather
+        // than showing a dead-end error screen.
         if (!data?.baseItem && !data?.candidateItem) {
           setCompareOpen(false);
           setCompareLoading(false);
-          markCompareIneligible(similarEntry);
           return;
         }
         setCompareData(data);
         setCompareLoading(false);
       })
       .catch(() => {
+        // Close modal silently — Compare button stays visible for retry.
         setCompareOpen(false);
         setCompareLoading(false);
-        markCompareIneligible(similarEntry);
+        setCompareData(null);
       });
   }
 
@@ -1309,6 +1312,17 @@ function ItemRow({
             }}
             iconOnly
             stopPropagation
+          />
+        ) : null}
+        {mid ? (
+          <FoodInterestButton
+            compact
+            interest={{
+              interest_type: "dish",
+              interest_key: `menu_item_${mid}`,
+              display_label: name,
+              source_menu_item_id: mid,
+            }}
           />
         ) : null}
       </div>
@@ -1436,6 +1450,12 @@ function ItemRow({
       {(indulgencePresentation || breadScore) ? (
         <CompactScoreSummary presentation={indulgencePresentation} breadScore={breadScore} />
       ) : null}
+
+      {/* Required card capabilities — do NOT remove during refactors:
+          CardVerdictBox (Verdict), Nutrition chip, Insights chip, Compare (via DetailPanel/Similar).
+          All four must render for items with sufficient data. */}
+      <CardVerdictBox label={cardVerdict} />
+
 
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
         {!indulgencePresentation ? (
