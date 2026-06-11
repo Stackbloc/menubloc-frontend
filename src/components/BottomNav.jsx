@@ -12,7 +12,7 @@ export default function BottomNav() {
 
   const tabs = useMemo(() => [
     { label: t("nav.home", "Home"), icon: "🏠", to: "/" },
-    { label: t("nav.waiter", "Waiter"), iconComponent: WaiterFaceIcon, iconSize: 88, to: "/food-interests" },
+    { label: t("nav.waiter", "Waiter"), iconComponent: WaiterFaceIcon, to: "/food-interests" },
     { label: t("nav.following", "Following"), icon: "F", to: "/account/following" },
     { label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
   ], [t]);
@@ -72,30 +72,18 @@ export default function BottomNav() {
               transition: "color 150ms ease",
             }}
           >
-            {/* Icon container: always 22px tall in the flow so all tabs match height.
-                Large icons (Waiter) are absolutely positioned inside, floating upward. */}
             <span
               style={{
                 position: "relative",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: 22,
-                height: 22,
                 fontSize: 22,
                 lineHeight: 1,
               }}
             >
               {tab.iconComponent ? (
-                <span style={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  lineHeight: 1,
-                }}>
-                  <tab.iconComponent size={iconSize} aria-hidden />
-                </span>
+                <tab.iconComponent size={iconSize} aria-hidden />
               ) : (
                 <span aria-hidden="true">{tab.icon}</span>
               )}
