@@ -36,7 +36,7 @@ import { trackBillboardClick } from "../lib/analytics.js";
 import { fetchSimilarItems, fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "./menu/CompareItemsModal.jsx";
-import { getCardVerdictTone } from "../lib/cardVerdict.js";
+import { getCardVerdictTone, resolveCardVerdict } from "../lib/cardVerdict.js";
 import {
   getQualitativeLabel,
   getNutritionSummary,
@@ -1108,6 +1108,7 @@ function ItemRow({
   const nutritionPreviewChips = buildNutritionPreviewChips(row, queryMeta);
   const pairingTeaser = formatPairingTeaser(row);
   const refinementMatchLabel = buildRefinementMatchLabel(row, activeRefinement);
+  const cardVerdict = resolveCardVerdict(row);
   const factsLine = venueRenderedAbove
     ? ""
     : buildKeyFactsLine({ row, restaurantSummary, matchContext });
