@@ -1956,7 +1956,7 @@ export default function GrubbidSearchResults() {
     : hasDishMatches;
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF", paddingBottom: "calc(var(--bottom-nav-h, 80px) + 16px)" }}>
       {/* ── STICKY HEADER ── */}
       <div style={{
         position: "sticky", top: 0, zIndex: 100,
