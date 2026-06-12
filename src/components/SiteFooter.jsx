@@ -20,8 +20,8 @@ export default function SiteFooter() {
   return (
     <footer
       style={{
-        borderTop: "1px solid #1F2937",
-        background: "#0B0F0C",
+        borderTop: "1px solid var(--gb-color-border)",
+        background: "var(--gb-color-page)",
         marginTop: 40,
       }}
     >
@@ -51,22 +51,22 @@ export default function SiteFooter() {
             flex: "0 0 auto",
           }}
         >
-          <Link to="/restaurant/onboarding" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/restaurant/onboarding" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.signup")}
           </Link>
-          <Link to="/operator/login" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/operator/login" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.signin")}
           </Link>
-          <Link to="/terms" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/terms" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.terms")}
           </Link>
-          <Link to="/privacy" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/privacy" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
             {t("footer.privacy", "Privacy Policy")}
           </Link>
-          <Link to="/about" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/about" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
             {t("footer.about", "About Menuply")}
           </Link>
-          <Link to="/contact" style={{ color: "#9CA3AF", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/contact" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.contact")}
           </Link>
         </div>
@@ -100,9 +100,9 @@ export default function SiteFooter() {
             style={{
               height: 34,
               borderRadius: 10,
-              border: "1px solid #1F2937",
-              background: "#121A14",
-              color: "#D1D5DB",
+              border: "1px solid var(--gb-color-border)",
+              background: "var(--gb-color-surface-strong)",
+              color: "var(--gb-color-ink)",
               padding: "0 10px",
               fontSize: 13,
               fontWeight: 700,

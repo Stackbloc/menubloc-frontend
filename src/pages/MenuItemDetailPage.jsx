@@ -44,6 +44,7 @@ import {
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
+import { resolveCardVerdict, NOT_AVAILABLE_LABEL } from "../lib/cardVerdict.js";
 import { fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
@@ -261,14 +262,14 @@ const SIGNAL_CHIP_COLORS = {
   high:      { bg: "rgba(239,68,68,0.12)",  color: "#F87171", border: "1px solid rgba(239,68,68,0.2)" },
   very_high: { bg: "rgba(185,28,28,0.15)",  color: "#FCA5A5", border: "1px solid rgba(185,28,28,0.25)" },
   low:       { bg: "rgba(107,114,128,0.12)", color: "#9CA3AF", border: "1px solid rgba(107,114,128,0.2)" },
-  default:   { bg: "#1A2419",               color: "#D1D5DB", border: "1px solid #1F2937" },
+  default:   { bg: "var(--gb-color-surface)", color: "var(--gb-color-ink-soft)", border: "1px solid var(--gb-color-border)" },
 };
 
 // ── Layout Primitives ────────────────────────────────────────
 
 function PageShell({ children, isMobile, stickyTitle }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title={stickyTitle} />
       <div style={{
         maxWidth: 720, margin: "0 auto",
@@ -285,7 +286,7 @@ function PageShell({ children, isMobile, stickyTitle }) {
 
 const Surface = React.forwardRef(function Surface({ children, style }, ref) {
   return (
-    <section ref={ref} style={{ background: "#121A14", border: "1px solid #1F2937", borderRadius: 24, boxShadow: "0 16px 44px rgba(0,0,0,0.3)", backdropFilter: "blur(8px)", ...style }}>
+    <section ref={ref} style={{ background: "var(--gb-color-surface-strong)", border: "1px solid var(--gb-color-border)", borderRadius: 24, boxShadow: "var(--gb-shadow-card)", ...style }}>
       {children}
     </section>
   );
@@ -301,7 +302,7 @@ function Eyebrow({ children, color = "#6B7280" }) {
 
 function BadgePill({ children, tone = "default" }) {
   const tones = {
-    default:  { background: "#1A2419",  color: "#D1D5DB", border: "1px solid #1F2937" },
+    default:  { background: "var(--gb-color-surface)", color: "var(--gb-color-ink-soft)", border: "1px solid var(--gb-color-border)" },
     positive: { background: "rgba(34,197,94,0.12)", color: "#22C55E", border: "1px solid rgba(34,197,94,0.3)" },
     caution:  { background: "rgba(234,179,8,0.12)",  color: "#FBBF24", border: "1px solid rgba(234,179,8,0.2)" },
     accent:   { background: "rgba(34,197,94,0.10)", color: "#22C55E", border: "1px solid rgba(34,197,94,0.2)" },
@@ -348,7 +349,14 @@ function toShortVerdictBasis(reason) {
 
 function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   const verdict = detailSystem?.verdict || {};
-  const label = verdict.label || null;
+  // Use backend verdict label when available; fall back to client-side computation
+  // so the block renders even when the backend omits a verdict for the item.
+  const backendLabel = verdict.label;
+  const normalizedNutrition = detailSystem?.nutrition
+    ? { ...detailSystem.nutrition, calories_kcal: detailSystem.nutrition.calories_kcal ?? detailSystem.nutrition.calories }
+    : null;
+  const fallbackVerdict = resolveCardVerdict({ detailSystem: { ...detailSystem, nutrition: normalizedNutrition } });
+  const label = backendLabel || (fallbackVerdict !== NOT_AVAILABLE_LABEL ? fallbackVerdict : null);
   const reason = String(verdict.reason || "").trim();
   const basis = Array.isArray(verdict.reasons)
     ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 2)
@@ -437,8 +445,8 @@ function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, 
         position: "sticky",
         top: STICKY_ITEM_HERO_TOP_PX,
         zIndex: 39,
-        background: "rgba(18,26,20,0.98)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--gb-color-surface-muted)",
+        border: "1px solid var(--gb-color-border)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -499,8 +507,8 @@ function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, 
               minHeight: 32,
               padding: "0 12px",
               borderRadius: 999,
-              background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-              color: "#0B0F0C",
+              background: "var(--gb-color-accent)",
+              color: "#ffffff",
               textDecoration: "none",
               fontSize: 12,
               fontWeight: 800,
@@ -529,7 +537,7 @@ function IndulgenceInline({ presentation }) {
       <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: "#FBBF24", marginBottom: 8 }}>
         Indulgent
       </div>
-      <div style={{ borderRadius: 18, padding: "14px 16px", background: "#121A14", border: "1px solid rgba(234,179,8,0.2)" }}>
+      <div style={{ borderRadius: 18, padding: "14px 16px", background: "var(--gb-color-warning-bg)", border: "1px solid var(--gb-color-warning-border)" }}>
         <IndulgenceMeter indulgence={presentation.indulgence} />
       </div>
     </div>
@@ -552,7 +560,7 @@ function BreadScoreInline({ detailSystem }) {
       <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase", color: "#FBBF24", marginBottom: 8 }}>
         Verdict
       </div>
-      <div style={{ borderRadius: 18, padding: "14px 16px", background: "#121A14", border: "1px solid rgba(234,179,8,0.2)" }}>
+      <div style={{ borderRadius: 18, padding: "14px 16px", background: "var(--gb-color-warning-bg)", border: "1px solid var(--gb-color-warning-border)" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div style={{ fontSize: 24, fontWeight: 900, color: "#FBBF24", letterSpacing: "-0.03em" }}>
             Bread Score
@@ -637,11 +645,11 @@ function NutritionCard({ detailSystem, t }) {
               justifyContent: "space-between",
               gap: 12,
               borderRadius: 16,
-              border: "1px solid #1F2937",
-              background: "#121A14",
+              border: "1px solid var(--gb-color-border)",
+              background: "var(--gb-color-surface-strong)",
               padding: "12px 14px",
               cursor: "pointer",
-              color: "#FFFFFF",
+              color: "var(--gb-color-ink)",
               textAlign: "left",
             }}
           >
@@ -663,11 +671,11 @@ function NutritionCard({ detailSystem, t }) {
                     onClick={() => setSelectedPortionKey(option.key)}
                     style={{
                       borderRadius: 14,
-                      border: active ? "1.5px solid #22C55E" : "1px solid #1F2937",
-                      background: active ? "rgba(34,197,94,0.12)" : "#121A14",
+                      border: active ? "1.5px solid var(--gb-color-accent)" : "1px solid var(--gb-color-border)",
+                      background: active ? "rgba(45,106,79,0.12)" : "var(--gb-color-surface-strong)",
                       padding: "12px 10px",
                       cursor: "pointer",
-                      color: "#FFFFFF",
+                      color: "var(--gb-color-ink)",
                     }}
                   >
                     <div style={{ fontSize: 13, fontWeight: 900 }}>{option.label}</div>
@@ -683,7 +691,7 @@ function NutritionCard({ detailSystem, t }) {
       ) : null}
       <div style={{ display: "grid", gap: 10 }}>
         {pairs.map((entry) => (
-          <div key={entry.label} style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "12px 14px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+          <div key={entry.label} style={{ borderRadius: 16, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: "12px 14px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
             <div style={{ fontSize: 13, color: "#FFFFFF", fontWeight: 800 }}>
               {entry.label}
             </div>
@@ -700,7 +708,7 @@ function NutritionCard({ detailSystem, t }) {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(120px, 180px))", gap: 10, width: "fit-content", maxWidth: "100%" }}>
             {perOzRows.map((row) => (
-              <div key={row.label} style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "12px 14px" }}>
+              <div key={row.label} style={{ borderRadius: 16, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: "12px 14px" }}>
                 <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   {row.label}
                 </div>
@@ -754,7 +762,7 @@ function InsightsCard({ detailSystem, t }) {
     <SectionCard
       title={t("menuItemDetail.insights", "Insights")}
       eyebrow={t("menuItemDetail.insights", "Insights")}
-      style={{ padding: 16, background: "#121A14", border: "1px solid #1F2937", boxShadow: "0 10px 24px rgba(20,33,27,0.04)" }}
+      style={{ padding: 16, background: "var(--gb-color-surface-strong)", border: "1px solid var(--gb-color-border)", boxShadow: "var(--gb-shadow-soft)" }}
     >
       <div style={{ display: "grid", gap: 8, padding: "2px 0" }}>
         {items.map((item) => {
@@ -766,7 +774,7 @@ function InsightsCard({ detailSystem, t }) {
                 {item.label}
               </div>
               <div style={{ width: 140, display: "flex", justifyContent: "center" }}>
-                <div style={{ width: 140, height: 8, borderRadius: 999, background: "#1F2937", overflow: "hidden" }}>
+                <div style={{ width: 140, height: 8, borderRadius: 999, background: "rgba(18,34,28,0.1)", overflow: "hidden" }}>
                   <div style={{ width: meterFill, height: "100%", borderRadius: 999, background: tone.color }} />
                 </div>
               </div>
@@ -789,7 +797,7 @@ function DessertInterpretationCard({ presentation, t }) {
     <SectionCard
       title={t("menuItemDetail.insights", "Insights")}
       eyebrow={itemLabel}
-      style={{ padding: 16, background: "#121A14", border: "1px solid #1F2937", boxShadow: "0 10px 24px rgba(20,33,27,0.04)" }}
+      style={{ padding: 16, background: "var(--gb-color-surface-strong)", border: "1px solid var(--gb-color-border)", boxShadow: "var(--gb-shadow-soft)" }}
     >
       <div style={{ fontSize: 15, lineHeight: 1.6, color: "#D1D5DB", fontWeight: 800 }}>
         {presentation.interpretation || "This item is still treated as an indulgent choice even if some protein or fiber offsets are present."}
@@ -963,7 +971,7 @@ function PreparationCard({ detailSystem, t }) {
         {rows.length ? (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
             {rows.map((row) => (
-              <div key={row.label} style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "12px 14px" }}>
+              <div key={row.label} style={{ borderRadius: 16, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: "12px 14px" }}>
                 <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   {row.label}
                 </div>
@@ -1137,7 +1145,7 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
       >
         <div style={{ display: "grid", gap: 14 }}>
           {similar.map((entry) => (
-            <div key={entry.id} style={{ borderRadius: 18, border: "1px solid #1F2937", background: "#121A14", padding: 16 }}>
+            <div key={entry.id} style={{ borderRadius: 18, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
                 {entry.restaurant_name}
                 {entry.distance_miles != null && (
@@ -1408,8 +1416,8 @@ export default function MenuItemDetailPage() {
         position: "sticky",
         top: STICKY_ITEM_HERO_TOP_PX,
         zIndex: 40,
-        background: "rgba(18,26,20,0.98)",
-        boxShadow: "0 16px 44px rgba(20,33,27,0.12), 0 8px 24px rgba(0,0,0,0.35)",
+        background: "var(--gb-color-surface-muted)",
+        boxShadow: "var(--gb-shadow-card)",
       }}>
         <div style={{ display: "grid", gridTemplateColumns: heroGridColumns, gap: isMobile ? 18 : 18, alignItems: "stretch" }}>
           <div style={{ display: "grid", gap: isMobile ? 16 : 12 }}>
@@ -1420,7 +1428,7 @@ export default function MenuItemDetailPage() {
                   <img
                     src={item.restaurant.logoUrl}
                     alt={`${item.restaurant.name} logo`}
-                    style={{ width: 62, height: 62, objectFit: "contain", borderRadius: 18, background: "#1A2419", border: "1px solid #1F2937", padding: 8 }}
+                    style={{ width: 62, height: 62, objectFit: "contain", borderRadius: 18, background: "var(--gb-color-surface)", border: "1px solid var(--gb-color-border)", padding: 8 }}
                   />
                 ) : null}
                 <div>
@@ -1514,8 +1522,8 @@ export default function MenuItemDetailPage() {
                         minHeight: 34,
                         padding: "0 14px",
                         borderRadius: 999,
-                        background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-                        color: "#0B0F0C",
+                        background: "var(--gb-color-accent)",
+                        color: "#ffffff",
                         textDecoration: "none",
                         fontSize: 12,
                         fontWeight: 800,
@@ -1561,7 +1569,7 @@ export default function MenuItemDetailPage() {
           </div>
 
         {showItemPhoto && isMobile ? (
-          <div style={{ minHeight: isMobile ? 280 : 100, borderRadius: 22, overflow: "hidden", border: "1px solid #1F2937", background: "#1A2419" }}>
+          <div style={{ minHeight: isMobile ? 280 : 100, borderRadius: 22, overflow: "hidden", border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface)" }}>
             <img src={item.itemPhotoUrl} alt={`${displayItemName} photo`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </div>
         ) : null}

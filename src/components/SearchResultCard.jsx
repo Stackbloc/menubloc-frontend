@@ -640,7 +640,7 @@ function InsightsPanel({ chips, onFindSimilar }) {
         </div>
       )}
       {rows.map(({ label, accent, score, level, explanation }) => (
-        <div key={label} style={{ padding: "6px 0", borderBottom: "1px solid #1F2937" }}>
+        <div key={label} style={{ padding: "6px 0", borderBottom: "1px solid var(--gb-color-border)" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#D1D5DB" }}>{label}</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: accent }}>{level}</span>
@@ -664,9 +664,9 @@ function InsightsPanel({ chips, onFindSimilar }) {
           gap: 4,
           padding: "6px 14px",
           borderRadius: 999,
-          border: "1px solid #374151",
-          background: "#1A2419",
-          color: "#D1D5DB",
+          border: "1px solid var(--gb-color-border-strong)",
+          background: "var(--gb-color-surface-strong)",
+          color: "var(--gb-color-ink-soft)",
           fontSize: 13,
           fontWeight: 700,
           cursor: "pointer",
@@ -695,12 +695,12 @@ function Chip({ label, active, available, onClick }) {
         lineHeight: 1,
         cursor: "pointer",
         border: active
-          ? "1px solid #22C55E"
+          ? "1px solid var(--gb-color-accent)"
           : available
-          ? "1px solid #374151"
-          : "1px solid #1F2937",
-        background: active ? "#22C55E" : available ? "#1A2419" : "#121A14",
-        color: active ? "#0B0F0C" : available ? "#D1D5DB" : "#6B7280",
+          ? "1px solid var(--gb-color-border-strong)"
+          : "1px solid var(--gb-color-border)",
+        background: active ? "var(--gb-color-accent)" : "var(--gb-color-surface-strong)",
+        color: active ? "#ffffff" : available ? "var(--gb-color-ink-soft)" : "var(--gb-color-ink-muted)",
       }}
     >
       {label}
@@ -721,7 +721,7 @@ function CompactScoreSummary({ presentation, breadScore }) {
         marginTop: 10,
         padding: "12px 14px",
         borderRadius: 16,
-        background: "linear-gradient(135deg, rgba(180,83,9,0.18), rgba(18,26,20,1))",
+        background: "linear-gradient(135deg, rgba(180,83,9,0.10), var(--gb-color-surface-strong))",
         border: "1px solid rgba(249,115,22,0.2)",
       }}
     >
@@ -798,9 +798,9 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels 
   const wrap = {
     marginTop: 10,
     paddingTop: 10,
-    borderTop: "1px solid #1F2937",
+    borderTop: "1px solid var(--gb-color-border)",
     fontSize: "14px",
-    color: "#D1D5DB",
+    color: "var(--gb-color-ink-soft)",
     lineHeight: 1.5,
     maxWidth: 560,
   };
@@ -1259,7 +1259,7 @@ function ItemRow({
       style={{
         paddingTop: 10,
         paddingBottom: 10,
-        borderBottom: "1px solid #1F2937",
+        borderBottom: "1px solid var(--gb-color-border)",
       }}
     >
       {/* 1. Item name + share */}
@@ -1512,7 +1512,7 @@ function DietBadge({ label, tone }) {
   const tones = {
     deal:    { background: "rgba(234,179,8,0.1)",   borderColor: "rgba(234,179,8,0.25)",   color: "#FCD34D" },
     vegan:   { background: "rgba(34,197,94,0.1)",   borderColor: "rgba(34,197,94,0.25)",   color: "#22C55E" },
-    gf:      { background: "#1F2937",               borderColor: "#374151",                color: "#D1D5DB" },
+    gf:      { background: "var(--gb-color-surface)", borderColor: "var(--gb-color-border-strong)", color: "var(--gb-color-ink-soft)" },
     popular: { background: "rgba(239,68,68,0.1)",   borderColor: "rgba(239,68,68,0.25)",   color: "#FCA5A5" },
   };
   const t = tones[tone] || {};
@@ -1526,9 +1526,9 @@ function DietBadge({ label, tone }) {
         fontSize: "12px",
         fontWeight: 700,
         lineHeight: 1,
-        border: "1px solid " + (t.borderColor || "#1F2937"),
-        background: t.background || "#121A14",
-        color: t.color || "#9CA3AF",
+        border: "1px solid " + (t.borderColor || "var(--gb-color-border)"),
+        background: t.background || "var(--gb-color-surface-strong)",
+        color: t.color || "var(--gb-color-ink-muted)",
         userSelect: "none",
       }}
     >
@@ -1559,9 +1559,9 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
   const tierLabel = profileTier === "pro" ? "Pro" : profileTier === "verified" ? "Verified" : "";
   const tierStyle =
     profileTier === "pro"
-      ? { background: "#1F2937", border: "1px solid #374151", color: "#D1D5DB" }
+      ? { background: "var(--gb-color-surface)", border: "1px solid var(--gb-color-border-strong)", color: "var(--gb-color-ink-soft)" }
       : profileTier === "verified"
-      ? { background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)", color: "#22C55E" }
+      ? { background: "rgba(45,106,79,0.1)", border: "1px solid rgba(45,106,79,0.25)", color: "var(--gb-color-accent)" }
       : null;
 
   return (
