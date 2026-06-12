@@ -1973,7 +1973,7 @@ export default function GrubbidSearchResults() {
           >
             ←
           </button>
-          <BrandLogo width={113} height={48} radius={14} pageColor="#f7f1e6" />
+          <BrandLogo width={113} height={48} radius={14} pageColor="#f8fafc" />
           <div style={{ width: 30, flexShrink: 0 }} />
         </div>
         <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
