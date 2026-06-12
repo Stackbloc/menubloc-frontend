@@ -1271,7 +1271,7 @@ export default function GrubbidDiscovery() {
               ☰
             </button>
 
-            <BrandLogo width={113} height={48} radius={14} pageColor="#2d6a4f" />
+            <BrandLogo width={113} height={48} radius={14} matchPageBackground={false} />
 
             <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
               <Link

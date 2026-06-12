@@ -23,7 +23,7 @@ function isDarkPageColor(value) {
   return false;
 }
 
-export const MENUPLY_LOGO_SRC = "/menuply-logo.png";
+export const MENUPLY_LOGO_SRC = "/menuply-logo-new.png";
 
 export function BrandLogo({
   to = "/",
