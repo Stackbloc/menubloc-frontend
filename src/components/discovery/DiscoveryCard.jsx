@@ -176,9 +176,9 @@ export default function DiscoveryCard({
         color: "inherit",
         overflow: "hidden",
         borderRadius: 12,
-        border: "1px solid #243020",
-        background: "#141E15",
-        boxShadow: "0 6px 24px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.32)",
+        border: "1px solid var(--gb-color-border)",
+        background: "var(--gb-color-surface-strong)",
+        boxShadow: "var(--gb-shadow-card)",
         transition: "box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease",
       }}
     >
@@ -188,8 +188,8 @@ export default function DiscoveryCard({
         borderTopLeftRadius: 12,
         borderBottomLeftRadius: 12,
         background: menu.flex_activity > 0
-          ? `linear-gradient(to top, #22C55E ${Math.min(100, menu.flex_activity)}%, #4ade80 100%)`
-          : "#1F2937",
+          ? `linear-gradient(to top, var(--gb-color-accent) ${Math.min(100, menu.flex_activity)}%, #4ade80 100%)`
+          : "rgba(18,34,28,0.08)",
         opacity: menu.flex_activity > 0
           ? Math.max(0.5, Math.min(1, menu.flex_activity / 100))
           : 0.5,
@@ -197,14 +197,14 @@ export default function DiscoveryCard({
       }} />
 
       {/* Content */}
-      <div style={{ padding: "9px 12px 9px", background: "#141E15", flex: 1, minWidth: 0 }}>
+      <div style={{ padding: "9px 12px 9px", background: "var(--gb-color-surface-strong)", flex: 1, minWidth: 0 }}>
         {/* Name row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{
               fontWeight: 700,
               fontSize: 13,
-              color: "#FFFFFF",
+              color: "var(--gb-color-ink-strong)",
               lineHeight: 1.2,
               letterSpacing: "-0.01em",
             }}>
@@ -214,8 +214,8 @@ export default function DiscoveryCard({
                   marginLeft: 6,
                   fontSize: 9,
                   fontWeight: 800,
-                  color: "#0B0F0C",
-                  background: "#22C55E",
+                  color: "#ffffff",
+                  background: "var(--gb-color-accent)",
                   borderRadius: 3,
                   padding: "1px 4px",
                   verticalAlign: "middle",
@@ -252,7 +252,7 @@ export default function DiscoveryCard({
                 height: 28,
                 border: "none",
                 borderRadius: 6,
-                background: followed ? "#22C55E" : "#1F2937",
+                background: followed ? "var(--gb-color-accent)" : "var(--gb-color-border)",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -263,7 +263,7 @@ export default function DiscoveryCard({
               <span style={{
                 fontSize: 11,
                 fontWeight: 900,
-                color: followed ? "#0B0F0C" : "#6B7280",
+                color: followed ? "#ffffff" : "var(--gb-color-ink-muted)",
               }}>
                 {followed ? "✓" : "F"}
               </span>
@@ -276,7 +276,7 @@ export default function DiscoveryCard({
           <div style={{
             fontSize: 11,
             fontWeight: 800,
-            color: "#22C55E",
+            color: "var(--gb-color-accent)",
             marginBottom: 2,
             letterSpacing: "0.01em",
           }}>
@@ -286,10 +286,10 @@ export default function DiscoveryCard({
 
         {/* Meta row */}
         {metaItems.length > 0 && (
-          <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2, display: "flex", flexWrap: "wrap", gap: "0 4px" }}>
+          <div style={{ fontSize: 11, color: "var(--gb-color-ink-muted)", marginTop: 2, display: "flex", flexWrap: "wrap", gap: "0 4px" }}>
             {metaItems.map((item, i) => (
               <span key={item.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {i > 0 && <span style={{ color: "#374151" }}>·</span>}
+                {i > 0 && <span style={{ color: "var(--gb-color-border-strong)" }}>·</span>}
                 {item.clickable ? (
                   <button
                     type="button"
@@ -317,8 +317,8 @@ export default function DiscoveryCard({
             {chips.map((tag) => (
               <span key={tag} style={{
                 fontSize: 10,
-                color: "#9CA3AF",
-                border: "1px solid #1F2937",
+                color: "var(--gb-color-ink-muted)",
+                border: "1px solid var(--gb-color-border)",
                 background: "transparent",
                 padding: "2px 7px",
                 borderRadius: 99,
