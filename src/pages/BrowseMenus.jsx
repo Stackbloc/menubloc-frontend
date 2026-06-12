@@ -548,7 +548,7 @@ export default function BrowseMenus() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader
         title={locationLabel
           ? t("browse.nearTitle", `Browsing Near ${locationLabel}`, { location: locationLabel })

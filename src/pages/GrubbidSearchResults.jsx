@@ -1281,9 +1281,9 @@ function FilterToggle({ label, active, onClick, isMobile }) {
         fontWeight: 700,
         lineHeight: 1,
         cursor: "pointer",
-        border: active ? "1.5px solid #22C55E" : "1px solid #1F2937",
-        background: active ? "#22C55E" : "#1A2419",
-        color: active ? "#0B0F0C" : "#D1D5DB",
+        border: active ? "1.5px solid var(--gb-color-accent)" : "1px solid var(--gb-color-border)",
+        background: active ? "var(--gb-color-accent)" : "var(--gb-color-surface-strong)",
+        color: active ? "#ffffff" : "var(--gb-color-ink-muted)",
         transition: "background 0.1s, color 0.1s",
         whiteSpace: "nowrap",
       }}
@@ -1956,12 +1956,12 @@ export default function GrubbidSearchResults() {
     : hasDishMatches;
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF", paddingBottom: "calc(var(--bottom-nav-h, 80px) + 16px)" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)", paddingBottom: "calc(var(--bottom-nav-h, 80px) + 16px)" }}>
       {/* ── STICKY HEADER ── */}
       <div style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: "#0B0F0C",
-        borderBottom: "1px solid #1F2937",
+        background: "var(--gb-color-page)",
+        borderBottom: "1px solid var(--gb-color-border)",
         paddingBottom: 12,
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px" }}>
@@ -1973,7 +1973,7 @@ export default function GrubbidSearchResults() {
           >
             ←
           </button>
-          <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
+          <BrandLogo width={113} height={48} radius={14} pageColor="#f7f1e6" />
           <div style={{ width: 30, flexShrink: 0 }} />
         </div>
         <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -2209,12 +2209,12 @@ export default function GrubbidSearchResults() {
           style={{
             marginTop: isMobile ? 32 : 44,
             paddingTop: isMobile ? 16 : 20,
-            borderTop: "1px solid #1F2937",
+            borderTop: "1px solid var(--gb-color-border)",
             display: "flex",
             alignItems: "center",
             gap: 8,
             fontSize: isMobile ? 13 : 14,
-            color: "#6B7280",
+            color: "var(--gb-color-ink-muted)",
           }}
         >
           <span style={{ fontWeight: 500 }}>Looking for something healthier?</span>
