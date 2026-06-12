@@ -850,15 +850,15 @@ function IngredientFlagsCard({ detailSystem, t }) {
     >
       <div style={{ display: "grid", gap: 12 }}>
         {processing?.processing_level ? (
-          <div style={{ borderRadius: 16, border: "1px solid #1F2937", background: "#121A14", padding: "14px 16px" }}>
-            <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          <div style={{ borderRadius: 16, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: "14px 16px" }}>
+            <div style={{ fontSize: 11, color: "var(--gb-color-ink-muted)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
               {t("menuItemDetail.processingLevel", "Processing Level")}
             </div>
-            <div style={{ marginTop: 6, fontSize: 18, fontWeight: 900, color: "#FFFFFF" }}>
+            <div style={{ marginTop: 6, fontSize: 18, fontWeight: 900, color: "var(--gb-color-ink)" }}>
               {processing.processing_level}
             </div>
             {processing.user_impact ? (
-              <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#9CA3AF" }}>
+              <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "var(--gb-color-ink-muted)" }}>
                 {processing.user_impact}
               </div>
             ) : null}

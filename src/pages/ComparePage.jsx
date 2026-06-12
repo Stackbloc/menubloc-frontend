@@ -45,7 +45,7 @@ export default function ComparePage() {
       <div style={{
         minHeight: "100dvh", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
-        background: "#0B0F0C", color: "#9CA3AF", gap: 16, padding: 24,
+        background: "var(--gb-color-page)", color: "var(--gb-color-ink-muted)", gap: 16, padding: 24,
       }}>
         <div style={{ fontSize: 15, fontWeight: 700 }}>
           This comparison is no longer available.

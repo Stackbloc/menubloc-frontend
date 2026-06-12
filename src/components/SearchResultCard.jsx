@@ -1618,9 +1618,9 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
             width: 24,
             height: 24,
             borderRadius: 6,
-            background: "#1F2937",
-            border: "1px solid #374151",
-            color: "#9CA3AF",
+            background: "var(--gb-color-surface-strong)",
+            border: "1px solid var(--gb-color-border)",
+            color: "var(--gb-color-ink-muted)",
             textDecoration: "none",
             flexShrink: 0,
           }}
@@ -1702,7 +1702,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
           style={{
             paddingBottom: 12,
             marginBottom: 4,
-            borderBottom: "1px solid #1F2937",
+            borderBottom: "1px solid var(--gb-color-border)",
           }}
         >
           {restHrefHeader ? (
