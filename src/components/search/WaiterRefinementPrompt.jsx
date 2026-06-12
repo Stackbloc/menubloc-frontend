@@ -123,10 +123,10 @@ export default function WaiterRefinementPrompt({
           width: 48,
           height: 48,
           borderRadius: 999,
-          background: "#FFFFFF",
-          color: "#0B0F0C",
+          background: "var(--gb-color-surface-strong)",
+          color: "var(--gb-color-ink-strong)",
           flexShrink: 0,
-          boxShadow: "0 0 0 1px rgba(255,255,255,0.18), 0 10px 26px rgba(0,0,0,0.28)",
+          boxShadow: "0 0 0 1px var(--gb-color-border), 0 10px 26px rgba(15,23,42,0.1)",
         }}
       >
         <WaiterFaceIcon size={34} />

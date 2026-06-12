@@ -470,7 +470,7 @@ function FranchiseBanner({ group, currentRestaurantId, onSelectLocation, brand }
 
 function FilterChip({ label, active, onClick, fullWidth, brand }) {
   const accent = brand?.accent ?? "#22C55E";
-  const onAccent = brand?.onAccent ?? "#0B0F0C";
+  const onAccent = brand?.onAccent ?? "#ffffff";
   return (
     <button
       type="button"
@@ -480,8 +480,8 @@ function FilterChip({ label, active, onClick, fullWidth, brand }) {
         width: fullWidth ? "100%" : "auto",
         padding: "0 16px",
         borderRadius: 999,
-        border: active ? `1.5px solid ${accent}` : "1px solid #1F2937",
-        background: active ? accent : "#1A2419",
+        border: active ? `1.5px solid ${accent}` : "1px solid var(--gb-color-border)",
+        background: active ? accent : "var(--gb-color-surface-strong)",
         color: active ? onAccent : "#9CA3AF",
         fontSize: 13,
         fontWeight: 800,
@@ -520,8 +520,8 @@ function FilterDrawer({ open, onClose, children }) {
         style={{
           width: "min(360px, 100vw)",
           height: "100%",
-          background: "#121A14",
-          boxShadow: "-18px 0 40px rgba(0,0,0,0.5)",
+          background: "var(--gb-color-surface-strong)",
+          boxShadow: "-18px 0 40px rgba(15,23,42,0.12)",
           display: "flex",
           flexDirection: "column",
         }}
@@ -593,7 +593,7 @@ function ItemDetailSheet({
 }) {
   const accent = brand?.accent ?? "#22C55E";
   const accentStrong = brand?.accentStrong ?? "#16A34A";
-  const onAccent = brand?.onAccent ?? "#0B0F0C";
+  const onAccent = brand?.onAccent ?? "#ffffff";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
   const softBorder = brand?.accentBorder ?? "1px solid rgba(34,197,94,0.3)";
   const primaryGradient = `linear-gradient(180deg, ${accent} 0%, ${accentStrong} 100%)`;
@@ -638,24 +638,24 @@ function ItemDetailSheet({
       <div
         style={{
           position: "fixed", bottom: 0, left: 0, right: 0,
-          background: "#121A14",
+          background: "var(--gb-color-surface-strong)",
           borderRadius: "24px 24px 0 0",
           zIndex: 501,
           maxHeight: "88vh",
           overflowY: "auto",
-          boxShadow: "0 -8px 40px rgba(0,0,0,0.16)",
+          boxShadow: "0 -8px 40px rgba(15,23,42,0.1)",
         }}
       >
         {/* drag handle */}
         <div style={{ paddingTop: 14, paddingBottom: 6, display: "flex", justifyContent: "center" }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: "#374151" }} />
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--gb-color-border-strong)" }} />
         </div>
 
         <div style={{ padding: "4px 20px 96px" }}>
 
           {/* Name + badges */}
           <div style={{ marginBottom: 6 }}>
-            <div style={{ fontSize: 21, fontWeight: 900, color: "#FFFFFF", lineHeight: 1.2 }}>{name}</div>
+            <div style={{ fontSize: 21, fontWeight: 900, color: "var(--gb-color-ink-strong)", lineHeight: 1.2 }}>{name}</div>
             {(hasDeal || item?.is_vegan || item?.is_gluten_free) && (
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                 {hasDeal && <Badge label={t("common.deals", "Deal")} bg={softBg} color={accent} border={softBorder} />}
@@ -681,11 +681,11 @@ function ItemDetailSheet({
               <MenuItemInsightsPanel
                 item={item}
                 colors={{
-                  panel2: "#141418",
-                  border: "rgba(255,255,255,0.08)",
-                  text: "rgba(255,255,255,0.92)",
-                  subtext: "rgba(255,255,255,0.65)",
-                  chipBg: "rgba(255,255,255,0.06)",
+                  panel2: "var(--gb-color-surface-muted)",
+                  border: "var(--gb-color-border)",
+                  text: "var(--gb-color-ink)",
+                  subtext: "var(--gb-color-ink-muted)",
+                  chipBg: "var(--gb-color-surface-muted)",
                 }}
               />
             </div>
@@ -775,8 +775,8 @@ function ItemDetailSheet({
                   }}
                   style={{
                     width: 44, height: 44, borderRadius: 999,
-                    border: "1px solid #1F2937",
-                    background: "#1A2419", color: "#9CA3AF",
+                    border: "1px solid var(--gb-color-border)",
+                    background: "var(--gb-color-surface-strong)", color: "var(--gb-color-ink-muted)",
                     fontSize: 20, fontWeight: 900, cursor: "pointer",
                   }}
                 >
@@ -784,7 +784,7 @@ function ItemDetailSheet({
                 </button>
                 <span aria-live="polite" style={{
                   minWidth: 48, textAlign: "center",
-                  fontSize: 18, fontWeight: 900, color: "#FFFFFF",
+                  fontSize: 18, fontWeight: 900, color: "var(--gb-color-ink-strong)",
                 }}>
                   {selectedQty}
                 </span>
@@ -847,10 +847,10 @@ function AddedConfirmation({ name, onRemove, setConfirmation, brand }) {
         bottom: 88,
         left: "50%",
         transform: "translateX(-50%)",
-        background: "#121A14",
+        background: "var(--gb-color-surface-strong)",
         borderRadius: 14,
         padding: "11px 16px",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+        boxShadow: "0 4px 24px rgba(15,23,42,0.12)",
         display: "flex",
         alignItems: "center",
         gap: 10,
@@ -1334,7 +1334,7 @@ export default function PublicMenuPage() {
       menuThemeSettings.background_style === "paper" ? "#f6efe3" :
       menuThemeSettings.background_style === "chalkboard" ? "#111111" :
       menuThemeSettings.background_style === "charcoal" ? "#0f1113" :
-      menuBrand?.pageBackground ?? "#0B0F0C",
+      menuBrand?.pageBackground ?? "var(--gb-color-page)",
   };
 
   useEffect(() => {

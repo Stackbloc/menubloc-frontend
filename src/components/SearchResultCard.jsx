@@ -77,8 +77,8 @@ function SearchBillboardBanner({ billboard, restaurantId = null, restaurantName 
         alignItems: "center",
         gap: 10,
         borderRadius: 8,
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.07)",
+        background: "var(--gb-color-surface-muted)",
+        border: "1px solid var(--gb-color-border)",
         overflow: "hidden",
         minWidth: 0,
       }}
@@ -169,9 +169,9 @@ function SearchBillboardBanner({ billboard, restaurantId = null, restaurantName 
             padding: "0 10px",
             marginRight: 10,
             borderRadius: 6,
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            color: "#E5E7EB",
+            background: "var(--gb-color-surface-strong)",
+            border: "1px solid var(--gb-color-border)",
+            color: "var(--gb-color-ink-soft)",
             fontSize: 11,
             fontWeight: 700,
             textDecoration: "none",
@@ -416,13 +416,13 @@ function BarRow({ label, pct, valueLabel, qualLabel, color, indent }) {
   const fill = Math.max(0, Math.min(100, Number(pct) || 0));
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: indent ? "2px 0" : "4px 0", paddingLeft: indent ? 12 : 0 }}>
-      <div style={{ width: indent ? 56 : 68, fontSize: indent ? 12 : 13, color: indent ? "#6B7280" : "#9CA3AF", flexShrink: 0 }}>
+      <div style={{ width: indent ? 56 : 68, fontSize: indent ? 12 : 13, color: indent ? "var(--gb-color-ink-muted)" : "var(--gb-color-ink-muted)", flexShrink: 0 }}>
         {indent && <span style={{ marginRight: 4, opacity: 0.5 }}>·</span>}{label}
       </div>
-      <div style={{ flex: 1, maxWidth: 160, height: indent ? 4 : 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden" }}>
+      <div style={{ flex: 1, maxWidth: 160, height: indent ? 4 : 6, background: "rgba(18,34,28,0.08)", borderRadius: 3, overflow: "hidden" }}>
         <div style={{ width: `${fill}%`, height: "100%", background: color, opacity: indent ? 0.65 : 0.85, borderRadius: 3 }} />
       </div>
-      <div style={{ minWidth: 48, fontSize: indent ? 12 : 13, fontWeight: 700, color: "#D1D5DB", textAlign: "right", flexShrink: 0 }}>
+      <div style={{ minWidth: 48, fontSize: indent ? 12 : 13, fontWeight: 700, color: "var(--gb-color-ink-soft)", textAlign: "right", flexShrink: 0 }}>
         {valueLabel}
         {qualLabel && (
           <span style={{ marginLeft: 4, fontWeight: 500, color: "#6B7280", fontSize: 11 }}>
@@ -479,16 +479,16 @@ function NutritionPanel({ chip }) {
       {sod   !== null && <BarRow label="Sodium"   pct={(sod   / 2300) * 100} valueLabel={`${sod}mg`}   qualLabel={getQualitativeLabel("sodium", sod)}   color="#c0392b" />}
 
       {hasPerOz && (
-        <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", letterSpacing: "0.04em", marginBottom: 5, textTransform: "uppercase" }}>
+        <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 10, background: "var(--gb-color-surface-muted)", border: "1px solid var(--gb-color-border)" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--gb-color-ink-muted)", letterSpacing: "0.04em", marginBottom: 5, textTransform: "uppercase" }}>
             Per oz · {servingOz} oz serving
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-            {proPerOz !== null && <span style={{ fontSize: 12, color: "#D1D5DB" }}><span style={{ fontWeight: 700 }}>{proPerOz}g</span> protein/oz</span>}
-            {carbsPerOz !== null && netCarbsPerOz !== null && <span style={{ fontSize: 12, color: "#D1D5DB" }}><span style={{ fontWeight: 700 }}>{netCarbsPerOz}g</span> net carbs/oz</span>}
-            {carbsPerOz !== null && netCarbsPerOz === null && <span style={{ fontSize: 12, color: "#D1D5DB" }}><span style={{ fontWeight: 700 }}>{carbsPerOz}g</span> carbs/oz</span>}
-            {sodPerOz !== null && <span style={{ fontSize: 12, color: "#D1D5DB" }}><span style={{ fontWeight: 700 }}>{sodPerOz}mg</span> sodium/oz</span>}
-            {fiberPerOz !== null && <span style={{ fontSize: 12, color: "#D1D5DB" }}><span style={{ fontWeight: 700 }}>{fiberPerOz}g</span> fiber/oz</span>}
+            {proPerOz !== null && <span style={{ fontSize: 12, color: "var(--gb-color-ink-soft)" }}><span style={{ fontWeight: 700 }}>{proPerOz}g</span> protein/oz</span>}
+            {carbsPerOz !== null && netCarbsPerOz !== null && <span style={{ fontSize: 12, color: "var(--gb-color-ink-soft)" }}><span style={{ fontWeight: 700 }}>{netCarbsPerOz}g</span> net carbs/oz</span>}
+            {carbsPerOz !== null && netCarbsPerOz === null && <span style={{ fontSize: 12, color: "var(--gb-color-ink-soft)" }}><span style={{ fontWeight: 700 }}>{carbsPerOz}g</span> carbs/oz</span>}
+            {sodPerOz !== null && <span style={{ fontSize: 12, color: "var(--gb-color-ink-soft)" }}><span style={{ fontWeight: 700 }}>{sodPerOz}mg</span> sodium/oz</span>}
+            {fiberPerOz !== null && <span style={{ fontSize: 12, color: "var(--gb-color-ink-soft)" }}><span style={{ fontWeight: 700 }}>{fiberPerOz}g</span> fiber/oz</span>}
           </div>
         </div>
       )}
@@ -496,14 +496,14 @@ function NutritionPanel({ chip }) {
       {(satiety !== null || glycemic !== null) && (
         <div style={{ marginTop: 8, display: "flex", gap: 12, flexWrap: "wrap" }}>
           {satiety !== null && (
-            <div style={{ fontSize: 13, color: "#D1D5DB" }}>
+            <div style={{ fontSize: 13, color: "var(--gb-color-ink-soft)" }}>
               <span style={{ color: "#9CA3AF" }}>Satiety </span>
               <span style={{ fontWeight: 700 }}>{satiety}/10</span>
               {satietyLbl && <span style={{ color: "#6B7280", marginLeft: 4 }}>· {satietyLbl}</span>}
             </div>
           )}
           {glycemic !== null && (
-            <div style={{ fontSize: 13, color: "#D1D5DB" }}>
+            <div style={{ fontSize: 13, color: "var(--gb-color-ink-soft)" }}>
               <span style={{ color: "#9CA3AF" }}>Glycemic </span>
               <span style={{ fontWeight: 700 }}>{glycemic}/10</span>
               {glycemicLbl && <span style={{ color: "#6B7280", marginLeft: 4 }}>· {glycemicLbl}</span>}
@@ -513,7 +513,7 @@ function NutritionPanel({ chip }) {
       )}
 
       {summary && (
-        <div style={{ marginTop: 10, fontSize: 13, color: "#D1D5DB", fontWeight: 600, lineHeight: 1.4 }}>
+        <div style={{ marginTop: 10, fontSize: 13, color: "var(--gb-color-ink-soft)", fontWeight: 600, lineHeight: 1.4 }}>
           {summary}
         </div>
       )}
@@ -636,19 +636,19 @@ function InsightsPanel({ chips, onFindSimilar }) {
   return (
     <div>
       {summary && (
-        <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 10, fontStyle: "italic" }}>
+        <div style={{ fontSize: 12, color: "var(--gb-color-ink-muted)", marginBottom: 10, fontStyle: "italic" }}>
           {summary}
         </div>
       )}
       {rows.map(({ label, accent, score, level, explanation }) => (
         <div key={label} style={{ padding: "6px 0", borderBottom: "1px solid var(--gb-color-border)" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#D1D5DB" }}>{label}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--gb-color-ink-soft)" }}>{label}</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: accent }}>{level}</span>
             <span style={{ fontSize: 12, color: "#6B7280" }}>({score}/10)</span>
           </div>
           {explanation && (
-            <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "var(--gb-color-ink-muted)", marginTop: 2 }}>
               {"→"} {explanation}
             </div>
           )}
@@ -821,7 +821,7 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels 
                 <div
                   style={{
                     fontSize: "12px",
-                    color: "#9CA3AF",
+                    color: "var(--gb-color-ink-muted)",
                     fontWeight: 700,
                     marginBottom: 6,
                   }}
@@ -849,7 +849,7 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels 
                           style={{
                             fontSize: "14px",
                             fontWeight: 600,
-                            color: "#FFFFFF",
+                            color: "var(--gb-color-ink-strong)",
                             minWidth: 0,
                             flex: "1 1 0",
                           }}
@@ -857,7 +857,7 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels 
                           {siHref ? (
                             <Link
                               to={siHref}
-                              style={{ color: "#FFFFFF", textDecoration: "none" }}
+                              style={{ color: "var(--gb-color-ink-strong)", textDecoration: "none" }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.textDecoration = "underline";
                               }}
@@ -975,9 +975,9 @@ function NutritionPreviewStrip({ chips }) {
             style={{
               fontSize: 11,
               fontWeight: 700,
-              color: primary ? "#22C55E" : "#D1D5DB",
-              background: primary ? "rgba(34,197,94,0.10)" : "rgba(255,255,255,0.06)",
-              border: primary ? "1px solid rgba(34,197,94,0.28)" : "1px solid rgba(255,255,255,0.08)",
+              color: primary ? "var(--gb-color-accent)" : "var(--gb-color-ink-soft)",
+              background: primary ? "var(--gb-color-accent-soft)" : "rgba(18,34,28,0.04)",
+              border: primary ? "1px solid rgba(45,106,79,0.28)" : "1px solid var(--gb-color-border)",
               borderRadius: 999,
               padding: "4px 10px",
               lineHeight: 1.2,
@@ -1248,21 +1248,21 @@ function ItemRow({
             fontWeight: 800,
             lineHeight: 1.25,
             letterSpacing: "-0.01em",
-            color: "#FFFFFF",
+            color: "var(--gb-color-ink-strong)",
             minWidth: 0,
           }}
         >
           {href ? (
             <Link
               to={href}
-              style={{ color: "#FFFFFF", textDecoration: "none" }}
+              style={{ color: "var(--gb-color-ink-strong)", textDecoration: "none" }}
               onClick={() => trackMenuItemInteraction(mid, "click")}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = "#22C55E";
                 e.currentTarget.style.textUnderlineOffset = "3px";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#FFFFFF";
+                e.currentTarget.style.color = "var(--gb-color-ink-strong)";
               }}
             >
               {hl(name, query)}
@@ -1308,7 +1308,7 @@ function ItemRow({
             marginTop: 6,
             fontSize: 13,
             fontWeight: 600,
-            color: "#9CA3AF",
+            color: "var(--gb-color-ink-muted)",
             lineHeight: 1.45,
           }}
         >
@@ -1325,7 +1325,7 @@ function ItemRow({
               style={{
                 fontSize: "var(--text-2, 14px)",
                 fontWeight: 700,
-                color: "#9CA3AF",
+                color: "var(--gb-color-ink-muted)",
                 textDecoration: "none",
               }}
               onMouseEnter={(e) => {
@@ -1354,7 +1354,7 @@ function ItemRow({
             marginTop: 6,
             fontSize: 13,
             fontWeight: 600,
-            color: "#9CA3AF",
+            color: "var(--gb-color-ink-muted)",
             lineHeight: 1.45,
             overflowWrap: "anywhere",
           }}
@@ -1370,7 +1370,7 @@ function ItemRow({
             marginTop: 8,
             fontSize: "13px",
             lineHeight: 1.45,
-            color: "#9CA3AF",
+            color: "var(--gb-color-ink-muted)",
             fontWeight: 650,
             overflowWrap: "anywhere",
           }}
@@ -1582,7 +1582,7 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
         <span
           style={{
             fontSize: "var(--text-2, 13px)",
-            color: "#9CA3AF",
+            color: "var(--gb-color-ink-muted)",
             fontWeight: 650,
           }}
         >
@@ -1734,7 +1734,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
                 marginTop: 6,
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#9CA3AF",
+                color: "var(--gb-color-ink-muted)",
                 lineHeight: 1.45,
                 overflowWrap: "anywhere",
               }}
@@ -1865,13 +1865,13 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   return (
     <article className="gb-card" style={cardStyle}>
       {/* Restaurant name */}
-      <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.01em", color: "#FFFFFF" }}>
+      <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.01em", color: "var(--gb-color-ink-strong)" }}>
         {restHrefS ? (
           <Link
             to={restHrefS}
-            style={{ color: "#FFFFFF", textDecoration: "none" }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "#22C55E"; e.currentTarget.style.textUnderlineOffset = "3px"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "#FFFFFF"; }}
+            style={{ color: "var(--gb-color-ink-strong)", textDecoration: "none" }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--gb-color-accent)"; e.currentTarget.style.textUnderlineOffset = "3px"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--gb-color-ink-strong)"; }}
           >
             {hl(restNameS, query)}
           </Link>
@@ -1887,7 +1887,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
       )}
 
       {(addressLine1S || cityStateLine) && (
-        <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "#9CA3AF", lineHeight: 1.5 }}>
+        <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "var(--gb-color-ink-muted)", lineHeight: 1.5 }}>
           {addressLine1S && <div>{addressLine1S}</div>}
           {cityStateLine && <div>{cityStateLine}</div>}
         </div>

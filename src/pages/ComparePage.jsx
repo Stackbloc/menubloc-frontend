@@ -54,7 +54,7 @@ export default function ComparePage() {
           onClick={() => navigate("/search")}
           style={{
             padding: "10px 22px", borderRadius: 999,
-            background: "#22C55E", color: "#0B0F0C",
+            background: "var(--gb-color-accent)", color: "#ffffff",
             border: "none", cursor: "pointer", fontWeight: 800, fontSize: 14,
           }}
         >
