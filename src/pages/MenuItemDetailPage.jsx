@@ -288,7 +288,7 @@ function PageShell({ children, isMobile, stickyTitle }) {
 
 const Surface = React.forwardRef(function Surface({ children, style }, ref) {
   return (
-    <section ref={ref} style={{ background: "var(--gb-color-surface-strong)", border: "1px solid var(--gb-color-border)", borderRadius: 24, boxShadow: "var(--gb-shadow-card)", backdropFilter: "blur(8px)", ...style }}>
+    <section ref={ref} style={{ background: "var(--gb-color-surface-strong)", border: "1px solid var(--gb-color-border)", borderRadius: 24, boxShadow: "var(--gb-shadow-card)", ...style }}>
       {children}
     </section>
   );

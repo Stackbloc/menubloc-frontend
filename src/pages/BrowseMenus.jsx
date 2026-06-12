@@ -742,7 +742,7 @@ export default function BrowseMenus() {
               {[0, 1, 2, 3, 4, 5].map((card) => (
                 <div
                   key={card}
-                  style={{ height: 148, borderRadius: 16, background: "var(--gb-color-border)" }}
+                  style={{ height: 148, borderRadius: 16, background: "rgba(18,34,28,0.07)" }}
                 />
               ))}
             </div>

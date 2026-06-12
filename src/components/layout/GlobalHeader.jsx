@@ -187,7 +187,7 @@ export default function GlobalHeader() {
           </button>
 
           <Link to="/" aria-label={t("global.goHome", "Go to home")} style={{ display: "inline-flex", textDecoration: "none" }}>
-            <BrandLogo width={136} height={58} radius={16} pageColor="#0B0F0C" />
+            <BrandLogo width={136} height={58} radius={16} pageColor="#f7f1e6" />
           </Link>
 
           {showDealsNav ? (
