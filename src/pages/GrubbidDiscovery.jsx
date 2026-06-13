@@ -1180,7 +1180,7 @@ export default function GrubbidDiscovery() {
     : "Enter city, state or zip";
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "#FFFFFF" }}>
       <style>{`
         .disc-search-input::placeholder { color: #6B7280; font-size: 15px; font-weight: 500; }
         .disc-search-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(34,197,94,0.35); }
@@ -1250,7 +1250,7 @@ export default function GrubbidDiscovery() {
         <div style={{
           position: "sticky", top: 0, zIndex: 100,
           minWidth: 0,
-          background: "#0B0F0C",
+          background: "var(--gb-color-page)",
           borderBottom: "1px solid #1F2937",
           paddingBottom: 12,
         }}>
@@ -1271,7 +1271,7 @@ export default function GrubbidDiscovery() {
               ☰
             </button>
 
-            <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
+            <BrandLogo width={113} height={48} radius={14} pageColor="var(--gb-color-page)" />
 
             <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
               <Link

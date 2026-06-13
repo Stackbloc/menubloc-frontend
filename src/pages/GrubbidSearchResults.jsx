@@ -1956,11 +1956,11 @@ export default function GrubbidSearchResults() {
     : hasDishMatches;
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF", paddingBottom: "calc(var(--bottom-nav-h, 80px) + 16px)" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "#FFFFFF", paddingBottom: "calc(var(--bottom-nav-h, 80px) + 16px)" }}>
       {/* ── STICKY HEADER ── */}
       <div style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: "#0B0F0C",
+        background: "var(--gb-color-page)",
         borderBottom: "1px solid #1F2937",
         paddingBottom: 12,
       }}>
@@ -1973,7 +1973,7 @@ export default function GrubbidSearchResults() {
           >
             ←
           </button>
-          <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
+          <BrandLogo width={113} height={48} radius={14} pageColor="var(--gb-color-page)" />
           <div style={{ width: 30, flexShrink: 0 }} />
         </div>
         <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
