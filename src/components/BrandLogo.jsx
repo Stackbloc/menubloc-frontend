@@ -35,7 +35,7 @@ export function BrandLogo({
   radius = 24,
   pageColor = "var(--gb-color-page)",
   matchPageBackground = true,
-  wordmarkColor = "var(--gb-color-ink-strong)",
+  wordmarkColor,
   imageStyle,
   linkStyle,
   ariaLabel = "Go to Menuply home",
@@ -44,6 +44,7 @@ export function BrandLogo({
   const xMarkW = Math.round(height * (X_MARK_RATIO * 1266 / 236));
   const fontSize = Math.round(height * 0.52);
   const gap = Math.round(height * 0.22);
+  const resolvedWordmarkColor = wordmarkColor ?? (isDarkPageColor(pageColor) ? "#FFFFFF" : "#0B0F0C");
 
   const content = (
     <span
@@ -75,7 +76,7 @@ export function BrandLogo({
         style={{
           fontSize,
           fontWeight: 800,
-          color: wordmarkColor,
+          color: resolvedWordmarkColor,
           letterSpacing: "-0.02em",
           fontFamily: "var(--gb-font-ui)",
           lineHeight: 1,

@@ -12,7 +12,7 @@ export default function BottomNav() {
 
   const tabs = useMemo(() => [
     { label: t("nav.home", "Home"), icon: "🏠", to: "/" },
-    { label: t("nav.waiter", "Waiter"), iconComponent: WaiterFaceIcon, to: "/food-interests" },
+    { label: t("nav.interested", "Interested"), iconComponent: WaiterFaceIcon, to: "/food-interests" },
     { label: t("nav.following", "Following"), icon: "F", to: "/account/following" },
     { label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
   ], [t]);
@@ -42,7 +42,6 @@ export default function BottomNav() {
         display: "flex", justifyContent: "space-around",
         padding: "6px 0 env(safe-area-inset-bottom, 8px)",
         boxShadow: "0 -2px 12px rgba(0,0,0,0.06)",
-        overflow: "visible",
       }}
     >
       {tabs.map((tab) => {
@@ -53,7 +52,6 @@ export default function BottomNav() {
             : pathname === tab.to ||
               (tab.to !== "/" && pathname.startsWith(tab.to));
         const showBadge = tab.to === "/checkout" && itemCount > 0;
-        const iconSize = tab.iconSize || 22;
         return (
           <Link
             key={tab.to}
@@ -83,7 +81,7 @@ export default function BottomNav() {
               }}
             >
               {tab.iconComponent ? (
-                <tab.iconComponent size={iconSize} aria-hidden />
+                <tab.iconComponent size={22} aria-hidden />
               ) : (
                 <span aria-hidden="true">{tab.icon}</span>
               )}
