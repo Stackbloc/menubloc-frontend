@@ -25,7 +25,7 @@ const shellStyle = {
   padding: "16px 0 20px",
   borderBottom: "1px solid #1F2937",
   marginBottom: 16,
-  background: "var(--gb-color-page)",
+  background: "#0B0F0C",
 };
 
 const leftStyle = {
@@ -187,7 +187,7 @@ export default function GlobalHeader() {
           </button>
 
           <Link to="/" aria-label={t("global.goHome", "Go to home")} style={{ display: "inline-flex", textDecoration: "none" }}>
-            <BrandLogo width={136} height={58} radius={16} pageColor="var(--gb-color-page)" />
+            <BrandLogo width={136} height={58} radius={16} pageColor="#0B0F0C" />
           </Link>
 
           {showDealsNav ? (

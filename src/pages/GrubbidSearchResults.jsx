@@ -28,7 +28,6 @@ import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import WaiterInsightIcon from "../components/icons/WaiterInsightIcon.jsx";
 import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
-
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
@@ -1956,11 +1955,11 @@ export default function GrubbidSearchResults() {
     : hasDishMatches;
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "#FFFFFF", paddingBottom: "calc(var(--bottom-nav-h, 80px) + 16px)" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
       {/* ── STICKY HEADER ── */}
       <div style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: "var(--gb-color-page)",
+        background: "#0B0F0C",
         borderBottom: "1px solid #1F2937",
         paddingBottom: 12,
       }}>
@@ -1973,7 +1972,7 @@ export default function GrubbidSearchResults() {
           >
             ←
           </button>
-          <BrandLogo width={113} height={48} radius={14} pageColor="var(--gb-color-page)" />
+          <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
           <div style={{ width: 30, flexShrink: 0 }} />
         </div>
         <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

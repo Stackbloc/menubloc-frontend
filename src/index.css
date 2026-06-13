@@ -40,9 +40,9 @@
 
   --gb-font-ui: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  --gb-color-page: #ffffff;
-  --gb-color-page-alt: #ffffff;
-  --gb-color-page-warm: #ffffff;
+  --gb-color-page: #0B0F0C;
+  --gb-color-page-alt: #0B0F0C;
+  --gb-color-page-warm: #0F1310;
   --gb-color-surface: rgba(18, 26, 20, 0.94);
   --gb-color-surface-muted: rgba(12, 17, 13, 0.96);
   --gb-color-surface-strong: #121A14;
@@ -109,7 +109,7 @@
 
 html {
   min-height: 100%;
-  background: #ffffff;
+  background: #0B0F0C;
   background-attachment: fixed;
 }
 
@@ -124,7 +124,7 @@ body {
   font-family: var(--gb-font-ui);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  background: #ffffff;
+  background: #0B0F0C;
 }
 
 *,
