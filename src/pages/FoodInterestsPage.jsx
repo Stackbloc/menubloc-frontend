@@ -10,7 +10,7 @@ function sectionTitleStyle() {
   return {
     fontSize: 18,
     fontWeight: 800,
-    color: "#F9FAFB",
+    color: "var(--gb-color-ink-strong)",
     letterSpacing: "-0.01em",
   };
 }
@@ -20,15 +20,15 @@ function PanelSection({ title, subtitle, children }) {
     <section
       style={{
         borderRadius: 20,
-        border: "1px solid rgba(31,41,55,0.92)",
-        background: "rgba(17,24,20,0.88)",
+        border: "1px solid var(--gb-color-border)",
+        background: "var(--gb-color-surface-strong)",
         padding: 18,
-        boxShadow: "0 20px 40px rgba(0,0,0,0.28)",
+        boxShadow: "0 2px 8px rgba(18,34,28,0.06)",
       }}
     >
       <div style={sectionTitleStyle()}>{title}</div>
       {subtitle ? (
-        <div style={{ marginTop: 4, fontSize: 13, color: "#9CA3AF", lineHeight: 1.45 }}>{subtitle}</div>
+        <div style={{ marginTop: 4, fontSize: 13, color: "var(--gb-color-ink-muted)", lineHeight: 1.45 }}>{subtitle}</div>
       ) : null}
       <div style={{ marginTop: 16 }}>{children}</div>
     </section>
@@ -57,9 +57,8 @@ export default function FoodInterestsPage() {
     <div
       style={{
         minHeight: "100vh",
-        background:
-          "radial-gradient(circle at top, rgba(34,197,94,0.14), transparent 32%), linear-gradient(180deg, #0B0F0C 0%, #101712 100%)",
-        color: "#FFFFFF",
+        background: "var(--gb-color-page)",
+        color: "var(--gb-color-ink)",
         paddingBottom: "calc(var(--bottom-nav-h, 72px) + 28px)",
       }}
     >
@@ -68,9 +67,9 @@ export default function FoodInterestsPage() {
           style={{
             borderRadius: 24,
             padding: "18px 18px 20px",
-            background: "linear-gradient(135deg, rgba(20,31,22,0.98), rgba(13,19,16,0.94))",
+            background: "var(--gb-color-surface-strong)",
             border: "1px solid rgba(34,197,94,0.16)",
-            boxShadow: "0 24px 54px rgba(0,0,0,0.3)",
+            boxShadow: "0 2px 12px rgba(18,34,28,0.06)",
           }}
         >
           <div style={{ fontSize: 13, fontWeight: 800, color: "#86EFAC", letterSpacing: "0.08em", textTransform: "uppercase" }}>
@@ -79,7 +78,7 @@ export default function FoodInterestsPage() {
           <h1 style={{ margin: "10px 0 0", fontSize: 30, lineHeight: 1.05, letterSpacing: "-0.03em" }}>
             {t("explore.headline", "Mark dishes, cuisines, and food traits you are interested in.")}
           </h1>
-          <p style={{ margin: "12px 0 0", fontSize: 15, color: "#CBD5E1", lineHeight: 1.55, maxWidth: 560 }}>
+          <p style={{ margin: "12px 0 0", fontSize: 15, color: "var(--gb-color-ink-muted)", lineHeight: 1.55, maxWidth: 560 }}>
             {t("explore.lead", "Keep this lightweight. Mark what you are into, then come back for simple updates.")}
           </p>
           {!isAuthenticated && (
@@ -96,7 +95,7 @@ export default function FoodInterestsPage() {
                 gap: 12,
               }}
             >
-              <div style={{ fontSize: 13, color: "#DCFCE7", lineHeight: 1.45 }}>
+              <div style={{ fontSize: 13, color: "var(--gb-color-ink)", lineHeight: 1.45 }}>
                 {t("explore.localHint", "Your selections can work locally now. Sign in to save them to your Menuply account.")}
               </div>
               <button
@@ -126,9 +125,9 @@ export default function FoodInterestsPage() {
             subtitle={t("explore.subtitle", "Pick food interests to personalize discovery and search.")}
           >
             {loading ? (
-              <div style={{ fontSize: 14, color: "#9CA3AF" }}>{t("explore.loadingInterests", "Loading interests…")}</div>
+              <div style={{ fontSize: 14, color: "var(--gb-color-ink-muted)" }}>{t("explore.loadingInterests", "Loading interests…")}</div>
             ) : interests.length === 0 ? (
-              <div style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.5 }}>
+              <div style={{ fontSize: 14, color: "var(--gb-color-ink-muted)", lineHeight: 1.5 }}>
                 {t("explore.noInterests", "You have not marked any food interests yet.")}
               </div>
             ) : (
@@ -219,11 +218,11 @@ export default function FoodInterestsPage() {
                     borderRadius: 16,
                     padding: "14px 15px",
                     border: "1px solid rgba(34,197,94,0.14)",
-                    background: "linear-gradient(180deg, rgba(17,24,20,0.92), rgba(11,15,12,0.92))",
+                    background: "var(--gb-color-page)",
                   }}
                 >
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#F9FAFB" }}>{card.title}</div>
-                  <div style={{ marginTop: 4, fontSize: 13, color: "#9CA3AF", lineHeight: 1.45 }}>{card.body}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "var(--gb-color-ink-strong)" }}>{card.title}</div>
+                  <div style={{ marginTop: 4, fontSize: 13, color: "var(--gb-color-ink-muted)", lineHeight: 1.45 }}>{card.body}</div>
                 </div>
               ))}
             </div>

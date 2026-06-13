@@ -31,14 +31,14 @@ const REQUIRED_FIELDS = ["restaurant_name", "city", "state", "pasted_mks_json"];
 const S = {
   page: {
     minHeight: "100vh",
-    background: "#0f0f0f",
-    color: "#f0f0f0",
+    background: "var(--gb-color-page)",
+    color: "var(--gb-color-ink)",
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     padding: "0 0 80px 0",
   },
   header: {
-    background: "#1a1a1a",
-    borderBottom: "1px solid #2a2a2a",
+    background: "var(--gb-color-surface-strong)",
+    borderBottom: "1px solid var(--gb-color-border)",
     padding: "18px 20px 14px",
   },
   headerTop: {
@@ -50,13 +50,13 @@ const S = {
   title: {
     fontSize: 18,
     fontWeight: 700,
-    color: "#ffffff",
+    color: "var(--gb-color-ink-strong)",
     margin: 0,
     letterSpacing: "-0.3px",
   },
   subtitle: {
     fontSize: 12,
-    color: "#666",
+    color: "var(--gb-color-ink-muted)",
     marginTop: 3,
   },
   statusBadge: (status) => ({
@@ -87,7 +87,7 @@ const S = {
   label: {
     fontSize: 11,
     fontWeight: 600,
-    color: "#888",
+    color: "var(--gb-color-ink-muted)",
     textTransform: "uppercase",
     letterSpacing: "0.6px",
   },
@@ -96,10 +96,10 @@ const S = {
     marginLeft: 2,
   },
   input: (hasError) => ({
-    background: "#1e1e1e",
-    border: `1.5px solid ${hasError ? "#ff6b6b" : "#2e2e2e"}`,
+    background: "var(--gb-color-surface-strong)",
+    border: `1.5px solid ${hasError ? "#ff6b6b" : "var(--gb-color-border)"}`,
     borderRadius: 10,
-    color: "#f0f0f0",
+    color: "var(--gb-color-ink)",
     fontSize: 16,
     padding: "12px 14px",
     outline: "none",
@@ -109,10 +109,10 @@ const S = {
     transition: "border-color 0.15s",
   }),
   textarea: (hasError) => ({
-    background: "#1e1e1e",
-    border: `1.5px solid ${hasError ? "#ff6b6b" : "#2e2e2e"}`,
+    background: "var(--gb-color-surface-strong)",
+    border: `1.5px solid ${hasError ? "#ff6b6b" : "var(--gb-color-border)"}`,
     borderRadius: 10,
-    color: "#f0f0f0",
+    color: "var(--gb-color-ink)",
     fontSize: 14,
     fontFamily: "'Menlo', 'Monaco', 'Courier New', monospace",
     lineHeight: 1.5,
@@ -127,7 +127,7 @@ const S = {
   }),
   hint: {
     fontSize: 11,
-    color: "#555",
+    color: "var(--gb-color-ink-muted)",
     marginTop: 2,
   },
   errorText: {
@@ -137,20 +137,20 @@ const S = {
   },
   divider: {
     height: 1,
-    background: "#2a2a2a",
+    background: "var(--gb-color-border)",
     margin: "4px 0",
   },
   successCard: {
     margin: "20px 20px 0",
-    background: "#0d2015",
-    border: "1.5px solid #1a4a2a",
+    background: "rgba(34,197,94,0.08)",
+    border: "1.5px solid rgba(34,197,94,0.25)",
     borderRadius: 12,
     padding: "16px",
   },
   successTitle: {
     fontSize: 14,
     fontWeight: 700,
-    color: "#4ade80",
+    color: "#16a34a",
     marginBottom: 8,
   },
   successRow: {
@@ -158,15 +158,15 @@ const S = {
     justifyContent: "space-between",
     alignItems: "center",
     fontSize: 13,
-    color: "#a0cfb0",
+    color: "var(--gb-color-ink)",
     marginBottom: 6,
   },
   successLabel: {
-    color: "#688c78",
+    color: "var(--gb-color-ink-muted)",
     fontSize: 12,
   },
   successValue: {
-    color: "#d4fce4",
+    color: "var(--gb-color-ink-strong)",
     fontWeight: 600,
   },
   profileLink: {
@@ -174,23 +174,23 @@ const S = {
     marginTop: 10,
     fontSize: 13,
     fontWeight: 600,
-    color: "#4ade80",
+    color: "#16a34a",
     textDecoration: "none",
     padding: "8px 14px",
-    border: "1.5px solid #1a4a2a",
+    border: "1.5px solid rgba(34,197,94,0.3)",
     borderRadius: 8,
   },
   memoSection: {
     margin: "20px 20px 0",
-    background: "#161616",
-    border: "1.5px solid #2a2a2a",
+    background: "var(--gb-color-surface-strong)",
+    border: "1.5px solid var(--gb-color-border)",
     borderRadius: 12,
     padding: "16px",
   },
   memoTitle: {
     fontSize: 13,
     fontWeight: 700,
-    color: "#888",
+    color: "var(--gb-color-ink-muted)",
     textTransform: "uppercase",
     letterSpacing: "0.6px",
     marginBottom: 14,
@@ -198,10 +198,10 @@ const S = {
   publishBtn: (disabled) => ({
     width: "100%",
     padding: "14px",
-    background: disabled ? "#1e1e1e" : "#1a4a2a",
-    border: `1.5px solid ${disabled ? "#2a2a2a" : "#2a6a3a"}`,
+    background: disabled ? "rgba(0,0,0,0.04)" : "rgba(34,197,94,0.12)",
+    border: `1.5px solid ${disabled ? "var(--gb-color-border)" : "rgba(34,197,94,0.3)"}`,
     borderRadius: 10,
-    color: disabled ? "#444" : "#4ade80",
+    color: disabled ? "var(--gb-color-ink-muted)" : "#16a34a",
     fontSize: 15,
     fontWeight: 700,
     cursor: disabled ? "not-allowed" : "pointer",
@@ -221,10 +221,10 @@ const S = {
     width: "100%",
   },
   memoSuccessBadge: {
-    background: "#0d2015",
-    border: "1.5px solid #1a4a2a",
+    background: "rgba(34,197,94,0.08)",
+    border: "1.5px solid rgba(34,197,94,0.3)",
     borderRadius: 8,
-    color: "#4ade80",
+    color: "#16a34a",
     fontSize: 13,
     fontWeight: 600,
     padding: "10px 14px",
@@ -233,12 +233,12 @@ const S = {
   },
   errorCard: {
     margin: "12px 20px 0",
-    background: "#1a0a0a",
-    border: "1.5px solid #4a1a1a",
+    background: "rgba(220,38,38,0.06)",
+    border: "1.5px solid rgba(220,38,38,0.2)",
     borderRadius: 10,
     padding: "12px 14px",
     fontSize: 13,
-    color: "#ff9999",
+    color: "#dc2626",
     lineHeight: 1.5,
   },
 };
@@ -247,15 +247,15 @@ const S = {
 function statusStyle(status) {
   switch (status) {
     case "debouncing":
-      return { background: "#1e1e1e", color: "#888", border: "1px solid #333" };
+      return { background: "rgba(0,0,0,0.04)", color: "var(--gb-color-ink-muted)", border: "1px solid var(--gb-color-border)" };
     case "saving":
-      return { background: "#1a2a3a", color: "#60a5fa", border: "1px solid #2a4a6a" };
+      return { background: "rgba(59,130,246,0.08)", color: "#2563eb", border: "1px solid rgba(59,130,246,0.2)" };
     case "saved":
-      return { background: "#0d2015", color: "#4ade80", border: "1px solid #1a4a2a" };
+      return { background: "rgba(34,197,94,0.08)", color: "#16a34a", border: "1px solid rgba(34,197,94,0.3)" };
     case "error":
-      return { background: "#1a0a0a", color: "#ff6b6b", border: "1px solid #4a1a1a" };
+      return { background: "rgba(220,38,38,0.08)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.2)" };
     default:
-      return { background: "#1a1a1a", color: "#555", border: "1px solid #2a2a2a" };
+      return { background: "var(--gb-color-surface-strong)", color: "var(--gb-color-ink-muted)", border: "1px solid var(--gb-color-border)" };
   }
 }
 
@@ -347,10 +347,10 @@ function SearchableSelect({ options, value, onChange, placeholder, hasError }) {
   }
 
   const inputStyle = {
-    background: "#1e1e1e",
-    border: `1.5px solid ${hasError ? "#ff6b6b" : open ? "#4a4a4a" : "#2e2e2e"}`,
+    background: "var(--gb-color-surface-strong)",
+    border: `1.5px solid ${hasError ? "#ff6b6b" : open ? "var(--gb-color-border-strong)" : "var(--gb-color-border)"}`,
     borderRadius: open ? "10px 10px 0 0" : 10,
-    color: open ? "#f0f0f0" : value ? "#f0f0f0" : "#555",
+    color: open ? "var(--gb-color-ink)" : value ? "var(--gb-color-ink)" : "var(--gb-color-ink-muted)",
     fontSize: 16,
     padding: "12px 36px 12px 14px",
     outline: "none",
@@ -366,8 +366,8 @@ function SearchableSelect({ options, value, onChange, placeholder, hasError }) {
     top: "100%",
     left: 0,
     right: 0,
-    background: "#1e1e1e",
-    border: "1.5px solid #4a4a4a",
+    background: "var(--gb-color-surface-strong)",
+    border: "1.5px solid var(--gb-color-border-strong)",
     borderTop: "none",
     borderRadius: "0 0 10px 10px",
     maxHeight: 220,
@@ -379,10 +379,10 @@ function SearchableSelect({ options, value, onChange, placeholder, hasError }) {
   const itemStyle = (hovered) => ({
     padding: "12px 14px",
     fontSize: 15,
-    color: "#f0f0f0",
+    color: "var(--gb-color-ink)",
     cursor: "pointer",
-    borderBottom: "1px solid #2a2a2a",
-    background: hovered ? "#2a2a2a" : "transparent",
+    borderBottom: "1px solid var(--gb-color-border)",
+    background: hovered ? "rgba(18,34,28,0.06)" : "transparent",
   });
 
   return (
@@ -408,7 +408,7 @@ function SearchableSelect({ options, value, onChange, placeholder, hasError }) {
           style={{
             position: "absolute", right: 12, top: "50%",
             transform: "translateY(-50%)",
-            color: "#555", fontSize: 18, cursor: "pointer", lineHeight: 1,
+            color: "var(--gb-color-ink-muted)", fontSize: 18, cursor: "pointer", lineHeight: 1,
           }}
         >×</span>
       )}
@@ -417,14 +417,14 @@ function SearchableSelect({ options, value, onChange, placeholder, hasError }) {
         <span style={{
           position: "absolute", right: 12, top: "50%",
           transform: `translateY(-50%) rotate(${open ? "180deg" : "0deg"})`,
-          color: "#555", fontSize: 11, pointerEvents: "none",
+          color: "var(--gb-color-ink-muted)", fontSize: 11, pointerEvents: "none",
           transition: "transform 0.15s",
         }}>▼</span>
       )}
       {open && (
         <div style={dropdownStyle}>
           {filtered.length === 0 ? (
-            <div style={{ padding: "12px 14px", color: "#555", fontSize: 14 }}>
+            <div style={{ padding: "12px 14px", color: "var(--gb-color-ink-muted)", fontSize: 14 }}>
               No matches
             </div>
           ) : (
@@ -692,7 +692,7 @@ export default function OperatorIntakePage() {
         {/* Phone + Website */}
         <div style={S.row}>
           <div style={S.fieldGroup}>
-            <label style={S.label}>Phone <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "#444" }}>— for duplicate check</span></label>
+            <label style={S.label}>Phone <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--gb-color-ink-muted)" }}>— for duplicate check</span></label>
             <input
               style={S.input(false)}
               type="tel"
@@ -788,8 +788,8 @@ export default function OperatorIntakePage() {
                     flexShrink: 0,
                     marginLeft: 8,
                     ...(detected === "json"
-                      ? { background: "#1a2a3a", color: "#60a5fa", border: "1px solid #2a4a6a" }
-                      : { background: "#1a1a2e", color: "#a78bfa", border: "1px solid #2a2a4a" }),
+                      ? { background: "rgba(59,130,246,0.08)", color: "#2563eb", border: "1px solid rgba(59,130,246,0.2)" }
+                      : { background: "rgba(124,58,237,0.08)", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.2)" }),
                   }}>
                     {detected === "json" ? "MKS JSON" : "Structured text"}
                   </span>
@@ -835,8 +835,8 @@ export default function OperatorIntakePage() {
             <span style={{
               ...S.successValue,
               ...(saveResult.input_type === "json"
-                ? { color: "#60a5fa" }
-                : { color: "#c4b5fd" }),
+                ? { color: "#2563eb" }
+                : { color: "#7c3aed" }),
             }}>
               {saveResult.input_type === "json" ? "Structured JSON" : "Structured text"}
             </span>

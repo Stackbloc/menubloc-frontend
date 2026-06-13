@@ -33,7 +33,7 @@ export function BrandLogo({
   width,
   height = 112,
   radius = 24,
-  pageColor = "#f7f6f1",
+  pageColor = "var(--gb-color-page)",
   matchPageBackground = true,
   wordmarkColor = "var(--gb-color-ink-strong)",
   imageStyle,

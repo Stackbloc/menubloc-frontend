@@ -51,7 +51,7 @@ export default function EasyMenuLanding() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#f7f9fc",
+        background: "var(--gb-color-page)",
         color: "#0f1720",
         fontFamily: "Arial, Helvetica, sans-serif",
         lineHeight: 1.5,

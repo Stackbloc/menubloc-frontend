@@ -194,7 +194,7 @@ export default function RestaurantQrUpsell() {
 const s = {
   page: {
     minHeight: "100vh",
-    background: "linear-gradient(180deg, #f6f6f3 0%, #eef5f2 100%)",
+    background: "var(--gb-color-page)",
     padding: "28px 18px 72px",
     color: "#101828",
     fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',

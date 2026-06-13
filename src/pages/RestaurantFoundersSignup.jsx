@@ -164,7 +164,7 @@ export default function RestaurantFoundersSignup() {
 
 const pageStyle = {
   minHeight: "100vh",
-  background: "linear-gradient(180deg, #f9f9f7 0%, #eef5f2 100%)",
+  background: "var(--gb-color-page)",
   padding: "40px 20px 80px",
   fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
   color: "#101828",

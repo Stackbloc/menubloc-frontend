@@ -29,7 +29,7 @@ const CODE_TYPES = ["primary", "page", "campaign", "flyer", "window", "table", "
 const S = {
   page: {
     minHeight: "100vh",
-    background: "var(--bg, #f6f7fb)",
+    background: "var(--gb-color-page)",
     color: "var(--ink, #0f1720)",
     padding: "24px 18px 60px",
     fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",

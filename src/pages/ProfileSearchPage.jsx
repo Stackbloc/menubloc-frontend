@@ -481,7 +481,7 @@ export default function ProfileSearchPage() {
       {/* Brand */}
       <BrandLockup
         subtitle="for Restaurants"
-        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f7f6f1" }}
+        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "var(--gb-color-page)" }}
       />
 
       {/* Step trail */}

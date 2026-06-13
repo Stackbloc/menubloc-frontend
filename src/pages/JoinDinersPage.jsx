@@ -129,8 +129,8 @@ const styles = {
   page: {
     boxSizing: "border-box",
     minHeight: "100dvh",
-    background: "#0D0D0D",
-    color: "#FFF",
+    background: "var(--gb-color-page)",
+    color: "var(--gb-color-ink)",
     fontFamily: "'DM Sans', sans-serif",
     display: "flex",
     alignItems: "center",
@@ -148,7 +148,7 @@ const styles = {
     gap: 10,
     textDecoration: "none",
     marginBottom: 56,
-    color: "#FFF",
+    color: "var(--gb-color-ink-strong)",
   },
   logoImage: {
     filter: "none",
@@ -172,18 +172,18 @@ const styles = {
     lineHeight: 1.15,
     letterSpacing: "-.025em",
     margin: "0 0 28px",
-    color: "#FFFFFF",
+    color: "var(--gb-color-ink-strong)",
   },
   subheading: {
     fontSize: "1rem",
     fontWeight: 600,
-    color: "rgba(255,255,255,0.88)",
+    color: "var(--gb-color-ink)",
     lineHeight: 1.75,
     margin: "0 0 12px",
   },
   paragraph: {
     fontSize: "1rem",
-    color: "rgba(255,255,255,0.88)",
+    color: "var(--gb-color-ink)",
     lineHeight: 1.75,
     margin: "0 0 16px",
   },
@@ -200,7 +200,7 @@ const styles = {
     alignItems: "flex-start",
     gap: 10,
     fontSize: "1rem",
-    color: "rgba(255,255,255,0.88)",
+    color: "var(--gb-color-ink)",
     lineHeight: 1.65,
   },
   dot: {
@@ -232,10 +232,10 @@ const styles = {
     marginTop: 52,
     fontSize: ".8rem",
     fontWeight: 500,
-    color: "rgba(255,255,255,0.65)",
+    color: "var(--gb-color-ink-muted)",
   },
   footerLink: {
-    color: "rgba(255,255,255,0.85)",
+    color: "var(--gb-color-ink)",
     textDecoration: "none",
   },
 };
