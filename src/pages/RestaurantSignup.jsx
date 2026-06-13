@@ -284,6 +284,9 @@ export default function RestaurantSignup() {
   const [serverError, setServerError] = useState("");
   const [serverErrorDetail, setServerErrorDetail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [qrReveal, setQrReveal] = useState(null);
+  const [postSignupNav, setPostSignupNav] = useState(null);
+  const [qrCopied, setQrCopied] = useState(false);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -395,7 +398,7 @@ export default function RestaurantSignup() {
         throw signupError;
       }
 
-      const { restaurant, owner_token } = data;
+      const { restaurant, owner_token, primary_qr } = data;
       const baseState = persistRestaurantOnboardingState({
         restaurant_id: restaurant.id,
         restaurant_name: form.restaurant_name.trim(),
@@ -426,15 +429,27 @@ export default function RestaurantSignup() {
         },
       });
 
-      nav("/operator/verify-email", {
-        replace: true,
-        state: {
-          ...draftState,
-          nextPath: selectedPlan === "verified" ? DESIGN_SELECTION_ROUTE : PLAN_SELECTION_ROUTE,
-          autoSend: true,
-          plan: selectedPlan,
+      // Capture nav state for after QR reveal step
+      const navTarget = {
+        path: "/operator/verify-email",
+        opts: {
+          replace: true,
+          state: {
+            ...draftState,
+            nextPath: selectedPlan === "verified" ? DESIGN_SELECTION_ROUTE : PLAN_SELECTION_ROUTE,
+            autoSend: true,
+            plan: selectedPlan,
+          },
         },
-      });
+      };
+
+      // If a QR was auto-created, show the reveal step first
+      if (primary_qr?.token) {
+        setQrReveal(primary_qr);
+        setPostSignupNav(navTarget);
+      } else {
+        nav(navTarget.path, navTarget.opts);
+      }
     } catch (error) {
       const failure = describeSignupFailure(error);
       setServerError(failure.title);
@@ -442,6 +457,113 @@ export default function RestaurantSignup() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // QR reveal panel shown after successful signup
+  if (qrReveal && postSignupNav) {
+    const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+    const base = import.meta.env.VITE_PUBLIC_APP_URL || "https://menuply.com";
+    const imageUrl = `${API_BASE}${qrReveal.image_url}`;
+    const destUrl = qrReveal.destination_path
+      ? `${base}${qrReveal.destination_path}`
+      : null;
+
+    async function handleQrCopy() {
+      if (!destUrl) return;
+      try {
+        await navigator.clipboard.writeText(destUrl);
+        setQrCopied(true);
+        setTimeout(() => setQrCopied(false), 2000);
+      } catch { /* silent */ }
+    }
+
+    function handleQrDownload() {
+      const a = document.createElement("a");
+      a.href = imageUrl;
+      a.download = "menuply-qr.png";
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.click();
+    }
+
+    return (
+      <div style={styles.page}>
+        <div style={styles.header}>
+          <BrandLockup
+            logoProps={{ width: 140, height: 88, radius: 20, pageColor: "#0B0F0C" }}
+            wrapperStyle={{ marginBottom: 6 }}
+          />
+          <div style={styles.pageTitle}>Your account is ready!</div>
+          <div style={styles.pageSubtitle}>
+            Your menu QR code has been generated. Print it, display it, or share the link.
+          </div>
+        </div>
+
+        <div style={{ maxWidth: 400, margin: "0 auto", padding: "0 20px 40px" }}>
+          <div style={{
+            background: "#fff", border: "1px solid #e4e9f0",
+            borderRadius: 16, padding: "24px", marginBottom: 20,
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 16,
+          }}>
+            <img
+              src={imageUrl}
+              alt="Your Menuply menu QR code"
+              style={{ width: 180, height: 180, display: "block" }}
+            />
+            {destUrl && (
+              <div style={{
+                fontSize: 11, color: "#667085", wordBreak: "break-all",
+                background: "#f8fafc", border: "1px solid #e4e9f0",
+                borderRadius: 6, padding: "6px 10px", width: "100%", textAlign: "center",
+              }}>
+                {destUrl}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+              <button
+                type="button"
+                onClick={handleQrCopy}
+                style={{
+                  background: qrCopied ? "#f0faf6" : "#f8fafc",
+                  color: qrCopied ? "#1F4E3D" : "#344054",
+                  border: "1px solid #e4e9f0",
+                  borderRadius: 8, padding: "9px 18px",
+                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                {qrCopied ? "Copied!" : "Copy link"}
+              </button>
+              <button
+                type="button"
+                onClick={handleQrDownload}
+                style={{
+                  background: "#111", color: "#fff",
+                  border: "none", borderRadius: 8,
+                  padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                Download QR
+              </button>
+            </div>
+            <p style={{ fontSize: 12, color: "#aab4c0", textAlign: "center", margin: 0 }}>
+              Your QR code is always available in My Account &rarr; QR Code.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => nav(postSignupNav.path, postSignupNav.opts)}
+            style={{
+              width: "100%", height: 48, borderRadius: 14,
+              border: 0, background: "#111", color: "#fff",
+              fontWeight: 800, fontSize: 15, cursor: "pointer",
+            }}
+          >
+            Continue to verify email &rarr;
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

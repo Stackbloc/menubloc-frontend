@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useNavigate } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { getSubscriptionStatusLabel, formatMoney } from "../../components/payments/paymentHelpers.js";
+import PrimaryQrCard from "../../components/qr/PrimaryQrCard.jsx";
 
 function getPlanTier(planCode) {
   if (!planCode) return "verified";
@@ -83,21 +84,24 @@ export default function OperatorMyAccount() {
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
+  const [primaryQr, setPrimaryQr] = useState(null);
 
   async function loadData(rid) {
     setLoading(true);
     setError("");
     try {
-      const [subData, billingData, menusData, dealsData] = await Promise.allSettled([
+      const [subData, billingData, menusData, dealsData, qrData] = await Promise.allSettled([
         api.getPlatformSubscriptionStatus(rid),
         api.getBillingOverview(rid),
         api.getMenus(rid),
         api.getDeals(rid),
+        api.getPrimaryQr(rid),
       ]);
       setSubscription(subData.status === "fulfilled" ? subData.value : null);
       setBillingOverview(billingData.status === "fulfilled" ? billingData.value : null);
       setMenus(menusData.status === "fulfilled" ? menusData.value?.menus || [] : []);
       setDeals(dealsData.status === "fulfilled" ? dealsData.value?.deals || [] : []);
+      setPrimaryQr(qrData.status === "fulfilled" ? qrData.value?.qr || null : null);
       if (subData.status === "rejected") setError("Unable to load subscription details.");
     } finally {
       setLoading(false);
@@ -215,6 +219,9 @@ export default function OperatorMyAccount() {
                 </div>
               );
             })()}
+
+            {/* Primary QR code */}
+            <PrimaryQrCard qr={primaryQr} restaurantId={selectedRestaurant?.id} />
 
             {/* Quick actions */}
             <div style={{

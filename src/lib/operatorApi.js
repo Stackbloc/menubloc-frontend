@@ -207,6 +207,9 @@ export async function uploadQrDoorPhoto(rid, file) {
   return json;
 }
 
+// ── Restaurant: Primary Digital QR ───────────────────────────────────────
+export const getPrimaryQr = (rid) => get(`/operator/restaurants/${rid}/qr`);
+
 // ── Restaurant: Sticker QR (/r/DOOR-...) ─────────────────────────────────
 export const getOperatorQrStickers = (rid) => get(`/operator/restaurants/${rid}/qr-stickers`);
 export const validateOperatorQrStickerActivation = (rid, body) =>
