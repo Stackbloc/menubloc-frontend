@@ -139,10 +139,10 @@ function DealRow({ deal, restaurantUrl, onShare, onDealClick }) {
   const dealUrl = buildDealUrl(deal);
   const link = dealUrl || restaurantUrl;
   return (
-    <div style={{ padding: "10px 14px", borderTop: "1px solid #1F2937" }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF", marginBottom: 3 }}>
+    <div style={{ padding: "10px 14px", borderTop: "1px solid var(--gb-color-border)" }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gb-color-ink-strong)", marginBottom: 3 }}>
         {link ? (
-          <Link to={link} style={{ color: "#FFFFFF", textDecoration: "none" }}>
+          <Link to={link} style={{ color: "var(--gb-color-ink-strong)", textDecoration: "none" }}>
             {deal.title || "Untitled Deal"}
           </Link>
         ) : (
@@ -340,16 +340,16 @@ export default function DealsPage() {
   }
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink-strong)" }}>
       <style>{`
         .deals-skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
         @keyframes skelPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
       `}</style>
 
       {/* ── STICKY TOP: page header + search + location title ── */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "#0B0F0C" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--gb-color-page)" }}>
         <StickyPageHeader />
-        <div style={{ borderBottom: "1px solid #1F2937", paddingBottom: 12 }}>
+        <div style={{ borderBottom: "1px solid var(--gb-color-border)", paddingBottom: 12 }}>
           {/* Search bar */}
           <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0" }}>
             <input
@@ -360,9 +360,9 @@ export default function DealsPage() {
               style={{
                 width: "100%", boxSizing: "border-box",
                 height: 36, borderRadius: 999,
-                border: "1.5px solid #1F2937",
-                background: "#121A14", padding: "0 14px",
-                fontSize: 13, fontWeight: 600, color: "#F9FAFB",
+                border: "1.5px solid var(--gb-color-border)",
+                background: "var(--gb-color-surface-strong)", padding: "0 14px",
+                fontSize: 13, fontWeight: 600, color: "var(--gb-color-ink)",
                 outline: "none",
               }}
             />
@@ -370,7 +370,7 @@ export default function DealsPage() {
 
           {/* Page title row */}
           <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0", textAlign: "center" }}>
-            <span style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.02em" }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color: "var(--gb-color-ink-strong)", letterSpacing: "-0.02em" }}>
               🔥 {t("deals.nearYou", "Deals Near {location}").replace(
                 "{location}",
                 locationLabel || t("discovery.you", "You"),
@@ -388,7 +388,7 @@ export default function DealsPage() {
           <div
             key={i}
             className="deals-skeleton"
-            style={{ background: "#1F2937", borderRadius: 12, height: 110, marginBottom: 8 }}
+            style={{ background: "var(--gb-color-border)", borderRadius: 12, height: 110, marginBottom: 8 }}
           />
         ))}
 
@@ -434,8 +434,8 @@ export default function DealsPage() {
                   key={group.key}
                   style={{
                     borderRadius: 12,
-                    border: "1px solid #1F2937",
-                    background: "#121A14",
+                    border: "1px solid var(--gb-color-border)",
+                    background: "var(--gb-color-surface-strong)",
                     boxShadow: "0 4px 18px rgba(0,0,0,0.4)",
                     overflow: "hidden",
                   }}
@@ -446,12 +446,12 @@ export default function DealsPage() {
                       {restaurantUrl ? (
                         <Link
                           to={restaurantUrl}
-                          style={{ fontSize: 14, fontWeight: 800, color: "#FFFFFF", textDecoration: "none", lineHeight: 1.2 }}
+                          style={{ fontSize: 14, fontWeight: 800, color: "var(--gb-color-ink-strong)", textDecoration: "none", lineHeight: 1.2 }}
                         >
                           {group.restaurantName}
                         </Link>
                       ) : (
-                        <div style={{ fontSize: 14, fontWeight: 800, color: "#FFFFFF" }}>{group.restaurantName}</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: "var(--gb-color-ink-strong)" }}>{group.restaurantName}</div>
                       )}
                       {group.distanceMiles != null && (
                         <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, marginTop: 2 }}>
@@ -489,7 +489,7 @@ export default function DealsPage() {
                       onClick={() => toggleRestaurant(expandedKey)}
                       style={{
                         display: "block", width: "100%",
-                        border: "none", borderTop: "1px solid #1F2937",
+                        border: "none", borderTop: "1px solid var(--gb-color-border)",
                         background: "transparent", padding: "10px 14px",
                         fontSize: 12, fontWeight: 800,
                         color: "#22C55E", cursor: "pointer",

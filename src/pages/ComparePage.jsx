@@ -65,7 +65,7 @@ export default function ComparePage() {
   }
 
   return (
-    <div style={{ minHeight: "100dvh", background: "rgba(14,22,18,0.92)" }}>
+    <div style={{ minHeight: "100dvh", background: "var(--gb-color-page)" }}>
       <CompareItemsModal
         open
         loading={loading}

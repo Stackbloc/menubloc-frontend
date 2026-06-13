@@ -68,9 +68,9 @@ function DishCard({ dish, rank, isMobile }) {
         flexDirection: isMobile ? "column" : "row",
         gap: isMobile ? 16 : 28,
         padding: isMobile ? "20px 18px" : "28px 32px",
-        background: "#121A14",
+        background: "var(--gb-color-surface-strong)",
         borderRadius: 24,
-        border: "1px solid #1F2937",
+        border: "1px solid var(--gb-color-border)",
         boxShadow: "0 8px 28px rgba(15,23,42,0.06)",
         alignItems: "flex-start",
       }}
@@ -102,7 +102,7 @@ function DishCard({ dish, rank, isMobile }) {
           style={{
             fontSize: isMobile ? 18 : 21,
             fontWeight: 900,
-            color: "#FFFFFF",
+            color: "var(--gb-color-ink-strong)",
             lineHeight: 1.2,
             marginBottom: 3,
             display: "block",
@@ -197,7 +197,7 @@ export default function Top5HealthiestPage() {
   if (state) searchParams.set("state", state);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title="Top Health Score Dishes" />
       <div
         style={{
@@ -230,7 +230,7 @@ export default function Top5HealthiestPage() {
               fontWeight: 900,
               letterSpacing: -0.5,
               lineHeight: 1.1,
-              color: "#FFFFFF",
+              color: "var(--gb-color-ink-strong)",
             }}
           >
             Top Health Score Dishes
@@ -295,7 +295,7 @@ export default function Top5HealthiestPage() {
           style={{
             marginTop: isMobile ? 40 : 56,
             paddingTop: isMobile ? 24 : 32,
-            borderTop: "1px solid #1F2937",
+            borderTop: "1px solid var(--gb-color-border)",
             display: "flex",
             flexDirection: isMobile ? "column" : "row",
             alignItems: isMobile ? "flex-start" : "center",

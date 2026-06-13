@@ -89,7 +89,7 @@ export default function BuyMeThisPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title="Buy Me This" />
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "14px 18px 80px" }}>
 
@@ -117,8 +117,8 @@ export default function BuyMeThisPage() {
             <div
               style={{
                 borderRadius: 24,
-                background: "#121A14",
-                border: "1px solid #1F2937",
+                background: "var(--gb-color-surface-strong)",
+                border: "1px solid var(--gb-color-border)",
                 padding: "24px 22px",
                 boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
               }}
@@ -179,8 +179,8 @@ export default function BuyMeThisPage() {
             <div
               style={{
                 borderRadius: 24,
-                background: "#121A14",
-                border: "1px solid #1F2937",
+                background: "var(--gb-color-surface-strong)",
+                border: "1px solid var(--gb-color-border)",
                 padding: "24px 22px",
                 boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
               }}
@@ -190,9 +190,9 @@ export default function BuyMeThisPage() {
                   <div
                     key={`${item.line_id || index}`}
                     style={{
-                      border: "1px solid #1F2937",
+                      border: "1px solid var(--gb-color-border)",
                       borderRadius: 18,
-                      background: "#121A14",
+                      background: "var(--gb-color-surface-strong)",
                       padding: "12px 14px",
                     }}
                   >

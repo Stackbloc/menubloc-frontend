@@ -225,7 +225,7 @@ export default function RestaurantBillboard() {
       <div
         style={{
           minHeight: "100vh",
-          background: "radial-gradient(circle at top, rgba(34,197,94,0.12), transparent 30%), #0B0F0C",
+          background: "var(--gb-color-page)",
           color: "#F8FAFC",
           padding: "0 0 calc(80px + env(safe-area-inset-bottom, 0px))",
           fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
@@ -315,7 +315,7 @@ const actionPrimary = {
 
 const actionSecondary = {
   ...actionBase,
-  background: "#121A14",
-  border: "1px solid #1F2937",
-  color: "#F8FAFC",
+  background: "var(--gb-color-surface-strong)",
+  border: "1px solid var(--gb-color-border)",
+  color: "var(--gb-color-ink)",
 };

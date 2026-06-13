@@ -152,7 +152,7 @@ export default function FoodTrucksPage() {
   }, [area.city, area.state, area.lat, area.lng, area.radius]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title={`Food Trucks${locationLabel ? ` in ${locationLabel}` : ""}`} />
 
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "14px 14px 88px" }}>

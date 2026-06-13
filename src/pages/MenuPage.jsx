@@ -141,8 +141,8 @@ export default function MenuPage() {
 
   const shellStyle = {
     minHeight: "100vh",
-    background: "#0B0F0C",
-    color: "#FFFFFF",
+    background: "var(--gb-color-page)",
+    color: "var(--gb-color-ink)",
     padding: isMobile ? 14 : 20,
     boxSizing: "border-box",
     overflowX: "hidden",
@@ -192,7 +192,7 @@ export default function MenuPage() {
                 fontWeight: 900,
                 fontSize: isMobile ? 18 : 20,
                 lineHeight: 1.2,
-                color: "#FFFFFF",
+                color: "var(--gb-color-ink-strong)",
               }}
             >
               Menu unavailable

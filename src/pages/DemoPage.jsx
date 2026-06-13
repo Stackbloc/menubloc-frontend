@@ -161,8 +161,8 @@ export default function DemoPage() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#0B0F0C",
-    color: "#ffffff",
+    background: "var(--gb-color-page)",
+    color: "var(--gb-color-ink-strong)",
     paddingBottom: 72,
   },
   header: {
@@ -175,7 +175,7 @@ const styles = {
     gap: 16,
   },
   demoMark: {
-    color: "#ffffff",
+    color: "var(--gb-color-ink-strong)",
     fontSize: 18,
     lineHeight: 1,
     fontWeight: 950,
@@ -239,9 +239,9 @@ const styles = {
     borderRadius: 14,
     overflow: "hidden",
     textDecoration: "none",
-    color: "#ffffff",
-    background: "#121A14",
-    border: "1px solid #1F2937",
+    color: "var(--gb-color-ink-strong)",
+    background: "var(--gb-color-surface-strong)",
+    border: "1px solid var(--gb-color-border)",
     boxShadow: "0 18px 48px rgba(0,0,0,0.24)",
   },
   window: {
@@ -373,7 +373,7 @@ const styles = {
   },
   cardTitle: {
     margin: 0,
-    color: "#ffffff",
+    color: "var(--gb-color-ink-strong)",
     fontSize: 19,
     lineHeight: 1.15,
     fontWeight: 900,

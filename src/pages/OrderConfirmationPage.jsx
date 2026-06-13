@@ -75,7 +75,7 @@ export default function OrderConfirmationPage() {
   }, [orderId, clearCart, restaurant?.restaurantId, state.order]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title={t("order.confirmation.title", "Order confirmed")} />
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 18px 80px" }}>
 
@@ -83,8 +83,8 @@ export default function OrderConfirmationPage() {
           style={{
             marginTop: 24,
             borderRadius: 24,
-            background: "#121A14",
-            border: "1px solid #1F2937",
+            background: "var(--gb-color-surface-strong)",
+            border: "1px solid var(--gb-color-border)",
             padding: "28px 24px",
             boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
           }}
@@ -191,8 +191,8 @@ export default function OrderConfirmationPage() {
                       key={item.id}
                       style={{
                         borderRadius: 18,
-                        border: "1px solid #1F2937",
-                        background: "#121A14",
+                        border: "1px solid var(--gb-color-border)",
+                        background: "var(--gb-color-surface-strong)",
                         padding: "12px 14px",
                         display: "flex",
                         justifyContent: "space-between",

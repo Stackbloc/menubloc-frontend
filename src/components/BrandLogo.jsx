@@ -23,46 +23,67 @@ function isDarkPageColor(value) {
   return false;
 }
 
-export const MENUPLY_LOGO_SRC = "/menuply-logo-new.png";
+export const MENUPLY_LOGO_SRC = "/menuplyofficialsmalllogo.png";
+
+// X mark occupies ~230/1266px of the image width — clip the rest off
+const X_MARK_RATIO = 230 / 1266;
 
 export function BrandLogo({
   to = "/",
-  width = 180,
+  width,
   height = 112,
   radius = 24,
   pageColor = "#f7f6f1",
   matchPageBackground = true,
+  wordmarkColor = "var(--gb-color-ink-strong)",
   imageStyle,
   linkStyle,
   ariaLabel = "Go to Menuply home",
   clickable = true,
 }) {
+  const xMarkW = Math.round(height * (X_MARK_RATIO * 1266 / 236));
+  const fontSize = Math.round(height * 0.52);
+  const gap = Math.round(height * 0.22);
+
   const content = (
     <span
       style={{
         display: "inline-flex",
-        width,
-        height,
-        overflow: "hidden",
         alignItems: "center",
-        justifyContent: "center",
+        height,
+        gap,
         borderRadius: radius,
         background: matchPageBackground ? pageColor : "transparent",
-        lineHeight: 0,
+        lineHeight: 1,
+        ...(width ? { width, overflow: "hidden", justifyContent: "center" } : {}),
       }}
     >
       <img
         src={MENUPLY_LOGO_SRC}
-        alt="Menuply"
+        alt=""
         style={{
           display: "block",
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-          objectPosition: "center",
+          height,
+          width: xMarkW,
+          objectFit: "cover",
+          objectPosition: "left center",
+          flexShrink: 0,
           ...imageStyle,
         }}
       />
+      <span
+        style={{
+          fontSize,
+          fontWeight: 800,
+          color: wordmarkColor,
+          letterSpacing: "-0.02em",
+          fontFamily: "var(--gb-font-ui)",
+          lineHeight: 1,
+          whiteSpace: "nowrap",
+        }}
+      >
+        Menuply
+      </span>
     </span>
   );
 
