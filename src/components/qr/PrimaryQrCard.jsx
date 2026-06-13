@@ -24,7 +24,7 @@ function formatDate(iso) {
 export default function PrimaryQrCard({ qr, restaurantId }) {
   const [copied, setCopied] = useState(false);
 
-  if (!qr && !restaurantId) return null;
+  if (!qr) return null;
 
   const imageUrl = qr?.image_url
     ? (qr.image_url.startsWith("http") ? qr.image_url : `${API}${qr.image_url}`)
