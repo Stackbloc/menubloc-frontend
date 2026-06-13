@@ -35,7 +35,7 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 56, accentBorder =
         height: size,
         borderRadius: 16,
         flexShrink: 0,
-        background: "#121A14",
+        background: "var(--gb-color-surface-strong)",
         border: `1.5px solid ${accentBorder}`,
       }}
     />
@@ -161,7 +161,7 @@ export default function ClassicMenuTemplate(ctx) {
                       fontWeight: 800,
                       letterSpacing: "-0.01em",
                       lineHeight: 1.15,
-                      color: "#FFFFFF",
+                      color: "var(--gb-color-ink-strong)",
                       textDecoration: "none",
                       minWidth: 0,
                       overflow: "hidden",
@@ -178,7 +178,7 @@ export default function ClassicMenuTemplate(ctx) {
                       fontWeight: 800,
                       letterSpacing: "-0.01em",
                       lineHeight: 1.15,
-                      color: "#FFFFFF",
+                      color: "var(--gb-color-ink-strong)",
                       minWidth: 0,
                       overflow: "hidden",
                       textOverflow: "ellipsis",

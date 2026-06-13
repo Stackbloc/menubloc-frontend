@@ -264,7 +264,7 @@ export default function ConsumerFollowing() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#0B0F0C",
+    background: "var(--gb-color-page)",
     fontFamily: "Inter, Arial, sans-serif",
     padding: "0 0 calc(80px + env(safe-area-inset-bottom, 0px))",
   },
@@ -298,7 +298,7 @@ const styles = {
   pageTitle: {
     margin: 0,
     fontSize: "28px",
-    color: "#FFFFFF",
+    color: "var(--gb-color-ink-strong)",
   },
   pageSubtitle: {
     margin: "8px 0 0",
@@ -306,8 +306,8 @@ const styles = {
     fontSize: "14px",
   },
   browseLink: {
-    color: "#FFFFFF",
-    background: "#121A14",
+    color: "var(--gb-color-ink-strong)",
+    background: "var(--gb-color-surface-strong)",
     border: "1px solid #1F2937",
     borderRadius: "999px",
     padding: "10px 16px",
@@ -319,7 +319,7 @@ const styles = {
     maxWidth: "520px",
     margin: "80px auto 0",
     padding: "28px",
-    background: "#121A14",
+    background: "var(--gb-color-surface-strong)",
     borderRadius: "14px",
     boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
   },
@@ -346,14 +346,14 @@ const styles = {
     borderRadius: "10px",
     border: "none",
     background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-    color: "#0B0F0C",
+    color: "var(--gb-color-page)",
     fontSize: "14px",
     fontWeight: 700,
     cursor: "pointer",
     fontFamily: "inherit",
   },
   emptyState: {
-    background: "#121A14",
+    background: "var(--gb-color-surface-strong)",
     borderRadius: "18px",
     padding: "32px",
     boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
@@ -361,7 +361,7 @@ const styles = {
   emptyTitle: {
     margin: "0 0 10px",
     fontSize: "22px",
-    color: "#FFFFFF",
+    color: "var(--gb-color-ink-strong)",
   },
   emptyActions: {
     display: "flex",
@@ -377,7 +377,7 @@ const styles = {
     padding: "0 16px",
     borderRadius: "10px",
     background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-    color: "#0B0F0C",
+    color: "var(--gb-color-page)",
     textDecoration: "none",
     fontSize: "14px",
     fontWeight: 700,
@@ -389,9 +389,9 @@ const styles = {
     minHeight: "42px",
     padding: "0 16px",
     borderRadius: "10px",
-    background: "#121A14",
+    background: "var(--gb-color-surface-strong)",
     border: "1px solid #1F2937",
-    color: "#FFFFFF",
+    color: "var(--gb-color-ink-strong)",
     textDecoration: "none",
     fontSize: "14px",
     fontWeight: 700,
@@ -401,7 +401,7 @@ const styles = {
     gap: "16px",
   },
   menuCard: {
-    background: "#121A14",
+    background: "var(--gb-color-surface-strong)",
     borderRadius: "18px",
     padding: "18px",
     boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
@@ -425,14 +425,14 @@ const styles = {
     borderRadius: "16px",
     objectFit: "cover",
     border: "1px solid #1F2937",
-    background: "#1A2419",
+    background: "var(--gb-color-surface-muted)",
     flexShrink: 0,
   },
   logoFallback: {
     width: "60px",
     height: "60px",
     borderRadius: "16px",
-    background: "#1A2419",
+    background: "var(--gb-color-surface-muted)",
     color: "#22C55E",
     display: "flex",
     alignItems: "center",
@@ -453,7 +453,7 @@ const styles = {
     marginBottom: "6px",
   },
   restaurantLink: {
-    color: "#FFFFFF",
+    color: "var(--gb-color-ink-strong)",
     textDecoration: "none",
     fontSize: "18px",
     fontWeight: 700,
@@ -489,11 +489,11 @@ const styles = {
     borderRadius: "16px",
     border: "1px solid #1F2937",
     overflow: "hidden",
-    background: "#121A14",
+    background: "var(--gb-color-surface-strong)",
   },
   windowToolbar: {
     height: "34px",
-    background: "#1A2419",
+    background: "var(--gb-color-surface-muted)",
     borderBottom: "1px solid #d7ddd8",
     display: "flex",
     alignItems: "center",
@@ -511,7 +511,7 @@ const styles = {
     padding: "16px",
     display: "grid",
     gap: "8px",
-    background: "#121A14",
+    background: "var(--gb-color-surface-strong)",
   },
   windowLabel: {
     fontSize: "11px",
@@ -523,7 +523,7 @@ const styles = {
   windowTitle: {
     fontSize: "20px",
     fontWeight: 800,
-    color: "#FFFFFF",
+    color: "var(--gb-color-ink-strong)",
     lineHeight: 1.2,
   },
   windowMeta: {
@@ -561,7 +561,7 @@ const styles = {
   billboardPreviewTitle: {
     fontSize: "14px",
     fontWeight: 700,
-    color: "#FFFFFF",
+    color: "var(--gb-color-ink-strong)",
     lineHeight: 1.35,
   },
   billboardPreviewStatus: {

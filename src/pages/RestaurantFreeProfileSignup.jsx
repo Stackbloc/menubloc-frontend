@@ -243,7 +243,7 @@ export default function RestaurantFreeProfileSignup() {
       <div style={styles.page}>
         <div style={styles.brandHeader}>
           <BrandLockup
-            logoProps={{ width: 160, height: 96, radius: 20, pageColor: "#0B0F0C" }}
+            logoProps={{ width: 160, height: 96, radius: 20, pageColor: "var(--gb-color-page)" }}
             wrapperStyle={styles.brandLockup}
           />
         </div>
@@ -276,7 +276,7 @@ export default function RestaurantFreeProfileSignup() {
         <BrandLockup
           subtitle="For Restaurants"
           subtitleStyle={styles.brandSubtitle}
-          logoProps={{ width: 160, height: 96, radius: 20, pageColor: "#0B0F0C" }}
+          logoProps={{ width: 160, height: 96, radius: 20, pageColor: "var(--gb-color-page)" }}
           wrapperStyle={styles.brandLockup}
         />
       </div>
@@ -410,7 +410,7 @@ function submitBtnStyle(disabled) {
     borderRadius: 12,
     border: 0,
     background: disabled ? "#374151" : "#22C55E",
-    color: disabled ? "#9CA3AF" : "#0B0F0C",
+    color: disabled ? "#9CA3AF" : "var(--gb-color-page)",
     fontWeight: 800,
     fontSize: 15,
     cursor: disabled ? "not-allowed" : "pointer",
@@ -426,8 +426,8 @@ const styles = {
     margin: "0 auto",
     padding: "48px 20px 60px",
     fontFamily: "var(--gb-font-ui, Inter, system-ui, sans-serif)",
-    color: "#F9FAFB",
-    background: "#0B0F0C",
+    color: "var(--gb-color-ink)",
+    background: "var(--gb-color-page)",
   },
   pageTitle: {
     fontSize: 28,
@@ -435,7 +435,7 @@ const styles = {
     margin: "0 0 8px",
     letterSpacing: "-0.03em",
     lineHeight: 1.2,
-    color: "#FFFFFF",
+    color: "var(--gb-color-ink-strong)",
   },
   brandHeader: {
     display: "flex",
@@ -488,8 +488,8 @@ const styles = {
     border: "1px solid #374151",
     padding: "0 12px",
     fontSize: 15,
-    background: "#121A14",
-    color: "#F9FAFB",
+    background: "var(--gb-color-surface-strong)",
+    color: "var(--gb-color-ink)",
     boxSizing: "border-box",
   },
   inputError: {
@@ -499,8 +499,8 @@ const styles = {
     border: "1px solid #f87171",
     padding: "0 12px",
     fontSize: 15,
-    background: "#121A14",
-    color: "#F9FAFB",
+    background: "var(--gb-color-surface-strong)",
+    color: "var(--gb-color-ink)",
     boxSizing: "border-box",
   },
   fieldError: { fontSize: 12, color: "#fca5a5", marginTop: 5 },
@@ -540,7 +540,7 @@ const styles = {
     border: "1px solid #374151",
     padding: 12,
     fontSize: 14,
-    background: "#121A14",
+    background: "var(--gb-color-surface-strong)",
     color: "#D1D5DB",
     boxSizing: "border-box",
   },
@@ -564,7 +564,7 @@ const styles = {
     lineHeight: 1.5,
   },
   successCard: {
-    background: "#121A14",
+    background: "var(--gb-color-surface-strong)",
     border: "1px solid #374151",
     borderRadius: 14,
     padding: 22,
@@ -577,7 +577,7 @@ const styles = {
     borderRadius: 10,
     border: "1px solid #374151",
     background: "rgba(255, 255, 255, 0.06)",
-    color: "#F9FAFB",
+    color: "var(--gb-color-ink)",
     fontWeight: 800,
     fontSize: 14,
     padding: "0 18px",

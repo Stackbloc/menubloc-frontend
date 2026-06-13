@@ -184,7 +184,7 @@ function PaymentStep({ orderId, onSuccess }) {
           border: "none",
           borderRadius: 16,
           background: submitting ? "#4B5563" : "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-          color: "#0B0F0C",
+          color: "var(--gb-color-page)",
           padding: "14px 16px",
           fontSize: 15,
           fontWeight: 900,
@@ -291,15 +291,15 @@ export default function CheckoutPage() {
       border: "1px solid #374151",
       padding: "12px 14px",
       fontSize: 16,
-      background: "#1A2419",
-      color: "#FFFFFF",
+      background: "var(--gb-color-surface-muted)",
+      color: "var(--gb-color-ink-strong)",
     }),
     []
   );
   const sectionCardStyle = useMemo(
     () => ({
       borderRadius: 24,
-      background: "#121A14",
+      background: "var(--gb-color-surface-strong)",
       border: "1px solid #1F2937",
       padding: isMobile ? "20px 16px" : "24px 22px",
       boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
@@ -445,14 +445,14 @@ export default function CheckoutPage() {
 
   if (!restaurant || items.length === 0) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+      <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
         <StickyPageHeader title={t("checkout.title", "Checkout")} />
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "14px 18px 80px" }}>
           <div
             style={{
               marginTop: 28,
               borderRadius: 24,
-              background: "#121A14",
+              background: "var(--gb-color-surface-strong)",
               border: "1px solid #1F2937",
               padding: "28px 24px",
               boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
@@ -608,7 +608,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title={t("checkout.title", "Checkout")} />
       <div style={{ maxWidth: 1120, margin: "0 auto", padding: "14px 18px 80px" }}>
 
@@ -671,8 +671,8 @@ export default function CheckoutPage() {
                         style={{
                           borderRadius: 14,
                           border: active ? "1.5px solid #22C55E" : "1px solid #374151",
-                          background: active ? "#22C55E" : "#1A2419",
-                          color: active ? "#0B0F0C" : "#D1D5DB",
+                          background: active ? "#22C55E" : "var(--gb-color-surface-muted)",
+                          color: active ? "var(--gb-color-page)" : "#D1D5DB",
                           padding: "10px 18px",
                           fontSize: 13,
                           fontWeight: 800,
@@ -762,11 +762,11 @@ export default function CheckoutPage() {
                   style={{
                     borderRadius: 16,
                     border: "1px solid #1F2937",
-                    background: "#121A14",
+                    background: "var(--gb-color-surface-strong)",
                     padding: "14px 16px",
                   }}
                 >
-                  <div style={{ fontSize: 13, fontWeight: 900, color: "#FFFFFF" }}>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: "var(--gb-color-ink-strong)" }}>
                     G-Coins balance: {formatMoney(previewState.data.coins.available_balance_cents)}
                   </div>
                   <label
@@ -776,7 +776,7 @@ export default function CheckoutPage() {
                       alignItems: "center",
                       gap: 10,
                       fontSize: 14,
-                      color: "#FFFFFF",
+                      color: "var(--gb-color-ink-strong)",
                       cursor: "pointer",
                     }}
                   >
@@ -824,7 +824,7 @@ export default function CheckoutPage() {
                     style={{
                       border: "none",
                       background: "#92400e",
-                      color: "#FFFFFF",
+                      color: "var(--gb-color-ink-strong)",
                       borderRadius: 10,
                       padding: "9px 14px",
                       fontSize: 13,
@@ -895,7 +895,7 @@ export default function CheckoutPage() {
                       border: "none",
                       borderRadius: 16,
                       background: (creatingIntent || staleCartError) ? "#4B5563" : "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-                      color: "#0B0F0C",
+                      color: "var(--gb-color-page)",
                       padding: "14px 16px",
                       fontSize: 15,
                       fontWeight: 900,
@@ -973,11 +973,11 @@ export default function CheckoutPage() {
                             marginTop: 14,
                             borderRadius: 18,
                             border: "1px solid #1F2937",
-                            background: "#121A14",
+                            background: "var(--gb-color-surface-strong)",
                             padding: "14px 16px",
                           }}
                         >
-                          <div style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF" }}>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: "var(--gb-color-ink-strong)" }}>
                             Send this order to someone else to pay?
                           </div>
                           <div style={{ marginTop: 6, fontSize: 13, color: "#9CA3AF", lineHeight: 1.5 }}>
@@ -992,7 +992,7 @@ export default function CheckoutPage() {
                                 borderRadius: 14,
                                 border: "none",
                                 background: "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-                                color: "#0B0F0C",
+                                color: "var(--gb-color-page)",
                                 padding: "12px 14px",
                                 fontSize: 14,
                                 fontWeight: 900,
@@ -1008,7 +1008,7 @@ export default function CheckoutPage() {
                               style={{
                                 borderRadius: 14,
                                 border: "1px solid #374151",
-                                background: "#1A2419",
+                                background: "var(--gb-color-surface-muted)",
                                 color: "#D1D5DB",
                                 padding: "12px 14px",
                                 fontSize: 14,
@@ -1028,7 +1028,7 @@ export default function CheckoutPage() {
                         paddingTop: 2,
                       }}
                     >
-                      <div style={{ fontSize: 14, fontWeight: 900, color: "#FFFFFF" }}>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: "var(--gb-color-ink-strong)" }}>
                         {bmtGateTitle}
                       </div>
                       <button
@@ -1075,7 +1075,7 @@ export default function CheckoutPage() {
                   style={{
                     border: "1px solid #1F2937",
                     borderRadius: 18,
-                    background: "#121A14",
+                    background: "var(--gb-color-surface-strong)",
                     padding: "12px 14px",
                   }}
                 >
@@ -1152,7 +1152,7 @@ export default function CheckoutPage() {
                         border: "1px solid #1F2937",
                         borderRadius: 999,
                         padding: "4px 6px",
-                        background: "#1A2419",
+                        background: "var(--gb-color-surface-muted)",
                       }}
                     >
                       <button
@@ -1160,7 +1160,7 @@ export default function CheckoutPage() {
                         onClick={() => updateQuantity(item.lineId, item.quantity - 1)}
                         style={{
                           border: "none",
-                          background: "#1F2937",
+                          background: "var(--gb-color-border)",
                           width: 30,
                           height: 30,
                           borderRadius: 999,
@@ -1180,7 +1180,7 @@ export default function CheckoutPage() {
                         disabled={pricingUnavailable}
                         style={{
                           border: "none",
-                          background: "#1F2937",
+                          background: "var(--gb-color-border)",
                           width: 30,
                           height: 30,
                           borderRadius: 999,
@@ -1223,7 +1223,7 @@ export default function CheckoutPage() {
                   padding: "11px 16px",
                   borderRadius: 12,
                   border: "1.5px solid #374151",
-                  background: "#1A2419",
+                  background: "var(--gb-color-surface-muted)",
                   color: "#D1D5DB",
                   fontSize: 14,
                   fontWeight: 700,
@@ -1330,7 +1330,7 @@ export default function CheckoutPage() {
                         borderRadius: 16,
                         border: "none",
                         background: userBidLoading ? "#4B5563" : "linear-gradient(180deg, #22C55E 0%, #16A34A 100%)",
-                        color: "#0B0F0C",
+                        color: "var(--gb-color-page)",
                         fontSize: 14,
                         fontWeight: 700,
                         padding: "12px 16px",
@@ -1346,7 +1346,7 @@ export default function CheckoutPage() {
                         borderRadius: 14,
                         border: "1px solid #1F2937",
                         padding: "12px 14px",
-                        background: "#121A14",
+                        background: "var(--gb-color-surface-strong)",
                         fontSize: 13,
                         color: "#D1D5DB",
                       }}
@@ -1418,7 +1418,7 @@ export default function CheckoutPage() {
                     {MENUPLY_PRICE_DISCLOSURE}
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 18 }}>
-                    <span style={{ color: "#FFFFFF", fontWeight: 900 }}>{t("checkout.total", "Total")}</span>
+                    <span style={{ color: "var(--gb-color-ink-strong)", fontWeight: 900 }}>{t("checkout.total", "Total")}</span>
                     <strong>{formatMoney(previewState.data.total_cents)}</strong>
                   </div>
                 </>
@@ -1457,8 +1457,8 @@ export default function CheckoutPage() {
             bottom: 18,
             zIndex: 1500,
             borderRadius: 14,
-            background: "#121A14",
-            color: "#FFFFFF",
+            background: "var(--gb-color-surface-strong)",
+            color: "var(--gb-color-ink-strong)",
             padding: "12px 14px",
             fontSize: 13,
             fontWeight: 800,

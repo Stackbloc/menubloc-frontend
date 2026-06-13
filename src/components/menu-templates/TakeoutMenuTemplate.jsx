@@ -33,7 +33,7 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
         height: size,
         borderRadius: 12,
         flexShrink: 0,
-        background: "#121A14",
+        background: "var(--gb-color-surface-strong)",
         border: "1px solid #1F2937",
       }}
     />
@@ -91,7 +91,7 @@ export default function TakeoutMenuTemplate(ctx) {
   const deals = Array.isArray(dealItems) ? dealItems : [];
   const accent = brand?.accent ?? "#22C55E";
   const accentStrong = brand?.accentStrong ?? "#16A34A";
-  const onAccent = brand?.onAccent ?? "#0B0F0C";
+  const onAccent = brand?.onAccent ?? "var(--gb-color-page)";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
   const dealPillBorder = `1px solid ${brand?.accentBorder ?? "rgba(34,197,94,0.35)"}`;
   const ctaGradient = `linear-gradient(180deg, ${accent} 0%, ${accentStrong} 100%)`;
@@ -173,7 +173,7 @@ export default function TakeoutMenuTemplate(ctx) {
             style={{
               border: "1px solid #1F2937",
               borderRadius: 999,
-              background: "#1A2419",
+              background: "var(--gb-color-surface-muted)",
               color: "#9CA3AF",
               fontSize: 11,
               fontWeight: 800,

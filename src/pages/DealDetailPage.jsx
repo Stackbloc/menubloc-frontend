@@ -151,7 +151,7 @@ export default function DealDetailPage() {
   const days = deal ? daysUntil(deal.expires_at) : null;
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title={t("dealDetail.terms", "Deal terms")} />
 
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "16px 16px 100px" }}>
@@ -161,7 +161,7 @@ export default function DealDetailPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {[120, 60, 80, 200].map((h, i) => (
               <div key={i} style={{
-                height: h, borderRadius: 12, background: "#1F2937",
+                height: h, borderRadius: 12, background: "var(--gb-color-border)",
                 animation: "skelPulse 1.4s ease-in-out infinite",
               }} />
             ))}
@@ -187,7 +187,7 @@ export default function DealDetailPage() {
               <span style={{
                 display: "inline-block",
                 padding: "4px 14px", borderRadius: 999,
-                background: "#22C55E", color: "#0B0F0C",
+                background: "#22C55E", color: "var(--gb-color-page)",
                 fontSize: 13, fontWeight: 900, letterSpacing: "0.02em",
               }}>
                 {discountBadgeText(deal)}
@@ -287,7 +287,7 @@ export default function DealDetailPage() {
             {deal.description && (
               <div style={{
                 marginTop: 16, padding: "14px 16px",
-                borderRadius: 12, background: "#121A14",
+                borderRadius: 12, background: "var(--gb-color-surface-strong)",
                 border: "1px solid #1F2937",
                 fontSize: 14, color: "#D1D5DB", lineHeight: 1.65,
               }}>
@@ -299,13 +299,13 @@ export default function DealDetailPage() {
             {deal.menu_item_name && (
               <div style={{
                 marginTop: 12, padding: "14px 16px",
-                borderRadius: 12, background: "#121A14",
+                borderRadius: 12, background: "var(--gb-color-surface-strong)",
                 border: "1px solid #1F2937",
               }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   Includes
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF" }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "var(--gb-color-ink-strong)" }}>
                   {getDisplayMenuItemName(
                     { name: deal.menu_item_name, menu_item_name: deal.menu_item_name },
                     language,
@@ -335,7 +335,7 @@ export default function DealDetailPage() {
                     </span>
                   )}
                   {!hasDealPrice && dealPriceCents != null && (
-                    <span style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF" }}>
+                    <span style={{ fontSize: 18, fontWeight: 900, color: "var(--gb-color-ink-strong)" }}>
                       {formatCents(dealPriceCents)}
                     </span>
                   )}
@@ -363,7 +363,7 @@ export default function DealDetailPage() {
             {/* Terms section */}
             <div style={{
               marginTop: 12, padding: "14px 16px",
-              borderRadius: 12, background: "#121A14",
+              borderRadius: 12, background: "var(--gb-color-surface-strong)",
               border: "1px solid #1F2937",
             }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>

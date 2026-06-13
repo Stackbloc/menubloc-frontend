@@ -21,7 +21,7 @@ function BoldLogoSlot({ logoUrl, restaurantName, accent }) {
     <div
       title={restaurantName}
       aria-hidden
-      style={{ ...style, background: "#121A14" }}
+      style={{ ...style, background: "var(--gb-color-surface-strong)" }}
     />
   );
 }
@@ -79,7 +79,7 @@ export default function BoldCasualMenuTemplate(ctx) {
 
   const accent = brand?.accent ?? "#22C55E";
   const accentBold = brand?.accentBold ?? "rgba(34,197,94,0.22)";
-  const onAccent = brand?.onAccent ?? "#0B0F0C";
+  const onAccent = brand?.onAccent ?? "var(--gb-color-page)";
   const dealItems = Array.isArray(data?.deal_items) ? data.deal_items : [];
   const hasDealBanner = dealItems.length > 0;
 
@@ -115,7 +115,7 @@ export default function BoldCasualMenuTemplate(ctx) {
                       fontWeight: 900,
                       letterSpacing: "-0.03em",
                       lineHeight: 1.05,
-                      color: "#FFFFFF",
+                      color: "var(--gb-color-ink-strong)",
                       textDecoration: "none",
                       minWidth: 0,
                       overflow: "hidden",
@@ -132,7 +132,7 @@ export default function BoldCasualMenuTemplate(ctx) {
                       fontWeight: 900,
                       letterSpacing: "-0.03em",
                       lineHeight: 1.05,
-                      color: "#FFFFFF",
+                      color: "var(--gb-color-ink-strong)",
                       minWidth: 0,
                       overflow: "hidden",
                       textOverflow: "ellipsis",

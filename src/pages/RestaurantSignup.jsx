@@ -32,7 +32,7 @@ function planLabel(t, planCode) {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#0B0F0C",
+    background: "var(--gb-color-page)",
     maxWidth: 640,
     margin: "0 auto",
     padding: "40px 20px 60px",
@@ -45,7 +45,7 @@ const styles = {
   pageTitle: { fontSize: 28, fontWeight: 800, marginTop: 20, marginBottom: 6, letterSpacing: "-0.03em" },
   pageSubtitle: { fontSize: 15, color: "rgba(248,244,234,0.82)", lineHeight: 1.6, maxWidth: 560 },
   section: {
-    background: "#121A14",
+    background: "var(--gb-color-surface-strong)",
     border: "1px solid rgba(61,217,52,0.16)",
     borderRadius: 18,
     padding: 20,
@@ -75,7 +75,7 @@ const styles = {
     border: "1px solid rgba(255,255,255,0.14)",
     padding: "0 12px",
     fontSize: 14,
-    background: "#0B0F0C",
+    background: "var(--gb-color-page)",
     color: "#F8F4EA",
     boxSizing: "border-box",
   },
@@ -86,7 +86,7 @@ const styles = {
     border: "1px solid #f87171",
     padding: "0 12px",
     fontSize: 14,
-    background: "#0B0F0C",
+    background: "var(--gb-color-page)",
     color: "#F8F4EA",
     boxSizing: "border-box",
   },
@@ -106,7 +106,7 @@ const styles = {
     padding: "0 10px",
     borderRadius: 999,
     border: "1px solid rgba(255,255,255,0.14)",
-    background: "#121A14",
+    background: "var(--gb-color-surface-strong)",
     color: "#F8F4EA",
     fontSize: 12,
     fontWeight: 700,
@@ -151,7 +151,7 @@ const styles = {
     flexWrap: "wrap",
     padding: "14px 16px",
     borderRadius: 14,
-    background: "#121A14",
+    background: "var(--gb-color-surface-strong)",
     border: "1px solid rgba(61,217,52,0.16)",
     marginTop: 18,
   },
@@ -449,7 +449,7 @@ export default function RestaurantSignup() {
       <div style={styles.header}>
         <BrandLockup
           subtitle={t("signup.forRestaurants")}
-          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#0B0F0C" }}
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "var(--gb-color-page)" }}
           wrapperStyle={{ marginBottom: 6 }}
         />
         <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your restaurant account")}</div>

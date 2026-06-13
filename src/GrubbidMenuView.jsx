@@ -21,9 +21,9 @@ function money(x) {
 function readTheme() {
   try {
     const v = localStorage.getItem("grubbid_theme");
-    return v === "light" ? "light" : "dark";
+    return v === "dark" ? "dark" : "light";
   } catch {
-    return "dark";
+    return "light";
   }
 }
 
@@ -362,9 +362,9 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
   const COLORS =
     theme === "light"
       ? {
-          bg: "#f7f6f1",
+          bg: "#f8fafc",
           panel: "#ffffff",
-          panel2: "#f7f6f1",
+          panel2: "#f1f5f9",
           border: "rgba(18,34,28,0.08)",
           border2: "rgba(18,34,28,0.14)",
           text: "#11211a",
