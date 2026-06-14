@@ -72,6 +72,19 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
     a.click();
   }
 
+  function handleDownloadPdf() {
+    if (!qr?.image_url_pdf) return;
+    const pdfUrl = qr.image_url_pdf.startsWith("http")
+      ? qr.image_url_pdf
+      : `${API}${qr.image_url_pdf}`;
+    const a = document.createElement("a");
+    a.href = pdfUrl;
+    a.download = "menuply-qr-poster.pdf";
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.click();
+  }
+
   return (
     <div style={{
       background: "#fff", border: "1px solid #e4e9f0",
@@ -182,6 +195,20 @@ export default function PrimaryQrCard({ qr, restaurantId }) {
                 }}
               >
                 Download SVG
+              </button>
+            )}
+
+            {qr?.image_url_pdf && (
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                style={{
+                  background: "#f8fafc", color: "#344054",
+                  border: "1px solid #e4e9f0", borderRadius: 7,
+                  padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                Download PDF poster
               </button>
             )}
           </div>

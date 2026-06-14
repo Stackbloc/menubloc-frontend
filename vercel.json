@@ -30,6 +30,10 @@
       "destination": "https://menubloc-backend-production.up.railway.app/qr/:token/image"
     },
     {
+      "source": "/qr/:token/pdf",
+      "destination": "https://menubloc-backend-production.up.railway.app/qr/:token/pdf"
+    },
+    {
       "source": "/qr/:token",
       "destination": "https://menubloc-backend-production.up.railway.app/qr/:token"
     },
