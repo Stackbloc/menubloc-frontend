@@ -25,6 +25,7 @@ import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "
 import { useCanonical } from "./hooks/useCanonical.js";
 import { captureEvent, initPostHog } from "./services/posthog.js";
 import { getAnalyticsSessionId } from "./lib/analyticsPageVisitSend.js";
+import { isCityStateSlug } from "./lib/cityStateSlug.js";
 import { CartProvider } from "./context/CartContext.jsx";
 import { OrderCartProvider } from "./context/OrderCartContext.jsx";
 import { LanguageProvider } from "./context/LanguageContext.jsx";
@@ -77,6 +78,7 @@ import OwnerSupportTickets from "./pages/owner/OwnerSupportTickets.jsx";
 import OwnerTicketDetail from "./pages/owner/OwnerTicketDetail.jsx";
 import OwnerMenuUploads from "./pages/owner/OwnerMenuUploads.jsx";
 import OwnerMenuUploadDetail from "./pages/owner/OwnerMenuUploadDetail.jsx";
+import OwnerMenuUploadReviewItems from "./pages/owner/OwnerMenuUploadReviewItems.jsx";
 import OwnerQrStickers from "./pages/owner/OwnerQrStickers.jsx";
 import OwnerMarketExpansion from "./pages/owner/OwnerMarketExpansion.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
@@ -108,6 +110,8 @@ import ComparePage from "./pages/ComparePage.jsx";
 import MenuItemInfoPage from "./pages/MenuItemInfoPage.jsx";
 import PublicMenuPage from "./pages/PublicMenuPage.jsx";
 import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
+import MarketAggregatorPage from "./pages/MarketAggregatorPage.jsx";
+import MarketMenuItemPage from "./pages/MarketMenuItemPage.jsx";
 import MenuThemesPage from "./pages/MenuThemesPage.jsx";
 import MenuDesignLabPage from "./pages/MenuDesignLabPage.jsx";
 import DemoPage from "./pages/DemoPage.jsx";
@@ -215,6 +219,15 @@ function RestaurantSingularRedirect() {
 function TruckRedirect() {
   const { slugOrId } = useParams();
   return <Navigate to={slugOrId ? `/foodtrucks/${slugOrId}` : "/"} replace />;
+}
+
+// Disambiguation: /restaurants/:slugOrId is both the profile URL and the market aggregator URL.
+// When the segment matches {words}-{valid-state-code} it renders the market aggregator.
+// All other slugs render the existing restaurant profile page.
+function RestaurantOrMarketRouter() {
+  const { slugOrId } = useParams();
+  if (isCityStateSlug(slugOrId)) return <MarketAggregatorPage />;
+  return <RestaurantPublicPage />;
 }
 
 const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
@@ -509,7 +522,11 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/trucks/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TruckRedirect />} />
 
         <Route path="/restaurants/:slugOrId/billboard" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantBillboard />} />
-        <Route path="/restaurants/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantPublicPage />} />
+        {/* Market-scoped routes — must be declared before the single-segment :slugOrId route */}
+        <Route path="/restaurants/:slugOrId/:restaurantSlug/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
+        <Route path="/restaurants/:slugOrId/:restaurantSlug/menu-items/:itemSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MarketMenuItemPage />} />
+        {/* Single-segment: market aggregator when slug is city-state, profile otherwise */}
+        <Route path="/restaurants/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOrMarketRouter />} />
         <Route path="/restaurants/:slugOrId/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/menu-template-preview" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/menu-design-lab" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuThemesPage />} />
@@ -625,6 +642,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/owner/support/:ticketId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTicketDetail /></OwnerRoute>} />
         <Route path="/owner/menu-uploads" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploads /></OwnerRoute>} />
         <Route path="/owner/menu-uploads/:uploadId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploadDetail /></OwnerRoute>} />
+        <Route path="/owner/menu-uploads/:uploadId/review-items" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploadReviewItems /></OwnerRoute>} />
         <Route path="/owner/qr-stickers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerQrStickers /></OwnerRoute>} />
         <Route path="/owner/market-expansion" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMarketExpansion /></OwnerRoute>} />
 

@@ -149,43 +149,6 @@ function DiscoveryChipRow({ chips, filters, onChipClick }) {
   );
 }
 
-function DiscoveryInlineSelect({ value, onChange, options, ariaLabel, disabled = false, prefix = "", compact = false }) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      aria-label={ariaLabel}
-      disabled={disabled}
-      style={compact ? {
-        fontSize: 12,
-        fontWeight: 700,
-        color: "#9ca3af",
-        background: "transparent",
-        border: "none",
-        cursor: "pointer",
-        padding: "0 2px",
-        outline: "none",
-      } : {
-        minHeight: 28,
-        border: "1px solid rgba(156,163,175,0.25)",
-        borderRadius: 999,
-        background: disabled ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.07)",
-        color: disabled ? "rgba(156,163,175,0.4)" : "#9ca3af",
-        fontSize: 12,
-        fontWeight: 700,
-        padding: "0 24px 0 9px",
-        cursor: disabled ? "default" : "pointer",
-        outline: "none",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>{prefix}{opt.label}</option>
-      ))}
-    </select>
-  );
-}
-
 function hasStoredDietSelection() {
   if (typeof window === "undefined") return false;
   try {
@@ -506,11 +469,6 @@ export default function GrubbidDiscovery() {
   const [recentLocations, setRecentLocations] = useState(() => loadRecentLocations());
   const [filters, setFilters] = useState(() => loadDietPrefs());
   const [selectedCuisine, setSelectedCuisine] = useState("");
-  const [sortMode, setSortMode] = useState("");
-  const [feedFacetCuisines, setFeedFacetCuisines] = useState([]);
-  const [marketplaceMenuCount, setMarketplaceMenuCount] = useState(0);
-  const [feedSupportsNearbySort, setFeedSupportsNearbySort] = useState(false);
-  const [canonicalCuisineOptions, setCanonicalCuisineOptions] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [rememberedOutOfMarketPromo, setRememberedOutOfMarketPromo] = useState(() => loadStoredOutOfMarketPromo());
 
@@ -658,75 +616,9 @@ export default function GrubbidDiscovery() {
         );
       });
     }
-    if (selectedCuisine) {
-      menus = menus.filter((m) => String(m?.cuisine || "").trim().toLowerCase() === selectedCuisine);
-    }
-    if (sortMode === "nearby") {
-      menus = [...menus].sort((a, b) => {
-        const da = Number(a?.distance_miles ?? Infinity);
-        const db = Number(b?.distance_miles ?? Infinity);
-        if (!Number.isFinite(da) && !Number.isFinite(db)) return 0;
-        if (!Number.isFinite(da)) return 1;
-        if (!Number.isFinite(db)) return -1;
-        return da - db;
-      });
-    }
     return menus;
-  }, [feedMenus, committedQuery, activeExcludedAllergens, selectedCuisine, sortMode]);
+  }, [feedMenus, committedQuery, activeExcludedAllergens]);
 
-  const feedCuisineOptions = useMemo(() => {
-    const canonicalLabelByValue = new Map(
-      canonicalCuisineOptions.map((opt) => [
-        String(opt?.value || "").trim().toLowerCase(),
-        opt?.label || opt?.value || "",
-      ])
-    );
-    if (feedFacetCuisines.length > 0) {
-      return feedFacetCuisines
-        .filter((f) => Number(f?.count ?? 0) > 0)
-        .map((f) => {
-          const val = String(f.value || "").trim().toLowerCase();
-          const label = canonicalLabelByValue.get(val) || f.label || val;
-          return label ? { value: val, label } : null;
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.label.localeCompare(b.label));
-    }
-    // Fallback when facets not yet loaded: build from feedMenus but only include
-    // values that exist in the canonical taxonomy — no improvised labels.
-    if (canonicalCuisineOptions.length === 0) return [];
-    const seen = new Set();
-    const opts = [];
-    for (const menu of feedMenus) {
-      const val = String(menu?.cuisine || "").trim().toLowerCase();
-      const label = canonicalLabelByValue.get(val);
-      if (val && label && !seen.has(val)) {
-        seen.add(val);
-        opts.push({ value: val, label });
-      }
-    }
-    return opts.sort((a, b) => a.label.localeCompare(b.label));
-  }, [feedFacetCuisines, feedMenus, canonicalCuisineOptions]);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`${API}/api/meta/cuisines`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((json) => {
-        if (!cancelled && Array.isArray(json?.cuisines)) {
-          setCanonicalCuisineOptions(json.cuisines);
-        }
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    setSelectedCuisine("");
-    setSortMode("");
-  }, [feedScopeKey]);
-
-  const useExpandedBrowseControls = (marketplaceMenuCount || feedMenus.length) > 25;
   const hasBackendFeedData = feedMenus.length > 0;
   const hasVisibleMenus = displayMenus.length > 0;
   const showBackendEmptyState =
@@ -938,9 +830,6 @@ export default function GrubbidDiscovery() {
         const nextMenus = dedupeDiscoveryMenus(menus);
         feedCacheRef.current[feedScopeKey] = nextMenus;
         setFeedMenus(nextMenus);
-        setFeedFacetCuisines(Array.isArray(json?.facets?.cuisines) ? json.facets.cuisines : []);
-        setMarketplaceMenuCount(Number(json?.marketplace_menu_count ?? 0));
-        setFeedSupportsNearbySort(json?.supports?.sort_nearby === true);
       })
       .catch((error) => {
         if (error?.name === "AbortError") return;
@@ -1449,73 +1338,23 @@ export default function GrubbidDiscovery() {
             />
           </div>
 
-          {/* Feed count + browse controls — sticky with header */}
+          {/* Feed count + allergen status — sticky with header */}
           {!feedLoading && !inlineError && (
-            <div style={{ padding: "6px 16px 0" }}>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", fontSize: 12, fontWeight: 700, color: "#9ca3af" }}>
-                {hasVisibleMenus && (
-                  <span>{displayMenus.length} {displayMenus.length === 1 ? "menu" : "menus"}</span>
-                )}
-                {useExpandedBrowseControls ? (
-                  <>
-                    {feedCuisineOptions.length > 0 && (
-                      <DiscoveryInlineSelect
-                        value={selectedCuisine}
-                        onChange={setSelectedCuisine}
-                        options={[{ value: "", label: "All cuisines" }, ...feedCuisineOptions]}
-                        ariaLabel="Filter by cuisine"
-                      />
-                    )}
-                    <DiscoveryInlineSelect
-                      value={sortMode || "nearby"}
-                      onChange={setSortMode}
-                      options={[{ value: "nearby", label: "Nearby" }]}
-                      ariaLabel="Sort"
-                      prefix="Sort: "
-                      disabled={!feedSupportsNearbySort}
-                    />
-                    <button
-                      type="button"
-                      disabled
-                      title="Open Now is unavailable until public hours logic is available."
-                      style={{
-                        minHeight: 28,
-                        border: "1px solid rgba(156,163,175,0.25)",
-                        borderRadius: 999,
-                        background: "rgba(255,255,255,0.03)",
-                        color: "rgba(156,163,175,0.4)",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        padding: "0 9px",
-                        cursor: "default",
-                      }}
-                    >
-                      Open Now
-                    </button>
-                  </>
-                ) : (
-                  feedCuisineOptions.length > 0 && (
-                    <DiscoveryInlineSelect
-                      value={selectedCuisine}
-                      onChange={setSelectedCuisine}
-                      options={[{ value: "", label: "All cuisines" }, ...feedCuisineOptions]}
-                      ariaLabel="Filter by cuisine"
-                      compact
-                    />
-                  )
-                )}
-                {/* GUARDRAIL:
-                    Do not render broad allergen warning blocks on public discovery/browse/menu-list cards.
-                    Allergen alerts are contextual item-level signals only and must remain small/restrained
-                    unless the user explicitly opens an allergen/nutrition detail context. */}
-                {hasNoneAllergenSelected ? (
-                  <span style={{ color: "#667085", fontSize: 11, fontWeight: 800 }}>Allergen filter off</span>
-                ) : activeExcludedAllergens.length > 0 ? (
-                  <span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 700 }}>
-                    Allergen exclusions: {activeExcludedAllergens.map((a) => formatDiscoveryAllergenLabel(a)).join(", ")}
-                  </span>
-                ) : null}
-              </div>
+            <div style={{ padding: "6px 16px 0", fontSize: 12, fontWeight: 700, color: "#9ca3af", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              {hasVisibleMenus && (
+                <span>{displayMenus.length} {displayMenus.length === 1 ? "menu" : "menus"}</span>
+              )}
+              {/* GUARDRAIL:
+                  Do not render broad allergen warning blocks on public discovery/browse/menu-list cards.
+                  Allergen alerts are contextual item-level signals only and must remain small/restrained
+                  unless the user explicitly opens an allergen/nutrition detail context. */}
+              {hasNoneAllergenSelected ? (
+                <span style={{ color: "#667085", fontSize: 11, fontWeight: 800 }}>Allergen filter off</span>
+              ) : activeExcludedAllergens.length > 0 ? (
+                <span style={{ color: "#9ca3af", fontSize: 11, fontWeight: 700 }}>
+                  Allergen exclusions: {activeExcludedAllergens.map((a) => formatDiscoveryAllergenLabel(a)).join(", ")}
+                </span>
+              ) : null}
             </div>
           )}
         </div>
