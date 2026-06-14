@@ -111,6 +111,15 @@ export const retryOwnerMenuUpload = (uploadId) =>
 export const archiveOwnerMenuUpload = (uploadId) =>
   post(`/api/owner/menu-uploads/${uploadId}/archive`, {});
 
+export const getUploadReviewItems = (uploadId) =>
+  get(`/api/owner/menu-uploads/${uploadId}/review-items`);
+export const approveReviewItem = (uploadId, itemId, edits = {}) =>
+  post(`/api/owner/menu-uploads/${uploadId}/review-items/${itemId}/approve`, edits);
+export const rejectReviewItem = (uploadId, itemId) =>
+  post(`/api/owner/menu-uploads/${uploadId}/review-items/${itemId}/reject`, {});
+export const bulkReviewItems = (uploadId, data) =>
+  post(`/api/owner/menu-uploads/${uploadId}/review-items/bulk`, data);
+
 export const getOwnerMarketExpansion = () => get("/api/owner/market-expansion/summary");
 export const getOwnerMarketExpansionByZip = (params = {}) => {
   const qs = new URLSearchParams(params).toString();

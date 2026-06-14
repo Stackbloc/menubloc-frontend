@@ -149,6 +149,25 @@ export default function OwnerMenuUploadDetail() {
             <strong>Failure reason:</strong> {upload.failure_reason}
           </div>
         )}
+        {upload.human_review_items > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <Link
+              to={`/owner/menu-uploads/${uploadId}/review-items`}
+              style={{
+                display: "inline-block",
+                padding: "10px 20px",
+                borderRadius: 10,
+                background: "#92400e",
+                color: "#fff",
+                fontWeight: 700,
+                fontSize: 13,
+                textDecoration: "none",
+              }}
+            >
+              Review Items ({upload.human_review_items})
+            </Link>
+          </div>
+        )}
       </PageCard>
 
       {/* Pages */}

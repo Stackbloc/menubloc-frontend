@@ -76,6 +76,7 @@ import OwnerSupportTickets from "./pages/owner/OwnerSupportTickets.jsx";
 import OwnerTicketDetail from "./pages/owner/OwnerTicketDetail.jsx";
 import OwnerMenuUploads from "./pages/owner/OwnerMenuUploads.jsx";
 import OwnerMenuUploadDetail from "./pages/owner/OwnerMenuUploadDetail.jsx";
+import OwnerMenuUploadReviewItems from "./pages/owner/OwnerMenuUploadReviewItems.jsx";
 import OwnerQrStickers from "./pages/owner/OwnerQrStickers.jsx";
 import OwnerMarketExpansion from "./pages/owner/OwnerMarketExpansion.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
@@ -637,6 +638,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/owner/support/:ticketId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerTicketDetail /></OwnerRoute>} />
         <Route path="/owner/menu-uploads" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploads /></OwnerRoute>} />
         <Route path="/owner/menu-uploads/:uploadId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploadDetail /></OwnerRoute>} />
+        <Route path="/owner/menu-uploads/:uploadId/review-items" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploadReviewItems /></OwnerRoute>} />
         <Route path="/owner/qr-stickers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerQrStickers /></OwnerRoute>} />
         <Route path="/owner/market-expansion" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMarketExpansion /></OwnerRoute>} />
 
