@@ -4,25 +4,68 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 export const FAQ_DEFS = [
   {
     questionKey: "onboarding.faq.q1",
-    answerKeys: [
-      "onboarding.faq.q1.a1",
-      "onboarding.faq.q1.a2",
-      "onboarding.faq.q1.a3",
-      "onboarding.faq.q1.a4",
+    answerBlocks: [
+      { type: "paragraph", key: "onboarding.faq.q1.a1" },
+      { type: "paragraph", key: "onboarding.faq.q1.a2" },
+      { type: "paragraph", key: "onboarding.faq.q1.a3" },
+      { type: "paragraph", key: "onboarding.faq.q1.a4" },
     ],
   },
   {
     questionKey: "onboarding.faq.q2",
-    answerKeys: ["onboarding.faq.q2.a1", "onboarding.faq.q2.a2", "onboarding.faq.q2.a3"],
+    answerBlocks: [
+      { type: "paragraph", key: "onboarding.faq.q2.a1" },
+      { type: "paragraph", key: "onboarding.faq.q2.a2" },
+      { type: "paragraph", key: "onboarding.faq.q2.a3" },
+    ],
   },
   {
     questionKey: "onboarding.faq.q3",
-    answerKeys: [
-      "onboarding.faq.q3.a1",
-      "onboarding.faq.q3.a2",
-      "onboarding.faq.q3.a3",
-      "onboarding.faq.q3.a4",
-      "onboarding.faq.q3.a5",
+    answerBlocks: [
+      { type: "paragraph", key: "onboarding.faq.q3.a1" },
+      { type: "paragraph", key: "onboarding.faq.q3.a2" },
+      { type: "paragraph", key: "onboarding.faq.q3.a3" },
+      { type: "paragraph", key: "onboarding.faq.q3.a4" },
+      { type: "paragraph", key: "onboarding.faq.q3.a5" },
+    ],
+  },
+  {
+    questionKey: "onboarding.faq.q4",
+    answerBlocks: [
+      { type: "paragraph", key: "onboarding.faq.q4.a1" },
+      { type: "paragraph", key: "onboarding.faq.q4.a2" },
+    ],
+  },
+  {
+    questionKey: "onboarding.faq.q5",
+    answerBlocks: [
+      { type: "paragraph", key: "onboarding.faq.q5.a1" },
+      {
+        type: "list",
+        labelKey: "onboarding.faq.q5.l1",
+        itemKeys: ["onboarding.faq.q5.l1.i1", "onboarding.faq.q5.l1.i2", "onboarding.faq.q5.l1.i3"],
+      },
+      { type: "paragraph", key: "onboarding.faq.q5.a2" },
+      {
+        type: "list",
+        labelKey: "onboarding.faq.q5.l2",
+        itemKeys: ["onboarding.faq.q5.l2.i1", "onboarding.faq.q5.l2.i2", "onboarding.faq.q5.l2.i3"],
+      },
+      { type: "paragraph", key: "onboarding.faq.q5.a3" },
+    ],
+  },
+  {
+    questionKey: "onboarding.faq.q6",
+    answerBlocks: [
+      { type: "paragraph", key: "onboarding.faq.q6.a1" },
+      { type: "paragraph", key: "onboarding.faq.q6.a2" },
+    ],
+  },
+  {
+    questionKey: "onboarding.faq.q7",
+    answerBlocks: [
+      { type: "paragraph", key: "onboarding.faq.q7.a1" },
+      { type: "paragraph", key: "onboarding.faq.q7.a2" },
     ],
   },
 ];
@@ -170,7 +213,50 @@ function buildStyles(variant) {
       lineHeight: 1.7,
       color: subtext,
     },
+    answerListLabel: {
+      margin: 0,
+      fontSize: 14,
+      lineHeight: 1.7,
+      color: subtext,
+      fontWeight: 700,
+    },
+    answerList: {
+      margin: "0 0 0 18px",
+      padding: 0,
+      display: "grid",
+      gap: 4,
+    },
+    answerListItem: {
+      fontSize: 14,
+      lineHeight: 1.7,
+      color: subtext,
+    },
   };
+}
+
+export function FaqAnswerBlocks({ blocks, t, styles }) {
+  return blocks.map((block) => {
+    if (block.type === "list") {
+      return (
+        <div key={block.labelKey}>
+          <p style={styles.answerListLabel}>{t(block.labelKey)}</p>
+          <ul style={styles.answerList}>
+            {block.itemKeys.map((itemKey) => (
+              <li key={itemKey} style={styles.answerListItem}>
+                {t(itemKey)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    return (
+      <p key={block.key} style={styles.answerParagraph}>
+        {t(block.key)}
+      </p>
+    );
+  });
 }
 
 export default function RestaurantFAQ({ instanceId = "restaurant-faq", variant = "light" }) {
@@ -233,11 +319,7 @@ export default function RestaurantFAQ({ instanceId = "restaurant-faq", variant =
 
                 {expanded ? (
                   <div id={panelId} style={styles.answer}>
-                    {item.answerKeys.map((answerKey) => (
-                      <p key={answerKey} style={styles.answerParagraph}>
-                        {t(answerKey)}
-                      </p>
-                    ))}
+                    <FaqAnswerBlocks blocks={item.answerBlocks} t={t} styles={styles} />
                   </div>
                 ) : null}
               </article>

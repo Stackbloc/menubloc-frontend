@@ -5,7 +5,7 @@ Purpose: Cursor-friendly React component version of the approved Menuply restaur
 
 import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
-import { FAQ_DEFS } from "./RestaurantFAQ.jsx";
+import { FAQ_DEFS, FaqAnswerBlocks } from "./RestaurantFAQ.jsx";
 
 const LOGO_SRC = "/menuplyofficialsmalllogo.png";
 
@@ -267,6 +267,19 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           color: #9e9a92;
         }
 
+        .restaurant-onboarding-page .faq-answer ul {
+          margin: 0 0 0 18px;
+          padding: 0;
+          display: grid;
+          gap: 3px;
+        }
+
+        .restaurant-onboarding-page .faq-answer li {
+          font-size: 14px;
+          line-height: 1.65;
+          color: #9e9a92;
+        }
+
         .restaurant-onboarding-page hr {
           border: none;
           border-top: 1px solid rgba(255,255,255,0.07);
@@ -407,9 +420,16 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
                     </button>
                     {expanded ? (
                       <div id={panelId} className="faq-answer">
-                        {item.answerKeys.map((answerKey) => (
-                          <p key={answerKey}>{t(answerKey)}</p>
-                        ))}
+                        <FaqAnswerBlocks
+                          blocks={item.answerBlocks}
+                          t={t}
+                          styles={{
+                            answerParagraph: undefined,
+                            answerListLabel: { fontWeight: 600 },
+                            answerList: undefined,
+                            answerListItem: undefined,
+                          }}
+                        />
                       </div>
                     ) : null}
                   </article>

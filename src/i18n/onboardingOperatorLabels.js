@@ -253,6 +253,36 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "onboarding.faq.q3.a4":
       "Menuply also recognizes that restaurants have different identities and customer bases. A sports bar, steakhouse, dessert shop, seafood restaurant, and vegan cafe should not all look or feel the same. The platform should support that diversity through menu presentation styles, promotional tools, and restaurant branding options.",
     "onboarding.faq.q3.a5": "Menuply is a restaurant commerce and discovery platform, not a diet app.",
+    "onboarding.faq.q4": "How do QR ordering materials work?",
+    "onboarding.faq.q4.a1":
+      "Menuply generates a dynamic QR code linked to your restaurant's profile and menu. You can print it on table tents, door signs, receipts, or any physical materials.",
+    "onboarding.faq.q4.a2":
+      "When diners scan it, they land directly on your Menuply menu page and can browse, follow your restaurant, and place orders. The QR code stays the same even if your menu changes.",
+    "onboarding.faq.q5": "Can I use my own delivery drivers?",
+    "onboarding.faq.q5.a1":
+      "Yes. Menuply supports direct online ordering with your own fulfillment — you are not required to use any third-party delivery fleet.",
+    "onboarding.faq.q5.l1": "Restaurants can use:",
+    "onboarding.faq.q5.l1.i1": "Pickup",
+    "onboarding.faq.q5.l1.i2": "In-house delivery",
+    "onboarding.faq.q5.l1.i3": "Third-party delivery providers",
+    "onboarding.faq.q5.a2":
+      "Importantly, restaurants can also use traditional third-party delivery platforms strictly for delivery fulfillment while still accepting orders directly through Menuply. This allows restaurants to avoid the high third-party marketplace sales commissions typically associated with traditional delivery apps.",
+    "onboarding.faq.q5.l2": "Restaurants may choose to:",
+    "onboarding.faq.q5.l2.i1": "Absorb the delivery cost",
+    "onboarding.faq.q5.l2.i2": "Partially subsidize it",
+    "onboarding.faq.q5.l2.i3": "Pass the delivery fee directly to the diner",
+    "onboarding.faq.q5.a3":
+      "This gives restaurants substantially more flexibility and control over pricing, margins, customer relationships, and fulfillment strategy.",
+    "onboarding.faq.q6": "Does Menuply support direct online ordering?",
+    "onboarding.faq.q6.a1":
+      "Yes. Diners can place orders directly through your Menuply page. Orders come to you without a per-order percentage taken out.",
+    "onboarding.faq.q6.a2":
+      "You can accept pickup and delivery orders from your existing customers using Menuply as your online ordering channel — no separate website or third-party integration required.",
+    "onboarding.faq.q7": "Why is Menuply focused on lower restaurant transaction costs?",
+    "onboarding.faq.q7.a1":
+      "High transaction costs on delivery platforms have pushed many restaurants to raise menu prices to offset fees. This creates a structural problem: diners pay more, restaurants earn less per order, and the platform keeps the margin in between.",
+    "onboarding.faq.q7.a2":
+      "Menuply is built around the idea that lower structural costs can unlock better long-term value for both restaurants and diners. When restaurants operate more efficiently, they have more room to offer competitive pricing, better deals, and stronger direct relationships with their customers.",
     "foodTruck.signup.title": "Food truck sign up",
     "foodTruck.signup.subtitle": "List your truck and share your live menu with diners.",
     "modifier.required": "Required",
@@ -515,6 +545,36 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "onboarding.faq.q3.a4":
       "Menuply reconoce identidades distintas: bar deportivo, steakhouse, postres, mariscos o vegano no deben verse igual. La plataforma apoya esa diversidad con estilos de menú, promociones y marca.",
     "onboarding.faq.q3.a5": "Menuply es una plataforma de comercio y descubrimiento para restaurantes, no una app de dieta.",
+    "onboarding.faq.q4": "How do QR ordering materials work?",
+    "onboarding.faq.q4.a1":
+      "Menuply generates a dynamic QR code linked to your restaurant's profile and menu. You can print it on table tents, door signs, receipts, or any physical materials.",
+    "onboarding.faq.q4.a2":
+      "When diners scan it, they land directly on your Menuply menu page and can browse, follow your restaurant, and place orders. The QR code stays the same even if your menu changes.",
+    "onboarding.faq.q5": "Can I use my own delivery drivers?",
+    "onboarding.faq.q5.a1":
+      "Yes. Menuply supports direct online ordering with your own fulfillment — you are not required to use any third-party delivery fleet.",
+    "onboarding.faq.q5.l1": "Restaurants can use:",
+    "onboarding.faq.q5.l1.i1": "Pickup",
+    "onboarding.faq.q5.l1.i2": "In-house delivery",
+    "onboarding.faq.q5.l1.i3": "Third-party delivery providers",
+    "onboarding.faq.q5.a2":
+      "Importantly, restaurants can also use traditional third-party delivery platforms strictly for delivery fulfillment while still accepting orders directly through Menuply. This allows restaurants to avoid the high third-party marketplace sales commissions typically associated with traditional delivery apps.",
+    "onboarding.faq.q5.l2": "Restaurants may choose to:",
+    "onboarding.faq.q5.l2.i1": "Absorb the delivery cost",
+    "onboarding.faq.q5.l2.i2": "Partially subsidize it",
+    "onboarding.faq.q5.l2.i3": "Pass the delivery fee directly to the diner",
+    "onboarding.faq.q5.a3":
+      "This gives restaurants substantially more flexibility and control over pricing, margins, customer relationships, and fulfillment strategy.",
+    "onboarding.faq.q6": "Does Menuply support direct online ordering?",
+    "onboarding.faq.q6.a1":
+      "Yes. Diners can place orders directly through your Menuply page. Orders come to you without a per-order percentage taken out.",
+    "onboarding.faq.q6.a2":
+      "You can accept pickup and delivery orders from your existing customers using Menuply as your online ordering channel — no separate website or third-party integration required.",
+    "onboarding.faq.q7": "Why is Menuply focused on lower restaurant transaction costs?",
+    "onboarding.faq.q7.a1":
+      "High transaction costs on delivery platforms have pushed many restaurants to raise menu prices to offset fees. This creates a structural problem: diners pay more, restaurants earn less per order, and the platform keeps the margin in between.",
+    "onboarding.faq.q7.a2":
+      "Menuply is built around the idea that lower structural costs can unlock better long-term value for both restaurants and diners. When restaurants operate more efficiently, they have more room to offer competitive pricing, better deals, and stronger direct relationships with their customers.",
     "foodTruck.signup.title": "Registro de food truck",
     "foodTruck.signup.subtitle": "Publica tu truck y comparte tu menú en vivo.",
     "modifier.required": "Obligatorio",
@@ -760,6 +820,36 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "onboarding.faq.q3.a4":
       "Menuply 也认识到餐厅身份与客户群各不相同：体育酒吧、牛排馆、甜品店、海鲜馆和纯素咖啡馆不应千篇一律，平台通过菜单风格、促销和品牌选项支持多样性。",
     "onboarding.faq.q3.a5": "Menuply 是餐厅商业与发现平台，不是节食应用。",
+    "onboarding.faq.q4": "How do QR ordering materials work?",
+    "onboarding.faq.q4.a1":
+      "Menuply generates a dynamic QR code linked to your restaurant's profile and menu. You can print it on table tents, door signs, receipts, or any physical materials.",
+    "onboarding.faq.q4.a2":
+      "When diners scan it, they land directly on your Menuply menu page and can browse, follow your restaurant, and place orders. The QR code stays the same even if your menu changes.",
+    "onboarding.faq.q5": "Can I use my own delivery drivers?",
+    "onboarding.faq.q5.a1":
+      "Yes. Menuply supports direct online ordering with your own fulfillment — you are not required to use any third-party delivery fleet.",
+    "onboarding.faq.q5.l1": "Restaurants can use:",
+    "onboarding.faq.q5.l1.i1": "Pickup",
+    "onboarding.faq.q5.l1.i2": "In-house delivery",
+    "onboarding.faq.q5.l1.i3": "Third-party delivery providers",
+    "onboarding.faq.q5.a2":
+      "Importantly, restaurants can also use traditional third-party delivery platforms strictly for delivery fulfillment while still accepting orders directly through Menuply. This allows restaurants to avoid the high third-party marketplace sales commissions typically associated with traditional delivery apps.",
+    "onboarding.faq.q5.l2": "Restaurants may choose to:",
+    "onboarding.faq.q5.l2.i1": "Absorb the delivery cost",
+    "onboarding.faq.q5.l2.i2": "Partially subsidize it",
+    "onboarding.faq.q5.l2.i3": "Pass the delivery fee directly to the diner",
+    "onboarding.faq.q5.a3":
+      "This gives restaurants substantially more flexibility and control over pricing, margins, customer relationships, and fulfillment strategy.",
+    "onboarding.faq.q6": "Does Menuply support direct online ordering?",
+    "onboarding.faq.q6.a1":
+      "Yes. Diners can place orders directly through your Menuply page. Orders come to you without a per-order percentage taken out.",
+    "onboarding.faq.q6.a2":
+      "You can accept pickup and delivery orders from your existing customers using Menuply as your online ordering channel — no separate website or third-party integration required.",
+    "onboarding.faq.q7": "Why is Menuply focused on lower restaurant transaction costs?",
+    "onboarding.faq.q7.a1":
+      "High transaction costs on delivery platforms have pushed many restaurants to raise menu prices to offset fees. This creates a structural problem: diners pay more, restaurants earn less per order, and the platform keeps the margin in between.",
+    "onboarding.faq.q7.a2":
+      "Menuply is built around the idea that lower structural costs can unlock better long-term value for both restaurants and diners. When restaurants operate more efficiently, they have more room to offer competitive pricing, better deals, and stronger direct relationships with their customers.",
     "foodTruck.signup.title": "餐车注册",
     "foodTruck.signup.subtitle": "发布餐车并分享实时菜单。",
     "modifier.required": "必选",
