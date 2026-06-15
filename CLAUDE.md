@@ -725,9 +725,19 @@ The primary object under review is the **extracted menu item**. Source photos an
 
 4. **Approve and Reject actions must be visible without scrolling horizontally** for every open item row.
 
-5. **Page quality badges must separate OCR quality from extraction quality.** A page that OCR'd at 100% but produced zero structured items must not display "100% OCR" as the only signal. Show both:
-   - OCR quality score (text recognition confidence) — with `⚠` when `ocr_quality_flags` are present
-   - Extraction quality (structured item count, parse failure, unreadable) — derived separately
+5. **Page quality must be displayed as three separate metrics. Never display "N% OCR" as a single quality indicator.**
+
+   OCR percentage measures text recognition confidence only — it says nothing about whether structured menu items were successfully extracted. A page with corrupted characters or a foreign script may OCR at 100% while producing zero usable items.
+
+   Required separate metrics:
+
+   | Metric | Label | Source |
+   |---|---|---|
+   | Text recognition confidence | **OCR Confidence** | `page_meta.preview.ocr_quality_score` — show `⚠` when `ocr_quality_flags` present |
+   | Number of structured items parsed | **Items Extracted** | `page_meta.preview.item_count` |
+   | Whether extraction succeeded | **Extraction Status** | Derived from `parse_failure`, `accepted`, `readable` — values: items extracted / no items / parse failed / unreadable |
+
+   These three metrics must be shown independently. Merging them back into a single "N% OCR" badge is a regression.
 
 ### What triggers this guardrail
 
