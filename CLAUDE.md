@@ -691,6 +691,59 @@ Any edit to:
 
 ---
 
+## 🔒 REVIEW QUEUE GUARDRAIL (CRITICAL)
+
+**Established:** 2026-06-15
+**File:** `src/pages/owner/OwnerMenuUploadReviewItems.jsx`
+
+The OCR review queue is **item-centric**, not OCR-centric.
+
+### Core rule
+
+The primary object under review is the **extracted menu item**. Source photos and OCR text are supporting evidence — they inform the reviewer's decision but must never dominate the layout.
+
+### Required layout priority (top to bottom, left to right)
+
+| Priority | Element | Notes |
+|---|---|---|
+| 1 | Item name | Editable input when open; bold static text when done |
+| 2 | Price | Editable input when open |
+| 3 | Description | Editable input when open |
+| 4 | Section | Editable input when open |
+| 5 | Hold reasons | Context chips — why the item was held |
+| 6 | Approve / Reject | Primary actions, always visible for open items |
+| Evidence | OCR text | Collapsible per-item toggle — never a standalone column |
+| Evidence | Source photos | Panel above the table — supports decisions, not the focus |
+
+### Hard rules
+
+1. **OCR text must NOT be a table column.** It is shown as a per-item expandable toggle ("Source text") beneath the name field. A reviewer should not see raw OCR before they see the item name.
+
+2. **Source photos appear above the item table** in a collapsible page panel. They are reference material, not the primary UI.
+
+3. **Item name is always the first editable field.** It must appear as the leftmost non-checkbox column in the table.
+
+4. **Approve and Reject actions must be visible without scrolling horizontally** for every open item row.
+
+5. **Page quality badges must separate OCR quality from extraction quality.** A page that OCR'd at 100% but produced zero structured items must not display "100% OCR" as the only signal. Show both:
+   - OCR quality score (text recognition confidence) — with `⚠` when `ocr_quality_flags` are present
+   - Extraction quality (structured item count, parse failure, unreadable) — derived separately
+
+### What triggers this guardrail
+
+Any edit to `OwnerMenuUploadReviewItems.jsx` that:
+- Adds OCR text as a top-level table column
+- Moves item name away from the first column position
+- Hides or removes Approve/Reject buttons from the item row
+- Merges OCR quality and extraction quality into a single badge
+- Makes source photos the dominant visual element above or replacing the item table
+
+### Why this exists
+
+Prior to 2026-06-15, the review queue displayed a wide "OCR Text" column as the first content column in the table, making raw OCR the primary signal. This required reviewers to mentally parse unstructured text before reaching the extracted item data. The refactor placed item name first with OCR text behind a collapsible toggle.
+
+---
+
 ## 🗂️ MANDATORY HANDOFF PRESERVATION GUARDRAIL
 
 **Full rules in:** `/Users/andrebarber/Desktop/menubloc/CLAUDE.md` — section "MANDATORY HANDOFF PRESERVATION GUARDRAIL"
