@@ -5,6 +5,8 @@ const API = (
   (VITE_ENV.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
 ).replace(/\/$/, "");
 
+export const OWNER_API_BASE = API;
+
 async function req(path, opts = {}) {
   const res = await fetch(`${API}${path}`, {
     credentials: "include",

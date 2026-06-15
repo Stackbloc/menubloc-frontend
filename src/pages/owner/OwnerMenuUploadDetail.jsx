@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useParams, Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
@@ -8,14 +8,38 @@ import {
   markOwnerMenuUploadReviewed,
   retryOwnerMenuUpload,
   archiveOwnerMenuUpload,
+  OWNER_API_BASE,
 } from "../../lib/ownerApi.js";
 
 const STATUS_STYLE = {
   pending:      { background: "#e8f0fe", color: "#1a56db" },
+  processing:   { background: "#e8f0fe", color: "#1a56db" },
   failed:       { background: "#fef2f2", color: "#991b1b" },
   needs_review: { background: "#fffbeb", color: "#92400e" },
   published:    { background: "#f0fdf4", color: "#15803d" },
+  stalled:      { background: "#fef2f2", color: "#7c3aed" },
 };
+
+function isStalled(upload) {
+  if (!upload) return false;
+  const s = upload.status || "";
+  if (s !== "open" && s !== "queued" && s !== "processing") return false;
+  if (!upload.created_at) return false;
+  const ageMs = Date.now() - new Date(upload.created_at).getTime();
+  return ageMs > 24 * 60 * 60 * 1000;
+}
+
+function resolveDisplayStatus(upload) {
+  if (!upload) return "pending";
+  if (isStalled(upload)) return "stalled";
+  return upload.display_status || "pending";
+}
+
+function buildImageUrl(relativePath) {
+  if (!relativePath) return null;
+  if (/^https?:\/\//.test(relativePath)) return relativePath;
+  return `${OWNER_API_BASE}${relativePath}`;
+}
 
 export default function OwnerMenuUploadDetail() {
   const { t } = useLanguage();
@@ -25,15 +49,23 @@ export default function OwnerMenuUploadDetail() {
   const [loading, setLoading] = useState(true);
   const [actionMsg, setActionMsg] = useState("");
   const [actionErr, setActionErr] = useState("");
+  const [photoPage, setPhotoPage] = useState(0);
+  const [expandedOcr, setExpandedOcr] = useState({});
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
-    getOwnerMenuUpload(uploadId)
-      .then((d) => setUpload(d.upload))
-      .catch(() => setError("Owner dashboard data is temporarily unavailable."))
-      .finally(() => setLoading(false));
+    try {
+      const d = await getOwnerMenuUpload(uploadId);
+      setUpload(d.upload);
+    } catch {
+      setError("Owner dashboard data is temporarily unavailable.");
+    } finally {
+      setLoading(false);
+    }
   }, [uploadId]);
+
+  useEffect(() => { load(); }, [load]);
 
   async function doAction(apiFn, successMsg) {
     setActionMsg("");
@@ -65,7 +97,10 @@ export default function OwnerMenuUploadDetail() {
     );
   }
 
-  const statusBadge = STATUS_STYLE[upload.display_status] || STATUS_STYLE.pending;
+  const displayStatus = resolveDisplayStatus(upload);
+  const statusBadge = STATUS_STYLE[displayStatus] || STATUS_STYLE.pending;
+  const pages = upload.pages || [];
+  const hasPhotos = pages.some((p) => p.image_url);
 
   return (
     <OwnerLayout title="Upload Detail">
@@ -80,31 +115,47 @@ export default function OwnerMenuUploadDetail() {
 
       {/* Header row */}
       <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 22 }}>
-        <span
-          style={{
-            display: "inline-block",
-            padding: "5px 12px",
-            borderRadius: 8,
-            fontSize: 12,
-            fontWeight: 700,
-            ...statusBadge,
-          }}
-        >
-          {upload.display_status}
+        <span style={{ display: "inline-block", padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, ...statusBadge }}>
+          {displayStatus}
         </span>
         <span style={{ color: OWNER_COLORS.muted, fontSize: 13 }}>
           ID: <code style={{ fontSize: 12 }}>{upload.id}</code>
         </span>
+        {displayStatus === "needs_review" && upload.human_review_items > 0 && (
+          <Link
+            to={`/owner/menu-uploads/${uploadId}/review-items`}
+            style={{
+              marginLeft: "auto",
+              padding: "9px 18px",
+              borderRadius: 10,
+              background: "#92400e",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 13,
+              textDecoration: "none",
+            }}
+          >
+            Review {upload.human_review_items} Items →
+          </Link>
+        )}
       </div>
+
+      {/* Stalled warning */}
+      {displayStatus === "stalled" && (
+        <div style={{ marginBottom: 18, padding: "14px 18px", borderRadius: 12, background: "#f5f3ff", border: "1px solid #c4b5fd", color: "#5b21b6", fontSize: 13, fontWeight: 600 }}>
+          ⚠️ This upload has been pending for over 24 hours with no activity. It may be stalled.
+          Use "Retry Processing" to requeue, or "Archive" to dismiss.
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 18, marginBottom: 18 }}>
         {/* Restaurant identity */}
         <PageCard style={{ padding: 22 }}>
           <SectionTitle title="Restaurant" />
-          <DetailRow label="Name"        value={upload.restaurant_name || "Unknown"} />
-          <DetailRow label="ID"          value={`#${upload.restaurant_id}`} />
-          <DetailRow label="Email"       value={upload.email} />
-          <DetailRow label="Location"    value={upload.city && upload.state ? `${upload.city}, ${upload.state}` : "—"} />
+          <DetailRow label="Name"     value={upload.restaurant_name || "Unknown"} />
+          <DetailRow label="ID"       value={upload.restaurant_id ? `#${upload.restaurant_id}` : "—"} />
+          <DetailRow label="Email"    value={upload.email || "—"} />
+          <DetailRow label="Location" value={upload.city && upload.state ? `${upload.city}, ${upload.state}` : "—"} />
           {upload.menu_id && (
             <DetailRow
               label="Linked Menu"
@@ -116,31 +167,32 @@ export default function OwnerMenuUploadDetail() {
         {/* Upload metadata */}
         <PageCard style={{ padding: 22 }}>
           <SectionTitle title="Upload Info" />
-          <DetailRow label="Upload Type"   value={upload.upload_type || "pdf"} />
-          <DetailRow label="Source File"   value={upload.source_filename || "—"} />
-          <DetailRow label="Submitted"     value={formatDateTime(upload.created_at)} />
-          <DetailRow label="Finished"      value={upload.finished_at ? formatDateTime(upload.finished_at) : "—"} />
-          <DetailRow label="Review Flag"   value={upload.owner_review_flagged ? "Flagged" : "—"} />
-          <DetailRow label="Reviewed"      value={upload.owner_reviewed ? "Yes" : "No"} />
+          <DetailRow label="Upload Type" value={upload.upload_type || "photo"} />
+          <DetailRow label="Source File" value={upload.source_filename || "—"} />
+          <DetailRow label="Submitted"   value={formatDateTime(upload.created_at)} />
+          <DetailRow label="Finished"    value={upload.finished_at ? formatDateTime(upload.finished_at) : "—"} />
+          <DetailRow label="Pages"       value={pages.length > 0 ? pages.length : (upload.page_count || "—")} />
         </PageCard>
       </div>
 
-      {/* Parsing results */}
+      {/* Parsing Results */}
       <PageCard style={{ padding: 22, marginBottom: 18 }}>
-        <SectionTitle title="Parsing Results" subtitle="Item counts from the ingestion report." />
+        <SectionTitle title="Parsing Results" subtitle="Item counts from OCR processing." />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14 }}>
           {[
-            ["Total Parsed",   upload.parsed_item_count],
-            ["Complete",       upload.complete_items],
-            ["Partial",        upload.partial_items],
-            ["Unresolved",     upload.unresolved_items],
-            ["Needs Review",   upload.human_review_items],
+            ["Total Extracted", upload.parsed_item_count],
+            ["Published",       upload.complete_items],
+            ["Partial",         upload.partial_items],
+            ["Rejected",        upload.unresolved_items],
+            ["Needs Review",    upload.human_review_items],
           ].map(([label, value]) => (
-            <div key={label} style={{ padding: 14, borderRadius: 12, background: "#f7f1ea", textAlign: "center" }}>
+            <div key={label} style={{ padding: 14, borderRadius: 12, background: label === "Needs Review" && value > 0 ? "#fffbeb" : "#f7f1ea", textAlign: "center", border: label === "Needs Review" && value > 0 ? "1px solid #fde68a" : "none" }}>
               <div style={{ fontSize: 11, color: OWNER_COLORS.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                 {label}
               </div>
-              <div style={{ fontSize: 26, fontWeight: 800, marginTop: 8 }}>{value ?? 0}</div>
+              <div style={{ fontSize: 26, fontWeight: 800, marginTop: 8, color: label === "Needs Review" && value > 0 ? "#92400e" : "inherit" }}>
+                {value ?? 0}
+              </div>
             </div>
           ))}
         </div>
@@ -164,65 +216,42 @@ export default function OwnerMenuUploadDetail() {
                 textDecoration: "none",
               }}
             >
-              Review Items ({upload.human_review_items})
+              Open Review Queue ({upload.human_review_items} items)
             </Link>
           </div>
         )}
       </PageCard>
 
-      {/* Pages */}
-      {upload.pages?.length > 0 && (
+      {/* Source Photos */}
+      {hasPhotos && (
         <PageCard style={{ padding: 22, marginBottom: 18 }}>
-          <SectionTitle title="Pages" subtitle={`${upload.pages.length} page(s) uploaded`} />
-          <div style={{ display: "grid", gap: 10 }}>
-            {upload.pages.map((p) => (
-              <div
+          <SectionTitle
+            title="Source Photos"
+            subtitle={`${pages.filter((p) => p.image_url).length} page(s) uploaded`}
+          />
+          <SourcePhotoViewer pages={pages} photoPage={photoPage} setPhotoPage={setPhotoPage} />
+        </PageCard>
+      )}
+
+      {/* OCR Output */}
+      {pages.length > 0 && pages.some((p) => p.ocr_text || p.ocr_text_preview) && (
+        <PageCard style={{ padding: 22, marginBottom: 18 }}>
+          <SectionTitle title="OCR Output" subtitle="Raw text extracted from each page." />
+          <div style={{ display: "grid", gap: 14 }}>
+            {pages.map((p) => (
+              <OcrPageBlock
                 key={p.page_number}
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: 12,
-                  background: "#fff",
-                  border: `1px solid ${OWNER_COLORS.line}`,
-                  display: "grid",
-                  gridTemplateColumns: "60px 1fr",
-                  gap: 14,
-                  alignItems: "start",
-                }}
-              >
-                <div style={{ fontWeight: 700, fontSize: 13, paddingTop: 2 }}>Page {p.page_number}</div>
-                <div>
-                  <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 4 }}>
-                    Role: {p.page_role} · Status: {p.status}
-                    {p.item_count > 0 && ` · ${p.item_count} items`}
-                  </div>
-                  {p.ocr_text_preview && (
-                    <pre
-                      style={{
-                        fontSize: 11,
-                        fontFamily: "monospace",
-                        background: "#f8f8f8",
-                        padding: 10,
-                        borderRadius: 8,
-                        maxHeight: 120,
-                        overflow: "auto",
-                        whiteSpace: "pre-wrap",
-                        wordBreak: "break-word",
-                        margin: 0,
-                        color: OWNER_COLORS.ink,
-                      }}
-                    >
-                      {p.ocr_text_preview}
-                    </pre>
-                  )}
-                </div>
-              </div>
+                page={p}
+                expanded={!!expandedOcr[p.page_number]}
+                onToggle={() => setExpandedOcr((prev) => ({ ...prev, [p.page_number]: !prev[p.page_number] }))}
+              />
             ))}
           </div>
         </PageCard>
       )}
 
-      {/* Exception queue */}
-      {upload.exceptions?.length > 0 && (
+      {/* Exception queue (Pipeline B) */}
+      {(upload.exceptions || []).length > 0 && (
         <PageCard style={{ padding: 22, marginBottom: 18 }}>
           <SectionTitle
             title="Exception Queue"
@@ -248,23 +277,8 @@ export default function OwnerMenuUploadDetail() {
                       {ex.failure_type}
                       {ex.confidence_score != null && ` · confidence: ${(ex.confidence_score * 100).toFixed(0)}%`}
                     </div>
-                    {ex.ai_reason && (
-                      <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 4, fontStyle: "italic" }}>
-                        {ex.ai_reason}
-                      </div>
-                    )}
                   </div>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: "3px 8px",
-                      borderRadius: 6,
-                      background: ex.status === "OPEN" ? "#fffbeb" : "#f0fdf4",
-                      color: ex.status === "OPEN" ? "#92400e" : "#15803d",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: ex.status === "OPEN" ? "#fffbeb" : "#f0fdf4", color: ex.status === "OPEN" ? "#92400e" : "#15803d", whiteSpace: "nowrap" }}>
                     {ex.status}
                   </span>
                 </div>
@@ -277,79 +291,331 @@ export default function OwnerMenuUploadDetail() {
       {/* Actions */}
       <PageCard style={{ padding: 22 }}>
         <SectionTitle title="Actions" />
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {upload.status === "finished" && !upload.owner_review_flagged && (
-            <ActionButton
-              label="Flag for Review"
-              onClick={() => doAction(markOwnerMenuUploadReview, "Flagged for review.")}
-            />
-          )}
-          {(upload.status === "finished") && (
-            <ActionButton
-              label="Mark Reviewed"
-              accent
-              onClick={() => doAction(markOwnerMenuUploadReviewed, "Marked as reviewed. Exceptions dismissed.")}
-            />
-          )}
-          {(upload.status === "rejected" || upload.status === "abandoned") && (
-            <ActionButton
-              label="Retry Processing"
-              onClick={() => doAction(retryOwnerMenuUpload, "Upload reopened for retry.")}
-            />
-          )}
-          {upload.status !== "finished" && (
-            <ActionButton
-              label="Archive"
-              onClick={() => doAction(archiveOwnerMenuUpload, "Upload archived.")}
-            />
-          )}
-          {upload.restaurant_id && (
-            <Link
-              to={`/restaurants/${upload.restaurant_id}`}
-              style={{
-                padding: "10px 18px",
-                borderRadius: 10,
-                border: `1px solid ${OWNER_COLORS.line}`,
-                background: "#fff",
-                color: OWNER_COLORS.ink,
-                fontWeight: 700,
-                fontSize: 13,
-                textDecoration: "none",
-              }}
-            >
-              Open Restaurant
-            </Link>
-          )}
-          {upload.menu_id && (
-            <Link
-              to={`/menus/${upload.menu_id}`}
-              style={{
-                padding: "10px 18px",
-                borderRadius: 10,
-                border: `1px solid ${OWNER_COLORS.line}`,
-                background: "#fff",
-                color: OWNER_COLORS.ink,
-                fontWeight: 700,
-                fontSize: 13,
-                textDecoration: "none",
-              }}
-            >
-              Open Menu
-            </Link>
-          )}
-        </div>
+        <StatusActions
+          upload={upload}
+          displayStatus={displayStatus}
+          uploadId={uploadId}
+          doAction={doAction}
+        />
       </PageCard>
     </OwnerLayout>
+  );
+}
+
+function SourcePhotoViewer({ pages, photoPage, setPhotoPage }) {
+  const photoPages = pages.filter((p) => p.image_url);
+  if (!photoPages.length) return null;
+  const current = photoPages[Math.min(photoPage, photoPages.length - 1)];
+  const imageUrl = buildImageUrl(current.image_url);
+
+  return (
+    <div>
+      {/* Navigation */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        <button
+          onClick={() => setPhotoPage((p) => Math.max(0, p - 1))}
+          disabled={photoPage === 0}
+          style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: photoPage === 0 ? "#f3f4f6" : "#fff", cursor: photoPage === 0 ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 13 }}
+        >
+          ← Prev
+        </button>
+        <span style={{ fontSize: 13, color: OWNER_COLORS.muted, fontWeight: 600 }}>
+          Photo {Math.min(photoPage + 1, photoPages.length)} of {photoPages.length}
+          {current.page_role && current.page_role !== "menu_items" && (
+            <span style={{ marginLeft: 8, fontSize: 11, color: OWNER_COLORS.muted }}>({current.page_role})</span>
+          )}
+        </span>
+        <button
+          onClick={() => setPhotoPage((p) => Math.min(photoPages.length - 1, p + 1))}
+          disabled={photoPage >= photoPages.length - 1}
+          style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: photoPage >= photoPages.length - 1 ? "#f3f4f6" : "#fff", cursor: photoPage >= photoPages.length - 1 ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 13 }}
+        >
+          Next →
+        </button>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          {imageUrl && (
+            <>
+              <a
+                href={imageUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", color: OWNER_COLORS.ink, fontWeight: 700, fontSize: 12, textDecoration: "none" }}
+              >
+                View Full Size
+              </a>
+              <a
+                href={imageUrl}
+                download
+                style={{ padding: "6px 14px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", color: OWNER_COLORS.ink, fontWeight: 700, fontSize: 12, textDecoration: "none" }}
+              >
+                Download
+              </a>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Photo */}
+      {imageUrl ? (
+        <div style={{ background: "#111", borderRadius: 12, overflow: "hidden", textAlign: "center", maxHeight: 600 }}>
+          <img
+            src={imageUrl}
+            alt={`Menu page ${current.page_number}`}
+            style={{ maxWidth: "100%", maxHeight: 600, objectFit: "contain" }}
+            onError={(e) => {
+              e.target.style.display = "none";
+              e.target.nextSibling.style.display = "flex";
+            }}
+          />
+          <div
+            style={{
+              display: "none",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 200,
+              color: "#9ca3af",
+              fontSize: 13,
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 32 }}>📷</span>
+            <span>Photo not available for this page</span>
+            <span style={{ fontSize: 11, color: "#6b7280" }}>{current.image_url}</span>
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: 32, background: "#f3f4f6", borderRadius: 12, textAlign: "center", color: OWNER_COLORS.muted, fontSize: 13 }}>
+          No photo available for this page
+        </div>
+      )}
+
+      {/* Thumbnail strip */}
+      {photoPages.length > 1 && (
+        <div style={{ display: "flex", gap: 8, marginTop: 12, overflowX: "auto", padding: "4px 0" }}>
+          {photoPages.map((p, idx) => (
+            <button
+              key={p.page_number}
+              onClick={() => setPhotoPage(idx)}
+              style={{
+                padding: 0,
+                border: idx === photoPage ? `2px solid ${OWNER_COLORS.accent}` : `2px solid transparent`,
+                borderRadius: 8,
+                cursor: "pointer",
+                background: "#f3f4f6",
+                flexShrink: 0,
+                overflow: "hidden",
+                width: 60,
+                height: 60,
+              }}
+            >
+              {p.image_url ? (
+                <img
+                  src={buildImageUrl(p.image_url)}
+                  alt={`Page ${p.page_number}`}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  onError={(e) => { e.target.style.display = "none"; }}
+                />
+              ) : (
+                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: OWNER_COLORS.muted }}>
+                  p{p.page_number}
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Per-page metadata */}
+      {(current.item_count > 0 || current.ocr_quality_score != null) && (
+        <div style={{ display: "flex", gap: 16, marginTop: 10, fontSize: 12, color: OWNER_COLORS.muted }}>
+          {current.item_count > 0 && <span>{current.item_count} items extracted</span>}
+          {current.ocr_quality_score != null && (
+            <span>
+              OCR quality:{" "}
+              <strong style={{ color: current.ocr_quality_score >= 0.9 ? "#15803d" : current.ocr_quality_score >= 0.7 ? "#92400e" : "#991b1b" }}>
+                {(current.ocr_quality_score * 100).toFixed(0)}%
+              </strong>
+            </span>
+          )}
+          {current.ocr_quality_flags?.length > 0 && (
+            <span style={{ color: "#92400e" }}>flags: {current.ocr_quality_flags.join(", ")}</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OcrPageBlock({ page, expanded, onToggle }) {
+  const text = page.ocr_text || page.ocr_text_preview || "";
+  if (!text) return null;
+  const preview = text.slice(0, 400);
+  const isLong = text.length > 400;
+
+  return (
+    <div style={{ borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, overflow: "hidden" }}>
+      <div
+        style={{
+          padding: "10px 14px",
+          background: "#f8f7f4",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          cursor: isLong ? "pointer" : "default",
+        }}
+        onClick={isLong ? onToggle : undefined}
+      >
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <span style={{ fontWeight: 700, fontSize: 12 }}>Page {page.page_number}</span>
+          {page.item_count > 0 && (
+            <span style={{ fontSize: 11, color: OWNER_COLORS.muted }}>{page.item_count} items</span>
+          )}
+          {page.ocr_quality_score != null && (
+            <span
+              style={{
+                fontSize: 10,
+                padding: "1px 6px",
+                borderRadius: 5,
+                fontWeight: 700,
+                background: page.ocr_quality_score >= 0.9 ? "#f0fdf4" : "#fffbeb",
+                color: page.ocr_quality_score >= 0.9 ? "#15803d" : "#92400e",
+              }}
+            >
+              {(page.ocr_quality_score * 100).toFixed(0)}% OCR
+            </span>
+          )}
+        </div>
+        {isLong && (
+          <span style={{ fontSize: 11, color: OWNER_COLORS.accent, fontWeight: 700 }}>
+            {expanded ? "Collapse ▲" : "Expand ▼"}
+          </span>
+        )}
+      </div>
+      <pre
+        style={{
+          fontSize: 11,
+          fontFamily: "monospace",
+          background: "#f9f9f9",
+          padding: 14,
+          maxHeight: expanded ? "none" : 120,
+          overflow: expanded ? "visible" : "hidden",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          margin: 0,
+          color: OWNER_COLORS.ink,
+          lineHeight: 1.5,
+        }}
+      >
+        {expanded ? text : preview}
+        {!expanded && isLong && <span style={{ color: OWNER_COLORS.muted }}> …</span>}
+      </pre>
+    </div>
+  );
+}
+
+function StatusActions({ upload, displayStatus, uploadId, doAction }) {
+  const actions = [];
+
+  if (displayStatus === "needs_review" && upload.human_review_items > 0) {
+    actions.push(
+      <Link
+        key="review"
+        to={`/owner/menu-uploads/${uploadId}/review-items`}
+        style={{
+          display: "inline-block",
+          padding: "10px 18px",
+          borderRadius: 10,
+          background: OWNER_COLORS.accent,
+          color: "#fff",
+          fontWeight: 700,
+          fontSize: 13,
+          textDecoration: "none",
+        }}
+      >
+        Review Items ({upload.human_review_items})
+      </Link>
+    );
+  }
+
+  if (displayStatus === "published") {
+    if (upload.menu_id) {
+      actions.push(
+        <Link
+          key="view-menu"
+          to={`/menus/${upload.menu_id}`}
+          style={{ padding: "10px 18px", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", color: OWNER_COLORS.ink, fontWeight: 700, fontSize: 13, textDecoration: "none" }}
+        >
+          View Menu
+        </Link>
+      );
+    }
+    if (upload.restaurant_id) {
+      actions.push(
+        <Link
+          key="view-restaurant"
+          to={`/restaurants/${upload.restaurant_id}`}
+          style={{ padding: "10px 18px", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", color: OWNER_COLORS.ink, fontWeight: 700, fontSize: 13, textDecoration: "none" }}
+        >
+          View Restaurant
+        </Link>
+      );
+    }
+    if (upload.status === "finished" && !upload.owner_review_flagged) {
+      actions.push(
+        <ActionButton key="flag" label="Flag for Review" onClick={() => doAction(markOwnerMenuUploadReview, "Flagged for review.")} />
+      );
+    }
+  }
+
+  if (displayStatus === "pending" || displayStatus === "processing") {
+    actions.push(
+      <ActionButton
+        key="refresh"
+        label="Refresh Status"
+        onClick={async () => {
+          const refreshed = await getOwnerMenuUpload(uploadId);
+          // Parent state updated via doAction, but we can also just reload
+          window.location.reload();
+        }}
+      />
+    );
+  }
+
+  if (displayStatus === "stalled" || displayStatus === "failed" || upload.status === "rejected" || upload.status === "abandoned") {
+    actions.push(
+      <ActionButton key="retry" label="Retry Processing" onClick={() => doAction(retryOwnerMenuUpload, "Upload reopened for retry.")} />
+    );
+  }
+
+  if (upload.status !== "finished") {
+    actions.push(
+      <ActionButton key="archive" label="Archive" onClick={() => doAction(archiveOwnerMenuUpload, "Upload archived.")} />
+    );
+  }
+
+  if (upload.status === "finished") {
+    actions.push(
+      <ActionButton
+        key="mark-reviewed"
+        label="Mark Reviewed"
+        accent
+        onClick={() => doAction(markOwnerMenuUploadReviewed, "Marked as reviewed.")}
+      />
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      {actions}
+    </div>
   );
 }
 
 function BackLink() {
   return (
     <div style={{ marginBottom: 20 }}>
-      <Link
-        to="/owner/menu-uploads"
-        style={{ color: OWNER_COLORS.muted, fontSize: 13, textDecoration: "none", fontWeight: 600 }}
-      >
+      <Link to="/owner/menu-uploads" style={{ color: OWNER_COLORS.muted, fontSize: 13, textDecoration: "none", fontWeight: 600 }}>
         ← Menu Uploads
       </Link>
     </div>
@@ -358,16 +624,7 @@ function BackLink() {
 
 function DetailRow({ label, value }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        gap: 12,
-        padding: "8px 0",
-        borderBottom: `1px solid ${OWNER_COLORS.line}`,
-        fontSize: 13,
-      }}
-    >
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "8px 0", borderBottom: `1px solid ${OWNER_COLORS.line}`, fontSize: 13 }}>
       <span style={{ color: OWNER_COLORS.muted, flexShrink: 0 }}>{label}</span>
       <span style={{ fontWeight: 600, textAlign: "right" }}>{value ?? "—"}</span>
     </div>

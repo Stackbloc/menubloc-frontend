@@ -6,7 +6,14 @@ import {
   approveReviewItem,
   rejectReviewItem,
   bulkReviewItems,
+  OWNER_API_BASE,
 } from "../../lib/ownerApi.js";
+
+function buildImageUrl(relativePath) {
+  if (!relativePath) return null;
+  if (/^https?:\/\//.test(relativePath)) return relativePath;
+  return `${OWNER_API_BASE}${relativePath}`;
+}
 
 const STATUS_BADGE = {
   open:     { background: "#fffbeb", color: "#92400e" },
@@ -91,6 +98,8 @@ export default function OwnerMenuUploadReviewItems() {
   const { uploadId } = useParams();
   const [items, setItems] = useState([]);
   const [counts, setCounts] = useState({ open: 0, edited: 0, approved: 0, rejected: 0 });
+  const [pages, setPages] = useState([]);
+  const [activePage, setActivePage] = useState(null);
   const [edits, setEdits] = useState({});
   const [selected, setSelected] = useState(new Set());
   const [busy, setBusy] = useState(new Set());
@@ -106,6 +115,7 @@ export default function OwnerMenuUploadReviewItems() {
       const data = await getUploadReviewItems(uploadId);
       setItems(data.items || []);
       setCounts(data.counts || { open: 0, edited: 0, approved: 0, rejected: 0 });
+      setPages(data.pages || []);
       const initEdits = {};
       for (const it of data.items || []) {
         initEdits[it.id] = {
@@ -238,6 +248,103 @@ export default function OwnerMenuUploadReviewItems() {
         <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "#f0fdf4", color: "#15803d", fontSize: 13, fontWeight: 600 }}>
           {statusMsg}
         </div>
+      )}
+
+      {/* Source Pages Panel */}
+      {pages.length > 0 && (
+        <PageCard style={{ padding: 18, marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <span style={{ fontWeight: 700, fontSize: 13 }}>Source Photos ({pages.length} pages)</span>
+            {activePage && (
+              <button onClick={() => setActivePage(null)} style={{ background: "none", border: "none", color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                Close ✕
+              </button>
+            )}
+          </div>
+          {/* Thumbnail strip */}
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "2px 0" }}>
+            {pages.map((p) => (
+              <button
+                key={p.page_number}
+                onClick={() => setActivePage(activePage?.page_number === p.page_number ? null : p)}
+                style={{
+                  padding: 0,
+                  border: activePage?.page_number === p.page_number ? `2px solid ${OWNER_COLORS.accent}` : `2px solid transparent`,
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  background: "#f3f4f6",
+                  flexShrink: 0,
+                  overflow: "hidden",
+                  width: 72,
+                  height: 72,
+                  position: "relative",
+                }}
+                title={`Page ${p.page_number}${p.item_count ? ` · ${p.item_count} items` : ""}`}
+              >
+                {p.image_url ? (
+                  <img
+                    src={buildImageUrl(p.image_url)}
+                    alt={`Page ${p.page_number}`}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={(e) => { e.target.style.display = "none"; }}
+                  />
+                ) : (
+                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: OWNER_COLORS.muted }}>
+                    P{p.page_number}
+                  </div>
+                )}
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: 9, textAlign: "center", padding: "2px 0", fontWeight: 700 }}>
+                  {p.page_number}
+                </div>
+              </button>
+            ))}
+          </div>
+          {/* Expanded page view */}
+          {activePage && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 10 }}>
+                <span style={{ fontWeight: 700, fontSize: 13 }}>Page {activePage.page_number}</span>
+                {activePage.item_count > 0 && <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>{activePage.item_count} items extracted</span>}
+                {activePage.ocr_quality_score != null && (
+                  <span style={{ fontSize: 11, padding: "1px 6px", borderRadius: 5, fontWeight: 700, background: activePage.ocr_quality_score >= 0.9 ? "#f0fdf4" : "#fffbeb", color: activePage.ocr_quality_score >= 0.9 ? "#15803d" : "#92400e" }}>
+                    {(activePage.ocr_quality_score * 100).toFixed(0)}% OCR
+                  </span>
+                )}
+                {activePage.image_url && (
+                  <a href={buildImageUrl(activePage.image_url)} target="_blank" rel="noreferrer" style={{ marginLeft: "auto", fontSize: 12, color: OWNER_COLORS.accent, fontWeight: 700, textDecoration: "none" }}>
+                    View Full Size ↗
+                  </a>
+                )}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                {/* Photo */}
+                <div>
+                  {activePage.image_url ? (
+                    <div style={{ background: "#111", borderRadius: 10, overflow: "hidden", textAlign: "center" }}>
+                      <img
+                        src={buildImageUrl(activePage.image_url)}
+                        alt={`Page ${activePage.page_number}`}
+                        style={{ maxWidth: "100%", maxHeight: 400, objectFit: "contain" }}
+                        onError={(e) => { e.target.parentNode.innerHTML = '<div style="padding:40px;color:#9ca3af;text-align:center">Photo unavailable</div>'; }}
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ padding: 32, background: "#f3f4f6", borderRadius: 10, textAlign: "center", color: OWNER_COLORS.muted, fontSize: 13 }}>
+                      No photo for this page
+                    </div>
+                  )}
+                </div>
+                {/* OCR Text */}
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>OCR Text</div>
+                  <pre style={{ fontSize: 10, fontFamily: "monospace", background: "#f9f9f9", padding: 12, borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, maxHeight: 360, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: OWNER_COLORS.ink, lineHeight: 1.5 }}>
+                    {activePage.ocr_text || "No OCR text available for this page."}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          )}
+        </PageCard>
       )}
 
       {/* Live counts */}
