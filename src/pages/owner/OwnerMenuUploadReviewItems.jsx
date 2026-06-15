@@ -86,12 +86,61 @@ function HoldReasonChips({ reasons }) {
   );
 }
 
-function QualityScore({ ocr, extraction }) {
+function OcrQualityBadge({ score, flags }) {
+  if (score == null) return null;
+  const pct = (score * 100).toFixed(0);
+  const hasFlags = Array.isArray(flags) && flags.length > 0;
+  const color = hasFlags ? "#92400e" : score >= 0.7 ? "#15803d" : score >= 0.4 ? "#92400e" : "#991b1b";
+  const bg = hasFlags ? "#fffbeb" : score >= 0.7 ? "#f0fdf4" : score >= 0.4 ? "#fffbeb" : "#fef2f2";
+  return (
+    <span title={hasFlags ? `Flags: ${flags.join(", ")}` : undefined} style={{ display: "inline-block", fontSize: 10, padding: "2px 6px", borderRadius: 5, fontWeight: 700, background: bg, color }}>
+      {hasFlags ? "⚠ " : ""}{pct}% OCR
+    </span>
+  );
+}
+
+function ExtractionQualityBadge({ itemCount, parseFailed, accepted, readable }) {
+  if (parseFailed) {
+    return <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 5, fontWeight: 700, background: "#fef2f2", color: "#991b1b" }}>Parse failed</span>;
+  }
+  if (accepted === false && readable === false) {
+    return <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 5, fontWeight: 700, background: "#fef2f2", color: "#991b1b" }}>Unreadable</span>;
+  }
+  if (itemCount > 0) {
+    return <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 5, fontWeight: 700, background: "#f0fdf4", color: "#15803d" }}>{itemCount} item{itemCount !== 1 ? "s" : ""}</span>;
+  }
+  if (accepted === false) {
+    return <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 5, fontWeight: 700, background: "#fffbeb", color: "#92400e" }}>No items extracted</span>;
+  }
+  return null;
+}
+
+function ItemQualityBadge({ ocr, extraction }) {
   const score = ocr != null ? Number(ocr) : extraction != null ? Number(extraction) : null;
   if (score == null) return <span style={{ color: OWNER_COLORS.muted }}>—</span>;
   const pct = (score * 100).toFixed(0);
   const color = score >= 0.7 ? "#15803d" : score >= 0.4 ? "#92400e" : "#991b1b";
-  return <span style={{ fontWeight: 700, color }}>{pct}%</span>;
+  return <span style={{ fontWeight: 700, color, fontSize: 12 }}>{pct}%</span>;
+}
+
+function SourceTextToggle({ text }) {
+  const [open, setOpen] = useState(false);
+  if (!text) return <span style={{ color: OWNER_COLORS.muted, fontSize: 11 }}>—</span>;
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: OWNER_COLORS.accent, fontSize: 11, fontWeight: 600 }}
+      >
+        {open ? "Hide" : "Source text"}
+      </button>
+      {open && (
+        <pre style={{ marginTop: 6, fontSize: 10, fontFamily: "monospace", background: "#f9f9f9", padding: "8px 10px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, maxHeight: 120, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", color: OWNER_COLORS.muted, lineHeight: 1.4 }}>
+          {text}
+        </pre>
+      )}
+    </div>
+  );
 }
 
 export default function OwnerMenuUploadReviewItems() {
@@ -276,7 +325,7 @@ export default function OwnerMenuUploadReviewItems() {
       {pages.length > 0 && (
         <PageCard style={{ padding: 18, marginBottom: 18 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <span style={{ fontWeight: 700, fontSize: 13 }}>Source Photos ({pages.length} pages)</span>
+            <span style={{ fontWeight: 700, fontSize: 13 }}>Source Pages ({pages.length} pages)</span>
             {activePage && (
               <button onClick={() => setActivePage(null)} style={{ background: "none", border: "none", color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
                 Close ✕
@@ -324,17 +373,20 @@ export default function OwnerMenuUploadReviewItems() {
           {/* Expanded page view */}
           {activePage && (
             <div style={{ marginTop: 14 }}>
-              <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 10 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
                 <span style={{ fontWeight: 700, fontSize: 13 }}>Page {activePage.page_number}</span>
-                {activePage.item_count > 0 && <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>{activePage.item_count} items extracted</span>}
-                {activePage.ocr_quality_score != null && (
-                  <span style={{ fontSize: 11, padding: "1px 6px", borderRadius: 5, fontWeight: 700, background: activePage.ocr_quality_score >= 0.9 ? "#f0fdf4" : "#fffbeb", color: activePage.ocr_quality_score >= 0.9 ? "#15803d" : "#92400e" }}>
-                    {(activePage.ocr_quality_score * 100).toFixed(0)}% OCR
-                  </span>
-                )}
+                {/* OCR quality — measures text recognition */}
+                <OcrQualityBadge score={activePage.ocr_quality_score} flags={activePage.ocr_quality_flags} />
+                {/* Extraction quality — measures structured item extraction */}
+                <ExtractionQualityBadge
+                  itemCount={activePage.item_count}
+                  parseFailed={activePage.extraction_parse_failure}
+                  accepted={activePage.extraction_accepted}
+                  readable={activePage.extraction_readable}
+                />
                 {activePage.image_url && (
                   <a href={buildImageUrl(activePage.image_url)} target="_blank" rel="noreferrer" style={{ marginLeft: "auto", fontSize: 12, color: OWNER_COLORS.accent, fontWeight: 700, textDecoration: "none" }}>
-                    View Full Size ↗
+                    Full size ↗
                   </a>
                 )}
               </div>
@@ -358,7 +410,7 @@ export default function OwnerMenuUploadReviewItems() {
                 </div>
                 {/* OCR Text */}
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>OCR Text</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>OCR Text (supporting evidence)</div>
                   <pre style={{ fontSize: 10, fontFamily: "monospace", background: "#f9f9f9", padding: 12, borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, maxHeight: 360, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: OWNER_COLORS.ink, lineHeight: 1.5 }}>
                     {activePage.ocr_text || "No OCR text available for this page."}
                   </pre>
@@ -403,7 +455,7 @@ export default function OwnerMenuUploadReviewItems() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Item table */}
       {items.length === 0 ? (
         <PageCard style={{ padding: 40, textAlign: "center", color: OWNER_COLORS.muted, fontSize: 14 }}>
           No review items found for this upload.
@@ -417,13 +469,12 @@ export default function OwnerMenuUploadReviewItems() {
                   <th style={th}>
                     <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: "pointer" }} />
                   </th>
-                  <th style={{ ...th, width: 180 }}>OCR Text</th>
-                  <th style={{ ...th, width: 160 }}>Name</th>
-                  <th style={{ ...th, width: 120 }}>Description</th>
+                  <th style={{ ...th, width: 200 }}>Name</th>
                   <th style={{ ...th, width: 80 }}>Price</th>
+                  <th style={{ ...th, width: 160 }}>Description</th>
                   <th style={{ ...th, width: 100 }}>Section</th>
                   <th style={{ ...th, width: 160 }}>Hold Reasons</th>
-                  <th style={{ ...th, width: 60, textAlign: "center" }}>Score</th>
+                  <th style={{ ...th, width: 80, textAlign: "center" }}>Quality</th>
                   <th style={{ ...th, width: 70, textAlign: "center" }}>Status</th>
                   <th style={{ ...th, textAlign: "right" }}>Actions</th>
                 </tr>
@@ -462,55 +513,28 @@ export default function OwnerMenuUploadReviewItems() {
                         )}
                       </td>
 
-                      {/* OCR Text */}
-                      <td style={td}>
-                        <div
-                          style={{
-                            maxWidth: 180,
-                            maxHeight: 72,
-                            overflow: "auto",
-                            fontFamily: "monospace",
-                            fontSize: 10,
-                            whiteSpace: "pre-wrap",
-                            color: OWNER_COLORS.muted,
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {item.original_text || item.raw_text || "—"}
-                        </div>
-                      </td>
-
-                      {/* Name */}
+                      {/* Name — primary field */}
                       <td style={td}>
                         {isDone ? (
-                          <span style={{ fontWeight: 600 }}>
-                            {item.parsed_name || item.proposed_item_name || "—"}
-                          </span>
+                          <div>
+                            <span style={{ fontWeight: 600 }}>
+                              {item.parsed_name || item.proposed_item_name || "—"}
+                            </span>
+                            <SourceTextToggle text={item.original_text || item.raw_text} />
+                          </div>
                         ) : (
-                          <input
-                            type="text"
-                            value={edit.name || ""}
-                            onChange={(e) => updateEdit(item.id, "name", e.target.value)}
-                            style={inputStyle}
-                            placeholder="Item name"
-                          />
-                        )}
-                      </td>
-
-                      {/* Description */}
-                      <td style={td}>
-                        {isDone ? (
-                          <span style={{ color: OWNER_COLORS.muted, fontSize: 11 }}>
-                            {item.parsed_description || item.proposed_description || "—"}
-                          </span>
-                        ) : (
-                          <input
-                            type="text"
-                            value={edit.description || ""}
-                            onChange={(e) => updateEdit(item.id, "description", e.target.value)}
-                            style={inputStyle}
-                            placeholder="Description"
-                          />
+                          <div>
+                            <input
+                              type="text"
+                              value={edit.name || ""}
+                              onChange={(e) => updateEdit(item.id, "name", e.target.value)}
+                              style={inputStyle}
+                              placeholder="Item name"
+                            />
+                            <div style={{ marginTop: 4 }}>
+                              <SourceTextToggle text={item.original_text || item.raw_text} />
+                            </div>
+                          </div>
                         )}
                       </td>
 
@@ -535,6 +559,23 @@ export default function OwnerMenuUploadReviewItems() {
                         )}
                       </td>
 
+                      {/* Description */}
+                      <td style={td}>
+                        {isDone ? (
+                          <span style={{ color: OWNER_COLORS.muted, fontSize: 11 }}>
+                            {item.parsed_description || item.proposed_description || "—"}
+                          </span>
+                        ) : (
+                          <input
+                            type="text"
+                            value={edit.description || ""}
+                            onChange={(e) => updateEdit(item.id, "description", e.target.value)}
+                            style={inputStyle}
+                            placeholder="Description"
+                          />
+                        )}
+                      </td>
+
                       {/* Section */}
                       <td style={td}>
                         {isDone ? (
@@ -555,9 +596,9 @@ export default function OwnerMenuUploadReviewItems() {
                         <HoldReasonChips reasons={item.hold_reasons} />
                       </td>
 
-                      {/* Quality Score */}
+                      {/* Quality */}
                       <td style={{ ...td, textAlign: "center" }}>
-                        <QualityScore ocr={item.ocr_quality_score} extraction={item.extraction_quality_score} />
+                        <ItemQualityBadge ocr={item.ocr_quality_score} extraction={item.extraction_quality_score} />
                       </td>
 
                       {/* Status */}
