@@ -224,6 +224,7 @@ function asBool(v) {
 function fmtPrice(row) {
   const cents = getConsumerDisplayPrice(row) ?? getConsumerDisplayPrice(row?.item);
   if (cents != null && cents > 0) return "$" + Math.round(cents / 100);
+  if (row?.price_resolution_source === "unavailable") return "Price varies";
   return "";
 }
 
