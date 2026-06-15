@@ -132,6 +132,12 @@
   color: #fff;
 }
 
+.ot-button--danger-outline {
+  border: 1px solid #f04438;
+  background: #fff;
+  color: #b42318;
+}
+
 .ot-restaurant-select {
   max-width: 260px;
   padding: 0 14px;
@@ -185,6 +191,113 @@
   border: 2px solid #f04438;
   background: #fef3f2;
   color: #b42318;
+}
+
+.ot-pwa-status {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 18px 20px;
+  border: 2px solid #1f4e3d;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ot-pwa-status__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ot-pwa-status__header span,
+.ot-pwa-related strong {
+  display: block;
+  color: #667085;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.ot-pwa-status__header strong {
+  display: block;
+  margin-top: 2px;
+  color: #101828;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.ot-pwa-status__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ot-pwa-status__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.ot-pwa-status__grid div {
+  min-height: 88px;
+  padding: 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.ot-pwa-status__grid dt {
+  margin: 0;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ot-pwa-status__grid dd {
+  margin: 8px 0 0;
+  color: #101828;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.ot-pwa-related {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.ot-pwa-related p {
+  margin: 0;
+  color: #475467;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ot-pwa-related pre {
+  overflow: auto;
+  max-height: 180px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #101828;
+  color: #f8fafc;
+  font-size: 13px;
+}
+
+.ot-pwa-reset-message {
+  padding: 12px;
+  border: 1px solid #fedf89;
+  border-radius: 8px;
+  background: #fffaeb;
+  color: #93370d;
+  font-size: 15px;
+  font-weight: 900;
 }
 
 .ot-alert-band,
@@ -655,6 +768,7 @@
   .ot-header,
   .ot-alert-band,
   .ot-status-panel,
+  .ot-pwa-status__header,
   .ot-push-foundation,
   .ot-detail-header {
     flex-direction: column;
@@ -679,6 +793,10 @@
 
   .ot-availability {
     grid-template-columns: 1fr;
+  }
+
+  .ot-pwa-status__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .ot-total {

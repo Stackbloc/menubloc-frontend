@@ -96,36 +96,133 @@ function useOnlineStatus() {
 
 function useInstallPrompt() {
   const [promptEvent, setPromptEvent] = useState(null);
-  const [installed, setInstalled] = useState(false);
+  const [beforeInstallPromptReceived, setBeforeInstallPromptReceived] = useState(() => {
+    return localStorage.getItem("menuplyOperatorPwa.beforeInstallPromptReceived") === "true";
+  });
+  const [appInstalledEventFired, setAppInstalledEventFired] = useState(() => {
+    return localStorage.getItem("menuplyOperatorPwa.appInstalledEventFired") === "true";
+  });
+  const [standalone, setStandalone] = useState(false);
+  const [serviceWorkerRegistered, setServiceWorkerRegistered] = useState(false);
+  const [relatedApps, setRelatedApps] = useState(null);
+  const [relatedAppsError, setRelatedAppsError] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
+
+  const refreshDiagnostics = useCallback(async () => {
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    setStandalone(isStandalone);
+    console.info("[Menuply Operator PWA] display-mode standalone:", isStandalone);
+
+    if ("serviceWorker" in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.getRegistration("/");
+        const hasRegistration = !!registration;
+        setServiceWorkerRegistered(hasRegistration);
+        console.info("[Menuply Operator PWA] service worker registered:", hasRegistration, registration || null);
+      } catch (error) {
+        setServiceWorkerRegistered(false);
+        console.warn("[Menuply Operator PWA] service worker registration check failed:", error);
+      }
+    } else {
+      setServiceWorkerRegistered(false);
+      console.info("[Menuply Operator PWA] service workers unavailable in this browser.");
+    }
+
+    if (typeof navigator.getInstalledRelatedApps === "function") {
+      try {
+        const apps = await navigator.getInstalledRelatedApps();
+        setRelatedApps(apps);
+        setRelatedAppsError("");
+        console.info("[Menuply Operator PWA] getInstalledRelatedApps results:", apps);
+      } catch (error) {
+        setRelatedApps([]);
+        setRelatedAppsError(error.message || "Unable to read installed related apps.");
+        console.warn("[Menuply Operator PWA] getInstalledRelatedApps failed:", error);
+      }
+    } else {
+      setRelatedApps(null);
+      setRelatedAppsError("navigator.getInstalledRelatedApps is not available in this browser.");
+      console.info("[Menuply Operator PWA] getInstalledRelatedApps unavailable.");
+    }
+  }, []);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
+      console.info("[Menuply Operator PWA] beforeinstallprompt received:", event);
       event.preventDefault();
+      localStorage.setItem("menuplyOperatorPwa.beforeInstallPromptReceived", "true");
+      setBeforeInstallPromptReceived(true);
       setPromptEvent(event);
     };
     const handleInstalled = () => {
-      setInstalled(true);
+      console.info("[Menuply Operator PWA] appinstalled event fired.");
+      localStorage.setItem("menuplyOperatorPwa.appInstalledEventFired", "true");
+      setAppInstalledEventFired(true);
       setPromptEvent(null);
+      refreshDiagnostics();
     };
 
+    queueMicrotask(() => {
+      refreshDiagnostics();
+    });
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleInstalled);
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleInstalled);
     };
-  }, []);
+  }, [refreshDiagnostics]);
 
   const install = useCallback(async () => {
     if (!promptEvent) return false;
+    console.info("[Menuply Operator PWA] install prompt opened.");
     promptEvent.prompt();
     const result = await promptEvent.userChoice.catch(() => null);
-    if (result?.outcome === "accepted") setInstalled(true);
+    console.info("[Menuply Operator PWA] install prompt result:", result);
     setPromptEvent(null);
+    refreshDiagnostics();
     return result?.outcome === "accepted";
-  }, [promptEvent]);
+  }, [promptEvent, refreshDiagnostics]);
 
-  return { canInstall: !!promptEvent, installed, install };
+  const resetPwaState = useCallback(async () => {
+    console.warn("[Menuply Operator PWA] Reset PWA State requested.");
+    setResetMessage("Resetting PWA state...");
+    localStorage.removeItem("menuplyOperatorPwa.beforeInstallPromptReceived");
+    localStorage.removeItem("menuplyOperatorPwa.appInstalledEventFired");
+    setBeforeInstallPromptReceived(false);
+    setAppInstalledEventFired(false);
+    setPromptEvent(null);
+
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations().catch(() => []);
+      await Promise.all(registrations.map((registration) => registration.unregister().catch(() => false)));
+      console.warn("[Menuply Operator PWA] service workers unregistered:", registrations.length);
+    }
+
+    if ("caches" in window) {
+      const cacheNames = await caches.keys().catch(() => []);
+      const pwaCacheNames = cacheNames.filter((cacheName) => cacheName.startsWith("menuply-operator-pwa"));
+      await Promise.all(pwaCacheNames.map((cacheName) => caches.delete(cacheName).catch(() => false)));
+      console.warn("[Menuply Operator PWA] PWA caches cleared:", pwaCacheNames);
+    }
+
+    setResetMessage("PWA state reset. Close Chrome fully, reopen, then revisit /operator/tablet.");
+    refreshDiagnostics();
+  }, [refreshDiagnostics]);
+
+  return {
+    appInstalledEventFired,
+    beforeInstallPromptReceived,
+    canInstall: !!promptEvent,
+    install,
+    refreshDiagnostics,
+    relatedApps,
+    relatedAppsError,
+    resetMessage,
+    resetPwaState,
+    serviceWorkerRegistered,
+    standalone,
+  };
 }
 
 function PrintTicket({ order, restaurantName }) {
@@ -179,6 +276,68 @@ function InstallPanel({ canInstall, installed, install, standalone }) {
         </div>
       )}
     </div>
+  );
+}
+
+function yesNo(value) {
+  return value ? "Yes" : "No";
+}
+
+function PwaStatusPanel({ diagnostics }) {
+  const relatedAppsAvailable = Array.isArray(diagnostics.relatedApps);
+  return (
+    <section className="ot-pwa-status" aria-label="PWA Status">
+      <div className="ot-pwa-status__header">
+        <div>
+          <span>PWA Status</span>
+          <strong>Tablet install diagnostics</strong>
+        </div>
+        <div className="ot-pwa-status__actions">
+          <button type="button" className="ot-button ot-button--secondary" onClick={diagnostics.refreshDiagnostics}>
+            Refresh PWA Status
+          </button>
+          <button type="button" className="ot-button ot-button--danger-outline" onClick={diagnostics.resetPwaState}>
+            Reset PWA State
+          </button>
+        </div>
+      </div>
+
+      <dl className="ot-pwa-status__grid">
+        <div>
+          <dt>beforeinstallprompt received</dt>
+          <dd>{yesNo(diagnostics.beforeInstallPromptReceived)}</dd>
+        </div>
+        <div>
+          <dt>service worker registered</dt>
+          <dd>{yesNo(diagnostics.serviceWorkerRegistered)}</dd>
+        </div>
+        <div>
+          <dt>appinstalled event fired</dt>
+          <dd>{yesNo(diagnostics.appInstalledEventFired)}</dd>
+        </div>
+        <div>
+          <dt>display-mode standalone</dt>
+          <dd>{yesNo(diagnostics.standalone)}</dd>
+        </div>
+      </dl>
+
+      <div className="ot-pwa-related">
+        <strong>navigator.getInstalledRelatedApps()</strong>
+        {relatedAppsAvailable ? (
+          diagnostics.relatedApps.length > 0 ? (
+            <pre>{JSON.stringify(diagnostics.relatedApps, null, 2)}</pre>
+          ) : (
+            <p>Available; returned an empty list.</p>
+          )
+        ) : (
+          <p>{diagnostics.relatedAppsError || "Not checked yet."}</p>
+        )}
+      </div>
+
+      {diagnostics.resetMessage ? (
+        <div className="ot-pwa-reset-message">{diagnostics.resetMessage}</div>
+      ) : null}
+    </section>
   );
 }
 
@@ -255,8 +414,7 @@ export default function OperatorTabletPage() {
   const restaurantId = selectedRestaurant?.id;
   const restaurantName = selectedRestaurant?.restaurant_name || selectedRestaurant?.name || "Restaurant";
   const isOnline = useOnlineStatus();
-  const { canInstall, installed, install } = useInstallPrompt();
-  const [standalone, setStandalone] = useState(false);
+  const pwaDiagnostics = useInstallPrompt();
   const [orders, setOrders] = useState([]);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [availability, setAvailability] = useState(null);
@@ -282,7 +440,6 @@ export default function OperatorTabletPage() {
 
   useEffect(() => {
     document.title = "Menuply Operator";
-    setStandalone(window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true);
   }, []);
 
   useEffect(() => {
@@ -486,7 +643,12 @@ export default function OperatorTabletPage() {
               ))}
             </select>
           ) : null}
-          <InstallPanel canInstall={canInstall} installed={installed} install={install} standalone={standalone} />
+          <InstallPanel
+            canInstall={pwaDiagnostics.canInstall}
+            installed={pwaDiagnostics.appInstalledEventFired}
+            install={pwaDiagnostics.install}
+            standalone={pwaDiagnostics.standalone}
+          />
           <button type="button" className="ot-button ot-button--secondary" onClick={() => navigate("/operator/orders")}>
             Desktop Orders
           </button>
@@ -502,6 +664,7 @@ export default function OperatorTabletPage() {
         </div>
       ) : null}
       {error ? <div className="ot-error" role="alert">{error}</div> : null}
+      <PwaStatusPanel diagnostics={pwaDiagnostics} />
 
       {!selectedRestaurant ? (
         <section className="ot-empty">
