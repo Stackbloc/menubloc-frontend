@@ -56,6 +56,7 @@ import OperatorDashboard from "./pages/operator/OperatorDashboard.jsx";
 import OperatorDeliveryPage from "./pages/operator/OperatorDeliveryPage.jsx";
 import RestaurantOrdersPage from "./pages/operator/RestaurantOrdersPage.jsx";
 import RestaurantOrderDetailPage from "./pages/operator/RestaurantOrderDetailPage.jsx";
+import OperatorTabletPage from "./pages/operator/OperatorTabletPage.jsx";
 import OperatorMenuEditor from "./pages/operator/OperatorMenuEditor.jsx";
 import OperatorMenuCameraUpload from "./pages/operator/OperatorMenuCameraUpload.jsx";
 import OperatorDealsEditor from "./pages/operator/OperatorDealsEditor.jsx";
@@ -488,7 +489,8 @@ function AppShell({ easyMenu, crmHost }) {
   const joinLandingRoute = isJoinLandingPath(location.pathname);
   const joinSignupRoute = location.pathname === "/restaurant/signup/free-profile";
   const restaurantOnboardingRoute = location.pathname === "/restaurant/onboarding";
-  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute || restaurantOnboardingRoute;
+  const operatorTabletRoute = location.pathname === "/operator/tablet";
+  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute || restaurantOnboardingRoute || operatorTabletRoute;
 
   return (
     <>
@@ -605,6 +607,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorResetPassword />} />
         <Route path="/operator/claim" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorClaimSearch /></OperatorRoute>} />
         <Route path="/operator" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDashboard /></OperatorRoute>} />
+        <Route path="/operator/tablet" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorTabletPage /></OperatorRoute>} />
         <Route path="/operator/orders" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantOrdersPage /></OperatorRoute>} />
         <Route path="/operator/orders/:orderId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantOrderDetailPage /></OperatorRoute>} />
         <Route path="/operator/delivery" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorDeliveryPage /></OperatorRoute>} />

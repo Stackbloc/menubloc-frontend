@@ -1,0 +1,687 @@
+.operator-tablet {
+  min-height: 100vh;
+  padding: 20px;
+  color: #101828;
+  background: #f7f1e6;
+  font-family: var(--gb-font-ui, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+}
+
+.operator-tablet button,
+.operator-tablet select {
+  font: inherit;
+}
+
+.ot-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  border: 1px solid rgba(18, 34, 28, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+}
+
+.ot-kicker {
+  color: #2d6a4f;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ot-header h1,
+.ot-detail h2,
+.ot-empty h2,
+.ot-modal h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.ot-header h1 {
+  margin-top: 4px;
+  font-size: 30px;
+  line-height: 1.08;
+}
+
+.ot-header-meta,
+.ot-header-actions,
+.ot-alert-actions,
+.ot-badges,
+.ot-actions,
+.ot-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ot-header-meta {
+  margin-top: 10px;
+  color: #475467;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.ot-header-meta span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border: 1px solid #e4e9f0;
+  border-radius: 999px;
+  background: #f8fafc;
+}
+
+.ot-connection.is-live {
+  color: #067647;
+}
+
+.ot-connection.is-offline,
+.ot-connection.is-reconnecting,
+.ot-connection.is-disconnected {
+  color: #b42318;
+}
+
+.ot-header-actions {
+  justify-content: flex-end;
+}
+
+.ot-button,
+.ot-restaurant-select {
+  min-height: 52px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.ot-button {
+  border: 0;
+  padding: 12px 18px;
+  cursor: pointer;
+}
+
+.ot-button:disabled,
+.ot-action:disabled,
+.ot-availability button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ot-button--primary,
+.ot-button--install {
+  background: #1f4e3d;
+  color: #fff;
+}
+
+.ot-button--secondary {
+  border: 1px solid #b8c7bf;
+  background: #fff;
+  color: #1f4e3d;
+}
+
+.ot-button--ghost {
+  border: 1px solid #e4e9f0;
+  background: #f8fafc;
+  color: #475467;
+}
+
+.ot-button--alert {
+  background: #b42318;
+  color: #fff;
+}
+
+.ot-restaurant-select {
+  max-width: 260px;
+  padding: 0 14px;
+  border: 1px solid #b8c7bf;
+  background: #fff;
+  color: #101828;
+}
+
+.ot-install {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  background: #edf7f2;
+  color: #1f4e3d;
+}
+
+.ot-install > div {
+  display: grid;
+  gap: 2px;
+  padding: 8px 14px;
+}
+
+.ot-install strong,
+.ot-install span {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.ot-install--installed {
+  padding: 0 14px;
+  font-weight: 900;
+}
+
+.ot-offline,
+.ot-error {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border-radius: 8px;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.ot-offline {
+  border: 2px solid #f79009;
+  background: #fffaeb;
+  color: #93370d;
+}
+
+.ot-error {
+  border: 2px solid #f04438;
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.ot-alert-band,
+.ot-status-panel,
+.ot-push-foundation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 18px 20px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(18, 34, 28, 0.12);
+}
+
+.ot-alert-band {
+  border-width: 3px;
+  border-color: #abefc6;
+  background: #ecfdf3;
+}
+
+.ot-alert-band.is-active {
+  animation: otPulse 1s infinite;
+  border-color: #b42318;
+  background: #fef3f2;
+}
+
+.ot-alert-band span,
+.ot-status-panel span,
+.ot-push-foundation span {
+  display: block;
+  color: #667085;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.ot-alert-band strong,
+.ot-status-panel strong,
+.ot-push-foundation strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.ot-alert-ready {
+  min-height: 52px;
+  display: inline-flex !important;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: #ecfdf3;
+  color: #067647 !important;
+}
+
+.ot-availability {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  gap: 10px;
+  width: min(100%, 640px);
+}
+
+.ot-availability button {
+  min-height: 64px;
+  border: 1px solid #b8c7bf;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+  font-size: 17px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ot-availability button.is-active {
+  border: 3px solid #1f4e3d;
+  background: #edf7f2;
+  color: #1f4e3d;
+}
+
+.ot-grid {
+  display: grid;
+  grid-template-columns: minmax(310px, 33%) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.ot-queue,
+.ot-detail,
+.ot-empty,
+.ot-push-foundation {
+  border: 1px solid rgba(18, 34, 28, 0.12);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ot-queue,
+.ot-detail {
+  min-height: 520px;
+  padding: 18px;
+}
+
+.ot-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ot-section-title h2 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.ot-section-title span {
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #1f4e3d;
+  color: #fff;
+  font-weight: 900;
+}
+
+.ot-queue-list {
+  display: grid;
+  gap: 12px;
+}
+
+.ot-order-card {
+  min-height: 132px;
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  border: 2px solid #e4e9f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #101828;
+  cursor: pointer;
+}
+
+.ot-order-card.is-selected {
+  border-color: #1f4e3d;
+  background: #edf7f2;
+}
+
+.ot-order-card.is-incoming {
+  border-color: #f04438;
+  background: #fff5f4;
+}
+
+.ot-order-id {
+  color: #667085;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.ot-order-customer {
+  overflow-wrap: anywhere;
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.ot-order-meta {
+  color: #475467;
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.ot-order-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  font-size: 18px;
+}
+
+.ot-order-bottom small {
+  min-width: 48px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #fff;
+  color: #b42318;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.ot-queue-empty,
+.ot-detail-empty,
+.ot-empty {
+  display: grid;
+  place-items: center;
+  min-height: 330px;
+  padding: 24px;
+  text-align: center;
+  color: #667085;
+}
+
+.ot-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ot-detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.ot-detail-header span {
+  color: #667085;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.ot-detail-header h2 {
+  margin-top: 4px;
+  font-size: 36px;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.ot-detail-header p {
+  margin: 8px 0 0;
+  color: #475467;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.ot-total {
+  flex: 0 0 auto;
+  color: #1f4e3d;
+  font-size: 36px;
+  font-weight: 900;
+}
+
+.ot-badges span {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #f2f4f7;
+  color: #344054;
+  font-size: 15px;
+  font-weight: 900;
+  text-transform: capitalize;
+}
+
+.ot-items {
+  display: grid;
+  gap: 12px;
+}
+
+.ot-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #e4e9f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.ot-item strong {
+  display: block;
+  font-size: 21px;
+}
+
+.ot-item span,
+.ot-item em,
+.ot-note span,
+.ot-muted {
+  display: block;
+  margin-top: 5px;
+  color: #667085;
+  font-size: 16px;
+}
+
+.ot-item b {
+  font-size: 19px;
+}
+
+.ot-note {
+  padding: 16px;
+  border: 2px solid #fedf89;
+  border-radius: 8px;
+  background: #fffaeb;
+}
+
+.ot-note strong {
+  display: block;
+  color: #93370d;
+  font-size: 16px;
+}
+
+.ot-actions {
+  margin-top: auto;
+  align-items: stretch;
+}
+
+.ot-action {
+  min-width: 150px;
+  min-height: 72px;
+  flex: 1 1 150px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ot-action--accept {
+  background: #079455;
+}
+
+.ot-action--decline {
+  background: #b42318;
+}
+
+.ot-action--primary {
+  background: #1f4e3d;
+}
+
+.ot-action--complete {
+  background: #101828;
+}
+
+.ot-action--print {
+  border: 2px solid #b8c7bf;
+  background: #fff;
+  color: #1f4e3d;
+}
+
+.ot-push-foundation {
+  margin-bottom: 20px;
+}
+
+.ot-push-foundation strong {
+  font-size: 18px;
+}
+
+.ot-push-foundation > span {
+  min-width: 96px;
+  text-align: right;
+}
+
+.ot-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 24, 40, 0.62);
+}
+
+.ot-modal-panel {
+  width: min(100%, 560px);
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(16, 24, 40, 0.28);
+}
+
+.ot-modal-panel h2 {
+  font-size: 28px;
+}
+
+.ot-modal-panel p {
+  margin: 0;
+  color: #667085;
+  font-size: 18px;
+}
+
+.ot-modal-panel select {
+  min-height: 58px;
+  padding: 0 14px;
+  border: 1px solid #b8c7bf;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+#operator-tablet-print-ticket {
+  display: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #000;
+}
+
+.ot-ticket-center {
+  text-align: center;
+}
+
+.ot-ticket-brand,
+.ot-ticket-order,
+.ot-ticket-total {
+  font-weight: 900;
+}
+
+.ot-ticket-brand {
+  font-size: 18px;
+}
+
+.ot-ticket-order {
+  font-size: 24px;
+}
+
+.ot-ticket-type {
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ot-ticket-line {
+  margin: 12px 0;
+  border-top: 2px dashed #000;
+}
+
+.ot-ticket-item {
+  margin-bottom: 8px;
+}
+
+.ot-ticket-price {
+  text-align: right;
+}
+
+.ot-ticket-total {
+  text-align: right;
+  font-size: 18px;
+}
+
+.ot-ticket-powered {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 12px;
+}
+
+@keyframes otPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(180, 35, 24, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(180, 35, 24, 0.12);
+  }
+}
+
+@media (max-width: 900px), (orientation: portrait) {
+  .operator-tablet {
+    padding: 12px;
+  }
+
+  .ot-header,
+  .ot-alert-band,
+  .ot-status-panel,
+  .ot-push-foundation,
+  .ot-detail-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ot-header-actions,
+  .ot-alert-actions {
+    justify-content: stretch;
+  }
+
+  .ot-button,
+  .ot-restaurant-select,
+  .ot-install,
+  .ot-header-actions > * {
+    width: 100%;
+  }
+
+  .ot-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ot-availability {
+    grid-template-columns: 1fr;
+  }
+
+  .ot-total {
+    font-size: 30px;
+  }
+}
