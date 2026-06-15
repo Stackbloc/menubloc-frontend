@@ -219,6 +219,7 @@ export default function OwnerMenuUploadReviewItems() {
   }
 
   const needsReview = counts.open + counts.edited;
+  const allDone = !loading && needsReview === 0 && items.length > 0;
 
   if (loading) {
     return (
@@ -247,6 +248,27 @@ export default function OwnerMenuUploadReviewItems() {
       {statusMsg && !error && (
         <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "#f0fdf4", color: "#15803d", fontSize: 13, fontWeight: 600 }}>
           {statusMsg}
+        </div>
+      )}
+
+      {/* All-done banner */}
+      {allDone && (
+        <div style={{ marginBottom: 18, padding: "16px 20px", borderRadius: 12, background: "#f0fdf4", border: "1px solid #86efac", color: "#15803d" }}>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
+            ✓ All items have been reviewed.
+          </div>
+          <div style={{ fontSize: 13, marginBottom: 12 }}>
+            {counts.approved > 0
+              ? `${counts.approved} item${counts.approved !== 1 ? "s" : ""} approved and published to the menu.`
+              : "No items were approved."}
+            {counts.rejected > 0 && ` ${counts.rejected} rejected.`}
+          </div>
+          <Link
+            to={`/owner/menu-uploads/${uploadId}`}
+            style={{ fontSize: 13, color: "#15803d", fontWeight: 700, textDecoration: "underline", marginRight: 16 }}
+          >
+            ← Back to Upload
+          </Link>
         </div>
       )}
 

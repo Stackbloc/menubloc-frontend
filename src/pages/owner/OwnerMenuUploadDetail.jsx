@@ -153,8 +153,6 @@ export default function OwnerMenuUploadDetail() {
         <PageCard style={{ padding: 22 }}>
           <SectionTitle title="Restaurant" />
           <DetailRow label="Name"     value={upload.restaurant_name || "Unknown"} />
-          <DetailRow label="ID"       value={upload.restaurant_id ? `#${upload.restaurant_id}` : "—"} />
-          <DetailRow label="Email"    value={upload.email || "—"} />
           <DetailRow label="Location" value={upload.city && upload.state ? `${upload.city}, ${upload.state}` : "—"} />
           {upload.menu_id && (
             <DetailRow
@@ -539,25 +537,14 @@ function StatusActions({ upload, displayStatus, uploadId, doAction }) {
   }
 
   if (displayStatus === "published") {
-    if (upload.menu_id) {
-      actions.push(
-        <Link
-          key="view-menu"
-          to={`/menus/${upload.menu_id}`}
-          style={{ padding: "10px 18px", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", color: OWNER_COLORS.ink, fontWeight: 700, fontSize: 13, textDecoration: "none" }}
-        >
-          View Menu
-        </Link>
-      );
-    }
     if (upload.restaurant_id) {
       actions.push(
         <Link
-          key="view-restaurant"
-          to={`/restaurants/${upload.restaurant_id}`}
-          style={{ padding: "10px 18px", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", color: OWNER_COLORS.ink, fontWeight: 700, fontSize: 13, textDecoration: "none" }}
+          key="view-menu"
+          to={`/public/restaurants/${upload.restaurant_id}/menu`}
+          style={{ padding: "10px 18px", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, background: "#15803d", color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none" }}
         >
-          View Restaurant
+          View Published Menu
         </Link>
       );
     }
