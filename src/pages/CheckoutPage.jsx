@@ -445,7 +445,7 @@ export default function CheckoutPage() {
 
   if (!restaurant || items.length === 0) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+      <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
         <StickyPageHeader title={t("checkout.title", "Checkout")} />
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "14px 18px 80px" }}>
           <div
@@ -608,7 +608,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title={t("checkout.title", "Checkout")} />
       <div style={{ maxWidth: 1120, margin: "0 auto", padding: "14px 18px 80px" }}>
 

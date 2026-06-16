@@ -89,7 +89,7 @@ export default function BuyMeThisPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title="Buy Me This" />
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "14px 18px 80px" }}>
 

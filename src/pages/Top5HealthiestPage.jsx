@@ -197,7 +197,7 @@ export default function Top5HealthiestPage() {
   if (state) searchParams.set("state", state);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title="Top Health Score Dishes" />
       <div
         style={{

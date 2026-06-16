@@ -225,8 +225,8 @@ export default function RestaurantBillboard() {
       <div
         style={{
           minHeight: "100vh",
-          background: "radial-gradient(circle at top, rgba(34,197,94,0.12), transparent 30%), #0B0F0C",
-          color: "#F8FAFC",
+          background: "var(--gb-color-page)",
+          color: "var(--gb-color-ink)",
           padding: "0 0 calc(80px + env(safe-area-inset-bottom, 0px))",
           fontFamily: "var(--font-ui, ui-sans-serif, system-ui, sans-serif)",
         }}

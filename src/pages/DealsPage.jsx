@@ -340,14 +340,14 @@ export default function DealsPage() {
   }
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <style>{`
         .deals-skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
         @keyframes skelPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
       `}</style>
 
       {/* ── STICKY TOP: page header + search + location title ── */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "#0B0F0C" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--gb-color-page)" }}>
         <StickyPageHeader />
         <div style={{ borderBottom: "1px solid #1F2937", paddingBottom: 12 }}>
           {/* Search bar */}

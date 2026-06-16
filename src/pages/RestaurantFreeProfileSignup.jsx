@@ -426,8 +426,8 @@ const styles = {
     margin: "0 auto",
     padding: "48px 20px 60px",
     fontFamily: "var(--gb-font-ui, Inter, system-ui, sans-serif)",
-    color: "#F9FAFB",
-    background: "#0B0F0C",
+    color: "var(--gb-color-ink)",
+    background: "var(--gb-color-page)",
   },
   pageTitle: {
     fontSize: 28,

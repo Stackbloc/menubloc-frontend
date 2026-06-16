@@ -24,6 +24,7 @@ function isDarkPageColor(value) {
 }
 
 export const MENUPLY_LOGO_SRC = "/menuply-logo.png";
+export const MENUPLY_LOGO_DARK_SRC = "/menuply-logo-dark.png";
 
 export function BrandLogo({
   to = "/",
@@ -52,7 +53,7 @@ export function BrandLogo({
       }}
     >
       <img
-        src={MENUPLY_LOGO_SRC}
+        src={isDarkPageColor(pageColor) ? MENUPLY_LOGO_SRC : MENUPLY_LOGO_DARK_SRC}
         alt="Menuply"
         style={{
           display: "block",

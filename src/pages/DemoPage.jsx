@@ -161,8 +161,8 @@ export default function DemoPage() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#0B0F0C",
-    color: "#ffffff",
+    background: "var(--gb-color-page)",
+    color: "var(--gb-color-ink)",
     paddingBottom: 72,
   },
   header: {

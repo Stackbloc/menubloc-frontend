@@ -151,7 +151,7 @@ export default function DealDetailPage() {
   const days = deal ? daysUntil(deal.expires_at) : null;
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title={t("dealDetail.terms", "Deal terms")} />
 
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "16px 16px 100px" }}>

@@ -57,9 +57,8 @@ export default function FoodInterestsPage() {
     <div
       style={{
         minHeight: "100vh",
-        background:
-          "radial-gradient(circle at top, rgba(34,197,94,0.14), transparent 32%), linear-gradient(180deg, #0B0F0C 0%, #101712 100%)",
-        color: "#FFFFFF",
+        background: "var(--gb-color-page)",
+        color: "var(--gb-color-ink)",
         paddingBottom: "calc(var(--bottom-nav-h, 72px) + 28px)",
       }}
     >

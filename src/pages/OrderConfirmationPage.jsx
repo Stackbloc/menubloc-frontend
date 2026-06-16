@@ -75,7 +75,7 @@ export default function OrderConfirmationPage() {
   }, [orderId, clearCart, restaurant?.restaurantId, state.order]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title={t("order.confirmation.title", "Order confirmed")} />
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 18px 80px" }}>
 

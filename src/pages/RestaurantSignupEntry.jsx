@@ -54,9 +54,9 @@ const SIGNUP_PLAN_OPTIONS = [
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#0B0F0C",
+    background: "var(--gb-color-page)",
     padding: "28px 18px 72px",
-    color: "#F8F4EA",
+    color: "var(--gb-color-ink)",
     fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
   },
   shell: {

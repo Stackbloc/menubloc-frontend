@@ -32,12 +32,12 @@ function planLabel(t, planCode) {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#0B0F0C",
+    background: "var(--gb-color-page)",
     maxWidth: 640,
     margin: "0 auto",
     padding: "40px 20px 60px",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
-    color: "#F8F4EA",
+    color: "var(--gb-color-ink)",
   },
   header: { marginBottom: 28 },
   brand: { fontWeight: 800, fontSize: 18 },
