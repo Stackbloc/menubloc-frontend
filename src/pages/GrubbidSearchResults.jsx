@@ -2044,6 +2044,10 @@ export default function GrubbidSearchResults() {
         <StatusMessage tone="muted">{emptyMessage}</StatusMessage>
       )}
 
+      {!loading && !err && hasVisibleResults && (
+        <SearchRefinementNudge displayQuery={displayQuery} locationLabel={locationLabel} />
+      )}
+
       {!loading && !err && useRestaurantGroupedRendering && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
         <>
           <SectionTitle style={{ color: "#0B0F0C" }}>{t("search.restaurants", "Restaurants")}</SectionTitle>
