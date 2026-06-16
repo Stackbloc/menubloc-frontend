@@ -37,26 +37,26 @@ export default function WaiterRefinementPrompt({
           fontSize: 15,
           cursor: isActive ? "default" : "pointer",
           color: isActive
-            ? "#22C55E"
+            ? "var(--gb-color-accent)"
             : isAnySelected
-            ? "rgba(229,231,235,0.45)"
-            : "#F9FAFB",
+            ? "var(--gb-color-ink-muted)"
+            : "var(--gb-color-ink-strong)",
           borderBottom: isActive
-            ? "2px solid #22C55E"
-            : "2px solid rgba(249,250,251,0.35)",
+            ? "2px solid var(--gb-color-accent)"
+            : "2px solid var(--gb-color-border)",
           paddingBottom: 1,
           transition: "color 0.15s, border-color 0.15s",
           whiteSpace: "nowrap",
           userSelect: "none",
         }}
         onMouseEnter={(e) => {
-          if (!isActive) e.currentTarget.style.color = "#22C55E";
+          if (!isActive) e.currentTarget.style.color = "var(--gb-color-accent)";
         }}
         onMouseLeave={(e) => {
           if (!isActive) {
             e.currentTarget.style.color = isAnySelected
-              ? "rgba(229,231,235,0.45)"
-              : "#F9FAFB";
+              ? "var(--gb-color-ink-muted)"
+              : "var(--gb-color-ink-strong)";
           }
         }}
       >
@@ -68,7 +68,7 @@ export default function WaiterRefinementPrompt({
   // Renders: Word1?  /  Word1 or Word2?  /  Word1, Word2, or Word3?
   function renderQuestion() {
     const [a, b, c] = visibleOptions;
-    const plain = { fontWeight: 800, fontSize: 15, color: "#9CA3AF" };
+    const plain = { fontWeight: 800, fontSize: 15, color: "var(--gb-color-ink-muted)" };
 
     if (visibleOptions.length === 1) {
       return (
@@ -123,10 +123,10 @@ export default function WaiterRefinementPrompt({
           width: 48,
           height: 48,
           borderRadius: 999,
-          background: "#FFFFFF",
-          color: "#0B0F0C",
+          background: "var(--gb-color-surface-strong)",
+          color: "var(--gb-color-ink-strong)",
           flexShrink: 0,
-          boxShadow: "0 0 0 1px rgba(255,255,255,0.18), 0 10px 26px rgba(0,0,0,0.28)",
+          boxShadow: "0 0 0 1px var(--gb-color-border), 0 10px 26px rgba(15,23,42,0.1)",
         }}
       >
         <WaiterFaceIcon size={34} />

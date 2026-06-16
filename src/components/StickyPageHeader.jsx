@@ -62,8 +62,8 @@ export default function StickyPageHeader({
 
   const hasNoneAllergenSelected = excludedAllergens.has(ALLERGEN_NONE_ID);
 
-  const headerBg = barBackground ?? "#0B0F0C";
-  const accent = linkAccent ?? "#22C55E";
+  const headerBg = barBackground ?? "var(--gb-color-page)";
+  const accent = linkAccent ?? "var(--gb-color-accent)";
   const dealsBg = dealsPillBackground ?? "rgba(34,197,94,0.08)";
   const dealsBorder = dealsPillBorder ?? "1.5px solid rgba(34,197,94,0.3)";
   const brandLogoPage = logoPageColor ?? headerBg;
@@ -86,7 +86,7 @@ export default function StickyPageHeader({
         top: 0,
         zIndex: 100,
         background: headerBg,
-        borderBottom: "1px solid #1F2937",
+        borderBottom: "1px solid var(--gb-color-border)",
       }}>
         <div style={{
           maxWidth: 576, margin: "0 auto",
