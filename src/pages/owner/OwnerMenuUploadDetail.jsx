@@ -356,7 +356,7 @@ function SourcePhotoViewer({ pages, photoPage, setPhotoPage }) {
             style={{ maxWidth: "100%", maxHeight: 600, objectFit: "contain" }}
             onError={(e) => {
               e.target.style.display = "none";
-              e.target.nextSibling.style.display = "flex";
+              if (e.target.nextSibling) e.target.nextSibling.style.display = "flex";
             }}
           />
           <div

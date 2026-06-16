@@ -202,7 +202,7 @@ export default function OwnerMenuUploadReviewItems() {
         price: edit.price !== "" ? Number(edit.price) : undefined,
         section: edit.section || undefined,
       });
-      setCounts(result.counts);
+      setCounts(result.counts || { open: 0, edited: 0, approved: 0, rejected: 0 });
       setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, status: "approved" } : it));
       setStatusMsg(`"${edit.name || item.proposed_item_name}" approved.`);
     } catch (e) {

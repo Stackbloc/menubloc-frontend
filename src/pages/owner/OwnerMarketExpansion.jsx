@@ -84,7 +84,7 @@ function ZipDrilldown({ market, state, thresholds, onClose }) {
         <div style={{ color: "#8b2e1a", fontSize: 13 }}>{error}</div>
       ) : !data ? (
         <div style={{ color: OWNER_COLORS.muted, fontSize: 13 }}>Loading...</div>
-      ) : data.zips.length === 0 ? (
+      ) : (data.zips || []).length === 0 ? (
         <EmptyState>No ZIP-level data yet for this market.</EmptyState>
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
