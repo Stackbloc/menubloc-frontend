@@ -34,45 +34,75 @@ function normalizeAllergens(raw) {
 }
 
 const CUISINE_IDENTITY = {
-  american:      { color: "#f59e0b", emoji: "🍔" },
-  burger:        { color: "#f59e0b", emoji: "🍔" },
-  burgers:       { color: "#f59e0b", emoji: "🍔" },
-  bbq:           { color: "#b45309", emoji: "🔥" },
-  sandwich:      { color: "#ea580c", emoji: "🥪" },
-  sandwiches:    { color: "#ea580c", emoji: "🥪" },
-  wings:         { color: "#ea580c", emoji: "🍗" },
-  chicken:       { color: "#d97706", emoji: "🍗" },
-  southern:      { color: "#b45309", emoji: "🍗" },
-  soul:          { color: "#b45309", emoji: "🍗" },
-  steak:         { color: "#991b1b", emoji: "🥩" },
-  steakhouse:    { color: "#991b1b", emoji: "🥩" },
-  italian:       { color: "#ef4444", emoji: "🍕" },
-  pizza:         { color: "#ef4444", emoji: "🍕" },
-  mexican:       { color: "#f97316", emoji: "🌮" },
-  "tex-mex":     { color: "#f97316", emoji: "🌮" },
-  tacos:         { color: "#f97316", emoji: "🌮" },
-  asian:         { color: "#6366f1", emoji: "🥡" },
-  chinese:       { color: "#6366f1", emoji: "🥡" },
-  japanese:      { color: "#6366f1", emoji: "🍱" },
-  sushi:         { color: "#0891b2", emoji: "🍣" },
-  thai:          { color: "#7c3aed", emoji: "🌶️" },
-  korean:        { color: "#6366f1", emoji: "🥘" },
-  vietnamese:    { color: "#0891b2", emoji: "🍜" },
-  indian:        { color: "#d97706", emoji: "🍛" },
-  mediterranean: { color: "#0d9488", emoji: "🫒" },
-  greek:         { color: "#0d9488", emoji: "🫒" },
-  seafood:       { color: "#0284c7", emoji: "🦞" },
-  vegan:         { color: "#22C55E", emoji: "🥗" },
-  vegetarian:    { color: "#22C55E", emoji: "🥗" },
-  salad:         { color: "#22C55E", emoji: "🥗" },
-  healthy:       { color: "#22C55E", emoji: "🥗" },
-  breakfast:     { color: "#ca8a04", emoji: "🍳" },
-  brunch:        { color: "#ca8a04", emoji: "🍳" },
+  american:      { color: "#B7791F", emoji: "🍔" },
+  burger:        { color: "#B7791F", emoji: "🍔" },
+  burgers:       { color: "#B7791F", emoji: "🍔" },
+  bbq:           { color: "#A24A1B", emoji: "🔥" },
+  barbecue:      { color: "#A24A1B", emoji: "🔥" },
+  sandwich:      { color: "#B7791F", emoji: "🥪" },
+  sandwiches:    { color: "#B7791F", emoji: "🥪" },
+  wings:         { color: "#A24A1B", emoji: "🍗" },
+  chicken:       { color: "#A24A1B", emoji: "🍗" },
+  southern:      { color: "#A24A1B", emoji: "🍗" },
+  soul:          { color: "#A24A1B", emoji: "🍗" },
+  steak:         { color: "#7F1D1D", emoji: "🥩" },
+  steakhouse:    { color: "#7F1D1D", emoji: "🥩" },
+  italian:       { color: "#8F1D2C", emoji: "🍕" },
+  pizza:         { color: "#8F1D2C", emoji: "🍕" },
+  mexican:       { color: "#B3261E", emoji: "🌮" },
+  "tex-mex":     { color: "#B3261E", emoji: "🌮" },
+  tacos:         { color: "#B3261E", emoji: "🌮" },
+  asian:         { color: "#047857", emoji: "🥡" },
+  chinese:       { color: "#047857", emoji: "🥡" },
+  japanese:      { color: "#047857", emoji: "🍱" },
+  sushi:         { color: "#2563EB", emoji: "🍣" },
+  thai:          { color: "#B3261E", emoji: "🌶️" },
+  korean:        { color: "#047857", emoji: "🥘" },
+  vietnamese:    { color: "#047857", emoji: "🍜" },
+  indian:        { color: "#A24A1B", emoji: "🍛" },
+  mediterranean: { color: "#047857", emoji: "🫒" },
+  greek:         { color: "#047857", emoji: "🫒" },
+  seafood:       { color: "#2563EB", emoji: "🦞" },
+  vegan:         { color: "#16A34A", emoji: "🥗" },
+  vegetarian:    { color: "#16A34A", emoji: "🥗" },
+  salad:         { color: "#16A34A", emoji: "🥗" },
+  salads:        { color: "#16A34A", emoji: "🥗" },
+  healthy:       { color: "#16A34A", emoji: "🥗" },
+  breakfast:     { color: "#B7791F", emoji: "🍳" },
+  brunch:        { color: "#B7791F", emoji: "🍳" },
   cafe:          { color: "#78716c", emoji: "☕" },
   coffee:        { color: "#78716c", emoji: "☕" },
 };
 
-const DEFAULT_IDENTITY = { color: "#4B5563", emoji: "🍽️" };
+const DEFAULT_IDENTITY = { color: "#2F6F4E", emoji: "🍽️" };
+
+function titleCaseLabel(value) {
+  return String(value || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function buildCuisineIdentityLine(menu, identity) {
+  const rawParts = [menu?.cuisine, menu?.category]
+    .map((part) => titleCaseLabel(part))
+    .filter(Boolean);
+  const parts = Array.from(new Set(rawParts));
+  if (parts.length === 0) return null;
+  return `${identity.emoji} ${parts.join(" • ")}`;
+}
+
+function hexToRgba(hex, alpha) {
+  const cleaned = String(hex || "").replace("#", "");
+  if (cleaned.length !== 6) return `rgba(47,111,78,${alpha})`;
+  const value = Number.parseInt(cleaned, 16);
+  if (!Number.isFinite(value)) return `rgba(47,111,78,${alpha})`;
+  const r = (value >> 16) & 255;
+  const g = (value >> 8) & 255;
+  const b = value & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
 function getCuisineIdentity(cuisine) {
   if (!cuisine) return DEFAULT_IDENTITY;
@@ -90,6 +120,7 @@ export default function DiscoveryCard({
   activeFilterParams = "",
   activeFilterLabel = null,
   hasActiveFilters = false,
+  visualIndex = 0,
 }) {
   const [showChainSheet, setShowChainSheet] = useState(false);
   const [followed, setFollowed] = useState(false);
@@ -108,7 +139,13 @@ export default function DiscoveryCard({
     menu?.name ||
     t("common.restaurant", "Restaurant");
   const name = localizedName.replace(/^The\s+/i, "");
-  const cuisine = menu?.cuisine || menu?.category || null;
+  const identity = getCuisineIdentity([menu?.cuisine, menu?.category].filter(Boolean).join(" "));
+  const cuisineIdentityLine = buildCuisineIdentityLine(menu, identity);
+  const accent = identity.color;
+  const accentSoft = hexToRgba(accent, 0.16);
+  const accentBorder = hexToRgba(accent, 0.34);
+  const accentGlow = hexToRgba(accent, 0.26);
+  const useRhythmGradient = visualIndex > 0 && (visualIndex + 1) % 5 === 0;
   const distance = formatDistance(menu?.distance_miles);
   const locationCount = menu?.location_count || 1;
   const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
@@ -176,28 +213,42 @@ export default function DiscoveryCard({
         color: "inherit",
         overflow: "hidden",
         borderRadius: 12,
-        border: "1px solid var(--gb-color-border)",
-        background: "var(--gb-color-surface-strong)",
-        boxShadow: "var(--gb-shadow-card)",
+        border: `1px solid ${accentBorder}`,
+        background: useRhythmGradient
+          ? `radial-gradient(circle at 88% 0%, ${hexToRgba(accent, 0.22)} 0%, transparent 34%), linear-gradient(145deg, #17261C 0%, #0E1711 54%, #142019 100%)`
+          : `radial-gradient(circle at 96% 10%, ${accentSoft} 0%, transparent 30%), linear-gradient(145deg, #142119 0%, #0B120E 58%, #101A13 100%)`,
+        boxShadow: `var(--gb-shadow-card), 0 0 0 1px ${hexToRgba(accent, 0.08)}, 0 12px 30px ${hexToRgba(accent, useRhythmGradient ? 0.13 : 0.08)}`,
         transition: "box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease",
+        position: "relative",
       }}
     >
+      <div aria-hidden="true" style={{
+        position: "absolute",
+        top: -30,
+        right: -28,
+        width: 86,
+        height: 86,
+        borderRadius: "50%",
+        background: `radial-gradient(circle, ${accentGlow} 0%, transparent 66%)`,
+        pointerEvents: "none",
+      }} />
       <div style={{
         width: 7,
         flexShrink: 0,
         borderTopLeftRadius: 12,
         borderBottomLeftRadius: 12,
         background: menu.flex_activity > 0
-          ? `linear-gradient(to top, var(--gb-color-accent) ${Math.min(100, menu.flex_activity)}%, #4ade80 100%)`
-          : "rgba(18,34,28,0.08)",
+          ? `linear-gradient(to top, ${accent} ${Math.min(100, menu.flex_activity)}%, #4ade80 100%)`
+          : `linear-gradient(to bottom, ${accentBorder}, ${hexToRgba(accent, 0.12)})`,
         opacity: menu.flex_activity > 0
           ? Math.max(0.5, Math.min(1, menu.flex_activity / 100))
-          : 0.5,
+          : 0.82,
         transition: "background 300ms ease, opacity 300ms ease",
+        zIndex: 1,
       }} />
 
       {/* Content */}
-      <div style={{ padding: "9px 12px 9px", background: "var(--gb-color-surface-strong)", flex: 1, minWidth: 0 }}>
+      <div style={{ padding: "9px 12px 9px", background: "transparent", flex: 1, minWidth: 0, position: "relative", zIndex: 1 }}>
         {/* Name row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -215,7 +266,8 @@ export default function DiscoveryCard({
                   fontSize: 9,
                   fontWeight: 800,
                   color: "#ffffff",
-                  background: "var(--gb-color-accent)",
+                  background: accent,
+                  boxShadow: `0 0 12px ${hexToRgba(accent, 0.28)}`,
                   borderRadius: 3,
                   padding: "1px 4px",
                   verticalAlign: "middle",
@@ -223,6 +275,20 @@ export default function DiscoveryCard({
                 }}>LIVE</span>
               )}
             </div>
+            {cuisineIdentityLine && (
+              <div style={{
+                marginTop: 3,
+                fontSize: 10,
+                fontWeight: 700,
+                color: "var(--gb-color-ink-soft)",
+                lineHeight: 1.25,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}>
+                {cuisineIdentityLine}
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
             {onSave && (
@@ -252,7 +318,7 @@ export default function DiscoveryCard({
                 height: 28,
                 border: "none",
                 borderRadius: 6,
-                background: followed ? "var(--gb-color-accent)" : "var(--gb-color-border)",
+                background: followed ? accent : hexToRgba(accent, 0.13),
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -317,9 +383,9 @@ export default function DiscoveryCard({
             {chips.map((tag) => (
               <span key={tag} style={{
                 fontSize: 10,
-                color: "var(--gb-color-ink-muted)",
-                border: "1px solid var(--gb-color-border)",
-                background: "transparent",
+                color: "var(--gb-color-ink-soft)",
+                border: `1px solid ${hexToRgba(accent, 0.26)}`,
+                background: hexToRgba(accent, 0.08),
                 padding: "2px 7px",
                 borderRadius: 99,
               }}>{tag.charAt(0).toUpperCase() + tag.slice(1)}</span>

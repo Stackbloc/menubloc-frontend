@@ -19,6 +19,8 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import { LEGAL_VERSIONS } from "../content/legal.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
@@ -526,12 +528,13 @@ export default function FoodTruckSignup() {
 
   return (
     <div style={styles.page}>
+      <StickyPageHeader />
       <div style={styles.shell}>
         <header style={styles.hero}>
           <div style={styles.heroContent}>
             {/* Keep the food-truck signup entry aligned with the restaurant shell. */}
             <BrandLockup
-              logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+              logoProps={{ width: 180, height: 112, radius: 24, pageColor: "var(--gb-color-page)" }}
               wrapperStyle={{ marginBottom: 8 }}
             />
             <div style={styles.eyebrow}>{t("foodTruck.signup.title", "Food truck sign up")}</div>
@@ -679,6 +682,7 @@ export default function FoodTruckSignup() {
           </div>
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 }

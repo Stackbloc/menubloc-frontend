@@ -13,6 +13,8 @@ import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
@@ -55,7 +57,7 @@ const styles = {
   page: {
     minHeight: "100vh",
     background: "var(--gb-color-page)",
-    padding: "28px 18px 72px",
+    padding: "24px 18px 96px",
     color: "var(--gb-color-ink)",
     fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
   },
@@ -82,9 +84,9 @@ const styles = {
     marginBottom: 16,
     padding: "8px 12px",
     borderRadius: 999,
-    background: "rgba(110,231,183,0.12)",
-    border: "1px solid rgba(110,231,183,0.3)",
-    color: "#6EE7B7",
+    background: "#eef6f1",
+    border: "1px solid rgba(31,78,61,0.18)",
+    color: "#1F4E3D",
     fontSize: 11,
     fontWeight: 800,
     letterSpacing: "0.08em",
@@ -231,7 +233,7 @@ const styles = {
   },
   foodTruckLink: {
     display: "inline",
-    color: "#6EE7B7",
+    color: "#1F4E3D",
     fontSize: 13,
     fontWeight: 800,
     textDecoration: "none",
@@ -245,7 +247,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    color: "#6EE7B7",
+    color: "#1F4E3D",
   },
   button: (featured) => ({
     width: "100%",
@@ -288,6 +290,13 @@ function planTranslationKey(code) {
   return "verified";
 }
 
+function buildAccountRoute(planCode) {
+  const params = new URLSearchParams();
+  if (planCode) params.set("plan", planCode);
+  const query = params.toString();
+  return query ? `${ACCOUNT_ROUTE}?${query}` : ACCOUNT_ROUTE;
+}
+
 function PlanPrice({ plan }) {
   if (plan.code === "pro_partner") {
     const [monthly, annual] = plan.price.split(/\s+(?:or|o|或)\s+/i);
@@ -322,7 +331,7 @@ export default function RestaurantSignupEntry() {
   );
 
   function handlePlanSelect(selectedPlan) {
-    navigate(ACCOUNT_ROUTE, {
+    navigate(buildAccountRoute(selectedPlan), {
       state: {
         selected_plan: selectedPlan,
       },
@@ -330,12 +339,14 @@ export default function RestaurantSignupEntry() {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.shell}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)" }}>
+      <StickyPageHeader />
+      <div style={styles.page}>
+        <div style={styles.shell}>
         <header style={styles.hero}>
           <div style={styles.heroContent}>
             <BrandLockup
-              logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#0B0F0C" }}
+              logoProps={{ width: 180, height: 112, radius: 24, pageColor: "var(--gb-color-page)" }}
               wrapperStyle={{ marginBottom: 8 }}
             />
             <div style={styles.eyebrow}>{t("signup.entry.eyebrow", "Restaurant Signup")}</div>
@@ -353,7 +364,7 @@ export default function RestaurantSignupEntry() {
               fontWeight: 900,
               letterSpacing: "-0.03em",
               lineHeight: 1.1,
-              color: "var(--gb-color-ink)",
+              color: "var(--gb-color-ink-strong)",
               margin: "16px 0 0",
             }}>
               {t("signup.entry.title", "Choose your plan")}
@@ -415,7 +426,9 @@ export default function RestaurantSignupEntry() {
         </section>
 
         <PlanComparisonTable />
+        </div>
       </div>
+      <BottomNav />
     </div>
   );
 }

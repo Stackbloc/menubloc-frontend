@@ -474,8 +474,7 @@ function AppShell({ easyMenu, crmHost }) {
   const location = useLocation();
   const joinLandingRoute = isJoinLandingPath(location.pathname);
   const joinSignupRoute = location.pathname === "/restaurant/signup/free-profile";
-  const restaurantOnboardingRoute = location.pathname === "/restaurant/onboarding";
-  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute || restaurantOnboardingRoute;
+  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute;
 
   return (
     <>
@@ -494,7 +493,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />
         <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />
         <Route path="/top-picks" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TopPicksPage />} />
-        <Route path="/food-interests" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodInterestsPage />} />
+        <Route path="/waiter" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodInterestsPage />} />
+        <Route path="/food-interests" element={<Navigate to="/waiter" replace />} />
         <Route path="/top5/healthiest" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TopPicksPage />} />
 
         <Route path="/deals" element={crmHost ? <HostRouteRedirect to="/crm" /> : <DealsPage />} />

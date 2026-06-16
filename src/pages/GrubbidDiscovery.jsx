@@ -1704,6 +1704,7 @@ export default function GrubbidDiscovery() {
                     hasActiveFilters={hasActivePublicFilters}
                     activeFilterLabel={activeFilterLabel}
                     activeFilterParams={activeFilterParams}
+                    visualIndex={i}
                   />
                 )
               ))}

@@ -14,6 +14,8 @@ import React, { useEffect, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { LEGAL_VERSIONS } from "../content/legal.js";
 import {
@@ -87,8 +89,8 @@ const s = {
   page: {
     minHeight: "100vh",
     background: "var(--gb-color-page)",
-    padding: "28px 18px 72px",
-    color: "#101828",
+    padding: "0 18px 96px",
+    color: "var(--gb-color-ink)",
     fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
   },
   shell: {
@@ -719,6 +721,7 @@ export default function SubscriptionSelect() {
 
   return (
     <div style={s.page}>
+      <StickyPageHeader />
       <div style={s.shell}>
         <Link to="/restaurant/signup" style={s.topLink}>
           &larr; Back to restaurant signup
@@ -729,7 +732,7 @@ export default function SubscriptionSelect() {
             subtitle="for Restaurants"
             wrapperStyle={{ alignItems: "flex-start", marginBottom: 18 }}
             subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
-            logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+            logoProps={{ width: 180, height: 112, radius: 24, pageColor: "var(--gb-color-page)" }}
           />
 
           <div style={s.heading}>Built for Better Value</div>
@@ -851,6 +854,7 @@ export default function SubscriptionSelect() {
           .
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 }

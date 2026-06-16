@@ -20,6 +20,8 @@ import React, { useEffect, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import {
   navigateWithRestaurantOnboardingState,
   persistRestaurantOnboardingState,
@@ -101,13 +103,14 @@ export default function RestaurantQrUpsell() {
 
   return (
     <div style={s.page}>
+      <StickyPageHeader />
       <div style={s.shell}>
         <div style={s.header}>
           <BrandLockup
             subtitle="for Restaurants"
             wrapperStyle={{ alignItems: "flex-start", marginBottom: 18 }}
             subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
-            logoProps={{ width: 160, height: 100, radius: 24, pageColor: "#f6f6f3" }}
+            logoProps={{ width: 160, height: 100, radius: 24, pageColor: "var(--gb-color-page)" }}
           />
         </div>
 
@@ -187,6 +190,7 @@ export default function RestaurantQrUpsell() {
           ) : null}
         </section>
       </div>
+      <BottomNav />
     </div>
   );
 }

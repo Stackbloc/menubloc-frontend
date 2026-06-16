@@ -127,7 +127,7 @@ const US_STATE_ABBREVS = new Set([
 ]);
 
 const WAITER_MIN_RESULTS = 8;
-const WAITER_MIN_OPTIONS = 1;
+const WAITER_MIN_OPTIONS = 2;
 const WAITER_MAX_OPTIONS = 3;
 const MAX_MENU_ITEMS_PER_RESTAURANT_GROUP = 3;
 const WAITER_MIN_ITEM_SIGNALS = 6;
@@ -197,11 +197,38 @@ const WAITER_TEXT_ONLY_PREPARATION_SIGNALS = [
   { key: "iced", label: "Iced", terms: ["iced", "cold brew", "cold"] },
   { key: "hot", label: "Hot", terms: ["hot"] },
 ];
+const WAITER_FOOD_FORM_SIGNALS = [
+  { key: "sandwich", label: "Sandwich", terms: ["sandwich", "sub", "hoagie", "hero", "po boy", "po-boy", "panini"] },
+  { key: "wings", label: "Wings", terms: ["wing", "wings"] },
+  { key: "tenders", label: "Tenders", terms: ["tender", "tenders", "strip", "strips"] },
+  { key: "nuggets", label: "Nuggets", terms: ["nugget", "nuggets"] },
+  { key: "salad", label: "Salad", terms: ["salad"] },
+  { key: "bowl", label: "Bowl", terms: ["bowl", "rice bowl", "grain bowl"] },
+  { key: "wrap", label: "Wrap", terms: ["wrap"] },
+  { key: "plate", label: "Plate", terms: ["plate", "platter", "dinner"] },
+  { key: "burger", label: "Burger", terms: ["burger", "cheeseburger", "hamburger"] },
+  { key: "taco", label: "Taco", terms: ["taco", "tacos"] },
+  { key: "burrito", label: "Burrito", terms: ["burrito", "quesadilla", "enchilada"] },
+  { key: "pizza", label: "Pizza", terms: ["pizza", "flatbread", "calzone"] },
+  { key: "pasta", label: "Pasta", terms: ["pasta", "spaghetti", "fettuccine", "penne", "rigatoni", "lasagna", "mac and cheese", "noodle", "ramen", "udon"] },
+];
 const WAITER_TEXT_ONLY_PREPARATION_ALIASES = new Map(
   WAITER_TEXT_ONLY_PREPARATION_SIGNALS.flatMap((signal) =>
     signal.terms.map((term) => [normalizeWaiterValue(term), signal])
   )
 );
+const WAITER_BROAD_PROTEIN_TERMS = new Set([
+  "chicken",
+  "beef",
+  "steak",
+  "pork",
+  "fish",
+  "seafood",
+  "shrimp",
+  "turkey",
+  "lamb",
+  "tofu",
+]);
 const WAITER_INTENT_PHRASES = Object.freeze({
   high_protein: ["high protein", "higher protein", "protein packed", "protein rich"],
   low_sodium: ["low sodium", "lower sodium", "reduced sodium"],
@@ -591,11 +618,30 @@ function buildQueryTokenSet(query) {
   return new Set(tokenizeWaiterText(query));
 }
 
+function isBroadProteinWaiterQuery(query) {
+  const tokens = buildQueryTokenSet(query);
+  return [...tokens].some((token) => WAITER_BROAD_PROTEIN_TERMS.has(token));
+}
+
 function canonicalWaiterPreparation(value) {
   const normalized = normalizeWaiterValue(value);
   const alias = WAITER_TEXT_ONLY_PREPARATION_ALIASES.get(normalized);
   if (alias) return { key: alias.key, label: alias.label };
   return { key: normalized, label: titleCaseWaiterValue(normalized) };
+}
+
+function extractWaiterFoodForms(row, queryTokens) {
+  const text = normalizeWaiterValue([row.__waiterText, row.category].join(" "));
+  const forms = new Map();
+
+  for (const signal of WAITER_FOOD_FORM_SIGNALS) {
+    if (queryTokens.has(singularizeWaiterToken(signal.key))) continue;
+    if (signal.terms.some((term) => waiterTextIncludesPhrase(text, term))) {
+      forms.set(signal.key, signal.label);
+    }
+  }
+
+  return forms;
 }
 
 function extractWaiterTextFeatures(row, queryTokens) {
@@ -740,9 +786,22 @@ function selectWaiterGroup(groups) {
       (b.priority || 0) - (a.priority || 0)
     );
 
+  const formGroup = ranked
+    .filter((group) => (
+      group.tier === WAITER_TIER_FOOD &&
+      (group.dimension === "form" || group.dimension === "canonical_family" || group.dimension === "category") &&
+      group.utilityScore >= WAITER_STRONG_UTILITY
+    ))
+    .sort((a, b) =>
+      b.utilityScore - a.utilityScore ||
+      (b.priority || 0) - (a.priority || 0)
+    )[0];
+  if (formGroup) return formGroup;
+
   const foodAttributeGroup = ranked
     .filter((group) => (
       group.tier === WAITER_TIER_FOOD &&
+      group.dimension !== "form" &&
       group.dimension !== "text" &&
       group.utilityScore >= WAITER_STRONG_UTILITY
     ))
@@ -838,6 +897,25 @@ function buildCanonicalFamilyCandidates(inventory, queryTokens) {
       `${titleCaseWaiterValue(family)} items`
     );
   }
+  return candidates;
+}
+
+function buildWaiterFoodFormCandidates(inventory, queryTokens) {
+  const candidates = new Map();
+
+  for (const row of inventory) {
+    const forms = extractWaiterFoodForms(row, queryTokens);
+    for (const [key, label] of forms.entries()) {
+      addCandidate(
+        candidates,
+        key,
+        label,
+        (candidateRow) => extractWaiterFoodForms(candidateRow, queryTokens).has(key),
+        `${label} items`
+      );
+    }
+  }
+
   return candidates;
 }
 
@@ -973,11 +1051,23 @@ function buildWaiterOptions(rows, query, context = {}) {
 
   const queryTokens = buildQueryTokenSet(query);
   const intentKeys = activeWaiterIntentKeys({ ...context, query });
+  const broadProteinQuery = isBroadProteinWaiterQuery(query);
   const groups = [
+    {
+      dimension: "form",
+      tier: WAITER_TIER_FOOD,
+      priority: broadProteinQuery ? 80 : 55,
+      options: buildWaiterOptionRows(
+        inventory,
+        "form",
+        buildWaiterFoodFormCandidates(inventory, queryTokens),
+        intentKeys
+      ),
+    },
     {
       dimension: "preparation",
       tier: WAITER_TIER_FOOD,
-      priority: 60,
+      priority: broadProteinQuery ? 40 : 60,
       options: buildWaiterOptionRows(
         inventory,
         "preparation",

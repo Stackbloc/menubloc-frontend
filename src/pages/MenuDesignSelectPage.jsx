@@ -3,6 +3,8 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import {
   RESTAURANT_SIGNUP_RESTART_ROUTE,
   buildRestaurantOnboardingSearch,
@@ -24,9 +26,9 @@ const s = {
   page: {
     maxWidth: 860,
     margin: "0 auto",
-    padding: "36px 20px 80px",
+    padding: "24px 20px 96px",
     fontFamily: FONT,
-    color: "#111",
+    color: "var(--gb-color-ink)",
   },
   steps: {
     display: "flex",
@@ -461,11 +463,13 @@ export default function MenuDesignSelectPage() {
   }
 
   return (
-    <div style={s.page}>
-      <BrandLockup
-        subtitle="for Restaurants"
-        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
-      />
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)" }}>
+      <StickyPageHeader />
+      <main style={s.page}>
+        <BrandLockup
+          subtitle="for Restaurants"
+          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "var(--gb-color-page)" }}
+        />
 
       <div style={s.steps}>
         <div style={s.step(false, true)}>1. Account</div>
@@ -569,6 +573,8 @@ export default function MenuDesignSelectPage() {
           {isUploadLater ? "Save this setup and finish for now" : "Skip for now and keep the basic menu layout"}
         </button>
       </div>
+      </main>
+      <BottomNav />
     </div>
   );
 }

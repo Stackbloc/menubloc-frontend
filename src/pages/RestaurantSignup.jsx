@@ -13,6 +13,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
 import {
   persistRestaurantOnboardingState,
@@ -23,6 +25,13 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").repla
 const PLAN_SELECTION_ROUTE = "/restaurant/subscription";
 const PLAN_ENTRY_ROUTE = "/restaurant/signup";
 const DESIGN_SELECTION_ROUTE = "/restaurant/design-select";
+const DEFAULT_SIGNUP_PLAN = "verified";
+const VALID_SIGNUP_PLANS = new Set(["verified", "founders_annual"]);
+
+function normalizeSignupPlan(value) {
+  const plan = String(value || "").trim();
+  return VALID_SIGNUP_PLANS.has(plan) ? plan : DEFAULT_SIGNUP_PLAN;
+}
 
 function planLabel(t, planCode) {
   if (!planCode) return "";
@@ -32,18 +41,18 @@ function planLabel(t, planCode) {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#FFFFFF",
+    background: "var(--gb-color-page)",
     maxWidth: 640,
     margin: "0 auto",
-    padding: "40px 20px 60px",
+    padding: "28px 20px 96px",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
-    color: "#0B0F0C",
+    color: "var(--gb-color-ink)",
   },
   header: { marginBottom: 28 },
   brand: { fontWeight: 800, fontSize: 18 },
   subbrand: { fontSize: 12, color: "#5F6B7A" },
-  pageTitle: { fontSize: 28, fontWeight: 800, marginTop: 20, marginBottom: 6, letterSpacing: "-0.03em" },
-  pageSubtitle: { fontSize: 15, color: "#475467", lineHeight: 1.6, maxWidth: 560 },
+  pageTitle: { fontSize: 28, fontWeight: 800, marginTop: 20, marginBottom: 6, letterSpacing: "-0.03em", color: "var(--gb-color-ink-strong)" },
+  pageSubtitle: { fontSize: 15, color: "rgba(248,244,234,0.72)", lineHeight: 1.6, maxWidth: 560 },
   section: {
     background: "#FFFFFF",
     border: "1px solid #DDE6D8",
@@ -255,7 +264,8 @@ export default function RestaurantSignup() {
   const location = useLocation();
   const { t } = useLanguage();
   const { operator, isAuthenticated: isOperatorAuthenticated, loading: operatorLoading } = useOperator();
-  const selectedPlan = location.state?.selected_plan || "";
+  const urlPlan = new URLSearchParams(location.search || "").get("plan");
+  const selectedPlan = normalizeSignupPlan(location.state?.selected_plan || urlPlan);
   const selectedPlanLabel = planLabel(t, selectedPlan);
 
   const [form, setForm] = useState({
@@ -445,11 +455,13 @@ export default function RestaurantSignup() {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
+    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)" }}>
+      <StickyPageHeader />
+      <main style={styles.page}>
+        <div style={styles.header}>
         <BrandLockup
           subtitle={t("signup.forRestaurants")}
-          logoProps={{ width: 280, height: 72, radius: 18, pageColor: "#FFFFFF" }}
+          logoProps={{ width: 280, height: 72, radius: 18, pageColor: "var(--gb-color-page)" }}
           wrapperStyle={{ marginBottom: 6 }}
         />
         <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your restaurant account")}</div>
@@ -489,7 +501,7 @@ export default function RestaurantSignup() {
             "Optional setup modules such as QR starter kit, equipment readiness, and launch deals stay optional later in onboarding."
           )}
         </div>
-      </div>
+        </div>
 
       {serverError ? (
         <div style={styles.errorBanner}>
@@ -675,6 +687,8 @@ export default function RestaurantSignup() {
             : t("signup.account.createAccountButton", "Create account")}
         </button>
       </form>
+      </main>
+      <BottomNav />
     </div>
   );
 }

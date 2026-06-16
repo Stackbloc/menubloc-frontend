@@ -7,6 +7,8 @@ import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { FAQ_DEFS, FaqAnswerBlocks } from "./RestaurantFAQ.jsx";
 import { BrandLogo } from "./BrandLogo.jsx";
+import StickyPageHeader from "./StickyPageHeader.jsx";
+import BottomNav from "./BottomNav.jsx";
 
 export default function RestaurantOnboardingApproved({ onContinue }) {
   const { t } = useLanguage();
@@ -30,6 +32,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
 
   return (
     <div className="restaurant-onboarding-page">
+      <StickyPageHeader />
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -46,7 +49,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         .restaurant-onboarding-page .page {
           max-width: 640px;
           margin: 0 auto;
-          padding: 48px 24px 80px;
+          padding: 32px 24px 96px;
         }
 
         .restaurant-onboarding-page .logo {
@@ -346,7 +349,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
 
       <main className="page">
         <div className="logo">
-          <BrandLogo width={180} height={48} radius={14} pageColor="#FFFFFF" />
+          <BrandLogo width={180} height={48} radius={14} pageColor="var(--gb-color-page)" />
         </div>
 
         <div className="section-label">For Restaurants</div>
@@ -459,6 +462,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           Continue
         </button>
       </main>
+      <BottomNav />
     </div>
   );
 }

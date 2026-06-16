@@ -774,6 +774,7 @@ export default function BrowseMenus() {
                     hasActiveFilters={hasActiveFilters(filters)}
                     activeFilterLabel={activeFilterLabel}
                     activeFilterParams={activeFilterParams}
+                    visualIndex={index}
                   />
                 ))}
               </div>

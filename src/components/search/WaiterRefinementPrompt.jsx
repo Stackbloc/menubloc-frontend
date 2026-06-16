@@ -11,7 +11,30 @@ export default function WaiterRefinementPrompt({
   const visibleOptions = refinementOptions.slice(0, 3);
   const selectedId = selectedRefinement?.id ?? null;
 
-  if (visibleOptions.length < 1) return null;
+  if (visibleOptions.length < 2) return null;
+
+  function getQuestionLead() {
+    const firstType = visibleOptions[0]?.type;
+    const normalizedQuery = String(displayQuery || "").trim();
+    const subject = normalizedQuery ? normalizedQuery : "this";
+
+    if (firstType === "form" || firstType === "canonical_family" || firstType === "category") {
+      return `What type of ${subject}: `;
+    }
+    if (firstType === "preparation") {
+      return "How would you like it prepared: ";
+    }
+    if (firstType === "ingredient" || firstType === "modifier") {
+      return "What sounds best: ";
+    }
+    if (firstType === "nutrition") {
+      return "Want to narrow it by nutrition: ";
+    }
+    if (firstType === "commerce") {
+      return "Want to narrow it by: ";
+    }
+    return "Are you looking for: ";
+  }
 
   // Build the question sentence with inline clickable words.
   // The words themselves ARE the interactive elements — no separate chip row.
@@ -82,6 +105,7 @@ export default function WaiterRefinementPrompt({
     if (visibleOptions.length === 2) {
       return (
         <span>
+          <span style={plain}>{getQuestionLead()}</span>
           {renderOptionWord(a, 0)}
           <span style={plain}> or </span>
           {renderOptionWord(b, 1)}
@@ -92,6 +116,7 @@ export default function WaiterRefinementPrompt({
 
     return (
       <span>
+        <span style={plain}>{getQuestionLead()}</span>
         {renderOptionWord(a, 0)}
         <span style={plain}>, </span>
         {renderOptionWord(b, 1)}

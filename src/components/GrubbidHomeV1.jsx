@@ -403,12 +403,13 @@ export default function GrubbidHomeV1() {
               : "No menus found nearby. Try changing your location."}
           </div>
         ) : (
-          menus.map((menu) => (
+          menus.map((menu, index) => (
             <DiscoveryCard
               key={menu.menu_id || menu.restaurant_id}
               menu={menu}
               saved={savedIds.includes(menu.restaurant_id)}
               onSave={toggleSave}
+              visualIndex={index}
             />
           ))
         )}

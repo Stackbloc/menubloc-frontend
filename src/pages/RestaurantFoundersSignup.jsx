@@ -30,6 +30,8 @@ import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import BottomNav from "../components/BottomNav.jsx";
 import FoundersProgressBar from "../components/founders/FoundersProgressBar.jsx";
 import FoundersIntroStep from "../components/founders/FoundersIntroStep.jsx";
 import FoundersFaqStep from "../components/founders/FoundersFaqStep.jsx";
@@ -114,6 +116,7 @@ export default function RestaurantFoundersSignup() {
 
   return (
     <div style={pageStyle}>
+      <StickyPageHeader />
       <div style={shellStyle}>
         <BrandLockup
           to="/"
@@ -125,8 +128,7 @@ export default function RestaurantFoundersSignup() {
             width: 160,
             height: 100,
             radius: 22,
-            pageColor: "#f9f9f7",
-            imageStyle: { filter: "brightness(0)" },
+            pageColor: "var(--gb-color-page)",
           }}
         />
 
@@ -158,6 +160,7 @@ export default function RestaurantFoundersSignup() {
           />
         ) : null}
       </div>
+      <BottomNav />
     </div>
   );
 }
@@ -165,9 +168,9 @@ export default function RestaurantFoundersSignup() {
 const pageStyle = {
   minHeight: "100vh",
   background: "var(--gb-color-page)",
-  padding: "40px 20px 80px",
+  padding: "0 20px 96px",
   fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
-  color: "#101828",
+  color: "var(--gb-color-ink)",
 };
 
 const shellStyle = {
