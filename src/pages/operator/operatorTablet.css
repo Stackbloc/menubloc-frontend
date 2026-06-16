@@ -146,23 +146,44 @@
   color: #101828;
 }
 
+.ot-install-wrap {
+  display: grid;
+  gap: 8px;
+}
+
 .ot-install {
   min-height: 52px;
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   border-radius: 8px;
   background: #edf7f2;
   color: #1f4e3d;
 }
 
-.ot-install > div {
-  display: grid;
-  gap: 2px;
+.ot-install--button,
+.ot-install--manual {
+  width: 100%;
+  border: 1px solid #b8c7bf;
   padding: 8px 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ot-install--button {
+  background: #1f4e3d;
+  color: #fff;
+}
+
+.ot-install--manual {
+  background: #edf7f2;
+  color: #1f4e3d;
 }
 
 .ot-install strong,
 .ot-install span {
+  display: block;
   font-size: 13px;
   line-height: 1.2;
 }
@@ -170,6 +191,27 @@
 .ot-install--installed {
   padding: 0 14px;
   font-weight: 900;
+}
+
+.ot-install-instructions {
+  max-width: 300px;
+  padding: 10px 12px;
+  border: 1px solid #fedf89;
+  border-radius: 8px;
+  background: #fffaeb;
+  color: #93370d;
+}
+
+.ot-install-instructions strong,
+.ot-install-instructions span {
+  display: block;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.ot-install-instructions span {
+  margin-top: 3px;
+  font-weight: 700;
 }
 
 .ot-offline,

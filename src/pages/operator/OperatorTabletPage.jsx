@@ -255,6 +255,8 @@ function PrintTicket({ order, restaurantName }) {
 }
 
 function InstallPanel({ canInstall, installed, install, standalone }) {
+  const [showManualInstall, setShowManualInstall] = useState(false);
+
   if (installed || standalone) {
     return (
       <div className="ot-install ot-install--installed">
@@ -264,17 +266,28 @@ function InstallPanel({ canInstall, installed, install, standalone }) {
   }
 
   return (
-    <div className="ot-install">
+    <div className="ot-install-wrap">
       {canInstall ? (
-        <button type="button" className="ot-button ot-button--install" onClick={install}>
-          Install Menuply Operator
+        <button type="button" className="ot-install ot-install--button" onClick={install}>
+          <strong>Install Menuply Operator</strong>
+          <span>Tap to open Chrome install prompt</span>
         </button>
       ) : (
-        <div>
+        <button
+          type="button"
+          className="ot-install ot-install--manual"
+          onClick={() => setShowManualInstall((value) => !value)}
+        >
           <strong>Install Menuply Operator</strong>
           <span>Chrome menu → Add to Home screen</span>
-        </div>
+        </button>
       )}
+      {!canInstall && showManualInstall ? (
+        <div className="ot-install-instructions">
+          <strong>Manual install</strong>
+          <span>Open Chrome menu, choose Install app or Add to Home screen, then confirm Menuply Operator.</span>
+        </div>
+      ) : null}
     </div>
   );
 }
