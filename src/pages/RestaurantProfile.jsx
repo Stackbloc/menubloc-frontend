@@ -423,11 +423,6 @@ export default function RestaurantProfile() {
               {uploading ? "Uploading…" : "Upload + Parse"}
             </button>
 
-            {restaurantId ? (
-              <button type="button" style={styles.btn2} onClick={() => nav(`/menus/${encodeURIComponent(String(restaurantId))}`)}>
-                View menu →
-              </button>
-            ) : null}
           </div>
 
           {!restaurantId ? (

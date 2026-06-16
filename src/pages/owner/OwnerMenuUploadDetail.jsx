@@ -154,12 +154,6 @@ export default function OwnerMenuUploadDetail() {
           <SectionTitle title="Restaurant" />
           <DetailRow label="Name"     value={upload.restaurant_name || "Unknown"} />
           <DetailRow label="Location" value={upload.city && upload.state ? `${upload.city}, ${upload.state}` : "—"} />
-          {upload.menu_id && (
-            <DetailRow
-              label="Linked Menu"
-              value={<Link to={`/menus/${upload.menu_id}`} style={{ color: OWNER_COLORS.accent }}>Menu #{upload.menu_id}</Link>}
-            />
-          )}
         </PageCard>
 
         {/* Upload metadata */}

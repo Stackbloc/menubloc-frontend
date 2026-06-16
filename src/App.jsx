@@ -105,7 +105,6 @@ import RestaurantBillboard from "./pages/RestaurantBillboard.jsx";
 import RestaurantPublicPage from "./pages/RestaurantPublicPage.jsx";
 
 import MenuPage from "./pages/MenuPage.jsx";
-import MenuDetailPage from "./pages/MenuDetailPage.jsx";
 import MenuItemDetailPage from "./pages/MenuItemDetailPage.jsx";
 import ComparePage from "./pages/ComparePage.jsx";
 import MenuItemInfoPage from "./pages/MenuItemInfoPage.jsx";
@@ -570,7 +569,6 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant/spreadsheet-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SpreadsheetUploadPage />} />
 
         <Route path="/menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuPage />} />
-        <Route path="/menus/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuDetailPage />} />
         <Route path="/public/restaurants/:id/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/public/restaurants/:id/display" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuDisplayPage />} />
         <Route path="/checkout" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CheckoutPage />} />
