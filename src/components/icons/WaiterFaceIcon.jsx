@@ -4,7 +4,7 @@ import waiterFaceSrc from "../../assets/waiter-icons/waiter-face.png";
 // Zoom factor: renders the PNG larger than the container and clips,
 // so the face features (eyes, smile, bow tie) fill the available space
 // instead of sitting in a sea of whitespace.
-const ZOOM = 1.7;
+const ZOOM = 1.85;
 
 export default function WaiterFaceIcon({
   size = 34,
