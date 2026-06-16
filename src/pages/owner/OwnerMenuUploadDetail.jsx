@@ -570,7 +570,7 @@ function StatusActions({ upload, displayStatus, uploadId, doAction }) {
   }
 
   if (displayStatus === "stalled" || displayStatus === "failed" || upload.status === "rejected" || upload.status === "abandoned") {
-    const canRetry = pages.some((p) => p.pdf_storage_url || p.image_url);
+    const canRetry = (upload.pages || []).some((p) => p.pdf_storage_url || p.image_url);
     actions.push(
       <ActionButton
         key="retry"
