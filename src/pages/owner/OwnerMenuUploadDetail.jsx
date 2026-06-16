@@ -570,8 +570,14 @@ function StatusActions({ upload, displayStatus, uploadId, doAction }) {
   }
 
   if (displayStatus === "stalled" || displayStatus === "failed" || upload.status === "rejected" || upload.status === "abandoned") {
+    const canRetry = pages.some((p) => p.pdf_storage_url || p.image_url);
     actions.push(
-      <ActionButton key="retry" label="Retry Processing" onClick={() => doAction(retryOwnerMenuUpload, "Upload reopened for retry.")} />
+      <ActionButton
+        key="retry"
+        label="Retry Processing"
+        disabled={!canRetry}
+        onClick={() => doAction(retryOwnerMenuUpload, "Upload reopened for retry.")}
+      />
     );
   }
 
@@ -618,19 +624,21 @@ function DetailRow({ label, value }) {
   );
 }
 
-function ActionButton({ label, onClick, accent }) {
+function ActionButton({ label, onClick, accent, disabled }) {
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       style={{
         padding: "10px 18px",
         borderRadius: 10,
-        border: `1px solid ${accent ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
-        background: accent ? OWNER_COLORS.accent : "#fff",
-        color: accent ? "#fff" : OWNER_COLORS.ink,
+        border: `1px solid ${disabled ? OWNER_COLORS.line : accent ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
+        background: disabled ? "#f3f4f6" : accent ? OWNER_COLORS.accent : "#fff",
+        color: disabled ? "#9ca3af" : accent ? "#fff" : OWNER_COLORS.ink,
         fontWeight: 700,
         fontSize: 13,
-        cursor: "pointer",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.6 : 1,
       }}
     >
       {label}
