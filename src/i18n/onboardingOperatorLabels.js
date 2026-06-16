@@ -275,9 +275,11 @@ export const ONBOARDING_OPERATOR_LABELS = {
       "This gives restaurants substantially more flexibility and control over pricing, margins, customer relationships, and fulfillment strategy.",
     "onboarding.faq.q6": "Does Menuply support direct online ordering?",
     "onboarding.faq.q6.a1":
-      "Yes. Diners can place orders directly through your Menuply page. Orders come to you without a per-order percentage taken out.",
+      "Yes. Diners can place orders directly from your Menuply menu by selecting items and adding them to their basket.",
     "onboarding.faq.q6.a2":
-      "You can accept pickup and delivery orders from your existing customers using Menuply as your online ordering channel — no separate website or third-party integration required.",
+      "Restaurants can accept pickup and delivery orders through Menuply without needing a separate ordering website. Payments are processed and deposited directly into the restaurant's account, with applicable Menuply commissions and payment processing fees deducted automatically. Menuply does not receive, hold, or delay the restaurant's share of sales proceeds beyond normal payment processor and banking settlement timeframes.",
+    "onboarding.faq.q6.a3":
+      "Restaurants maintain control over their menus, pricing, operating hours, and order fulfillment.",
     "onboarding.faq.q7": "Why is Menuply focused on lower restaurant transaction costs?",
     "onboarding.faq.q7.a1":
       "High transaction costs on delivery platforms have pushed many restaurants to raise menu prices to offset fees. This creates a structural problem: diners pay more, restaurants earn less per order, and the platform keeps the margin in between.",
@@ -567,9 +569,11 @@ export const ONBOARDING_OPERATOR_LABELS = {
       "This gives restaurants substantially more flexibility and control over pricing, margins, customer relationships, and fulfillment strategy.",
     "onboarding.faq.q6": "Does Menuply support direct online ordering?",
     "onboarding.faq.q6.a1":
-      "Yes. Diners can place orders directly through your Menuply page. Orders come to you without a per-order percentage taken out.",
+      "Yes. Diners can place orders directly from your Menuply menu by selecting items and adding them to their basket.",
     "onboarding.faq.q6.a2":
-      "You can accept pickup and delivery orders from your existing customers using Menuply as your online ordering channel — no separate website or third-party integration required.",
+      "Restaurants can accept pickup and delivery orders through Menuply without needing a separate ordering website. Payments are processed and deposited directly into the restaurant's account, with applicable Menuply commissions and payment processing fees deducted automatically. Menuply does not receive, hold, or delay the restaurant's share of sales proceeds beyond normal payment processor and banking settlement timeframes.",
+    "onboarding.faq.q6.a3":
+      "Restaurants maintain control over their menus, pricing, operating hours, and order fulfillment.",
     "onboarding.faq.q7": "Why is Menuply focused on lower restaurant transaction costs?",
     "onboarding.faq.q7.a1":
       "High transaction costs on delivery platforms have pushed many restaurants to raise menu prices to offset fees. This creates a structural problem: diners pay more, restaurants earn less per order, and the platform keeps the margin in between.",
@@ -842,9 +846,11 @@ export const ONBOARDING_OPERATOR_LABELS = {
       "This gives restaurants substantially more flexibility and control over pricing, margins, customer relationships, and fulfillment strategy.",
     "onboarding.faq.q6": "Does Menuply support direct online ordering?",
     "onboarding.faq.q6.a1":
-      "Yes. Diners can place orders directly through your Menuply page. Orders come to you without a per-order percentage taken out.",
+      "Yes. Diners can place orders directly from your Menuply menu by selecting items and adding them to their basket.",
     "onboarding.faq.q6.a2":
-      "You can accept pickup and delivery orders from your existing customers using Menuply as your online ordering channel — no separate website or third-party integration required.",
+      "Restaurants can accept pickup and delivery orders through Menuply without needing a separate ordering website. Payments are processed and deposited directly into the restaurant's account, with applicable Menuply commissions and payment processing fees deducted automatically. Menuply does not receive, hold, or delay the restaurant's share of sales proceeds beyond normal payment processor and banking settlement timeframes.",
+    "onboarding.faq.q6.a3":
+      "Restaurants maintain control over their menus, pricing, operating hours, and order fulfillment.",
     "onboarding.faq.q7": "Why is Menuply focused on lower restaurant transaction costs?",
     "onboarding.faq.q7.a1":
       "High transaction costs on delivery platforms have pushed many restaurants to raise menu prices to offset fees. This creates a structural problem: diners pay more, restaurants earn less per order, and the platform keeps the margin in between.",
