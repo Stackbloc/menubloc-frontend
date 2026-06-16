@@ -130,7 +130,7 @@ export default function WaiterRefinementPrompt({
           boxShadow: "0 0 0 1px var(--gb-color-border), 0 10px 26px rgba(15,23,42,0.1)",
         }}
       >
-        <WaiterFaceIcon size={64} style={{ filter: "invert(1)", flexShrink: 0 }} />
+        <WaiterFaceIcon size={48} style={{ filter: "invert(1)" }} />
       </span>
 
       {/* Inline question with clickable option words */}
