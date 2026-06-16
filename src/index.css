@@ -40,8 +40,8 @@
 
   --gb-font-ui: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  --gb-color-page: #f7f1e6;
-  --gb-color-page-alt: #edf2ee;
+  --gb-color-page: #FAFAF5;
+  --gb-color-page-alt: #F5F5F2;
   --gb-color-page-warm: #fff4da;
   --gb-color-surface: rgba(255, 255, 255, 0.94);
   --gb-color-surface-muted: rgba(247, 246, 241, 0.96);
@@ -109,10 +109,7 @@
 
 html {
   min-height: 100%;
-  background:
-    radial-gradient(circle at top left, rgba(255, 231, 178, 0.88), transparent 30%),
-    radial-gradient(circle at top right, rgba(111, 154, 126, 0.22), transparent 24%),
-    linear-gradient(180deg, var(--gb-color-page) 0%, var(--gb-color-page-alt) 52%, #f5efe4 100%);
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAFAF5 100%);
   background-attachment: fixed;
 }
 

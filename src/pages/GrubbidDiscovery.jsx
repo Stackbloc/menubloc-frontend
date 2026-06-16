@@ -1270,7 +1270,7 @@ export default function GrubbidDiscovery() {
               ☰
             </button>
 
-            <BrandLogo width={113} height={48} radius={14} pageColor="#f7f1e6" />
+            <BrandLogo height={36} radius={8} matchPageBackground={false} pageColor="#FAFAF5" />
 
             <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
               <Link
@@ -1666,7 +1666,7 @@ export default function GrubbidDiscovery() {
             ))
           ) : inlineError ? null : showOutOfMarketPromo ? (
             <div style={{ textAlign: "left", padding: "24px 4px 32px" }}>
-              <div style={{ color: "#E5E7EB", fontSize: 16, fontWeight: 700, lineHeight: 1.55, width: "100%", maxWidth: 760, margin: 0, textAlign: "left" }}>
+              <div style={{ color: "var(--gb-color-ink)", fontSize: 16, fontWeight: 700, lineHeight: 1.55, width: "100%", maxWidth: 760, margin: 0, textAlign: "left" }}>
                 As the cost of dining continues to rise, Menuply is building a lower-cost alternative that enables restaurants to offer better value to diners in {outOfMarketAreaLabel}. Click below to learn more.
               </div>
               <div className="disc-oom-actions">
