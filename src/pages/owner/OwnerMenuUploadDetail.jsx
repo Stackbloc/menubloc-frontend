@@ -11,6 +11,181 @@ import {
   OWNER_API_BASE,
 } from "../../lib/ownerApi.js";
 
+// ─── Retry / Recovery Panel ───────────────────────────────────────────────────
+function RetryPanel({ upload, uploadId, onComplete }) {
+  const [open, setOpen] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
+  const [name, setName] = useState(upload.restaurant_name || "");
+  const [city, setCity] = useState(upload.city || "");
+  const [stateVal, setStateVal] = useState(upload.state || "");
+
+  const canRetry = (upload.pages || []).some((p) => p.pdf_storage_url || p.image_url);
+  const totalItems = (upload.pages || []).reduce((sum, p) => sum + (p.item_count || 0), 0);
+  const needsIdentity = !upload.restaurant_name;
+
+  async function handleRun(e) {
+    e.preventDefault();
+    if (!name.trim()) { setError("Restaurant name is required."); return; }
+    setRunning(true);
+    setError("");
+    setResult(null);
+    try {
+      const res = await retryOwnerMenuUpload(uploadId, {
+        restaurant_name: name.trim(),
+        city: city.trim(),
+        state: stateVal.trim(),
+      });
+      setResult(res.report);
+      if (onComplete) onComplete();
+    } catch (err) {
+      setError(err?.payload?.error || err?.message || "Retry failed. Please try again.");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        disabled={!canRetry}
+        style={{
+          padding: "10px 18px",
+          borderRadius: 10,
+          border: `1px solid ${!canRetry ? OWNER_COLORS.line : OWNER_COLORS.line}`,
+          background: !canRetry ? "#f3f4f6" : "#fff",
+          color: !canRetry ? "#9ca3af" : OWNER_COLORS.ink,
+          fontWeight: 700,
+          fontSize: 13,
+          cursor: !canRetry ? "not-allowed" : "pointer",
+          opacity: !canRetry ? 0.6 : 1,
+        }}
+      >
+        Retry Processing
+      </button>
+    );
+  }
+
+  return (
+    <div style={{
+      marginTop: 12,
+      padding: "18px 20px",
+      borderRadius: 14,
+      border: `1px solid ${OWNER_COLORS.line}`,
+      background: "#fafafa",
+      width: "100%",
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <span style={{ fontWeight: 700, fontSize: 14, color: OWNER_COLORS.ink }}>Recovery Wizard</span>
+        <button onClick={() => { setOpen(false); setResult(null); setError(""); }}
+          style={{ background: "none", border: "none", cursor: "pointer", color: OWNER_COLORS.muted, fontSize: 18 }}>×</button>
+      </div>
+
+      {result ? (
+        <div>
+          <div style={{ padding: "14px 16px", borderRadius: 12, background: result.items_promoted > 0 ? "#f0fdf4" : "#fef2f2", marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: result.items_promoted > 0 ? "#15803d" : "#991b1b" }}>
+              {result.items_promoted > 0 ? "Recovery complete" : "Recovery incomplete"}
+            </div>
+            <div style={{ fontSize: 12, color: OWNER_COLORS.muted, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+              <span>Pages scanned: <strong>{result.pages_read}</strong></span>
+              <span>Items found: <strong>{result.items_found}</strong></span>
+              <span>Items published: <strong style={{ color: "#15803d" }}>{result.items_promoted}</strong></span>
+              <span>Items for review: <strong style={{ color: result.items_to_review > 0 ? "#92400e" : "inherit" }}>{result.items_to_review}</strong></span>
+              {result.items_cleared > 0 && (
+                <span style={{ gridColumn: "1/-1" }}>Old wrong items removed: <strong>{result.items_cleared}</strong></span>
+              )}
+            </div>
+            {result.errors?.length > 0 && (
+              <div style={{ marginTop: 8, fontSize: 12, color: "#991b1b" }}>{result.errors[0]}</div>
+            )}
+          </div>
+          <button
+            onClick={() => { setResult(null); setOpen(false); if (onComplete) onComplete(); }}
+            style={{ padding: "8px 16px", borderRadius: 8, background: OWNER_COLORS.accent, color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+          >
+            Refresh
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleRun}>
+          <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 14 }}>
+            {totalItems > 0
+              ? `${totalItems} items found across ${(upload.pages || []).length} page(s) — ready for promotion.`
+              : `${(upload.pages || []).length} page(s) scanned. Confirm restaurant identity to recover.`}
+          </div>
+          {needsIdentity && (
+            <div style={{ marginBottom: 10, padding: "8px 12px", borderRadius: 8, background: "#fffbeb", border: "1px solid #fde68a", fontSize: 12, color: "#92400e" }}>
+              Restaurant name could not be determined automatically. Please enter it below.
+            </div>
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, marginBottom: 4, textTransform: "uppercase" }}>
+                Restaurant Name *
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="Restaurant name"
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, fontSize: 13, boxSizing: "border-box" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, marginBottom: 4, textTransform: "uppercase" }}>
+                City
+              </label>
+              <input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="City"
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, fontSize: 13, boxSizing: "border-box" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, marginBottom: 4, textTransform: "uppercase" }}>
+                State
+              </label>
+              <input
+                value={stateVal}
+                onChange={(e) => setStateVal(e.target.value)}
+                placeholder="CA"
+                maxLength={2}
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, fontSize: 13, boxSizing: "border-box" }}
+              />
+            </div>
+          </div>
+          {error && (
+            <div style={{ marginBottom: 10, padding: "8px 12px", borderRadius: 8, background: "#fef2f2", fontSize: 12, color: "#991b1b" }}>{error}</div>
+          )}
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              type="submit"
+              disabled={running || !name.trim()}
+              style={{
+                padding: "10px 20px", borderRadius: 10, background: running || !name.trim() ? "#9ca3af" : "#1a56db",
+                color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: running || !name.trim() ? "not-allowed" : "pointer",
+              }}
+            >
+              {running ? "Recovering…" : "Run Recovery"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setOpen(false); setError(""); }}
+              style={{ padding: "10px 16px", borderRadius: 10, background: "#fff", border: `1px solid ${OWNER_COLORS.line}`, fontWeight: 600, fontSize: 13, cursor: "pointer", color: OWNER_COLORS.muted }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
 const STATUS_STYLE = {
   pending:      { background: "#e8f0fe", color: "#1a56db" },
   processing:   { background: "#e8f0fe", color: "#1a56db" },
@@ -288,6 +463,7 @@ export default function OwnerMenuUploadDetail() {
           displayStatus={displayStatus}
           uploadId={uploadId}
           doAction={doAction}
+          onRetryComplete={load}
         />
       </PageCard>
     </OwnerLayout>
@@ -506,7 +682,7 @@ function OcrPageBlock({ page, expanded, onToggle }) {
   );
 }
 
-function StatusActions({ upload, displayStatus, uploadId, doAction }) {
+function StatusActions({ upload, displayStatus, uploadId, doAction, onRetryComplete }) {
   const actions = [];
 
   if (displayStatus === "needs_review" && upload.human_review_items > 0) {
@@ -564,14 +740,8 @@ function StatusActions({ upload, displayStatus, uploadId, doAction }) {
   }
 
   if (displayStatus === "stalled" || displayStatus === "failed" || upload.status === "rejected" || upload.status === "abandoned") {
-    const canRetry = (upload.pages || []).some((p) => p.pdf_storage_url || p.image_url);
     actions.push(
-      <ActionButton
-        key="retry"
-        label="Retry Processing"
-        disabled={!canRetry}
-        onClick={() => doAction(retryOwnerMenuUpload, "Upload reopened for retry.")}
-      />
+      <RetryPanel key="retry" upload={upload} uploadId={uploadId} onComplete={onRetryComplete} />
     );
   }
 

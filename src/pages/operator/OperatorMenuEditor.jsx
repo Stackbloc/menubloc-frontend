@@ -318,6 +318,8 @@ function MenuLabPanel({ rid }) {
     background_style: "dark",
     hero_enabled: true,
     image_density: "all",
+    logo_placement: "top-left",
+    font_preset: "default",
     section_heading_style: "default",
     item_image_style: "auto",
     price_placement: "right",
@@ -351,6 +353,8 @@ function MenuLabPanel({ rid }) {
           ...current,
           ...normalized,
           menu_style: normalized.menu_style || current.menu_style || "v1",
+          logo_placement: data.settings.logo_placement || "top-left",
+          font_preset: data.settings.font_preset || "default",
         }));
       }
     } catch {
@@ -380,26 +384,30 @@ function MenuLabPanel({ rid }) {
     setStatus("");
     setSaved(false);
     try {
-      const payload = normalizeMenuThemeSettings({
-        ...settings,
-        menu_style: settings.menu_style || "v1",
-        primary_color: settings.primary_color || null,
-        accent_color: settings.accent_color || settings.primary_color || null,
-        background_style: settings.background_style || "dark",
-        hero_enabled: settings.hero_enabled !== false,
-        image_density: settings.image_density || "all",
-        section_heading_style: settings.section_heading_style || "default",
-        item_image_style: settings.item_image_style || settings.image_density || "auto",
-        price_placement: settings.price_placement || "right",
-        intelligence_display_style: settings.intelligence_display_style || "subtle",
-        intelligence_density: settings.intelligence_density || "subtle",
-        nutrition_display: settings.nutrition_display || "compact",
-        allergen_display: settings.allergen_display || "icon",
-        insight_display: settings.insight_display || "compact",
-        compare_enabled: settings.compare_enabled !== false,
-        similar_enabled: settings.similar_enabled !== false,
-        indulgence_display: settings.indulgence_display || "compact",
-      });
+      const payload = {
+        ...normalizeMenuThemeSettings({
+          ...settings,
+          menu_style: settings.menu_style || "v1",
+          primary_color: settings.primary_color || null,
+          accent_color: settings.accent_color || settings.primary_color || null,
+          background_style: settings.background_style || "dark",
+          hero_enabled: settings.hero_enabled !== false,
+          image_density: settings.image_density || "all",
+          section_heading_style: settings.section_heading_style || "default",
+          item_image_style: settings.item_image_style || settings.image_density || "auto",
+          price_placement: settings.price_placement || "right",
+          intelligence_display_style: settings.intelligence_display_style || "subtle",
+          intelligence_density: settings.intelligence_density || "subtle",
+          nutrition_display: settings.nutrition_display || "compact",
+          allergen_display: settings.allergen_display || "icon",
+          insight_display: settings.insight_display || "compact",
+          compare_enabled: settings.compare_enabled !== false,
+          similar_enabled: settings.similar_enabled !== false,
+          indulgence_display: settings.indulgence_display || "compact",
+        }),
+        logo_placement: settings.logo_placement || "top-left",
+        font_preset: settings.font_preset || "default",
+      };
       const data = await api.updateDisplaySettings(rid, payload);
       if (data?.ok && data?.settings) {
         const normalized = normalizeMenuThemeSettings(data.settings);
@@ -407,6 +415,8 @@ function MenuLabPanel({ rid }) {
           ...current,
           ...normalized,
           item_image_style: data.settings.item_image_style || normalized.item_image_style,
+          logo_placement: data.settings.logo_placement || "top-left",
+          font_preset: data.settings.font_preset || "default",
         }));
       }
       setSaved(true);
@@ -621,6 +631,33 @@ function MenuLabPanel({ rid }) {
                 {settings.hero_enabled ? "Enabled" : "Disabled"}
               </button>
             </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
+              Font style
+              <select
+                value={settings.font_preset || "default"}
+                onChange={(e) => setSettings((current) => ({ ...current, font_preset: e.target.value }))}
+                style={controlStyle}
+              >
+                <option value="default">Default</option>
+                <option value="modern">Modern</option>
+                <option value="classic">Classic</option>
+                <option value="bold">Bold</option>
+                <option value="serif">Serif</option>
+                <option value="script">Script</option>
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
+              Logo placement
+              <select
+                value={settings.logo_placement || "top-left"}
+                onChange={(e) => setSettings((current) => ({ ...current, logo_placement: e.target.value }))}
+                style={controlStyle}
+              >
+                <option value="top-left">Top left</option>
+                <option value="center">Centered</option>
+                <option value="hidden">Hidden</option>
+              </select>
+            </label>
           </div>
         </>
       )}
@@ -647,6 +684,7 @@ export default function OperatorMenuEditor() {
 
   const [showNewMenuForm, setShowNewMenuForm] = useState(false);
   const [newMenuName, setNewMenuName]         = useState("");
+  const [newMenuPresetType, setNewMenuPresetType] = useState("");
   const [newMenuBusy, setNewMenuBusy]         = useState(false);
 
   const [showAddItem, setShowAddItem] = useState(false);
@@ -735,11 +773,14 @@ export default function OperatorMenuEditor() {
     setNewMenuBusy(true);
     setUpgradePrompt(false);
     try {
-      const d = await api.createMenu(rid, { name: newMenuName.trim(), is_primary: menus.length === 0 });
+      const body = { name: newMenuName.trim(), is_primary: menus.length === 0 };
+      if (newMenuPresetType) body.preset_type = newMenuPresetType;
+      const d = await api.createMenu(rid, body);
       const updated = [...menus, d.menu];
       setMenus(updated);
       setSelectedMenuId(d.menu.id);
       setNewMenuName("");
+      setNewMenuPresetType("");
       setShowNewMenuForm(false);
     } catch (e) {
       if (e.status === 403 && e.payload?.upgrade_required) {
@@ -986,24 +1027,39 @@ export default function OperatorMenuEditor() {
       {/* ── Top bar: New → Edit → Publish → Delete ───────────────── */}
       <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
 
-        {/* Menu selector */}
+        {/* Menu selector — tab chips */}
         {loadingMenus ? (
           <span style={{ color: "#8a9ab0", fontSize: 13 }}>Loading menus…</span>
         ) : menus.length === 0 ? (
           <span style={{ color: "#8a9ab0", fontSize: 13 }}>No menus yet</span>
         ) : (
-          <select
-            className="operator-responsive-select"
-            value={selectedMenuId || ""}
-            onChange={e => setSelectedMenuId(Number(e.target.value))}
-            style={{ ...INPUT, minWidth: 200, cursor: "pointer" }}
-          >
-            {menus.map(m => (
-              <option key={m.id} value={m.id}>
-                {m.name} {m.status === "draft" ? "(draft)" : ""}
-              </option>
-            ))}
-          </select>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            {menus.map(m => {
+              const active = m.id === selectedMenuId;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => { setSelectedMenuId(m.id); setMenuEditMode(false); setShowAddItem(false); setEditingItem(null); }}
+                  style={{
+                    padding: "7px 16px",
+                    borderRadius: 999,
+                    border: active ? "2px solid #1F4E3D" : "1.5px solid #dbe3eb",
+                    background: active ? "#1F4E3D" : "#fff",
+                    color: active ? "#fff" : "#0f1720",
+                    fontWeight: active ? 700 : 500,
+                    fontSize: 13,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {m.name}
+                  {m.status === "draft" ? <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 11 }}>draft</span> : null}
+                </button>
+              );
+            })}
+          </div>
         )}
 
         {/* New — always first */}
@@ -1126,26 +1182,63 @@ export default function OperatorMenuEditor() {
           borderRadius: 12,
           padding: "16px 18px",
           marginBottom: 20,
-          display: "flex",
-          gap: 10,
-          alignItems: "flex-end",
-          flexWrap: "wrap",
         }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Menu name</label>
-            <input
-              style={{ ...INPUT, width: "100%" }}
-              value={newMenuName}
-              onChange={e => setNewMenuName(e.target.value)}
-              placeholder="e.g. Lunch Menu, Seasonal Specials"
-              autoFocus
-              onKeyDown={e => e.key === "Enter" && handleCreateMenu()}
-            />
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#475467", marginBottom: 8 }}>Quick start — pick a menu type</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+            {[
+              { label: "Lunch", preset: "lunch" },
+              { label: "Dinner", preset: "dinner" },
+              { label: "Breakfast", preset: "breakfast" },
+              { label: "Specials", preset: "custom", name: "Specials" },
+              { label: "Happy Hour", preset: "custom", name: "Happy Hour" },
+              { label: "Catering", preset: "custom", name: "Catering Menu" },
+              { label: "Kids Menu", preset: "custom", name: "Kids Menu" },
+              { label: "Special Event", preset: "custom", name: "Special Event" },
+            ].map(({ label, preset, name }) => {
+              const active = newMenuName === (name || label.charAt(0).toUpperCase() + label.slice(1) + " Menu") ||
+                (newMenuPresetType === preset && !name && newMenuName === label.charAt(0).toUpperCase() + label.slice(1) + " Menu");
+              const resolvedName = name || (label.charAt(0).toUpperCase() + label.slice(1) + " Menu");
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    setNewMenuPresetType(preset);
+                    setNewMenuName(resolvedName);
+                  }}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 999,
+                    border: newMenuName === resolvedName ? "2px solid #1F4E3D" : "1.5px solid #dbe3eb",
+                    background: newMenuName === resolvedName ? "#edf7f2" : "#f4f7fa",
+                    color: newMenuName === resolvedName ? "#1F4E3D" : "#475467",
+                    fontWeight: newMenuName === resolvedName ? 700 : 500,
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
-          <button style={BTN("primary")} onClick={handleCreateMenu} disabled={newMenuBusy || !newMenuName.trim()}>
-            {newMenuBusy ? "Creating…" : "Create"}
-          </button>
-          <button style={BTN("muted")} onClick={() => setShowNewMenuForm(false)}>Cancel</button>
+          <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#5b6675", display: "block", marginBottom: 4 }}>Menu name</label>
+              <input
+                style={{ ...INPUT, width: "100%" }}
+                value={newMenuName}
+                onChange={e => { setNewMenuName(e.target.value); if (!e.target.value) setNewMenuPresetType(""); }}
+                placeholder="e.g. Lunch Menu, Seasonal Specials"
+                autoFocus
+                onKeyDown={e => e.key === "Enter" && handleCreateMenu()}
+              />
+            </div>
+            <button style={BTN("primary")} onClick={handleCreateMenu} disabled={newMenuBusy || !newMenuName.trim()}>
+              {newMenuBusy ? "Creating…" : "Create"}
+            </button>
+            <button style={BTN("muted")} onClick={() => { setShowNewMenuForm(false); setNewMenuName(""); setNewMenuPresetType(""); }}>Cancel</button>
+          </div>
         </div>
       )}
 

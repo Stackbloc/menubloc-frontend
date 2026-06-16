@@ -336,10 +336,16 @@ export default function MenuDesignLabPage() {
         <BrandLogo width={132} height={52} radius={0} pageColor={backgroundColor} linkStyle={styles.logo} />
         <div style={styles.headerActions}>
           {rid ? (
-            <Link to="/operator/menulab"
-              style={{ ...styles.headerLink, background: isDarkShell ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)", color: isDarkShell ? "#fff" : "#0f1720" }}>
-              ← Back to Menu Lab
-            </Link>
+            <>
+              <Link to="/operator/menulab"
+                style={{ ...styles.headerLink, background: isDarkShell ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)", color: isDarkShell ? "#fff" : "#0f1720" }}>
+                ← Back to Menu Lab
+              </Link>
+              <Link to="/operator"
+                style={{ ...styles.headerLink, background: isDarkShell ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)", color: isDarkShell ? "#fff" : "#0f1720" }}>
+                Operator Dashboard
+              </Link>
+            </>
           ) : (
             <>
               <Link to="/demo"

@@ -108,8 +108,8 @@ export const markOwnerMenuUploadReview = (uploadId) =>
   post(`/api/owner/menu-uploads/${uploadId}/mark-review`, {});
 export const markOwnerMenuUploadReviewed = (uploadId) =>
   post(`/api/owner/menu-uploads/${uploadId}/mark-reviewed`, {});
-export const retryOwnerMenuUpload = (uploadId) =>
-  post(`/api/owner/menu-uploads/${uploadId}/retry`, {});
+export const retryOwnerMenuUpload = (uploadId, identity = {}) =>
+  post(`/api/owner/menu-uploads/${uploadId}/retry`, identity);
 export const archiveOwnerMenuUpload = (uploadId) =>
   post(`/api/owner/menu-uploads/${uploadId}/archive`, {});
 
