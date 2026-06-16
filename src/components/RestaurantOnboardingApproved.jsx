@@ -6,8 +6,7 @@ Purpose: Cursor-friendly React component version of the approved Menuply restaur
 import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { FAQ_DEFS, FaqAnswerBlocks } from "./RestaurantFAQ.jsx";
-
-const LOGO_SRC = "/menuplyofficialsmalllogo.png";
+import { BrandLogo } from "./BrandLogo.jsx";
 
 export default function RestaurantOnboardingApproved({ onContinue }) {
   const { t } = useLanguage();
@@ -347,7 +346,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
 
       <main className="page">
         <div className="logo">
-          <img src={LOGO_SRC} alt="Menuply" style={{ height: "36px", width: "auto" }} />
+          <BrandLogo width={180} height={48} radius={14} pageColor="#FFFFFF" />
         </div>
 
         <div className="section-label">For Restaurants</div>

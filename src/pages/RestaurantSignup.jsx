@@ -32,21 +32,21 @@ function planLabel(t, planCode) {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "var(--gb-color-page)",
+    background: "#FFFFFF",
     maxWidth: 640,
     margin: "0 auto",
     padding: "40px 20px 60px",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
-    color: "#F8F4EA",
+    color: "#0B0F0C",
   },
   header: { marginBottom: 28 },
   brand: { fontWeight: 800, fontSize: 18 },
-  subbrand: { fontSize: 12, color: "rgba(248,244,234,0.62)" },
+  subbrand: { fontSize: 12, color: "#5F6B7A" },
   pageTitle: { fontSize: 28, fontWeight: 800, marginTop: 20, marginBottom: 6, letterSpacing: "-0.03em" },
-  pageSubtitle: { fontSize: 15, color: "rgba(248,244,234,0.82)", lineHeight: 1.6, maxWidth: 560 },
+  pageSubtitle: { fontSize: 15, color: "#475467", lineHeight: 1.6, maxWidth: 560 },
   section: {
-    background: "var(--gb-color-surface-strong)",
-    border: "1px solid rgba(61,217,52,0.16)",
+    background: "#FFFFFF",
+    border: "1px solid #DDE6D8",
     borderRadius: 18,
     padding: 20,
     marginBottom: 16,
@@ -65,18 +65,18 @@ const styles = {
     fontSize: 13,
     fontWeight: 700,
     marginBottom: 6,
-    color: "#F8F4EA",
+    color: "#111827",
   },
   required: { color: "#c00", marginLeft: 2 },
   input: {
     width: "100%",
     height: 44,
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
+    border: "1px solid #D0D5DD",
     padding: "0 12px",
     fontSize: 14,
-    background: "var(--gb-color-page)",
-    color: "#F8F4EA",
+    background: "#FFFFFF",
+    color: "#111827",
     boxSizing: "border-box",
   },
   inputError: {
@@ -86,8 +86,8 @@ const styles = {
     border: "1px solid #f87171",
     padding: "0 12px",
     fontSize: 14,
-    background: "var(--gb-color-page)",
-    color: "#F8F4EA",
+    background: "#FFFFFF",
+    color: "#111827",
     boxSizing: "border-box",
   },
   row2: { display: "flex", gap: 12, flexWrap: "wrap" },
@@ -105,9 +105,9 @@ const styles = {
     height: 30,
     padding: "0 10px",
     borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "var(--gb-color-surface-strong)",
-    color: "#F8F4EA",
+    border: "1px solid #D0D5DD",
+    background: "#FFFFFF",
+    color: "#111827",
     fontSize: 12,
     fontWeight: 700,
     cursor: "pointer",
@@ -119,16 +119,16 @@ const styles = {
     padding: "12px 16px",
     marginBottom: 16,
     fontSize: 13,
-    color: "#fecaca",
+    color: "#991B1B",
   },
   fieldError: { fontSize: 12, color: "#c00", marginTop: 5 },
-  helperText: { fontSize: 12, color: "rgba(248,244,234,0.80)", marginTop: 6 },
+  helperText: { fontSize: 12, color: "#667085", marginTop: 6 },
   expectationCard: {
     marginTop: 12,
     padding: "14px 16px",
     borderRadius: 14,
-    background: "#0F1712",
-    border: "1px solid rgba(61,217,52,0.14)",
+    background: "#F7FFF4",
+    border: "1px solid #D6F5CD",
   },
   expectationTitle: {
     fontSize: 12,
@@ -141,7 +141,7 @@ const styles = {
   expectationBody: {
     fontSize: 13,
     lineHeight: 1.6,
-    color: "rgba(248,244,234,0.84)",
+    color: "#344054",
   },
   planSummary: {
     display: "flex",
@@ -151,8 +151,8 @@ const styles = {
     flexWrap: "wrap",
     padding: "14px 16px",
     borderRadius: 14,
-    background: "var(--gb-color-surface-strong)",
-    border: "1px solid rgba(61,217,52,0.16)",
+    background: "#F7FFF4",
+    border: "1px solid #D6F5CD",
     marginTop: 18,
   },
   planSummaryLabel: {
@@ -166,7 +166,7 @@ const styles = {
   planSummaryValue: {
     fontSize: 16,
     fontWeight: 800,
-    color: "#F8F4EA",
+    color: "#111827",
   },
   planSummaryLink: {
     color: "#3DD934",
@@ -189,10 +189,10 @@ const styles = {
   checkboxLabel: {
     fontSize: 14,
     lineHeight: 1.6,
-    color: "#F8F4EA",
+    color: "#344054",
   },
   legalLink: {
-    color: "#F8F4EA",
+    color: "#111827",
     fontWeight: 700,
     textDecoration: "underline",
   },
@@ -449,7 +449,7 @@ export default function RestaurantSignup() {
       <div style={styles.header}>
         <BrandLockup
           subtitle={t("signup.forRestaurants")}
-          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "var(--gb-color-page)" }}
+          logoProps={{ width: 280, height: 72, radius: 18, pageColor: "#FFFFFF" }}
           wrapperStyle={{ marginBottom: 6 }}
         />
         <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your restaurant account")}</div>
