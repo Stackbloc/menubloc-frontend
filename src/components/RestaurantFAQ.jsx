@@ -59,6 +59,7 @@ export const FAQ_DEFS = [
     answerBlocks: [
       { type: "paragraph", key: "onboarding.faq.q6.a1" },
       { type: "paragraph", key: "onboarding.faq.q6.a2" },
+      { type: "paragraph", key: "onboarding.faq.q6.a3" },
     ],
   },
   {
