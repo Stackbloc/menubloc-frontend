@@ -181,6 +181,7 @@ export default function ChalkboardMenuTemplate(ctx) {
     restaurantProfileHref,
     menuTypeLabel,
     logoUrl,
+    logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
     franchiseSlot,
@@ -197,6 +198,7 @@ export default function ChalkboardMenuTemplate(ctx) {
   } = ctx;
 
   const accent = brand?.accent ?? "#f6b21a";
+  const showLogo = logoPlacement !== "hidden";
   const columns = buildColumns(displaySections, isMobile ? 1 : 3);
 
   return (
@@ -211,12 +213,12 @@ export default function ChalkboardMenuTemplate(ctx) {
           "radial-gradient(circle at 18% 18%, rgba(255,255,255,0.08), transparent 22%), radial-gradient(circle at 82% 28%, rgba(255,255,255,0.05), transparent 24%), linear-gradient(135deg, #151515, #2b2927 45%, #111)",
       }}
     >
-      <header style={{ maxWidth: 1180, margin: "0 auto 28px", display: "flex", alignItems: "center", gap: 16 }}>
-        {logoUrl ? (
+      <header style={{ maxWidth: 1180, margin: "0 auto 28px", display: "flex", alignItems: "center", gap: 16, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
+        {showLogo && (logoUrl ? (
           <img src={logoUrl} alt="" width={58} height={58} style={{ width: 58, height: 58, borderRadius: 4, objectFit: "cover" }} />
         ) : (
           <div aria-hidden="true" style={{ width: 58, height: 58, borderRadius: 4, background: `${accent}33`, border: `2px solid ${accent}` }} />
-        )}
+        ))}
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ color: accent, fontSize: 12, fontWeight: 900, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 4 }}>
             {menuTypeLabel || "Sample menu design"}

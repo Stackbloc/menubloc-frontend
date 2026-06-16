@@ -59,6 +59,7 @@ export default function ClassicMenuTemplate(ctx) {
     addressLine,
     directionsHref,
     logoUrl,
+    logoPlacement = "top-left",
     heroImageUrl,
     shareData,
     shareAnalyticsContext,
@@ -95,6 +96,7 @@ export default function ClassicMenuTemplate(ctx) {
 
   const showItemImages = shouldShowItemImages(menuThemeSettings);
   const showSectionImages = shouldShowSectionImages(menuThemeSettings);
+  const showLogo = logoPlacement !== "hidden";
 
   return (
     <>
@@ -143,12 +145,12 @@ export default function ClassicMenuTemplate(ctx) {
           padding: isMobile ? "12px 12px" : "14px 20px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
-          <RestaurantLogoSlot
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 10, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
+          {showLogo && <RestaurantLogoSlot
             logoUrl={logoUrl}
             restaurantName={restaurantName}
             accentBorder={brand?.accentBorder ?? "rgba(34,197,94,0.30)"}
-          />
+          />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", marginBottom: addressLine ? 2 : 0 }}>
               <div style={{ minWidth: 0, flex: "0 1 auto", display: "flex", alignItems: "center", gap: 6 }}>

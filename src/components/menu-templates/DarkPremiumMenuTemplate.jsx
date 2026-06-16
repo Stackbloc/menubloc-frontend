@@ -43,6 +43,7 @@ export default function DarkPremiumMenuTemplate(ctx) {
     addressLine2,
     directionsHref,
     logoUrl,
+    logoPlacement = "top-left",
     heroImageUrl,
     shareData,
     shareAnalyticsContext,
@@ -74,6 +75,7 @@ export default function DarkPremiumMenuTemplate(ctx) {
 
   const accent = brand?.accent ?? "#b68b45";
   const muted = "rgba(255,255,255,0.62)";
+  const showLogo = logoPlacement !== "hidden";
   const showItemImages = shouldShowItemImages(menuThemeSettings);
   const showSectionImages = shouldShowSectionImages(menuThemeSettings);
 
@@ -88,9 +90,11 @@ export default function DarkPremiumMenuTemplate(ctx) {
           textAlign: "center",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-          <LogoMark logoUrl={logoUrl} restaurantName={restaurantName} accent={accent} />
-        </div>
+        {showLogo && (
+          <div style={{ display: "flex", justifyContent: logoPlacement === "center" ? "center" : "center", marginBottom: 20 }}>
+            <LogoMark logoUrl={logoUrl} restaurantName={restaurantName} accent={accent} />
+          </div>
+        )}
         <div style={{ color: accent, fontSize: 12, fontWeight: 850, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 14 }}>
           {menuTypeLabel || "Sample menu design"}
         </div>

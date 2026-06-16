@@ -312,6 +312,7 @@ export default function PremiumBistroMenuTemplate(ctx) {
     addressLine,
     directionsHref,
     logoUrl,
+    logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
     franchiseSlot,
@@ -336,6 +337,7 @@ export default function PremiumBistroMenuTemplate(ctx) {
 
   const accent = brand?.accentStrong ?? brand?.accent ?? "#6b211c";
   const accentFill = brand?.accent ?? "#7a2b23";
+  const showLogo = logoPlacement !== "hidden";
   const cream = "#fbf7ee";
   const paper = "#fffdf8";
   const muted = "#74695f";
@@ -436,9 +438,11 @@ export default function PremiumBistroMenuTemplate(ctx) {
               {statusLabel}
             </div>
           ) : null}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
-            <PremiumLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} accent={accentFill} />
-          </div>
+          {showLogo && (
+            <div style={{ display: "flex", justifyContent: logoPlacement === "center" ? "center" : "center", marginBottom: 18 }}>
+              <PremiumLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} accent={accentFill} />
+            </div>
+          )}
           {restaurantProfileHref ? (
             <Link
               to={restaurantProfileHref}

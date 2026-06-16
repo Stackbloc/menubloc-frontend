@@ -1437,6 +1437,7 @@ export default function PublicMenuPage() {
           addressLine,
           directionsHref,
           logoUrl: data?.logo_url || null,
+          logoPlacement: menuThemeSettings.logo_placement || "top-left",
           shareData,
           shareAnalyticsContext,
           franchiseSlot,

@@ -46,6 +46,7 @@ export default function RefinedEditorialMenuTemplate(ctx) {
     addressLine,
     directionsHref,
     logoUrl,
+    logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
     franchiseSlot,
@@ -81,6 +82,7 @@ export default function RefinedEditorialMenuTemplate(ctx) {
 
   const accent = brand?.accent ?? "#22C55E";
   const tagline = brand?.tagline || null;
+  const showLogo = logoPlacement !== "hidden";
   const dealItems = Array.isArray(data?.deal_items) ? data.deal_items : [];
   const chefsPickItems = pickFeaturedMenuItems(displaySections, dealItems, 4);
 
@@ -95,8 +97,8 @@ export default function RefinedEditorialMenuTemplate(ctx) {
         borderBottom: "1px solid rgba(255,255,255,0.07)",
         background: "rgba(14,18,15,0.6)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <EditorialLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />
+        <div style={{ display: "flex", alignItems: "center", gap: 16, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
+          {showLogo && <EditorialLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flexWrap: "nowrap" }}>
               <div style={{ minWidth: 0, flex: "0 1 auto" }}>

@@ -44,6 +44,7 @@ export default function BoldCasualMenuTemplate(ctx) {
     addressLine,
     directionsHref,
     logoUrl,
+    logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
     franchiseSlot,
@@ -80,6 +81,7 @@ export default function BoldCasualMenuTemplate(ctx) {
   const accent = brand?.accent ?? "#22C55E";
   const accentBold = brand?.accentBold ?? "rgba(34,197,94,0.22)";
   const onAccent = brand?.onAccent ?? "#0B0F0C";
+  const showLogo = logoPlacement !== "hidden";
   const dealItems = Array.isArray(data?.deal_items) ? data.deal_items : [];
   const hasDealBanner = dealItems.length > 0;
 
@@ -101,8 +103,8 @@ export default function BoldCasualMenuTemplate(ctx) {
           padding: isMobile ? "10px 12px" : "12px 20px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
-          <BoldLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} accent={accent} />
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 10, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
+          {showLogo && <BoldLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} accent={accent} />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", marginBottom: addressLine ? 2 : 0 }}>
               <div style={{ minWidth: 0, flex: "0 1 auto", display: "flex", alignItems: "center", gap: 6 }}>

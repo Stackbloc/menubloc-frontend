@@ -53,6 +53,7 @@ export default function CinematicMenuTemplate(ctx) {
     restaurantProfileHref,
     heroImageUrl,
     logoUrl,
+    logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
     franchiseSlot,
@@ -88,6 +89,7 @@ export default function CinematicMenuTemplate(ctx) {
 
   const gradientFallback = brand?.heroBackdrop ?? "linear-gradient(135deg, hsl(24, 42%, 12%) 0%, hsl(280, 35%, 8%) 100%)";
   const featured = pickFeaturedMenuItems(displaySections, dealItems, 6);
+  const showLogo = logoPlacement !== "hidden";
 
   return (
     <>
@@ -119,8 +121,8 @@ export default function CinematicMenuTemplate(ctx) {
           }}
         />
         <div style={{ position: "relative", padding: isMobile ? "18px 14px 22px" : "28px 22px 26px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-            <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 14, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
+            {showLogo && <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 {restaurantProfileHref ? (

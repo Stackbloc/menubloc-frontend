@@ -29,6 +29,7 @@ export default function FamilyDinerMenuTemplate(ctx) {
     addressLine2,
     directionsHref,
     logoUrl,
+    logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
     franchiseSlot,
@@ -60,6 +61,7 @@ export default function FamilyDinerMenuTemplate(ctx) {
   const accent = brand?.accent ?? "#2563eb";
   const soft = brand?.accentSoftBg ?? "rgba(37,99,235,0.12)";
   const showItemImages = shouldShowItemImages(menuThemeSettings);
+  const showLogo = logoPlacement !== "hidden";
 
   return (
     <div
@@ -83,9 +85,11 @@ export default function FamilyDinerMenuTemplate(ctx) {
           background: "#ffffff",
           border: "1px solid #eadfce",
           boxShadow: "0 10px 24px rgba(15,23,42,0.06)",
+          justifyContent: logoPlacement === "center" ? "center" : undefined,
+          textAlign: logoPlacement === "center" ? "center" : undefined,
         }}
       >
-        <DinerLogo logoUrl={logoUrl} restaurantName={restaurantName} accent={accent} />
+        {showLogo && <DinerLogo logoUrl={logoUrl} restaurantName={restaurantName} accent={accent} />}
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ color: accent, fontSize: 11, fontWeight: 850, letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: 4 }}>
             {menuTypeLabel || "Sample menu design"}

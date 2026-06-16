@@ -242,7 +242,8 @@ export default function MenuDesignLabPage() {
     accentBorderStrong: controls.accentColor ? `${controls.accentColor}99` : brand.accentBorderStrong,
     accentSoftBg: controls.accentColor ? `${controls.accentColor}1c` : brand.accentSoftBg,
     accentBold: controls.accentColor ? `${controls.accentColor}22` : brand.accentBold,
-  }), [brand, controls.accentColor, controls.primaryColor]);
+    fontPreset: controls.fontPreset || brand.fontPreset || "default",
+  }), [brand, controls.accentColor, controls.primaryColor, controls.fontPreset]);
   const isDarkShell = controls.backgroundStyle === "dark" || controls.backgroundStyle === "chalkboard" || controls.backgroundStyle === "charcoal";
   const isLightShell = controls.backgroundStyle === "light" || controls.backgroundStyle === "paper";
 
@@ -264,6 +265,7 @@ export default function MenuDesignLabPage() {
     addressLine: [previewData.address_line1, previewData.city, previewData.state].filter(Boolean).join(", "),
     directionsHref: "",
     logoUrl: previewData.logo_url || null,
+    logoPlacement: controls.logoPlacement || "top-left",
     shareData: {
       title: `${selectedTheme.name} sample menu`,
       text: "Sample menu design preview",
@@ -306,7 +308,7 @@ export default function MenuDesignLabPage() {
     cartLineCount: 0,
     onGoCheckout: () => previewNotice(),
     brand: adjustedBrand,
-    fontStack: fontStackForPreset(brand?.fontPreset),
+    fontStack: fontStackForPreset(controls.fontPreset || brand?.fontPreset),
     menus: previewData.menus || [],
     selectedMenuId: resolvedPreviewMenuId,
     onSelectMenu: setSelectedPreviewMenuId,

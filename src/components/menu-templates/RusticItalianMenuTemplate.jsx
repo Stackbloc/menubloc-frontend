@@ -99,6 +99,7 @@ export default function RusticItalianMenuTemplate(ctx) {
     restaurantProfileHref,
     menuTypeLabel,
     logoUrl,
+    logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
     onOpenFilters,
@@ -120,6 +121,7 @@ export default function RusticItalianMenuTemplate(ctx) {
   const heroImage = data?.hero_image_url || data?.cover_image_url || null;
   const showItemImages = shouldShowItemImages(menuThemeSettings);
   const showSectionImages = shouldShowSectionImages(menuThemeSettings);
+  const showLogo = logoPlacement !== "hidden";
 
   return (
     <div
@@ -144,12 +146,12 @@ export default function RusticItalianMenuTemplate(ctx) {
       >
         <div style={{ padding: isMobile ? "18px 18px 20px" : "30px 32px 28px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-              {logoUrl ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
+              {showLogo && (logoUrl ? (
                 <img src={logoUrl} alt="" width={54} height={54} style={{ width: 54, height: 54, borderRadius: 14, objectFit: "cover", border: "2px solid rgba(255,255,255,0.4)" }} />
               ) : (
                 <div aria-hidden="true" style={{ width: 54, height: 54, borderRadius: 14, background: accent }} />
-              )}
+              ))}
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: "#f3d6b8", fontSize: 11, fontWeight: 850, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>
                   {menuTypeLabel || "Sample menu design"}

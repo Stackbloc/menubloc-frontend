@@ -13,6 +13,7 @@ export default function ModernFastCasualMenuTemplate(ctx) {
     restaurantProfileHref,
     menuTypeLabel,
     logoUrl,
+    logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
     onOpenFilters,
@@ -44,6 +45,7 @@ export default function ModernFastCasualMenuTemplate(ctx) {
   const accent = brand?.accent ?? "#2f7d5b";
   const soft = brand?.accentSoftBg ?? "rgba(47,125,91,0.12)";
   const showItemImages = shouldShowItemImages(menuThemeSettings);
+  const showLogo = logoPlacement !== "hidden";
 
   return (
     <div
@@ -56,12 +58,12 @@ export default function ModernFastCasualMenuTemplate(ctx) {
       }}
     >
       <header style={{ maxWidth: 980, margin: "0 auto 20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-          {logoUrl ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
+          {showLogo && (logoUrl ? (
             <img src={logoUrl} alt="" width={54} height={54} style={{ width: 54, height: 54, borderRadius: 14, objectFit: "cover" }} />
           ) : (
             <div aria-hidden="true" style={{ width: 54, height: 54, borderRadius: 14, background: accent }} />
-          )}
+          ))}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ color: accent, fontSize: 11, fontWeight: 850, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
               {menuTypeLabel || "Sample menu design"}

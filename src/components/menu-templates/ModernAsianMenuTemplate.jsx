@@ -101,6 +101,7 @@ export default function ModernAsianMenuTemplate(ctx) {
     restaurantProfileHref,
     menuTypeLabel,
     logoUrl,
+    logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
     onOpenFilters,
@@ -122,6 +123,7 @@ export default function ModernAsianMenuTemplate(ctx) {
   const heroImage = data?.hero_image_url || data?.cover_image_url || null;
   const showItemImages = shouldShowItemImages(menuThemeSettings);
   const showSectionImages = shouldShowSectionImages(menuThemeSettings);
+  const showLogo = logoPlacement !== "hidden";
 
   return (
     <div
@@ -155,12 +157,12 @@ export default function ModernAsianMenuTemplate(ctx) {
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(11,15,20,0.18), rgba(11,15,20,0.9))" }} />
         <div style={{ position: "relative", padding: isMobile ? "18px 18px 20px" : "26px 28px 24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-              {logoUrl ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
+              {showLogo && (logoUrl ? (
                 <img src={logoUrl} alt="" width={56} height={56} style={{ width: 56, height: 56, borderRadius: 18, objectFit: "cover", border: "2px solid rgba(255,255,255,0.45)" }} />
               ) : (
                 <div aria-hidden="true" style={{ width: 56, height: 56, borderRadius: 18, background: accent }} />
-              )}
+              ))}
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: "rgba(255,248,238,0.8)", fontSize: 11, fontWeight: 850, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 4 }}>
                   {menuTypeLabel || "Sample menu design"}

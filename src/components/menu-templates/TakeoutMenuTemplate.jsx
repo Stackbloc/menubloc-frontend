@@ -51,6 +51,7 @@ export default function TakeoutMenuTemplate(ctx) {
     restaurantName,
     restaurantProfileHref,
     logoUrl,
+    logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
     franchiseSlot,
@@ -90,6 +91,7 @@ export default function TakeoutMenuTemplate(ctx) {
 
   const deals = Array.isArray(dealItems) ? dealItems : [];
   const accent = brand?.accent ?? "#22C55E";
+  const showLogo = logoPlacement !== "hidden";
   const accentStrong = brand?.accentStrong ?? "#16A34A";
   const onAccent = brand?.onAccent ?? "#0B0F0C";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
@@ -113,8 +115,8 @@ export default function TakeoutMenuTemplate(ctx) {
           padding: isMobile ? "8px 12px" : "10px 20px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
+          {showLogo && <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />}
           <div style={{ flex: 1, minWidth: 0 }}>
             {restaurantProfileHref ? (
               <Link
