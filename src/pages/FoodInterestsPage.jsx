@@ -236,53 +236,6 @@ export default function FoodInterestsPage() {
             )}
           </PanelSection>
 
-          {/* ── Sign-in prompt (unsigned only) ── */}
-          {!isAuthenticated && (
-            <div
-              style={{
-                borderRadius: 20,
-                border: "1px solid rgba(34,197,94,0.16)",
-                background: "rgba(17,24,20,0.88)",
-                padding: 18,
-                boxShadow: "0 20px 40px rgba(0,0,0,0.28)",
-              }}
-            >
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#F9FAFB", marginBottom: 10 }}>
-                Get Personalized Recommendations
-              </div>
-              <div style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 14, lineHeight: 1.55 }}>
-                Sign in to unlock the full Waiter experience:
-              </div>
-              <ul style={{ margin: "0 0 14px", padding: "0 0 0 18px", listStyle: "disc" }}>
-                {[
-                  "Follow foods and receive relevant updates",
-                  "Follow cuisines and discover nearby options",
-                  "Follow restaurants and track menu changes",
-                  "Receive personalized daily briefings",
-                  "Track deals from your favorite restaurants",
-                ].map((item) => (
-                  <li key={item} style={{ fontSize: 13, color: "#CBD5E1", lineHeight: 1.7 }}>{item}</li>
-                ))}
-              </ul>
-              <button
-                type="button"
-                onClick={() => navigate("/account/login")}
-                style={{
-                  border: "none",
-                  borderRadius: 999,
-                  background: "#22C55E",
-                  color: "#0B0F0C",
-                  fontSize: 13,
-                  fontWeight: 800,
-                  padding: "12px 20px",
-                  cursor: "pointer",
-                }}
-              >
-                Sign In
-              </button>
-            </div>
-          )}
-
           {/* ── Manage Interests link (signed-in only) ── */}
           {isAuthenticated && (
             <div style={{ textAlign: "center", padding: "8px 0 4px" }}>
