@@ -63,8 +63,8 @@ export function PageHero({
   );
 }
 
-export function SectionTitle({ children, className = "" }) {
-  return <div className={cx("gb-section-title", className)}>{children}</div>;
+export function SectionTitle({ children, className = "", style }) {
+  return <div className={cx("gb-section-title", className)} style={style}>{children}</div>;
 }
 
 export function Card({

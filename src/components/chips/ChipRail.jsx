@@ -13,17 +13,20 @@ export default function ChipRail({ children, className = "", style = {}, ...prop
       const maxScrollLeft = el.scrollWidth - el.clientWidth;
       if (maxScrollLeft <= 1) return;
 
-      const dominantDelta =
-        Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-      if (!dominantDelta) return;
+      // Horizontal trackpad swipe (deltaX dominant) — let the browser handle
+      // it natively so kinetic/momentum scrolling works smoothly.
+      if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
+
+      // Vertical scroll — redirect to horizontal so the rail scrolls instead
+      // of the page. Only prevent default here to avoid blocking page scroll
+      // when the rail is at its boundary.
+      if (!event.deltaY) return;
 
       const nextScrollLeft = Math.min(
         maxScrollLeft,
-        Math.max(0, el.scrollLeft + dominantDelta)
+        Math.max(0, el.scrollLeft + event.deltaY)
       );
 
-      // Keep desktop trackpad swipes contained inside the rail so the browser
-      // does not interpret horizontal gestures as back/forward page navigation.
       event.preventDefault();
       if (nextScrollLeft !== el.scrollLeft) {
         el.scrollLeft = nextScrollLeft;

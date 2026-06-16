@@ -1956,11 +1956,11 @@ export default function GrubbidSearchResults() {
     : hasDishMatches;
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh", background: "#0B0F0C", color: "#FFFFFF" }}>
+    <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)" }}>
       {/* ── STICKY HEADER ── */}
       <div style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: "#0B0F0C",
+        background: "var(--gb-color-page)",
         borderBottom: "1px solid #1F2937",
         paddingBottom: 12,
       }}>
@@ -1969,15 +1969,15 @@ export default function GrubbidSearchResults() {
             type="button"
             onClick={() => navigate(-1)}
             aria-label="Go back"
-            style={{ border: "none", background: "transparent", fontSize: 22, color: "#9CA3AF", cursor: "pointer", padding: 4, lineHeight: 1, flexShrink: 0 }}
+            style={{ border: "none", background: "transparent", fontSize: 22, color: "#6B7280", cursor: "pointer", padding: 4, lineHeight: 1, flexShrink: 0 }}
           >
             ←
           </button>
-          <BrandLogo width={113} height={48} radius={14} pageColor="#0B0F0C" />
+          <BrandLogo height={48} radius={14} />
           <div style={{ width: 30, flexShrink: 0 }} />
         </div>
         <div style={{ maxWidth: 576, margin: "0 auto", padding: "0 14px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 17, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.02em" }}>
+          <span style={{ fontSize: 17, fontWeight: 900, color: "#0B0F0C", letterSpacing: "-0.02em" }}>
             🔍 {displayQuery ? `"${displayQuery}"` : "Search"}
           </span>
           {locationLabel && (
@@ -2001,7 +2001,7 @@ export default function GrubbidSearchResults() {
             }}
             title="Share these search results"
             style={{
-              marginLeft: "auto", border: "1px solid rgba(255,255,255,0.15)",
+              marginLeft: "auto", border: "1px solid rgba(0,0,0,0.15)",
               borderRadius: 999, background: shareCopied ? "rgba(34,197,94,0.14)" : "transparent",
               color: shareCopied ? "#22C55E" : "#9CA3AF",
               fontSize: 12, fontWeight: 800, cursor: "pointer",
@@ -2046,7 +2046,7 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && useRestaurantGroupedRendering && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
         <>
-          <SectionTitle>{t("search.restaurants", "Restaurants")}</SectionTitle>
+          <SectionTitle style={{ color: "#0B0F0C" }}>{t("search.restaurants", "Restaurants")}</SectionTitle>
           <div style={styles.grid}>
             {restaurantOnlyVisible.map((r) => (
               <SearchResultCard
@@ -2069,7 +2069,7 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && useRestaurantGroupedRendering && hasMenuMatches && (
         <>
-          {!showWaiter && <SectionTitle>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>}
+          {!showWaiter && <SectionTitle style={{ color: "#0B0F0C" }}>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>}
           {showWaiter && (
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
@@ -2119,7 +2119,7 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && !useRestaurantGroupedRendering && hasDishMatches && (
         <>
-          {!showWaiter && <SectionTitle>{t("common.results")}</SectionTitle>}
+          {!showWaiter && <SectionTitle style={{ color: "#0B0F0C" }}>{t("common.results")}</SectionTitle>}
           {showWaiter && (
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
