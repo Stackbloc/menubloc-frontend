@@ -315,11 +315,12 @@ export default function MenuDesignLabPage() {
     menuPresentation: previewData.menu_presentation || {},
   };
 
-  const backgroundColor = isDarkShell
-    ? "#0B0F0C"
-    : isLightShell
-      ? "#f6f0e7"
-      : "#111827";
+  const backgroundColor =
+    controls.backgroundStyle === "chalkboard" ? "#1a2e1c"
+    : controls.backgroundStyle === "charcoal"  ? "#1c1c1e"
+    : isDarkShell                               ? "#0B0F0C"
+    : isLightShell                              ? "#f6f0e7"
+    : "#111827";
 
   const shellStyle = {
     ...styles.shell,

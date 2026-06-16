@@ -1332,8 +1332,8 @@ export default function PublicMenuPage() {
     background:
       menuThemeSettings.background_style === "light" ? "#f7f5ef" :
       menuThemeSettings.background_style === "paper" ? "#f6efe3" :
-      menuThemeSettings.background_style === "chalkboard" ? "#111111" :
-      menuThemeSettings.background_style === "charcoal" ? "#0f1113" :
+      menuThemeSettings.background_style === "chalkboard" ? "#1a2e1c" :
+      menuThemeSettings.background_style === "charcoal" ? "#1c1c1e" :
       menuBrand?.pageBackground ?? "#0B0F0C",
   };
 
