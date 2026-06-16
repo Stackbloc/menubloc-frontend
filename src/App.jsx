@@ -508,6 +508,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />
         <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />
         <Route path="/top-picks" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TopPicksPage />} />
+        <Route path="/waiter" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodInterestsPage />} />
         <Route path="/food-interests" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodInterestsPage />} />
         <Route path="/top5/healthiest" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TopPicksPage />} />
 
