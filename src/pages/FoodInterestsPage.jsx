@@ -1,15 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
-import FoodInterestButton from "../components/food-interests/FoodInterestButton.jsx";
-import { useFoodInterests } from "../context/FoodInterestsContext.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
-import { useLanguage } from "../context/LanguageContext.jsx";
 import { fetchWaiterBriefing } from "../lib/waiterApi.js";
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 
-// Parse "Los Angeles, CA" → { city: "Los Angeles", state: "CA" }
 function parseSessionLocation(raw) {
   const str = String(raw || "").trim();
   if (!str) return { city: "", state: "" };
@@ -50,7 +46,6 @@ function PanelSection({ title, subtitle, children }) {
   );
 }
 
-// Card type → accent color
 const CARD_COLORS = {
   marketplace_snapshot: "#86EFAC",
   food_spotlight:       "#60A5FA",
@@ -79,7 +74,6 @@ function BriefingCard({ card }) {
         {card.headline}
       </div>
 
-      {/* Marketplace snapshot — bullet list */}
       {card.bullets && card.bullets.length > 0 && (
         <ul style={{ margin: "6px 0 0", padding: "0 0 0 16px", listStyle: "disc" }}>
           {card.bullets.map((b, i) => (
@@ -88,7 +82,6 @@ function BriefingCard({ card }) {
         </ul>
       )}
 
-      {/* Food spotlight / deal alert — single sentence */}
       {card.summary && (
         <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.5, marginTop: 4 }}>
           {card.summary}
@@ -116,26 +109,9 @@ function BriefingCard({ card }) {
   );
 }
 
-const SUGGESTED_FOODS = [
-  { interest_key: "burger",           display_label: "Burger" },
-  { interest_key: "pizza",            display_label: "Pizza" },
-  { interest_key: "chicken_wings",    display_label: "Chicken Wings" },
-  { interest_key: "chicken_sandwich", display_label: "Chicken Sandwich" },
-  { interest_key: "tacos",            display_label: "Tacos" },
-  { interest_key: "bbq",              display_label: "BBQ" },
-  { interest_key: "seafood",          display_label: "Seafood" },
-  { interest_key: "steak",            display_label: "Steak" },
-  { interest_key: "salad",            display_label: "Salad" },
-  { interest_key: "breakfast",        display_label: "Breakfast" },
-  { interest_key: "coffee",           display_label: "Coffee" },
-  { interest_key: "dessert",          display_label: "Desserts" },
-];
-
 export default function FoodInterestsPage() {
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const { isAuthenticated } = useConsumer();
-  const { interests, suggestions, loading, error } = useFoodInterests();
 
   const [briefing, setBriefing] = useState(null);
   const [briefingLoading, setBriefingLoading] = useState(true);
@@ -158,15 +134,6 @@ export default function FoodInterestsPage() {
       .finally(() => setBriefingLoading(false));
   }, []);
 
-  const interestGroups = useMemo(() => {
-    const groups = { dish: [], cuisine: [], trait: [] };
-    for (const interest of interests) {
-      if (groups[interest.interest_type]) groups[interest.interest_type].push(interest);
-    }
-    return groups;
-  }, [interests]);
-
-  // Build a subheading for the briefing
   const briefingSubheading = useMemo(() => {
     if (briefing?.city && briefing?.state_full) {
       return `Today's food highlights from ${briefing.city}, ${briefing.state_full}.`;
@@ -269,112 +236,6 @@ export default function FoodInterestsPage() {
             )}
           </PanelSection>
 
-          {/* ── Your Interests ── */}
-          <PanelSection
-            title={t("explore.yourInterests", "Your Interests")}
-            subtitle={t("explore.subtitle", "Pick food interests to personalize discovery and search.")}
-          >
-            {loading ? (
-              <div style={{ fontSize: 14, color: "#9CA3AF" }}>{t("explore.loadingInterests", "Loading interests…")}</div>
-            ) : interests.length === 0 ? (
-              <div style={{ fontSize: 14, color: "#9CA3AF", lineHeight: 1.5 }}>
-                {t("explore.noInterests", "You have not marked any food interests yet.")}
-              </div>
-            ) : (
-              <div style={{ display: "grid", gap: 12 }}>
-                {["dish", "cuisine", "trait"].map((type) => (
-                  interestGroups[type].length > 0 ? (
-                    <div key={type}>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: "#86EFAC", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                        {type === "dish"
-                          ? t("explore.dishInterests", "Dish Interests")
-                          : type === "cuisine"
-                            ? t("explore.cuisineInterests", "Cuisine Interests")
-                            : t("explore.foodTraits", "Food Traits")}
-                      </div>
-                      <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                        {interestGroups[type].map((interest) => (
-                          <FoodInterestButton
-                            key={`${interest.interest_type}:${interest.interest_key}`}
-                            interest={interest}
-                            activeLabel={t("explore.interestedActive", "✓ Interested")}
-                            inactiveLabel={t("explore.interested", "Interested")}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ) : null
-                ))}
-              </div>
-            )}
-          </PanelSection>
-
-          {/* ── Suggested Interests ── */}
-          <PanelSection
-            title={t("explore.suggestedInterests", "Suggested Interests")}
-            subtitle={t("explore.suggestedSubtitle", "Start with simple cuisines, food traits, and foods.")}
-          >
-            <div style={{ display: "grid", gap: 18 }}>
-
-              {/* Foods */}
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#86EFAC", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Foods
-                </div>
-                <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {SUGGESTED_FOODS.map((food) => (
-                    <FoodInterestButton
-                      key={`food:${food.interest_key}`}
-                      interest={{ ...food, interest_type: "dish" }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Traits */}
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#86EFAC", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Traits
-                </div>
-                <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {suggestions.traits.map((interest) => (
-                    <FoodInterestButton
-                      key={`trait:${interest.interest_key}`}
-                      interest={{ ...interest, interest_type: "trait" }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Cuisines */}
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#86EFAC", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Cuisines
-                </div>
-                <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {suggestions.cuisines.length > 0 ? suggestions.cuisines.map((interest) => (
-                    <FoodInterestButton
-                      key={`cuisine:${interest.interest_key}`}
-                      interest={{ ...interest, interest_type: "cuisine" }}
-                    />
-                  )) : (
-                    [
-                      { interest_key: "korean",        display_label: "Korean" },
-                      { interest_key: "mediterranean",  display_label: "Mediterranean" },
-                      { interest_key: "japanese",       display_label: "Japanese" },
-                      { interest_key: "mexican",        display_label: "Mexican" },
-                    ].map((interest) => (
-                      <FoodInterestButton
-                        key={`fallback-cuisine:${interest.interest_key}`}
-                        interest={{ ...interest, interest_type: "cuisine" }}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          </PanelSection>
-
           {/* ── Sign-in prompt (unsigned only) ── */}
           {!isAuthenticated && (
             <div
@@ -422,21 +283,18 @@ export default function FoodInterestsPage() {
             </div>
           )}
 
-          {error ? (
-            <div
-              style={{
-                borderRadius: 16,
-                border: "1px solid rgba(248,113,113,0.22)",
-                background: "rgba(127,29,29,0.18)",
-                color: "#FCA5A5",
-                padding: "12px 14px",
-                fontSize: 13,
-                lineHeight: 1.45,
-              }}
-            >
-              {error}
+          {/* ── Manage Interests link (signed-in only) ── */}
+          {isAuthenticated && (
+            <div style={{ textAlign: "center", padding: "8px 0 4px" }}>
+              <Link
+                to="/account/interests"
+                style={{ fontSize: 13, color: "#6B7280", textDecoration: "none", borderBottom: "1px solid #374151", paddingBottom: 1 }}
+              >
+                Manage food interests →
+              </Link>
             </div>
-          ) : null}
+          )}
+
         </div>
       </div>
 
