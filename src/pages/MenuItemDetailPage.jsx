@@ -349,54 +349,143 @@ function toShortVerdictBasis(reason) {
   return simplified.charAt(0).toLowerCase() + simplified.slice(1);
 }
 
+// All 6 of these must be non-null for a verdict to be credible.
+function hasRequiredNutritionForVerdict(nutrition) {
+  if (!nutrition) return false;
+  const cal = nutrition.calories_kcal ?? nutrition.calories;
+  return [
+    cal,
+    nutrition.fat_g,
+    nutrition.saturated_fat_g,
+    nutrition.protein_g,
+    nutrition.sodium_mg,
+    nutrition.carbs_g,
+  ].every((v) => v != null && Number.isFinite(Number(v)));
+}
+
+// Returns a driver-based explanation sentence for the verdict label.
+// Uses backend reason if it is substantive; otherwise derives from actual nutrition values.
+function buildVerdictExplanation(label, verdict, nutrition) {
+  const backendReason = String(verdict?.reason || "").trim();
+  const genericPhrases = ["profile is decent", "not light enough", "overall profile", "recommend daily"];
+  const isGeneric = !backendReason || genericPhrases.some((p) => backendReason.toLowerCase().includes(p));
+  if (!isGeneric && backendReason.length > 20) return backendReason;
+
+  const cal = nutrition?.calories_kcal ?? nutrition?.calories;
+  const fat = nutrition?.fat_g;
+  const sodium = nutrition?.sodium_mg;
+  const protein = nutrition?.protein_g;
+
+  const lbl = String(label || "").toLowerCase();
+  if (lbl.includes("frequent") || lbl.includes("daily") || lbl.includes("regular")) {
+    if (cal != null && cal <= 400) return "Lower calorie density and balanced nutrition support frequent consumption.";
+    if (protein != null && protein >= 25) return "High protein and controlled macronutrient levels support frequent consumption.";
+    return "Calorie density and macronutrient balance are within range for frequent consumption.";
+  }
+  if (lbl.includes("occasional") || lbl.includes("moderation")) {
+    const drivers = [];
+    if (cal != null && cal >= 600) drivers.push("calorie density");
+    if (fat != null && fat >= 20) drivers.push("fat content");
+    if (sodium != null && sodium >= 700) drivers.push("sodium level");
+    if (drivers.length) {
+      const joined = drivers.join(" and ");
+      return `Elevated ${joined} increases overall energy density, making this better suited for occasional rather than daily consumption.`;
+    }
+    return "Nutrient profile exceeds the daily-friendly threshold for one or more key macros.";
+  }
+  if (lbl.includes("indulgent")) {
+    const drivers = [];
+    if (cal != null && cal >= 700) drivers.push(`high calorie density (${Math.round(cal)} kcal)`);
+    if (fat != null && fat >= 35) drivers.push(`elevated fat (${Math.round(fat)}g)`);
+    if (sodium != null && sodium >= 1200) drivers.push(`high sodium (${Math.round(sodium)}mg)`);
+    if (drivers.length) return `${drivers[0].charAt(0).toUpperCase() + drivers[0].slice(1)} makes this best as an occasional choice.`;
+    return "High calorie density and elevated fat or sodium levels make this an occasional choice.";
+  }
+  return "";
+}
+
+// Returns an array of driver strings to display under "Why this verdict".
+// Uses backend reasons when available; falls back to deriving from nutrition values.
+function buildVerdictDrivers(verdict, nutrition) {
+  if (Array.isArray(verdict?.reasons) && verdict.reasons.length > 0) {
+    return verdict.reasons.slice(0, 4);
+  }
+  const drivers = [];
+  const cal = nutrition?.calories_kcal ?? nutrition?.calories;
+  const fat = nutrition?.fat_g;
+  const satFat = nutrition?.saturated_fat_g;
+  const protein = nutrition?.protein_g;
+  const sodium = nutrition?.sodium_mg;
+
+  if (cal != null) drivers.push(`Calories: ${Math.round(cal)}`);
+  if (fat != null) {
+    drivers.push(fat >= 20
+      ? `Fat: ${Math.round(fat)}g — above daily-friendly threshold`
+      : `Fat: ${Math.round(fat)}g`);
+  }
+  if (satFat != null && satFat >= 6) drivers.push(`Saturated fat: ${Math.round(satFat)}g — elevated`);
+  if (sodium != null) {
+    drivers.push(sodium >= 700
+      ? `Sodium: ${Math.round(sodium)}mg — elevated`
+      : `Sodium: ${Math.round(sodium)}mg`);
+  }
+  if (protein != null && protein >= 20) drivers.push(`Protein: ${Math.round(protein)}g`);
+  return drivers.slice(0, 4);
+}
+
 function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   const verdict = detailSystem?.verdict || {};
-  // Use backend verdict label when available; fall back to client-side computation
-  // so the block renders even when the backend omits a verdict for the item.
-  const backendLabel = verdict.label;
-  const normalizedNutrition = detailSystem?.nutrition
-    ? { ...detailSystem.nutrition, calories_kcal: detailSystem.nutrition.calories_kcal ?? detailSystem.nutrition.calories }
+  const nutrition = detailSystem?.nutrition || null;
+
+  // Guardrail: a verdict is only shown when all 6 core nutrition fields are present.
+  // Missing fields (displayed as "—" in the nutrition panel) mean the underlying data
+  // is incomplete and any verdict label would be misleading.
+  const nutritionComplete = hasRequiredNutritionForVerdict(nutrition);
+
+  // Compact / sticky-rail variant: hide silently when data is incomplete.
+  if (!nutritionComplete && compact) return null;
+
+  // Full panel: show "Verdict unavailable" when data is incomplete.
+  if (!nutritionComplete) {
+    return (
+      <Surface style={{ marginTop: 20, padding: isMobile ? 22 : 28, background: "rgba(148,163,184,0.08)", border: "1px solid rgba(148,163,184,0.18)", color: "#f8f6ef" }}>
+        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(148,163,184,0.60)", marginBottom: 10 }}>
+          {t("menuItemDetail.verdict", "Verdict")}
+        </div>
+        <div style={{ fontSize: isMobile ? 24 : 30, fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", color: "#94A3B8" }}>
+          Verdict unavailable
+        </div>
+        <div style={{ marginTop: 10, color: "#6B7280", fontSize: isMobile ? 12 : 13, fontWeight: 600, lineHeight: 1.5 }}>
+          Additional nutrition analysis is required before a recommendation can be generated.
+        </div>
+      </Surface>
+    );
+  }
+
+  const normalizedNutrition = nutrition
+    ? { ...nutrition, calories_kcal: nutrition.calories_kcal ?? nutrition.calories }
     : null;
   const fallbackVerdict = resolveCardVerdict({ detailSystem: { ...detailSystem, nutrition: normalizedNutrition } });
-  const label = backendLabel || (fallbackVerdict !== NOT_AVAILABLE_LABEL ? fallbackVerdict : null);
-  const reason = String(verdict.reason || "").trim();
-  const basis = Array.isArray(verdict.reasons)
-    ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 2)
-    : [];
-  const reasonText = reason || basis[0] || "";
+  const label = verdict.label || (fallbackVerdict !== NOT_AVAILABLE_LABEL ? fallbackVerdict : null);
 
   if (!label) return null;
 
   const theme = getVerdictTheme(label);
+  const explanation = buildVerdictExplanation(label, verdict, normalizedNutrition);
+  const drivers = buildVerdictDrivers(verdict, normalizedNutrition);
 
   if (compact) {
     return (
-      <div
-        style={{
-          marginTop: 2,
-          padding: 0,
-          background: "transparent",
-          color: "#f8f6ef",
-          border: "none",
-        }}
-      >
+      <div style={{ marginTop: 2, padding: 0, background: "transparent", color: "#f8f6ef", border: "none" }}>
         <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: "#9CA3AF", marginBottom: 4 }}>
           {t("menuItemDetail.verdict", "Verdict")}
         </div>
         <div style={{ fontSize: isMobile ? 20 : 22, fontWeight: 900, lineHeight: 1.1, letterSpacing: "-0.03em", color: theme.label }}>
           {label}
         </div>
-        {reasonText ? (
-          <div
-            style={{
-              marginTop: 4,
-              color: "#D1D5DB",
-              fontSize: 12,
-              fontWeight: 700,
-              lineHeight: 1.35,
-            }}
-          >
-            {reasonText}
+        {explanation ? (
+          <div style={{ marginTop: 4, color: "#D1D5DB", fontSize: 12, fontWeight: 700, lineHeight: 1.35 }}>
+            {explanation}
           </div>
         ) : null}
       </div>
@@ -411,17 +500,23 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
       <div style={{ fontSize: isMobile ? 34 : 46, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em", color: theme.label }}>
         {label}
       </div>
-      {basis.length ? (
-        <div
-          style={{
-            marginTop: 12,
-            color: "#fff8ee",
-            fontSize: isMobile ? 13 : 14,
-            fontWeight: 700,
-            lineHeight: 1.35,
-          }}
-        >
-          {basis.join(", ")}
+      {explanation ? (
+        <div style={{ marginTop: 12, color: "#fff8ee", fontSize: isMobile ? 13 : 14, fontWeight: 700, lineHeight: 1.5 }}>
+          {explanation}
+        </div>
+      ) : null}
+      {drivers.length > 0 ? (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color: theme.eye, marginBottom: 8 }}>
+            Why this verdict
+          </div>
+          <ul style={{ margin: 0, padding: "0 0 0 16px", listStyle: "disc" }}>
+            {drivers.map((d, i) => (
+              <li key={i} style={{ color: "#fff8ee", fontSize: 12, fontWeight: 600, lineHeight: 1.5, marginBottom: 2 }}>
+                {d}
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
     </Surface>
@@ -430,7 +525,8 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
 
 function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, priceLabel, fromSearch, onBack }) {
   const verdict = detailSystem?.verdict || {};
-  const label = verdict.label;
+  const nutritionComplete = hasRequiredNutritionForVerdict(detailSystem?.nutrition);
+  const label = nutritionComplete ? verdict.label : null;
   const reason = String(verdict.reason || "").trim();
   const basis = Array.isArray(verdict.reasons)
     ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 1)
