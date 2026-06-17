@@ -56,7 +56,7 @@ export function BrandLogo({
         borderRadius: radius,
         background: matchPageBackground ? pageColor : "transparent",
         lineHeight: 1,
-        ...(width ? { width, overflow: "hidden", justifyContent: "center" } : {}),
+        ...(width ? { minWidth: width } : {}),
       }}
     >
       <img
