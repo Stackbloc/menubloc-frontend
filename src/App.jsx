@@ -157,6 +157,7 @@ import CrmLeadDetail from "./pages/crm/CrmLeadDetail.jsx";
 import CrmTasks from "./pages/crm/CrmTasks.jsx";
 import CrmReports from "./pages/crm/CrmReports.jsx";
 import CrmQrInventory from "./pages/crm/CrmQrInventory.jsx";
+import BuildInfoPage from "./pages/BuildInfoPage.jsx";
 import CrmLogin from "./pages/crm/CrmLogin.jsx";
 import CrmForgotPassword from "./pages/crm/CrmForgotPassword.jsx";
 import CrmResetPassword from "./pages/crm/CrmResetPassword.jsx";
@@ -667,6 +668,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/admin/crm/tasks" element={<CrmLegacyRedirect />} />
         <Route path="/admin/crm/reports" element={<CrmLegacyRedirect />} />
 
+        <Route path="/build-info" element={<BuildInfoPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 

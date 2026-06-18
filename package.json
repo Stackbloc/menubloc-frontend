@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/prerender.mjs",
+    "build": "node scripts/generateBuildInfo.mjs && vite build && node scripts/prerender.mjs",
     "design-lock": "node scripts/check-design-lock.mjs && npm run verify:discovery-state-and-chip-rails",
     "verify:allergen-and-filtered-counts": "node scripts/verifyAllergenAndFilteredCounts.mjs",
     "verify:allergen-and-filtered-counts-live": "node scripts/verifyAllergenAndFilteredCountsLive.mjs",
