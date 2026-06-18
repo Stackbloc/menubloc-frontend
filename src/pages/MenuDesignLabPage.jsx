@@ -348,6 +348,14 @@ export default function MenuDesignLabPage() {
                 style={{ ...styles.headerLink, background: isDarkShell ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)", color: isDarkShell ? "#fff" : "#0f1720" }}>
                 Operator Dashboard
               </Link>
+              <a
+                href={`/restaurants/${rid}/menu`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={styles.headerCta}
+              >
+                Preview My Menu ↗
+              </a>
             </>
           ) : (
             <>
@@ -389,6 +397,14 @@ export default function MenuDesignLabPage() {
                   <div style={{ fontSize: 12, color: isDarkShell ? "rgba(255,255,255,0.5)" : "#6b7280", marginBottom: 4 }}>
                     This design applies to all your menus.
                   </div>
+                  <a
+                    href={`/restaurants/${rid}/menu`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: "inline-block", marginTop: 8, fontSize: 12, fontWeight: 700, color: isDarkShell ? "#3DD934" : "#1F4E3D", textDecoration: "none" }}
+                  >
+                    Preview My Menu ↗
+                  </a>
                 </div>
               )}
 
