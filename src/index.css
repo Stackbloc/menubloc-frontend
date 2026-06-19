@@ -43,9 +43,9 @@
   --gb-color-page: #ffffff;
   --gb-color-page-alt: #ffffff;
   --gb-color-page-warm: #ffffff;
-  --gb-color-surface: rgba(18, 26, 20, 0.94);
-  --gb-color-surface-muted: rgba(12, 17, 13, 0.96);
-  --gb-color-surface-strong: #121A14;
+  --gb-color-surface: rgba(46, 61, 28, 0.94);
+  --gb-color-surface-muted: rgba(33, 44, 20, 0.96);
+  --gb-color-surface-strong: #2E3D1C;
   --gb-color-border: #1F2937;
   --gb-color-border-strong: #374151;
   --gb-color-ink: #F9FAFB;
