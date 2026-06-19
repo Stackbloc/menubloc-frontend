@@ -177,27 +177,22 @@ export default function DiscoveryCard({
         overflow: "hidden",
         borderRadius: 12,
         border: "1px solid var(--gb-color-border)",
-        background: "var(--gb-color-surface-strong)",
+        background: "linear-gradient(180deg, #071b12 0%, #0b2418 100%)",
         boxShadow: "var(--gb-shadow-card)",
         transition: "box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease",
       }}
     >
       <div style={{
-        width: 7,
+        width: 4,
         flexShrink: 0,
         borderTopLeftRadius: 12,
         borderBottomLeftRadius: 12,
-        background: menu.flex_activity > 0
-          ? `linear-gradient(to top, var(--gb-color-accent) ${Math.min(100, menu.flex_activity)}%, #4ade80 100%)`
-          : "rgba(18,34,28,0.08)",
-        opacity: menu.flex_activity > 0
-          ? Math.max(0.5, Math.min(1, menu.flex_activity / 100))
-          : 0.5,
-        transition: "background 300ms ease, opacity 300ms ease",
+        background: getCuisineIdentity(cuisine).color,
+        opacity: 0.9,
       }} />
 
       {/* Content */}
-      <div style={{ padding: "9px 12px 9px", background: "var(--gb-color-surface-strong)", flex: 1, minWidth: 0 }}>
+      <div style={{ padding: "9px 12px 9px", background: "transparent", flex: 1, minWidth: 0 }}>
         {/* Name row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -284,30 +279,35 @@ export default function DiscoveryCard({
           </div>
         )}
 
-        {/* Meta row */}
+        {/* Meta row — pill chips */}
         {metaItems.length > 0 && (
-          <div style={{ fontSize: 11, color: "var(--gb-color-ink-muted)", marginTop: 2, display: "flex", flexWrap: "wrap", gap: "0 4px" }}>
-            {metaItems.map((item, i) => (
-              <span key={item.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {i > 0 && <span style={{ color: "var(--gb-color-border-strong)" }}>·</span>}
-                {item.clickable ? (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowChainSheet(true); }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      font: "inherit",
-                      color: "inherit",
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                      textUnderlineOffset: 2,
-                    }}
-                  >{item.text}</button>
-                ) : item.text}
-              </span>
-            ))}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+            {metaItems.map((item) => {
+              const emoji = item.key === "distance" ? "📍" : item.key === "chain" ? "🏪" : "🍽️";
+              const pillStyle = {
+                fontSize: 10,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.70)",
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 99,
+                padding: "2px 7px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3,
+                lineHeight: 1.4,
+              };
+              return item.clickable ? (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowChainSheet(true); }}
+                  style={{ ...pillStyle, cursor: "pointer", border: "none", textDecoration: "underline", textUnderlineOffset: 2 }}
+                ><span>{emoji}</span><span>{item.text}</span></button>
+              ) : (
+                <span key={item.key} style={pillStyle}><span>{emoji}</span><span>{item.text}</span></span>
+              );
+            })}
           </div>
         )}
 
