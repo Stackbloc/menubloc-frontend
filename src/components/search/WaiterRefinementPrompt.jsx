@@ -139,18 +139,6 @@ export default function WaiterRefinementPrompt({
           <WaiterFaceIcon size={28} />
         </span>
         {renderQuestion()}
-        {filteredResultCount > 0 && (
-          <span
-            style={{
-              marginLeft: 10,
-              fontSize: 11,
-              fontWeight: 700,
-              color: "#6B7280",
-            }}
-          >
-            {filteredResultCount} {filteredResultCount === 1 ? "result" : "results"}
-          </span>
-        )}
         {selectedId !== null && (
           <button
             type="button"
