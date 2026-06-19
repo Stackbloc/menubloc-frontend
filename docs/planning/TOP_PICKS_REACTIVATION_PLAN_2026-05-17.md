@@ -1,4 +1,6 @@
-# Top Picks Reactivation Plan
+# Top Picks Reactivation Plan (Retired)
+
+This plan is retired as of June 19, 2026. Top Picks was removed and must not be reactivated as a separate recommendation page. Waiter is the single recommendation surface; see `docs/platform/WAITER_PERSONALIZATION_AND_LIKES.md`.
 
 - Path: `menubloc-frontend/docs/planning/TOP_PICKS_REACTIVATION_PLAN_2026-05-17.md`
 - Filename: `TOP_PICKS_REACTIVATION_PLAN_2026-05-17.md`

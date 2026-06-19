@@ -60,10 +60,9 @@ export const getFollowedRestaurants = ()    => get("/api/consumer/followed-resta
 // ── Preferences ───────────────────────────────────────────────────────────
 export const getPreferences        = ()     => get("/api/consumer/profile/preferences");
 export const updatePreferences     = (body) => put("/api/consumer/profile/preferences", body);
-export const getFoodInterests      = ()     => get("/api/consumer/food-interests");
-export const getFoodInterestSuggestions = () => get("/api/consumer/food-interests/suggestions");
-export const followFoodInterest    = (body) => post("/api/consumer/food-interests/follow", body);
-export const unfollowFoodInterest  = (body) => post("/api/consumer/food-interests/unfollow", body);
+export const getMenuItemLikeStatus = (menuItemId) => get(`/api/consumer/menu-item-likes/${encodeURIComponent(String(menuItemId))}`);
+export const likeMenuItem = (menuItemId) => post(`/api/consumer/menu-item-likes/${encodeURIComponent(String(menuItemId))}`, {});
+export const unlikeMenuItem = (menuItemId) => del(`/api/consumer/menu-item-likes/${encodeURIComponent(String(menuItemId))}`);
 
 // ── Saved Locations ───────────────────────────────────────────────────────
 export const getLocations          = ()         => get("/api/consumer/profile/locations");

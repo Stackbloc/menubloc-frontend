@@ -54,6 +54,7 @@ import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
+import { getMenuItemLikeStatus, likeMenuItem, unlikeMenuItem } from "../lib/consumerApi.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -149,6 +150,7 @@ function normalizeResultItem(raw) {
       name: restaurantName || "Unknown Restaurant",
       slug: raw?.restaurant_slug || raw?.restaurant?.slug || raw?.slug || null,
       city: raw?.restaurant?.city || raw?.city || null,
+      state: raw?.restaurant?.state || raw?.state || null,
       cuisine: raw?.restaurant?.cuisine || raw?.cuisine || null,
       logoUrl: restaurantLogoUrl,
       subscription: restaurantSubscription,
@@ -1231,77 +1233,99 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
       <SectionCard
         title={t("menuItemDetail.similarItems", "Similar Items")}
         eyebrow={t("menuItemDetail.similarItems", "Similar Items")}
-        style={{ marginTop: 24 }}
+        style={{ marginTop: 32 }}
       >
         <div style={{ display: "grid", gap: 14 }}>
-          {similar.map((entry) => (
-            <div key={entry.id} style={{ borderRadius: 18, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
-                {entry.restaurant_name}
-                {entry.distance_miles != null && (
-                  <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>
-                )}
-              </div>
-
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-                <Link
-                  to={buildSimilarLink(entry)}
-                  style={{
-                    textDecoration: "none",
-                    color: "#22C55E",
-                    fontWeight: 800,
-                    fontSize: 15,
-                    lineHeight: 1.35,
-                    flex: "1 1 0",
-                    minWidth: 0,
-                  }}
-                >
-                  {formatMenuItemName(entry.name)}
-                </Link>
-                {isSimilarRowCompareEligible(entry) ? (
-                  <button
-                    type="button"
-                    onClick={() => handleCompare(entry)}
-                    style={{
-                      flexShrink: 0,
-                      background: "rgba(34,197,94,0.09)",
-                      border: "1px solid rgba(34,197,94,0.2)",
-                      borderRadius: 999,
-                      padding: "5px 13px",
-                      fontSize: 12,
-                      fontWeight: 800,
-                      color: "#22C55E",
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    Compare
-                  </button>
-                ) : null}
-              </div>
-
-              {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-                  {entry.profile_differences.map((phrase) => (
-                    <span
-                      key={phrase}
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "#9CA3AF",
-                        background: "rgba(255,255,255,0.05)",
-                        borderRadius: 20,
-                        padding: "3px 10px",
-                      }}
-                    >
-                      {phrase}
-                    </span>
-                  ))}
+          {similar.map((entry) => {
+            const hasPhoto = hasRenderableImage(entry.item_photo_url);
+            return (
+              <div key={entry.id} style={{ borderRadius: 18, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
+                  {entry.restaurant_name}
+                  {entry.distance_miles != null && (
+                    <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  {hasPhoto ? (
+                    <img
+                      src={entry.item_photo_url}
+                      alt={formatMenuItemName(entry.name)}
+                      style={{
+                        width: 56,
+                        height: 56,
+                        objectFit: "cover",
+                        borderRadius: 10,
+                        flexShrink: 0,
+                        border: "1px solid var(--gb-color-border)",
+                      }}
+                    />
+                  ) : null}
+
+                  <div style={{ flex: "1 1 0", minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+                      <Link
+                        to={buildSimilarLink(entry)}
+                        style={{
+                          textDecoration: "none",
+                          color: "#22C55E",
+                          fontWeight: 800,
+                          fontSize: 15,
+                          lineHeight: 1.35,
+                          flex: "1 1 0",
+                          minWidth: 0,
+                        }}
+                      >
+                        {formatMenuItemName(entry.name)}
+                      </Link>
+                      {isSimilarRowCompareEligible(entry) ? (
+                        <button
+                          type="button"
+                          onClick={() => handleCompare(entry)}
+                          style={{
+                            flexShrink: 0,
+                            background: "rgba(34,197,94,0.09)",
+                            border: "1px solid rgba(34,197,94,0.2)",
+                            borderRadius: 999,
+                            padding: "5px 13px",
+                            fontSize: 12,
+                            fontWeight: 800,
+                            color: "#22C55E",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          Compare
+                        </button>
+                      ) : null}
+                    </div>
+
+                    {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                        {entry.profile_differences.map((phrase) => (
+                          <span
+                            key={phrase}
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 700,
+                              color: "#9CA3AF",
+                              background: "rgba(255,255,255,0.05)",
+                              borderRadius: 20,
+                              padding: "3px 10px",
+                            }}
+                          >
+                            {phrase}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </SectionCard>
 
@@ -1340,6 +1364,10 @@ export default function MenuItemDetailPage() {
   const [loading,  setLoading]  = useState(true);
   const [err,      setErr]      = useState("");
   const [rawItem,  setRawItem]  = useState(null);
+  const [liked, setLiked] = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [likeError, setLikeError] = useState("");
+  const [showLikeSignInMessage, setShowLikeSignInMessage] = useState(false);
 
   const item = useMemo(() => (rawItem ? normalizeResultItem(rawItem) : null), [rawItem]);
 
@@ -1353,6 +1381,36 @@ export default function MenuItemDetailPage() {
     // Intentionally fire once when item first loads for this id
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id, id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLiked(false);
+    setLikeError("");
+    setShowLikeSignInMessage(false);
+    if (!isAuthenticated || !id) return () => { cancelled = true; };
+    getMenuItemLikeStatus(id)
+      .then((data) => { if (!cancelled) setLiked(data?.liked === true); })
+      .catch(() => { if (!cancelled) setLikeError("Like status is temporarily unavailable."); });
+    return () => { cancelled = true; };
+  }, [id, isAuthenticated]);
+
+  async function handleLikeToggle() {
+    if (!isAuthenticated) {
+      setShowLikeSignInMessage(true);
+      return;
+    }
+    if (likeLoading) return;
+    setLikeLoading(true);
+    setLikeError("");
+    try {
+      const data = liked ? await unlikeMenuItem(id) : await likeMenuItem(id);
+      setLiked(data?.liked === true);
+    } catch (error) {
+      setLikeError(error?.message || "Could not update this Like.");
+    } finally {
+      setLikeLoading(false);
+    }
+  }
 
   const displayItemName = useMemo(
     () => getDisplayMenuItemName(item, language, item?.name || "Untitled Item"),
@@ -1527,9 +1585,12 @@ export default function MenuItemDetailPage() {
                       {item.restaurant.name}
                     </Link>
                   </div>
-                  {(item.restaurant.city || item.restaurant.cuisine) ? (
+                  {(item.restaurant.city || item.restaurant.state || item.restaurant.cuisine) ? (
                     <div style={{ marginTop: 4, fontSize: 13, color: "#9CA3AF" }}>
-                      {[item.restaurant.city, item.restaurant.cuisine].filter(Boolean).join(" · ")}
+                      {[
+                        [item.restaurant.city, item.restaurant.state].filter(Boolean).join(", "),
+                        item.restaurant.cuisine,
+                      ].filter(Boolean).join(" · ")}
                     </div>
                   ) : null}
                 </div>
@@ -1632,7 +1693,34 @@ export default function MenuItemDetailPage() {
                     {priceLabel}
                   </div>
                 ) : null}
+                <button
+                  type="button"
+                  aria-pressed={liked}
+                  disabled={likeLoading}
+                  onClick={handleLikeToggle}
+                  style={{
+                    minHeight: 36,
+                    padding: "0 14px",
+                    borderRadius: 999,
+                    border: liked ? "1px solid #22C55E" : "1px solid rgba(255,255,255,0.18)",
+                    background: liked ? "rgba(34,197,94,0.16)" : "rgba(255,255,255,0.08)",
+                    color: liked ? "#DCFCE7" : "#F9FAFB",
+                    cursor: likeLoading ? "wait" : "pointer",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    opacity: likeLoading ? 0.65 : 1,
+                  }}
+                >
+                  👍 {liked ? "Liked" : "Like"}
+                </button>
               </div>
+
+              {showLikeSignInMessage ? (
+                <div style={{ marginTop: 8, fontSize: 12, color: "#FDE68A" }}>
+                  Sign in to like dishes and improve Waiter recommendations.
+                </div>
+              ) : null}
+              {likeError ? <div style={{ marginTop: 8, fontSize: 12, color: "#FCA5A5" }}>{likeError}</div> : null}
 
               {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
               {!indulgencePresentation && detailSystem?.bread_score ? <BreadScoreInline detailSystem={detailSystem} /> : null}

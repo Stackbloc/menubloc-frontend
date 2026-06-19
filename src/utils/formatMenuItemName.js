@@ -1,8 +1,10 @@
 /**
  * DISPLAY CLEANUP RULES (frontend only — never mutates storage).
  *
- * - ALL CAPS → readable title case (preserve common food acronyms)
+ * - Preserve source capitalization when it already looks intentional
  * - Remove leading punctuation and accidental OCR/parser prefixes
+ * - Title-case only obvious cleanup cases, such as lowercase starts or
+ *   connector artifacts that are not part of the source menu title
  * - Collapse whitespace
  * - Minor presentation cleanup for readability
  *
@@ -61,15 +63,6 @@ function collapseWhitespace(value) {
 
 function lettersOnly(value) {
   return String(value || "").replace(/[^A-Za-z]/g, "");
-}
-
-function isOverwhelminglyUppercase(value) {
-  const letters = lettersOnly(value);
-  if (letters.length < 3) return false;
-  const upper = letters.replace(/[^A-Z]/g, "").length;
-  const lower = letters.replace(/[^a-z]/g, "").length;
-  if (lower === 0) return true;
-  return upper / letters.length >= 0.85;
 }
 
 function hasMixedCaseWord(value) {
@@ -235,6 +228,20 @@ function stripLeadingConnectors(value) {
   return result;
 }
 
+function shouldNormalizeCase(cleaned, hadCleanupArtifacts) {
+  if (!cleaned) return false;
+  if (hadCleanupArtifacts) return true;
+
+  const firstAlpha = cleaned.match(/[A-Za-z]/)?.[0] || "";
+  if (!firstAlpha) return false;
+
+  if (firstAlpha === firstAlpha.toLowerCase()) return true;
+
+  // Preserve already intentional mixed case and all-caps source titles.
+  if (hasMixedCaseWord(cleaned)) return false;
+  return false;
+}
+
 /**
  * Format a menu item name for user-facing display.
  * @param {string|null|undefined} name
@@ -245,19 +252,18 @@ export function formatMenuItemName(name) {
   if (!original) return "";
 
   let cleaned = stripLeadingPunctuation(original);
+  let hadCleanupArtifacts = cleaned !== original;
   cleaned = stripLeadingConnectors(cleaned);
+  if (cleaned !== original) hadCleanupArtifacts = true;
   cleaned = collapseWhitespace(cleaned);
 
   if (!cleaned || cleaned.length < 2) {
     return original;
   }
 
-  if (!isOverwhelminglyUppercase(cleaned) && !LEADING_PUNCT_RE.test(original) && !hasLeadingConnectorArtifact(original)) {
-    if (hasMixedCaseWord(cleaned)) return cleaned;
-    if (cleaned === original) return cleaned;
-  }
-
-  const titled = isOverwhelminglyUppercase(cleaned) ? toReadableTitleCase(cleaned) : cleaned;
+  const titled = shouldNormalizeCase(cleaned, hadCleanupArtifacts)
+    ? toReadableTitleCase(cleaned)
+    : cleaned;
   const finalName = collapseWhitespace(titled);
 
   if (!finalName || finalName.length < 2) {
@@ -265,14 +271,4 @@ export function formatMenuItemName(name) {
   }
 
   return finalName;
-}
-
-function hasLeadingConnectorArtifact(value) {
-  const trimmed = collapseWhitespace(value);
-  if (LEADING_PHRASE_CONNECTORS.some((phrase) => phraseConnectorPattern(phrase).test(trimmed))) {
-    return true;
-  }
-  if (/^w\/\s*/i.test(trimmed)) return true;
-  if (/^w\s+(?=[A-Za-z])/i.test(trimmed)) return true;
-  return LEADING_CONNECTORS.some((connector) => new RegExp(`^${connector}\\s+`, "i").test(trimmed));
 }
