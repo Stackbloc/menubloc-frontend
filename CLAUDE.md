@@ -791,6 +791,10 @@ The Waiter must NEVER ask about preparation, flavor, ingredient, nutrition, or c
 
 This rule applies to **every search** — not just chicken. Any query (steak, fish, salmon, chicken, pasta, etc.) where form diversity exists must ask the form question first.
 
+### Live-data requirement
+
+The form question must reflect what is **actually present in the live result set** — not a hardcoded taxonomy. A form option (Taco, Salad, Sandwich) may only appear in the Waiter question if it matches real items returned by the current search. Do NOT generate form options based on what forms theoretically exist for a protein or ingredient. `buildFormCandidates` enforces this: it only creates a candidate when at least `WAITER_MIN_OPTION_MATCHES` items in the inventory resolve to that form key.
+
 ### Correct question flow examples
 
 ```
