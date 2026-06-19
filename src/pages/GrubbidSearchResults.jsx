@@ -65,14 +65,15 @@ function useIsMobile(breakpoint = 768) {
 
 /* ---- Geolocation hook ---- */
 
-function SearchRefinementNudge({ displayQuery, locationLabel }) {
+function SearchRefinementNudge({ displayQuery, locationLabel, resultCount }) {
   if (!displayQuery && !locationLabel) return null;
 
   return (
     <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 12, lineHeight: 1.5 }}>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-        Showing {displayQuery ? `“${displayQuery}”` : "results"}
-        {locationLabel ? ` near ${locationLabel}` : ""}.
+        Showing {displayQuery ? `"${displayQuery}"` : "results"}
+        {locationLabel ? ` near ${locationLabel}` : ""}
+        {resultCount > 0 ? `, ${resultCount} ${resultCount === 1 ? "result" : "results"}` : ""}.
       </span>
     </div>
   );
@@ -430,7 +431,7 @@ function waiterCorrectionPair(value) {
 
   const text = String(value || "").trim();
   if (!text) return null;
-  const quoted = /["“]?([^"”]+)["”]?\s*(?:→|->| to )\s*["“]?([^"”]+)["”]?/i.exec(text);
+  const quoted = /[""]?([^""]+)[""]?\s*(?:→|->| to )\s*[""]?([^""]+)[""]?/i.exec(text);
   if (quoted) return { from: quoted[1].trim(), to: quoted[2].trim() };
   return null;
 }
@@ -2219,7 +2220,7 @@ export default function GrubbidSearchResults() {
       )}
 
       {!loading && !err && hasVisibleResults && (
-        <SearchRefinementNudge displayQuery={displayQuery} locationLabel={locationLabel} />
+        <SearchRefinementNudge displayQuery={displayQuery} locationLabel={locationLabel} resultCount={rows.length} />
       )}
 
       {!loading && !err && useRestaurantGroupedRendering && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
@@ -2247,7 +2248,7 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && useRestaurantGroupedRendering && hasMenuMatches && (
         <>
-          {!showWaiter && <SectionTitle style={{ color: "#0B0F0C" }}>{restaurantIntent ? t("common.dishes") : t("common.results")}</SectionTitle>}
+          {!showWaiter && restaurantIntent && <SectionTitle style={{ color: "#0B0F0C" }}>{t("common.dishes")}</SectionTitle>}
           {showWaiter && (
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
@@ -2297,7 +2298,6 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && !useRestaurantGroupedRendering && hasDishMatches && (
         <>
-          {!showWaiter && <SectionTitle style={{ color: "#0B0F0C" }}>{t("common.results")}</SectionTitle>}
           {showWaiter && (
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
