@@ -1,9 +1,7 @@
 import React from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
-import { PageNav } from "../components/NavButton.jsx";
-import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
-import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 
 const paragraphStyle = {
@@ -22,22 +20,16 @@ const statementStyle = {
 
 export default function AboutMenuply() {
   const { t } = useLanguage();
-  const pageTitle = t("about.title", "About Menuply");
 
   return (
     <>
-    <StickyPageHeader title={pageTitle} />
     <PageShell width="reading">
-      <PageNav back />
-      <Breadcrumbs
-        items={[
-          { label: t("nav.discovery", "Discovery"), to: "/" },
-          { label: t("about.breadcrumb", "About") },
-        ]}
-      />
+      <div style={{ marginBottom: 16 }}>
+        <BrandLogo height={36} radius={8} matchPageBackground={false} />
+      </div>
 
       <PageHero
-        title={pageTitle}
+        title={t("about.title", "About Menuply")}
         description={t(
           "about.hero",
           "Food intelligence built to make restaurant choices clearer, not more judgmental."

@@ -1,9 +1,7 @@
 import React from "react";
-import { PageNav } from "../NavButton.jsx";
-import Breadcrumbs from "../ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../grubbid/GrubbidPrimitives.jsx";
+import { BrandLogo } from "../BrandLogo.jsx";
 import { LEGAL_CONTACT, LEGAL_EFFECTIVE_DATE } from "../../content/legal.js";
-import StickyPageHeader from "../StickyPageHeader.jsx";
 import BottomNav from "../BottomNav.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 
@@ -63,15 +61,10 @@ export default function LegalDocumentPage({ document, eyebrow, titleKey }) {
   const localizedTitle = titleKey ? t(titleKey, document.title) : document.title;
   return (
     <>
-    <StickyPageHeader />
     <PageShell width="reading">
-      <PageNav back />
-      <Breadcrumbs
-        items={[
-          { label: t("legal.discovery", "Discovery"), to: "/" },
-          { label: localizedTitle },
-        ]}
-      />
+      <div style={{ marginBottom: 16 }}>
+        <BrandLogo height={36} radius={8} matchPageBackground={false} />
+      </div>
 
       <PageHero
         eyebrow={eyebrow}

@@ -46,14 +46,14 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         .restaurant-onboarding-page .page {
           max-width: 640px;
           margin: 0 auto;
-          padding: 48px 24px calc(var(--bottom-nav-h, 72px) + 8px);
+          padding: 28px 24px calc(var(--bottom-nav-h, 72px) + 8px);
         }
 
         .restaurant-onboarding-page .logo {
           display: flex;
           align-items: center;
           gap: 10px;
-          margin-bottom: 40px;
+          margin-bottom: 20px;
         }
 
         .restaurant-onboarding-page .section-label {

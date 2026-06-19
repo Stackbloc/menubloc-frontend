@@ -1,18 +1,6 @@
-/**
- * ============================================================
- * File: Contact.jsx
- * Path: menubloc-frontend/src/pages/Contact.jsx
- * Date: 2026-04-03
- * Purpose:
- *   Dedicated Grubbid contact page with labeled support channels.
- * ============================================================
- */
-
 import React, { useEffect, useState } from "react";
-import { PageNav } from "../components/NavButton.jsx";
-import Breadcrumbs from "../components/ui/Breadcrumbs.jsx";
 import { PageHero, PageShell } from "../components/grubbid/GrubbidPrimitives.jsx";
-import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 
@@ -27,7 +15,7 @@ const rowStyle = {
   display: "grid",
   gap: 4,
   padding: "16px 0",
-  borderTop: "1px solid #1F2937",
+  borderTop: "1px solid #E5E7EB",
 };
 
 const labelStyle = {
@@ -55,62 +43,17 @@ const defaultContactRows = [
   { key: "inquiries", label: "contact.otherInquiries", email: "inquiries@menuply.com" },
 ];
 
-const fieldStyle = {
-  width: "100%",
-  borderRadius: 12,
-  border: "1px solid #1F2937",
-  background: "#0F1720",
-  color: "#F9FAFB",
-  padding: "12px 14px",
-  fontSize: "15px",
-  boxSizing: "border-box",
-};
-
-const bannerStyles = {
-  success: {
-    margin: "0 0 16px",
-    padding: "12px 14px",
-    borderRadius: 12,
-    background: "rgba(34,197,94,0.12)",
-    color: "#bbf7d0",
-    fontSize: 14,
-    fontWeight: 700,
-  },
-  error: {
-    margin: "0 0 16px",
-    padding: "12px 14px",
-    borderRadius: 12,
-    background: "rgba(239,68,68,0.12)",
-    color: "#fecaca",
-    fontSize: 14,
-    fontWeight: 700,
-  },
-};
-
 export default function Contact() {
   const { t } = useLanguage();
   const [contactRows, setContactRows] = useState(defaultContactRows);
-  const [formState, setFormState] = useState({
-    topic: "inquiries",
-    name: "",
-    email: "",
-    restaurantName: "",
-    subject: "",
-    message: "",
-  });
-  const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-
     async function loadContactOptions() {
       try {
         const response = await fetch(`${API}/api/contact`);
         const data = await response.json();
         if (!response.ok || !data?.ok || cancelled) return;
-
         setContactRows([
           { key: "menus", label: "contact.menuSubmissions", email: data.contact?.menus_email || "menus@menuply.com" },
           { key: "support", label: "contact.supportIssues", email: data.contact?.support_email || "support@menuply.com" },
@@ -120,70 +63,16 @@ export default function Contact() {
         // Keep fallback addresses when the API is unavailable.
       }
     }
-
     loadContactOptions();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
-
-  function onChange(key, value) {
-    setFormState((current) => ({ ...current, [key]: value }));
-  }
-
-  async function onSubmit(event) {
-    event.preventDefault();
-    setSubmitting(true);
-    setSubmitError("");
-    setSubmitSuccess("");
-
-    try {
-      const response = await fetch(`${API}/api/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic: formState.topic,
-          name: formState.name,
-          email: formState.email,
-          restaurant_name: formState.restaurantName,
-          subject: formState.subject,
-          message: formState.message,
-          page_url: typeof window !== "undefined" ? window.location.href : "/contact",
-        }),
-      });
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok || !data?.ok) {
-        throw new Error(data?.error || t("contact.submitError", "Unable to send your message right now."));
-      }
-
-      setSubmitSuccess(data.message || t("contact.submitSuccess", "Your message was sent."));
-      setFormState((current) => ({
-        ...current,
-        name: "",
-        email: "",
-        restaurantName: "",
-        subject: "",
-        message: "",
-      }));
-    } catch (error) {
-      setSubmitError(error?.message || t("contact.submitError", "Unable to send your message right now."));
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   return (
     <>
-    <StickyPageHeader />
     <PageShell width="reading">
-      <PageNav back />
-      <Breadcrumbs
-        items={[
-          { label: t("legal.discovery", "Discovery"), to: "/" },
-          { label: t("contact.heroTitle", "Contact") },
-        ]}
-      />
+      <div style={{ marginBottom: 16 }}>
+        <BrandLogo height={36} radius={8} matchPageBackground={false} />
+      </div>
 
       <PageHero
         title={t("contact.heroTitle", "Contact")}
@@ -201,9 +90,7 @@ export default function Contact() {
               key={row.email}
               style={{
                 ...rowStyle,
-                borderBottom: index === contactRows.length - 1
-                  ? "1px solid #1F2937"
-                  : "none",
+                borderBottom: index === contactRows.length - 1 ? "1px solid #E5E7EB" : "none",
               }}
             >
               <div style={labelStyle}>{t(row.label, row.label)}</div>
@@ -212,70 +99,6 @@ export default function Contact() {
               </a>
             </div>
           ))}
-        </div>
-
-        <div style={{ marginTop: 28 }}>
-          {submitError ? <div style={bannerStyles.error}>{submitError}</div> : null}
-          {submitSuccess ? <div style={bannerStyles.success}>{submitSuccess}</div> : null}
-
-          <form onSubmit={onSubmit} style={{ display: "grid", gap: 14 }}>
-            <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.inquiryType", "Inquiry type")}</div>
-              <select value={formState.topic} onChange={(event) => onChange("topic", event.target.value)} style={fieldStyle}>
-                <option value="inquiries">{t("contact.inquiry.general", "General inquiry")}</option>
-                <option value="support">{t("contact.inquiry.support", "Support issue")}</option>
-                <option value="menus">{t("contact.inquiry.menu", "Menu submission")}</option>
-              </select>
-            </div>
-
-            <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.nameField", "Name")}</div>
-              <input value={formState.name} onChange={(event) => onChange("name", event.target.value)} style={fieldStyle} />
-            </div>
-
-            <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.emailField", "Email")}</div>
-              <input type="email" value={formState.email} onChange={(event) => onChange("email", event.target.value)} style={fieldStyle} />
-            </div>
-
-            <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.restaurantField", "Restaurant name (optional)")}</div>
-              <input value={formState.restaurantName} onChange={(event) => onChange("restaurantName", event.target.value)} style={fieldStyle} />
-            </div>
-
-            <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.subjectField", "Subject (optional)")}</div>
-              <input value={formState.subject} onChange={(event) => onChange("subject", event.target.value)} style={fieldStyle} />
-            </div>
-
-            <div>
-              <div style={{ ...labelStyle, marginBottom: 8 }}>{t("contact.messageField", "Message")}</div>
-              <textarea
-                value={formState.message}
-                onChange={(event) => onChange("message", event.target.value)}
-                rows={7}
-                style={{ ...fieldStyle, resize: "vertical" }}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              style={{
-                border: "none",
-                borderRadius: 12,
-                background: "var(--gb-color-accent)",
-                color: "#0B0F0C",
-                padding: "13px 16px",
-                fontSize: 15,
-                fontWeight: 800,
-                cursor: submitting ? "default" : "pointer",
-                opacity: submitting ? 0.7 : 1,
-              }}
-            >
-              {submitting ? t("contact.sending", "Sending…") : t("contact.sendMessage", "Send message")}
-            </button>
-          </form>
         </div>
       </div>
     </PageShell>

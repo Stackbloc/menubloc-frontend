@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "59edcfdd398d491acd1785fafbc45abe091c4088",
-  "gitShortSha": "59edcfd",
+  "gitSha": "8c4e1a065cd60788d26decd429379ff0255a7a5d",
+  "gitShortSha": "8c4e1a0",
   "branch": "main",
-  "buildTime": "2026-06-19T05:50:46.959Z",
+  "buildTime": "2026-06-19T06:09:51.527Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix: resolve site-wide text legibility and logo rendering defects"
+  "commitMessage": "fix: remove duplicate dark GlobalHeader from content pages, fix logos"
 }
