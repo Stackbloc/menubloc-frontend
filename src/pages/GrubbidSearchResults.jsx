@@ -1566,15 +1566,6 @@ export default function GrubbidSearchResults() {
   const trackedEventKeysRef = useRef(new Set());
   const sortMode = String(params.get("sort") || "default_relevance").trim() || "default_relevance";
   const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
-  const waiterIntentContext = useMemo(() => ({
-    activeFilters,
-    high_protein,
-    priceMax: routePriceMax,
-    urlIntentText: Array.from(params.entries()).flat().join(" "),
-    // Hierarchy rule condition A: true when user has already selected a food-form option,
-    // which unblocks preparation/ingredient/nutrition/commerce as follow-up questions.
-    formSelected: waiterSelection?.type === "form" || waiterSelection?.type === "canonical_family",
-  }), [activeFilters, high_protein, params, routePriceMax, waiterSelection]);
 
   const [rows, setRows] = useState([]);
   const [restaurantMetaMap, setRestaurantMetaMap] = useState(new Map());
@@ -1589,6 +1580,18 @@ export default function GrubbidSearchResults() {
   const SEARCH_LIMIT = 24;
   const [waiterSelection, setWaiterSelection] = useState(null);
   const [shareCopied, setShareCopied] = useState(false);
+
+  // waiterIntentContext must be declared AFTER waiterSelection (TDZ guard: waiterSelection is a
+  // useState const — referencing it before its declaration throws ReferenceError on every render).
+  const waiterIntentContext = useMemo(() => ({
+    activeFilters,
+    high_protein,
+    priceMax: routePriceMax,
+    urlIntentText: Array.from(params.entries()).flat().join(" "),
+    // Hierarchy rule condition A: true when user has already selected a food-form option,
+    // which unblocks preparation/ingredient/nutrition/commerce as follow-up questions.
+    formSelected: waiterSelection?.type === "form" || waiterSelection?.type === "canonical_family",
+  }), [activeFilters, high_protein, params, routePriceMax, waiterSelection]);
 
   const waiterState = useMemo(() => buildWaiterOptions(rows, q, waiterIntentContext), [rows, q, waiterIntentContext]);
   const waiterOptionsSignature = useMemo(
