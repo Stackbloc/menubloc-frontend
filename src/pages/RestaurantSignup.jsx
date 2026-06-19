@@ -54,7 +54,7 @@ const styles = {
   sectionTitle: {
     fontSize: 12,
     fontWeight: 800,
-    color: "#3DD934",
+    color: "#22C55E",
     marginBottom: 14,
     textTransform: "uppercase",
     letterSpacing: "0.05em",
@@ -133,7 +133,7 @@ const styles = {
   expectationTitle: {
     fontSize: 12,
     fontWeight: 800,
-    color: "#3DD934",
+    color: "#22C55E",
     letterSpacing: "0.06em",
     textTransform: "uppercase",
     marginBottom: 6,
@@ -158,7 +158,7 @@ const styles = {
   planSummaryLabel: {
     fontSize: 12,
     fontWeight: 800,
-    color: "#3DD934",
+    color: "#22C55E",
     letterSpacing: "0.06em",
     textTransform: "uppercase",
     marginBottom: 4,
@@ -169,7 +169,7 @@ const styles = {
     color: "#F8F4EA",
   },
   planSummaryLink: {
-    color: "#3DD934",
+    color: "#22C55E",
     fontWeight: 800,
     textDecoration: "none",
   },
@@ -183,7 +183,7 @@ const styles = {
     width: 18,
     height: 18,
     marginTop: 2,
-    accentColor: "#3DD934",
+    accentColor: "#22C55E",
     flex: "0 0 auto",
   },
   checkboxLabel: {
