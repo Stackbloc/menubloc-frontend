@@ -1370,8 +1370,8 @@ function ItemRow({
           style={{
             marginTop: 8,
             fontSize: "13px",
-            lineHeight: 1.45,
-            color: "#9CA3AF",
+            lineHeight: 1.55,
+            color: "#C0C8D5",
             fontWeight: 650,
             overflowWrap: "anywhere",
           }}
