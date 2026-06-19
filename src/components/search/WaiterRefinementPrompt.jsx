@@ -6,6 +6,25 @@ function isValidOptionLabel(label) {
   return /[A-Za-z0-9]/.test(text);
 }
 
+function UndoIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 7v6h6" />
+      <path d="M3 13C4.5 8.5 8.5 5 13 5a9 9 0 0 1 9 9 9 9 0 0 1-9 9c-3.5 0-6.5-1.5-8.5-4" />
+    </svg>
+  );
+}
+
 export default function WaiterRefinementPrompt({
   displayQuery,
   filteredResultCount = 0,
@@ -20,8 +39,6 @@ export default function WaiterRefinementPrompt({
 
   if (visibleOptions.length < 1) return null;
 
-  // Build the question sentence with inline clickable words.
-  // The words themselves ARE the interactive elements — no separate chip row.
   function renderOptionWord(option) {
     const isActive = selectedId !== null && option.id === selectedId;
     const isAnySelected = selectedId !== null;
@@ -48,11 +65,7 @@ export default function WaiterRefinementPrompt({
             : isAnySelected
             ? "#9CA3AF"
             : "#0B0F0C",
-          borderBottom: isActive
-            ? "2px solid var(--gb-color-accent)"
-            : "2px solid var(--gb-color-border)",
-          paddingBottom: 1,
-          transition: "color 0.15s, border-color 0.15s",
+          transition: "color 0.15s",
           whiteSpace: "nowrap",
           userSelect: "none",
         }}
@@ -70,7 +83,6 @@ export default function WaiterRefinementPrompt({
     );
   }
 
-  // Renders a concise question from existing live-data refinement options.
   function renderQuestion() {
     const [a, b, c] = visibleOptions;
     const plain = { fontWeight: 800, fontSize: 15, color: "#6B7280" };
@@ -118,7 +130,6 @@ export default function WaiterRefinementPrompt({
         margin: "2px 0 14px",
       }}
     >
-      {/* Inline question with clickable option words */}
       <span style={{ display: "inline-flex", alignItems: "center", gap: 8, lineHeight: 1.4 }}>
         <span
           aria-hidden="true"
@@ -139,6 +150,29 @@ export default function WaiterRefinementPrompt({
           >
             {filteredResultCount} {filteredResultCount === 1 ? "result" : "results"}
           </span>
+        )}
+        {selectedId !== null && (
+          <button
+            type="button"
+            aria-label="Clear refinement"
+            title="Undo"
+            onClick={() => onSelectRefinement?.(null)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "none",
+              border: "none",
+              padding: "2px 4px",
+              cursor: "pointer",
+              color: "#9CA3AF",
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "#0B0F0C"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "#9CA3AF"; }}
+          >
+            <UndoIcon />
+          </button>
         )}
       </span>
     </section>

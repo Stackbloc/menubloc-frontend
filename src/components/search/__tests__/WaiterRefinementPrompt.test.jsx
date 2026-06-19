@@ -224,8 +224,8 @@ describe("WaiterRefinementPrompt", () => {
     expect(bakedButton.getAttribute("role")).toBe("button");
     expect(friedButton.getAttribute("tabindex")).toBe("0");
     expect(bakedButton.getAttribute("tabindex")).toBe("0");
-    expect(friedButton.style.borderBottom).toContain("solid");
-    expect(bakedButton.style.borderBottom).toContain("solid");
+    expect(friedButton.style.cursor).toBe("pointer");
+    expect(bakedButton.style.cursor).toBe("pointer");
   });
 
   it("shows only live-label-derived content and no fallback language", () => {
