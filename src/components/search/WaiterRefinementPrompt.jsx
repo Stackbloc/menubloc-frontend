@@ -1,5 +1,9 @@
 import React from "react";
-import WaiterFaceIcon from "../icons/WaiterFaceIcon.jsx";
+
+function isValidOptionLabel(label) {
+  const text = String(label || "").trim();
+  return /[A-Za-z0-9]/.test(text);
+}
 
 export default function WaiterRefinementPrompt({
   displayQuery,
@@ -8,14 +12,16 @@ export default function WaiterRefinementPrompt({
   selectedRefinement = null,
   onSelectRefinement,
 }) {
-  const visibleOptions = refinementOptions.slice(0, 3);
+  const visibleOptions = refinementOptions
+    .filter((option) => isValidOptionLabel(option?.label))
+    .slice(0, 3);
   const selectedId = selectedRefinement?.id ?? null;
 
   if (visibleOptions.length < 1) return null;
 
   // Build the question sentence with inline clickable words.
   // The words themselves ARE the interactive elements — no separate chip row.
-  function renderOptionWord(option, index) {
+  function renderOptionWord(option) {
     const isActive = selectedId !== null && option.id === selectedId;
     const isAnySelected = selectedId !== null;
 
@@ -65,7 +71,7 @@ export default function WaiterRefinementPrompt({
     );
   }
 
-  // Renders: Word1?  /  Word1 or Word2?  /  Word1, Word2, or Word3?
+  // Renders a concise question from existing live-data refinement options.
   function renderQuestion() {
     const [a, b, c] = visibleOptions;
     const plain = { fontWeight: 800, fontSize: 15, color: "var(--gb-color-ink-muted)" };
@@ -73,7 +79,7 @@ export default function WaiterRefinementPrompt({
     if (visibleOptions.length === 1) {
       return (
         <span>
-          {renderOptionWord(a, 0)}
+          {renderOptionWord(a)}
           <span style={plain}>?</span>
         </span>
       );
@@ -82,9 +88,9 @@ export default function WaiterRefinementPrompt({
     if (visibleOptions.length === 2) {
       return (
         <span>
-          {renderOptionWord(a, 0)}
+          {renderOptionWord(a)}
           <span style={plain}> or </span>
-          {renderOptionWord(b, 1)}
+          {renderOptionWord(b)}
           <span style={plain}>?</span>
         </span>
       );
@@ -92,11 +98,11 @@ export default function WaiterRefinementPrompt({
 
     return (
       <span>
-        {renderOptionWord(a, 0)}
+        {renderOptionWord(a)}
         <span style={plain}>, </span>
-        {renderOptionWord(b, 1)}
+        {renderOptionWord(b)}
         <span style={plain}>, or </span>
-        {renderOptionWord(c, 2)}
+        {renderOptionWord(c)}
         <span style={plain}>?</span>
       </span>
     );
@@ -113,26 +119,6 @@ export default function WaiterRefinementPrompt({
         margin: "2px 0 14px",
       }}
     >
-      {/* Bow tie icon */}
-      <span
-        title={displayQuery ? `Refine ${displayQuery}` : "Refine results"}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 48,
-          height: 48,
-          borderRadius: 999,
-          background: "var(--gb-color-surface-strong)",
-          color: "var(--gb-color-ink-strong)",
-          flexShrink: 0,
-          overflow: "hidden",
-          boxShadow: "0 0 0 1px var(--gb-color-border), 0 10px 26px rgba(15,23,42,0.1)",
-        }}
-      >
-        <WaiterFaceIcon size={48} style={{ filter: "invert(1)" }} />
-      </span>
-
       {/* Inline question with clickable option words */}
       <span style={{ lineHeight: 1.4 }}>
         {renderQuestion()}

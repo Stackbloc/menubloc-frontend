@@ -79,7 +79,7 @@ function SearchRefinementNudge({ displayQuery, locationLabel }) {
           aria-label="Refine results"
           style={{ display: "inline-flex", alignItems: "center", color: "#E5E7EB", transform: "translateY(1px)" }}
         >
-          <WaiterInsightIcon size={24} />
+          <WaiterInsightIcon size={28} />
         </span>
       </span>
     </div>
