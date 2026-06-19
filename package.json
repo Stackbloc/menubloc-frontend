@@ -16,7 +16,10 @@
     "smoke:homepage": "node scripts/smoke-homepage.mjs",
     "test": "node --test tests/*.test.js && npm run verify:geo-routes && npm run verify:discovery-state-and-chip-rails",
     "verify:geo-routes": "node scripts/verifyGeoRoutes.mjs",
-    "verify:search-quality": "node scripts/verifyGeoRoutes.mjs"
+    "verify:search-quality": "node scripts/verifyGeoRoutes.mjs",
+    "ui:smoke": "npx playwright test tests/playwright/smoke.spec.js --reporter=list",
+    "ui:visual": "npx playwright test tests/playwright/visual.spec.js --reporter=list",
+    "ui:update-baselines": "npx playwright test tests/playwright/visual.spec.js --update-snapshots --reporter=list"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^6.1.0",
@@ -28,6 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.61.0",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",

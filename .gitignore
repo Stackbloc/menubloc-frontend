@@ -9,3 +9,5 @@ seo-next/.next
 .next
 .vercel
 .playwright-browsers
+test-results/
+playwright-report/
