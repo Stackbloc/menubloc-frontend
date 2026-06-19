@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "b5c846ecceaa22a593b27cbbc629e653252d90d3",
-  "gitShortSha": "b5c846e",
+  "gitSha": "59edcfdd398d491acd1785fafbc45abe091c4088",
+  "gitShortSha": "59edcfd",
   "branch": "main",
-  "buildTime": "2026-06-19T05:02:57.840Z",
+  "buildTime": "2026-06-19T05:50:46.959Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix: improve logo rendering and text legibility"
+  "commitMessage": "fix: resolve site-wide text legibility and logo rendering defects"
 }

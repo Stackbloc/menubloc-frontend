@@ -24,16 +24,12 @@ export function BackButton() {
 }
 
 export function PageNav({ back = false }) {
+  if (!back) return null;
   return (
-    <>
-      <GlobalHeader />
-      {back ? (
-        <div className="gb-page-nav" style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <BackButton />
-          </div>
-        </div>
-      ) : null}
-    </>
+    <div className="gb-page-nav" style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <BackButton />
+      </div>
+    </div>
   );
 }

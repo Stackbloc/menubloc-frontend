@@ -12,7 +12,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
@@ -334,10 +334,7 @@ export default function RestaurantSignupEntry() {
       <div style={styles.shell}>
         <header style={styles.hero}>
           <div style={styles.heroContent}>
-            <BrandLockup
-              logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#0B0F0C" }}
-              wrapperStyle={{ marginBottom: 8 }}
-            />
+            <BrandLogo height={48} radius={14} matchPageBackground={false} linkStyle={{ marginBottom: 8 }} />
             <div style={styles.eyebrow}>{t("signup.entry.eyebrow", "Restaurant Signup")}</div>
             <div style={styles.foodTruckRow}>
               <span style={styles.foodTruckIcon} aria-hidden>

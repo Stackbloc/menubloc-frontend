@@ -6,8 +6,7 @@ Purpose: Cursor-friendly React component version of the approved Menuply restaur
 import { useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { FAQ_DEFS, FaqAnswerBlocks } from "./RestaurantFAQ.jsx";
-
-const LOGO_SRC = "/menuplyofficialsmalllogo.png";
+import { BrandLogo } from "./BrandLogo.jsx";
 
 export default function RestaurantOnboardingApproved({ onContinue }) {
   const { t } = useLanguage();
@@ -36,8 +35,8 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
 
         .restaurant-onboarding-page {
           min-height: 100vh;
-          background-color: #141a14;
-          color: #f0ede6;
+          background-color: #ffffff;
+          color: #0B0F0C;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
           font-size: 17px;
           line-height: 1.65;
@@ -63,9 +62,9 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           font-weight: 700;
           letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: #f0ede6;
-          background: rgba(255,255,255,0.08);
-          border: 1px solid rgba(255,255,255,0.12);
+          color: #6B7280;
+          background: rgba(0,0,0,0.05);
+          border: 1px solid rgba(0,0,0,0.1);
           border-radius: 4px;
           padding: 3px 10px;
           margin-bottom: 20px;
@@ -76,19 +75,19 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           font-weight: 800;
           line-height: 1.15;
           letter-spacing: -0.5px;
-          color: #f0ede6;
+          color: #0B0F0C;
           margin-bottom: 18px;
         }
 
         .restaurant-onboarding-page .body-text {
-          color: #c9c4bb;
+          color: #374151;
           margin-bottom: 18px;
         }
 
         .restaurant-onboarding-page .hero-subhead {
           font-size: 18px;
           line-height: 1.45;
-          color: #ded9d0;
+          color: #374151;
           margin-bottom: 28px;
           font-weight: 500;
           font-style: italic;
@@ -99,7 +98,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         }
 
         .restaurant-onboarding-page .goal-section p {
-          color: #c9c4bb;
+          color: #374151;
           margin-bottom: 14px;
         }
 
@@ -114,7 +113,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           display: flex;
           align-items: flex-start;
           gap: 12px;
-          color: #c9c4bb;
+          color: #374151;
         }
 
         .restaurant-onboarding-page .goal-list li::before {
@@ -128,17 +127,17 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         }
 
         .restaurant-onboarding-page .callout {
-          background: #1e261e;
-          border: 1px solid rgba(255,255,255,0.07);
+          background: #F9FAFB;
+          border: 1px solid #E5E7EB;
           border-radius: 10px;
           padding: 22px 24px;
-          color: #c9c4bb;
+          color: #374151;
           margin-bottom: 24px;
         }
 
         .restaurant-onboarding-page .info-card {
-          background: #1e261e;
-          border: 1px solid rgba(255,255,255,0.07);
+          background: #F9FAFB;
+          border: 1px solid #E5E7EB;
           border-radius: 10px;
           padding: 22px 24px;
           margin-bottom: 24px;
@@ -152,7 +151,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           letter-spacing: 0.12em;
           text-transform: uppercase;
           color: #4caf50;
-          background: rgba(76,175,80,0.15);
+          background: rgba(76,175,80,0.12);
           border: 1px solid rgba(76,175,80,0.3);
           border-radius: 4px;
           padding: 3px 9px;
@@ -163,13 +162,13 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           font-size: 26px;
           font-weight: 800;
           letter-spacing: -0.3px;
-          color: #f0ede6;
+          color: #0B0F0C;
           margin-bottom: 10px;
           padding-right: 48px;
         }
 
         .restaurant-onboarding-page .info-card p {
-          color: #9e9a92;
+          color: #6B7280;
           margin-bottom: 14px;
         }
 
@@ -210,10 +209,10 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         }
 
         .restaurant-onboarding-page .faq-item {
-          border: 1px solid rgba(255,255,255,0.07);
+          border: 1px solid #E5E7EB;
           border-radius: 8px;
           overflow: hidden;
-          background: rgba(255,255,255,0.02);
+          background: transparent;
         }
 
         .restaurant-onboarding-page .faq-item-btn {
@@ -227,7 +226,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           align-items: flex-start;
           justify-content: space-between;
           gap: 12px;
-          color: #f0ede6;
+          color: #0B0F0C;
           font-family: inherit;
         }
 
@@ -264,7 +263,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           margin: 0;
           font-size: 14px;
           line-height: 1.65;
-          color: #9e9a92;
+          color: #6B7280;
         }
 
         .restaurant-onboarding-page .faq-answer ul {
@@ -277,12 +276,12 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         .restaurant-onboarding-page .faq-answer li {
           font-size: 14px;
           line-height: 1.65;
-          color: #9e9a92;
+          color: #6B7280;
         }
 
         .restaurant-onboarding-page hr {
           border: none;
-          border-top: 1px solid rgba(255,255,255,0.07);
+          border-top: 1px solid #E5E7EB;
           margin: 0 0 24px;
         }
 
@@ -290,8 +289,8 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           display: flex;
           align-items: flex-start;
           gap: 14px;
-          background: #1e261e;
-          border: 1px solid rgba(255,255,255,0.07);
+          background: #F9FAFB;
+          border: 1px solid #E5E7EB;
           border-radius: 10px;
           padding: 18px 20px;
           margin-bottom: 20px;
@@ -305,7 +304,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           flex-shrink: 0;
           width: 20px;
           height: 20px;
-          border: 2px solid rgba(255,255,255,0.25);
+          border: 2px solid #D1D5DB;
           border-radius: 4px;
           background: transparent;
           cursor: pointer;
@@ -318,7 +317,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         }
 
         .restaurant-onboarding-page .agreement span {
-          color: #c9c4bb;
+          color: #374151;
           font-size: 15px;
           cursor: pointer;
         }
@@ -327,8 +326,8 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           display: block;
           width: 100%;
           padding: 17px;
-          background: rgba(255,255,255,0.12);
-          color: rgba(255,255,255,0.35);
+          background: #F3F4F6;
+          color: #9CA3AF;
           font-size: 16px;
           font-weight: 600;
           border: none;
@@ -347,7 +346,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
 
       <main className="page">
         <div className="logo">
-          <img src={LOGO_SRC} alt="Menuply" style={{ height: "36px", width: "auto" }} />
+          <BrandLogo height={48} radius={14} matchPageBackground={false} />
         </div>
 
         <div className="section-label">For Restaurants</div>

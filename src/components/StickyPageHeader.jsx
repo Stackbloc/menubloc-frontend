@@ -107,7 +107,7 @@ export default function StickyPageHeader({
               }}
             >☰</button>
             <Link to="/" style={{ display: "inline-flex", textDecoration: "none" }}>
-              <BrandLogo height={48} radius={14} pageColor={brandLogoPage} />
+              <BrandLogo height={36} radius={8} pageColor={brandLogoPage} />
             </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 20, flexShrink: 0 }}>
               <Link
