@@ -243,7 +243,7 @@ export default function RestaurantFreeProfileSignup() {
       <div style={styles.page}>
         <div style={styles.brandHeader}>
           <BrandLockup
-            logoProps={{ width: 160, height: 96, radius: 20, pageColor: "#0B0F0C" }}
+            logoProps={{ height: 48, radius: 14, matchPageBackground: false }}
             wrapperStyle={styles.brandLockup}
           />
         </div>
@@ -276,7 +276,7 @@ export default function RestaurantFreeProfileSignup() {
         <BrandLockup
           subtitle="For Restaurants"
           subtitleStyle={styles.brandSubtitle}
-          logoProps={{ width: 160, height: 96, radius: 20, pageColor: "#0B0F0C" }}
+          logoProps={{ height: 48, radius: 14, matchPageBackground: false }}
           wrapperStyle={styles.brandLockup}
         />
       </div>
