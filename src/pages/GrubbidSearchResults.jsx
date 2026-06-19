@@ -2013,7 +2013,7 @@ export default function GrubbidSearchResults() {
         </div>
       </div>
       {/* ── SCROLLABLE FEED ── */}
-      <div style={{ maxWidth: 576, margin: "0 auto", padding: "10px 14px 80px" }}>
+      <div style={{ maxWidth: 576, margin: "0 auto", padding: "10px 14px calc(var(--bottom-nav-h, 72px) + 8px)" }}>
 
       <ActiveFilterChips filters={activeFilters} onToggle={toggleSearchFilter} />
 

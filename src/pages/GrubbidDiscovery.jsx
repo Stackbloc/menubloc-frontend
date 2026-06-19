@@ -1243,7 +1243,7 @@ export default function GrubbidDiscovery() {
       />
 
 
-      <div style={{ maxWidth: 576, margin: "0 auto", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ maxWidth: 576, margin: "0 auto", minHeight: "100vh", display: "flex", flexDirection: "column", paddingBottom: "calc(var(--bottom-nav-h, 72px) + 8px)" }}>
 
         {/* ── STICKY HEADER ──────────────────────────────────────────────── */}
         <div style={{
