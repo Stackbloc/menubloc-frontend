@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "3dbad4dac2c70899029d3f2429b7486de37859e7",
-  "gitShortSha": "3dbad4d",
+  "gitSha": "7e1bc788ede9f943ca694a99d77abdabac3e5298",
+  "gitShortSha": "7e1bc78",
   "branch": "main",
-  "buildTime": "2026-06-19T16:51:35.216Z",
+  "buildTime": "2026-06-19T17:04:20.699Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix: change card surface from near-black to dark olive"
+  "commitMessage": "fix: stabilize waiter refinement prompt"
 }

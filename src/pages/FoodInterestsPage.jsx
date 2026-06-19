@@ -165,8 +165,14 @@ export default function FoodInterestsPage() {
             boxShadow: "0 24px 54px rgba(0,0,0,0.3)",
           }}
         >
-          <div style={{ fontSize: 13, fontWeight: 800, color: "#86EFAC", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            Waiter
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 800, color: "#86EFAC", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            <span>Waiter</span>
+            {/* bow-tie paths extracted from waiter-insight.svg — no new asset */}
+            <svg width="16" height="11" viewBox="6.5 12.5 11 7.5" fill="currentColor" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <path d="M11.58 16.34 7.4 13.68v5.32l4.18-2.66Z" />
+              <path d="M12.42 16.34 16.6 13.68v5.32l-4.18-2.66Z" />
+              <circle cx="12" cy="16.34" r="1" />
+            </svg>
           </div>
           <h1 style={{ margin: "10px 0 0", fontSize: 28, lineHeight: 1.05, letterSpacing: "-0.03em" }}>
             {briefingSubheading}
