@@ -787,21 +787,41 @@ The Waiter must NEVER ask about preparation, flavor, ingredient, nutrition, or c
 4. `selectWaiterGroup` must always receive `context` from `buildWaiterOptions` — never call it without the context argument.
 5. Do NOT reorder or remove the `if (!context.formSelected)` block in `selectWaiterGroup`.
 
-### Correct question flow example
+### Scope
+
+This rule applies to **every search** — not just chicken. Any query (steak, fish, salmon, chicken, pasta, etc.) where form diversity exists must ask the form question first.
+
+### Correct question flow examples
 
 ```
-Search: "chicken"
-  → Form group qualifies (Sandwich=18, Salad=24, Taco=31)
+Search: "steak"
+  → Form group qualifies (Taco=12, Salad=9, Sandwich=7)
   → Waiter asks: "Taco, Salad, or Sandwich?"
 
 User selects "Taco" (formSelected = true)
   → Hierarchy rule satisfied (condition A)
-  → Waiter may now ask: "Fried or Spicy?" (preparation)
+  → Waiter may now ask: "Fried or Grilled?" (preparation)
+
+---
+
+Search: "chicken"
+  → Form group qualifies (Sandwich=18, Salad=24, Taco=31)
+  → Waiter asks: "Taco, Salad, or Sandwich?"
+
+---
+
+Search: "salmon"
+  → Only preparation data exists, no form diversity (condition B)
+  → Waiter may ask: "Grilled or Blackened?" (preparation unblocked)
 ```
 
-### Prohibited
+### Prohibited (for any search term)
 
 ```
+Search: "steak"
+  → Form group qualifies but preparation group scores higher
+  → Waiter asks: "Grilled, Seared, or Braised?"  ← FORBIDDEN
+
 Search: "chicken"
   → Form group qualifies but preparation group scores higher
   → Waiter asks: "Fried, Iced, or Spicy?"  ← FORBIDDEN
