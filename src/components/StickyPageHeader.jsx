@@ -130,7 +130,7 @@ export default function StickyPageHeader({
           </div>
           {title && (
             <div style={{ padding: "0 16px" }}>
-              <span style={{ fontSize: 17, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.02em" }}>
+              <span style={{ fontSize: 17, fontWeight: 900, color: barBackground ? "#FFFFFF" : "#0B0F0C", letterSpacing: "-0.02em" }}>
                 {title}
               </span>
             </div>

@@ -892,7 +892,7 @@ export default function RestaurantPublicPage() {
                   width: 64,
                   height: 64,
                   borderRadius: 10,
-                  objectFit: "cover",
+                  objectFit: "contain",
                   flexShrink: 0,
                   border: isDark
                     ? "1px solid rgba(59,130,246,0.25)"

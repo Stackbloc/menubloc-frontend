@@ -101,7 +101,7 @@ const styles = {
     borderRadius: 14,
     border: "1px solid rgba(252, 211, 77, 0.35)",
     background: "rgba(252, 211, 77, 0.08)",
-    color: "rgba(248,244,234,0.88)",
+    color: "#101828",
     fontSize: 14,
     lineHeight: 1.55,
     fontWeight: 600,
@@ -226,7 +226,7 @@ const styles = {
   foodTruckPrompt: {
     fontSize: 14,
     fontWeight: 700,
-    color: "rgba(248,244,234,0.8)",
+    color: "#374151",
     lineHeight: 1.4,
   },
   foodTruckLink: {
@@ -353,7 +353,7 @@ export default function RestaurantSignupEntry() {
               fontWeight: 900,
               letterSpacing: "-0.03em",
               lineHeight: 1.1,
-              color: "#F8F4EA",
+              color: "#0B0F0C",
               margin: "16px 0 0",
             }}>
               {t("signup.entry.title", "Choose your plan")}
@@ -361,7 +361,7 @@ export default function RestaurantSignupEntry() {
             <div style={{
               fontSize: 16,
               lineHeight: 1.65,
-              color: "rgba(248,244,234,0.72)",
+              color: "#374151",
               maxWidth: 660,
               marginTop: 12,
             }}>
