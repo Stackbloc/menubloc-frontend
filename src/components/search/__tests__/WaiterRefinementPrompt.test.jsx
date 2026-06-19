@@ -32,6 +32,7 @@ function makeRow({
   preparations = [],
   ingredients = [],
   canonicalFamily = null,
+  foodForm = null,
   distanceMiles = null,
   hasDeal = false,
 }) {
@@ -68,6 +69,7 @@ function makeRow({
       context: {
         kids_meal: false,
         canonical_family: canonicalFamily,
+        food_form: foodForm,
         portion_context: null,
       },
     },
@@ -317,7 +319,7 @@ describe("WaiterRefinementPrompt", () => {
       )
     ).toBe(true);
     expect(result.options[0].sourceValues[0]).toMatchObject({
-      sourceField: "waiter_text",
+      sourceField: "waiter_attributes.categories",
       menu_item_id: "1",
       menu_item_name: "Chicken Taco",
       restaurant_id: "10",
@@ -442,5 +444,108 @@ describe("WaiterRefinementPrompt", () => {
     expectSourceValues(dealResult.options[0].sourceValues);
     expect(distanceResult.dimension).toBe("commerce");
     expectSourceValues(distanceResult.options[0].sourceValues);
+  });
+
+  it("resolves form dimension from structured categories even when item text has no form term", () => {
+    // Names contain no food-form words; only waiter_attributes.categories carries the form signal.
+    const rows = [
+      makeRow({ id: 1, name: "Special Plate A", restaurantId: 1, restaurantName: "R1", sectionName: "Mains", price: 10, categories: ["Tacos"] }),
+      makeRow({ id: 2, name: "Special Plate B", restaurantId: 2, restaurantName: "R2", sectionName: "Mains", price: 10, categories: ["Tacos"] }),
+      makeRow({ id: 3, name: "Special Plate C", restaurantId: 3, restaurantName: "R3", sectionName: "Mains", price: 10, categories: ["Tacos"] }),
+      makeRow({ id: 4, name: "Special Plate D", restaurantId: 4, restaurantName: "R4", sectionName: "Mains", price: 12, categories: ["Salads"] }),
+      makeRow({ id: 5, name: "Special Plate E", restaurantId: 5, restaurantName: "R5", sectionName: "Mains", price: 12, categories: ["Salads"] }),
+      makeRow({ id: 6, name: "Special Plate F", restaurantId: 6, restaurantName: "R6", sectionName: "Mains", price: 12, categories: ["Salads"] }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+
+    expect(result.dimension).toBe("form");
+    const labels = result.options.map((o) => o.label);
+    expect(labels).toContain("Tacos");
+    expect(labels).toContain("Salads");
+    const tacosOption = result.options.find((o) => o.label === "Tacos");
+    expect(tacosOption.sourceValues[0].sourceField).toBe("waiter_attributes.categories");
+  });
+
+  it("falls back to text matching for form dimension when no structured categories are present", () => {
+    // Categories are empty; form must be inferred from item text alone (text fallback path).
+    const rows = [
+      makeRow({ id: 1, name: "Chicken Taco", restaurantId: 1, restaurantName: "R1", sectionName: "Mains", price: 10 }),
+      makeRow({ id: 2, name: "Chicken Taco Grande", restaurantId: 2, restaurantName: "R2", sectionName: "Mains", price: 10 }),
+      makeRow({ id: 3, name: "Chicken Taco Special", restaurantId: 3, restaurantName: "R3", sectionName: "Mains", price: 10 }),
+      makeRow({ id: 4, name: "Chicken Salad", restaurantId: 4, restaurantName: "R4", sectionName: "Mains", price: 12 }),
+      makeRow({ id: 5, name: "Chicken Caesar Salad", restaurantId: 5, restaurantName: "R5", sectionName: "Mains", price: 12 }),
+      makeRow({ id: 6, name: "Chicken Salad Supreme", restaurantId: 6, restaurantName: "R6", sectionName: "Mains", price: 12 }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+
+    expect(result.dimension).toBe("form");
+    const labels = result.options.map((o) => o.label);
+    expect(labels).toContain("Tacos");
+    expect(labels).toContain("Salads");
+    const tacosOption = result.options.find((o) => o.label === "Tacos");
+    expect(tacosOption.sourceValues[0].sourceField).toBe("waiter_text");
+  });
+
+  it("resolves form from food_form even when categories and item text suggest a different form", () => {
+    // food_form = "taco" / "salad" on all rows, but categories = ["Sandwiches"] and item names all say "sandwich".
+    // Priority 0 (food_form) must win — no Sandwiches candidate should appear.
+    const rows = [
+      makeRow({ id: 1, name: "Mystery Sandwich A", restaurantId: 1, restaurantName: "R1", sectionName: "Mains", price: 10, categories: ["Sandwiches"], foodForm: "taco" }),
+      makeRow({ id: 2, name: "Mystery Sandwich B", restaurantId: 2, restaurantName: "R2", sectionName: "Mains", price: 10, categories: ["Sandwiches"], foodForm: "taco" }),
+      makeRow({ id: 3, name: "Mystery Sandwich C", restaurantId: 3, restaurantName: "R3", sectionName: "Mains", price: 10, categories: ["Sandwiches"], foodForm: "taco" }),
+      makeRow({ id: 4, name: "Mystery Sandwich D", restaurantId: 4, restaurantName: "R4", sectionName: "Mains", price: 12, categories: ["Sandwiches"], foodForm: "salad" }),
+      makeRow({ id: 5, name: "Mystery Sandwich E", restaurantId: 5, restaurantName: "R5", sectionName: "Mains", price: 12, categories: ["Sandwiches"], foodForm: "salad" }),
+      makeRow({ id: 6, name: "Mystery Sandwich F", restaurantId: 6, restaurantName: "R6", sectionName: "Mains", price: 12, categories: ["Sandwiches"], foodForm: "salad" }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+
+    expect(result.dimension).toBe("form");
+    const labels = result.options.map((o) => o.label);
+    expect(labels).toContain("Tacos");
+    expect(labels).toContain("Salads");
+    expect(labels).not.toContain("Sandwiches");
+    const tacosOption = result.options.find((o) => o.label === "Tacos");
+    expect(tacosOption.sourceValues[0].sourceField).toBe("waiter_attributes.context.food_form");
+  });
+
+  it("falls back to categories when food_form is null", () => {
+    // food_form explicitly null; categories carry the form signal (Priority 1).
+    const rows = [
+      makeRow({ id: 1, name: "Item A", restaurantId: 1, restaurantName: "R1", sectionName: "Mains", price: 10, categories: ["Tacos"], foodForm: null }),
+      makeRow({ id: 2, name: "Item B", restaurantId: 2, restaurantName: "R2", sectionName: "Mains", price: 10, categories: ["Tacos"], foodForm: null }),
+      makeRow({ id: 3, name: "Item C", restaurantId: 3, restaurantName: "R3", sectionName: "Mains", price: 10, categories: ["Tacos"], foodForm: null }),
+      makeRow({ id: 4, name: "Item D", restaurantId: 4, restaurantName: "R4", sectionName: "Mains", price: 12, categories: ["Salads"], foodForm: null }),
+      makeRow({ id: 5, name: "Item E", restaurantId: 5, restaurantName: "R5", sectionName: "Mains", price: 12, categories: ["Salads"], foodForm: null }),
+      makeRow({ id: 6, name: "Item F", restaurantId: 6, restaurantName: "R6", sectionName: "Mains", price: 12, categories: ["Salads"], foodForm: null }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+
+    expect(result.dimension).toBe("form");
+    const tacosOption = result.options.find((o) => o.label === "Tacos");
+    expect(tacosOption).toBeTruthy();
+    expect(tacosOption.sourceValues[0].sourceField).toBe("waiter_attributes.categories");
+  });
+
+  it("uses text fallback when food_form is null and categories are empty", () => {
+    // food_form = null, categories = [] on all rows — form must come from item text (Priority 3).
+    const rows = [
+      makeRow({ id: 1, name: "Chicken Taco", restaurantId: 1, restaurantName: "R1", sectionName: "Mains", price: 10, foodForm: null }),
+      makeRow({ id: 2, name: "Chicken Taco Plate", restaurantId: 2, restaurantName: "R2", sectionName: "Mains", price: 10, foodForm: null }),
+      makeRow({ id: 3, name: "Taco Deluxe", restaurantId: 3, restaurantName: "R3", sectionName: "Mains", price: 10, foodForm: null }),
+      makeRow({ id: 4, name: "Chicken Salad", restaurantId: 4, restaurantName: "R4", sectionName: "Mains", price: 12, foodForm: null }),
+      makeRow({ id: 5, name: "Caesar Salad", restaurantId: 5, restaurantName: "R5", sectionName: "Mains", price: 12, foodForm: null }),
+      makeRow({ id: 6, name: "Grilled Chicken Salad", restaurantId: 6, restaurantName: "R6", sectionName: "Mains", price: 12, foodForm: null }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+
+    expect(result.dimension).toBe("form");
+    const tacosOption = result.options.find((o) => o.label === "Tacos");
+    expect(tacosOption).toBeTruthy();
+    expect(tacosOption.sourceValues[0].sourceField).toBe("waiter_text");
   });
 });

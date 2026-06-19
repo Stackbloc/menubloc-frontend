@@ -374,7 +374,11 @@ function titleCaseWaiterValue(value) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-const WAITER_FORM_SIGNALS = [
+// TEMPORARY: Text-only fallback taxonomy. Do NOT expand this list.
+// Once MKS/Common Knowledge food-form data is present in the search payload,
+// replace this with structured MKS field lookups and remove these text terms.
+// Preferred long-term signal order: MKS food-form → canonical_family → categories → text fallback.
+const TEMP_WAITER_FORM_TEXT_FALLBACK = [
   { key: "taco", label: "Tacos", terms: ["taco", "tacos"] },
   { key: "salad", label: "Salads", terms: ["salad"] },
   { key: "sandwich", label: "Sandwiches", terms: ["sandwich", "sub", "hoagie", "hero", "po boy", "po-boy", "panini"] },
@@ -388,13 +392,14 @@ const WAITER_FORM_SIGNALS = [
   { key: "dessert", label: "Desserts", terms: ["dessert", "ice cream", "sundae", "milkshake", "shake", "brownie", "cookie", "donut", "doughnut", "cheesecake", "sorbet", "gelato", "pudding", "mousse"] },
   { key: "drink", label: "Drinks", terms: ["drink", "beverage", "soda", "lemonade", "juice", "coffee", "tea", "smoothie", "beer", "wine", "cocktail", "cider"] },
 ];
-
-const WAITER_FORM_ALIASES = new Map(
-  WAITER_FORM_SIGNALS.flatMap((signal) =>
-    signal.terms.map((term) => [normalizeWaiterValue(term), signal])
-  )
+// Maps normalized form key or normalized plural label → signal (for structured category/canonical_family matching).
+const _WAITER_FORM_KEY_LOOKUP = new Map(
+  TEMP_WAITER_FORM_TEXT_FALLBACK.flatMap((signal) => [
+    [signal.key, signal],
+    [normalizeWaiterValue(signal.label), signal],
+  ])
 );
-const WAITER_FORM_RANK = new Map(WAITER_FORM_SIGNALS.map((signal, index) => [signal.key, index]));
+const _WAITER_FORM_RANK = new Map(TEMP_WAITER_FORM_TEXT_FALLBACK.map((signal, index) => [signal.key, index]));
 
 function escapeRegExp(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -824,37 +829,113 @@ export function selectWaiterGroup(groups) {
 
 function buildFormCandidates(inventory, queryTokens) {
   const candidates = new Map();
-  const valuesByRow = [];
 
   for (const row of inventory) {
-    const text = getWaiterText(row);
-    const normalizedText = normalizeWaiterValue(text);
-    const rowMatches = [];
-    for (const signal of WAITER_FORM_SIGNALS) {
-      if (signal.terms.some((term) => normalizedText.includes(normalizeWaiterValue(term)))) {
-        rowMatches.push(signal);
+    let resolvedSignal = null;
+    let formSourceField = null;
+    let formSourceValue = null;
+
+    // Priority 0: waiter_attributes.context.food_form (MKS strict_type — highest-authority structured source).
+    const directForm = normalizeWaiterValue(row.waiter_attributes?.context?.food_form || "");
+    if (directForm) {
+      const signal =
+        _WAITER_FORM_KEY_LOOKUP.get(directForm) ||
+        _WAITER_FORM_KEY_LOOKUP.get(singularizeWaiterToken(directForm));
+      if (signal) {
+        resolvedSignal = signal;
+        formSourceField = "waiter_attributes.context.food_form";
+        formSourceValue = row.waiter_attributes.context.food_form;
       }
     }
-    valuesByRow.push({ row, rowMatches, text });
-  }
 
-  for (const { row, rowMatches, text } of valuesByRow) {
-    for (const signal of rowMatches) {
-      if (queryTokens.has(singularizeWaiterToken(signal.key))) continue;
-      addCandidate(
-        candidates,
-        signal.key,
-        signal.label,
-        (candidateRow) => normalizeWaiterValue(getWaiterText(candidateRow)).includes(signal.key),
-        `${signal.label} items`,
-        {
-          sourceValues: [
-            sourceRecordFor(row, "waiter_text", text),
-          ],
-          formRank: WAITER_FORM_RANK.get(signal.key) ?? Number.MAX_SAFE_INTEGER,
+    // Priority 1: waiter_attributes.categories (MKS-backed structured data).
+    if (!resolvedSignal) {
+      const categorySet = row.__waiterAttributes?.category;
+      if (categorySet && categorySet.size > 0) {
+        for (const rawCategory of categorySet) {
+          const norm = normalizeWaiterValue(rawCategory);
+          const signal =
+            _WAITER_FORM_KEY_LOOKUP.get(norm) ||
+            _WAITER_FORM_KEY_LOOKUP.get(singularizeWaiterToken(norm));
+          if (signal) {
+            resolvedSignal = signal;
+            formSourceField = "waiter_attributes.categories";
+            formSourceValue = rawCategory;
+            break;
+          }
         }
-      );
+      }
     }
+
+    // Priority 2: waiter_attributes.context.canonical_family (structured).
+    if (!resolvedSignal) {
+      const family = normalizeWaiterValue(row.waiter_attributes?.context?.canonical_family || "");
+      if (family && family.length >= 3) {
+        const signal =
+          _WAITER_FORM_KEY_LOOKUP.get(family) ||
+          _WAITER_FORM_KEY_LOOKUP.get(singularizeWaiterToken(family));
+        if (signal) {
+          resolvedSignal = signal;
+          formSourceField = "waiter_attributes.context.canonical_family";
+          formSourceValue = row.waiter_attributes?.context?.canonical_family || family;
+        }
+      }
+    }
+
+    // Priority 3: Text fallback — TEMPORARY. Remove once MKS food-form data is in the search payload.
+    if (!resolvedSignal) {
+      const text = getWaiterText(row);
+      const normalizedText = normalizeWaiterValue(text);
+      for (const signal of TEMP_WAITER_FORM_TEXT_FALLBACK) {
+        if (signal.terms.some((term) => normalizedText.includes(normalizeWaiterValue(term)))) {
+          resolvedSignal = signal;
+          formSourceField = "waiter_text";
+          formSourceValue = text;
+          break;
+        }
+      }
+    }
+
+    if (!resolvedSignal || !formSourceField) continue;
+    if (queryTokens.has(singularizeWaiterToken(resolvedSignal.key))) continue;
+
+    addCandidate(
+      candidates,
+      resolvedSignal.key,
+      resolvedSignal.label,
+      (candidateRow) => {
+        const ff = normalizeWaiterValue(candidateRow.waiter_attributes?.context?.food_form || "");
+        if (ff) {
+          if (
+            (_WAITER_FORM_KEY_LOOKUP.get(ff) || _WAITER_FORM_KEY_LOOKUP.get(singularizeWaiterToken(ff)))?.key ===
+            resolvedSignal.key
+          ) return true;
+        }
+        const cats = candidateRow.__waiterAttributes?.category;
+        if (cats && cats.size > 0) {
+          for (const rawCat of cats) {
+            const n = normalizeWaiterValue(rawCat);
+            if (
+              (_WAITER_FORM_KEY_LOOKUP.get(n) || _WAITER_FORM_KEY_LOOKUP.get(singularizeWaiterToken(n)))?.key ===
+              resolvedSignal.key
+            ) return true;
+          }
+        }
+        const fam = normalizeWaiterValue(candidateRow.waiter_attributes?.context?.canonical_family || "");
+        if (fam) {
+          if (
+            (_WAITER_FORM_KEY_LOOKUP.get(fam) || _WAITER_FORM_KEY_LOOKUP.get(singularizeWaiterToken(fam)))?.key ===
+            resolvedSignal.key
+          ) return true;
+        }
+        return normalizeWaiterValue(getWaiterText(candidateRow)).includes(resolvedSignal.key);
+      },
+      `${resolvedSignal.label} items`,
+      {
+        sourceValues: [sourceRecordFor(row, formSourceField, formSourceValue)],
+        formRank: _WAITER_FORM_RANK.get(resolvedSignal.key) ?? Number.MAX_SAFE_INTEGER,
+      }
+    );
   }
 
   return candidates;
