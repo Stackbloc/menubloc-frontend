@@ -1236,8 +1236,8 @@ function ItemRow({
   return (
     <div
       style={{
-        paddingTop: 10,
-        paddingBottom: 10,
+        paddingTop: 14,
+        paddingBottom: 14,
         borderBottom: "1px solid var(--gb-color-border)",
       }}
     >
