@@ -46,8 +46,8 @@ export default function WaiterRefinementPrompt({
           color: isActive
             ? "var(--gb-color-accent)"
             : isAnySelected
-            ? "var(--gb-color-ink-muted)"
-            : "var(--gb-color-ink-strong)",
+            ? "#9CA3AF"
+            : "#0B0F0C",
           borderBottom: isActive
             ? "2px solid var(--gb-color-accent)"
             : "2px solid var(--gb-color-border)",
@@ -61,9 +61,7 @@ export default function WaiterRefinementPrompt({
         }}
         onMouseLeave={(e) => {
           if (!isActive) {
-            e.currentTarget.style.color = isAnySelected
-              ? "var(--gb-color-ink-muted)"
-              : "var(--gb-color-ink-strong)";
+            e.currentTarget.style.color = isAnySelected ? "#9CA3AF" : "#0B0F0C";
           }
         }}
       >
@@ -75,7 +73,7 @@ export default function WaiterRefinementPrompt({
   // Renders a concise question from existing live-data refinement options.
   function renderQuestion() {
     const [a, b, c] = visibleOptions;
-    const plain = { fontWeight: 800, fontSize: 15, color: "var(--gb-color-ink-muted)" };
+    const plain = { fontWeight: 800, fontSize: 15, color: "#6B7280" };
 
     if (visibleOptions.length === 1) {
       return (

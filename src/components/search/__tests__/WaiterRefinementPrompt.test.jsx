@@ -299,6 +299,17 @@ describe("WaiterRefinementPrompt", () => {
         price: 14,
         categories: ["Sandwiches"],
       }),
+      // Extra Taco item gives Tacos count=3 > Salads count=2 = Sandwiches count=2,
+      // so count-descending order produces ["Tacos", "Salads", "Sandwiches"].
+      makeRow({
+        id: 7,
+        name: "Chicken Street Taco",
+        restaurantId: 12,
+        restaurantName: "Taqueria 3",
+        sectionName: "Tacos",
+        price: 9,
+        categories: ["Tacos"],
+      }),
     ];
 
     const result = buildWaiterOptions(rows, "chicken");

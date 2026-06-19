@@ -725,14 +725,7 @@ function buildWaiterOptionRows(rows, dimension, candidates, intentKeys) {
     ))
     // Block raw numeric values (e.g. protein grams leaked from chips.nutrition_chip)
     .filter((option) => !/^\$?\d+(\.\d+)?(g|mg|kcal|cal|ml|oz)?$/i.test(String(option.label).trim()))
-    .sort((a, b) => {
-      if (dimension === "form") {
-        const rankA = a.formRank ?? Number.MAX_SAFE_INTEGER;
-        const rankB = b.formRank ?? Number.MAX_SAFE_INTEGER;
-        if (rankA !== rankB) return rankA - rankB;
-      }
-      return b.count - a.count || a.label.localeCompare(b.label);
-    });
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
 
 function scoreWaiterGroup(group) {
@@ -768,63 +761,22 @@ function scoreWaiterGroup(group) {
 }
 
 export function selectWaiterGroup(groups) {
+  // Pick the group whose question removes the most ambiguity.
+  // Sort order: tier (food > nutrition > commerce) → utility score → priority (form=70 beats prep=60 as tiebreaker).
+  // Form is preferred over preparation only when its utility is equal or higher — not unconditionally.
   const ranked = groups
     .map((group) => ({
       ...group,
       utilityScore: scoreWaiterGroup(group),
     }))
-    .filter((group) => group.utilityScore > 0)
+    .filter((group) => group.utilityScore >= WAITER_STRONG_UTILITY)
     .sort((a, b) =>
       b.tier - a.tier ||
       b.utilityScore - a.utilityScore ||
       (b.priority || 0) - (a.priority || 0)
     );
 
-  const foodHierarchyGroup = ranked
-    .filter((group) => (
-      group.tier === WAITER_TIER_FOOD &&
-      (group.dimension === "form" || group.dimension === "canonical_family") &&
-      group.utilityScore >= WAITER_STRONG_UTILITY
-    ))
-    .sort((a, b) =>
-      (b.dimension === "form" ? 1 : 0) - (a.dimension === "form" ? 1 : 0) ||
-      (b.priority || 0) - (a.priority || 0) ||
-      b.utilityScore - a.utilityScore
-    )[0];
-  if (foodHierarchyGroup) return foodHierarchyGroup;
-
-  const foodAttributeGroup = ranked
-    .filter((group) => (
-      group.tier === WAITER_TIER_FOOD &&
-      group.dimension !== "text" &&
-      group.utilityScore >= WAITER_STRONG_UTILITY
-    ))
-    .sort((a, b) =>
-      (b.priority || 0) - (a.priority || 0) ||
-      b.utilityScore - a.utilityScore
-    )[0];
-  if (foodAttributeGroup) return foodAttributeGroup;
-
-  const textFoodGroup = ranked.find(
-    (group) => (
-      group.tier === WAITER_TIER_FOOD &&
-      group.dimension === "text" &&
-      group.utilityScore >= WAITER_STRONG_UTILITY
-    )
-  );
-  if (textFoodGroup) return textFoodGroup;
-
-  const nutritionGroup = ranked.find(
-    (group) => group.tier === WAITER_TIER_NUTRITION && group.utilityScore >= WAITER_STRONG_UTILITY
-  );
-  if (nutritionGroup) return nutritionGroup;
-
-  const commerceGroup = ranked.find(
-    (group) => group.tier === WAITER_TIER_COMMERCE && group.utilityScore >= WAITER_STRONG_UTILITY
-  );
-  if (commerceGroup) return commerceGroup;
-
-  return null;
+  return ranked[0] || null;
 }
 
 function buildFormCandidates(inventory, queryTokens) {
