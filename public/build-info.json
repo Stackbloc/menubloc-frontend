@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "318374e1f2acdcbbefc4a1b5c02f51b5df1ffda1",
-  "gitShortSha": "318374e",
+  "gitSha": "3dbad4dac2c70899029d3f2429b7486de37859e7",
+  "gitShortSha": "3dbad4d",
   "branch": "main",
-  "buildTime": "2026-06-19T06:22:59.077Z",
+  "buildTime": "2026-06-19T16:51:35.216Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix: consistent logo header and layout across all content pages"
+  "commitMessage": "fix: change card surface from near-black to dark olive"
 }

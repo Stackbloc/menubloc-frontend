@@ -1,4 +1,5 @@
 import React from "react";
+import WaiterFaceIcon from "../icons/WaiterFaceIcon.jsx";
 
 function isValidOptionLabel(label) {
   const text = String(label || "").trim();
@@ -120,7 +121,14 @@ export default function WaiterRefinementPrompt({
       }}
     >
       {/* Inline question with clickable option words */}
-      <span style={{ lineHeight: 1.4 }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, lineHeight: 1.4 }}>
+        <span
+          aria-hidden="true"
+          title={displayQuery ? `Refine ${displayQuery}` : "Refine results"}
+          style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+        >
+          <WaiterFaceIcon size={28} />
+        </span>
         {renderQuestion()}
         {filteredResultCount > 0 && (
           <span

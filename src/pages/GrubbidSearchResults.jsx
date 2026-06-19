@@ -26,7 +26,6 @@ import SearchResultCard from "../components/SearchResultCard";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
-import WaiterInsightIcon from "../components/icons/WaiterInsightIcon.jsx";
 import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
 
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
@@ -74,13 +73,6 @@ function SearchRefinementNudge({ displayQuery, locationLabel }) {
       <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
         Showing {displayQuery ? `“${displayQuery}”` : "results"}
         {locationLabel ? ` near ${locationLabel}` : ""}.
-        <span
-          title="Refine results"
-          aria-label="Refine results"
-          style={{ display: "inline-flex", alignItems: "center", color: "#E5E7EB", transform: "translateY(1px)" }}
-        >
-          <WaiterInsightIcon size={28} />
-        </span>
       </span>
     </div>
   );
@@ -382,8 +374,41 @@ function titleCaseWaiterValue(value) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+const WAITER_FORM_SIGNALS = [
+  { key: "taco", label: "Tacos", terms: ["taco", "tacos"] },
+  { key: "salad", label: "Salads", terms: ["salad"] },
+  { key: "sandwich", label: "Sandwiches", terms: ["sandwich", "sub", "hoagie", "hero", "po boy", "po-boy", "panini"] },
+  { key: "burger", label: "Burgers", terms: ["burger", "cheeseburger", "hamburger"] },
+  { key: "wrap", label: "Wraps", terms: ["wrap", "gyro", "pita wrap"] },
+  { key: "burrito", label: "Burritos", terms: ["burrito", "quesadilla", "enchilada"] },
+  { key: "pizza", label: "Pizzas", terms: ["pizza", "flatbread", "calzone"] },
+  { key: "pasta", label: "Pastas", terms: ["pasta", "spaghetti", "fettuccine", "penne", "rigatoni", "lasagna", "mac and cheese", "noodle", "ramen", "udon"] },
+  { key: "bowl", label: "Bowls", terms: ["bowl", "rice bowl", "grain bowl", "acai bowl", "poke bowl"] },
+  { key: "soup", label: "Soups", terms: ["soup", "bisque", "chowder", "stew"] },
+  { key: "dessert", label: "Desserts", terms: ["dessert", "ice cream", "sundae", "milkshake", "shake", "brownie", "cookie", "donut", "doughnut", "cheesecake", "sorbet", "gelato", "pudding", "mousse"] },
+  { key: "drink", label: "Drinks", terms: ["drink", "beverage", "soda", "lemonade", "juice", "coffee", "tea", "smoothie", "beer", "wine", "cocktail", "cider"] },
+];
+
+const WAITER_FORM_ALIASES = new Map(
+  WAITER_FORM_SIGNALS.flatMap((signal) =>
+    signal.terms.map((term) => [normalizeWaiterValue(term), signal])
+  )
+);
+const WAITER_FORM_RANK = new Map(WAITER_FORM_SIGNALS.map((signal, index) => [signal.key, index]));
+
 function escapeRegExp(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function sourceRecordFor(row, sourceField, sourceValue) {
+  return {
+    sourceField,
+    sourceValue,
+    menu_item_id: asString(pickFirst(row, ["menu_item_id", "menuItemId", "item_id", "id"], "")),
+    menu_item_name: getWaiterItemName(row),
+    restaurant_id: asString(pickFirst(row, ["restaurant_id", "restaurantId"], "")),
+    restaurant_name: getWaiterRestaurantName(row),
+  };
 }
 
 function waiterTextIncludesPhrase(text, phrase) {
@@ -684,6 +709,8 @@ function buildWaiterOptionRows(rows, dimension, candidates, intentKeys) {
       commerceType: candidate.commerceType || null,
       test: candidate.test,
       count: countWaiterMatches(rows, candidate.test),
+      sourceValues: candidate.sourceValues || [],
+      formRank: candidate.formRank ?? null,
     }))
     .filter((option) => !waiterOptionRepeatsIntent(option, intentKeys))
     .filter((option) => (
@@ -693,7 +720,14 @@ function buildWaiterOptionRows(rows, dimension, candidates, intentKeys) {
     ))
     // Block raw numeric values (e.g. protein grams leaked from chips.nutrition_chip)
     .filter((option) => !/^\$?\d+(\.\d+)?(g|mg|kcal|cal|ml|oz)?$/i.test(String(option.label).trim()))
-    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+    .sort((a, b) => {
+      if (dimension === "form") {
+        const rankA = a.formRank ?? Number.MAX_SAFE_INTEGER;
+        const rankB = b.formRank ?? Number.MAX_SAFE_INTEGER;
+        if (rankA !== rankB) return rankA - rankB;
+      }
+      return b.count - a.count || a.label.localeCompare(b.label);
+    });
 }
 
 function scoreWaiterGroup(group) {
@@ -728,7 +762,7 @@ function scoreWaiterGroup(group) {
   );
 }
 
-function selectWaiterGroup(groups) {
+export function selectWaiterGroup(groups) {
   const ranked = groups
     .map((group) => ({
       ...group,
@@ -740,6 +774,19 @@ function selectWaiterGroup(groups) {
       b.utilityScore - a.utilityScore ||
       (b.priority || 0) - (a.priority || 0)
     );
+
+  const foodHierarchyGroup = ranked
+    .filter((group) => (
+      group.tier === WAITER_TIER_FOOD &&
+      (group.dimension === "form" || group.dimension === "canonical_family") &&
+      group.utilityScore >= WAITER_STRONG_UTILITY
+    ))
+    .sort((a, b) =>
+      (b.dimension === "form" ? 1 : 0) - (a.dimension === "form" ? 1 : 0) ||
+      (b.priority || 0) - (a.priority || 0) ||
+      b.utilityScore - a.utilityScore
+    )[0];
+  if (foodHierarchyGroup) return foodHierarchyGroup;
 
   const foodAttributeGroup = ranked
     .filter((group) => (
@@ -775,15 +822,60 @@ function selectWaiterGroup(groups) {
   return null;
 }
 
+function buildFormCandidates(inventory, queryTokens) {
+  const candidates = new Map();
+  const valuesByRow = [];
+
+  for (const row of inventory) {
+    const text = getWaiterText(row);
+    const normalizedText = normalizeWaiterValue(text);
+    const rowMatches = [];
+    for (const signal of WAITER_FORM_SIGNALS) {
+      if (signal.terms.some((term) => normalizedText.includes(normalizeWaiterValue(term)))) {
+        rowMatches.push(signal);
+      }
+    }
+    valuesByRow.push({ row, rowMatches, text });
+  }
+
+  for (const { row, rowMatches, text } of valuesByRow) {
+    for (const signal of rowMatches) {
+      if (queryTokens.has(singularizeWaiterToken(signal.key))) continue;
+      addCandidate(
+        candidates,
+        signal.key,
+        signal.label,
+        (candidateRow) => normalizeWaiterValue(getWaiterText(candidateRow)).includes(signal.key),
+        `${signal.label} items`,
+        {
+          sourceValues: [
+            sourceRecordFor(row, "waiter_text", text),
+          ],
+          formRank: WAITER_FORM_RANK.get(signal.key) ?? Number.MAX_SAFE_INTEGER,
+        }
+      );
+    }
+  }
+
+  return candidates;
+}
+
 function addCandidate(candidates, key, label, test, predicateDescription, metadata = {}) {
   const normalizedKey = normalizeWaiterValue(key);
   if (!normalizedKey) return;
+  const existing = candidates.get(normalizedKey);
+  const sourceValues = [
+    ...(Array.isArray(existing?.sourceValues) ? existing.sourceValues : []),
+    ...(Array.isArray(metadata.sourceValues) ? metadata.sourceValues : []),
+  ];
   candidates.set(normalizedKey, {
+    ...(existing || {}),
     key: normalizedKey,
     label: label || titleCaseWaiterValue(normalizedKey),
     predicateDescription,
     test,
     ...metadata,
+    sourceValues,
   });
 }
 
@@ -800,13 +892,20 @@ function buildAttributeCandidates(inventory, group, queryTokens) {
         : { key: normalizeWaiterValue(rawValue), label: titleCaseWaiterValue(rawValue) };
       if (!value.key) continue;
       if (queryTokens.has(singularizeWaiterToken(value.key))) continue;
-      normalizedValues.push(value);
+      normalizedValues.push({ ...value, rawValue });
     }
-    valuesByRow.push(normalizedValues);
+    valuesByRow.push({ row, values: normalizedValues });
   }
 
-  for (const values of valuesByRow) {
+  for (const { row, values } of valuesByRow) {
     for (const value of values) {
+      const sourceField = group === "preparation"
+        ? "waiter_attributes.preparations"
+        : group === "ingredient"
+        ? "waiter_attributes.ingredients"
+        : group === "modifier"
+        ? "waiter_attributes.modifiers"
+        : "waiter_attributes.categories";
       addCandidate(
         candidates,
         value.key,
@@ -818,7 +917,12 @@ function buildAttributeCandidates(inventory, group, queryTokens) {
           }
           return rowValues.has(value.key);
         },
-        `${value.label} matches`
+        `${value.label} matches`,
+        {
+          sourceValues: [
+            sourceRecordFor(row, sourceField, value.rawValue ?? value.label),
+          ],
+        }
       );
     }
   }
@@ -836,7 +940,12 @@ function buildCanonicalFamilyCandidates(inventory, queryTokens) {
       family,
       titleCaseWaiterValue(family),
       (r) => normalizeWaiterValue(r.waiter_attributes?.context?.canonical_family || "") === family,
-      `${titleCaseWaiterValue(family)} items`
+      `${titleCaseWaiterValue(family)} items`,
+      {
+        sourceValues: [
+          sourceRecordFor(row, "waiter_attributes.context.canonical_family", row.waiter_attributes?.context?.canonical_family || ""),
+        ],
+      }
     );
   }
   return candidates;
@@ -844,9 +953,12 @@ function buildCanonicalFamilyCandidates(inventory, queryTokens) {
 
 function buildTextFeatureCandidates(inventory, queryTokens) {
   const counts = new Map();
+  const sources = new Map();
   for (const row of inventory) {
     for (const feature of extractWaiterTextFeatures(row, queryTokens)) {
       counts.set(feature, (counts.get(feature) || 0) + 1);
+      const record = sourceRecordFor(row, "waiter_text", getWaiterText(row));
+      sources.set(feature, [...(sources.get(feature) || []), record]);
     }
   }
 
@@ -859,7 +971,10 @@ function buildTextFeatureCandidates(inventory, queryTokens) {
       feature,
       titleCaseWaiterValue(feature),
       (row) => extractWaiterTextFeatures(row, queryTokens).has(feature),
-      `${titleCaseWaiterValue(feature)} matches`
+      `${titleCaseWaiterValue(feature)} matches`,
+      {
+        sourceValues: sources.get(feature) || [],
+      }
     );
   }
   return candidates;
@@ -885,7 +1000,12 @@ function buildPriceCommerceCandidates(inventory) {
           return price !== null && price < threshold;
         },
         `Items under $${displayThreshold}`,
-        { commerceType: "price" }
+        {
+          commerceType: "price",
+          sourceValues: priced.map((row) =>
+            sourceRecordFor(row, "waiter_attributes.commerce.price", row.waiter_attributes?.commerce?.price ?? getWaiterPriceDollars(row))
+          ),
+        }
       );
     }
   }
@@ -903,7 +1023,12 @@ function buildDealCommerceCandidates(inventory) {
       "Deals",
       getWaiterHasDeal,
       "Items with active deals",
-      { commerceType: "deal" }
+      {
+        commerceType: "deal",
+        sourceValues: inventory
+          .filter(getWaiterHasDeal)
+          .map((row) => sourceRecordFor(row, "waiter_attributes.commerce.has_deal", true)),
+      }
     );
   }
   return candidates;
@@ -924,7 +1049,12 @@ function buildDistanceCommerceCandidates(inventory) {
           return distance !== null && distance <= 3;
         },
         "Items within 3 miles",
-        { commerceType: "distance" }
+        {
+          commerceType: "distance",
+          sourceValues: withDistance
+            .filter((row) => getDistanceMiles(row) <= 3)
+            .map((row) => sourceRecordFor(row, "waiter_attributes.commerce.distance_miles", row.waiter_attributes?.commerce?.distance_miles ?? getDistanceMiles(row))),
+        }
       );
     }
   }
@@ -953,7 +1083,7 @@ function buildNutritionCandidates(inventory) {
   return candidates;
 }
 
-function buildWaiterOptions(rows, query, context = {}) {
+export function buildWaiterOptions(rows, query, context = {}) {
   const rawInventory = buildWaiterInventory(rows);
   if (rawInventory.length < WAITER_MIN_ITEM_SIGNALS) {
     return { inventory: rawInventory, options: [], dimension: null };
@@ -975,6 +1105,17 @@ function buildWaiterOptions(rows, query, context = {}) {
   const queryTokens = buildQueryTokenSet(query);
   const intentKeys = activeWaiterIntentKeys({ ...context, query });
   const groups = [
+    {
+      dimension: "form",
+      tier: WAITER_TIER_FOOD,
+      priority: 70,
+      options: buildWaiterOptionRows(
+        inventory,
+        "form",
+        buildFormCandidates(inventory, queryTokens),
+        intentKeys
+      ),
+    },
     {
       dimension: "preparation",
       tier: WAITER_TIER_FOOD,

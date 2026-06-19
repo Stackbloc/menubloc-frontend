@@ -761,3 +761,44 @@ Prior to 2026-06-15, the review queue displayed a wide "OCR Text" column as the 
 For any non-trivial frontend task, maintain a handoff file at `docs/handoffs/YYYY-MM-DD_<topic>_handoff.md`.
 Index every handoff file in `docs/handoffs/README.md`.
 Update the handoff before ending any session with work in progress.
+
+---
+
+## 🔮 Future Waiter Architecture Audit Order
+
+**Established:** 2026-06-19
+**Status:** Functional behavior validated — 15/15 tests passing. Architecture review deferred.
+
+### Rules while audit is pending
+
+1. Do not add new Waiter intelligence or features until the architecture audit is completed.
+2. Audit whether Waiter can use existing MKS/Common Knowledge food-form signals instead of maintaining a separate `WAITER_FORM_SIGNALS` taxonomy.
+3. Preferred long-term signal order:
+   - MKS/Common Knowledge food form
+   - `waiter_attributes.context.canonical_family`
+   - reliable `waiter_attributes.categories`
+   - temporary/minimal text fallback only when structured fields are missing
+4. Waiter must not become a separate food-classification engine.
+5. Preserve the current passing functional behavior until the audit is complete:
+   - live-label-only prompts
+   - invalid-label filtering
+   - no placeholder/fallback questions
+   - bottom-nav Waiter icon reuse (`WaiterFaceIcon` — same asset in `BottomNav` and `WaiterRefinementPrompt`)
+   - information-gain / removes-most-ambiguity question selection
+   - food-form before preparation when food-form split is the better narrowing question
+
+### Current validated state (2026-06-19)
+
+- Test suite: `npx vitest run src/components/search/__tests__/WaiterRefinementPrompt.test.jsx` → 15 tests, 15 passed, 0 failed.
+- Key files: `src/pages/GrubbidSearchResults.jsx` (`buildWaiterOptions`, `selectWaiterGroup`, `WAITER_FORM_SIGNALS`), `src/components/search/WaiterRefinementPrompt.jsx`.
+- Open question: whether `WAITER_FORM_SIGNALS`, `WAITER_FORM_RANK`, and `buildFormCandidates` should remain long-term or be replaced by MKS/CK-backed form signals.
+
+### Protected constants — do not change without audit completion
+
+- `WAITER_MIN_RESULTS` (8)
+- `WAITER_STRONG_UTILITY` (0.3)
+- `buildPriceCommerceCandidates`
+- `buildDealCommerceCandidates`
+- `buildDistanceCommerceCandidates`
+- `buildWaiterOptions`
+- `selectWaiterGroup`
