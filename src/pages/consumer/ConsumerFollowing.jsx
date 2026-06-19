@@ -266,7 +266,7 @@ const styles = {
     minHeight: "100vh",
     background: "var(--gb-color-page)",
     fontFamily: "Inter, Arial, sans-serif",
-    padding: "0 0 calc(80px + env(safe-area-inset-bottom, 0px))",
+    padding: "0 0 calc(var(--bottom-nav-h, 72px) + 8px)",
   },
   pageInner: {
     maxWidth: "760px",

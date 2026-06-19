@@ -447,7 +447,7 @@ export default function CheckoutPage() {
     return (
       <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
         <StickyPageHeader title={t("checkout.title", "Checkout")} />
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "14px 18px 80px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "14px 18px calc(var(--bottom-nav-h, 72px) + 8px)" }}>
           <div
             style={{
               marginTop: 28,
@@ -610,7 +610,7 @@ export default function CheckoutPage() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
       <StickyPageHeader title={t("checkout.title", "Checkout")} />
-      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "14px 18px 80px" }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto", padding: "14px 18px calc(var(--bottom-nav-h, 72px) + 8px)" }}>
 
         <div
           style={{

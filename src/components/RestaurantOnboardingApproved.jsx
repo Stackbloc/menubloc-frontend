@@ -47,7 +47,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         .restaurant-onboarding-page .page {
           max-width: 640px;
           margin: 0 auto;
-          padding: 48px 24px 80px;
+          padding: 48px 24px calc(var(--bottom-nav-h, 72px) + 8px);
         }
 
         .restaurant-onboarding-page .logo {
