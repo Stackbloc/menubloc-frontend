@@ -761,7 +761,14 @@ function scoreWaiterGroup(group) {
   );
 }
 
-export function selectWaiterGroup(groups) {
+// WAITER HIERARCHY RULE (guardrail):
+// Waiter must never ask preparation, flavor, ingredient, nutrition, or commerce
+// until food_form has EITHER:
+//   A. been selected by the user (context.formSelected === true), OR
+//   B. been determined to have insufficient diversity to generate a valid question
+//      (no form/canonical_family group reaches WAITER_STRONG_UTILITY threshold).
+// Food form is mandatory whenever a valid food-form split exists.
+export function selectWaiterGroup(groups, context = {}) {
   const ranked = groups
     .map((group) => ({
       ...group,
@@ -774,13 +781,17 @@ export function selectWaiterGroup(groups) {
       (b.priority || 0) - (a.priority || 0)
     );
 
-  // Food-form (dish type: sandwich, taco, salad, bowl…) must be asked before preparation
-  // (fried, grilled, spicy…) whenever a form question qualifies. Only fall through to
-  // preparation/ingredient/modifier if no form or canonical_family group passes the threshold.
-  const formGroup = ranked.find(
-    (g) => g.tier === WAITER_TIER_FOOD && (g.dimension === "form" || g.dimension === "canonical_family")
-  );
-  if (formGroup) return formGroup;
+  // Condition A: user already selected a food-form — hierarchy rule is satisfied,
+  // allow preparation/ingredient/modifier/nutrition/commerce as follow-up questions.
+  if (!context.formSelected) {
+    // Condition B check: is there a qualifying food-form group?
+    // If yes, it is mandatory — return it regardless of preparation utility.
+    const formGroup = ranked.find(
+      (g) => g.tier === WAITER_TIER_FOOD && (g.dimension === "form" || g.dimension === "canonical_family")
+    );
+    if (formGroup) return formGroup;
+    // No qualifying form group → insufficient diversity (condition B met), fall through.
+  }
 
   return ranked[0] || null;
 }
@@ -1233,7 +1244,7 @@ export function buildWaiterOptions(rows, query, context = {}) {
     options: group.options.slice(0, WAITER_MAX_OPTIONS),
   })).filter((group) => group.options.length >= WAITER_MIN_OPTIONS);
 
-  const selectedGroup = selectWaiterGroup(groups);
+  const selectedGroup = selectWaiterGroup(groups, context);
   if (!selectedGroup) return { inventory, options: [], dimension: null };
 
   return {
@@ -1560,7 +1571,10 @@ export default function GrubbidSearchResults() {
     high_protein,
     priceMax: routePriceMax,
     urlIntentText: Array.from(params.entries()).flat().join(" "),
-  }), [activeFilters, high_protein, params, routePriceMax]);
+    // Hierarchy rule condition A: true when user has already selected a food-form option,
+    // which unblocks preparation/ingredient/nutrition/commerce as follow-up questions.
+    formSelected: waiterSelection?.type === "form" || waiterSelection?.type === "canonical_family",
+  }), [activeFilters, high_protein, params, routePriceMax, waiterSelection]);
 
   const [rows, setRows] = useState([]);
   const [restaurantMetaMap, setRestaurantMetaMap] = useState(new Map());

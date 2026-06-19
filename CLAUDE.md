@@ -764,22 +764,77 @@ Update the handoff before ending any session with work in progress.
 
 ---
 
-## 🔮 Future Waiter Architecture Audit Order
+## 🚨 WAITER HIERARCHY RULE (MANDATORY GUARDRAIL)
 
 **Established:** 2026-06-19
-**Status:** Functional behavior validated — 15/15 tests passing. Architecture review deferred.
+**Enforced in:** `selectWaiterGroup` in `src/pages/GrubbidSearchResults.jsx`
 
-### Rules while audit is pending
+The Waiter must NEVER ask about preparation, flavor, ingredient, nutrition, or commerce until food_form has either:
 
-1. Do not add new Waiter intelligence or features until the architecture audit is completed.
-2. Audit whether Waiter can use existing MKS/Common Knowledge food-form signals instead of maintaining a separate `WAITER_FORM_SIGNALS` taxonomy.
-3. Preferred long-term signal order:
-   - MKS/Common Knowledge food form
-   - `waiter_attributes.context.canonical_family`
-   - reliable `waiter_attributes.categories`
-   - temporary/minimal text fallback only when structured fields are missing
-4. Waiter must not become a separate food-classification engine.
-5. Preserve the current passing functional behavior until the audit is complete:
+**A. Been selected by the user** (`context.formSelected === true` — set when `waiterSelection.type === "form"` or `"canonical_family"`)
+
+**OR**
+
+**B. Been determined to have insufficient diversity to generate a valid question** (no form/canonical_family group reaches `WAITER_STRONG_UTILITY` threshold after scoring)
+
+**Food form is mandatory whenever a valid food-form split exists.**
+
+### Hard rules
+
+1. If a form or canonical_family group passes `WAITER_STRONG_UTILITY`, it MUST be returned — regardless of whether preparation/ingredient/commerce scores higher utility.
+2. Preparation, ingredient, modifier, nutrition, and commerce questions may ONLY appear when condition A or B is met.
+3. `waiterIntentContext.formSelected` must be kept in sync with `waiterSelection.type` — never remove this from the memoized context.
+4. `selectWaiterGroup` must always receive `context` from `buildWaiterOptions` — never call it without the context argument.
+5. Do NOT reorder or remove the `if (!context.formSelected)` block in `selectWaiterGroup`.
+
+### Correct question flow example
+
+```
+Search: "chicken"
+  → Form group qualifies (Sandwich=18, Salad=24, Taco=31)
+  → Waiter asks: "Taco, Salad, or Sandwich?"
+
+User selects "Taco" (formSelected = true)
+  → Hierarchy rule satisfied (condition A)
+  → Waiter may now ask: "Fried or Spicy?" (preparation)
+```
+
+### Prohibited
+
+```
+Search: "chicken"
+  → Form group qualifies but preparation group scores higher
+  → Waiter asks: "Fried, Iced, or Spicy?"  ← FORBIDDEN
+```
+
+---
+
+## 🔮 Waiter Form Source Architecture
+
+**Established:** 2026-06-19 (audit deferred)
+**Updated:** 2026-06-19 (structured-source priority implemented)
+**Status:** 17/17 tests passing. Structured-first priority is live. MKS food-form integration deferred.
+
+### Current implementation (as of 2026-06-19)
+
+`buildFormCandidates` now resolves form signals in priority order:
+1. `waiter_attributes.categories` (MKS-backed structured data) — used when present
+2. `waiter_attributes.context.canonical_family` (structured) — used when categories don't match a known form
+3. `TEMP_WAITER_FORM_TEXT_FALLBACK` (text scan) — activated only when structured data is absent
+
+`TEMP_WAITER_FORM_TEXT_FALLBACK` (formerly `WAITER_FORM_SIGNALS`) is the text-only fallback taxonomy. **Do NOT expand it.** It must be removed once MKS/CK food-form data arrives in the search payload.
+
+Source provenance is tracked on each form option via `sourceValues[0].sourceField`:
+- `"waiter_attributes.categories"` — structured path was used
+- `"waiter_attributes.context.canonical_family"` — canonical family path was used
+- `"waiter_text"` — text fallback was used
+
+### Rules
+
+1. Do not add new Waiter intelligence or features without audit.
+2. Do not expand `TEMP_WAITER_FORM_TEXT_FALLBACK`. It is frozen until MKS replaces it.
+3. Waiter must not become a separate food-classification engine.
+4. Preserve all passing functional behavior:
    - live-label-only prompts
    - invalid-label filtering
    - no placeholder/fallback questions
@@ -789,9 +844,9 @@ Update the handoff before ending any session with work in progress.
 
 ### Current validated state (2026-06-19)
 
-- Test suite: `npx vitest run src/components/search/__tests__/WaiterRefinementPrompt.test.jsx` → 15 tests, 15 passed, 0 failed.
-- Key files: `src/pages/GrubbidSearchResults.jsx` (`buildWaiterOptions`, `selectWaiterGroup`, `WAITER_FORM_SIGNALS`), `src/components/search/WaiterRefinementPrompt.jsx`.
-- Open question: whether `WAITER_FORM_SIGNALS`, `WAITER_FORM_RANK`, and `buildFormCandidates` should remain long-term or be replaced by MKS/CK-backed form signals.
+- Test suite: `npx vitest run src/components/search/__tests__/WaiterRefinementPrompt.test.jsx` → 17 tests, 17 passed, 0 failed.
+- Key files: `src/pages/GrubbidSearchResults.jsx` (`buildWaiterOptions`, `selectWaiterGroup`, `TEMP_WAITER_FORM_TEXT_FALLBACK`, `_WAITER_FORM_KEY_LOOKUP`, `buildFormCandidates`), `src/components/search/WaiterRefinementPrompt.jsx`.
+- Remaining open question: add MKS food-form field to the search payload and remove `TEMP_WAITER_FORM_TEXT_FALLBACK` entirely.
 
 ### Protected constants — do not change without audit completion
 
