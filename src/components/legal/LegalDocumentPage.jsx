@@ -9,14 +9,14 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 
 const headingStyle = {
   margin: "32px 0 10px",
-  color: "var(--gb-color-ink-strong)",
+  color: "#0B0F0C",
   fontSize: "18px",
   fontWeight: 800,
 };
 
 const paragraphStyle = {
   margin: "0 0 14px",
-  color: "var(--gb-color-ink-soft)",
+  color: "#374151",
   fontSize: "15px",
   lineHeight: 1.75,
 };

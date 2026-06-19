@@ -18,7 +18,7 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 
 const introStyle = {
   margin: "0 0 24px",
-  color: "var(--gb-color-ink-soft)",
+  color: "#374151",
   fontSize: "15px",
   lineHeight: 1.8,
 };
@@ -31,7 +31,7 @@ const rowStyle = {
 };
 
 const labelStyle = {
-  color: "var(--gb-color-ink)",
+  color: "#0B0F0C",
   fontSize: "14px",
   fontWeight: 800,
 };

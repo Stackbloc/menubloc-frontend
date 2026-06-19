@@ -8,7 +8,7 @@ import BottomNav from "../components/BottomNav.jsx";
 
 const paragraphStyle = {
   margin: "0 0 18px",
-  color: "var(--gb-color-ink-soft)",
+  color: "#374151",
   fontSize: "15px",
   lineHeight: 1.8,
 };
@@ -16,7 +16,7 @@ const paragraphStyle = {
 const statementStyle = {
   ...paragraphStyle,
   margin: "0 0 8px",
-  color: "var(--gb-color-ink-strong)",
+  color: "#0B0F0C",
   fontWeight: 700,
 };
 
@@ -45,7 +45,7 @@ export default function AboutMenuply() {
       />
 
       <div style={{ maxWidth: 720 }}>
-        <p style={{ ...paragraphStyle, fontSize: "17px", fontWeight: 700, color: "var(--gb-color-ink-strong)", marginBottom: 12 }}>
+        <p style={{ ...paragraphStyle, fontSize: "17px", fontWeight: 700, color: "#0B0F0C", marginBottom: 12 }}>
           {t("about.intro", "Menuply — we know, the name is a little different. But we are building a different kind of restaurant platform.")}
         </p>
 
@@ -61,10 +61,10 @@ export default function AboutMenuply() {
           ...statementStyle,
           fontSize: "18px",
           fontStyle: "italic",
-          color: "var(--gb-color-ink-strong)",
+          color: "#0B0F0C",
           marginBottom: 32,
           paddingLeft: 16,
-          borderLeft: "3px solid var(--gb-color-ink-soft, #9ca3af)",
+          borderLeft: "3px solid #D1D5DB",
         }}>
           {t("about.tagline", "Menuply — One Menu. Multiplied by Thousands.")}
         </p>

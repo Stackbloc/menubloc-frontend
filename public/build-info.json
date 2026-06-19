@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "ec19ec9f431ebaff54b407116a03fd805894eee1",
-  "gitShortSha": "ec19ec9",
+  "gitSha": "b5c846ecceaa22a593b27cbbc629e653252d90d3",
+  "gitShortSha": "b5c846e",
   "branch": "main",
-  "buildTime": "2026-06-18T23:33:51.677Z",
+  "buildTime": "2026-06-19T05:02:57.840Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix: force Vite framework in vercel.json to override dashboard services setting"
+  "commitMessage": "fix: improve logo rendering and text legibility"
 }

@@ -51,22 +51,22 @@ export default function SiteFooter() {
             flex: "0 0 auto",
           }}
         >
-          <Link to="/restaurant/onboarding" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/restaurant/onboarding" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.signup")}
           </Link>
-          <Link to="/operator/login" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/operator/login" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.signin")}
           </Link>
-          <Link to="/terms" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/terms" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.terms")}
           </Link>
-          <Link to="/privacy" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/privacy" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
             {t("footer.privacy", "Privacy Policy")}
           </Link>
-          <Link to="/about" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/about" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
             {t("footer.about", "About Menuply")}
           </Link>
-          <Link to="/contact" style={{ color: "var(--gb-color-ink-muted)", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/contact" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.contact")}
           </Link>
         </div>
