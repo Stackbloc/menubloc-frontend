@@ -762,9 +762,6 @@ function scoreWaiterGroup(group) {
 }
 
 export function selectWaiterGroup(groups) {
-  // Pick the group whose question removes the most ambiguity.
-  // Sort order: tier (food > nutrition > commerce) → utility score → priority (form=70 beats prep=60 as tiebreaker).
-  // Form is preferred over preparation only when its utility is equal or higher — not unconditionally.
   const ranked = groups
     .map((group) => ({
       ...group,
@@ -776,6 +773,14 @@ export function selectWaiterGroup(groups) {
       b.utilityScore - a.utilityScore ||
       (b.priority || 0) - (a.priority || 0)
     );
+
+  // Food-form (dish type: sandwich, taco, salad, bowl…) must be asked before preparation
+  // (fried, grilled, spicy…) whenever a form question qualifies. Only fall through to
+  // preparation/ingredient/modifier if no form or canonical_family group passes the threshold.
+  const formGroup = ranked.find(
+    (g) => g.tier === WAITER_TIER_FOOD && (g.dimension === "form" || g.dimension === "canonical_family")
+  );
+  if (formGroup) return formGroup;
 
   return ranked[0] || null;
 }
@@ -2381,33 +2386,6 @@ export default function GrubbidSearchResults() {
         </div>
       )}
 
-      {/* Top 5 Healthiest link — shown when we have a city context */}
-      {!loading && !err && city && (
-        <div
-          style={{
-            marginTop: isMobile ? 32 : 44,
-            paddingTop: isMobile ? 16 : 20,
-            borderTop: "1px solid #1F2937",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            fontSize: isMobile ? 13 : 14,
-            color: "#6B7280",
-          }}
-        >
-          <span style={{ fontWeight: 500 }}>Looking for something healthier?</span>
-          <Link
-            to={`/top-picks?city=${encodeURIComponent(city)}${state ? `&state=${encodeURIComponent(state)}` : ""}`}
-            style={{
-              color: "#22C55E",
-              fontWeight: 700,
-              textDecoration: "none",
-            }}
-          >
-            Top Picks in {city} →
-          </Link>
-        </div>
-      )}
       </div>
       <BottomNav />
     </div>
