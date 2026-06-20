@@ -9,12 +9,6 @@ import {
 } from "../lib/restaurantOnboardingState.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-const MAX_PDF_BYTES = 20 * 1024 * 1024;
-
-function isPdfFile(file) {
-  if (!file) return false;
-  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-}
 
 function describeSignupFailure(error) {
   const rawMessage = String(error?.message || "").trim();
@@ -56,11 +50,9 @@ export default function RestaurantFreeProfileSignup() {
     restaurant_name: "",
     address_line1: "",
   });
-  const [menuFile, setMenuFile] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [serverErrorDetail, setServerErrorDetail] = useState("");
-  const [uploadNotice, setUploadNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [successState, setSuccessState] = useState(null);
   const [legalConsent, setLegalConsent] = useState(false);
@@ -71,40 +63,12 @@ export default function RestaurantFreeProfileSignup() {
     setFieldErrors((current) => ({ ...current, [name]: "" }));
   }
 
-  function handleFileChange(event) {
-    const file = event.target.files?.[0] || null;
-    setUploadNotice("");
-    setFieldErrors((current) => ({ ...current, menuFile: "" }));
-
-    if (!file) {
-      setMenuFile(null);
-      return;
-    }
-
-    if (!isPdfFile(file)) {
-      setMenuFile(null);
-      setFieldErrors((current) => ({ ...current, menuFile: "Please choose a PDF file." }));
-      event.target.value = "";
-      return;
-    }
-
-    if (file.size > MAX_PDF_BYTES) {
-      setMenuFile(null);
-      setFieldErrors((current) => ({ ...current, menuFile: "PDF must be 20 MB or smaller." }));
-      event.target.value = "";
-      return;
-    }
-
-    setMenuFile(file);
-  }
-
   function validate() {
     const errors = {};
 
     if (!form.restaurant_name.trim()) errors.restaurant_name = "Restaurant name is required.";
     if (!form.address_line1.trim()) errors.address_line1 = "Street address is required.";
     if (!form.email.trim()) errors.email = "Owner email is required.";
-    if (menuFile && !isPdfFile(menuFile)) errors.menuFile = "Please choose a PDF file.";
     if (!legalConsent) {
       errors.legalConsent = "You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.";
     }
@@ -112,37 +76,10 @@ export default function RestaurantFreeProfileSignup() {
     return errors;
   }
 
-  async function uploadMenuIfPresent({ restaurant, owner_token }) {
-    if (!menuFile) return { uploaded: false };
-
-    const formData = new FormData();
-    formData.append("file", menuFile, menuFile.name);
-    formData.append("restaurant_id", String(restaurant.id));
-    formData.append("email", form.email.trim());
-    formData.append("owner_token", owner_token);
-    formData.append("plan", "verified");
-
-    const res = await fetch(`${API}/menu-upload/pdf`, {
-      method: "POST",
-      credentials: "include",
-      body: formData,
-    });
-    const data = await res.json().catch(() => null);
-
-    if (!res.ok || !data?.ok) {
-      const error = new Error(data?.error || `Menu upload failed (${res.status})`);
-      error.status = res.status;
-      throw error;
-    }
-
-    return { uploaded: true, data };
-  }
-
   async function handleSubmit(event) {
     event.preventDefault();
     setServerError("");
     setServerErrorDetail("");
-    setUploadNotice("");
 
     const errors = validate();
     if (Object.keys(errors).length > 0) {
@@ -190,42 +127,29 @@ export default function RestaurantFreeProfileSignup() {
         owner_token,
         city: market.city || "",
         state: market.state_code || "",
-        ingestion_method: menuFile ? "pdf_upload" : "later",
+        ingestion_method: "later",
         selected_plan: "verified",
         plan: "verified",
       });
 
       await syncRestaurantOnboardingProgress(baseState, {
-        current_step_key: menuFile ? "menu_review" : "basic_public_profile",
+        current_step_key: "basic_public_profile",
         completed_step_keys: ["create_operator_account", "public_restaurant_information"],
         intake_path: "join_landing_free_profile",
         requested_location_count: 1,
         selected_plan_code: "verified",
-        manual_review_required: Boolean(menuFile),
+        manual_review_required: false,
         draft_payload: {
           signup_source: market.signup_source,
           market: market.market,
           payment_required: false,
           plan_type: "free",
           profile_status: "pending",
-          menu_upload_mode: menuFile ? "pdf_now" : "upload_later",
+          menu_upload_mode: "upload_later",
         },
       });
 
-      let uploaded = false;
-      try {
-        const uploadResult = await uploadMenuIfPresent({ restaurant, owner_token });
-        uploaded = uploadResult.uploaded;
-      } catch (uploadError) {
-        setUploadNotice(
-          uploadError?.message
-            ? `Your profile was created, but the PDF upload did not finish: ${uploadError.message}`
-            : "Your profile was created, but the PDF upload did not finish."
-        );
-      }
-
       setSuccessState({
-        uploaded,
         restaurantName: form.restaurant_name.trim(),
         passwordSetupEmailSent: Boolean(password_setup_email_sent),
       });
@@ -250,18 +174,14 @@ export default function RestaurantFreeProfileSignup() {
         <div style={styles.successCard}>
           <div style={styles.pageTitle}>Your free restaurant profile has been created.</div>
           <div style={styles.pageSubtitle}>
-            We&apos;ll use your restaurant information and menu to prepare your Menuply profile. If you uploaded
-            a menu, we&apos;ll review it before publication and follow up when it&apos;s ready.
+            We&apos;ll use your restaurant information to prepare your Menuply profile and follow up when it&apos;s ready.
           </div>
-          {!successState.uploaded ? (
-            <div style={styles.helperText}>You can upload your menu later from your restaurant account.</div>
-          ) : null}
+          <div style={styles.helperText}>You can upload your menu later from your restaurant account.</div>
           {successState.passwordSetupEmailSent ? (
             <div style={styles.helperText}>
               Check your email for a link to set your operator password and access your account.
             </div>
           ) : null}
-          {uploadNotice ? <div style={styles.noticeBanner}>{uploadNotice}</div> : null}
           <button type="button" onClick={() => nav("/")} style={styles.secondaryButton}>
             Return to Menuply
           </button>
@@ -322,24 +242,6 @@ export default function RestaurantFreeProfileSignup() {
           autoComplete="email"
           type="email"
         />
-
-        <div style={styles.fieldGroup}>
-          <label htmlFor="menu_pdf" style={styles.label}>
-            PDF Menu Upload <span style={styles.optional}>(optional)</span>
-          </label>
-          <input
-            id="menu_pdf"
-            name="menu_pdf"
-            type="file"
-            accept="application/pdf,.pdf"
-            onChange={handleFileChange}
-            style={styles.fileInput}
-          />
-          <div style={styles.helperText}>
-            Upload a menu now or add it later.
-          </div>
-          {fieldErrors.menuFile ? <div style={styles.fieldError}>{fieldErrors.menuFile}</div> : null}
-        </div>
 
         <label style={styles.checkboxRow}>
           <input
@@ -477,10 +379,6 @@ const styles = {
     marginBottom: 6,
     color: "#D1D5DB",
   },
-  optional: {
-    fontWeight: 500,
-    color: "#9CA3AF",
-  },
   input: {
     width: "100%",
     height: 44,
@@ -534,16 +432,6 @@ const styles = {
     margin: "12px 0 0",
     lineHeight: 1.5,
   },
-  fileInput: {
-    width: "100%",
-    borderRadius: 10,
-    border: "1px solid #374151",
-    padding: 12,
-    fontSize: 14,
-    background: "#121A14",
-    color: "#D1D5DB",
-    boxSizing: "border-box",
-  },
   errorBanner: {
     background: "rgba(248, 113, 113, 0.1)",
     border: "1px solid rgba(248, 113, 113, 0.35)",
@@ -552,16 +440,6 @@ const styles = {
     marginBottom: 20,
     fontSize: 13,
     color: "#fca5a5",
-  },
-  noticeBanner: {
-    background: "rgba(234, 179, 8, 0.1)",
-    border: "1px solid rgba(234, 179, 8, 0.35)",
-    borderRadius: 10,
-    padding: "12px 16px",
-    marginTop: 16,
-    fontSize: 13,
-    color: "#FCD34D",
-    lineHeight: 1.5,
   },
   successCard: {
     background: "#121A14",
