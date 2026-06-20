@@ -22,6 +22,7 @@
 
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { useCanonical } from "./hooks/useCanonical.js";
 import { captureEvent, initPostHog } from "./services/posthog.js";
 import { getAnalyticsSessionId } from "./lib/analyticsPageVisitSend.js";
@@ -187,9 +188,9 @@ function CrmLegacyRedirect() {
 
 function OwnerRoute({ children }) {
   const { isAuthenticated, loading } = useOwner();
-  if (loading) return null;
+  if (loading) return <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #f7f1ea 0%, #efe5db 100%)" }} />;
   if (!isAuthenticated) return <Navigate to="/owner/login" replace />;
-  return children;
+  return <ErrorBoundary>{children}</ErrorBoundary>;
 }
 
 function isEasyMenuHost() {
