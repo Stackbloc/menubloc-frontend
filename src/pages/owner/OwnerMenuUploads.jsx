@@ -72,7 +72,7 @@ const UPLOAD_FILTERS = [
 
 const UPLOAD_COL_HEADS = ["Restaurant", "Email", "Type", "Status", "Items (inserted/parsed)", "Uploaded", "Location", ""];
 
-function UploadActivityTab({ searchParams, setSearchParams }) {
+function UploadActivityTab({ searchParams, setSearchParams, restaurantFilter }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -82,6 +82,7 @@ function UploadActivityTab({ searchParams, setSearchParams }) {
     setLoading(true);
     setError("");
     const params = {};
+    if (restaurantFilter?.id) params.restaurant_id = restaurantFilter.id;
     if (activeFilter === "today") params.today = "1";
     else if (activeFilter === "last7days") params.last7days = "1";
     else if (activeFilter !== "all") params.status = activeFilter;
@@ -97,7 +98,7 @@ function UploadActivityTab({ searchParams, setSearchParams }) {
       .finally(() => { settled = true; clearTimeout(timeout); setLoading(false); });
 
     return () => { settled = true; clearTimeout(timeout); };
-  }, [activeFilter]);
+  }, [activeFilter, restaurantFilter?.id]);
 
   function setFilter(key) {
     setSearchParams((prev) => {
@@ -112,7 +113,8 @@ function UploadActivityTab({ searchParams, setSearchParams }) {
 
   function onUploadSuccess() {
     setLoading(true);
-    getOwnerMenuUploads({})
+    const params = restaurantFilter?.id ? { restaurant_id: restaurantFilter.id } : {};
+    getOwnerMenuUploads(params)
       .then((result) => setData(result))
       .catch(() => setError("Upload data is temporarily unavailable."))
       .finally(() => setLoading(false));
@@ -120,8 +122,20 @@ function UploadActivityTab({ searchParams, setSearchParams }) {
 
   return (
     <div>
+      {restaurantFilter && (
+        <div style={{
+          marginBottom: 16, padding: "12px 16px", borderRadius: 10,
+          background: OWNER_COLORS.accentSoft, border: `1px solid ${OWNER_COLORS.accent}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.accent }}>
+            Showing uploads for: {restaurantFilter.name}
+            {restaurantFilter.city ? ` — ${restaurantFilter.city}, ${restaurantFilter.state}` : ""}
+          </div>
+        </div>
+      )}
       {error ? <ErrorBanner message={error} /> : null}
-      <NewUploadSection onSuccess={onUploadSuccess} />
+      <NewUploadSection onSuccess={onUploadSuccess} initialRestaurant={restaurantFilter} />
 
       <SectionTitle
         title="Upload Activity"
@@ -232,7 +246,7 @@ const ITEM_SEARCH_LIMIT = 50;
 
 // ─── Menu Manager tab ─────────────────────────────────────────────────────────
 
-function MenuManagerTab() {
+function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToUploads }) {
   // ── search view state
   const [searchQ, setSearchQ]           = useState("");
   const [searchResults, setSearchResults] = useState(null); // null = no search run yet
@@ -247,7 +261,6 @@ function MenuManagerTab() {
   const [recentRestaurants, setRecentRestaurants] = useState(loadRecentRestaurants);
 
   // ── restaurant view state
-  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [restaurantSummary, setRestaurantSummary] = useState(null); // { hidden_count, duplicate_count }
   const [menus, setMenus]               = useState([]);
   const [menusLoading, setMenusLoading] = useState(false);
@@ -688,17 +701,32 @@ function MenuManagerTab() {
   // ══════════════════════════════════════════════════════════════
   return (
     <div>
-      {/* Back button */}
-      <button
-        type="button"
-        onClick={handleBack}
-        style={{
-          marginBottom: 16, background: "none", border: "none",
-          cursor: "pointer", color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 13, padding: 0,
-        }}
-      >
-        ← Back to Search
-      </button>
+      {/* Back button + Upload shortcut */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+        <button
+          type="button"
+          onClick={handleBack}
+          style={{
+            background: "none", border: "none",
+            cursor: "pointer", color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 13, padding: 0,
+          }}
+        >
+          ← Back to Search
+        </button>
+        {onSwitchToUploads && (
+          <button
+            type="button"
+            onClick={onSwitchToUploads}
+            style={{
+              padding: "6px 14px", borderRadius: 9,
+              background: "#fff", border: `1px solid ${OWNER_COLORS.line}`,
+              color: OWNER_COLORS.ink, fontWeight: 600, fontSize: 12, cursor: "pointer",
+            }}
+          >
+            Upload Menu →
+          </button>
+        )}
+      </div>
 
       {/* Restaurant summary panel */}
       <PageCard style={{ padding: 20, marginBottom: 16 }}>
@@ -1971,12 +1999,16 @@ const labelStyle = {
 
 // ─── Upload helpers (preserved from original) ──────────────────────────────────
 
-function NewUploadSection({ onSuccess }) {
+function NewUploadSection({ onSuccess, initialRestaurant }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState("text");
-  const [restaurantQuery, setRestaurantQuery] = useState("");
+  const [restaurantQuery, setRestaurantQuery] = useState(
+    initialRestaurant
+      ? initialRestaurant.name + (initialRestaurant.city ? ` — ${initialRestaurant.city}, ${initialRestaurant.state}` : "")
+      : ""
+  );
   const [restaurantResults, setRestaurantResults] = useState([]);
-  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState(initialRestaurant || null);
   const [menuText, setMenuText] = useState("");
   const [file, setFile] = useState(null);
   const [searching, setSearching] = useState(false);
@@ -2171,6 +2203,7 @@ function formatDate(iso) {
 
 export default function OwnerMenuUploads() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const activeTab = searchParams.get("tab") === "uploads" ? "uploads" : "manager";
 
   function setTab(tab) {
@@ -2188,7 +2221,7 @@ export default function OwnerMenuUploads() {
       <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: `2px solid ${OWNER_COLORS.line}`, paddingBottom: 0 }}>
         {[
           { key: "manager", label: "Menu Manager" },
-          { key: "uploads", label: "Upload Activity" },
+          { key: "uploads", label: selectedRestaurant ? `Upload Activity — ${selectedRestaurant.name}` : "Upload Activity" },
         ].map((t) => {
           const active = activeTab === t.key;
           return (
@@ -2207,6 +2240,10 @@ export default function OwnerMenuUploads() {
                 cursor: "pointer",
                 position: "relative",
                 bottom: -2,
+                maxWidth: 320,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
               {t.label}
@@ -2216,9 +2253,17 @@ export default function OwnerMenuUploads() {
       </div>
 
       {activeTab === "manager" ? (
-        <MenuManagerTab />
+        <MenuManagerTab
+          selectedRestaurant={selectedRestaurant}
+          setSelectedRestaurant={setSelectedRestaurant}
+          onSwitchToUploads={() => setTab("uploads")}
+        />
       ) : (
-        <UploadActivityTab searchParams={searchParams} setSearchParams={setSearchParams} />
+        <UploadActivityTab
+          searchParams={searchParams}
+          setSearchParams={setSearchParams}
+          restaurantFilter={selectedRestaurant}
+        />
       )}
     </OwnerLayout>
   );
