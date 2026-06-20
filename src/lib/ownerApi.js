@@ -122,6 +122,47 @@ export const rejectReviewItem = (uploadId, itemId) =>
 export const bulkReviewItems = (uploadId, data) =>
   post(`/api/owner/menu-uploads/${uploadId}/review-items/bulk`, data);
 
+// ─── Menu Console ─────────────────────────────────────────────────────────────
+
+export const searchMenuConsoleRestaurants = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/menu-console/restaurant-search${qs ? `?${qs}` : ""}`);
+};
+export const getMenuConsoleRestaurantMenus = (restaurantId) =>
+  get(`/api/owner/menu-console/restaurants/${restaurantId}/menus`);
+export const getMenuConsoleMenu = (restaurantId, menuId) =>
+  get(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}`);
+export const createMenuConsoleMenu = (restaurantId, body) =>
+  post(`/api/owner/menu-console/restaurants/${restaurantId}/menus`, body);
+export const updateMenuConsoleMenu = (restaurantId, menuId, body) =>
+  req(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+export const publishMenuConsoleMenu = (restaurantId, menuId) =>
+  post(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/publish`, {});
+export const unpublishMenuConsoleMenu = (restaurantId, menuId) =>
+  post(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/unpublish`, {});
+export const deleteMenuConsoleMenu = (restaurantId, menuId) =>
+  req(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}`, { method: "DELETE" });
+export const addMenuConsoleItem = (restaurantId, menuId, body) =>
+  post(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items`, body);
+export const updateMenuConsoleItem = (restaurantId, menuId, itemId, body) =>
+  req(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+export const deleteMenuConsoleItem = (restaurantId, menuId, itemId) =>
+  req(`/api/owner/menu-console/restaurants/${restaurantId}/menus/${menuId}/items/${itemId}`, {
+    method: "DELETE",
+  });
+export const searchMenuConsoleItems = (restaurantId, params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/menu-console/restaurants/${restaurantId}/items/search${qs ? `?${qs}` : ""}`);
+};
+export const bulkMenuConsoleItems = (restaurantId, body) =>
+  post(`/api/owner/menu-console/restaurants/${restaurantId}/items/bulk`, body);
+
 export const getOwnerMarketExpansion = () => get("/api/owner/market-expansion/summary");
 export const getOwnerMarketExpansionByZip = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
