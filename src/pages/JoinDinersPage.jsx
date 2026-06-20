@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
@@ -29,25 +29,6 @@ export default function JoinDinersPage() {
     return readSessionLocationLabel();
   }, [location.search]);
 
-  useEffect(() => {
-    const preconnectId = "menuply-dm-sans-preconnect";
-    const fontId = "menuply-dm-sans-font";
-    if (!document.getElementById(preconnectId)) {
-      const el = document.createElement("link");
-      el.id = preconnectId;
-      el.rel = "preconnect";
-      el.href = "https://fonts.googleapis.com";
-      document.head.appendChild(el);
-    }
-    if (!document.getElementById(fontId)) {
-      const el = document.createElement("link");
-      el.id = fontId;
-      el.rel = "stylesheet";
-      el.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap";
-      document.head.appendChild(el);
-    }
-  }, []);
-
   return (
     <main style={styles.page}>
       <div style={styles.wrap}>
@@ -55,7 +36,7 @@ export default function JoinDinersPage() {
           width={130}
           height={52}
           radius={0}
-          pageColor="#0D0D0D"
+          pageColor="#0B0F0C"
           linkStyle={styles.logo}
           imageStyle={styles.logoImage}
         />
@@ -129,9 +110,9 @@ const styles = {
   page: {
     boxSizing: "border-box",
     minHeight: "100dvh",
-    background: "#0D0D0D",
+    background: "#0B0F0C",
     color: "#FFF",
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -155,15 +136,15 @@ const styles = {
   },
   eyebrow: {
     display: "inline-block",
-    background: "rgba(61,217,52,.1)",
-    color: "#3DD934",
+    background: "rgba(34,197,94,0.10)",
+    color: "#22C55E",
     fontSize: ".7rem",
     fontWeight: 700,
     letterSpacing: ".09em",
     textTransform: "uppercase",
     padding: "5px 13px",
     borderRadius: 100,
-    border: "1px solid rgba(61,217,52,.2)",
+    border: "1px solid rgba(34,197,94,0.22)",
     marginBottom: 20,
   },
   heading: {
@@ -207,7 +188,7 @@ const styles = {
     width: 7,
     height: 7,
     borderRadius: "50%",
-    background: "#3DD934",
+    background: "#22C55E",
     flexShrink: 0,
     marginTop: 7,
   },
@@ -219,8 +200,8 @@ const styles = {
   },
   ctaPrimary: {
     display: "block",
-    background: "#3DD934",
-    color: "#0D0D0D",
+    background: "#22C55E",
+    color: "#0B0F0C",
     textDecoration: "none",
     fontSize: "1rem",
     fontWeight: 700,
