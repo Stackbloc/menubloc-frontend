@@ -811,6 +811,8 @@ function MenuManagerTab() {
           bulkErr={bulkErr}
           onBulkOp={handleBulkOp}
           onOpenMenu={handleJumpToMenu}
+          restaurantId={selectedRestaurant?.id}
+          onSaved={() => runItemSearch(itemQ, itemPage, itemFilter)}
         />
       ) : (
       <>
@@ -921,6 +923,7 @@ function ItemSearchResults({
   bulkTargetMenuId, setBulkTargetMenuId,
   bulkSectionInput, setBulkSectionInput,
   bulkLoading, bulkErr, onBulkOp, onOpenMenu,
+  restaurantId, onSaved,
 }) {
   const from = (page - 1) * 50 + 1;
   const to   = Math.min(page * 50, total);
@@ -1084,6 +1087,8 @@ function ItemSearchResults({
               onCheck={() => onSelectItem(item.id)}
               onOpenMenu={() => onOpenMenu(item)}
               isLast={idx === results.length - 1}
+              restaurantId={restaurantId}
+              onSaved={onSaved}
             />
           ))}
         </PageCard>
@@ -1103,7 +1108,94 @@ function ItemSearchResults({
   );
 }
 
-function ItemResultRow({ item, checked, onCheck, onOpenMenu, isLast }) {
+function ItemResultRow({ item, checked, onCheck, onOpenMenu, isLast, restaurantId, onSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [saveErr, setSaveErr] = useState("");
+
+  function startEdit() {
+    setDraft({
+      name: item.name || "",
+      description: item.description || "",
+      price: item.price != null ? String(item.price) : "",
+      section: item.section || "",
+    });
+    setSaveErr("");
+    setEditing(true);
+  }
+
+  async function handleSave(e) {
+    e.preventDefault();
+    if (!draft.name.trim()) { setSaveErr("Name is required."); return; }
+    setSaving(true);
+    setSaveErr("");
+    try {
+      await updateMenuConsoleItem(restaurantId, item.menu_id, item.id, {
+        name: draft.name.trim(),
+        description: draft.description.trim() || null,
+        price: draft.price === "" ? null : Number(draft.price),
+        section: draft.section.trim() || null,
+      });
+      setEditing(false);
+      if (onSaved) onSaved();
+    } catch (err) {
+      setSaveErr(err?.payload?.error || err?.message || "Save failed.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <div style={{
+        padding: "14px 16px",
+        borderBottom: isLast ? "none" : `1px solid ${OWNER_COLORS.line}`,
+        background: "#f8f7f4",
+        borderLeft: `3px solid ${OWNER_COLORS.accent}`,
+      }}>
+        <form onSubmit={handleSave}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+            <div>
+              <label style={labelStyle}>Name *</label>
+              <input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
+                style={inputStyle} placeholder="Item name" autoFocus />
+            </div>
+            <div>
+              <label style={labelStyle}>Price</label>
+              <input value={draft.price} onChange={(e) => setDraft((p) => ({ ...p, price: e.target.value }))}
+                style={inputStyle} placeholder="9.99" type="number" step="0.01" min="0" />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+            <div>
+              <label style={labelStyle}>Description</label>
+              <input value={draft.description} onChange={(e) => setDraft((p) => ({ ...p, description: e.target.value }))}
+                style={inputStyle} placeholder="Optional" />
+            </div>
+            <div>
+              <label style={labelStyle}>Section</label>
+              <input value={draft.section} onChange={(e) => setDraft((p) => ({ ...p, section: e.target.value }))}
+                style={inputStyle} placeholder="e.g. Appetizers" />
+            </div>
+          </div>
+          {saveErr && <div style={{ fontSize: 12, color: "#991b1b", marginBottom: 8 }}>{saveErr}</div>}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="submit" disabled={saving} style={{
+              padding: "7px 16px", borderRadius: 8, background: OWNER_COLORS.accent,
+              color: "#fff", border: "none", fontWeight: 700, fontSize: 12,
+              cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1,
+            }}>{saving ? "Saving…" : "Save"}</button>
+            <button type="button" onClick={() => setEditing(false)} style={{
+              padding: "7px 12px", borderRadius: 8, background: "#fff",
+              border: `1px solid ${OWNER_COLORS.line}`, fontWeight: 600, fontSize: 12, cursor: "pointer",
+            }}>Cancel</button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       padding: "12px 16px",
@@ -1123,9 +1215,7 @@ function ItemResultRow({ item, checked, onCheck, onOpenMenu, isLast }) {
           {item.name}
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", fontSize: 12, color: OWNER_COLORS.muted }}>
-          {item.section && (
-            <span>{item.section}</span>
-          )}
+          {item.section && <span>{item.section}</span>}
           <span style={{ fontStyle: "italic" }}>
             {item.menu_name || "Unnamed menu"}
             {item.menu_type ? ` · ${item.menu_type}` : ""}
@@ -1139,6 +1229,15 @@ function ItemResultRow({ item, checked, onCheck, onOpenMenu, isLast }) {
       </div>
       <div style={{ flexShrink: 0, display: "flex", gap: 8, alignItems: "flex-start" }}>
         <StatusChip status={item.menu_status || "draft"} />
+        <button
+          type="button"
+          onClick={startEdit}
+          style={{
+            padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+            border: `1px solid ${OWNER_COLORS.line}`, background: "#fff",
+            color: OWNER_COLORS.ink, cursor: "pointer", whiteSpace: "nowrap",
+          }}
+        >Edit</button>
         <button
           type="button"
           onClick={onOpenMenu}
