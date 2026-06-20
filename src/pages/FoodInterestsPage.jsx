@@ -54,6 +54,35 @@ function verifiedCount(value) {
   return Number.isInteger(value) && value >= 0 ? value : null;
 }
 
+function normalizeRecommendationKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/['’]/g, "")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\b(xs|extra small|small|medium|large|xl|xxl|mini|regular|kids?|junior|jr|side)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function uniqueRecommendations(rows) {
+  const seen = new Set();
+  return rows.filter((row) => {
+    const key = [
+      row?.restaurant_id ?? row?.restaurant_name ?? "",
+      row?.menu_item_id ?? "",
+      normalizeRecommendationKey(row?.title || row?.name || ""),
+      normalizeRecommendationKey(row?.detail || ""),
+    ].join(":");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function RecommendationCard({ recommendation }) {
   return (
     <div style={{ borderRadius: 16, padding: "14px 15px", border: "1px solid rgba(134,239,172,0.14)", background: "linear-gradient(180deg, rgba(17,24,20,0.92), rgba(11,15,12,0.92))" }}>
@@ -104,10 +133,10 @@ export default function FoodInterestsPage() {
   const recommendationRows = Array.isArray(briefing?.suggestions)
     ? briefing.suggestions
     : (Array.isArray(briefing?.recommendations) ? briefing.recommendations : []);
-  const suggestions = recommendationRows.filter((row) => row?.type !== "active_deal").slice(0, 5);
-  const deals = (Array.isArray(briefing?.deals)
+  const suggestions = uniqueRecommendations(recommendationRows.filter((row) => row?.type !== "active_deal")).slice(0, 5);
+  const deals = uniqueRecommendations((Array.isArray(briefing?.deals)
     ? briefing.deals
-    : recommendationRows.filter((row) => row?.type === "active_deal")).slice(0, 3);
+    : recommendationRows.filter((row) => row?.type === "active_deal"))).slice(0, 3);
   const marketLabel = [location.city, location.state].filter(Boolean).join(", ");
   const menuItemCount = verifiedCount(briefing?.counts?.menu_item_count);
   const restaurantCount = verifiedCount(briefing?.counts?.restaurant_count);
