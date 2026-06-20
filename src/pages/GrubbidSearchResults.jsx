@@ -121,6 +121,7 @@ const US_STATE_ABBREVS = new Set([
 ]);
 
 const WAITER_MIN_RESULTS = 8;
+const WAITER_PRICE_MIN_RESULTS = 15;
 const WAITER_MIN_OPTIONS = 1;
 const WAITER_MAX_OPTIONS = 3;
 const MAX_MENU_ITEMS_PER_RESTAURANT_GROUP = 3;
@@ -167,6 +168,13 @@ const WAITER_STOP_WORDS = new Set([
   "order",
   "kitchen",
   "demo",
+  // Cut/shape words — not useful as primary refinements (spec section 6)
+  "diced",
+  "chopped",
+  "sliced",
+  "cubed",
+  "shredded",
+  "minced",
 ]);
 // Kids meal detection — mirrors backend isKidsMealItem in pairComparabilityService.js
 const KIDS_NAME_RE    = /\b(kids?'?s?\b|junior\b|jr\.?\b|children'?s?\b|lil'?\b)/i;
@@ -1022,7 +1030,7 @@ function buildTextFeatureCandidates(inventory, queryTokens) {
 function buildPriceCommerceCandidates(inventory) {
   const candidates = new Map();
   const priced = inventory.filter((row) => getWaiterPriceDollars(row) !== null);
-  if (priced.length >= WAITER_MIN_RESULTS) {
+  if (priced.length >= WAITER_PRICE_MIN_RESULTS) {
     const prices = priced.map((row) => getWaiterPriceDollars(row)).sort((a, b) => a - b);
     const midpointIndex = Math.floor(prices.length / 2);
     const threshold = prices.length % 2 === 0
@@ -1240,6 +1248,51 @@ export function buildWaiterOptions(rows, query, context = {}) {
     inventory,
     options: selectedGroup.options,
     dimension: selectedGroup.dimension,
+  };
+}
+
+// Debug export — returns all candidate groups with utility scores for auditing.
+// Not used in production rendering.
+export function buildWaiterDebugGroups(rows, query, context = {}) {
+  const rawInventory = buildWaiterInventory(rows);
+  if (rawInventory.length < WAITER_MIN_ITEM_SIGNALS) return { inventory: rawInventory, groups: [] };
+  const kidsCount = rawInventory.filter((r) => r.__isKidsMeal).length;
+  const allKids = kidsCount === rawInventory.length;
+  const inventory = allKids ? rawInventory : rawInventory.filter((r) => !r.__isKidsMeal);
+  if (inventory.length < WAITER_MIN_ITEM_SIGNALS) return { inventory: rawInventory, groups: [] };
+
+  const queryTokens = buildQueryTokenSet(query);
+  const intentKeys = activeWaiterIntentKeys({ ...context, query });
+  const groups = [
+    { dimension: "form", tier: WAITER_TIER_FOOD, priority: 70, options: buildWaiterOptionRows(inventory, "form", buildFormCandidates(inventory, queryTokens), intentKeys) },
+    { dimension: "preparation", tier: WAITER_TIER_FOOD, priority: 60, options: buildWaiterOptionRows(inventory, "preparation", buildAttributeCandidates(inventory, "preparation", queryTokens), intentKeys) },
+    { dimension: "ingredient", tier: WAITER_TIER_FOOD, priority: 50, options: buildWaiterOptionRows(inventory, "ingredient", buildAttributeCandidates(inventory, "ingredient", queryTokens), intentKeys) },
+    { dimension: "canonical_family", tier: WAITER_TIER_FOOD, priority: 48, options: buildWaiterOptionRows(inventory, "canonical_family", buildCanonicalFamilyCandidates(inventory, queryTokens), intentKeys) },
+    { dimension: "modifier", tier: WAITER_TIER_FOOD, priority: 45, options: buildWaiterOptionRows(inventory, "modifier", buildAttributeCandidates(inventory, "modifier", queryTokens), intentKeys) },
+    { dimension: "category", tier: WAITER_TIER_FOOD, priority: 35, options: buildWaiterOptionRows(inventory, "category", buildAttributeCandidates(inventory, "category", queryTokens), intentKeys) },
+    { dimension: "nutrition", tier: WAITER_TIER_NUTRITION, priority: 15, options: buildWaiterOptionRows(inventory, "nutrition", buildNutritionCandidates(inventory), intentKeys) },
+    ...[
+      { commerceType: "price", priority: 10, candidates: buildPriceCommerceCandidates(inventory) },
+      { commerceType: "deal", priority: 9, candidates: buildDealCommerceCandidates(inventory) },
+      { commerceType: "distance", priority: 8, candidates: buildDistanceCommerceCandidates(inventory) },
+    ].map((cg) => ({ dimension: "commerce", commerceType: cg.commerceType, tier: WAITER_TIER_COMMERCE, priority: cg.priority, options: buildWaiterOptionRows(inventory, "commerce", cg.candidates, intentKeys) })),
+  ].map((g) => ({ ...g, totalCount: inventory.length, options: g.options.slice(0, WAITER_MAX_OPTIONS) }));
+
+  const scored = groups.map((g) => ({ ...g, utilityScore: scoreWaiterGroup(g) }));
+  const selectedGroup = selectWaiterGroup(groups);
+  return {
+    inventory,
+    totalCount: inventory.length,
+    groups: scored.map((g) => ({
+      dimension: g.dimension,
+      commerceType: g.commerceType || null,
+      tier: g.tier,
+      priority: g.priority,
+      utilityScore: g.utilityScore,
+      options: g.options.map((o) => ({ key: o.key, label: o.label, count: o.count, sourceValues: (o.sourceValues || []).slice(0, 2) })),
+      selected: selectedGroup ? (g.dimension === selectedGroup.dimension && (g.commerceType || null) === (selectedGroup.commerceType || null) && g.priority === selectedGroup.priority) : false,
+    })),
+    selectedDimension: selectedGroup?.dimension || null,
   };
 }
 

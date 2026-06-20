@@ -409,17 +409,25 @@ describe("WaiterRefinementPrompt", () => {
   });
 
   it("preserves provenance for price, deal, and distance candidates", () => {
-    // priceRows: 8 rows required by buildPriceCommerceCandidates (WAITER_MIN_RESULTS=8).
-    // Prices split 4 below / 4 above the $12 median threshold → utilityScore ≈ 0.36 > WAITER_STRONG_UTILITY.
+    // priceRows: 15 rows required by WAITER_PRICE_MIN_RESULTS=15.
+    // Prices split 7 below / 8 above the $14 median → utilityScore > WAITER_STRONG_UTILITY.
+    // All categories=["Salads"] → form "salad" has count=total → filtered; price wins.
     const priceRows = [
-      makeRow({ id: 1, name: "Chicken Salad A", restaurantId: 1, restaurantName: "Alpha", sectionName: "Salads", price: 8, categories: ["Salads"] }),
-      makeRow({ id: 2, name: "Chicken Salad B", restaurantId: 2, restaurantName: "Beta", sectionName: "Salads", price: 9, categories: ["Salads"] }),
-      makeRow({ id: 3, name: "Chicken Salad C", restaurantId: 3, restaurantName: "Gamma", sectionName: "Salads", price: 10, categories: ["Salads"] }),
-      makeRow({ id: 4, name: "Chicken Salad D", restaurantId: 4, restaurantName: "Delta", sectionName: "Salads", price: 11, categories: ["Salads"] }),
-      makeRow({ id: 5, name: "Chicken Salad E", restaurantId: 5, restaurantName: "Epsilon", sectionName: "Salads", price: 13, categories: ["Salads"] }),
-      makeRow({ id: 6, name: "Chicken Salad F", restaurantId: 6, restaurantName: "Zeta", sectionName: "Salads", price: 14, categories: ["Salads"] }),
-      makeRow({ id: 7, name: "Chicken Salad G", restaurantId: 7, restaurantName: "Eta", sectionName: "Salads", price: 15, categories: ["Salads"] }),
-      makeRow({ id: 8, name: "Chicken Salad H", restaurantId: 8, restaurantName: "Theta", sectionName: "Salads", price: 16, categories: ["Salads"] }),
+      makeRow({ id: 1,  name: "Salad A", restaurantId: 1,  restaurantName: "R1",  sectionName: "Salads", price: 8,  categories: ["Salads"] }),
+      makeRow({ id: 2,  name: "Salad B", restaurantId: 2,  restaurantName: "R2",  sectionName: "Salads", price: 9,  categories: ["Salads"] }),
+      makeRow({ id: 3,  name: "Salad C", restaurantId: 3,  restaurantName: "R3",  sectionName: "Salads", price: 10, categories: ["Salads"] }),
+      makeRow({ id: 4,  name: "Salad D", restaurantId: 4,  restaurantName: "R4",  sectionName: "Salads", price: 11, categories: ["Salads"] }),
+      makeRow({ id: 5,  name: "Salad E", restaurantId: 5,  restaurantName: "R5",  sectionName: "Salads", price: 12, categories: ["Salads"] }),
+      makeRow({ id: 6,  name: "Salad F", restaurantId: 6,  restaurantName: "R6",  sectionName: "Salads", price: 12, categories: ["Salads"] }),
+      makeRow({ id: 7,  name: "Salad G", restaurantId: 7,  restaurantName: "R7",  sectionName: "Salads", price: 13, categories: ["Salads"] }),
+      makeRow({ id: 8,  name: "Salad H", restaurantId: 8,  restaurantName: "R8",  sectionName: "Salads", price: 14, categories: ["Salads"] }),
+      makeRow({ id: 9,  name: "Salad I", restaurantId: 9,  restaurantName: "R9",  sectionName: "Salads", price: 15, categories: ["Salads"] }),
+      makeRow({ id: 10, name: "Salad J", restaurantId: 10, restaurantName: "R10", sectionName: "Salads", price: 16, categories: ["Salads"] }),
+      makeRow({ id: 11, name: "Salad K", restaurantId: 11, restaurantName: "R11", sectionName: "Salads", price: 17, categories: ["Salads"] }),
+      makeRow({ id: 12, name: "Salad L", restaurantId: 12, restaurantName: "R12", sectionName: "Salads", price: 18, categories: ["Salads"] }),
+      makeRow({ id: 13, name: "Salad M", restaurantId: 13, restaurantName: "R13", sectionName: "Salads", price: 19, categories: ["Salads"] }),
+      makeRow({ id: 14, name: "Salad N", restaurantId: 14, restaurantName: "R14", sectionName: "Salads", price: 20, categories: ["Salads"] }),
+      makeRow({ id: 15, name: "Salad O", restaurantId: 15, restaurantName: "R15", sectionName: "Salads", price: 21, categories: ["Salads"] }),
     ];
     // dealRows: 8 rows with 4 deals / 4 non-deals → 50/50 entropy → utilityScore ≈ 0.36 > WAITER_STRONG_UTILITY.
     const dealRows = [
@@ -558,5 +566,114 @@ describe("WaiterRefinementPrompt", () => {
     const tacosOption = result.options.find((o) => o.label === "Tacos");
     expect(tacosOption).toBeTruthy();
     expect(tacosOption.sourceValues[0].sourceField).toBe("waiter_text");
+  });
+
+  // ── Phase 4 regression tests ────────────────────────────────────────────────
+
+  it("(A) Diced chicken items with correct preparations never produce an 'Iced' option", () => {
+    // Regression for Diced→Iced substring bug (shaping.js inferPreparationsFromText).
+    // Backend fix: word-boundary regex prevents "iced" matching inside "diced".
+    // These rows simulate the FIXED backend: preparations=["fried"], NOT ["fried","iced"].
+    const rows = [
+      makeRow({ id: 1, name: "Diced Chicken w/ Fried Rice",  restaurantId: 1, restaurantName: "R1", sectionName: "Entrees", price: 12, preparations: ["fried"] }),
+      makeRow({ id: 2, name: "Diced Chicken Bowl",            restaurantId: 2, restaurantName: "R2", sectionName: "Entrees", price: 13, preparations: ["fried"] }),
+      makeRow({ id: 3, name: "Diced Chicken Stir Fry",        restaurantId: 3, restaurantName: "R3", sectionName: "Entrees", price: 14, preparations: ["fried"] }),
+      makeRow({ id: 4, name: "Grilled Chicken Sandwich",      restaurantId: 4, restaurantName: "R4", sectionName: "Mains",   price: 10, preparations: ["grilled"], categories: ["Sandwiches"] }),
+      makeRow({ id: 5, name: "Grilled Chicken Sandwich Dlx",  restaurantId: 5, restaurantName: "R5", sectionName: "Mains",   price: 11, preparations: ["grilled"], categories: ["Sandwiches"] }),
+      makeRow({ id: 6, name: "Grilled Chicken Club",          restaurantId: 6, restaurantName: "R6", sectionName: "Mains",   price: 12, preparations: ["grilled"], categories: ["Sandwiches"] }),
+      makeRow({ id: 7, name: "Spicy Chicken Soup",            restaurantId: 7, restaurantName: "R7", sectionName: "Soups",   price: 9,  preparations: ["spicy"],   categories: ["Soups"] }),
+      makeRow({ id: 8, name: "Chicken Noodle Soup",           restaurantId: 8, restaurantName: "R8", sectionName: "Soups",   price: 8,  preparations: [],           categories: ["Soups"] }),
+      makeRow({ id: 9, name: "Chicken Tortilla Soup",         restaurantId: 9, restaurantName: "R9", sectionName: "Soups",   price: 7,  preparations: [],           categories: ["Soups"] }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+
+    const allLabels = (result?.options || []).map((o) => o.label.toLowerCase());
+    expect(allLabels.every((l) => l !== "iced")).toBe(true);
+  });
+
+  it("(B) Items with 'diced' in name never produce a 'Diced' text-feature refinement", () => {
+    // Regression for cut/shape words appearing as Waiter options.
+    // "diced" is in WAITER_STOP_WORDS → must be suppressed from text-feature candidates.
+    const rows = [
+      makeRow({ id: 1, name: "Diced Chicken Bowl",  restaurantId: 1, restaurantName: "R1", sectionName: "Mains", price: 10, categories: ["Bowls"] }),
+      makeRow({ id: 2, name: "Diced Steak Bowl",    restaurantId: 2, restaurantName: "R2", sectionName: "Mains", price: 11, categories: ["Bowls"] }),
+      makeRow({ id: 3, name: "Diced Pork Bowl",     restaurantId: 3, restaurantName: "R3", sectionName: "Mains", price: 12, categories: ["Bowls"] }),
+      makeRow({ id: 4, name: "Diced Veggie Bowl",   restaurantId: 4, restaurantName: "R4", sectionName: "Mains", price: 13, categories: ["Bowls"] }),
+      makeRow({ id: 5, name: "Diced Chicken Taco",  restaurantId: 5, restaurantName: "R5", sectionName: "Mains", price: 10, categories: ["Tacos"] }),
+      makeRow({ id: 6, name: "Diced Steak Taco",    restaurantId: 6, restaurantName: "R6", sectionName: "Mains", price: 11, categories: ["Tacos"] }),
+      makeRow({ id: 7, name: "Diced Pork Taco",     restaurantId: 7, restaurantName: "R7", sectionName: "Mains", price: 12, categories: ["Tacos"] }),
+      makeRow({ id: 8, name: "Diced Veggie Taco",   restaurantId: 8, restaurantName: "R8", sectionName: "Mains", price: 13, categories: ["Tacos"] }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+
+    const allKeys   = (result?.options || []).map((o) => o.key.toLowerCase());
+    const allLabels = (result?.options || []).map((o) => o.label.toLowerCase());
+    expect(allKeys.every((k) => k !== "diced")).toBe(true);
+    expect(allLabels.every((l) => l !== "diced")).toBe(true);
+  });
+
+  it("(C) 9 salad results → no price question (below WAITER_PRICE_MIN_RESULTS=15)", () => {
+    // Regression for "salad" search showing "Under $21?" with only 9 results.
+    // WAITER_PRICE_MIN_RESULTS=15 blocks price when inventory < 15.
+    // Form "salad" is also suppressed because it matches the query token.
+    const rows = Array.from({ length: 9 }, (_, i) =>
+      makeRow({ id: i + 1, name: `Salad ${i + 1}`, restaurantId: i + 1, restaurantName: `R${i + 1}`, sectionName: "Salads", price: 8 + i, categories: ["Salads"] })
+    );
+
+    const result = buildWaiterOptions(rows, "salad");
+
+    expect(result?.dimension).not.toBe("commerce");
+  });
+
+  it("(D) 12 burger results → no price question (below WAITER_PRICE_MIN_RESULTS=15)", () => {
+    // Regression for "burger" search showing "Under $14?" with only 12 results.
+    // Same as test C: 12 < WAITER_PRICE_MIN_RESULTS=15.
+    const rows = Array.from({ length: 12 }, (_, i) =>
+      makeRow({ id: i + 1, name: `Burger ${i + 1}`, restaurantId: i + 1, restaurantName: `R${i + 1}`, sectionName: "Burgers", price: 8 + i, categories: ["Burgers"] })
+    );
+
+    const result = buildWaiterOptions(rows, "burger");
+
+    expect(result?.dimension).not.toBe("commerce");
+  });
+
+  it("(E) 30 burger results → price question is allowed (meets WAITER_PRICE_MIN_RESULTS=15)", () => {
+    // Inverse of test D: 30 rows ≥ 15 → price candidates qualify.
+    // Form "burger" is suppressed by the query token → commerce wins.
+    const rows = Array.from({ length: 30 }, (_, i) =>
+      makeRow({ id: i + 1, name: `Burger ${i + 1}`, restaurantId: i + 1, restaurantName: `R${i + 1}`, sectionName: "Burgers", price: 8 + i, categories: ["Burgers"] })
+    );
+
+    const result = buildWaiterOptions(rows, "burger");
+
+    expect(result?.dimension).toBe("commerce");
+  });
+
+  it("(F) form dimension wins over preparation even when preparation has higher raw utility", () => {
+    // Regression for hierarchy violation: food form must beat preparation when both qualify.
+    // selectWaiterGroup explicitly promotes form/canonical_family groups above preparation/ingredient/text.
+    // Scenario: 4 sandwiches (preparations=fried) vs 4 bowls (preparations=grilled).
+    // Preparation raw utility ≈ 0.5; form utility ≈ 0.5 — form wins because of explicit promotion.
+    const rows = [
+      makeRow({ id: 1, name: "Fried Chicken Sandwich",  restaurantId: 1, restaurantName: "R1", sectionName: "Mains", price: 10, foodForm: "sandwich", preparations: ["fried"] }),
+      makeRow({ id: 2, name: "Fried Chicken Sandwich B", restaurantId: 2, restaurantName: "R2", sectionName: "Mains", price: 11, foodForm: "sandwich", preparations: ["fried"] }),
+      makeRow({ id: 3, name: "Fried Chicken Sandwich C", restaurantId: 3, restaurantName: "R3", sectionName: "Mains", price: 12, foodForm: "sandwich", preparations: ["fried"] }),
+      makeRow({ id: 4, name: "Fried Chicken Sandwich D", restaurantId: 4, restaurantName: "R4", sectionName: "Mains", price: 13, foodForm: "sandwich", preparations: ["fried"] }),
+      makeRow({ id: 5, name: "Grilled Chicken Bowl",    restaurantId: 5, restaurantName: "R5", sectionName: "Mains", price: 10, foodForm: "bowl",     preparations: ["grilled"] }),
+      makeRow({ id: 6, name: "Grilled Chicken Bowl B",  restaurantId: 6, restaurantName: "R6", sectionName: "Mains", price: 11, foodForm: "bowl",     preparations: ["grilled"] }),
+      makeRow({ id: 7, name: "Grilled Chicken Bowl C",  restaurantId: 7, restaurantName: "R7", sectionName: "Mains", price: 12, foodForm: "bowl",     preparations: ["grilled"] }),
+      makeRow({ id: 8, name: "Grilled Chicken Bowl D",  restaurantId: 8, restaurantName: "R8", sectionName: "Mains", price: 13, foodForm: "bowl",     preparations: ["grilled"] }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+
+    expect(result?.dimension).toBe("form");
+    const labels = (result?.options || []).map((o) => o.label);
+    expect(labels).toContain("Sandwiches");
+    expect(labels).toContain("Bowls");
+    expect(labels).not.toContain("Fried");
+    expect(labels).not.toContain("Grilled");
   });
 });

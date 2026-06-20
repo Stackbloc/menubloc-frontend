@@ -54,6 +54,11 @@ import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
+import {
+  getMenuItemLikeStatus,
+  likeMenuItem as apiLikeMenuItem,
+  unlikeMenuItem as apiUnlikeMenuItem,
+} from "../lib/consumerApi.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -1340,6 +1345,8 @@ export default function MenuItemDetailPage() {
   const [loading,  setLoading]  = useState(true);
   const [err,      setErr]      = useState("");
   const [rawItem,  setRawItem]  = useState(null);
+  const [liked,       setLiked]       = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
 
   const item = useMemo(() => (rawItem ? normalizeResultItem(rawItem) : null), [rawItem]);
 
@@ -1353,6 +1360,33 @@ export default function MenuItemDetailPage() {
     // Intentionally fire once when item first loads for this id
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id, id]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !id) return;
+    let cancelled = false;
+    getMenuItemLikeStatus(id)
+      .then((data) => { if (!cancelled) setLiked(data?.liked === true); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isAuthenticated, id]);
+
+  async function handleLike() {
+    if (likeLoading || !id) return;
+    setLikeLoading(true);
+    try {
+      if (liked) {
+        await apiUnlikeMenuItem(id);
+        setLiked(false);
+      } else {
+        await apiLikeMenuItem(id);
+        setLiked(true);
+      }
+    } catch {
+      // Leave state unchanged on error
+    } finally {
+      setLikeLoading(false);
+    }
+  }
 
   const displayItemName = useMemo(
     () => getDisplayMenuItemName(item, language, item?.name || "Untitled Item"),
@@ -1559,6 +1593,31 @@ export default function MenuItemDetailPage() {
                 >
                   {displayItemName}
                 </h1>
+                <button
+                  onClick={isAuthenticated ? handleLike : () => navigate(`/account/login?return=${encodeURIComponent(window.location.pathname + window.location.search)}`)}
+                  disabled={isAuthenticated && likeLoading}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    alignSelf: "center",
+                    gap: 5,
+                    minHeight: 34,
+                    padding: "0 12px",
+                    borderRadius: 999,
+                    background: liked ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.08)",
+                    border: liked ? "1px solid rgba(34,197,94,0.4)" : "1px solid rgba(255,255,255,0.15)",
+                    color: liked ? "#22C55E" : "#9CA3AF",
+                    cursor: likeLoading ? "default" : "pointer",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    flex: "0 0 auto",
+                    opacity: likeLoading ? 0.6 : 1,
+                    transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                  }}
+                >
+                  <span style={{ fontSize: 15, lineHeight: 1 }}>{liked ? "♥" : "♡"}</span>
+                  {liked ? "Liked" : "Like"}
+                </button>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6b7280", flex: "0 0 auto", flexWrap: "wrap" }}>
                   {shareData ? (
                     <>
