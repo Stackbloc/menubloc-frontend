@@ -282,7 +282,7 @@ export default function OwnerMenuUploadReviewItems() {
     <OwnerLayout title="OCR Review Queue">
       <div style={{ marginBottom: 20 }}>
         <Link
-          to={`/owner/menu-uploads/${uploadId}`}
+          to={`/owner/menu-manager/uploads/${uploadId}`}
           style={{ color: OWNER_COLORS.accent, fontSize: 13, textDecoration: "none" }}
         >
           ← Back to Upload Detail
@@ -313,7 +313,7 @@ export default function OwnerMenuUploadReviewItems() {
             {counts.rejected > 0 && ` ${counts.rejected} rejected.`}
           </div>
           <Link
-            to={`/owner/menu-uploads/${uploadId}`}
+            to={`/owner/menu-manager/uploads/${uploadId}`}
             style={{ fontSize: 13, color: "#15803d", fontWeight: 700, textDecoration: "underline", marginRight: 16 }}
           >
             ← Back to Upload

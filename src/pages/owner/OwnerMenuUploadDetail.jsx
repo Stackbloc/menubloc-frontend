@@ -298,7 +298,7 @@ export default function OwnerMenuUploadDetail() {
         </span>
         {displayStatus === "needs_review" && upload.human_review_items > 0 && (
           <Link
-            to={`/owner/menu-uploads/${uploadId}/review-items`}
+            to={`/owner/menu-manager/uploads/${uploadId}/review-items`}
             style={{
               marginLeft: "auto",
               padding: "9px 18px",
@@ -371,7 +371,7 @@ export default function OwnerMenuUploadDetail() {
         {upload.human_review_items > 0 && (
           <div style={{ marginTop: 16 }}>
             <Link
-              to={`/owner/menu-uploads/${uploadId}/review-items`}
+              to={`/owner/menu-manager/uploads/${uploadId}/review-items`}
               style={{
                 display: "inline-block",
                 padding: "10px 20px",
@@ -689,7 +689,7 @@ function StatusActions({ upload, displayStatus, uploadId, doAction, onRetryCompl
     actions.push(
       <Link
         key="review"
-        to={`/owner/menu-uploads/${uploadId}/review-items`}
+        to={`/owner/menu-manager/uploads/${uploadId}/review-items`}
         style={{
           display: "inline-block",
           padding: "10px 18px",

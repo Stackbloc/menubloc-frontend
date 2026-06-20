@@ -12,7 +12,7 @@ const NAV = [
   { to: "/owner/revenue", label: "Revenue" },
   { to: "/owner/market-expansion", label: "Market Expansion" },
   { to: "/owner/support", label: "Support Tickets" },
-  { to: "/owner/menu-uploads", label: "Menu Uploads" },
+  { to: "/owner/menu-manager", label: "Menu Manager" },
   { to: "/owner/qr-stickers", label: "QR Stickers" },
 ];
 

@@ -2177,7 +2177,7 @@ function UploadRow({ upload }) {
       <td style={{ padding: "11px 14px", color: OWNER_COLORS.muted, fontSize: 12, whiteSpace: "nowrap" }}>{formatDate(upload.created_at)}</td>
       <td style={{ padding: "11px 14px", color: OWNER_COLORS.muted, fontSize: 12 }}>{location || "—"}</td>
       <td style={{ padding: "11px 14px" }}>
-        <Link to={`/owner/menu-uploads/${upload.id}`} style={{ color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 12, textDecoration: "none" }}>View →</Link>
+        <Link to={`/owner/menu-manager/uploads/${upload.id}`} style={{ color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 12, textDecoration: "none" }}>View →</Link>
       </td>
     </tr>
   );
@@ -2216,7 +2216,7 @@ export default function OwnerMenuUploads() {
   }
 
   return (
-    <OwnerLayout title="Menu Management">
+    <OwnerLayout title="Menu Manager">
       {/* Tab bar */}
       <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: `2px solid ${OWNER_COLORS.line}`, paddingBottom: 0 }}>
         {[

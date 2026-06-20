@@ -50,39 +50,39 @@ export default function OwnerDashboard() {
 
       {/* Menu Upload metrics */}
       <div style={{ marginTop: 28 }}>
-        <SectionTitle title="Menu Uploads" subtitle="Ingestion and upload activity across the platform." />
+        <SectionTitle title="Menu Manager" subtitle="Ingestion and upload activity across the platform." />
         <div style={CARD_GRID}>
           <MetricCard
             label="Total Uploads"
             value={summary.menu_uploads_total}
-            href="/owner/menu-uploads"
+            href="/owner/menu-manager"
           />
           <MetricCard
             label="Uploads Today"
             value={summary.menu_uploads_today}
-            href="/owner/menu-uploads?status=today"
+            href="/owner/menu-manager?status=today"
           />
           <MetricCard
             label="Pending"
             value={summary.menu_uploads_pending}
-            href="/owner/menu-uploads?status=pending"
+            href="/owner/menu-manager?status=pending"
           />
           <MetricCard
             label="Failed"
             value={summary.menu_uploads_failed}
-            href="/owner/menu-uploads?status=failed"
+            href="/owner/menu-manager?status=failed"
             highlight={Number(summary.menu_uploads_failed) > 0}
           />
           <MetricCard
             label="Needs Review"
             value={summary.menu_uploads_needs_review}
-            href="/owner/menu-uploads?status=needs_review"
+            href="/owner/menu-manager?status=needs_review"
             highlight={Number(summary.menu_uploads_needs_review) > 0}
           />
           <MetricCard
             label="Published"
             value={summary.menu_uploads_published}
-            href="/owner/menu-uploads?status=published"
+            href="/owner/menu-manager?status=published"
           />
         </div>
       </div>
