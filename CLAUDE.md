@@ -150,11 +150,65 @@ Reduce token waste, reduce regression frequency, prevent route drift, prevent ar
 
 **Platform:** Vercel (project: `andre-barber-s-projects/menubloc-frontend`, alias: `menuply.com`)
 
-**Git push alone does NOT deploy to production.** Always run:
+**Git push alone does NOT deploy to production. `vercel --prod` alone is also NOT sufficient.**
+
+Always run BOTH commands from the `menubloc-frontend/` directory:
 ```bash
 npx vercel --prod
+# then, using the deployment URL printed in the "▲ Production" line above:
+npx vercel alias set <deployment-url> menuply.com
 ```
-from the `menubloc-frontend/` directory after pushing changes.
+
+**Verify the alias took effect:**
+```bash
+curl -s "https://menuply.com/" | grep -o 'src="/assets/index-[^"]*"'
+# hash must match the filename printed in the vite build output
+```
+
+**Why:** `vercel --prod` creates a new deployment but does NOT move the `menuply.com` custom domain to it. The domain stays on whatever deployment it previously pointed to until the alias is explicitly updated.
+
+*Incident 2026-06-20: multiple commits deployed via `vercel --prod` but `menuply.com` continued serving an older bundle for hours because the alias step was omitted.*
+
+---
+
+## 🚨 VITE_API_BASE_URL GUARDRAIL (MANDATORY — PRODUCTION BREAKAGE RISK)
+
+**Established:** 2026-06-20
+
+`VITE_API_BASE_URL` MUST be set in the Vercel project's environment variables (Production + Preview) before any deploy. If it is missing, all API modules that don't have an explicit Railway fallback will resolve to `http://localhost:3001` at build time. This is baked into the JS bundle. In the browser, requests to `http://localhost:3001` from an HTTPS page are blocked as mixed content — all affected endpoints return "Failed to fetch" with no error detail.
+
+Only two modules have an explicit Railway fallback: `src/lib/api.js` and `src/lib/ownerApi.js`. The following modules have NO Railway fallback and break silently if the env var is missing:
+- `src/lib/consumerApi.js` (consumer auth, profile, preferences)
+- `src/lib/crmApi.js`
+- `src/lib/waiterApi.js`
+- `src/lib/languageApi.js`
+- `src/lib/analyticsPageVisitSend.js`
+- `src/lib/restaurantOnboardingState.js`
+- `src/lib/interactionTracking.js`
+- Inline `API_BASE` definitions in page components (e.g. `ConsumerLogin.jsx`)
+
+### Required verification after every deploy
+
+After `vercel alias set`, run this bundle check:
+
+```bash
+BUNDLE=$(curl -s "https://menuply.com/" | grep -o 'index-[A-Za-z0-9_]*.js' | head -1)
+curl -s "https://menuply.com/assets/${BUNDLE}" | grep -o 'localhost:3001\|menubloc-backend-production' | sort | uniq -c
+```
+
+Expected result: `menubloc-backend-production` count >> `localhost:3001` count (which should be ≤ 6 — only DEV-branch dead code).
+
+If `localhost:3001` count is high (e.g. 50+), `VITE_API_BASE_URL` is missing. Fix:
+```bash
+echo "https://menubloc-backend-production.up.railway.app" | npx vercel env add VITE_API_BASE_URL production
+# then redeploy + alias set
+```
+
+### No task is complete if consumer login fails
+
+Before declaring any frontend task done, agents MUST confirm `menuply.com/account/login` renders without a "Failed to fetch" error. A "Failed to fetch" on the login form is the primary signal that `VITE_API_BASE_URL` is missing from the build. Agents must NOT exit the task without fixing this if it is observed.
+
+*Incident 2026-06-20: `VITE_API_BASE_URL` was not set in Vercel. 56 bundle occurrences resolved to `localhost:3001`. Consumer login showed "Failed to fetch". Fixed by `vercel env add` + redeploy.*
 
 ---
 
