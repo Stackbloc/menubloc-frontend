@@ -87,26 +87,6 @@ export default function JoinPage({ marketKey = "generic" }) {
     };
   }, [marketKey, location.pathname, location.search]);
 
-  useEffect(() => {
-    const preconnectId = "menuply-dm-sans-preconnect";
-    const fontId = "menuply-dm-sans-font";
-
-    if (!document.getElementById(preconnectId)) {
-      const preconnect = document.createElement("link");
-      preconnect.id = preconnectId;
-      preconnect.rel = "preconnect";
-      preconnect.href = "https://fonts.googleapis.com";
-      document.head.appendChild(preconnect);
-    }
-
-    if (!document.getElementById(fontId)) {
-      const font = document.createElement("link");
-      font.id = fontId;
-      font.rel = "stylesheet";
-      font.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap";
-      document.head.appendChild(font);
-    }
-  }, []);
 
   return (
     <main style={styles.page}>
@@ -115,7 +95,7 @@ export default function JoinPage({ marketKey = "generic" }) {
           width={130}
           height={52}
           radius={0}
-          pageColor="#0D0D0D"
+          pageColor="#0B0F0C"
           linkStyle={styles.logo}
           imageStyle={styles.logoImage}
         />
@@ -163,9 +143,9 @@ const styles = {
   page: {
     boxSizing: "border-box",
     minHeight: "100dvh",
-    background: "#0D0D0D",
+    background: "#0B0F0C",
     color: "#FFF",
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -189,15 +169,15 @@ const styles = {
   },
   eyebrow: {
     display: "inline-block",
-    background: "rgba(61,217,52,.1)",
-    color: "#3DD934",
+    background: "rgba(34,197,94,0.10)",
+    color: "#22C55E",
     fontSize: ".7rem",
     fontWeight: 700,
     letterSpacing: ".09em",
     textTransform: "uppercase",
     padding: "5px 13px",
     borderRadius: 100,
-    border: "1px solid rgba(61,217,52,.2)",
+    border: "1px solid rgba(34,197,94,0.22)",
     marginBottom: 20,
   },
   heading: {
@@ -219,8 +199,8 @@ const styles = {
   },
   cta: {
     display: "inline-block",
-    background: "#3DD934",
-    color: "#0D0D0D",
+    background: "#22C55E",
+    color: "#0B0F0C",
     textDecoration: "none",
     fontSize: "1rem",
     fontWeight: 700,
