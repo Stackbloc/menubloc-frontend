@@ -116,7 +116,6 @@ import DemoPage from "./pages/DemoPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
 import BuyMeThisPage from "./pages/BuyMeThisPage.jsx";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage.jsx";
-import BrowseMenus from "./pages/BrowseMenus.jsx";
 import FoodInterestsPage from "./pages/FoodInterestsPage.jsx";
 
 import DealsPage from "./pages/DealsPage.jsx";
@@ -503,7 +502,6 @@ function AppShell({ easyMenu, crmHost }) {
 
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
         <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />
-        <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />
         <Route path="/waiter" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FoodInterestsPage />} />
         <Route path="/food-interests" element={<Navigate to="/waiter" replace />} />
         <Route path="/top-picks" element={<Navigate to="/waiter" replace />} />

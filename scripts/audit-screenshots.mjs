@@ -50,7 +50,6 @@ async function main() {
     { name: "05-checkout", path: "/checkout" },
     { name: "06-signup-entry", path: "/restaurant/signup" },
     { name: "07-signup-account", path: "/restaurant/signup/account" },
-    { name: "08-browse", path: "/browse-menus?city=Los+Angeles&state=CA" },
     { name: "09-terms", path: "/terms" },
     { name: "10-privacy", path: "/privacy" },
     { name: "11-contact", path: "/contact" },

@@ -9,13 +9,11 @@ const frontendRoot = path.join(__dirname, "..");
 const repoRoot = path.join(frontendRoot, "..");
 
 const files = {
-  browseMenus: path.join(frontendRoot, "src/pages/BrowseMenus.jsx"),
   discovery: path.join(frontendRoot, "src/pages/GrubbidDiscovery.jsx"),
   searchResults: path.join(frontendRoot, "src/pages/GrubbidSearchResults.jsx"),
   discoveryDrawer: path.join(frontendRoot, "src/components/grubbid/DiscoveryDrawer.jsx"),
   discoveryCard: path.join(frontendRoot, "src/components/discovery/DiscoveryCard.jsx"),
   featuredDiscoveryCard: path.join(frontendRoot, "src/components/discovery/FeaturedDiscoveryCard.jsx"),
-  menuPreviewCard: path.join(frontendRoot, "src/components/browse/MenuPreviewCard.jsx"),
   searchResultCard: path.join(frontendRoot, "src/components/SearchResultCard.jsx"),
   countHelper: path.join(frontendRoot, "src/lib/publicCardCounts.js"),
   liveVerifier: path.join(frontendRoot, "scripts/verifyAllergenAndFilteredCountsLive.mjs"),
@@ -73,27 +71,19 @@ assert.match(
   "publicCardCounts.js must include the filtered-count guardrail."
 );
 assert.match(
-  source.browseMenus,
-  /GUARDRAIL:[\s\S]*Do not render broad allergen warning blocks on public discovery\/browse\/menu-list cards\./,
-  "BrowseMenus.jsx must include the allergen-display guardrail."
-);
-assert.match(
   source.discovery,
   /GUARDRAIL:[\s\S]*Do not render broad allergen warning blocks on public discovery\/browse\/menu-list cards\./,
   "GrubbidDiscovery.jsx must include the allergen-display guardrail."
 );
 
-assertNoBroadAllergenBanner("BrowseMenus.jsx", source.browseMenus);
 assertNoBroadAllergenBanner("GrubbidDiscovery.jsx", source.discovery);
 assertNoBroadAllergenBanner("GrubbidSearchResults.jsx", source.searchResults);
 assertNoBroadAllergenBanner("DiscoveryCard.jsx", source.discoveryCard);
 assertNoBroadAllergenBanner("FeaturedDiscoveryCard.jsx", source.featuredDiscoveryCard);
-assertNoBroadAllergenBanner("MenuPreviewCard.jsx", source.menuPreviewCard);
 assertNoBroadAllergenBanner("SearchResultCard.jsx", source.searchResultCard);
 
 assertUsesCountHelper("DiscoveryCard.jsx", source.discoveryCard);
 assertUsesCountHelper("FeaturedDiscoveryCard.jsx", source.featuredDiscoveryCard);
-assertUsesCountHelper("MenuPreviewCard.jsx", source.menuPreviewCard);
 assert.doesNotMatch(
   source.searchResults,
   /menu\?\.menu_item_count\s*\|\|\s*0|restaurant\?\.menu_item_count\s*\|\|\s*0/,
@@ -110,11 +100,6 @@ assert.doesNotMatch(
   "SearchResultCard.jsx must not recreate the broad allergen status display."
 );
 
-assert.match(
-  source.browseMenus,
-  /<DiscoveryCard[\s\S]*hasActiveFilters=\{hasActiveFilters\(filters\)\}/,
-  "BrowseMenus.jsx must pass active filter state into the shared card count helper path."
-);
 assert.match(
   source.discovery,
   /const hasActivePublicFilters =[\s\S]*activeExcludedAllergens\.length > 0;/,

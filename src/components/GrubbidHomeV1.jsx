@@ -221,18 +221,8 @@ export default function GrubbidHomeV1() {
 
   // ── Navigation ───────────────────────────────────────────────────────────
 
-  function handleBrowseAll() {
-    const params = new URLSearchParams();
-    if (appliedLocation) {
-      const loc = parseLocation(appliedLocation);
-      if (loc.city) params.set("city", loc.city);
-      if (loc.state) params.set("state", loc.state);
-    } else if (autoLocation.city) {
-      params.set("city", autoLocation.city);
-      if (autoLocation.state) params.set("state", autoLocation.state);
-    }
-    const qs = params.toString();
-    navigate(qs ? `/browse-menus?${qs}` : "/browse-menus");
+  function handleOpenWaiter() {
+    navigate("/waiter");
   }
 
   const toggleSave = (id) =>
@@ -352,14 +342,14 @@ export default function GrubbidHomeV1() {
         <div className="gb-section-title">Near You</div>
         <button
           type="button"
-          onClick={handleBrowseAll}
+          onClick={handleOpenWaiter}
           style={{
             background: "none", border: "none", padding: 0,
             fontSize: 13, fontWeight: 700, color: "#1F4E3D",
             cursor: "pointer", textDecoration: "underline",
             textUnderlineOffset: 3,
           }}
-        >Browse all menus →</button>
+        >Ask Waiter →</button>
       </div>
 
       {/* Filter toggles */}

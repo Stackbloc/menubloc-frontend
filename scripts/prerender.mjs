@@ -57,14 +57,6 @@ const ROUTE_META = {
     ogDescription: "Read the Menuply Privacy Policy covering how your data is collected and used.",
     ogImage: `${SITE_BASE}/menuply-share-default.svg`,
   },
-  "/browse-menus": {
-    title: "Browse Restaurant Menus | Menuply",
-    description: "Explore restaurant menus in your area on Menuply. Find the best local dishes near you.",
-    canonical: `${SITE_BASE}/browse-menus`,
-    ogTitle: "Browse Restaurant Menus | Menuply",
-    ogDescription: "Explore restaurant menus in your area on Menuply. Find the best local dishes near you.",
-    ogImage: `${SITE_BASE}/menuply-share-default.svg`,
-  },
   "/restaurant/onboarding": {
     title: "List Your Restaurant on Menuply | Get Found Online",
     description: "Join Menuply and get your restaurant menu in front of local customers searching for food.",

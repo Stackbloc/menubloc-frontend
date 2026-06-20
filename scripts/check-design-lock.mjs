@@ -14,13 +14,11 @@ const PROTECTED_FILES = [
   "src/main.jsx",
   "src/pages/TopPicksPage.jsx",
   "src/pages/GrubbidSearchResults.jsx",
-  "src/pages/BrowseMenus.jsx",
   "src/pages/DealsPage.jsx",
   "src/pages/Terms.jsx",
   "src/components/NavButton.jsx",
   "src/components/MenuCard.jsx",
   "src/components/SearchResultCard.jsx",
-  "src/components/browse/MenuPreviewCard.jsx",
   "src/components/grubbid/GrubbidPrimitives.jsx",
 ];
 

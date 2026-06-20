@@ -16,7 +16,6 @@ const root = path.join(__dirname, "..");
 
 const files = {
   discovery: path.join(root, "src/pages/GrubbidDiscovery.jsx"),
-  browseMenus: path.join(root, "src/pages/BrowseMenus.jsx"),
   searchResults: path.join(root, "src/pages/GrubbidSearchResults.jsx"),
   activeFilterChips: path.join(root, "src/components/discovery/ActiveFilterChips.jsx"),
   chipRail: path.join(root, "src/components/chips/ChipRail.jsx"),
@@ -141,11 +140,6 @@ assert.match(
   source.activeFilterChips,
   /ChipRail/,
   "ActiveFilterChips must use the shared ChipRail component."
-);
-assert.match(
-  source.browseMenus,
-  /ActiveFilterChips/,
-  "BrowseMenus must use the shared ActiveFilterChips rail."
 );
 assert.match(
   source.searchResults,

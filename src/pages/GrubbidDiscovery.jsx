@@ -49,7 +49,6 @@ import {
   resolveDiscoveryMarketLocation,
 } from "../lib/marketGate.js";
 
-const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const LOCAL_RADIUS_MILES = 8;
 const SESSION_GEO_KEY = "grubbid.discovery.geo";
@@ -1148,26 +1147,6 @@ export default function GrubbidDiscovery() {
 
   function handleFilterToggle(key) {
     setFilters((p) => ({ ...p, [key]: !p[key] }));
-  }
-
-  function handleBrowse() {
-    const p = new URLSearchParams();
-    if (shouldUseGeoBrowse) {
-      if (autoLocation.city) p.set("city", autoLocation.city);
-      if (autoLocation.state) p.set("state", autoLocation.state);
-      p.set("lat", String(autoLocation.lat));
-      p.set("lng", String(autoLocation.lng));
-      p.set("radius_miles", String(LOCAL_RADIUS_MILES));
-    } else if (appliedLocation) {
-      const loc = parseLocation(appliedLocation);
-      if (loc.city) p.set("city", loc.city);
-      if (loc.state) p.set("state", loc.state);
-    } else if (autoLocation.city || autoLocation.state) {
-      if (autoLocation.city) p.set("city", autoLocation.city);
-      if (autoLocation.state) p.set("state", autoLocation.state);
-    }
-    const qs = p.toString();
-    navigate(qs ? `${BROWSE_MENUS_PATH}?${qs}` : BROWSE_MENUS_PATH);
   }
 
   // ── render ──────────────────────────────────────────────────────────────────

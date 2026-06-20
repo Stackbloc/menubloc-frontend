@@ -137,7 +137,7 @@ export default function ConsumerFollowing() {
             <h1 style={styles.pageTitle}>{t("consumer.following.title", "Following")}</h1>
             <p style={styles.pageSubtitle}>{headingCopy}</p>
           </div>
-          <Link to="/browse-menus" style={styles.browseLink}>Browse restaurants</Link>
+          <Link to="/waiter" style={styles.browseLink}>Open Waiter</Link>
         </div>
 
         {error ? (
@@ -156,8 +156,8 @@ export default function ConsumerFollowing() {
               Follow restaurants from their public page to keep them in one place.
             </p>
             <div style={styles.emptyActions}>
-              <Link to="/" style={styles.secondaryLink}>Go to discovery</Link>
-              <Link to="/browse-menus" style={styles.primaryLink}>Browse menus</Link>
+              <Link to="/search" style={styles.secondaryLink}>Search nearby food</Link>
+              <Link to="/waiter" style={styles.primaryLink}>Open Waiter</Link>
             </div>
           </div>
         ) : null}

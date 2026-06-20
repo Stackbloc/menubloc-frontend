@@ -169,8 +169,8 @@ Missing section → STOP. Any baseline FAIL → STOP. No user approval on diff �
 
 2. BASELINE RESULTS (all must be PASS)
    [ ] /                                           → loads, auto-detects location, plain text input only
-   [ ] /browse-menus?city=Los+Angeles&state=CA     → LA restaurants only
-   [ ] /browse-menus?city=Dothan&state=AL          → Dothan restaurants only
+   [ ] /waiter?city=Los+Angeles&state=CA           → LA-scoped real suggestions only
+   [ ] /waiter?city=Dothan&state=AL                → Dothan-scoped real suggestions only
    [ ] /search?q=chicken&city=Los+Angeles&state=CA → returns results
 
 3. CHANGE PLAN
@@ -187,7 +187,7 @@ Missing section → STOP. Any baseline FAIL → STOP. No user approval on diff �
 ## Quick reference: protected files
 
 - `src/pages/GrubbidDiscovery.jsx`
-- `src/pages/BrowseMenus.jsx`
+- `src/pages/FoodInterestsPage.jsx`
 - `src/pages/GrubbidSearchResults.jsx`
 - `src/lib/locationUtils.js`
 - `src/hooks/useDietPreferences.js`
@@ -231,8 +231,8 @@ If it exits 1 → STOP. Do not push. Fix the chip scroll regression first.
 ## Baseline pages (run before AND after every change)
 ```
 /                                         → auto-detects location, plain text input only
-/browse-menus?city=Los+Angeles&state=CA   → LA restaurants only, no Dothan
-/browse-menus?city=Dothan&state=AL        → Dothan restaurants only, no LA
+/waiter?city=Los+Angeles&state=CA         → LA-scoped real suggestions only, no Dothan
+/waiter?city=Dothan&state=AL              → Dothan-scoped real suggestions only, no LA
 /search?q=chicken&city=Los+Angeles&state=CA → returns results
 ```
 
@@ -260,7 +260,7 @@ The location input is a PLAIN TEXT FIELD. Never add:
 
 `autoLocation.city` and `autoLocation.state` MUST flow to:
 1. `buildSearchParams` (alongside lat/lng when no manual location is set)
-2. Browse Menus button click (`?city=&state=` in the URL)
+2. Waiter navigation (`?city=&state=` in the URL)
 
 ## URL contract — params that must never be silently removed
 `city`, `state`, `lat`, `lng`, `radius_miles`

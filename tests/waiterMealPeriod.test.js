@@ -9,10 +9,11 @@ function localDate(year, month, day, hour, minute) {
 
 test("Waiter selects meal periods from local time boundaries", () => {
   assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 5, 0)), "breakfast");
-  assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 10, 29)), "breakfast");
-  assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 10, 30)), "lunch");
-  assert.equal(getDefaultMealPeriod(localDate(2026, 5, 20, 10, 30)), "brunch");
-  assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 14, 0)), "lunch");
+  assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 10, 59)), "breakfast");
+  assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 11, 0)), "lunch");
+  assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 14, 59)), "lunch");
+  assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 15, 0)), "afternoon");
+  assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 16, 59)), "afternoon");
   assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 17, 0)), "dinner");
   assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 22, 0)), "late_night");
   assert.equal(getDefaultMealPeriod(localDate(2026, 5, 17, 4, 59)), "late_night");
@@ -25,7 +26,7 @@ test("Waiter greeting follows local morning, afternoon, and evening", () => {
 });
 
 test("Waiter exposes a distinct fallback prompt for every meal-period chip", () => {
-  const periods = ["breakfast", "brunch", "lunch", "dinner", "late_night"];
+  const periods = ["breakfast", "lunch", "afternoon", "dinner", "late_night"];
   const prompts = periods.map((period) => getMealPeriodFallback(period));
 
   assert.equal(new Set(prompts.map((prompt) => prompt.title)).size, periods.length);
@@ -38,11 +39,11 @@ test("Waiter exposes a distinct fallback prompt for every meal-period chip", () 
 });
 
 test("Waiter fallback guidance preserves the requested meal-period language", () => {
-  assert.match(getMealPeriodFallback("breakfast").paragraphs.join(" "), /breakfast menus and morning favorites/);
-  assert.match(getMealPeriodFallback("brunch").paragraphs.join(" "), /brunch-friendly menus/);
+  assert.match(getMealPeriodFallback("breakfast").paragraphs.join(" "), /morning-friendly menu items/);
   assert.match(getMealPeriodFallback("lunch").paragraphs.join(" "), /lunch-friendly menu items/);
-  assert.match(getMealPeriodFallback("dinner").paragraphs.join(" "), /evening favorites/);
-  assert.match(getMealPeriodFallback("late_night").paragraphs.join(" "), /late-night options/);
+  assert.match(getMealPeriodFallback("afternoon").paragraphs.join(" "), /afternoon-friendly items/);
+  assert.match(getMealPeriodFallback("dinner").paragraphs.join(" "), /dinner-friendly menu items/);
+  assert.match(getMealPeriodFallback("late_night").paragraphs.join(" "), /late-night-friendly menu items/);
 });
 
 test("Waiter fallback omits unverified counts and negative empty-state messaging", () => {
@@ -50,8 +51,8 @@ test("Waiter fallback omits unverified counts and negative empty-state messaging
   const apiSource = readFileSync(new URL("../src/lib/waiterApi.js", import.meta.url), "utf8");
   const source = `${pageSource}\n${apiSource}`;
 
-  assert.doesNotMatch(source, /fetchWaiterMarketCounts|restaurants represented|menu items available|food categories available/);
-  assert.doesNotMatch(source, /no (?:breakfast|brunch|lunch|dinner|late-night|personalized )?recommendations|recommendations (?:are )?available near/i);
+  assert.doesNotMatch(source, /fetchWaiterMarketCounts|restaurants represented|food categories available/);
+  assert.doesNotMatch(source, /no (?:breakfast|lunch|afternoon|dinner|late-night|personalized )?recommendations|recommendations (?:are )?available near/i);
   assert.match(pageSource, /Help Menuply Grow/);
   assert.match(pageSource, /use the camera scanner on the home page to submit a menu/);
 });

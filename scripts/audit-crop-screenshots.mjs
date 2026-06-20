@@ -32,8 +32,6 @@ const CROPS = [
   { name: "checkout-top",   path: "/checkout",        scrollY: 0,    height: 500 },
   // Homepage — footer area
   { name: "homepage-footer", path: "/",               scrollY: 99999, height: 200 },
-  // Browse — header area
-  { name: "browse-top",     path: "/browse-menus?city=Los+Angeles&state=CA", scrollY: 0, height: 400 },
   // Deals page
   { name: "deals-top",      path: "/deals",           scrollY: 0,    height: 600 },
   // Food trucks

@@ -121,15 +121,6 @@ export async function getRestaurantMenu(restaurantId) {
   return apiGet(`/public/restaurants/${encodeURIComponent(String(restaurantId))}/menu`);
 }
 
-export async function getBrowseMenus(params = {}, options = {}) {
-  const search = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value === null || value === undefined || value === "") return;
-    search.set(key, String(value));
-  });
-  return apiGet(`/menus/browse?${search.toString()}`, options);
-}
-
 export async function getBrowseItems(params = {}) {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -226,7 +217,6 @@ export default {
   apiPatch,
   searchPublicMenu,
   getRestaurantMenu,
-  getBrowseMenus,
   getBrowseItems,
   previewOrder,
   createOrderPaymentIntent,

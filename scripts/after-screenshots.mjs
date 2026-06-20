@@ -19,7 +19,6 @@ const SHOTS = [
   { name: "signup-account-top",path: "/restaurant/signup/account",    h: 700 },
   { name: "homepage-footer",   path: "/",                             h: 200, scrollY: 99999 },
   { name: "toppicks-top",      path: "/top-picks",                    h: 600 },
-  { name: "browse-top",        path: "/browse-menus?city=Los+Angeles&state=CA", h: 400 },
   { name: "checkout-top",      path: "/checkout",                     h: 500 },
   { name: "homepage",          path: "/",                             h: 800, full: true },
   { name: "search",            path: "/search?q=burger&city=Los+Angeles&state=CA", h: 800, full: true },

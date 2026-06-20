@@ -223,20 +223,6 @@ async function verifyFrontend() {
     const page = await context.newPage();
     const discoveryChecks = await verifyDiscoveryTyping(page);
 
-    await page.goto(`${frontendBaseUrl}/browse-menus?city=Los+Angeles&state=CA`, { waitUntil: "domcontentloaded", timeout: 30000 });
-    await page.waitForLoadState("load", { timeout: 15000 });
-    const browseBody = await page.textContent("body");
-    assertCheck(
-      page.url().includes("city=Los+Angeles") && page.url().includes("state=CA"),
-      "Browse must preserve city/state in the URL",
-      { url: page.url() }
-    );
-    assertCheck(
-      !/Dothan/i.test(browseBody || ""),
-      "LA browse page must not render Dothan content",
-      { bodySnippet: String(browseBody || "").slice(0, 1000) }
-    );
-
     await page.goto(`${frontendBaseUrl}/search?q=chicken&city=Los+Angeles&state=CA`, { waitUntil: "domcontentloaded", timeout: 30000 });
     await page.waitForLoadState("load", { timeout: 15000 });
     await page.waitForFunction(
@@ -255,8 +241,7 @@ async function verifyFrontend() {
 
     return {
       ...discoveryChecks,
-      browseUrlPreserved: true,
-      browseCrossCityLeakage: false,
+      searchCrossCityLeakage: false,
     };
   } finally {
     await browser.close();

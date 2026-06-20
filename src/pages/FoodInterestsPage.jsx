@@ -30,20 +30,28 @@ function MarketFallback({ marketLabel, mealPeriod }) {
         ))}
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 15 }}>
-          <Link to="/browse-menus" style={{ fontSize: 12, fontWeight: 800, color: "#86EFAC", textDecoration: "none", borderBottom: "1px solid rgba(134,239,172,0.28)", paddingBottom: 1 }}>Explore menus →</Link>
           <Link to="/deals" style={{ fontSize: 12, fontWeight: 800, color: "#86EFAC", textDecoration: "none", borderBottom: "1px solid rgba(134,239,172,0.28)", paddingBottom: 1 }}>View active deals →</Link>
           <Link to="/search" style={{ fontSize: 12, fontWeight: 800, color: "#86EFAC", textDecoration: "none", borderBottom: "1px solid rgba(134,239,172,0.28)", paddingBottom: 1 }}>Search nearby food →</Link>
         </div>
       </div>
 
-      <div style={{ borderRadius: 14, padding: "13px 14px", border: "1px solid rgba(107,114,128,0.22)", background: "rgba(17,24,20,0.5)" }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: "#D1D5DB" }}>Help Menuply Grow</div>
-        <div style={{ marginTop: 5, fontSize: 12, color: "#9CA3AF", lineHeight: 1.55 }}>We're actively collecting restaurant menus throughout {marketLabel}.</div>
-        <div style={{ marginTop: 5, fontSize: 12, color: "#9CA3AF", lineHeight: 1.55 }}>If your favorite restaurant is missing, use the camera scanner on the home page to submit a menu.</div>
-        <div style={{ marginTop: 5, fontSize: 12, color: "#9CA3AF", lineHeight: 1.55 }}>Every menu submission helps improve food discovery and recommendations.</div>
-      </div>
     </div>
   );
+}
+
+function CommunityGrowthCard({ marketLabel }) {
+  return (
+    <div style={{ borderRadius: 14, padding: "13px 14px", border: "1px solid rgba(107,114,128,0.22)", background: "rgba(17,24,20,0.5)" }}>
+      <div style={{ fontSize: 14, fontWeight: 800, color: "#D1D5DB" }}>Help Menuply Grow</div>
+      <div style={{ marginTop: 5, fontSize: 12, color: "#9CA3AF", lineHeight: 1.55 }}>We're actively collecting restaurant menus throughout {marketLabel}.</div>
+      <div style={{ marginTop: 5, fontSize: 12, color: "#9CA3AF", lineHeight: 1.55 }}>If your favorite restaurant is missing, use the camera scanner on the home page to submit a menu.</div>
+      <div style={{ marginTop: 5, fontSize: 12, color: "#9CA3AF", lineHeight: 1.55 }}>Every menu submission helps improve food discovery and recommendations.</div>
+    </div>
+  );
+}
+
+function verifiedCount(value) {
+  return Number.isInteger(value) && value >= 0 ? value : null;
 }
 
 function RecommendationCard({ recommendation }) {
@@ -89,14 +97,27 @@ export default function FoodInterestsPage() {
   }, [location.city, location.state, mealPeriod]);
 
   const briefingSubheading = locationLabel
-    ? `Today's food highlights from ${locationLabel}.`
+    ? `Food picks for ${locationLabel}.`
     : "Your local food market intelligence.";
   const firstName = profile?.first_name || briefing?.account?.first_name || "there";
   const formattedDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(now);
-  const recommendations = Array.isArray(briefing?.recommendations) ? briefing.recommendations : [];
+  const recommendationRows = Array.isArray(briefing?.suggestions)
+    ? briefing.suggestions
+    : (Array.isArray(briefing?.recommendations) ? briefing.recommendations : []);
+  const suggestions = recommendationRows.filter((row) => row?.type !== "active_deal").slice(0, 5);
+  const deals = (Array.isArray(briefing?.deals)
+    ? briefing.deals
+    : recommendationRows.filter((row) => row?.type === "active_deal")).slice(0, 3);
   const marketLabel = [location.city, location.state].filter(Boolean).join(", ");
+  const menuItemCount = verifiedCount(briefing?.counts?.menu_item_count);
+  const restaurantCount = verifiedCount(briefing?.counts?.restaurant_count);
+  const hasVerifiedMarketCounts = menuItemCount !== null && restaurantCount !== null && menuItemCount > 0 && restaurantCount > 0;
+  const coverageLimited = Boolean(briefing?.coverage_limited) || suggestions.length < 3;
+  const selectedMealLabel = WAITER_MEAL_PERIODS.find((period) => period.id === mealPeriod)?.label || "Meal";
   const marketSubtitle = marketLabel
-    ? `Building menu intelligence for ${marketLabel}.`
+    ? (hasVerifiedMarketCounts
+      ? `Tracking ${menuItemCount.toLocaleString()} menu items across ${marketLabel}.`
+      : `Building menu intelligence for ${marketLabel}.`)
     : "Building menu intelligence for your local market.";
 
   return (
@@ -142,11 +163,41 @@ export default function FoodInterestsPage() {
           ) : null}
 
           <div aria-live="polite" style={{ marginTop: 18 }}>
-            {briefingLoading ? <div style={{ fontSize: 14, color: "#9CA3AF" }}>Updating recommendations…</div> : recommendations.length ? (
-              <div style={{ display: "grid", gap: 12 }}>{recommendations.map((recommendation, index) => <RecommendationCard key={`${recommendation.type}-${recommendation.link}-${index}`} recommendation={recommendation} />)}</div>
-            ) : (
-              marketLabel ? <MarketFallback marketLabel={marketLabel} mealPeriod={mealPeriod} /> : <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.55 }}>Set your location on the home screen to receive local recommendations.</div>
-            )}
+            {briefingLoading ? <div style={{ fontSize: 14, color: "#9CA3AF" }}>Updating recommendations…</div> : marketLabel ? (
+              <div style={{ display: "grid", gap: 14 }}>
+                {hasVerifiedMarketCounts ? (
+                  <div style={{ fontSize: 13, color: "#CBD5E1", lineHeight: 1.55 }}>
+                    Currently tracking {menuItemCount.toLocaleString()} menu items from {restaurantCount.toLocaleString()} {restaurantCount === 1 ? "restaurant" : "restaurants"} in {marketLabel}.
+                  </div>
+                ) : null}
+
+                {coverageLimited ? (
+                  <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.55 }}>
+                    We are new to {marketLabel} and are actively adding restaurants and menu data.
+                  </div>
+                ) : null}
+
+                {suggestions.length ? (
+                  <div>
+                    <h3 style={{ margin: "0 0 10px", fontSize: 16, color: "#F9FAFB" }}>{selectedMealLabel} Picks</h3>
+                    <div style={{ display: "grid", gap: 12 }}>
+                      {suggestions.map((recommendation, index) => <RecommendationCard key={`${recommendation.type}-${recommendation.menu_item_id || recommendation.link}-${index}`} recommendation={recommendation} />)}
+                    </div>
+                  </div>
+                ) : <MarketFallback marketLabel={marketLabel} mealPeriod={mealPeriod} />}
+
+                {deals.length ? (
+                  <div>
+                    <h3 style={{ margin: "2px 0 10px", fontSize: 16, color: "#F9FAFB" }}>Today's Deals</h3>
+                    <div style={{ display: "grid", gap: 12 }}>
+                      {deals.map((deal, index) => <RecommendationCard key={`deal-${deal.deal_id || deal.link}-${index}`} recommendation={deal} />)}
+                    </div>
+                  </div>
+                ) : null}
+
+                {coverageLimited ? <CommunityGrowthCard marketLabel={marketLabel} /> : null}
+              </div>
+            ) : <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.55 }}>Set your location on the home screen to receive local recommendations.</div>}
           </div>
         </section>
       </div>
