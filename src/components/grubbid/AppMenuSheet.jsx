@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 
 const NAV_ITEMS = [
   { label: "Deals",               href: "/deals",             icon: "🏷️" },
-  { label: "Top Picks Near You",  href: "/top-picks",         icon: "⭐" },
   { label: "Food Truck Directory", href: "/foodtrucks",       icon: "🚚" },
 ];
 
