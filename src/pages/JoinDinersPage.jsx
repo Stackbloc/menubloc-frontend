@@ -33,8 +33,7 @@ export default function JoinDinersPage() {
     <main style={styles.page}>
       <div style={styles.wrap}>
         <BrandLogo
-          width={130}
-          height={52}
+          height={36}
           radius={0}
           pageColor="#0B0F0C"
           linkStyle={styles.logo}
