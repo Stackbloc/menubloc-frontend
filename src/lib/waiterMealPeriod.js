@@ -7,11 +7,29 @@ export const WAITER_MEAL_PERIODS = [
 ];
 
 const WAITER_MEAL_PERIOD_FALLBACKS = {
-  breakfast: "For breakfast, you can explore available breakfast items, coffee options, bakery items, and morning-friendly restaurant menus.",
-  brunch: "For brunch, you can explore breakfast plates, sandwiches, salads, coffee drinks, and casual dining options.",
-  lunch: "For lunch, you can explore burgers, sandwiches, pizza, salads, fast food, and quick-service menus.",
-  dinner: "For dinner, you can explore available restaurant menus, casual dining options, pizza, burgers, chicken dishes, and active deals.",
-  late_night: "For late night, you can explore fast food, pizza, burgers, snacks, and any restaurants still showing available menu data.",
+  breakfast: {
+    title: "Looking for breakfast?",
+    paragraphs: [
+      "Browse available breakfast menus and morning favorites currently available in Menuply.",
+      "As we continue expanding coverage, Waiter will learn your preferences and provide more personalized recommendations.",
+    ],
+  },
+  brunch: {
+    title: "Looking for brunch?",
+    paragraphs: ["Browse available brunch-friendly menus, breakfast favorites, sandwiches, coffee drinks, and casual dining options currently available in Menuply."],
+  },
+  lunch: {
+    title: "Looking for lunch?",
+    paragraphs: ["Browse available burgers, sandwiches, pizza, salads, chicken dishes, and other lunch-friendly menu items currently available in Menuply."],
+  },
+  dinner: {
+    title: "Looking for dinner?",
+    paragraphs: ["Browse available restaurant menus, dinner options, pizza, burgers, chicken dishes, and other evening favorites currently available in Menuply."],
+  },
+  late_night: {
+    title: "Looking for a late-night bite?",
+    paragraphs: ["Browse available fast food, pizza, burgers, snacks, and other late-night options currently available in Menuply."],
+  },
 };
 
 export function getMealPeriodFallback(mealPeriod) {
