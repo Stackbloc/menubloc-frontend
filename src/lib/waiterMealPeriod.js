@@ -6,6 +6,18 @@ export const WAITER_MEAL_PERIODS = [
   { id: "late_night", label: "Late Night" },
 ];
 
+const WAITER_MEAL_PERIOD_FALLBACKS = {
+  breakfast: "For breakfast, you can explore available breakfast items, coffee options, bakery items, and morning-friendly restaurant menus.",
+  brunch: "For brunch, you can explore breakfast plates, sandwiches, salads, coffee drinks, and casual dining options.",
+  lunch: "For lunch, you can explore burgers, sandwiches, pizza, salads, fast food, and quick-service menus.",
+  dinner: "For dinner, you can explore available restaurant menus, casual dining options, pizza, burgers, chicken dishes, and active deals.",
+  late_night: "For late night, you can explore fast food, pizza, burgers, snacks, and any restaurants still showing available menu data.",
+};
+
+export function getMealPeriodFallback(mealPeriod) {
+  return WAITER_MEAL_PERIOD_FALLBACKS[mealPeriod] || WAITER_MEAL_PERIOD_FALLBACKS.lunch;
+}
+
 export function getDefaultMealPeriod(date = new Date()) {
   const hour = date.getHours();
   const minute = date.getMinutes();

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getDefaultMealPeriod, getWaiterGreeting } from "../src/lib/waiterMealPeriod.js";
+import { getDefaultMealPeriod, getMealPeriodFallback, getWaiterGreeting } from "../src/lib/waiterMealPeriod.js";
 
 function localDate(year, month, day, hour, minute) {
   return new Date(year, month, day, hour, minute, 0, 0);
@@ -21,4 +21,15 @@ test("Waiter greeting follows local morning, afternoon, and evening", () => {
   assert.equal(getWaiterGreeting(localDate(2026, 5, 17, 8, 0)), "Good morning");
   assert.equal(getWaiterGreeting(localDate(2026, 5, 17, 12, 0)), "Good afternoon");
   assert.equal(getWaiterGreeting(localDate(2026, 5, 17, 17, 0)), "Good evening");
+});
+
+test("Waiter exposes a distinct fallback prompt for every meal-period chip", () => {
+  const periods = ["breakfast", "brunch", "lunch", "dinner", "late_night"];
+  const prompts = periods.map((period) => getMealPeriodFallback(period));
+
+  assert.equal(new Set(prompts).size, periods.length);
+  for (const prompt of prompts) {
+    assert.match(prompt, /^For /);
+    assert.doesNotMatch(prompt, /available near/);
+  }
 });
