@@ -5,6 +5,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { fetchWaiterBriefing } from "../lib/waiterApi.js";
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
+const SESSION_AUTO_LABEL_KEY = "grubbid.discovery.auto_label";
 
 function parseSessionLocation(raw) {
   const str = String(raw || "").trim();
@@ -118,7 +119,10 @@ export default function FoodInterestsPage() {
   const [locationLabel, setLocationLabel] = useState("");
 
   useEffect(() => {
-    const raw = String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim();
+    const raw = (
+      String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim() ||
+      String(window.sessionStorage.getItem(SESSION_AUTO_LABEL_KEY) || "").trim()
+    );
     setLocationLabel(raw);
     const { city, state } = parseSessionLocation(raw);
     if (!city || !state) {
@@ -241,18 +245,6 @@ export default function FoodInterestsPage() {
               </div>
             )}
           </PanelSection>
-
-          {/* ── Manage Interests link (signed-in only) ── */}
-          {isAuthenticated && (
-            <div style={{ textAlign: "center", padding: "8px 0 4px" }}>
-              <Link
-                to="/account/interests"
-                style={{ fontSize: 13, color: "#6B7280", textDecoration: "none", borderBottom: "1px solid #374151", paddingBottom: 1 }}
-              >
-                Manage food interests →
-              </Link>
-            </div>
-          )}
 
         </div>
       </div>

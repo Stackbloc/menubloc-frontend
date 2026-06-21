@@ -821,6 +821,12 @@ export default function GrubbidDiscovery() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Save auto-detected label for cross-page location reading (e.g., Waiter page)
+  useEffect(() => {
+    if (!autoLocation.label) return;
+    try { window.sessionStorage.setItem("grubbid.discovery.auto_label", autoLocation.label); } catch {}
+  }, [autoLocation.label]);
+
   // When geo resolves, overwrite stale session location unless user manually set one
   useEffect(() => {
     if (autoLocation.status !== "ready" || autoLocation.lat == null || autoLocation.lng == null) return;
