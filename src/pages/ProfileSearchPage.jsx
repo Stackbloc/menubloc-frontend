@@ -24,51 +24,85 @@
 import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useLocation, useNavigate } from "react-router-dom";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
 /* ---- Styles ---- */
 
+const GREEN = "#4caf50";
+
 const ST = {
+  outer: {
+    minHeight: "100vh",
+    background: "#ffffff",
+    color: "#0B0F0C",
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+    fontSize: 16,
+    lineHeight: 1.6,
+    WebkitFontSmoothing: "antialiased",
+  },
   page: {
     maxWidth: 640,
-    margin: "40px auto",
-    padding: "0 20px 80px",
-    fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
-    color: "#111",
+    margin: "0 auto",
+    padding: "28px 24px 80px",
   },
-  brand:    { fontWeight: 800, fontSize: 18 },
-  subbrand: { fontSize: 12, color: "#666", marginBottom: 28 },
+  logoWrap: { marginBottom: 20 },
+
+  sectionChip: {
+    display: "inline-block",
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    color: "#6B7280",
+    background: "rgba(0,0,0,0.05)",
+    border: "1px solid rgba(0,0,0,0.1)",
+    borderRadius: 4,
+    padding: "3px 10px",
+    marginBottom: 20,
+  },
+
   /* Step trail */
   steps: {
     display: "flex",
     alignItems: "center",
     gap: 0,
-    marginBottom: 32,
+    marginBottom: 28,
     fontSize: 12,
     fontWeight: 600,
+    flexWrap: "wrap",
+    rowGap: 6,
   },
   step: (active, done) => ({
     padding: "4px 12px",
     borderRadius: 999,
-    background: done ? "#111" : active ? "#f0f0f5" : "transparent",
-    color: done ? "#fff" : active ? "#111" : "#aaa",
-    border: active ? "1.5px solid #111" : "1.5px solid transparent",
+    background: done ? GREEN : active ? "#F9FAFB" : "transparent",
+    color: done ? "#fff" : active ? "#0B0F0C" : "#9CA3AF",
+    border: active ? `1.5px solid #0B0F0C` : done ? `1.5px solid ${GREEN}` : "1.5px solid transparent",
     whiteSpace: "nowrap",
   }),
-  stepDivider: { flex: "0 0 16px", height: 1, background: "#e0e0e0", margin: "0 2px" },
+  stepDivider: { flex: "0 0 14px", height: 1, background: "#E5E7EB", margin: "0 2px" },
 
-  heading:    { fontSize: 22, fontWeight: 800, marginBottom: 4 },
-  subheading: { fontSize: 14, color: "#666", marginBottom: 24, lineHeight: 1.5 },
+  heading: { fontSize: 26, fontWeight: 800, letterSpacing: "-0.3px", marginBottom: 6, color: "#0B0F0C" },
+  subheading: { fontSize: 14, color: "#6B7280", marginBottom: 24, lineHeight: 1.55 },
 
-  /* Your Profile card (created during signup) */
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#6B7280",
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    marginBottom: 10,
+  },
+
+  /* Your Profile card */
   yourProfileCard: {
-    border: "2px solid #111",
-    borderRadius: 14,
+    border: `1.5px solid ${GREEN}`,
+    borderRadius: 10,
     padding: "16px 18px",
     marginBottom: 24,
-    background: "#fafafa",
+    background: "rgba(76,175,80,0.04)",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
@@ -77,27 +111,31 @@ const ST = {
   yourProfileBadge: {
     display: "inline-block",
     fontSize: 10,
-    fontWeight: 800,
-    background: "#111",
-    color: "#fff",
-    borderRadius: 999,
+    fontWeight: 700,
+    background: `rgba(76,175,80,0.12)`,
+    color: GREEN,
+    border: `1px solid rgba(76,175,80,0.3)`,
+    borderRadius: 4,
     padding: "2px 8px",
-    marginBottom: 4,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    marginBottom: 6,
   },
-  yourProfileName:    { fontWeight: 700, fontSize: 15, marginBottom: 3 },
-  yourProfileAddress: { fontSize: 13, color: "#555", lineHeight: 1.4 },
+  yourProfileName:    { fontWeight: 700, fontSize: 15, marginBottom: 3, color: "#0B0F0C" },
+  yourProfileAddress: { fontSize: 13, color: "#6B7280", lineHeight: 1.45 },
   continueBtn: {
     height: 36,
     padding: "0 18px",
     borderRadius: 10,
     border: 0,
-    background: "#111",
+    background: GREEN,
     color: "#fff",
     fontWeight: 700,
     fontSize: 13,
     cursor: "pointer",
     whiteSpace: "nowrap",
     flexShrink: 0,
+    fontFamily: "inherit",
   },
 
   /* Search form */
@@ -106,74 +144,83 @@ const ST = {
     flex: "2 1 200px",
     height: 42,
     borderRadius: 10,
-    border: "1px solid #e5e5e5",
+    border: "1px solid #E5E7EB",
     padding: "0 12px",
     fontSize: 14,
     background: "#fff",
+    color: "#0B0F0C",
+    fontFamily: "inherit",
+    outline: "none",
   },
   inputSm: {
     flex: "1 1 120px",
     height: 42,
     borderRadius: 10,
-    border: "1px solid #e5e5e5",
+    border: "1px solid #E5E7EB",
     padding: "0 12px",
     fontSize: 14,
     background: "#fff",
+    color: "#0B0F0C",
+    fontFamily: "inherit",
+    outline: "none",
   },
   searchBtn: {
     height: 42,
     padding: "0 20px",
     borderRadius: 10,
     border: 0,
-    background: "#111",
+    background: GREEN,
     color: "#fff",
     fontWeight: 700,
     fontSize: 14,
     cursor: "pointer",
     whiteSpace: "nowrap",
     flexShrink: 0,
+    fontFamily: "inherit",
   },
 
   /* Result cards */
   resultCard: {
-    border: "1px solid #e5e5e5",
-    borderRadius: 14,
+    border: "1px solid #E5E7EB",
+    borderRadius: 10,
     padding: "14px 16px",
     marginBottom: 10,
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
     gap: 12,
-    background: "#fff",
+    background: "#F9FAFB",
   },
-  cardName:    { fontWeight: 700, fontSize: 15, marginBottom: 3 },
-  cardAddress: { fontSize: 13, color: "#555", lineHeight: 1.4 },
-  cardMeta:    { fontSize: 12, color: "#888", marginTop: 4 },
+  cardName:    { fontWeight: 700, fontSize: 15, marginBottom: 3, color: "#0B0F0C" },
+  cardAddress: { fontSize: 13, color: "#6B7280", lineHeight: 1.4 },
+  cardMeta:    { fontSize: 12, color: "#9CA3AF", marginTop: 4 },
   claimBtn: {
     height: 36,
     padding: "0 16px",
     borderRadius: 10,
-    border: "1.5px solid #111",
+    border: `1.5px solid ${GREEN}`,
     background: "#fff",
-    color: "#111",
+    color: GREEN,
     fontWeight: 700,
     fontSize: 13,
     cursor: "pointer",
     whiteSpace: "nowrap",
     flexShrink: 0,
+    fontFamily: "inherit",
   },
   claimBtnDoing: {
     height: 36,
     padding: "0 16px",
     borderRadius: 10,
-    border: "1.5px solid #ccc",
-    background: "#f5f5f5",
-    color: "#999",
+    border: "1.5px solid #E5E7EB",
+    background: "#F3F4F6",
+    color: "#9CA3AF",
     fontWeight: 700,
     fontSize: 13,
     cursor: "not-allowed",
     whiteSpace: "nowrap",
     flexShrink: 0,
+    fontFamily: "inherit",
   },
 
   /* Email prompt */
@@ -183,93 +230,89 @@ const ST = {
     marginBottom: 16,
     alignItems: "center",
     padding: "12px 14px",
-    background: "#fffbe6",
+    background: "#F9FAFB",
     borderRadius: 10,
-    border: "1px solid #f0d060",
+    border: "1px solid #E5E7EB",
   },
-  emailLabel: { fontSize: 13, color: "#666", whiteSpace: "nowrap" },
+  emailLabel: { fontSize: 13, color: "#6B7280", whiteSpace: "nowrap", fontWeight: 600 },
   emailInput: {
     flex: 1,
     height: 36,
     borderRadius: 8,
-    border: "1px solid #e5e5e5",
+    border: "1px solid #E5E7EB",
     padding: "0 10px",
     fontSize: 13,
+    background: "#fff",
+    color: "#0B0F0C",
+    fontFamily: "inherit",
+    outline: "none",
   },
 
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: 800,
-    color: "#888",
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    marginBottom: 12,
-  },
-
-  divider: { margin: "28px 0 20px", display: "flex", alignItems: "center", gap: 12 },
-  dividerLine: { flex: 1, height: 1, background: "#e9e9e9" },
-  dividerText: { fontSize: 13, color: "#999", whiteSpace: "nowrap" },
+  divider: { margin: "24px 0 20px", display: "flex", alignItems: "center", gap: 12 },
+  dividerLine: { flex: 1, height: 1, background: "#E5E7EB" },
+  dividerText: { fontSize: 13, color: "#9CA3AF", whiteSpace: "nowrap" },
 
   /* Create section */
   createSection: {
-    border: "1px solid #e5e5e5",
-    borderRadius: 14,
-    padding: "18px 18px",
-    background: "#fafafa",
+    border: "1px solid #E5E7EB",
+    borderRadius: 10,
+    padding: "20px 20px",
+    background: "#F9FAFB",
   },
-  createHeading: { fontWeight: 700, fontSize: 15, marginBottom: 4 },
-  createSubtext: { fontSize: 13, color: "#666", marginBottom: 14, lineHeight: 1.5 },
+  createHeading: { fontWeight: 800, fontSize: 16, marginBottom: 4, color: "#0B0F0C" },
+  createSubtext: { fontSize: 13, color: "#6B7280", marginBottom: 16, lineHeight: 1.55 },
   previewGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: "4px 16px",
     fontSize: 13,
-    color: "#444",
-    marginBottom: 14,
+    color: "#374151",
+    marginBottom: 16,
   },
-  previewLabel: { color: "#888", fontWeight: 600 },
+  previewLabel: { color: "#9CA3AF", fontWeight: 600 },
   createBtn: {
     height: 42,
     padding: "0 20px",
     borderRadius: 10,
     border: 0,
-    background: "#111",
+    background: GREEN,
     color: "#fff",
     fontWeight: 700,
     fontSize: 14,
     cursor: "pointer",
+    fontFamily: "inherit",
   },
   createBtnDisabled: {
     height: 42,
     padding: "0 20px",
     borderRadius: 10,
     border: 0,
-    background: "#ccc",
-    color: "#fff",
+    background: "#F3F4F6",
+    color: "#9CA3AF",
     fontWeight: 700,
     fontSize: 14,
     cursor: "not-allowed",
+    fontFamily: "inherit",
   },
 
-  /* Mini form for direct navigation (no state) */
-  miniForm: { display: "grid", gap: 10, marginBottom: 14 },
+  miniForm: { display: "grid", gap: 10, marginBottom: 16 },
 
   error: {
     padding: "10px 14px",
-    background: "#fff0f0",
-    border: "1px solid #f5c6c6",
+    background: "#FFF0F0",
+    border: "1px solid #FECACA",
     borderRadius: 10,
     fontSize: 13,
-    color: "#c00",
+    color: "#DC2626",
     marginBottom: 12,
   },
   info: {
     padding: "10px 14px",
-    background: "#f0f7ff",
-    border: "1px solid #c2d9f0",
+    background: "#F0F7FF",
+    border: "1px solid #BFDBFE",
     borderRadius: 10,
     fontSize: 13,
-    color: "#2563a8",
+    color: "#2563AB",
     marginBottom: 12,
   },
 };
@@ -477,293 +520,299 @@ export default function ProfileSearchPage() {
   const needsEmail = !stateEmail;
 
   return (
-    <div style={ST.page}>
-      {/* Brand */}
-      <BrandLockup
-        subtitle="for Restaurants"
-        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f7f6f1" }}
-      />
+    <div style={ST.outer}>
+      <div style={ST.page}>
 
-      {/* Step trail */}
-      <div style={ST.steps}>
-        <div style={ST.step(false, true)}>1. Account</div>
-        <div style={ST.stepDivider} />
-        <div style={ST.step(true, false)}>2. Find your profile</div>
-        <div style={ST.stepDivider} />
-        <div style={ST.step(false, false)}>3. Choose plan</div>
-        <div style={ST.stepDivider} />
-        <div style={ST.step(false, false)}>4. Upload menu</div>
-      </div>
-
-      <div style={ST.heading}>Find your restaurant profile</div>
-      <div style={ST.subheading}>
-        Search for your restaurant below. If it already has a Menuply profile you can claim it.
-        {hasCreatedProfile
-          ? " Or continue with the profile we just created."
-          : " If not, create a new profile."}
-      </div>
-
-      {/* Email prompt (only when not passed from signup) */}
-      {needsEmail && (
-        <div style={ST.emailRow}>
-          <span style={ST.emailLabel}>Your email:</span>
-          <input
-            type="email"
-            style={ST.emailInput}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-          />
+        {/* Brand */}
+        <div style={ST.logoWrap}>
+          <BrandLogo height={48} radius={14} matchPageBackground={false} />
         </div>
-      )}
 
-      {/* ---- Your Profile card (created during signup) ---- */}
-      {hasCreatedProfile && (
-        <div>
-          <div style={ST.sectionLabel}>Your profile</div>
-          <div style={ST.yourProfileCard}>
-            <div style={{ minWidth: 0 }}>
-              <div style={ST.yourProfileBadge}>Just created</div>
-              <div style={ST.yourProfileName}>{stateName}</div>
-              {(stateAddr || stateCity) && (
-                <div style={ST.yourProfileAddress}>
-                  {formatAddress({
-                    address_line1: stateAddr,
-                    city:          stateCity,
-                    state:         stateStateVal,
-                    postal_code:   stateZip,
-                  })}
-                </div>
-              )}
-            </div>
-            <button
-              style={ST.continueBtn}
-              onClick={() =>
-                proceedToSubscription({
-                  restaurant_id: stateRestaurantId,
-                  email:         stateEmail,
-                  owner_token:   stateOwnerToken,
-                })
-              }
-            >
-              Continue →
-            </button>
-          </div>
+        {/* Section chip */}
+        <div style={ST.sectionChip}>For Restaurants</div>
+
+        {/* Step trail */}
+        <div style={ST.steps}>
+          <div style={ST.step(false, true)}>1. Account</div>
+          <div style={ST.stepDivider} />
+          <div style={ST.step(true, false)}>2. Find your profile</div>
+          <div style={ST.stepDivider} />
+          <div style={ST.step(false, false)}>3. Choose plan</div>
+          <div style={ST.stepDivider} />
+          <div style={ST.step(false, false)}>4. Upload menu</div>
         </div>
-      )}
 
-      {/* ---- Search for existing profiles ---- */}
-      <div style={hasCreatedProfile ? { marginTop: 8 } : {}}>
-        <div style={ST.sectionLabel}>
+        <div style={ST.heading}>Find your restaurant profile</div>
+        <div style={ST.subheading}>
+          Search for your restaurant below. If it already has a Menuply profile you can claim it.
           {hasCreatedProfile
-            ? "Or search to see if your restaurant already has a profile"
-            : "Search for your restaurant"}
+            ? " Or continue with the profile we just created."
+            : " If not, create a new profile."}
         </div>
-        <form onSubmit={handleSearch}>
-          <div style={ST.searchRow}>
+
+        {/* Email prompt (only when not passed from signup) */}
+        {needsEmail && (
+          <div style={ST.emailRow}>
+            <span style={ST.emailLabel}>Your email:</span>
             <input
-              style={ST.input}
-              type="text"
-              placeholder="Restaurant name *"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
+              type="email"
+              style={ST.emailInput}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
             />
-            <input
-              style={ST.inputSm}
-              type="text"
-              placeholder="City"
-              value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
-            />
-            <input
-              style={ST.inputSm}
-              type="text"
-              placeholder="ZIP"
-              value={zipFilter}
-              onChange={(e) => setZipFilter(e.target.value)}
-            />
-            <button type="submit" style={ST.searchBtn} disabled={searching}>
-              {searching ? "Searching…" : "Search"}
-            </button>
           </div>
-        </form>
-      </div>
+        )}
 
-      {searchErr && <div style={ST.error}>{searchErr}</div>}
-
-      {/* Search results */}
-      {results !== null && !searching && (
-        <>
-          {results.length === 0 ? (
-            <div style={ST.info}>
-              No claimable profiles found for &ldquo;{q}&rdquo;
-              {cityFilter ? ` in ${cityFilter}` : ""}.
-              {!hasCreatedProfile && " Create a new profile below."}
-            </div>
-          ) : (
-            <>
-              {claimErr && <div style={ST.error}>{claimErr}</div>}
-              {results.map((r) => (
-                <div key={r.id} style={ST.resultCard}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={ST.cardName}>{r.restaurant_name}</div>
-                    <div style={ST.cardAddress}>{formatAddress(r)}</div>
-                    {(r.cuisine || r.category) && (
-                      <div style={ST.cardMeta}>
-                        {[r.category, r.cuisine].filter(Boolean).join(" · ")}
-                      </div>
-                    )}
+        {/* ---- Your Profile card (created during signup) ---- */}
+        {hasCreatedProfile && (
+          <div>
+            <div style={ST.sectionLabel}>Your profile</div>
+            <div style={ST.yourProfileCard}>
+              <div style={{ minWidth: 0 }}>
+                <div style={ST.yourProfileBadge}>Just created</div>
+                <div style={ST.yourProfileName}>{stateName}</div>
+                {(stateAddr || stateCity) && (
+                  <div style={ST.yourProfileAddress}>
+                    {formatAddress({
+                      address_line1: stateAddr,
+                      city:          stateCity,
+                      state:         stateStateVal,
+                      postal_code:   stateZip,
+                    })}
                   </div>
-                  <button
-                    style={claimingId === r.id ? ST.claimBtnDoing : ST.claimBtn}
-                    disabled={claimingId !== null}
-                    onClick={() => handleClaim(r.id)}
-                  >
-                    {claimingId === r.id ? "Claiming…" : "Claim this profile"}
-                  </button>
-                </div>
-              ))}
-            </>
-          )}
-        </>
-      )}
-
-      {/* Divider + Create section — only shown when no profile was created during signup */}
-      {!hasCreatedProfile && (
-        <>
-          {searched && (
-            <div style={ST.divider}>
-              <div style={ST.dividerLine} />
-              <div style={ST.dividerText}>
-                {results && results.length > 0
-                  ? "Don't see your restaurant?"
-                  : "Create a new profile"}
+                )}
               </div>
-              <div style={ST.dividerLine} />
-            </div>
-          )}
-
-          {(searched || (!searching && results === null)) && (
-            <div style={ST.createSection}>
-              <div style={ST.createHeading}>
-                {!searched
-                  ? `Create a profile for ${createName || "your restaurant"}`
-                  : "Create a new restaurant profile"}
-              </div>
-              <div style={ST.createSubtext}>
-                {!searched
-                  ? "Your restaurant isn't in our database yet. We'll create a new profile."
-                  : "If your restaurant isn't above, add it here."}
-              </div>
-
-              {createErr && <div style={ST.error}>{createErr}</div>}
-
-              {/* If we have signup state, show a data preview; otherwise show a mini form */}
-              {stateName ? (
-                <div style={ST.previewGrid}>
-                  {createName && (
-                    <>
-                      <span style={ST.previewLabel}>Name</span>
-                      <span>{createName}</span>
-                    </>
-                  )}
-                  {(createAddr || stateAddr) && (
-                    <>
-                      <span style={ST.previewLabel}>Address</span>
-                      <span>{createAddr || stateAddr}</span>
-                    </>
-                  )}
-                  {(createCity || stateCity) && (
-                    <>
-                      <span style={ST.previewLabel}>City</span>
-                      <span>
-                        {[createCity || stateCity, createState || stateStateVal]
-                          .filter(Boolean)
-                          .join(", ")}
-                      </span>
-                    </>
-                  )}
-                  {(createZip || stateZip) && (
-                    <>
-                      <span style={ST.previewLabel}>ZIP</span>
-                      <span>{createZip || stateZip}</span>
-                    </>
-                  )}
-                  {(createPhone || statePhone) && (
-                    <>
-                      <span style={ST.previewLabel}>Phone</span>
-                      <span>{createPhone || statePhone}</span>
-                    </>
-                  )}
-                </div>
-              ) : (
-                /* Mini form for direct navigation (no signup state) */
-                <div style={ST.miniForm}>
-                  <input
-                    style={ST.input}
-                    type="text"
-                    placeholder="Restaurant name *"
-                    value={createName}
-                    onChange={(e) => setCreateName(e.target.value)}
-                  />
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <input
-                      style={{ ...ST.inputSm, flex: "2 1 160px" }}
-                      type="text"
-                      placeholder="Address"
-                      value={createAddr}
-                      onChange={(e) => setCreateAddr(e.target.value)}
-                    />
-                    <input
-                      style={ST.inputSm}
-                      type="text"
-                      placeholder="City"
-                      value={createCity}
-                      onChange={(e) => setCreateCity(e.target.value)}
-                    />
-                  </div>
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <input
-                      style={{ ...ST.inputSm, flex: "0 0 70px" }}
-                      type="text"
-                      placeholder="ST"
-                      maxLength={2}
-                      value={createState}
-                      onChange={(e) => setCreateState(e.target.value)}
-                    />
-                    <input
-                      style={ST.inputSm}
-                      type="text"
-                      placeholder="ZIP"
-                      value={createZip}
-                      onChange={(e) => setCreateZip(e.target.value)}
-                    />
-                    <input
-                      style={ST.inputSm}
-                      type="tel"
-                      placeholder="Phone"
-                      value={createPhone}
-                      onChange={(e) => setCreatePhone(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-
               <button
-                style={creating ? ST.createBtnDisabled : ST.createBtn}
-                disabled={creating}
-                onClick={handleCreate}
+                style={ST.continueBtn}
+                onClick={() =>
+                  proceedToSubscription({
+                    restaurant_id: stateRestaurantId,
+                    email:         stateEmail,
+                    owner_token:   stateOwnerToken,
+                  })
+                }
               >
-                {creating
-                  ? "Creating profile…"
-                  : stateName
-                  ? `Create profile for ${createName || "my restaurant"}`
-                  : "Create new profile"}
+                Continue →
               </button>
             </div>
-          )}
-        </>
-      )}
+          </div>
+        )}
+
+        {/* ---- Search for existing profiles ---- */}
+        <div style={hasCreatedProfile ? { marginTop: 8 } : {}}>
+          <div style={ST.sectionLabel}>
+            {hasCreatedProfile
+              ? "Or search to see if your restaurant already has a profile"
+              : "Search for your restaurant"}
+          </div>
+          <form onSubmit={handleSearch}>
+            <div style={ST.searchRow}>
+              <input
+                style={ST.input}
+                type="text"
+                placeholder="Restaurant name *"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+              />
+              <input
+                style={ST.inputSm}
+                type="text"
+                placeholder="City"
+                value={cityFilter}
+                onChange={(e) => setCityFilter(e.target.value)}
+              />
+              <input
+                style={ST.inputSm}
+                type="text"
+                placeholder="ZIP"
+                value={zipFilter}
+                onChange={(e) => setZipFilter(e.target.value)}
+              />
+              <button type="submit" style={ST.searchBtn} disabled={searching}>
+                {searching ? "Searching…" : "Search"}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {searchErr && <div style={ST.error}>{searchErr}</div>}
+
+        {/* Search results */}
+        {results !== null && !searching && (
+          <>
+            {results.length === 0 ? (
+              <div style={ST.info}>
+                No claimable profiles found for &ldquo;{q}&rdquo;
+                {cityFilter ? ` in ${cityFilter}` : ""}.
+                {!hasCreatedProfile && " Create a new profile below."}
+              </div>
+            ) : (
+              <>
+                {claimErr && <div style={ST.error}>{claimErr}</div>}
+                {results.map((r) => (
+                  <div key={r.id} style={ST.resultCard}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={ST.cardName}>{r.restaurant_name}</div>
+                      <div style={ST.cardAddress}>{formatAddress(r)}</div>
+                      {(r.cuisine || r.category) && (
+                        <div style={ST.cardMeta}>
+                          {[r.category, r.cuisine].filter(Boolean).join(" · ")}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      style={claimingId === r.id ? ST.claimBtnDoing : ST.claimBtn}
+                      disabled={claimingId !== null}
+                      onClick={() => handleClaim(r.id)}
+                    >
+                      {claimingId === r.id ? "Claiming…" : "Claim this profile"}
+                    </button>
+                  </div>
+                ))}
+              </>
+            )}
+          </>
+        )}
+
+        {/* Divider + Create section — only shown when no profile was created during signup */}
+        {!hasCreatedProfile && (
+          <>
+            {searched && (
+              <div style={ST.divider}>
+                <div style={ST.dividerLine} />
+                <div style={ST.dividerText}>
+                  {results && results.length > 0
+                    ? "Don't see your restaurant?"
+                    : "Create a new profile"}
+                </div>
+                <div style={ST.dividerLine} />
+              </div>
+            )}
+
+            {(searched || (!searching && results === null)) && (
+              <div style={ST.createSection}>
+                <div style={ST.createHeading}>
+                  {!searched
+                    ? `Create a profile for ${createName || "your restaurant"}`
+                    : "Create a new restaurant profile"}
+                </div>
+                <div style={ST.createSubtext}>
+                  {!searched
+                    ? "Your restaurant isn't in our database yet. We'll create a new profile."
+                    : "If your restaurant isn't above, add it here."}
+                </div>
+
+                {createErr && <div style={ST.error}>{createErr}</div>}
+
+                {/* If we have signup state, show a data preview; otherwise show a mini form */}
+                {stateName ? (
+                  <div style={ST.previewGrid}>
+                    {createName && (
+                      <>
+                        <span style={ST.previewLabel}>Name</span>
+                        <span>{createName}</span>
+                      </>
+                    )}
+                    {(createAddr || stateAddr) && (
+                      <>
+                        <span style={ST.previewLabel}>Address</span>
+                        <span>{createAddr || stateAddr}</span>
+                      </>
+                    )}
+                    {(createCity || stateCity) && (
+                      <>
+                        <span style={ST.previewLabel}>City</span>
+                        <span>
+                          {[createCity || stateCity, createState || stateStateVal]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </span>
+                      </>
+                    )}
+                    {(createZip || stateZip) && (
+                      <>
+                        <span style={ST.previewLabel}>ZIP</span>
+                        <span>{createZip || stateZip}</span>
+                      </>
+                    )}
+                    {(createPhone || statePhone) && (
+                      <>
+                        <span style={ST.previewLabel}>Phone</span>
+                        <span>{createPhone || statePhone}</span>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  /* Mini form for direct navigation (no signup state) */
+                  <div style={ST.miniForm}>
+                    <input
+                      style={ST.input}
+                      type="text"
+                      placeholder="Restaurant name *"
+                      value={createName}
+                      onChange={(e) => setCreateName(e.target.value)}
+                    />
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <input
+                        style={{ ...ST.inputSm, flex: "2 1 160px" }}
+                        type="text"
+                        placeholder="Address"
+                        value={createAddr}
+                        onChange={(e) => setCreateAddr(e.target.value)}
+                      />
+                      <input
+                        style={ST.inputSm}
+                        type="text"
+                        placeholder="City"
+                        value={createCity}
+                        onChange={(e) => setCreateCity(e.target.value)}
+                      />
+                    </div>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <input
+                        style={{ ...ST.inputSm, flex: "0 0 70px" }}
+                        type="text"
+                        placeholder="ST"
+                        maxLength={2}
+                        value={createState}
+                        onChange={(e) => setCreateState(e.target.value)}
+                      />
+                      <input
+                        style={ST.inputSm}
+                        type="text"
+                        placeholder="ZIP"
+                        value={createZip}
+                        onChange={(e) => setCreateZip(e.target.value)}
+                      />
+                      <input
+                        style={ST.inputSm}
+                        type="tel"
+                        placeholder="Phone"
+                        value={createPhone}
+                        onChange={(e) => setCreatePhone(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  style={creating ? ST.createBtnDisabled : ST.createBtn}
+                  disabled={creating}
+                  onClick={handleCreate}
+                >
+                  {creating
+                    ? "Creating profile…"
+                    : stateName
+                    ? `Create profile for ${createName || "my restaurant"}`
+                    : "Create new profile"}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+      </div>
     </div>
   );
 }
