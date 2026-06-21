@@ -270,6 +270,9 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
   const [menuDetailLoading, setMenuDetailLoading] = useState(false);
   const [menuDetailErr, setMenuDetailErr] = useState("");
 
+  // ── recent uploads (for selected restaurant)
+  const [recentUploads, setRecentUploads] = useState([]);
+
   // ── item search state (within selected restaurant)
   const [itemQ, setItemQ]               = useState("");
   const [itemFilter, setItemFilter]     = useState("all");
@@ -417,6 +420,7 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
   async function selectRestaurant(r) {
     setSelectedRestaurant(r);
     setMenus([]);
+    setRecentUploads([]);
     setSelectedMenuId(null);
     setMenuDetail(null);
     setMenuDetailErr("");
@@ -426,16 +430,24 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
     saveRecentRestaurant(r);
     setRecentRestaurants(loadRecentRestaurants());
     try {
-      const data = await getMenuConsoleRestaurantMenus(r.id);
-      // Prefer fresh restaurant data from API over stale search result
-      if (data.restaurant) setSelectedRestaurant(data.restaurant);
-      if (data.summary) setRestaurantSummary(data.summary);
-      const loaded = data.menus || [];
-      setMenus(loaded);
-      const initial = loaded.find((m) => m.menu_type === "main") || loaded[0];
-      if (initial) {
-        setActiveMenuType(initial.menu_type || "main");
-        loadMenu(initial.id, r.id);
+      const [menuData, uploadData] = await Promise.allSettled([
+        getMenuConsoleRestaurantMenus(r.id),
+        getOwnerMenuUploads({ restaurant_id: r.id }),
+      ]);
+      if (menuData.status === "fulfilled") {
+        const data = menuData.value;
+        if (data.restaurant) setSelectedRestaurant(data.restaurant);
+        if (data.summary) setRestaurantSummary(data.summary);
+        const loaded = data.menus || [];
+        setMenus(loaded);
+        const initial = loaded.find((m) => m.menu_type === "main") || loaded[0];
+        if (initial) {
+          setActiveMenuType(initial.menu_type || "main");
+          loadMenu(initial.id, r.id);
+        }
+      }
+      if (uploadData.status === "fulfilled") {
+        setRecentUploads((uploadData.value.uploads || []).slice(0, 5));
       }
     } catch {
       setMenus([]);
@@ -495,6 +507,7 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
     setSelectedMenuId(null);
     setMenuDetail(null);
     setActiveMenuType(null);
+    setRecentUploads([]);
     resetItemSearch();
   }
 
@@ -758,6 +771,72 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
           </div>
         </div>
       </PageCard>
+
+      {/* ── Recent uploads panel ─────────────────────────────────────────── */}
+      {recentUploads.length > 0 && (
+        <PageCard style={{ padding: "14px 18px", marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: OWNER_COLORS.muted, marginBottom: 10 }}>
+            Recent Uploads
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {recentUploads.map((u) => {
+              const isReview = u.status === "needs_review";
+              const isFailed = u.status === "failed";
+              return (
+                <div key={u.id} style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  gap: 12, padding: "8px 12px", borderRadius: 8,
+                  background: isReview ? OWNER_COLORS.accentSoft : "#f9fafb",
+                  border: `1px solid ${isReview ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <StatusChip status={u.status} />
+                      <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+                        {u.session_meta?.upload_type || "upload"} · {formatDate(u.created_at)}
+                      </span>
+                      {(u.inserted_item_count > 0 || u.parsed_item_count > 0) && (
+                        <span style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
+                          {u.inserted_item_count} inserted / {u.parsed_item_count} parsed
+                        </span>
+                      )}
+                      {u.human_review_items > 0 && (
+                        <span style={{ fontSize: 11, color: OWNER_COLORS.accent, fontWeight: 700 }}>
+                          {u.human_review_items} need review
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                    {isReview && (
+                      <Link
+                        to={`/owner/menu-manager/uploads/${u.id}/review-items`}
+                        style={{
+                          padding: "6px 12px", borderRadius: 7, textDecoration: "none",
+                          background: OWNER_COLORS.accent, color: "#fff",
+                          fontSize: 12, fontWeight: 700,
+                        }}
+                      >
+                        Review Items →
+                      </Link>
+                    )}
+                    <Link
+                      to={`/owner/menu-manager/uploads/${u.id}`}
+                      style={{
+                        padding: "6px 10px", borderRadius: 7, textDecoration: "none",
+                        background: "#fff", color: isFailed ? "#991b1b" : OWNER_COLORS.ink,
+                        border: `1px solid ${OWNER_COLORS.line}`, fontSize: 12, fontWeight: 600,
+                      }}
+                    >
+                      View →
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </PageCard>
+      )}
 
       {/* ── Item search bar + filter chips ─────────────────────────────────── */}
       <PageCard style={{ padding: "14px 18px", marginBottom: 12 }}>
@@ -2058,8 +2137,10 @@ function NewUploadSection({ onSuccess, initialRestaurant }) {
       setSubmitting(true);
       try {
         const json = await submitOwnerMenuFilePdf(selectedRestaurant.id, file);
-        const inserted = (json.inserted || 0) + (json.updated || 0);
-        setResult({ ok: true, message: `File processed. ${inserted} item${inserted !== 1 ? "s" : ""} inserted.` });
+        const inserted = (json.inserted_items || json.inserted || 0) + (json.updated_items || json.updated || 0);
+        const reviewCount = json.review_count || 0;
+        const reviewNote = reviewCount > 0 ? ` (${reviewCount} sent to review queue)` : "";
+        setResult({ ok: true, message: `File processed. ${inserted} item${inserted !== 1 ? "s" : ""} inserted${reviewNote}. Check the Upload Activity tab to review extracted content.` });
         setFile(null); if (fileRef.current) fileRef.current.value = "";
         setSelectedRestaurant(null); setRestaurantQuery("");
         onSuccess();
