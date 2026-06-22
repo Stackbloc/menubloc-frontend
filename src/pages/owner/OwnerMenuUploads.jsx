@@ -246,7 +246,10 @@ const ITEM_SEARCH_LIMIT = 50;
 
 // ─── Menu Manager tab ─────────────────────────────────────────────────────────
 
-function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToUploads }) {
+function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParams, setSearchParams }) {
+  // race-condition guard: each selectRestaurant call gets a version; stale responses are discarded
+  const restaurantVersionRef = useRef(0);
+
   // ── search view state
   const [searchQ, setSearchQ]           = useState("");
   const [searchResults, setSearchResults] = useState(null); // null = no search run yet
@@ -418,6 +421,9 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
 
   // ── select a restaurant → enter restaurant view
   async function selectRestaurant(r) {
+    restaurantVersionRef.current += 1;
+    const myVersion = restaurantVersionRef.current;
+
     setSelectedRestaurant(r);
     setMenus([]);
     setRecentUploads([]);
@@ -432,8 +438,9 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
     try {
       const [menuData, uploadData] = await Promise.allSettled([
         getMenuConsoleRestaurantMenus(r.id),
-        getOwnerMenuUploads({ restaurant_id: r.id }),
+        getOwnerMenuUploads({ restaurant_id: r.id, limit: 50 }),
       ]);
+      if (myVersion !== restaurantVersionRef.current) return; // stale — a newer selectRestaurant fired
       if (menuData.status === "fulfilled") {
         const data = menuData.value;
         if (data.restaurant) setSelectedRestaurant(data.restaurant);
@@ -447,12 +454,13 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
         }
       }
       if (uploadData.status === "fulfilled") {
-        setRecentUploads((uploadData.value.uploads || []).slice(0, 5));
+        setRecentUploads(uploadData.value.uploads || []);
       }
     } catch {
+      if (myVersion !== restaurantVersionRef.current) return;
       setMenus([]);
     } finally {
-      setMenusLoading(false);
+      if (myVersion === restaurantVersionRef.current) setMenusLoading(false);
     }
   }
 
@@ -541,8 +549,9 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
     if (!m.updated_at) return latest;
     return !latest || new Date(m.updated_at) > new Date(latest) ? m.updated_at : latest;
   }, null);
-  const hiddenItems      = restaurantSummary?.hidden_count    ?? null;
-  const duplicateCount   = restaurantSummary?.duplicate_count ?? null;
+  const hiddenItems      = restaurantSummary?.hidden_count      ?? null;
+  const duplicateCount   = restaurantSummary?.duplicate_count   ?? null;
+  const needsReviewItems = restaurantSummary?.needs_review_count ?? null;
 
   const isItemSearchActive = itemQ.trim().length >= 2 || itemFilter !== "all";
   const totalPages = Math.ceil(searchTotal / SEARCH_LIMIT);
@@ -714,8 +723,8 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
   // ══════════════════════════════════════════════════════════════
   return (
     <div>
-      {/* Back button + Upload shortcut */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+      {/* Back to search */}
+      <div style={{ marginBottom: 16 }}>
         <button
           type="button"
           onClick={handleBack}
@@ -724,60 +733,65 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
             cursor: "pointer", color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 13, padding: 0,
           }}
         >
-          ← Back to Search
+          ← Menu Manager
         </button>
-        {onSwitchToUploads && (
-          <button
-            type="button"
-            onClick={onSwitchToUploads}
-            style={{
-              padding: "6px 14px", borderRadius: 9,
-              background: "#fff", border: `1px solid ${OWNER_COLORS.line}`,
-              color: OWNER_COLORS.ink, fontWeight: 600, fontSize: 12, cursor: "pointer",
-            }}
-          >
-            Upload Menu →
-          </button>
-        )}
       </div>
 
       {/* Restaurant summary panel */}
       <PageCard style={{ padding: 20, marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: OWNER_COLORS.ink }}>
-              {selectedRestaurant.name}
-            </h2>
-            <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginTop: 4 }}>
-              {[selectedRestaurant.city, selectedRestaurant.state].filter(Boolean).join(", ")}
-              {selectedRestaurant.email && ` · ${selectedRestaurant.email}`}
-            </div>
+        <div style={{ marginBottom: 14 }}>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: OWNER_COLORS.ink }}>
+            {selectedRestaurant.name}
+          </h2>
+          <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginTop: 4 }}>
+            {[selectedRestaurant.city, selectedRestaurant.state].filter(Boolean).join(", ")}
+            {selectedRestaurant.email && ` · ${selectedRestaurant.email}`}
           </div>
-          <div style={{ display: "flex", gap: 24, flexShrink: 0, flexWrap: "wrap" }}>
-            <StatBox label="ID"               value={`#${selectedRestaurant.id}`} />
-            <StatBox label="Menus"            value={menus.length} />
-            <StatBox label="Total Items"      value={totalItems.toLocaleString()} />
-            <StatBox label="Published Items"  value={publishedItems.toLocaleString()} />
-            <StatBox label="Draft Items"      value={draftItems.toLocaleString()} />
-            {hiddenItems !== null && (
-              <StatBox label="Hidden Items"   value={hiddenItems.toLocaleString()} />
-            )}
-            {duplicateCount !== null && duplicateCount > 0 && (
-              <StatBox label="Duplicates"     value={duplicateCount.toLocaleString()} warn />
-            )}
-            {lastMenuUpdated && (
-              <StatBox label="Last Updated"   value={formatDate(lastMenuUpdated)} />
-            )}
-          </div>
+        </div>
+        <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+          <StatBox label="ID"               value={`#${selectedRestaurant.id}`} />
+          <StatBox label="Menus"            value={menus.length} />
+          <StatBox label="Total Items"      value={totalItems.toLocaleString()} />
+          <StatBox label="Published Items"  value={publishedItems.toLocaleString()} />
+          <StatBox label="Draft Items"      value={draftItems.toLocaleString()} />
+          {needsReviewItems !== null && (
+            <StatBox label="Needs Review"   value={needsReviewItems.toLocaleString()} warn={needsReviewItems > 0} />
+          )}
+          {hiddenItems !== null && (
+            <StatBox label="Hidden Items"   value={hiddenItems.toLocaleString()} />
+          )}
+          {duplicateCount !== null && duplicateCount > 0 && (
+            <StatBox label="Duplicates"     value={duplicateCount.toLocaleString()} warn />
+          )}
+          {selectedRestaurant.created_at && (
+            <StatBox label="Restaurant Created" value={formatDate(selectedRestaurant.created_at)} />
+          )}
+          {selectedRestaurant.first_menu_date && (
+            <StatBox label="First Upload"   value={formatDate(selectedRestaurant.first_menu_date)} />
+          )}
+          {lastMenuUpdated && (
+            <StatBox label="Last Updated"   value={formatDate(lastMenuUpdated)} />
+          )}
         </div>
       </PageCard>
 
-      {/* ── Recent uploads panel ─────────────────────────────────────────── */}
-      {recentUploads.length > 0 && (
-        <PageCard style={{ padding: "14px 18px", marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: OWNER_COLORS.muted, marginBottom: 10 }}>
-            Recent Uploads
-          </div>
+      {/* ── Upload History ──────────────────────────────────────────────── */}
+      <PageCard style={{ padding: "16px 20px", marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.ink }}>Upload History</div>
+          <NewUploadSection
+            onSuccess={() => {
+              getOwnerMenuUploads({ restaurant_id: selectedRestaurant.id, limit: 50 })
+                .then((r) => setRecentUploads(r.uploads || []))
+                .catch(() => {});
+            }}
+            initialRestaurant={selectedRestaurant}
+            compact
+          />
+        </div>
+        {recentUploads.length === 0 ? (
+          <div style={{ color: OWNER_COLORS.muted, fontSize: 13 }}>No uploads yet for this restaurant.</div>
+        ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {recentUploads.map((u) => {
               const isReview = u.status === "needs_review";
@@ -790,7 +804,7 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
                   border: `1px solid ${isReview ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
                 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <StatusChip status={u.status} />
                       <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
                         {u.session_meta?.upload_type || "upload"} · {formatDate(u.created_at)}
@@ -835,8 +849,8 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, onSwitchToU
               );
             })}
           </div>
-        </PageCard>
-      )}
+        )}
+      </PageCard>
 
       {/* ── Item search bar + filter chips ─────────────────────────────────── */}
       <PageCard style={{ padding: "14px 18px", marginBottom: 12 }}>
@@ -2078,7 +2092,7 @@ const labelStyle = {
 
 // ─── Upload helpers (preserved from original) ──────────────────────────────────
 
-function NewUploadSection({ onSuccess, initialRestaurant }) {
+function NewUploadSection({ onSuccess, initialRestaurant, compact }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState("text");
   const [restaurantQuery, setRestaurantQuery] = useState(
@@ -2140,13 +2154,83 @@ function NewUploadSection({ onSuccess, initialRestaurant }) {
         const inserted = (json.inserted_items || json.inserted || 0) + (json.updated_items || json.updated || 0);
         const reviewCount = json.review_count || 0;
         const reviewNote = reviewCount > 0 ? ` (${reviewCount} sent to review queue)` : "";
-        setResult({ ok: true, message: `File processed. ${inserted} item${inserted !== 1 ? "s" : ""} inserted${reviewNote}. Check the Upload Activity tab to review extracted content.` });
+        setResult({ ok: true, message: `File processed. ${inserted} item${inserted !== 1 ? "s" : ""} inserted${reviewNote}. Check Upload History below to review extracted content.` });
         setFile(null); if (fileRef.current) fileRef.current.value = "";
         setSelectedRestaurant(null); setRestaurantQuery("");
         onSuccess();
       } catch (err) { setResult({ ok: false, message: err?.payload?.error || err?.message || "File upload failed." }); }
       finally { setSubmitting(false); }
     }
+  }
+
+  if (compact) {
+    return (
+      <div>
+        <button
+          onClick={() => { setOpen((v) => !v); setResult(null); }}
+          style={{ padding: "6px 14px", borderRadius: 9, border: `1px solid ${open ? OWNER_COLORS.accent : OWNER_COLORS.line}`, background: open ? OWNER_COLORS.accent : "#fff", color: open ? "#fff" : OWNER_COLORS.ink, fontWeight: 700, fontSize: 12, cursor: "pointer" }}
+        >
+          {open ? "Cancel" : "+ New Upload"}
+        </button>
+        {open && (
+          <div style={{ marginTop: 12 }}>
+            <form onSubmit={handleSubmit}>
+              {!initialRestaurant && (
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: "block", fontWeight: 700, fontSize: 13, marginBottom: 6 }}>Restaurant</label>
+                  <div style={{ position: "relative" }}>
+                    <input type="text" value={restaurantQuery} onChange={handleQueryChange} placeholder="Type restaurant name…" style={inputStyle} autoComplete="off" />
+                    {searching && <div style={{ position: "absolute", right: 12, top: 10, color: OWNER_COLORS.muted, fontSize: 12 }}>Searching…</div>}
+                  </div>
+                  {restaurantResults.length > 0 && (
+                    <div style={{ border: `1px solid ${OWNER_COLORS.line}`, borderRadius: 10, background: "#fff", marginTop: 4, maxHeight: 200, overflowY: "auto", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
+                      {restaurantResults.map((r) => (
+                        <button key={r.id} type="button" onClick={() => { setSelectedRestaurant(r); setRestaurantQuery(r.name); setRestaurantResults([]); }} style={{ display: "block", width: "100%", padding: "10px 14px", border: "none", background: "none", textAlign: "left", cursor: "pointer", fontSize: 13, borderBottom: `1px solid ${OWNER_COLORS.line}` }}>
+                          <span style={{ fontWeight: 600 }}>{r.name}</span>
+                          {r.city && <span style={{ color: OWNER_COLORS.muted, marginLeft: 8, fontSize: 12 }}>{r.city}, {r.state}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Upload Method</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {[{ key: "text", label: "Paste Menu Text" }, { key: "file", label: "Upload PDF / Image" }].map((m) => (
+                    <button key={m.key} type="button" onClick={() => { setMode(m.key); setResult(null); }} style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${mode === m.key ? OWNER_COLORS.accent : OWNER_COLORS.line}`, background: mode === m.key ? OWNER_COLORS.accentSoft : "#fff", color: mode === m.key ? OWNER_COLORS.accent : OWNER_COLORS.ink, fontWeight: mode === m.key ? 700 : 600, fontSize: 12, cursor: "pointer" }}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {mode === "text" && (
+                <div style={{ marginBottom: 14 }}>
+                  <textarea value={menuText} onChange={(e) => setMenuText(e.target.value)} placeholder={"APPETIZERS\nSpring Rolls  $8.99\n\nMAINS\nGrilled Salmon  $24"} rows={8} style={{ ...inputStyle, fontFamily: "monospace", resize: "vertical", lineHeight: 1.6 }} />
+                </div>
+              )}
+              {mode === "file" && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ marginBottom: 6, fontSize: 12, color: OWNER_COLORS.muted }}>Accepted: PDF, JPEG, PNG, WebP. Max 20 MB.</div>
+                  <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ ...inputStyle, padding: "10px 12px" }} />
+                  {file && <div style={{ marginTop: 4, fontSize: 12, color: OWNER_COLORS.muted }}>Selected: <strong style={{ color: OWNER_COLORS.ink }}>{file.name}</strong></div>}
+                </div>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <button type="submit" disabled={submitting} style={{ padding: "9px 18px", borderRadius: 9, border: "none", background: submitting ? OWNER_COLORS.muted : OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: submitting ? "not-allowed" : "pointer" }}>
+                  {submitting ? "Submitting…" : "Submit Upload"}
+                </button>
+                {result && (
+                  <div style={{ flex: 1, padding: "8px 12px", borderRadius: 9, background: result.ok ? "#f0fdf4" : "#fff1ef", color: result.ok ? "#15803d" : "#8b2e1a", fontWeight: 700, fontSize: 12 }}>
+                    {result.message}
+                  </div>
+                )}
+              </div>
+            </form>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -2285,67 +2369,15 @@ function formatDate(iso) {
 export default function OwnerMenuUploads() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
-  const activeTab = searchParams.get("tab") === "uploads" ? "uploads" : "manager";
-
-  function setTab(tab) {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set("tab", tab);
-      if (tab === "manager") next.delete("status");
-      return next;
-    });
-  }
 
   return (
     <OwnerLayout title="Menu Manager">
-      {/* Tab bar */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: `2px solid ${OWNER_COLORS.line}`, paddingBottom: 0 }}>
-        {[
-          { key: "manager", label: "Menu Manager" },
-          { key: "uploads", label: selectedRestaurant ? `Upload Activity — ${selectedRestaurant.name}` : "Upload Activity" },
-        ].map((t) => {
-          const active = activeTab === t.key;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              style={{
-                padding: "10px 20px",
-                borderRadius: "10px 10px 0 0",
-                border: `1px solid ${active ? OWNER_COLORS.line : "transparent"}`,
-                borderBottom: active ? "2px solid #fff" : "none",
-                background: active ? "#fff" : "transparent",
-                color: active ? OWNER_COLORS.accent : OWNER_COLORS.muted,
-                fontWeight: active ? 700 : 600,
-                fontSize: 14,
-                cursor: "pointer",
-                position: "relative",
-                bottom: -2,
-                maxWidth: 320,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {activeTab === "manager" ? (
-        <MenuManagerTab
-          selectedRestaurant={selectedRestaurant}
-          setSelectedRestaurant={setSelectedRestaurant}
-          onSwitchToUploads={() => setTab("uploads")}
-        />
-      ) : (
-        <UploadActivityTab
-          searchParams={searchParams}
-          setSearchParams={setSearchParams}
-          restaurantFilter={selectedRestaurant}
-        />
-      )}
+      <MenuManagerTab
+        selectedRestaurant={selectedRestaurant}
+        setSelectedRestaurant={setSelectedRestaurant}
+        searchParams={searchParams}
+        setSearchParams={setSearchParams}
+      />
     </OwnerLayout>
   );
 }
