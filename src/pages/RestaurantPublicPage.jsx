@@ -47,6 +47,7 @@ import { trackRestaurantFollow, trackRestaurantView } from "../lib/analytics.js"
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
+import { restaurantMenuPath, restaurantPath } from "../lib/canonicalUrl.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -604,7 +605,9 @@ export default function RestaurantPublicPage() {
   const { isAuthenticated } = useConsumer();
   const location = useLocation();
   const navigate = useNavigate();
-  const { slugOrId } = useParams();
+  const { slugOrId, restaurantSlug: canonicalRestaurantSlug } = useParams();
+  // canonicalRestaurantSlug is present on 3-segment canonical routes
+  // (/restaurants/:state/:city/:restaurantSlug); slugOrId on legacy 1-segment routes
   const trackedRestaurantViewRef = useRef(new Set());
 
   const [theme, setTheme] = useState(readTheme);
@@ -620,9 +623,10 @@ export default function RestaurantPublicPage() {
 
   const isDark = theme === "dark";
   const isMobile = useIsMobile();
+  const resolvedSlug = canonicalRestaurantSlug || slugOrId;
   const dataUrl = useMemo(
-    () => `${API}/public/restaurants/${encodeURIComponent(slugOrId)}`,
-    [slugOrId]
+    () => `${API}/public/restaurants/${encodeURIComponent(resolvedSlug)}`,
+    [resolvedSlug]
   );
 
   useEffect(() => {
@@ -669,14 +673,14 @@ export default function RestaurantPublicPage() {
     trackRestaurantView({
       restaurantId,
       restaurantName: data?.restaurant_name || data?.name || "",
-      slug: data?.slug || slugOrId,
+      slug: data?.slug || resolvedSlug,
       source: "restaurant_profile",
     });
     sendPageVisit({
       path: window.location.pathname + window.location.search,
       restaurant_id: Number(data.id),
     });
-  }, [data?.id, data?.restaurant_name, data?.name, data?.slug, slugOrId, loading, err]);
+  }, [data?.id, data?.restaurant_name, data?.name, data?.slug, resolvedSlug, loading, err]);
 
   useEffect(() => {
     let alive = true;
@@ -765,7 +769,7 @@ export default function RestaurantPublicPage() {
     getLocalizedField(data, "name", language) ||
     data?.restaurant_name ||
     data?.name ||
-    `Restaurant ${slugOrId}`;
+    `Restaurant ${resolvedSlug}`;
   const streetAddr = data?.address || data?.address_line1 || "";
   const city = data?.city || "";
   const stateVal = data?.state || data?.region || "";
@@ -799,7 +803,7 @@ export default function RestaurantPublicPage() {
     : null;
   const dealItems = Array.isArray(data?.deal_items) ? data.deal_items : [];
   const billboardPreview = Array.isArray(data?.billboard_preview) ? data.billboard_preview : [];
-  const billboardHref = buildRestaurantBillboardHref(data?.slug || data?.id || slugOrId);
+  const billboardHref = buildRestaurantBillboardHref(data?.slug || data?.id || resolvedSlug);
 
   const showLogo = isPro && !!logoUrl;
   const showBio = isPro && !!bio;
@@ -828,7 +832,7 @@ export default function RestaurantPublicPage() {
   const discoveryLogo = null;
 
   if (!loading && !err && data && !isClaimedRestaurant(data)) {
-    return <UnclaimedRestaurantPage data={data} isDark={isDark} slugOrId={slugOrId} />;
+    return <UnclaimedRestaurantPage data={data} isDark={isDark} slugOrId={resolvedSlug} />;
   }
 
   return (
@@ -1344,7 +1348,8 @@ export default function RestaurantPublicPage() {
               <Divider isDark={isDark} />
               <Link
                 to={{
-                  pathname: `/restaurants/${encodeURIComponent(String(data.slug || data.id))}/menu`,
+                  pathname: restaurantMenuPath({ slug: data.slug, city: data.city, state: data.state, id: data.id }) ||
+                    `/restaurants/${encodeURIComponent(String(data.slug || data.id))}/menu`,
                   search: location.search || "",
                 }}
                 style={{

@@ -34,6 +34,7 @@ import {
   buildCanonicalMenuPath,
   buildMenuShareMetadata,
 } from "../components/share/shareUtils.js";
+import { restaurantMenuPath } from "../lib/canonicalUrl.js";
 import BottomNav from "../components/BottomNav.jsx";
 
 function useIsMobile(breakpoint = 900) {

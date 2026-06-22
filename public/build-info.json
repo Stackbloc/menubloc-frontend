@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "7e1bc788ede9f943ca694a99d77abdabac3e5298",
-  "gitShortSha": "7e1bc78",
-  "branch": "main",
-  "buildTime": "2026-06-19T17:04:20.699Z",
+  "gitSha": "452f6f1580818e775c8304ba87763d3917ea08e0",
+  "gitShortSha": "452f6f1",
+  "branch": "stabilize/frontend-safe-baseline",
+  "buildTime": "2026-06-20T22:38:28.360Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix: stabilize waiter refinement prompt"
+  "commitMessage": "feat(owner): rename Menu Uploads → Menu Manager; update URL to /owner/menu-manager"
 }

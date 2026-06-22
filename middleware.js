@@ -7,8 +7,13 @@
 const BACKEND = "https://menubloc-backend-production.up.railway.app";
 const ORIGIN = "https://menuply.com";
 
+// Canonical 3-segment: /restaurants/:state/:city/:slug[/menu]
+const CANONICAL_MENU_RE = /^\/restaurants\/([^/]+)\/([^/]+)\/([^/]+)\/menu\/?$/;
+const CANONICAL_PROFILE_RE = /^\/restaurants\/([^/]+)\/([^/]+)\/([^/]+)\/?$/;
+// Legacy 1-segment: /restaurants/:slug[/menu]
 const RESTAURANT_MENU_RE = /^\/restaurants\/([^/]+)\/menu\/?$/;
 const RESTAURANT_PROFILE_RE = /^\/restaurants\/([^/]+)\/?$/;
+// Legacy numeric from public path
 const LEGACY_NUMERIC_RE = /^\/public\/restaurants\/(\d+)\/menu\/?$/;
 const MENU_ITEM_RE = /^\/menu-items\/(\d+)\/?$/;
 
@@ -65,6 +70,43 @@ async function fetchMeta(path) {
   }
 }
 
+// STATE_NAMES: 2-letter code → full lowercase state slug (mirrors src/lib/slugs.js)
+const STATE_NAMES = {
+  AL:"alabama",AK:"alaska",AZ:"arizona",AR:"arkansas",CA:"california",CO:"colorado",
+  CT:"connecticut",DE:"delaware",FL:"florida",GA:"georgia",HI:"hawaii",ID:"idaho",
+  IL:"illinois",IN:"indiana",IA:"iowa",KS:"kansas",KY:"kentucky",LA:"louisiana",
+  ME:"maine",MD:"maryland",MA:"massachusetts",MI:"michigan",MN:"minnesota",MS:"mississippi",
+  MO:"missouri",MT:"montana",NE:"nebraska",NV:"nevada",NH:"new-hampshire",NJ:"new-jersey",
+  NM:"new-mexico",NY:"new-york",NC:"north-carolina",ND:"north-dakota",OH:"ohio",OK:"oklahoma",
+  OR:"oregon",PA:"pennsylvania",RI:"rhode-island",SC:"south-carolina",SD:"south-dakota",
+  TN:"tennessee",TX:"texas",UT:"utah",VT:"vermont",VA:"virginia",WA:"washington",
+  WV:"west-virginia",WI:"wisconsin",WY:"wyoming",DC:"district-of-columbia",
+};
+
+function toSlugMW(str) {
+  if (!str) return "";
+  return String(str).toLowerCase().replace(/['''""`]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80);
+}
+
+function toStateSlugMW(code) {
+  if (!code) return "";
+  const upper = String(code).trim().toUpperCase();
+  return STATE_NAMES[upper] || toSlugMW(code);
+}
+
+// Returns the canonical path for a restaurant given DB data ({slug, city, state, id}).
+function buildCanonicalRestaurantPath(data, suffix = "") {
+  if (data.slug && data.city && data.state) {
+    const stateSlug = data.state.length === 2 ? toStateSlugMW(data.state) : toSlugMW(data.state);
+    const citySlug = toSlugMW(data.city);
+    return `${ORIGIN}/restaurants/${stateSlug}/${citySlug}/${data.slug}${suffix}`;
+  }
+  // Fallback to legacy 1-segment slug or numeric ID
+  if (data.slug) return `${ORIGIN}/restaurants/${data.slug}${suffix}`;
+  if (suffix === "/menu") return `${ORIGIN}/public/restaurants/${data.id}/menu`;
+  return `${ORIGIN}/public/restaurants/${data.id}`;
+}
+
 function buildRestaurantMenuMeta(data) {
   const name = escapeHtml(data.name);
   const title = `${name} — Menu | Menuply`;
@@ -72,9 +114,7 @@ function buildRestaurantMenuMeta(data) {
   const description = hasLocation
     ? `Browse the full ${name} menu in ${escapeHtml(data.city)}, ${escapeHtml(data.state)}. View dishes, nutrition insights, and deals on Menuply.`
     : `Browse the full ${name} menu. View dishes, nutrition insights, and deals on Menuply.`;
-  const canonical = data.slug
-    ? `${ORIGIN}/restaurants/${data.slug}/menu`
-    : `${ORIGIN}/public/restaurants/${data.id}/menu`;
+  const canonical = buildCanonicalRestaurantPath(data, "/menu");
   return { title, description, canonical };
 }
 
@@ -85,9 +125,7 @@ function buildRestaurantProfileMeta(data) {
   const description = hasLocation
     ? `Explore ${name} in ${escapeHtml(data.city)}, ${escapeHtml(data.state)}. View the full menu, nutrition insights, and deals on Menuply.`
     : `Explore ${name}. View the full menu, nutrition insights, and deals on Menuply.`;
-  const canonical = data.slug
-    ? `${ORIGIN}/restaurants/${data.slug}`
-    : `${ORIGIN}/public/restaurants/${data.id}`;
+  const canonical = buildCanonicalRestaurantPath(data);
   return { title, description, canonical };
 }
 
@@ -118,46 +156,81 @@ function injectedResponse(html) {
 export default async function middleware(request) {
   const { pathname } = new URL(request.url);
 
-  // --- /restaurants/:slug/menu ---
-  let m = RESTAURANT_MENU_RE.exec(pathname);
+  // --- Canonical 3-segment: /restaurants/:state/:city/:slug/menu ---
+  let m = CANONICAL_MENU_RE.exec(pathname);
   if (m) {
-    const slug = m[1];
+    const slug = m[3];
     const [shell, meta] = await Promise.all([
       fetchShell(request.url),
       fetchMeta(`/public/meta/restaurants/${encodeURIComponent(slug)}`),
     ]);
     if (!shell || !meta || !meta.ok) return;
     const { title, description, canonical } = buildRestaurantMenuMeta(meta.data);
+    // Geographic validation: URL state/city must match DB data — redirect if not
+    if (canonical !== `${ORIGIN}${pathname}`) {
+      return Response.redirect(canonical, 301);
+    }
     return injectedResponse(injectMeta(shell, title, description, canonical));
   }
 
-  // --- /restaurants/:slug (profile) ---
-  m = RESTAURANT_PROFILE_RE.exec(pathname);
+  // --- Canonical 3-segment: /restaurants/:state/:city/:slug (profile) ---
+  m = CANONICAL_PROFILE_RE.exec(pathname);
   if (m) {
-    const slug = m[1];
+    const slug = m[3];
     const [shell, meta] = await Promise.all([
       fetchShell(request.url),
       fetchMeta(`/public/meta/restaurants/${encodeURIComponent(slug)}`),
     ]);
     if (!shell || !meta || !meta.ok) return;
     const { title, description, canonical } = buildRestaurantProfileMeta(meta.data);
+    // Geographic validation: URL state/city must match DB data — redirect if not
+    if (canonical !== `${ORIGIN}${pathname}`) {
+      return Response.redirect(canonical, 301);
+    }
     return injectedResponse(injectMeta(shell, title, description, canonical));
   }
 
-  // --- /public/restaurants/:id/menu (legacy numeric) ---
+  // --- Legacy 1-segment: /restaurants/:slug/menu → redirect to canonical ---
+  m = RESTAURANT_MENU_RE.exec(pathname);
+  if (m) {
+    const slug = m[1];
+    const meta = await fetchMeta(`/public/meta/restaurants/${encodeURIComponent(slug)}`);
+    if (!meta || !meta.ok) return;
+    const canonical = buildCanonicalRestaurantPath(meta.data, "/menu");
+    // Only redirect when the canonical differs from the current URL (avoids redirect loops)
+    if (canonical !== `${ORIGIN}${pathname}`) {
+      return Response.redirect(canonical, 301);
+    }
+    const shell = await fetchShell(request.url);
+    if (!shell) return;
+    const { title, description } = buildRestaurantMenuMeta(meta.data);
+    return injectedResponse(injectMeta(shell, title, description, canonical));
+  }
+
+  // --- Legacy 1-segment: /restaurants/:slug (profile) → redirect to canonical ---
+  m = RESTAURANT_PROFILE_RE.exec(pathname);
+  if (m) {
+    const slug = m[1];
+    const meta = await fetchMeta(`/public/meta/restaurants/${encodeURIComponent(slug)}`);
+    if (!meta || !meta.ok) return;
+    const canonical = buildCanonicalRestaurantPath(meta.data);
+    if (canonical !== `${ORIGIN}${pathname}`) {
+      return Response.redirect(canonical, 301);
+    }
+    const shell = await fetchShell(request.url);
+    if (!shell) return;
+    const { title, description } = buildRestaurantProfileMeta(meta.data);
+    return injectedResponse(injectMeta(shell, title, description, canonical));
+  }
+
+  // --- /public/restaurants/:id/menu (legacy numeric) → redirect to canonical ---
   m = LEGACY_NUMERIC_RE.exec(pathname);
   if (m) {
     const id = m[1];
     const meta = await fetchMeta(`/public/meta/restaurants/${id}`);
     if (!meta || !meta.ok) return;
-    if (meta.data.slug) {
-      return Response.redirect(`${ORIGIN}/restaurants/${meta.data.slug}/menu`, 301);
-    }
-    // No slug — inject meta with numeric canonical
-    const shell = await fetchShell(request.url);
-    if (!shell) return;
-    const { title, description, canonical } = buildRestaurantMenuMeta(meta.data);
-    return injectedResponse(injectMeta(shell, title, description, canonical));
+    const canonical = buildCanonicalRestaurantPath(meta.data, "/menu");
+    return Response.redirect(canonical, 301);
   }
 
   // --- /menu-items/:id ---

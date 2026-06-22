@@ -5,6 +5,7 @@ import BottomNav from "../../components/BottomNav.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { getFollowedRestaurants } from "../../lib/consumerApi.js";
 import { useLanguage } from "../../context/LanguageContext.jsx";
+import { restaurantPath, restaurantMenuPath } from "../../lib/canonicalUrl.js";
 
 function formatFollowedDate(value) {
   if (!value) return "Following";
@@ -33,20 +34,18 @@ function formatFollowerCount(value) {
 }
 
 function buildRestaurantHref(item) {
-  return item.slug
-    ? `/restaurants/${encodeURIComponent(item.slug)}`
-    : `/restaurants/${encodeURIComponent(String(item.restaurant_id))}`;
+  return restaurantPath({ slug: item.slug, city: item.city, state: item.state })
+    || `/restaurants/${encodeURIComponent(String(item.restaurant_id))}`;
 }
 
 function buildMenuHref(item) {
-  if (item.slug) return `/restaurants/${encodeURIComponent(item.slug)}/menu`;
-  return `/public/restaurants/${encodeURIComponent(String(item.restaurant_id))}/menu`;
+  return restaurantMenuPath({ slug: item.slug, city: item.city, state: item.state, id: item.restaurant_id });
 }
 
 function buildBillboardHref(item) {
-  return item.slug
-    ? `/restaurants/${encodeURIComponent(item.slug)}/billboard`
-    : `/restaurants/${encodeURIComponent(String(item.restaurant_id))}/billboard`;
+  const base = restaurantPath({ slug: item.slug, city: item.city, state: item.state })
+    || `/restaurants/${encodeURIComponent(String(item.restaurant_id))}`;
+  return `${base}/billboard`;
 }
 
 function formatBillboardStatusLabel(status) {

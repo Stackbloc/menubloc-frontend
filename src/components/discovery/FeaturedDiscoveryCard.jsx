@@ -5,6 +5,7 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 import { getDisplayItemCount } from "../../lib/publicCardCounts.js";
 import { getLocalizedField, getLocalizedPreviewLabel } from "../../utils/getLocalizedField.js";
 import { appendLanguageParam } from "../../lib/languageApi.js";
+import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 
 function buildMergedSearch(baseSearch, extra) {
   const params = new URLSearchParams(baseSearch || "");
@@ -123,7 +124,8 @@ export default function FeaturedDiscoveryCard({
   const locationCount = menu?.location_count || 1;
 
   const href = appendLanguageParam(
-    `/public/restaurants/${id}/menu${buildMergedSearch(location.search, activeFilterParams)}`,
+    (restaurantMenuPathFromRow(menu) || `/public/restaurants/${id}/menu`) +
+      buildMergedSearch(location.search, activeFilterParams),
     language
   );
   const { gradient, emoji } = getCuisineStyle(cuisine);

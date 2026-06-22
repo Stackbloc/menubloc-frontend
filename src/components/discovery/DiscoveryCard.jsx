@@ -7,6 +7,7 @@ import { followRestaurant, unfollowRestaurant } from "../../lib/consumerApi.js";
 import { getDisplayItemCount } from "../../lib/publicCardCounts.js";
 import { getLocalizedField, getLocalizedPreviewLabel } from "../../utils/getLocalizedField.js";
 import { appendLanguageParam } from "../../lib/languageApi.js";
+import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 
 function buildMergedSearch(baseSearch, extra) {
   const params = new URLSearchParams(baseSearch || "");
@@ -120,7 +121,8 @@ export default function DiscoveryCard({
   const phone = menu?.phone || null;
 
   const href = appendLanguageParam(
-    `/public/restaurants/${id}/menu${buildMergedSearch(location.search, activeFilterParams)}`,
+    (restaurantMenuPathFromRow(menu) || `/public/restaurants/${id}/menu`) +
+      buildMergedSearch(location.search, activeFilterParams),
     language
   );
 

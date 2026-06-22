@@ -17,6 +17,7 @@
  */
 
 import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
+import { restaurantMenuPath, restaurantPath } from "../../lib/canonicalUrl.js";
 
 const DEFAULT_PUBLIC_ORIGIN = "https://menuply.com";
 const DEFAULT_SHARE_IMAGE_PATH = "/menuply-share-default.svg";
@@ -55,20 +56,21 @@ export function toAbsoluteUrl(value, origin = getPublicOrigin()) {
   }
 }
 
-export function buildCanonicalMenuPath({ restaurantSlug, restaurantId }) {
-  const preferredTarget = pickFirstText(restaurantSlug, restaurantId);
-  if (!preferredTarget) return "/menus";
-  return `/restaurants/${encodeURIComponent(preferredTarget)}/menu`;
+export function buildCanonicalMenuPath({ restaurantSlug, restaurantId, city, state }) {
+  const path = restaurantMenuPath({ slug: restaurantSlug, city, state, id: restaurantId });
+  return path || "/menus";
 }
 
-export function buildCanonicalMenuUrl({ restaurantSlug, restaurantId, origin = getPublicOrigin() }) {
-  return toAbsoluteUrl(buildCanonicalMenuPath({ restaurantSlug, restaurantId }), origin);
+export function buildCanonicalMenuUrl({ restaurantSlug, restaurantId, city, state, origin = getPublicOrigin() }) {
+  return toAbsoluteUrl(buildCanonicalMenuPath({ restaurantSlug, restaurantId, city, state }), origin);
 }
 
 export function getCanonicalMenuUrl(restaurant, origin = getPublicOrigin()) {
   return buildCanonicalMenuUrl({
     restaurantSlug: restaurant?.slug || restaurant?.restaurant_slug || restaurant?.restaurantSlug || null,
     restaurantId: restaurant?.id || restaurant?.restaurant_id || restaurant?.restaurantId || null,
+    city: restaurant?.city || restaurant?.restaurant_city || null,
+    state: restaurant?.state || restaurant?.restaurant_state || null,
     origin,
   });
 }
@@ -83,38 +85,30 @@ export function buildMenuShareMetadata({
   restaurantName,
   restaurantSlug,
   restaurantId,
+  city,
+  state,
   logoUrl,
   origin = getPublicOrigin(),
 }) {
   const safeRestaurantName = pickFirstText(restaurantName, "this restaurant");
   const title = `Check out the menu for ${safeRestaurantName} on Menuply`;
   const text = `Explore the menu, deals, and nutrition insights for ${safeRestaurantName} on Menuply.`;
-  const url = buildCanonicalMenuUrl({ restaurantSlug, restaurantId, origin });
+  const url = buildCanonicalMenuUrl({ restaurantSlug, restaurantId, city, state, origin });
   const image = resolveShareImageUrl({ imageUrl: logoUrl, origin });
 
   return { title, text, url, image, restaurantName: safeRestaurantName };
 }
 
 export function getCanonicalMenuItemPath({ restaurant, menuItem }) {
-  const restaurantTarget = pickFirstText(
-    restaurant?.slug,
-    restaurant?.restaurant_slug,
-    restaurant?.restaurantSlug,
-    restaurant?.id,
-    restaurant?.restaurant_id,
-    restaurant?.restaurantId
-  );
   const menuItemId = pickFirstText(
     menuItem?.id,
     menuItem?.menu_item_id,
     menuItem?.menuItemId
   );
 
-  if (!restaurantTarget || !menuItemId) {
-    return menuItemId ? `/menu-items/${encodeURIComponent(menuItemId)}` : "/menu-items";
-  }
-
-  return `/restaurants/${encodeURIComponent(restaurantTarget)}/menu-items/${encodeURIComponent(menuItemId)}`;
+  // Menu item slugs not yet in DB — canonical item URL remains /menu-items/:id
+  if (!menuItemId) return "/menu-items";
+  return `/menu-items/${encodeURIComponent(menuItemId)}`;
 }
 
 export function getCanonicalMenuItemUrl({ restaurant, menuItem, origin = getPublicOrigin() }) {

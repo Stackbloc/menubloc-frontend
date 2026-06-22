@@ -13,6 +13,7 @@ import { parseLocation } from "../lib/locationUtils.js";
 import { trackDealClick } from "../lib/analytics.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildLocalizedApiUrl, withLanguageHeaders } from "../lib/languageApi.js";
+import { restaurantMenuPath } from "../lib/canonicalUrl.js";
 
 // ── Utility ──────────────────────────────────────────────────
 
@@ -95,6 +96,8 @@ function groupDealsByRestaurant(deals) {
         restaurantId: deal.restaurant_id || null,
         restaurantName: deal.restaurant_name || "Restaurant",
         restaurantSlug: deal.restaurant_slug || null,
+        restaurantCity: deal.restaurant_city || null,
+        restaurantState: deal.restaurant_state || null,
         deals: [],
       });
     }
@@ -110,11 +113,6 @@ function groupDealsByRestaurant(deals) {
       distanceMiles: getGroupDistanceMiles({ deals: sortedDeals }),
     };
   });
-}
-
-function buildRestaurantMenuUrl(restaurantSlug, restaurantId) {
-  const base = restaurantSlug || restaurantId;
-  return base ? `/restaurants/${base}/menu` : null;
 }
 
 function buildRestaurantScopedShareUrl({ origin, city, state, lat, lng, restaurantId }) {
@@ -427,7 +425,7 @@ export default function DealsPage() {
               const expandedKey = group.restaurantId || group.key;
               const isExpanded = Boolean(expandedRestaurants[expandedKey]);
               const hiddenCount = group.extraDeals.length;
-              const restaurantUrl = buildRestaurantMenuUrl(group.restaurantSlug, group.restaurantId);
+              const restaurantUrl = restaurantMenuPath({ slug: group.restaurantSlug, city: group.restaurantCity, state: group.restaurantState, id: group.restaurantId });
 
               return (
                 <div

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
+import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_GEO_KEY = "grubbid.discovery.geo";
@@ -95,7 +96,7 @@ export default function ChainLocationsSheet({ chainId, currentRestaurantId, onCl
           )}
           {!loading && !error && locations.map((loc) => {
             const addressSnippet = [loc.address_line1, loc.city, loc.state].filter(Boolean).join(", ");
-            const href = `/public/restaurants/${loc.restaurant_id}/menu`;
+            const href = restaurantMenuPathFromRow(loc) || `/public/restaurants/${loc.restaurant_id}/menu`;
             return (
               <Link
                 key={loc.restaurant_id}

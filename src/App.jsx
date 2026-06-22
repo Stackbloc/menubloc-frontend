@@ -229,6 +229,13 @@ function RestaurantOrMarketRouter() {
   return <RestaurantPublicPage />;
 }
 
+// Handles the canonical 3-segment route /restaurants/:state/:city/:restaurantSlug.
+// RestaurantPublicPage reads both slugOrId and restaurantSlug from useParams(),
+// so no extra wrapper logic is required — the component resolves the param itself.
+function CanonicalRestaurantProfile() {
+  return <RestaurantPublicPage />;
+}
+
 const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 const GA_SCRIPT_ID = "grubbid-ga4-script";
 const GA_DEBUG_QUERY_PARAM = "ga_debug";
@@ -517,7 +524,11 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/trucks/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <TruckRedirect />} />
 
         <Route path="/restaurants/:slugOrId/billboard" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantBillboard />} />
-        {/* Market-scoped routes — must be declared before the single-segment :slugOrId route */}
+        {/* Canonical 3-segment routes — /restaurants/:state/:city/:restaurantSlug */}
+        <Route path="/restaurants/:state/:city/:restaurantSlug/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
+        <Route path="/restaurants/:state/:city/:restaurantSlug/menu-items/:itemSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MarketMenuItemPage />} />
+        <Route path="/restaurants/:state/:city/:restaurantSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CanonicalRestaurantProfile />} />
+        {/* Legacy 2-segment market-scoped routes (kept for backward compat — middleware redirects to canonical) */}
         <Route path="/restaurants/:slugOrId/:restaurantSlug/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/restaurants/:slugOrId/:restaurantSlug/menu-items/:itemSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MarketMenuItemPage />} />
         {/* Single-segment: market aggregator when slug is city-state, profile otherwise */}

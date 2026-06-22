@@ -4,6 +4,7 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 import { isRestaurantVerifiedMenuStatus } from "../../lib/menuVerificationLabels.js";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayItemCount } from "../../lib/publicCardCounts.js";
+import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 
 function buildMergedSearch(search, extraParams) {
   const params = new URLSearchParams(search || "");
@@ -270,7 +271,7 @@ export default function MenuPreviewCard({
   const [confirm, setConfirm] = useState(null); // null | "phone" | "order"
   const { language, t } = useLanguage();
   const location = useLocation();
-  const baseHref = `/public/restaurants/${menu?.restaurant_id}/menu`;
+  const baseHref = restaurantMenuPathFromRow(menu) || `/public/restaurants/${menu?.restaurant_id}/menu`;
   const href = `${baseHref}${buildMergedSearch(location.search, activeFilterParams)}`;
   const phone = menu?.phone || null;
   const websiteUrl = menu?.website_url || null;

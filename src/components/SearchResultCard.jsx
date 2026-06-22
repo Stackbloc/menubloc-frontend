@@ -27,6 +27,7 @@ import {
   buildDishShareData,
   getCanonicalMenuItemPath,
 } from "./share/shareUtils.js";
+import { restaurantPath, restaurantMenuPath } from "../lib/canonicalUrl.js";
 import { getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
@@ -1096,8 +1097,11 @@ function ItemRow({
     getRestName(row, language);
   const restIdForLink = (restaurantSummary && restaurantSummary.id) || getRestId(row);
   const restSlugForLink = (restaurantSummary && restaurantSummary.slug) || getRestSlug(row);
+  const restCityForLink = getCityLike(restaurantSummary || row);
+  const restStateForLink = getStateLike(restaurantSummary || row);
   const restProfileTarget = restSlugForLink || restIdForLink;
-  const restHref = restProfileTarget ? "/restaurants/" + restProfileTarget : null;
+  const restHref = restaurantPath({ slug: restSlugForLink, city: restCityForLink, state: restStateForLink }) ||
+    (restProfileTarget ? "/restaurants/" + restProfileTarget : null);
 
   const nutChip = chips?.nutrition_chip || {};
 
@@ -1662,8 +1666,11 @@ export default function SearchResultCard({ restaurant, items, item, query, query
       asStr(restaurant?.restaurant_name || restaurant?.name) ||
       getRestName(items[0], language);
 
+    const restCity = asStr(restaurant?.city || restaurant?.restaurant_city);
+    const restState = asStr(restaurant?.state || restaurant?.restaurant_state);
+
     const menuHref = restId
-      ? buildCanonicalMenuPath({ restaurantSlug: restSlug, restaurantId: restId }) + contextSearch
+      ? (restaurantMenuPath({ slug: restSlug, city: restCity, state: restState, id: restId }) || buildCanonicalMenuPath({ restaurantSlug: restSlug, restaurantId: restId })) + contextSearch
       : null;
 
     const restaurantSummary = {
@@ -1677,7 +1684,8 @@ export default function SearchResultCard({ restaurant, items, item, query, query
     };
 
     const restProfileTarget = restSlug || restId;
-    const restHrefHeader = restProfileTarget ? "/restaurants/" + restProfileTarget : null;
+    const restHrefHeader = restaurantPath({ slug: restSlug, city: restCity, state: restState }) ||
+      (restProfileTarget ? "/restaurants/" + restProfileTarget : null);
     const venueFactsLine = buildKeyFactsLine({
       row: items[0],
       restaurantSummary,
@@ -1798,9 +1806,10 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const postalS = getPostalCodeLike(item);
   const distanceMilesS = getDistanceMilesLike(item);
   const restProfileTargetS = restSlugS || restIdS;
-  const restHrefS = restProfileTargetS ? "/restaurants/" + restProfileTargetS : null;
+  const restHrefS = restaurantPath({ slug: restSlugS, city: cityS, state: stateS }) ||
+    (restProfileTargetS ? "/restaurants/" + restProfileTargetS : null);
   const menuHrefS = restIdS
-    ? buildCanonicalMenuPath({ restaurantSlug: restSlugS, restaurantId: restIdS }) + contextSearch
+    ? (restaurantMenuPath({ slug: restSlugS, city: cityS, state: stateS, id: restIdS }) || buildCanonicalMenuPath({ restaurantSlug: restSlugS, restaurantId: restIdS })) + contextSearch
     : null;
 
   if (isItemRow) {

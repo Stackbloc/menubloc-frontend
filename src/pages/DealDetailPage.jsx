@@ -13,6 +13,7 @@ import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { buildLocalizedApiUrl, withLanguageHeaders } from "../lib/languageApi.js";
+import { restaurantPath, restaurantMenuPath } from "../lib/canonicalUrl.js";
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -139,10 +140,11 @@ export default function DealDetailPage() {
   }
 
   const restaurantUrl = deal
-    ? `/restaurants/${deal.restaurant_slug || deal.restaurant_id}`
+    ? restaurantPath({ slug: deal.restaurant_slug, city: deal.restaurant_city, state: deal.restaurant_state })
+      || (deal.restaurant_id ? `/restaurants/${encodeURIComponent(String(deal.restaurant_id))}` : null)
     : null;
   const restaurantMenuUrl = deal
-    ? `/restaurants/${deal.restaurant_slug || deal.restaurant_id}/menu`
+    ? restaurantMenuPath({ slug: deal.restaurant_slug, city: deal.restaurant_city, state: deal.restaurant_state, id: deal.restaurant_id })
     : null;
 
   const dealPriceCents = deal ? getDealPriceCents(deal) : null;
