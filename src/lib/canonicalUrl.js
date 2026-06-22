@@ -71,6 +71,15 @@ export function restaurantPathFromRow(row) {
   return restaurantPath({ slug, city, state }) || (id ? `/public/restaurants/${encodeURIComponent(String(id))}` : null);
 }
 
+// Returns the canonical path for a menu item within its restaurant context.
+// Falls back to /menu-items/{itemId} when restaurant location data is absent.
+export function menuItemPath({ restaurantSlug, city, state, itemId } = {}) {
+  const base = restaurantPath({ slug: restaurantSlug, city, state });
+  if (base && itemId) return `${base}/menu-items/${encodeURIComponent(String(itemId))}`;
+  if (itemId) return `/menu-items/${encodeURIComponent(String(itemId))}`;
+  return null;
+}
+
 // Convenience: given a restaurant object, return the canonical menu path.
 export function restaurantMenuPathFromRow(row) {
   if (!row) return null;

@@ -150,6 +150,8 @@ export default function PublicMenuItemCard({
           id: currentRestaurantId,
           slug: data?.slug || null,
           name: restaurantName,
+          city: data?.city || null,
+          state: data?.state || null,
           logoUrl: data?.logo_url || null,
         },
         menuItem: { ...it, id: it.id, name },

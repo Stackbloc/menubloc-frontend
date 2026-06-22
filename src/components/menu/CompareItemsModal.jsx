@@ -15,6 +15,7 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
+import { copyText } from "../share/shareUtils.js";
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -500,13 +501,9 @@ export default function CompareItemsModal({
                   const url = new URL("/compare", window.location.origin);
                   url.searchParams.set("base", String(base.id));
                   url.searchParams.set("candidate", String(candidate.id));
-                  try {
-                    await navigator.clipboard.writeText(url.toString());
-                    setShareCopied(true);
-                    setTimeout(() => setShareCopied(false), 2200);
-                  } catch {
-                    prompt("Copy this compare link:", url.toString());
-                  }
+                  await copyText(url.toString());
+                  setShareCopied(true);
+                  setTimeout(() => setShareCopied(false), 2200);
                 }}
                 style={{
                   background: shareCopied ? "rgba(22,105,62,0.12)" : "rgba(20,33,27,0.04)",

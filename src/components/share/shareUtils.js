@@ -17,7 +17,7 @@
  */
 
 import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
-import { restaurantMenuPath, restaurantPath } from "../../lib/canonicalUrl.js";
+import { menuItemPath, restaurantMenuPath, restaurantPath } from "../../lib/canonicalUrl.js";
 
 const DEFAULT_PUBLIC_ORIGIN = "https://menuply.com";
 const DEFAULT_SHARE_IMAGE_PATH = "/menuply-share-default.svg";
@@ -100,15 +100,13 @@ export function buildMenuShareMetadata({
 }
 
 export function getCanonicalMenuItemPath({ restaurant, menuItem }) {
-  const menuItemId = pickFirstText(
-    menuItem?.id,
-    menuItem?.menu_item_id,
-    menuItem?.menuItemId
-  );
-
-  // Menu item slugs not yet in DB — canonical item URL remains /menu-items/:id
-  if (!menuItemId) return "/menu-items";
-  return `/menu-items/${encodeURIComponent(menuItemId)}`;
+  const itemId = pickFirstText(menuItem?.id, menuItem?.menu_item_id, menuItem?.menuItemId);
+  if (!itemId) return "/menu-items";
+  const slug = pickFirstText(restaurant?.slug, restaurant?.restaurant_slug);
+  const city = pickFirstText(restaurant?.city, restaurant?.restaurant_city);
+  const state = pickFirstText(restaurant?.state, restaurant?.restaurant_state);
+  const path = menuItemPath({ restaurantSlug: slug, city, state, itemId });
+  return path || `/menu-items/${encodeURIComponent(itemId)}`;
 }
 
 export function getCanonicalMenuItemUrl({ restaurant, menuItem, origin = getPublicOrigin() }) {
@@ -168,6 +166,27 @@ export function buildDishShareData({
 }
 
 export const buildMenuShareData = buildMenuShareMetadata;
+
+export function buildRestaurantShareData({
+  restaurantName,
+  restaurantSlug,
+  restaurantId,
+  city,
+  state,
+  logoUrl,
+  origin = getPublicOrigin(),
+}) {
+  const safeRestaurantName = pickFirstText(restaurantName, "this restaurant");
+  const title = `${safeRestaurantName} on Menuply`;
+  const text = `Check out ${safeRestaurantName} on Menuply — view the menu, nutrition insights, and deals.`;
+  const path = restaurantPath({ slug: restaurantSlug, city, state });
+  const url = toAbsoluteUrl(
+    path || (restaurantId ? `/public/restaurants/${encodeURIComponent(String(restaurantId))}` : "/"),
+    origin
+  );
+  const image = resolveShareImageUrl({ imageUrl: logoUrl, origin });
+  return { title, text, url, image, restaurantName: safeRestaurantName };
+}
 
 export function buildShareLinks({ title, text, url }) {
   const safeTitle = asText(title);

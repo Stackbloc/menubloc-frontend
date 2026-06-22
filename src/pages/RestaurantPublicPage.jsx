@@ -48,6 +48,8 @@ import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { restaurantMenuPath, restaurantPath } from "../lib/canonicalUrl.js";
+import ShareButton from "../components/share/ShareButton.jsx";
+import { buildRestaurantShareData } from "../components/share/shareUtils.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -788,6 +790,17 @@ export default function RestaurantPublicPage() {
   const category = humanizeLabel(data?.category || "");
   const cuisineLine = [category, cuisine].filter(Boolean).join(" • ");
 
+  const restaurantShareData = data?.id
+    ? buildRestaurantShareData({
+        restaurantName: name,
+        restaurantSlug: data?.slug || resolvedSlug,
+        restaurantId: data?.id,
+        city,
+        state: stateVal,
+        logoUrl,
+      })
+    : null;
+
   const bio = getLocalizedField(data, "bio", language) || data?.bio || "";
   const landmarks = getLocalizedField(data, "landmarks", language) || data?.landmarks || "";
   const rawFeaturedItem = data?.featured_item || null;
@@ -1018,13 +1031,13 @@ export default function RestaurantPublicPage() {
                 ) : null}
 
                 {!loading && !err && data?.id ? (
-                  <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
+                    <div style={{ display: "flex", gap: 8 }}>
                     <button
                       type="button"
                       onClick={handleFollowToggle}
                       disabled={followStatusLoading || followActionLoading}
                       style={{
-                        alignSelf: "flex-start",
                         minWidth: 112,
                         height: 38,
                         padding: "0 16px",
@@ -1059,6 +1072,16 @@ export default function RestaurantPublicPage() {
                     >
                       {followButtonLabel}
                     </button>
+                    {restaurantShareData ? (
+                      <ShareButton
+                        shareData={restaurantShareData}
+                        analyticsContext={{ restaurantId: data?.id, restaurantName: name, restaurantSlug: data?.slug || resolvedSlug }}
+                        label="Share"
+                        size="compact"
+                        tone="subtle"
+                      />
+                    ) : null}
+                    </div>
 
                     {followerCount > 0 ? (
                       <div

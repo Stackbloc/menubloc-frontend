@@ -1224,6 +1224,8 @@ export default function PublicMenuPage() {
       restaurantName: liveRestaurantName,
       restaurantSlug: liveData?.slug,
       restaurantId: liveRestaurantId,
+      city: liveData?.city,
+      state: liveData?.state,
       logoUrl: liveData?.logo_url,
     });
 
@@ -1294,6 +1296,8 @@ export default function PublicMenuPage() {
     restaurantName,
     restaurantSlug: data?.slug,
     restaurantId: currentRestaurantId,
+    city: data?.city,
+    state: data?.state,
     logoUrl: data?.logo_url,
   });
   const shareAnalyticsContext = {
