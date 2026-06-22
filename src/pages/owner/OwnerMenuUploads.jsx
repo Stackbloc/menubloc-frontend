@@ -740,6 +740,9 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
       {/* Restaurant summary panel */}
       <PageCard style={{ padding: 20, marginBottom: 16 }}>
         <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+            Restaurant Menu Detail
+          </div>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: OWNER_COLORS.ink }}>
             {selectedRestaurant.name}
           </h2>
