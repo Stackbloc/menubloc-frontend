@@ -856,3 +856,39 @@ Update the handoff before ending any session with work in progress.
 - `buildDistanceCommerceCandidates`
 - `buildWaiterOptions`
 - `selectWaiterGroup`
+
+---
+
+## 🔒 PRE-COMMIT REGRESSION CHECKLIST (MANDATORY — applies to every agent, every task)
+
+Before any commit, every agent must answer all of the following for each modified screen or feature:
+
+- What existed before?
+- What exists now?
+- What changed intentionally?
+- What changed unintentionally?
+- What user-visible behavior changed?
+- What API contracts changed?
+- What database behavior changed?
+- What tests prove no regression?
+- Which previously working features were manually verified?
+
+**If any answer cannot be provided, do not commit.**
+
+---
+
+## 🚫 NO SUBSTITUTION RULE (MANDATORY — applies to every agent, every task)
+
+Agents may not replace an existing working implementation with a different implementation simply because it appears cleaner, more modern, or easier.
+
+When repairing an existing feature:
+
+1. Restore the last known good behavior.
+2. Apply only the requested fix.
+3. Verify that every previously existing capability still exists.
+
+Restoration is always preferred over reinvention.
+
+If a previous implementation already satisfies the requested behavior, that implementation is the default baseline.
+
+Do not invent Version 2 when the task is to repair Version 1.
