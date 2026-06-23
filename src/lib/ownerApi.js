@@ -121,6 +121,12 @@ export const rejectReviewItem = (uploadId, itemId) =>
   post(`/api/owner/menu-uploads/${uploadId}/review-items/${itemId}/reject`, {});
 export const bulkReviewItems = (uploadId, data) =>
   post(`/api/owner/menu-uploads/${uploadId}/review-items/bulk`, data);
+export const getUploadItems = (uploadId) =>
+  get(`/api/owner/menu-uploads/${uploadId}/items`);
+export const updateUploadItem = (uploadId, itemId, body) =>
+  req(`/api/owner/menu-uploads/${uploadId}/items/${itemId}`, { method: "PATCH", body: JSON.stringify(body) });
+export const publishUpload = (uploadId) =>
+  post(`/api/owner/menu-uploads/${uploadId}/publish`, {});
 
 // ─── Menu Console ─────────────────────────────────────────────────────────────
 

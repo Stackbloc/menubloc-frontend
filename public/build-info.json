@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "197f3636968ed32c90be85b5ba86f1482e64d39b",
-  "gitShortSha": "197f363",
+  "gitSha": "1b6b94e0d38470326e30ed808b224f45384b5232",
+  "gitShortSha": "1b6b94e",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-23T14:32:24.284Z",
+  "buildTime": "2026-06-23T15:13:17.970Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(menu-manager): add Menu Files and Review Queue sections to workspace"
+  "commitMessage": "fix(menu-manager): always show Menu Files and Review Queue sections with empty states"
 }

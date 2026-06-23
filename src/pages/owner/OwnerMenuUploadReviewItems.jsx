@@ -79,7 +79,7 @@ function HoldReasonChips({ reasons }) {
     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
       {reasons.map((r, i) => (
         <span key={i} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 6, background: "#fffbeb", color: "#92400e", whiteSpace: "nowrap" }}>
-          {r}
+          {typeof r === "string" ? r : (r?.code || JSON.stringify(r))}
         </span>
       ))}
     </div>

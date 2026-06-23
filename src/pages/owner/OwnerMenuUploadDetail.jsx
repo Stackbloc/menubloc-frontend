@@ -8,6 +8,9 @@ import {
   markOwnerMenuUploadReviewed,
   retryOwnerMenuUpload,
   archiveOwnerMenuUpload,
+  getUploadItems,
+  updateUploadItem,
+  publishUpload,
   OWNER_API_BASE,
 } from "../../lib/ownerApi.js";
 
@@ -216,6 +219,319 @@ function buildImageUrl(relativePath) {
   return `${OWNER_API_BASE}${relativePath}`;
 }
 
+const inputS = {
+  padding: "5px 8px",
+  borderRadius: 6,
+  border: `1px solid ${OWNER_COLORS.line}`,
+  fontSize: 12,
+  fontFamily: "inherit",
+  outline: "none",
+  width: "100%",
+  boxSizing: "border-box",
+};
+
+function ParsedItemsSection({ uploadId, upload }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [meta, setMeta] = useState({});
+  const [editingId, setEditingId] = useState(null);
+  const [draft, setDraft] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [saveErr, setSaveErr] = useState("");
+  const [publishing, setPublishing] = useState(false);
+  const [publishResult, setPublishResult] = useState(null);
+  const [publishError, setPublishError] = useState("");
+
+  const isReady = upload && ["finished", "needs_review"].includes(upload.status);
+
+  useEffect(() => {
+    if (!isReady) return;
+    setLoading(true);
+    getUploadItems(uploadId)
+      .then((d) => {
+        setItems(d.items || []);
+        setMeta({
+          public_menu_id: d.public_menu_id,
+          public_restaurant_id: d.public_restaurant_id,
+          audit_menu_id: d.audit_menu_id,
+          already_published: d.already_published || 0,
+        });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [uploadId, upload?.status]);
+
+  async function handleSave(itemId) {
+    setSaving(true);
+    setSaveErr("");
+    try {
+      await updateUploadItem(uploadId, itemId, draft);
+      setItems((prev) =>
+        prev.map((it) => (it.id === itemId ? { ...it, ...draft } : it))
+      );
+      setEditingId(null);
+    } catch (err) {
+      setSaveErr(err?.message || "Save failed.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePublish() {
+    setPublishing(true);
+    setPublishError("");
+    setPublishResult(null);
+    try {
+      const r = await publishUpload(uploadId);
+      setPublishResult(r);
+    } catch (err) {
+      setPublishError(err?.payload?.error || err?.message || "Publish failed.");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  if (!isReady) return null;
+
+  const promotedItems = items.filter((it) => it._source === "promoted");
+  const heldItems = items.filter((it) => it._source === "review");
+  const totalShown = items.length;
+
+  const isPublished = publishResult?.ok || meta.already_published > 0;
+  const publicRestaurantId = publishResult?.public_restaurant_id || meta.public_restaurant_id;
+
+  return (
+    <PageCard style={{ padding: 22, marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+        <SectionTitle
+          title="Parsed Menu Items"
+          subtitle={
+            loading
+              ? "Loading…"
+              : `${promotedItems.length} promoted · ${heldItems.length} held for review`
+          }
+        />
+        {!loading && (
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
+            {isPublished && publicRestaurantId && (
+              <a
+                href={`/restaurants/${publicRestaurantId}/menu`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 9,
+                  border: `1px solid ${OWNER_COLORS.line}`,
+                  background: "#fff",
+                  color: OWNER_COLORS.ink,
+                  fontWeight: 700,
+                  fontSize: 12,
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Preview Menu →
+              </a>
+            )}
+            {!isPublished && promotedItems.length > 0 && (
+              <button
+                onClick={handlePublish}
+                disabled={publishing}
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: 9,
+                  border: "none",
+                  background: publishing ? "#d1fae5" : "#16a34a",
+                  color: publishing ? "#15803d" : "#fff",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: publishing ? "not-allowed" : "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {publishing ? "Publishing…" : "Publish to Menu"}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {publishResult?.ok && (
+        <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "#f0fdf4", color: "#15803d", fontWeight: 700, fontSize: 13 }}>
+          {publishResult.already_published
+            ? publishResult.message
+            : `Published ${publishResult.inserted} item${publishResult.inserted !== 1 ? "s" : ""} to menu.`}
+          {publicRestaurantId && (
+            <>
+              {" "}
+              <a
+                href={`/restaurants/${publicRestaurantId}/menu`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "#15803d", fontWeight: 800 }}
+              >
+                View Live Menu →
+              </a>
+            </>
+          )}
+        </div>
+      )}
+      {publishError && (
+        <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "#fef2f2", color: "#991b1b", fontSize: 13 }}>
+          {publishError}
+        </div>
+      )}
+      {meta.already_published > 0 && !publishResult && (
+        <div style={{ marginBottom: 14, padding: "10px 14px", borderRadius: 10, background: "#eff6ff", color: "#1d4ed8", fontSize: 12, fontWeight: 600 }}>
+          Already published — {meta.already_published} items live.
+          {publicRestaurantId && (
+            <>
+              {" "}
+              <a href={`/restaurants/${publicRestaurantId}/menu`} target="_blank" rel="noreferrer" style={{ color: "#1d4ed8" }}>
+                View →
+              </a>
+            </>
+          )}
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ padding: 24, textAlign: "center", color: OWNER_COLORS.muted, fontSize: 13 }}>
+          Loading items…
+        </div>
+      ) : totalShown === 0 ? (
+        <div style={{ padding: 24, textAlign: "center", color: OWNER_COLORS.muted, fontSize: 13 }}>
+          No parsed items found. Items appear here once OCR processing completes.
+        </div>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          {saveErr && (
+            <div style={{ marginBottom: 10, padding: "8px 12px", borderRadius: 8, background: "#fef2f2", color: "#991b1b", fontSize: 12 }}>
+              {saveErr}
+            </div>
+          )}
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr>
+                {["#", "Name", "Section", "Price", "Status", ""].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      padding: "8px 10px",
+                      textAlign: "left",
+                      fontWeight: 700,
+                      fontSize: 11,
+                      color: OWNER_COLORS.muted,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      borderBottom: `1px solid ${OWNER_COLORS.line}`,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item, idx) => {
+                const isEditing = editingId === item.id;
+                const isHeld = item._source === "review";
+                return (
+                  <tr key={item.id} style={{ background: idx % 2 === 0 ? "#fff" : "#fafaf9" }}>
+                    <td style={{ padding: "8px 10px", color: OWNER_COLORS.muted, fontSize: 11, whiteSpace: "nowrap" }}>
+                      {idx + 1}
+                    </td>
+                    <td style={{ padding: "8px 10px", minWidth: 180 }}>
+                      {isEditing ? (
+                        <input
+                          style={inputS}
+                          value={draft.name ?? item.name ?? ""}
+                          onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+                          autoFocus
+                        />
+                      ) : (
+                        <span style={{ fontWeight: 600 }}>{item.name || <em style={{ color: OWNER_COLORS.muted }}>unnamed</em>}</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "8px 10px", minWidth: 120 }}>
+                      {isEditing ? (
+                        <input
+                          style={inputS}
+                          value={draft.section ?? item.section ?? ""}
+                          onChange={(e) => setDraft((d) => ({ ...d, section: e.target.value }))}
+                          placeholder="e.g. Appetizers"
+                        />
+                      ) : (
+                        <span style={{ color: OWNER_COLORS.muted, fontSize: 12 }}>{item.section || "—"}</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "8px 10px", minWidth: 80, whiteSpace: "nowrap" }}>
+                      {isEditing ? (
+                        <input
+                          style={{ ...inputS, width: 80 }}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={draft.price ?? item.price ?? ""}
+                          onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
+                          placeholder="0.00"
+                        />
+                      ) : (
+                        <span>{item.price != null ? `$${Number(item.price).toFixed(2)}` : "—"}</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
+                      {isHeld ? (
+                        <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#fffbeb", color: "#92400e", fontWeight: 700 }}>
+                          held
+                          {item.hold_reasons?.length > 0 && ` · ${item.hold_reasons[0]}`}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, background: "#f0fdf4", color: "#15803d", fontWeight: 700 }}>
+                          promoted
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: "8px 10px", whiteSpace: "nowrap", textAlign: "right" }}>
+                      {isEditing ? (
+                        <span style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                          <button
+                            onClick={() => handleSave(item.id)}
+                            disabled={saving}
+                            style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: saving ? "#d1fae5" : "#16a34a", color: "#fff", fontWeight: 700, fontSize: 11, cursor: saving ? "not-allowed" : "pointer" }}
+                          >
+                            {saving ? "…" : "Save"}
+                          </button>
+                          <button
+                            onClick={() => { setEditingId(null); setSaveErr(""); }}
+                            style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", color: OWNER_COLORS.ink, fontWeight: 700, fontSize: 11, cursor: "pointer" }}
+                          >
+                            Cancel
+                          </button>
+                        </span>
+                      ) : (
+                        !isHeld && (
+                          <button
+                            onClick={() => { setEditingId(item.id); setDraft({}); setSaveErr(""); }}
+                            style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", color: OWNER_COLORS.ink, fontWeight: 600, fontSize: 11, cursor: "pointer" }}
+                          >
+                            Edit
+                          </button>
+                        )
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </PageCard>
+  );
+}
+
 export default function OwnerMenuUploadDetail() {
   const { t } = useLanguage();
   const { uploadId } = useParams();
@@ -388,6 +704,9 @@ export default function OwnerMenuUploadDetail() {
           </div>
         )}
       </PageCard>
+
+      {/* Parsed Items — edit + publish */}
+      <ParsedItemsSection uploadId={uploadId} upload={upload} />
 
       {/* Source Photos */}
       {hasPhotos && (
@@ -772,8 +1091,8 @@ function StatusActions({ upload, displayStatus, uploadId, doAction, onRetryCompl
 function BackLink() {
   return (
     <div style={{ marginBottom: 20 }}>
-      <Link to="/owner/menu-uploads" style={{ color: OWNER_COLORS.muted, fontSize: 13, textDecoration: "none", fontWeight: 600 }}>
-        ← Menu Uploads
+      <Link to="/owner/menu-manager" style={{ color: OWNER_COLORS.muted, fontSize: 13, textDecoration: "none", fontWeight: 600 }}>
+        ← Menu Manager
       </Link>
     </div>
   );

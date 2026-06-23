@@ -220,6 +220,16 @@ function TruckRedirect() {
   return <Navigate to={slugOrId ? `/foodtrucks/${slugOrId}` : "/"} replace />;
 }
 
+function OldUploadDetailRedirect() {
+  const { uploadId } = useParams();
+  return <Navigate to={`/owner/menu-manager/uploads/${uploadId}`} replace />;
+}
+
+function OldUploadReviewRedirect() {
+  const { uploadId } = useParams();
+  return <Navigate to={`/owner/menu-manager/uploads/${uploadId}/review-items`} replace />;
+}
+
 // Disambiguation: /restaurants/:slugOrId is both the profile URL and the market aggregator URL.
 // When the segment matches {words}-{valid-state-code} it renders the market aggregator.
 // All other slugs render the existing restaurant profile page.
@@ -649,6 +659,9 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/owner/menu-manager" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploads /></OwnerRoute>} />
         <Route path="/owner/menu-manager/uploads/:uploadId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploadDetail /></OwnerRoute>} />
         <Route path="/owner/menu-manager/uploads/:uploadId/review-items" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploadReviewItems /></OwnerRoute>} />
+        <Route path="/owner/menu-uploads" element={<Navigate to="/owner/menu-manager" replace />} />
+        <Route path="/owner/menu-uploads/:uploadId" element={<OldUploadDetailRedirect />} />
+        <Route path="/owner/menu-uploads/:uploadId/review-items" element={<OldUploadReviewRedirect />} />
         <Route path="/owner/qr-stickers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerQrStickers /></OwnerRoute>} />
         <Route path="/owner/market-expansion" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMarketExpansion /></OwnerRoute>} />
 
