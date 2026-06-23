@@ -814,120 +814,135 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
         </PageCard>
       )}
 
-      {/* ── Menu Files — PDFs and photos ───────────────────────────────────── */}
-      {recentUploads.length > 0 && (
-        <PageCard style={{ padding: "16px 20px", marginBottom: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.ink, marginBottom: 14 }}>
-            Menu Files
+      {/* ── Menu Files — PDFs, photos, text imports ────────────────────────── */}
+      <PageCard style={{ padding: "16px 20px", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.ink, marginBottom: 14 }}>
+          Menu Files
+        </div>
+
+        {/* Photos subsection */}
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: OWNER_COLORS.muted, marginBottom: 10 }}>
+            Menu Photos
           </div>
-          {/* Photos */}
-          {recentUploads.filter((u) => (u.upload_type || "").includes("photo")).length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: OWNER_COLORS.muted, marginBottom: 10 }}>
-                Menu Photos
-              </div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {recentUploads
-                  .filter((u) => (u.upload_type || "").includes("photo"))
-                  .map((u) => (
-                    <Link
-                      key={u.id}
-                      to={`/owner/menu-manager/uploads/${u.id}`}
-                      style={{
-                        display: "block", padding: "12px 16px", borderRadius: 10,
-                        border: `1px solid ${OWNER_COLORS.line}`, background: "#f9fafb",
-                        textDecoration: "none", minWidth: 150,
-                      }}
-                    >
-                      <div style={{ fontSize: 22, marginBottom: 6 }}>📸</div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.ink }}>
-                        Photo Capture
-                      </div>
-                      <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 2 }}>
-                        {u.page_count ? `${u.page_count} page${u.page_count !== 1 ? "s" : ""}` : ""}{u.page_count && u.parsed_item_count ? " · " : ""}
-                        {u.parsed_item_count ? `${u.parsed_item_count} items` : ""}
-                      </div>
-                      <div style={{ marginTop: 6 }}><StatusChip status={u.display_status || u.status} /></div>
-                      <div style={{ marginTop: 4, fontSize: 10, color: OWNER_COLORS.muted }}>
-                        {formatDate(u.created_at)} · View detail →
-                      </div>
-                    </Link>
-                  ))}
-              </div>
+          {recentUploads.filter((u) => (u.upload_type || "").includes("photo")).length === 0 ? (
+            <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>
+              No photo uploads yet.{" "}
+              <span style={{ opacity: 0.7 }}>Upload a photo of the menu using "+ New Upload" above.</span>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {recentUploads
+                .filter((u) => (u.upload_type || "").includes("photo"))
+                .map((u) => (
+                  <Link
+                    key={u.id}
+                    to={`/owner/menu-manager/uploads/${u.id}`}
+                    style={{
+                      display: "block", padding: "12px 16px", borderRadius: 10,
+                      border: `1px solid ${OWNER_COLORS.line}`, background: "#f9fafb",
+                      textDecoration: "none", minWidth: 150,
+                    }}
+                  >
+                    <div style={{ fontSize: 22, marginBottom: 6 }}>📸</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.ink }}>Photo Capture</div>
+                    <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 2 }}>
+                      {u.page_count ? `${u.page_count} page${u.page_count !== 1 ? "s" : ""}` : ""}
+                      {u.page_count && u.parsed_item_count ? " · " : ""}
+                      {u.parsed_item_count ? `${u.parsed_item_count} items` : ""}
+                    </div>
+                    <div style={{ marginTop: 6 }}><StatusChip status={u.display_status || u.status} /></div>
+                    <div style={{ marginTop: 4, fontSize: 10, color: OWNER_COLORS.muted }}>
+                      {formatDate(u.created_at)} · View →
+                    </div>
+                  </Link>
+                ))}
             </div>
           )}
-          {/* PDFs */}
-          {recentUploads.filter((u) => (u.upload_type || "") === "pdf").length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: OWNER_COLORS.muted, marginBottom: 10 }}>
-                PDF Copies
-              </div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {recentUploads
-                  .filter((u) => (u.upload_type || "") === "pdf")
-                  .map((u) => (
-                    <Link
-                      key={u.id}
-                      to={`/owner/menu-manager/uploads/${u.id}`}
-                      style={{
-                        display: "block", padding: "12px 16px", borderRadius: 10,
-                        border: `1px solid ${OWNER_COLORS.line}`, background: "#f9fafb",
-                        textDecoration: "none", minWidth: 150,
-                      }}
-                    >
-                      <div style={{ fontSize: 22, marginBottom: 6 }}>📄</div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.ink }}>
-                        {u.source_filename || "PDF Upload"}
-                      </div>
-                      <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 2 }}>
-                        {u.parsed_item_count ? `${u.parsed_item_count} items parsed` : `${u.page_count || ""} page${u.page_count !== 1 ? "s" : ""}`}
-                      </div>
-                      <div style={{ marginTop: 6 }}><StatusChip status={u.display_status || u.status} /></div>
-                      <div style={{ marginTop: 4, fontSize: 10, color: OWNER_COLORS.muted }}>
-                        {formatDate(u.created_at)} · View detail →
-                      </div>
-                    </Link>
-                  ))}
-              </div>
+        </div>
+
+        {/* PDFs subsection */}
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: OWNER_COLORS.muted, marginBottom: 10 }}>
+            PDF Copies
+          </div>
+          {recentUploads.filter((u) => (u.upload_type || "") === "pdf").length === 0 ? (
+            <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>
+              No PDF uploads yet.{" "}
+              <span style={{ opacity: 0.7 }}>Upload a PDF using "+ New Upload" above.</span>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {recentUploads
+                .filter((u) => (u.upload_type || "") === "pdf")
+                .map((u) => (
+                  <Link
+                    key={u.id}
+                    to={`/owner/menu-manager/uploads/${u.id}`}
+                    style={{
+                      display: "block", padding: "12px 16px", borderRadius: 10,
+                      border: `1px solid ${OWNER_COLORS.line}`, background: "#f9fafb",
+                      textDecoration: "none", minWidth: 150,
+                    }}
+                  >
+                    <div style={{ fontSize: 22, marginBottom: 6 }}>📄</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.ink }}>
+                      {u.source_filename || "PDF Upload"}
+                    </div>
+                    <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 2 }}>
+                      {u.parsed_item_count ? `${u.parsed_item_count} items parsed` : `${u.page_count || 0} page${u.page_count !== 1 ? "s" : ""}`}
+                    </div>
+                    <div style={{ marginTop: 6 }}><StatusChip status={u.display_status || u.status} /></div>
+                    <div style={{ marginTop: 4, fontSize: 10, color: OWNER_COLORS.muted }}>
+                      {formatDate(u.created_at)} · View →
+                    </div>
+                  </Link>
+                ))}
             </div>
           )}
-          {/* Text ingests */}
-          {recentUploads.filter((u) => (u.upload_type || "") === "menu_text").length > 0 && (
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: OWNER_COLORS.muted, marginBottom: 10 }}>
-                Text Imports
-              </div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {recentUploads
-                  .filter((u) => (u.upload_type || "") === "menu_text")
-                  .map((u) => (
-                    <Link
-                      key={u.id}
-                      to={`/owner/menu-manager/uploads/${u.id}`}
-                      style={{
-                        display: "block", padding: "12px 16px", borderRadius: 10,
-                        border: `1px solid ${OWNER_COLORS.line}`, background: "#f9fafb",
-                        textDecoration: "none", minWidth: 150,
-                      }}
-                    >
-                      <div style={{ fontSize: 22, marginBottom: 6 }}>📝</div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.ink }}>
-                        Text Import
-                      </div>
-                      <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 2 }}>
-                        {u.inserted_item_count || u.parsed_item_count ? `${u.inserted_item_count || u.parsed_item_count} items` : ""}
-                      </div>
-                      <div style={{ marginTop: 6 }}><StatusChip status={u.display_status || u.status} /></div>
-                      <div style={{ marginTop: 4, fontSize: 10, color: OWNER_COLORS.muted }}>
-                        {formatDate(u.created_at)} · View detail →
-                      </div>
-                    </Link>
-                  ))}
-              </div>
+        </div>
+
+        {/* Text imports subsection */}
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: OWNER_COLORS.muted, marginBottom: 10 }}>
+            Text Imports
+          </div>
+          {recentUploads.filter((u) => (u.upload_type || "") === "menu_text").length === 0 ? (
+            <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>
+              No text imports yet.{" "}
+              <span style={{ opacity: 0.7 }}>Paste menu text using "+ New Upload" above.</span>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {recentUploads
+                .filter((u) => (u.upload_type || "") === "menu_text")
+                .map((u) => (
+                  <Link
+                    key={u.id}
+                    to={`/owner/menu-manager/uploads/${u.id}`}
+                    style={{
+                      display: "block", padding: "12px 16px", borderRadius: 10,
+                      border: `1px solid ${OWNER_COLORS.line}`, background: "#f9fafb",
+                      textDecoration: "none", minWidth: 150,
+                    }}
+                  >
+                    <div style={{ fontSize: 22, marginBottom: 6 }}>📝</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.ink }}>Text Import</div>
+                    <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 2 }}>
+                      {u.inserted_item_count || u.parsed_item_count
+                        ? `${u.inserted_item_count || u.parsed_item_count} items`
+                        : ""}
+                    </div>
+                    <div style={{ marginTop: 6 }}><StatusChip status={u.display_status || u.status} /></div>
+                    <div style={{ marginTop: 4, fontSize: 10, color: OWNER_COLORS.muted }}>
+                      {formatDate(u.created_at)} · View →
+                    </div>
+                  </Link>
+                ))}
             </div>
           )}
-        </PageCard>
-      )}
+        </div>
+      </PageCard>
 
       {/* ── Upload History ──────────────────────────────────────────────── */}
       <PageCard style={{ padding: "16px 20px", marginBottom: 16 }}>

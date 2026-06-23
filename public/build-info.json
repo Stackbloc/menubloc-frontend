@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "f3a594b8df95946b6ec17335b18860603255e60c",
-  "gitShortSha": "f3a594b",
+  "gitSha": "197f3636968ed32c90be85b5ba86f1482e64d39b",
+  "gitShortSha": "197f363",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-23T14:19:25.642Z",
+  "buildTime": "2026-06-23T14:32:24.284Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(waiter): group recommendations by restaurant; add DealCard and StandaloneCard"
+  "commitMessage": "feat(menu-manager): add Menu Files and Review Queue sections to workspace"
 }
