@@ -16,6 +16,198 @@ function parseSessionLocation(raw) {
   return { city: str.slice(0, comma).trim(), state: str.slice(comma + 1).trim() };
 }
 
+// ---- Grouping helpers ----
+
+function extractRestaurantName(detail) {
+  if (!detail) return "";
+  const midDot = detail.indexOf(" · ");
+  return midDot !== -1 ? detail.slice(0, midDot).trim() : detail.trim();
+}
+
+function extractRestaurantSlug(link) {
+  if (!link) return null;
+  const m = link.match(/\/restaurants\/([^/?#]+)/);
+  return m ? m[1] : null;
+}
+
+function resolveGroupLabel(labels, mealLabel) {
+  if (!labels.length) return null;
+  if (labels.length === 1) return labels[0];
+  return `Recommended for ${mealLabel}`;
+}
+
+// Groups new_item rows by restaurant. new_restaurant rows become standalones.
+// Returns up to 5 groups.
+function groupSuggestions(rows) {
+  const restaurantOrder = [];
+  const restaurantMap = new Map();
+
+  for (const row of rows) {
+    if (row.type === "new_item") {
+      const name = extractRestaurantName(row.detail);
+      if (!name) continue;
+      if (!restaurantMap.has(name)) {
+        const entry = {
+          kind: "restaurant_group",
+          restaurantName: name,
+          slug: extractRestaurantSlug(row.link),
+          labelSet: [],
+          items: [],
+        };
+        restaurantMap.set(name, entry);
+        restaurantOrder.push(entry);
+      }
+      const g = restaurantMap.get(name);
+      if (row.label && !g.labelSet.includes(row.label)) g.labelSet.push(row.label);
+      g.items.push(row);
+    } else {
+      // new_restaurant or other — show as standalone
+      restaurantOrder.push({ kind: "standalone", rec: row });
+    }
+  }
+
+  return restaurantOrder.slice(0, 5);
+}
+
+// ---- Dedup ----
+
+function normalizeRecommendationKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/['']/g, "")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\b(xs|extra small|small|medium|large|xl|xxl|mini|regular|kids?|junior|jr|side)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function uniqueRecommendations(rows) {
+  const seen = new Set();
+  return rows.filter((row) => {
+    const key = [
+      row?.restaurant_id ?? row?.restaurant_name ?? "",
+      row?.menu_item_id ?? "",
+      normalizeRecommendationKey(row?.title || row?.name || ""),
+      normalizeRecommendationKey(row?.detail || ""),
+    ].join(":");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+// ---- Card components ----
+
+const CARD_STYLE = {
+  borderRadius: 16,
+  padding: "14px 15px",
+  border: "1px solid rgba(134,239,172,0.14)",
+  background: "linear-gradient(180deg, rgba(17,24,20,0.92), rgba(11,15,12,0.92))",
+};
+
+const LABEL_STYLE = {
+  fontSize: 10,
+  fontWeight: 800,
+  color: "#86EFAC",
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  marginBottom: 6,
+};
+
+const LINK_STYLE = {
+  display: "inline-block",
+  marginTop: 10,
+  fontSize: 12,
+  fontWeight: 800,
+  color: "#86EFAC",
+  textDecoration: "none",
+  borderBottom: "1px solid rgba(134,239,172,0.28)",
+  paddingBottom: 1,
+};
+
+const ITEM_LINK_STYLE = {
+  color: "#CBD5E1",
+  textDecoration: "none",
+  fontSize: 13,
+  lineHeight: 1.45,
+};
+
+// One card per restaurant with multiple items listed inside
+function RestaurantGroupCard({ group, mealLabel }) {
+  const { restaurantName, slug, labelSet, items } = group;
+  const resolvedLabel = resolveGroupLabel(labelSet, mealLabel);
+  const menuLink = slug ? `/restaurants/${slug}/menu` : (items[0]?.link || null);
+  const visibleItems = items.slice(0, 4);
+  const overflow = items.length - visibleItems.length;
+
+  return (
+    <div style={CARD_STYLE}>
+      <div style={{ fontSize: 15, fontWeight: 800, color: "#F9FAFB", marginBottom: 4 }}>
+        {restaurantName}
+      </div>
+      {resolvedLabel ? <div style={LABEL_STYLE}>{resolvedLabel}</div> : null}
+      <ul style={{ margin: "6px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 3 }}>
+        {visibleItems.map((item, i) => (
+          <li key={item.link || i} style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+            <span style={{ color: "#4B5563", fontSize: 12, flexShrink: 0 }}>&bull;</span>
+            {item.link ? (
+              <Link to={item.link} style={ITEM_LINK_STYLE}>{item.title}</Link>
+            ) : (
+              <span style={{ ...ITEM_LINK_STYLE, color: "#9CA3AF" }}>{item.title}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+      {overflow > 0 ? (
+        <div style={{ marginTop: 5, fontSize: 12, color: "#6B7280" }}>+{overflow} more on menu</div>
+      ) : null}
+      {menuLink ? (
+        <Link to={menuLink} style={LINK_STYLE}>View Menu →</Link>
+      ) : null}
+    </div>
+  );
+}
+
+// Single-item or new_restaurant standalone card
+function StandaloneCard({ rec }) {
+  return (
+    <div style={CARD_STYLE}>
+      {rec.label ? <div style={LABEL_STYLE}>{rec.label}</div> : null}
+      <div style={{ fontSize: 15, fontWeight: 800, color: "#F9FAFB" }}>{rec.title}</div>
+      {rec.detail ? (
+        <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.5, marginTop: 4 }}>{rec.detail}</div>
+      ) : null}
+      {rec.link ? (
+        <Link to={rec.link} style={LINK_STYLE}>{rec.link_label || "View →"}</Link>
+      ) : null}
+    </div>
+  );
+}
+
+// Deal card — unchanged shape, compact
+function DealCard({ rec }) {
+  return (
+    <div style={{ ...CARD_STYLE, border: "1px solid rgba(251,191,36,0.18)", background: "linear-gradient(180deg, rgba(20,18,10,0.92), rgba(12,11,6,0.92))" }}>
+      {rec.label ? (
+        <div style={{ ...LABEL_STYLE, color: "#FDE68A" }}>{rec.label}</div>
+      ) : null}
+      <div style={{ fontSize: 15, fontWeight: 800, color: "#F9FAFB" }}>{rec.title}</div>
+      {rec.detail ? (
+        <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.5, marginTop: 4 }}>{rec.detail}</div>
+      ) : null}
+      {rec.link ? (
+        <Link to={rec.link} style={{ ...LINK_STYLE, color: "#FDE68A", borderBottomColor: "rgba(251,191,36,0.28)" }}>
+          {rec.link_label || "View Deal →"}
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
 function MarketFallback({ marketLabel, mealPeriod }) {
   const guidance = getMealPeriodFallback(mealPeriod);
   return (
@@ -49,52 +241,6 @@ function CommunityGrowthCard({ marketLabel }) {
 
 function verifiedCount(value) {
   return Number.isInteger(value) && value >= 0 ? value : null;
-}
-
-function normalizeRecommendationKey(value) {
-  return String(value || "")
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/['']/g, "")
-    .replace(/\([^)]*\)/g, " ")
-    .replace(/\[[^\]]*\]/g, " ")
-    .replace(/\b(xs|extra small|small|medium|large|xl|xxl|mini|regular|kids?|junior|jr|side)\b/g, " ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function uniqueRecommendations(rows) {
-  const seen = new Set();
-  return rows.filter((row) => {
-    const key = [
-      row?.restaurant_id ?? row?.restaurant_name ?? "",
-      row?.menu_item_id ?? "",
-      normalizeRecommendationKey(row?.title || row?.name || ""),
-      normalizeRecommendationKey(row?.detail || ""),
-    ].join(":");
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function RecommendationCard({ recommendation }) {
-  return (
-    <div style={{ borderRadius: 16, padding: "14px 15px", border: "1px solid rgba(134,239,172,0.14)", background: "linear-gradient(180deg, rgba(17,24,20,0.92), rgba(11,15,12,0.92))" }}>
-      <div style={{ fontSize: 10, fontWeight: 800, color: "#86EFAC", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
-        {recommendation.label}
-      </div>
-      <div style={{ fontSize: 15, fontWeight: 800, color: "#F9FAFB" }}>{recommendation.title}</div>
-      {recommendation.detail ? <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.5, marginTop: 4 }}>{recommendation.detail}</div> : null}
-      {recommendation.link ? (
-        <Link to={recommendation.link} style={{ display: "inline-block", marginTop: 10, fontSize: 12, fontWeight: 800, color: "#86EFAC", textDecoration: "none", borderBottom: "1px solid rgba(134,239,172,0.28)", paddingBottom: 1 }}>
-          {recommendation.link_label || "View Dish"}
-        </Link>
-      ) : null}
-    </div>
-  );
 }
 
 export default function FoodInterestsPage() {
@@ -138,13 +284,18 @@ export default function FoodInterestsPage() {
     : "Your local food market intelligence.";
   const firstName = profile?.first_name || briefing?.account?.first_name || "there";
   const formattedDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(now);
+
   const recommendationRows = Array.isArray(briefing?.suggestions)
     ? briefing.suggestions
     : (Array.isArray(briefing?.recommendations) ? briefing.recommendations : []);
-  const suggestions = uniqueRecommendations(recommendationRows.filter((row) => row?.type !== "active_deal")).slice(0, 5);
-  const deals = uniqueRecommendations((Array.isArray(briefing?.deals)
-    ? briefing.deals
-    : recommendationRows.filter((row) => row?.type === "active_deal"))).slice(0, 3);
+
+  const suggestions = uniqueRecommendations(recommendationRows.filter((row) => row?.type !== "active_deal"));
+  const deals = uniqueRecommendations(
+    Array.isArray(briefing?.deals)
+      ? briefing.deals
+      : recommendationRows.filter((row) => row?.type === "active_deal")
+  ).slice(0, 3);
+
   const marketLabel = [location.city, location.state].filter(Boolean).join(", ");
   const menuItemCount = verifiedCount(briefing?.counts?.menu_item_count);
   const restaurantCount = verifiedCount(briefing?.counts?.restaurant_count);
@@ -156,6 +307,8 @@ export default function FoodInterestsPage() {
       ? `Tracking ${menuItemCount.toLocaleString()} menu items across ${marketLabel}.`
       : `Building menu intelligence for ${marketLabel}.`)
     : "Building menu intelligence for your local market.";
+
+  const groups = useMemo(() => groupSuggestions(suggestions), [suggestions]);
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)", paddingBottom: "calc(var(--bottom-nav-h, 72px) + 28px)" }}>
@@ -225,16 +378,29 @@ export default function FoodInterestsPage() {
                   </div>
                 ) : null}
 
-                {suggestions.length ? (
+                {groups.length ? (
                   <div>
                     <h3 style={{ margin: "0 0 10px", fontSize: 16, color: "#F9FAFB" }}>{selectedMealLabel} Picks</h3>
+                    {coverageLimited && suggestions.length < 3 ? (
+                      <div style={{ fontSize: 13, color: "#9CA3AF", marginBottom: 10, lineHeight: 1.55 }}>
+                        We only have a few recommendations in this area right now.
+                      </div>
+                    ) : null}
                     <div style={{ display: "grid", gap: 12 }}>
-                      {suggestions.map((recommendation, index) => (
-                        <RecommendationCard
-                          key={`${recommendation.type}-${recommendation.menu_item_id || recommendation.link}-${index}`}
-                          recommendation={recommendation}
-                        />
-                      ))}
+                      {groups.map((group, index) =>
+                        group.kind === "restaurant_group" ? (
+                          <RestaurantGroupCard
+                            key={group.restaurantName + index}
+                            group={group}
+                            mealLabel={selectedMealLabel}
+                          />
+                        ) : (
+                          <StandaloneCard
+                            key={(group.rec?.link || group.rec?.title) + index}
+                            rec={group.rec}
+                          />
+                        )
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -246,9 +412,9 @@ export default function FoodInterestsPage() {
                     <h3 style={{ margin: "2px 0 10px", fontSize: 16, color: "#F9FAFB" }}>Today's Deals</h3>
                     <div style={{ display: "grid", gap: 12 }}>
                       {deals.map((deal, index) => (
-                        <RecommendationCard
+                        <DealCard
                           key={`deal-${deal.deal_id || deal.link}-${index}`}
-                          recommendation={deal}
+                          rec={deal}
                         />
                       ))}
                     </div>
