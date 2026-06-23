@@ -502,7 +502,9 @@ function CanonicalUpdater() {
 function AppShell({ easyMenu, crmHost }) {
   const location = useLocation();
   const joinLandingRoute = isJoinLandingPath(location.pathname);
-  const joinSignupRoute = location.pathname === "/restaurant/signup/free-profile";
+  const joinSignupRoute =
+    location.pathname === "/restaurant/signup/free-profile" ||
+    location.pathname === "/restaurant/signup/account";
   const restaurantOnboardingRoute = location.pathname === "/restaurant/onboarding";
   const operatorTabletRoute = location.pathname === "/operator/tablet";
   const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute || restaurantOnboardingRoute || operatorTabletRoute;

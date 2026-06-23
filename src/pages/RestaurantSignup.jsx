@@ -13,6 +13,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { BrandLockup } from "../components/BrandLogo.jsx";
+import SiteFooter from "../components/SiteFooter.jsx";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
 import {
   persistRestaurantOnboardingState,
@@ -30,19 +31,26 @@ function planLabel(t, planCode) {
 }
 
 const styles = {
-  page: {
+  pageWrap: {
     minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    overflowX: "hidden",
     background: "var(--gb-color-page)",
-    maxWidth: 640,
-    margin: "0 auto",
-    padding: "40px 20px 60px",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
     color: "#0B0F0C",
+  },
+  pageMain: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 680,
+    margin: "0 auto",
+    padding: "32px 20px 56px",
   },
   header: { marginBottom: 28 },
   brand: { fontWeight: 800, fontSize: 18 },
   subbrand: { fontSize: 12, color: "#6B7280" },
-  pageTitle: { fontSize: 28, fontWeight: 800, marginTop: 20, marginBottom: 6, letterSpacing: "-0.03em" },
+  pageTitle: { fontSize: 28, fontWeight: 800, marginTop: 16, marginBottom: 8, letterSpacing: "-0.03em" },
   pageSubtitle: { fontSize: 15, color: "#374151", lineHeight: 1.6, maxWidth: 560 },
   section: {
     background: "#121A14",
@@ -487,91 +495,95 @@ export default function RestaurantSignup() {
     }
 
     return (
-      <div style={styles.page}>
-        <div style={styles.header}>
-          <BrandLockup
-            logoProps={{ width: 140, height: 88, radius: 20, pageColor: "#0B0F0C" }}
-            wrapperStyle={{ marginBottom: 6 }}
-          />
-          <div style={styles.pageTitle}>Your account is ready!</div>
-          <div style={styles.pageSubtitle}>
-            Your menu QR code has been generated. Print it, display it, or share the link.
-          </div>
-        </div>
-
-        <div style={{ maxWidth: 400, margin: "0 auto", padding: "0 20px 40px" }}>
-          <div style={{
-            background: "#fff", border: "1px solid #e4e9f0",
-            borderRadius: 16, padding: "24px", marginBottom: 20,
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 16,
-          }}>
-            <img
-              src={imageUrl}
-              alt="Your Menuply menu QR code"
-              style={{ width: 180, height: 180, display: "block" }}
+      <div style={styles.pageWrap}>
+        <main style={styles.pageMain}>
+          <div style={styles.header}>
+            <BrandLockup
+              logoProps={{ width: 120, height: 76, radius: 18, pageColor: "#0B0F0C" }}
+              wrapperStyle={{ marginBottom: 6 }}
             />
-            {destUrl && (
-              <div style={{
-                fontSize: 11, color: "#667085", wordBreak: "break-all",
-                background: "#f8fafc", border: "1px solid #e4e9f0",
-                borderRadius: 6, padding: "6px 10px", width: "100%", textAlign: "center",
-              }}>
-                {destUrl}
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-              <button
-                type="button"
-                onClick={handleQrCopy}
-                style={{
-                  background: qrCopied ? "#f0faf6" : "#f8fafc",
-                  color: qrCopied ? "#1F4E3D" : "#344054",
-                  border: "1px solid #e4e9f0",
-                  borderRadius: 8, padding: "9px 18px",
-                  fontSize: 13, fontWeight: 600, cursor: "pointer",
-                }}
-              >
-                {qrCopied ? "Copied!" : "Copy link"}
-              </button>
-              <button
-                type="button"
-                onClick={handleQrDownload}
-                style={{
-                  background: "#111", color: "#fff",
-                  border: "none", borderRadius: 8,
-                  padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer",
-                }}
-              >
-                Download QR
-              </button>
+            <div style={styles.pageTitle}>Your account is ready!</div>
+            <div style={styles.pageSubtitle}>
+              Your menu QR code has been generated. Print it, display it, or share the link.
             </div>
-            <p style={{ fontSize: 12, color: "#aab4c0", textAlign: "center", margin: 0 }}>
-              Your QR code is always available in My Account &rarr; QR Code.
-            </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => nav(postSignupNav.path, postSignupNav.opts)}
-            style={{
-              width: "100%", height: 48, borderRadius: 14,
-              border: 0, background: "#111", color: "#fff",
-              fontWeight: 800, fontSize: 15, cursor: "pointer",
-            }}
-          >
-            Continue to verify email &rarr;
-          </button>
-        </div>
+          <div style={{ maxWidth: 400, margin: "0 auto", padding: "0 0 40px" }}>
+            <div style={{
+              background: "#fff", border: "1px solid #e4e9f0",
+              borderRadius: 16, padding: "24px", marginBottom: 20,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 16,
+            }}>
+              <img
+                src={imageUrl}
+                alt="Your Menuply menu QR code"
+                style={{ width: 180, height: 180, display: "block" }}
+              />
+              {destUrl && (
+                <div style={{
+                  fontSize: 11, color: "#667085", wordBreak: "break-all",
+                  background: "#f8fafc", border: "1px solid #e4e9f0",
+                  borderRadius: 6, padding: "6px 10px", width: "100%", textAlign: "center",
+                }}>
+                  {destUrl}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+                <button
+                  type="button"
+                  onClick={handleQrCopy}
+                  style={{
+                    background: qrCopied ? "#f0faf6" : "#f8fafc",
+                    color: qrCopied ? "#1F4E3D" : "#344054",
+                    border: "1px solid #e4e9f0",
+                    borderRadius: 8, padding: "9px 18px",
+                    fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  }}
+                >
+                  {qrCopied ? "Copied!" : "Copy link"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleQrDownload}
+                  style={{
+                    background: "#111", color: "#fff",
+                    border: "none", borderRadius: 8,
+                    padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  }}
+                >
+                  Download QR
+                </button>
+              </div>
+              <p style={{ fontSize: 12, color: "#aab4c0", textAlign: "center", margin: 0 }}>
+                Your QR code is always available in My Account &rarr; QR Code.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => nav(postSignupNav.path, postSignupNav.opts)}
+              style={{
+                width: "100%", height: 48, borderRadius: 14,
+                border: 0, background: "#111", color: "#fff",
+                fontWeight: 800, fontSize: 15, cursor: "pointer",
+              }}
+            >
+              Continue to verify email &rarr;
+            </button>
+          </div>
+        </main>
+        <SiteFooter />
       </div>
     );
   }
 
   return (
-    <div style={styles.page}>
+    <div style={styles.pageWrap}>
+      <main style={styles.pageMain}>
       <div style={styles.header}>
         <BrandLockup
           subtitle={t("signup.forRestaurants")}
-          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#0B0F0C" }}
+          logoProps={{ width: 120, height: 76, radius: 18, pageColor: "#0B0F0C" }}
           wrapperStyle={{ marginBottom: 6 }}
         />
         <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your restaurant account")}</div>
@@ -797,6 +809,8 @@ export default function RestaurantSignup() {
             : t("signup.account.createAccountButton", "Create account")}
         </button>
       </form>
+      </main>
+      <SiteFooter />
     </div>
   );
 }
