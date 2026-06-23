@@ -265,9 +265,23 @@ function ParsedItemsSection({ uploadId, upload }) {
     setSaving(true);
     setSaveErr("");
     try {
-      await updateUploadItem(uploadId, itemId, draft);
+      // Only send price if explicitly set to a non-empty value
+      const body = {};
+      if (draft.name !== undefined) body.name = draft.name;
+      if (draft.section !== undefined) body.section = draft.section;
+      if (draft.description !== undefined) body.description = draft.description;
+      if (draft.price !== undefined && draft.price !== "") body.price = draft.price;
+      await updateUploadItem(uploadId, itemId, body);
       setItems((prev) =>
-        prev.map((it) => (it.id === itemId ? { ...it, ...draft } : it))
+        prev.map((it) => {
+          if (it.id !== itemId) return it;
+          const next = { ...it };
+          if (body.name !== undefined) next.name = body.name;
+          if (body.section !== undefined) next.section = body.section;
+          if (body.description !== undefined) next.description = body.description;
+          if (body.price !== undefined) next.price = Number(body.price);
+          return next;
+        })
       );
       setEditingId(null);
     } catch (err) {

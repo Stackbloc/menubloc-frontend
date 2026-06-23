@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "1b6b94e0d38470326e30ed808b224f45384b5232",
-  "gitShortSha": "1b6b94e",
+  "gitSha": "9ab0e540574dae8640ff9b60de828240d2b0e4d5",
+  "gitShortSha": "9ab0e54",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-23T15:13:17.970Z",
+  "buildTime": "2026-06-23T15:39:26.907Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(menu-manager): always show Menu Files and Review Queue sections with empty states"
+  "commitMessage": "feat(menu-manager): parsed items editor + publish + old route redirects"
 }

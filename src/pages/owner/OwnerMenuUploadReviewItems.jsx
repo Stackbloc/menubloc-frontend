@@ -192,6 +192,7 @@ export default function OwnerMenuUploadReviewItems() {
 
   async function handleApprove(item) {
     const edit = getEdit(item.id);
+    const approvedPrice = edit.price !== "" ? Number(edit.price) : undefined;
     setBusy((prev) => new Set([...prev, item.id]));
     setStatusMsg("");
     setError("");
@@ -199,12 +200,22 @@ export default function OwnerMenuUploadReviewItems() {
       const result = await approveReviewItem(uploadId, item.id, {
         name: edit.name || undefined,
         description: edit.description !== undefined ? edit.description : undefined,
-        price: edit.price !== "" ? Number(edit.price) : undefined,
+        price: approvedPrice,
         section: edit.section || undefined,
       });
       setCounts(result.counts || { open: 0, edited: 0, approved: 0, rejected: 0 });
-      setItems((prev) => prev.map((it) => it.id === item.id ? { ...it, status: "approved" } : it));
-      setStatusMsg(`"${edit.name || item.proposed_item_name}" approved.`);
+      // Update local item to reflect the user's edits in the done-state display
+      setItems((prev) => prev.map((it) => {
+        if (it.id !== item.id) return it;
+        return {
+          ...it,
+          status: "approved",
+          parsed_name: edit.name || it.parsed_name,
+          proposed_price: approvedPrice !== undefined ? approvedPrice : it.proposed_price,
+          parsed_description: edit.description !== undefined ? edit.description : it.parsed_description,
+        };
+      }));
+      setStatusMsg(`"${edit.name || item.parsed_name || item.proposed_item_name}" approved.`);
     } catch (e) {
       setError(`Approve failed: ${e?.message || "Server error"}`);
     } finally {
