@@ -778,6 +778,157 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
         </div>
       </PageCard>
 
+      {/* ── Review Queue — uploads with items needing attention ───────────── */}
+      {recentUploads.some((u) => (u.human_review_items || 0) > 0) && (
+        <PageCard style={{ padding: "16px 20px", marginBottom: 16, background: "#fffbeb", border: "1px solid #fde68a" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 12 }}>
+            Review Queue — Items Needing Attention
+          </div>
+          {recentUploads
+            .filter((u) => (u.human_review_items || 0) > 0)
+            .map((u, idx, arr) => (
+              <div key={u.id} style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "9px 0",
+                borderBottom: idx < arr.length - 1 ? "1px solid #fde68a" : "none",
+              }}>
+                <div>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#92400e" }}>
+                    {u.human_review_items} item{u.human_review_items !== 1 ? "s" : ""} need review
+                  </span>
+                  <span style={{ fontSize: 12, color: OWNER_COLORS.muted, marginLeft: 10 }}>
+                    {u.upload_type || "upload"} · {formatDate(u.created_at)}
+                  </span>
+                </div>
+                <Link
+                  to={`/owner/menu-manager/uploads/${u.id}/review-items`}
+                  style={{
+                    padding: "6px 14px", borderRadius: 8, textDecoration: "none",
+                    background: "#92400e", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0,
+                  }}
+                >
+                  Review →
+                </Link>
+              </div>
+            ))}
+        </PageCard>
+      )}
+
+      {/* ── Menu Files — PDFs and photos ───────────────────────────────────── */}
+      {recentUploads.length > 0 && (
+        <PageCard style={{ padding: "16px 20px", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.ink, marginBottom: 14 }}>
+            Menu Files
+          </div>
+          {/* Photos */}
+          {recentUploads.filter((u) => (u.upload_type || "").includes("photo")).length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: OWNER_COLORS.muted, marginBottom: 10 }}>
+                Menu Photos
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {recentUploads
+                  .filter((u) => (u.upload_type || "").includes("photo"))
+                  .map((u) => (
+                    <Link
+                      key={u.id}
+                      to={`/owner/menu-manager/uploads/${u.id}`}
+                      style={{
+                        display: "block", padding: "12px 16px", borderRadius: 10,
+                        border: `1px solid ${OWNER_COLORS.line}`, background: "#f9fafb",
+                        textDecoration: "none", minWidth: 150,
+                      }}
+                    >
+                      <div style={{ fontSize: 22, marginBottom: 6 }}>📸</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.ink }}>
+                        Photo Capture
+                      </div>
+                      <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 2 }}>
+                        {u.page_count ? `${u.page_count} page${u.page_count !== 1 ? "s" : ""}` : ""}{u.page_count && u.parsed_item_count ? " · " : ""}
+                        {u.parsed_item_count ? `${u.parsed_item_count} items` : ""}
+                      </div>
+                      <div style={{ marginTop: 6 }}><StatusChip status={u.display_status || u.status} /></div>
+                      <div style={{ marginTop: 4, fontSize: 10, color: OWNER_COLORS.muted }}>
+                        {formatDate(u.created_at)} · View detail →
+                      </div>
+                    </Link>
+                  ))}
+              </div>
+            </div>
+          )}
+          {/* PDFs */}
+          {recentUploads.filter((u) => (u.upload_type || "") === "pdf").length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: OWNER_COLORS.muted, marginBottom: 10 }}>
+                PDF Copies
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {recentUploads
+                  .filter((u) => (u.upload_type || "") === "pdf")
+                  .map((u) => (
+                    <Link
+                      key={u.id}
+                      to={`/owner/menu-manager/uploads/${u.id}`}
+                      style={{
+                        display: "block", padding: "12px 16px", borderRadius: 10,
+                        border: `1px solid ${OWNER_COLORS.line}`, background: "#f9fafb",
+                        textDecoration: "none", minWidth: 150,
+                      }}
+                    >
+                      <div style={{ fontSize: 22, marginBottom: 6 }}>📄</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.ink }}>
+                        {u.source_filename || "PDF Upload"}
+                      </div>
+                      <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 2 }}>
+                        {u.parsed_item_count ? `${u.parsed_item_count} items parsed` : `${u.page_count || ""} page${u.page_count !== 1 ? "s" : ""}`}
+                      </div>
+                      <div style={{ marginTop: 6 }}><StatusChip status={u.display_status || u.status} /></div>
+                      <div style={{ marginTop: 4, fontSize: 10, color: OWNER_COLORS.muted }}>
+                        {formatDate(u.created_at)} · View detail →
+                      </div>
+                    </Link>
+                  ))}
+              </div>
+            </div>
+          )}
+          {/* Text ingests */}
+          {recentUploads.filter((u) => (u.upload_type || "") === "menu_text").length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: OWNER_COLORS.muted, marginBottom: 10 }}>
+                Text Imports
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {recentUploads
+                  .filter((u) => (u.upload_type || "") === "menu_text")
+                  .map((u) => (
+                    <Link
+                      key={u.id}
+                      to={`/owner/menu-manager/uploads/${u.id}`}
+                      style={{
+                        display: "block", padding: "12px 16px", borderRadius: 10,
+                        border: `1px solid ${OWNER_COLORS.line}`, background: "#f9fafb",
+                        textDecoration: "none", minWidth: 150,
+                      }}
+                    >
+                      <div style={{ fontSize: 22, marginBottom: 6 }}>📝</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: OWNER_COLORS.ink }}>
+                        Text Import
+                      </div>
+                      <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 2 }}>
+                        {u.inserted_item_count || u.parsed_item_count ? `${u.inserted_item_count || u.parsed_item_count} items` : ""}
+                      </div>
+                      <div style={{ marginTop: 6 }}><StatusChip status={u.display_status || u.status} /></div>
+                      <div style={{ marginTop: 4, fontSize: 10, color: OWNER_COLORS.muted }}>
+                        {formatDate(u.created_at)} · View detail →
+                      </div>
+                    </Link>
+                  ))}
+              </div>
+            </div>
+          )}
+        </PageCard>
+      )}
+
       {/* ── Upload History ──────────────────────────────────────────────── */}
       <PageCard style={{ padding: "16px 20px", marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -793,12 +944,15 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
           />
         </div>
         {recentUploads.length === 0 ? (
-          <div style={{ color: OWNER_COLORS.muted, fontSize: 13 }}>No uploads yet for this restaurant.</div>
+          <div style={{ color: OWNER_COLORS.muted, fontSize: 13 }}>
+            No uploads yet for this restaurant.{" "}
+            <span style={{ opacity: 0.7 }}>Use "+ New Upload" above to add a PDF, photo, or paste menu text.</span>
+          </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {recentUploads.map((u) => {
-              const isReview = u.status === "needs_review";
-              const isFailed = u.status === "failed";
+              const isReview = (u.human_review_items || 0) > 0;
+              const isFailed = u.status === "failed" || u.display_status === "failed";
               return (
                 <div key={u.id} style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -808,16 +962,16 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
                 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <StatusChip status={u.status} />
+                      <StatusChip status={u.display_status || u.status} />
                       <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
-                        {u.session_meta?.upload_type || "upload"} · {formatDate(u.created_at)}
+                        {u.upload_type || "upload"} · {formatDate(u.created_at)}
                       </span>
                       {(u.inserted_item_count > 0 || u.parsed_item_count > 0) && (
                         <span style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
                           {u.inserted_item_count} inserted / {u.parsed_item_count} parsed
                         </span>
                       )}
-                      {u.human_review_items > 0 && (
+                      {(u.human_review_items || 0) > 0 && (
                         <span style={{ fontSize: 11, color: OWNER_COLORS.accent, fontWeight: 700 }}>
                           {u.human_review_items} need review
                         </span>

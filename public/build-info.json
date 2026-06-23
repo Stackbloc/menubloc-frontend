@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "0c208baa28735306fcb097946e5e8099a73abdda",
-  "gitShortSha": "0c208ba",
+  "gitSha": "f3a594b8df95946b6ec17335b18860603255e60c",
+  "gitShortSha": "f3a594b",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-23T00:20:45.349Z",
+  "buildTime": "2026-06-23T14:19:25.642Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(menu-manager): add \"Restaurant Menu Detail\" page label to restaurant detail view"
+  "commitMessage": "feat(waiter): group recommendations by restaurant; add DealCard and StandaloneCard"
 }
