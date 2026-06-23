@@ -15,7 +15,7 @@ export default function Header({ title = "Menuply", subtitle = "Restaurants" }) 
         gap: 14,
       }}
     >
-      <BrandLogo width={74} height={48} radius={14} pageColor="#ffffff" />
+      <BrandLogo height={48} radius={14} pageColor="#ffffff" />
 
       <div style={{ lineHeight: 1.1 }}>
         <div style={{ fontSize: 22, fontWeight: 800 }}>{title}</div>

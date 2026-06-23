@@ -107,7 +107,7 @@ export default function RestaurantQrUpsell() {
             subtitle="for Restaurants"
             wrapperStyle={{ alignItems: "flex-start", marginBottom: 18 }}
             subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
-            logoProps={{ width: 160, height: 100, radius: 24, pageColor: "#f6f6f3" }}
+            logoProps={{ height: 100, radius: 24, pageColor: "#f6f6f3" }}
           />
         </div>
 

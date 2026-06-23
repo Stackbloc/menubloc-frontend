@@ -640,7 +640,7 @@ export default function SpreadsheetUploadPage() {
       <div style={s.page}>
         <BrandLockup
           subtitle="for Restaurants"
-          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+          logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
         />
         <div style={{ ...s.error, marginTop: 24 }}>
           <strong>We could not recover your restaurant signup session.</strong><br />
@@ -660,7 +660,7 @@ export default function SpreadsheetUploadPage() {
         {!isOperatorFlow && (
           <BrandLockup
             subtitle="for Restaurants"
-            logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+            logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
           />
         )}
 
@@ -702,7 +702,7 @@ export default function SpreadsheetUploadPage() {
       {!isOperatorFlow && (
         <BrandLockup
           subtitle="for Restaurants"
-          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+          logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
         />
       )}
 

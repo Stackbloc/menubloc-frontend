@@ -142,7 +142,7 @@ export default function MenuUploadChoicePage() {
       <div style={styles.page}>
         <BrandLockup
           subtitle="for Restaurants"
-          logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#ffffff" }}
+          logoProps={{ height: 112, radius: 24, pageColor: "#ffffff" }}
         />
         <div style={styles.error}>
           <strong>We could not recover your restaurant signup session.</strong><br />
@@ -160,7 +160,7 @@ export default function MenuUploadChoicePage() {
     <div style={styles.page}>
       <BrandLockup
         subtitle="for Restaurants"
-        logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#ffffff" }}
+        logoProps={{ height: 112, radius: 24, pageColor: "#ffffff" }}
       />
 
       <div style={styles.steps}>

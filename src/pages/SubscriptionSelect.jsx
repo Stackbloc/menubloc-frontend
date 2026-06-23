@@ -729,7 +729,7 @@ export default function SubscriptionSelect() {
             subtitle="for Restaurants"
             wrapperStyle={{ alignItems: "flex-start", marginBottom: 18 }}
             subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
-            logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+            logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
           />
 
           <div style={s.heading}>Built for Better Value</div>

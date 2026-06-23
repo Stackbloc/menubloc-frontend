@@ -336,7 +336,7 @@ export default function MenuDesignLabPage() {
   return (
     <main style={{ ...styles.page, background: backgroundColor }}>
       <header style={styles.header}>
-        <BrandLogo width={132} height={52} radius={0} pageColor={backgroundColor} linkStyle={styles.logo} />
+        <BrandLogo height={52} radius={0} pageColor={backgroundColor} linkStyle={styles.logo} />
         <div style={styles.headerActions}>
           {rid ? (
             <>

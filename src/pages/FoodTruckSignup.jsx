@@ -494,7 +494,7 @@ export default function FoodTruckSignup() {
       <div style={styles.page}>
         <div style={styles.shell}>
           <BrandLockup
-            logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+            logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
             wrapperStyle={{ marginBottom: 18 }}
           />
         <div style={styles.successBanner}>
@@ -531,7 +531,7 @@ export default function FoodTruckSignup() {
           <div style={styles.heroContent}>
             {/* Keep the food-truck signup entry aligned with the restaurant shell. */}
             <BrandLockup
-              logoProps={{ width: 180, height: 112, radius: 24, pageColor: "#f6f6f3" }}
+              logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
               wrapperStyle={{ marginBottom: 8 }}
             />
             <div style={styles.eyebrow}>{t("foodTruck.signup.title", "Food truck sign up")}</div>

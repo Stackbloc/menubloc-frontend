@@ -122,7 +122,6 @@ export default function RestaurantFoundersSignup() {
           wrapperStyle={{ alignItems: "flex-start", marginBottom: 4 }}
           subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
           logoProps={{
-            width: 160,
             height: 100,
             radius: 22,
             pageColor: "#f9f9f7",

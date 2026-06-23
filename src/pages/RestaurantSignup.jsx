@@ -499,7 +499,7 @@ export default function RestaurantSignup() {
         <main style={styles.pageMain}>
           <div style={styles.header}>
             <BrandLockup
-              logoProps={{ width: 120, height: 76, radius: 18, pageColor: "#0B0F0C" }}
+              logoProps={{ height: 76, radius: 18, pageColor: "#0B0F0C" }}
               wrapperStyle={{ marginBottom: 6 }}
             />
             <div style={styles.pageTitle}>Your account is ready!</div>
@@ -583,7 +583,7 @@ export default function RestaurantSignup() {
       <div style={styles.header}>
         <BrandLockup
           subtitle={t("signup.forRestaurants")}
-          logoProps={{ width: 120, height: 76, radius: 18, pageColor: "#0B0F0C" }}
+          logoProps={{ height: 76, radius: 18, pageColor: "#0B0F0C" }}
           wrapperStyle={{ marginBottom: 6 }}
         />
         <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your restaurant account")}</div>
