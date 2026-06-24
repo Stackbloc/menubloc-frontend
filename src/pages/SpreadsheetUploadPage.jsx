@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useLocation, Link } from "react-router-dom";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import OperatorLayout from "./operator/OperatorLayout.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import {
@@ -638,10 +638,7 @@ export default function SpreadsheetUploadPage() {
   if (missingState) {
     return (
       <div style={s.page}>
-        <BrandLockup
-          subtitle="for Restaurants"
-          logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-        />
+        <BrandLogo height={48} radius={14} matchPageBackground={false} />
         <div style={{ ...s.error, marginTop: 24 }}>
           <strong>We could not recover your restaurant signup session.</strong><br />
           Restart signup to continue with the spreadsheet menu upload.
@@ -658,10 +655,7 @@ export default function SpreadsheetUploadPage() {
     const content = (
       <div style={s.page}>
         {!isOperatorFlow && (
-          <BrandLockup
-            subtitle="for Restaurants"
-            logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-          />
+          <BrandLogo height={48} radius={14} matchPageBackground={false} />
         )}
 
         <div style={s.successBox}>
@@ -700,10 +694,7 @@ export default function SpreadsheetUploadPage() {
   const content = (
     <div style={s.page}>
       {!isOperatorFlow && (
-        <BrandLockup
-          subtitle="for Restaurants"
-          logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-        />
+        <BrandLogo height={48} radius={14} matchPageBackground={false} />
       )}
 
       {!isOperatorFlow && (

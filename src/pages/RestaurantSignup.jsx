@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import SiteFooter from "../components/SiteFooter.jsx";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
 import {
@@ -53,19 +53,19 @@ const styles = {
   pageTitle: { fontSize: 28, fontWeight: 800, marginTop: 16, marginBottom: 8, letterSpacing: "-0.03em" },
   pageSubtitle: { fontSize: 15, color: "#374151", lineHeight: 1.6, maxWidth: 560 },
   section: {
-    background: "#121A14",
-    border: "1px solid rgba(61,217,52,0.16)",
-    borderRadius: 18,
+    background: "#F9FAFB",
+    border: "1px solid #E5E7EB",
+    borderRadius: 10,
     padding: 20,
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: 800,
-    color: "#22C55E",
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#6B7280",
     marginBottom: 14,
     textTransform: "uppercase",
-    letterSpacing: "0.05em",
+    letterSpacing: "0.1em",
   },
   fieldGroup: { marginBottom: 14 },
   label: {
@@ -73,30 +73,32 @@ const styles = {
     fontSize: 13,
     fontWeight: 700,
     marginBottom: 6,
-    color: "#F8F4EA",
+    color: "#374151",
   },
   required: { color: "#c00", marginLeft: 2 },
   input: {
     width: "100%",
     height: 44,
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.14)",
+    borderRadius: 10,
+    border: "1px solid #E5E7EB",
     padding: "0 12px",
     fontSize: 14,
-    background: "#0B0F0C",
-    color: "#F8F4EA",
+    background: "#ffffff",
+    color: "#0B0F0C",
     boxSizing: "border-box",
+    fontFamily: "inherit",
   },
   inputError: {
     width: "100%",
     height: 44,
-    borderRadius: 12,
-    border: "1px solid #f87171",
+    borderRadius: 10,
+    border: "1px solid #FECACA",
     padding: "0 12px",
     fontSize: 14,
-    background: "#0B0F0C",
-    color: "#F8F4EA",
+    background: "#ffffff",
+    color: "#0B0F0C",
     boxSizing: "border-box",
+    fontFamily: "inherit",
   },
   row2: { display: "flex", gap: 12, flexWrap: "wrap" },
   halfField: { flex: "1 1 220px", marginBottom: 14 },
@@ -113,43 +115,43 @@ const styles = {
     height: 30,
     padding: "0 10px",
     borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.14)",
-    background: "#121A14",
-    color: "#F8F4EA",
+    border: "1px solid #E5E7EB",
+    background: "#ffffff",
+    color: "#374151",
     fontSize: 12,
     fontWeight: 700,
     cursor: "pointer",
   },
   errorBanner: {
-    background: "rgba(248,113,113,0.10)",
-    border: "1px solid rgba(248,113,113,0.24)",
-    borderRadius: 12,
+    background: "#FFF0F0",
+    border: "1px solid #FECACA",
+    borderRadius: 10,
     padding: "12px 16px",
     marginBottom: 16,
     fontSize: 13,
-    color: "#fecaca",
+    color: "#DC2626",
   },
-  fieldError: { fontSize: 12, color: "#c00", marginTop: 5 },
-  helperText: { fontSize: 12, color: "rgba(248,244,234,0.80)", marginTop: 6 },
+  fieldError: { fontSize: 12, color: "#DC2626", marginTop: 5 },
+  helperText: { fontSize: 12, color: "#6B7280", marginTop: 6 },
   expectationCard: {
     marginTop: 12,
     padding: "14px 16px",
-    borderRadius: 14,
-    background: "#0F1712",
-    border: "1px solid rgba(61,217,52,0.14)",
+    borderRadius: 10,
+    background: "#F9FAFB",
+    border: "1px solid #E5E7EB",
   },
   expectationTitle: {
-    fontSize: 12,
-    fontWeight: 800,
-    color: "#22C55E",
-    letterSpacing: "0.06em",
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#6B7280",
+    letterSpacing: "0.1em",
     textTransform: "uppercase",
     marginBottom: 6,
   },
   expectationBody: {
     fontSize: 13,
     lineHeight: 1.6,
-    color: "rgba(248,244,234,0.84)",
+    color: "#374151",
   },
   planSummary: {
     display: "flex",
@@ -158,26 +160,26 @@ const styles = {
     alignItems: "center",
     flexWrap: "wrap",
     padding: "14px 16px",
-    borderRadius: 14,
-    background: "#121A14",
-    border: "1px solid rgba(61,217,52,0.16)",
+    borderRadius: 10,
+    background: "rgba(76,175,80,0.04)",
+    border: "1.5px solid #4caf50",
     marginTop: 18,
   },
   planSummaryLabel: {
-    fontSize: 12,
-    fontWeight: 800,
-    color: "#22C55E",
-    letterSpacing: "0.06em",
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#6B7280",
+    letterSpacing: "0.1em",
     textTransform: "uppercase",
     marginBottom: 4,
   },
   planSummaryValue: {
     fontSize: 16,
     fontWeight: 800,
-    color: "#F8F4EA",
+    color: "#0B0F0C",
   },
   planSummaryLink: {
-    color: "#22C55E",
+    color: "#4caf50",
     fontWeight: 800,
     textDecoration: "none",
   },
@@ -191,16 +193,16 @@ const styles = {
     width: 18,
     height: 18,
     marginTop: 2,
-    accentColor: "#22C55E",
+    accentColor: "#4caf50",
     flex: "0 0 auto",
   },
   checkboxLabel: {
     fontSize: 14,
     lineHeight: 1.6,
-    color: "#F8F4EA",
+    color: "#374151",
   },
   legalLink: {
-    color: "#F8F4EA",
+    color: "#374151",
     fontWeight: 700,
     textDecoration: "underline",
   },
@@ -210,14 +212,15 @@ function submitBtnStyle(disabled) {
   return {
     width: "100%",
     height: 48,
-    borderRadius: 14,
+    borderRadius: 10,
     border: 0,
-    background: disabled ? "#374151" : "#111",
-    color: "#fff",
+    background: disabled ? "#F3F4F6" : "#4caf50",
+    color: disabled ? "#9CA3AF" : "#fff",
     fontWeight: 800,
     fontSize: 15,
     cursor: disabled ? "not-allowed" : "pointer",
     marginTop: 4,
+    fontFamily: "inherit",
   };
 }
 
@@ -498,10 +501,7 @@ export default function RestaurantSignup() {
       <div style={styles.pageWrap}>
         <main style={styles.pageMain}>
           <div style={styles.header}>
-            <BrandLockup
-              logoProps={{ height: 76, radius: 18, pageColor: "#0B0F0C" }}
-              wrapperStyle={{ marginBottom: 6 }}
-            />
+            <BrandLogo height={48} radius={14} matchPageBackground={false} />
             <div style={styles.pageTitle}>Your account is ready!</div>
             <div style={styles.pageSubtitle}>
               Your menu QR code has been generated. Print it, display it, or share the link.
@@ -546,7 +546,7 @@ export default function RestaurantSignup() {
                   type="button"
                   onClick={handleQrDownload}
                   style={{
-                    background: "#111", color: "#fff",
+                    background: "#4caf50", color: "#fff",
                     border: "none", borderRadius: 8,
                     padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer",
                   }}
@@ -563,8 +563,8 @@ export default function RestaurantSignup() {
               type="button"
               onClick={() => nav(postSignupNav.path, postSignupNav.opts)}
               style={{
-                width: "100%", height: 48, borderRadius: 14,
-                border: 0, background: "#111", color: "#fff",
+                width: "100%", height: 48, borderRadius: 10,
+                border: 0, background: "#4caf50", color: "#fff",
                 fontWeight: 800, fontSize: 15, cursor: "pointer",
               }}
             >
@@ -581,11 +581,7 @@ export default function RestaurantSignup() {
     <div style={styles.pageWrap}>
       <main style={styles.pageMain}>
       <div style={styles.header}>
-        <BrandLockup
-          subtitle={t("signup.forRestaurants")}
-          logoProps={{ height: 76, radius: 18, pageColor: "#0B0F0C" }}
-          wrapperStyle={{ marginBottom: 6 }}
-        />
+        <BrandLogo height={48} radius={14} matchPageBackground={false} />
         <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your restaurant account")}</div>
         <div style={styles.pageSubtitle}>
           {t(

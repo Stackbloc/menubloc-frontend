@@ -19,7 +19,7 @@
 import React, { useEffect, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import {
   navigateWithRestaurantOnboardingState,
   persistRestaurantOnboardingState,
@@ -103,12 +103,7 @@ export default function RestaurantQrUpsell() {
     <div style={s.page}>
       <div style={s.shell}>
         <div style={s.header}>
-          <BrandLockup
-            subtitle="for Restaurants"
-            wrapperStyle={{ alignItems: "flex-start", marginBottom: 18 }}
-            subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
-            logoProps={{ height: 100, radius: 24, pageColor: "#f6f6f3" }}
-          />
+          <BrandLogo height={48} radius={14} matchPageBackground={false} />
         </div>
 
         {/* Free assets */}

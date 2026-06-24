@@ -29,7 +29,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import FoundersProgressBar from "../components/founders/FoundersProgressBar.jsx";
 import FoundersIntroStep from "../components/founders/FoundersIntroStep.jsx";
 import FoundersFaqStep from "../components/founders/FoundersFaqStep.jsx";
@@ -115,19 +115,7 @@ export default function RestaurantFoundersSignup() {
   return (
     <div style={pageStyle}>
       <div style={shellStyle}>
-        <BrandLockup
-          to="/"
-          ariaLabel="Go to Menuply home"
-          subtitle="for Restaurants"
-          wrapperStyle={{ alignItems: "flex-start", marginBottom: 4 }}
-          subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
-          logoProps={{
-            height: 100,
-            radius: 22,
-            pageColor: "#f9f9f7",
-            imageStyle: { filter: "brightness(0)" },
-          }}
-        />
+        <BrandLogo height={48} radius={14} matchPageBackground={false} />
 
         <FoundersProgressBar step={step} />
 

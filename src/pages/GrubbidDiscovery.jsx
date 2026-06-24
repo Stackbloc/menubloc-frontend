@@ -20,7 +20,7 @@ import { addLocation, getLocations, updateLocation } from "../lib/consumerApi.js
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
 import { filtersToUrlParams } from "../lib/filterUtils.js";
-import { BrandLogo, BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import {
   buildSearchLocationParams,
   formatLocationLabel,

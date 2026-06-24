@@ -13,7 +13,7 @@
 import React, { useEffect, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { LEGAL_VERSIONS } from "../content/legal.js";
 import {
@@ -725,12 +725,7 @@ export default function SubscriptionSelect() {
         </Link>
 
         <section style={s.hero}>
-          <BrandLockup
-            subtitle="for Restaurants"
-            wrapperStyle={{ alignItems: "flex-start", marginBottom: 18 }}
-            subtitleStyle={{ textAlign: "left", width: "100%", paddingLeft: 6 }}
-            logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-          />
+          <BrandLogo height={48} radius={14} matchPageBackground={false} linkStyle={{ marginBottom: 18 }} />
 
           <div style={s.heading}>Built for Better Value</div>
           <div style={s.subheading}>

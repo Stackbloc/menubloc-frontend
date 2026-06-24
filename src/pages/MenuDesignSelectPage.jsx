@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import {
   RESTAURANT_SIGNUP_RESTART_ROUTE,
   buildRestaurantOnboardingSearch,
@@ -410,10 +410,7 @@ export default function MenuDesignSelectPage() {
   if (missingState) {
     return (
       <div style={s.page}>
-        <BrandLockup
-          subtitle="for Restaurants"
-          logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-        />
+        <BrandLogo height={48} radius={14} matchPageBackground={false} />
         <div style={s.error}>
           <strong>We could not recover your restaurant signup session.</strong><br />
           Start signup again to restore your account, plan, and upload path.
@@ -430,10 +427,7 @@ export default function MenuDesignSelectPage() {
     const chosenStyle = DESIGN_STYLES.find((style) => style.id === (design_style ?? selectedStyle));
     return (
       <div style={s.page}>
-        <BrandLockup
-          subtitle="for Restaurants"
-          logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-        />
+        <BrandLogo height={48} radius={14} matchPageBackground={false} />
 
         <div style={s.completionCard}>
           <div style={s.completionLabel}>Setup saved</div>
@@ -462,10 +456,7 @@ export default function MenuDesignSelectPage() {
 
   return (
     <div style={s.page}>
-      <BrandLockup
-        subtitle="for Restaurants"
-        logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-      />
+      <BrandLogo height={48} radius={14} matchPageBackground={false} />
 
       <div style={s.steps}>
         <div style={s.step(false, true)}>1. Account</div>

@@ -18,7 +18,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import { LEGAL_VERSIONS } from "../content/legal.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
@@ -493,10 +493,7 @@ export default function FoodTruckSignup() {
     return (
       <div style={styles.page}>
         <div style={styles.shell}>
-          <BrandLockup
-            logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-            wrapperStyle={{ marginBottom: 18 }}
-          />
+          <BrandLogo height={48} radius={14} matchPageBackground={false} />
         <div style={styles.successBanner}>
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>You are listed!</div>
           Your Menuply Food Truck Annual plan is active. You can finish your truck profile, menu, and live location details from the operator dashboard.
@@ -530,10 +527,7 @@ export default function FoodTruckSignup() {
         <header style={styles.hero}>
           <div style={styles.heroContent}>
             {/* Keep the food-truck signup entry aligned with the restaurant shell. */}
-            <BrandLockup
-              logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-              wrapperStyle={{ marginBottom: 8 }}
-            />
+            <BrandLogo height={48} radius={14} matchPageBackground={false} />
             <div style={styles.eyebrow}>{t("foodTruck.signup.title", "Food truck sign up")}</div>
             <h1 style={styles.heading}>{t("foodTruck.signup.subtitle", "List your truck and share your live menu with diners.")}</h1>
             <div style={styles.subheading}>

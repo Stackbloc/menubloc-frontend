@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import { resolveJoinMarketForSignup } from "../lib/joinMarketConfig.js";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
 import {
@@ -166,10 +166,7 @@ export default function RestaurantFreeProfileSignup() {
     return (
       <div style={styles.page}>
         <div style={styles.brandHeader}>
-          <BrandLockup
-            logoProps={{ height: 48, radius: 14, matchPageBackground: false }}
-            wrapperStyle={styles.brandLockup}
-          />
+          <BrandLogo height={48} radius={14} matchPageBackground={false} />
         </div>
         <div style={styles.successCard}>
           <div style={styles.pageTitle}>Your free restaurant profile has been created.</div>
@@ -193,12 +190,7 @@ export default function RestaurantFreeProfileSignup() {
   return (
     <div style={styles.page}>
       <div style={styles.brandHeader}>
-        <BrandLockup
-          subtitle="For Restaurants"
-          subtitleStyle={styles.brandSubtitle}
-          logoProps={{ height: 48, radius: 14, matchPageBackground: false }}
-          wrapperStyle={styles.brandLockup}
-        />
+        <BrandLogo height={48} radius={14} matchPageBackground={false} />
       </div>
 
       <h1 style={styles.pageTitle}>Join the Menuply Network</h1>

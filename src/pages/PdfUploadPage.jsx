@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import OperatorLayout from "./operator/OperatorLayout.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import {
@@ -1027,10 +1027,7 @@ export default function PdfUploadPage() {
     }
     return (
       <div style={s.page}>
-        <BrandLockup
-          subtitle="for Restaurants"
-          logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-        />
+        <BrandLogo height={48} radius={14} matchPageBackground={false} />
         <div style={{ ...s.error, marginTop: 24 }}>
           <strong>We could not recover your restaurant signup session.</strong><br />
           Restart signup to reconnect this upload to your restaurant.
@@ -1080,10 +1077,7 @@ export default function PdfUploadPage() {
     }
     return (
       <div style={s.page}>
-        <BrandLockup
-          subtitle="for Restaurants"
-          logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-        />
+        <BrandLogo height={48} radius={14} matchPageBackground={false} />
 
         <div style={s.successBox}>
           <div style={s.successIcon}>✓</div>
@@ -1217,10 +1211,7 @@ export default function PdfUploadPage() {
 
   return (
     <div style={s.page}>
-      <BrandLockup
-        subtitle="for Restaurants"
-        logoProps={{ height: 112, radius: 24, pageColor: "#f6f6f3" }}
-      />
+      <BrandLogo height={48} radius={14} matchPageBackground={false} />
 
       <div style={s.steps}>
         <div style={s.step(false, true)}>1. Account</div>

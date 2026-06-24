@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BrandLockup } from "../components/BrandLogo.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
 import {
   RESTAURANT_SIGNUP_RESTART_ROUTE,
   navigateWithRestaurantOnboardingState,
@@ -36,13 +36,13 @@ const styles = {
   step: (active, done) => ({
     padding: "4px 10px",
     borderRadius: 999,
-    background: done ? "#111" : active ? "#f0f0f5" : "transparent",
-    color: done ? "#fff" : active ? "#111" : "#aaa",
-    border: active ? "1.5px solid #111" : "1.5px solid transparent",
+    background: done ? "#4caf50" : active ? "#F9FAFB" : "transparent",
+    color: done ? "#fff" : active ? "#0B0F0C" : "#9CA3AF",
+    border: active ? "1.5px solid #0B0F0C" : done ? "1.5px solid #4caf50" : "1.5px solid transparent",
     whiteSpace: "nowrap",
     fontSize: 11,
   }),
-  stepDivider: { flex: "0 0 12px", height: 1, background: "#e0e0e0", margin: "0 2px" },
+  stepDivider: { flex: "0 0 12px", height: 1, background: "#E5E7EB", margin: "0 2px" },
   heading: { fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.03em" },
   subheading: { fontSize: 15, color: "#555", lineHeight: 1.6, marginBottom: 24 },
   summary: {
@@ -140,10 +140,7 @@ export default function MenuUploadChoicePage() {
   if (missingState) {
     return (
       <div style={styles.page}>
-        <BrandLockup
-          subtitle="for Restaurants"
-          logoProps={{ height: 112, radius: 24, pageColor: "#ffffff" }}
-        />
+        <BrandLogo height={48} radius={14} matchPageBackground={false} />
         <div style={styles.error}>
           <strong>We could not recover your restaurant signup session.</strong><br />
           Restart signup to continue into menu upload.
@@ -158,10 +155,7 @@ export default function MenuUploadChoicePage() {
 
   return (
     <div style={styles.page}>
-      <BrandLockup
-        subtitle="for Restaurants"
-        logoProps={{ height: 112, radius: 24, pageColor: "#ffffff" }}
-      />
+      <BrandLogo height={48} radius={14} matchPageBackground={false} />
 
       <div style={styles.steps}>
         <div style={styles.step(false, true)}>1. Account</div>
