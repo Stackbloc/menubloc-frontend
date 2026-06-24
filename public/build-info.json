@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "9ab0e540574dae8640ff9b60de828240d2b0e4d5",
-  "gitShortSha": "9ab0e54",
+  "gitSha": "82603e24f26430bb65389c7070be40a7fa372b70",
+  "gitShortSha": "82603e2",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-23T15:39:26.907Z",
+  "buildTime": "2026-06-24T15:38:22.233Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(menu-manager): parsed items editor + publish + old route redirects"
+  "commitMessage": "Replace BrandLockup with BrandLogo across all consumer-facing pages"
 }

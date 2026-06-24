@@ -19,6 +19,9 @@ import {
   deleteMenuConsoleItem,
   searchMenuConsoleItems,
   bulkMenuConsoleItems,
+  getUploadReviewItems,
+  approveReviewItem,
+  rejectReviewItem,
 } from "../../lib/ownerApi.js";
 
 // ─── Shared styles ─────────────────────────────────────────────────────────────
@@ -778,41 +781,16 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
         </div>
       </PageCard>
 
-      {/* ── Review Queue — uploads with items needing attention ───────────── */}
-      {recentUploads.some((u) => (u.human_review_items || 0) > 0) && (
-        <PageCard style={{ padding: "16px 20px", marginBottom: 16, background: "#fffbeb", border: "1px solid #fde68a" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 12 }}>
-            Review Queue — Items Needing Attention
-          </div>
-          {recentUploads
-            .filter((u) => (u.human_review_items || 0) > 0)
-            .map((u, idx, arr) => (
-              <div key={u.id} style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "9px 0",
-                borderBottom: idx < arr.length - 1 ? "1px solid #fde68a" : "none",
-              }}>
-                <div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#92400e" }}>
-                    {u.human_review_items} item{u.human_review_items !== 1 ? "s" : ""} need review
-                  </span>
-                  <span style={{ fontSize: 12, color: OWNER_COLORS.muted, marginLeft: 10 }}>
-                    {u.upload_type || "upload"} · {formatDate(u.created_at)}
-                  </span>
-                </div>
-                <Link
-                  to={`/owner/menu-manager/uploads/${u.id}/review-items`}
-                  style={{
-                    padding: "6px 14px", borderRadius: 8, textDecoration: "none",
-                    background: "#92400e", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0,
-                  }}
-                >
-                  Review →
-                </Link>
-              </div>
-            ))}
-        </PageCard>
-      )}
+      {/* ── Review Queue — inline approve/reject within workspace ─────────── */}
+      <WorkspaceReviewPanel
+        uploads={recentUploads}
+        restaurantId={selectedRestaurant.id}
+        onItemActioned={() => {
+          getOwnerMenuUploads({ restaurant_id: selectedRestaurant.id, limit: 50 })
+            .then((r) => setRecentUploads(r.uploads || []))
+            .catch(() => {});
+        }}
+      />
 
       {/* ── Menu Files — PDFs, photos, text imports ────────────────────────── */}
       <PageCard style={{ padding: "16px 20px", marginBottom: 16 }}>
@@ -1024,6 +1002,13 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
         )}
       </PageCard>
 
+      {/* ── Publishing Status — all menus draft/published overview ──────────── */}
+      <PublishingStatusPanel
+        menus={menus}
+        restaurantId={selectedRestaurant.id}
+        onMenuUpdated={onMenuUpdated}
+      />
+
       {/* ── Item search bar + filter chips ─────────────────────────────────── */}
       <PageCard style={{ padding: "14px 18px", marginBottom: 12 }}>
         <div style={{ position: "relative" }}>
@@ -1204,6 +1189,309 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
       </>
       )}
     </div>
+  );
+}
+
+// ─── Workspace Review Panel ──────────────────────────────────────────────────
+
+const HOLD_REASON_LABELS = {
+  price_zero_unverified: "Missing price",
+  low_confidence:        "Low confidence",
+  mojibake:              "Encoding issue",
+  identity_conflict:     "Identity conflict",
+  incoherent_parse:      "Parse error",
+};
+
+function ReviewItemRow({ item, onApprove, onReject }) {
+  const [name,        setName]        = useState(item.name        || "");
+  const [price,       setPrice]       = useState(item.price != null ? String(item.price) : "");
+  const [description, setDescription] = useState(item.description || "");
+  const [section,     setSection]     = useState(item.section     || "");
+  const [acting,      setActing]      = useState(false);
+
+  async function doApprove() {
+    setActing(true);
+    await onApprove({
+      name:        name.trim(),
+      price:       price === "" ? null : Number(price),
+      description: description.trim() || null,
+      section:     section.trim() || null,
+    });
+    setActing(false);
+  }
+
+  async function doReject() {
+    setActing(true);
+    await onReject();
+    setActing(false);
+  }
+
+  return (
+    <div style={{ padding: "12px 14px", borderRadius: 10, background: "#fff", border: "1px solid #fde68a" }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 5 }}>
+          {HOLD_REASON_LABELS[item.hold_reason] || item.hold_reason || "Needs review"}
+        </span>
+        {item.section && <span style={{ fontSize: 11, color: OWNER_COLORS.muted }}>{item.section}</span>}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+        <div>
+          <label style={labelStyle}>Name *</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} placeholder="Item name" />
+        </div>
+        <div>
+          <label style={labelStyle}>Price</label>
+          <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" step="0.01" min="0" style={{ ...inputStyle, fontSize: 12 }} placeholder="0.00" />
+        </div>
+      </div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={labelStyle}>Description</label>
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} style={{ ...inputStyle, resize: "vertical", minHeight: 44, lineHeight: 1.5, fontSize: 12 }} placeholder="Optional description" />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={labelStyle}>Section</label>
+        <input value={section} onChange={(e) => setSection(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} placeholder="e.g. Appetizers" />
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          type="button"
+          onClick={doApprove}
+          disabled={acting || !name.trim()}
+          style={{ padding: "7px 16px", borderRadius: 8, background: "#15803d", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: (acting || !name.trim()) ? "not-allowed" : "pointer", opacity: (acting || !name.trim()) ? 0.5 : 1 }}
+        >
+          {acting ? "…" : "Approve"}
+        </button>
+        <button
+          type="button"
+          onClick={doReject}
+          disabled={acting}
+          style={{ padding: "7px 14px", borderRadius: 8, background: "#fff", color: "#991b1b", border: "1px solid #fca5a5", fontWeight: 700, fontSize: 12, cursor: acting ? "not-allowed" : "pointer", opacity: acting ? 0.5 : 1 }}
+        >
+          Reject
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function WorkspaceReviewPanel({ uploads, restaurantId, onItemActioned }) {
+  const pending = uploads.filter((u) => (u.human_review_items || 0) > 0);
+  const uploadKey = pending.map((u) => u.id).join(",");
+
+  const [itemsByUpload, setItemsByUpload] = useState({});
+  const [loadingSet,    setLoadingSet]    = useState(new Set());
+  const [expanded,      setExpanded]      = useState(true);
+  const [actionMsg,     setActionMsg]     = useState("");
+  const [actionOk,      setActionOk]      = useState(true);
+
+  useEffect(() => {
+    if (!pending.length) return;
+    pending.forEach((u) => {
+      if (itemsByUpload[u.id] !== undefined) return;
+      setLoadingSet((prev) => new Set([...prev, u.id]));
+      getUploadReviewItems(u.id)
+        .then((data) => setItemsByUpload((prev) => ({ ...prev, [u.id]: data.items || [] })))
+        .catch(() =>    setItemsByUpload((prev) => ({ ...prev, [u.id]: [] })))
+        .finally(() =>  setLoadingSet((prev) => { const next = new Set(prev); next.delete(u.id); return next; }));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploadKey]);
+
+  if (!pending.length) return null;
+
+  const openItems = pending.flatMap((u) =>
+    (itemsByUpload[u.id] || [])
+      .filter((item) => item.status === "open" || item.status === "edited")
+      .map((item) => ({ ...item, uploadId: u.id }))
+  );
+  const isLoading = loadingSet.size > 0;
+
+  function flashMsg(text, ok = true) {
+    setActionMsg(text);
+    setActionOk(ok);
+    setTimeout(() => setActionMsg(""), 3000);
+  }
+
+  async function handleApprove(uploadId, itemId, edits) {
+    try {
+      await approveReviewItem(uploadId, itemId, edits);
+      setItemsByUpload((prev) => ({
+        ...prev,
+        [uploadId]: (prev[uploadId] || []).filter((i) => i.id !== itemId),
+      }));
+      flashMsg("Item approved.");
+      onItemActioned?.();
+    } catch (err) {
+      flashMsg(err?.payload?.error || "Approve failed.", false);
+    }
+  }
+
+  async function handleReject(uploadId, itemId) {
+    try {
+      await rejectReviewItem(uploadId, itemId);
+      setItemsByUpload((prev) => ({
+        ...prev,
+        [uploadId]: (prev[uploadId] || []).filter((i) => i.id !== itemId),
+      }));
+      flashMsg("Item rejected.");
+      onItemActioned?.();
+    } catch (err) {
+      flashMsg(err?.payload?.error || "Reject failed.", false);
+    }
+  }
+
+  return (
+    <PageCard style={{ padding: "16px 20px", marginBottom: 16, background: "#fffbeb", border: "1px solid #fde68a" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: expanded ? 14 : 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e" }}>
+          Review Queue —{" "}
+          {isLoading
+            ? "Loading…"
+            : openItems.length > 0
+              ? `${openItems.length} item${openItems.length !== 1 ? "s" : ""} awaiting review`
+              : "All items resolved"}
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "#92400e", fontWeight: 700, fontSize: 12, padding: "2px 6px" }}
+        >
+          {expanded ? "Collapse ▲" : "Expand ▼"}
+        </button>
+      </div>
+
+      {expanded && (
+        <>
+          {actionMsg && (
+            <div style={{ marginBottom: 10, padding: "6px 12px", borderRadius: 8, background: actionOk ? "#f0fdf4" : "#fff1ef", color: actionOk ? "#15803d" : "#8b2e1a", fontWeight: 700, fontSize: 13 }}>
+              {actionMsg}
+            </div>
+          )}
+          {isLoading ? (
+            <div style={{ color: "#92400e", fontSize: 13 }}>Loading review items…</div>
+          ) : openItems.length === 0 ? (
+            <div style={{ color: "#92400e", fontSize: 13 }}>No items pending review.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {openItems.map((item) => (
+                <ReviewItemRow
+                  key={`${item.uploadId}-${item.id}`}
+                  item={item}
+                  onApprove={(edits) => handleApprove(item.uploadId, item.id, edits)}
+                  onReject={() => handleReject(item.uploadId, item.id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </PageCard>
+  );
+}
+
+// ─── Publishing Status Panel ──────────────────────────────────────────────────
+
+function PublishingStatusPanel({ menus, restaurantId, onMenuUpdated }) {
+  const [savingId, setSavingId] = useState(null);
+  const [msg,      setMsg]      = useState("");
+  const [msgOk,    setMsgOk]    = useState(true);
+
+  if (!menus.length) return null;
+
+  async function togglePublish(menu) {
+    setSavingId(menu.id);
+    setMsg("");
+    try {
+      const data = menu.status === "published"
+        ? await unpublishMenuConsoleMenu(restaurantId, menu.id)
+        : await publishMenuConsoleMenu(restaurantId, menu.id);
+      onMenuUpdated(data.menu);
+      setMsg(menu.status === "published" ? "Set to draft." : "Published.");
+      setMsgOk(true);
+    } catch (err) {
+      setMsg(err?.payload?.error || "Action failed.");
+      setMsgOk(false);
+    } finally {
+      setSavingId(null);
+      setTimeout(() => setMsg(""), 3000);
+    }
+  }
+
+  const publishedMenus = menus.filter((m) => m.status === "published");
+  const draftMenus     = menus.filter((m) => m.status !== "published");
+
+  return (
+    <PageCard style={{ padding: "16px 20px", marginBottom: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.ink, marginBottom: 14 }}>
+        Publishing Status
+      </div>
+
+      {msg && (
+        <div style={{ marginBottom: 12, padding: "6px 12px", borderRadius: 8, background: msgOk ? "#f0fdf4" : "#fff1ef", color: msgOk ? "#15803d" : "#8b2e1a", fontWeight: 700, fontSize: 13 }}>
+          {msg}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 24, marginBottom: 16, flexWrap: "wrap" }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#15803d", marginBottom: 2 }}>Published</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#15803d" }}>{publishedMenus.length}</div>
+          <div style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
+            {publishedMenus.reduce((s, m) => s + (m.item_count || 0), 0)} items live
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#92400e", marginBottom: 2 }}>Draft</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#92400e" }}>{draftMenus.length}</div>
+          <div style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
+            {draftMenus.reduce((s, m) => s + (m.item_count || 0), 0)} items pending
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {menus.map((menu) => {
+          const isPublished = menu.status === "published";
+          const isSaving    = savingId === menu.id;
+          return (
+            <div key={menu.id} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "8px 12px", borderRadius: 8, gap: 12,
+              background: isPublished ? "#f0fdf4" : "#fffbeb",
+              border: `1px solid ${isPublished ? "#bbf7d0" : "#fde68a"}`,
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, color: OWNER_COLORS.ink }}>
+                  {menu.display_name || menu.name}
+                </div>
+                <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 2 }}>
+                  {menu.menu_type} · {menu.item_count || 0} items
+                  {menu.updated_at ? ` · ${formatDate(menu.updated_at)}` : ""}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <StatusChip status={menu.status} />
+                <button
+                  type="button"
+                  disabled={isSaving}
+                  onClick={() => togglePublish(menu)}
+                  style={{
+                    padding: "6px 14px", borderRadius: 8, fontWeight: 700, fontSize: 12,
+                    background: isPublished ? "#fff" : "#15803d",
+                    color:      isPublished ? OWNER_COLORS.ink : "#fff",
+                    border:     isPublished ? `1px solid ${OWNER_COLORS.line}` : "none",
+                    cursor:  isSaving ? "not-allowed" : "pointer",
+                    opacity: isSaving ? 0.6 : 1,
+                  }}
+                >
+                  {isSaving ? "…" : isPublished ? "Set Draft" : "Publish"}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </PageCard>
   );
 }
 
