@@ -4,7 +4,10 @@ import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import WaiterRefinementPrompt from "../WaiterRefinementPrompt.jsx";
-import { buildWaiterOptions } from "../../../pages/GrubbidSearchResults.jsx";
+import {
+  buildWaiterOptions,
+  buildContextAwareRefinementOptions,
+} from "../../../pages/GrubbidSearchResults.jsx";
 
 function renderPrompt(refinementOptions, overrides = {}) {
   const onSelectRefinement = overrides.onSelectRefinement || vi.fn();
@@ -89,6 +92,28 @@ function expectSourceValues(records) {
 }
 
 describe("WaiterRefinementPrompt", () => {
+  it("removes query-subject repetition and uses Something Else label", () => {
+    const options = [
+      { id: "1", type: "form", key: "sandwich", label: "Sandwich", count: 8, test: () => true },
+      { id: "2", type: "form", key: "chicken_sandwich", label: "Chicken Sandwich", count: 6, test: () => true },
+      { id: "3", type: "form", key: "unknown", label: "Unknown", count: 4, test: () => true },
+    ];
+
+    const refined = buildContextAwareRefinementOptions(options, "chicken");
+    expect(refined.map((o) => o.label)).toEqual(["Sandwich", "Something Else"]);
+  });
+
+  it("normalizes misspelled sandwich labels and strips repeated subject", () => {
+    const options = [
+      { id: "1", type: "form", key: "sanwich", label: "Sanwich", count: 8, test: () => true },
+      { id: "2", type: "form", key: "chicken_sanwich", label: "Chicken Sanwich", count: 6, test: () => true },
+      { id: "3", type: "form", key: "pizza", label: "Pizza", count: 4, test: () => true },
+    ];
+
+    const refined = buildContextAwareRefinementOptions(options, "chicken");
+    expect(refined.map((o) => o.label)).toEqual(["Sandwich", "Pizza"]);
+  });
+
   it("renders a single live option as an inline question", () => {
     const { container } = renderPrompt([{ key: "fried", label: "Fried" }], { filteredResultCount: 0 });
 
@@ -528,6 +553,21 @@ describe("WaiterRefinementPrompt", () => {
     expect(labels).not.toContain("Sandwiches");
     const tacosOption = result.options.find((o) => o.label === "Tacos");
     expect(tacosOption.sourceValues[0].sourceField).toBe("waiter_attributes.context.food_form");
+  });
+
+  it("normalizes canonical family chicken sandwich to unresolved form label", () => {
+    const rows = [
+      makeRow({ id: 1, name: "Item A", restaurantId: 1, restaurantName: "R1", sectionName: "Mains", price: 10, canonicalFamily: "chicken sandwich" }),
+      makeRow({ id: 2, name: "Item B", restaurantId: 2, restaurantName: "R2", sectionName: "Mains", price: 11, canonicalFamily: "chicken sandwich" }),
+      makeRow({ id: 3, name: "Item C", restaurantId: 3, restaurantName: "R3", sectionName: "Mains", price: 12, canonicalFamily: "chicken sandwich" }),
+      makeRow({ id: 4, name: "Item D", restaurantId: 4, restaurantName: "R4", sectionName: "Mains", price: 12, canonicalFamily: "chicken taco" }),
+      makeRow({ id: 5, name: "Item E", restaurantId: 5, restaurantName: "R5", sectionName: "Mains", price: 13, canonicalFamily: "chicken taco" }),
+      makeRow({ id: 6, name: "Item F", restaurantId: 6, restaurantName: "R6", sectionName: "Mains", price: 14, canonicalFamily: "chicken taco" }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+    expect(result.dimension).toBe("canonical_family");
+    expect(result.options.map((o) => o.label)).toEqual(["Sandwich", "Taco"]);
   });
 
   it("falls back to categories when food_form is null", () => {

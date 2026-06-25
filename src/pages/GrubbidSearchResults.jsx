@@ -631,6 +631,106 @@ function buildQueryTokenSet(query) {
   return new Set(tokenizeWaiterText(query));
 }
 
+function normalizedOptionTokens(option) {
+  return tokenizeWaiterText(option?.label || option?.key || "").map((token) => {
+    const t = String(token || "").toLowerCase();
+    if (t === "sanwich" || t === "sandwhich") return "sandwich";
+    if (t === "sanwiches" || t === "sandwhiches") return "sandwich";
+    return t;
+  });
+}
+
+function isOtherOption(option) {
+  const key = normalizeWaiterValue(option?.key || "");
+  const label = normalizeWaiterValue(option?.label || "");
+  return key === "unknown" || label === "unknown" || key === "other" || label === "other";
+}
+
+function withSomethingElseLabel(option) {
+  return {
+    ...option,
+    label: "Something Else",
+    key: option?.key || "something_else",
+  };
+}
+
+function titleFromTokens(tokens, fallbackLabel = "") {
+  const words = (Array.isArray(tokens) ? tokens : []).filter(Boolean);
+  if (!words.length) return String(fallbackLabel || "").trim();
+  return words
+    .map((word) => {
+      const singular = singularizeWaiterToken(String(word || "").toLowerCase());
+      const mapped = singular === "sandwich" ? "sandwich" : singular;
+      if (mapped === "sandwich") return "Sandwich";
+      return mapped.charAt(0).toUpperCase() + mapped.slice(1);
+    })
+    .join(" ");
+}
+
+export function buildContextAwareRefinementOptions(options, query) {
+  const source = Array.isArray(options) ? options : [];
+  if (!source.length) return [];
+
+  const queryTokens = buildQueryTokenSet(query);
+  const ranked = source.map((option, index) => ({
+    option,
+    index,
+    tokens: normalizedOptionTokens(option),
+  }));
+
+  const bestByCore = new Map();
+  for (const entry of ranked) {
+    const coreTokensRaw = entry.tokens.filter((token) => !queryTokens.has(token));
+    const coreTokens =
+      coreTokensRaw.length > 0
+        ? coreTokensRaw
+        : entry.tokens;
+    const coreKey = coreTokens.join(" ");
+    const overlapCount = entry.tokens.length - coreTokens.length;
+    const existing = bestByCore.get(coreKey);
+    if (
+      !existing ||
+      overlapCount < existing.overlapCount ||
+      (overlapCount === existing.overlapCount && entry.index < existing.index)
+    ) {
+      bestByCore.set(coreKey, {
+        ...entry,
+        coreTokens,
+        overlapCount,
+        option: {
+          ...entry.option,
+          label: titleFromTokens(coreTokens, entry.option?.label || entry.option?.key || ""),
+        },
+      });
+    }
+  }
+
+  let deduped = Array.from(bestByCore.values())
+    .sort((a, b) => a.index - b.index)
+    .map((entry) => entry.option);
+
+  deduped = deduped.map((option) => (isOtherOption(option) ? withSomethingElseLabel(option) : option));
+
+  // If duplicate-collapse removed all but one visible option, preserve a second
+  // path so users can explicitly opt out of the shown refinement.
+  if (deduped.length === 1 && source.length > 1 && !deduped.some(isOtherOption)) {
+    deduped = [
+      deduped[0],
+      {
+        id: "waiter:other",
+        type: deduped[0].type,
+        key: "something_else",
+        label: "Something Else",
+        count: Math.max(0, Number(deduped[0].totalCount || 0) - Number(deduped[0].count || 0)),
+        predicateDescription: "Items outside the shown option",
+        test: (row) => !deduped[0].test(row),
+      },
+    ];
+  }
+
+  return deduped;
+}
+
 function canonicalWaiterPreparation(value) {
   const normalized = normalizeWaiterValue(value);
   const alias = WAITER_TEXT_ONLY_PREPARATION_ALIASES.get(normalized);
@@ -981,13 +1081,28 @@ function buildCanonicalFamilyCandidates(inventory, queryTokens) {
   for (const row of inventory) {
     const family = normalizeWaiterValue(row.waiter_attributes?.context?.canonical_family || "");
     if (!family || family.length < 3) continue;
-    if (queryTokens.has(singularizeWaiterToken(family))) continue;
+    const familyTokens = tokenizeWaiterText(family).map((token) => {
+      const t = String(token || "").toLowerCase();
+      if (t === "sanwich" || t === "sandwhich") return "sandwich";
+      if (t === "sanwiches" || t === "sandwhiches") return "sandwich";
+      return t;
+    });
+    const reducedTokens = familyTokens.filter((token) => !queryTokens.has(singularizeWaiterToken(token)));
+    if (reducedTokens.length === 0) continue;
+    const reducedKey = reducedTokens.join(" ");
+    const reducedLabel = reducedTokens
+      .map((token) => {
+        const singular = singularizeWaiterToken(token);
+        if (singular === "sandwich") return "Sandwich";
+        return titleCaseWaiterValue(singular);
+      })
+      .join(" ");
     addCandidate(
       candidates,
-      family,
-      titleCaseWaiterValue(family),
+      reducedKey,
+      reducedLabel,
       (r) => normalizeWaiterValue(r.waiter_attributes?.context?.canonical_family || "") === family,
-      `${titleCaseWaiterValue(family)} items`,
+      `${reducedLabel} items`,
       {
         sourceValues: [
           sourceRecordFor(row, "waiter_attributes.context.canonical_family", row.waiter_attributes?.context?.canonical_family || ""),
@@ -2018,7 +2133,10 @@ export default function GrubbidSearchResults() {
     return sortByWaiterRefinement(filtered, waiterSelection);
   }, [rows, waiterSelection, waiterState.inventory]);
 
-  const waiterDisplayOptions = waiterState.options;
+  const waiterDisplayOptions = useMemo(
+    () => buildContextAwareRefinementOptions(waiterState.options, q),
+    [waiterState.options, q]
+  );
 
   const dishRows = useMemo(() => waiterFilteredRows.filter(isDishRow), [waiterFilteredRows]);
   const restaurantOnlyRows = useMemo(() => waiterFilteredRows.filter((r) => !isDishRow(r)), [waiterFilteredRows]);
