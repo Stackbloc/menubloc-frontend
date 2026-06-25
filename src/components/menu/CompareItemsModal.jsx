@@ -19,25 +19,11 @@ import { copyText } from "../share/shareUtils.js";
 
 // ── Helpers ──────────────────────────────────────────────────
 
-function fmt(value, suffix = "") {
-  if (value === null || value === undefined) return "—";
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return `${n}${suffix}`;
-}
-
 function fmtMoney(value) {
   if (value === null || value === undefined) return null;
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
   return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
-}
-
-function fmtPerOz(value) {
-  if (value === null || value === undefined) return "—";
-  const n = Number(value);
-  if (!Number.isFinite(n)) return "—";
-  return `$${n.toFixed(2)}/oz`;
 }
 
 function fmtDist(value) {
@@ -203,13 +189,103 @@ function SectionLabel({ children }) {
   );
 }
 
-function CompareRow({ label, baseValue, candidateValue, baseWins = false, candidateWins = false }) {
+function CompareRow({ label, baseValue, candidateValue, baseWins = false, candidateWins = false, baseConfidence = null, candidateConfidence = null }) {
   return (
     <div style={ROW_GRID_STYLE}>
       <div style={ROW_LABEL_STYLE}>{label}</div>
-      <div style={valueBox(baseWins)}>{hasValue(baseValue) ? baseValue : "—"}</div>
-      <div style={valueBox(candidateWins)}>{hasValue(candidateValue) ? candidateValue : "—"}</div>
+      <div style={valueBox(baseWins)}>
+        <ValueWithConfidence value={baseValue} confidence={baseConfidence} />
+      </div>
+      <div style={valueBox(candidateWins)}>
+        <ValueWithConfidence value={candidateValue} confidence={candidateConfidence} />
+      </div>
     </div>
+  );
+}
+
+function ValueWithConfidence({ value, confidence }) {
+  const display = hasValue(value) ? value : "—";
+  if (!confidence || confidence === "Verified") {
+    return <span>{display}</span>;
+  }
+  return (
+    <span style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+      <span>{display}</span>
+      <span style={{ fontSize: 9, fontWeight: 700, color: "#8a9e94", letterSpacing: "0.04em" }}>
+        {confidence}
+      </span>
+    </span>
+  );
+}
+
+function ComparisonWarnings({ warnings }) {
+  if (!warnings?.length) return null;
+  return (
+    <div style={{ marginTop: 14, display: "grid", gap: 6 }}>
+      {warnings.map((warning, idx) => (
+        <div
+          key={`warn-${idx}`}
+          style={{
+            fontSize: 12,
+            color: "#8a6a3a",
+            fontWeight: 700,
+            lineHeight: 1.45,
+            padding: "8px 12px",
+            borderRadius: 10,
+            background: "rgba(160,120,40,0.08)",
+            border: "1px solid rgba(160,120,40,0.15)",
+          }}
+        >
+          {warning}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function NutritionSection({ presentation }) {
+  const status = presentation?.nutritionSimilarityStatus;
+  if (!status || status === "insufficient_data") return null;
+
+  if (status === "substantially_similar") {
+    return (
+      <>
+        <SectionLabel>Nutrition</SectionLabel>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: "#3d5248",
+            lineHeight: 1.5,
+            padding: "10px 12px",
+            borderRadius: 12,
+            background: "rgba(20,33,27,0.04)",
+            border: "1px solid rgba(20,33,27,0.07)",
+          }}
+        >
+          {presentation.nutritionSummaryText}
+        </div>
+      </>
+    );
+  }
+
+  const diffs = asSafeArray(presentation?.meaningfulNutritionDifferences);
+  if (!diffs.length) return null;
+
+  return (
+    <>
+      <SectionLabel>Nutrition</SectionLabel>
+      {diffs.map((row) => (
+        <CompareRow
+          key={row.key}
+          label={row.label}
+          baseValue={row.baseDisplay}
+          candidateValue={row.candidateDisplay}
+          baseWins={row.baseWins}
+          candidateWins={row.candidateWins}
+        />
+      ))}
+    </>
   );
 }
 
@@ -437,17 +513,11 @@ export default function CompareItemsModal({
 
   const base = comparison?.baseItem || null;
   const candidate = comparison?.candidateItem || null;
-  const highlights = asSafeArray(comparison?.highlights);
+  const presentation = comparison?.presentation || null;
+  const highlights = asSafeArray(presentation?.highlights || comparison?.highlights);
 
-  const hlMap = {};
-  for (const h of highlights) {
-    if (!h?.key) continue;
-    hlMap[h.key] = h.winner;
-  }
-
-  function wins(key, side) {
-    return hlMap[key] === side;
-  }
+  const baseConf = presentation?.confidenceLabels?.base || {};
+  const candConf = presentation?.confidenceLabels?.candidate || {};
 
   const candidateRestaurantName = asSafeString(candidate?.restaurant_name);
   const candidateLabel = candidateRestaurantName
@@ -460,13 +530,14 @@ export default function CompareItemsModal({
   const baseVerdictLabel = base?.verdict?.label || null;
   const candVerdictLabel = candidate?.verdict?.label || null;
 
-  const showVerdictRow = !!(baseVerdictLabel || candVerdictLabel);
-  const showMethodRow = !!(base?.preparation || candidate?.preparation);
-  const showIndulgenceRow = !!(base?.indulgence?.label || candidate?.indulgence?.label);
+  const showVerdictRow = presentation?.showVerdict ?? !!(baseVerdictLabel || candVerdictLabel);
+  const showMethodRow = presentation?.showPreparation ?? !!(base?.preparation || candidate?.preparation);
+  const showIndulgenceRow = presentation?.showIndulgence ?? !!(base?.indulgence?.label || candidate?.indulgence?.label);
+  const showAllergens = presentation?.showAllergens ?? !!(base?.allergen_alert || candidate?.allergen_alert);
 
-  const baseIns = base?.insights || null;
-  const candIns = candidate?.insights || null;
-  const showInsightsSection = !!(baseIns || candIns);
+  const valueRows = asSafeArray(presentation?.valueDifferences);
+  const insightRows = asSafeArray(presentation?.insightDifferences);
+  const comparisonWarnings = asSafeArray(presentation?.comparisonWarnings);
 
   const isNarrowViewport =
     typeof window !== "undefined" ? window.innerWidth <= 640 : false;
@@ -558,7 +629,7 @@ export default function CompareItemsModal({
                 </div>
               )}
 
-              {(base?.allergen_alert || candidate?.allergen_alert) && (
+              {(showAllergens) && (
                 <div style={{ marginTop: showVerdictRow ? 8 : 12 }}>
                   <CompareRow
                     label="Allergens"
@@ -569,143 +640,73 @@ export default function CompareItemsModal({
               )}
 
               <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
-                <CompareRow
-                  label="Price"
-                  baseValue={fmtMoney(base?.price) || "—"}
-                  candidateValue={fmtMoney(candidate?.price) || "—"}
-                  baseWins={wins("price", "base")}
-                  candidateWins={wins("price", "candidate")}
-                />
-
-                <CompareRow
-                  label="Portion"
-                  baseValue={base?.portion_oz != null ? `${base.portion_oz} oz` : "—"}
-                  candidateValue={candidate?.portion_oz != null ? `${candidate.portion_oz} oz` : "—"}
-                  baseWins={wins("portion_oz", "base")}
-                  candidateWins={wins("portion_oz", "candidate")}
-                />
-
-                <CompareRow
-                  label="$/oz"
-                  baseValue={fmtPerOz(base?.price_per_oz)}
-                  candidateValue={fmtPerOz(candidate?.price_per_oz)}
-                  baseWins={wins("price_per_oz", "base")}
-                  candidateWins={wins("price_per_oz", "candidate")}
-                />
+                {valueRows.map((row) => (
+                  <CompareRow
+                    key={row.key}
+                    label={row.label}
+                    baseValue={row.baseDisplay}
+                    candidateValue={row.candidateDisplay}
+                    baseWins={row.baseWins}
+                    candidateWins={row.candidateWins}
+                    baseConfidence={
+                      row.key === "portion_oz"
+                        ? baseConf.portion_oz
+                        : row.key === "price_per_oz"
+                          ? baseConf.price_per_oz
+                          : row.key === "distance_miles"
+                            ? baseConf.distance_miles
+                            : null
+                    }
+                    candidateConfidence={
+                      row.key === "portion_oz"
+                        ? candConf.portion_oz
+                        : row.key === "price_per_oz"
+                          ? candConf.price_per_oz
+                          : row.key === "distance_miles"
+                            ? candConf.distance_miles
+                            : null
+                    }
+                  />
+                ))}
 
                 {showMethodRow && (
                   <CompareRow
                     label="Method"
                     baseValue={base?.preparation || "—"}
                     candidateValue={candidate?.preparation || "—"}
+                    baseConfidence={baseConf.preparation}
+                    candidateConfidence={candConf.preparation}
                   />
                 )}
 
-                <CompareRow
-                  label="Distance"
-                  baseValue={fmtDist(base?.distance_miles) || "—"}
-                  candidateValue={fmtDist(candidate?.distance_miles) || "—"}
-                  baseWins={wins("distance_miles", "base")}
-                  candidateWins={wins("distance_miles", "candidate")}
-                />
+                <NutritionSection presentation={presentation} />
 
-                {(base?.nutrition || candidate?.nutrition) && (
-                  <>
-                    <SectionLabel>Nutrition</SectionLabel>
-
-                    <CompareRow
-                      label="Calories"
-                      baseValue={fmt(base?.nutrition?.calories)}
-                      candidateValue={fmt(candidate?.nutrition?.calories)}
-                      baseWins={wins("calories", "base")}
-                      candidateWins={wins("calories", "candidate")}
-                    />
-
-                    <CompareRow
-                      label="Protein"
-                      baseValue={fmt(base?.nutrition?.protein_g, "g")}
-                      candidateValue={fmt(candidate?.nutrition?.protein_g, "g")}
-                      baseWins={wins("protein_g", "base")}
-                      candidateWins={wins("protein_g", "candidate")}
-                    />
-
-                    <CompareRow
-                      label="Carbs"
-                      baseValue={fmt(base?.nutrition?.carbs_g, "g")}
-                      candidateValue={fmt(candidate?.nutrition?.carbs_g, "g")}
-                    />
-
-                    <CompareRow
-                      label="Fat"
-                      baseValue={fmt(base?.nutrition?.fat_g, "g")}
-                      candidateValue={fmt(candidate?.nutrition?.fat_g, "g")}
-                    />
-
-                    <CompareRow
-                      label="Sodium"
-                      baseValue={fmt(base?.nutrition?.sodium_mg, "mg")}
-                      candidateValue={fmt(candidate?.nutrition?.sodium_mg, "mg")}
-                      baseWins={wins("sodium_mg", "base")}
-                      candidateWins={wins("sodium_mg", "candidate")}
-                    />
-
-                    {showIndulgenceRow && (
-                      <div style={ROW_GRID_STYLE}>
-                        <div style={ROW_LABEL_STYLE}>Indulgence</div>
-                        <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
-                          <IndulgencePill label={base?.indulgence?.label} />
-                        </div>
-                        <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
-                          <IndulgencePill label={candidate?.indulgence?.label} />
-                        </div>
-                      </div>
-                    )}
-                  </>
+                {showIndulgenceRow && (
+                  <div style={ROW_GRID_STYLE}>
+                    <div style={ROW_LABEL_STYLE}>Indulgence</div>
+                    <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
+                      <IndulgencePill label={base?.indulgence?.label} />
+                    </div>
+                    <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
+                      <IndulgencePill label={candidate?.indulgence?.label} />
+                    </div>
+                  </div>
                 )}
 
-                {showInsightsSection && (
+                {insightRows.length > 0 && (
                   <>
                     <SectionLabel>Insights</SectionLabel>
-
-                    <div style={ROW_GRID_STYLE}>
-                      <div style={ROW_LABEL_STYLE}>Protein</div>
-                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
-                        <InsightBadge level={baseIns?.protein_strength} higherIsBetter />
+                    {insightRows.map((row) => (
+                      <div key={row.key} style={ROW_GRID_STYLE}>
+                        <div style={ROW_LABEL_STYLE}>{row.label}</div>
+                        <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
+                          <InsightBadge level={row.baseDisplay !== "—" ? row.baseDisplay : null} higherIsBetter={row.higherIsBetter} />
+                        </div>
+                        <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
+                          <InsightBadge level={row.candidateDisplay !== "—" ? row.candidateDisplay : null} higherIsBetter={row.higherIsBetter} />
+                        </div>
                       </div>
-                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
-                        <InsightBadge level={candIns?.protein_strength} higherIsBetter />
-                      </div>
-                    </div>
-
-                    <div style={ROW_GRID_STYLE}>
-                      <div style={ROW_LABEL_STYLE}>Glycemic</div>
-                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
-                        <InsightBadge level={baseIns?.glycemic_impact} higherIsBetter={false} />
-                      </div>
-                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
-                        <InsightBadge level={candIns?.glycemic_impact} higherIsBetter={false} />
-                      </div>
-                    </div>
-
-                    <div style={ROW_GRID_STYLE}>
-                      <div style={ROW_LABEL_STYLE}>Sodium</div>
-                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
-                        <InsightBadge level={baseIns?.sodium_signal} higherIsBetter={false} />
-                      </div>
-                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
-                        <InsightBadge level={candIns?.sodium_signal} higherIsBetter={false} />
-                      </div>
-                    </div>
-
-                    <div style={ROW_GRID_STYLE}>
-                      <div style={ROW_LABEL_STYLE}>Energy</div>
-                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
-                        <InsightBadge level={baseIns?.lasting_energy} higherIsBetter />
-                      </div>
-                      <div style={{ ...valueBox(false), background: "rgba(20,33,27,0.02)" }}>
-                        <InsightBadge level={candIns?.lasting_energy} higherIsBetter />
-                      </div>
-                    </div>
+                    ))}
                   </>
                 )}
               </div>
@@ -716,19 +717,7 @@ export default function CompareItemsModal({
                 candidateLabel={candidateLabel}
               />
 
-              {!base?.nutrition && !candidate?.nutrition && (
-                <div
-                  style={{
-                    marginTop: 14,
-                    fontSize: 12,
-                    color: "#8a9e94",
-                    fontWeight: 700,
-                    textAlign: "center",
-                  }}
-                >
-                  Limited nutrition data available
-                </div>
-              )}
+              <ComparisonWarnings warnings={comparisonWarnings} />
             </>
           )}
         </div>
