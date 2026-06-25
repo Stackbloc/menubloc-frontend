@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   getUploadReviewItems,
+  getOwnerMenuUpload,
   approveReviewItem,
   rejectReviewItem,
   bulkReviewItems,
@@ -161,20 +162,33 @@ export default function OwnerMenuUploadReviewItems() {
     setLoading(true);
     setError("");
     try {
-      const data = await getUploadReviewItems(uploadId);
-      setItems(data.items || []);
-      setCounts(data.counts || { open: 0, edited: 0, approved: 0, rejected: 0 });
-      setPages(data.pages || []);
-      const initEdits = {};
-      for (const it of data.items || []) {
-        initEdits[it.id] = {
-          name: it.parsed_name || it.proposed_item_name || "",
-          description: it.parsed_description || it.proposed_description || "",
-          price: it.proposed_price != null ? String(it.proposed_price) : "",
-          section: "",
-        };
+      const [reviewData, uploadDetail] = await Promise.allSettled([
+        getUploadReviewItems(uploadId),
+        getOwnerMenuUpload(uploadId),
+      ]);
+
+      if (reviewData.status === "fulfilled") {
+        const data = reviewData.value;
+        setItems(data.items || []);
+        setCounts(data.counts || { open: 0, edited: 0, approved: 0, rejected: 0 });
+        const initEdits = {};
+        for (const it of data.items || []) {
+          initEdits[it.id] = {
+            name: it.parsed_name || it.proposed_item_name || "",
+            description: it.parsed_description || it.proposed_description || "",
+            price: it.proposed_price != null ? String(it.proposed_price) : "",
+            section: "",
+          };
+        }
+        setEdits(initEdits);
       }
-      setEdits(initEdits);
+
+      // Pages with image_url come from the upload detail endpoint
+      if (uploadDetail.status === "fulfilled") {
+        const detail = uploadDetail.value;
+        const detailPages = detail.pages || detail.upload?.pages || [];
+        if (detailPages.length > 0) setPages(detailPages);
+      }
     } catch {
       setError("Failed to load review items.");
     } finally {
