@@ -240,11 +240,18 @@ describe("WaiterRefinementPrompt", () => {
     expect(container.textContent).not.toMatch(/does price matter|looking for a deal|nearby only|refine\?/i);
   });
 
-  it("shows the filtered result count when results are narrowed", () => {
+  it("shows filtered result count only after a refinement step is active", () => {
+    const { container: before } = renderPrompt([{ key: "fried", label: "Fried" }], {
+      filteredResultCount: 7,
+      refinementStackLength: 0,
+    });
+    expect(before.textContent).not.toMatch(/7 filtered results/i);
+
     const { container } = renderPrompt([{ key: "fried", label: "Fried" }], {
       filteredResultCount: 7,
+      refinementStackLength: 1,
     });
-    expect(container.textContent).toMatch(/7 results/i);
+    expect(container.textContent).toMatch(/7 filtered results/i);
   });
 
   it("undo goes back one refinement step", () => {
@@ -262,7 +269,7 @@ describe("WaiterRefinementPrompt", () => {
       filteredResultCount: 5,
       refinementStackLength: 1,
     });
-    expect(container.textContent).toMatch(/5 results/i);
+    expect(container.textContent).toMatch(/5 filtered results/i);
     expect(screen.getByRole("button", { name: /undo last refinement/i })).toBeTruthy();
     expect(container.textContent).not.toMatch(/\?/);
   });

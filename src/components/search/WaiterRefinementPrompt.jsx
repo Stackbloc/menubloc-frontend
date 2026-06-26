@@ -42,7 +42,7 @@ export default function WaiterRefinementPrompt({
   if (!hasQuestion && !hasActiveRefinement) return null;
 
   const resultLabel =
-    filteredResultCount === 1 ? "1 result" : `${filteredResultCount} results`;
+    filteredResultCount === 1 ? "1 filtered result" : `${filteredResultCount} filtered results`;
 
   function renderOptionWord(option) {
     return (
@@ -133,7 +133,7 @@ export default function WaiterRefinementPrompt({
         >
           <WaiterFaceIcon size={28} />
         </span>
-        {filteredResultCount > 0 && (
+        {hasActiveRefinement && filteredResultCount > 0 && (
           <span
             aria-live="polite"
             style={{ fontWeight: 800, fontSize: 14, color: "#6B7280", whiteSpace: "nowrap" }}

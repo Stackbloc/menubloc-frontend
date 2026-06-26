@@ -2626,7 +2626,11 @@ export default function GrubbidSearchResults() {
       )}
 
       {!loading && !err && hasVisibleResults && (
-        <SearchRefinementNudge displayQuery={displayQuery} locationLabel={locationLabel} resultCount={rows.length} />
+        <SearchRefinementNudge
+          displayQuery={displayQuery}
+          locationLabel={locationLabel}
+          resultCount={waiterRefinementStack.length > 0 ? 0 : visibleResultCountForWaiter}
+        />
       )}
 
       {!loading && !err && useRestaurantGroupedRendering && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
