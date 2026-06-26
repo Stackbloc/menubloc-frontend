@@ -308,6 +308,9 @@ function isDishRow(x) {
 
 function singularizeWaiterToken(value) {
   const normalized = normalizeKey(value);
+  if (normalized === "sandwiches" || normalized === "sandwhiches" || normalized === "sanwiches") {
+    return "sandwich";
+  }
   if (normalized.endsWith("ies")) return `${normalized.slice(0, -3)}y`;
   if (normalized.endsWith("s") && !normalized.endsWith("ss")) return normalized.slice(0, -1);
   return normalized;
@@ -811,6 +814,45 @@ function countWaiterMatches(rows, test) {
   return (Array.isArray(rows) ? rows : []).reduce((count, row) => count + (test(row) ? 1 : 0), 0);
 }
 
+function isFoodFormWaiterGroup(group) {
+  return (
+    group?.tier === WAITER_TIER_FOOD &&
+    (group.dimension === "form" || group.dimension === "canonical_family")
+  );
+}
+
+function focusFoodFormWaiterOptions(options, maxOptions = 2) {
+  return [...(Array.isArray(options) ? options : [])]
+    .sort(
+      (a, b) =>
+        b.count - a.count ||
+        (a.formRank ?? Number.MAX_SAFE_INTEGER) - (b.formRank ?? Number.MAX_SAFE_INTEGER) ||
+        String(a.label).localeCompare(String(b.label))
+    )
+    .slice(0, maxOptions);
+}
+
+function trimWaiterGroupOptions(group) {
+  if (isFoodFormWaiterGroup(group)) {
+    return focusFoodFormWaiterOptions(group.options, 2);
+  }
+  return group.options.slice(0, WAITER_MAX_OPTIONS);
+}
+
+function minWaiterOptionsForGroup(group) {
+  return isFoodFormWaiterGroup(group) ? 2 : WAITER_MIN_OPTIONS;
+}
+
+function finalizeWaiterGroups(groups, totalCount) {
+  return groups
+    .map((group) => ({
+      ...group,
+      totalCount,
+      options: trimWaiterGroupOptions(group),
+    }))
+    .filter((group) => group.options.length >= minWaiterOptionsForGroup(group));
+}
+
 function buildWaiterOptionRows(rows, dimension, candidates, intentKeys) {
   const total = Array.isArray(rows) ? rows.length : 0;
   return Array.from(candidates.values())
@@ -834,14 +876,15 @@ function buildWaiterOptionRows(rows, dimension, candidates, intentKeys) {
     ))
     // Block raw numeric values (e.g. protein grams leaked from chips.nutrition_chip)
     .filter((option) => !/^\$?\d+(\.\d+)?(g|mg|kcal|cal|ml|oz)?$/i.test(String(option.label).trim()))
-    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+    .sort((a, b) => b.count - a.count || (a.formRank ?? Number.MAX_SAFE_INTEGER) - (b.formRank ?? Number.MAX_SAFE_INTEGER) || a.label.localeCompare(b.label));
 }
 
 function scoreWaiterGroup(group) {
-  if (!group || group.options.length < WAITER_MIN_OPTIONS) return -1;
+  if (!group || group.options.length < minWaiterOptionsForGroup(group)) return -1;
   const totalCount = Math.max(group.totalCount || 0, 1);
+  const isFoodForm = isFoodFormWaiterGroup(group);
   const optionCounts = group.options.map((option) => option.count).filter((count) => count > 0);
-  if (optionCounts.length < WAITER_MIN_OPTIONS) return -1;
+  if (optionCounts.length < minWaiterOptionsForGroup(group)) return -1;
 
   const coveredCount = Math.min(optionCounts.reduce((sum, count) => sum + count, 0), totalCount);
   const residualCount = Math.max(totalCount - coveredCount, 0);
@@ -856,11 +899,19 @@ function scoreWaiterGroup(group) {
   const averageRemovalRatio =
     optionCounts.reduce((sum, count) => sum + ((totalCount - count) / totalCount), 0) /
     optionCounts.length;
+  const sortedCounts = [...optionCounts].sort((a, b) => b - a);
   const smallestShare = Math.min(...optionCounts) / totalCount;
   const optionVariety = Math.min(optionCounts.length, WAITER_MAX_OPTIONS) / WAITER_MAX_OPTIONS;
 
   if (informationGain < WAITER_MIN_INFORMATION_GAIN) return -1;
-  if (smallestShare < WAITER_MIN_OPTION_SHARE) return -1;
+  if (isFoodForm) {
+    const topCount = sortedCounts[0] || 0;
+    const secondCount = sortedCounts[1] || 0;
+    if (topCount / totalCount < WAITER_MIN_OPTION_SHARE) return -1;
+    if (secondCount < WAITER_MIN_OPTION_MATCHES) return -1;
+  } else if (smallestShare < WAITER_MIN_OPTION_SHARE) {
+    return -1;
+  }
 
   return coverageRatio * (
     informationGain * 0.5 +
@@ -1251,7 +1302,7 @@ export function buildWaiterOptions(rows, query, context = {}) {
 
   const queryTokens = buildQueryTokenSet(query);
   const intentKeys = activeWaiterIntentKeys({ ...context, query });
-  const groups = [
+  const rawGroups = [
     {
       dimension: "form",
       tier: WAITER_TIER_FOOD,
@@ -1335,11 +1386,9 @@ export function buildWaiterOptions(rows, query, context = {}) {
       priority: commerceGroup.priority,
       options: buildWaiterOptionRows(inventory, "commerce", commerceGroup.candidates, intentKeys),
     })),
-  ].map((group) => ({
-    ...group,
-    totalCount: inventory.length,
-    options: group.options.slice(0, WAITER_MAX_OPTIONS),
-  })).filter((group) => group.options.length >= WAITER_MIN_OPTIONS);
+  ];
+
+  const groups = finalizeWaiterGroups(rawGroups, inventory.length);
 
   const selectedGroup = selectWaiterGroup(groups);
   if (!selectedGroup) return { inventory, options: [], dimension: null };
@@ -1363,7 +1412,7 @@ export function buildWaiterDebugGroups(rows, query, context = {}) {
 
   const queryTokens = buildQueryTokenSet(query);
   const intentKeys = activeWaiterIntentKeys({ ...context, query });
-  const groups = [
+  const rawGroups = [
     { dimension: "form", tier: WAITER_TIER_FOOD, priority: 70, options: buildWaiterOptionRows(inventory, "form", buildFormCandidates(inventory, queryTokens), intentKeys) },
     { dimension: "preparation", tier: WAITER_TIER_FOOD, priority: 60, options: buildWaiterOptionRows(inventory, "preparation", buildAttributeCandidates(inventory, "preparation", queryTokens), intentKeys) },
     { dimension: "ingredient", tier: WAITER_TIER_FOOD, priority: 50, options: buildWaiterOptionRows(inventory, "ingredient", buildAttributeCandidates(inventory, "ingredient", queryTokens), intentKeys) },
@@ -1376,7 +1425,9 @@ export function buildWaiterDebugGroups(rows, query, context = {}) {
       { commerceType: "deal", priority: 9, candidates: buildDealCommerceCandidates(inventory) },
       { commerceType: "distance", priority: 8, candidates: buildDistanceCommerceCandidates(inventory) },
     ].map((cg) => ({ dimension: "commerce", commerceType: cg.commerceType, tier: WAITER_TIER_COMMERCE, priority: cg.priority, options: buildWaiterOptionRows(inventory, "commerce", cg.candidates, intentKeys) })),
-  ].map((g) => ({ ...g, totalCount: inventory.length, options: g.options.slice(0, WAITER_MAX_OPTIONS) }));
+  ];
+
+  const groups = finalizeWaiterGroups(rawGroups, inventory.length);
 
   const scored = groups.map((g) => ({ ...g, utilityScore: scoreWaiterGroup(g) }));
   const selectedGroup = selectWaiterGroup(groups);

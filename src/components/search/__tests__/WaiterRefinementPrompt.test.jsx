@@ -340,7 +340,7 @@ describe("WaiterRefinementPrompt", () => {
     const result = buildWaiterOptions(rows, "chicken");
 
     expect(result.dimension).toBe("form");
-    expect(result.options.map((option) => option.label)).toEqual(["Tacos", "Salads", "Sandwiches"]);
+    expect(result.options.map((option) => option.label)).toEqual(["Tacos", "Salads"]);
     expect(result.options.every((option) => Array.isArray(option.sourceValues) && option.sourceValues.length > 0)).toBe(true);
     expect(
       result.options.every((option) =>
@@ -431,6 +431,30 @@ describe("WaiterRefinementPrompt", () => {
 
     expect(result.dimension).toBe("form");
     expect(result.options.map((option) => option.label)).not.toEqual(["Fried", "Grilled", "Baked"]);
+  });
+
+  it("asks dominant food forms for chicken search (LA-like mix)", () => {
+    const rows = [
+      makeRow({ id: 1, name: "Nashville Hot Chicken Sandwich", restaurantId: 1, restaurantName: "R1", sectionName: "Sandwiches", price: 14, foodForm: "sandwich", categories: ["sandwich", "entree"] }),
+      makeRow({ id: 2, name: "Grilled Chicken & Avocado Sandwich", restaurantId: 2, restaurantName: "R2", sectionName: "Sandwiches", price: 15, foodForm: "sandwich", categories: ["sandwich", "entree"] }),
+      makeRow({ id: 3, name: "Crispy Chicken Sandwich", restaurantId: 3, restaurantName: "R3", sectionName: "Sandwiches", price: 13, foodForm: "sandwich", categories: ["sandwich", "entree"] }),
+      makeRow({ id: 4, name: "Kids Chicken Fingers", restaurantId: 4, restaurantName: "R4", sectionName: "Kids", price: 8, foodForm: "sandwich", categories: ["sandwich", "Kids"] }),
+      makeRow({ id: 5, name: "Crispy Chicken", restaurantId: 5, restaurantName: "R5", sectionName: "Sandwiches", price: 12, foodForm: "sandwich", categories: ["sandwich", "entree"] }),
+      makeRow({ id: 6, name: "Chicken Caesar Salad", restaurantId: 6, restaurantName: "R6", sectionName: "Salads", price: 13, categories: ["Salads", "entree"] }),
+      makeRow({ id: 7, name: "Chicken Cobb Salad", restaurantId: 7, restaurantName: "R7", sectionName: "Salads", price: 14, categories: ["Salads", "entree"] }),
+      makeRow({ id: 8, name: "Fried chicken tenders", restaurantId: 8, restaurantName: "R8", sectionName: "Entrees", price: 12, categories: ["breaded_chicken", "entree"] }),
+      makeRow({ id: 9, name: "chicken plate", restaurantId: 9, restaurantName: "R9", sectionName: "Entrees", price: 10, categories: ["Entrees"] }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+    expect(result.dimension).toBe("form");
+
+    const display = buildContextAwareRefinementOptions(result.options, "chicken");
+    const labels = display.map((option) => option.label);
+    expect(labels).toContain("Sandwich");
+    expect(labels).toContain("Salad");
+    expect(labels).not.toContain("Deals");
+    expect(labels).not.toContain("Deal");
   });
 
   it("does not surface deal commerce as a waiter refinement", () => {
