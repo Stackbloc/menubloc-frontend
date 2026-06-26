@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
+import { parseLocation } from "../../lib/locationUtils.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_GEO_KEY = "grubbid.discovery.geo";
+const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 
 function readGeo() {
   try {
@@ -14,6 +16,21 @@ function readGeo() {
     if (Number.isFinite(geo?.lat) && Number.isFinite(geo?.lng)) return geo;
   } catch {}
   return null;
+}
+
+function readMarketContext() {
+  const geo = readGeo();
+  let city = "";
+  let state = "";
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_LOCATION_KEY);
+    if (raw) {
+      const parsed = parseLocation(raw);
+      city = parsed.city || "";
+      state = parsed.state || "";
+    }
+  } catch {}
+  return { geo, city, state };
 }
 
 export default function ChainLocationsSheet({ chainId, currentRestaurantId, onClose }) {
@@ -28,8 +45,10 @@ export default function ChainLocationsSheet({ chainId, currentRestaurantId, onCl
   }, []);
 
   useEffect(() => {
-    const geo = readGeo();
+    const { geo, city, state } = readMarketContext();
     const params = new URLSearchParams();
+    if (city) params.set("city", city);
+    if (state) params.set("state", state);
     if (geo) {
       params.set("lat", String(geo.lat));
       params.set("lng", String(geo.lng));
