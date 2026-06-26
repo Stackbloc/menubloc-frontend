@@ -204,6 +204,17 @@ export default function DiscoveryDrawer({
             <option value="zh">{t("language.chinese", "中文")}</option>
           </select>
 
+          <Section label="For Restaurants" />
+          <Link to="/restaurant/signup" onClick={onClose} style={{
+            display: "block", padding: "12px 0",
+            fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
+          }}>Add your restaurant</Link>
+          <Link to="/franchises" onClick={onClose} style={{
+            display: "block", padding: "12px 0",
+            fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
+            borderTop: "1px solid #f2f4f7",
+          }}>Franchise / Multi-location</Link>
+
         </div>
       </div>
     </>
