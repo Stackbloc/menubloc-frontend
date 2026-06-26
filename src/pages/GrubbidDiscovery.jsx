@@ -48,6 +48,11 @@ import {
   activeMarketsShareBrowseScope,
   resolveDiscoveryMarketLocation,
 } from "../lib/marketGate.js";
+import {
+  readDetectedLocation,
+  saveDetectedLocation,
+  shouldRequestGeolocation,
+} from "../lib/discoveryLocationPersistence.js";
 
 const BROWSE_MENUS_PATH = "/browse-menus";
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -397,12 +402,19 @@ function removeRecentLocation(label) {
 }
 
 function useAutoLocation() {
-  const [state, setState] = useState({
-    status: "locating",
-    label: "", city: "", state: "", confidence: "low", lat: null, lng: null,
+  const [state, setState] = useState(() => {
+    if (typeof window === "undefined") return {
+      status: "unavailable", label: "", city: "", state: "", confidence: "low", lat: null, lng: null,
+    };
+    return readDetectedLocation(window.localStorage) || {
+      status: "locating", label: "", city: "", state: "", confidence: "low", lat: null, lng: null,
+    };
   });
 
   useEffect(() => {
+    const cached = readDetectedLocation(window.localStorage);
+    if (!shouldRequestGeolocation(cached)) return;
+
     async function ipFallback() {
       try {
         const res = await fetch("https://ipapi.co/json/");
@@ -434,7 +446,7 @@ function useAutoLocation() {
         }
         // Unblock the initial Discovery feed as soon as browser geo resolves.
         // Reverse geocoding is a secondary enrichment step and must not gate cards.
-        setState({
+        const coordinateLocation = {
           status: "ready",
           label: "",
           city: "",
@@ -442,13 +454,15 @@ function useAutoLocation() {
           confidence: "low",
           lat,
           lng,
-        });
+        };
+        setState(coordinateLocation);
+        saveDetectedLocation(window.localStorage, coordinateLocation);
 
         try {
           const geo = await reverseGeocode(lat, lng);
           setState((prev) => {
             if (prev.lat !== lat || prev.lng !== lng) return prev;
-            return {
+            const resolved = {
               status: "ready",
               label: geo.label,
               city: geo.city,
@@ -457,6 +471,8 @@ function useAutoLocation() {
               lat,
               lng,
             };
+            saveDetectedLocation(window.localStorage, resolved);
+            return resolved;
           });
         } catch {
           // Keep the coordinate-backed ready state so Discovery cards remain visible.
