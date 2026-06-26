@@ -449,12 +449,29 @@ describe("WaiterRefinementPrompt", () => {
     const result = buildWaiterOptions(rows, "chicken");
     expect(result.dimension).toBe("form");
 
-    const display = buildContextAwareRefinementOptions(result.options, "chicken");
+    const display = buildContextAwareRefinementOptions(result.options, "chicken", result.inventory);
     const labels = display.map((option) => option.label);
     expect(labels).toContain("Sandwich");
     expect(labels).toContain("Salad");
+    expect(labels).toContain("Something Else");
     expect(labels).not.toContain("Deals");
     expect(labels).not.toContain("Deal");
+  });
+
+  it("adds Something Else when top two forms do not cover all chicken results", () => {
+    const rows = [
+      makeRow({ id: 1, name: "Chicken Sandwich A", restaurantId: 1, restaurantName: "R1", sectionName: "Sandwiches", price: 10, foodForm: "sandwich", categories: ["sandwich"] }),
+      makeRow({ id: 2, name: "Chicken Sandwich B", restaurantId: 2, restaurantName: "R2", sectionName: "Sandwiches", price: 10, foodForm: "sandwich", categories: ["sandwich"] }),
+      makeRow({ id: 3, name: "Chicken Sandwich C", restaurantId: 3, restaurantName: "R3", sectionName: "Sandwiches", price: 10, foodForm: "sandwich", categories: ["sandwich"] }),
+      makeRow({ id: 4, name: "Chicken Alfredo", restaurantId: 4, restaurantName: "R4", sectionName: "Pasta", price: 12, foodForm: "pasta", categories: ["pasta"] }),
+      makeRow({ id: 5, name: "Chicken Rigatoni", restaurantId: 5, restaurantName: "R5", sectionName: "Pasta", price: 12, foodForm: "pasta", categories: ["pasta"] }),
+      makeRow({ id: 6, name: "Chicken Taco", restaurantId: 6, restaurantName: "R6", sectionName: "Tacos", price: 11, foodForm: "taco", categories: ["taco"] }),
+      makeRow({ id: 7, name: "Chicken Salad", restaurantId: 7, restaurantName: "R7", sectionName: "Salads", price: 13, categories: ["Salads"] }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+    const display = buildContextAwareRefinementOptions(result.options, "chicken", result.inventory);
+    expect(display.map((option) => option.label)).toEqual(["Sandwich", "Pasta", "Something Else"]);
   });
 
   it("does not surface deal commerce as a waiter refinement", () => {

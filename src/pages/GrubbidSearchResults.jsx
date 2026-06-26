@@ -657,6 +657,59 @@ function withSomethingElseLabel(option) {
   };
 }
 
+function createSomethingElseOption(displayOptions, uncoveredCount) {
+  const tests = displayOptions
+    .filter((option) => !isOtherOption(option))
+    .map((option) => option.test)
+    .filter((test) => typeof test === "function");
+
+  return {
+    id: "waiter:other",
+    type: displayOptions[0]?.type || "form",
+    key: "something_else",
+    label: "Something Else",
+    count: uncoveredCount,
+    predicateDescription: "Items outside the shown options",
+    test: (row) => !tests.some((test) => test(row)),
+  };
+}
+
+function countUncoveredWaiterInventory(inventory, displayOptions) {
+  const tests = displayOptions
+    .filter((option) => !isOtherOption(option))
+    .map((option) => option.test)
+    .filter((test) => typeof test === "function");
+  if (!tests.length) return 0;
+
+  return (Array.isArray(inventory) ? inventory : []).filter(
+    (row) => !tests.some((test) => test(row))
+  ).length;
+}
+
+function appendSomethingElseForUncoveredResults(displayOptions, inventory) {
+  if (!Array.isArray(displayOptions) || displayOptions.length === 0) return displayOptions;
+  if (displayOptions.length >= WAITER_MAX_OPTIONS) {
+    return displayOptions.slice(0, WAITER_MAX_OPTIONS);
+  }
+  if (displayOptions.some((option) => isOtherOption(option) || option.key === "something_else")) {
+    return displayOptions;
+  }
+
+  const total = Array.isArray(inventory) ? inventory.length : 0;
+  if (total === 0) return displayOptions;
+
+  const uncoveredCount = countUncoveredWaiterInventory(inventory, displayOptions);
+  if (uncoveredCount < WAITER_MIN_OPTION_MATCHES) return displayOptions;
+
+  const coveredCount = total - uncoveredCount;
+  if (coveredCount <= 0) return displayOptions;
+
+  return [
+    ...displayOptions,
+    createSomethingElseOption(displayOptions, uncoveredCount),
+  ].slice(0, WAITER_MAX_OPTIONS);
+}
+
 function titleFromTokens(tokens, fallbackLabel = "") {
   const words = (Array.isArray(tokens) ? tokens : []).filter(Boolean);
   if (!words.length) return String(fallbackLabel || "").trim();
@@ -670,7 +723,7 @@ function titleFromTokens(tokens, fallbackLabel = "") {
     .join(" ");
 }
 
-export function buildContextAwareRefinementOptions(options, query) {
+export function buildContextAwareRefinementOptions(options, query, inventory = null) {
   const source = Array.isArray(options) ? options : [];
   if (!source.length) return [];
 
@@ -714,20 +767,15 @@ export function buildContextAwareRefinementOptions(options, query) {
 
   deduped = deduped.map((option) => (isOtherOption(option) ? withSomethingElseLabel(option) : option));
 
-  // If duplicate-collapse removed all but one visible option, preserve a second
-  // path so users can explicitly opt out of the shown refinement.
+  if (Array.isArray(inventory)) {
+    return appendSomethingElseForUncoveredResults(deduped, inventory);
+  }
+
+  // Unit-test fallback when inventory is not supplied.
   if (deduped.length === 1 && source.length > 1 && !deduped.some(isOtherOption)) {
     deduped = [
       deduped[0],
-      {
-        id: "waiter:other",
-        type: deduped[0].type,
-        key: "something_else",
-        label: "Something Else",
-        count: Math.max(0, Number(deduped[0].totalCount || 0) - Number(deduped[0].count || 0)),
-        predicateDescription: "Items outside the shown option",
-        test: (row) => !deduped[0].test(row),
-      },
+      createSomethingElseOption(deduped, Math.max(0, Number(deduped[0].totalCount || 0) - Number(deduped[0].count || 0))),
     ];
   }
 
@@ -2170,8 +2218,8 @@ export default function GrubbidSearchResults() {
   }, [rows, waiterSelection, waiterState.inventory]);
 
   const waiterDisplayOptions = useMemo(
-    () => buildContextAwareRefinementOptions(waiterState.options, q),
-    [waiterState.options, q]
+    () => buildContextAwareRefinementOptions(waiterState.options, q, waiterState.inventory),
+    [waiterState.options, waiterState.inventory, q]
   );
 
   const dishRows = useMemo(() => waiterFilteredRows.filter(isDishRow), [waiterFilteredRows]);
