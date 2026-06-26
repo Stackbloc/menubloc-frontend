@@ -7,20 +7,24 @@ import WaiterRefinementPrompt from "../WaiterRefinementPrompt.jsx";
 import {
   buildWaiterOptions,
   buildContextAwareRefinementOptions,
+  applyWaiterRefinementStackToRows,
+  shouldOfferWaiterFollowUp,
 } from "../../../pages/GrubbidSearchResults.jsx";
 
 function renderPrompt(refinementOptions, overrides = {}) {
   const onSelectRefinement = overrides.onSelectRefinement || vi.fn();
+  const onUndo = overrides.onUndo || vi.fn();
   const utils = render(
     <WaiterRefinementPrompt
       displayQuery={overrides.displayQuery || "chicken"}
       filteredResultCount={overrides.filteredResultCount ?? 12}
       refinementOptions={refinementOptions}
-      selectedRefinement={overrides.selectedRefinement || null}
+      refinementStackLength={overrides.refinementStackLength ?? 0}
       onSelectRefinement={onSelectRefinement}
+      onUndo={onUndo}
     />
   );
-  return { ...utils, onSelectRefinement };
+  return { ...utils, onSelectRefinement, onUndo };
 }
 
 function makeRow({
@@ -222,15 +226,79 @@ describe("WaiterRefinementPrompt", () => {
   });
 
   it("invokes the refinement callback with the clicked option", () => {
-    const { container, onSelectRefinement } = renderPrompt([{ key: "fried", label: "Fried" }], {
+    const { container, onSelectRefinement } = renderPrompt([{ id: "form:fried", key: "fried", label: "Fried" }], {
       filteredResultCount: 0,
     });
 
     fireEvent.click(screen.getByRole("button", { name: /fried/i }));
     expect(onSelectRefinement).toHaveBeenCalledTimes(1);
-    expect(onSelectRefinement).toHaveBeenCalledWith({ key: "fried", label: "Fried" });
+    expect(onSelectRefinement).toHaveBeenCalledWith(
+      expect.objectContaining({ key: "fried", label: "Fried" })
+    );
 
     expect(container.textContent).not.toMatch(/does price matter|looking for a deal|nearby only|refine\?/i);
+  });
+
+  it("shows the filtered result count when results are narrowed", () => {
+    const { container } = renderPrompt([{ key: "fried", label: "Fried" }], {
+      filteredResultCount: 7,
+    });
+    expect(container.textContent).toMatch(/7 results/i);
+  });
+
+  it("undo goes back one refinement step", () => {
+    const onUndo = vi.fn();
+    renderPrompt([{ key: "fried", label: "Fried" }], {
+      refinementStackLength: 1,
+      onUndo,
+    });
+    fireEvent.click(screen.getByRole("button", { name: /undo last refinement/i }));
+    expect(onUndo).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows narrowed count and undo without a follow-up question when refinement is active", () => {
+    const { container } = renderPrompt([], {
+      filteredResultCount: 5,
+      refinementStackLength: 1,
+    });
+    expect(container.textContent).toMatch(/5 results/i);
+    expect(screen.getByRole("button", { name: /undo last refinement/i })).toBeTruthy();
+    expect(container.textContent).not.toMatch(/\?/);
+  });
+
+  it("stops follow-up questions at five results unless utility is exceptional", () => {
+    expect(
+      shouldOfferWaiterFollowUp({
+        visibleResultCount: 5,
+        refinementStackLength: 1,
+        utilityScore: 0.4,
+        optionCount: 2,
+        inventorySignalCount: 5,
+        minItemSignals: 4,
+      })
+    ).toBe(false);
+
+    expect(
+      shouldOfferWaiterFollowUp({
+        visibleResultCount: 5,
+        refinementStackLength: 1,
+        utilityScore: 0.6,
+        optionCount: 2,
+        inventorySignalCount: 5,
+        minItemSignals: 4,
+      })
+    ).toBe(true);
+
+    expect(
+      shouldOfferWaiterFollowUp({
+        visibleResultCount: 7,
+        refinementStackLength: 1,
+        utilityScore: 0.35,
+        optionCount: 2,
+        inventorySignalCount: 7,
+        minItemSignals: 4,
+      })
+    ).toBe(true);
   });
 
   it("keeps option words underlined and interactive", () => {
@@ -431,6 +499,30 @@ describe("WaiterRefinementPrompt", () => {
 
     expect(result.dimension).toBe("form");
     expect(result.options.map((option) => option.label)).not.toEqual(["Fried", "Grilled", "Baked"]);
+  });
+
+  it("supports multi-step refinement with follow-up options on narrowed rows", () => {
+    const rows = [
+      makeRow({ id: 1, name: "Chicken Sandwich Fried", restaurantId: 1, restaurantName: "R1", sectionName: "Sandwiches", price: 10, foodForm: "sandwich", preparations: ["fried"], categories: ["sandwich"] }),
+      makeRow({ id: 2, name: "Chicken Sandwich Grilled", restaurantId: 2, restaurantName: "R2", sectionName: "Sandwiches", price: 10, foodForm: "sandwich", preparations: ["grilled"], categories: ["sandwich"] }),
+      makeRow({ id: 3, name: "Chicken Sandwich Fried 2", restaurantId: 3, restaurantName: "R3", sectionName: "Sandwiches", price: 10, foodForm: "sandwich", preparations: ["fried"], categories: ["sandwich"] }),
+      makeRow({ id: 4, name: "Chicken Sandwich Fried 3", restaurantId: 4, restaurantName: "R4", sectionName: "Sandwiches", price: 10, foodForm: "sandwich", preparations: ["fried"], categories: ["sandwich"] }),
+      makeRow({ id: 5, name: "Chicken Taco", restaurantId: 5, restaurantName: "R5", sectionName: "Tacos", price: 11, foodForm: "taco", categories: ["taco"] }),
+      makeRow({ id: 6, name: "Chicken Taco 2", restaurantId: 6, restaurantName: "R6", sectionName: "Tacos", price: 11, foodForm: "taco", categories: ["taco"] }),
+    ];
+
+    const initial = buildWaiterOptions(rows, "chicken");
+    const sandwichOption = initial.options.find((option) => option.key === "sandwich");
+    expect(sandwichOption).toBeTruthy();
+
+    const narrowedRows = applyWaiterRefinementStackToRows(rows, initial.inventory, [sandwichOption]);
+    expect(narrowedRows).toHaveLength(4);
+
+    const followUp = buildWaiterOptions(narrowedRows, "chicken", { waiterRefinementDepth: 1 });
+    expect(followUp.dimension).toBe("preparation");
+    expect(followUp.options.map((option) => option.label)).toEqual(
+      expect.arrayContaining(["Fried", "Grilled"])
+    );
   });
 
   it("asks dominant food forms for chicken search (LA-like mix)", () => {

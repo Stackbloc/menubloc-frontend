@@ -20,7 +20,7 @@
  * ============================================================
  */
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
@@ -122,13 +122,16 @@ const US_STATE_ABBREVS = new Set([
 
 const WAITER_MIN_RESULTS = 8;
 const WAITER_PRICE_MIN_RESULTS = 15;
+const WAITER_FOLLOW_UP_MAX_RESULTS = 5;
 const WAITER_MIN_OPTIONS = 1;
 const WAITER_MAX_OPTIONS = 3;
 const MAX_MENU_ITEMS_PER_RESTAURANT_GROUP = 3;
 const WAITER_MIN_ITEM_SIGNALS = 6;
+const WAITER_FOLLOW_UP_MIN_ITEM_SIGNALS = 4;
 const WAITER_MIN_OPTION_MATCHES = 1;
 const WAITER_MIN_REMOVED_ITEMS = 1;
 const WAITER_STRONG_UTILITY = 0.3;
+const WAITER_EXCEPTIONAL_UTILITY = 0.55;
 const WAITER_MIN_INFORMATION_GAIN = 0.55;
 const WAITER_MIN_OPTION_SHARE = 0.1;
 const WAITER_TIER_FOOD = 3;
@@ -858,6 +861,20 @@ function buildWaiterInventory(rows) {
   return inventory;
 }
 
+export function applyWaiterRefinementStackToRows(rows, inventory, stack) {
+  if (!Array.isArray(stack) || stack.length === 0) return rows;
+  let filteredInventory = Array.isArray(inventory) ? inventory : [];
+  for (const step of stack) {
+    const test = step?.test;
+    if (typeof test !== "function") continue;
+    filteredInventory = filteredInventory.filter((row) => test(row));
+  }
+  const matchingRows = new Set(
+    filteredInventory.map((row) => row.__waiterSourceRow).filter(Boolean)
+  );
+  return (Array.isArray(rows) ? rows : []).filter((row) => matchingRows.has(row));
+}
+
 function countWaiterMatches(rows, test) {
   return (Array.isArray(rows) ? rows : []).reduce((count, row) => count + (test(row) ? 1 : 0), 0);
 }
@@ -990,6 +1007,26 @@ export function selectWaiterGroup(groups) {
   if (formGroup) return formGroup;
 
   return ranked[0] || null;
+}
+
+export function shouldOfferWaiterFollowUp({
+  visibleResultCount,
+  refinementStackLength,
+  utilityScore = 0,
+  optionCount,
+  inventorySignalCount,
+  minItemSignals = WAITER_MIN_ITEM_SIGNALS,
+}) {
+  if (optionCount < 1) return false;
+  if (inventorySignalCount < minItemSignals) return false;
+
+  if (refinementStackLength === 0) {
+    return visibleResultCount >= WAITER_MIN_RESULTS;
+  }
+
+  if (visibleResultCount > WAITER_FOLLOW_UP_MAX_RESULTS) return true;
+
+  return utilityScore >= WAITER_EXCEPTIONAL_UTILITY;
 }
 
 function buildFormCandidates(inventory, queryTokens) {
@@ -1331,7 +1368,11 @@ function buildNutritionCandidates(inventory) {
 
 export function buildWaiterOptions(rows, query, context = {}) {
   const rawInventory = buildWaiterInventory(rows);
-  if (rawInventory.length < WAITER_MIN_ITEM_SIGNALS) {
+  const minItemSignals =
+    Number(context.waiterRefinementDepth || 0) > 0
+      ? WAITER_FOLLOW_UP_MIN_ITEM_SIGNALS
+      : WAITER_MIN_ITEM_SIGNALS;
+  if (rawInventory.length < minItemSignals) {
     return { inventory: rawInventory, options: [], dimension: null };
   }
 
@@ -1344,7 +1385,7 @@ export function buildWaiterOptions(rows, query, context = {}) {
     ? rawInventory
     : rawInventory.filter((r) => !r.__isKidsMeal);
 
-  if (inventory.length < WAITER_MIN_ITEM_SIGNALS) {
+  if (inventory.length < minItemSignals) {
     return { inventory: rawInventory, options: [], dimension: null };
   }
 
@@ -1445,6 +1486,7 @@ export function buildWaiterOptions(rows, query, context = {}) {
     inventory,
     options: selectedGroup.options,
     dimension: selectedGroup.dimension,
+    utilityScore: selectedGroup.utilityScore ?? 0,
   };
 }
 
@@ -1812,7 +1854,8 @@ export default function GrubbidSearchResults() {
     high_protein,
     priceMax: routePriceMax,
     urlIntentText: Array.from(params.entries()).flat().join(" "),
-  }), [activeFilters, high_protein, params, routePriceMax]);
+    waiterRefinementDepth: waiterRefinementStack.length,
+  }), [activeFilters, high_protein, params, routePriceMax, waiterRefinementStack.length]);
 
   const [rows, setRows] = useState([]);
   const [restaurantMetaMap, setRestaurantMetaMap] = useState(new Map());
@@ -1825,49 +1868,103 @@ export default function GrubbidSearchResults() {
   const [searchHasMore, setSearchHasMore] = useState(false);
   const [searchTotalCount, setSearchTotalCount] = useState(0);
   const SEARCH_LIMIT = 24;
-  const [waiterSelection, setWaiterSelection] = useState(null);
+  const [waiterRefinementStack, setWaiterRefinementStack] = useState([]);
   const [shareCopied, setShareCopied] = useState(false);
 
-  const waiterState = useMemo(() => buildWaiterOptions(rows, q, waiterIntentContext), [rows, q, waiterIntentContext]);
-  const waiterOptionsSignature = useMemo(
-    () => waiterState.options.map((option) => `${option.id}:${option.count}`).join("|"),
-    [waiterState.options]
+  const baseWaiterState = useMemo(
+    () => buildWaiterOptions(rows, q, waiterIntentContext),
+    [rows, q, waiterIntentContext]
   );
+
+  const waiterFilteredRows = useMemo(() => {
+    const filtered = applyWaiterRefinementStackToRows(
+      rows,
+      baseWaiterState.inventory,
+      waiterRefinementStack
+    );
+    if (!waiterRefinementStack.length) return filtered;
+    const lastStep = waiterRefinementStack[waiterRefinementStack.length - 1];
+    return sortByWaiterRefinement(filtered, lastStep);
+  }, [rows, baseWaiterState.inventory, waiterRefinementStack]);
+
+  const activeWaiterState = useMemo(
+    () => buildWaiterOptions(waiterFilteredRows, q, waiterIntentContext),
+    [waiterFilteredRows, q, waiterIntentContext]
+  );
+
+  const handleWaiterSelect = useCallback((option) => {
+    if (!option) return;
+    setWaiterRefinementStack((prev) => [...prev, option]);
+  }, []);
+
+  const handleWaiterUndo = useCallback(() => {
+    setWaiterRefinementStack((prev) => (prev.length ? prev.slice(0, -1) : prev));
+  }, []);
 
   const waiterRestoredRef = useRef(false);
 
   // Reset waiter only on query/location changes — not on results reload.
   useEffect(() => {
-    setWaiterSelection(null);
+    setWaiterRefinementStack([]);
     waiterRestoredRef.current = false;
   }, [q, city, state, zip, near]);
 
-  // Keep ?waiter= in the URL in sync with the active selection (silent, no re-render).
+  // Keep ?waiter= in the URL in sync with the active refinement stack (silent, no re-render).
   useEffect(() => {
     try {
       const url = new URL(window.location.href);
-      if (waiterSelection?.id) {
-        url.searchParams.set("waiter", waiterSelection.id);
+      if (waiterRefinementStack.length) {
+        url.searchParams.set(
+          "waiter",
+          waiterRefinementStack.map((step) => step.id).join(",")
+        );
       } else {
         url.searchParams.delete("waiter");
       }
       window.history.replaceState({}, "", url.toString());
     } catch (_) {}
-  }, [waiterSelection]);
+  }, [waiterRefinementStack]);
 
-  // Restore waiter selection from URL after results load (supports shared links).
+  // Restore waiter stack from URL after results load (supports shared links).
   useEffect(() => {
     if (loading || waiterRestoredRef.current) return;
-    if (!waiterState.options.length) return;
+    if (!rows.length) return;
     try {
-      const targetId = new URL(window.location.href).searchParams.get("waiter");
-      if (targetId) {
-        const match = waiterState.options.find((o) => o.id === targetId);
-        if (match) setWaiterSelection(match);
+      const raw = new URL(window.location.href).searchParams.get("waiter");
+      if (!raw) {
+        waiterRestoredRef.current = true;
+        return;
       }
+      const ids = raw.split(",").map((id) => id.trim()).filter(Boolean);
+      if (!ids.length) {
+        waiterRestoredRef.current = true;
+        return;
+      }
+
+      let restoredRows = rows;
+      const restoredStack = [];
+      for (const id of ids) {
+        const stepState = buildWaiterOptions(restoredRows, q, {
+          ...waiterIntentContext,
+          waiterRefinementDepth: restoredStack.length,
+        });
+        const match =
+          stepState.options.find((option) => option.id === id) ||
+          buildContextAwareRefinementOptions(stepState.options, q, stepState.inventory).find(
+            (option) => option.id === id
+          );
+        if (!match) break;
+        restoredStack.push(match);
+        restoredRows = applyWaiterRefinementStackToRows(
+          restoredRows,
+          stepState.inventory,
+          restoredStack
+        );
+      }
+      if (restoredStack.length) setWaiterRefinementStack(restoredStack);
     } catch (_) {}
     waiterRestoredRef.current = true;
-  }, [loading, waiterState.options]);
+  }, [loading, rows, q, waiterIntentContext]);
 
   const { primaryUrl, fallbackUrl, hasGeoFilter } = useMemo(() => {
     const u = new URL(`${API}/search`);
@@ -2205,21 +2302,9 @@ export default function GrubbidSearchResults() {
     sortMode,
   ]);
 
-  const waiterFilteredRows = useMemo(() => {
-    if (!waiterSelection) return rows;
-    const matchingRows = new Set(
-      waiterState.inventory
-        .filter((row) => waiterSelection.test(row))
-        .map((row) => row.__waiterSourceRow)
-        .filter(Boolean)
-    );
-    const filtered = rows.filter((row) => matchingRows.has(row));
-    return sortByWaiterRefinement(filtered, waiterSelection);
-  }, [rows, waiterSelection, waiterState.inventory]);
-
   const waiterDisplayOptions = useMemo(
-    () => buildContextAwareRefinementOptions(waiterState.options, q, waiterState.inventory),
-    [waiterState.options, waiterState.inventory, q]
+    () => buildContextAwareRefinementOptions(activeWaiterState.options, q, activeWaiterState.inventory),
+    [activeWaiterState.options, activeWaiterState.inventory, q]
   );
 
   const dishRows = useMemo(() => waiterFilteredRows.filter(isDishRow), [waiterFilteredRows]);
@@ -2293,10 +2378,21 @@ export default function GrubbidSearchResults() {
   const visibleResultCountForWaiter = useRestaurantGroupedRendering
     ? restaurantGroups.length || restaurantOnlyRows.length
     : visibleDishRows.length;
-  const showWaiter =
-    waiterState.inventory.length >= WAITER_MIN_ITEM_SIGNALS &&
-    waiterState.options.length >= WAITER_MIN_OPTIONS &&
-    (waiterSelection || visibleResultCountForWaiter >= WAITER_MIN_RESULTS);
+  const waiterMinItemSignals =
+    waiterRefinementStack.length > 0 ? WAITER_FOLLOW_UP_MIN_ITEM_SIGNALS : WAITER_MIN_ITEM_SIGNALS;
+  const showWaiterQuestion = shouldOfferWaiterFollowUp({
+    visibleResultCount: visibleResultCountForWaiter,
+    refinementStackLength: waiterRefinementStack.length,
+    utilityScore: activeWaiterState.utilityScore,
+    optionCount: waiterDisplayOptions.length,
+    inventorySignalCount: activeWaiterState.inventory.length,
+    minItemSignals: waiterMinItemSignals,
+  });
+  const showWaiterBar = showWaiterQuestion || waiterRefinementStack.length > 0;
+  const activeWaiterRefinement =
+    waiterRefinementStack.length > 0
+      ? waiterRefinementStack[waiterRefinementStack.length - 1]
+      : null;
 
   const restaurantGroupsById = useMemo(() => {
     if (!useRestaurantGroupedRendering) return new Set();
@@ -2508,14 +2604,15 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && useRestaurantGroupedRendering && hasMenuMatches && (
         <>
-          {!showWaiter && restaurantIntent && <SectionTitle style={{ color: "#0B0F0C" }}>{t("common.dishes")}</SectionTitle>}
-          {showWaiter && (
+          {!showWaiterBar && restaurantIntent && <SectionTitle style={{ color: "#0B0F0C" }}>{t("common.dishes")}</SectionTitle>}
+          {showWaiterBar && (
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
               filteredResultCount={visibleResultCountForWaiter}
-              refinementOptions={waiterDisplayOptions}
-              selectedRefinement={waiterSelection}
-              onSelectRefinement={setWaiterSelection}
+              refinementOptions={showWaiterQuestion ? waiterDisplayOptions : []}
+              refinementStackLength={waiterRefinementStack.length}
+              onSelectRefinement={handleWaiterSelect}
+              onUndo={handleWaiterUndo}
             />
           )}
           <div style={styles.grid}>
@@ -2548,7 +2645,7 @@ export default function GrubbidSearchResults() {
                       coordinateSearchActive: hasGeoFilter === true,
                     }}
                     geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
-                    activeRefinement={waiterSelection}
+                    activeRefinement={activeWaiterRefinement}
                   />
               );
           })}
@@ -2558,13 +2655,14 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && !useRestaurantGroupedRendering && hasDishMatches && (
         <>
-          {showWaiter && (
+          {showWaiterBar && (
             <WaiterRefinementPrompt
               displayQuery={displayQuery}
               filteredResultCount={visibleResultCountForWaiter}
-              refinementOptions={waiterDisplayOptions}
-              selectedRefinement={waiterSelection}
-              onSelectRefinement={setWaiterSelection}
+              refinementOptions={showWaiterQuestion ? waiterDisplayOptions : []}
+              refinementStackLength={waiterRefinementStack.length}
+              onSelectRefinement={handleWaiterSelect}
+              onUndo={handleWaiterUndo}
             />
           )}
           <div style={styles.grid}>
@@ -2584,7 +2682,7 @@ export default function GrubbidSearchResults() {
                     coordinateSearchActive: hasGeoFilter === true,
                   }}
                   geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
-                  activeRefinement={waiterSelection}
+                  activeRefinement={activeWaiterRefinement}
                 />
               );
             })}

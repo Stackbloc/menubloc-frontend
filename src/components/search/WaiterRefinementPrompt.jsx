@@ -29,29 +29,30 @@ export default function WaiterRefinementPrompt({
   displayQuery,
   filteredResultCount = 0,
   refinementOptions = [],
-  selectedRefinement = null,
+  refinementStackLength = 0,
   onSelectRefinement,
+  onUndo,
 }) {
   const visibleOptions = refinementOptions
     .filter((option) => isValidOptionLabel(option?.label))
     .slice(0, 3);
-  const selectedId = selectedRefinement?.id ?? null;
+  const hasQuestion = visibleOptions.length >= 1;
+  const hasActiveRefinement = refinementStackLength > 0;
 
-  if (visibleOptions.length < 1) return null;
+  if (!hasQuestion && !hasActiveRefinement) return null;
+
+  const resultLabel =
+    filteredResultCount === 1 ? "1 result" : `${filteredResultCount} results`;
 
   function renderOptionWord(option) {
-    const isActive = selectedId !== null && option.id === selectedId;
-    const isAnySelected = selectedId !== null;
-
     return (
       <span
         key={option.id}
         role="button"
         tabIndex={0}
-        aria-pressed={isActive}
-        onClick={isActive ? undefined : () => onSelectRefinement?.(option)}
+        onClick={() => onSelectRefinement?.(option)}
         onKeyDown={(e) => {
-          if ((e.key === "Enter" || e.key === " ") && !isActive) {
+          if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             onSelectRefinement?.(option);
           }
@@ -59,23 +60,17 @@ export default function WaiterRefinementPrompt({
         style={{
           fontWeight: 900,
           fontSize: 15,
-          cursor: isActive ? "default" : "pointer",
-          color: isActive
-            ? "var(--gb-color-accent)"
-            : isAnySelected
-            ? "#9CA3AF"
-            : "#0B0F0C",
+          cursor: "pointer",
+          color: "#0B0F0C",
           transition: "color 0.15s",
           whiteSpace: "nowrap",
           userSelect: "none",
         }}
         onMouseEnter={(e) => {
-          if (!isActive) e.currentTarget.style.color = "var(--gb-color-accent)";
+          e.currentTarget.style.color = "var(--gb-color-accent)";
         }}
         onMouseLeave={(e) => {
-          if (!isActive) {
-            e.currentTarget.style.color = isAnySelected ? "#9CA3AF" : "#0B0F0C";
-          }
+          e.currentTarget.style.color = "#0B0F0C";
         }}
       >
         {option.label}
@@ -130,7 +125,7 @@ export default function WaiterRefinementPrompt({
         margin: "2px 0 14px",
       }}
     >
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, lineHeight: 1.4 }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, lineHeight: 1.4, flexWrap: "wrap" }}>
         <span
           aria-hidden="true"
           title={displayQuery ? `Refine ${displayQuery}` : "Refine results"}
@@ -138,13 +133,22 @@ export default function WaiterRefinementPrompt({
         >
           <WaiterFaceIcon size={28} />
         </span>
-        {renderQuestion()}
-        {selectedId !== null && (
+        {filteredResultCount > 0 && (
+          <span
+            aria-live="polite"
+            style={{ fontWeight: 800, fontSize: 14, color: "#6B7280", whiteSpace: "nowrap" }}
+          >
+            {resultLabel}
+            <span aria-hidden="true"> · </span>
+          </span>
+        )}
+        {hasQuestion && renderQuestion()}
+        {refinementStackLength > 0 && (
           <button
             type="button"
-            aria-label="Clear refinement"
+            aria-label="Undo last refinement"
             title="Undo"
-            onClick={() => onSelectRefinement?.(null)}
+            onClick={() => onUndo?.()}
             style={{
               display: "inline-flex",
               alignItems: "center",
