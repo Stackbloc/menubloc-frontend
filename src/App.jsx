@@ -92,6 +92,7 @@ import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
 
 import RestaurantSignup from "./pages/RestaurantSignup.jsx";
 import RestaurantSignupEntry from "./pages/RestaurantSignupEntry.jsx";
+import FranchisesPage from "./pages/FranchisesPage.jsx";
 import RestaurantFreeProfileSignup from "./pages/RestaurantFreeProfileSignup.jsx";
 import RestaurantPhilosophy from "./pages/RestaurantPhilosophy.jsx";
 import RestaurantFoundersSignup from "./pages/RestaurantFoundersSignup.jsx";
@@ -561,6 +562,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/join/dothan" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage marketKey="dothan" />} />
         <Route path="/join/diners" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinDinersPage />} />
         <Route path="/restaurant/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFoundersSignup />} />
+        <Route path="/franchises" element={crmHost ? <HostRouteRedirect to="/crm" /> : <FranchisesPage />} />
         <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/restaurant/signup/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
         <Route path="/restaurant/signup/free-profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFreeProfileSignup />} />
