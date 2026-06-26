@@ -1554,8 +1554,9 @@ function compareNullableNumbers(a, b) {
 function sortByWaiterRefinement(filteredRows, refinement) {
   if (!refinement) return filteredRows;
   const sorted = [...filteredRows];
+  const refinementKey = String(refinement.key || "");
 
-  if (refinement.type === "nutrition" && refinement.key.includes("protein")) {
+  if (refinement.type === "nutrition" && refinementKey.includes("protein")) {
     sorted.sort((a, b) => {
       const pa = getWaiterProtein(a) ?? -1;
       const pb = getWaiterProtein(b) ?? -1;
@@ -1574,7 +1575,7 @@ function sortByWaiterRefinement(filteredRows, refinement) {
         const db = getDistanceMiles(b) ?? -Infinity;
         return db - da;
       });
-    } else if (refinement.key.startsWith("under_") || /^\d+_plus$/.test(refinement.key)) {
+    } else if (refinementKey.startsWith("under_") || /^\d+_plus$/.test(refinementKey)) {
       sorted.sort((a, b) => {
         const pa = getWaiterPriceDollars(a) ?? Infinity;
         const pb = getWaiterPriceDollars(b) ?? Infinity;
@@ -1849,6 +1850,7 @@ export default function GrubbidSearchResults() {
   const trackedEventKeysRef = useRef(new Set());
   const sortMode = String(params.get("sort") || "default_relevance").trim() || "default_relevance";
   const activeFilters = useMemo(() => parseFiltersFromUrl(params), [params]);
+  const [waiterRefinementStack, setWaiterRefinementStack] = useState([]);
   const waiterIntentContext = useMemo(() => ({
     activeFilters,
     high_protein,
@@ -1868,7 +1870,6 @@ export default function GrubbidSearchResults() {
   const [searchHasMore, setSearchHasMore] = useState(false);
   const [searchTotalCount, setSearchTotalCount] = useState(0);
   const SEARCH_LIMIT = 24;
-  const [waiterRefinementStack, setWaiterRefinementStack] = useState([]);
   const [shareCopied, setShareCopied] = useState(false);
 
   const baseWaiterState = useMemo(
