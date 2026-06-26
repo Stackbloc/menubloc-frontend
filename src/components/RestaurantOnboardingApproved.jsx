@@ -4,6 +4,7 @@ Purpose: Cursor-friendly React component version of the approved Menuply restaur
 */
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { FAQ_DEFS, FaqAnswerBlocks } from "./RestaurantFAQ.jsx";
 import { BrandLogo } from "./BrandLogo.jsx";
@@ -458,6 +459,13 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         >
           Continue
         </button>
+
+        <div style={{ marginTop: 20, fontSize: 13, color: "#6B7280", lineHeight: 1.5 }}>
+          Franchise or multi-location brand?{" "}
+          <Link to="/franchises" style={{ color: "#1F4E3D", fontWeight: 700, textDecoration: "none" }}>
+            Contact us →
+          </Link>
+        </div>
       </main>
     </div>
   );
