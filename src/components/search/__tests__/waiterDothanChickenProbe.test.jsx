@@ -4,6 +4,7 @@ import {
   buildWaiterOptions,
   buildWaiterDebugGroups,
   buildContextAwareRefinementOptions,
+  applyWaiterRefinementStackToRows,
 } from "../../../pages/GrubbidSearchResults.jsx";
 
 // Snapshot of production GET /public/search?q=chicken&city=Dothan&state=AL (2026-06-26)
@@ -37,5 +38,23 @@ describe("waiter Dothan chicken probe", () => {
     expect(result.dimension).toBe("form");
     expect(result.options.map((o) => `${o.label}:${o.count}`)).toEqual(["Sandwiches:7", "Salads:1"]);
     expect(display.map((o) => o.label)).toEqual(["Sandwich", "Salad", "Something Else"]);
+  });
+
+  it("narrows to sandwich items only when user selects Sandwich (display option)", () => {
+    const result = buildWaiterOptions(DOTHAN_CHICKEN_ROWS, "chicken");
+    const display = buildContextAwareRefinementOptions(result.options, "chicken", result.inventory);
+    const sandwich = display.find((option) => option.label === "Sandwich");
+    expect(sandwich).toBeTruthy();
+    expect(typeof sandwich.test).toBe("function");
+
+    const narrowed = applyWaiterRefinementStackToRows(DOTHAN_CHICKEN_ROWS, result.inventory, [sandwich]);
+    const names = narrowed.map((row) => row.name).sort();
+
+    expect(names).not.toContain("Tuscani Chicken Pasta");
+    expect(names).not.toContain("CHICKEN CAESAR WRAP");
+    expect(names).not.toContain("Orbit Chicken Stack");
+    expect(names).toContain("Grilled Chicken Sandwich");
+    expect(names).toContain("TRUCK STOP CHICKEN");
+    expect(narrowed).toHaveLength(7);
   });
 });

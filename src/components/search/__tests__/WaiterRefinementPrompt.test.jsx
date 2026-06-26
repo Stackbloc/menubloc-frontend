@@ -9,6 +9,7 @@ import {
   buildContextAwareRefinementOptions,
   applyWaiterRefinementStackToRows,
   shouldOfferWaiterFollowUp,
+  resolveWaiterRefinementStep,
 } from "../../../pages/GrubbidSearchResults.jsx";
 
 function renderPrompt(refinementOptions, overrides = {}) {
@@ -264,6 +265,28 @@ describe("WaiterRefinementPrompt", () => {
     expect(container.textContent).toMatch(/5 results/i);
     expect(screen.getByRole("button", { name: /undo last refinement/i })).toBeTruthy();
     expect(container.textContent).not.toMatch(/\?/);
+  });
+
+  it("resolves a refinement step without a test function before filtering", () => {
+    const rows = [
+      makeRow({ id: 1, name: "Chicken Sandwich", restaurantId: 1, restaurantName: "R1", sectionName: "Sandwiches", price: 10, foodForm: "sandwich", categories: ["sandwich"] }),
+      makeRow({ id: 2, name: "Chicken Taco", restaurantId: 2, restaurantName: "R2", sectionName: "Tacos", price: 11, foodForm: "taco", categories: ["taco"] }),
+      makeRow({ id: 3, name: "Chicken Taco 2", restaurantId: 3, restaurantName: "R3", sectionName: "Tacos", price: 12, foodForm: "taco", categories: ["taco"] }),
+      makeRow({ id: 4, name: "Chicken Taco 3", restaurantId: 4, restaurantName: "R4", sectionName: "Tacos", price: 13, foodForm: "taco", categories: ["taco"] }),
+      makeRow({ id: 5, name: "Chicken Taco 4", restaurantId: 5, restaurantName: "R5", sectionName: "Tacos", price: 14, foodForm: "taco", categories: ["taco"] }),
+      makeRow({ id: 6, name: "Chicken Taco 5", restaurantId: 6, restaurantName: "R6", sectionName: "Tacos", price: 15, foodForm: "taco", categories: ["taco"] }),
+    ];
+    const state = buildWaiterOptions(rows, "chicken");
+    const display = buildContextAwareRefinementOptions(state.options, "chicken", state.inventory);
+    const sandwich = display.find((option) => option.label === "Sandwich");
+    const stripped = { id: sandwich.id, key: sandwich.key, type: sandwich.type, label: sandwich.label };
+
+    const resolved = resolveWaiterRefinementStep(stripped, rows, "chicken");
+    expect(typeof resolved?.test).toBe("function");
+
+    const narrowed = applyWaiterRefinementStackToRows(rows, state.inventory, [resolved]);
+    expect(narrowed).toHaveLength(1);
+    expect(narrowed[0].menu_item_name).toMatch(/sandwich/i);
   });
 
   it("stops follow-up questions at five results unless utility is exceptional", () => {

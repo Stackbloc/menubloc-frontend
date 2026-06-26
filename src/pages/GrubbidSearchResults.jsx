@@ -861,18 +861,59 @@ function buildWaiterInventory(rows) {
   return inventory;
 }
 
+function waiterRowKey(row) {
+  return asString(pickFirst(row, ["menu_item_id", "menuItemId", "item_id", "id"], ""));
+}
+
+export function resolveWaiterRefinementStep(option, rows, query, context = {}) {
+  if (!option) return null;
+  if (typeof option.test === "function") return option;
+
+  const stepState = buildWaiterOptions(rows, query, context);
+  const displayOptions = buildContextAwareRefinementOptions(
+    stepState.options,
+    query,
+    stepState.inventory
+  );
+  const pools = [...displayOptions, ...stepState.options];
+  const match =
+    pools.find((candidate) => option.id && candidate.id === option.id) ||
+    pools.find(
+      (candidate) =>
+        candidate.key === option.key &&
+        (candidate.type || null) === (option.type || null)
+    );
+
+  return match && typeof match.test === "function" ? match : null;
+}
+
 export function applyWaiterRefinementStackToRows(rows, inventory, stack) {
   if (!Array.isArray(stack) || stack.length === 0) return rows;
-  let filteredInventory = Array.isArray(inventory) ? inventory : [];
+
+  let narrowedRows = Array.isArray(rows) ? rows : [];
+  let anyStepApplied = false;
+
   for (const step of stack) {
     const test = step?.test;
     if (typeof test !== "function") continue;
-    filteredInventory = filteredInventory.filter((row) => test(row));
+    anyStepApplied = true;
+
+    const stepInventory = buildWaiterInventory(narrowedRows);
+    const allowedKeys = new Set(
+      stepInventory
+        .filter((invRow) => test(invRow))
+        .map((invRow) => waiterRowKey(invRow.__waiterSourceRow || invRow))
+        .filter(Boolean)
+    );
+
+    narrowedRows = narrowedRows.filter((row) => {
+      const key = waiterRowKey(row);
+      return key && allowedKeys.has(key);
+    });
   }
-  const matchingRows = new Set(
-    filteredInventory.map((row) => row.__waiterSourceRow).filter(Boolean)
-  );
-  return (Array.isArray(rows) ? rows : []).filter((row) => matchingRows.has(row));
+
+  if (!anyStepApplied) return Array.isArray(rows) ? rows : [];
+  return narrowedRows;
 }
 
 function countWaiterMatches(rows, test) {
@@ -1894,9 +1935,13 @@ export default function GrubbidSearchResults() {
   );
 
   const handleWaiterSelect = useCallback((option) => {
-    if (!option) return;
-    setWaiterRefinementStack((prev) => [...prev, option]);
-  }, []);
+    const resolved = resolveWaiterRefinementStep(option, waiterFilteredRows, q, {
+      ...waiterIntentContext,
+      waiterRefinementDepth: waiterRefinementStack.length,
+    });
+    if (!resolved) return;
+    setWaiterRefinementStack((prev) => [...prev, resolved]);
+  }, [waiterFilteredRows, q, waiterIntentContext, waiterRefinementStack.length]);
 
   const handleWaiterUndo = useCallback(() => {
     setWaiterRefinementStack((prev) => (prev.length ? prev.slice(0, -1) : prev));
@@ -1950,11 +1995,15 @@ export default function GrubbidSearchResults() {
           waiterRefinementDepth: restoredStack.length,
         });
         const match =
+          resolveWaiterRefinementStep({ id }, restoredRows, q, {
+            ...waiterIntentContext,
+            waiterRefinementDepth: restoredStack.length,
+          }) ||
           stepState.options.find((option) => option.id === id) ||
           buildContextAwareRefinementOptions(stepState.options, q, stepState.inventory).find(
             (option) => option.id === id
           );
-        if (!match) break;
+        if (!match || typeof match.test !== "function") break;
         restoredStack.push(match);
         restoredRows = applyWaiterRefinementStackToRows(
           restoredRows,
