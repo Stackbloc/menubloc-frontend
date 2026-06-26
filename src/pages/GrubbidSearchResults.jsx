@@ -1175,25 +1175,10 @@ function buildPriceCommerceCandidates(inventory) {
   return candidates;
 }
 
-function buildDealCommerceCandidates(inventory) {
-  const candidates = new Map();
-  const dealCount = inventory.filter(getWaiterHasDeal).length;
-  if (dealCount > 0 && dealCount < inventory.length) {
-    addCandidate(
-      candidates,
-      "deals",
-      "Deals",
-      getWaiterHasDeal,
-      "Items with active deals",
-      {
-        commerceType: "deal",
-        sourceValues: inventory
-          .filter(getWaiterHasDeal)
-          .map((row) => sourceRecordFor(row, "waiter_attributes.commerce.has_deal", true)),
-      }
-    );
-  }
-  return candidates;
+function buildDealCommerceCandidates() {
+  // Deal refinement is not a useful waiter question for open-ended dish search —
+  // everyone wants a deal. Deals are surfaced via filters/badges, not waiter prompts.
+  return new Map();
 }
 
 function buildDistanceCommerceCandidates(inventory) {

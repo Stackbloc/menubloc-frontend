@@ -433,7 +433,24 @@ describe("WaiterRefinementPrompt", () => {
     expect(result.options.map((option) => option.label)).not.toEqual(["Fried", "Grilled", "Baked"]);
   });
 
-  it("preserves provenance for price, deal, and distance candidates", () => {
+  it("does not surface deal commerce as a waiter refinement", () => {
+    const dealRows = [
+      makeRow({ id: 11, name: "Chicken Salad A", restaurantId: 11, restaurantName: "Alpha", sectionName: "Salads", price: 10, hasDeal: true, categories: ["Salads"] }),
+      makeRow({ id: 12, name: "Chicken Salad B", restaurantId: 12, restaurantName: "Beta", sectionName: "Salads", price: 10, hasDeal: true, categories: ["Salads"] }),
+      makeRow({ id: 13, name: "Chicken Salad C", restaurantId: 13, restaurantName: "Gamma", sectionName: "Salads", price: 10, hasDeal: true, categories: ["Salads"] }),
+      makeRow({ id: 14, name: "Chicken Salad D", restaurantId: 14, restaurantName: "Delta", sectionName: "Salads", price: 10, hasDeal: true, categories: ["Salads"] }),
+      makeRow({ id: 15, name: "Chicken Salad E", restaurantId: 15, restaurantName: "Epsilon", sectionName: "Salads", price: 10, categories: ["Salads"] }),
+      makeRow({ id: 16, name: "Chicken Salad F", restaurantId: 16, restaurantName: "Zeta", sectionName: "Salads", price: 10, categories: ["Salads"] }),
+      makeRow({ id: 17, name: "Chicken Salad G", restaurantId: 17, restaurantName: "Eta", sectionName: "Salads", price: 10, categories: ["Salads"] }),
+      makeRow({ id: 18, name: "Chicken Salad H", restaurantId: 18, restaurantName: "Theta", sectionName: "Salads", price: 10, categories: ["Salads"] }),
+    ];
+
+    const result = buildWaiterOptions(dealRows, "chicken");
+    expect(result.options.map((o) => o.label)).not.toContain("Deals");
+    expect(result.options.every((o) => o.commerceType !== "deal")).toBe(true);
+  });
+
+  it("preserves provenance for price and distance candidates", () => {
     // priceRows: 15 rows required by WAITER_PRICE_MIN_RESULTS=15.
     // Prices split 7 below / 8 above the $14 median → utilityScore > WAITER_STRONG_UTILITY.
     // All categories=["Salads"] → form "salad" has count=total → filtered; price wins.
@@ -454,17 +471,6 @@ describe("WaiterRefinementPrompt", () => {
       makeRow({ id: 14, name: "Salad N", restaurantId: 14, restaurantName: "R14", sectionName: "Salads", price: 20, categories: ["Salads"] }),
       makeRow({ id: 15, name: "Salad O", restaurantId: 15, restaurantName: "R15", sectionName: "Salads", price: 21, categories: ["Salads"] }),
     ];
-    // dealRows: 8 rows with 4 deals / 4 non-deals → 50/50 entropy → utilityScore ≈ 0.36 > WAITER_STRONG_UTILITY.
-    const dealRows = [
-      makeRow({ id: 11, name: "Chicken Salad A", restaurantId: 11, restaurantName: "Alpha", sectionName: "Salads", price: 10, hasDeal: true, categories: ["Salads"] }),
-      makeRow({ id: 12, name: "Chicken Salad B", restaurantId: 12, restaurantName: "Beta", sectionName: "Salads", price: 10, hasDeal: true, categories: ["Salads"] }),
-      makeRow({ id: 13, name: "Chicken Salad C", restaurantId: 13, restaurantName: "Gamma", sectionName: "Salads", price: 10, hasDeal: true, categories: ["Salads"] }),
-      makeRow({ id: 14, name: "Chicken Salad D", restaurantId: 14, restaurantName: "Delta", sectionName: "Salads", price: 10, hasDeal: true, categories: ["Salads"] }),
-      makeRow({ id: 15, name: "Chicken Salad E", restaurantId: 15, restaurantName: "Epsilon", sectionName: "Salads", price: 10, categories: ["Salads"] }),
-      makeRow({ id: 16, name: "Chicken Salad F", restaurantId: 16, restaurantName: "Zeta", sectionName: "Salads", price: 10, categories: ["Salads"] }),
-      makeRow({ id: 17, name: "Chicken Salad G", restaurantId: 17, restaurantName: "Eta", sectionName: "Salads", price: 10, categories: ["Salads"] }),
-      makeRow({ id: 18, name: "Chicken Salad H", restaurantId: 18, restaurantName: "Theta", sectionName: "Salads", price: 10, categories: ["Salads"] }),
-    ];
     // distanceRows: 8 rows required by buildDistanceCommerceCandidates (WAITER_MIN_RESULTS=8).
     // 4 nearby (≤3 mi) / 4 far (>3 mi) → utilityScore ≈ 0.36 > WAITER_STRONG_UTILITY.
     const distanceRows = [
@@ -479,13 +485,10 @@ describe("WaiterRefinementPrompt", () => {
     ];
 
     const priceResult = buildWaiterOptions(priceRows, "chicken");
-    const dealResult = buildWaiterOptions(dealRows, "chicken");
     const distanceResult = buildWaiterOptions(distanceRows, "chicken");
 
     expect(priceResult.dimension).toBe("commerce");
     expectSourceValues(priceResult.options[0].sourceValues);
-    expect(dealResult.dimension).toBe("commerce");
-    expectSourceValues(dealResult.options[0].sourceValues);
     expect(distanceResult.dimension).toBe("commerce");
     expectSourceValues(distanceResult.options[0].sourceValues);
   });
