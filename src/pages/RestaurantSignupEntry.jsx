@@ -345,6 +345,12 @@ export default function RestaurantSignupEntry() {
                 {t("signup.entry.foodTruckSignup", "Sign up")}
               </Link>
             </div>
+            <div style={styles.foodTruckRow}>
+              <span style={styles.foodTruckPrompt}>Franchise / Multi-location?</span>
+              <Link to="/franchises" style={styles.foodTruckLink}>
+                Contact us
+              </Link>
+            </div>
             <h1 style={{
               fontSize: "clamp(1.7rem, 3.5vw, 2.6rem)",
               fontWeight: 900,
