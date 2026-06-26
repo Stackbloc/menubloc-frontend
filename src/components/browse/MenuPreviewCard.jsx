@@ -3,8 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { isRestaurantVerifiedMenuStatus } from "../../lib/menuVerificationLabels.js";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
-import { getDisplayItemCount } from "../../lib/publicCardCounts.js";
-import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
+import { getDisplayItemCount, getMenuAvailabilityLabel, shouldLinkRestaurantCardToMenu } from "../../lib/publicCardCounts.js";
+import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/canonicalUrl.js";
 
 function buildMergedSearch(search, extraParams) {
   const params = new URLSearchParams(search || "");
@@ -271,12 +271,15 @@ export default function MenuPreviewCard({
   const [confirm, setConfirm] = useState(null); // null | "phone" | "order"
   const { language, t } = useLanguage();
   const location = useLocation();
-  const baseHref = restaurantMenuPathFromRow(menu) || `/public/restaurants/${menu?.restaurant_id}/menu`;
+  const menuReady = shouldLinkRestaurantCardToMenu(menu);
+  const profileHref = restaurantPathFromRow(menu) || `/public/restaurants/${menu?.restaurant_id}`;
+  const menuHref = restaurantMenuPathFromRow(menu) || `/public/restaurants/${menu?.restaurant_id}/menu`;
+  const baseHref = menuReady ? menuHref : profileHref;
   const href = `${baseHref}${buildMergedSearch(location.search, activeFilterParams)}`;
   const phone = menu?.phone || null;
   const websiteUrl = menu?.website_url || null;
   const theme = CARD_THEMES[index % CARD_THEMES.length];
-  const isVerified = isRestaurantVerifiedMenuStatus(menu?.menu_status);
+  const isVerified = menuReady && isRestaurantVerifiedMenuStatus(menu?.menu_status);
   const distance = formatDistance(menu?.distance_miles);
   const restaurantName = (
     getLocalizedField(menu, "restaurant_name", language) ||
@@ -287,11 +290,13 @@ export default function MenuPreviewCard({
   const cuisine = localizeCanonicalLabel(menu?.cuisine, "cuisine", t) || null;
   const emoji = getCuisineEmoji(restaurantName, menu?.cuisine || menu?.category);
   const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
+  const availabilityLabel = getMenuAvailabilityLabel(menu, t);
   const itemCountLabel = itemCount > 0
     ? activeFilterLabel
       ? `${itemCount} ${activeFilterLabel} ${t(itemCount === 1 ? "common.itemSingular" : "common.itemPlural")}`
       : `${itemCount} ${t(itemCount === 1 ? "common.itemSingular" : "common.itemPlural")}`
     : null;
+  const statusLabel = itemCountLabel || availabilityLabel;
   const locationCount = menu?.location_count || 1;
   const locationLabel = locationCount > 1 ? `${locationCount} locations` : null;
 
@@ -438,7 +443,7 @@ export default function MenuPreviewCard({
           )}
 
           {/* Meta pill */}
-          {(cuisine || distance || itemCount > 0) && (
+          {(cuisine || distance || statusLabel) && (
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 5,
               padding: "3px 10px",
@@ -461,7 +466,7 @@ export default function MenuPreviewCard({
                 textOverflow: "ellipsis",
                 maxWidth: 200,
               }}>
-                {[distance, itemCountLabel, cuisine].filter(Boolean).join(" · ")}
+                {[distance, statusLabel, cuisine].filter(Boolean).join(" · ")}
               </span>
             </div>
           )}
@@ -540,7 +545,9 @@ export default function MenuPreviewCard({
             letterSpacing: 0.6,
             textShadow: "0 1px 4px rgba(0,0,0,0.3)",
           }}>
-            {t("common.viewMenuShort", "View Menu")}
+            {menuReady
+              ? t("common.viewMenuShort", "View Menu")
+              : (availabilityLabel || t("discovery.viewProfile", "View Profile"))}
           </div>
         </div>
 

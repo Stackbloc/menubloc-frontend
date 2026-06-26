@@ -12,12 +12,45 @@ function toFiniteCount(value) {
 // Do not introduce page-specific overrides or duplicate display logic.
 // Do not redesign search/browse/discovery hierarchy without explicit user approval.
 
+export function isRestaurantMenuReady(restaurant) {
+  if (restaurant?.menu_ready === true) return true;
+  if (restaurant?.menu_ready === false) return false;
+  return null;
+}
+
+export function getMenuAvailabilityLabel(restaurant, t = (key, fallback) => fallback) {
+  if (isRestaurantMenuReady(restaurant) !== false) return null;
+
+  const state = String(restaurant?.menu_availability_state || "").trim().toLowerCase();
+  if (state === "claim_restaurant") {
+    return t("discovery.claimRestaurant", "Claim this restaurant");
+  }
+  if (state === "menu_not_yet_available") {
+    return t("discovery.menuNotYetAvailable", "Menu not yet available");
+  }
+  return t("discovery.profileOnly", "Profile only");
+}
+
+export function shouldLinkRestaurantCardToMenu(restaurant) {
+  const menuReady = isRestaurantMenuReady(restaurant);
+  if (menuReady === false) return false;
+  return true;
+}
+
 export function getDisplayItemCount({ restaurant, hasActiveFilters = false }) {
+  const menuReady = isRestaurantMenuReady(restaurant);
+  if (menuReady === false) return null;
+
+  const publicMenuItemCount = toFiniteCount(restaurant?.public_menu_item_count);
   const menuItemCount = toFiniteCount(restaurant?.menu_item_count);
   const matchingItemCount = toFiniteCount(
     restaurant?.matching_item_count ?? restaurant?.filtered_item_count
   );
   const totalItemCount = toFiniteCount(restaurant?.total_item_count);
+
+  if (menuReady === true && !hasActiveFilters && publicMenuItemCount != null) {
+    return publicMenuItemCount;
+  }
 
   // GUARDRAIL:
   // Public restaurant/menu cards must display counts from the current filtered
@@ -32,5 +65,5 @@ export function getDisplayItemCount({ restaurant, hasActiveFilters = false }) {
     return null;
   }
 
-  return menuItemCount ?? matchingItemCount ?? totalItemCount;
+  return menuItemCount ?? matchingItemCount ?? totalItemCount ?? publicMenuItemCount;
 }

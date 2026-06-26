@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ChainLocationsSheet from "./ChainLocationsSheet.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { getDisplayItemCount } from "../../lib/publicCardCounts.js";
+import { getDisplayItemCount, getMenuAvailabilityLabel, shouldLinkRestaurantCardToMenu } from "../../lib/publicCardCounts.js";
 import { getLocalizedField, getLocalizedPreviewLabel } from "../../utils/getLocalizedField.js";
 import { appendLanguageParam } from "../../lib/languageApi.js";
-import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
+import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/canonicalUrl.js";
 
 function buildMergedSearch(baseSearch, extra) {
   const params = new URLSearchParams(baseSearch || "");
@@ -115,16 +115,20 @@ export default function FeaturedDiscoveryCard({
   const cuisine = menu?.cuisine || menu?.category || null;
   const distance = formatDistance(menu?.distance_miles);
   const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
-  const isVerified = menu?.menu_status === "published";
-  const hasDeals = menu?.has_deals || false;
-  const previewSource = Array.isArray(menu?.preview_menu_items) && menu.preview_menu_items.length
+  const menuReady = shouldLinkRestaurantCardToMenu(menu);
+  const availabilityLabel = getMenuAvailabilityLabel(menu, t);
+  const isVerified = menuReady && menu?.menu_status === "published";
+  const hasDeals = menuReady && (menu?.has_deals || false);
+  const previewSource = menuReady && Array.isArray(menu?.preview_menu_items) && menu.preview_menu_items.length
     ? menu.preview_menu_items
-    : menu?.preview_items || [];
+    : menuReady ? (menu?.preview_items || []) : [];
   const chips = previewSource.slice(0, 3).map((item) => getLocalizedPreviewLabel(item, language));
   const locationCount = menu?.location_count || 1;
 
+  const profileHref = restaurantPathFromRow(menu) || `/public/restaurants/${id}`;
+  const menuHref = restaurantMenuPathFromRow(menu) || `/public/restaurants/${id}/menu`;
   const href = appendLanguageParam(
-    (restaurantMenuPathFromRow(menu) || `/public/restaurants/${id}/menu`) +
+    (menuReady ? menuHref : profileHref) +
       buildMergedSearch(location.search, activeFilterParams),
     language
   );
@@ -277,6 +281,16 @@ export default function FeaturedDiscoveryCard({
                 borderRadius: 999, padding: "2px 8px",
               }}>
                 📋 {itemCountLabel}
+              </span>
+            )}
+            {!itemCountLabel && availabilityLabel && (
+              <span style={{
+                fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.82)",
+                background: "rgba(0,0,0,0.30)", backdropFilter: "blur(6px)",
+                border: "1px solid rgba(255,255,255,0.18)",
+                borderRadius: 999, padding: "2px 8px",
+              }}>
+                {availabilityLabel}
               </span>
             )}
             {hasDeals && (

@@ -4,10 +4,10 @@ import ChainLocationsSheet from "./ChainLocationsSheet.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { followRestaurant, unfollowRestaurant } from "../../lib/consumerApi.js";
-import { getDisplayItemCount } from "../../lib/publicCardCounts.js";
+import { getDisplayItemCount, getMenuAvailabilityLabel, shouldLinkRestaurantCardToMenu } from "../../lib/publicCardCounts.js";
 import { getLocalizedField, getLocalizedPreviewLabel } from "../../utils/getLocalizedField.js";
 import { appendLanguageParam } from "../../lib/languageApi.js";
-import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
+import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/canonicalUrl.js";
 
 function buildMergedSearch(baseSearch, extra) {
   const params = new URLSearchParams(baseSearch || "");
@@ -113,15 +113,19 @@ export default function DiscoveryCard({
   const distance = formatDistance(menu?.distance_miles);
   const locationCount = menu?.location_count || 1;
   const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
-  const isVerified = menu?.menu_status === "published";
-  const previewSource = Array.isArray(menu?.preview_menu_items) && menu.preview_menu_items.length
+  const menuReady = shouldLinkRestaurantCardToMenu(menu);
+  const availabilityLabel = getMenuAvailabilityLabel(menu, t);
+  const isVerified = menuReady && menu?.menu_status === "published";
+  const previewSource = menuReady && Array.isArray(menu?.preview_menu_items) && menu.preview_menu_items.length
     ? menu.preview_menu_items
-    : menu?.preview_items || [];
+    : menuReady ? (menu?.preview_items || []) : [];
   const chips = previewSource.slice(0, 3).map((item) => getLocalizedPreviewLabel(item, language));
   const phone = menu?.phone || null;
 
+  const profileHref = restaurantPathFromRow(menu) || `/public/restaurants/${id}`;
+  const menuHref = restaurantMenuPathFromRow(menu) || `/public/restaurants/${id}/menu`;
   const href = appendLanguageParam(
-    (restaurantMenuPathFromRow(menu) || `/public/restaurants/${id}/menu`) +
+    (menuReady ? menuHref : profileHref) +
       buildMergedSearch(location.search, activeFilterParams),
     language
   );
@@ -165,6 +169,8 @@ export default function DiscoveryCard({
     locationCountLabel && chainId == null
                        ? { key: "chain",    text: locationCountLabel, clickable: false } : null,
     itemCountLabel     ? { key: "items",    text: itemCountLabel,     clickable: false } : null,
+    !itemCountLabel && availabilityLabel
+                       ? { key: "availability", text: availabilityLabel, clickable: false } : null,
   ].filter(Boolean);
 
   return (
