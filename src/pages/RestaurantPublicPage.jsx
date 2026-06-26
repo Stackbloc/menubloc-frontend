@@ -453,6 +453,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
         </div>
 
         <div
+          id="claim-profile"
           style={{
             alignSelf: "start",
             borderRadius: 18,

@@ -910,6 +910,7 @@ export default function GrubbidDiscovery() {
     if (!hasLocation) return;
 
     const params = new URLSearchParams();
+    params.set("surface", "home");
     if (shouldUseGeoBrowse) {
       // Omit city/state so /menus/browse uses geo+radius (consistent local radius).
       params.set("lat", String(autoLocation.lat));
@@ -1686,21 +1687,7 @@ export default function GrubbidDiscovery() {
                 height: 130, marginBottom: 10,
               }} />
             ))
-          ) : inlineError ? null : showOutOfMarketPromo ? (
-            <div style={{ textAlign: "left", padding: "24px 4px 32px" }}>
-              <div style={{ color: "#1e2924", fontSize: 16, fontWeight: 700, lineHeight: 1.55, width: "100%", maxWidth: 760, margin: 0, textAlign: "left" }}>
-                As the cost of dining continues to rise, Menuply is building a lower-cost alternative that enables restaurants to offer better value to diners in {outOfMarketAreaLabel}. Click below to learn more.
-              </div>
-              <div className="disc-oom-actions">
-                <Link to={joinInfoPath} className="disc-oom-button">
-                  Restaurants
-                </Link>
-                <Link to={joinDinersPath} className="disc-oom-button">
-                  Diners
-                </Link>
-              </div>
-            </div>
-          ) : showFilterEmptyState ? (
+          ) : inlineError ? null : showFilterEmptyState ? (
             <div style={{
               textAlign: "center", padding: "48px 20px",
               color: "#9ca3af", fontSize: 15, fontWeight: 600, lineHeight: 1.6,

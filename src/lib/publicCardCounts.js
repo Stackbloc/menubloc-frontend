@@ -20,15 +20,10 @@ export function isRestaurantMenuReady(restaurant) {
 
 export function getMenuAvailabilityLabel(restaurant, t = (key, fallback) => fallback) {
   if (isRestaurantMenuReady(restaurant) !== false) return null;
-
-  const state = String(restaurant?.menu_availability_state || "").trim().toLowerCase();
-  if (state === "claim_restaurant") {
-    return t("discovery.claimRestaurant", "Claim this restaurant");
-  }
-  if (state === "menu_not_yet_available") {
-    return t("discovery.menuNotYetAvailable", "Menu not yet available");
-  }
-  return t("discovery.profileOnly", "Profile only");
+  return t(
+    "discovery.menuPendingClaim",
+    "Menu pending — claim this profile to add or verify the menu."
+  );
 }
 
 export function shouldLinkRestaurantCardToMenu(restaurant) {

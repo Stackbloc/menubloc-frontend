@@ -124,9 +124,9 @@ export default function DiscoveryCard({
 
   const profileHref = restaurantPathFromRow(menu) || `/public/restaurants/${id}`;
   const menuHref = restaurantMenuPathFromRow(menu) || `/public/restaurants/${id}/menu`;
+  const cardSearch = buildMergedSearch(location.search, activeFilterParams);
   const href = appendLanguageParam(
-    (menuReady ? menuHref : profileHref) +
-      buildMergedSearch(location.search, activeFilterParams),
+    menuReady ? `${menuHref}${cardSearch}` : `${profileHref}${cardSearch}#claim-profile`,
     language
   );
 
