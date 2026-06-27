@@ -339,53 +339,41 @@ function saveRecentLocation(label) {
   } catch {}
 }
 
-function countSearchResults(payload) {
-  if (Array.isArray(payload?.results)) return payload.results.length;
+function countBrowseResults(payload) {
+  if (Array.isArray(payload?.menus)) return payload.menus.length;
+  const row = Array.isArray(payload?.rows) ? payload.rows[0] : null;
+  if (Array.isArray(row?.menus)) return row.menus.length;
   return 0;
 }
 
 async function verifyFilterHealth(locationParams) {
   try {
-    const query = "chicken";
-
-    const baseQuery = new URLSearchParams({
-      q: query,
+    const baseParams = new URLSearchParams({
       ...locationParams,
-    }).toString();
+      surface: "home",
+      limit: "24",
+    });
+    const dietaryParams = new URLSearchParams(baseParams);
+    dietaryParams.set("gluten_free", "1");
 
-    const dietaryQuery = new URLSearchParams({
-      q: query,
-      ...locationParams,
-      gluten_free: "1",
-    }).toString();
-
-    const allergenQuery = new URLSearchParams({
-      q: query,
-      ...locationParams,
-      allergens: "gluten",
-    }).toString();
-
-    const [baseRes, dietaryRes, allergenRes] = await Promise.all([
-      fetch(`${API}/search?${baseQuery}`),
-      fetch(`${API}/search?${dietaryQuery}`),
-      fetch(`${API}/search?${allergenQuery}`),
+    const [baseRes, dietaryRes] = await Promise.all([
+      fetch(`${API}/menus/browse?${baseParams}`),
+      fetch(`${API}/menus/browse?${dietaryParams}`),
     ]);
 
-    const [baseData, dietaryData, allergenData] = await Promise.all([
+    const [baseData, dietaryData] = await Promise.all([
       baseRes.json(),
       dietaryRes.json(),
-      allergenRes.json(),
     ]);
 
-    const baseCount = countSearchResults(baseData);
-    const dietaryCount = countSearchResults(dietaryData);
-    const allergenCount = countSearchResults(allergenData);
+    const baseCount = countBrowseResults(baseData);
+    const dietaryCount = countBrowseResults(dietaryData);
 
+    // Browse dietary filters should narrow (or empty) the restaurant feed vs unfiltered.
     return {
       baseCount,
       dietaryCount,
-      allergenCount,
-      isWorking: dietaryCount < baseCount && allergenCount < baseCount,
+      isWorking: baseCount === 0 || dietaryCount < baseCount,
     };
   } catch (err) {
     console.warn("Filter health check failed to run", err);
@@ -817,11 +805,17 @@ export default function GrubbidDiscovery() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.sessionStorage.getItem(FILTER_HEALTH_CHECKED_KEY) === "1") return;
+    const healthScopeKey = `${locationKey}::health`;
+    if (window.sessionStorage.getItem(`${FILTER_HEALTH_CHECKED_KEY}:${healthScopeKey}`) === "1") {
+      const broken = window.sessionStorage.getItem(FILTER_HEALTH_BROKEN_KEY) === "1";
+      setFilterHealthBroken(broken);
+      return;
+    }
 
-    try { window.sessionStorage.setItem(FILTER_HEALTH_CHECKED_KEY, "1"); } catch {}
     const locationParams = buildApiLocationParams();
     if (!Object.keys(locationParams).length) return;
+
+    try { window.sessionStorage.setItem(`${FILTER_HEALTH_CHECKED_KEY}:${healthScopeKey}`, "1"); } catch {}
 
     verifyFilterHealth(locationParams)
       .then((result) => {
@@ -830,12 +824,11 @@ export default function GrubbidDiscovery() {
           setFilterHealthBroken(true);
           try { window.sessionStorage.setItem(FILTER_HEALTH_BROKEN_KEY, "1"); } catch {}
         } else {
+          setFilterHealthBroken(false);
           try { window.sessionStorage.setItem(FILTER_HEALTH_BROKEN_KEY, "0"); } catch {}
         }
       });
-  // Intentionally once per session; location is read at mount time only.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [locationKey, shouldUseGeoBrowse, appliedLocation, autoLocation.lat, autoLocation.lng]);
 
   // Save auto-detected label for cross-page location reading (e.g., Waiter page)
   useEffect(() => {
@@ -1391,7 +1384,7 @@ export default function GrubbidDiscovery() {
                 </button>
               </div>
             </form>
-            {filterHealthBroken && (
+            {filterHealthBroken && hasActivePublicFilters && (
               <div style={{
                 marginTop: 10,
                 padding: "10px 14px",
