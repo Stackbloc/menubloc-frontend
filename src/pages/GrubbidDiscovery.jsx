@@ -911,6 +911,7 @@ export default function GrubbidDiscovery() {
 
     const params = new URLSearchParams();
     params.set("surface", "home");
+    params.set("limit", "50");
     if (shouldUseGeoBrowse) {
       // Omit city/state so /menus/browse uses geo+radius (consistent local radius).
       params.set("lat", String(autoLocation.lat));
