@@ -40,11 +40,7 @@ export default function OperatorEmailVerification() {
 
   const nextPath = useMemo(() => {
     if (location.state?.nextPath) return location.state.nextPath;
-    if (onboarding?.restaurant_id) {
-      return onboarding?.selected_plan === "verified" || onboarding?.plan === "verified"
-        ? "/restaurant/design-select"
-        : "/restaurant/subscription";
-    }
+    if (onboarding?.restaurant_id) return "/restaurant/onboarding/welcome";
     return restaurants?.length === 0 ? "/operator/claim" : "/operator";
   }, [location.state, onboarding, restaurants]);
 

@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -22,6 +22,10 @@ import {
   buildMenuThemeSettingsFromPreset,
   normalizeMenuThemeSettings,
 } from "../../components/menu-templates/menuThemeSettings.js";
+import {
+  resolveRestaurantOnboardingState,
+  navigateWithRestaurantOnboardingState,
+} from "../../lib/restaurantOnboardingState.js";
 
 const CANONICAL_MENU_CATEGORIES = [
   "Appetizers",
@@ -670,6 +674,8 @@ export default function OperatorMenuEditor() {
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
   const navigate = useNavigate();
+  const location = useLocation();
+  const onboarding = resolveRestaurantOnboardingState({ routeState: location.state, search: location.search }).state;
 
   const [menus, setMenus]             = useState([]);
   const [selectedMenuId, setSelectedMenuId] = useState(null);
@@ -802,6 +808,10 @@ export default function OperatorMenuEditor() {
     try {
       const d = await api.publishMenu(rid, selectedMenuId);
       setMenus(menus.map(m => m.id === selectedMenuId ? { ...m, status: d.menu?.status } : m));
+      if (onboarding?.restaurant_id) {
+        navigateWithRestaurantOnboardingState(navigate, "/restaurant/onboarding/success", onboarding);
+        return;
+      }
       showSuccess(`"${selectedMenu?.name || "Menu"}" published successfully.`);
     } catch (e) {
       const msg = e.message || "Could not publish menu.";

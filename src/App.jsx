@@ -92,6 +92,9 @@ import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
 
 import RestaurantSignup from "./pages/RestaurantSignup.jsx";
 import RestaurantSignupEntry from "./pages/RestaurantSignupEntry.jsx";
+import RestaurantOnboardingWelcome from "./pages/RestaurantOnboardingWelcome.jsx";
+import RestaurantOnboardingProcessing from "./pages/RestaurantOnboardingProcessing.jsx";
+import RestaurantMenuLive from "./pages/RestaurantMenuLive.jsx";
 import FranchisesPage from "./pages/FranchisesPage.jsx";
 import RestaurantFreeProfileSignup from "./pages/RestaurantFreeProfileSignup.jsx";
 import RestaurantPhilosophy from "./pages/RestaurantPhilosophy.jsx";
@@ -506,7 +509,9 @@ function AppShell({ easyMenu, crmHost }) {
   const joinSignupRoute =
     location.pathname === "/restaurant/signup/free-profile" ||
     location.pathname === "/restaurant/signup/account";
-  const restaurantOnboardingRoute = location.pathname === "/restaurant/onboarding";
+  const restaurantOnboardingRoute =
+    location.pathname === "/restaurant/onboarding" ||
+    location.pathname.startsWith("/restaurant/onboarding/");
   const operatorTabletRoute = location.pathname === "/operator/tablet";
   const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute || restaurantOnboardingRoute || operatorTabletRoute;
 
@@ -556,6 +561,9 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant-profile/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantProfile />} />
 
         <Route path="/restaurant/onboarding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantPhilosophy />} />
+        <Route path="/restaurant/onboarding/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOnboardingWelcome />} />
+        <Route path="/restaurant/onboarding/processing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOnboardingProcessing />} />
+        <Route path="/restaurant/onboarding/success" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantMenuLive />} />
         <Route path="/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage />} />
         <Route path="/join/losangeles" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage marketKey="losangeles" />} />
         <Route path="/join/los-angeles" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage marketKey="losangeles" />} />
@@ -566,7 +574,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/restaurant/signup/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
         <Route path="/restaurant/signup/free-profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFreeProfileSignup />} />
-        <Route path="/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
+        <Route path="/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/restaurant/signup/account" replace />} />
         <Route path="/pricing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
         <Route path="/profilesearch" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProfileSearchPage />} />
         <Route path="/restaurant/subscription" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />

@@ -1169,40 +1169,28 @@ export default function PdfUploadPage() {
           <CompletionNextSteps isOperatorFlow={false} restaurantId={restaurant_id} />
         </div>
 
-        {chosenStyle ? (
-          <div style={s.designBanner(true)}>
-            <div style={s.designBannerIcon}>🎨</div>
-            <div style={s.designBannerText}>
-              <div style={s.designBannerTitle}>
-                Design style selected: {chosenStyle.name}
-              </div>
-              <div style={s.designBannerDesc}>
-                {chosenStyle.tagline}. Your menu will be styled and ready once it is approved and published.
-              </div>
-            </div>
+        <div style={{ marginTop: 20 }}>
+          <button
+            onClick={() => {
+              const nextState = { ...state, ingestion_method: isOcrFlow ? "ocr" : ingestion_method };
+              const dest = !isOperatorFlow && state.restaurant_id
+                ? "/restaurant/onboarding/processing"
+                : "/operator/menulab";
+              navigateWithRestaurantOnboardingState(nav, dest, nextState);
+            }}
+            style={{
+              width: "100%", height: 50, borderRadius: 12,
+              border: 0, background: "#1F4E3D", color: "#fff",
+              fontSize: 15, fontWeight: 800, cursor: "pointer",
+              fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+            }}
+          >
+            Continue to Publish
+          </button>
+          <div style={{ fontSize: 12, color: "#9CA3AF", textAlign: "center", marginTop: 10 }}>
+            Additional customization options will be available after publication.
           </div>
-        ) : (
-          <div style={s.designBanner(false)}>
-            <div style={s.designBannerIcon}>✦</div>
-            <div style={s.designBannerText}>
-              <div style={s.designBannerTitle}>Make your menu look beautiful</div>
-              <div style={s.designBannerDesc}>
-                You skipped the design step. Choose a style anytime to give your menu a polished, professional look.
-              </div>
-              <button
-                style={s.designBannerLink}
-                onClick={() =>
-                  navigateWithRestaurantOnboardingState(nav, "/restaurant/design-select", {
-                    ...state,
-                    ingestion_method: isOcrFlow ? "ocr" : ingestion_method,
-                  })
-                }
-              >
-                Choose a design style →
-              </button>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     );
   }
@@ -1214,13 +1202,11 @@ export default function PdfUploadPage() {
       <BrandLogo height={48} radius={14} matchPageBackground={false} />
 
       <div style={s.steps}>
-        <div style={s.step(false, true)}>1. Account</div>
+        <div style={s.step(true, false)}>1. Import</div>
         <div style={s.stepDivider} />
-        <div style={s.step(false, true)}>2. Choose plan</div>
+        <div style={s.step(false, false)}>2. Review</div>
         <div style={s.stepDivider} />
-        <div style={s.step(false, true)}>3. Design</div>
-        <div style={s.stepDivider} />
-        <div style={s.step(true, false)}>4. Upload menu</div>
+        <div style={s.step(false, false)}>3. Publish</div>
       </div>
 
       <div style={s.heading}>
