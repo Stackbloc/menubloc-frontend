@@ -16,6 +16,25 @@ import {
   styles,
 } from "../../components/consumer/ConsumerAuthShared.jsx";
 
+function resolveOnboardingDest(restaurant) {
+  if (!restaurant) return "/operator/claim";
+  const step = restaurant.current_step_key;
+  if (!step) return restaurant.has_published_menu ? "/operator" : "/restaurant/onboarding/welcome";
+  switch (step) {
+    case "menu_live": return "/operator";
+    case "import_menu": return "/restaurant/onboarding/welcome";
+    case "process_menu": return "/restaurant/onboarding/processing";
+    case "review_menu":
+    case "publish_menu": return "/operator/menulab";
+    default: return "/operator";
+  }
+}
+
+function onboardingStateForResume(restaurant, email) {
+  if (!restaurant) return undefined;
+  return { restaurant_id: restaurant.id, restaurant_name: restaurant.restaurant_name, email };
+}
+
 export default function OperatorLogin() {
   const { login, isAuthenticated, isEmailVerified, loading, operator, restaurants } = useOperator();
   const { t } = useLanguage();
@@ -28,8 +47,13 @@ export default function OperatorLogin() {
   const [busy, setBusy] = useState(false);
 
   if (!loading && isAuthenticated) {
-    const nextPath = restaurants?.length === 0 ? "/operator/claim" : "/operator";
-    return <Navigate to={isEmailVerified ? nextPath : "/operator/verify-email"} replace state={{ email: operator?.email, nextPath }} />;
+    if (!isEmailVerified) {
+      const dest = restaurants?.length === 0 ? "/operator/claim" : resolveOnboardingDest(restaurants?.[0]);
+      return <Navigate to="/operator/verify-email" replace state={{ email: operator?.email, nextPath: dest }} />;
+    }
+    if (!restaurants?.length) return <Navigate to="/operator/claim" replace />;
+    const dest = resolveOnboardingDest(restaurants[0]);
+    return <Navigate to={dest} replace state={onboardingStateForResume(restaurants[0], operator?.email)} />;
   }
 
   async function handleSubmit(e) {
@@ -49,7 +73,11 @@ export default function OperatorLogin() {
     setBusy(true);
     try {
       const result = await login(email.trim(), password);
-      const dest = result.restaurants?.length === 0 ? "/operator/claim" : "/operator";
+      if (!result.restaurants?.length) {
+        navigate("/operator/claim", { replace: true });
+        return;
+      }
+      const dest = resolveOnboardingDest(result.restaurants[0]);
       if (result.operator?.email_verified !== true) {
         navigate("/operator/verify-email", {
           replace: true,
@@ -57,7 +85,10 @@ export default function OperatorLogin() {
         });
         return;
       }
-      navigate(dest, { replace: true });
+      navigate(dest, {
+        replace: true,
+        state: onboardingStateForResume(result.restaurants[0], email.trim()),
+      });
     } catch (err) {
       setFormError(err.message || t("auth.signInFailed", "Sign in failed. Please try again."));
     } finally {

@@ -11,10 +11,10 @@ const FONT = '"Instrument Sans", "Avenir Next", system-ui, sans-serif';
 
 const STEPS = [
   "Reading your menu...",
-  "Finding sections...",
-  "Detecting prices...",
-  "Extracting menu items...",
-  "Building structured menu...",
+  "Organizing sections...",
+  "Matching your prices...",
+  "Putting items together...",
+  "Almost ready...",
 ];
 
 export default function RestaurantOnboardingProcessing() {
@@ -88,7 +88,7 @@ export default function RestaurantOnboardingProcessing() {
               margin: "0 auto 32px",
             }} />
             <h2 style={{ fontSize: 22, fontWeight: 900, color: "#0B0F0C", marginBottom: 12 }}>
-              Processing your menu
+              Preparing Your Menu
             </h2>
             <p style={{ fontSize: 15, color: "#6B7280", lineHeight: 1.65 }}>
               {STEPS[stepIndex]}
@@ -108,10 +108,10 @@ export default function RestaurantOnboardingProcessing() {
               &#10003;
             </div>
             <h2 style={{ fontSize: 22, fontWeight: 900, color: "#0B0F0C", marginBottom: 12 }}>
-              Menu imported
+              Your menu is ready to review
             </h2>
             <p style={{ fontSize: 15, color: "#6B7280", lineHeight: 1.65, marginBottom: 32 }}>
-              Your menu has been extracted. Review the items and publish when ready.
+              We've organized your menu items. Take a look and publish when everything looks good.
             </p>
             <button
               onClick={handleContinue}

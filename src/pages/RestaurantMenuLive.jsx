@@ -70,7 +70,7 @@ export default function RestaurantMenuLive() {
           lineHeight: 1.1,
           marginBottom: 12,
         }}>
-          Your menu is now live.
+          Your menu is now live!
         </h1>
 
         <p style={{ fontSize: 16, color: "#374151", lineHeight: 1.65, marginBottom: 40 }}>
@@ -93,6 +93,22 @@ export default function RestaurantMenuLive() {
             >
               View Menu
             </a>
+          )}
+
+          {menuUrl && (
+            <button
+              onClick={() => {
+                const shareUrl = `${window.location.origin}${menuUrl}`;
+                if (navigator.share) {
+                  navigator.share({ title: restaurantName, url: shareUrl }).catch(() => {});
+                } else {
+                  navigator.clipboard?.writeText(shareUrl).catch(() => {});
+                }
+              }}
+              style={outlineBtn}
+            >
+              Share Menu
+            </button>
           )}
 
           <button
