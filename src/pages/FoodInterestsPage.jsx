@@ -4,6 +4,7 @@ import BottomNav from "../components/BottomNav.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { fetchWaiterBriefing } from "../lib/waiterApi.js";
 import { getDefaultMealPeriod, getMealPeriodFallback, getWaiterGreeting, WAITER_MEAL_PERIODS } from "../lib/waiterMealPeriod.js";
+import { groupLikedRecommendations } from "../lib/waiterRecommendations.js";
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const SESSION_AUTO_LABEL_KEY = "grubbid.discovery.auto_label";
@@ -42,7 +43,21 @@ function groupSuggestions(rows) {
   const restaurantOrder = [];
   const restaurantMap = new Map();
 
+  const likedRows = rows.filter((row) => row.type === "liked_signal");
+  let likedModuleAdded = false;
+
   for (const row of rows) {
+    if (row.type === "liked_signal") {
+      if (!likedModuleAdded) {
+        restaurantOrder.push({
+          kind: "liked_topic",
+          label: "Based on dishes you like",
+          restaurants: groupLikedRecommendations(likedRows),
+        });
+        likedModuleAdded = true;
+      }
+      continue;
+    }
     if (row.type === "new_item") {
       const name = extractRestaurantName(row.detail);
       if (!name) continue;
@@ -135,6 +150,35 @@ const ITEM_LINK_STYLE = {
   fontSize: 13,
   lineHeight: 1.45,
 };
+
+export function LikedRecommendationTopicCard({ topic }) {
+  return (
+    <div style={CARD_STYLE} data-testid="liked-recommendation-topic">
+      <h4 style={{ margin: "0 0 12px", fontSize: 15, color: "#F9FAFB" }}>{topic.label}</h4>
+      <div style={{ display: "grid", gap: 14 }}>
+        {topic.restaurants.map((restaurant) => (
+          <div key={restaurant.restaurantId ?? restaurant.restaurantName}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#F9FAFB" }}>
+              {restaurant.restaurantName}
+            </div>
+            <div style={{ display: "grid", gap: 7, marginTop: 6 }}>
+              {restaurant.items.map((item, index) => (
+                <div key={item.menu_item_id ?? item.link ?? index} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+                  <span style={{ ...ITEM_LINK_STYLE, color: "#CBD5E1" }}>{item.title}</span>
+                  {item.link ? (
+                    <Link to={item.link} style={{ ...LINK_STYLE, marginTop: 0, whiteSpace: "nowrap" }}>
+                      {item.link_label || "View dish →"}
+                    </Link>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // One card per restaurant with multiple items listed inside
 function RestaurantGroupCard({ group, mealLabel }) {
@@ -388,7 +432,12 @@ export default function FoodInterestsPage() {
                     ) : null}
                     <div style={{ display: "grid", gap: 12 }}>
                       {groups.map((group, index) =>
-                        group.kind === "restaurant_group" ? (
+                        group.kind === "liked_topic" ? (
+                          <LikedRecommendationTopicCard
+                            key="liked-recommendation-topic"
+                            topic={group}
+                          />
+                        ) : group.kind === "restaurant_group" ? (
                           <RestaurantGroupCard
                             key={group.restaurantName + index}
                             group={group}
