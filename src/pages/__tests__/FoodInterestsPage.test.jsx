@@ -28,7 +28,8 @@ describe("Waiter liked-dish recommendation topic", () => {
     );
 
     const module = screen.getByTestId("liked-recommendation-topic");
-    expect(within(module).getAllByText("Based on dishes you like")).toHaveLength(1);
+    const heading = within(module).getByText("Based on dishes you like");
+    expect(heading.style.color).toBe("rgb(134, 239, 172)");
     expect(within(module).getAllByText("Chick-fil-A")).toHaveLength(1);
     expect(within(module).getAllByText("Waffle House")).toHaveLength(1);
     expect(within(module).getAllByText("View dish →")).toHaveLength(3);

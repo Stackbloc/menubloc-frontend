@@ -154,7 +154,7 @@ const ITEM_LINK_STYLE = {
 export function LikedRecommendationTopicCard({ topic }) {
   return (
     <div style={CARD_STYLE} data-testid="liked-recommendation-topic">
-      <h4 style={{ margin: "0 0 12px", fontSize: 15, color: "#F9FAFB" }}>{topic.label}</h4>
+      <h4 style={{ margin: "0 0 12px", fontSize: 15, color: "#86EFAC" }}>{topic.label}</h4>
       <div style={{ display: "grid", gap: 14 }}>
         {topic.restaurants.map((restaurant) => (
           <div key={restaurant.restaurantId ?? restaurant.restaurantName}>
@@ -227,26 +227,6 @@ function StandaloneCard({ rec }) {
       ) : null}
       {rec.link ? (
         <Link to={rec.link} style={LINK_STYLE}>{rec.link_label || "View →"}</Link>
-      ) : null}
-    </div>
-  );
-}
-
-// Deal card — unchanged shape, compact
-function DealCard({ rec }) {
-  return (
-    <div style={{ ...CARD_STYLE, border: "1px solid rgba(251,191,36,0.18)", background: "linear-gradient(180deg, rgba(20,18,10,0.92), rgba(12,11,6,0.92))" }}>
-      {rec.label ? (
-        <div style={{ ...LABEL_STYLE, color: "#FDE68A" }}>{rec.label}</div>
-      ) : null}
-      <div style={{ fontSize: 15, fontWeight: 800, color: "#F9FAFB" }}>{rec.title}</div>
-      {rec.detail ? (
-        <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.5, marginTop: 4 }}>{rec.detail}</div>
-      ) : null}
-      {rec.link ? (
-        <Link to={rec.link} style={{ ...LINK_STYLE, color: "#FDE68A", borderBottomColor: "rgba(251,191,36,0.28)" }}>
-          {rec.link_label || "View Deal →"}
-        </Link>
       ) : null}
     </div>
   );
@@ -334,11 +314,6 @@ export default function FoodInterestsPage() {
     : (Array.isArray(briefing?.recommendations) ? briefing.recommendations : []);
 
   const suggestions = uniqueRecommendations(recommendationRows.filter((row) => row?.type !== "active_deal"));
-  const deals = uniqueRecommendations(
-    Array.isArray(briefing?.deals)
-      ? briefing.deals
-      : recommendationRows.filter((row) => row?.type === "active_deal")
-  ).slice(0, 3);
 
   const marketLabel = [location.city, location.state].filter(Boolean).join(", ");
   const menuItemCount = verifiedCount(briefing?.counts?.menu_item_count);
@@ -455,20 +430,6 @@ export default function FoodInterestsPage() {
                 ) : (
                   <MarketFallback marketLabel={marketLabel} mealPeriod={mealPeriod} />
                 )}
-
-                {deals.length ? (
-                  <div>
-                    <h3 style={{ margin: "2px 0 10px", fontSize: 16, color: "#F9FAFB" }}>Today's Deals</h3>
-                    <div style={{ display: "grid", gap: 12 }}>
-                      {deals.map((deal, index) => (
-                        <DealCard
-                          key={`deal-${deal.deal_id || deal.link}-${index}`}
-                          rec={deal}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
 
                 {coverageLimited ? <CommunityGrowthCard marketLabel={marketLabel} /> : null}
               </div>
