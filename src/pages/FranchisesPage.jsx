@@ -13,7 +13,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { BrandLogo } from "../components/BrandLogo.jsx";
-import SiteFooter from "../components/SiteFooter.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -721,7 +720,7 @@ export default function FranchisesPage() {
                       style={styles.contactBtn}
                       onClick={() => handleContactClick(f)}
                     >
-                      Contact Menuply About This Franchise
+                      Claim
                     </button>
                   </div>
                 );
@@ -805,8 +804,6 @@ export default function FranchisesPage() {
           )}
         </div>
       </div>
-
-      <SiteFooter />
     </div>
   );
 }

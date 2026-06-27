@@ -352,6 +352,12 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
 
         <div className="section-label">For Restaurants</div>
 
+        <div style={{ marginBottom: 16 }}>
+          <Link to="/franchises" style={{ color: "#4caf50", fontSize: 14, fontWeight: 800, textDecoration: "none" }}>
+            Franchise / Multi-location?
+          </Link>
+        </div>
+
         <h1>The future of the restaurant industry will not be built on higher prices alone.</h1>
 
         <p className="hero-subhead">
@@ -460,12 +466,6 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           Continue
         </button>
 
-        <div style={{ marginTop: 20, fontSize: 13, color: "#6B7280", lineHeight: 1.5 }}>
-          Franchise or multi-location brand?{" "}
-          <Link to="/franchises" style={{ color: "#1F4E3D", fontWeight: 700, textDecoration: "none" }}>
-            Contact us →
-          </Link>
-        </div>
       </main>
     </div>
   );

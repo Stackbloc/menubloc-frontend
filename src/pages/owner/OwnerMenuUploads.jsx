@@ -1186,11 +1186,92 @@ function ReviewItemRow({ item, onApprove, onReject }) {
   );
 }
 
+function UploadReviewGroup({ upload, items, pages, photoUrl, onApprove, onReject }) {
+  const [photoExpanded, setPhotoExpanded] = useState(false);
+  const [activePage, setActivePage]       = useState(0);
+
+  const activeUrl = pages[activePage]?.image_url || pages[activePage]?.pdf_storage_url || null;
+
+  return (
+    <div style={{ border: "1px solid #fde68a", borderRadius: 10, overflow: "hidden", background: "#fff" }}>
+      {/* Upload label bar */}
+      <div style={{ padding: "8px 12px", background: "#fef3c7", borderBottom: "1px solid #fde68a", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#92400e" }}>
+          {(upload.upload_type || "").includes("photo") ? "📸" : (upload.upload_type || "") === "pdf" ? "📄" : "📝"}
+          {" "}{upload.source_filename || upload.upload_type || "upload"}
+        </span>
+        <span style={{ fontSize: 11, color: "#b45309" }}>{items.length} item{items.length !== 1 ? "s" : ""}</span>
+        {pages.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setPhotoExpanded((v) => !v)}
+            style={{ marginLeft: "auto", background: "none", border: "1px solid #f59e0b", borderRadius: 6, cursor: "pointer", color: "#92400e", fontWeight: 700, fontSize: 11, padding: "2px 8px" }}
+          >
+            {photoExpanded ? "Hide Source ▲" : "Show Source ▼"}
+          </button>
+        )}
+      </div>
+
+      {/* Source photo viewer */}
+      {photoExpanded && pages.length > 0 && (
+        <div style={{ padding: 12, borderBottom: "1px solid #fde68a", background: "#fffbeb" }}>
+          {activeUrl ? (
+            <img
+              src={activeUrl}
+              alt={`Page ${activePage + 1}`}
+              style={{ width: "100%", maxHeight: 480, objectFit: "contain", borderRadius: 6, border: "1px solid #fde68a", display: "block" }}
+            />
+          ) : (
+            <div style={{ color: "#b45309", fontSize: 12, padding: 8 }}>No preview available for this page.</div>
+          )}
+          {pages.length > 1 && (
+            <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+              {pages.map((p, i) => {
+                const thumb = p.image_url || p.pdf_storage_url;
+                return thumb ? (
+                  <img
+                    key={i}
+                    src={thumb}
+                    alt={`Page ${i + 1}`}
+                    onClick={() => setActivePage(i)}
+                    style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 4, cursor: "pointer", border: i === activePage ? "2px solid #f59e0b" : "2px solid transparent", opacity: i === activePage ? 1 : 0.6 }}
+                  />
+                ) : (
+                  <div
+                    key={i}
+                    onClick={() => setActivePage(i)}
+                    style={{ width: 56, height: 56, borderRadius: 4, cursor: "pointer", background: "#fef3c7", border: i === activePage ? "2px solid #f59e0b" : "2px solid transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#92400e" }}
+                  >
+                    p{i + 1}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Review items */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12 }}>
+        {items.map((item) => (
+          <ReviewItemRow
+            key={item.id}
+            item={item}
+            onApprove={(edits) => onApprove(item.id, edits)}
+            onReject={() => onReject(item.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function WorkspaceReviewPanel({ uploads, restaurantId, onItemActioned }) {
   const pending = uploads.filter((u) => (u.human_review_items || 0) > 0);
   const uploadKey = pending.map((u) => u.id).join(",");
 
   const [itemsByUpload, setItemsByUpload] = useState({});
+  const [pagesByUpload, setPagesByUpload] = useState({});
   const [loadingSet,    setLoadingSet]    = useState(new Set());
   const [expanded,      setExpanded]      = useState(true);
   const [actionMsg,     setActionMsg]     = useState("");
@@ -1201,10 +1282,23 @@ function WorkspaceReviewPanel({ uploads, restaurantId, onItemActioned }) {
     pending.forEach((u) => {
       if (itemsByUpload[u.id] !== undefined) return;
       setLoadingSet((prev) => new Set([...prev, u.id]));
-      getUploadReviewItems(u.id)
-        .then((data) => setItemsByUpload((prev) => ({ ...prev, [u.id]: data.items || [] })))
-        .catch(() =>    setItemsByUpload((prev) => ({ ...prev, [u.id]: [] })))
-        .finally(() =>  setLoadingSet((prev) => { const next = new Set(prev); next.delete(u.id); return next; }));
+      Promise.allSettled([
+        getUploadReviewItems(u.id),
+        getOwnerMenuUpload(u.id),
+      ]).then(([reviewResult, detailResult]) => {
+        if (reviewResult.status === "fulfilled") {
+          setItemsByUpload((prev) => ({ ...prev, [u.id]: reviewResult.value.items || [] }));
+        } else {
+          setItemsByUpload((prev) => ({ ...prev, [u.id]: [] }));
+        }
+        if (detailResult.status === "fulfilled") {
+          const detail = detailResult.value;
+          const pages = detail.pages || detail.upload?.pages || [];
+          setPagesByUpload((prev) => ({ ...prev, [u.id]: pages }));
+        }
+      }).finally(() => {
+        setLoadingSet((prev) => { const next = new Set(prev); next.delete(u.id); return next; });
+      });
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uploadKey]);
@@ -1284,15 +1378,25 @@ function WorkspaceReviewPanel({ uploads, restaurantId, onItemActioned }) {
           ) : openItems.length === 0 ? (
             <div style={{ color: "#92400e", fontSize: 13 }}>No items pending review.</div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {openItems.map((item) => (
-                <ReviewItemRow
-                  key={`${item.uploadId}-${item.id}`}
-                  item={item}
-                  onApprove={(edits) => handleApprove(item.uploadId, item.id, edits)}
-                  onReject={() => handleReject(item.uploadId, item.id)}
-                />
-              ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {pending.map((u) => {
+                const uploadItems = (itemsByUpload[u.id] || [])
+                  .filter((item) => item.status === "open" || item.status === "edited");
+                if (!uploadItems.length) return null;
+                const pages = pagesByUpload[u.id] || [];
+                const photoUrl = pages.find((p) => p.image_url)?.image_url || null;
+                return (
+                  <UploadReviewGroup
+                    key={u.id}
+                    upload={u}
+                    items={uploadItems}
+                    pages={pages}
+                    photoUrl={photoUrl}
+                    onApprove={(itemId, edits) => handleApprove(u.id, itemId, edits)}
+                    onReject={(itemId) => handleReject(u.id, itemId)}
+                  />
+                );
+              })}
             </div>
           )}
         </>

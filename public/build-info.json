@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "82603e24f26430bb65389c7070be40a7fa372b70",
-  "gitShortSha": "82603e2",
+  "gitSha": "aaaf8129f13483e09fc1b77ad2b9de81d94acbe0",
+  "gitShortSha": "aaaf812",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-24T15:38:22.233Z",
+  "buildTime": "2026-06-26T22:02:13.847Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Replace BrandLockup with BrandLogo across all consumer-facing pages"
+  "commitMessage": "fix: add public menu gate and menu audit trail"
 }

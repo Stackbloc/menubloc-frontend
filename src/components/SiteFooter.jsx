@@ -54,9 +54,6 @@ export default function SiteFooter() {
           <Link to="/restaurant/onboarding" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.signup")}
           </Link>
-          <Link to="/franchises" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
-            Franchise / Multi-location
-          </Link>
           <Link to="/operator/login" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.signin")}
           </Link>

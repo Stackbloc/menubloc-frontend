@@ -126,6 +126,7 @@ export default function GrubbidHomeV1() {
     if (!hasLocation) return;
 
     const params = new URLSearchParams();
+    params.set("surface", "home");
 
     // city/state (optional but useful)
     if (appliedLocation) {

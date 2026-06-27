@@ -21,6 +21,7 @@ const DOTHAN_CHICKEN_ROWS = [
   { name: "CHICKEN CAESAR WRAP", waiter_attributes: { categories: ["salad", "entree", "SANDWICHES + WRAPS"], context: { food_form: "salad" } }, menu_item_id: "10", restaurant_id: "10", restaurant_name: "J" },
   { name: "Southern Fried Chicken", waiter_attributes: { categories: ["sandwich", "entree", "Signature Fried Chicken"], context: { food_form: "sandwich" } }, menu_item_id: "11", restaurant_id: "11", restaurant_name: "K" },
   { name: "CHICKEN & WAFFLES", waiter_attributes: { categories: ["sandwich", "entree", "PLATES"], context: { food_form: "sandwich" } }, menu_item_id: "12", restaurant_id: "12", restaurant_name: "L" },
+  { name: "Nashville Hot Chicken Sandwich", waiter_attributes: { categories: ["burger", "entree"], context: { food_form: "burger" } }, menu_item_id: "13", restaurant_id: "13", restaurant_name: "M" },
 ].map((row) => ({
   ...row,
   menu_item_name: row.name,
@@ -36,7 +37,7 @@ describe("waiter Dothan chicken probe", () => {
     const formGroup = debug.groups.find((g) => g.dimension === "form");
     expect(formGroup).toBeTruthy();
     expect(result.dimension).toBe("form");
-    expect(result.options.map((o) => `${o.label}:${o.count}`)).toEqual(["Sandwiches:7", "Salads:1"]);
+    expect(result.options.map((o) => `${o.label}:${o.count}`)).toEqual(["Sandwiches:8", "Salads:1"]);
     expect(display.map((o) => o.label)).toEqual(["Sandwich", "Salad", "Something Else"]);
   });
 
@@ -55,6 +56,6 @@ describe("waiter Dothan chicken probe", () => {
     expect(names).not.toContain("Orbit Chicken Stack");
     expect(names).toContain("Grilled Chicken Sandwich");
     expect(names).toContain("TRUCK STOP CHICKEN");
-    expect(narrowed).toHaveLength(7);
+    expect(narrowed).toHaveLength(8);
   });
 });

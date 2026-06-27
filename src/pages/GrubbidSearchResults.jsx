@@ -416,6 +416,60 @@ const _WAITER_FORM_KEY_LOOKUP = new Map(
 );
 const _WAITER_FORM_RANK = new Map(TEMP_WAITER_FORM_TEXT_FALLBACK.map((signal, index) => [signal.key, index]));
 
+function foodFormSignalTerms(formKey) {
+  const signal =
+    _WAITER_FORM_KEY_LOOKUP.get(normalizeWaiterValue(formKey)) ||
+    _WAITER_FORM_KEY_LOOKUP.get(singularizeWaiterToken(formKey));
+  return signal?.terms || [formKey];
+}
+
+function itemNameSupportsFoodForm(itemName, formKey) {
+  const name = normalizeWaiterValue(itemName);
+  if (!name) return false;
+  return foodFormSignalTerms(formKey).some((term) => name.includes(normalizeWaiterValue(term)));
+}
+
+/** MKS food_form can disagree with the item name (e.g. chicken sandwich tagged burger). Prefer the name. */
+function foodFormMetadataConflictsWithItemName(itemName, formKey) {
+  const name = normalizeWaiterValue(itemName);
+  const form = normalizeWaiterValue(formKey);
+  if (!name || !form) return false;
+
+  if (form === "burger") {
+    return (
+      /\b(sandwich|sub|hoagie|hero|panini|wrap)\b/.test(name) &&
+      !/\b(burger|cheeseburger|hamburger)\b/.test(name)
+    );
+  }
+
+  if (form === "sandwich") {
+    return (
+      (/\b(parmesan|parm)\b/.test(name) ||
+        /\bwaffles?\b/.test(name) ||
+        (/\b(fried|southern fried)\b/.test(name) &&
+          /\bchicken\b/.test(name) &&
+          !/\b(sandwich|sub|wrap)\b/.test(name))) &&
+      !/\b(sandwich|sub|hoagie|hero|panini|wrap)\b/.test(name)
+    );
+  }
+
+  return false;
+}
+
+function foodFormOptionShouldBeOffered(option, inventory) {
+  if (option?.type !== "form") return true;
+  const formKey = normalizeWaiterValue(option.key);
+
+  // Never ask "Burgers?" when the only matching items are named as sandwiches.
+  if (formKey !== "burger") return true;
+
+  const matching = (Array.isArray(inventory) ? inventory : []).filter((row) =>
+    typeof option.test === "function" ? option.test(row) : false
+  );
+  if (!matching.length) return false;
+  return matching.some((row) => itemNameSupportsFoodForm(getWaiterItemName(row), formKey));
+}
+
 function escapeRegExp(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -975,6 +1029,7 @@ function buildWaiterOptionRows(rows, dimension, candidates, intentKeys) {
       formRank: candidate.formRank ?? null,
     }))
     .filter((option) => !waiterOptionRepeatsIntent(option, intentKeys))
+    .filter((option) => dimension !== "form" || foodFormOptionShouldBeOffered(option, rows))
     .filter((option) => (
       option.count >= WAITER_MIN_OPTION_MATCHES &&
       option.count < total &&
@@ -1081,10 +1136,11 @@ function buildFormCandidates(inventory, queryTokens) {
     // Priority 0: waiter_attributes.context.food_form (MKS strict_type — highest-authority structured source).
     const directForm = normalizeWaiterValue(row.waiter_attributes?.context?.food_form || "");
     if (directForm) {
+      const itemName = getWaiterItemName(row);
       const signal =
         _WAITER_FORM_KEY_LOOKUP.get(directForm) ||
         _WAITER_FORM_KEY_LOOKUP.get(singularizeWaiterToken(directForm));
-      if (signal) {
+      if (signal && !foodFormMetadataConflictsWithItemName(itemName, directForm)) {
         resolvedSignal = signal;
         formSourceField = "waiter_attributes.context.food_form";
         formSourceValue = row.waiter_attributes.context.food_form;
@@ -1100,7 +1156,10 @@ function buildFormCandidates(inventory, queryTokens) {
           const signal =
             _WAITER_FORM_KEY_LOOKUP.get(norm) ||
             _WAITER_FORM_KEY_LOOKUP.get(singularizeWaiterToken(norm));
-          if (signal) {
+          if (
+            signal &&
+            !foodFormMetadataConflictsWithItemName(getWaiterItemName(row), signal.key)
+          ) {
             resolvedSignal = signal;
             formSourceField = "waiter_attributes.categories";
             formSourceValue = rawCategory;

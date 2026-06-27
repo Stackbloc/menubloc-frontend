@@ -857,6 +857,26 @@ describe("WaiterRefinementPrompt", () => {
     expect(result?.dimension).toBe("commerce");
   });
 
+  it("does not offer Burgers on a chicken search when burger-tagged items are named as sandwiches", () => {
+    const rows = [
+      makeRow({ id: 1, name: "Nashville Hot Chicken Sandwich", restaurantId: 1, restaurantName: "R1", sectionName: "Burgers", price: 12, foodForm: "burger", categories: ["burger"] }),
+      makeRow({ id: 2, name: "Grilled Chicken Sandwich", restaurantId: 2, restaurantName: "R2", sectionName: "Sandwiches", price: 11, foodForm: "sandwich", categories: ["sandwich"] }),
+      makeRow({ id: 3, name: "Grilled Chicken Sandwich B", restaurantId: 3, restaurantName: "R3", sectionName: "Sandwiches", price: 12, foodForm: "sandwich", categories: ["sandwich"] }),
+      makeRow({ id: 4, name: "Grilled Chicken Sandwich C", restaurantId: 4, restaurantName: "R4", sectionName: "Sandwiches", price: 13, foodForm: "sandwich", categories: ["sandwich"] }),
+      makeRow({ id: 5, name: "Chicken Taco", restaurantId: 5, restaurantName: "R5", sectionName: "Tacos", price: 10, foodForm: "taco", categories: ["taco"] }),
+      makeRow({ id: 6, name: "Chicken Taco B", restaurantId: 6, restaurantName: "R6", sectionName: "Tacos", price: 11, foodForm: "taco", categories: ["taco"] }),
+      makeRow({ id: 7, name: "Chicken Taco C", restaurantId: 7, restaurantName: "R7", sectionName: "Tacos", price: 12, foodForm: "taco", categories: ["taco"] }),
+      makeRow({ id: 8, name: "Chicken Salad", restaurantId: 8, restaurantName: "R8", sectionName: "Salads", price: 9, foodForm: "salad", categories: ["salad"] }),
+    ];
+
+    const result = buildWaiterOptions(rows, "chicken");
+
+    expect(result?.dimension).toBe("form");
+    const labels = (result?.options || []).map((option) => option.label);
+    expect(labels).not.toContain("Burgers");
+    expect(labels.some((label) => /sandwich/i.test(label))).toBe(true);
+  });
+
   it("(F) form dimension wins over preparation even when preparation has higher raw utility", () => {
     // Regression for hierarchy violation: food form must beat preparation when both qualify.
     // selectWaiterGroup explicitly promotes form/canonical_family groups above preparation/ingredient/text.

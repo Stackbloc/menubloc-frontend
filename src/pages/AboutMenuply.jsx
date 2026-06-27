@@ -82,6 +82,19 @@ export default function AboutMenuply() {
         <p style={{ ...statementStyle, marginTop: 28 }}>{t("about.closer1", "Enjoy your food.")}</p>
         <p style={statementStyle}>{t("about.closer2", "Understand your food.")}</p>
         <p style={statementStyle}>{t("about.closer3", "That's Menuply.")}</p>
+
+        <p style={{ ...paragraphStyle, marginTop: 26, fontSize: "13px", color: "#6B7280" }}>
+          {t("about.dataAttributionPrefix", "Certain data provided to Menuply by ")}
+          <a
+            href="https://simplemaps.com/data/businesses"
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "#1D4ED8" }}
+          >
+            SimpleMaps.com
+          </a>
+          {t("about.dataAttributionSuffix", ".")}
+        </p>
       </div>
     </PageShell>
     <BottomNav />

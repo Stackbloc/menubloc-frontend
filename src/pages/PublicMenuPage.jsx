@@ -251,6 +251,29 @@ function IntakePreviewBanner({ show }) {
   );
 }
 
+function FranchisePricingDisclosureBanner({ text }) {
+  const disclosure = asStr(text).trim();
+  if (!disclosure) return null;
+  return (
+    <div
+      role="note"
+      aria-label="Pricing information"
+      style={{
+        padding: "10px 14px",
+        borderRadius: 12,
+        background: "#fffbeb",
+        border: "1px solid #fcd34d",
+        color: "#78350f",
+        fontSize: 12,
+        lineHeight: 1.45,
+        marginBottom: 16,
+      }}
+    >
+      {disclosure}
+    </div>
+  );
+}
+
 function FranchiseLocationSheet({ locations, currentRestaurantId, brandName, onSelect, onClose, accent }) {
   return (
     <div
@@ -1446,7 +1469,12 @@ export default function PublicMenuPage() {
           shareData,
           shareAnalyticsContext,
           franchiseSlot,
-          intakeBannerSlot: <IntakePreviewBanner show={isIntakePreview} />,
+          intakeBannerSlot: (
+            <>
+              <IntakePreviewBanner show={isIntakePreview} />
+              <FranchisePricingDisclosureBanner text={data?.pricing_disclosure} />
+            </>
+          ),
           allergenBannerSlot: <AllergenFilterBanner active={allergenFilterActive} enabledKeys={enabledAllergenKeys} />,
           onOpenFilters: () => setIsFilterDrawerOpen(true),
           displaySections,
