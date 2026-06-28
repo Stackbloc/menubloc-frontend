@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "d5860855c3225581d83acac584eb5ba0a9d41b25",
-  "gitShortSha": "d586085",
+  "gitSha": "35fafae0123f766d069f25cf3f32754e33e6e4ae",
+  "gitShortSha": "35fafae",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-28T02:40:17.042Z",
+  "buildTime": "2026-06-28T02:51:01.228Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "chore: update build-info for 2026-06-27 franchises deploy"
+  "commitMessage": "fix(franchises): place eyebrow label below logo instead of beside it"
 }

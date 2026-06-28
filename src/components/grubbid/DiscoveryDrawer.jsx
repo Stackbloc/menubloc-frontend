@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
@@ -47,6 +47,119 @@ function Section({ label }) {
   );
 }
 
+const API = (
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? "http://localhost:3001" : "https://menubloc-backend-production.up.railway.app")
+).replace(/\/$/, "");
+
+const DINER_SUPPORT_REASONS = [
+  "Incorrect menu or restaurant information",
+  "Account or sign-in help",
+  "Problem with Menuply search or recommendations",
+  "Accessibility issue",
+  "Privacy or safety concern",
+  "Technical problem",
+  "Other",
+];
+
+export function DinerSupportDialog({ open, onClose, initialName = "", initialEmail = "" }) {
+  const [name, setName] = useState(initialName);
+  const [email, setEmail] = useState(initialEmail);
+  const [reason, setReason] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
+
+  if (!open) return null;
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    if (!name.trim() || !/^\S+@\S+\.\S+$/.test(email.trim()) || !reason || !message.trim()) {
+      setError("Enter your name, a valid email, a contact reason, and a message.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch(`${API}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: "support",
+          name: name.trim(),
+          email: email.trim(),
+          subject: `Diner support: ${reason}`,
+          message: message.trim(),
+          page_url: typeof window === "undefined" ? "" : window.location.href,
+        }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok) throw new Error(data?.error || "Unable to send your message.");
+      setSent(true);
+    } catch (submitError) {
+      setError(submitError.message || "Unable to send your message. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      role="presentation"
+      onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(15,23,42,0.62)", display: "grid", placeItems: "center", padding: 16 }}
+    >
+      <div role="dialog" aria-modal="true" aria-labelledby="diner-support-title" style={{ width: "min(520px, 100%)", maxHeight: "90vh", overflowY: "auto", borderRadius: 18, background: "#fff", boxShadow: "0 24px 70px rgba(0,0,0,0.28)", padding: 22 }}>
+        <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: 16 }}>
+          <div>
+            <h2 id="diner-support-title" style={{ margin: 0, color: "#101828", fontSize: 21 }}>Contact Menuply Support</h2>
+            <p style={{ margin: "6px 0 0", color: "#667085", fontSize: 14, lineHeight: 1.5 }}>Get help with your Menuply account, restaurant information, or the app.</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close diner support" style={{ border: 0, background: "transparent", color: "#667085", fontSize: 20, cursor: "pointer" }}>✕</button>
+        </div>
+
+        <div style={{ marginTop: 16, borderRadius: 12, background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412", padding: "11px 12px", fontSize: 13, lineHeight: 1.5 }}>
+          Food quality, order, delivery, refund, and billing issues are handled directly by the restaurant. Please contact the restaurant where you placed the order.
+        </div>
+
+        {sent ? (
+          <div style={{ marginTop: 18, borderRadius: 12, background: "#ecfdf3", color: "#166534", padding: 14, fontSize: 14, lineHeight: 1.5 }}>
+            Your message was sent to Menuply Support. We’ll reply at the email you provided.
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: "grid", gap: 13, marginTop: 18 }}>
+            <label style={{ display: "grid", gap: 6, color: "#344054", fontSize: 13, fontWeight: 700 }}>
+              Name
+              <input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" style={{ height: 42, border: "1px solid #d0d5dd", borderRadius: 10, padding: "0 11px", fontSize: 14 }} />
+            </label>
+            <label style={{ display: "grid", gap: 6, color: "#344054", fontSize: 13, fontWeight: 700 }}>
+              Email
+              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" style={{ height: 42, border: "1px solid #d0d5dd", borderRadius: 10, padding: "0 11px", fontSize: 14 }} />
+            </label>
+            <label style={{ display: "grid", gap: 6, color: "#344054", fontSize: 13, fontWeight: 700 }}>
+              Contact reason
+              <select value={reason} onChange={(event) => setReason(event.target.value)} style={{ height: 42, border: "1px solid #d0d5dd", borderRadius: 10, padding: "0 10px", background: "#fff", fontSize: 14 }}>
+                <option value="">Select a reason…</option>
+                {DINER_SUPPORT_REASONS.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: 6, color: "#344054", fontSize: 13, fontWeight: 700 }}>
+              Message
+              <textarea value={message} onChange={(event) => setMessage(event.target.value)} rows={5} placeholder="Tell us what happened and include any useful details." style={{ border: "1px solid #d0d5dd", borderRadius: 10, padding: 11, resize: "vertical", font: "inherit" }} />
+            </label>
+            {error ? <div role="alert" style={{ color: "#b42318", fontSize: 13 }}>{error}</div> : null}
+            <button type="submit" disabled={submitting} style={{ height: 44, border: 0, borderRadius: 10, background: "#1F4E3D", color: "#fff", fontSize: 14, fontWeight: 800, cursor: submitting ? "wait" : "pointer", opacity: submitting ? 0.7 : 1 }}>
+              {submitting ? "Sending…" : "Send to Menuply Support"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function DiscoveryDrawer({
   open, onClose,
   filters = null, setFilters = null,
@@ -54,8 +167,9 @@ export default function DiscoveryDrawer({
   allergenNoneSelected = false,
   onAllergenToggle = null,
 }) {
-  const { isAuthenticated: loggedIn } = useConsumer();
+  const { isAuthenticated: loggedIn, consumer, profile } = useConsumer();
   const { language, setLanguage, t } = useLanguage();
+  const [supportOpen, setSupportOpen] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -204,19 +318,22 @@ export default function DiscoveryDrawer({
             <option value="zh">{t("language.chinese", "中文")}</option>
           </select>
 
-          <Section label="For Restaurants" />
-          <Link to="/restaurant/signup" onClick={onClose} style={{
-            display: "block", padding: "12px 0",
-            fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
-          }}>Add your restaurant</Link>
-          <Link to="/franchises" onClick={onClose} style={{
-            display: "block", padding: "12px 0",
-            fontSize: 15, fontWeight: 700, color: "#1F4E3D", textDecoration: "none",
-            borderTop: "1px solid #f2f4f7",
-          }}>Franchise / Multi-location</Link>
+          <Section label="Support" />
+          <button type="button" onClick={() => setSupportOpen(true)} style={{
+            display: "block", width: "100%", padding: "12px 0", border: 0, background: "transparent", textAlign: "left",
+            fontSize: 15, fontWeight: 700, color: "#1F4E3D", cursor: "pointer",
+          }}>Contact Menuply Support</button>
 
         </div>
       </div>
+      {supportOpen ? (
+        <DinerSupportDialog
+          open
+          onClose={() => setSupportOpen(false)}
+          initialName={[profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || profile?.display_name || ""}
+          initialEmail={consumer?.email || ""}
+        />
+      ) : null}
     </>
   );
 }
