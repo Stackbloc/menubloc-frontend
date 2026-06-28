@@ -14,11 +14,29 @@ import { Link } from "react-router-dom";
 
 const MENUPLY_LOGO_SCALE = 1.12;
 
+function relativeLum(r, g, b) {
+  const lin = [r, g, b].map((v) => {
+    const x = v / 255;
+    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+}
+
 function isDarkPageColor(value) {
   const color = String(value || "").trim().toLowerCase();
   if (!color) return false;
+
+  // rgb(r, g, b) or rgba(r, g, b, a)
+  const rgbMatch = color.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (rgbMatch) {
+    return relativeLum(+rgbMatch[1], +rgbMatch[2], +rgbMatch[3]) < 0.18;
+  }
+
+  // hex strings
   if (color === "#0b0f0c" || color === "#0b0f0cff" || color === "#101010") return true;
   if (color.startsWith("#0") || color.startsWith("#1") || color.startsWith("#2")) return true;
+
+  // keyword
   if (color.includes("black") || color.includes("charcoal") || color.includes("slate") || color.includes("night")) return true;
   return false;
 }

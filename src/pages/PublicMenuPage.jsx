@@ -1355,14 +1355,16 @@ export default function PublicMenuPage() {
     hero_image_url: menuThemeSettings.hero_enabled === false ? null : data?.hero_image_url || null,
     font_preset: data?.font_preset || "default",
   }, restaurantName) : null;
+  const resolvedPageBackground =
+    menuThemeSettings.background_style === "light" ? "#f7f5ef" :
+    menuThemeSettings.background_style === "paper" ? "#f6efe3" :
+    menuThemeSettings.background_style === "chalkboard" ? "#1a2e1c" :
+    menuThemeSettings.background_style === "charcoal" ? "#1c1c1e" :
+    menuBrand?.pageBackground ?? "#0B0F0C";
+
   const pageShellStyle = {
     minHeight: "100vh",
-    background:
-      menuThemeSettings.background_style === "light" ? "#f7f5ef" :
-      menuThemeSettings.background_style === "paper" ? "#f6efe3" :
-      menuThemeSettings.background_style === "chalkboard" ? "#1a2e1c" :
-      menuThemeSettings.background_style === "charcoal" ? "#1c1c1e" :
-      menuBrand?.pageBackground ?? "#0B0F0C",
+    background: resolvedPageBackground,
   };
 
   useEffect(() => {
@@ -1514,11 +1516,11 @@ export default function PublicMenuPage() {
     return (
       <div style={pageShellStyle}>
         <StickyPageHeader
-          barBackground={menuBrand?.pageBackground}
+          barBackground={resolvedPageBackground}
           linkAccent={menuBrand?.accent}
           dealsPillBackground={menuBrand?.accentSoftBg}
           dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
-          logoPageColor={menuBrand?.pageBackground}
+          logoPageColor={resolvedPageBackground}
         />
         <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
           <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
@@ -1531,11 +1533,11 @@ export default function PublicMenuPage() {
     return (
       <div style={pageShellStyle}>
         <StickyPageHeader
-          barBackground={menuBrand?.pageBackground}
+          barBackground={resolvedPageBackground}
           linkAccent={menuBrand?.accent}
           dealsPillBackground={menuBrand?.accentSoftBg}
           dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
-          logoPageColor={menuBrand?.pageBackground}
+          logoPageColor={resolvedPageBackground}
         />
         <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "14px 12px 80px" : "20px 20px 80px", color: "#101828" }}>
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{t("publicMenu.loadError", "Couldn't load menu")}</div>
@@ -1549,11 +1551,11 @@ export default function PublicMenuPage() {
     return (
       <div style={pageShellStyle}>
         <StickyPageHeader
-          barBackground={menuBrand?.pageBackground}
+          barBackground={resolvedPageBackground}
           linkAccent={menuBrand?.accent}
           dealsPillBackground={menuBrand?.accentSoftBg}
           dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
-          logoPageColor={menuBrand?.pageBackground}
+          logoPageColor={resolvedPageBackground}
         />
         <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
           <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
@@ -1565,11 +1567,11 @@ export default function PublicMenuPage() {
   return (
     <div style={pageShellStyle}>
       <StickyPageHeader
-        barBackground={menuBrand?.pageBackground}
+        barBackground={resolvedPageBackground}
         linkAccent={menuBrand?.accent}
         dealsPillBackground={menuBrand?.accentSoftBg}
         dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
-        logoPageColor={menuBrand?.pageBackground}
+        logoPageColor={resolvedPageBackground}
       />
       <div style={{
         maxWidth: 860,
