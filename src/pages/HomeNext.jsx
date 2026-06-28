@@ -124,13 +124,11 @@ export default function HomeNext() {
         .home-next-search:focus { outline: none; box-shadow: 0 0 0 2px rgba(45,106,79,0.35); }
         .home-next-skeleton { animation: homeNextPulse 1.4s ease-in-out infinite; }
         @keyframes homeNextPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
-        .home-next-section-scroll,
         .home-next-food-chip-row,
         .home-next-health-rail {
           scrollbar-width: none;
           -ms-overflow-style: none;
         }
-        .home-next-section-scroll::-webkit-scrollbar,
         .home-next-food-chip-row::-webkit-scrollbar,
         .home-next-health-rail::-webkit-scrollbar {
           display: none;
@@ -154,13 +152,14 @@ export default function HomeNext() {
           scrollbar-width: none;
           -ms-overflow-style: none;
         }
-        .home-next-food-chip-row::-webkit-scrollbar {
-          display: none;
-          width: 0;
-          height: 0;
+        .home-next-menu-grid-cell {
+          min-width: 0;
         }
         @media (min-width: 760px) {
           .home-next-shell { max-width: 720px; }
+          .home-next-menu-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
         }
       `}</style>
 
