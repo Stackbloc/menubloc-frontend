@@ -1,6 +1,7 @@
 import { dedupeDiscoveryMenus } from "./discoveryFeedGuardrails.js";
 
 const SECTION_MAX = 4;
+const EXPANDED_SECTION_MAX = 8;
 
 function menuKey(menu) {
   return menu?.menu_id ?? menu?.restaurant_id ?? null;
@@ -37,19 +38,23 @@ function sortDiscover(menus) {
 }
 
 /**
- * Full list for an expanded section (no preview cap, no cross-section dedupe).
+ * Expanded section menus — same sort as preview, capped at 8, no cross-section dedupe.
  */
 export function getExpandedSectionMenus(menus, sectionId, { hasGeo = false } = {}) {
   const deduped = dedupeDiscoveryMenus(menus);
   if (!deduped.length) return [];
 
+  let sorted = deduped;
   switch (sectionId) {
     case "popular":
-      return sortPopular(deduped);
+      sorted = sortPopular(deduped);
+      break;
     case "nearby":
-      return hasGeo ? sortNearby(deduped) : [];
+      sorted = hasGeo ? sortNearby(deduped) : [];
+      break;
     case "discover":
-      return sortDiscover(deduped);
+      sorted = sortDiscover(deduped);
+      break;
     case "more": {
       const used = new Set();
       const preview = buildHomeDiscoverySections(deduped, { hasGeo });
@@ -59,11 +64,14 @@ export function getExpandedSectionMenus(menus, sectionId, { hasGeo = false } = {
           if (key) used.add(key);
         }
       }
-      return deduped.filter((menu) => !used.has(menuKey(menu)));
+      sorted = deduped.filter((menu) => !used.has(menuKey(menu)));
+      break;
     }
     default:
-      return deduped;
+      sorted = deduped;
   }
+
+  return sorted.slice(0, EXPANDED_SECTION_MAX);
 }
 
 /**

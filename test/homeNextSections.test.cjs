@@ -28,18 +28,21 @@ function testEmptyInput() {
   assert.deepStrictEqual(buildHomeDiscoverySections([]), []);
 }
 
-function testExpandedPopularReturnsAllSorted() {
-  const menus = [
-    { menu_id: 1, restaurant_id: 10, restaurant_name: "A", menu_item_count: 50, cuisine: "pizza" },
-    { menu_id: 2, restaurant_id: 20, restaurant_name: "B", menu_item_count: 40, cuisine: "mexican" },
-    { menu_id: 3, restaurant_id: 30, restaurant_name: "C", menu_item_count: 30, cuisine: "asian" },
-  ];
+function testExpandedPopularReturnsSortedAndCapped() {
+  const menus = Array.from({ length: 12 }, (_, i) => ({
+    menu_id: i + 1,
+    restaurant_id: (i + 1) * 10,
+    restaurant_name: `R${i + 1}`,
+    menu_item_count: 100 - i,
+    cuisine: "american",
+  }));
   const expanded = getExpandedSectionMenus(menus, "popular");
-  assert.strictEqual(expanded.length, 3);
+  assert.strictEqual(expanded.length, 8);
   assert.strictEqual(expanded[0].menu_id, 1);
+  assert.strictEqual(expanded[7].menu_id, 8);
 }
 
 testDedupesAcrossSections();
 testEmptyInput();
-testExpandedPopularReturnsAllSorted();
+testExpandedPopularReturnsSortedAndCapped();
 console.log("homeNextSections tests passed");

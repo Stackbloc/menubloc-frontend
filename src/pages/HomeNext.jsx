@@ -33,6 +33,7 @@ export default function HomeNext() {
   const [draftQuery, setDraftQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [expandedSectionId, setExpandedSectionId] = useState(null);
+  const [homeResetSignal, setHomeResetSignal] = useState(0);
 
   const {
     menus,
@@ -66,6 +67,17 @@ export default function HomeNext() {
 
   function closeSection() {
     setExpandedSectionId(null);
+  }
+
+  function resetHomeScreen() {
+    setExpandedSectionId(null);
+    setDraftQuery("");
+    setSearching(false);
+    setHomeResetSignal((n) => n + 1);
+    inputRef.current?.blur();
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
   async function runSearch(queryValue = draftQuery) {
@@ -179,7 +191,20 @@ export default function HomeNext() {
               padding: "14px 16px 10px",
             }}
           >
-            <BrandLogo height={36} radius={8} matchPageBackground={false} />
+            <button
+              type="button"
+              onClick={resetHomeScreen}
+              aria-label={t("homeNext.resetHome", "Reset home screen")}
+              style={{
+                border: "none",
+                background: "transparent",
+                padding: 0,
+                cursor: "pointer",
+                display: "inline-flex",
+              }}
+            >
+              <BrandLogo height={36} radius={8} matchPageBackground={false} clickable={false} />
+            </button>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <Link
                 to="/deals"
@@ -214,6 +239,7 @@ export default function HomeNext() {
               appliedLocation={appliedLocation}
               onApplyLocation={setAppliedLocation}
               locating={locating}
+              collapseSignal={homeResetSignal}
             />
 
             <form

@@ -41,6 +41,7 @@ export default function HomeNextLocationSelector({
   appliedLocation,
   onApplyLocation,
   locating = false,
+  collapseSignal = 0,
 }) {
   const [showEditor, setShowEditor] = useState(false);
   const [locationInput, setLocationInput] = useState(() => appliedLocation || "");
@@ -51,6 +52,10 @@ export default function HomeNextLocationSelector({
   useEffect(() => {
     setLocationInput(appliedLocation || "");
   }, [appliedLocation]);
+
+  useEffect(() => {
+    setShowEditor(false);
+  }, [collapseSignal]);
 
   useEffect(() => {
     if (!showEditor) return undefined;
