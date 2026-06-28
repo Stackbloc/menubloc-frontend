@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "aaaf8129f13483e09fc1b77ad2b9de81d94acbe0",
-  "gitShortSha": "aaaf812",
+  "gitSha": "c6cd2b7a51d2b8ab07fc094f213c1cca92947f65",
+  "gitShortSha": "c6cd2b7",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-26T22:02:13.847Z",
+  "buildTime": "2026-06-28T00:43:14.140Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix: add public menu gate and menu audit trail"
+  "commitMessage": "fix(discovery): card city/state wins over stale session label in ChainLocationsSheet"
 }
