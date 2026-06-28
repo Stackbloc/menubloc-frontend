@@ -675,7 +675,7 @@ export default function FranchisesPage() {
   return (
     <div style={styles.page}>
       <div style={styles.hero}>
-        <BrandLogo height={42} radius={12} matchPageBackground={false} linkStyle={{ marginBottom: 16 }} />
+        <BrandLogo height={42} radius={12} matchPageBackground={false} linkStyle={{ display: "block", marginBottom: 14 }} />
         <div style={styles.heroEyebrow}>Franchise &amp; Corporate Brands</div>
         <h1 style={styles.heroTitle}>Franchise Headquarters and Corporate Brand Contacts</h1>
         <p style={styles.heroBody}>

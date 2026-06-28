@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "c6cd2b7a51d2b8ab07fc094f213c1cca92947f65",
-  "gitShortSha": "c6cd2b7",
+  "gitSha": "d5860855c3225581d83acac584eb5ba0a9d41b25",
+  "gitShortSha": "d586085",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-28T00:43:14.140Z",
+  "buildTime": "2026-06-28T02:40:17.042Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(discovery): card city/state wins over stale session label in ChainLocationsSheet"
+  "commitMessage": "chore: update build-info for 2026-06-27 franchises deploy"
 }
