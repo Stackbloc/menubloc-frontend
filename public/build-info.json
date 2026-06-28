@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "cc6e4097505f5ed271b90aed8a154d41355db641",
-  "gitShortSha": "cc6e409",
+  "gitSha": "35fafae0123f766d069f25cf3f32754e33e6e4ae",
+  "gitShortSha": "35fafae",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-28T16:48:16.912Z",
+  "buildTime": "2026-06-28T02:51:01.228Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(owner): PHMS incident manager, repair tickets, and deployment ops UI"
+  "commitMessage": "fix(franchises): place eyebrow label below logo instead of beside it"
 }
