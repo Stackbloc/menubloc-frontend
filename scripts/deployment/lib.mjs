@@ -88,9 +88,12 @@ export function parseDeploymentUrl(output) {
     const parsed = JSON.parse(output);
     if (parsed.url) return parsed.url.startsWith("http") ? parsed.url : `https://${parsed.url}`;
   } catch {}
+  const previewMatch = output.match(/Preview\s+(https:\/\/[^\s]+)/i);
+  if (previewMatch?.[1]) return previewMatch[1].replace(/[),]+$/, "");
   const matches = output.match(/https:\/\/[^\s]+/g);
   if (!matches?.length) abort(`could not identify deployment URL from Vercel output: ${output.slice(0, 500)}`);
-  return matches.at(-1).replace(/[),]+$/, "");
+  const preferred = matches.find((url) => !/api\.vercel\.com\/v\d+\/deployments/i.test(url)) || matches.at(-1);
+  return preferred.replace(/[),]+$/, "");
 }
 
 export function parseVercelInspection(output, config) {
