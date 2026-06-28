@@ -89,6 +89,14 @@ Browse feed may use geo-only params while session label remains from a prior mar
 
 Frontend-only fix. Deploy menubloc-frontend via Vercel `--prod` + `vercel alias set <deployment-url> menuply.com`.
 
+| Field | Value |
+|-------|-------|
+| Commit | `a3b588b` on `stabilize/frontend-safe-baseline` |
+| Deployed | 2026-06-28 |
+| Vercel URL | `https://menubloc-a9471l17v-menuply.vercel.app` |
+| Production alias | `https://menuply.com` |
+| Bundle hash | `index-CsEg9BJ4.js` |
+
 ---
 
 ## Final verdict
