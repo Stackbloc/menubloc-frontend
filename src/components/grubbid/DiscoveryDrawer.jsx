@@ -76,8 +76,8 @@ export function DinerSupportDialog({ open, onClose, initialName = "", initialEma
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
-    if (!name.trim() || !/^\S+@\S+\.\S+$/.test(email.trim()) || !reason || !message.trim()) {
-      setError("Enter your name, a valid email, a contact reason, and a message.");
+    if (!name.trim() || !/^\S+@\S+\.\S+$/.test(email.trim()) || !message.trim()) {
+      setError("Enter your name, a valid email address, and a message.");
       return;
     }
 
@@ -90,7 +90,7 @@ export function DinerSupportDialog({ open, onClose, initialName = "", initialEma
           topic: "support",
           name: name.trim(),
           email: email.trim(),
-          subject: `Diner support: ${reason}`,
+          subject: `Diner support: ${reason || "General inquiry"}`,
           message: message.trim(),
           page_url: typeof window === "undefined" ? "" : window.location.href,
         }),
