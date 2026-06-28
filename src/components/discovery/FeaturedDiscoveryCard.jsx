@@ -330,6 +330,8 @@ export default function FeaturedDiscoveryCard({
         <ChainLocationsSheet
           chainId={chainId}
           currentRestaurantId={id}
+          marketCity={menu?.city}
+          marketState={menu?.state}
           onClose={() => setShowChainSheet(false)}
         />
       )}

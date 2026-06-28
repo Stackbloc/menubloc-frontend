@@ -18,7 +18,7 @@ function readGeo() {
   return null;
 }
 
-function readMarketContext() {
+function readSessionMarketContext() {
   const geo = readGeo();
   let city = "";
   let state = "";
@@ -33,7 +33,13 @@ function readMarketContext() {
   return { geo, city, state };
 }
 
-export default function ChainLocationsSheet({ chainId, currentRestaurantId, onClose }) {
+export default function ChainLocationsSheet({
+  chainId,
+  currentRestaurantId,
+  marketCity = "",
+  marketState = "",
+  onClose,
+}) {
   const { t } = useLanguage();
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +51,12 @@ export default function ChainLocationsSheet({ chainId, currentRestaurantId, onCl
   }, []);
 
   useEffect(() => {
-    const { geo, city, state } = readMarketContext();
+    const session = readSessionMarketContext();
+    // Card city/state wins — session label can be stale (e.g. LA) while browse is geo-scoped to Dothan.
+    const city = String(marketCity || session.city || "").trim();
+    const state = String(marketState || session.state || "").trim();
+    const geo = session.geo;
+
     const params = new URLSearchParams();
     if (city) params.set("city", city);
     if (state) params.set("state", state);
@@ -66,7 +77,7 @@ export default function ChainLocationsSheet({ chainId, currentRestaurantId, onCl
       })
       .catch((err) => setError(err.message || "Could not load locations"))
       .finally(() => setLoading(false));
-  }, [chainId, currentRestaurantId]);
+  }, [chainId, currentRestaurantId, marketCity, marketState]);
 
   return (
     <>
