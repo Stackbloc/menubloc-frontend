@@ -84,16 +84,17 @@ export function verifyFrontendArtifact(config) {
 }
 
 export function parseDeploymentUrl(output) {
+  const normalize = (value) => value.replace(/["'`,)]+$/g, "").replace(/^["'`(]+/g, "");
   try {
     const parsed = JSON.parse(output);
-    if (parsed.url) return parsed.url.startsWith("http") ? parsed.url : `https://${parsed.url}`;
+    if (parsed.url) return normalize(parsed.url.startsWith("http") ? parsed.url : `https://${parsed.url}`);
   } catch {}
   const previewMatch = output.match(/Preview\s+(https:\/\/[^\s]+)/i);
-  if (previewMatch?.[1]) return previewMatch[1].replace(/[),]+$/, "");
+  if (previewMatch?.[1]) return normalize(previewMatch[1]);
   const matches = output.match(/https:\/\/[^\s]+/g);
   if (!matches?.length) abort(`could not identify deployment URL from Vercel output: ${output.slice(0, 500)}`);
   const preferred = matches.find((url) => !/api\.vercel\.com\/v\d+\/deployments/i.test(url)) || matches.at(-1);
-  return preferred.replace(/[),]+$/, "");
+  return normalize(preferred);
 }
 
 export function parseVercelInspection(output, config) {
