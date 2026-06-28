@@ -112,32 +112,42 @@ export default function HomeNext() {
         .home-next-skeleton { animation: homeNextPulse 1.4s ease-in-out infinite; }
         @keyframes homeNextPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
         .home-next-section-scroll,
-        .home-next-food-two-row-scroll,
+        .home-next-food-chip-row,
         .home-next-health-rail {
           scrollbar-width: none;
           -ms-overflow-style: none;
         }
         .home-next-section-scroll::-webkit-scrollbar,
-        .home-next-food-two-row-scroll::-webkit-scrollbar,
+        .home-next-food-chip-row::-webkit-scrollbar,
         .home-next-health-rail::-webkit-scrollbar {
           display: none;
+          width: 0;
+          height: 0;
         }
-        .home-next-food-two-row-scroll {
-          display: grid;
-          grid-template-rows: repeat(2, auto);
-          grid-auto-flow: column;
-          grid-auto-columns: minmax(168px, 46vw);
+        .home-next-food-chip-rows {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .home-next-food-chip-row {
+          display: flex;
+          flex-wrap: nowrap;
           gap: 10px;
           overflow-x: auto;
           overflow-y: hidden;
-          padding: 0 16px 4px;
+          padding: 0 16px 2px;
+          overscroll-behavior-x: contain;
           -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .home-next-food-chip-row::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
         }
         @media (min-width: 760px) {
           .home-next-shell { max-width: 720px; }
-          .home-next-food-two-row-scroll {
-            grid-auto-columns: minmax(168px, 160px);
-          }
         }
       `}</style>
 

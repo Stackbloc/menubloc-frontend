@@ -3,6 +3,7 @@
 const assert = require("assert");
 const { getTimeAwareMealChip } = require("../src/lib/homeNextMealChip.js");
 const { getFoodEntryPoints } = require("../src/lib/homeNextEntryPoints.js");
+const { splitFoodEntryPointRows } = require("../src/lib/homeNextEntryPoints.js");
 const { buildHomeChipUrl } = require("../src/lib/homeNextNavigation.js");
 
 function atLocalHour(hour) {
@@ -45,8 +46,18 @@ function testSomethingElseGoesToWaiter() {
   assert.strictEqual(buildHomeChipUrl(other, {}), "/waiter");
 }
 
+function testSplitFoodRowsIndependently() {
+  const chips = getFoodEntryPoints(atLocalHour(12));
+  const [rowOne, rowTwo] = splitFoodEntryPointRows(chips);
+  assert.strictEqual(rowOne.length + rowTwo.length, chips.length);
+  assert.ok(rowOne.length >= rowTwo.length);
+  assert.strictEqual(rowOne[0].id, chips[0].id);
+  assert.strictEqual(rowTwo[0].id, chips[1].id);
+}
+
 testMealWindows();
 testFoodEntryPointsMealSlot();
 testAsianChipUsesCuisineParam();
 testSomethingElseGoesToWaiter();
+testSplitFoodRowsIndependently();
 console.log("homeNextMealChip tests passed");

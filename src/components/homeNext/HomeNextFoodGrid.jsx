@@ -1,11 +1,37 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getFoodEntryPoints, FOOD_CHIP_BUTTON_STYLE } from "../../lib/homeNextEntryPoints.js";
+import {
+  getFoodEntryPoints,
+  FOOD_CHIP_BUTTON_STYLE,
+  FOOD_CHIP_CONTEXT_AWARE_STYLE,
+  splitFoodEntryPointRows,
+} from "../../lib/homeNextEntryPoints.js";
 import { buildHomeChipUrl } from "../../lib/homeNextNavigation.js";
+
+function FoodChipRow({ entries, onChipClick }) {
+  if (!entries.length) return null;
+  return (
+    <div className="home-next-food-chip-row">
+      {entries.map((entry) => (
+        <button
+          key={entry.id}
+          type="button"
+          onClick={() => onChipClick(entry)}
+          style={entry.contextAware ? FOOD_CHIP_CONTEXT_AWARE_STYLE : FOOD_CHIP_BUTTON_STYLE}
+        >
+          <span style={{ fontSize: 22, lineHeight: 1 }} aria-hidden="true">
+            {entry.icon}
+          </span>
+          <span>{entry.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function HomeNextFoodGrid({ autoLocation, appliedLocation, shouldUseGeoBrowse }) {
   const navigate = useNavigate();
-  const chips = useMemo(() => getFoodEntryPoints(), []);
+  const [rowOne, rowTwo] = useMemo(() => splitFoodEntryPointRows(getFoodEntryPoints()), []);
 
   const locationContext = { appliedLocation, autoLocation, shouldUseGeoBrowse };
 
@@ -23,20 +49,9 @@ export default function HomeNextFoodGrid({ autoLocation, appliedLocation, should
           Start with a food — we&apos;ll help you narrow it down
         </p>
       </div>
-      <div className="home-next-food-two-row-scroll">
-        {chips.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            onClick={() => handleClick(entry)}
-            style={FOOD_CHIP_BUTTON_STYLE}
-          >
-            <span style={{ fontSize: 22, lineHeight: 1 }} aria-hidden="true">
-              {entry.icon}
-            </span>
-            <span>{entry.label}</span>
-          </button>
-        ))}
+      <div className="home-next-food-chip-rows">
+        <FoodChipRow entries={rowOne} onChipClick={handleClick} />
+        <FoodChipRow entries={rowTwo} onChipClick={handleClick} />
       </div>
     </section>
   );
