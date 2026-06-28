@@ -19,6 +19,7 @@ import HomeNextFoodGrid from "../components/homeNext/HomeNextFoodGrid.jsx";
 import HomeNextHealthGoals from "../components/homeNext/HomeNextHealthGoals.jsx";
 import HomeNextDiscoverySection from "../components/homeNext/HomeNextDiscoverySection.jsx";
 import HomeNextSectionExpanded from "../components/homeNext/HomeNextSectionExpanded.jsx";
+import HomeNextLocationSelector from "../components/homeNext/HomeNextLocationSelector.jsx";
 import { captureEvent } from "../services/posthog.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -38,8 +39,8 @@ export default function HomeNext() {
     loading: feedLoading,
     autoLocation,
     appliedLocation,
+    setAppliedLocation,
     shouldUseGeoBrowse,
-    locationLabel,
     locating,
   } = useHomeBrowseFeed({ language });
 
@@ -208,9 +209,12 @@ export default function HomeNext() {
             <p style={{ margin: "0 0 10px", fontSize: 22, fontWeight: 800, color: "#111827", lineHeight: 1.2 }}>
               {t("homeNext.headline", "What sounds good?")}
             </p>
-            <p style={{ margin: "0 0 12px", fontSize: 14, color: "#6B7280" }}>
-              {locationLabel}
-            </p>
+            <HomeNextLocationSelector
+              autoLocation={autoLocation}
+              appliedLocation={appliedLocation}
+              onApplyLocation={setAppliedLocation}
+              locating={locating}
+            />
 
             <form
               role="search"
