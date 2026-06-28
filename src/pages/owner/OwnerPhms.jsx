@@ -6,6 +6,8 @@ import {
   getOwnerPhmsDisplayAudit,
   getOwnerPhmsDeploymentHealth,
   captureOwnerPhmsDisplaySnapshot,
+  getOwnerPhmsRepairTickets,
+  acknowledgeOwnerPhmsRepairTicket,
 } from "../../lib/ownerApi.js";
 
 // ── Status palette ────────────────────────────────────────────────────────────
@@ -471,6 +473,140 @@ function DeploymentHealthSection() {
   );
 }
 
+// ── Section: Repair Tickets ───────────────────────────────────────────────────
+function RepairTicketsSection() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [copyMsg, setCopyMsg] = useState(null);
+
+  function load() {
+    setLoading(true);
+    setError(null);
+    getOwnerPhmsRepairTickets()
+      .then(setData)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function copyText(text, label) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyMsg(label);
+      setTimeout(() => setCopyMsg(null), 2000);
+    } catch (e) {
+      setCopyMsg(`Copy failed: ${e.message}`);
+    }
+  }
+
+  function exportMarkdown(ticket) {
+    const blob = new Blob([ticket.markdown || ""], { type: "text/markdown" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${ticket.checkId}-repair-ticket.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  async function markResolved(checkId) {
+    try {
+      await acknowledgeOwnerPhmsRepairTicket(checkId);
+      setCopyMsg(`Acknowledged ${checkId} — PHMS must pass to verify`);
+      load();
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  const tickets = data?.tickets || [];
+
+  return (
+    <PageCard style={{ padding: "24px 26px", marginBottom: 28 }}>
+      <SectionTitle
+        title="Repair Tickets"
+        subtitle={data?.generatedAt ? `From PHMS run ${fmtTime(data.generatedAt)}` : "Auto-generated from latest PHMS archive"}
+        action={
+          <button onClick={load} disabled={loading} style={{ fontSize: 12, fontWeight: 700, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", borderRadius: 10, padding: "7px 14px", cursor: "pointer" }}>
+            {loading ? "Loading…" : "Refresh"}
+          </button>
+        }
+      />
+
+      {copyMsg && (
+        <div style={{ marginBottom: 12, padding: "8px 12px", background: "#f0fdf4", borderRadius: 8, fontSize: 12, color: "#166534" }}>
+          {copyMsg}
+        </div>
+      )}
+
+      {error ? <SectionError msg={error} /> : null}
+      {loading ? <Spinner /> : null}
+
+      {!loading && data?.message && tickets.length === 0 && (
+        <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>{data.message}</div>
+      )}
+
+      {!loading && tickets.length === 0 && !data?.message && (
+        <div style={{ padding: "12px 14px", background: "#f0fdf4", borderRadius: 10, color: "#166534", fontSize: 13 }}>
+          No open repair tickets — all PHMS checks passing in latest archive.
+        </div>
+      )}
+
+      {!loading && tickets.length > 0 && (
+        <div style={{ display: "grid", gap: 14 }}>
+          {tickets.map((ticket) => (
+            <div key={ticket.incidentId} style={{
+              border: `1px solid ${OWNER_COLORS.line}`,
+              borderRadius: 12,
+              padding: "16px 18px",
+              background: "#fff",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 14 }}>{ticket.checkId} — {ticket.checkName}</div>
+                  <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 4 }}>
+                    {ticket.department} · {ticket.suspectedSubsystem?.label} ({ticket.suspectedSubsystem?.confidencePct}%)
+                  </div>
+                  <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 2, fontFamily: "monospace" }}>
+                    {ticket.incidentId}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <StatusBadge status={ticket.priority === "Critical" ? "CRITICAL" : ticket.priority === "High" ? "FAIL" : "WARN"} />
+                  {ticket.customerVisible === "Yes" && (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#991b1b" }}>Customer-visible</span>
+                  )}
+                </div>
+              </div>
+              <p style={{ fontSize: 13, color: OWNER_COLORS.ink, margin: "10px 0 12px", lineHeight: 1.45 }}>
+                {ticket.problemSummary?.slice(0, 280)}{ticket.problemSummary?.length > 280 ? "…" : ""}
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <button type="button" onClick={() => copyText(ticket.markdown, "Repair ticket copied")} style={{ fontSize: 11, fontWeight: 700, padding: "6px 10px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", cursor: "pointer" }}>
+                  Copy Repair Ticket
+                </button>
+                <button type="button" onClick={() => copyText(ticket.agentPrompt, "Agent prompt copied")} style={{ fontSize: 11, fontWeight: 700, padding: "6px 10px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", cursor: "pointer" }}>
+                  Copy Agent Prompt
+                </button>
+                <button type="button" onClick={() => exportMarkdown(ticket)} style={{ fontSize: 11, fontWeight: 700, padding: "6px 10px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", cursor: "pointer" }}>
+                  Export Markdown
+                </button>
+                <button type="button" disabled title="GitHub integration not yet implemented" style={{ fontSize: 11, fontWeight: 700, padding: "6px 10px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: "#f9fafb", cursor: "not-allowed", opacity: 0.6 }}>
+                  Create GitHub Issue
+                </button>
+                <button type="button" onClick={() => markResolved(ticket.checkId)} style={{ fontSize: 11, fontWeight: 700, padding: "6px 10px", borderRadius: 8, border: "1px solid #86efac", background: "#f0fdf4", cursor: "pointer", color: "#166534" }}>
+                  Mark Resolved
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </PageCard>
+  );
+}
+
 // ── Section: Recent Incidents ─────────────────────────────────────────────────
 function RecentIncidentsSection({ healthData }) {
   if (!healthData?.checks) return null;
@@ -513,8 +649,9 @@ export default function OwnerPhms() {
 
   return (
     <OwnerLayout title="Platform Health">
-      <div style={{ marginBottom: 10, fontSize: 13, color: OWNER_COLORS.muted }}>
-        Live critical-health monitoring · Display disappearance detection · Deployment verification
+      <div style={{ marginBottom: 10, fontSize: 13, color: OWNER_COLORS.muted, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <span>Live critical-health monitoring · Display disappearance detection · Deployment verification</span>
+        <a href="/owner/phms/incidents" style={{ color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 12 }}>Incident Manager →</a>
       </div>
 
       <CriticalHealthSection onHealthLoaded={setHealthData} onDataChange={setHealthData} />
@@ -522,6 +659,7 @@ export default function OwnerPhms() {
       <MenuStatusSection />
       <DisplayAuditSection />
       <DeploymentHealthSection />
+      <RepairTicketsSection />
       <RecentIncidentsSection healthData={healthData} />
     </OwnerLayout>
   );

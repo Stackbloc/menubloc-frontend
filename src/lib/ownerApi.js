@@ -210,4 +210,31 @@ export const getOwnerPhmsDisplayAudit = () => get("/api/owner/phms/display-audit
 export const getOwnerPhmsDeploymentHealth = () => get("/api/owner/phms/deployment-health");
 export const captureOwnerPhmsDisplaySnapshot = (body) =>
   post("/api/owner/phms/display-audit/capture", body);
+export const getOwnerPhmsRepairTickets = () => get("/api/owner/phms/repair-tickets");
+export const getOwnerPhmsRepairTicket = (checkId) =>
+  get(`/api/owner/phms/repair-tickets/${encodeURIComponent(checkId)}`);
+export const acknowledgeOwnerPhmsRepairTicket = (checkId) =>
+  post(`/api/owner/phms/repair-tickets/${encodeURIComponent(checkId)}/acknowledge`, {});
+
+export const getOwnerPhmsIncidents = (query = "") =>
+  get(`/api/owner/phms/incidents${query ? `?${query}` : ""}`);
+export const getOwnerPhmsIncident = (incidentId) =>
+  get(`/api/owner/phms/incidents/${encodeURIComponent(incidentId)}`);
+export const assignOwnerPhmsIncident = (incidentId, body) =>
+  post(`/api/owner/phms/incidents/${encodeURIComponent(incidentId)}/assign`, body);
+export const setOwnerPhmsIncidentStatus = (incidentId, status, message) =>
+  post(`/api/owner/phms/incidents/${encodeURIComponent(incidentId)}/status`, { status, message });
+export const verifyOwnerPhmsIncident = (incidentId, body = {}) =>
+  post(`/api/owner/phms/incidents/${encodeURIComponent(incidentId)}/verify`, body);
+export const closeOwnerPhmsIncident = (incidentId) =>
+  post(`/api/owner/phms/incidents/${encodeURIComponent(incidentId)}/close`, {});
+export const setOwnerPhmsDeploymentBlocker = (incidentId, deploymentBlocker) =>
+  post(`/api/owner/phms/incidents/${encodeURIComponent(incidentId)}/deployment-blocker`, { deploymentBlocker });
+
+// Deployment Operations
+export const getDeploymentOperationsSummary = () => get("/api/owner/deployment-operations/summary");
+export const runDeploymentSmoke = () => post("/api/owner/deployment-operations/smoke", {});
+export const runDeploymentWatchdog = () => post("/api/owner/deployment-operations/watchdog", {});
+export const freezeDeployments = (reason) => post("/api/owner/deployment-operations/freeze", { reason });
+export const resumeDeployments = (reason) => post("/api/owner/deployment-operations/resume", { reason });
 
