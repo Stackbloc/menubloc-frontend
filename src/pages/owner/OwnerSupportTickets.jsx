@@ -47,15 +47,17 @@ export default function OwnerSupportTickets() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    {["Ticket", "Subject", "Restaurant", "Status", "Priority", "Assigned", "Updated"].map((label) => <th key={label} style={thStyle}>{label}</th>)}
+                    {["Ticket", "Source", "Subject", "From", "Restaurant", "Status", "Priority", "Assigned", "Updated"].map((label) => <th key={label} style={thStyle}>{label}</th>)}
                   </tr>
                 </thead>
                 <tbody>
                   {data.tickets.map((ticket) => (
                     <tr key={ticket.id}>
                       <td style={tdStyle}><Link to={`/owner/support/${ticket.id}`} style={linkStyle}>{ticket.ticket_number || `#${ticket.id}`}</Link></td>
+                      <td style={tdStyle}><SourceBadge source={ticket.ticket_source} /></td>
                       <td style={tdStyle}>{ticket.subject}</td>
-                      <td style={tdStyle}>{ticket.restaurant_name || "Unlinked"}</td>
+                      <td style={tdStyle}><SubmitterCell ticket={ticket} /></td>
+                      <td style={tdStyle}>{ticket.restaurant_name || "—"}</td>
                       <td style={tdStyle}>{ticket.status}</td>
                       <td style={tdStyle}>{ticket.priority}</td>
                       <td style={tdStyle}>{ticket.assigned_to_name || ticket.assigned_to_email || "Unassigned"}</td>
@@ -70,6 +72,38 @@ export default function OwnerSupportTickets() {
       </div>
     </OwnerLayout>
   );
+}
+
+function SourceBadge({ source }) {
+  const isDiner = source === "diner";
+  return (
+    <span style={{
+      display: "inline-block",
+      padding: "2px 8px",
+      borderRadius: 6,
+      fontSize: 11,
+      fontWeight: 700,
+      background: isDiner ? "#eff6ff" : "#f0fdf4",
+      color: isDiner ? "#1d4ed8" : "#166534",
+      border: `1px solid ${isDiner ? "#bfdbfe" : "#bbf7d0"}`,
+    }}>
+      {isDiner ? "Diner" : "Operator"}
+    </span>
+  );
+}
+
+function SubmitterCell({ ticket }) {
+  if (ticket.ticket_source === "diner") {
+    return (
+      <div>
+        <div style={{ fontWeight: 600, fontSize: 13 }}>{ticket.submitter_name || "—"}</div>
+        {ticket.submitter_email ? (
+          <a href={`mailto:${ticket.submitter_email}`} style={{ color: "#667085", fontSize: 12 }}>{ticket.submitter_email}</a>
+        ) : null}
+      </div>
+    );
+  }
+  return <span style={{ color: "#667085", fontSize: 13 }}>{ticket.operator_email || ticket.assigned_to_email || "—"}</span>;
 }
 
 function Filters({ value, onChange }) {
