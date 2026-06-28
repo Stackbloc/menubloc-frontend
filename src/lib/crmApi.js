@@ -27,6 +27,15 @@ export const loginCrm = (email, password) => post("/api/crm/auth/login", { email
 export const logoutCrm = () => post("/api/crm/auth/logout", {});
 
 export const getCrmDashboard = () => get("/api/crm/dashboard");
+export const getCrmSeedMarkets = () => get("/api/crm/seed-explorer/markets");
+export const getCrmSeedRestaurants = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/seed-explorer/restaurants${qs ? `?${qs}` : ""}`);
+};
+export const addCrmSeedRestaurantLead = (restaurantId) =>
+  post(`/api/crm/seed-explorer/restaurants/${encodeURIComponent(restaurantId)}/add-lead`, {});
 export const getCrmLeads = (params = {}) => {
   const qs = new URLSearchParams(
     Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")

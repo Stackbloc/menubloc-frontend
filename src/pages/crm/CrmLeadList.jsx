@@ -26,7 +26,7 @@ const DEFAULT_FILTERS = {
   page_size: 25,
 };
 
-export default function CrmLeadList() {
+export default function CrmLeadList({ mode = "leads" }) {
   const { t } = useLanguage();
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [data, setData] = useState({ leads: [], pagination: { page: 1, total: 0, page_size: 25 } });
@@ -63,11 +63,11 @@ export default function CrmLeadList() {
   }
 
   return (
-    <CrmPage title="CRM Leads">
+    <CrmPage title={mode === "companies" ? "CRM Companies" : "CRM Leads"}>
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 18, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: mode === "companies" ? "1fr" : "1.6fr 1fr", gap: 18, marginBottom: 18 }}>
         <CrmCard title="Lead Filters">
           <div style={filterGridStyle}>
             <input value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })} placeholder="Search leads, restaurants, email, phone" style={inputStyle} />
@@ -98,7 +98,7 @@ export default function CrmLeadList() {
           </div>
         </CrmCard>
 
-        <CrmCard title="Quick Create Lead" subtitle="Manual internal lead entry">
+        {mode !== "companies" ? <CrmCard title="Quick Create Lead" subtitle="Manual internal lead entry">
           <form onSubmit={handleCreateLead} style={{ display: "grid", gap: 10 }}>
             <input value={newLead.lead_name} onChange={(e) => setNewLead({ ...newLead, lead_name: e.target.value })} placeholder="Lead name" style={inputStyle} />
             <input value={newLead.contact_name || ""} onChange={(e) => setNewLead({ ...newLead, contact_name: e.target.value })} placeholder="Contact name" style={inputStyle} />
@@ -106,10 +106,10 @@ export default function CrmLeadList() {
             <input value={newLead.phone || ""} onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })} placeholder="Phone" style={inputStyle} />
             <button type="submit" style={primaryButtonStyle}>Create lead</button>
           </form>
-        </CrmCard>
+        </CrmCard> : null}
       </div>
 
-      <CrmCard title="Lead List" subtitle={`${data.pagination.total || 0} total leads`}>
+      <CrmCard title={mode === "companies" ? "Company List" : "Lead List"} subtitle={`${data.pagination.total || 0} total ${mode === "companies" ? "companies" : "leads"}`}>
         <DataTable
           rows={data.leads || []}
           columns={[
