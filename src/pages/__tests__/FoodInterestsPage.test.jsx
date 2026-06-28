@@ -32,7 +32,10 @@ describe("Waiter liked-dish recommendation topic", () => {
     expect(heading.style.color).toBe("rgb(134, 239, 172)");
     expect(within(module).getAllByText("Chick-fil-A")).toHaveLength(1);
     expect(within(module).getAllByText("Waffle House")).toHaveLength(1);
-    expect(within(module).getAllByText("View dish →")).toHaveLength(3);
+    expect(within(module).queryByText("View dish →")).toBeNull();
+    expect(within(module).getByRole("link", { name: "Spicy Chicken Biscuit" }).getAttribute("href")).toBe("/dish/101");
+    expect(within(module).getByRole("link", { name: "Chicken Biscuit" }).getAttribute("href")).toBe("/dish/102");
+    expect(within(module).getByRole("link", { name: "2 Egg Breakfast" }).getAttribute("href")).toBe("/dish/201");
 
     const text = module.textContent;
     expect(text.indexOf("Spicy Chicken Biscuit")).toBeLessThan(text.indexOf("Chicken Biscuit"));

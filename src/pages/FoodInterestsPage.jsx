@@ -163,13 +163,14 @@ export function LikedRecommendationTopicCard({ topic }) {
             </div>
             <div style={{ display: "grid", gap: 7, marginTop: 6 }}>
               {restaurant.items.map((item, index) => (
-                <div key={item.menu_item_id ?? item.link ?? index} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-                  <span style={{ ...ITEM_LINK_STYLE, color: "#CBD5E1" }}>{item.title}</span>
+                <div key={item.menu_item_id ?? item.link ?? index}>
                   {item.link ? (
-                    <Link to={item.link} style={{ ...LINK_STYLE, marginTop: 0, whiteSpace: "nowrap" }}>
-                      {item.link_label || "View dish →"}
+                    <Link to={item.link} style={{ ...ITEM_LINK_STYLE, display: "block" }}>
+                      {item.title}
                     </Link>
-                  ) : null}
+                  ) : (
+                    <span style={ITEM_LINK_STYLE}>{item.title}</span>
+                  )}
                 </div>
               ))}
             </div>
