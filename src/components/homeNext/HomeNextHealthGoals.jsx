@@ -29,7 +29,7 @@ export default function HomeNextHealthGoals({ autoLocation, appliedLocation, sho
         </p>
       </div>
       <div style={{ padding: "0 16px", minWidth: 0 }}>
-        <ChipRail>
+        <ChipRail className="home-next-health-rail">
           {HEALTH_GOAL_ENTRY_POINTS.map((entry) => (
             <button
               key={entry.id}

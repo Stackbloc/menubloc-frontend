@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { FOOD_ENTRY_POINTS } from "../../lib/homeNextEntryPoints.js";
+import { FOOD_ENTRY_POINTS, FOOD_CHIP_BUTTON_STYLE } from "../../lib/homeNextEntryPoints.js";
 import { buildHomeSearchUrl } from "../../lib/homeNextNavigation.js";
 
 export default function HomeNextFoodGrid({ autoLocation, appliedLocation, shouldUseGeoBrowse }) {
   const navigate = useNavigate();
+  const locationContext = { appliedLocation, autoLocation, shouldUseGeoBrowse };
 
   function handleClick(entry) {
     if (entry.to) {
@@ -30,36 +31,13 @@ export default function HomeNextFoodGrid({ autoLocation, appliedLocation, should
           Start with a food — we&apos;ll help you narrow it down
         </p>
       </div>
-      <div
-        className="home-next-food-grid"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-          gap: 10,
-          padding: "0 16px",
-        }}
-      >
+      <div className="home-next-food-two-row-scroll">
         {FOOD_ENTRY_POINTS.map((entry) => (
           <button
             key={entry.id}
             type="button"
             onClick={() => handleClick(entry)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              minHeight: 52,
-              padding: "10px 14px",
-              borderRadius: 14,
-              border: "1.5px solid var(--gb-color-border)",
-              background: "var(--gb-color-surface-strong)",
-              color: "var(--gb-color-ink)",
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-              textAlign: "left",
-              boxShadow: "var(--gb-shadow-soft)",
-            }}
+            style={FOOD_CHIP_BUTTON_STYLE}
           >
             <span style={{ fontSize: 22, lineHeight: 1 }} aria-hidden="true">
               {entry.icon}

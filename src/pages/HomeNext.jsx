@@ -9,11 +9,16 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { useHomeBrowseFeed } from "../hooks/useHomeBrowseFeed.js";
-import { buildHomeDiscoverySections } from "../lib/homeNextSections.js";
+import {
+  buildHomeDiscoverySections,
+  findHomeSectionMeta,
+  getExpandedSectionMenus,
+} from "../lib/homeNextSections.js";
 import { buildHomeSearchUrl } from "../lib/homeNextNavigation.js";
 import HomeNextFoodGrid from "../components/homeNext/HomeNextFoodGrid.jsx";
 import HomeNextHealthGoals from "../components/homeNext/HomeNextHealthGoals.jsx";
 import HomeNextDiscoverySection from "../components/homeNext/HomeNextDiscoverySection.jsx";
+import HomeNextSectionExpanded from "../components/homeNext/HomeNextSectionExpanded.jsx";
 import { captureEvent } from "../services/posthog.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -23,8 +28,10 @@ export default function HomeNext() {
   const { isAuthenticated: consumerLoggedIn, loading: consumerLoading } = useConsumer();
   const navigate = useNavigate();
   const inputRef = useRef(null);
+  const helpSectionRef = useRef(null);
   const [draftQuery, setDraftQuery] = useState("");
   const [searching, setSearching] = useState(false);
+  const [expandedSectionId, setExpandedSectionId] = useState(null);
 
   const {
     menus,
@@ -40,6 +47,25 @@ export default function HomeNext() {
     () => buildHomeDiscoverySections(menus, { hasGeo: shouldUseGeoBrowse }),
     [menus, shouldUseGeoBrowse]
   );
+
+  const expandedSection = useMemo(() => {
+    if (!expandedSectionId) return null;
+    const meta = findHomeSectionMeta(sections, expandedSectionId);
+    if (!meta) return null;
+    return {
+      ...meta,
+      menus: getExpandedSectionMenus(menus, expandedSectionId, { hasGeo: shouldUseGeoBrowse }),
+    };
+  }, [expandedSectionId, sections, menus, shouldUseGeoBrowse]);
+
+  function openSection(sectionId) {
+    setExpandedSectionId(sectionId);
+    helpSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function closeSection() {
+    setExpandedSectionId(null);
+  }
 
   async function runSearch(queryValue = draftQuery) {
     const qTerm = String(queryValue || "").trim();
@@ -85,10 +111,33 @@ export default function HomeNext() {
         .home-next-search:focus { outline: none; box-shadow: 0 0 0 2px rgba(45,106,79,0.35); }
         .home-next-skeleton { animation: homeNextPulse 1.4s ease-in-out infinite; }
         @keyframes homeNextPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
-        .home-next-section-scroll::-webkit-scrollbar { display: none; }
+        .home-next-section-scroll,
+        .home-next-food-two-row-scroll,
+        .home-next-health-rail {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .home-next-section-scroll::-webkit-scrollbar,
+        .home-next-food-two-row-scroll::-webkit-scrollbar,
+        .home-next-health-rail::-webkit-scrollbar {
+          display: none;
+        }
+        .home-next-food-two-row-scroll {
+          display: grid;
+          grid-template-rows: repeat(2, auto);
+          grid-auto-flow: column;
+          grid-auto-columns: minmax(168px, 46vw);
+          gap: 10px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding: 0 16px 4px;
+          -webkit-overflow-scrolling: touch;
+        }
         @media (min-width: 760px) {
           .home-next-shell { max-width: 720px; }
-          .home-next-food-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+          .home-next-food-two-row-scroll {
+            grid-auto-columns: minmax(168px, 160px);
+          }
         }
       `}</style>
 
@@ -145,7 +194,7 @@ export default function HomeNext() {
             </div>
           </div>
 
-          <div style={{ padding: "0 16px" }}>
+          <div style={{ padding: "28px 16px 0" }}>
             <p style={{ margin: "0 0 10px", fontSize: 22, fontWeight: 800, color: "#111827", lineHeight: 1.2 }}>
               {t("homeNext.headline", "What sounds good?")}
             </p>
@@ -177,7 +226,7 @@ export default function HomeNext() {
                     border: "1.5px solid var(--gb-color-border)",
                     background: "var(--gb-color-surface-strong)",
                     paddingLeft: 20,
-                    paddingRight: 52,
+                    paddingRight: 92,
                     fontSize: 16,
                     fontWeight: 600,
                     color: "var(--gb-color-ink)",
@@ -191,18 +240,39 @@ export default function HomeNext() {
                   disabled={searching}
                   style={{
                     position: "absolute",
+                    right: 46,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    border: "none",
+                    background: "transparent",
+                    fontSize: 18,
+                    color: "#9CA3AF",
+                    cursor: searching ? "wait" : "pointer",
+                    padding: 4,
+                    lineHeight: 1,
+                  }}
+                >
+                  {searching ? "…" : "🔍"}
+                </button>
+                <button
+                  type="button"
+                  aria-label="Add photo of menu text"
+                  onClick={() => navigate("/menu-capture")}
+                  style={{
+                    position: "absolute",
                     right: 14,
                     top: "50%",
                     transform: "translateY(-50%)",
                     border: "none",
                     background: "transparent",
                     fontSize: 20,
-                    color: "var(--gb-color-accent)",
-                    cursor: searching ? "wait" : "pointer",
+                    color: "#9CA3AF",
+                    cursor: "pointer",
                     padding: 4,
+                    lineHeight: 1,
                   }}
                 >
-                  {searching ? "…" : "🔍"}
+                  📸
                 </button>
               </div>
             </form>
@@ -222,13 +292,15 @@ export default function HomeNext() {
             shouldUseGeoBrowse={shouldUseGeoBrowse}
           />
 
-          <section style={{ marginBottom: 8 }}>
+          <section ref={helpSectionRef} style={{ marginBottom: 8 }}>
             <div style={{ padding: "0 16px", marginBottom: 12 }}>
               <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#111827" }}>
                 Help me decide
               </h2>
               <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6B7280" }}>
-                Curated menus — each shown for a clear reason
+                {expandedSection
+                  ? "Browsing one category — tap Back to see all"
+                  : "Curated menus — tap a category to see more"}
               </p>
             </div>
 
@@ -247,6 +319,36 @@ export default function HomeNext() {
                   />
                 ))}
               </div>
+            ) : expandedSection ? (
+              expandedSection.menus.length > 0 ? (
+                <HomeNextSectionExpanded
+                  title={expandedSection.title}
+                  reason={expandedSection.reason}
+                  menus={expandedSection.menus}
+                  onBack={closeSection}
+                />
+              ) : (
+                <div style={{ padding: "0 16px" }}>
+                  <button
+                    type="button"
+                    onClick={closeSection}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      padding: "0 0 12px",
+                      color: "#15803d",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    ← Back
+                  </button>
+                  <p style={{ margin: 0, fontSize: 14, color: "#6B7280" }}>
+                    No menus in this category right now.
+                  </p>
+                </div>
+              )
             ) : sections.length === 0 ? (
               <div
                 style={{
@@ -270,6 +372,7 @@ export default function HomeNext() {
                   title={section.title}
                   reason={section.reason}
                   menus={section.menus}
+                  onTitleClick={() => openSection(section.id)}
                 />
               ))
             )}

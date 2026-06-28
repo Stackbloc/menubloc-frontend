@@ -18,6 +18,54 @@ function pickUnique(menus, used, max = SECTION_MAX) {
   return picked;
 }
 
+function sortPopular(menus) {
+  return [...menus].sort((a, b) => Number(b.menu_item_count || 0) - Number(a.menu_item_count || 0));
+}
+
+function sortNearby(menus) {
+  return [...menus]
+    .filter((m) => Number.isFinite(Number(m.distance_miles)))
+    .sort((a, b) => Number(a.distance_miles) - Number(b.distance_miles));
+}
+
+function sortDiscover(menus) {
+  return [...menus].sort((a, b) => {
+    const cuisineCmp = String(a.cuisine || "").localeCompare(String(b.cuisine || ""));
+    if (cuisineCmp !== 0) return cuisineCmp;
+    return String(a.restaurant_name || "").localeCompare(String(b.restaurant_name || ""));
+  });
+}
+
+/**
+ * Full list for an expanded section (no preview cap, no cross-section dedupe).
+ */
+export function getExpandedSectionMenus(menus, sectionId, { hasGeo = false } = {}) {
+  const deduped = dedupeDiscoveryMenus(menus);
+  if (!deduped.length) return [];
+
+  switch (sectionId) {
+    case "popular":
+      return sortPopular(deduped);
+    case "nearby":
+      return hasGeo ? sortNearby(deduped) : [];
+    case "discover":
+      return sortDiscover(deduped);
+    case "more": {
+      const used = new Set();
+      const preview = buildHomeDiscoverySections(deduped, { hasGeo });
+      for (const section of preview) {
+        for (const menu of section.menus) {
+          const key = menuKey(menu);
+          if (key) used.add(key);
+        }
+      }
+      return deduped.filter((menu) => !used.has(menuKey(menu)));
+    }
+    default:
+      return deduped;
+  }
+}
+
 /**
  * Slice a location-scoped browse feed into curated sections.
  * Every section includes a human-readable reason for visibility.
@@ -29,10 +77,7 @@ export function buildHomeDiscoverySections(menus, { hasGeo = false } = {}) {
   const used = new Set();
   const sections = [];
 
-  const popular = pickUnique(
-    [...deduped].sort((a, b) => Number(b.menu_item_count || 0) - Number(a.menu_item_count || 0)),
-    used
-  );
+  const popular = pickUnique(sortPopular(deduped), used);
   if (popular.length) {
     sections.push({
       id: "popular",
@@ -43,12 +88,7 @@ export function buildHomeDiscoverySections(menus, { hasGeo = false } = {}) {
   }
 
   if (hasGeo) {
-    const nearby = pickUnique(
-      [...deduped]
-        .filter((m) => Number.isFinite(Number(m.distance_miles)))
-        .sort((a, b) => Number(a.distance_miles) - Number(b.distance_miles)),
-      used
-    );
+    const nearby = pickUnique(sortNearby(deduped), used);
     if (nearby.length) {
       sections.push({
         id: "nearby",
@@ -59,14 +99,7 @@ export function buildHomeDiscoverySections(menus, { hasGeo = false } = {}) {
     }
   }
 
-  const diverse = pickUnique(
-    [...deduped].sort((a, b) => {
-      const cuisineCmp = String(a.cuisine || "").localeCompare(String(b.cuisine || ""));
-      if (cuisineCmp !== 0) return cuisineCmp;
-      return String(a.restaurant_name || "").localeCompare(String(b.restaurant_name || ""));
-    }),
-    used
-  );
+  const diverse = pickUnique(sortDiscover(deduped), used);
   if (diverse.length) {
     sections.push({
       id: "discover",
@@ -87,4 +120,8 @@ export function buildHomeDiscoverySections(menus, { hasGeo = false } = {}) {
   }
 
   return sections;
+}
+
+export function findHomeSectionMeta(sections, sectionId) {
+  return (Array.isArray(sections) ? sections : []).find((s) => s.id === sectionId) || null;
 }

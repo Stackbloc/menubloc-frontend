@@ -1,7 +1,10 @@
 "use strict";
 
 const assert = require("assert");
-const { buildHomeDiscoverySections } = require("../src/lib/homeNextSections.js");
+const {
+  buildHomeDiscoverySections,
+  getExpandedSectionMenus,
+} = require("../src/lib/homeNextSections.js");
 
 function testDedupesAcrossSections() {
   const menus = [
@@ -25,6 +28,18 @@ function testEmptyInput() {
   assert.deepStrictEqual(buildHomeDiscoverySections([]), []);
 }
 
+function testExpandedPopularReturnsAllSorted() {
+  const menus = [
+    { menu_id: 1, restaurant_id: 10, restaurant_name: "A", menu_item_count: 50, cuisine: "pizza" },
+    { menu_id: 2, restaurant_id: 20, restaurant_name: "B", menu_item_count: 40, cuisine: "mexican" },
+    { menu_id: 3, restaurant_id: 30, restaurant_name: "C", menu_item_count: 30, cuisine: "asian" },
+  ];
+  const expanded = getExpandedSectionMenus(menus, "popular");
+  assert.strictEqual(expanded.length, 3);
+  assert.strictEqual(expanded[0].menu_id, 1);
+}
+
 testDedupesAcrossSections();
 testEmptyInput();
+testExpandedPopularReturnsAllSorted();
 console.log("homeNextSections tests passed");
