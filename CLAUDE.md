@@ -687,6 +687,22 @@ if (wantsFat) push(`${fat}g fat`);  // often never shown
 
 ---
 
+## 🚨 HOME PAGE PROTECTION PROTOCOL (HPP) — P0 MANDATORY
+
+**Established:** 2026-06-28  
+**Authoritative design:** `docs/architecture/2026-06-28_AUTHORITATIVE-HOME-PAGE-DESIGN.md`  
+**Full guardrail:** `docs/guardrails/2026-06-28_home-page-protection-protocol-guardrail.md`
+
+**`HomeNext` at `/` is the product-owner-approved authoritative home page.** Stabilization period — off limits unless the task explicitly requests home page work.
+
+Before editing `HomeNext.jsx`, `HomeRoot.jsx`, `src/components/homeNext/*`, or `src/lib/homeNext*.js`:
+
+> **Per Home Page Protection Protocol: the proposed change will modify [names] and may alter the authoritative Menuply home page. Explicit product-owner approval required.**
+
+Every PR must include **Home Page Impact**: ☐ No home page impact · ☐ Home page modified with explicit approval.
+
+---
+
 ## 🚨 SHOW SIMILAR & COMPARE GUARDRAIL (CRITICAL)
 
 **Established:** 2026-06-05  

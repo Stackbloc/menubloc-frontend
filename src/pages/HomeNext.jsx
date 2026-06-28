@@ -1,6 +1,7 @@
 /**
- * Experimental home page redesign — food-first, decision-support oriented.
- * Parallel to GrubbidDiscovery; toggled via VITE_ENABLE_NEW_HOMEPAGE or /home-next route.
+ * AUTHORITATIVE Menuply home page (HomeNext) — product-owner approved 2026-06-28.
+ * Live at "/" via HomeRoot (default). Legacy rollback: VITE_USE_LEGACY_HOME=1 or /home-legacy.
+ * Protected: docs/architecture/2026-06-28_AUTHORITATIVE-HOME-PAGE-DESIGN.md
  */
 import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";

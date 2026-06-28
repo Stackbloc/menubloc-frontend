@@ -12,8 +12,8 @@ function isExplicitlyFalse(value) {
 }
 
 /**
- * When true, "/" renders LegacyDiscoveryHome instead of HomeNext.
- * Set VITE_USE_LEGACY_HOME=1 or VITE_ENABLE_NEW_HOMEPAGE=0 to roll back.
+ * When true, "/" renders LegacyDiscoveryHome instead of HomeNext (rollback only).
+ * HomeNext is the authoritative default. Set VITE_USE_LEGACY_HOME=1 or VITE_ENABLE_NEW_HOMEPAGE=0 to roll back.
  */
 export function isLegacyHomepageEnabled() {
   if (isTruthy(import.meta.env.VITE_USE_LEGACY_HOME)) return true;
