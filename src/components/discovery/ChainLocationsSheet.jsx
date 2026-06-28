@@ -52,10 +52,23 @@ export default function ChainLocationsSheet({
 
   useEffect(() => {
     const session = readSessionMarketContext();
-    // Card city/state wins — session label can be stale (e.g. LA) while browse is geo-scoped to Dothan.
-    const city = String(marketCity || session.city || "").trim();
-    const state = String(marketState || session.state || "").trim();
-    const geo = session.geo;
+    const cardCity = String(marketCity || "").trim();
+    const cardState = String(marketState || "").trim();
+    const hasCardMarket = Boolean(cardCity);
+
+    // Card market wins. When set, omit session geo — stale LA coords + Dothan city returns 0 rows.
+    let city = "";
+    let state = "";
+    let geo = null;
+    if (hasCardMarket) {
+      city = cardCity;
+      state = cardState;
+    } else if (session.geo) {
+      geo = session.geo;
+    } else {
+      city = String(session.city || "").trim();
+      state = String(session.state || "").trim();
+    }
 
     const params = new URLSearchParams();
     if (city) params.set("city", city);
