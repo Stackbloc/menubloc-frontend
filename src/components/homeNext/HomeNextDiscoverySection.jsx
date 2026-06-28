@@ -1,17 +1,58 @@
+import { Link } from "react-router-dom";
 import DiscoveryCard from "../discovery/DiscoveryCard.jsx";
+import { buildHomeBrowseUrl } from "../../lib/homeNextNavigation.js";
 
-export default function HomeNextDiscoverySection({ title, reason, menus }) {
+export default function HomeNextDiscoverySection({
+  sectionId,
+  title,
+  reason,
+  menus,
+  appliedLocation,
+  autoLocation,
+  shouldUseGeoBrowse,
+}) {
   if (!Array.isArray(menus) || menus.length === 0) return null;
+
+  const viewAllHref = buildHomeBrowseUrl({
+    sectionId,
+    appliedLocation,
+    autoLocation,
+    shouldUseGeoBrowse,
+  });
 
   return (
     <section style={{ marginBottom: 28 }}>
-      <div style={{ padding: "0 16px", marginBottom: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#111827" }}>
-          {title}
-        </h2>
-        <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6B7280", lineHeight: 1.4 }}>
-          {reason}
-        </p>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: "0 16px",
+          marginBottom: 10,
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#111827" }}>
+            {title}
+          </h2>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6B7280", lineHeight: 1.4 }}>
+            {reason}
+          </p>
+        </div>
+        <Link
+          to={viewAllHref}
+          style={{
+            flexShrink: 0,
+            fontSize: 13,
+            fontWeight: 700,
+            color: "#15803d",
+            textDecoration: "none",
+            paddingTop: 2,
+          }}
+        >
+          View all
+        </Link>
       </div>
       <div
         className="home-next-section-scroll"
