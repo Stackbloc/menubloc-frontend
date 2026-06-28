@@ -42,6 +42,37 @@ export const getCrmLeads = (params = {}) => {
   ).toString();
   return get(`/api/crm/leads${qs ? `?${qs}` : ""}`);
 };
+export const getCrmBdContacts = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/business-development/contacts${qs ? `?${qs}` : ""}`);
+};
+export const getCrmBdContact = (contactId) => get(`/api/crm/business-development/contacts/${contactId}`);
+export const createCrmBdContact = (body) => post("/api/crm/business-development/contacts", body);
+export const importCrmBdContacts = (contacts) => post("/api/crm/business-development/contacts/import", { contacts });
+export const updateCrmBdContact = (contactId, body) => put(`/api/crm/business-development/contacts/${contactId}`, body);
+export const deleteCrmBdContact = (contactId) => req(`/api/crm/business-development/contacts/${contactId}`, { method: "DELETE" });
+export const linkCrmBdContactLead = (contactId, body) => post(`/api/crm/business-development/contacts/${contactId}/leads`, body);
+export const unlinkCrmBdContactLead = (contactId, leadId) =>
+  req(`/api/crm/business-development/contacts/${contactId}/leads/${leadId}`, { method: "DELETE" });
+
+/** @deprecated Use getCrmBdContacts */
+export const getCrmReferralProspects = getCrmBdContacts;
+/** @deprecated Use getCrmBdContact */
+export const getCrmReferralProspect = getCrmBdContact;
+/** @deprecated Use createCrmBdContact */
+export const createCrmReferralProspect = createCrmBdContact;
+/** @deprecated Use importCrmBdContacts */
+export const importCrmReferralProspects = importCrmBdContacts;
+/** @deprecated Use updateCrmBdContact */
+export const updateCrmReferralProspect = updateCrmBdContact;
+/** @deprecated Use deleteCrmBdContact */
+export const deleteCrmReferralProspect = deleteCrmBdContact;
+/** @deprecated Use linkCrmBdContactLead */
+export const linkCrmReferralProspectLead = linkCrmBdContactLead;
+/** @deprecated Use unlinkCrmBdContactLead */
+export const unlinkCrmReferralProspectLead = unlinkCrmBdContactLead;
 export const getCrmLead = (leadId) => get(`/api/crm/leads/${leadId}`);
 export const createCrmLead = (body) => post("/api/crm/leads", body);
 export const updateCrmLead = (leadId, body) => put(`/api/crm/leads/${leadId}`, body);

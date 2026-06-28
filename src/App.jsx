@@ -159,6 +159,8 @@ import CrmLeadList from "./pages/crm/CrmLeadList.jsx";
 import CrmLeadDetail from "./pages/crm/CrmLeadDetail.jsx";
 import CrmTasks from "./pages/crm/CrmTasks.jsx";
 import CrmSeedExplorer from "./pages/crm/CrmSeedExplorer.jsx";
+import CrmBusinessDevelopment from "./pages/crm/CrmBusinessDevelopment.jsx";
+import CrmBusinessDevelopmentDetail from "./pages/crm/CrmBusinessDevelopmentDetail.jsx";
 import CrmReports from "./pages/crm/CrmReports.jsx";
 import CrmQrInventory from "./pages/crm/CrmQrInventory.jsx";
 import BuildInfoPage from "./pages/BuildInfoPage.jsx";
@@ -691,6 +693,10 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/crm/leads" element={<CrmRoute><CrmLeadList /></CrmRoute>} />
         <Route path="/crm/companies" element={<CrmRoute><CrmLeadList mode="companies" /></CrmRoute>} />
         <Route path="/crm/leads/:id" element={<CrmRoute><CrmLeadDetail /></CrmRoute>} />
+        <Route path="/crm/business-development" element={<CrmRoute><CrmBusinessDevelopment /></CrmRoute>} />
+        <Route path="/crm/business-development/:id" element={<CrmRoute><CrmBusinessDevelopmentDetail /></CrmRoute>} />
+        <Route path="/crm/referral-prospects" element={<Navigate to="/crm/business-development" replace />} />
+        <Route path="/crm/referral-prospects/:id" element={<CrmRoute><CrmBusinessDevelopmentDetail /></CrmRoute>} />
         <Route path="/crm/tasks" element={<CrmRoute><CrmTasks /></CrmRoute>} />
         <Route path="/crm/seed-explorer" element={<CrmRoute><CrmSeedExplorer /></CrmRoute>} />
         <Route path="/crm/reports" element={<CrmRoute><CrmReports /></CrmRoute>} />
