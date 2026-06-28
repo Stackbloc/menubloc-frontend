@@ -154,6 +154,45 @@ export default function HomeNext() {
         }
         .home-next-menu-grid-cell {
           min-width: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        .home-next-menu-pane-shell {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+        }
+        .home-next-menu-pane-shell .discovery-pane {
+          flex: 1;
+        }
+        /* Popular — Waffle House (Dothan) reference height */
+        .discovery-pane--featured {
+          min-height: 122px;
+        }
+        .discovery-pane--featured .discovery-pane-body {
+          display: flex;
+          flex-direction: column;
+        }
+        .discovery-pane--featured .discovery-pane-meta {
+          min-height: 42px;
+        }
+        .discovery-pane--featured .discovery-pane-preview {
+          min-height: 24px;
+        }
+        /* Other categories — Toasted Yolk (Dothan) reference height */
+        .discovery-pane--compact {
+          min-height: 98px;
+        }
+        .discovery-pane--compact .discovery-pane-body {
+          display: flex;
+          flex-direction: column;
+        }
+        .discovery-pane--compact .discovery-pane-meta {
+          min-height: 22px;
+        }
+        .discovery-pane--compact .discovery-pane-preview {
+          min-height: 24px;
         }
         @media (min-width: 760px) {
           .home-next-shell { max-width: 720px; }
@@ -361,6 +400,7 @@ export default function HomeNext() {
             ) : expandedSection ? (
               expandedSection.menus.length > 0 ? (
                 <HomeNextSectionExpanded
+                  sectionId={expandedSection.id}
                   title={expandedSection.title}
                   reason={expandedSection.reason}
                   menus={expandedSection.menus}
@@ -408,6 +448,7 @@ export default function HomeNext() {
               sections.map((section) => (
                 <HomeNextDiscoverySection
                   key={section.id}
+                  sectionId={section.id}
                   title={section.title}
                   reason={section.reason}
                   menus={section.menus}

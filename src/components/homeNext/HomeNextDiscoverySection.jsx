@@ -1,6 +1,6 @@
 import HomeNextMenuCardRow from "./HomeNextMenuCardRow.jsx";
 
-export default function HomeNextDiscoverySection({ title, reason, menus, onTitleClick }) {
+export default function HomeNextDiscoverySection({ sectionId, title, reason, menus, onTitleClick }) {
   if (!Array.isArray(menus) || menus.length === 0) return null;
 
   return (
@@ -28,7 +28,7 @@ export default function HomeNextDiscoverySection({ title, reason, menus, onTitle
           </p>
         </button>
       </div>
-      <HomeNextMenuCardRow menus={menus} />
+      <HomeNextMenuCardRow menus={menus} sectionId={sectionId} />
     </section>
   );
 }

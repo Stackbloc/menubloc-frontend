@@ -1,8 +1,10 @@
 import DiscoveryCard from "../discovery/DiscoveryCard.jsx";
 
 /** 2-column menu grid — preview sections show 4 cards (2×2), no horizontal scroll. */
-export default function HomeNextMenuCardRow({ menus }) {
+export default function HomeNextMenuCardRow({ menus, sectionId }) {
   if (!Array.isArray(menus) || menus.length === 0) return null;
+
+  const paneVariant = sectionId === "popular" ? "featured" : "compact";
 
   return (
     <div
@@ -16,7 +18,9 @@ export default function HomeNextMenuCardRow({ menus }) {
     >
       {menus.map((menu) => (
         <div key={menu.menu_id || menu.restaurant_id} className="home-next-menu-grid-cell">
-          <DiscoveryCard menu={menu} />
+          <div className="home-next-menu-pane-shell">
+            <DiscoveryCard menu={menu} paneVariant={paneVariant} />
+          </div>
         </div>
       ))}
     </div>

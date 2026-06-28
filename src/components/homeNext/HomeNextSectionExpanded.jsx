@@ -1,7 +1,7 @@
 import HomeNextMenuCardRow from "./HomeNextMenuCardRow.jsx";
 
 /** Single category expanded — same card row as preview sections, with Back. */
-export default function HomeNextSectionExpanded({ title, reason, menus, onBack }) {
+export default function HomeNextSectionExpanded({ sectionId, title, reason, menus, onBack }) {
   return (
     <section style={{ marginBottom: 28 }}>
       <div style={{ padding: "0 16px", marginBottom: 10 }}>
@@ -27,7 +27,7 @@ export default function HomeNextSectionExpanded({ title, reason, menus, onBack }
           {reason}
         </p>
       </div>
-      <HomeNextMenuCardRow menus={menus} />
+      <HomeNextMenuCardRow menus={menus} sectionId={sectionId} />
     </section>
   );
 }

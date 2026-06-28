@@ -91,6 +91,8 @@ export default function DiscoveryCard({
   activeFilterParams = "",
   activeFilterLabel = null,
   hasActiveFilters = false,
+  /** HomeNext only — uniform pane heights: featured (Popular) vs compact (other sections). */
+  paneVariant = null,
 }) {
   const [showChainSheet, setShowChainSheet] = useState(false);
   const [followed, setFollowed] = useState(false);
@@ -119,7 +121,14 @@ export default function DiscoveryCard({
   const previewSource = menuReady && Array.isArray(menu?.preview_menu_items) && menu.preview_menu_items.length
     ? menu.preview_menu_items
     : menuReady ? (menu?.preview_items || []) : [];
-  const chips = previewSource.slice(0, 3).map((item) => getLocalizedPreviewLabel(item, language));
+  const previewLimit = paneVariant === "compact" ? 2 : 3;
+  const chips = previewSource.slice(0, previewLimit).map((item) => getLocalizedPreviewLabel(item, language));
+  const paneClass =
+    paneVariant === "featured"
+      ? "discovery-pane discovery-pane--featured"
+      : paneVariant === "compact"
+        ? "discovery-pane discovery-pane--compact"
+        : "";
   const phone = menu?.phone || null;
 
   const profileHref = restaurantPathFromRow(menu) || `/public/restaurants/${id}`;
@@ -177,6 +186,7 @@ export default function DiscoveryCard({
   <>
     <Link
       to={href}
+      className={paneClass || undefined}
       style={{
         display: "flex",
         flexDirection: "row",
@@ -188,6 +198,7 @@ export default function DiscoveryCard({
         background: "linear-gradient(180deg, #071b12 0%, #0b2418 100%)",
         boxShadow: "var(--gb-shadow-card)",
         transition: "box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease",
+        ...(paneVariant ? { height: "100%", boxSizing: "border-box" } : {}),
       }}
     >
       <div style={{
@@ -200,7 +211,10 @@ export default function DiscoveryCard({
       }} />
 
       {/* Content */}
-      <div style={{ padding: "9px 12px 9px", background: "transparent", flex: 1, minWidth: 0 }}>
+      <div
+        className={paneVariant ? "discovery-pane-body" : undefined}
+        style={{ padding: "9px 12px 9px", background: "transparent", flex: 1, minWidth: 0 }}
+      >
         {/* Name row */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -288,8 +302,11 @@ export default function DiscoveryCard({
         )}
 
         {/* Meta row — pill chips */}
-        {metaItems.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+        {(metaItems.length > 0 || paneVariant) && (
+          <div
+            className={paneVariant ? "discovery-pane-meta" : undefined}
+            style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}
+          >
             {metaItems.map((item) => {
               const emoji = item.key === "distance" ? "📍" : item.key === "chain" ? "🏪" : "🍽️";
               const pillStyle = {
@@ -320,8 +337,11 @@ export default function DiscoveryCard({
         )}
 
         {/* Preview chips */}
-        {chips.length > 0 && (
-          <div style={{ display: "flex", gap: 4, marginTop: 5, flexWrap: "wrap" }}>
+        {(chips.length > 0 || paneVariant) && (
+          <div
+            className={paneVariant ? "discovery-pane-preview" : undefined}
+            style={{ display: "flex", gap: 4, marginTop: 5, flexWrap: "wrap" }}
+          >
             {chips.map((tag) => (
               <span key={tag} style={{
                 fontSize: 10,
