@@ -33,6 +33,11 @@ export const verifyOwner2FA = (code) => post("/api/owner/auth/verify-2fa", { cod
 export const logoutOwner = () => post("/api/owner/auth/logout", {});
 
 export const getOwnerDashboardSummary = () => get("/api/owner/dashboard/summary");
+export const getDeploymentOperationsSummary = () => get("/api/owner/deployment-operations/summary");
+export const runDeploymentSmoke = () => post("/api/owner/deployment-operations/smoke", {});
+export const runDeploymentWatchdog = () => post("/api/owner/deployment-operations/watchdog", {});
+export const freezeDeployments = (reason) => post("/api/owner/deployment-operations/freeze", { reason });
+export const resumeDeployments = (reason) => post("/api/owner/deployment-operations/resume", { reason });
 export const getOwnerTrafficAnalytics = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/analytics/traffic${qs ? `?${qs}` : ""}`);
@@ -117,4 +122,3 @@ export const replaceOwnerQrSticker = (restaurantId, qrCode) =>
 
 export const searchOwnerRestaurantsForQr = (q) =>
   get(`/api/owner/qr-stickers/restaurant-search?q=${encodeURIComponent(q)}`);
-

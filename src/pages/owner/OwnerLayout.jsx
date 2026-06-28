@@ -14,6 +14,7 @@ const NAV = [
   { to: "/owner/support", label: "Support Tickets" },
   { to: "/owner/menu-uploads", label: "Menu Uploads" },
   { to: "/owner/qr-stickers", label: "QR Stickers" },
+  { to: "/owner/deployments", label: "Deployment Operations" },
 ];
 
 export const OWNER_COLORS = {

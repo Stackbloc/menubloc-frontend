@@ -1,0 +1,61 @@
+name: Production Watchdog
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: URL to probe (supports outage simulation)
+        required: false
+        default: https://menuply.com
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      WATCHDOG_BASE_URL: ${{ inputs.base_url || 'https://menuply.com' }}
+      WATCHDOG_INCIDENT_DIR: docs/incidents
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: watchdog
+        continue-on-error: true
+        run: node scripts/deployment/watchdog.mjs
+      - name: Upload incident evidence
+        if: steps.watchdog.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-incident-${{ github.run_id }}
+          path: docs/incidents/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Send SMTP alert when configured
+        if: steps.watchdog.outcome == 'failure' && secrets.SMTP_URL != '' && secrets.SMTP_USERNAME != '' && secrets.SMTP_PASSWORD != '' && secrets.ALERT_EMAIL_TO != '' && secrets.ALERT_EMAIL_FROM != ''
+        env:
+          SMTP_URL: ${{ secrets.SMTP_URL }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          ALERT_EMAIL_FROM: ${{ secrets.ALERT_EMAIL_FROM }}
+        run: |
+          printf 'From: %s\nTo: %s\nSubject: Menuply production outage\n\nWatchdog run failed: %s/actions/runs/%s\n' "$ALERT_EMAIL_FROM" "$ALERT_EMAIL_TO" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > /tmp/alert.txt
+          curl --fail --ssl-reqd --url "$SMTP_URL" --user "$SMTP_USERNAME:$SMTP_PASSWORD" --mail-from "$ALERT_EMAIL_FROM" --mail-rcpt "$ALERT_EMAIL_TO" --upload-file /tmp/alert.txt
+      - name: Open or update outage issue
+        if: steps.watchdog.outcome == 'failure' && vars.WATCHDOG_OPEN_ISSUE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create production-outage --color B60205 --description 'Automated production outage' --force
+          existing="$(gh issue list --label production-outage --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then gh issue comment "$existing" --body "Watchdog failed: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; else gh issue create --label production-outage --title 'Production watchdog failure' --body "Evidence: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; fi
+      - name: Fail workflow
+        if: steps.watchdog.outcome == 'failure'
+        run: exit 1

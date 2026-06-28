@@ -79,6 +79,7 @@ import OwnerMenuUploads from "./pages/owner/OwnerMenuUploads.jsx";
 import OwnerMenuUploadDetail from "./pages/owner/OwnerMenuUploadDetail.jsx";
 import OwnerQrStickers from "./pages/owner/OwnerQrStickers.jsx";
 import OwnerMarketExpansion from "./pages/owner/OwnerMarketExpansion.jsx";
+import OwnerDeploymentOperations from "./pages/owner/OwnerDeploymentOperations.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
 import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
 import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
@@ -627,6 +628,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/owner/menu-uploads/:uploadId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMenuUploadDetail /></OwnerRoute>} />
         <Route path="/owner/qr-stickers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerQrStickers /></OwnerRoute>} />
         <Route path="/owner/market-expansion" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMarketExpansion /></OwnerRoute>} />
+        <Route path="/owner/deployments" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerDeploymentOperations /></OwnerRoute>} />
 
         <Route path="/crm/login" element={<CrmLogin />} />
         <Route path="/crm/forgot-password" element={<CrmForgotPassword />} />

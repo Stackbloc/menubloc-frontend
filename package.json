@@ -5,6 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "deploy:frontend:production": "node scripts/deployment/frontend-deploy.mjs production",
+    "deploy:frontend:preview": "node scripts/deployment/frontend-deploy.mjs preview",
+    "watchdog:production": "node scripts/deployment/watchdog.mjs",
+    "test:deployment-guard": "node --test test/deploymentGuard.test.mjs",
     "build": "vite build && node scripts/prerender.mjs",
     "design-lock": "node scripts/check-design-lock.mjs && npm run verify:discovery-state-and-chip-rails",
     "verify:allergen-and-filtered-counts": "node scripts/verifyAllergenAndFilteredCounts.mjs",
