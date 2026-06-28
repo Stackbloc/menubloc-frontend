@@ -1,14 +1,21 @@
 import { useNavigate } from "react-router-dom";
 import ChipRail from "../chips/ChipRail.jsx";
 import { HEALTH_GOAL_ENTRY_POINTS } from "../../lib/homeNextEntryPoints.js";
-import { buildHomeChipUrl } from "../../lib/homeNextNavigation.js";
+import { buildHomeSearchUrl } from "../../lib/homeNextNavigation.js";
 
 export default function HomeNextHealthGoals({ autoLocation, appliedLocation, shouldUseGeoBrowse }) {
   const navigate = useNavigate();
-  const locationContext = { appliedLocation, autoLocation, shouldUseGeoBrowse };
 
   function handleClick(entry) {
-    navigate(buildHomeChipUrl(entry, locationContext));
+    navigate(
+      buildHomeSearchUrl({
+        query: entry.query,
+        filterKey: entry.filterKey || null,
+        appliedLocation,
+        autoLocation,
+        shouldUseGeoBrowse,
+      })
+    );
   }
 
   return (

@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "3cf248f02f694ab5b0cd3ad6c5075bf9c9367dd4",
-  "gitShortSha": "3cf248f",
+  "gitSha": "cc6e4097505f5ed271b90aed8a154d41355db641",
+  "gitShortSha": "cc6e409",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-28T17:19:23.438Z",
+  "buildTime": "2026-06-28T16:48:16.912Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Promote HomeNext to live \"/\" with legacy fallback at /home-legacy."
+  "commitMessage": "feat(owner): PHMS incident manager, repair tickets, and deployment ops UI"
 }

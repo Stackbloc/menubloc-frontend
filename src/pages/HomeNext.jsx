@@ -10,7 +10,6 @@ import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { useHomeBrowseFeed } from "../hooks/useHomeBrowseFeed.js";
 import { buildHomeDiscoverySections } from "../lib/homeNextSections.js";
-import HomeNextLocationSelector from "../components/homeNext/HomeNextLocationSelector.jsx";
 import { buildHomeSearchUrl } from "../lib/homeNextNavigation.js";
 import HomeNextFoodGrid from "../components/homeNext/HomeNextFoodGrid.jsx";
 import HomeNextHealthGoals from "../components/homeNext/HomeNextHealthGoals.jsx";
@@ -32,8 +31,8 @@ export default function HomeNext() {
     loading: feedLoading,
     autoLocation,
     appliedLocation,
-    setAppliedLocation,
     shouldUseGeoBrowse,
+    locationLabel,
     locating,
   } = useHomeBrowseFeed({ language });
 
@@ -87,9 +86,9 @@ export default function HomeNext() {
         .home-next-skeleton { animation: homeNextPulse 1.4s ease-in-out infinite; }
         @keyframes homeNextPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
         .home-next-section-scroll::-webkit-scrollbar { display: none; }
-        .home-next-food-rail::-webkit-scrollbar { display: none; }
         @media (min-width: 760px) {
           .home-next-shell { max-width: 720px; }
+          .home-next-food-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
         }
       `}</style>
 
@@ -117,7 +116,7 @@ export default function HomeNext() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              padding: "16px 16px 8px",
+              padding: "14px 16px 10px",
             }}
           >
             <BrandLogo height={36} radius={8} matchPageBackground={false} />
@@ -146,17 +145,13 @@ export default function HomeNext() {
             </div>
           </div>
 
-          <div style={{ padding: "12px 16px 0" }}>
-            <p style={{ margin: "0 0 12px", fontSize: 22, fontWeight: 800, color: "#111827", lineHeight: 1.2 }}>
+          <div style={{ padding: "0 16px" }}>
+            <p style={{ margin: "0 0 10px", fontSize: 22, fontWeight: 800, color: "#111827", lineHeight: 1.2 }}>
               {t("homeNext.headline", "What sounds good?")}
             </p>
-
-            <HomeNextLocationSelector
-              autoLocation={autoLocation}
-              appliedLocation={appliedLocation}
-              onApplyLocation={setAppliedLocation}
-              locating={locating}
-            />
+            <p style={{ margin: "0 0 12px", fontSize: 14, color: "#6B7280" }}>
+              {locationLabel}
+            </p>
 
             <form
               role="search"
@@ -214,7 +209,7 @@ export default function HomeNext() {
           </div>
         </header>
 
-        <main style={{ paddingTop: 20 }}>
+        <main style={{ paddingTop: 16 }}>
           <HomeNextFoodGrid
             autoLocation={autoLocation}
             appliedLocation={appliedLocation}
@@ -272,13 +267,9 @@ export default function HomeNext() {
               sections.map((section) => (
                 <HomeNextDiscoverySection
                   key={section.id}
-                  sectionId={section.id}
                   title={section.title}
                   reason={section.reason}
                   menus={section.menus}
-                  appliedLocation={appliedLocation}
-                  autoLocation={autoLocation}
-                  shouldUseGeoBrowse={shouldUseGeoBrowse}
                 />
               ))
             )}
