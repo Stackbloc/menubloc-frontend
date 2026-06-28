@@ -203,3 +203,11 @@ export const replaceOwnerQrSticker = (restaurantId, qrCode) =>
 export const searchOwnerRestaurantsForQr = (q) =>
   get(`/api/owner/qr-stickers/restaurant-search?q=${encodeURIComponent(q)}`);
 
+// PHMS Dashboard
+export const getOwnerPhmsHealth = () => get("/api/owner/phms/health");
+export const getOwnerPhmsMenuStatus = () => get("/api/owner/phms/menu-status");
+export const getOwnerPhmsDisplayAudit = () => get("/api/owner/phms/display-audit");
+export const getOwnerPhmsDeploymentHealth = () => get("/api/owner/phms/deployment-health");
+export const captureOwnerPhmsDisplaySnapshot = (body) =>
+  post("/api/owner/phms/display-audit/capture", body);
+
