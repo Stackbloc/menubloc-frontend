@@ -27,6 +27,9 @@ import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
+import FoodNavigationLadder from "../components/search/FoodNavigationLadder.jsx";
+import { useFoodNavigation, FOOD_NAV_SLICE_ENABLED } from "../hooks/useFoodNavigation.js";
+import { recordFoodNavEvent } from "../lib/waiterApi.js";
 
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -1880,6 +1883,7 @@ export default function GrubbidSearchResults() {
   }, []);
 
   const q = String(params.get("q") || "").trim();
+  const foodNav = useFoodNavigation(q, { enabled: FOOD_NAV_SLICE_ENABLED });
   const normalizedQuery = (q || "")
     .toLowerCase()
     .replace(/\+/g, " ")
@@ -1932,11 +1936,14 @@ export default function GrubbidSearchResults() {
   const requestState = routeState;
   const requestNear = routeNear;
 
-  // Persist the resolved location back to sessionStorage so that returning to
-  // the Discovery page pre-fills the same location the user already searched with.
-  // Only write when we have an explicit, actionable location from the URL —
-  // geo-only (lat/lng) searches are intentionally excluded since we can't
-  // reverse-geocode here without an extra API call.
+  useEffect(() => {
+    if (!foodNav.terminalQuery || foodNav.terminalQuery === q) return;
+    const next = new URLSearchParams(params);
+    next.set("q", foodNav.terminalQuery);
+    navigate({ search: `?${next.toString()}` }, { replace: false });
+  }, [foodNav.terminalQuery, q, params, navigate]);
+
+  // Persist the resolved location back to sessionStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
     const label = city && state
@@ -2294,6 +2301,15 @@ export default function GrubbidSearchResults() {
     }
 
     async function run() {
+      if (foodNav.pendingNavigation) {
+        setLoading(false);
+        setErr("");
+        setRows([]);
+        setQueryMeta(null);
+        setSearchMeta(null);
+        return;
+      }
+
       setLoading(true);
       setErr("");
       setGeoFallbackUsed(false);
@@ -2383,6 +2399,7 @@ export default function GrubbidSearchResults() {
     fallbackUrl,
     hasGeoFilter,
     q,
+    foodNav.pendingNavigation,
     requestZip,
     requestCity,
     requestState,
@@ -2497,7 +2514,8 @@ export default function GrubbidSearchResults() {
     inventorySignalCount: activeWaiterState.inventory.length,
     minItemSignals: waiterMinItemSignals,
   });
-  const showWaiterBar = showWaiterQuestion || waiterRefinementStack.length > 0;
+  const showWaiterBar =
+    !foodNav.pendingNavigation && (showWaiterQuestion || waiterRefinementStack.length > 0);
   const activeWaiterRefinement =
     waiterRefinementStack.length > 0
       ? waiterRefinementStack[waiterRefinementStack.length - 1]
@@ -2651,6 +2669,18 @@ export default function GrubbidSearchResults() {
             {shareCopied ? "Copied!" : "Share"}
           </button>
         </div>
+        {showWaiterBar && (
+          <div style={{ maxWidth: 576, margin: "0 auto", padding: "4px 14px 2px" }}>
+            <WaiterRefinementPrompt
+              displayQuery={displayQuery}
+              filteredResultCount={visibleResultCountForWaiter}
+              refinementOptions={showWaiterQuestion ? waiterDisplayOptions : []}
+              refinementStackLength={waiterRefinementStack.length}
+              onSelectRefinement={handleWaiterSelect}
+              onUndo={handleWaiterUndo}
+            />
+          </div>
+        )}
       </div>
       {/* ── SCROLLABLE FEED ── */}
       <div style={{ maxWidth: 576, margin: "0 auto", padding: "10px 14px calc(var(--bottom-nav-h, 72px) + 8px)" }}>
@@ -2684,7 +2714,18 @@ export default function GrubbidSearchResults() {
         <StatusMessage tone="muted">{emptyMessage}</StatusMessage>
       )}
 
-      {!loading && !err && hasVisibleResults && (
+      {foodNav.pendingNavigation && (
+        <FoodNavigationLadder
+          step={foodNav.navState?.step}
+          breadcrumb={foodNav.navState?.step?.breadcrumb || foodNav.breadcrumb}
+          loading={foodNav.loading}
+          onSelectChoice={foodNav.selectChoice}
+          onBypass={foodNav.bypass}
+          onBack={foodNav.goBack}
+        />
+      )}
+
+      {!foodNav.pendingNavigation && !loading && !err && hasVisibleResults && (
         <SearchRefinementNudge
           displayQuery={displayQuery}
           locationLabel={locationLabel}
@@ -2718,16 +2759,6 @@ export default function GrubbidSearchResults() {
       {!loading && !err && useRestaurantGroupedRendering && hasMenuMatches && (
         <>
           {!showWaiterBar && restaurantIntent && <SectionTitle style={{ color: "#0B0F0C" }}>{t("common.dishes")}</SectionTitle>}
-          {showWaiterBar && (
-            <WaiterRefinementPrompt
-              displayQuery={displayQuery}
-              filteredResultCount={visibleResultCountForWaiter}
-              refinementOptions={showWaiterQuestion ? waiterDisplayOptions : []}
-              refinementStackLength={waiterRefinementStack.length}
-              onSelectRefinement={handleWaiterSelect}
-              onUndo={handleWaiterUndo}
-            />
-          )}
           <div style={styles.grid}>
             {restaurantGroups.map((g) => {
               const rMeta = restaurantMetaMap.get(asString(g.restaurant_id));
@@ -2768,16 +2799,6 @@ export default function GrubbidSearchResults() {
 
       {!loading && !err && !useRestaurantGroupedRendering && hasDishMatches && (
         <>
-          {showWaiterBar && (
-            <WaiterRefinementPrompt
-              displayQuery={displayQuery}
-              filteredResultCount={visibleResultCountForWaiter}
-              refinementOptions={showWaiterQuestion ? waiterDisplayOptions : []}
-              refinementStackLength={waiterRefinementStack.length}
-              onSelectRefinement={handleWaiterSelect}
-              onUndo={handleWaiterUndo}
-            />
-          )}
           <div style={styles.grid}>
             {visibleDishRows.map((row) => {
               const rowId = asString(pickFirst(row, ["menu_item_id", "id"], ""));
