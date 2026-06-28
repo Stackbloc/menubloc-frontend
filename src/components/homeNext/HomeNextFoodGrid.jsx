@@ -1,24 +1,16 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { FOOD_ENTRY_POINTS, FOOD_CHIP_BUTTON_STYLE } from "../../lib/homeNextEntryPoints.js";
-import { buildHomeSearchUrl } from "../../lib/homeNextNavigation.js";
+import { getFoodEntryPoints, FOOD_CHIP_BUTTON_STYLE } from "../../lib/homeNextEntryPoints.js";
+import { buildHomeChipUrl } from "../../lib/homeNextNavigation.js";
 
 export default function HomeNextFoodGrid({ autoLocation, appliedLocation, shouldUseGeoBrowse }) {
   const navigate = useNavigate();
+  const chips = useMemo(() => getFoodEntryPoints(), []);
+
   const locationContext = { appliedLocation, autoLocation, shouldUseGeoBrowse };
 
   function handleClick(entry) {
-    if (entry.to) {
-      navigate(entry.to);
-      return;
-    }
-    navigate(
-      buildHomeSearchUrl({
-        query: entry.query,
-        appliedLocation,
-        autoLocation,
-        shouldUseGeoBrowse,
-      })
-    );
+    navigate(buildHomeChipUrl(entry, locationContext));
   }
 
   return (
@@ -32,7 +24,7 @@ export default function HomeNextFoodGrid({ autoLocation, appliedLocation, should
         </p>
       </div>
       <div className="home-next-food-two-row-scroll">
-        {FOOD_ENTRY_POINTS.map((entry) => (
+        {chips.map((entry) => (
           <button
             key={entry.id}
             type="button"
