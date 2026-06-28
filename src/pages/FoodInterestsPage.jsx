@@ -4,7 +4,10 @@ import BottomNav from "../components/BottomNav.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { fetchWaiterBriefing } from "../lib/waiterApi.js";
 import { getDefaultMealPeriod, getMealPeriodFallback, getWaiterGreeting, WAITER_MEAL_PERIODS } from "../lib/waiterMealPeriod.js";
-import { groupLikedRecommendations } from "../lib/waiterRecommendations.js";
+import {
+  groupLikedRecommendations,
+  groupNewRestaurantRecommendations,
+} from "../lib/waiterRecommendations.js";
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const SESSION_AUTO_LABEL_KEY = "grubbid.discovery.auto_label";
@@ -37,14 +40,16 @@ function resolveGroupLabel(labels, mealLabel) {
   return `Recommended for ${mealLabel}`;
 }
 
-// Groups new_item rows by restaurant. new_restaurant rows become standalones.
+// Groups new_item rows by restaurant. new_restaurant rows share one topic card.
 // Returns up to 5 groups.
 function groupSuggestions(rows) {
   const restaurantOrder = [];
   const restaurantMap = new Map();
 
   const likedRows = rows.filter((row) => row.type === "liked_signal");
+  const newRestaurantTopic = groupNewRestaurantRecommendations(rows);
   let likedModuleAdded = false;
+  let newRestaurantModuleAdded = false;
 
   for (const row of rows) {
     if (row.type === "liked_signal") {
@@ -55,6 +60,16 @@ function groupSuggestions(rows) {
           restaurants: groupLikedRecommendations(likedRows),
         });
         likedModuleAdded = true;
+      }
+      continue;
+    }
+    if (row.type === "new_restaurant") {
+      if (!newRestaurantModuleAdded && newRestaurantTopic) {
+        restaurantOrder.push({
+          kind: "new_restaurant_topic",
+          ...newRestaurantTopic,
+        });
+        newRestaurantModuleAdded = true;
       }
       continue;
     }
@@ -217,7 +232,30 @@ function RestaurantGroupCard({ group, mealLabel }) {
   );
 }
 
-// Single-item or new_restaurant standalone card
+function NewRestaurantTopicCard({ topic }) {
+  return (
+    <div style={CARD_STYLE} data-testid="new-restaurant-topic">
+      <div style={LABEL_STYLE}>{topic.label}</div>
+      <div style={{ display: "grid", gap: 12, marginTop: 2 }}>
+        {topic.restaurants.map((restaurant, index) => (
+          <div key={restaurant.link || restaurant.title || index}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#F9FAFB" }}>{restaurant.title}</div>
+            {restaurant.detail ? (
+              <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.5, marginTop: 4 }}>{restaurant.detail}</div>
+            ) : null}
+            {restaurant.link ? (
+              <Link to={restaurant.link} style={LINK_STYLE}>
+                {restaurant.link_label || "View restaurant →"}
+              </Link>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Single-item standalone card (trending, meal idea, etc.)
 function StandaloneCard({ rec }) {
   return (
     <div style={CARD_STYLE}>
@@ -411,6 +449,11 @@ export default function FoodInterestsPage() {
                         group.kind === "liked_topic" ? (
                           <LikedRecommendationTopicCard
                             key="liked-recommendation-topic"
+                            topic={group}
+                          />
+                        ) : group.kind === "new_restaurant_topic" ? (
+                          <NewRestaurantTopicCard
+                            key="new-restaurant-topic"
                             topic={group}
                           />
                         ) : group.kind === "restaurant_group" ? (

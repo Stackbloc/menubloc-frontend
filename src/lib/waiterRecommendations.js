@@ -29,3 +29,13 @@ export function groupLikedRecommendations(rows) {
 
   return groups;
 }
+
+/** One Waiter card per "Recently added restaurant" label — lists all new restaurants inside. */
+export function groupNewRestaurantRecommendations(rows) {
+  const list = (Array.isArray(rows) ? rows : []).filter((row) => row?.type === "new_restaurant");
+  if (!list.length) return null;
+  return {
+    label: list[0]?.label || "Recently added restaurant",
+    restaurants: list,
+  };
+}
