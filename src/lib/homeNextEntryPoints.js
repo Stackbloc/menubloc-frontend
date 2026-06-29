@@ -50,7 +50,6 @@ const FOOD_ENTRY_STATIC = [
   { id: "asian", icon: "🥡", label: "Asian", query: "asian food", cuisine: "asian" },
   { id: "mexican", icon: "🌮", label: "Mexican", query: "mexican food", cuisine: "mexican" },
   { id: "comfort", icon: "🍲", label: "Comfort Food", query: "comfort food" },
-  { id: "something-else", icon: "✨", label: "Something Else", to: "/waiter" },
 ];
 
 export function getFoodEntryPoints(now = new Date()) {

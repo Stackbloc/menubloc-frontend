@@ -40,10 +40,10 @@ function testAsianChipUsesCuisineParam() {
   assert.match(url, /cuisine=asian/);
 }
 
-function testSomethingElseGoesToWaiter() {
+function testSomethingElseNotInBlankStateChips() {
   const chips = getFoodEntryPoints(atLocalHour(12));
   const other = chips.find((c) => c.id === "something-else");
-  assert.strictEqual(buildHomeChipUrl(other, {}), "/waiter");
+  assert.strictEqual(other, undefined, "Something Else must not appear in default food chips");
 }
 
 function testSplitFoodRowsIndependently() {
@@ -58,6 +58,6 @@ function testSplitFoodRowsIndependently() {
 testMealWindows();
 testFoodEntryPointsMealSlot();
 testAsianChipUsesCuisineParam();
-testSomethingElseGoesToWaiter();
+testSomethingElseNotInBlankStateChips();
 testSplitFoodRowsIndependently();
 console.log("homeNextMealChip tests passed");
