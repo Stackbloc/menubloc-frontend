@@ -642,6 +642,11 @@ function HomeFeedCacheSection() {
     { label: "Oldest stale row", value: data?.oldest_stale_minutes != null ? `${data.oldest_stale_minutes} min` : "—" },
     { label: "Stale rows", value: data?.stale_row_count ?? "—" },
     { label: "Queue depth", value: data?.queue_depth ?? "—" },
+    { label: "Feed chains", value: data?.feed_diversity?.chains_represented ?? "—" },
+    { label: "Feed categories", value: data?.feed_diversity?.categories_represented ?? "—" },
+    { label: "Composer candidates", value: data?.feed_diversity?.candidates_read ?? "—" },
+    { label: "Diversity filtered", value: data?.feed_diversity?.diversity_filtered ?? "—" },
+    { label: "Composer relaxed", value: data?.feed_diversity?.rules_relaxed?.length ? data.feed_diversity.rules_relaxed.join(", ") : "none" },
   ];
 
   return (
