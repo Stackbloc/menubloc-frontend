@@ -44,7 +44,7 @@ export default function HomeNext() {
     setAppliedLocation,
     shouldUseGeoBrowse,
     locating,
-  } = useHomeBrowseFeed({ language });
+  } = useHomeBrowseFeed();
 
   const sections = useMemo(
     () => buildHomeDiscoverySections(menus, { hasGeo: shouldUseGeoBrowse }),
@@ -116,7 +116,7 @@ export default function HomeNext() {
     }
   }
 
-  const showSkeleton = feedLoading || locating;
+  const showSkeleton = feedLoading;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "#111827" }}>

@@ -16,6 +16,9 @@ import { activeMarketsShareBrowseScope, resolveDiscoveryMarketLocation } from ".
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const LOCAL_RADIUS_MILES = 8;
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
+const DEFAULT_MARKET = { city: "Los Angeles", state: "CA" };
+/** 16 cards displayed; 20 gives section-dedupe slack (popular/nearby/discover/more). */
+const HOME_FEED_LIMIT = 20;
 
 function useDiscoveryAutoLocation() {
   const [state, setState] = useState(() => {
@@ -101,20 +104,20 @@ function useDiscoveryAutoLocation() {
 }
 
 /**
- * Location-scoped browse feed for HomeNext.
- * Consumes GET /menus/browse — same contract as GrubbidDiscovery.
+ * Location-scoped homepage feed for HomeNext.
+ * Consumes GET /api/home/feed — lightweight path only (not /menus/browse).
  */
-export function useHomeBrowseFeed(options = {}) {
-  const language = options.language || "en";
+export function useHomeBrowseFeed() {
   const autoLocation = useDiscoveryAutoLocation();
   const [appliedLocation, setAppliedLocation] = useState(() => {
     if (typeof window === "undefined") return "";
     return String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim();
   });
   const [menus, setMenus] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const requestRef = useRef(0);
   const cacheRef = useRef({});
+  const menusRef = useRef([]);
 
   const geoMarketLocation = useMemo(
     () => resolveDiscoveryMarketLocation({ autoLocation, useAutoGeo: autoLocation.status === "ready" }),
@@ -145,56 +148,61 @@ export function useHomeBrowseFeed(options = {}) {
     [locationKey, shouldUseGeoBrowse]
   );
 
-  const locationLabel = appliedLocation || autoLocation.label || "Near you";
+  const locationLabel = appliedLocation || autoLocation.label || `${DEFAULT_MARKET.city}, ${DEFAULT_MARKET.state}`;
 
   useEffect(() => {
-    const hasLocation = shouldUseGeoBrowse || appliedLocation;
-    if (!hasLocation) return undefined;
+    menusRef.current = menus;
+  }, [menus]);
 
+  useEffect(() => {
     const params = new URLSearchParams();
-    params.set("surface", "home");
-    params.set("limit", "50");
+    params.set("limit", String(HOME_FEED_LIMIT));
 
-    if (shouldUseGeoBrowse) {
+    if (appliedLocation) {
+      const loc = parseLocation(appliedLocation);
+      if (loc.zip && !loc.city && !loc.state) {
+        setLoading(false);
+        return undefined;
+      }
+      if (loc.city) params.set("city", loc.city);
+      if (loc.state) params.set("state", loc.state);
+    } else if (shouldUseGeoBrowse) {
       params.set("lat", String(autoLocation.lat));
       params.set("lng", String(autoLocation.lng));
       params.set("radius", String(LOCAL_RADIUS_MILES));
-    } else if (appliedLocation) {
-      const loc = parseLocation(appliedLocation);
-      if (loc.zip && !loc.city && !loc.state) {
-        setMenus([]);
-        return undefined;
-      }
-      if (loc.zip) params.set("zip", loc.zip);
-      if (loc.city) params.set("city", loc.city);
-      if (loc.state) params.set("state", loc.state);
+    } else {
+      params.set("city", DEFAULT_MARKET.city);
+      params.set("state", DEFAULT_MARKET.state);
     }
-
-    if (language && language !== "en") params.set("lang", language);
 
     const cached = cacheRef.current[feedScopeKey];
     const requestId = requestRef.current + 1;
     requestRef.current = requestId;
     const controller = new AbortController();
+    const hasVisibleMenus = menusRef.current.length > 0;
 
-    setMenus(Array.isArray(cached) ? cached : []);
-    setLoading(true);
+    if (Array.isArray(cached)) {
+      setMenus(cached);
+      setLoading(false);
+    } else if (hasVisibleMenus) {
+      // Stale-while-revalidate: keep default-market cards visible during geo refresh.
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
 
-    fetch(`${API}/menus/browse?${params.toString()}`, { signal: controller.signal })
+    fetch(`${API}/api/home/feed?${params.toString()}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((json) => {
         if (controller.signal.aborted || requestRef.current !== requestId) return;
-        const rows = Array.isArray(json?.menus)
-          ? json.menus
-          : Array.isArray(json?.rows?.[0]?.menus)
-            ? json.rows[0].menus
-            : [];
+        const rows = Array.isArray(json?.menus) ? json.menus : [];
         const next = dedupeDiscoveryMenus(rows);
         cacheRef.current[feedScopeKey] = next;
         setMenus(next);
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
+        // On failure, retain any cards already on screen (default market).
       })
       .finally(() => {
         if (controller.signal.aborted || requestRef.current !== requestId) return;
@@ -208,7 +216,6 @@ export function useHomeBrowseFeed(options = {}) {
     autoLocation.lng,
     appliedLocation,
     feedScopeKey,
-    language,
   ]);
 
   return {

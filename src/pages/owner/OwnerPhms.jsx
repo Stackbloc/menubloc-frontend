@@ -5,6 +5,7 @@ import {
   getOwnerPhmsMenuStatus,
   getOwnerPhmsDisplayAudit,
   getOwnerPhmsDeploymentHealth,
+  getOwnerPhmsHomeFeedCache,
   captureOwnerPhmsDisplaySnapshot,
   getOwnerPhmsRepairTickets,
   acknowledgeOwnerPhmsRepairTicket,
@@ -607,6 +608,96 @@ function RepairTicketsSection() {
   );
 }
 
+// ── Section: Home Feed Cache ──────────────────────────────────────────────────
+function HomeFeedCacheSection() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  function load() {
+    setLoading(true);
+    setError(null);
+    getOwnerPhmsHomeFeedCache()
+      .then(setData)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => { load(); }, []);
+
+  const metrics = [
+    { label: "Cache health", value: data?.status || "—" },
+    { label: "Expected cache version", value: data?.expected_cache_version ?? "—" },
+    { label: "Schema status", value: data?.schema_verification?.status || "—" },
+    { label: "Scheduler", value: data?.scheduler_enabled ? "enabled" : "disabled" },
+    { label: "Rows cached", value: data?.rows_cached ?? "—" },
+    { label: "Eligible restaurants", value: data?.eligible_restaurants ?? "—" },
+    { label: "Incompatible version rows", value: data?.incompatible_version_count ?? "—" },
+    { label: "Cache hit rate", value: data?.cache_hit_rate != null ? `${data.cache_hit_rate}%` : "—" },
+    { label: "Cache misses", value: data?.cache_misses ?? "—" },
+    { label: "Fallback-to-live", value: data?.fallback_to_live ?? "—" },
+    { label: "Fallback / hour", value: data?.fallback_to_live_per_hour ?? "—" },
+    { label: "Failed refreshes", value: data?.failed_refreshes ?? "—" },
+    { label: "Avg refresh time", value: data?.average_refresh_ms != null ? `${data.average_refresh_ms} ms` : "—" },
+    { label: "Oldest stale row", value: data?.oldest_stale_minutes != null ? `${data.oldest_stale_minutes} min` : "—" },
+    { label: "Stale rows", value: data?.stale_row_count ?? "—" },
+    { label: "Queue depth", value: data?.queue_depth ?? "—" },
+  ];
+
+  return (
+    <PageCard style={{ padding: "24px 26px", marginBottom: 28 }}>
+      <SectionTitle
+        title="Home Feed Cache"
+        subtitle="Publish-time homepage cache · self-healing · operational metrics"
+        action={
+          <button onClick={load} disabled={loading} style={{ fontSize: 12, fontWeight: 700, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", borderRadius: 10, padding: "7px 14px", cursor: "pointer" }}>
+            {loading ? "Refreshing…" : "Refresh"}
+          </button>
+        }
+      />
+      {error ? <SectionError msg={error} /> : null}
+      {loading && !data ? <Spinner /> : null}
+      {data ? (
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <StatusBadge status={data.status === "Healthy" ? "HEALTHY" : data.status === "Warning" ? "WARN" : "CRITICAL"} />
+            <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+              Last refresh {fmtTime(data.last_refresh)} · Scheduler {fmtTime(data.last_scheduler_run)}
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
+            {metrics.map((m) => (
+              <div key={m.label} style={{ padding: "12px 14px", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff" }}>
+                <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginBottom: 4 }}>{m.label}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: OWNER_COLORS.ink }}>{m.value}</div>
+              </div>
+            ))}
+          </div>
+          {Array.isArray(data.alerts) && data.alerts.length > 0 ? (
+            <div style={{ display: "grid", gap: 8 }}>
+              {data.alerts.map((a) => (
+                <div key={a.code} style={{
+                  padding: "10px 14px", borderRadius: 10,
+                  background: a.level === "critical" ? "#fee2e2" : "#fef9c3",
+                  border: `1px solid ${a.level === "critical" ? "#fca5a5" : "#fde047"}`,
+                  fontSize: 13,
+                }}>
+                  <StatusBadge status={a.level === "critical" ? "FAIL" : "WARN"} style={{ marginRight: 8 }} />
+                  {a.message}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: 10, color: "#166534", fontSize: 13 }}>
+              No active cache alerts.
+            </div>
+          )}
+        </>
+      ) : null}
+    </PageCard>
+  );
+}
+
 // ── Section: Recent Incidents ─────────────────────────────────────────────────
 function RecentIncidentsSection({ healthData }) {
   if (!healthData?.checks) return null;
@@ -657,6 +748,7 @@ export default function OwnerPhms() {
       <CriticalHealthSection onHealthLoaded={setHealthData} onDataChange={setHealthData} />
       <SearchHealthSection healthData={healthData} />
       <MenuStatusSection />
+      <HomeFeedCacheSection />
       <DisplayAuditSection />
       <DeploymentHealthSection />
       <RepairTicketsSection />

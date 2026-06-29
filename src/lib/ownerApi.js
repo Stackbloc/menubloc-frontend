@@ -205,6 +205,7 @@ export const searchOwnerRestaurantsForQr = (q) =>
 
 // PHMS Dashboard
 export const getOwnerPhmsHealth = () => get("/api/owner/phms/health");
+export const getOwnerPhmsHomeFeedCache = () => get("/api/owner/phms/home-feed-cache");
 export const getOwnerPhmsMenuStatus = () => get("/api/owner/phms/menu-status");
 export const getOwnerPhmsDisplayAudit = () => get("/api/owner/phms/display-audit");
 export const getOwnerPhmsDeploymentHealth = () => get("/api/owner/phms/deployment-health");
