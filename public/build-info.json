@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "c9feb587a5f195ea4652a9f904142b3122c37d2e",
-  "gitShortSha": "c9feb58",
+  "gitSha": "bcbcb7d4a5990967ce13f2b9ef34630290f3715d",
+  "gitShortSha": "bcbcb7d",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-28T17:30:27.919Z",
+  "buildTime": "2026-06-29T00:44:20.693Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Revert \"Revert \"Promote HomeNext to live \"/\" with legacy fallback at /home-legacy.\"\""
+  "commitMessage": "Fix search result dish/restaurant mode selector and restaurant-only cards."
 }

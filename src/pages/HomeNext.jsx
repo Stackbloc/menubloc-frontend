@@ -123,6 +123,16 @@ export default function HomeNext() {
       <style>{`
         .home-next-search::placeholder { color: var(--gb-color-ink-muted); font-weight: 500; }
         .home-next-search:focus { outline: none; box-shadow: 0 0 0 2px rgba(45,106,79,0.35); }
+        @media (max-width: 576px) {
+          .home-next-search {
+            font-size: 14px !important;
+            padding-left: 14px !important;
+            padding-right: 84px !important;
+          }
+          .home-next-search::placeholder {
+            font-size: 13px;
+          }
+        }
         .home-next-skeleton { animation: homeNextPulse 1.4s ease-in-out infinite; }
         @keyframes homeNextPulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
         .home-next-food-chip-row,
