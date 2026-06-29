@@ -55,7 +55,7 @@ try {
   const deploymentUrl = engine.deployGreen(environment);
   const green = engine.inspect(deploymentUrl);
   console.log(`GREEN deployment: ${green.url} (${green.id || "id unavailable"})`);
-  const results = environment === "preview" ? await runSmokeTests(deploymentUrl) : [];
+  const results = environment === "preview" ? await runSmokeTests(deploymentUrl, { attempts: 6, retryDelayMs: 5000 }) : [];
   const failures = results.filter((result) => !result.pass);
   if (failures.length) {
     writeIncidentFiles(results, "docs/incidents", "candidate rejected; production alias unchanged");
@@ -68,7 +68,7 @@ try {
       blue,
       green,
       aliases: FRONTEND.productionAliases,
-      probeImpl: runSmokeTests,
+      probeImpl: (url) => runSmokeTests(url, { attempts: 6, retryDelayMs: 5000 }),
       aliasImpl: async (target, alias) => engine.alias(target, alias),
       certifyImpl: certificationProvider(green),
     });

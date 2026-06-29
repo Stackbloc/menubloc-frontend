@@ -27,12 +27,12 @@ export function classify({ endpoint, status, headers, body }) {
   return "";
 }
 
-export async function probe(baseUrl, { endpoints = PRODUCTION_ENDPOINTS, timeoutMs = 15000, fetchImpl = fetch } = {}) {
+export async function probe(baseUrl, { endpoints = PRODUCTION_ENDPOINTS, timeoutMs = 15000, fetchImpl = fetch, attempts = DEFAULT_ATTEMPTS, retryDelayMs = DEFAULT_RETRY_DELAY_MS } = {}) {
   const results = [];
   for (const endpoint of endpoints) {
     let attempt = 0;
     let lastResult = null;
-    while (attempt < DEFAULT_ATTEMPTS) {
+    while (attempt < attempts) {
       attempt += 1;
       const timestamp = new Date().toISOString();
       try {
@@ -54,8 +54,8 @@ export async function probe(baseUrl, { endpoints = PRODUCTION_ENDPOINTS, timeout
       } catch (error) {
         lastResult = { timestamp, endpoint, status: 0, response_headers: {}, deployment_id: "", vercel_id: "", body_excerpt: excerpt(error.message), failure_type: error.name === "TimeoutError" ? "timeout" : "network_error", pass: false };
       }
-      if (lastResult.pass || attempt >= DEFAULT_ATTEMPTS || !isTransientFailure(lastResult.failure_type)) break;
-      await sleep(DEFAULT_RETRY_DELAY_MS * attempt);
+      if (lastResult.pass || attempt >= attempts || !isTransientFailure(lastResult.failure_type)) break;
+      await sleep(retryDelayMs * attempt);
     }
     results.push(lastResult);
   }
