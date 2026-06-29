@@ -6,18 +6,26 @@ const { getFoodEntryPoints } = require("../src/lib/homeNextEntryPoints.js");
 const { splitFoodEntryPointRows } = require("../src/lib/homeNextEntryPoints.js");
 const { buildHomeChipUrl } = require("../src/lib/homeNextNavigation.js");
 
-function atLocalHour(hour) {
-  const d = new Date();
+function atLocalHour(hour, date = new Date()) {
+  const d = new Date(date);
   d.setHours(hour, 30, 0, 0);
   return d;
 }
 
 function testMealWindows() {
   assert.strictEqual(getTimeAwareMealChip(atLocalHour(7)).label, "Breakfast");
-  assert.strictEqual(getTimeAwareMealChip(atLocalHour(11)).label, "Brunch");
   assert.strictEqual(getTimeAwareMealChip(atLocalHour(13)).label, "Lunch");
   assert.strictEqual(getTimeAwareMealChip(atLocalHour(19)).label, "Dinner");
   assert.strictEqual(getTimeAwareMealChip(atLocalHour(23)).label, "Late Night");
+  assert.strictEqual(getTimeAwareMealChip(atLocalHour(15)).label, "Snacks");
+}
+
+function testWeekendBrunch() {
+  // Saturday 2026-06-27
+  const saturday = new Date("2026-06-27T11:30:00");
+  assert.strictEqual(getTimeAwareMealChip(saturday).label, "Brunch");
+  const wednesday = new Date("2026-06-24T11:30:00");
+  assert.strictEqual(getTimeAwareMealChip(wednesday).label, "Lunch");
 }
 
 function testFoodEntryPointsMealSlot() {
@@ -29,7 +37,7 @@ function testFoodEntryPointsMealSlot() {
   assert.strictEqual(meal.contextAware, true);
 }
 
-function testContextMealChipRoutesToWaiter() {
+function testContextMealChipRoutesToSearch() {
   const chips = getFoodEntryPoints(atLocalHour(13));
   const lunch = chips.find((c) => c.label === "Lunch");
   assert.ok(lunch);
@@ -38,7 +46,8 @@ function testContextMealChipRoutesToWaiter() {
     autoLocation: null,
     shouldUseGeoBrowse: false,
   });
-  assert.strictEqual(url, "/waiter?meal_period=lunch");
+  assert.match(url, /q=lunch/);
+  assert.doesNotMatch(url, /waiter/);
 }
 
 function testLateNightMealPeriodMapping() {
@@ -51,7 +60,7 @@ function testLateNightMealPeriodMapping() {
     autoLocation: null,
     shouldUseGeoBrowse: false,
   });
-  assert.strictEqual(url, "/waiter?meal_period=late_night");
+  assert.match(url, /q=late(\+|%20)night/);
 }
 
 function testAsianChipUsesCuisineParam() {
@@ -83,8 +92,9 @@ function testSplitFoodRowsIndependently() {
 }
 
 testMealWindows();
+testWeekendBrunch();
 testFoodEntryPointsMealSlot();
-testContextMealChipRoutesToWaiter();
+testContextMealChipRoutesToSearch();
 testLateNightMealPeriodMapping();
 testAsianChipUsesCuisineParam();
 testSomethingElseNotInBlankStateChips();

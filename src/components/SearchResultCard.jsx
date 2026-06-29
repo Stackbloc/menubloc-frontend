@@ -1672,7 +1672,7 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
 
 /* ---- Main export ---- */
 
-export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, geo, activeRefinement, resultView }) {
+export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, geo, activeRefinement, resultView, hiddenMatchCount = 0 }) {
   const location = useLocation();
   const { language, t } = useLanguage();
   const contextSearch = location.search || "";
@@ -1811,6 +1811,19 @@ export default function SearchResultCard({ restaurant, items, item, query, query
             );
           })}
         </div>
+
+        {hiddenMatchCount > 0 ? (
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#9CA3AF",
+            }}
+          >
+            +{hiddenMatchCount} more matching items
+          </div>
+        ) : null}
 
         {menuHref && (
           <div style={{ marginTop: 10 }}>

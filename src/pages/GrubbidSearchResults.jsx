@@ -30,7 +30,7 @@ import BottomNav from "../components/BottomNav.jsx";
 import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
 import FoodNavigationLadder from "../components/search/FoodNavigationLadder.jsx";
 import { useFoodNavigation, FOOD_NAV_SLICE_ENABLED } from "../hooks/useFoodNavigation.js";
-import { recordFoodNavEvent } from "../lib/waiterApi.js";
+import { flattenHomeContextChipResults } from "../lib/homeContextChipApi.js";
 
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -389,6 +389,18 @@ function isDishRow(x) {
   return !!(x?.menu_item_id || x?.menu_item_name || x?.item_name);
 }
 
+function flattenRestaurantCardMatches(rows) {
+  const out = [];
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (Array.isArray(row?.matches) && row.matches.length) {
+      out.push(...row.matches);
+      continue;
+    }
+    if (isDishRow(row)) out.push(row);
+  }
+  return out;
+}
+
 function singularizeWaiterToken(value) {
   const normalized = normalizeKey(value);
   if (normalized === "sandwiches" || normalized === "sandwhiches" || normalized === "sanwiches") {
@@ -401,6 +413,10 @@ function singularizeWaiterToken(value) {
 
 function normalizeRows(json) {
   if (!json) return [];
+
+  if (json?.search_meta?.result_type === "restaurant_cards" && Array.isArray(json.results)) {
+    return json.results;
+  }
 
   if (Array.isArray(json.results) && json.results.length) {
     const out = [];
@@ -1950,6 +1966,7 @@ function FilterToggle({ label, active, onClick, isMobile }) {
 
 export default function GrubbidSearchResults() {
   const { t, language } = useLanguage();
+  const location = useLocation();
   const params = useQueryParams();
   const navigate = useNavigate();
   const geo = useGeolocation();
@@ -2070,21 +2087,27 @@ export default function GrubbidSearchResults() {
     }
   }, []);
 
+  const isRestaurantCardResults = searchMeta?.result_type === "restaurant_cards";
+  const waiterInventoryRows = useMemo(
+    () => (isRestaurantCardResults ? flattenRestaurantCardMatches(rows) : rows),
+    [isRestaurantCardResults, rows]
+  );
+
   const baseWaiterState = useMemo(
-    () => buildWaiterOptions(rows, q, waiterIntentContext),
-    [rows, q, waiterIntentContext]
+    () => buildWaiterOptions(waiterInventoryRows, q, waiterIntentContext),
+    [waiterInventoryRows, q, waiterIntentContext]
   );
 
   const waiterFilteredRows = useMemo(() => {
     const filtered = applyWaiterRefinementStackToRows(
-      rows,
+      waiterInventoryRows,
       baseWaiterState.inventory,
       waiterRefinementStack
     );
     if (!waiterRefinementStack.length) return filtered;
     const lastStep = waiterRefinementStack[waiterRefinementStack.length - 1];
     return sortByWaiterRefinement(filtered, lastStep);
-  }, [rows, baseWaiterState.inventory, waiterRefinementStack]);
+  }, [waiterInventoryRows, baseWaiterState.inventory, waiterRefinementStack]);
 
   const activeWaiterState = useMemo(
     () => buildWaiterOptions(waiterFilteredRows, q, waiterIntentContext),
@@ -2401,6 +2424,26 @@ export default function GrubbidSearchResults() {
         return;
       }
 
+      const prefetched = location.state?.homeContextChip;
+      if (prefetched?.results?.length) {
+        const flatRows = flattenHomeContextChipResults(prefetched.results);
+        if (flatRows.length) {
+          setRows(flatRows);
+          setQueryMeta({ q: prefetched.query_terms?.[0] || q, context: prefetched.context });
+          setSearchMeta({
+            result_type: "menu_items",
+            context_chip: prefetched.context,
+            temporary_patch: true,
+          });
+          setSearchTotalCount(flatRows.length);
+          setSearchOffset(flatRows.length);
+          setSearchHasMore(false);
+          setLoading(false);
+          setErr("");
+          return;
+        }
+      }
+
       setLoading(true);
       setErr("");
       setGeoFallbackUsed(false);
@@ -2422,7 +2465,11 @@ export default function GrubbidSearchResults() {
         if (!alive) return;
 
         const resultRows = normalizeRows(json);
-        const total = Number.isFinite(Number(json?.total)) ? Number(json.total) : resultRows.length;
+        const total = Number.isFinite(Number(json?.pagination?.total_count))
+          ? Number(json.pagination.total_count)
+          : Number.isFinite(Number(json?.total))
+          ? Number(json.total)
+          : resultRows.length;
         const returned = resultRows.length;
         const pageOffset = 0;
 
@@ -2491,6 +2538,7 @@ export default function GrubbidSearchResults() {
     hasGeoFilter,
     q,
     foodNav.pendingNavigation,
+    location.state,
     requestZip,
     requestCity,
     requestState,
@@ -2526,7 +2574,12 @@ export default function GrubbidSearchResults() {
 
   const dishRows = useMemo(() => waiterFilteredRows.filter(isDishRow), [waiterFilteredRows]);
   const restaurantOnlyRows = useMemo(() => waiterFilteredRows.filter((r) => !isDishRow(r)), [waiterFilteredRows]);
-  const allDishRows = useMemo(() => rows.filter(isDishRow), [rows]);
+  const allDishRows = useMemo(() => {
+    if (searchMeta?.result_type === "restaurant_cards") {
+      return flattenRestaurantCardMatches(rows);
+    }
+    return rows.filter(isDishRow);
+  }, [rows, searchMeta?.result_type]);
   const allRestaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);
 
   const activeDietFilterLabels = useMemo(() => {
@@ -2549,14 +2602,11 @@ export default function GrubbidSearchResults() {
     searchMeta?.restaurant_first ||
     searchMeta?.direct_restaurant_name
   );
-  // Dish-first rule: grouped restaurant rendering only activates when the
-  // backend explicitly suppressed menu items (confirmed restaurant-name search)
-  // OR when restaurantIntent is set but there are no actual dish rows (cuisine
-  // keyword with no local item data — fall back to restaurant bucket cards).
-  // This prevents food queries like "pizza" or "Italian" from suppressing
-  // individual dish cards just because the query word is also a cuisine type.
+  // Backend restaurant cards are canonical for menu-item-first searches.
   const useRestaurantGroupedRendering = !!(
+    searchMeta?.result_type === "restaurant_cards" ||
     searchMeta?.suppress_menu_items ||
+    searchMeta?.restaurant_grouped_results === true ||
     (restaurantIntent && dishRows.length === 0)
   );
 
@@ -2609,11 +2659,24 @@ export default function GrubbidSearchResults() {
 
   const restaurantGroups = useMemo(() => {
     if (!activeRestaurantGroupedRendering) return [];
+    if (searchMeta?.result_type === "restaurant_cards") {
+      return rows.map((card) => ({
+        restaurant_id: card.restaurant_id,
+        restaurant_slug: card.restaurant_slug || card.slug,
+        restaurant_name: card.restaurant_name || card.name,
+        hidden_match_count: Number(card.hidden_match_count) || 0,
+        matched_item_count:
+          Number(card.matched_item_count ?? card.menu_item_count) ||
+          (Array.isArray(card.matches) ? card.matches.length : 0),
+        items: card.matches || [],
+        _first: card.matches?.[0] || card,
+      }));
+    }
     return buildRestaurantGroups(
       dishRows,
       relaxPerRestaurantItemCap ? Number.MAX_SAFE_INTEGER : MAX_MENU_ITEMS_PER_RESTAURANT_GROUP
     );
-  }, [dishRows, relaxPerRestaurantItemCap, activeRestaurantGroupedRendering]);
+  }, [dishRows, relaxPerRestaurantItemCap, activeRestaurantGroupedRendering, rows, searchMeta?.result_type]);
 
   function toggleSearchFilter(key) {
     const next = { ...activeFilters, [key]: !activeFilters[key] };
@@ -2621,11 +2684,6 @@ export default function GrubbidSearchResults() {
     navigate("?" + nextParams.toString(), { replace: true });
   }
 
-  // GUARDRAIL:
-  // Ordinary food searches are dish-first experiences.
-  // Restaurant-first grouping, section splitting, or venue-grouped rendering may only activate when explicit restaurant intent is detected.
-  // Food-intent queries must prioritize individual menu-item relevance over restaurant grouping.
-  // Agents may not redesign search hierarchy, grouping, ranking, or result presentation without explicit user approval.
   const visibleDishRows = useMemo(
     () => (activeRestaurantGroupedRendering ? [] : dishRows),
     [dishRows, activeRestaurantGroupedRendering]
@@ -2925,6 +2983,10 @@ export default function GrubbidSearchResults() {
           <div style={styles.grid}>
             {restaurantGroups.map((g) => {
               const rMeta = restaurantMetaMap.get(asString(g.restaurant_id));
+              const hiddenCount =
+                Number(g.hidden_match_count) > 0
+                  ? Number(g.hidden_match_count)
+                  : Math.max(0, Number(g.matched_item_count || 0) - (g.items?.length || 0));
               return (
                 <SearchResultCard
                   key={`rg-${g.restaurant_id || g.restaurant_name}`}
@@ -2945,6 +3007,7 @@ export default function GrubbidSearchResults() {
                       raw: g._first,
                     }}
                     items={g.items}
+                    hiddenMatchCount={hiddenCount}
                     query={q}
                     queryMeta={queryMeta}
                     matchContext={{
