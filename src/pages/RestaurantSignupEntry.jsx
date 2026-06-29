@@ -9,7 +9,11 @@
  * ============================================================
  */
 
-import { Navigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext.jsx";
+import { BrandLogo } from "../components/BrandLogo.jsx";
+import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
 
@@ -299,5 +303,180 @@ function PlanPrice({ plan }) {
 }
 
 export default function RestaurantSignupEntry() {
-  return <Navigate to="/restaurant/signup/account" replace />;
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  const [hoveredPlan, setHoveredPlan] = useState(null);
+
+  const localizedPlans = useMemo(
+    () => SIGNUP_PLAN_OPTIONS.map((plan) => {
+      const key = planTranslationKey(plan.code);
+      return {
+        ...plan,
+        name: t(`signup.entry.plan.${key}.name`, plan.name),
+        price: t(`signup.entry.plan.${key}.price`, plan.price),
+        description: t(`signup.entry.plan.${key}.description`, plan.description),
+        cta: t(`signup.entry.plan.${key}.cta`, plan.cta),
+      };
+    }),
+    [t]
+  );
+
+  function handlePlanSelect(selectedPlan) {
+    navigate(ACCOUNT_ROUTE, {
+      state: {
+        selected_plan: selectedPlan,
+      },
+    });
+  }
+
+  return (
+    <div style={styles.page}>
+      <div style={styles.shell}>
+        <header style={styles.hero}>
+          <div style={styles.heroContent}>
+            <BrandLogo height={48} radius={14} matchPageBackground={false} linkStyle={{ marginBottom: 8 }} />
+            <div style={styles.eyebrow}>{t("signup.entry.eyebrow", "Restaurant Signup")}</div>
+            <div style={styles.foodTruckRow}>
+              <span style={styles.foodTruckIcon} aria-hidden>
+                <FoodTruckIcon />
+              </span>
+              <span style={styles.foodTruckPrompt}>{t("signup.entry.foodTruckOwner", "Food Truck Owner?")}</span>
+              <Link to="/foodtruck/signup" style={styles.foodTruckLink}>
+                {t("signup.entry.foodTruckSignup", "Sign up")}
+              </Link>
+            </div>
+            <div style={styles.foodTruckRow}>
+              <span style={styles.foodTruckPrompt}>Franchise / Multi-location?</span>
+              <Link to="/franchises" style={styles.foodTruckLink}>
+                Contact us
+              </Link>
+            </div>
+            <h1 style={{
+              fontSize: "clamp(1.7rem, 3.5vw, 2.6rem)",
+              fontWeight: 900,
+              letterSpacing: "-0.03em",
+              lineHeight: 1.1,
+              color: "#0B0F0C",
+              margin: "16px 0 0",
+            }}>
+              {t("signup.entry.title", "Choose your plan")}
+            </h1>
+            <div style={{
+              fontSize: 16,
+              lineHeight: 1.65,
+              color: "#374151",
+              maxWidth: 660,
+              marginTop: 12,
+            }}>
+              {t(
+                "signup.entry.subtitle",
+                "Select the plan that fits how you want diners to discover and order from your menu."
+              )}
+            </div>
+          </div>
+        </header>
+
+        <div style={styles.foundersNotice}>
+          {t(
+            "signup.entry.foundersNotice",
+            "Founder's Membership is available for a limited time to early restaurant partners."
+          )}
+        </div>
+
+        <section style={styles.cardsGrid}>
+          {localizedPlans.map((plan) => (
+            <article
+              key={plan.code}
+              style={styles.card(plan.featured, hoveredPlan === plan.code)}
+              onClick={() => handlePlanSelect(plan.code)}
+              onMouseEnter={() => setHoveredPlan(plan.code)}
+              onMouseLeave={() => setHoveredPlan(null)}
+              tabIndex={0}
+              role="button"
+              aria-label={plan.cta}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handlePlanSelect(plan.code); } }}
+            >
+              {plan.code === "founders_annual" ? (
+                <div style={styles.limitedBadge}>{t("signup.entry.limitedAvailability", "Limited Availability")}</div>
+              ) : null}
+              <div style={styles.planName}>{plan.name}</div>
+              <PlanPrice plan={plan} />
+              <div style={styles.description}>{plan.description}</div>
+
+              <ul style={styles.featureList}>
+                {plan.features.map((feature) => (
+                  <li key={feature} style={styles.featureItem}>
+                    <span style={styles.featureMark(plan.featured)}>&#10003;</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div style={styles.button(plan.featured)}>{plan.cta}</div>
+            </article>
+          ))}
+        </section>
+
+        <PlanComparisonTable />
+
+        <div style={{
+          marginTop: 32,
+          padding: "24px 22px",
+          borderRadius: 20,
+          border: "1.5px solid #e5e7eb",
+          background: "#f9fafb",
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+        }}>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 800,
+            color: "#6B7280",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+          }}>
+            Franchise or National Brand?
+          </div>
+          <div style={{
+            fontSize: 18,
+            fontWeight: 900,
+            letterSpacing: "-0.02em",
+            color: "#0B0F0C",
+            lineHeight: 1.25,
+          }}>
+            Franchise headquarters and corporate brands
+          </div>
+          <p style={{
+            fontSize: 14,
+            lineHeight: 1.65,
+            color: "#374151",
+            margin: 0,
+            maxWidth: 640,
+          }}>
+            If you represent a franchise headquarters or corporate brand, contact Menuply so we can keep your information accurate and route your request for review.
+          </p>
+          <Link
+            to="/franchises"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              alignSelf: "flex-start",
+              marginTop: 6,
+              padding: "12px 20px",
+              borderRadius: 12,
+              background: "#1F4E3D",
+              color: "#fff",
+              fontWeight: 800,
+              fontSize: 14,
+              textDecoration: "none",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Contact Menuply About Your Franchise &rarr;
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }

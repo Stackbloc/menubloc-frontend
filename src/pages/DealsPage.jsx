@@ -174,23 +174,13 @@ function DealRow({ deal, restaurantUrl, onShare, onDealClick }) {
             onClick={onShare}
             aria-label="Share"
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              border: "1px solid rgba(17, 33, 26, 0.18)",
-              borderRadius: 999,
-              background: "linear-gradient(180deg, #ffffff 0%, #f5faf7 100%)",
-              color: "#111827",
-              cursor: "pointer",
-              padding: "4px 10px",
-              lineHeight: 1,
-              fontSize: 12,
-              fontWeight: 800,
-              boxShadow: "0 4px 12px rgba(17, 33, 26, 0.08)",
+              border: "none", background: "transparent",
+              color: "#9ca3af", cursor: "pointer",
+              padding: "2px 4px", lineHeight: 1,
+              display: "flex", alignItems: "center",
             }}
           >
-            <ShareIcon size={14} />
-            Share
+            <ShareIcon size={12} />
           </button>
         )}
       </div>

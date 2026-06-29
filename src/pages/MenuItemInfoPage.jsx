@@ -1306,7 +1306,7 @@ export default function MenuItemInfoPage() {
                       <span style={{ fontSize: 12, opacity: 0.55 }}>•</span>
                       <ShareButton
                         variant="dish"
-                        label="Share"
+                        label="Share item"
                         modalTitle={`Share ${displayItemName}`}
                         shareData={shareData}
                         analyticsContext={{
@@ -1318,7 +1318,7 @@ export default function MenuItemInfoPage() {
                           shareTarget: "dish",
                         }}
                         size="compact"
-                        tone="subtle"
+                        tone="inline"
                       />
                     </>
                   ) : null}

@@ -384,30 +384,6 @@ function getDistanceMilesLike(x) {
   return n === null || n > 3000 ? null : n;
 }
 
-function getLatLike(x) {
-  return asNum(pick(x, ["lat", "restaurant_lat", "latitude"], null));
-}
-
-function getLngLike(x) {
-  return asNum(pick(x, ["lng", "restaurant_lng", "longitude"], null));
-}
-
-function buildGoogleMapsUrl(row) {
-  const lat = getLatLike(row);
-  const lng = getLngLike(row);
-  if (lat !== null && lng !== null && !(lat === 0 && lng === 0)) {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
-  }
-  const parts = [
-    getAddressLine1Like(row),
-    getCityLike(row),
-    getStateLike(row),
-    getPostalCodeLike(row),
-  ].filter(Boolean);
-  if (!parts.length) return null;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts.join(", "))}`;
-}
-
 function getProfileTierLike(x) {
   return normalizeTier(
     pick(
@@ -1287,12 +1263,10 @@ function ItemRow({
               onClick={() => trackMenuItemInteraction(mid, "click")}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = "#22C55E";
-                e.currentTarget.style.textDecoration = "underline";
                 e.currentTarget.style.textUnderlineOffset = "3px";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = "#FFFFFF";
-                e.currentTarget.style.textDecoration = "none";
               }}
             >
               {hl(name, query)}
@@ -1304,7 +1278,7 @@ function ItemRow({
         {dishShareData ? (
           <ShareButton
             variant="dish"
-            label="Share"
+            label="Share Dish"
             modalTitle={`Share ${name}`}
             shareData={dishShareData}
             analyticsContext={{
@@ -1315,8 +1289,7 @@ function ItemRow({
               pageType: "search_results",
               shareTarget: "dish",
             }}
-            size="compact"
-            tone="subtle"
+            iconOnly
             stopPropagation
           />
         ) : null}
@@ -1452,17 +1425,23 @@ function ItemRow({
         {!indulgencePresentation ? (
           <Chip
             label={labels.nutrition}
-            active={openTab === "nutrition"}
+            active={false}
             available={hasNut}
-            onClick={() => toggle("nutrition")}
+            onClick={() => {
+              trackMenuItemInteraction(mid, "open_nutrition");
+              if (href) navigate(href);
+            }}
           />
         ) : null}
         {!indulgencePresentation && hasIns ? (
           <Chip
             label={labels.insights}
-            active={openTab === "insights"}
+            active={false}
             available={true}
-            onClick={() => toggle("insights")}
+            onClick={() => {
+              trackMenuItemInteraction(mid, "open_insights");
+              if (href) navigate(href);
+            }}
           />
         ) : null}
         {showSimilarChip ? (
@@ -1474,28 +1453,6 @@ function ItemRow({
           />
         ) : null}
       </div>
-
-      {openTab === "nutrition" && (
-        <DetailPanel
-          tab="nutrition"
-          row={row}
-          similarState={similarState}
-          onFindSimilar={() => {}}
-          onCompare={handleCompare}
-          labels={labels}
-        />
-      )}
-
-      {openTab === "insights" && (
-        <DetailPanel
-          tab="insights"
-          row={row}
-          similarState={similarState}
-          onFindSimilar={() => {}}
-          onCompare={handleCompare}
-          labels={labels}
-        />
-      )}
 
       {openTab === "similar" && (
         <DetailPanel
@@ -1672,7 +1629,7 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
 
 /* ---- Main export ---- */
 
-export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, geo, activeRefinement, resultView }) {
+export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, geo, activeRefinement }) {
   const location = useLocation();
   const { language, t } = useLanguage();
   const contextSearch = location.search || "";
@@ -1837,8 +1794,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
     );
   }
 
-  const isItemRow =
-    resultView !== "restaurant" && Boolean(item?.menu_item_id || item?.menu_item_name);
+  const isItemRow = Boolean(item?.menu_item_id || item?.menu_item_name);
   const restIdS = getRestId(item);
   const restSlugS = getRestSlug(item);
   const restNameS = getRestName(item, language);
@@ -1899,9 +1855,10 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const cityStateLine = [cityS, stateS ? (postalS ? `${stateS} ${postalS}` : stateS) : postalS]
     .filter(Boolean)
     .join(", ");
-  const mapsUrl = buildGoogleMapsUrl(item);
-  const addressDisplay = [addressLine1S, cityStateLine].filter(Boolean).join(", ");
-  const isRestaurantBrowse = resultView === "restaurant";
+  const detailPieces = [
+    distanceMilesS !== null ? `${distanceMilesS.toFixed(1)} mi away` : null,
+    phoneS || null,
+  ].filter(Boolean);
 
   return (
     <article className="gb-card" style={cardStyle}>
@@ -1921,83 +1878,22 @@ export default function SearchResultCard({ restaurant, items, item, query, query
         )}
       </div>
 
-      {!isRestaurantBrowse && cuisineS && (
+      {cuisineS && (
         <div style={{ marginTop: 4, fontSize: 13, fontWeight: 600, color: "#9CA3AF" }}>
           {cuisineS}
         </div>
       )}
 
-      {addressDisplay && (
-        mapsUrl ? (
-          <a
-            href={mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Open ${restNameS || "restaurant"} in Google Maps`}
-            title="Open in Google Maps"
-            style={{
-              display: isRestaurantBrowse ? "inline-flex" : "block",
-              alignItems: isRestaurantBrowse ? "flex-start" : undefined,
-              gap: isRestaurantBrowse ? 5 : undefined,
-              marginTop: 6,
-              fontSize: 14,
-              fontWeight: 500,
-              color: "#9CA3AF",
-              lineHeight: 1.5,
-              textDecoration: "none",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#22C55E";
-              e.currentTarget.style.textDecoration = "underline";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "#9CA3AF";
-              e.currentTarget.style.textDecoration = "none";
-            }}
-          >
-            {isRestaurantBrowse && (
-              <span style={{ flexShrink: 0, fontSize: 13, lineHeight: 1.5 }} aria-hidden="true">
-                📍
-              </span>
-            )}
-            <span style={isRestaurantBrowse ? { display: "flex", flexDirection: "column", gap: 1 } : undefined}>
-              {addressLine1S && <div>{addressLine1S}</div>}
-              {cityStateLine && <div>{cityStateLine}</div>}
-            </span>
-          </a>
-        ) : (
-          <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "#9CA3AF", lineHeight: 1.5 }}>
-            {addressLine1S && <div>{addressLine1S}</div>}
-            {cityStateLine && <div>{cityStateLine}</div>}
-          </div>
-        )
-      )}
-
-      {distanceMilesS !== null && (
-        <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "#9CA3AF" }}>
-          {distanceMilesS.toFixed(1)} mi
-          {isRestaurantBrowse && matchContext?.coordinateSearchActive
-            ? " from your location"
-            : " away"}
+      {(addressLine1S || cityStateLine) && (
+        <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "#9CA3AF", lineHeight: 1.5 }}>
+          {addressLine1S && <div>{addressLine1S}</div>}
+          {cityStateLine && <div>{cityStateLine}</div>}
         </div>
       )}
 
-      {phoneS && (
-        <div style={{ marginTop: 4 }}>
-          <a
-            href={`tel:${phoneS.replace(/[^\d+]/g, "")}`}
-            style={{ fontSize: 14, fontWeight: 600, color: "#E5E7EB", textDecoration: "none" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#22C55E";
-              e.currentTarget.style.textDecoration = "underline";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "#E5E7EB";
-              e.currentTarget.style.textDecoration = "none";
-            }}
-          >
-            {phoneS}
-          </a>
+      {detailPieces.length > 0 && (
+        <div style={{ marginTop: 4, fontSize: 14, fontWeight: 500, color: "#6B7280" }}>
+          {detailPieces.join(" · ")}
         </div>
       )}
 
@@ -2007,7 +1903,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
         restaurantName={restNameS}
       />
 
-      {!isRestaurantBrowse && menuHrefS && (
+      {menuHrefS && (
         <div style={{ marginTop: 12 }}>
           <Link
             to={menuHrefS}

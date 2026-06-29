@@ -298,7 +298,6 @@ export default function PublicMenuItemCard({
                 <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0, whiteSpace: "nowrap" }}>
                   <ShareButton
                     variant="dish"
-                    label="Share"
                     shareData={dishShareData}
                     analyticsContext={{
                       restaurantId: currentRestaurantId,
@@ -310,6 +309,7 @@ export default function PublicMenuItemCard({
                     }}
                     size="compact"
                     tone="subtle"
+                    iconOnly
                   />
                 </div>
               ) : null}

@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "b1ebf549bf249236e376b02ddf7e56a603d1a79e",
-  "gitShortSha": "b1ebf54",
+  "gitSha": "8c9a1ef99fcc4966ac58674d91b9026451549687",
+  "gitShortSha": "8c9a1ef",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-29T01:51:06.789Z",
+  "buildTime": "2026-06-29T04:18:04.961Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Hide dish-specific search UI when restaurant mode is selected."
+  "commitMessage": "Add icon-only share control next to restaurant profile name."
 }

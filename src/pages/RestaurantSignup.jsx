@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
@@ -21,7 +21,14 @@ import {
 } from "../lib/restaurantOnboardingState.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-const WELCOME_ROUTE = "/restaurant/onboarding/welcome";
+const PLAN_SELECTION_ROUTE = "/restaurant/subscription";
+const PLAN_ENTRY_ROUTE = "/restaurant/signup";
+const DESIGN_SELECTION_ROUTE = "/restaurant/design-select";
+
+function planLabel(t, planCode) {
+  if (!planCode) return "";
+  return t(`signup.account.plan.${planCode}`, planCode);
+}
 
 const styles = {
   pageWrap: {
@@ -259,12 +266,17 @@ export default function RestaurantSignup() {
   const location = useLocation();
   const { t } = useLanguage();
   const { operator, isAuthenticated: isOperatorAuthenticated, loading: operatorLoading } = useOperator();
+  const selectedPlan = location.state?.selected_plan || "";
+  const selectedPlanLabel = planLabel(t, selectedPlan);
 
   const [form, setForm] = useState({
     email: operator?.email || "",
     password: "",
     confirmPassword: "",
     restaurant_name: "",
+    city: "",
+    state: "",
+    phone: "",
   });
   const [agreements, setAgreements] = useState({ legalConsent: false });
 
@@ -349,6 +361,8 @@ export default function RestaurantSignup() {
       else if (form.password !== form.confirmPassword) errors.confirmPassword = t("signup.error.passwordsDoNotMatch");
     }
     if (!form.restaurant_name.trim()) errors.restaurant_name = t("signup.error.restaurantNameRequired");
+    if (!form.city.trim()) errors.city = "City is required.";
+    if (!form.state.trim()) errors.state = "State is required.";
     if (!agreements.legalConsent) {
       errors.legalConsent = "You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.";
     }
@@ -373,6 +387,9 @@ export default function RestaurantSignup() {
       const payload = {
         email: form.email.trim(),
         restaurant_name: form.restaurant_name.trim(),
+        city: form.city.trim(),
+        state: form.state.trim().toUpperCase(),
+        phone: form.phone.trim() || null,
         ...buildLegalConsentPayload(),
       };
       if (!isOperatorAuthenticated) {
@@ -398,25 +415,41 @@ export default function RestaurantSignup() {
         restaurant_name: form.restaurant_name.trim(),
         email: form.email.trim(),
         owner_token,
+        city: form.city.trim(),
+        state: form.state.trim().toUpperCase(),
+        phone: form.phone.trim(),
         ingestion_method: "later",
+        selected_plan: selectedPlan,
       });
       const draftState = await syncRestaurantOnboardingProgress(baseState, {
-        current_step_key: "import_menu",
-        completed_step_keys: ["account_created"],
+        current_step_key: selectedPlan === "verified" ? "basic_public_profile" : "choose_plan",
+        completed_step_keys: ["create_operator_account", "public_restaurant_information"],
         intake_path: "independent_single_location",
         requested_location_count: 1,
+        selected_plan_code: selectedPlan || null,
         manual_review_required: false,
-        draft_payload: {},
+        draft_payload: {
+          temporary_selections: {
+            selected_plan_code: selectedPlan || null,
+            menu_upload_mode: "upload_later",
+          },
+          optional_modules: {
+            qr_starter_kit: { status: "not_started" },
+            equipment_readiness: { status: "not_started" },
+          },
+        },
       });
 
+      // Capture nav state for after QR reveal step
       const navTarget = {
         path: "/operator/verify-email",
         opts: {
           replace: true,
           state: {
             ...draftState,
-            nextPath: WELCOME_ROUTE,
+            nextPath: selectedPlan === "verified" ? DESIGN_SELECTION_ROUTE : PLAN_SELECTION_ROUTE,
             autoSend: true,
+            plan: selectedPlan,
           },
         },
       };
@@ -549,11 +582,41 @@ export default function RestaurantSignup() {
       <main style={styles.pageMain}>
       <div style={styles.header}>
         <BrandLogo height={48} radius={14} matchPageBackground={false} />
-        <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your account")}</div>
+        <div style={styles.pageTitle}>{t("signup.account.pageTitle", "Create your restaurant account")}</div>
         <div style={styles.pageSubtitle}>
           {t(
             "signup.account.pageSubtitleDetails",
-            "Start with your restaurant name and email. You can add your address and other details after publishing your menu."
+            "Enter your restaurant details to continue with your selected plan."
+          )}
+        </div>
+        {selectedPlanLabel ? (
+          <div style={styles.planSummary}>
+            <div>
+              <div style={styles.planSummaryLabel}>
+                {t("signup.account.selectedPlan", "Selected plan")}
+              </div>
+              <div style={styles.planSummaryValue}>{selectedPlanLabel}</div>
+            </div>
+            <Link to={PLAN_ENTRY_ROUTE} style={styles.planSummaryLink}>
+              {t("signup.account.changePlan", "Change plan")}
+            </Link>
+          </div>
+        ) : null}
+        <div style={styles.expectationCard}>
+          <div style={styles.expectationTitle}>
+            {t("signup.account.partnerExpectationTitle", "Menuply Partner Expectation")}
+          </div>
+          <div style={styles.expectationBody}>
+            {t(
+              "signup.account.partnerExpectationBody",
+              "Restaurants always control their own pricing. Menuply is built for partners aligned with real diner value through better pricing, meaningful deals, richer menu information, and more direct engagement."
+            )}
+          </div>
+        </div>
+        <div style={{ ...styles.helperText, marginTop: 10 }}>
+          {t(
+            "signup.account.optionalModulesNote",
+            "Optional setup modules such as QR starter kit, equipment readiness, and launch deals stay optional later in onboarding."
           )}
         </div>
       </div>
@@ -564,6 +627,13 @@ export default function RestaurantSignup() {
           {serverErrorDetail ? <div>{serverErrorDetail}</div> : null}
         </div>
       ) : null}
+      {!selectedPlanLabel ? (
+        <div style={styles.errorBanner}>
+          {t("signup.account.choosePlanFirst", "Choose a plan first to start restaurant signup.")}{" "}
+          <Link to={PLAN_ENTRY_ROUTE}>{t("signup.account.goToPricing", "Go to pricing")}</Link>
+        </div>
+      ) : null}
+
       <form onSubmit={handleSubmit} noValidate>
         <div style={styles.section}>
           <div style={styles.sectionTitle}>{t("signup.account.sectionAccount", "Account")}</div>
@@ -652,6 +722,55 @@ export default function RestaurantSignup() {
             {fieldErrors.restaurant_name ? <div style={styles.fieldError}>{fieldErrors.restaurant_name}</div> : null}
           </div>
 
+          <div style={styles.row2}>
+            <div style={styles.halfField}>
+              <label htmlFor="city" style={styles.label}>
+                {t("signup.city")}<span style={styles.required}>*</span>
+              </label>
+              <input
+                id="city"
+                name="city"
+                type="text"
+                autoComplete="address-level2"
+                value={form.city}
+                onChange={handleChange}
+                style={fieldErrors.city ? styles.inputError : styles.input}
+              />
+              {fieldErrors.city ? <div style={styles.fieldError}>{fieldErrors.city}</div> : null}
+            </div>
+
+            <div style={styles.halfField}>
+              <label htmlFor="state" style={styles.label}>
+                {t("signup.state")}<span style={styles.required}>*</span>
+              </label>
+              <input
+                id="state"
+                name="state"
+                type="text"
+                autoComplete="address-level1"
+                maxLength={2}
+                value={form.state}
+                onChange={handleChange}
+                style={fieldErrors.state ? styles.inputError : styles.input}
+              />
+              {fieldErrors.state ? <div style={styles.fieldError}>{fieldErrors.state}</div> : null}
+            </div>
+          </div>
+
+          <div style={styles.fieldGroup}>
+            <label htmlFor="phone" style={styles.label}>
+              {t("signup.phone")}
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              value={form.phone}
+              onChange={handleChange}
+              style={styles.input}
+            />
+          </div>
         </div>
 
         <div style={styles.section}>
@@ -680,7 +799,7 @@ export default function RestaurantSignup() {
           {fieldErrors.legalConsent ? <div style={styles.fieldError}>{fieldErrors.legalConsent}</div> : null}
         </div>
 
-        <button type="submit" style={submitBtnStyle(submitting || operatorLoading)} disabled={submitting || operatorLoading}>
+        <button type="submit" style={submitBtnStyle(submitting || !selectedPlanLabel || operatorLoading)} disabled={submitting || !selectedPlanLabel || operatorLoading}>
           {submitting
             ? t("signup.account.creatingAccount", "Creating account...")
             : t("signup.account.createAccountButton", "Create account")}

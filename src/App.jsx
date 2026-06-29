@@ -7,7 +7,7 @@
  *   Domain-aware routing:
  *     - easymenuupload.com -> EasyMenuLanding on "/"
  *     - crm.menuply.com (primary) / crm.grubbid.com (legacy) -> internal CRM shell
- *     - grubbid.com (and everything else) -> HomeRoot on "/" (HomeNext live; legacy via flag or /home-legacy)
+ *     - grubbid.com (and everything else) -> GrubbidDiscovery on "/"
  *
  *   Public route support:
  *   - Canonical restaurant public page: /restaurants/:slugOrId
@@ -90,9 +90,7 @@ import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
 import OperatorBrandSettings from "./pages/operator/OperatorBrandSettings.jsx";
 import OperatorCartNegotiationSettings from "./pages/operator/OperatorCartNegotiationSettings.jsx";
 
-import HomeRoot from "./pages/HomeRoot.jsx";
-import HomeNext from "./pages/HomeNext.jsx";
-import LegacyDiscoveryHome from "./pages/LegacyDiscoveryHome.jsx";
+import GrubbidDiscovery from "./pages/GrubbidDiscovery.jsx";
 import GrubbidHomeV1 from "./components/GrubbidHomeV1.jsx";
 import GrubbidSearchResults from "./pages/GrubbidSearchResults.jsx";
 
@@ -533,9 +531,7 @@ function AppShell({ easyMenu, crmHost }) {
       {hidePublicChrome ? null : <OrderCartDrawer />}
       {hidePublicChrome ? null : <BasketResumePrompt />}
       <Routes>
-        <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <HomeRoot />} />
-        <Route path="/home-legacy" element={crmHost ? <HostRouteRedirect to="/crm" /> : <LegacyDiscoveryHome />} />
-        <Route path="/home-next" element={crmHost ? <HostRouteRedirect to="/crm" /> : <HomeNext />} />
+        <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <GrubbidDiscovery />} />
 
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
         <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />
@@ -585,7 +581,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/restaurant/signup/account" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignup />} />
         <Route path="/restaurant/signup/free-profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantFreeProfileSignup />} />
-        <Route path="/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Navigate to="/restaurant/signup/account" replace />} />
+        <Route path="/signup" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantSignupEntry />} />
         <Route path="/pricing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
         <Route path="/profilesearch" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ProfileSearchPage />} />
         <Route path="/restaurant/subscription" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SubscriptionSelect />} />
