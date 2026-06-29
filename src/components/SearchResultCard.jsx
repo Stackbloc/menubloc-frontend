@@ -1934,8 +1934,12 @@ export default function SearchResultCard({ restaurant, items, item, query, query
             href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={`Open ${restNameS || "restaurant"} in Google Maps`}
+            title="Open in Google Maps"
             style={{
-              display: "block",
+              display: isRestaurantBrowse ? "inline-flex" : "block",
+              alignItems: isRestaurantBrowse ? "flex-start" : undefined,
+              gap: isRestaurantBrowse ? 5 : undefined,
               marginTop: 6,
               fontSize: 14,
               fontWeight: 500,
@@ -1952,8 +1956,15 @@ export default function SearchResultCard({ restaurant, items, item, query, query
               e.currentTarget.style.textDecoration = "none";
             }}
           >
-            {addressLine1S && <div>{addressLine1S}</div>}
-            {cityStateLine && <div>{cityStateLine}</div>}
+            {isRestaurantBrowse && (
+              <span style={{ flexShrink: 0, fontSize: 13, lineHeight: 1.5 }} aria-hidden="true">
+                📍
+              </span>
+            )}
+            <span style={isRestaurantBrowse ? { display: "flex", flexDirection: "column", gap: 1 } : undefined}>
+              {addressLine1S && <div>{addressLine1S}</div>}
+              {cityStateLine && <div>{cityStateLine}</div>}
+            </span>
           </a>
         ) : (
           <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "#9CA3AF", lineHeight: 1.5 }}>
@@ -1965,7 +1976,10 @@ export default function SearchResultCard({ restaurant, items, item, query, query
 
       {distanceMilesS !== null && (
         <div style={{ marginTop: 6, fontSize: 14, fontWeight: 500, color: "#9CA3AF" }}>
-          {distanceMilesS.toFixed(1)} mi away
+          {distanceMilesS.toFixed(1)} mi
+          {isRestaurantBrowse && matchContext?.coordinateSearchActive
+            ? " from your location"
+            : " away"}
         </div>
       )}
 

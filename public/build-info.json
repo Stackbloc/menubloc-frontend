@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "bcbcb7d4a5990967ce13f2b9ef34630290f3715d",
-  "gitShortSha": "bcbcb7d",
+  "gitSha": "ff66661b136b1fff1c39254d882f5bfe93725670",
+  "gitShortSha": "ff66661",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-29T00:44:20.693Z",
+  "buildTime": "2026-06-29T01:01:51.485Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Fix search result dish/restaurant mode selector and restaurant-only cards."
+  "commitMessage": "Fix mobile home search placeholder truncation on small phones."
 }

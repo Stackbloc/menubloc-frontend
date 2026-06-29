@@ -2536,8 +2536,22 @@ export default function GrubbidSearchResults() {
   const activeRestaurantGroupedRendering = useRestaurantGroupedRendering || preferRestaurantView;
   const restaurantBrowseRows = useMemo(() => {
     if (!preferRestaurantView) return [];
-    return buildRestaurantBrowseRows(allDishRows, allRestaurantOnlyRows, restaurantMetaMap);
-  }, [preferRestaurantView, allDishRows, allRestaurantOnlyRows, restaurantMetaMap]);
+    const userGeo =
+      geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null;
+    return buildRestaurantBrowseRows(
+      allDishRows,
+      allRestaurantOnlyRows,
+      restaurantMetaMap,
+      userGeo
+    );
+  }, [
+    preferRestaurantView,
+    allDishRows,
+    allRestaurantOnlyRows,
+    restaurantMetaMap,
+    geo.lat,
+    geo.lng,
+  ]);
   const isRestaurantResultsView =
     preferRestaurantView ||
     (useRestaurantGroupedRendering && searchMeta?.suppress_menu_items === true);
