@@ -2710,14 +2710,24 @@ export default function GrubbidSearchResults() {
     },
   };
 
-  const emptyMessage = displayQuery
-    ? t("search.noResultsFor", `No results for "${displayQuery}"${locationPhrase ? ` ${locationPhrase}` : ""}.`, {
-        query: displayQuery,
-        location: locationPhrase ? ` ${locationPhrase}` : "",
-      })
-    : t("search.noResultsGeneric", `No results${locationPhrase ? ` ${locationPhrase}` : ""}.`, {
-        location: locationPhrase ? ` ${locationPhrase}` : "",
-      });
+  const emptyMessage = preferRestaurantView
+    ? displayQuery
+      ? t(
+          "search.noRestaurantsFor",
+          `No restaurants found for "${displayQuery}"${locationPhrase ? ` ${locationPhrase}` : ""}.`,
+          { query: displayQuery, location: locationPhrase ? ` ${locationPhrase}` : "" }
+        )
+      : t("search.noRestaurantsGeneric", `No restaurants found${locationPhrase ? ` ${locationPhrase}` : ""}.`, {
+          location: locationPhrase ? ` ${locationPhrase}` : "",
+        })
+    : displayQuery
+      ? t("search.noResultsFor", `No results for "${displayQuery}"${locationPhrase ? ` ${locationPhrase}` : ""}.`, {
+          query: displayQuery,
+          location: locationPhrase ? ` ${locationPhrase}` : "",
+        })
+      : t("search.noResultsGeneric", `No results${locationPhrase ? ` ${locationPhrase}` : ""}.`, {
+          location: locationPhrase ? ` ${locationPhrase}` : "",
+        });
 
   const subtitleParts = [
     locationLabel && locationLabel !== "your current location"
@@ -2799,7 +2809,9 @@ export default function GrubbidSearchResults() {
       {/* ── SCROLLABLE FEED ── */}
       <div style={{ maxWidth: 576, margin: "0 auto", padding: "10px 14px calc(var(--bottom-nav-h, 72px) + 8px)" }}>
 
-      <ActiveFilterChips filters={activeFilters} onToggle={toggleSearchFilter} />
+      {!preferRestaurantView && (
+        <ActiveFilterChips filters={activeFilters} onToggle={toggleSearchFilter} />
+      )}
 
       {geoFallbackUsed && (
         <StatusMessage tone="warning">
@@ -2816,7 +2828,7 @@ export default function GrubbidSearchResults() {
       {err && <StatusMessage>Error: {err}</StatusMessage>}
       {loading && <StatusMessage tone="muted">{t("common.loading")}</StatusMessage>}
 
-      {!loading && !err && !hasDishMatches && hasDietFilter && (
+      {!loading && !err && !preferRestaurantView && !hasDishMatches && hasDietFilter && (
         <StatusMessage tone="muted">
           {t("search.noDietaryResults", `No menu items meet your preference for ${activeDietFilterLabels.join(", ")}.`, {
             filters: activeDietFilterLabels.join(", "),
@@ -2824,7 +2836,7 @@ export default function GrubbidSearchResults() {
         </StatusMessage>
       )}
 
-      {!loading && !err && q && !hasVisibleResults && !hasDietFilter && (
+      {!loading && !err && q && !hasVisibleResults && (preferRestaurantView || !hasDietFilter) && (
         <StatusMessage tone="muted">{emptyMessage}</StatusMessage>
       )}
 

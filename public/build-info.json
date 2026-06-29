@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "d2145b4ac4972c0acb106535acda29c85566ebe7",
-  "gitShortSha": "d2145b4",
+  "gitSha": "09be630251fa8f314a234801c2380301623e9901",
+  "gitShortSha": "09be630",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-29T01:28:29.951Z",
+  "buildTime": "2026-06-29T01:34:28.952Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Improve restaurant search results with maps pin, distance, and proximity sort."
+  "commitMessage": "Improve share visibility sitewide and restore Contact Support on diner profile."
 }
