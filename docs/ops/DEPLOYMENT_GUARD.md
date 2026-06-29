@@ -27,6 +27,8 @@ npm run deploy:backend:production
 
 Production commands require the exact repository, origin, `main` branch, clean tree, platform project/service, environment, artifact, domains, and required variables. Dirty deployment is only available when both `--allow-dirty` and `ALLOW_DIRTY_DEPLOY=1` are deliberately supplied.
 
+Protected preview deployments require `VERCEL_PROTECTION_BYPASS_SECRET` for smoke testing and alias validation. The guard sends that value as `x-vercel-protection-bypass`; if the secret is absent, protected preview smoke tests abort closed instead of guessing.
+
 ## Blue/green frontend release
 
 `deploy:frontend:production`:

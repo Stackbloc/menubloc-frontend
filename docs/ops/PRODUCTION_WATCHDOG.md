@@ -4,6 +4,8 @@
 
 It probes `/`, `/search`, `/browse`, `/owner`, and `/api/health` and records timestamp, status, response headers, excerpt, deployment ID, `x-vercel-id`, and pass/fail. It rejects non-200 responses, timeouts, blank content, Vercel/function crash markers, missing Vite assets, and JSON on frontend routes.
 
+When probing a protected preview deployment, pass `VERCEL_PROTECTION_BYPASS_SECRET` so the requests include `x-vercel-protection-bypass`. The watchdog itself still runs independently of Menuply and does not require any app-side code to be healthy.
+
 On failure it:
 
 1. Appends `docs/incidents/YYYY-MM-DD_production-health.jsonl` in the workflow workspace.
