@@ -39,6 +39,7 @@ import { parseFiltersFromUrl, filtersToUrlParams } from "../lib/filterUtils.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackSearchPerformed } from "../lib/analytics.js";
 import {
+  buildRestaurantBrowseRows,
   countUniqueRestaurants,
   shouldShowSearchResultModeSelector,
 } from "../lib/searchResultViewMode.js";
@@ -83,7 +84,7 @@ function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChan
     cursor: "pointer",
     fontSize: 13,
     fontWeight: selected ? 800 : 600,
-    color: selected ? "#F9FAFB" : "#9CA3AF",
+    color: selected ? "#111827" : "#6B7280",
     userSelect: "none",
   });
 
@@ -2483,6 +2484,8 @@ export default function GrubbidSearchResults() {
 
   const dishRows = useMemo(() => waiterFilteredRows.filter(isDishRow), [waiterFilteredRows]);
   const restaurantOnlyRows = useMemo(() => waiterFilteredRows.filter((r) => !isDishRow(r)), [waiterFilteredRows]);
+  const allDishRows = useMemo(() => rows.filter(isDishRow), [rows]);
+  const allRestaurantOnlyRows = useMemo(() => rows.filter((r) => !isDishRow(r)), [rows]);
 
   const activeDietFilterLabels = useMemo(() => {
     const labels = [];
@@ -2515,10 +2518,10 @@ export default function GrubbidSearchResults() {
     (restaurantIntent && dishRows.length === 0)
   );
 
-  const dishResultCount = dishRows.length;
+  const dishResultCount = allDishRows.length;
   const restaurantResultCount = useMemo(
-    () => countUniqueRestaurants(dishRows, restaurantOnlyRows),
-    [dishRows, restaurantOnlyRows]
+    () => countUniqueRestaurants(allDishRows, allRestaurantOnlyRows),
+    [allDishRows, allRestaurantOnlyRows]
   );
   const showResultModeSelector = useMemo(
     () => shouldShowSearchResultModeSelector({
@@ -2531,6 +2534,13 @@ export default function GrubbidSearchResults() {
   );
   const preferRestaurantView = showResultModeSelector && searchViewMode === "restaurants";
   const activeRestaurantGroupedRendering = useRestaurantGroupedRendering || preferRestaurantView;
+  const restaurantBrowseRows = useMemo(() => {
+    if (!preferRestaurantView) return [];
+    return buildRestaurantBrowseRows(allDishRows, allRestaurantOnlyRows, restaurantMetaMap);
+  }, [preferRestaurantView, allDishRows, allRestaurantOnlyRows, restaurantMetaMap]);
+  const isRestaurantResultsView =
+    preferRestaurantView ||
+    (useRestaurantGroupedRendering && searchMeta?.suppress_menu_items === true);
 
   const relaxPerRestaurantItemCap = useMemo(() => {
     if (!activeRestaurantGroupedRendering) return false;
@@ -2580,7 +2590,9 @@ export default function GrubbidSearchResults() {
     minItemSignals: waiterMinItemSignals,
   });
   const showWaiterBar =
-    !foodNav.pendingNavigation && (showWaiterQuestion || waiterRefinementStack.length > 0);
+    !foodNav.pendingNavigation &&
+    !isRestaurantResultsView &&
+    (showWaiterQuestion || waiterRefinementStack.length > 0);
   const activeWaiterRefinement =
     waiterRefinementStack.length > 0
       ? waiterRefinementStack[waiterRefinementStack.length - 1]
@@ -2674,9 +2686,11 @@ export default function GrubbidSearchResults() {
       return null;
     })(),
   ].filter(Boolean).join(" · ");
-  const hasVisibleResults = activeRestaurantGroupedRendering
-    ? hasMenuMatches || restaurantOnlyVisible.length > 0
-    : hasDishMatches;
+  const hasVisibleResults = preferRestaurantView
+    ? restaurantBrowseRows.length > 0
+    : activeRestaurantGroupedRendering
+      ? hasMenuMatches || restaurantOnlyVisible.length > 0
+      : hasDishMatches;
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", background: "var(--gb-color-page)" }}>
@@ -2799,7 +2813,29 @@ export default function GrubbidSearchResults() {
         />
       )}
 
-      {!loading && !err && activeRestaurantGroupedRendering && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
+      {!loading && !err && preferRestaurantView && restaurantBrowseRows.length > 0 && (
+        <div style={styles.grid}>
+          {restaurantBrowseRows.map((r) => (
+            <SearchResultCard
+              key={`rb-${
+                asString(pickFirst(r, ["restaurant_id", "id"], "")) ||
+                asString(pickFirst(r, ["restaurant_name", "name"], ""))
+              }`}
+              item={r}
+              query={q}
+              queryMeta={queryMeta}
+              resultView="restaurant"
+              matchContext={{
+                wantsNearby: searchMeta?.wants_nearby === true,
+                coordinateSearchActive: hasGeoFilter === true,
+              }}
+              geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+            />
+          ))}
+        </div>
+      )}
+
+      {!loading && !err && activeRestaurantGroupedRendering && !preferRestaurantView && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
         <>
           <SectionTitle style={{ color: "#0B0F0C" }}>{t("search.restaurants", "Restaurants")}</SectionTitle>
           <div style={styles.grid}>
@@ -2822,7 +2858,7 @@ export default function GrubbidSearchResults() {
         </>
       )}
 
-      {!loading && !err && activeRestaurantGroupedRendering && hasMenuMatches && (
+      {!loading && !err && activeRestaurantGroupedRendering && !preferRestaurantView && hasMenuMatches && (
         <>
           {!showWaiterBar && restaurantIntent && <SectionTitle style={{ color: "#0B0F0C" }}>{t("common.dishes")}</SectionTitle>}
           <div style={styles.grid}>
