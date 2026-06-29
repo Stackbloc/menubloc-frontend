@@ -345,12 +345,6 @@ export default function RestaurantSignupEntry() {
                 {t("signup.entry.foodTruckSignup", "Sign up")}
               </Link>
             </div>
-            <div style={styles.foodTruckRow}>
-              <span style={styles.foodTruckPrompt}>Franchise / Multi-location?</span>
-              <Link to="/franchises" style={styles.foodTruckLink}>
-                Contact us
-              </Link>
-            </div>
             <h1 style={{
               fontSize: "clamp(1.7rem, 3.5vw, 2.6rem)",
               fontWeight: 900,
@@ -418,64 +412,6 @@ export default function RestaurantSignupEntry() {
         </section>
 
         <PlanComparisonTable />
-
-        <div style={{
-          marginTop: 32,
-          padding: "24px 22px",
-          borderRadius: 20,
-          border: "1.5px solid #e5e7eb",
-          background: "#f9fafb",
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-        }}>
-          <div style={{
-            fontSize: 11,
-            fontWeight: 800,
-            color: "#6B7280",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-          }}>
-            Franchise or National Brand?
-          </div>
-          <div style={{
-            fontSize: 18,
-            fontWeight: 900,
-            letterSpacing: "-0.02em",
-            color: "#0B0F0C",
-            lineHeight: 1.25,
-          }}>
-            Franchise headquarters and corporate brands
-          </div>
-          <p style={{
-            fontSize: 14,
-            lineHeight: 1.65,
-            color: "#374151",
-            margin: 0,
-            maxWidth: 640,
-          }}>
-            If you represent a franchise headquarters or corporate brand, contact Menuply so we can keep your information accurate and route your request for review.
-          </p>
-          <Link
-            to="/franchises"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              alignSelf: "flex-start",
-              marginTop: 6,
-              padding: "12px 20px",
-              borderRadius: 12,
-              background: "#1F4E3D",
-              color: "#fff",
-              fontWeight: 800,
-              fontSize: 14,
-              textDecoration: "none",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Contact Menuply About Your Franchise &rarr;
-          </Link>
-        </div>
       </div>
     </div>
   );

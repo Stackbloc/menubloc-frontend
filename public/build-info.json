@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "8c9a1ef99fcc4966ac58674d91b9026451549687",
-  "gitShortSha": "8c9a1ef",
+  "gitSha": "81c6b9c03f5600d1a9bac04c15fb7a76c16d2fe2",
+  "gitShortSha": "81c6b9c",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-29T04:18:04.961Z",
+  "buildTime": "2026-06-29T04:49:53.142Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Add icon-only share control next to restaurant profile name."
+  "commitMessage": "Restore pre-HomeNext site surfaces and full restaurant signup funnel."
 }
