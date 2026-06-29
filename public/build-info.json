@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "81c6b9c03f5600d1a9bac04c15fb7a76c16d2fe2",
-  "gitShortSha": "81c6b9c",
+  "gitSha": "24e4a69622ba75de55872112ece47994115d9f6d",
+  "gitShortSha": "24e4a69",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-29T04:49:53.142Z",
+  "buildTime": "2026-06-29T05:45:34.962Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Restore pre-HomeNext site surfaces and full restaurant signup funnel."
+  "commitMessage": "Remove franchise cross-links from restaurant signup plan page."
 }

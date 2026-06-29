@@ -117,12 +117,14 @@ export default function WaiterRefinementPrompt({
   return (
     <section
       aria-label="Search refinement"
+      className="gb-waiter-refinement-prompt"
       style={{
         display: "flex",
         alignItems: "center",
         gap: 12,
         flexWrap: "wrap",
-        margin: "2px 0 14px",
+        margin: 0,
+        padding: "6px 0 10px",
       }}
     >
       <span style={{ display: "inline-flex", alignItems: "center", gap: 8, lineHeight: 1.4, flexWrap: "wrap" }}>

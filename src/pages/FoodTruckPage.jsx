@@ -568,13 +568,14 @@ function ProfileHeaderCard({ profile, slug, isDark, c, isMobile }) {
               fontSize: 11,
               fontWeight: 700,
               cursor: "pointer",
-              background: "transparent",
-              border: isDark ? "1px solid rgba(255,255,255,0.14)" : "1px solid #d1d9e6",
-              color: isDark ? "rgba(255,255,255,0.60)" : "#64748b",
+              background: shared ? "rgba(34,197,94,0.12)" : "linear-gradient(180deg, #ffffff 0%, #f5faf7 100%)",
+              border: isDark ? "1px solid rgba(255,255,255,0.22)" : "1px solid rgba(17, 33, 26, 0.18)",
+              color: shared ? "#15803d" : isDark ? "#f8fafc" : "#111827",
+              boxShadow: "0 4px 12px rgba(17, 33, 26, 0.08)",
               flexShrink: 0,
             }}
           >
-            <ShareIcon size={13} />
+            <ShareIcon size={14} />
             {shared ? "Copied!" : "Share"}
           </button>
         </div>

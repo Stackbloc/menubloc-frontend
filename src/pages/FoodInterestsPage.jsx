@@ -1,10 +1,20 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { fetchWaiterBriefing } from "../lib/waiterApi.js";
-import { getDefaultMealPeriod, getMealPeriodFallback, getWaiterGreeting, WAITER_MEAL_PERIODS } from "../lib/waiterMealPeriod.js";
-import { groupLikedRecommendations } from "../lib/waiterRecommendations.js";
+import {
+  getDefaultMealPeriod,
+  getMealPeriodFallback,
+  getWaiterGreeting,
+  normalizeMealPeriodId,
+  WAITER_MEAL_PERIODS,
+} from "../lib/waiterMealPeriod.js";
+import {
+  groupLabeledRecommendationTopics,
+  groupLikedRecommendations,
+  groupNewRestaurantRecommendations,
+} from "../lib/waiterRecommendations.js";
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
 const SESSION_AUTO_LABEL_KEY = "grubbid.discovery.auto_label";
@@ -37,51 +47,68 @@ function resolveGroupLabel(labels, mealLabel) {
   return `Recommended for ${mealLabel}`;
 }
 
-// Groups new_item rows by restaurant. new_restaurant rows become standalones.
-// Returns up to 5 groups.
+// Groups dish rows by category label or restaurant. Returns up to 5 groups.
 function groupSuggestions(rows) {
-  const restaurantOrder = [];
-  const restaurantMap = new Map();
+  const out = [];
 
   const likedRows = rows.filter((row) => row.type === "liked_signal");
-  let likedModuleAdded = false;
+  if (likedRows.length) {
+    out.push({
+      kind: "liked_topic",
+      label: "Based on dishes you like",
+      restaurants: groupLikedRecommendations(likedRows),
+    });
+  }
 
+  for (const topic of groupLabeledRecommendationTopics(rows)) {
+    out.push({ kind: "label_topic", ...topic });
+  }
+
+  const restaurantOrder = [];
+  const restaurantMap = new Map();
   for (const row of rows) {
-    if (row.type === "liked_signal") {
-      if (!likedModuleAdded) {
-        restaurantOrder.push({
-          kind: "liked_topic",
-          label: "Based on dishes you like",
-          restaurants: groupLikedRecommendations(likedRows),
-        });
-        likedModuleAdded = true;
-      }
-      continue;
+    if (row.type !== "new_item") continue;
+    const name = extractRestaurantName(row.detail);
+    if (!name) continue;
+    if (!restaurantMap.has(name)) {
+      const entry = {
+        kind: "restaurant_group",
+        restaurantName: name,
+        slug: extractRestaurantSlug(row.link),
+        labelSet: [],
+        items: [],
+      };
+      restaurantMap.set(name, entry);
+      restaurantOrder.push(entry);
     }
-    if (row.type === "new_item") {
-      const name = extractRestaurantName(row.detail);
-      if (!name) continue;
-      if (!restaurantMap.has(name)) {
-        const entry = {
-          kind: "restaurant_group",
-          restaurantName: name,
-          slug: extractRestaurantSlug(row.link),
-          labelSet: [],
-          items: [],
-        };
-        restaurantMap.set(name, entry);
-        restaurantOrder.push(entry);
-      }
-      const g = restaurantMap.get(name);
-      if (row.label && !g.labelSet.includes(row.label)) g.labelSet.push(row.label);
-      g.items.push(row);
-    } else {
-      // new_restaurant or other — show as standalone
-      restaurantOrder.push({ kind: "standalone", rec: row });
+    const g = restaurantMap.get(name);
+    if (row.label && !g.labelSet.includes(row.label)) g.labelSet.push(row.label);
+    g.items.push(row);
+  }
+  out.push(...restaurantOrder);
+
+  const newRestaurantTopic = groupNewRestaurantRecommendations(rows);
+  if (newRestaurantTopic) {
+    out.push({
+      kind: "new_restaurant_topic",
+      ...newRestaurantTopic,
+    });
+  }
+
+  const handledTypes = new Set([
+    "liked_signal",
+    "trending_dish",
+    "meal_recommendation",
+    "new_item",
+    "new_restaurant",
+  ]);
+  for (const row of rows) {
+    if (!handledTypes.has(row.type)) {
+      out.push({ kind: "standalone", rec: row });
     }
   }
 
-  return restaurantOrder.slice(0, 5);
+  return out.slice(0, 5);
 }
 
 // ---- Dedup ----
@@ -217,7 +244,54 @@ function RestaurantGroupCard({ group, mealLabel }) {
   );
 }
 
-// Single-item or new_restaurant standalone card
+function LabelTopicCard({ topic }) {
+  return (
+    <div style={CARD_STYLE} data-testid="label-recommendation-topic">
+      <div style={LABEL_STYLE}>{topic.label}</div>
+      <div style={{ display: "grid", gap: 10, marginTop: 2 }}>
+        {topic.items.map((item, index) => (
+          <div key={item.link || item.menu_item_id || item.title || index}>
+            {item.link ? (
+              <Link to={item.link} style={{ ...ITEM_LINK_STYLE, display: "block", fontWeight: 700, color: "#F9FAFB" }}>
+                {item.title}
+              </Link>
+            ) : (
+              <span style={{ ...ITEM_LINK_STYLE, fontWeight: 700, color: "#F9FAFB" }}>{item.title}</span>
+            )}
+            {item.detail ? (
+              <div style={{ fontSize: 12, color: "#9CA3AF", lineHeight: 1.45, marginTop: 3 }}>{item.detail}</div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NewRestaurantTopicCard({ topic }) {
+  return (
+    <div style={CARD_STYLE} data-testid="new-restaurant-topic">
+      <div style={LABEL_STYLE}>{topic.label}</div>
+      <div style={{ display: "grid", gap: 12, marginTop: 2 }}>
+        {topic.restaurants.map((restaurant, index) => (
+          <div key={restaurant.link || restaurant.title || index}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#F9FAFB" }}>{restaurant.title}</div>
+            {restaurant.detail ? (
+              <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.5, marginTop: 4 }}>{restaurant.detail}</div>
+            ) : null}
+            {restaurant.link ? (
+              <Link to={restaurant.link} style={LINK_STYLE}>
+                {restaurant.link_label || "View restaurant →"}
+              </Link>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Single-item standalone card (trending, meal idea, etc.)
 function StandaloneCard({ rec }) {
   return (
     <div style={CARD_STYLE}>
@@ -270,9 +344,20 @@ function verifiedCount(value) {
 
 export default function FoodInterestsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAuthenticated, profile } = useConsumer();
   const now = useMemo(() => new Date(), []);
-  const [mealPeriod, setMealPeriod] = useState(() => getDefaultMealPeriod(now));
+  const mealPeriodFromUrl = useMemo(
+    () => normalizeMealPeriodId(searchParams.get("meal_period")),
+    [searchParams]
+  );
+  const [mealPeriod, setMealPeriod] = useState(() => mealPeriodFromUrl || getDefaultMealPeriod(now));
+
+  useEffect(() => {
+    if (mealPeriodFromUrl) {
+      setMealPeriod(mealPeriodFromUrl);
+    }
+  }, [mealPeriodFromUrl]);
   const [briefing, setBriefing] = useState(null);
   const [locationLabel] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -411,6 +496,16 @@ export default function FoodInterestsPage() {
                         group.kind === "liked_topic" ? (
                           <LikedRecommendationTopicCard
                             key="liked-recommendation-topic"
+                            topic={group}
+                          />
+                        ) : group.kind === "label_topic" ? (
+                          <LabelTopicCard
+                            key={`label-topic-${group.label}`}
+                            topic={group}
+                          />
+                        ) : group.kind === "new_restaurant_topic" ? (
+                          <NewRestaurantTopicCard
+                            key="new-restaurant-topic"
                             topic={group}
                           />
                         ) : group.kind === "restaurant_group" ? (

@@ -317,6 +317,16 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
     ? "Your information appears here with Pro subscription."
     : "Your information appears here with Pro subscription.";
 
+  const restaurantShareData = data?.id
+    ? buildRestaurantShareData({
+        restaurantName: name,
+        restaurantSlug: data?.slug || slugOrId,
+        restaurantId: data?.id,
+        city,
+        state: stateVal,
+      })
+    : null;
+
   return (
     <>
     <StickyPageHeader />
@@ -368,18 +378,42 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
               {isFoodTruck ? "Unclaimed Food Truck Profile" : "Unclaimed Restaurant Profile"}
             </div>
 
-            <h1
+            <div
               style={{
-                margin: 0,
-                fontSize: isMobile ? 24 : 32,
-                lineHeight: 1.1,
-                fontWeight: 900,
-                letterSpacing: "-0.02em",
-                color: isDark ? "#f8fafc" : "#0f172a",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flexWrap: "wrap",
               }}
             >
-              {name}
-            </h1>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: isMobile ? 24 : 32,
+                  lineHeight: 1.1,
+                  fontWeight: 900,
+                  letterSpacing: "-0.02em",
+                  color: isDark ? "#f8fafc" : "#0f172a",
+                }}
+              >
+                {name}
+              </h1>
+
+              {restaurantShareData ? (
+                <ShareButton
+                  shareData={restaurantShareData}
+                  analyticsContext={{
+                    restaurantId: data?.id,
+                    restaurantName: name,
+                    restaurantSlug: data?.slug || slugOrId,
+                  }}
+                  label="Share restaurant"
+                  iconOnly
+                  tone="ghost"
+                  size="compact"
+                />
+              ) : null}
+            </div>
 
             <p
               style={{
@@ -960,6 +994,21 @@ export default function RestaurantPublicPage() {
                       {isPro ? "◆ Pro" : "✓ Verified"}
                     </span>
                   ) : null}
+
+                  {restaurantShareData ? (
+                    <ShareButton
+                      shareData={restaurantShareData}
+                      analyticsContext={{
+                        restaurantId: data?.id,
+                        restaurantName: name,
+                        restaurantSlug: data?.slug || resolvedSlug,
+                      }}
+                      label="Share restaurant"
+                      iconOnly
+                      tone="ghost"
+                      size="compact"
+                    />
+                  ) : null}
                 </div>
               )}
             </div>
@@ -1073,15 +1122,6 @@ export default function RestaurantPublicPage() {
                     >
                       {followButtonLabel}
                     </button>
-                    {restaurantShareData ? (
-                      <ShareButton
-                        shareData={restaurantShareData}
-                        analyticsContext={{ restaurantId: data?.id, restaurantName: name, restaurantSlug: data?.slug || resolvedSlug }}
-                        label="Share"
-                        size="compact"
-                        tone="subtle"
-                      />
-                    ) : null}
                     </div>
 
                     {followerCount > 0 ? (

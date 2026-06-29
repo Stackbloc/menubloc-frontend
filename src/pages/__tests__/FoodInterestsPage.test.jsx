@@ -5,7 +5,11 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { LikedRecommendationTopicCard } from "../FoodInterestsPage.jsx";
-import { groupLikedRecommendations } from "../../lib/waiterRecommendations.js";
+import {
+  groupLabeledRecommendationTopics,
+  groupLikedRecommendations,
+  groupNewRestaurantRecommendations,
+} from "../../lib/waiterRecommendations.js";
 
 afterEach(cleanup);
 
@@ -40,5 +44,67 @@ describe("Waiter liked-dish recommendation topic", () => {
     const text = module.textContent;
     expect(text.indexOf("Spicy Chicken Biscuit")).toBeLessThan(text.indexOf("Chicken Biscuit"));
     expect(text.indexOf("Chicken Biscuit")).toBeLessThan(text.indexOf("Waffle House"));
+  });
+});
+
+describe("Waiter recently-added restaurant topic", () => {
+  it("groups multiple new_restaurant rows into one topic with shared label", () => {
+    const rows = [
+      {
+        type: "new_restaurant",
+        label: "Recently added restaurant",
+        title: "McDonald's",
+        detail: "Burgers",
+        link: "/restaurants/mcdonalds",
+        link_label: "View restaurant →",
+      },
+      {
+        type: "new_restaurant",
+        label: "Recently added restaurant",
+        title: "Taco Bell",
+        detail: "Mexican",
+        link: "/restaurants/taco-bell",
+        link_label: "View restaurant →",
+      },
+    ];
+    const topic = groupNewRestaurantRecommendations(rows);
+    expect(topic.label).toBe("Recently added restaurant");
+    expect(topic.restaurants).toHaveLength(2);
+    expect(topic.restaurants[0].title).toBe("McDonald's");
+    expect(topic.restaurants[1].title).toBe("Taco Bell");
+  });
+});
+
+describe("Waiter labeled dish recommendation topics", () => {
+  it("groups trending and meal recommendations into one card per label", () => {
+    const rows = [
+      {
+        type: "trending_dish",
+        label: "Popular nearby",
+        title: "Spicy Chicken Sandwich",
+        detail: "Chick-fil-A · Fast Food",
+        link: "/dish/1",
+      },
+      {
+        type: "trending_dish",
+        label: "Popular nearby",
+        title: "Double-Double",
+        detail: "In-N-Out · Burgers",
+        link: "/dish/2",
+      },
+      {
+        type: "meal_recommendation",
+        label: "lunch idea",
+        title: "Caesar Salad",
+        detail: "Sweetgreen · Salads",
+        link: "/dish/3",
+      },
+    ];
+    const topics = groupLabeledRecommendationTopics(rows);
+    expect(topics).toHaveLength(2);
+    expect(topics[0].label).toBe("Popular nearby");
+    expect(topics[0].items).toHaveLength(2);
+    expect(topics[1].label).toBe("lunch idea");
+    expect(topics[1].items).toHaveLength(1);
   });
 });

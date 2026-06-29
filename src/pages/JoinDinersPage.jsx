@@ -47,8 +47,9 @@ export default function JoinDinersPage() {
             Join the Movement{locationLabel ? ` in ${locationLabel}` : ""}
           </h1>
           <ShareButton
-            iconOnly
+            label="Share"
             size="compact"
+            tone="subtle"
             shareData={{
               title: "Menuply",
               text: "Join the movement to make dining out more affordable.",
