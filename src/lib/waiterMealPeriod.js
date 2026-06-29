@@ -36,6 +36,12 @@ export function getMealPeriodFallback(mealPeriod) {
   return WAITER_MEAL_PERIOD_FALLBACKS[mealPeriod] || WAITER_MEAL_PERIOD_FALLBACKS.lunch;
 }
 
+/** Map URL/chip ids to a valid Waiter meal period, or null. */
+export function normalizeMealPeriodId(value) {
+  const key = String(value || "").trim().toLowerCase().replace(/[ -]+/g, "_");
+  return WAITER_MEAL_PERIODS.some((period) => period.id === key) ? key : null;
+}
+
 export function getDefaultMealPeriod(date = new Date()) {
   const hour = date.getHours();
   if (hour >= 5 && hour < 11) return "breakfast";

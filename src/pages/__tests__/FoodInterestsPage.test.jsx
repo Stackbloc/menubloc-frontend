@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { LikedRecommendationTopicCard } from "../FoodInterestsPage.jsx";
 import {
+  groupLabeledRecommendationTopics,
   groupLikedRecommendations,
   groupNewRestaurantRecommendations,
 } from "../../lib/waiterRecommendations.js";
@@ -71,5 +72,39 @@ describe("Waiter recently-added restaurant topic", () => {
     expect(topic.restaurants).toHaveLength(2);
     expect(topic.restaurants[0].title).toBe("McDonald's");
     expect(topic.restaurants[1].title).toBe("Taco Bell");
+  });
+});
+
+describe("Waiter labeled dish recommendation topics", () => {
+  it("groups trending and meal recommendations into one card per label", () => {
+    const rows = [
+      {
+        type: "trending_dish",
+        label: "Popular nearby",
+        title: "Spicy Chicken Sandwich",
+        detail: "Chick-fil-A · Fast Food",
+        link: "/dish/1",
+      },
+      {
+        type: "trending_dish",
+        label: "Popular nearby",
+        title: "Double-Double",
+        detail: "In-N-Out · Burgers",
+        link: "/dish/2",
+      },
+      {
+        type: "meal_recommendation",
+        label: "lunch idea",
+        title: "Caesar Salad",
+        detail: "Sweetgreen · Salads",
+        link: "/dish/3",
+      },
+    ];
+    const topics = groupLabeledRecommendationTopics(rows);
+    expect(topics).toHaveLength(2);
+    expect(topics[0].label).toBe("Popular nearby");
+    expect(topics[0].items).toHaveLength(2);
+    expect(topics[1].label).toBe("lunch idea");
+    expect(topics[1].items).toHaveLength(1);
   });
 });

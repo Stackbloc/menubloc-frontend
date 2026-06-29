@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "09be630251fa8f314a234801c2380301623e9901",
-  "gitShortSha": "09be630",
+  "gitSha": "b1ebf549bf249236e376b02ddf7e56a603d1a79e",
+  "gitShortSha": "b1ebf54",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-29T01:34:28.952Z",
+  "buildTime": "2026-06-29T01:51:06.789Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Improve share visibility sitewide and restore Contact Support on diner profile."
+  "commitMessage": "Hide dish-specific search UI when restaurant mode is selected."
 }

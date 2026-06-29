@@ -39,3 +39,32 @@ export function groupNewRestaurantRecommendations(rows) {
     restaurants: list,
   };
 }
+
+const DEFAULT_LABEL_TOPIC_TYPES = ["trending_dish", "meal_recommendation"];
+
+/** One Waiter card per recommendation label (e.g. Popular nearby, lunch idea). */
+export function groupLabeledRecommendationTopics(
+  rows,
+  types = DEFAULT_LABEL_TOPIC_TYPES
+) {
+  const typeSet = new Set(types);
+  const topics = [];
+  const seenLabels = new Set();
+
+  for (const row of rows) {
+    if (!typeSet.has(row?.type)) continue;
+    const label = String(row?.label || "Recommendations").trim() || "Recommendations";
+    if (seenLabels.has(label)) continue;
+    seenLabels.add(label);
+    topics.push({
+      label,
+      items: rows.filter(
+        (candidate) =>
+          typeSet.has(candidate?.type) &&
+          (String(candidate?.label || "Recommendations").trim() || "Recommendations") === label
+      ),
+    });
+  }
+
+  return topics;
+}

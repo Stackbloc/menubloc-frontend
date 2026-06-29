@@ -38,6 +38,9 @@ export function buildHomeSearchUrl({
 /** Navigate target for a home chip entry object. */
 export function buildHomeChipUrl(entry, locationContext) {
   if (entry?.to) return entry.to;
+  if (entry?.contextAware && entry?.mealPeriod) {
+    return `/waiter?meal_period=${encodeURIComponent(entry.mealPeriod)}`;
+  }
   return buildHomeSearchUrl({
     query: entry?.query || "",
     filterKey: entry?.filterKey || null,

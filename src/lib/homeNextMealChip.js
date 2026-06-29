@@ -3,11 +3,11 @@
  * Uses browser local time (market timezone can be layered later via location).
  */
 const MEAL_WINDOWS = [
-  { start: 5, end: 10, id: "breakfast", icon: "🍳", label: "Breakfast", query: "breakfast" },
-  { start: 10, end: 12, id: "brunch", icon: "🥞", label: "Brunch", query: "brunch" },
-  { start: 12, end: 17, id: "lunch", icon: "🥪", label: "Lunch", query: "lunch" },
-  { start: 17, end: 22, id: "dinner", icon: "🍽️", label: "Dinner", query: "dinner" },
-  { start: 22, end: 4, id: "late-night", icon: "🌙", label: "Late Night", query: "late night food" },
+  { start: 5, end: 10, id: "breakfast", mealPeriod: "breakfast", icon: "🍳", label: "Breakfast", query: "breakfast" },
+  { start: 10, end: 12, id: "brunch", mealPeriod: "brunch", icon: "🥞", label: "Brunch", query: "brunch" },
+  { start: 12, end: 17, id: "lunch", mealPeriod: "lunch", icon: "🥪", label: "Lunch", query: "lunch" },
+  { start: 17, end: 22, id: "dinner", mealPeriod: "dinner", icon: "🍽️", label: "Dinner", query: "dinner" },
+  { start: 22, end: 4, id: "late-night", mealPeriod: "late_night", icon: "🌙", label: "Late Night", query: "late night food" },
 ];
 
 function hourInWindow(hour, start, end) {

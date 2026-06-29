@@ -61,6 +61,7 @@ export function getFoodEntryPoints(now = new Date()) {
         icon: meal.icon,
         label: meal.label,
         query: meal.query,
+        mealPeriod: meal.mealPeriod,
         contextAware: true,
       };
     }
