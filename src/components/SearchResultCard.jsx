@@ -1263,10 +1263,12 @@ function ItemRow({
               onClick={() => trackMenuItemInteraction(mid, "click")}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = "#22C55E";
+                e.currentTarget.style.textDecoration = "underline";
                 e.currentTarget.style.textUnderlineOffset = "3px";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = "#FFFFFF";
+                e.currentTarget.style.textDecoration = "none";
               }}
             >
               {hl(name, query)}
@@ -1290,6 +1292,8 @@ function ItemRow({
               shareTarget: "dish",
             }}
             iconOnly
+            size="compact"
+            tone="ghost"
             stopPropagation
           />
         ) : null}
@@ -1425,23 +1429,17 @@ function ItemRow({
         {!indulgencePresentation ? (
           <Chip
             label={labels.nutrition}
-            active={false}
+            active={openTab === "nutrition"}
             available={hasNut}
-            onClick={() => {
-              trackMenuItemInteraction(mid, "open_nutrition");
-              if (href) navigate(href);
-            }}
+            onClick={() => toggle("nutrition")}
           />
         ) : null}
         {!indulgencePresentation && hasIns ? (
           <Chip
             label={labels.insights}
-            active={false}
+            active={openTab === "insights"}
             available={true}
-            onClick={() => {
-              trackMenuItemInteraction(mid, "open_insights");
-              if (href) navigate(href);
-            }}
+            onClick={() => toggle("insights")}
           />
         ) : null}
         {showSimilarChip ? (
@@ -1453,6 +1451,28 @@ function ItemRow({
           />
         ) : null}
       </div>
+
+      {openTab === "nutrition" && (
+        <DetailPanel
+          tab="nutrition"
+          row={row}
+          similarState={similarState}
+          onFindSimilar={() => {}}
+          onCompare={handleCompare}
+          labels={labels}
+        />
+      )}
+
+      {openTab === "insights" && (
+        <DetailPanel
+          tab="insights"
+          row={row}
+          similarState={similarState}
+          onFindSimilar={() => {}}
+          onCompare={handleCompare}
+          labels={labels}
+        />
+      )}
 
       {openTab === "similar" && (
         <DetailPanel

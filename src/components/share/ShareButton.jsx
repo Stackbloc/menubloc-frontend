@@ -59,6 +59,7 @@ export default function ShareButton({
   const resolvedModalTitle = modalTitle || resolvedLabel;
   const compact = size === "compact";
   const subtle = tone === "subtle";
+  const ghost = tone === "ghost";
   const inline = tone === "inline";
 
   const buttonStyles = {
@@ -66,30 +67,30 @@ export default function ShareButton({
     alignItems: "center",
     justifyContent: "center",
     gap: iconOnly ? 0 : compact ? 6 : 8,
-    width: iconOnly ? (compact ? 36 : 40) : "auto",
-    minWidth: iconOnly ? (compact ? 36 : 40) : "auto",
-    minHeight: inline ? "auto" : iconOnly ? (compact ? 36 : 40) : compact ? 34 : 44,
+    width: iconOnly ? (ghost ? 28 : compact ? 32 : 36) : "auto",
+    minWidth: iconOnly ? (ghost ? 28 : compact ? 32 : 36) : "auto",
+    minHeight: inline ? "auto" : iconOnly ? (ghost ? 28 : compact ? 32 : 36) : compact ? 34 : 44,
     padding: inline ? 0 : iconOnly ? 0 : compact ? "0 13px" : "0 16px",
     borderRadius: iconOnly ? "50%" : 999,
-    border: inline
+    border: inline || ghost
       ? "none"
       : iconOnly
         ? "1px solid rgba(15, 23, 42, 0.10)"
         : subtle
           ? "1px solid rgba(18, 34, 28, 0.1)"
           : "1px solid rgba(18, 34, 28, 0.14)",
-    background: inline
+    background: inline || ghost
       ? "transparent"
       : iconOnly
         ? "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.96) 100%)"
         : subtle
           ? "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(243,248,245,0.94) 100%)"
           : "linear-gradient(180deg, #ffffff 0%, #f5faf7 100%)",
-    color: inline ? "#11211a" : iconOnly ? "#0f172a" : subtle ? "#1f4333" : "#11211a",
+    color: inline ? "#11211a" : ghost ? "#6B7280" : iconOnly ? "#0f172a" : subtle ? "#1f4333" : "#11211a",
     fontSize: inline ? 13 : compact ? 12 : 14,
     fontWeight: inline ? 800 : compact ? 700 : 800,
     cursor: "pointer",
-    boxShadow: inline
+    boxShadow: inline || ghost
       ? "none"
       : iconOnly
         ? "0 8px 18px rgba(15, 23, 42, 0.10)"
@@ -147,7 +148,7 @@ export default function ShareButton({
         onClick={handleClick}
         style={buttonStyles}
       >
-        <ShareIcon size={inline ? 13 : iconOnly ? 15 : compact ? 14 : 16} />
+        <ShareIcon size={inline ? 13 : iconOnly ? (ghost ? 14 : compact ? 14 : 15) : compact ? 14 : 16} />
         {iconOnly ? (
           <span style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>
             {resolvedLabel}

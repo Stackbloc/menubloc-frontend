@@ -38,6 +38,10 @@ import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.
 import { parseFiltersFromUrl, filtersToUrlParams } from "../lib/filterUtils.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackSearchPerformed } from "../lib/analytics.js";
+import {
+  countUniqueRestaurants,
+  shouldShowSearchResultModeSelector,
+} from "../lib/searchResultViewMode.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
@@ -68,16 +72,55 @@ function useIsMobile(breakpoint = 768) {
 
 /* ---- Geolocation hook ---- */
 
-function SearchRefinementNudge({ displayQuery, locationLabel, resultCount }) {
-  if (!displayQuery && !locationLabel) return null;
+function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChange }) {
+  const dishLabel = `${dishCount} ${dishCount === 1 ? "Dish" : "Dishes"}`;
+  const restaurantLabel = `${restaurantCount} ${restaurantCount === 1 ? "Restaurant" : "Restaurants"}`;
+
+  const optionStyle = (selected) => ({
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 7,
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: selected ? 800 : 600,
+    color: selected ? "#F9FAFB" : "#9CA3AF",
+    userSelect: "none",
+  });
+
+  const radioStyle = {
+    width: 14,
+    height: 14,
+    margin: 0,
+    accentColor: "#22C55E",
+    cursor: "pointer",
+  };
 
   return (
-    <div style={{ fontSize: 12, color: "#9CA3AF", marginBottom: 12, lineHeight: 1.5 }}>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-        Showing {displayQuery ? `"${displayQuery}"` : "results"}
-        {locationLabel ? ` near ${locationLabel}` : ""}
-        {resultCount > 0 ? `, ${resultCount} ${resultCount === 1 ? "result" : "results"}` : ""}.
-      </span>
+    <div
+      role="radiogroup"
+      aria-label="Search result view"
+      style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px", marginBottom: 12 }}
+    >
+      <label style={optionStyle(mode === "dishes")}>
+        <input
+          type="radio"
+          name="search-result-mode"
+          checked={mode === "dishes"}
+          onChange={() => onModeChange("dishes")}
+          style={radioStyle}
+        />
+        {dishLabel}
+      </label>
+      <label style={optionStyle(mode === "restaurants")}>
+        <input
+          type="radio"
+          name="search-result-mode"
+          checked={mode === "restaurants"}
+          onChange={() => onModeChange("restaurants")}
+          style={radioStyle}
+        />
+        {restaurantLabel}
+      </label>
     </div>
   );
 }
@@ -1883,6 +1926,10 @@ export default function GrubbidSearchResults() {
   }, []);
 
   const q = String(params.get("q") || "").trim();
+
+  useEffect(() => {
+    setSearchViewMode("dishes");
+  }, [q]);
   const foodNav = useFoodNavigation(q, { enabled: FOOD_NAV_SLICE_ENABLED });
   const normalizedQuery = (q || "")
     .toLowerCase()
@@ -1976,6 +2023,7 @@ export default function GrubbidSearchResults() {
   const [searchOffset, setSearchOffset] = useState(0);
   const [searchHasMore, setSearchHasMore] = useState(false);
   const [searchTotalCount, setSearchTotalCount] = useState(0);
+  const [searchViewMode, setSearchViewMode] = useState("dishes");
   const SEARCH_LIMIT = 24;
   const [shareCopied, setShareCopied] = useState(false);
 
@@ -2467,22 +2515,39 @@ export default function GrubbidSearchResults() {
     (restaurantIntent && dishRows.length === 0)
   );
 
+  const dishResultCount = dishRows.length;
+  const restaurantResultCount = useMemo(
+    () => countUniqueRestaurants(dishRows, restaurantOnlyRows),
+    [dishRows, restaurantOnlyRows]
+  );
+  const showResultModeSelector = useMemo(
+    () => shouldShowSearchResultModeSelector({
+      directRestaurantName: searchMeta?.direct_restaurant_name === true,
+      suppressMenuItems: searchMeta?.suppress_menu_items === true,
+      dishCount: dishResultCount,
+      restaurantCount: restaurantResultCount,
+    }),
+    [searchMeta, dishResultCount, restaurantResultCount]
+  );
+  const preferRestaurantView = showResultModeSelector && searchViewMode === "restaurants";
+  const activeRestaurantGroupedRendering = useRestaurantGroupedRendering || preferRestaurantView;
+
   const relaxPerRestaurantItemCap = useMemo(() => {
-    if (!useRestaurantGroupedRendering) return false;
+    if (!activeRestaurantGroupedRendering) return false;
     if (hasDietFilter) return true;
     const n = normalizedQuery;
     return /\b(high[\s-]?protein|protein[\s-]?(rich|packed)|low[\s-]?carb|low[\s-]?sodium|keto|vegan|vegetarian|gluten[\s-]?free|diabetic|heart[\s-]?healthy)\b/i.test(
       n
     );
-  }, [hasDietFilter, normalizedQuery, useRestaurantGroupedRendering]);
+  }, [hasDietFilter, normalizedQuery, activeRestaurantGroupedRendering]);
 
   const restaurantGroups = useMemo(() => {
-    if (!useRestaurantGroupedRendering) return [];
+    if (!activeRestaurantGroupedRendering) return [];
     return buildRestaurantGroups(
       dishRows,
       relaxPerRestaurantItemCap ? Number.MAX_SAFE_INTEGER : MAX_MENU_ITEMS_PER_RESTAURANT_GROUP
     );
-  }, [dishRows, relaxPerRestaurantItemCap, useRestaurantGroupedRendering]);
+  }, [dishRows, relaxPerRestaurantItemCap, activeRestaurantGroupedRendering]);
 
   function toggleSearchFilter(key) {
     const next = { ...activeFilters, [key]: !activeFilters[key] };
@@ -2496,12 +2561,12 @@ export default function GrubbidSearchResults() {
   // Food-intent queries must prioritize individual menu-item relevance over restaurant grouping.
   // Agents may not redesign search hierarchy, grouping, ranking, or result presentation without explicit user approval.
   const visibleDishRows = useMemo(
-    () => (useRestaurantGroupedRendering ? [] : dishRows),
-    [dishRows, useRestaurantGroupedRendering]
+    () => (activeRestaurantGroupedRendering ? [] : dishRows),
+    [dishRows, activeRestaurantGroupedRendering]
   );
   const hasMenuMatches = restaurantGroups.length > 0;
   const hasDishMatches = visibleDishRows.length > 0;
-  const visibleResultCountForWaiter = useRestaurantGroupedRendering
+  const visibleResultCountForWaiter = activeRestaurantGroupedRendering
     ? restaurantGroups.length || restaurantOnlyRows.length
     : visibleDishRows.length;
   const waiterMinItemSignals =
@@ -2522,24 +2587,24 @@ export default function GrubbidSearchResults() {
       : null;
 
   const restaurantGroupsById = useMemo(() => {
-    if (!useRestaurantGroupedRendering) return new Set();
+    if (!activeRestaurantGroupedRendering) return new Set();
     const s = new Set();
     for (const g of restaurantGroups) {
       const id = asString(g.restaurant_id);
       if (id) s.add(id);
     }
     return s;
-  }, [restaurantGroups, useRestaurantGroupedRendering]);
+  }, [restaurantGroups, activeRestaurantGroupedRendering]);
 
   const restaurantOnlyVisible = useMemo(() => {
-    if (!useRestaurantGroupedRendering) return [];
+    if (!activeRestaurantGroupedRendering) return [];
     if (!restaurantOnlyRows.length) return [];
     return restaurantOnlyRows.filter((r) => {
       const id = asString(pickFirst(r, ["restaurant_id", "id"], ""));
       if (!id) return true;
       return !restaurantGroupsById.has(id);
     });
-  }, [restaurantOnlyRows, restaurantGroupsById, useRestaurantGroupedRendering]);
+  }, [restaurantOnlyRows, restaurantGroupsById, activeRestaurantGroupedRendering]);
 
   const minVisibleDistance = useMemo(() => {
     const distances = rows
@@ -2593,15 +2658,15 @@ export default function GrubbidSearchResults() {
       ? t("search.nearYou", "near you")
       : null,
     !loading && (() => {
-      if (useRestaurantGroupedRendering ? hasMenuMatches : hasDishMatches) {
-        const totalDishes = useRestaurantGroupedRendering
+      if (activeRestaurantGroupedRendering ? hasMenuMatches : hasDishMatches) {
+        const totalDishes = activeRestaurantGroupedRendering
           ? restaurantGroups.reduce((acc, g) => acc + g.items.length, 0)
           : visibleDishRows.length;
         return totalDishes === 1
           ? t("search.foundDish", "1 dish found", { count: totalDishes })
           : t("search.foundDishes", `${totalDishes} dishes found`, { count: totalDishes });
       }
-      if (useRestaurantGroupedRendering && !hasDietFilter && restaurantOnlyVisible.length) {
+      if (activeRestaurantGroupedRendering && !hasDietFilter && restaurantOnlyVisible.length) {
         return restaurantOnlyVisible.length === 1
           ? t("search.foundRestaurant", "1 restaurant found", { count: restaurantOnlyVisible.length })
           : t("search.foundRestaurants", `${restaurantOnlyVisible.length} restaurants found`, { count: restaurantOnlyVisible.length });
@@ -2609,7 +2674,7 @@ export default function GrubbidSearchResults() {
       return null;
     })(),
   ].filter(Boolean).join(" · ");
-  const hasVisibleResults = useRestaurantGroupedRendering
+  const hasVisibleResults = activeRestaurantGroupedRendering
     ? hasMenuMatches || restaurantOnlyVisible.length > 0
     : hasDishMatches;
 
@@ -2725,15 +2790,16 @@ export default function GrubbidSearchResults() {
         />
       )}
 
-      {!foodNav.pendingNavigation && !loading && !err && hasVisibleResults && (
-        <SearchRefinementNudge
-          displayQuery={displayQuery}
-          locationLabel={locationLabel}
-          resultCount={waiterRefinementStack.length > 0 ? 0 : visibleResultCountForWaiter}
+      {!foodNav.pendingNavigation && !loading && !err && hasVisibleResults && showResultModeSelector && (
+        <SearchResultModeSelector
+          dishCount={dishResultCount}
+          restaurantCount={restaurantResultCount}
+          mode={searchViewMode}
+          onModeChange={setSearchViewMode}
         />
       )}
 
-      {!loading && !err && useRestaurantGroupedRendering && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
+      {!loading && !err && activeRestaurantGroupedRendering && !hasDietFilter && restaurantOnlyVisible.length > 0 && (restaurantIntent || !hasMenuMatches) && (
         <>
           <SectionTitle style={{ color: "#0B0F0C" }}>{t("search.restaurants", "Restaurants")}</SectionTitle>
           <div style={styles.grid}>
@@ -2756,7 +2822,7 @@ export default function GrubbidSearchResults() {
         </>
       )}
 
-      {!loading && !err && useRestaurantGroupedRendering && hasMenuMatches && (
+      {!loading && !err && activeRestaurantGroupedRendering && hasMenuMatches && (
         <>
           {!showWaiterBar && restaurantIntent && <SectionTitle style={{ color: "#0B0F0C" }}>{t("common.dishes")}</SectionTitle>}
           <div style={styles.grid}>
@@ -2797,7 +2863,7 @@ export default function GrubbidSearchResults() {
         </>
       )}
 
-      {!loading && !err && !useRestaurantGroupedRendering && hasDishMatches && (
+      {!loading && !err && !activeRestaurantGroupedRendering && hasDishMatches && (
         <>
           <div style={styles.grid}>
             {visibleDishRows.map((row) => {
