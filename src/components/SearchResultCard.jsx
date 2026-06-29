@@ -1304,7 +1304,7 @@ function ItemRow({
         {dishShareData ? (
           <ShareButton
             variant="dish"
-            label="Share Dish"
+            label="Share"
             modalTitle={`Share ${name}`}
             shareData={dishShareData}
             analyticsContext={{
@@ -1315,9 +1315,8 @@ function ItemRow({
               pageType: "search_results",
               shareTarget: "dish",
             }}
-            iconOnly
             size="compact"
-            tone="ghost"
+            tone="subtle"
             stopPropagation
           />
         ) : null}

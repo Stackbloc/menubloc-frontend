@@ -25,6 +25,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchResultCard from "../components/SearchResultCard";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
+import ShareIcon from "../components/share/ShareIcon.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
 import FoodNavigationLadder from "../components/search/FoodNavigationLadder.jsx";
@@ -100,7 +101,7 @@ function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChan
     <div
       role="radiogroup"
       aria-label="Search result view"
-      style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px", marginBottom: 12 }}
+      style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px", marginBottom: 0 }}
     >
       <label style={optionStyle(mode === "dishes")}>
         <input
@@ -123,6 +124,38 @@ function SearchResultModeSelector({ dishCount, restaurantCount, mode, onModeChan
         {restaurantLabel}
       </label>
     </div>
+  );
+}
+
+function SearchResultsShareControl({ copied, onShare }) {
+  return (
+    <button
+      type="button"
+      onClick={onShare}
+      aria-label="Share these search results"
+      title="Share these search results"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 7,
+        border: "1px solid rgba(17, 33, 26, 0.18)",
+        borderRadius: 999,
+        background: copied
+          ? "rgba(34,197,94,0.12)"
+          : "linear-gradient(180deg, #ffffff 0%, #f5faf7 100%)",
+        color: copied ? "#15803d" : "#111827",
+        fontSize: 13,
+        fontWeight: 800,
+        cursor: "pointer",
+        padding: "6px 14px",
+        whiteSpace: "nowrap",
+        boxShadow: "0 4px 12px rgba(17, 33, 26, 0.08)",
+        flexShrink: 0,
+      }}
+    >
+      <ShareIcon size={15} />
+      {copied ? "Copied!" : "Share results"}
+    </button>
   );
 }
 
@@ -2027,6 +2060,15 @@ export default function GrubbidSearchResults() {
   const [searchViewMode, setSearchViewMode] = useState("dishes");
   const SEARCH_LIMIT = 24;
   const [shareCopied, setShareCopied] = useState(false);
+  const handleShareResults = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2200);
+    } catch {
+      prompt("Copy this search link:", window.location.href);
+    }
+  }, []);
 
   const baseWaiterState = useMemo(
     () => buildWaiterOptions(rows, q, waiterIntentContext),
@@ -2740,27 +2782,6 @@ export default function GrubbidSearchResults() {
               Near {locationLabel}
             </span>
           )}
-          <button
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(window.location.href);
-                setShareCopied(true);
-                setTimeout(() => setShareCopied(false), 2200);
-              } catch {
-                prompt("Copy this search link:", window.location.href);
-              }
-            }}
-            title="Share these search results"
-            style={{
-              marginLeft: "auto", border: "1px solid rgba(0,0,0,0.15)",
-              borderRadius: 999, background: shareCopied ? "rgba(34,197,94,0.14)" : "transparent",
-              color: shareCopied ? "#22C55E" : "#9CA3AF",
-              fontSize: 12, fontWeight: 800, cursor: "pointer",
-              padding: "3px 12px", whiteSpace: "nowrap", transition: "color 0.15s",
-            }}
-          >
-            {shareCopied ? "Copied!" : "Share"}
-          </button>
         </div>
         {showWaiterBar && (
           <div style={{ maxWidth: 576, margin: "0 auto", padding: "4px 14px 2px" }}>
@@ -2818,13 +2839,27 @@ export default function GrubbidSearchResults() {
         />
       )}
 
-      {!foodNav.pendingNavigation && !loading && !err && hasVisibleResults && showResultModeSelector && (
-        <SearchResultModeSelector
-          dishCount={dishResultCount}
-          restaurantCount={restaurantResultCount}
-          mode={searchViewMode}
-          onModeChange={setSearchViewMode}
-        />
+      {!foodNav.pendingNavigation && !loading && !err && hasVisibleResults && q && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: showResultModeSelector ? "space-between" : "flex-end",
+            gap: 12,
+            flexWrap: "wrap",
+            marginBottom: 12,
+          }}
+        >
+          {showResultModeSelector ? (
+            <SearchResultModeSelector
+              dishCount={dishResultCount}
+              restaurantCount={restaurantResultCount}
+              mode={searchViewMode}
+              onModeChange={setSearchViewMode}
+            />
+          ) : null}
+          <SearchResultsShareControl copied={shareCopied} onShare={handleShareResults} />
+        </div>
       )}
 
       {!loading && !err && preferRestaurantView && restaurantBrowseRows.length > 0 && (

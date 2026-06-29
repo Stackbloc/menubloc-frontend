@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "ff66661b136b1fff1c39254d882f5bfe93725670",
-  "gitShortSha": "ff66661",
+  "gitSha": "d2145b4ac4972c0acb106535acda29c85566ebe7",
+  "gitShortSha": "d2145b4",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-29T01:01:51.485Z",
+  "buildTime": "2026-06-29T01:28:29.951Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Fix mobile home search placeholder truncation on small phones."
+  "commitMessage": "Improve restaurant search results with maps pin, distance, and proximity sort."
 }

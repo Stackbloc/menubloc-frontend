@@ -72,31 +72,43 @@ export default function ShareButton({
     minHeight: inline ? "auto" : iconOnly ? (ghost ? 28 : compact ? 32 : 36) : compact ? 34 : 44,
     padding: inline ? 0 : iconOnly ? 0 : compact ? "0 13px" : "0 16px",
     borderRadius: iconOnly ? "50%" : 999,
-    border: inline || ghost
+    border: inline
       ? "none"
-      : iconOnly
-        ? "1px solid rgba(15, 23, 42, 0.10)"
-        : subtle
-          ? "1px solid rgba(18, 34, 28, 0.1)"
-          : "1px solid rgba(18, 34, 28, 0.14)",
-    background: inline || ghost
+      : ghost
+        ? iconOnly
+          ? "1px solid rgba(55, 65, 81, 0.28)"
+          : "1px solid rgba(55, 65, 81, 0.22)"
+        : iconOnly
+          ? "1px solid rgba(15, 23, 42, 0.16)"
+          : subtle
+            ? "1px solid rgba(17, 33, 26, 0.18)"
+            : "1px solid rgba(18, 34, 28, 0.2)",
+    background: inline
       ? "transparent"
-      : iconOnly
-        ? "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.96) 100%)"
-        : subtle
-          ? "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(243,248,245,0.94) 100%)"
-          : "linear-gradient(180deg, #ffffff 0%, #f5faf7 100%)",
-    color: inline ? "#11211a" : ghost ? "#6B7280" : iconOnly ? "#0f172a" : subtle ? "#1f4333" : "#11211a",
+      : ghost
+        ? iconOnly
+          ? "rgba(255, 255, 255, 0.96)"
+          : "rgba(255, 255, 255, 0.92)"
+        : iconOnly
+          ? "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.96) 100%)"
+          : subtle
+            ? "linear-gradient(180deg, rgba(255,255,255,0.99) 0%, rgba(243,248,245,0.97) 100%)"
+            : "linear-gradient(180deg, #ffffff 0%, #f5faf7 100%)",
+    color: inline ? "#111827" : ghost ? "#111827" : iconOnly ? "#0f172a" : subtle ? "#11211a" : "#11211a",
     fontSize: inline ? 13 : compact ? 12 : 14,
-    fontWeight: inline ? 800 : compact ? 700 : 800,
+    fontWeight: inline ? 800 : compact ? 800 : 800,
     cursor: "pointer",
-    boxShadow: inline || ghost
+    boxShadow: inline
       ? "none"
-      : iconOnly
-        ? "0 8px 18px rgba(15, 23, 42, 0.10)"
-        : subtle
-          ? "0 8px 20px rgba(17, 33, 26, 0.08)"
-          : "0 10px 24px rgba(17, 33, 26, 0.12)",
+      : ghost
+        ? iconOnly
+          ? "0 2px 8px rgba(15, 23, 42, 0.12)"
+          : "0 4px 12px rgba(15, 23, 42, 0.10)"
+        : iconOnly
+          ? "0 8px 18px rgba(15, 23, 42, 0.12)"
+          : subtle
+            ? "0 6px 16px rgba(17, 33, 26, 0.10)"
+            : "0 10px 24px rgba(17, 33, 26, 0.12)",
     position: iconOnly ? "relative" : "static",
     whiteSpace: "nowrap",
     backdropFilter: subtle ? "blur(8px)" : "none",
@@ -148,7 +160,7 @@ export default function ShareButton({
         onClick={handleClick}
         style={buttonStyles}
       >
-        <ShareIcon size={inline ? 13 : iconOnly ? (ghost ? 14 : compact ? 14 : 15) : compact ? 14 : 16} />
+        <ShareIcon size={inline ? 14 : iconOnly ? (ghost ? 15 : compact ? 15 : 16) : compact ? 15 : 16} />
         {iconOnly ? (
           <span style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>
             {resolvedLabel}

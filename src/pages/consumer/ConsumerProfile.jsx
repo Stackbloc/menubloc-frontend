@@ -12,6 +12,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
+import { DinerSupportDialog } from "../../components/grubbid/DiscoveryDrawer.jsx";
 import {
   getConsumerProfile,
   updateConsumerProfile,
@@ -131,6 +132,7 @@ export default function ConsumerProfile() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState("");
+  const [supportOpen, setSupportOpen] = useState(false);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -296,6 +298,8 @@ export default function ConsumerProfile() {
         [defaultLoc.city, defaultLoc.state].filter(Boolean).join(", "),
       ].filter(Boolean).join(" — ")
     : "";
+  const supportContactName =
+    [firstName, lastName].filter(Boolean).join(" ") || displayName.trim();
 
   return (
     <>
@@ -456,6 +460,22 @@ export default function ConsumerProfile() {
           </div>
         </Section>
 
+        <Section title={t("consumer.profile.support", "Support")}>
+          <p style={styles.sectionDesc}>
+            {t(
+              "consumer.profile.supportDesc",
+              "Need help with your account, search, restaurant information, or the app? Contact Menuply Support."
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => setSupportOpen(true)}
+            style={styles.supportBtn}
+          >
+            {t("consumer.profile.contactSupport", "Contact Support")}
+          </button>
+        </Section>
+
         <Section title="Save">
           <p style={styles.sectionDesc}>
             Save all profile preferences in one action.
@@ -485,6 +505,14 @@ export default function ConsumerProfile() {
       </div>
     </div>
     <BottomNav />
+    {supportOpen ? (
+      <DinerSupportDialog
+        open
+        onClose={() => setSupportOpen(false)}
+        initialName={supportContactName}
+        initialEmail={consumer?.email || ""}
+      />
+    ) : null}
     </>
   );
 }
@@ -715,6 +743,21 @@ const styles = {
     textDecoration: "none",
     fontSize: "14px",
     fontWeight: 700,
+  },
+  supportBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "42px",
+    padding: "0 16px",
+    borderRadius: "10px",
+    border: "1.5px solid #374151",
+    background: "#1A2419",
+    color: "#FFFFFF",
+    fontSize: "14px",
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
   card: {
     maxWidth: "520px",

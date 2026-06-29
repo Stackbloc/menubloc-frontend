@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function ShareIcon({ size = 16, stroke = "currentColor", strokeWidth = 1.75 }) {
+export default function ShareIcon({ size = 16, stroke = "currentColor", strokeWidth = 2 }) {
   return (
     <svg
       aria-hidden="true"
