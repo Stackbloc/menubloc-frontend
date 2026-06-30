@@ -37,7 +37,7 @@ export default function OwnerRestaurants() {
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
-  const [marketOptions, setMarketOptions] = useState([["", "Any launch market"]]);
+  const [marketOptions, setMarketOptions] = useState([["", "Any market"]]);
 
   const queryParams = useMemo(() => {
     const params = {};
@@ -75,10 +75,10 @@ export default function OwnerRestaurants() {
       .then((res) => {
         const rows = Array.isArray(res?.markets) ? res.markets : [];
         setMarketOptions([
-          ["", "Any launch market"],
+          ["", "Any market"],
           ...rows.map((market) => [
             market.name,
-            `${market.name}, ${market.state} (${market.market_type || "market"}) — ${Number(market.restaurant_count || 0).toLocaleString()} locations`,
+            `${market.name} — ${Number(market.restaurant_count || 0).toLocaleString()} locations`,
           ]),
         ]);
       })
