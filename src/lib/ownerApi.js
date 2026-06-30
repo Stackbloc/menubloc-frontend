@@ -64,6 +64,18 @@ export const getOwnerRestaurantSignups = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/restaurants/signups${qs ? `?${qs}` : ""}`);
 };
+export const searchOwnerRestaurants = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/restaurants/search${qs ? `?${qs}` : ""}`);
+};
+export const getOwnerRestaurantsSummary = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/restaurants/summary${qs ? `?${qs}` : ""}`);
+};
+export const getOwnerRestaurantDetail = (restaurantId) =>
+  get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}`);
+export const addOwnerRestaurantToCrm = (restaurantId) =>
+  post(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}/add-to-crm`, {});
 export const getOwnerRevenueSummary = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/revenue/summary${qs ? `?${qs}` : ""}`);

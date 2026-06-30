@@ -11,7 +11,7 @@ const NAV = [
   { to: "/owner/deployments", label: "Deployment Operations" },
   { to: "/owner/analytics", label: "Site Analytics" },
   { to: "/owner/search-analytics", label: "Search Analytics" },
-  { to: "/owner/restaurants", label: "Restaurant Profile" },
+  { to: "/owner/restaurants", label: "Restaurant Intelligence" },
   { to: "/owner/revenue", label: "Revenue" },
   { to: "/owner/market-expansion", label: "Market Expansion" },
   { to: "/owner/support", label: "Support Tickets" },
