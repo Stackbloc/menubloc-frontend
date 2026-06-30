@@ -11,6 +11,7 @@ import {
 
 import {
   canRemoveManualMenuItem,
+  canRemoveManualMenuSection,
   emptyManualMenuItem,
   emptyManualMenuSection,
   loadManualMenuDraft,
@@ -69,6 +70,12 @@ const s = {
     padding: "18px 18px 14px",
     marginBottom: 18,
     background: "#fff",
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#344054",
+    marginBottom: 12,
   },
   sectionHeader: {
     display: "flex",
@@ -156,16 +163,6 @@ const s = {
     fontWeight: 600,
     cursor: "pointer",
     fontFamily: FONT,
-  },
-  dangerBtn: {
-    border: 0,
-    background: "transparent",
-    color: "#b42318",
-    fontSize: 12,
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: FONT,
-    padding: "4px 0",
   },
   addRow: {
     display: "flex",
@@ -472,7 +469,7 @@ export default function ManualMenuEntryPage() {
 
         <div style={s.successBox}>
           <div style={s.successIcon}>✓</div>
-          <div style={s.successTitle}>Menu submitted for review</div>
+          <div style={s.successTitle}>Menu submitted</div>
           <p style={s.successSub}>
             {result.items_inserted} menu item{result.items_inserted !== 1 ? "s" : ""} saved and pending review.
             Once approved, your menu will appear on your Menuply profile.
@@ -518,7 +515,7 @@ export default function ManualMenuEntryPage() {
       <div style={s.heading}>Enter your menu</div>
       <div style={s.subheading}>
         Add sections and items with names, descriptions, and prices. Description is optional.
-        Save a draft any time, then submit when you are ready for review.
+        Save a draft any time, then submit when you are ready.
       </div>
 
       <div style={s.contextCard}>
@@ -532,9 +529,10 @@ export default function ManualMenuEntryPage() {
 
       <form onSubmit={handleSubmit} noValidate>
         {sections.map((section, sectionIndex) => (
-          <div key={section.id} style={s.sectionCard}>
+          <div key={section.id} style={s.sectionCard} data-testid="manual-menu-section-card">
             <div style={s.sectionHeader}>
               <div style={{ flex: "1 1 240px" }}>
+                <div style={s.sectionTitle}>Section {sectionIndex + 1}</div>
                 <label style={s.label} htmlFor={`section-${section.id}`}>
                   Section name {sectionIndex === 0 ? "(required)" : ""}
                 </label>
@@ -546,10 +544,10 @@ export default function ManualMenuEntryPage() {
                   placeholder="Appetizers"
                 />
               </div>
-              {sections.length > 1 ? (
+              {canRemoveManualMenuSection(sectionIndex, sections.length) ? (
                 <button
                   type="button"
-                  style={s.dangerBtn}
+                  style={s.subtleRemoveBtn}
                   onClick={() => removeSection(section.id)}
                 >
                   Remove section
@@ -631,10 +629,10 @@ export default function ManualMenuEntryPage() {
 
         {formError ? <div style={s.error}>{formError}</div> : null}
         {uploadErr ? <div style={s.error}>{uploadErr}</div> : null}
-        {uploading ? <div style={s.notice}>Submitting your menu for review...</div> : null}
+        {uploading ? <div style={s.notice}>Submitting your menu...</div> : null}
 
         <button type="submit" style={s.submitBtn(uploading)} disabled={uploading}>
-          {uploading ? "Submitting..." : "Submit for review"}
+          {uploading ? "Submitting..." : "Submit"}
         </button>
       </form>
     </div>

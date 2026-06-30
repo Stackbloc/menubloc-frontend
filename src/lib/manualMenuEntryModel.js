@@ -18,6 +18,14 @@ export function parseManualMenuPrice(value) {
   return n.toFixed(2);
 }
 
+export function isManualMenuItemRowStarted({ name, description, priceRaw }) {
+  return Boolean(
+    String(name || "").trim()
+    || String(description || "").trim()
+    || String(priceRaw ?? "").trim()
+  );
+}
+
 export function sectionsToManualMenuItems(sections) {
   const items = [];
   for (const section of sections) {
@@ -26,7 +34,11 @@ export function sectionsToManualMenuItems(sections) {
       const name = String(item.name || "").trim();
       const price = parseManualMenuPrice(item.price);
       const description = String(item.description || "").trim();
-      if (!sectionName && !name && !description && !item.price) continue;
+
+      if (!isManualMenuItemRowStarted({ name, description, priceRaw: item.price })) {
+        continue;
+      }
+
       items.push({
         section: sectionName,
         name,
@@ -61,6 +73,11 @@ export function validateManualMenuSections(sections) {
 /** Only additional items (index > 0) may be removed — keeps the first row stable. */
 export function canRemoveManualMenuItem(itemIndex, itemCount) {
   return itemCount > 1 && itemIndex > 0;
+}
+
+/** Only additional sections (index > 0) may be removed — keeps the first section stable. */
+export function canRemoveManualMenuSection(sectionIndex, sectionCount) {
+  return sectionCount > 1 && sectionIndex > 0;
 }
 
 export function manualMenuDraftStorageKey(restaurantId) {

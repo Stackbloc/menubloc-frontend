@@ -39,6 +39,24 @@ describe("ManualMenuEntryPage", () => {
     sessionStorage.setItem("grubbid.onboarding.state", JSON.stringify(ONBOARDING_STATE));
   });
 
+  it("does not show remove section before adding another section", () => {
+    renderPage();
+    expect(screen.queryByRole("button", { name: /remove section/i })).toBeNull();
+  });
+
+  it("shows remove section only on the additional section after add section", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /add another section/i }));
+
+    const removeButtons = screen.getAllByRole("button", { name: /remove section/i });
+    expect(removeButtons).toHaveLength(1);
+
+    const sectionCards = screen.getAllByTestId("manual-menu-section-card");
+    expect(sectionCards).toHaveLength(2);
+    expect(within(sectionCards[0]).queryByRole("button", { name: /remove section/i })).toBeNull();
+    expect(within(sectionCards[1]).getByRole("button", { name: /remove section/i })).toBeTruthy();
+  });
+
   it("does not show remove controls before adding another item", () => {
     renderPage();
     expect(screen.queryByRole("button", { name: /remove item/i })).toBeNull();
@@ -69,7 +87,35 @@ describe("ManualMenuEntryPage", () => {
 
   it("validates required fields on submit", () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: /submit for review/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
     expect(screen.getByText(/add at least one menu item/i)).toBeTruthy();
+  });
+
+  it("ignores blank placeholder rows when submitting a filled section", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, items_inserted: 1 }),
+    }));
+
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /add another item/i }));
+    fireEvent.click(screen.getByRole("button", { name: /add another section/i }));
+
+    const sectionInputs = screen.getAllByPlaceholderText("Appetizers");
+    fireEvent.change(sectionInputs[0], { target: { value: "Appetizers" } });
+
+    const nameInputs = screen.getAllByPlaceholderText("Mozzarella Sticks");
+    fireEvent.change(nameInputs[0], { target: { value: "Mozzarella Sticks" } });
+
+    const priceInputs = screen.getAllByPlaceholderText("8.99");
+    fireEvent.change(priceInputs[0], { target: { value: "8.99" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+
+    expect(screen.queryByText(/section name is required/i)).toBeNull();
+    expect(screen.queryByText(/add at least one menu item/i)).toBeNull();
+    expect(await screen.findByText(/menu submitted/i)).toBeTruthy();
+
+    vi.unstubAllGlobals();
   });
 });

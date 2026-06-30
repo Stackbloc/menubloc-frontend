@@ -3,9 +3,13 @@
 const assert = require("assert");
 const {
   canRemoveManualMenuItem,
+  canRemoveManualMenuSection,
+  emptyManualMenuItem,
   emptyManualMenuSection,
+  isManualMenuItemRowStarted,
+  loadManualMenuDraft,
+  manualMenuDraftStorageKey,
   validateManualMenuSections,
-  sectionsToManualMenuItems,
 } = require("../src/lib/manualMenuEntryModel.js");
 
 function testCanRemoveOnlyAdditionalItems() {
@@ -37,18 +41,46 @@ function testValidateRequiresSectionNamePrice() {
   assert.strictEqual(bad.ok, false);
 }
 
-function testSectionsToItemsSkipsFullyEmptyRows() {
+function testSectionsToItemsSkipsEmptyPlaceholderRows() {
   const section = emptyManualMenuSection();
+  section.name = "Appetizers";
+  section.items[0] = {
+    ...section.items[0],
+    name: "Mozzarella Sticks",
+    price: "8.99",
+  };
   section.items.push({
     id: "extra",
     name: "",
     description: "",
     price: "",
   });
-  assert.strictEqual(sectionsToManualMenuItems([section]).length, 0);
+
+  const filledSection = emptyManualMenuSection();
+  filledSection.name = "";
+  filledSection.items[0] = {
+    ...filledSection.items[0],
+    name: "",
+    description: "",
+    price: "",
+  };
+
+  const items = validateManualMenuSections([section, filledSection]);
+  assert.strictEqual(items.ok, true);
+  assert.strictEqual(items.flat.length, 1);
+
+  assert.strictEqual(isManualMenuItemRowStarted({ name: "", description: "", priceRaw: "" }), false);
+  assert.strictEqual(isManualMenuItemRowStarted({ name: "Fries", description: "", priceRaw: "" }), true);
+}
+
+function testCanRemoveOnlyAdditionalSections() {
+  assert.strictEqual(canRemoveManualMenuSection(0, 1), false);
+  assert.strictEqual(canRemoveManualMenuSection(0, 2), false);
+  assert.strictEqual(canRemoveManualMenuSection(1, 2), true);
 }
 
 testCanRemoveOnlyAdditionalItems();
+testCanRemoveOnlyAdditionalSections();
 testValidateRequiresSectionNamePrice();
-testSectionsToItemsSkipsFullyEmptyRows();
+testSectionsToItemsSkipsEmptyPlaceholderRows();
 console.log("manualMenuEntryModel.test.cjs: all passed");
