@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   addOwnerRestaurantToCrm,
@@ -78,7 +79,7 @@ export default function OwnerRestaurants() {
           ["", "Any market"],
           ...rows.map((market) => [
             market.name,
-            `${market.name} — ${Number(market.restaurant_count || 0).toLocaleString()} locations`,
+            formatMarketOptionLabel(market),
           ]),
         ]);
       })
@@ -140,17 +141,18 @@ export default function OwnerRestaurants() {
         </div>
       }
     >
+      <div className="owner-restaurant-intelligence" style={{ minWidth: 0, maxWidth: "100%" }}>
       {error ? <ErrorBanner message={error} /> : null}
       {actionMessage ? <InfoBanner message={actionMessage} /> : null}
 
       <PageCard style={{ padding: 18, marginBottom: 16 }}>
         <form id={FILTER_FORM_ID} onSubmit={applyFilters}>
           <SectionTitle title="Search & Filters" subtitle="System-wide restaurant records — no geo radius or consumer discovery." />
-          <div className="owner-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(160px, 1fr))", gap: 12 }}>
+          <div className="owner-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(160px, 1fr))", gap: 12, minWidth: 0 }}>
             <FilterInput label="Restaurant / chain" value={draft.q} onChange={(v) => setDraft((c) => ({ ...c, q: v }))} />
             <FilterInput label="City" value={draft.city} onChange={(v) => setDraft((c) => ({ ...c, city: v }))} />
             <FilterInput label="State" value={draft.state} onChange={(v) => setDraft((c) => ({ ...c, state: v }))} />
-            <FilterSelect label="Market" value={draft.market} onChange={(v) => setDraft((c) => ({ ...c, market: v }))} options={marketOptions} />
+            <MarketFilterSelect value={draft.market} onChange={(v) => setDraft((c) => ({ ...c, market: v }))} options={marketOptions} />
             <FilterInput label="Cuisine" value={draft.cuisine} onChange={(v) => setDraft((c) => ({ ...c, cuisine: v }))} />
             <FilterSelect label="Chain only" value={draft.chain} onChange={(v) => setDraft((c) => ({ ...c, chain: v }))} options={[["", "Any"], ["true", "Chain / franchise"]]} />
             <FilterSelect label="Menu status" value={draft.menu_status} onChange={(v) => setDraft((c) => ({ ...c, menu_status: v }))} options={[["", "Any"], ["active", "Active menu"], ["draft", "Draft menu"], ["pending", "Pending menu"], ["none", "No menu"]]} />
@@ -205,7 +207,7 @@ export default function OwnerRestaurants() {
         <MetricCard label="Missing phone" value={summary?.missing_phone} loading={loading} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr)", gap: 16, marginBottom: 16 }}>
         <PageCard style={{ padding: 18 }}>
           <SectionTitle title="Top chains" subtitle="By location count for current filters" />
           <SimpleTable rows={summary?.top_chains || []} columns={[["Chain", "chain_name"], ["Locations", "location_count"]]} emptyLabel="No chain grouping for current filters." />
@@ -279,6 +281,7 @@ export default function OwnerRestaurants() {
           onCrm={handleAddToCrm}
         />
       ) : null}
+      </div>
     </OwnerLayout>
   );
 }
@@ -302,8 +305,30 @@ function RowActions({ row, onDetail, onCrm }) {
 
 function DetailDrawer({ loading, restaurant, onClose, onCrm }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(16,24,40,0.45)", zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
-      <div style={{ width: "min(520px, 100vw)", height: "100%", background: "#fffdf8", borderLeft: `1px solid ${OWNER_COLORS.line}`, padding: 24, overflowY: "auto" }}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(16,24,40,0.45)",
+        zIndex: 50,
+        display: "flex",
+        justifyContent: "flex-end",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          width: "min(520px, 100%)",
+          maxWidth: "100%",
+          height: "100%",
+          boxSizing: "border-box",
+          background: "#fffdf8",
+          borderLeft: `1px solid ${OWNER_COLORS.line}`,
+          padding: 24,
+          overflowY: "auto",
+          overflowX: "hidden",
+        }}
+      >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <h3 style={{ margin: 0 }}>Restaurant record</h3>
           <button type="button" onClick={onClose} style={secondaryBtnStyle}>Close</button>
@@ -341,7 +366,7 @@ function DetailDrawer({ loading, restaurant, onClose, onCrm }) {
 
 function FilterInput({ label, value, onChange }) {
   return (
-    <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 700 }}>
+    <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 700, minWidth: 0 }}>
       {label}
       <input
         type="search"
@@ -354,15 +379,171 @@ function FilterInput({ label, value, onChange }) {
         data-lpignore="true"
         data-1p-ignore="true"
         onChange={(e) => onChange(e.target.value)}
-        style={inputStyle}
+        style={{ ...inputStyle, width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
       />
+    </label>
+  );
+}
+
+function formatMarketOptionLabel(market) {
+  const shortName = String(market?.name || "").split(",")[0].trim() || market?.name || "Market";
+  const count = Number(market?.restaurant_count || 0).toLocaleString();
+  return `${shortName} (${count})`;
+}
+
+function MarketFilterSelect({ value, onChange, options }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [panelRect, setPanelRect] = useState(null);
+  const rootRef = useRef(null);
+  const triggerRef = useRef(null);
+
+  const selectedLabel = options.find(([val]) => val === value)?.[1] || options[0]?.[1] || "Any market";
+  const needle = query.trim().toLowerCase();
+  const filtered = needle
+    ? options.filter(([, text]) => text.toLowerCase().includes(needle))
+    : options;
+
+  const updatePanelRect = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const margin = 8;
+    const panelWidth = Math.min(320, window.innerWidth - margin * 2);
+    let left = rect.left;
+    if (left + panelWidth > window.innerWidth - margin) {
+      left = Math.max(margin, window.innerWidth - panelWidth - margin);
+    }
+    const spaceBelow = window.innerHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+    const openBelow = spaceBelow >= 160 || spaceBelow >= spaceAbove;
+    const maxListHeight = Math.min(280, Math.max(120, openBelow ? spaceBelow - 52 : spaceAbove - 52));
+    setPanelRect({
+      left,
+      width: panelWidth,
+      top: openBelow ? rect.bottom + 4 : undefined,
+      bottom: openBelow ? undefined : window.innerHeight - rect.top + 4,
+      maxListHeight,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    updatePanelRect();
+    const onPointerDown = (event) => {
+      if (!rootRef.current?.contains(event.target) && !event.target.closest?.("[data-market-panel]")) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    window.addEventListener("resize", updatePanelRect);
+    window.addEventListener("scroll", updatePanelRect, true);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      window.removeEventListener("resize", updatePanelRect);
+      window.removeEventListener("scroll", updatePanelRect, true);
+    };
+  }, [open, updatePanelRect, query]);
+
+  const panel = open && panelRect ? createPortal(
+    <div
+      data-market-panel
+      role="listbox"
+      style={{
+        position: "fixed",
+        left: panelRect.left,
+        top: panelRect.top,
+        bottom: panelRect.bottom,
+        width: panelRect.width,
+        zIndex: 200,
+        background: "#fff",
+        border: `1px solid ${OWNER_COLORS.line}`,
+        borderRadius: 12,
+        boxShadow: "0 12px 32px rgba(16, 24, 40, 0.16)",
+        overflow: "hidden",
+        boxSizing: "border-box",
+      }}
+    >
+      <div style={{ padding: 8, borderBottom: `1px solid ${OWNER_COLORS.line}` }}>
+        <input
+          type="search"
+          value={query}
+          placeholder="Search markets…"
+          autoComplete="off"
+          onChange={(e) => setQuery(e.target.value)}
+          style={{ ...inputStyle, width: "100%", boxSizing: "border-box" }}
+        />
+      </div>
+      <div style={{ maxHeight: panelRect.maxListHeight, overflowY: "auto", overflowX: "hidden" }}>
+        {filtered.length ? filtered.map(([val, text]) => (
+          <button
+            key={val || "any"}
+            type="button"
+            role="option"
+            aria-selected={val === value}
+            title={text}
+            onClick={() => {
+              onChange(val);
+              setOpen(false);
+              setQuery("");
+            }}
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "10px 12px",
+              border: "none",
+              borderBottom: `1px solid ${OWNER_COLORS.line}`,
+              background: val === value ? "#faf3ec" : "#fff",
+              textAlign: "left",
+              fontSize: 13,
+              cursor: "pointer",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              boxSizing: "border-box",
+            }}
+          >
+            {text}
+          </button>
+        )) : (
+          <div style={{ padding: "12px", color: OWNER_COLORS.muted, fontSize: 13 }}>No markets match.</div>
+        )}
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
+  return (
+    <label ref={rootRef} style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 700, minWidth: 0, position: "relative" }}>
+      Market
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((cur) => !cur)}
+        style={{
+          ...inputStyle,
+          width: "100%",
+          maxWidth: "100%",
+          boxSizing: "border-box",
+          textAlign: "left",
+          cursor: "pointer",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {selectedLabel}
+      </button>
+      {panel}
     </label>
   );
 }
 
 function FilterSelect({ label, value, onChange, options }) {
   return (
-    <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 700 }}>
+    <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 700, minWidth: 0 }}>
       {label}
       <select
         value={value}
@@ -373,7 +554,7 @@ function FilterSelect({ label, value, onChange, options }) {
             e.currentTarget.form?.requestSubmit();
           }
         }}
-        style={inputStyle}
+        style={{ ...inputStyle, width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
       >
         {options.map(([val, text]) => <option key={val || "any"} value={val}>{text}</option>)}
       </select>

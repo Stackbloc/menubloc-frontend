@@ -48,6 +48,15 @@
   min-width: 0;
 }
 
+.owner-shell__content {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+.owner-restaurant-intelligence .owner-responsive-grid-4 {
+  grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
+}
+
 @media (max-width: 767px) {
   .owner-shell {
     display: block;
