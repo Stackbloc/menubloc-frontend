@@ -79,8 +79,32 @@ function testCanRemoveOnlyAdditionalSections() {
   assert.strictEqual(canRemoveManualMenuSection(1, 2), true);
 }
 
+function testMissingSectionNamePointsAtCorrectSection() {
+  const section1 = emptyManualMenuSection();
+  section1.items[0] = {
+    ...section1.items[0],
+    name: "Steak & Eggs",
+    price: "16.99",
+  };
+
+  const section2 = emptyManualMenuSection();
+  section2.name = "Drinks";
+  section2.items[0] = {
+    ...section2.items[0],
+    name: "Vodka & Tonic",
+    price: "11.00",
+  };
+
+  const result = validateManualMenuSections([section1, section2]);
+  assert.strictEqual(result.ok, false);
+  assert.match(result.errors[0], /Section 1: add a section name for Steak & Eggs/);
+  assert.strictEqual(result.invalidSectionIds.length, 1);
+  assert.strictEqual(result.invalidSectionIds[0], section1.id);
+}
+
 testCanRemoveOnlyAdditionalItems();
 testCanRemoveOnlyAdditionalSections();
 testValidateRequiresSectionNamePrice();
 testSectionsToItemsSkipsEmptyPlaceholderRows();
+testMissingSectionNamePointsAtCorrectSection();
 console.log("manualMenuEntryModel.test.cjs: all passed");

@@ -7,7 +7,9 @@ import {
   RESTAURANT_SIGNUP_RESTART_ROUTE,
   persistRestaurantOnboardingState,
   resolveRestaurantOnboardingState,
+  syncRestaurantOnboardingProgress,
 } from "../lib/restaurantOnboardingState.js";
+import MenuUploadCompletionNextSteps from "../components/menuUpload/MenuUploadCompletionNextSteps.jsx";
 
 import {
   canRemoveManualMenuItem,
@@ -16,6 +18,7 @@ import {
   emptyManualMenuSection,
   loadManualMenuDraft,
   manualMenuDraftStorageKey,
+  MANUAL_MENU_FIELD_PLACEHOLDERS,
   validateManualMenuSections,
 } from "../lib/manualMenuEntryModel.js";
 
@@ -91,6 +94,12 @@ const s = {
     color: "#444",
     marginBottom: 6,
   },
+  fieldHint: {
+    fontSize: 12,
+    color: "#667085",
+    marginTop: 6,
+    lineHeight: 1.5,
+  },
   input: {
     width: "100%",
     boxSizing: "border-box",
@@ -100,6 +109,17 @@ const s = {
     padding: "0 12px",
     fontSize: 14,
     fontFamily: FONT,
+  },
+  inputInvalid: {
+    width: "100%",
+    boxSizing: "border-box",
+    height: 42,
+    borderRadius: 10,
+    border: "1px solid #f04438",
+    padding: "0 12px",
+    fontSize: 14,
+    fontFamily: FONT,
+    background: "#fffafa",
   },
   textarea: {
     width: "100%",
@@ -133,7 +153,10 @@ const s = {
   },
   sectionFooter: {
     display: "flex",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 10,
     marginTop: 4,
     marginBottom: 4,
   },
@@ -312,6 +335,7 @@ export default function ManualMenuEntryPage() {
   const [savedMenuId, setSavedMenuId] = useState(null);
   const [draftNotice, setDraftNotice] = useState("");
   const [formError, setFormError] = useState("");
+  const [invalidSectionIds, setInvalidSectionIds] = useState([]);
   const [uploadErr, setUploadErr] = useState("");
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState(null);
@@ -327,6 +351,9 @@ export default function ManualMenuEntryPage() {
   }, [restaurant_id]);
 
   function updateSection(sectionId, patch) {
+    if (patch.name != null) {
+      setInvalidSectionIds((prev) => prev.filter((id) => id !== sectionId));
+    }
     setSections((prev) => prev.map((section) => (
       section.id === sectionId ? { ...section, ...patch } : section
     )));
@@ -390,10 +417,12 @@ export default function ManualMenuEntryPage() {
     event.preventDefault();
     setFormError("");
     setUploadErr("");
+    setInvalidSectionIds([]);
 
-    const { ok, errors, flat } = validateManualMenuSections(sections);
+    const { ok, errors, flat, invalidSectionIds: badSectionIds } = validateManualMenuSections(sections);
     if (!ok) {
-      setFormError(errors.slice(0, 4).join(" "));
+      setInvalidSectionIds(badSectionIds || []);
+      setFormError(errors.slice(0, 3).join(" "));
       return;
     }
 
@@ -427,6 +456,12 @@ export default function ManualMenuEntryPage() {
 
       if (restaurant_id) {
         localStorage.removeItem(manualMenuDraftStorageKey(restaurant_id));
+      }
+      if (!isOperatorFlow && restaurant_id) {
+        await syncRestaurantOnboardingProgress(state, {
+          current_step_key: "review_menu",
+          completed_step_keys: ["account_created", "email_verified", "import_menu", "process_menu"],
+        }).catch(() => {});
       }
       setResult(data);
     } catch (error) {
@@ -474,17 +509,14 @@ export default function ManualMenuEntryPage() {
             {result.items_inserted} menu item{result.items_inserted !== 1 ? "s" : ""} saved and pending review.
             Once approved, your menu will appear on your Menuply profile.
           </p>
-          <Link to={isOperatorFlow ? "/operator/menulab" : "/operator/login"} style={s.profileLink}>
-            {isOperatorFlow ? "Back to Menu Lab" : "Sign in to My Account"}
-          </Link>
-          {!isOperatorFlow ? (
-            <Link
-              to={`/restaurant-profile/${restaurant_id}`}
-              style={{ ...s.profileLink, marginTop: 10, background: "#fff", color: "#111", border: "1px solid #d0d5dd" }}
-            >
-              View restaurant profile
-            </Link>
-          ) : null}
+          <MenuUploadCompletionNextSteps
+            isOperatorFlow={isOperatorFlow}
+            restaurantId={restaurant_id}
+            email={email}
+            restaurantName={restaurant_name}
+            primaryStyle={s.profileLink}
+            secondaryStyle={{ ...s.profileLink, marginTop: 10, background: "#fff", color: "#111", border: "1px solid #d0d5dd" }}
+          />
           <div style={s.pendingNote}>
             {result.items_inserted} items saved · Menu status: <strong>pending review</strong>
           </div>
@@ -515,6 +547,7 @@ export default function ManualMenuEntryPage() {
       <div style={s.heading}>Enter your menu</div>
       <div style={s.subheading}>
         Add sections and items with names, descriptions, and prices. Description is optional.
+        Gray example text in each field is not saved — type your own values before submitting.
         Save a draft any time, then submit when you are ready.
       </div>
 
@@ -534,25 +567,20 @@ export default function ManualMenuEntryPage() {
               <div style={{ flex: "1 1 240px" }}>
                 <div style={s.sectionTitle}>Section {sectionIndex + 1}</div>
                 <label style={s.label} htmlFor={`section-${section.id}`}>
-                  Section name {sectionIndex === 0 ? "(required)" : ""}
+                  Section name (required)
                 </label>
                 <input
                   id={`section-${section.id}`}
-                  style={s.input}
+                  style={invalidSectionIds.includes(section.id) ? s.inputInvalid : s.input}
                   value={section.name}
                   onChange={(event) => updateSection(section.id, { name: event.target.value })}
-                  placeholder="Appetizers"
+                  placeholder={MANUAL_MENU_FIELD_PLACEHOLDERS.sectionName}
+                  aria-invalid={invalidSectionIds.includes(section.id) ? "true" : "false"}
                 />
+                <div style={s.fieldHint}>
+                  Type the section name yourself. Example text is not saved.
+                </div>
               </div>
-              {canRemoveManualMenuSection(sectionIndex, sections.length) ? (
-                <button
-                  type="button"
-                  style={s.subtleRemoveBtn}
-                  onClick={() => removeSection(section.id)}
-                >
-                  Remove section
-                </button>
-              ) : null}
             </div>
 
             {section.items.map((item, itemIndex) => (
@@ -577,7 +605,7 @@ export default function ManualMenuEntryPage() {
                       style={s.input}
                       value={item.name}
                       onChange={(event) => updateItem(section.id, item.id, { name: event.target.value })}
-                      placeholder="Mozzarella Sticks"
+                      placeholder={MANUAL_MENU_FIELD_PLACEHOLDERS.itemName}
                     />
                   </div>
                   <div>
@@ -587,7 +615,7 @@ export default function ManualMenuEntryPage() {
                       style={s.input}
                       value={item.price}
                       onChange={(event) => updateItem(section.id, item.id, { price: event.target.value })}
-                      placeholder="8.99"
+                      placeholder={MANUAL_MENU_FIELD_PLACEHOLDERS.price}
                       inputMode="decimal"
                     />
                   </div>
@@ -599,7 +627,7 @@ export default function ManualMenuEntryPage() {
                     style={s.textarea}
                     value={item.description}
                     onChange={(event) => updateItem(section.id, item.id, { description: event.target.value })}
-                    placeholder="Fried mozzarella served with marinara"
+                    placeholder={MANUAL_MENU_FIELD_PLACEHOLDERS.description}
                   />
                 </div>
               </div>
@@ -614,6 +642,15 @@ export default function ManualMenuEntryPage() {
               >
                 + Add another item
               </button>
+              {canRemoveManualMenuSection(sectionIndex, sections.length) ? (
+                <button
+                  type="button"
+                  style={s.ghostBtn}
+                  onClick={() => removeSection(section.id)}
+                >
+                  Remove this section
+                </button>
+              ) : null}
             </div>
           </div>
         ))}

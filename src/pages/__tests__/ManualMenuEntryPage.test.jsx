@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ManualMenuEntryPage from "../ManualMenuEntryPage.jsx";
+import { MANUAL_MENU_FIELD_PLACEHOLDERS } from "../../lib/manualMenuEntryModel.js";
 
 vi.mock("../../context/OperatorContext.jsx", () => ({
   useOperator: () => ({ operator: null, selectedRestaurant: null }),
@@ -39,22 +40,29 @@ describe("ManualMenuEntryPage", () => {
     sessionStorage.setItem("grubbid.onboarding.state", JSON.stringify(ONBOARDING_STATE));
   });
 
+  it("uses example placeholders that are not treated as saved values", () => {
+    renderPage();
+    const sectionInput = screen.getByPlaceholderText(MANUAL_MENU_FIELD_PLACEHOLDERS.sectionName);
+    expect(sectionInput.value).toBe("");
+    expect(MANUAL_MENU_FIELD_PLACEHOLDERS.sectionName).toMatch(/\(for example\)/i);
+  });
+
   it("does not show remove section before adding another section", () => {
     renderPage();
-    expect(screen.queryByRole("button", { name: /remove section/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /remove this section/i })).toBeNull();
   });
 
   it("shows remove section only on the additional section after add section", () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /add another section/i }));
 
-    const removeButtons = screen.getAllByRole("button", { name: /remove section/i });
+    const removeButtons = screen.getAllByRole("button", { name: /remove this section/i });
     expect(removeButtons).toHaveLength(1);
 
     const sectionCards = screen.getAllByTestId("manual-menu-section-card");
     expect(sectionCards).toHaveLength(2);
-    expect(within(sectionCards[0]).queryByRole("button", { name: /remove section/i })).toBeNull();
-    expect(within(sectionCards[1]).getByRole("button", { name: /remove section/i })).toBeTruthy();
+    expect(within(sectionCards[0]).queryByRole("button", { name: /remove this section/i })).toBeNull();
+    expect(within(sectionCards[1]).getByRole("button", { name: /remove this section/i })).toBeTruthy();
   });
 
   it("does not show remove controls before adding another item", () => {
@@ -101,13 +109,13 @@ describe("ManualMenuEntryPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /add another item/i }));
     fireEvent.click(screen.getByRole("button", { name: /add another section/i }));
 
-    const sectionInputs = screen.getAllByPlaceholderText("Appetizers");
+    const sectionInputs = screen.getAllByPlaceholderText(MANUAL_MENU_FIELD_PLACEHOLDERS.sectionName);
     fireEvent.change(sectionInputs[0], { target: { value: "Appetizers" } });
 
-    const nameInputs = screen.getAllByPlaceholderText("Mozzarella Sticks");
+    const nameInputs = screen.getAllByPlaceholderText(MANUAL_MENU_FIELD_PLACEHOLDERS.itemName);
     fireEvent.change(nameInputs[0], { target: { value: "Mozzarella Sticks" } });
 
-    const priceInputs = screen.getAllByPlaceholderText("8.99");
+    const priceInputs = screen.getAllByPlaceholderText(MANUAL_MENU_FIELD_PLACEHOLDERS.price);
     fireEvent.change(priceInputs[0], { target: { value: "8.99" } });
 
     fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
@@ -117,5 +125,29 @@ describe("ManualMenuEntryPage", () => {
     expect(await screen.findByText(/menu submitted/i)).toBeTruthy();
 
     vi.unstubAllGlobals();
+  });
+
+  it("reports missing section name on the correct section, not a later one", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /add another section/i }));
+
+    const sectionInputs = screen.getAllByPlaceholderText(MANUAL_MENU_FIELD_PLACEHOLDERS.sectionName);
+    fireEvent.change(sectionInputs[0], { target: { value: "" } });
+
+    const nameInputs = screen.getAllByPlaceholderText(MANUAL_MENU_FIELD_PLACEHOLDERS.itemName);
+    fireEvent.change(nameInputs[0], { target: { value: "Steak & Eggs" } });
+    fireEvent.change(nameInputs[1], { target: { value: "Vodka & Tonic" } });
+
+    const priceInputs = screen.getAllByPlaceholderText(MANUAL_MENU_FIELD_PLACEHOLDERS.price);
+    fireEvent.change(priceInputs[0], { target: { value: "16.99" } });
+
+    fireEvent.change(sectionInputs[1], { target: { value: "Drinks" } });
+    fireEvent.change(priceInputs[1], { target: { value: "11.00" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+
+    expect(screen.getByText(/Section 1: add a section name for Steak & Eggs/i)).toBeTruthy();
+    expect(sectionInputs[0].getAttribute("aria-invalid")).toBe("true");
+    expect(sectionInputs[1].getAttribute("aria-invalid")).not.toBe("true");
   });
 });

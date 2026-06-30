@@ -8,7 +8,9 @@ import {
   RESTAURANT_SIGNUP_RESTART_ROUTE,
   persistRestaurantOnboardingState,
   resolveRestaurantOnboardingState,
+  syncRestaurantOnboardingProgress,
 } from "../lib/restaurantOnboardingState.js";
+import MenuUploadCompletionNextSteps from "../components/menuUpload/MenuUploadCompletionNextSteps.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -619,6 +621,13 @@ export default function SpreadsheetUploadPage() {
         throw new Error(data?.error || `Upload failed (${res.status})`);
       }
 
+      if (!isOperatorFlow && restaurant_id) {
+        await syncRestaurantOnboardingProgress(state, {
+          current_step_key: "review_menu",
+          completed_step_keys: ["account_created", "email_verified", "import_menu", "process_menu"],
+        }).catch(() => {});
+      }
+
       setResult(data);
     } catch (error) {
       setUploadErr(error.message || "Upload failed. Please try again.");
@@ -665,17 +674,14 @@ export default function SpreadsheetUploadPage() {
             {result.items_inserted} menu item{result.items_inserted !== 1 ? "s" : ""} uploaded and pending review.
             Once approved, your menu will appear on your Menuply profile.
           </p>
-          <Link to={isOperatorFlow ? "/operator/menulab" : "/operator/login"} style={s.profileLink}>
-            {isOperatorFlow ? "Back to Menu Lab" : "Sign in to My Account"}
-          </Link>
-          {!isOperatorFlow ? (
-            <Link
-              to={`/restaurant-profile/${restaurant_id}`}
-              style={{ ...s.profileLink, marginTop: 10, background: "#fff", color: "#111", border: "1px solid #d0d5dd" }}
-            >
-              View restaurant profile
-            </Link>
-          ) : null}
+          <MenuUploadCompletionNextSteps
+            isOperatorFlow={isOperatorFlow}
+            restaurantId={restaurant_id}
+            email={email}
+            restaurantName={restaurant_name}
+            primaryStyle={s.profileLink}
+            secondaryStyle={{ ...s.profileLink, marginTop: 10, background: "#fff", color: "#111", border: "1px solid #d0d5dd" }}
+          />
           <div style={s.pendingNote}>
             {result.items_inserted} items saved · {result.items_skipped > 0 ? `${result.items_skipped} skipped · ` : ""}
             Menu status: <strong>pending review</strong>

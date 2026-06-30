@@ -1,3 +1,10 @@
+export const MANUAL_MENU_FIELD_PLACEHOLDERS = {
+  sectionName: "Appetisers (for example)",
+  itemName: "Mozzarella Sticks (for example)",
+  price: "8.99 (for example)",
+  description: "Fried mozzarella served with marinara (for example)",
+};
+
 export function makeManualMenuId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
@@ -28,15 +35,15 @@ export function isManualMenuItemRowStarted({ name, description, priceRaw }) {
 
 export function sectionsToManualMenuItems(sections) {
   const items = [];
-  for (const section of sections) {
+  sections.forEach((section, sectionIndex) => {
     const sectionName = String(section.name || "").trim();
-    for (const item of section.items) {
+    section.items.forEach((item, itemIndexInSection) => {
       const name = String(item.name || "").trim();
       const price = parseManualMenuPrice(item.price);
       const description = String(item.description || "").trim();
 
       if (!isManualMenuItemRowStarted({ name, description, priceRaw: item.price })) {
-        continue;
+        return;
       }
 
       items.push({
@@ -44,30 +51,68 @@ export function sectionsToManualMenuItems(sections) {
         name,
         description: description || null,
         price,
+        sectionIndex,
+        itemIndexInSection,
         _sectionId: section.id,
         _itemId: item.id,
       });
-    }
-  }
+    });
+  });
   return items;
+}
+
+function formatItemLabel(item, sectionNumber) {
+  if (item.name) return `"${item.name}" in Section ${sectionNumber}`;
+  return `the item in Section ${sectionNumber}, row ${item.itemIndexInSection + 1}`;
 }
 
 export function validateManualMenuSections(sections) {
   const flat = sectionsToManualMenuItems(sections);
   const errors = [];
+  const invalidSectionIds = new Set();
 
   if (!flat.length) {
-    return { ok: false, errors: ["Add at least one menu item before submitting."], flat };
+    return {
+      ok: false,
+      errors: ["Add at least one menu item before submitting."],
+      flat,
+      invalidSectionIds: [],
+    };
   }
 
-  flat.forEach((item, index) => {
-    const row = index + 1;
-    if (!item.section) errors.push(`Item ${row}: section name is required.`);
-    if (!item.name) errors.push(`Item ${row}: item name is required.`);
-    if (item.price == null) errors.push(`Item ${row}: enter a valid price (example: 8.99).`);
+  sections.forEach((section, sectionIndex) => {
+    const sectionName = String(section.name || "").trim();
+    const sectionNumber = sectionIndex + 1;
+    const startedItems = flat.filter((item) => item._sectionId === section.id);
+    if (!startedItems.length) return;
+
+    if (!sectionName) {
+      invalidSectionIds.add(section.id);
+      const preview = startedItems
+        .map((item) => item.name)
+        .filter(Boolean)
+        .slice(0, 2)
+        .join(", ");
+      errors.push(
+        preview
+          ? `Section ${sectionNumber}: add a section name for ${preview}${startedItems.length > 2 ? ", …" : ""}.`
+          : `Section ${sectionNumber}: add a section name for the items below.`
+      );
+    }
+
+    startedItems.forEach((item) => {
+      const label = formatItemLabel(item, sectionNumber);
+      if (!item.name) errors.push(`${label}: item name is required.`);
+      if (item.price == null) errors.push(`${label}: enter a valid price (example: 8.99).`);
+    });
   });
 
-  return { ok: errors.length === 0, errors, flat };
+  return {
+    ok: errors.length === 0,
+    errors,
+    flat,
+    invalidSectionIds: [...invalidSectionIds],
+  };
 }
 
 /** Only additional items (index > 0) may be removed — keeps the first row stable. */

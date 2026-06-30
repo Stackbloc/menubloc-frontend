@@ -9,7 +9,9 @@ import {
   navigateWithRestaurantOnboardingState,
   persistRestaurantOnboardingState,
   resolveRestaurantOnboardingState,
+  syncRestaurantOnboardingProgress,
 } from "../lib/restaurantOnboardingState.js";
+import MenuUploadCompletionNextSteps from "../components/menuUpload/MenuUploadCompletionNextSteps.jsx";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
@@ -97,7 +99,7 @@ function OcrProgressSpinner() {
   );
 }
 
-function CompletionNextSteps({ isOperatorFlow, restaurantId }) {
+function CompletionNextSteps({ isOperatorFlow, restaurantId, email, restaurantName }) {
   return (
     <div style={s.nextStepsBox}>
       <div style={s.nextStepsTitle}>What happens next</div>
@@ -105,14 +107,14 @@ function CompletionNextSteps({ isOperatorFlow, restaurantId }) {
         Your upload is saved. Menuply will process your menu — items will appear in Menu Lab once import and review are complete.
       </p>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-        <Link to={isOperatorFlow ? "/operator/menulab" : "/operator/login"} style={s.profileLink}>
-          {isOperatorFlow ? "Back to Menu Lab" : "Sign in to My Account"}
-        </Link>
-        {!isOperatorFlow ? (
-          <Link to={`/restaurant-profile/${restaurantId}`} style={s.secondaryAction}>
-            View restaurant profile
-          </Link>
-        ) : null}
+        <MenuUploadCompletionNextSteps
+          isOperatorFlow={isOperatorFlow}
+          restaurantId={restaurantId}
+          email={email}
+          restaurantName={restaurantName}
+          primaryStyle={s.profileLink}
+          secondaryStyle={s.secondaryAction}
+        />
       </div>
     </div>
   );
@@ -656,6 +658,7 @@ export default function PdfUploadPage() {
   const [uploadErr, setUploadErr] = useState("");
   const [restaurantValidation, setRestaurantValidation] = useState({ status: "checking", error: "" });
   const [result, setResult] = useState(null);
+  const menuUploadProgressSyncedRef = useRef(false);
   /** null = idle; otherwise staged OCR UX label key */
   const [ocrProgressPhase, setOcrProgressPhase] = useState(null);
   /** 1-based page index while a photo is being processed (consumer-facing progress). */
@@ -681,6 +684,15 @@ export default function PdfUploadPage() {
   useEffect(() => {
     return () => clearOcrPhaseTimers();
   }, []);
+
+  useEffect(() => {
+    if (!result || isOperatorFlow || !restaurant_id || menuUploadProgressSyncedRef.current) return;
+    menuUploadProgressSyncedRef.current = true;
+    syncRestaurantOnboardingProgress(state, {
+      current_step_key: "review_menu",
+      completed_step_keys: ["account_created", "email_verified", "import_menu", "process_menu"],
+    }).catch(() => {});
+  }, [result, isOperatorFlow, restaurant_id, state]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1122,7 +1134,12 @@ export default function PdfUploadPage() {
               <Link to="/operator/menulab" style={s.profileLink}>
                 Back to menu
               </Link>
-              <CompletionNextSteps isOperatorFlow restaurantId={restaurant_id} />
+              <CompletionNextSteps
+                isOperatorFlow
+                restaurantId={restaurant_id}
+                email={email}
+                restaurantName={restaurant_name}
+              />
             </div>
           </div>
         </OperatorLayout>
@@ -1219,7 +1236,12 @@ export default function PdfUploadPage() {
               </div>
             );
           })()}
-          <CompletionNextSteps isOperatorFlow={false} restaurantId={restaurant_id} />
+          <CompletionNextSteps
+            isOperatorFlow={false}
+            restaurantId={restaurant_id}
+            email={email}
+            restaurantName={restaurant_name}
+          />
         </div>
 
         <div style={{ marginTop: 20 }}>
