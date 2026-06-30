@@ -73,6 +73,7 @@ export const getOwnerRestaurantsSummary = (params = {}) => {
   return get(`/api/owner/restaurants/summary${qs ? `?${qs}` : ""}`);
 };
 export const getOwnerRestaurantMarkets = () => get("/api/owner/restaurants/markets");
+export const getOwnerRestaurantCuisines = () => get("/api/owner/restaurants/cuisines");
 export const getOwnerRestaurantDetail = (restaurantId) =>
   get(`/api/owner/restaurants/${encodeURIComponent(restaurantId)}`);
 export const addOwnerRestaurantToCrm = (restaurantId) =>

@@ -4,6 +4,7 @@ import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from ".
 import {
   addOwnerRestaurantToCrm,
   getOwnerRestaurantDetail,
+  getOwnerRestaurantCuisines,
   getOwnerRestaurantMarkets,
   getOwnerRestaurantsSummary,
   searchOwnerRestaurants,
@@ -39,6 +40,7 @@ export default function OwnerRestaurants() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
   const [marketOptions, setMarketOptions] = useState([["", "Any market"]]);
+  const [cuisineOptions, setCuisineOptions] = useState([["", "Any cuisine"]]);
 
   const queryParams = useMemo(() => {
     const params = {};
@@ -70,6 +72,20 @@ export default function OwnerRestaurants() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    getOwnerRestaurantCuisines()
+      .then((res) => {
+        const rows = Array.isArray(res?.cuisines) ? res.cuisines : [];
+        setCuisineOptions([
+          ["", "Any cuisine"],
+          ...rows.map((row) => [row.value, row.label || row.value]),
+        ]);
+      })
+      .catch(() => {
+        setCuisineOptions([["", "Unavailable"]]);
+      });
+  }, []);
 
   useEffect(() => {
     getOwnerRestaurantMarkets()
@@ -153,8 +169,8 @@ export default function OwnerRestaurants() {
             <FilterInput label="City" value={draft.city} onChange={(v) => setDraft((c) => ({ ...c, city: v }))} />
             <FilterInput label="State" value={draft.state} onChange={(v) => setDraft((c) => ({ ...c, state: v }))} />
             <MarketFilterSelect value={draft.market} onChange={(v) => setDraft((c) => ({ ...c, market: v }))} options={marketOptions} />
-            <FilterInput label="Cuisine" value={draft.cuisine} onChange={(v) => setDraft((c) => ({ ...c, cuisine: v }))} />
-            <FilterSelect label="Chain only" value={draft.chain} onChange={(v) => setDraft((c) => ({ ...c, chain: v }))} options={[["", "Any"], ["true", "Chain / franchise"]]} />
+            <FilterSelect label="Cuisine" value={draft.cuisine} onChange={(v) => setDraft((c) => ({ ...c, cuisine: v }))} options={cuisineOptions} />
+            <FilterSelect label="Chain only" value={draft.chain} onChange={(v) => setDraft((c) => ({ ...c, chain: v }))} options={[["", "Any"], ["independent", "Independent"], ["true", "Chain / franchise"]]} />
             <FilterSelect label="Menu status" value={draft.menu_status} onChange={(v) => setDraft((c) => ({ ...c, menu_status: v }))} options={[["", "Any"], ["active", "Active menu"], ["draft", "Draft menu"], ["pending", "Pending menu"], ["none", "No menu"]]} />
             <FilterSelect label="Claim status" value={draft.claim_status} onChange={(v) => setDraft((c) => ({ ...c, claim_status: v }))} options={[["", "Any"], ["claimed", "Claimed"], ["verified", "Verified"], ["unclaimed", "Unclaimed"]]} />
             <FilterSelect label="Source" value={draft.source} onChange={(v) => setDraft((c) => ({ ...c, source: v }))} options={[["", "Any"], ["seed", "Seed"], ["manual", "Manual"], ["owner", "Owner-created"], ["google", "Google Places"], ["osm", "OSM"]]} />
