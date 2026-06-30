@@ -16,6 +16,7 @@ const UPLOAD_ROUTES = {
   pdf: "/restaurant/pdf-upload",
   later: "/restaurant/design-select",
   manual: "/restaurant/manual-menu-entry",
+  spreadsheet: "/restaurant/spreadsheet-upload",
   ocr: "/restaurant/ocr-upload",
 };
 const FONT = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
@@ -403,8 +404,7 @@ export default function MenuDesignSelectPage() {
       return;
     }
 
-    const uploadRoute = UPLOAD_ROUTES[ingestion_method === "spreadsheet" ? "manual" : ingestion_method]
-      || "/restaurant/menu-upload-choice";
+    const uploadRoute = UPLOAD_ROUTES[ingestion_method] || "/restaurant/menu-upload-choice";
     navigateWithRestaurantOnboardingState(nav, uploadRoute, nextState);
   }
 

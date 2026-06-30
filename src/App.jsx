@@ -152,6 +152,7 @@ import Contact from "./pages/Contact.jsx";
 import QrCodesPage from "./pages/QrCodesPage.jsx";
 import PdfUploadPage from "./pages/PdfUploadPage.jsx";
 import ManualMenuEntryPage from "./pages/ManualMenuEntryPage.jsx";
+import SpreadsheetUploadPage from "./pages/SpreadsheetUploadPage.jsx";
 import FoodTruckPage from "./pages/FoodTruckPage.jsx";
 import FoodTrucksPage from "./pages/FoodTrucksPage.jsx";
 import FoodTruckSchedulePage from "./pages/FoodTruckSchedulePage.jsx";
@@ -605,7 +606,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant/pdf-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PdfUploadPage />} />
         <Route path="/restaurant/ocr-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PdfUploadPage />} />
         <Route path="/restaurant/manual-menu-entry" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ManualMenuEntryPage />} />
-        <Route path="/restaurant/spreadsheet-upload" element={<Navigate to="/restaurant/manual-menu-entry" replace />} />
+        <Route path="/restaurant/spreadsheet-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <SpreadsheetUploadPage />} />
 
         <Route path="/menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuPage />} />
         <Route path="/public/restaurants/:id/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
@@ -657,7 +658,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/menu/upload" element={<Navigate to="/operator/menulab" replace />} />
         <Route path="/operator/menu/upload/paste" element={<Navigate to="/operator/menulab" replace />} />
         <Route path="/operator/menu/upload/manual" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><ManualMenuEntryPage /></OperatorRoute>} />
-        <Route path="/operator/menu/upload/spreadsheet" element={<Navigate to="/operator/menu/upload/manual" replace />} />
+        <Route path="/operator/menu/upload/spreadsheet" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><SpreadsheetUploadPage /></OperatorRoute>} />
         <Route path="/operator/menu/upload/pdf" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><PdfUploadPage /></OperatorRoute>} />
         <Route path="/operator/menu/upload/photo" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><PdfUploadPage /></OperatorRoute>} />
         <Route path="/operator/design" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorAdobeStudio /></OperatorRoute>} />
