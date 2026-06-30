@@ -72,12 +72,19 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         }
 
         .restaurant-onboarding-page h1 {
+          font-family: Georgia, "Times New Roman", serif;
           font-size: clamp(28px, 6vw, 42px);
-          font-weight: 800;
-          line-height: 1.15;
-          letter-spacing: -0.5px;
+          font-weight: 700;
+          line-height: 1.25;
+          letter-spacing: -0.35px;
           color: #0B0F0C;
           margin-bottom: 18px;
+        }
+
+        .restaurant-onboarding-page .headline-emphasis {
+          color: #35B96B;
+          font-style: italic;
+          font-weight: 400;
         }
 
         .restaurant-onboarding-page .body-text {
@@ -358,7 +365,10 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
           </Link>
         </div>
 
-        <h1>The future of the restaurant industry will not be built on higher prices alone.</h1>
+        <h1>
+          The future of the restaurant industry will not be built on{" "}
+          <em className="headline-emphasis">higher prices alone.</em>
+        </h1>
 
         <p className="hero-subhead">
           The future will be built by restaurants that create more value for diners. Menuply was built to support that future.
