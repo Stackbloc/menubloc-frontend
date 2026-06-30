@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useLanguage } from "../context/LanguageContext.jsx";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { DESIGN_STYLES } from "../services/designEngine.js";
 import { BrandLogo } from "../components/BrandLogo.jsx";
@@ -598,7 +597,6 @@ function buildPreviewUrl(file) {
 }
 
 export default function PdfUploadPage() {
-  const { t } = useLanguage();
   const location = useLocation();
   const nav = useNavigate();
   const { selectedRestaurant, operator } = useOperator();
@@ -656,6 +654,7 @@ export default function PdfUploadPage() {
   const [fileError, setFileError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState("");
+  const [restaurantValidation, setRestaurantValidation] = useState({ status: "checking", error: "" });
   const [result, setResult] = useState(null);
   /** null = idle; otherwise staged OCR UX label key */
   const [ocrProgressPhase, setOcrProgressPhase] = useState(null);
@@ -682,6 +681,56 @@ export default function PdfUploadPage() {
   useEffect(() => {
     return () => clearOcrPhaseTimers();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = Number(restaurant_id);
+    if (!Number.isInteger(id) || id <= 0) {
+      setRestaurantValidation({
+        status: "invalid",
+        error: `Restaurant record could not be found for ID ${restaurant_id || "[missing]"}. Return to restaurant setup and try again.`,
+      });
+      return () => { cancelled = true; };
+    }
+
+    setRestaurantValidation({ status: "checking", error: "" });
+    if (import.meta.env.DEV) {
+      console.info("[pdf-upload] validating restaurant", {
+        endpoint: `${API}/menu-upload/restaurant/validate`,
+        restaurant_id: id,
+      });
+    }
+
+    fetch(`${API}/menu-upload/restaurant/validate`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ restaurant_id: id, email, owner_token }),
+    })
+      .then(async (res) => ({ res, data: await res.json().catch(() => null) }))
+      .then(({ res, data }) => {
+        if (cancelled) return;
+        if (!res.ok || !data?.ok) {
+          const preciseNotFound = `Restaurant record could not be found for ID ${id}. Return to restaurant setup and try again.`;
+          setRestaurantValidation({
+            status: "invalid",
+            error: res.status === 404 ? preciseNotFound : (data?.error || preciseNotFound),
+          });
+          return;
+        }
+        setRestaurantValidation({ status: "valid", error: "" });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRestaurantValidation({
+            status: "invalid",
+            error: "We could not verify this restaurant record. Return to restaurant setup and try again.",
+          });
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [restaurant_id, email, owner_token]);
 
   function validateChosenFile(chosen) {
     setFileError("");
@@ -855,6 +904,11 @@ export default function PdfUploadPage() {
     setUploadErr("");
     setFileError("");
 
+    if (restaurantValidation.status !== "valid") {
+      setUploadErr(restaurantValidation.error || "Wait for the restaurant record to be verified before uploading.");
+      return;
+    }
+
     if (isOcrFlow && capturedPages.length > 0) {
       setUploading(true);
       setOcrProgressPhase("processing");
@@ -913,7 +967,6 @@ export default function PdfUploadPage() {
         const startedAt = Date.now();
         const maxWaitMs = 8 * 60 * 1000;
 
-        // eslint-disable-next-line no-constant-condition
         while (true) {
           if (Date.now() - startedAt > maxWaitMs) {
             throw new Error("Menu processing is taking longer than expected. Please refresh and try again.");
@@ -1195,7 +1248,11 @@ export default function PdfUploadPage() {
     );
   }
 
-  const submitDisabled = uploading || !!fileError || (!file && capturedPages.length === 0);
+  const submitDisabled =
+    uploading ||
+    restaurantValidation.status !== "valid" ||
+    !!fileError ||
+    (!file && capturedPages.length === 0);
 
   return (
     <div style={s.page}>
@@ -1231,6 +1288,12 @@ export default function PdfUploadPage() {
           </span>
         ) : null}
       </div>
+      {restaurantValidation.status === "checking" ? (
+        <div style={s.progress} role="status">Verifying restaurant record…</div>
+      ) : null}
+      {restaurantValidation.status === "invalid" ? (
+        <div style={s.error} role="alert">{restaurantValidation.error}</div>
+      ) : null}
       <div style={{
         marginTop: 14,
         marginBottom: 18,
