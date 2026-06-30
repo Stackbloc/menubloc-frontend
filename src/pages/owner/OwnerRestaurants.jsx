@@ -60,7 +60,7 @@ export default function OwnerRestaurants() {
       setPagination(searchRes.pagination || { page: 1, limit: 50, total: 0 });
       setSummary(summaryRes.summary || null);
     } catch {
-      setError("Restaurant intelligence data is temporarily unavailable.");
+      setError("Unavailable.");
     } finally {
       setLoading(false);
     }
@@ -83,7 +83,7 @@ export default function OwnerRestaurants() {
         ]);
       })
       .catch(() => {
-        setMarketOptions([["", "Any launch market (list unavailable)"]]);
+        setMarketOptions([["", "Unavailable"]]);
       });
   }, []);
 
