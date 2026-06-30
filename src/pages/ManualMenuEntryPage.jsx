@@ -9,85 +9,17 @@ import {
   resolveRestaurantOnboardingState,
 } from "../lib/restaurantOnboardingState.js";
 
+import {
+  canRemoveManualMenuItem,
+  emptyManualMenuItem,
+  emptyManualMenuSection,
+  loadManualMenuDraft,
+  manualMenuDraftStorageKey,
+  validateManualMenuSections,
+} from "../lib/manualMenuEntryModel.js";
+
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const FONT = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
-
-function makeId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function emptyItem() {
-  return { id: makeId(), name: "", description: "", price: "" };
-}
-
-function emptySection() {
-  return { id: makeId(), name: "", items: [emptyItem()] };
-}
-
-function draftStorageKey(restaurantId) {
-  return `menuply_manual_menu_draft_${restaurantId}`;
-}
-
-function parsePrice(value) {
-  const cleaned = String(value ?? "").replace(/[^0-9.]/g, "").trim();
-  if (!cleaned) return null;
-  const n = parseFloat(cleaned);
-  if (!Number.isFinite(n) || n < 0) return null;
-  return n.toFixed(2);
-}
-
-function sectionsToItems(sections) {
-  const items = [];
-  for (const section of sections) {
-    const sectionName = String(section.name || "").trim();
-    for (const item of section.items) {
-      const name = String(item.name || "").trim();
-      const price = parsePrice(item.price);
-      const description = String(item.description || "").trim();
-      if (!sectionName && !name && !description && !item.price) continue;
-      items.push({
-        section: sectionName,
-        name,
-        description: description || null,
-        price,
-        _sectionId: section.id,
-        _itemId: item.id,
-      });
-    }
-  }
-  return items;
-}
-
-function validateSections(sections) {
-  const flat = sectionsToItems(sections);
-  const errors = [];
-
-  if (!flat.length) {
-    return { ok: false, errors: ["Add at least one menu item before submitting."], flat };
-  }
-
-  flat.forEach((item, index) => {
-    const row = index + 1;
-    if (!item.section) errors.push(`Item ${row}: section name is required.`);
-    if (!item.name) errors.push(`Item ${row}: item name is required.`);
-    if (item.price == null) errors.push(`Item ${row}: enter a valid price (example: 8.99).`);
-  });
-
-  return { ok: errors.length === 0, errors, flat };
-}
-
-function loadDraft(restaurantId) {
-  if (!restaurantId) return null;
-  try {
-    const raw = localStorage.getItem(draftStorageKey(restaurantId));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed?.sections) || !parsed.sections.length) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
 
 const s = {
   page: {
@@ -180,15 +112,39 @@ const s = {
     marginBottom: 12,
     background: "#fafbfc",
   },
+  itemCardHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    gap: 8,
+  },
+  itemTitle: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#344054",
+  },
+  sectionFooter: {
+    display: "flex",
+    justifyContent: "flex-start",
+    marginTop: 4,
+    marginBottom: 4,
+  },
   itemGrid: {
     display: "grid",
     gap: 12,
     gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
   },
-  itemActions: {
-    display: "flex",
-    justifyContent: "flex-end",
-    marginTop: 10,
+  subtleRemoveBtn: {
+    border: "1px solid #d0d5dd",
+    background: "#fff",
+    color: "#667085",
+    borderRadius: 8,
+    padding: "6px 10px",
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: FONT,
   },
   ghostBtn: {
     border: "1px solid #d0d5dd",
@@ -355,7 +311,7 @@ export default function ManualMenuEntryPage() {
 
   const missingState = isOperatorFlow ? !selectedRestaurant?.id : recovery.missing;
 
-  const [sections, setSections] = useState([emptySection()]);
+  const [sections, setSections] = useState([emptyManualMenuSection()]);
   const [savedMenuId, setSavedMenuId] = useState(null);
   const [draftNotice, setDraftNotice] = useState("");
   const [formError, setFormError] = useState("");
@@ -365,7 +321,7 @@ export default function ManualMenuEntryPage() {
 
   useEffect(() => {
     if (!restaurant_id) return;
-    const draft = loadDraft(restaurant_id);
+    const draft = loadManualMenuDraft(restaurant_id);
     if (draft?.sections?.length) {
       setSections(draft.sections);
       if (draft.menu_id) setSavedMenuId(draft.menu_id);
@@ -392,20 +348,20 @@ export default function ManualMenuEntryPage() {
   }
 
   function addSection() {
-    setSections((prev) => [...prev, emptySection()]);
+    setSections((prev) => [...prev, emptyManualMenuSection()]);
   }
 
   function addItem(sectionId) {
     setSections((prev) => prev.map((section) => (
       section.id === sectionId
-        ? { ...section, items: [...section.items, emptyItem()] }
+        ? { ...section, items: [...section.items, emptyManualMenuItem()] }
         : section
     )));
   }
 
   function removeSection(sectionId) {
     setSections((prev) => {
-      if (prev.length <= 1) return [emptySection()];
+      if (prev.length <= 1) return [emptyManualMenuSection()];
       return prev.filter((section) => section.id !== sectionId);
     });
   }
@@ -416,7 +372,7 @@ export default function ManualMenuEntryPage() {
       const nextItems = section.items.filter((item) => item.id !== itemId);
       return {
         ...section,
-        items: nextItems.length ? nextItems : [emptyItem()],
+        items: nextItems.length ? nextItems : [emptyManualMenuItem()],
       };
     }));
   }
@@ -428,7 +384,7 @@ export default function ManualMenuEntryPage() {
       menu_id: savedMenuId,
       saved_at: new Date().toISOString(),
     };
-    localStorage.setItem(draftStorageKey(restaurant_id), JSON.stringify(payload));
+    localStorage.setItem(manualMenuDraftStorageKey(restaurant_id), JSON.stringify(payload));
     setDraftNotice(`Draft saved locally at ${new Date().toLocaleTimeString()}.`);
     setFormError("");
   }
@@ -438,7 +394,7 @@ export default function ManualMenuEntryPage() {
     setFormError("");
     setUploadErr("");
 
-    const { ok, errors, flat } = validateSections(sections);
+    const { ok, errors, flat } = validateManualMenuSections(sections);
     if (!ok) {
       setFormError(errors.slice(0, 4).join(" "));
       return;
@@ -473,7 +429,7 @@ export default function ManualMenuEntryPage() {
       }
 
       if (restaurant_id) {
-        localStorage.removeItem(draftStorageKey(restaurant_id));
+        localStorage.removeItem(manualMenuDraftStorageKey(restaurant_id));
       }
       setResult(data);
     } catch (error) {
@@ -602,7 +558,19 @@ export default function ManualMenuEntryPage() {
             </div>
 
             {section.items.map((item, itemIndex) => (
-              <div key={item.id} style={s.itemCard}>
+              <div key={item.id} style={s.itemCard} data-testid="manual-menu-item-card">
+                <div style={s.itemCardHeader}>
+                  <div style={s.itemTitle}>Item {itemIndex + 1}</div>
+                  {canRemoveManualMenuItem(itemIndex, section.items.length) ? (
+                    <button
+                      type="button"
+                      style={s.subtleRemoveBtn}
+                      onClick={() => removeItem(section.id, item.id)}
+                    >
+                      Remove item
+                    </button>
+                  ) : null}
+                </div>
                 <div style={s.itemGrid}>
                   <div>
                     <label style={s.label} htmlFor={`item-name-${item.id}`}>Item name</label>
@@ -636,30 +604,19 @@ export default function ManualMenuEntryPage() {
                     placeholder="Fried mozzarella served with marinara"
                   />
                 </div>
-                {section.items.length > 1 ? (
-                  <div style={s.itemActions}>
-                    <button
-                      type="button"
-                      style={s.dangerBtn}
-                      onClick={() => removeItem(section.id, item.id)}
-                    >
-                      Remove item
-                    </button>
-                  </div>
-                ) : null}
-                {itemIndex === section.items.length - 1 ? (
-                  <div style={s.itemActions}>
-                    <button
-                      type="button"
-                      style={s.ghostBtn}
-                      onClick={() => addItem(section.id)}
-                    >
-                      + Add another item
-                    </button>
-                  </div>
-                ) : null}
               </div>
             ))}
+
+            <div style={s.sectionFooter}>
+              <button
+                type="button"
+                style={s.ghostBtn}
+                data-testid="manual-menu-add-item"
+                onClick={() => addItem(section.id)}
+              >
+                + Add another item
+              </button>
+            </div>
           </div>
         ))}
 

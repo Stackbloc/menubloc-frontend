@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "smoke:homepage": "node scripts/smoke-homepage.mjs",
-    "test": "node --test tests/*.test.js && npm run verify:geo-routes && npm run verify:discovery-state-and-chip-rails",
+    "test": "node --test tests/*.test.js test/manualMenuEntryModel.test.cjs && npx vitest run src/pages/__tests__/ManualMenuEntryPage.test.jsx && npm run verify:geo-routes && npm run verify:discovery-state-and-chip-rails",
     "verify:geo-routes": "node scripts/verifyGeoRoutes.mjs",
     "verify:search-quality": "node scripts/verifyGeoRoutes.mjs",
     "ui:smoke": "npx playwright test tests/playwright/smoke.spec.js --reporter=list",
