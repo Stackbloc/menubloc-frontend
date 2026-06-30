@@ -15,7 +15,7 @@ const BYPASS_MODE = import.meta.env.VITE_ALLOW_OWNER_TOKEN_BYPASS === "true";
 const UPLOAD_ROUTES = {
   pdf: "/restaurant/pdf-upload",
   later: "/restaurant/design-select",
-  spreadsheet: "/restaurant/spreadsheet-upload",
+  manual: "/restaurant/manual-menu-entry",
   ocr: "/restaurant/ocr-upload",
 };
 const FONT = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
@@ -403,7 +403,8 @@ export default function MenuDesignSelectPage() {
       return;
     }
 
-    const uploadRoute = UPLOAD_ROUTES[ingestion_method] || "/restaurant/menu-upload-choice";
+    const uploadRoute = UPLOAD_ROUTES[ingestion_method === "spreadsheet" ? "manual" : ingestion_method]
+      || "/restaurant/menu-upload-choice";
     navigateWithRestaurantOnboardingState(nav, uploadRoute, nextState);
   }
 

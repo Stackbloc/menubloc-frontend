@@ -11,7 +11,7 @@ import {
 
 const ROUTES = {
   pdf: "/restaurant/pdf-upload",
-  spreadsheet: "/restaurant/spreadsheet-upload",
+  manual: "/restaurant/manual-menu-entry",
   ocr: "/restaurant/ocr-upload",
 };
 
@@ -98,10 +98,10 @@ const OPTIONS = [
     meta: "Best when you already have a finished menu PDF.",
   },
   {
-    key: "spreadsheet",
-    title: "Upload menu spreadsheet",
-    description: "Use the CSV template workflow from the former signup flow.",
-    meta: "Best when you want to structure sections, descriptions, and prices in a spreadsheet first.",
+    key: "manual",
+    title: "Enter menu manually",
+    description: "Type your menu sections, item names, descriptions, and prices directly in a simple form.",
+    meta: "Best when you want to add your menu without preparing a spreadsheet or PDF.",
   },
   {
     key: "ocr",
