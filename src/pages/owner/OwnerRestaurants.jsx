@@ -3,6 +3,7 @@ import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from ".
 import {
   addOwnerRestaurantToCrm,
   getOwnerRestaurantDetail,
+  getOwnerRestaurantMarkets,
   getOwnerRestaurantsSummary,
   searchOwnerRestaurants,
 } from "../../lib/ownerApi.js";
@@ -23,6 +24,8 @@ const DEFAULT_FILTERS = {
   limit: 50,
 };
 
+const FILTER_FORM_ID = "owner-restaurant-intelligence-filters";
+
 export default function OwnerRestaurants() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [draft, setDraft] = useState(DEFAULT_FILTERS);
@@ -34,6 +37,7 @@ export default function OwnerRestaurants() {
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
+  const [marketOptions, setMarketOptions] = useState([["", "Any launch market"]]);
 
   const queryParams = useMemo(() => {
     const params = {};
@@ -66,7 +70,25 @@ export default function OwnerRestaurants() {
     loadData();
   }, [loadData]);
 
-  function applyFilters() {
+  useEffect(() => {
+    getOwnerRestaurantMarkets()
+      .then((res) => {
+        const rows = Array.isArray(res?.markets) ? res.markets : [];
+        setMarketOptions([
+          ["", "Any launch market"],
+          ...rows.map((market) => [
+            market.name,
+            `${market.name}, ${market.state} (${market.market_type || "market"}) — ${Number(market.restaurant_count || 0).toLocaleString()} locations`,
+          ]),
+        ]);
+      })
+      .catch(() => {
+        setMarketOptions([["", "Any launch market (list unavailable)"]]);
+      });
+  }, []);
+
+  function applyFilters(event) {
+    event?.preventDefault?.();
     setFilters({ ...draft, page: 1 });
   }
 
@@ -105,6 +127,8 @@ export default function OwnerRestaurants() {
 
   const breakdown = summary?.query_breakdown;
   const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 50)));
+  const appliedBrandQuery = String(filters.q || "").trim();
+  const showBrandBreakdown = Boolean(breakdown && appliedBrandQuery && draft.q === filters.q);
 
   return (
     <OwnerLayout
@@ -112,7 +136,7 @@ export default function OwnerRestaurants() {
       actions={
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
           <button type="button" onClick={resetFilters} style={secondaryBtnStyle}>Reset</button>
-          <button type="button" onClick={applyFilters} style={primaryBtnStyle}>Apply Filters</button>
+          <button type="submit" form={FILTER_FORM_ID} style={primaryBtnStyle}>Apply Filters</button>
         </div>
       }
     >
@@ -120,23 +144,29 @@ export default function OwnerRestaurants() {
       {actionMessage ? <InfoBanner message={actionMessage} /> : null}
 
       <PageCard style={{ padding: 18, marginBottom: 16 }}>
-        <SectionTitle title="Search & Filters" subtitle="System-wide restaurant records — no geo radius or consumer discovery." />
-        <div className="owner-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(160px, 1fr))", gap: 12 }}>
-          <FilterInput label="Restaurant / chain" value={draft.q} onChange={(v) => setDraft((c) => ({ ...c, q: v }))} placeholder="Starbucks" />
-          <FilterInput label="City" value={draft.city} onChange={(v) => setDraft((c) => ({ ...c, city: v }))} />
-          <FilterInput label="State" value={draft.state} onChange={(v) => setDraft((c) => ({ ...c, state: v }))} />
-          <FilterInput label="Market" value={draft.market} onChange={(v) => setDraft((c) => ({ ...c, market: v }))} placeholder="los_angeles" />
-          <FilterInput label="Cuisine" value={draft.cuisine} onChange={(v) => setDraft((c) => ({ ...c, cuisine: v }))} />
-          <FilterSelect label="Chain only" value={draft.chain} onChange={(v) => setDraft((c) => ({ ...c, chain: v }))} options={[["", "Any"], ["true", "Chain / franchise"]]} />
-          <FilterSelect label="Menu status" value={draft.menu_status} onChange={(v) => setDraft((c) => ({ ...c, menu_status: v }))} options={[["", "Any"], ["active", "Active menu"], ["draft", "Draft menu"], ["pending", "Pending menu"], ["none", "No menu"]]} />
-          <FilterSelect label="Claim status" value={draft.claim_status} onChange={(v) => setDraft((c) => ({ ...c, claim_status: v }))} options={[["", "Any"], ["claimed", "Claimed"], ["verified", "Verified"], ["unclaimed", "Unclaimed"]]} />
-          <FilterSelect label="Source" value={draft.source} onChange={(v) => setDraft((c) => ({ ...c, source: v }))} options={[["", "Any"], ["seed", "Seed"], ["manual", "Manual"], ["owner", "Owner-created"], ["google", "Google Places"], ["osm", "OSM"]]} />
-          <FilterSelect label="Missing data" value={draft.missing} onChange={(v) => setDraft((c) => ({ ...c, missing: v }))} options={[["", "Any"], ["phone", "No phone"], ["website", "No website"], ["latlng", "No lat/lng"], ["menu", "No menu"], ["slug", "No slug"]]} />
-          <FilterSelect label="Sort" value={draft.sort} onChange={(v) => setDraft((c) => ({ ...c, sort: v }))} options={[["updated_at", "Last updated"], ["name", "Name"], ["city", "City"], ["state", "State"], ["menu_status", "Menu status"]]} />
-        </div>
+        <form id={FILTER_FORM_ID} onSubmit={applyFilters}>
+          <SectionTitle title="Search & Filters" subtitle="System-wide restaurant records — no geo radius or consumer discovery." />
+          <div className="owner-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(160px, 1fr))", gap: 12 }}>
+            <FilterInput label="Restaurant / chain" value={draft.q} onChange={(v) => setDraft((c) => ({ ...c, q: v }))} />
+            <FilterInput label="City" value={draft.city} onChange={(v) => setDraft((c) => ({ ...c, city: v }))} />
+            <FilterInput label="State" value={draft.state} onChange={(v) => setDraft((c) => ({ ...c, state: v }))} />
+            <FilterSelect label="Market" value={draft.market} onChange={(v) => setDraft((c) => ({ ...c, market: v }))} options={marketOptions} />
+            <FilterInput label="Cuisine" value={draft.cuisine} onChange={(v) => setDraft((c) => ({ ...c, cuisine: v }))} />
+            <FilterSelect label="Chain only" value={draft.chain} onChange={(v) => setDraft((c) => ({ ...c, chain: v }))} options={[["", "Any"], ["true", "Chain / franchise"]]} />
+            <FilterSelect label="Menu status" value={draft.menu_status} onChange={(v) => setDraft((c) => ({ ...c, menu_status: v }))} options={[["", "Any"], ["active", "Active menu"], ["draft", "Draft menu"], ["pending", "Pending menu"], ["none", "No menu"]]} />
+            <FilterSelect label="Claim status" value={draft.claim_status} onChange={(v) => setDraft((c) => ({ ...c, claim_status: v }))} options={[["", "Any"], ["claimed", "Claimed"], ["verified", "Verified"], ["unclaimed", "Unclaimed"]]} />
+            <FilterSelect label="Source" value={draft.source} onChange={(v) => setDraft((c) => ({ ...c, source: v }))} options={[["", "Any"], ["seed", "Seed"], ["manual", "Manual"], ["owner", "Owner-created"], ["google", "Google Places"], ["osm", "OSM"]]} />
+            <FilterSelect label="Missing data" value={draft.missing} onChange={(v) => setDraft((c) => ({ ...c, missing: v }))} options={[["", "Any"], ["phone", "No phone"], ["website", "No website"], ["latlng", "No lat/lng"], ["menu", "No menu"], ["slug", "No slug"]]} />
+            <FilterSelect label="Sort" value={draft.sort} onChange={(v) => setDraft((c) => ({ ...c, sort: v }))} options={[["updated_at", "Last updated"], ["name", "Name"], ["city", "City"], ["state", "State"], ["menu_status", "Menu status"]]} />
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap", marginTop: 16 }}>
+            <button type="button" onClick={resetFilters} style={secondaryBtnStyle}>Reset</button>
+            <button type="submit" style={primaryBtnStyle}>Apply Filters</button>
+          </div>
+        </form>
       </PageCard>
 
-      {breakdown ? (
+      {showBrandBreakdown ? (
         <PageCard style={{ padding: 18, marginBottom: 16 }}>
           <SectionTitle title={breakdown.query} subtitle="Filtered chain / brand summary" />
           <div className="owner-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(140px, 1fr))", gap: 12 }}>
@@ -144,7 +174,9 @@ export default function OwnerRestaurants() {
             <MetricCard label="Active menus" value={breakdown.active_menus} />
             <MetricCard label="Pending menus" value={breakdown.pending_menus} />
             <MetricCard label="No menu" value={breakdown.no_menu} />
-            <MetricCard label="Verified / claimed" value={breakdown.verified_or_claimed} />
+            <MetricCard label="Independent claimed" value={breakdown.independent_claimed} />
+            <MetricCard label="Independent verified" value={breakdown.independent_verified} />
+            <MetricCard label="Chain locations" value={breakdown.chain_locations} />
           </div>
           {breakdown.markets?.length ? (
             <div style={{ marginTop: 12, fontSize: 13, color: OWNER_COLORS.muted }}>
@@ -161,10 +193,13 @@ export default function OwnerRestaurants() {
 
       <div className="owner-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(150px, 1fr))", gap: 12, marginBottom: 16 }}>
         <MetricCard label="Total restaurants" value={summary?.total_restaurants} loading={loading} />
+        <MetricCard label="Independent restaurants" value={summary?.total_independent} loading={loading} />
+        <MetricCard label="Independent claimed" value={summary?.independent_claimed} loading={loading} />
+        <MetricCard label="Independent verified" value={summary?.independent_verified} loading={loading} />
+        <MetricCard label="Chain / franchise locations" value={summary?.total_chain_locations} loading={loading} />
+        <MetricCard label="Chain claimed" value={summary?.chain_claimed} loading={loading} />
         <MetricCard label="Active menus" value={summary?.total_active_menus} loading={loading} />
         <MetricCard label="No menu" value={summary?.total_no_menu} loading={loading} />
-        <MetricCard label="Verified / claimed" value={summary?.total_verified} loading={loading} />
-        <MetricCard label="Chain locations" value={summary?.total_chain_locations} loading={loading} />
         <MetricCard label="Results (filter)" value={summary?.results_count ?? pagination.total} loading={loading} />
         <MetricCard label="Missing lat/lng" value={summary?.missing_latlng} loading={loading} />
         <MetricCard label="Missing phone" value={summary?.missing_phone} loading={loading} />
@@ -304,11 +339,23 @@ function DetailDrawer({ loading, restaurant, onClose, onCrm }) {
   );
 }
 
-function FilterInput({ label, value, onChange, placeholder = "" }) {
+function FilterInput({ label, value, onChange }) {
   return (
     <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 700 }}>
       {label}
-      <input value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} style={inputStyle} />
+      <input
+        type="search"
+        name="owner_restaurant_intelligence_q"
+        value={value}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        data-lpignore="true"
+        data-1p-ignore="true"
+        onChange={(e) => onChange(e.target.value)}
+        style={inputStyle}
+      />
     </label>
   );
 }
@@ -317,7 +364,17 @@ function FilterSelect({ label, value, onChange, options }) {
   return (
     <label style={{ display: "grid", gap: 6, fontSize: 12, fontWeight: 700 }}>
       {label}
-      <select value={value} onChange={(e) => onChange(e.target.value)} style={inputStyle}>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            e.currentTarget.form?.requestSubmit();
+          }
+        }}
+        style={inputStyle}
+      >
         {options.map(([val, text]) => <option key={val || "any"} value={val}>{text}</option>)}
       </select>
     </label>
