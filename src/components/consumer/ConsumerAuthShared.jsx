@@ -248,7 +248,7 @@ export function GoogleSignInButton({ onCredential, onError, disabled, contextLab
   if (!clientId) {
     return (
       <GoogleButtonFallback
-        label={t("auth.continueGoogle", "Continue with Google")}
+        label={t("auth.google", "Google")}
         disabled
       />
     );
@@ -257,7 +257,7 @@ export function GoogleSignInButton({ onCredential, onError, disabled, contextLab
   if (disabled) {
     return (
       <GoogleButtonFallback
-        label={t("auth.continueGoogle", "Continue with Google")}
+        label={t("auth.google", "Google")}
         disabled
       />
     );
@@ -323,8 +323,8 @@ export function AppleSignInButton({ onSuccess, onError, disabled }) {
       disabled={disabled}
       style={{ ...styles.oauthButton, ...styles.appleButton, ...(disabled ? styles.oauthButtonDisabled : null) }}
     >
-      <span style={styles.appleLogo} aria-hidden="true">Apple</span>
-      <span>{t("auth.continueApple", "Continue with Apple")}</span>
+      <span style={styles.oauthIconCircle} aria-hidden="true">A</span>
+      <span>{t("auth.apple", "Apple")}</span>
     </button>
   );
 }
@@ -647,11 +647,5 @@ export const styles = {
     background: "#111827",
     color: "#fff",
     borderColor: "#111827",
-  },
-  appleLogo: {
-    fontSize: "13px",
-    lineHeight: 1,
-    fontWeight: 700,
-    letterSpacing: "0.02em",
   },
 };
