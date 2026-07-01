@@ -86,7 +86,11 @@ export default function BottomNav() {
               }}
             >
               {tab.iconComponent ? (
-                <tab.iconComponent size={iconSize} aria-hidden />
+                <tab.iconComponent
+                  size={iconSize}
+                  active={tab.to === "/browse-menus" ? active : undefined}
+                  aria-hidden
+                />
               ) : (
                 <span aria-hidden="true">{tab.icon}</span>
               )}
