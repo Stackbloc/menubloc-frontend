@@ -30,8 +30,6 @@ import BottomNav from "../components/BottomNav.jsx";
 import WaiterRefinementPrompt from "../components/search/WaiterRefinementPrompt.jsx";
 import FoodNavigationLadder from "../components/search/FoodNavigationLadder.jsx";
 import { useFoodNavigation, FOOD_NAV_SLICE_ENABLED } from "../hooks/useFoodNavigation.js";
-import { flattenHomeContextChipResults } from "../lib/homeContextChipApi.js";
-
 import { SectionTitle, StatusMessage } from "../components/grubbid/GrubbidPrimitives.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
@@ -1966,7 +1964,6 @@ function FilterToggle({ label, active, onClick, isMobile }) {
 
 export default function GrubbidSearchResults() {
   const { t, language } = useLanguage();
-  const location = useLocation();
   const params = useQueryParams();
   const navigate = useNavigate();
   const geo = useGeolocation();
@@ -2424,26 +2421,6 @@ export default function GrubbidSearchResults() {
         return;
       }
 
-      const prefetched = location.state?.homeContextChip;
-      if (prefetched?.results?.length) {
-        const flatRows = flattenHomeContextChipResults(prefetched.results);
-        if (flatRows.length) {
-          setRows(flatRows);
-          setQueryMeta({ q: prefetched.query_terms?.[0] || q, context: prefetched.context });
-          setSearchMeta({
-            result_type: "menu_items",
-            context_chip: prefetched.context,
-            temporary_patch: true,
-          });
-          setSearchTotalCount(flatRows.length);
-          setSearchOffset(flatRows.length);
-          setSearchHasMore(false);
-          setLoading(false);
-          setErr("");
-          return;
-        }
-      }
-
       setLoading(true);
       setErr("");
       setGeoFallbackUsed(false);
@@ -2538,7 +2515,6 @@ export default function GrubbidSearchResults() {
     hasGeoFilter,
     q,
     foodNav.pendingNavigation,
-    location.state,
     requestZip,
     requestCity,
     requestState,

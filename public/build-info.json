@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "4ce5298ae59d0ac013d69c61d09e5bd657db95a4",
-  "gitShortSha": "4ce5298",
+  "gitSha": "44ca26fc0a41331134cdf2c59e97c2f09eb5eb69",
+  "gitShortSha": "44ca26f",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-01T18:10:37.556Z",
+  "buildTime": "2026-07-01T19:09:27.191Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(browse): replace category grid with single-menu catalog reader."
+  "commitMessage": "fix(browse): remove prev/next screens and add swipe coach watermark."
 }

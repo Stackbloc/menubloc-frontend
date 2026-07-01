@@ -37,7 +37,7 @@ function testFoodEntryPointsMealSlot() {
   assert.strictEqual(meal.contextAware, true);
 }
 
-function testContextMealChipRoutesToSearch() {
+function testContextMealChipRoutesToWaiter() {
   const chips = getFoodEntryPoints(atLocalHour(13));
   const lunch = chips.find((c) => c.label === "Lunch");
   assert.ok(lunch);
@@ -46,8 +46,7 @@ function testContextMealChipRoutesToSearch() {
     autoLocation: null,
     shouldUseGeoBrowse: false,
   });
-  assert.match(url, /q=lunch/);
-  assert.doesNotMatch(url, /waiter/);
+  assert.strictEqual(url, "/waiter?meal_period=lunch");
 }
 
 function testLateNightMealPeriodMapping() {
@@ -60,7 +59,7 @@ function testLateNightMealPeriodMapping() {
     autoLocation: null,
     shouldUseGeoBrowse: false,
   });
-  assert.match(url, /q=late(\+|%20)night/);
+  assert.strictEqual(url, "/waiter?meal_period=late_night");
 }
 
 function testAsianChipUsesCuisineParam() {
@@ -94,7 +93,7 @@ function testSplitFoodRowsIndependently() {
 testMealWindows();
 testWeekendBrunch();
 testFoodEntryPointsMealSlot();
-testContextMealChipRoutesToSearch();
+testContextMealChipRoutesToWaiter();
 testLateNightMealPeriodMapping();
 testAsianChipUsesCuisineParam();
 testSomethingElseNotInBlankStateChips();

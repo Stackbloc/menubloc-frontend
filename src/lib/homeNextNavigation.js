@@ -39,10 +39,7 @@ export function buildHomeSearchUrl({
 export function buildHomeChipUrl(entry, locationContext) {
   if (entry?.to) return entry.to;
   if (entry?.contextAware && entry?.mealPeriod) {
-    return buildHomeSearchUrl({
-      query: entry?.query || "",
-      ...locationContext,
-    });
+    return `/waiter?meal_period=${encodeURIComponent(entry.mealPeriod)}`;
   }
   return buildHomeSearchUrl({
     query: entry?.query || "",
