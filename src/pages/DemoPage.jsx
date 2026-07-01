@@ -80,8 +80,8 @@ function MenuWindow({ theme }) {
 }
 
 export default function DemoPage() {
-  const featuredThemes = CURATED_MENU_DESIGN_LAB_THEMES.filter((theme) => ["v1", "v4", "v6"].includes(theme.style));
-  const additionalThemes = CURATED_MENU_DESIGN_LAB_THEMES.filter((theme) => ["v7", "v8", "v9"].includes(theme.style));
+  const featuredThemes = CURATED_MENU_DESIGN_LAB_THEMES.filter((theme) => ["v1", "v13", "v14"].includes(theme.style));
+  const additionalThemes = CURATED_MENU_DESIGN_LAB_THEMES.filter((theme) => ["v15", "v12"].includes(theme.style));
 
   return (
     <main style={styles.page}>

@@ -9,9 +9,16 @@ import { useIsTabletRange, getRestaurantInitials } from "./menuPresentationUtils
 import MapPinIcon from "./MapPinIcon.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
-const INK = "#1D1D1F";
-const SUBTLE = "#6E6E73";
-const HAIRLINE = "#E5E5EA";
+// Bright, punchy palette for quick-service / fast-casual concepts — bold
+// orange-red accent on section headers/logo/tabs, bolder type weight
+// throughout for a quick-scan feel. Price stays neutral ink, same as every
+// other scheme (price never competes with the item name). Same layout
+// system as v1.
+const BG = "#FFFBF5";
+const INK = "#1A1A1A";
+const SUBTLE = "#767676";
+const HAIRLINE = "#ECECEC";
+const PUNCH = "#FF5A36";
 
 function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
   if (logoUrl) {
@@ -34,14 +41,14 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
         height: size,
         borderRadius: 10,
         flexShrink: 0,
-        background: "#F5F5F7",
+        background: "#FFF0EA",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontSize: size * 0.36,
-        fontWeight: 600,
+        fontWeight: 700,
         letterSpacing: "0.02em",
-        color: SUBTLE,
+        color: PUNCH,
       }}
     >
       {getRestaurantInitials(restaurantName)}
@@ -50,22 +57,16 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
 }
 
 /**
- * V1 Classic (default) — Apple-inspired editorial redesign, adopted as the
- * default menu template. White space is the primary structural tool: no card
- * backgrounds, no borders, no colored badge fills, one restrained accent used
- * only where it carries meaning (price stays neutral; accent is reserved for
- * active/in-cart state). Hairline dividers separate rows instead of gaps
- * between boxes. Typography carries the hierarchy that color/chrome used to.
+ * V14 QSR / Fast Casual — bright, bold, quick-scan palette for counter-service
+ * concepts (bowls, tacos, sandwiches, coffee). Same Apple-inspired layout
+ * system as the default (v1); the differentiator is a punchy orange-red
+ * accent (section headers, logo, selected tab) plus bolder type weight for a
+ * faster, more energetic read. Price stays neutral, same as every scheme.
  *
- * Scope note: this covers the restaurant header through the item list only.
- * The surrounding site chrome (top nav, bottom tab bar) is shared across the
- * whole app and out of scope here — it stays as-is (still dark).
- *
- * Item-level styling lives behind PublicMenuItemCard's `editorialRefresh`
- * flag, which is additive-only and does not affect the boutique templates
- * (v2 ModernFastCasual, v5 FamilyDiner) that also use density="classic".
+ * Isolated: does not touch v1/v12/v13. Uses PublicMenuItemCard's
+ * `editorialRefresh` + `editorialColorScheme="qsr"`.
  */
-export default function ClassicMenuTemplate(ctx) {
+export default function EditorialQSRMenuTemplate(ctx) {
   const {
     isMobile,
     language,
@@ -116,18 +117,11 @@ export default function ClassicMenuTemplate(ctx) {
   const showSectionImages = shouldShowSectionImages(menuThemeSettings);
   const showLogo = logoPlacement !== "hidden";
   const isTablet = useIsTabletRange();
-  // Must exactly cancel the ancestor page container's horizontal padding
-  // (PublicMenuPage.jsx uses the same isMobile 900px cutoff: 12px vs 20px).
   const edgeBleed = isMobile ? -12 : -20;
-  const accent = brand?.accent ?? "#0071E3";
-  // TEMPORARY, scoped experiment: share sits inline next to the name instead
-  // of anchored to the trailing edge. Requested for Emmy Squared Pizza (id
-  // 678) only, to compare against the default anchored-right placement
-  // before deciding whether to change it platform-wide.
-  const shareInlineExperiment = String(currentRestaurantId) === "678";
+  const accent = brand?.accent ?? PUNCH;
 
   return (
-    <div style={{ fontFamily: FONT_STACK, background: "#FFFFFF", marginLeft: edgeBleed, marginRight: edgeBleed }}>
+    <div style={{ fontFamily: FONT_STACK, background: BG, marginLeft: edgeBleed, marginRight: edgeBleed }}>
       {heroImageUrl ? (
         <div aria-hidden style={{ height: isTablet ? 140 : isMobile ? 120 : 180, overflow: "hidden", position: "relative", flexShrink: 0 }}>
           <img
@@ -143,7 +137,7 @@ export default function ClassicMenuTemplate(ctx) {
           position: "sticky",
           top: "var(--sph-h, 88px)",
           zIndex: 50,
-          background: "rgba(255,255,255,0.86)",
+          background: "rgba(255,251,245,0.88)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           borderBottom: `1px solid ${HAIRLINE}`,
@@ -154,21 +148,19 @@ export default function ClassicMenuTemplate(ctx) {
           {showLogo && <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "nowrap" }}>
-              <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 {restaurantProfileHref ? (
                   <Link
                     to={restaurantProfileHref}
                     title={`Open ${restaurantName} profile`}
                     style={{
                       fontSize: isTablet ? 24 : isMobile ? 22 : 28,
-                      fontWeight: 600,
+                      fontWeight: 800,
                       letterSpacing: "-0.02em",
                       lineHeight: 1.15,
                       color: INK,
                       textDecoration: "none",
                       display: "block",
-                      minWidth: 0,
-                      flexShrink: shareInlineExperiment ? 1 : undefined,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -180,12 +172,10 @@ export default function ClassicMenuTemplate(ctx) {
                   <div
                     style={{
                       fontSize: isTablet ? 24 : isMobile ? 22 : 28,
-                      fontWeight: 600,
+                      fontWeight: 800,
                       letterSpacing: "-0.02em",
                       lineHeight: 1.15,
                       color: INK,
-                      minWidth: 0,
-                      flexShrink: shareInlineExperiment ? 1 : undefined,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -194,31 +184,17 @@ export default function ClassicMenuTemplate(ctx) {
                     {restaurantName}
                   </div>
                 )}
-
-                {shareInlineExperiment ? (
-                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
-                    <ShareButton
-                      variant="menu"
-                      iconOnly={true}
-                      tone="inline"
-                      shareData={shareData}
-                      analyticsContext={shareAnalyticsContext}
-                    />
-                  </div>
-                ) : null}
               </div>
 
-              {!shareInlineExperiment ? (
-                <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4 }}>
-                  <ShareButton
-                    variant="menu"
-                    iconOnly={true}
-                    tone="inline"
-                    shareData={shareData}
-                    analyticsContext={shareAnalyticsContext}
-                  />
-                </div>
-              ) : null}
+              <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4 }}>
+                <ShareButton
+                  variant="menu"
+                  iconOnly={true}
+                  tone="inline"
+                  shareData={shareData}
+                  analyticsContext={shareAnalyticsContext}
+                />
+              </div>
             </div>
 
             {addressLine ? (
@@ -241,7 +217,7 @@ export default function ClassicMenuTemplate(ctx) {
             ) : null}
 
             {(scheduledActiveMenuLabel || menuTypeLabel) ? (
-              <div style={{ marginTop: 6, fontSize: 13, fontWeight: 400, color: SUBTLE }}>
+              <div style={{ marginTop: 6, fontSize: 13, fontWeight: 500, color: SUBTLE }}>
                 {scheduledActiveMenuLabel || menuTypeLabel}
               </div>
             ) : null}
@@ -274,10 +250,10 @@ export default function ClassicMenuTemplate(ctx) {
                         flexShrink: 0,
                         padding: "7px 16px",
                         borderRadius: 999,
-                        border: isSelected ? `1px solid ${INK}` : `1px solid ${HAIRLINE}`,
-                        background: isSelected ? INK : "transparent",
+                        border: isSelected ? `1px solid ${PUNCH}` : `1px solid ${HAIRLINE}`,
+                        background: isSelected ? PUNCH : "transparent",
                         color: isSelected ? "#FFFFFF" : SUBTLE,
-                        fontWeight: 500,
+                        fontWeight: 700,
                         fontSize: 14,
                         cursor: tabLoading ? "wait" : "pointer",
                         opacity: tabLoading && !isSelected ? 0.5 : 1,
@@ -307,7 +283,7 @@ export default function ClassicMenuTemplate(ctx) {
                     "publicMenu.noItemsAfterFilters",
                     "This restaurant has no items that match your saved dietary preferences."
                   )}{" "}
-                  <Link to="/account" style={{ color: accent, fontWeight: 500, fontSize: 15, textDecoration: "underline" }}>
+                  <Link to="/account" style={{ color: accent, fontWeight: 700, fontSize: 15, textDecoration: "underline" }}>
                     {t("common.managePreferences", "Manage preferences")}
                   </Link>
                 </>
@@ -328,10 +304,10 @@ export default function ClassicMenuTemplate(ctx) {
                   <div
                     style={{
                       fontSize: 12,
-                      fontWeight: 600,
+                      fontWeight: 800,
                       letterSpacing: "0.06em",
                       textTransform: "uppercase",
-                      color: SUBTLE,
+                      color: PUNCH,
                       marginBottom: 4,
                     }}
                   >
@@ -360,6 +336,7 @@ export default function ClassicMenuTemplate(ctx) {
                         key={String(it?.id ?? `${sIdx}-${iIdx}`)}
                         density="classic"
                         editorialRefresh={true}
+                        editorialColorScheme="qsr"
                         it={it}
                         sIdx={sIdx}
                         iIdx={iIdx}

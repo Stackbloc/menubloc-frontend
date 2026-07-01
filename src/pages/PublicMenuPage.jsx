@@ -1501,7 +1501,7 @@ export default function PublicMenuPage() {
           >
             {t(
               "menuTemplates.previewBanner",
-              "Preview mode — sample data only. Use ?previewStyle=v1|v2|v3|v4|v5|v6|v7|v8|v9. On a live menu add ?menuStyle=v6."
+              "Preview mode — sample data only. Use ?previewStyle=v1|v12|v13|v14|v15. On a live menu add ?menuStyle=v13."
             )}
           </div>
         ) : null}

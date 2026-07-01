@@ -5,7 +5,8 @@ import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
-import { useIsTabletRange } from "./menuPresentationUtils.js";
+import { useIsTabletRange, getRestaurantInitials } from "./menuPresentationUtils.js";
+import MapPinIcon from "./MapPinIcon.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 // Apple iOS dark-mode color tokens — distinct from the old Menuply dark-green
@@ -31,8 +32,23 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
     <div
       title={restaurantName}
       aria-hidden
-      style={{ width: size, height: size, borderRadius: 10, flexShrink: 0, background: "#1C1C1E" }}
-    />
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 10,
+        flexShrink: 0,
+        background: "#1C1C1E",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: size * 0.36,
+        fontWeight: 600,
+        letterSpacing: "0.02em",
+        color: SUBTLE,
+      }}
+    >
+      {getRestaurantInitials(restaurantName)}
+    </div>
   );
 }
 
@@ -178,7 +194,8 @@ export default function EditorialDarkMenuTemplate(ctx) {
             </div>
 
             {addressLine ? (
-              <div style={{ fontSize: 14, color: SUBTLE, fontWeight: 400, marginTop: 4 }}>
+              <div style={{ fontSize: 14, color: SUBTLE, fontWeight: 400, marginTop: 4, display: "flex", alignItems: "flex-start", gap: 5 }}>
+                <MapPinIcon size={13} stroke={SUBTLE} />
                 {directionsHref ? (
                   <a
                     href={directionsHref}

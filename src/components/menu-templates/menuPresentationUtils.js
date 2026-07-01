@@ -25,19 +25,37 @@ export function useIsTabletRange(min = 768, max = 1024) {
 
 export function normalizeMenuStyle(raw) {
   const s = String(raw || "").toLowerCase().trim();
-  if (s === "v2" || s === "modern" || s === "cinematic") return "v2";
-  if (s === "v3" || s === "takeout" || s === "conversion") return "v3";
-  if (s === "v4" || s === "bold-casual" || s === "bold_casual" || s === "casual") return "v4";
-  if (s === "v5" || s === "refined-editorial" || s === "editorial" || s === "upscale") return "v5";
-  if (s === "v6" || s === "premium-bistro" || s === "premium_bistro" || s === "bistro") return "v6";
-  if (s === "v7" || s === "chalkboard" || s === "street" || s === "food-truck") return "v7";
-  if (s === "v8" || s === "italian" || s === "pizza" || s === "rustic-italian") return "v8";
-  if (s === "v9" || s === "asian" || s === "sushi" || s === "modern-asian") return "v9";
-  if (s === "v10" || s === "refined-dark") return "v10";
+  // v2-v10: retired boutique layouts. Numeric keys kept recognizable (so old
+  // links don't 404-equivalent) but no longer carry their old word aliases —
+  // those words now point at the current concept variants below.
+  if (s === "v2") return "v2";
+  if (s === "v3") return "v3";
+  if (s === "v4") return "v4";
+  if (s === "v5") return "v5";
+  if (s === "v6") return "v6";
+  if (s === "v7") return "v7";
+  if (s === "v8") return "v8";
+  if (s === "v9") return "v9";
+  if (s === "v10") return "v10";
   if (s === "v11" || s === "editorial-refresh") return "v11";
-  if (s === "v12" || s === "editorial-dark") return "v12";
+  if (s === "v12" || s === "editorial-dark" || s === "modern-dark" || s === "dark") return "v12";
+  if (s === "v13" || s === "steakhouse" || s === "fine-dining" || s === "editorial-steakhouse") return "v13";
+  if (s === "v14" || s === "qsr" || s === "fast-casual" || s === "quick-service") return "v14";
+  if (s === "v15" || s === "casual" || s === "family-diner" || s === "family" || s === "diner") return "v15";
   if (s === "v1" || s === "classic") return "v1";
   return "v1";
+}
+
+/**
+ * Initials shown in the logo placeholder when a restaurant has no logo image.
+ * First letters of the first two words; for a single-word name, the first
+ * two letters of that word.
+ */
+export function getRestaurantInitials(name) {
+  const words = String(name || "").trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return "";
 }
 
 /** Optional hero visual — populated when backend sends URLs; otherwise templates use gradient fallback. */

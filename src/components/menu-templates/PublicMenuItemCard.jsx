@@ -12,9 +12,14 @@ import { useIsTabletRange } from "./menuPresentationUtils.js";
 // Editorial (Apple-inspired) neutral palettes — isolated to editorialRefresh only.
 // "light" backs the new default (Classic/v1). "dark" backs the dark color-scheme
 // variant (v12) — same layout/typography system, different color tokens only.
+// "steakhouse" (v13) is a warm dark palette (candlelit, brass accent) for
+// upscale dining — still the same layout/typography system, colors only.
 const ED_PALETTES = {
-  light: { ink: "#1D1D1F", subtle: "#6E6E73", hairline: "#E5E5EA", unavailableBg: "#F5F5F7", unavailable: "#FF3B30" },
-  dark: { ink: "#F5F5F7", subtle: "#8E8E93", hairline: "#38383A", unavailableBg: "#1C1C1E", unavailable: "#FF453A" },
+  light: { ink: "#1D1D1F", subtle: "#6E6E73", hairline: "#E5E5EA", unavailableBg: "#F5F5F7", unavailable: "#FF3B30", accentDefault: "#0071E3" },
+  dark: { ink: "#F5F5F7", subtle: "#8E8E93", hairline: "#38383A", unavailableBg: "#1C1C1E", unavailable: "#FF453A", accentDefault: "#0A84FF" },
+  steakhouse: { ink: "#F2E9DC", subtle: "#A89985", hairline: "#3A2F26", unavailableBg: "#221C17", unavailable: "#D97757", accentDefault: "#C9A227" },
+  qsr: { ink: "#1A1A1A", subtle: "#767676", hairline: "#ECECEC", unavailableBg: "#F7F7F7", unavailable: "#E8483A", accentDefault: "#FF5A36" },
+  casual: { ink: "#3A2A22", subtle: "#8A7568", hairline: "#EAE0D3", unavailableBg: "#F5EEE3", unavailable: "#C0392B", accentDefault: "#D2691E" },
 };
 
 function EditorialTag({ label, color }) {
@@ -106,7 +111,7 @@ export default function PublicMenuItemCard({
   menuThemeSettings = {},
 }) {
   const themeSettings = normalizeMenuThemeSettings(menuThemeSettings);
-  const accent = brand?.accent ?? "#22C55E";
+  const accent = brand?.accent ?? (editorialRefresh ? (ED_PALETTES[editorialColorScheme]?.accentDefault || ED_PALETTES.light.accentDefault) : "#22C55E");
   const onAccent = brand?.onAccent ?? "#0B0F0C";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
   const softBorder = brand?.accentBorder ?? "rgba(34,197,94,0.32)";

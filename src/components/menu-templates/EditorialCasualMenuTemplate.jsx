@@ -9,9 +9,14 @@ import { useIsTabletRange, getRestaurantInitials } from "./menuPresentationUtils
 import MapPinIcon from "./MapPinIcon.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
-const INK = "#1D1D1F";
-const SUBTLE = "#6E6E73";
-const HAIRLINE = "#E5E5EA";
+// Warm, friendly palette for casual/family dining and diners — warm cream
+// background, warm brown ink instead of pure black, terracotta accent. Same
+// layout system as v1; colors and warmth only.
+const BG = "#FFF8EF";
+const INK = "#3A2A22";
+const SUBTLE = "#8A7568";
+const HAIRLINE = "#EAE0D3";
+const TERRACOTTA = "#D2691E";
 
 function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
   if (logoUrl) {
@@ -34,14 +39,14 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
         height: size,
         borderRadius: 10,
         flexShrink: 0,
-        background: "#F5F5F7",
+        background: "#F5EEE3",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontSize: size * 0.36,
         fontWeight: 600,
         letterSpacing: "0.02em",
-        color: SUBTLE,
+        color: TERRACOTTA,
       }}
     >
       {getRestaurantInitials(restaurantName)}
@@ -50,22 +55,16 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
 }
 
 /**
- * V1 Classic (default) — Apple-inspired editorial redesign, adopted as the
- * default menu template. White space is the primary structural tool: no card
- * backgrounds, no borders, no colored badge fills, one restrained accent used
- * only where it carries meaning (price stays neutral; accent is reserved for
- * active/in-cart state). Hairline dividers separate rows instead of gaps
- * between boxes. Typography carries the hierarchy that color/chrome used to.
+ * V15 Casual / Family Dining — warm, friendly palette for diners, breakfast
+ * spots, and family-owned comfort food. Same Apple-inspired layout system as
+ * the default (v1); the differentiator is warmth — cream background, warm
+ * brown ink instead of stark black, terracotta accent instead of a cool or
+ * neutral tone.
  *
- * Scope note: this covers the restaurant header through the item list only.
- * The surrounding site chrome (top nav, bottom tab bar) is shared across the
- * whole app and out of scope here — it stays as-is (still dark).
- *
- * Item-level styling lives behind PublicMenuItemCard's `editorialRefresh`
- * flag, which is additive-only and does not affect the boutique templates
- * (v2 ModernFastCasual, v5 FamilyDiner) that also use density="classic".
+ * Isolated: does not touch v1/v12/v13/v14. Uses PublicMenuItemCard's
+ * `editorialRefresh` + `editorialColorScheme="casual"`.
  */
-export default function ClassicMenuTemplate(ctx) {
+export default function EditorialCasualMenuTemplate(ctx) {
   const {
     isMobile,
     language,
@@ -116,18 +115,11 @@ export default function ClassicMenuTemplate(ctx) {
   const showSectionImages = shouldShowSectionImages(menuThemeSettings);
   const showLogo = logoPlacement !== "hidden";
   const isTablet = useIsTabletRange();
-  // Must exactly cancel the ancestor page container's horizontal padding
-  // (PublicMenuPage.jsx uses the same isMobile 900px cutoff: 12px vs 20px).
   const edgeBleed = isMobile ? -12 : -20;
-  const accent = brand?.accent ?? "#0071E3";
-  // TEMPORARY, scoped experiment: share sits inline next to the name instead
-  // of anchored to the trailing edge. Requested for Emmy Squared Pizza (id
-  // 678) only, to compare against the default anchored-right placement
-  // before deciding whether to change it platform-wide.
-  const shareInlineExperiment = String(currentRestaurantId) === "678";
+  const accent = brand?.accent ?? TERRACOTTA;
 
   return (
-    <div style={{ fontFamily: FONT_STACK, background: "#FFFFFF", marginLeft: edgeBleed, marginRight: edgeBleed }}>
+    <div style={{ fontFamily: FONT_STACK, background: BG, marginLeft: edgeBleed, marginRight: edgeBleed }}>
       {heroImageUrl ? (
         <div aria-hidden style={{ height: isTablet ? 140 : isMobile ? 120 : 180, overflow: "hidden", position: "relative", flexShrink: 0 }}>
           <img
@@ -143,7 +135,7 @@ export default function ClassicMenuTemplate(ctx) {
           position: "sticky",
           top: "var(--sph-h, 88px)",
           zIndex: 50,
-          background: "rgba(255,255,255,0.86)",
+          background: "rgba(255,248,239,0.88)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           borderBottom: `1px solid ${HAIRLINE}`,
@@ -154,7 +146,7 @@ export default function ClassicMenuTemplate(ctx) {
           {showLogo && <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "nowrap" }}>
-              <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 {restaurantProfileHref ? (
                   <Link
                     to={restaurantProfileHref}
@@ -162,13 +154,11 @@ export default function ClassicMenuTemplate(ctx) {
                     style={{
                       fontSize: isTablet ? 24 : isMobile ? 22 : 28,
                       fontWeight: 600,
-                      letterSpacing: "-0.02em",
+                      letterSpacing: "-0.01em",
                       lineHeight: 1.15,
                       color: INK,
                       textDecoration: "none",
                       display: "block",
-                      minWidth: 0,
-                      flexShrink: shareInlineExperiment ? 1 : undefined,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -181,11 +171,9 @@ export default function ClassicMenuTemplate(ctx) {
                     style={{
                       fontSize: isTablet ? 24 : isMobile ? 22 : 28,
                       fontWeight: 600,
-                      letterSpacing: "-0.02em",
+                      letterSpacing: "-0.01em",
                       lineHeight: 1.15,
                       color: INK,
-                      minWidth: 0,
-                      flexShrink: shareInlineExperiment ? 1 : undefined,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -194,31 +182,17 @@ export default function ClassicMenuTemplate(ctx) {
                     {restaurantName}
                   </div>
                 )}
-
-                {shareInlineExperiment ? (
-                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
-                    <ShareButton
-                      variant="menu"
-                      iconOnly={true}
-                      tone="inline"
-                      shareData={shareData}
-                      analyticsContext={shareAnalyticsContext}
-                    />
-                  </div>
-                ) : null}
               </div>
 
-              {!shareInlineExperiment ? (
-                <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4 }}>
-                  <ShareButton
-                    variant="menu"
-                    iconOnly={true}
-                    tone="inline"
-                    shareData={shareData}
-                    analyticsContext={shareAnalyticsContext}
-                  />
-                </div>
-              ) : null}
+              <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4 }}>
+                <ShareButton
+                  variant="menu"
+                  iconOnly={true}
+                  tone="inline"
+                  shareData={shareData}
+                  analyticsContext={shareAnalyticsContext}
+                />
+              </div>
             </div>
 
             {addressLine ? (
@@ -274,8 +248,8 @@ export default function ClassicMenuTemplate(ctx) {
                         flexShrink: 0,
                         padding: "7px 16px",
                         borderRadius: 999,
-                        border: isSelected ? `1px solid ${INK}` : `1px solid ${HAIRLINE}`,
-                        background: isSelected ? INK : "transparent",
+                        border: isSelected ? `1px solid ${TERRACOTTA}` : `1px solid ${HAIRLINE}`,
+                        background: isSelected ? TERRACOTTA : "transparent",
                         color: isSelected ? "#FFFFFF" : SUBTLE,
                         fontWeight: 500,
                         fontSize: 14,
@@ -331,7 +305,7 @@ export default function ClassicMenuTemplate(ctx) {
                       fontWeight: 600,
                       letterSpacing: "0.06em",
                       textTransform: "uppercase",
-                      color: SUBTLE,
+                      color: TERRACOTTA,
                       marginBottom: 4,
                     }}
                   >
@@ -360,6 +334,7 @@ export default function ClassicMenuTemplate(ctx) {
                         key={String(it?.id ?? `${sIdx}-${iIdx}`)}
                         density="classic"
                         editorialRefresh={true}
+                        editorialColorScheme="casual"
                         it={it}
                         sIdx={sIdx}
                         iIdx={iIdx}
