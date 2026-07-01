@@ -250,27 +250,6 @@ function IntakePreviewBanner({ show }) {
   );
 }
 
-function FranchisePricingDisclosureBanner({ text }) {
-  const disclosure = asStr(text).trim();
-  if (!disclosure) return null;
-  return (
-    <div
-      role="note"
-      aria-label="Pricing information"
-      style={{
-        padding: "6px 2px 10px",
-        borderBottom: "1px solid rgba(217,119,6,0.18)",
-        color: "#92700F",
-        fontSize: 11,
-        lineHeight: 1.45,
-        marginBottom: 16,
-      }}
-    >
-      {disclosure}
-    </div>
-  );
-}
-
 function FranchiseLocationSheet({ locations, currentRestaurantId, brandName, onSelect, onClose, accent }) {
   return (
     <div
@@ -637,24 +616,6 @@ function ItemDetailSheet({
               />
             </div>
           ) : null}
-
-          {!canAddToOrder ? (
-            <div
-              style={{
-                marginBottom: 16,
-                padding: "12px 14px",
-                borderRadius: 14,
-                background: "#1c1a0a",
-                color: "#FCD34D",
-                fontSize: 13,
-                fontWeight: 700,
-                lineHeight: 1.5,
-              }}
-            >
-              This item is not currently available for checkout because pricing is unavailable.
-            </div>
-          ) : null}
-
 
           {/* Indulgence */}
           {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
@@ -1379,10 +1340,7 @@ export default function PublicMenuPage() {
           shareAnalyticsContext,
           franchiseSlot,
           intakeBannerSlot: (
-            <>
-              <IntakePreviewBanner show={isIntakePreview} />
-              <FranchisePricingDisclosureBanner text={data?.pricing_disclosure} />
-            </>
+            <IntakePreviewBanner show={isIntakePreview} />
           ),
           allergenBannerSlot: <AllergenFilterBanner active={allergenFilterActive} enabledKeys={enabledAllergenKeys} />,
           displaySections,

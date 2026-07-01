@@ -167,23 +167,6 @@ export default function CatalogItemDetailSheet({
             </div>
           ) : null}
 
-          {!canAddToOrder ? (
-            <div
-              style={{
-                marginBottom: 16,
-                padding: "12px 14px",
-                borderRadius: 14,
-                background: "#1c1a0a",
-                color: "#FCD34D",
-                fontSize: 13,
-                fontWeight: 700,
-                lineHeight: 1.5,
-              }}
-            >
-              This item is not currently available for checkout because pricing is unavailable.
-            </div>
-          ) : null}
-
           {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}
 
           {canNavigate && navigate ? (
