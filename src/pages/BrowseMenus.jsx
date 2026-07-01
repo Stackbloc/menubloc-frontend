@@ -1,6 +1,6 @@
 /**
  * Menu Catalog Reader — one full restaurant menu at a time.
- * Sidebar picks the category sequence; Previous / Next flip through menus.
+ * Top category tabs pick the sequence; swipe or arrows flip through menus.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -8,11 +8,17 @@ import { useLocation, useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import CatalogMenuRenderer, { prefetchCatalogMenu } from "../components/menuCatalog/CatalogMenuRenderer.jsx";
-import MenuCatalogSidebar from "../components/menuCatalog/MenuCatalogSidebar.jsx";
-import MenuCatalogControls from "../components/menuCatalog/MenuCatalogControls.jsx";
+import MenuCatalogCategoryTabs from "../components/menuCatalog/MenuCatalogCategoryTabs.jsx";
+import MenuCatalogSwipeCoach, {
+  dismissMenuCatalogSwipeCoach,
+  isMenuCatalogSwipeCoachDismissed,
+} from "../components/menuCatalog/MenuCatalogSwipeCoach.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import useMenuCatalogSequence from "../hooks/useMenuCatalogSequence.js";
-import { MENU_CATALOG_DEFAULT_SECTION } from "../lib/menuCatalogCategories.js";
+import {
+  MENU_CATALOG_DEFAULT_SECTION,
+  MENU_CATALOG_SWIPE_HINT_MAX_INDEX,
+} from "../lib/menuCatalogCategories.js";
 import { asFiniteNumber } from "../lib/catalogMenuUtils.js";
 
 function useIsMobile(breakpoint = 900) {
@@ -68,13 +74,18 @@ export default function BrowseMenus() {
   const urlIndex = asFiniteNumber(urlParams.get("i")) ?? 0;
 
   const [locationParams, setLocationParams] = useState({ city: urlCity || null, state: urlState || null });
+  const [swipeCoachDismissed, setSwipeCoachDismissed] = useState(() => isMenuCatalogSwipeCoachDismissed());
   const swipeRef = useRef({ startX: 0, startY: 0 });
+
+  const dismissSwipeCoach = useCallback(() => {
+    dismissMenuCatalogSwipeCoach();
+    setSwipeCoachDismissed(true);
+  }, []);
 
   const {
     entries,
     currentEntry,
     activeIndex,
-    totalCount,
     loading,
     loadingMore,
     error,
@@ -177,11 +188,24 @@ export default function BrowseMenus() {
     const dx = touch.clientX - swipeRef.current.startX;
     const dy = touch.clientY - swipeRef.current.startY;
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    dismissSwipeCoach();
     if (dx < 0) goNext();
     else goPrev();
   }
 
   const showMenuLoading = (loading && !currentEntry) || waitingForPage || (loadingMore && !currentEntry);
+  const showSwipeCoach = Boolean(
+    currentEntry
+    && !showMenuLoading
+    && !swipeCoachDismissed
+    && activeIndex <= MENU_CATALOG_SWIPE_HINT_MAX_INDEX
+  );
+
+  useEffect(() => {
+    if (activeIndex > MENU_CATALOG_SWIPE_HINT_MAX_INDEX) {
+      dismissSwipeCoach();
+    }
+  }, [activeIndex, dismissSwipeCoach]);
 
   return (
     <div
@@ -196,78 +220,64 @@ export default function BrowseMenus() {
     >
       <StickyPageHeader />
 
+      <MenuCatalogCategoryTabs
+        activeSection={activeSection}
+        onSelect={selectSection}
+      />
+
       <div
         style={{
           flex: 1,
           minHeight: 0,
           display: "flex",
-          flexDirection: isMobile ? "column" : "row",
+          flexDirection: "column",
           overflow: "hidden",
+          position: "relative",
         }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
-        <MenuCatalogSidebar
-          activeSection={activeSection}
-          onSelect={selectSection}
-          isMobile={isMobile}
-        />
+        {showMenuLoading ? (
+          <div style={{ padding: 24, fontSize: 14, fontWeight: 600, color: "#667085" }}>
+            {t("menuCatalog.loadingMenu", "Loading menu…")}
+          </div>
+        ) : null}
 
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0,
-            minHeight: 0,
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
-          {showMenuLoading ? (
-            <div style={{ padding: 24, fontSize: 14, fontWeight: 600, color: "#667085" }}>
-              {t("menuCatalog.loadingMenu", "Loading menu…")}
+        {error ? (
+          <div style={{ padding: 24 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
+              {t("menuCatalog.loadError", "Couldn't load menus")}
             </div>
-          ) : null}
+            <div style={{ color: "#667085", fontSize: 14 }}>{error}</div>
+          </div>
+        ) : null}
 
-          {error ? (
-            <div style={{ padding: 24 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
-                {t("menuCatalog.loadError", "Couldn't load menus")}
-              </div>
-              <div style={{ color: "#667085", fontSize: 14 }}>{error}</div>
+        {isEmpty && !loading ? (
+          <div style={{ padding: 24 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
+              {t("menuBrowser.emptyTitle", "No menus in this category yet")}
             </div>
-          ) : null}
-
-          {isEmpty && !loading ? (
-            <div style={{ padding: 24 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
-                {t("menuBrowser.emptyTitle", "No menus in this category yet")}
-              </div>
-              <div style={{ color: "#667085", fontSize: 14 }}>
-                {t("menuBrowser.emptyBody", "Try another category or check back as we add more menus.")}
-              </div>
+            <div style={{ color: "#667085", fontSize: 14 }}>
+              {t("menuBrowser.emptyBody", "Try another category or check back as we add more menus.")}
             </div>
-          ) : null}
+          </div>
+        ) : null}
 
-          {currentEntry ? (
-            <CatalogMenuRenderer
-              key={`${activeSection}-${currentEntry.restaurant_id}-${activeIndex}`}
-              entry={currentEntry}
-              locationParams={locationParams}
-              isMobile={isMobile}
-            />
-          ) : null}
-
-          <MenuCatalogControls
-            index={activeIndex}
-            total={totalCount}
-            hasPrev={hasPrev}
-            hasNext={hasNext}
-            onPrev={goPrev}
-            onNext={goNext}
+        {currentEntry ? (
+          <CatalogMenuRenderer
+            key={`${activeSection}-${currentEntry.restaurant_id}-${activeIndex}`}
+            entry={currentEntry}
+            locationParams={locationParams}
             isMobile={isMobile}
           />
-        </div>
+        ) : null}
+
+        {showSwipeCoach ? (
+          <MenuCatalogSwipeCoach
+            index={activeIndex}
+            visible
+          />
+        ) : null}
       </div>
 
       <BottomNav />

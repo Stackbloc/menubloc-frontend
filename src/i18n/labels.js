@@ -159,6 +159,7 @@ export const UI_LABELS = {
     "menuCatalog.loadingMenu": "Loading menu…",
     "menuCatalog.loadError": "Couldn't load menus",
     "menuCatalog.selectMenu": "Select a category to browse menus.",
+    "menuCatalog.swipe": "Swipe",
     "search.title": "Search results",
     "search.searchingFor": "Searching for",
     "search.noDietaryResults": "No menu items meet your preference for {filters}.",

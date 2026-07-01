@@ -55,29 +55,6 @@ function AllergenFilterBanner({ active, enabledKeys }) {
   );
 }
 
-function FranchisePricingDisclosureBanner({ text }) {
-  const disclosure = asStr(text).trim();
-  if (!disclosure) return null;
-  return (
-    <div
-      role="note"
-      aria-label="Pricing information"
-      style={{
-        padding: "10px 14px",
-        borderRadius: 12,
-        background: "#fffbeb",
-        border: "1px solid #fcd34d",
-        color: "#78350f",
-        fontSize: 12,
-        lineHeight: 1.45,
-        marginBottom: 16,
-      }}
-    >
-      {disclosure}
-    </div>
-  );
-}
-
 function AddedConfirmation({ name, onRemove, setConfirmation, brand }) {
   const accent = brand?.accent ?? "#22C55E";
   const accentBorder = brand?.accentBorder ?? "rgba(34,197,94,0.24)";
@@ -495,11 +472,7 @@ export default function CatalogMenuRenderer({
           shareData,
           shareAnalyticsContext,
           franchiseSlot: null,
-          intakeBannerSlot: (
-            <>
-              <FranchisePricingDisclosureBanner text={data?.pricing_disclosure} />
-            </>
-          ),
+          intakeBannerSlot: null,
           allergenBannerSlot: <AllergenFilterBanner active={allergenFilterActive} enabledKeys={enabledAllergenKeys} />,
           displaySections,
           displayableItemCount,
