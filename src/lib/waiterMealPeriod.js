@@ -1,3 +1,5 @@
+import { getZonedParts } from "./timeZoneUtils.js";
+
 export const WAITER_MEAL_PERIODS = [
   { id: "breakfast", label: "Breakfast" },
   { id: "brunch", label: "Brunch" },
@@ -42,8 +44,15 @@ export function normalizeMealPeriodId(value) {
   return WAITER_MEAL_PERIODS.some((period) => period.id === key) ? key : null;
 }
 
-export function getDefaultMealPeriod(date = new Date()) {
-  const hour = date.getHours();
+/**
+ * `timezone` should be the IANA zone of the market being viewed (e.g. the
+ * restaurant's own local time), not the viewer's device timezone — a user
+ * checking a Dothan, AL restaurant from a Pacific-time device must still see
+ * Dothan's actual local meal period. Falls back to the device's own detected
+ * timezone when no market timezone is available.
+ */
+export function getDefaultMealPeriod(date = new Date(), timezone) {
+  const { hour } = getZonedParts(date, timezone);
   if (hour >= 5 && hour < 11) return "breakfast";
   if (hour >= 11 && hour < 15) return "lunch";
   if (hour >= 15 && hour < 17) return "brunch";
@@ -51,8 +60,8 @@ export function getDefaultMealPeriod(date = new Date()) {
   return "late_night";
 }
 
-export function getWaiterGreeting(date = new Date()) {
-  const hour = date.getHours();
+export function getWaiterGreeting(date = new Date(), timezone) {
+  const { hour } = getZonedParts(date, timezone);
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";

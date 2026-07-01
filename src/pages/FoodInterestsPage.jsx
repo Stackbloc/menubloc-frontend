@@ -10,6 +10,7 @@ import {
   normalizeMealPeriodId,
   WAITER_MEAL_PERIODS,
 } from "../lib/waiterMealPeriod.js";
+import { getTimezoneForUsState } from "../lib/timeZoneUtils.js";
 import {
   groupLabeledRecommendationTopics,
   groupLikedRecommendations,
@@ -347,18 +348,6 @@ export default function FoodInterestsPage() {
   const [searchParams] = useSearchParams();
   const { isAuthenticated, profile } = useConsumer();
   const now = useMemo(() => new Date(), []);
-  const mealPeriodFromUrl = useMemo(
-    () => normalizeMealPeriodId(searchParams.get("meal_period")),
-    [searchParams]
-  );
-  const [mealPeriod, setMealPeriod] = useState(() => mealPeriodFromUrl || getDefaultMealPeriod(now));
-
-  useEffect(() => {
-    if (mealPeriodFromUrl) {
-      setMealPeriod(mealPeriodFromUrl);
-    }
-  }, [mealPeriodFromUrl]);
-  const [briefing, setBriefing] = useState(null);
   const [locationLabel] = useState(() => {
     if (typeof window === "undefined") return "";
     return (
@@ -366,6 +355,24 @@ export default function FoodInterestsPage() {
       String(window.sessionStorage.getItem(SESSION_AUTO_LABEL_KEY) || "").trim()
     );
   });
+  const location = useMemo(() => parseSessionLocation(locationLabel), [locationLabel]);
+  // The market being viewed, not the viewer's device — a user checking a
+  // Dothan, AL restaurant from a Pacific-time device must still see Dothan's
+  // actual local meal period. Falls back to the device's own timezone when
+  // no market location is set yet.
+  const marketTimezone = useMemo(() => getTimezoneForUsState(location.state), [location.state]);
+  const mealPeriodFromUrl = useMemo(
+    () => normalizeMealPeriodId(searchParams.get("meal_period")),
+    [searchParams]
+  );
+  const [mealPeriod, setMealPeriod] = useState(() => mealPeriodFromUrl || getDefaultMealPeriod(now, marketTimezone));
+
+  useEffect(() => {
+    if (mealPeriodFromUrl) {
+      setMealPeriod(mealPeriodFromUrl);
+    }
+  }, [mealPeriodFromUrl]);
+  const [briefing, setBriefing] = useState(null);
   const [briefingLoading, setBriefingLoading] = useState(() => {
     if (typeof window === "undefined") return false;
     const raw = (
@@ -375,8 +382,6 @@ export default function FoodInterestsPage() {
     const initialLocation = parseSessionLocation(raw);
     return Boolean(initialLocation.city && initialLocation.state);
   });
-
-  const location = useMemo(() => parseSessionLocation(locationLabel), [locationLabel]);
 
   useEffect(() => {
     if (!location.city || !location.state) return undefined;
@@ -393,7 +398,10 @@ export default function FoodInterestsPage() {
     ? `Food picks for ${locationLabel}.`
     : "Your local food market intelligence.";
   const firstName = profile?.first_name || briefing?.account?.first_name || "there";
-  const formattedDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(now);
+  const formattedDate = new Intl.DateTimeFormat(undefined, {
+    weekday: "long", month: "long", day: "numeric", year: "numeric",
+    ...(marketTimezone ? { timeZone: marketTimezone } : null),
+  }).format(now);
 
   const recommendationRows = Array.isArray(briefing?.suggestions)
     ? briefing.suggestions
@@ -439,7 +447,7 @@ export default function FoodInterestsPage() {
 
         <section style={{ marginTop: 20, borderRadius: 20, border: "1px solid rgba(31,41,55,0.92)", background: "rgba(17,24,20,0.88)", padding: 18, boxShadow: "0 20px 40px rgba(0,0,0,0.28)" }}>
           <div style={{ fontSize: 13, color: "#9CA3AF" }}>Today is {formattedDate}.</div>
-          <h2 style={{ margin: "5px 0 0", fontSize: 22, color: "#F9FAFB", letterSpacing: "-0.02em" }}>{getWaiterGreeting(now)}, {firstName}.</h2>
+          <h2 style={{ margin: "5px 0 0", fontSize: 22, color: "#F9FAFB", letterSpacing: "-0.02em" }}>{getWaiterGreeting(now, marketTimezone)}, {firstName}.</h2>
 
           <div role="radiogroup" aria-label="Meal period" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
             {WAITER_MEAL_PERIODS.map((period) => {
