@@ -199,7 +199,8 @@ export default async function middleware(request) {
     const canonical = buildCanonicalRestaurantPath(meta.data, "/menu");
     // Only redirect when the canonical differs from the current URL (avoids redirect loops)
     if (canonical !== `${ORIGIN}${pathname}`) {
-      return Response.redirect(canonical, 301);
+      const search = new URL(request.url).search;
+      return Response.redirect(canonical + search, 301);
     }
     const shell = await fetchShell(request.url);
     if (!shell) return;
