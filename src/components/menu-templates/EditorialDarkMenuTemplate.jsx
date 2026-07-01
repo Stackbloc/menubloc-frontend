@@ -7,6 +7,7 @@ import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 import { useIsTabletRange, getRestaurantInitials } from "./menuPresentationUtils.js";
 import MapPinIcon from "./MapPinIcon.jsx";
+import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 // Apple iOS dark-mode color tokens — distinct from the old Menuply dark-green
@@ -75,6 +76,8 @@ export default function EditorialDarkMenuTemplate(ctx) {
     addressLine2,
     addressLine,
     directionsHref,
+    distanceMiles,
+    showDistanceBelowAddress,
     logoUrl,
     logoPlacement = "top-left",
     heroImageUrl,
@@ -210,6 +213,10 @@ export default function EditorialDarkMenuTemplate(ctx) {
                   <span>{addressLine1}{addressLine2 ? `, ${addressLine2}` : ""}</span>
                 )}
               </div>
+            ) : null}
+
+            {showDistanceBelowAddress ? (
+              <MenuRestaurantDistanceLine miles={distanceMiles} color={SUBTLE} />
             ) : null}
 
             {(scheduledActiveMenuLabel || menuTypeLabel) ? (

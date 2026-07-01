@@ -318,6 +318,7 @@ export default function BrowseMenus() {
               entry={currentEntry}
               locationParams={locationParams}
               isMobile={isMobile}
+              browseSection={activeSection}
               onLoadStateChange={handleMenuLoadStateChange}
             />
           </div>

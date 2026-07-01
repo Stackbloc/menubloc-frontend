@@ -159,6 +159,7 @@ export default function CatalogMenuRenderer({
   entry,
   locationParams = {},
   isMobile = false,
+  browseSection = "",
   onLoadStateChange,
 }) {
   const { language, t } = useLanguage();
@@ -345,6 +346,12 @@ export default function CatalogMenuRenderer({
   const addressLine2 = buildAddressLocalityLine(data?.city, data?.state, data?.zip);
   const addressLine = asStr(data?.address_line).trim() || [addressLine1, addressLine2].filter(Boolean).join(", ");
   const directionsHref = buildGoogleMapsDirectionsUrl(addressLine);
+  const distanceMiles = useMemo(() => {
+    const fromEntry = asFiniteNumber(entry?.distance_miles ?? entry?.restaurant_distance_miles);
+    if (fromEntry != null) return fromEntry;
+    return asFiniteNumber(data?.distance_miles ?? data?.restaurant_distance_miles);
+  }, [data?.distance_miles, data?.restaurant_distance_miles, entry?.distance_miles, entry?.restaurant_distance_miles]);
+  const showDistanceBelowAddress = browseSection === "nearby" && distanceMiles != null;
   const sections = tabSections?.sections ?? normalizeSections(data);
   const displaySections = getFilteredDisplaySections(sections, dietPrefs, enabledAllergenKeys);
   const displayableItemCount = displaySections.reduce(
@@ -472,6 +479,8 @@ export default function CatalogMenuRenderer({
           addressLine2,
           addressLine,
           directionsHref,
+          distanceMiles,
+          showDistanceBelowAddress,
           logoUrl: data?.logo_url || null,
           logoPlacement: menuThemeSettings.logo_placement || "top-left",
           shareData,
