@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getFoodEntryPoints,
@@ -7,6 +7,10 @@ import {
   splitFoodEntryPointRows,
 } from "../../lib/homeNextEntryPoints.js";
 import { buildHomeChipUrl } from "../../lib/homeNextNavigation.js";
+import {
+  buildHomeContextChipSearchUrl,
+  fetchHomeContextChip,
+} from "../../lib/homeContextChipApi.js";
 
 function FoodChipRow({ entries, onChipClick }) {
   if (!entries.length) return null;
@@ -32,10 +36,29 @@ function FoodChipRow({ entries, onChipClick }) {
 export default function HomeNextFoodGrid({ autoLocation, appliedLocation, shouldUseGeoBrowse }) {
   const navigate = useNavigate();
   const [rowOne, rowTwo] = useMemo(() => splitFoodEntryPointRows(getFoodEntryPoints()), []);
+  const [contextLoading, setContextLoading] = useState(false);
 
   const locationContext = { appliedLocation, autoLocation, shouldUseGeoBrowse };
 
-  function handleClick(entry) {
+  async function handleClick(entry) {
+    if (entry?.contextAware) {
+      setContextLoading(true);
+      try {
+        const payload = await fetchHomeContextChip({
+          appliedLocation,
+          autoLocation,
+          shouldUseGeoBrowse,
+          mealPeriod: entry.mealPeriod,
+        });
+        const target = buildHomeContextChipSearchUrl(entry, payload, locationContext);
+        navigate(target, { state: { homeContextChip: payload } });
+      } catch {
+        navigate(buildHomeChipUrl(entry, locationContext));
+      } finally {
+        setContextLoading(false);
+      }
+      return;
+    }
     navigate(buildHomeChipUrl(entry, locationContext));
   }
 
@@ -49,7 +72,7 @@ export default function HomeNextFoodGrid({ autoLocation, appliedLocation, should
           Start with a food — we&apos;ll help you narrow it down
         </p>
       </div>
-      <div className="home-next-food-chip-rows">
+      <div className="home-next-food-chip-rows" aria-busy={contextLoading}>
         <FoodChipRow entries={rowOne} onChipClick={handleClick} />
         <FoodChipRow entries={rowTwo} onChipClick={handleClick} />
       </div>
