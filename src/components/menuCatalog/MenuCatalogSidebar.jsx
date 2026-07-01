@@ -1,0 +1,63 @@
+import { useLanguage } from "../../context/LanguageContext.jsx";
+import { MENU_CATALOG_SIDEBAR, toMenuCatalogTranslationKey } from "../../lib/menuCatalogCategories.js";
+
+export default function MenuCatalogSidebar({
+  activeSection,
+  onSelect,
+  isMobile = false,
+}) {
+  const { t } = useLanguage();
+
+  const listStyle = {
+    listStyle: "none",
+    margin: 0,
+    padding: isMobile ? "8px 12px" : "12px 0",
+    display: isMobile ? "flex" : "block",
+    flexDirection: isMobile ? "row" : undefined,
+    gap: isMobile ? 4 : 0,
+    overflowX: isMobile ? "auto" : undefined,
+    WebkitOverflowScrolling: "touch",
+    borderRight: isMobile ? "none" : "1px solid rgba(0,0,0,0.08)",
+    borderBottom: isMobile ? "1px solid rgba(0,0,0,0.08)" : "none",
+    flexShrink: 0,
+    width: isMobile ? "100%" : 168,
+    background: "var(--gb-color-page, #f8f6f1)",
+  };
+
+  return (
+    <nav aria-label={t("menuCatalog.categories", "Categories")} style={listStyle}>
+      {MENU_CATALOG_SIDEBAR.map((entry) => {
+        const isActive = entry.id === activeSection;
+        const label = t(toMenuCatalogTranslationKey(entry.id), entry.label);
+        return (
+          <button
+            key={entry.id}
+            type="button"
+            onClick={() => onSelect(entry.id)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              width: isMobile ? "auto" : "100%",
+              textAlign: "left",
+              border: "none",
+              background: isActive ? "rgba(34, 197, 94, 0.12)" : "transparent",
+              color: isActive ? "#15803d" : "var(--gb-color-ink, #1a1a1a)",
+              fontSize: isMobile ? 13 : 14,
+              fontWeight: isActive ? 800 : 600,
+              padding: isMobile ? "8px 12px" : "9px 16px",
+              borderRadius: isMobile ? 999 : 0,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            {isActive && !isMobile ? (
+              <span aria-hidden="true" style={{ marginRight: 6, fontSize: 11 }}>►</span>
+            ) : null}
+            {label}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}

@@ -1,0 +1,691 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext.jsx";
+import { useOrderCart } from "../../context/OrderCartContext.jsx";
+import { useConsumer } from "../../context/ConsumerContext.jsx";
+import { getLocalizedField } from "../../utils/getLocalizedField.js";
+import BasketSummaryBar from "../basket/BasketSummaryBar.jsx";
+import ModifierSheet from "../basket/ModifierSheet.jsx";
+import SmartCustomizationSheet, { isCustomizableItem } from "../basket/SmartCustomizationSheet.jsx";
+import PublicMenuMainContent from "../menu-templates/PublicMenuMainContent.jsx";
+import { normalizeMenuStyle, pickHeroImageUrl } from "../menu-templates/menuPresentationUtils.js";
+import { buildRestaurantMenuBrand, fontStackForPreset } from "../menu-templates/restaurantMenuBrand.js";
+import { normalizeMenuThemeSettings } from "../menu-templates/menuThemeSettings.js";
+import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
+import { buildMenuShareMetadata } from "../share/shareUtils.js";
+import { toConsumerErrorMessage } from "../../lib/api.js";
+import CatalogItemDetailSheet from "./CatalogItemDetailSheet.jsx";
+import {
+  asFiniteNumber,
+  asStr,
+  buildAddressLocalityLine,
+  buildGoogleMapsDirectionsUrl,
+  getCartItemState,
+  getFilteredDisplaySections,
+  isFoodTruckCategory,
+  normalizeSections,
+} from "../../lib/catalogMenuUtils.js";
+
+const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
+
+const menuPayloadCache = new Map();
+
+function AllergenFilterBanner({ active, enabledKeys }) {
+  if (!active || !enabledKeys || enabledKeys.size === 0) return null;
+  const labels = [...enabledKeys]
+    .map((key) => String(key || "").replace(/_/g, " ").split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "))
+    .join(", ");
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "9px 14px",
+      borderRadius: 10,
+      background: "rgba(234, 179, 8, 0.08)",
+      border: "1px solid rgba(234, 179, 8, 0.22)",
+      color: "#92400e",
+      fontSize: 12,
+      fontWeight: 700,
+      marginBottom: 12,
+    }}>
+      <span aria-hidden="true" style={{ fontSize: 14 }}>⚠</span>
+      Allergen filter active — items containing {labels} are hidden
+    </div>
+  );
+}
+
+function FranchisePricingDisclosureBanner({ text }) {
+  const disclosure = asStr(text).trim();
+  if (!disclosure) return null;
+  return (
+    <div
+      role="note"
+      aria-label="Pricing information"
+      style={{
+        padding: "10px 14px",
+        borderRadius: 12,
+        background: "#fffbeb",
+        border: "1px solid #fcd34d",
+        color: "#78350f",
+        fontSize: 12,
+        lineHeight: 1.45,
+        marginBottom: 16,
+      }}
+    >
+      {disclosure}
+    </div>
+  );
+}
+
+function AddedConfirmation({ name, onRemove, setConfirmation, brand }) {
+  const accent = brand?.accent ?? "#22C55E";
+  const accentBorder = brand?.accentBorder ?? "rgba(34,197,94,0.24)";
+  useEffect(() => {
+    const timer = setTimeout(() => setConfirmation(null), 2500);
+    return () => clearTimeout(timer);
+  }, [setConfirmation]);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 88,
+        left: "50%",
+        transform: "translateX(-50%)",
+        background: "#121A14",
+        borderRadius: 14,
+        padding: "11px 16px",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        zIndex: 600,
+        maxWidth: 360,
+        width: "calc(100% - 32px)",
+        border: `1px solid ${accentBorder}`,
+      }}
+    >
+      <span style={{ color: accent, fontSize: 18, lineHeight: 1 }}>✓</span>
+      <span style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF", flex: 1 }}>
+        {name ? `${name} added` : "Added to order"}
+      </span>
+      <button
+        type="button"
+        onClick={onRemove}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          fontSize: 13,
+          fontWeight: 700,
+          color: "#667085",
+          padding: "4px 0",
+          textDecoration: "underline",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Remove
+      </button>
+    </div>
+  );
+}
+
+function fmtMoney(item) {
+  const cents = getConsumerDisplayPrice(item);
+  return cents != null ? formatMoney(cents) : "";
+}
+
+async function fetchMenuPayload(restaurantId, apiUrl) {
+  const cacheKey = apiUrl;
+  if (menuPayloadCache.has(cacheKey)) {
+    return menuPayloadCache.get(cacheKey);
+  }
+  const promise = (async () => {
+    const res = await fetch(apiUrl);
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json || json.ok !== true) {
+      throw new Error(
+        toConsumerErrorMessage(
+          json?.detail || json?.error || `Request failed (${res.status})`,
+          "We couldn't load this menu right now."
+        )
+      );
+    }
+    return json;
+  })();
+  menuPayloadCache.set(cacheKey, promise);
+  try {
+    return await promise;
+  } catch (error) {
+    menuPayloadCache.delete(cacheKey);
+    throw error;
+  }
+}
+
+export function prefetchCatalogMenu(restaurantId, locationParams = {}, language = "en") {
+  if (!restaurantId) return;
+  const params = new URLSearchParams();
+  if (locationParams.lat != null && locationParams.lng != null) {
+    params.set("lat", String(locationParams.lat));
+    params.set("lng", String(locationParams.lng));
+  }
+  if (locationParams.city) params.set("city", locationParams.city);
+  if (locationParams.state) params.set("state", locationParams.state);
+  if (language && language !== "en") params.set("lang", language);
+  const qs = params.toString();
+  const apiUrl = `${API}/public/restaurants/${encodeURIComponent(restaurantId)}/menu${qs ? `?${qs}` : ""}`;
+  fetchMenuPayload(restaurantId, apiUrl).catch(() => {});
+}
+
+export default function CatalogMenuRenderer({
+  entry,
+  locationParams = {},
+  isMobile = false,
+}) {
+  const { language, t } = useLanguage();
+  const navigate = useNavigate();
+  const {
+    addMenuItem,
+    restaurant: cartRestaurantState,
+    items: cartItems,
+    itemCount,
+    subtotalCents,
+    updateQuantity,
+    removeItem,
+  } = useOrderCart();
+  const { isAuthenticated, allergenPreferences, dietaryPreferences, foodsToAvoid = [] } = useConsumer();
+
+  const restaurantId = entry?.restaurant_id;
+  const [pageState, setPageState] = useState({ status: "idle", data: null, error: null });
+  const [selectedMenuId, setSelectedMenuId] = useState(null);
+  const [tabSections, setTabSections] = useState(null);
+  const [tabLoading, setTabLoading] = useState(false);
+  const [tabError, setTabError] = useState(null);
+  const userSelectedTabRef = useRef(false);
+  const [modifierItem, setModifierItem] = useState(null);
+  const [modifierInitialInstructions, setModifierInitialInstructions] = useState("");
+  const [smartSheetItem, setSmartSheetItem] = useState(null);
+  const [itemSheet, setItemSheet] = useState(null);
+  const [addedConfirmation, setAddedConfirmation] = useState(null);
+  const [hoveredItemId, setHoveredItemId] = useState(null);
+
+  const enabledDietKeys = useMemo(() => {
+    if (!isAuthenticated || !Array.isArray(dietaryPreferences)) return new Set();
+    return new Set(dietaryPreferences.filter((p) => p.is_enabled).map((p) => p.preference_key));
+  }, [isAuthenticated, dietaryPreferences]);
+
+  const dietPrefs = {
+    dairy_free: enabledDietKeys.has("dairy_free"),
+    diabetic_friendly: enabledDietKeys.has("diabetic_friendly"),
+    gluten_free: enabledDietKeys.has("gluten_free"),
+    keto: enabledDietKeys.has("keto"),
+    low_fat: false,
+    low_sodium: enabledDietKeys.has("low_sodium"),
+    vegan: enabledDietKeys.has("vegan"),
+    vegetarian: enabledDietKeys.has("vegetarian"),
+  };
+
+  const enabledAllergenKeys = useMemo(() => {
+    if (!isAuthenticated || !Array.isArray(allergenPreferences)) return new Set();
+    return new Set(allergenPreferences.filter((p) => p.is_enabled).map((p) => p.allergen_key));
+  }, [isAuthenticated, allergenPreferences]);
+
+  const allergenFilterActive = enabledAllergenKeys.size > 0;
+  const filtersActive = Object.values(dietPrefs).some(Boolean) || allergenFilterActive;
+
+  const apiUrl = useMemo(() => {
+    if (!restaurantId) return "";
+    const params = new URLSearchParams();
+    if (locationParams.lat != null && locationParams.lng != null) {
+      params.set("lat", String(locationParams.lat));
+      params.set("lng", String(locationParams.lng));
+    }
+    if (locationParams.city) params.set("city", locationParams.city);
+    if (locationParams.state) params.set("state", locationParams.state);
+    if (language && language !== "en") params.set("lang", language);
+    const qs = params.toString();
+    return `${API}/public/restaurants/${encodeURIComponent(restaurantId)}/menu${qs ? `?${qs}` : ""}`;
+  }, [language, locationParams.city, locationParams.lat, locationParams.lng, locationParams.state, restaurantId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!restaurantId || !apiUrl) {
+      setPageState({ status: "idle", data: null, error: null });
+      return undefined;
+    }
+
+    userSelectedTabRef.current = false;
+    setSelectedMenuId(null);
+    setTabSections(null);
+    setTabError(null);
+
+    async function run() {
+      setPageState({ status: "loading", data: null, error: null });
+      try {
+        const json = await fetchMenuPayload(restaurantId, apiUrl);
+        if (cancelled) return;
+        setPageState({ status: "ok", data: json, error: null });
+      } catch (error) {
+        if (cancelled) return;
+        setPageState({
+          status: "error",
+          data: null,
+          error: toConsumerErrorMessage(error, "We couldn't load this menu right now."),
+        });
+      }
+    }
+
+    run();
+    return () => { cancelled = true; };
+  }, [apiUrl, restaurantId]);
+
+  useEffect(() => {
+    const d = pageState.data;
+    if (d?.selected_menu_id && !userSelectedTabRef.current) {
+      setSelectedMenuId(d.selected_menu_id);
+    }
+  }, [pageState.data]);
+
+  const handleSelectMenu = useCallback(async (menuId) => {
+    if (menuId === selectedMenuId) return;
+    const prevMenuId = selectedMenuId;
+    userSelectedTabRef.current = true;
+    setSelectedMenuId(menuId);
+    setTabError(null);
+    setTabLoading(true);
+    try {
+      const rid = encodeURIComponent(asStr(restaurantId).trim());
+      const res = await fetch(`${API}/public/restaurants/${rid}/menu?menu=${menuId}`);
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.ok) {
+        const newSections = normalizeSections(json);
+        if (newSections.length > 0) {
+          setTabSections({ menuId, sections: newSections });
+        } else {
+          setSelectedMenuId(prevMenuId);
+          setTabError("Unable to load menu section.");
+        }
+      } else {
+        setSelectedMenuId(prevMenuId);
+        setTabError("Unable to load menu section.");
+      }
+    } catch {
+      setSelectedMenuId(prevMenuId);
+      setTabError("Unable to load menu section.");
+    } finally {
+      setTabLoading(false);
+    }
+  }, [restaurantId, selectedMenuId]);
+
+  const data = pageState.status === "ok" ? pageState.data : null;
+  const menuThemeSettings = normalizeMenuThemeSettings(data?.display_settings || data || {});
+  const restaurantName = data
+    ? (
+      getLocalizedField(data, "restaurant_name", language) ||
+      getLocalizedField(data, "name", language) ||
+      asStr(data?.restaurant_name || data?.name || entry?.restaurant_name || `Restaurant ${restaurantId}`).trim()
+    )
+    : asStr(entry?.restaurant_name || "").trim();
+
+  const _allMenus = Array.isArray(data?.menus) ? data.menus : [];
+  const _activeMenu = _allMenus.length > 1 && selectedMenuId != null
+    ? (_allMenus.find((m) => m.id === selectedMenuId) ?? _allMenus[0])
+    : null;
+  const menuTypeLabel = asStr(
+    (_activeMenu ? (_activeMenu.tab_label || _activeMenu.display_name || _activeMenu.name) : null) ||
+    data?.menu_name ||
+    data?.menu_label ||
+    ""
+  ).trim() || null;
+
+  const _scheduledActiveMenu = _allMenus.find((m) => {
+    const days = Array.isArray(m.schedule_days) ? m.schedule_days : [];
+    return !!(m.start_time && m.end_time && days.length > 0 && days.length < 7) && m.is_currently_active === true;
+  }) || null;
+  const scheduledActiveMenuLabel = _scheduledActiveMenu
+    ? asStr(_scheduledActiveMenu.tab_label || _scheduledActiveMenu.display_name || _scheduledActiveMenu.name).trim() || null
+    : null;
+
+  const isFoodTruck =
+    isFoodTruckCategory(data?.category) ||
+    isFoodTruckCategory(data?.restaurant_category) ||
+    isFoodTruckCategory(data?.type);
+  const restaurantProfileTarget = asStr(data?.slug || data?.restaurant_id || restaurantId).trim();
+  const restaurantProfileHref = restaurantProfileTarget
+    ? {
+        pathname: `${isFoodTruck ? "/foodtrucks" : "/restaurants"}/${encodeURIComponent(restaurantProfileTarget)}`,
+        search: "",
+      }
+    : null;
+
+  const addressLine1 = asStr(data?.address_line1 || data?.address).trim();
+  const addressLine2 = buildAddressLocalityLine(data?.city, data?.state, data?.zip);
+  const addressLine = asStr(data?.address_line).trim() || [addressLine1, addressLine2].filter(Boolean).join(", ");
+  const directionsHref = buildGoogleMapsDirectionsUrl(addressLine);
+  const sections = tabSections?.sections ?? normalizeSections(data);
+  const displaySections = getFilteredDisplaySections(sections, dietPrefs, enabledAllergenKeys);
+  const displayableItemCount = displaySections.reduce(
+    (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
+    0
+  );
+  const isIntakePreview = data?.menu_source === "intake";
+  const currentRestaurantId = data?.restaurant_id || restaurantId;
+
+  const shareData = buildMenuShareMetadata({
+    restaurantName,
+    restaurantSlug: data?.slug,
+    restaurantId: currentRestaurantId,
+    city: data?.city,
+    state: data?.state,
+    logoUrl: data?.logo_url,
+  });
+
+  const shareAnalyticsContext = {
+    restaurantId: currentRestaurantId,
+    restaurantName,
+    restaurantSlug: data?.slug || null,
+    menuId: currentRestaurantId,
+    pageType: "menu_catalog",
+    shareTarget: "menu",
+  };
+
+  const cartRestaurant = {
+    restaurantId: currentRestaurantId,
+    restaurantName,
+    deliveryEnabled: data?.delivery_enabled === true,
+    defaultDeliveryProvider: data?.default_delivery_provider || null,
+    activeDeliveryProviders: Array.isArray(data?.active_delivery_providers)
+      ? data.active_delivery_providers
+      : [],
+    availableFulfillmentTypes:
+      Array.isArray(data?.available_fulfillment_types) && data.available_fulfillment_types.includes("delivery")
+        ? data.available_fulfillment_types
+        : ["pickup", "delivery"],
+  };
+
+  const hasBasketItems = itemCount > 0;
+  const basketMatchesCurrentRestaurant =
+    Number(cartRestaurantState?.restaurantId) === Number(cartRestaurant.restaurantId);
+  const activeCartItems = basketMatchesCurrentRestaurant ? cartItems || [] : [];
+
+  const menuBrand = data ? buildRestaurantMenuBrand({
+    ...data,
+    accent_color: menuThemeSettings.primary_color || menuThemeSettings.accent_color || data?.accent_color || null,
+    hero_image_url: menuThemeSettings.hero_enabled === false ? null : data?.hero_image_url || null,
+    font_preset: data?.font_preset || "default",
+  }, restaurantName) : null;
+
+  const resolvedPageBackground =
+    menuThemeSettings.background_style === "light" ? "#f7f5ef" :
+    menuThemeSettings.background_style === "paper" ? "#f6efe3" :
+    menuThemeSettings.background_style === "chalkboard" ? "#1a2e1c" :
+    menuThemeSettings.background_style === "charcoal" ? "#1c1c1e" :
+    menuBrand?.pageBackground ?? "#0B0F0C";
+
+  const dealMap = useMemo(() => {
+    const m = new Map();
+    for (const d of pageState.data?.deal_items || []) {
+      if (d.id != null) m.set(d.id, d);
+    }
+    return m;
+  }, [pageState.data]);
+
+  function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = [], specialInstructions = null) {
+    return addMenuItem({
+      restaurant: cartRestaurant,
+      item: {
+        menuItemId: item?.id,
+        name: itemName,
+        description: itemDescription,
+        basePriceCents: getConsumerDisplayPrice(item) ?? 0,
+        originalBasePriceCents: getBaseMenuPrice(item) ?? getConsumerDisplayPrice(item) ?? 0,
+        modifiers,
+        specialInstructions: specialInstructions || null,
+      },
+    });
+  }
+
+  function openCheckout() {
+    navigate("/checkout");
+  }
+
+  function openModifierFlow(item, itemName, itemDescription, initialInstructions = "") {
+    setModifierInitialInstructions(initialInstructions);
+    setModifierItem({
+      ...item,
+      name: itemName,
+      description: itemDescription,
+    });
+  }
+
+  function openSmartOrModifierFlow(item, itemName, itemDescription) {
+    if (isCustomizableItem(item)) {
+      setSmartSheetItem({ ...item, name: itemName, description: itemDescription });
+    } else {
+      openModifierFlow(item, itemName, itemDescription);
+    }
+  }
+
+  function handleRemoveAdded() {
+    if (!addedConfirmation) return;
+    const state = getCartItemState(activeCartItems, addedConfirmation.itemId);
+    if (state.simpleLine) removeItem(state.simpleLine.lineId);
+    setAddedConfirmation(null);
+  }
+
+  const menuPresentationStyle = normalizeMenuStyle(data?.menu_style);
+
+  const templateContext =
+    data && pageState.status === "ok"
+      ? {
+          isMobile,
+          language,
+          t,
+          restaurantName,
+          restaurantProfileHref,
+          menuTypeLabel,
+          scheduledActiveMenuLabel,
+          addressLine1,
+          addressLine2,
+          addressLine,
+          directionsHref,
+          logoUrl: data?.logo_url || null,
+          logoPlacement: menuThemeSettings.logo_placement || "top-left",
+          shareData,
+          shareAnalyticsContext,
+          franchiseSlot: null,
+          intakeBannerSlot: (
+            <>
+              <FranchisePricingDisclosureBanner text={data?.pricing_disclosure} />
+            </>
+          ),
+          allergenBannerSlot: <AllergenFilterBanner active={allergenFilterActive} enabledKeys={enabledAllergenKeys} />,
+          displaySections,
+          displayableItemCount,
+          dealItems: data?.deal_items || [],
+          filtersActive,
+          data,
+          currentRestaurantId,
+          dealMap,
+          activeCartItems,
+          hoveredItemId,
+          setHoveredItemId,
+          removeItem,
+          navigate,
+          setItemSheet,
+          setAddedConfirmation,
+          commitMenuItemToBasket,
+          fmtMoney,
+          getConsumerDisplayPrice,
+          heroImageUrl: menuThemeSettings.hero_enabled === false ? null : pickHeroImageUrl(data),
+          menuThemeSettings,
+          cartLineCount: basketMatchesCurrentRestaurant ? itemCount : 0,
+          onGoCheckout: openCheckout,
+          brand: menuBrand,
+          fontStack: fontStackForPreset(menuBrand?.fontPreset),
+          menus: data?.menus || [],
+          selectedMenuId,
+          onSelectMenu: handleSelectMenu,
+          tabLoading,
+          tabError,
+          menuPresentation: data?.menu_presentation || data?.presentation || {},
+        }
+      : null;
+
+  const isSponsored = entry?.is_sponsored === true;
+
+  if (!restaurantId) {
+    return (
+      <div style={{ padding: 24, color: "#667085", fontSize: 14, fontWeight: 600 }}>
+        {t("menuCatalog.selectMenu", "Select a category to browse menus.")}
+      </div>
+    );
+  }
+
+  if (pageState.status === "loading" || pageState.status === "idle") {
+    return (
+      <div style={{ padding: 24, color: "#667085", fontSize: 14, fontWeight: 600 }}>
+        {t("menuCatalog.loadingMenu", "Loading menu…")}
+      </div>
+    );
+  }
+
+  if (pageState.status === "error") {
+    return (
+      <div style={{ padding: 24 }}>
+        <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>{t("publicMenu.loadError", "Couldn't load menu")}</div>
+        <div style={{ color: "#667085", fontSize: 14 }}>{pageState.error}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        flex: 1,
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+        background: resolvedPageBackground,
+        overflow: "hidden",
+      }}
+    >
+      {isSponsored ? (
+        <div style={{
+          padding: "6px 16px",
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: "0.05em",
+          textTransform: "uppercase",
+          color: "#a16207",
+          background: "rgba(234, 179, 8, 0.14)",
+          borderBottom: "1px solid rgba(234, 179, 8, 0.25)",
+          flexShrink: 0,
+        }}>
+          {entry?.sponsored_label || t("menuBrowser.sponsored", "Sponsored")}
+          {entry?.sponsored_deal?.title ? ` · ${entry.sponsored_deal.title}` : ""}
+        </div>
+      ) : null}
+
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        <div style={{
+          maxWidth: 860,
+          margin: "0 auto",
+          padding: isMobile ? "12px 10px 24px" : "20px 16px 24px",
+          color: "#FFFFFF",
+        }}>
+          {templateContext ? (
+            <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
+          ) : null}
+        </div>
+      </div>
+
+      {itemSheet ? (
+        <CatalogItemDetailSheet
+          sheetData={itemSheet}
+          activeCartItems={activeCartItems}
+          onClose={() => setItemSheet(null)}
+          onAddSimple={(item, name, desc) => {
+            if (isCustomizableItem(item)) {
+              setItemSheet(null);
+              setSmartSheetItem({ ...item, name, description: desc });
+            } else {
+              commitMenuItemToBasket(item, name, desc);
+            }
+          }}
+          onOpenModifiers={(item, name, desc) => openSmartOrModifierFlow(item, name, desc)}
+          onUpdateQuantity={(lineId, qty) => updateQuantity(lineId, qty)}
+          onRemoveItem={(lineId) => removeItem(lineId)}
+          t={t}
+          brand={menuBrand}
+          menuThemeSettings={menuThemeSettings}
+          navigate={navigate}
+        />
+      ) : null}
+
+      <ModifierSheet
+        open={!!modifierItem}
+        item={modifierItem}
+        initialSpecialInstructions={modifierInitialInstructions}
+        onClose={() => { setModifierItem(null); setModifierInitialInstructions(""); }}
+        onConfirm={(modifiers, specialInstructions) => {
+          if (!modifierItem) return;
+          commitMenuItemToBasket(
+            modifierItem,
+            modifierItem.name,
+            modifierItem.description,
+            modifiers,
+            specialInstructions
+          );
+          setModifierItem(null);
+          setModifierInitialInstructions("");
+        }}
+      />
+
+      <SmartCustomizationSheet
+        open={!!smartSheetItem}
+        item={smartSheetItem}
+        foodsToAvoid={foodsToAvoid}
+        onClose={() => setSmartSheetItem(null)}
+        onAddToCart={(item, specialInstructions) => {
+          commitMenuItemToBasket(item, item.name, item.description, [], specialInstructions);
+          setSmartSheetItem(null);
+        }}
+        onCustomize={(item, initialInstructions) => {
+          setSmartSheetItem(null);
+          openModifierFlow(item, item.name, item.description, initialInstructions || "");
+        }}
+      />
+
+      {hasBasketItems ? (
+        <BasketSummaryBar
+          itemCount={itemCount}
+          subtotal={subtotalCents}
+          restaurantName={cartRestaurantState?.restaurantName}
+          isCurrentRestaurant={basketMatchesCurrentRestaurant}
+          summaryLabel={`${itemCount} ${itemCount === 1 ? "item" : "items"} • ${formatMoney(subtotalCents)}`}
+          ctaLabel="Review Order"
+          onOpenBasket={() => navigate("/checkout")}
+          onClear={() => { for (const line of activeCartItems) removeItem(line.lineId); }}
+        />
+      ) : null}
+
+      {addedConfirmation ? (
+        <AddedConfirmation
+          name={addedConfirmation.name}
+          onRemove={handleRemoveAdded}
+          setConfirmation={setAddedConfirmation}
+          brand={menuBrand}
+        />
+      ) : null}
+    </div>
+  );
+}
