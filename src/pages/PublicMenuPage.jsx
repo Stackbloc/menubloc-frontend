@@ -258,12 +258,10 @@ function FranchisePricingDisclosureBanner({ text }) {
       role="note"
       aria-label="Pricing information"
       style={{
-        padding: "10px 14px",
-        borderRadius: 12,
-        background: "#fffbeb",
-        border: "1px solid #fcd34d",
-        color: "#78350f",
-        fontSize: 12,
+        padding: "6px 2px 10px",
+        borderBottom: "1px solid rgba(217,119,6,0.18)",
+        color: "#92700F",
+        fontSize: 11,
         lineHeight: 1.45,
         marginBottom: 16,
       }}

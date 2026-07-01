@@ -34,7 +34,8 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
         height: size,
         borderRadius: 10,
         flexShrink: 0,
-        background: "#F5F5F7",
+        background: "linear-gradient(160deg, #F5F5F7 0%, #EBEBED 100%)",
+        border: "1px solid #E5E5EA",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -147,10 +148,10 @@ export default function ClassicMenuTemplate(ctx) {
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           borderBottom: `1px solid ${HAIRLINE}`,
-          padding: isTablet ? "20px 16px" : isMobile ? "18px 16px" : "28px 24px",
+          padding: isTablet ? "22px 16px" : isMobile ? "20px 16px" : "32px 24px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 14, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
           {showLogo && <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "nowrap" }}>
@@ -222,7 +223,7 @@ export default function ClassicMenuTemplate(ctx) {
             </div>
 
             {addressLine ? (
-              <div style={{ fontSize: 14, color: SUBTLE, fontWeight: 400, marginTop: 4, display: "flex", alignItems: "flex-start", gap: 5 }}>
+              <div style={{ fontSize: 14, color: SUBTLE, fontWeight: 400, marginTop: 7, display: "flex", alignItems: "flex-start", gap: 5 }}>
                 <MapPinIcon size={13} stroke={SUBTLE} />
                 {directionsHref ? (
                   <a
@@ -324,15 +325,22 @@ export default function ClassicMenuTemplate(ctx) {
               const sectionImage = getMenuSectionImageUrl(sec);
 
               return (
-                <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 28 : 40 }}>
+                <div
+                  key={`${title}-${sIdx}`}
+                  style={{
+                    marginTop: sIdx === 0 ? 28 : 48,
+                    paddingTop: sIdx === 0 ? 0 : 24,
+                    borderTop: sIdx === 0 ? "none" : `1px solid ${HAIRLINE}`,
+                  }}
+                >
                   <div
                     style={{
                       fontSize: 12,
                       fontWeight: 600,
-                      letterSpacing: "0.06em",
+                      letterSpacing: "0.08em",
                       textTransform: "uppercase",
                       color: SUBTLE,
-                      marginBottom: 4,
+                      marginBottom: 14,
                     }}
                   >
                     {title}

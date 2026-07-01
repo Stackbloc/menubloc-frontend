@@ -28,6 +28,29 @@ function EditorialTag({ label, color }) {
   );
 }
 
+// Muted status pill — used for the unavailable state instead of loud
+// warning-colored text, per the "no loud red as the main treatment" rule.
+function SoftBadge({ label, color, hairline }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        height: 18,
+        padding: "0 8px",
+        borderRadius: 999,
+        fontSize: 11,
+        fontWeight: 500,
+        color,
+        border: `1px solid ${hairline}`,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
 function Badge({ label, bg, color, border }) {
   return (
     <span
@@ -194,7 +217,7 @@ export default function PublicMenuItemCard({
   // a wall of tags. Priority: unavailability status, then deal, then diet flags.
   const visibleBadges = editorialRefresh
     ? [
-        !itemIsOrderable ? { key: "unavailable", label: "Unavailable", color: ed.unavailable } : null,
+        !itemIsOrderable ? { key: "unavailable", label: t("common.unavailable", "Unavailable"), color: ed.subtle, soft: true } : null,
         hasDeal ? { key: "deal", label: t("common.deals", "Deals"), color: accent } : null,
         it?.is_vegan ? { key: "vegan", label: t("diet.vegan", "Vegan"), color: ed.subtle } : null,
         it?.is_gluten_free ? { key: "gf", label: "GF", color: ed.subtle } : null,
@@ -383,32 +406,38 @@ export default function PublicMenuItemCard({
                 ) : null}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, marginLeft: shareInlineExperiment ? "auto" : undefined }}>
-                {!shareInlineExperiment && dishShareData ? (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <ShareButton
-                      variant="dish"
-                      iconOnly={true}
-                      tone="inline"
-                      shareData={dishShareData}
-                      analyticsContext={{
-                        restaurantId: currentRestaurantId,
-                        restaurantSlug: data?.slug || null,
-                        menuItemId: it.id,
-                        menuItemName: name,
-                        pageType: "public_menu",
-                        shareTarget: "dish",
-                      }}
-                    />
+                {!shareInlineExperiment ? (
+                  <div style={{ width: 28, display: "flex", justifyContent: "center", flexShrink: 0 }}>
+                    {dishShareData ? (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <ShareButton
+                          variant="dish"
+                          iconOnly={true}
+                          tone="inline"
+                          shareData={dishShareData}
+                          analyticsContext={{
+                            restaurantId: currentRestaurantId,
+                            restaurantSlug: data?.slug || null,
+                            menuItemId: it.id,
+                            menuItemName: name,
+                            pageType: "public_menu",
+                            shareTarget: "dish",
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
                 {price ? (
                   <span
                     style={{
                       fontSize: titleSize,
-                      fontWeight: 400,
+                      fontWeight: 600,
                       color: ed.ink,
                       whiteSpace: "nowrap",
                       fontVariantNumeric: "tabular-nums",
+                      minWidth: 56,
+                      textAlign: "right",
                     }}
                   >
                     {price}
@@ -557,7 +586,9 @@ export default function PublicMenuItemCard({
               ) : null}
               {editorialRefresh ? (
                 visibleBadges.map((b) => (
-                  <EditorialTag key={b.key} label={b.label} color={b.color} />
+                  b.soft
+                    ? <SoftBadge key={b.key} label={b.label} color={b.color} hairline={ed.hairline} />
+                    : <EditorialTag key={b.key} label={b.label} color={b.color} />
                 ))
               ) : (
                 <>
@@ -592,6 +623,12 @@ export default function PublicMenuItemCard({
           fontSize: descSize,
           color: editorialRefresh ? ed.subtle : density === "classic" ? "rgba(156,163,175,0.82)" : "#9CA3AF",
           lineHeight: 1.4,
+          ...(editorialRefresh ? {
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          } : null),
         }}>{desc}</div>
       ) : null}
 
@@ -608,12 +645,14 @@ export default function PublicMenuItemCard({
               style={editorialRefresh ? {
                 display: "inline-flex",
                 alignItems: "center",
-                border: "none",
+                height: 22,
+                padding: "0 10px",
+                borderRadius: 999,
+                border: `1px solid ${ed.hairline}`,
                 background: "transparent",
                 color: ed.subtle,
-                fontSize: 13,
-                fontWeight: 400,
-                padding: 0,
+                fontSize: 12,
+                fontWeight: 500,
                 whiteSpace: "nowrap",
                 flexShrink: 0,
                 cursor: "pointer",
@@ -660,12 +699,14 @@ export default function PublicMenuItemCard({
               style={editorialRefresh ? {
                 display: "inline-flex",
                 alignItems: "center",
-                border: "none",
+                height: 22,
+                padding: "0 10px",
+                borderRadius: 999,
+                border: `1px solid ${ed.hairline}`,
                 background: "transparent",
                 color: ed.subtle,
-                fontSize: 13,
-                fontWeight: 400,
-                padding: 0,
+                fontSize: 12,
+                fontWeight: 500,
                 cursor: "pointer",
                 lineHeight: 1,
               } : {
@@ -684,15 +725,23 @@ export default function PublicMenuItemCard({
                 transition: "all 0.15s ease",
               }}
               onMouseEnter={(e) => {
+                if (editorialRefresh) {
+                  e.currentTarget.style.background = ed.unavailableBg;
+                  return;
+                }
                 e.currentTarget.style.textDecoration = "underline";
                 e.currentTarget.style.opacity = "0.85";
               }}
               onMouseLeave={(e) => {
+                if (editorialRefresh) {
+                  e.currentTarget.style.background = "transparent";
+                  return;
+                }
                 e.currentTarget.style.textDecoration = "none";
                 e.currentTarget.style.opacity = "1";
               }}
             >
-              Insights
+              {t("common.insights", "Insights")}
             </button>
           ) : null}
         </div>
