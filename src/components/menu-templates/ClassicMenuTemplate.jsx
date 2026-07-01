@@ -149,23 +149,24 @@ export default function ClassicMenuTemplate(ctx) {
           {showLogo && <RestaurantLogoSlot
             logoUrl={logoUrl}
             restaurantName={restaurantName}
+            size={48}
             accentBorder={brand?.accentBorder ?? "rgba(34,197,94,0.30)"}
           />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", marginBottom: addressLine ? 2 : 0 }}>
-              <div style={{ minWidth: 0, flex: "0 1 auto", display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 {restaurantProfileHref ? (
                   <Link
                     to={restaurantProfileHref}
                     title={`Open ${restaurantName} profile`}
                     style={{
-                      fontSize: isMobile ? 20 : 24,
+                      fontSize: isMobile ? 18 : 21,
                       fontWeight: 800,
                       letterSpacing: "-0.01em",
                       lineHeight: 1.15,
                       color: "#FFFFFF",
                       textDecoration: "none",
-                      minWidth: 0,
+                      display: "block",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -176,12 +177,11 @@ export default function ClassicMenuTemplate(ctx) {
                 ) : (
                   <div
                     style={{
-                      fontSize: isMobile ? 20 : 24,
+                      fontSize: isMobile ? 18 : 21,
                       fontWeight: 800,
                       letterSpacing: "-0.01em",
                       lineHeight: 1.15,
                       color: "#FFFFFF",
-                      minWidth: 0,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -192,41 +192,44 @@ export default function ClassicMenuTemplate(ctx) {
                 )}
               </div>
 
-              <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
-                <ShareButton
-                  variant="menu"
-                  label="Share Menu"
-                  shareData={shareData}
-                  analyticsContext={shareAnalyticsContext}
-                  size="compact"
-                  tone="subtle"
-                />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <ShareButton
+                    variant="menu"
+                    iconOnly={true}
+                    tone="ghost"
+                    shareData={shareData}
+                    analyticsContext={shareAnalyticsContext}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onOpenFilters}
+                  style={{
+                    flexShrink: 0,
+                    border: `1px solid ${brand?.accentBorder ?? "rgba(34,197,94,0.22)"}`,
+                    borderRadius: 999,
+                    background: filtersActive ? `${brand?.accent ?? "#22C55E"}1a` : "transparent",
+                    color: brand?.accent ?? "#22C55E",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    cursor: "pointer",
+                    letterSpacing: "0.01em",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  {filtersActive && <span aria-hidden="true" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: brand?.accent ?? "#22C55E", flexShrink: 0 }} />}
+                  Filters
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={onOpenFilters}
-                style={{
-                  flexShrink: 0,
-                  border: `1px solid ${brand?.accentBorder ?? "rgba(34,197,94,0.30)"}`,
-                  borderRadius: 8,
-                  background: "transparent",
-                  color: brand?.accent ?? "#22C55E",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  padding: "5px 11px",
-                  cursor: "pointer",
-                  letterSpacing: "0.01em",
-                }}
-              >
-                Filters
-              </button>
-
-              <div style={{ flex: 1 }} />
             </div>
 
             {addressLine ? (
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontWeight: 500, marginTop: 2 }}>
                 {directionsHref ? (
                   <a
                     href={directionsHref}
@@ -238,10 +241,10 @@ export default function ClassicMenuTemplate(ctx) {
                       textDecoration: "none",
                       display: "inline-flex",
                       alignItems: "flex-start",
-                      gap: 5,
+                      gap: 4,
                     }}
                   >
-                    <span style={{ flexShrink: 0, fontSize: 13 }}>📍</span>
+                    <span style={{ flexShrink: 0, fontSize: 12 }}>📍</span>
                     <span style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                       {addressLine1 ? <span>{addressLine1}</span> : null}
                       {addressLine2 ? <span>{addressLine2}</span> : null}
@@ -382,26 +385,26 @@ export default function ClassicMenuTemplate(ctx) {
 
               return (
                 <div key={`${title}-${sIdx}`} style={{ marginTop: sIdx === 0 ? 0 : 20 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                     <span
                       aria-hidden="true"
                       style={{
                         display: "inline-block",
-                        width: 6,
-                        height: 6,
-                        borderRadius: "50%",
+                        width: 3,
+                        height: 14,
+                        borderRadius: 2,
                         background: brand?.accent ?? "#22C55E",
                         flexShrink: 0,
-                        opacity: 0.7,
+                        opacity: 0.55,
                       }}
                     />
                     <span
                       style={{
-                        fontSize: 14,
+                        fontSize: 11,
                         fontWeight: 800,
-                        letterSpacing: "0.08em",
+                        letterSpacing: "0.10em",
                         textTransform: "uppercase",
-                        color: "rgba(255,255,255,0.6)",
+                        color: "rgba(255,255,255,0.42)",
                       }}
                     >
                       {title}
@@ -433,7 +436,7 @@ export default function ClassicMenuTemplate(ctx) {
                     </div>
                   ) : null}
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {items.map((it, iIdx) => (
                       <PublicMenuItemCard
                         key={String(it?.id ?? `${sIdx}-${iIdx}`)}

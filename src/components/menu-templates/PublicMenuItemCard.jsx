@@ -165,7 +165,7 @@ export default function PublicMenuItemCard({
     density === "takeout" ? "8px 12px" :
     density === "bold-casual" ? "12px 16px" :
     density === "refined-editorial" ? "14px 0" :
-    "12px 16px";
+    "10px 14px";
   const radius =
     density === "cinematic" ? 20 :
     density === "takeout" ? 12 :
@@ -230,7 +230,7 @@ export default function PublicMenuItemCard({
             : density === "bold-casual"
               ? inCartCount > 0 ? `1px solid ${softBorder}` : "none"
               : density === "classic"
-                ? inCartCount > 0 ? `1px solid ${softBorder}` : "1px solid #252F3D"
+                ? inCartCount > 0 ? `1px solid ${softBorder}` : "1px solid rgba(255,255,255,0.07)"
                 : inCartCount > 0 ? `1px solid ${softBorder}` : "1px solid var(--gb-color-border)",
         borderLeft: density === "bold-casual" ? `4px solid ${accent}` : undefined,
         borderRadius: radius,
@@ -245,7 +245,7 @@ export default function PublicMenuItemCard({
         padding: pad,
         boxShadow:
           density === "cinematic" ? "0 8px 28px rgba(0,0,0,0.35)" :
-          density === "classic" ? "0 2px 12px rgba(0,0,0,0.28), 0 1px 3px rgba(0,0,0,0.18)" :
+          density === "classic" ? "0 1px 4px rgba(0,0,0,0.20)" :
           "var(--gb-shadow-card)",
         cursor: "pointer",
         opacity: itemIsOrderable ? 1 : 0.78,
@@ -278,27 +278,29 @@ export default function PublicMenuItemCard({
           </div>
         ) : null}
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1, flexWrap: "nowrap" }}>
-              <span
-                style={{
-                  fontSize: titleSize,
-                  fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : density === "classic" ? 700 : 600,
-                  color: "#FFFFFF",
-                  lineHeight: 1.2,
-                  minWidth: 0,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: density === "takeout" ? "nowrap" : "normal",
-                }}
-              >
-                {name}
-              </span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+            <span
+              style={{
+                fontSize: titleSize,
+                fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : density === "classic" ? 700 : 600,
+                color: "#FFFFFF",
+                lineHeight: 1.2,
+                minWidth: 0,
+                flex: 1,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: density === "takeout" ? "nowrap" : "normal",
+              }}
+            >
+              {name}
+            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
               {dishShareData ? (
-                <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0, whiteSpace: "nowrap" }}>
+                <div onClick={(e) => e.stopPropagation()}>
                   <ShareButton
                     variant="dish"
-                    label="Share"
+                    iconOnly={true}
+                    tone="ghost"
                     shareData={dishShareData}
                     analyticsContext={{
                       restaurantId: currentRestaurantId,
@@ -308,15 +310,13 @@ export default function PublicMenuItemCard({
                       pageType: "public_menu",
                       shareTarget: "dish",
                     }}
-                    size="compact"
-                    tone="subtle"
                   />
                 </div>
               ) : null}
+              {price ? (
+                <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap" }}>{price}</span>
+              ) : null}
             </div>
-            {price ? (
-              <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap" }}>{price}</span>
-            ) : null}
           </div>
 
           {inCartCount > 0 || hasDeal || it?.is_vegan || it?.is_gluten_free || !itemIsOrderable ? (
@@ -405,15 +405,15 @@ export default function PublicMenuItemCard({
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                height: 18,
-                padding: "0 7px",
+                height: 16,
+                padding: "0 6px",
                 borderRadius: 999,
-                fontSize: 10,
-                fontWeight: 800,
+                fontSize: 9.5,
+                fontWeight: 700,
                 letterSpacing: 0.3,
-                background: softBg,
-                color: accent,
-                border: `1px solid ${softBorder}`,
+                background: "transparent",
+                color: "rgba(255,255,255,0.38)",
+                border: "1px solid rgba(255,255,255,0.14)",
                 whiteSpace: "nowrap",
                 flexShrink: 0,
                 cursor: "pointer",
@@ -443,21 +443,13 @@ export default function PublicMenuItemCard({
                 alignItems: "center",
                 border: "none",
                 background: "transparent",
-                color: accent,
-                fontSize: 12,
-                fontWeight: 600,
+                color: "rgba(255,255,255,0.38)",
+                fontSize: 9.5,
+                fontWeight: 700,
                 cursor: "pointer",
                 padding: 0,
                 lineHeight: 1,
-                transition: "all 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.textDecoration = "underline";
-                e.currentTarget.style.opacity = "0.85";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.textDecoration = "none";
-                e.currentTarget.style.opacity = "1";
+                letterSpacing: 0.2,
               }}
             >
               Insights
