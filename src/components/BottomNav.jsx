@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import WaiterFaceIcon from "./icons/WaiterFaceIcon.jsx";
+import BrowseMenusIcon from "./icons/BrowseMenusIcon.jsx";
 
 export default function BottomNav() {
   const { t } = useLanguage();
@@ -13,7 +14,7 @@ export default function BottomNav() {
   const tabs = useMemo(() => [
     { label: t("nav.home", "Home"), icon: "🏠", to: "/" },
     { label: t("nav.waiter", "Waiter"), iconComponent: WaiterFaceIcon, iconSize: 28, to: "/waiter" },
-    { label: t("nav.following", "Following"), icon: "F", to: "/account/following" },
+    { label: t("nav.browseMenus", "Browse"), iconComponent: BrowseMenusIcon, iconSize: 24, to: "/browse-menus" },
     { label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
   ], [t]);
 
@@ -50,8 +51,10 @@ export default function BottomNav() {
         const active =
           isCheckout
             ? pathname.startsWith("/checkout")
-            : pathname === tab.to ||
-              (tab.to !== "/" && pathname.startsWith(tab.to));
+            : tab.to === "/browse-menus"
+              ? pathname === "/browse-menus" || pathname.startsWith("/browse-menus")
+              : pathname === tab.to ||
+                (tab.to !== "/" && pathname.startsWith(tab.to));
         const showBadge = tab.to === "/checkout" && itemCount > 0;
         const iconSize = tab.iconSize || 22;
         return (

@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "24e4a69622ba75de55872112ece47994115d9f6d",
-  "gitShortSha": "24e4a69",
+  "gitSha": "05d060681edd7da9ce819718bb88583d6225b099",
+  "gitShortSha": "05d0606",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-06-29T05:45:34.962Z",
+  "buildTime": "2026-07-01T17:03:48.725Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Remove franchise cross-links from restaurant signup plan page."
+  "commitMessage": "fix(account): render operator Password card unconditionally, not gated behind restaurant selection"
 }
