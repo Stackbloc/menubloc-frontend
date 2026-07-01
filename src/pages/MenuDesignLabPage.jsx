@@ -138,7 +138,13 @@ export default function MenuDesignLabPage() {
   const [publishing, setPublishing] = useState(false);
   const [editorMsg, setEditorMsg] = useState("");
 
-  // Load existing display settings on mount so controls reflect what's live
+  // Load existing display settings on mount so controls reflect what's live.
+  // Edit mode (arrived via a specific gallery card / ?style=) always keeps
+  // that theme's own identity; only its color/layout customizations are
+  // carried over from the saved row, and only when the restaurant was
+  // already saved on this exact theme — otherwise a freshly-selected preset
+  // would silently inherit colors left over from a previous, different
+  // theme instead of showing its own defaults.
   const loadExistingDesign = useCallback(() => {
     if (!rid) return;
     Promise.allSettled([
@@ -147,21 +153,23 @@ export default function MenuDesignLabPage() {
     ]).then(([dispResult, brandResult]) => {
       const s = dispResult.status === "fulfilled" ? (dispResult.value?.settings || {}) : {};
       const b = brandResult.status === "fulfilled" ? (brandResult.value?.brand || brandResult.value || {}) : {};
-      const style = s.menu_style || selectedStyle;
+      const savedStyle = s.menu_style || null;
+      const style = isEditMode ? selectedStyle : (savedStyle || selectedStyle);
       const labTheme = getMenuDesignLabTheme(style);
+      const sameStyle = isEditMode ? savedStyle === style : true;
       if (!isEditMode) setSearchParams({ style });
       setControls({
         themePreset:     style,
-        primaryColor:    s.primary_color    || labTheme.preset?.colorDefaults?.primary || "#c45c26",
-        accentColor:     s.accent_color     || labTheme.preset?.colorDefaults?.accent  || "#c45c26",
-        backgroundStyle: s.background_style || inferBackgroundStyle(labTheme),
-        imageDensity:    s.image_density    || inferImageDensity(labTheme),
-        heroEnabled:     s.hero_enabled    !== false,
-        fontPreset:      b.font_preset      || "default",
-        logoPlacement:   s.logo_placement   || "top-left",
+        primaryColor:    (sameStyle && s.primary_color)    || labTheme.preset?.colorDefaults?.primary || "#c45c26",
+        accentColor:     (sameStyle && s.accent_color)     || labTheme.preset?.colorDefaults?.accent  || "#c45c26",
+        backgroundStyle: (sameStyle && s.background_style) || inferBackgroundStyle(labTheme),
+        imageDensity:    (sameStyle && s.image_density)    || inferImageDensity(labTheme),
+        heroEnabled:     sameStyle ? s.hero_enabled !== false : true,
+        fontPreset:      (sameStyle && b.font_preset)      || "default",
+        logoPlacement:   (sameStyle && s.logo_placement)   || "top-left",
       });
     });
-  }, [rid]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rid, isEditMode, selectedStyle]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadExistingDesign(); }, [loadExistingDesign]);
 
