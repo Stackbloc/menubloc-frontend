@@ -26,15 +26,16 @@ export default function MenuCatalogIntroSplash({
         alignItems: "center",
         justifyContent: "center",
         background: "#FACC15",
-        padding: "24px 20px",
+        borderRadius: 16,
+        padding: "24px 16px",
       }}
     >
       <img
         src={logoSrc}
         alt="Yellow Browser"
         style={{
-          width: "min(88vw, 340px)",
-          maxHeight: "52vh",
+          width: "min(88%, 340px)",
+          maxHeight: "min(52%, 420px)",
           objectFit: "contain",
           marginBottom: 28,
         }}
@@ -42,7 +43,7 @@ export default function MenuCatalogIntroSplash({
 
       <div
         style={{
-          width: "min(78vw, 300px)",
+          width: "min(78%, 300px)",
           marginTop: 4,
         }}
       >

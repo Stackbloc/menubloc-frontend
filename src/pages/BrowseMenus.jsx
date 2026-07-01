@@ -228,6 +228,19 @@ export default function BrowseMenus() {
   const showMenuLoading =
     bootComplete && ((loading && !currentEntry) || waitingForPage || (loadingMore && !currentEntry));
 
+  const browseShellStyle = {
+    flex: 1,
+    minHeight: 0,
+    width: "100%",
+    maxWidth: 576,
+    margin: "0 auto",
+    padding: "0 16px",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    boxSizing: "border-box",
+  };
+
   return (
     <div
       style={{
@@ -241,23 +254,24 @@ export default function BrowseMenus() {
     >
       <StickyPageHeader />
 
-      <MenuCatalogCategoryTabs
-        activeSection={activeSection}
-        onSelect={selectSection}
-      />
+      <div style={browseShellStyle}>
+        <MenuCatalogCategoryTabs
+          activeSection={activeSection}
+          onSelect={selectSection}
+        />
 
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          position: "relative",
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            position: "relative",
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
         <MenuCatalogIntroSplash visible={showIntro} progress={introProgress} />
 
         {showMenuLoading ? (
@@ -308,6 +322,7 @@ export default function BrowseMenus() {
             />
           </div>
         ) : null}
+        </div>
       </div>
 
       <BottomNav />
