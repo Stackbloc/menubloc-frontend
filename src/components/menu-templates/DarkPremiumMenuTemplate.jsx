@@ -50,11 +50,9 @@ export default function DarkPremiumMenuTemplate(ctx) {
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
-    onOpenFilters,
     displaySections,
     displayableItemCount,
     filtersActive,
-    handleClearFilters,
     data,
     currentRestaurantId,
     dealMap,
@@ -120,9 +118,6 @@ export default function DarkPremiumMenuTemplate(ctx) {
         ) : null}
         <div style={{ marginTop: 22, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
           <ShareButton variant="menu" label="Share" shareData={shareData} analyticsContext={shareAnalyticsContext} size="compact" tone="subtle" />
-          <button type="button" onClick={onOpenFilters} style={{ border: `1px solid ${accent}`, borderRadius: 999, background: "transparent", color: accent, minHeight: 36, padding: "0 16px", fontSize: 12, fontWeight: 850, cursor: "pointer" }}>
-            Filters
-          </button>
         </div>
       </header>
 
@@ -154,9 +149,12 @@ export default function DarkPremiumMenuTemplate(ctx) {
         {displayableItemCount === 0 ? (
           <div style={{ color: muted, padding: "28px 0" }}>
             {filtersActive ? (
-              <button type="button" onClick={handleClearFilters} style={{ color: accent, background: "transparent", border: "none", fontWeight: 850, cursor: "pointer" }}>
-                Clear filters
-              </button>
+              <>
+                This restaurant has no items that match your saved dietary preferences.{" "}
+                <Link to="/account" style={{ color: accent, fontWeight: 850, fontSize: 15 }}>
+                  Manage preferences
+                </Link>
+              </>
             ) : (
               t("publicMenu.noItems", "This restaurant does not currently have any displayable menu items.")
             )}

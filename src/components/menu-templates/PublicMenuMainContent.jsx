@@ -8,6 +8,8 @@ import ChalkboardMenuTemplate from "./ChalkboardMenuTemplate.jsx";
 import RusticItalianMenuTemplate from "./RusticItalianMenuTemplate.jsx";
 import ModernAsianMenuTemplate from "./ModernAsianMenuTemplate.jsx";
 import RefinedDarkMenuTemplate from "./RefinedDarkMenuTemplate.jsx";
+import EditorialMenuTemplate from "./EditorialMenuTemplate.jsx";
+import EditorialDarkMenuTemplate from "./EditorialDarkMenuTemplate.jsx";
 import { normalizeMenuStyle } from "./menuPresentationUtils.js";
 
 /**
@@ -25,5 +27,7 @@ export default function PublicMenuMainContent({ menuStyle: rawStyle, templateCon
   if (menuStyle === "v8") return <RusticItalianMenuTemplate {...ctx} />;
   if (menuStyle === "v9") return <ModernAsianMenuTemplate {...ctx} />;
   if (menuStyle === "v10") return <RefinedDarkMenuTemplate {...ctx} />;
+  if (menuStyle === "v11") return <EditorialMenuTemplate {...ctx} />;
+  if (menuStyle === "v12") return <EditorialDarkMenuTemplate {...ctx} />;
   return <ClassicMenuTemplate {...ctx} />;
 }

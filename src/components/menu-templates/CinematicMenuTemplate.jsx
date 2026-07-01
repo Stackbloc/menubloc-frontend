@@ -59,12 +59,10 @@ export default function CinematicMenuTemplate(ctx) {
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
-    onOpenFilters,
     displaySections,
     displayableItemCount,
     dealItems,
     filtersActive,
-    handleClearFilters,
     data,
     currentRestaurantId,
     dealMap,
@@ -162,22 +160,6 @@ export default function CinematicMenuTemplate(ctx) {
                     tone="subtle"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={onOpenFilters}
-                  style={{
-                    border: "1px solid rgba(255,255,255,0.25)",
-                    borderRadius: 999,
-                    background: "rgba(0,0,0,0.35)",
-                    color: "#e5e7eb",
-                    fontSize: 12,
-                    fontWeight: 800,
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Filters
-                </button>
               </div>
               <div style={{ marginTop: 10, fontSize: 12, fontWeight: 700, color: "rgba(226,232,240,0.85)" }}>
                 {t("menuTemplates.v2.tagline", "Featured picks & full menu below")}
@@ -242,24 +224,19 @@ export default function CinematicMenuTemplate(ctx) {
             <>
               {t(
                 "publicMenu.noItemsAfterFilters",
-                "This restaurant has no displayable menu items after your active filters."
+                "This restaurant has no items that match your saved dietary preferences."
               )}{" "}
-              <button
-                type="button"
-                onClick={handleClearFilters}
+              <Link
+                to="/account"
                 style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
                   color: brand?.accent ?? "#22C55E",
                   fontWeight: 700,
                   fontSize: 14,
-                  padding: 0,
                   textDecoration: "underline",
                 }}
               >
-                {t("common.clearFilters", "Clear filters")}
-              </button>
+                {t("common.managePreferences", "Manage preferences")}
+              </Link>
             </>
           ) : (
             t("publicMenu.noItems", "This restaurant does not currently have any displayable menu items.")

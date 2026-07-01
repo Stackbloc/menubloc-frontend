@@ -7,6 +7,21 @@ import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
 import { buildDishShareData } from "../share/shareUtils.js";
 import { getMenuItemImageUrl } from "./menuImageUtils.js";
 import { normalizeMenuThemeSettings } from "./menuThemeSettings.js";
+import { useIsTabletRange } from "./menuPresentationUtils.js";
+
+// Editorial (Apple-inspired) neutral palettes — isolated to editorialRefresh only.
+// "light" backs the new default (Classic/v1). "dark" backs the dark color-scheme
+// variant (v12) — same layout/typography system, different color tokens only.
+const ED_PALETTES = {
+  light: { ink: "#1D1D1F", subtle: "#6E6E73", hairline: "#E5E5EA", unavailableBg: "#F5F5F7", unavailable: "#FF3B30" },
+  dark: { ink: "#F5F5F7", subtle: "#8E8E93", hairline: "#38383A", unavailableBg: "#1C1C1E", unavailable: "#FF453A" },
+};
+
+function EditorialTag({ label, color }) {
+  return (
+    <span style={{ fontSize: 12, fontWeight: 500, color, whiteSpace: "nowrap" }}>{label}</span>
+  );
+}
 
 function Badge({ label, bg, color, border }) {
   return (
@@ -64,6 +79,10 @@ export default function PublicMenuItemCard({
   density = "classic",
   showImage = true,
   compactActions = false,
+  // Isolated Apple-inspired redesign variant (Classic/v1 default + v12 dark scheme).
+  // Additive-only: does not alter any density or compactActions branch below.
+  editorialRefresh = false,
+  editorialColorScheme = "light",
   it,
   sIdx,
   iIdx,
@@ -160,22 +179,40 @@ export default function PublicMenuItemCard({
     : null;
   const cartState = getCartItemStateForItem(activeCartItems, it?.id);
   const inCartCount = cartState.totalQuantity;
+  const isTablet = useIsTabletRange();
+  const ed = ED_PALETTES[editorialColorScheme] || ED_PALETTES.light;
+  // Cap descriptive badges at 2 (editorialRefresh only) so the row never shows
+  // a wall of tags. Priority: unavailability status, then deal, then diet flags.
+  const visibleBadges = editorialRefresh
+    ? [
+        !itemIsOrderable ? { key: "unavailable", label: "Unavailable", color: ed.unavailable } : null,
+        hasDeal ? { key: "deal", label: t("common.deals", "Deals"), color: accent } : null,
+        it?.is_vegan ? { key: "vegan", label: t("diet.vegan", "Vegan"), color: ed.subtle } : null,
+        it?.is_gluten_free ? { key: "gf", label: "GF", color: ed.subtle } : null,
+      ].filter(Boolean).slice(0, 2)
+    : null;
 
-  const pad =
-    density === "cinematic" ? "14px 16px" :
-    density === "takeout" ? "8px 12px" :
-    density === "bold-casual" ? "12px 16px" :
-    density === "refined-editorial" ? "14px 0" :
-    compactActions ? "10px 14px" :
-    "12px 16px";
-  const radius =
-    density === "cinematic" ? 20 :
-    density === "takeout" ? 12 :
-    density === "refined-editorial" ? 0 :
-    density === "bold-casual" ? 14 :
-    18;
-  const titleSize = density === "cinematic" ? 17 : density === "bold-casual" ? 16 : density === "refined-editorial" ? 15 : 15;
-  const descSize = density === "cinematic" ? 13 : density === "takeout" ? 11 : density === "refined-editorial" ? 13 : 12;
+  const pad = editorialRefresh
+    ? isTablet ? "18px 0" : "16px 0"
+    : density === "cinematic" ? "14px 16px" :
+      density === "takeout" ? "8px 12px" :
+      density === "bold-casual" ? "12px 16px" :
+      density === "refined-editorial" ? "14px 0" :
+      compactActions ? "10px 14px" :
+      "12px 16px";
+  const radius = editorialRefresh
+    ? 0
+    : density === "cinematic" ? 20 :
+      density === "takeout" ? 12 :
+      density === "refined-editorial" ? 0 :
+      density === "bold-casual" ? 14 :
+      18;
+  const titleSize = editorialRefresh
+    ? 17
+    : density === "cinematic" ? 17 : density === "bold-casual" ? 16 : density === "refined-editorial" ? 15 : 15;
+  const descSize = editorialRefresh
+    ? 14
+    : density === "cinematic" ? 13 : density === "takeout" ? 11 : density === "refined-editorial" ? 13 : 12;
 
   function openSheet() {
     setItemSheet({
@@ -226,18 +263,21 @@ export default function PublicMenuItemCard({
         }
       }}
       style={{
-        border:
-          density === "refined-editorial"
+        border: editorialRefresh
+          ? "none"
+          : density === "refined-editorial"
             ? inCartCount > 0 ? `1px solid ${softBorder}` : "none"
             : density === "bold-casual"
               ? inCartCount > 0 ? `1px solid ${softBorder}` : "none"
               : density === "classic"
                 ? inCartCount > 0 ? `1px solid ${softBorder}` : compactActions ? "1px solid rgba(255,255,255,0.07)" : "1px solid #252F3D"
                 : inCartCount > 0 ? `1px solid ${softBorder}` : "1px solid var(--gb-color-border)",
+        borderBottom: editorialRefresh ? `1px solid ${ed.hairline}` : undefined,
         borderLeft: density === "bold-casual" ? `4px solid ${accent}` : undefined,
         borderRadius: radius,
-        background:
-          density === "refined-editorial"
+        background: editorialRefresh
+          ? (!itemIsOrderable ? ed.unavailableBg : inCartCount > 0 ? `${accent}0D` : "transparent")
+          : density === "refined-editorial"
             ? inCartCount > 0 ? softBg : "transparent"
             : !itemIsOrderable
               ? "#121A14"
@@ -245,8 +285,9 @@ export default function PublicMenuItemCard({
                 ? softBg
                 : "var(--gb-color-surface-strong)",
         padding: pad,
-        boxShadow:
-          density === "cinematic" ? "0 8px 28px rgba(0,0,0,0.35)" :
+        boxShadow: editorialRefresh
+          ? "none"
+          : density === "cinematic" ? "0 8px 28px rgba(0,0,0,0.35)" :
           density === "classic" ? (compactActions ? "0 1px 4px rgba(0,0,0,0.20)" : "0 2px 12px rgba(0,0,0,0.28), 0 1px 3px rgba(0,0,0,0.18)") :
           "var(--gb-shadow-card)",
         cursor: "pointer",
@@ -259,7 +300,15 @@ export default function PublicMenuItemCard({
         {showImage && imageUrl ? (
           <div
             aria-hidden="true"
-            style={{
+            style={editorialRefresh ? {
+              width: 64,
+              height: 64,
+              borderRadius: 10,
+              overflow: "hidden",
+              flexShrink: 0,
+              background: ed.unavailableBg,
+              marginTop: 2,
+            } : {
               width: density === "cinematic" ? 100 : 72,
               height: density === "cinematic" ? 72 : 72,
               borderRadius: density === "refined-editorial" ? 14 : 12,
@@ -280,7 +329,58 @@ export default function PublicMenuItemCard({
           </div>
         ) : null}
         <div style={{ minWidth: 0, flex: 1 }}>
-          {compactActions ? (
+          {editorialRefresh ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span
+                style={{
+                  fontSize: titleSize,
+                  fontWeight: 600,
+                  color: ed.ink,
+                  lineHeight: 1.3,
+                  minWidth: 0,
+                  flex: 1,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "normal",
+                }}
+              >
+                {name}
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                {dishShareData ? (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <ShareButton
+                      variant="dish"
+                      iconOnly={true}
+                      tone="inline"
+                      shareData={dishShareData}
+                      analyticsContext={{
+                        restaurantId: currentRestaurantId,
+                        restaurantSlug: data?.slug || null,
+                        menuItemId: it.id,
+                        menuItemName: name,
+                        pageType: "public_menu",
+                        shareTarget: "dish",
+                      }}
+                    />
+                  </div>
+                ) : null}
+                {price ? (
+                  <span
+                    style={{
+                      fontSize: titleSize,
+                      fontWeight: 400,
+                      color: ed.ink,
+                      whiteSpace: "nowrap",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {price}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          ) : compactActions ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span
                 style={{
@@ -343,7 +443,8 @@ export default function PublicMenuItemCard({
                   <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0, whiteSpace: "nowrap" }}>
                     <ShareButton
                       variant="dish"
-                      label="Share"
+                      iconOnly={true}
+                      tone="ghost"
                       shareData={dishShareData}
                       analyticsContext={{
                         restaurantId: currentRestaurantId,
@@ -353,8 +454,6 @@ export default function PublicMenuItemCard({
                         pageType: "public_menu",
                         shareTarget: "dish",
                       }}
-                      size="compact"
-                      tone="subtle"
                     />
                   </div>
                 ) : null}
@@ -365,8 +464,8 @@ export default function PublicMenuItemCard({
             </div>
           )}
 
-          {inCartCount > 0 || hasDeal || it?.is_vegan || it?.is_gluten_free || !itemIsOrderable ? (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+          {(editorialRefresh ? visibleBadges.length > 0 : (hasDeal || it?.is_vegan || it?.is_gluten_free || !itemIsOrderable)) || inCartCount > 0 ? (
+            <div style={{ display: "flex", alignItems: "center", gap: editorialRefresh ? 8 : 6, flexWrap: "wrap", marginTop: 6 }}>
               {inCartCount > 0 ? (
                 hoveredItemId === it.id ? (
                   <button
@@ -376,7 +475,16 @@ export default function PublicMenuItemCard({
                       removeItem(cartState.simpleLine?.lineId);
                       setHoveredItemId(null);
                     }}
-                    style={{
+                    style={editorialRefresh ? {
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: ed.unavailable,
+                      background: "transparent",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    } : {
                       fontSize: 11,
                       fontWeight: 700,
                       color: "#fca5a5",
@@ -392,7 +500,12 @@ export default function PublicMenuItemCard({
                   </button>
                 ) : (
                   <span
-                    style={{
+                    style={editorialRefresh ? {
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: accent,
+                      whiteSpace: "nowrap",
+                    } : {
                       fontSize: 11,
                       fontWeight: 700,
                       color: onAccent,
@@ -406,24 +519,32 @@ export default function PublicMenuItemCard({
                   </span>
                 )
               ) : null}
-              {!itemIsOrderable ? <Badge label="Unavailable" bg="#1c1208" color="#fb923c" border="1px solid #431407" /> : null}
-              {hasDeal && (
-                <Badge
-                  label={t("common.deals", "Deals")}
-                  bg={softBg}
-                  color={accent}
-                  border={`1px solid ${softBorder}`}
-                />
+              {editorialRefresh ? (
+                visibleBadges.map((b) => (
+                  <EditorialTag key={b.key} label={b.label} color={b.color} />
+                ))
+              ) : (
+                <>
+                  {!itemIsOrderable ? <Badge label="Unavailable" bg="#1c1208" color="#fb923c" border="1px solid #431407" /> : null}
+                  {hasDeal && (
+                    <Badge
+                      label={t("common.deals", "Deals")}
+                      bg={softBg}
+                      color={accent}
+                      border={`1px solid ${softBorder}`}
+                    />
+                  )}
+                  {it?.is_vegan && (
+                    <Badge
+                      label={t("diet.vegan", "Vegan")}
+                      bg={softBg}
+                      color={accent}
+                      border={`1px solid ${softBorder}`}
+                    />
+                  )}
+                  {it?.is_gluten_free && <Badge label="GF" bg="#1c1a0a" color="#FCD34D" border="1px solid #44400a" />}
+                </>
               )}
-              {it?.is_vegan && (
-                <Badge
-                  label={t("diet.vegan", "Vegan")}
-                  bg={softBg}
-                  color={accent}
-                  border={`1px solid ${softBorder}`}
-                />
-              )}
-              {it?.is_gluten_free && <Badge label="GF" bg="#1c1a0a" color="#FCD34D" border="1px solid #44400a" />}
             </div>
           ) : null}
         </div>
@@ -431,15 +552,15 @@ export default function PublicMenuItemCard({
 
       {desc ? (
         <div style={{
-          marginTop: density === "classic" ? 4 : 3,
+          marginTop: editorialRefresh ? 4 : density === "classic" ? 4 : 3,
           fontSize: descSize,
-          color: density === "classic" ? "rgba(156,163,175,0.82)" : "#9CA3AF",
-          lineHeight: density === "classic" ? 1.4 : 1.35,
+          color: editorialRefresh ? ed.subtle : density === "classic" ? "rgba(156,163,175,0.82)" : "#9CA3AF",
+          lineHeight: 1.4,
         }}>{desc}</div>
       ) : null}
 
       {density !== "takeout" && (showInsightsInline || showNutritionInline || showAllergenInline || showIndulgenceInline) ? (
-        <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: editorialRefresh ? 10 : 8, flexWrap: "wrap" }}>
           {showNutritionInline ? (
             <button
               type="button"
@@ -448,7 +569,19 @@ export default function PublicMenuItemCard({
                 const navId = it?.canonical_menu_item_id || it?.id;
                 if (navId && navigate) navigate(`/menu-items/${navId}?from=menu`);
               }}
-              style={{
+              style={editorialRefresh ? {
+                display: "inline-flex",
+                alignItems: "center",
+                border: "none",
+                background: "transparent",
+                color: ed.subtle,
+                fontSize: 13,
+                fontWeight: 400,
+                padding: 0,
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                cursor: "pointer",
+              } : {
                 display: "inline-flex",
                 alignItems: "center",
                 height: compactActions ? 16 : 18,
@@ -469,12 +602,16 @@ export default function PublicMenuItemCard({
             </button>
           ) : null}
           {showIndulgenceInline && indulgencePresentation?.indulgence?.score != null ? (
-            <Badge
-              label={`Indulgence ${indulgencePresentation.indulgence.score}`}
-              bg={softBg}
-              color={accent}
-              border={`1px solid ${softBorder}`}
-            />
+            editorialRefresh ? (
+              <EditorialTag label={`Indulgence ${indulgencePresentation.indulgence.score}`} color={ed.subtle} />
+            ) : (
+              <Badge
+                label={`Indulgence ${indulgencePresentation.indulgence.score}`}
+                bg={softBg}
+                color={accent}
+                border={`1px solid ${softBorder}`}
+              />
+            )
           ) : null}
           {showInsightsInline ? (
             <button
@@ -484,7 +621,18 @@ export default function PublicMenuItemCard({
                 const navId = it?.canonical_menu_item_id || it?.id;
                 if (navId && navigate) navigate(`/menu-items/${navId}?from=menu`);
               }}
-              style={{
+              style={editorialRefresh ? {
+                display: "inline-flex",
+                alignItems: "center",
+                border: "none",
+                background: "transparent",
+                color: ed.subtle,
+                fontSize: 13,
+                fontWeight: 400,
+                padding: 0,
+                cursor: "pointer",
+                lineHeight: 1,
+              } : {
                 display: "inline-flex",
                 alignItems: "center",
                 border: compactActions ? "1px solid rgba(255,255,255,0.14)" : "none",

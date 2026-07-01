@@ -187,11 +187,9 @@ export default function ChalkboardMenuTemplate(ctx) {
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
-    onOpenFilters,
     displaySections,
     displayableItemCount,
     filtersActive,
-    handleClearFilters,
     brand,
     fontStack,
     t,
@@ -235,13 +233,6 @@ export default function ChalkboardMenuTemplate(ctx) {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
           <ShareButton variant="menu" label="Share" shareData={shareData} analyticsContext={shareAnalyticsContext} size="compact" tone="subtle" />
-          <button
-            type="button"
-            onClick={onOpenFilters}
-            style={{ minHeight: 38, borderRadius: 2, border: `1px solid ${accent}`, background: "rgba(0,0,0,0.18)", color: accent, padding: "0 13px", fontSize: 12, fontWeight: 900, cursor: "pointer", textTransform: "uppercase" }}
-          >
-            Filters
-          </button>
         </div>
       </header>
 
@@ -254,10 +245,10 @@ export default function ChalkboardMenuTemplate(ctx) {
           <div style={{ padding: 28, color: "rgba(255,255,255,0.75)", fontSize: 15, fontWeight: 800 }}>
             {filtersActive ? (
               <>
-                No items match the active filters.{" "}
-                <button type="button" onClick={handleClearFilters} style={{ color: accent, border: "none", background: "transparent", fontWeight: 900, cursor: "pointer" }}>
-                  Clear filters
-                </button>
+                This restaurant has no items that match your saved dietary preferences.{" "}
+                <Link to="/account" style={{ color: accent, fontWeight: 900, fontSize: 15 }}>
+                  Manage preferences
+                </Link>
               </>
             ) : (
               t("publicMenu.noItems", "This restaurant does not currently have any displayable menu items.")

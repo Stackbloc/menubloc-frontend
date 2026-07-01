@@ -318,11 +318,9 @@ export default function PremiumBistroMenuTemplate(ctx) {
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
-    onOpenFilters,
     displaySections,
     displayableItemCount,
     filtersActive,
-    handleClearFilters,
     heroImageUrl,
     brand,
     fontStack,
@@ -391,27 +389,6 @@ export default function PremiumBistroMenuTemplate(ctx) {
             : brand?.heroBackdrop || "linear-gradient(135deg, #17130f, #090b0a)",
         }}
       >
-        <button
-          type="button"
-          onClick={onOpenFilters}
-          aria-label="Open filters"
-          style={{
-            position: "absolute",
-            top: 18,
-            left: 18,
-            width: 46,
-            height: 46,
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,0.25)",
-            background: "rgba(8,10,9,0.42)",
-            color: "#fff",
-            fontSize: 22,
-            lineHeight: 1,
-            cursor: "pointer",
-          }}
-        >
-          ☰
-        </button>
         <div style={{ position: "absolute", top: 18, right: 18 }}>
           <ShareButton
             variant="menu"
@@ -557,13 +534,12 @@ export default function PremiumBistroMenuTemplate(ctx) {
                 }}
               >
                 <span>{displayableItemCount} matching items</span>
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  style={{ border: "none", background: "transparent", color: accent, fontWeight: 850, cursor: "pointer" }}
+                <Link
+                  to="/account"
+                  style={{ color: accent, fontWeight: 850, fontSize: 13 }}
                 >
-                  Clear filters
-                </button>
+                  Manage preferences
+                </Link>
               </div>
             ) : null}
 

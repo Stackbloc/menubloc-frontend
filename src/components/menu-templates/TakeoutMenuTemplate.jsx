@@ -57,12 +57,10 @@ export default function TakeoutMenuTemplate(ctx) {
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
-    onOpenFilters,
     displaySections,
     displayableItemCount,
     dealItems,
     filtersActive,
-    handleClearFilters,
     data,
     currentRestaurantId,
     dealMap,
@@ -169,23 +167,6 @@ export default function TakeoutMenuTemplate(ctx) {
             size="compact"
             tone="subtle"
           />
-          <button
-            type="button"
-            onClick={onOpenFilters}
-            style={{
-              border: "1px solid #1F2937",
-              borderRadius: 999,
-              background: "#1A2419",
-              color: "#9CA3AF",
-              fontSize: 11,
-              fontWeight: 800,
-              padding: "6px 10px",
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
-          >
-            Filter
-          </button>
         </div>
         {franchiseSlot ? <div style={{ marginTop: 10 }}>{franchiseSlot}</div> : null}
       </div>
@@ -291,24 +272,19 @@ export default function TakeoutMenuTemplate(ctx) {
             <>
               {t(
                 "publicMenu.noItemsAfterFilters",
-                "This restaurant has no displayable menu items after your active filters."
+                "This restaurant has no items that match your saved dietary preferences."
               )}{" "}
-              <button
-                type="button"
-                onClick={handleClearFilters}
+              <Link
+                to="/account"
                 style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
                   color: accent,
                   fontWeight: 700,
                   fontSize: 14,
-                  padding: 0,
                   textDecoration: "underline",
                 }}
               >
-                {t("common.clearFilters", "Clear filters")}
-              </button>
+                {t("common.managePreferences", "Manage preferences")}
+              </Link>
             </>
           ) : (
             t("publicMenu.noItems", "This restaurant does not currently have any displayable menu items.")

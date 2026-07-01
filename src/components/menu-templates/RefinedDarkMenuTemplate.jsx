@@ -67,11 +67,9 @@ export default function RefinedDarkMenuTemplate(ctx) {
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
-    onOpenFilters,
     displaySections,
     displayableItemCount,
     filtersActive,
-    handleClearFilters,
     data,
     currentRestaurantId,
     dealMap,
@@ -205,33 +203,6 @@ export default function RefinedDarkMenuTemplate(ctx) {
                     tone="ghost"
                   />
                 </div>
-
-                <button
-                  type="button"
-                  onClick={onOpenFilters}
-                  style={{
-                    flexShrink: 0,
-                    border: filtersActive
-                      ? `1px solid ${accent}`
-                      : "1px solid rgba(255,255,255,0.18)",
-                    borderRadius: 999,
-                    background: filtersActive ? `${accent}18` : "transparent",
-                    color: filtersActive ? accent : "rgba(255,255,255,0.60)",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: "4px 10px",
-                    cursor: "pointer",
-                    letterSpacing: "0.02em",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 5,
-                  }}
-                >
-                  {filtersActive && (
-                    <span aria-hidden="true" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: accent, flexShrink: 0 }} />
-                  )}
-                  Filters
-                </button>
               </div>
             </div>
 
@@ -359,24 +330,19 @@ export default function RefinedDarkMenuTemplate(ctx) {
                 <>
                   {t(
                     "publicMenu.noItemsAfterFilters",
-                    "This restaurant has no displayable menu items after your active filters."
+                    "This restaurant has no items that match your saved dietary preferences."
                   )}{" "}
-                  <button
-                    type="button"
-                    onClick={handleClearFilters}
+                  <Link
+                    to="/account"
                     style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
                       color: accent,
                       fontWeight: 700,
                       fontSize: 14,
-                      padding: 0,
                       textDecoration: "underline",
                     }}
                   >
-                    {t("common.clearFilters", "Clear filters")}
-                  </button>
+                    {t("common.managePreferences", "Manage preferences")}
+                  </Link>
                 </>
               ) : (
                 t("publicMenu.noItems", "This restaurant does not currently have any displayable menu items.")

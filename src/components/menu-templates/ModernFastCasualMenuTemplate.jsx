@@ -16,14 +16,12 @@ export default function ModernFastCasualMenuTemplate(ctx) {
     logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
-    onOpenFilters,
     franchiseSlot,
     intakeBannerSlot,
     allergenBannerSlot,
     displaySections,
     displayableItemCount,
     filtersActive,
-    handleClearFilters,
     data,
     currentRestaurantId,
     dealMap,
@@ -108,18 +106,16 @@ export default function ModernFastCasualMenuTemplate(ctx) {
         {franchiseSlot}
         {intakeBannerSlot}
         {allergenBannerSlot}
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-          <button type="button" onClick={onOpenFilters} style={{ minHeight: 38, border: "1px solid #d6ded6", borderRadius: 999, background: "#fff", color: "#334155", padding: "0 14px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-            Filters
-          </button>
-        </div>
 
         {displayableItemCount === 0 ? (
           <div style={{ color: "#667085", padding: 24 }}>
             {filtersActive ? (
-              <button type="button" onClick={handleClearFilters} style={{ border: "none", background: "transparent", color: accent, fontWeight: 850, cursor: "pointer" }}>
-                Clear filters
-              </button>
+              <>
+                This restaurant has no items that match your saved dietary preferences.{" "}
+                <Link to="/account" style={{ color: accent, fontWeight: 850, fontSize: 15 }}>
+                  Manage preferences
+                </Link>
+              </>
             ) : (
               t("publicMenu.noItems", "This restaurant does not currently have any displayable menu items.")
             )}

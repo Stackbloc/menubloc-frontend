@@ -8,9 +8,12 @@ import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettin
 import { useIsTabletRange } from "./menuPresentationUtils.js";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
-const INK = "#1D1D1F";
-const SUBTLE = "#6E6E73";
-const HAIRLINE = "#E5E5EA";
+// Apple iOS dark-mode color tokens — distinct from the old Menuply dark-green
+// theme (this is a considered dark palette, not a recolor of the old look).
+const BG = "#000000";
+const INK = "#F5F5F7";
+const SUBTLE = "#8E8E93";
+const HAIRLINE = "#38383A";
 
 function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
   if (logoUrl) {
@@ -28,28 +31,22 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 44 }) {
     <div
       title={restaurantName}
       aria-hidden
-      style={{ width: size, height: size, borderRadius: 10, flexShrink: 0, background: "#F5F5F7" }}
+      style={{ width: size, height: size, borderRadius: 10, flexShrink: 0, background: "#1C1C1E" }}
     />
   );
 }
 
 /**
- * V1 Classic (default) — Apple-inspired editorial redesign, adopted as the
- * default menu template. White space is the primary structural tool: no card
- * backgrounds, no borders, no colored badge fills, one restrained accent used
- * only where it carries meaning (price stays neutral; accent is reserved for
- * active/in-cart state). Hairline dividers separate rows instead of gaps
- * between boxes. Typography carries the hierarchy that color/chrome used to.
+ * V12 Editorial Dark — same Apple-inspired layout/typography system as the
+ * default (Classic/v1), on a true-black iOS dark-mode palette instead of
+ * white. Not a recolor of the old Menuply dark-green theme — this uses
+ * Apple's actual dark-mode tokens (systemBackground #000, label #F5F5F7,
+ * secondaryLabel #8E8E93, separator #38383A).
  *
- * Scope note: this covers the restaurant header through the item list only.
- * The surrounding site chrome (top nav, bottom tab bar) is shared across the
- * whole app and out of scope here — it stays as-is (still dark).
- *
- * Item-level styling lives behind PublicMenuItemCard's `editorialRefresh`
- * flag, which is additive-only and does not affect the boutique templates
- * (v2 ModernFastCasual, v5 FamilyDiner) that also use density="classic".
+ * Isolated: does not touch the default (v1) or any other template. Uses
+ * PublicMenuItemCard's `editorialRefresh` + `editorialColorScheme="dark"`.
  */
-export default function ClassicMenuTemplate(ctx) {
+export default function EditorialDarkMenuTemplate(ctx) {
   const {
     isMobile,
     language,
@@ -100,13 +97,11 @@ export default function ClassicMenuTemplate(ctx) {
   const showSectionImages = shouldShowSectionImages(menuThemeSettings);
   const showLogo = logoPlacement !== "hidden";
   const isTablet = useIsTabletRange();
-  // Must exactly cancel the ancestor page container's horizontal padding
-  // (PublicMenuPage.jsx uses the same isMobile 900px cutoff: 12px vs 20px).
   const edgeBleed = isMobile ? -12 : -20;
-  const accent = brand?.accent ?? "#0071E3";
+  const accent = brand?.accent ?? "#0A84FF";
 
   return (
-    <div style={{ fontFamily: FONT_STACK, background: "#FFFFFF", marginLeft: edgeBleed, marginRight: edgeBleed }}>
+    <div style={{ fontFamily: FONT_STACK, background: BG, marginLeft: edgeBleed, marginRight: edgeBleed }}>
       {heroImageUrl ? (
         <div aria-hidden style={{ height: isTablet ? 140 : isMobile ? 120 : 180, overflow: "hidden", position: "relative", flexShrink: 0 }}>
           <img
@@ -122,7 +117,7 @@ export default function ClassicMenuTemplate(ctx) {
           position: "sticky",
           top: "var(--sph-h, 88px)",
           zIndex: 50,
-          background: "rgba(255,255,255,0.86)",
+          background: "rgba(0,0,0,0.86)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           borderBottom: `1px solid ${HAIRLINE}`,
@@ -236,7 +231,7 @@ export default function ClassicMenuTemplate(ctx) {
                         borderRadius: 999,
                         border: isSelected ? `1px solid ${INK}` : `1px solid ${HAIRLINE}`,
                         background: isSelected ? INK : "transparent",
-                        color: isSelected ? "#FFFFFF" : SUBTLE,
+                        color: isSelected ? "#000000" : SUBTLE,
                         fontWeight: 500,
                         fontSize: 14,
                         cursor: tabLoading ? "wait" : "pointer",
@@ -320,6 +315,7 @@ export default function ClassicMenuTemplate(ctx) {
                         key={String(it?.id ?? `${sIdx}-${iIdx}`)}
                         density="classic"
                         editorialRefresh={true}
+                        editorialColorScheme="dark"
                         it={it}
                         sIdx={sIdx}
                         iIdx={iIdx}

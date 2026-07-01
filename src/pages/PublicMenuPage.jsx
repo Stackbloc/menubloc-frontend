@@ -182,7 +182,7 @@ function itemFailsAllergenFilter(item, enabledAllergenKeys) {
   return false;
 }
 
-function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap, enabledAllergenKeys) {
+function getFilteredDisplaySections(sections, dietPrefs, enabledAllergenKeys) {
   return (Array.isArray(sections) ? sections : [])
     .map((sec) => {
       const title = asStr(sec?.title || "Menu").trim() || "Menu";
@@ -190,7 +190,6 @@ function getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap, e
       const items = rawItems.filter((it) => {
         if (!isDisplayableMenuItem(it)) return false;
         if (!itemPassesDietFilter(it, dietPrefs)) return false;
-        if (dealsFilter && dealMap.get(it?.id) == null) return false;
         if (itemFailsAllergenFilter(it, enabledAllergenKeys)) return false;
         return true;
       });
@@ -492,80 +491,6 @@ function FranchiseBanner({ group, currentRestaurantId, onSelectLocation, brand }
 
 /* ---- Filter chip ---- */
 
-function FilterChip({ label, active, onClick, fullWidth, brand }) {
-  const accent = brand?.accent ?? "#22C55E";
-  const onAccent = brand?.onAccent ?? "#0B0F0C";
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        height: 40,
-        width: fullWidth ? "100%" : "auto",
-        padding: "0 16px",
-        borderRadius: 999,
-        border: active ? `1.5px solid ${accent}` : "1px solid #1F2937",
-        background: active ? accent : "#1A2419",
-        color: active ? onAccent : "#9CA3AF",
-        fontSize: 13,
-        fontWeight: 800,
-        cursor: "pointer",
-        textAlign: "left",
-        boxSizing: "border-box",
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
-
-function FilterDrawer({ open, onClose, children }) {
-  if (!open) return null;
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Filters"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1400,
-        background: "rgba(15,23,42,0.28)",
-        backdropFilter: "blur(3px)",
-        display: "flex",
-        justifyContent: "flex-end",
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={(event) => event.stopPropagation()}
-        style={{
-          width: "min(360px, 100vw)",
-          height: "100%",
-          background: "#121A14",
-          boxShadow: "-18px 0 40px rgba(0,0,0,0.5)",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-const DIET_CHIPS = [
-  { key: "dairy_free",        label: "Dairy Free" },
-  { key: "diabetic_friendly", label: "Diabetic Friendly" },
-  { key: "gluten_free",       label: "Gluten Free" },
-  { key: "keto",              label: "Keto" },
-  { key: "low_fat",           label: "Low Fat" },
-  { key: "low_sodium",        label: "Low Sodium" },
-  { key: "vegan",             label: "Vegan" },
-  { key: "vegetarian",        label: "Vegetarian" },
-];
 
 /* ---- Badge ---- */
 
@@ -930,14 +855,13 @@ export default function PublicMenuPage() {
     removeItem,
   } = useOrderCart();
   const isMobile = useIsMobile();
-  const { isAuthenticated, allergenPreferences, foodsToAvoid = [] } = useConsumer();
+  const { isAuthenticated, allergenPreferences, dietaryPreferences, foodsToAvoid = [] } = useConsumer();
   const [searchParams, setSearchParams] = useSearchParams();
   const [modifierItem, setModifierItem] = useState(null);
   const [modifierInitialInstructions, setModifierInitialInstructions] = useState("");
   const [smartSheetItem, setSmartSheetItem] = useState(null);
   const [itemSheet, setItemSheet] = useState(null);
   const [addedConfirmation, setAddedConfirmation] = useState(null);
-  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [hoveredItemId, setHoveredItemId] = useState(null);
   // Multi-menu tab state
   const [selectedMenuId, setSelectedMenuId] = useState(null);
@@ -959,23 +883,30 @@ export default function PublicMenuPage() {
     error: null,
   }));
 
+  // Diet preferences are sourced from the signed-in consumer's saved profile
+  // (same pattern as allergen preferences below) — there is no manual in-page
+  // toggle. Logged-out visitors see no diet-based exclusion, matching allergens.
+  const enabledDietKeys = useMemo(() => {
+    if (!isAuthenticated || !Array.isArray(dietaryPreferences)) return new Set();
+    return new Set(dietaryPreferences.filter((p) => p.is_enabled).map((p) => p.preference_key));
+  }, [isAuthenticated, dietaryPreferences]);
   const dietPrefs = {
-    dairy_free:        searchParams.get("dairy_free")        === "1",
-    diabetic_friendly: searchParams.get("diabetic_friendly") === "1",
-    gluten_free:       searchParams.get("gluten_free")       === "1",
-    keto:              searchParams.get("keto")              === "1" || searchParams.get("low_carb") === "1",
-    low_fat:           searchParams.get("low_fat")           === "1" || searchParams.get("low_fat") === "true",
-    low_sodium:        searchParams.get("low_sodium")        === "1",
-    vegan:             searchParams.get("vegan")             === "1",
-    vegetarian:        searchParams.get("vegetarian")        === "1",
+    dairy_free:        enabledDietKeys.has("dairy_free"),
+    diabetic_friendly: enabledDietKeys.has("diabetic_friendly"),
+    gluten_free:       enabledDietKeys.has("gluten_free"),
+    keto:              enabledDietKeys.has("keto"),
+    // No corresponding profile setting exists today (profile offers low_carb, not low_fat).
+    low_fat:           false,
+    low_sodium:        enabledDietKeys.has("low_sodium"),
+    vegan:             enabledDietKeys.has("vegan"),
+    vegetarian:        enabledDietKeys.has("vegetarian"),
   };
-  const dealsFilter = searchParams.get("deals") === "1";
   const enabledAllergenKeys = useMemo(() => {
     if (!isAuthenticated || !Array.isArray(allergenPreferences)) return new Set();
     return new Set(allergenPreferences.filter((p) => p.is_enabled).map((p) => p.allergen_key));
   }, [isAuthenticated, allergenPreferences]);
   const allergenFilterActive = enabledAllergenKeys.size > 0;
-  const filtersActive = Object.values(dietPrefs).some(Boolean) || dealsFilter || allergenFilterActive;
+  const filtersActive = Object.values(dietPrefs).some(Boolean) || allergenFilterActive;
   const proximityLat = asFiniteNumber(searchParams.get("lat"));
   const proximityLng = asFiniteNumber(searchParams.get("lng"));
   const contextCity  = searchParams.get("city")  || null;
@@ -1072,28 +1003,6 @@ export default function PublicMenuPage() {
     resolvedRouteState,
   ]);
 
-  function handleTogglePref(key) {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      const isKeto = key === "keto";
-      const isActive = isKeto
-        ? next.get("keto") === "1" || next.get("low_carb") === "1"
-        : next.get(key) === "1" || next.get(key) === "true";
-
-      if (isActive) {
-        next.delete(key);
-        if (isKeto) next.delete("low_carb");
-      } else {
-        next.set(key, key === "low_fat" ? "true" : "1");
-        if (isKeto) next.set("low_carb", "1");
-      }
-      return next;
-    });
-  }
-
-  function handleClearFilters() {
-    setSearchParams({});
-  }
 
   const apiUrl = useMemo(() => {
     const rid = encodeURIComponent(asStr(routeState.restaurantId).trim());
@@ -1307,7 +1216,7 @@ export default function PublicMenuPage() {
   // tabSections?.sections may still show a prior menu's content during a background fetch —
   // this is intentional: never blank the display while waiting for a new tab to load.
   const sections        = tabSections?.sections ?? normalizeSections(data);
-  const displaySections = getFilteredDisplaySections(sections, dietPrefs, dealsFilter, dealMap, enabledAllergenKeys);
+  const displaySections = getFilteredDisplaySections(sections, dietPrefs, enabledAllergenKeys);
   const displayableItemCount = displaySections.reduce(
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
     0
@@ -1478,12 +1387,10 @@ export default function PublicMenuPage() {
             </>
           ),
           allergenBannerSlot: <AllergenFilterBanner active={allergenFilterActive} enabledKeys={enabledAllergenKeys} />,
-          onOpenFilters: () => setIsFilterDrawerOpen(true),
           displaySections,
           displayableItemCount,
           dealItems: data?.deal_items || [],
           filtersActive,
-          handleClearFilters,
           data,
           currentRestaurantId,
           dealMap,
@@ -1600,69 +1507,6 @@ export default function PublicMenuPage() {
         ) : null}
 
         <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />
-
-        <FilterDrawer open={isFilterDrawerOpen} onClose={() => setIsFilterDrawerOpen(false)}>
-          <div style={{ padding: "18px 18px 14px", borderBottom: "1px solid #1F2937", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ fontSize: 17, fontWeight: 900, color: "#FFFFFF" }}>
-              {t("common.filters", "Filters")}
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsFilterDrawerOpen(false)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontSize: 20,
-                lineHeight: 1,
-                color: "#667085",
-                padding: 0,
-              }}
-              aria-label={t("common.close", "Close")}
-            >
-              ×
-            </button>
-          </div>
-          <div style={{ padding: 18, display: "grid", gap: 10, overflowY: "auto" }}>
-            {DIET_CHIPS.map(({ key, label }) => (
-              <FilterChip
-                key={key}
-                label={t(`diet.${key}`, label)}
-                active={dietPrefs[key]}
-                onClick={() => handleTogglePref(key)}
-                fullWidth
-                brand={menuBrand}
-              />
-            ))}
-            <FilterChip
-              label={t("common.deals", "Deals")}
-              active={dealsFilter}
-              onClick={() => handleTogglePref("deals")}
-              fullWidth
-              brand={menuBrand}
-            />
-            {filtersActive ? (
-              <button
-                type="button"
-                onClick={handleClearFilters}
-                style={{
-                  marginTop: 8,
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#667085",
-                  padding: 0,
-                  textDecoration: "underline",
-                  textAlign: "left",
-                }}
-              >
-                {t("common.clearAll", "Clear all")}
-              </button>
-            ) : null}
-          </div>
-        </FilterDrawer>
       </div>
 
       {/* Item detail sheet */}

@@ -104,11 +104,9 @@ export default function ModernAsianMenuTemplate(ctx) {
     logoPlacement = "top-left",
     shareData,
     shareAnalyticsContext,
-    onOpenFilters,
     displaySections,
     displayableItemCount,
     filtersActive,
-    handleClearFilters,
     data,
     dealMap,
     setItemSheet,
@@ -181,23 +179,6 @@ export default function ModernAsianMenuTemplate(ctx) {
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <ShareButton variant="menu" label="Share" shareData={shareData} analyticsContext={shareAnalyticsContext} size="compact" tone="subtle" />
-              <button
-                type="button"
-                onClick={onOpenFilters}
-                style={{
-                  minHeight: 40,
-                  borderRadius: 999,
-                  border: "1px solid rgba(255,255,255,0.24)",
-                  background: "rgba(0,0,0,0.22)",
-                  color: "#fff",
-                  padding: "0 14px",
-                  fontSize: 12,
-                  fontWeight: 850,
-                  cursor: "pointer",
-                }}
-              >
-                Filters
-              </button>
             </div>
           </div>
         </div>
@@ -208,10 +189,10 @@ export default function ModernAsianMenuTemplate(ctx) {
           <div style={{ padding: 24, color: "rgba(255,255,255,0.62)", fontSize: 16 }}>
             {filtersActive ? (
               <>
-                No sample items match these filters.{" "}
-                <button type="button" onClick={handleClearFilters} style={{ border: "none", background: "transparent", color: accent, fontWeight: 850, cursor: "pointer" }}>
-                  Clear filters
-                </button>
+                This restaurant has no items that match your saved dietary preferences.{" "}
+                <Link to="/account" style={{ color: accent, fontWeight: 850, fontSize: 16 }}>
+                  Manage preferences
+                </Link>
               </>
             ) : (
               "This restaurant does not currently have any displayable menu items."
