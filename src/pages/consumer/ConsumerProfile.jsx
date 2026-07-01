@@ -19,6 +19,7 @@ import {
   updatePreferences,
   getFoodsToAvoid,
   updateFoodsToAvoid,
+  changePassword,
 } from "../../lib/consumerApi.js";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 
@@ -133,6 +134,13 @@ export default function ConsumerProfile() {
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState("");
   const [supportOpen, setSupportOpen] = useState(false);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const loadProfile = useCallback(async () => {
     try {
@@ -260,6 +268,29 @@ export default function ConsumerProfile() {
   async function handleLogout() {
     await logout();
     navigate("/", { replace: true });
+  }
+
+  async function handleChangePassword() {
+    setPasswordError("");
+    setPasswordMessage("");
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError("New passwords do not match");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      await changePassword(currentPassword, newPassword);
+      setPasswordMessage("Password updated successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+    } catch (err) {
+      setPasswordError(err.message || "Failed to update password");
+    } finally {
+      setPasswordSaving(false);
+    }
   }
 
   if (authLoading || pageLoading) {
@@ -457,6 +488,53 @@ export default function ConsumerProfile() {
               <span style={styles.coinLabel}>Lifetime redeemed</span>
               <strong style={styles.coinValue}>{formatMoney(coinsWallet.lifetime_redeemed_cents)}</strong>
             </div>
+          </div>
+        </Section>
+
+        <Section title="Password">
+          <div style={styles.field}>
+            <label style={styles.fieldLabel}>Current password</label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              style={styles.input}
+              placeholder="Current password"
+              autoComplete="current-password"
+            />
+          </div>
+          <div style={styles.field}>
+            <label style={styles.fieldLabel}>New password</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              style={styles.input}
+              placeholder="New password"
+              autoComplete="new-password"
+            />
+          </div>
+          <div style={styles.field}>
+            <label style={styles.fieldLabel}>Confirm new password</label>
+            <input
+              type="password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              style={styles.input}
+              placeholder="Confirm new password"
+              autoComplete="new-password"
+            />
+          </div>
+          <div style={styles.saveRow}>
+            <button
+              type="button"
+              onClick={handleChangePassword}
+              style={{ ...styles.saveBtn, ...(passwordSaving ? styles.saveBtnDisabled : null) }}
+              disabled={passwordSaving}
+            >
+              {passwordSaving ? "Updating..." : "Update Password"}
+            </button>
+            <SaveStatus status={passwordError || passwordMessage} isError={Boolean(passwordError)} />
           </div>
         </Section>
 

@@ -68,6 +68,8 @@ export const validateOperatorResetToken = (token) =>
   get(`/operator/auth/reset-password?token=${encodeURIComponent(token)}`);
 export const resetOperatorPassword = (token, password) =>
   post("/operator/auth/reset-password", { token, password });
+export const changeOperatorPassword = (currentPassword, newPassword) =>
+  post("/operator/auth/change-password", { current_password: currentPassword, new_password: newPassword });
 
 // ── Subscription ──────────────────────────────────────────────────────────
 export const getSubscription = () => get("/operator/subscription");

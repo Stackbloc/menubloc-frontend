@@ -85,6 +85,12 @@ export default function OperatorMyAccount() {
   const [cancelBusy, setCancelBusy] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
   const [primaryQr, setPrimaryQr] = useState(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   async function loadData(rid) {
     setLoading(true);
@@ -156,6 +162,29 @@ export default function OperatorMyAccount() {
 
   const locationLine = [selectedRestaurant?.city, selectedRestaurant?.state]
     .filter(Boolean).join(", ");
+
+  async function handleChangePassword() {
+    setPasswordError("");
+    setPasswordMessage("");
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError("New passwords do not match");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      await api.changeOperatorPassword(currentPassword, newPassword);
+      setPasswordMessage("Password updated successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+    } catch (err) {
+      setPasswordError(err.message || "Failed to update password");
+    } finally {
+      setPasswordSaving(false);
+    }
+  }
 
   return (
     <OperatorLayout>
@@ -253,6 +282,63 @@ export default function OperatorMyAccount() {
                   <span style={{ fontSize: 16, color: "#c4cdd6" }}>›</span>
                 </button>
               ))}
+            </div>
+
+            {/* Password */}
+            <div style={{
+              background: "#fff", border: "1px solid #e4e9f0",
+              borderRadius: 12, padding: "16px 18px",
+              marginBottom: 20,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8a9ab0", marginBottom: 12 }}>
+                Password
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Current password"
+                  autoComplete="current-password"
+                  style={{ padding: "10px 12px", fontSize: 13, border: "1px solid #e4e9f0", borderRadius: 7, fontFamily: "inherit" }}
+                />
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="New password"
+                  autoComplete="new-password"
+                  style={{ padding: "10px 12px", fontSize: 13, border: "1px solid #e4e9f0", borderRadius: 7, fontFamily: "inherit" }}
+                />
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  autoComplete="new-password"
+                  style={{ padding: "10px 12px", fontSize: 13, border: "1px solid #e4e9f0", borderRadius: 7, fontFamily: "inherit" }}
+                />
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={handleChangePassword}
+                    disabled={passwordSaving}
+                    style={{
+                      background: "#0f1720", color: "#fff",
+                      border: "none", borderRadius: 7,
+                      padding: "9px 16px", fontSize: 13, fontWeight: 700,
+                      cursor: passwordSaving ? "default" : "pointer", opacity: passwordSaving ? 0.7 : 1,
+                    }}
+                  >
+                    {passwordSaving ? "Updating…" : "Update Password"}
+                  </button>
+                  {(passwordError || passwordMessage) && (
+                    <span style={{ fontSize: 12, fontWeight: 600, color: passwordError ? "#dc2626" : "#16a34a" }}>
+                      {passwordError || passwordMessage}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Subscription summary card */}
