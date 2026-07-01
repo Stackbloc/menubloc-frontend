@@ -15,7 +15,7 @@ import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { API_BASE } from "../../lib/operatorApi.js";
 import {
-  MENU_DESIGN_LAB_THEMES,
+  CURATED_MENU_DESIGN_LAB_THEMES,
   getMenuDesignLabTheme,
 } from "../../data/menuDesignLabThemes.js";
 import {
@@ -513,7 +513,7 @@ function MenuLabPanel({ rid, isEmailVerified }) {
             gap: 12,
             marginBottom: 16,
           }}>
-            {MENU_DESIGN_LAB_THEMES.map((theme) => (
+            {CURATED_MENU_DESIGN_LAB_THEMES.map((theme) => (
               <MenuLabPresetCard
                 key={theme.style}
                 theme={theme}
