@@ -159,6 +159,7 @@ export default function CatalogMenuRenderer({
   entry,
   locationParams = {},
   isMobile = false,
+  onLoadStateChange,
 }) {
   const { language, t } = useLanguage();
   const navigate = useNavigate();
@@ -256,6 +257,10 @@ export default function CatalogMenuRenderer({
     run();
     return () => { cancelled = true; };
   }, [apiUrl, restaurantId]);
+
+  useEffect(() => {
+    onLoadStateChange?.(pageState.status);
+  }, [onLoadStateChange, pageState.status]);
 
   useEffect(() => {
     const d = pageState.data;

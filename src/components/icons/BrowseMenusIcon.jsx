@@ -1,6 +1,6 @@
 import React from "react";
 
-/** Open book / catalog icon — Menu Browser entry point (not a filter). */
+/** Open book / catalog icon — Menu Browser entry point (yellow). */
 export default function BrowseMenusIcon({
   size = 24,
   title,
@@ -13,11 +13,11 @@ export default function BrowseMenusIcon({
     ? { role: "img", "aria-label": title }
     : { "aria-hidden": true };
 
-  const leftCover = active ? "#14532d" : "#1F4E3D";
-  const rightCover = active ? "#166534" : "#22754a";
-  const leftFill = active ? "#86efac" : "#4ade80";
-  const rightFill = active ? "#bbf7d0" : "#86efac";
-  const lineColor = active ? "#14532d" : "#166534";
+  const leftCover = active ? "#CA8A04" : "#EAB308";
+  const rightCover = active ? "#A16207" : "#CA8A04";
+  const leftFill = active ? "#FDE047" : "#FACC15";
+  const rightFill = active ? "#FEF08A" : "#FDE047";
+  const lineColor = active ? "#854D0E" : "#A16207";
 
   return (
     <svg
@@ -34,7 +34,7 @@ export default function BrowseMenusIcon({
       <path
         d="M5 4.5C5 3.67 5.67 3 6.5 3H11v18H6.5A1.5 1.5 0 0 1 5 19.5v-15Z"
         fill={leftFill}
-        fillOpacity={active ? 0.95 : 0.82}
+        fillOpacity={0.95}
         stroke={leftCover}
         strokeWidth="1.5"
         strokeLinejoin="round"
@@ -42,7 +42,7 @@ export default function BrowseMenusIcon({
       <path
         d="M19 4.5C19 3.67 18.33 3 17.5 3H13v18h4.5A1.5 1.5 0 0 0 19 19.5v-15Z"
         fill={rightFill}
-        fillOpacity={active ? 0.98 : 0.88}
+        fillOpacity={0.98}
         stroke={rightCover}
         strokeWidth="1.5"
         strokeLinejoin="round"

@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "4ce5298ae59d0ac013d69c61d09e5bd657db95a4",
-  "gitShortSha": "4ce5298",
+  "gitSha": "71a319edc1ac9891fe08055eb5f49f6b5ae6a68f",
+  "gitShortSha": "71a319e",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-01T18:10:37.556Z",
+  "buildTime": "2026-07-01T22:49:52.153Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(browse): replace category grid with single-menu catalog reader."
+  "commitMessage": "Revert \"chore: remove unused homeContextChipApi module, tidy home-next food grid and navigation\""
 }

@@ -57,6 +57,10 @@ export default function BottomNav() {
                 (tab.to !== "/" && pathname.startsWith(tab.to));
         const showBadge = tab.to === "/checkout" && itemCount > 0;
         const iconSize = tab.iconSize || 22;
+        const isBrowseTab = tab.to === "/browse-menus";
+        const linkColor = isBrowseTab
+          ? (active ? "#CA8A04" : "#EAB308")
+          : (active ? "#1d4ed8" : "#9ca3af");
         return (
           <Link
             key={tab.to}
@@ -69,7 +73,7 @@ export default function BottomNav() {
             style={{
               display: "flex", flexDirection: "column", alignItems: "center",
               gap: 2, textDecoration: "none", minWidth: 56,
-              color: active ? "#1d4ed8" : "#9ca3af",
+              color: linkColor,
               fontSize: 10, fontWeight: active ? 800 : 500,
               padding: "2px 8px",
               transition: "color 150ms ease",

@@ -1,6 +1,6 @@
 /**
  * Menu Catalog Reader — one full restaurant menu at a time.
- * Top category tabs pick the sequence; swipe or arrows flip through menus.
+ * Top category tabs pick the sequence; swipe or arrow keys flip through menus.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -9,16 +9,11 @@ import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import CatalogMenuRenderer, { prefetchCatalogMenu } from "../components/menuCatalog/CatalogMenuRenderer.jsx";
 import MenuCatalogCategoryTabs from "../components/menuCatalog/MenuCatalogCategoryTabs.jsx";
-import MenuCatalogSwipeCoach, {
-  dismissMenuCatalogSwipeCoach,
-  isMenuCatalogSwipeCoachDismissed,
-} from "../components/menuCatalog/MenuCatalogSwipeCoach.jsx";
+import MenuCatalogIntroSplash from "../components/menuCatalog/MenuCatalogIntroSplash.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import useMenuCatalogSequence from "../hooks/useMenuCatalogSequence.js";
-import {
-  MENU_CATALOG_DEFAULT_SECTION,
-  MENU_CATALOG_SWIPE_HINT_MAX_INDEX,
-} from "../lib/menuCatalogCategories.js";
+import { MENU_CATALOG_DEFAULT_SECTION, MENU_BROWSER_INTRO_MIN_MS } from "../lib/menuCatalogCategories.js";
+import { computeMenuBrowserLoadTarget, useSmoothedProgress } from "../lib/menuCatalogIntroProgress.js";
 import { asFiniteNumber } from "../lib/catalogMenuUtils.js";
 
 function useIsMobile(breakpoint = 900) {
@@ -74,13 +69,10 @@ export default function BrowseMenus() {
   const urlIndex = asFiniteNumber(urlParams.get("i")) ?? 0;
 
   const [locationParams, setLocationParams] = useState({ city: urlCity || null, state: urlState || null });
-  const [swipeCoachDismissed, setSwipeCoachDismissed] = useState(() => isMenuCatalogSwipeCoachDismissed());
+  const [introMinElapsed, setIntroMinElapsed] = useState(false);
+  const [menuLoadStatus, setMenuLoadStatus] = useState("idle");
+  const [bootComplete, setBootComplete] = useState(false);
   const swipeRef = useRef({ startX: 0, startY: 0 });
-
-  const dismissSwipeCoach = useCallback(() => {
-    dismissMenuCatalogSwipeCoach();
-    setSwipeCoachDismissed(true);
-  }, []);
 
   const {
     entries,
@@ -100,6 +92,11 @@ export default function BrowseMenus() {
     urlState,
     index: urlIndex,
   });
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIntroMinElapsed(true), MENU_BROWSER_INTRO_MIN_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (urlParams.get("section")) return;
@@ -188,24 +185,48 @@ export default function BrowseMenus() {
     const dx = touch.clientX - swipeRef.current.startX;
     const dy = touch.clientY - swipeRef.current.startY;
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    dismissSwipeCoach();
     if (dx < 0) goNext();
     else goPrev();
   }
 
-  const showMenuLoading = (loading && !currentEntry) || waitingForPage || (loadingMore && !currentEntry);
-  const showSwipeCoach = Boolean(
-    currentEntry
-    && !showMenuLoading
-    && !swipeCoachDismissed
-    && activeIndex <= MENU_CATALOG_SWIPE_HINT_MAX_INDEX
+  useEffect(() => {
+    setMenuLoadStatus("idle");
+  }, [currentEntry?.restaurant_id, activeIndex]);
+
+  const handleMenuLoadStateChange = useCallback((status) => {
+    setMenuLoadStatus(status);
+  }, []);
+
+  const loadTarget = useMemo(
+    () =>
+      computeMenuBrowserLoadTarget({
+        loading,
+        currentEntry,
+        menuStatus: menuLoadStatus,
+        isEmpty,
+        error,
+      }),
+    [loading, currentEntry, menuLoadStatus, isEmpty, error]
   );
 
+  const introProgress = useSmoothedProgress(loadTarget, !bootComplete);
+
+  const firstMenuReady = useMemo(() => {
+    if (error) return introMinElapsed;
+    if (isEmpty && !loading) return true;
+    if (!currentEntry) return false;
+    return menuLoadStatus === "ok" || menuLoadStatus === "error";
+  }, [error, isEmpty, loading, currentEntry, menuLoadStatus, introMinElapsed]);
+
   useEffect(() => {
-    if (activeIndex > MENU_CATALOG_SWIPE_HINT_MAX_INDEX) {
-      dismissSwipeCoach();
+    if (introMinElapsed && firstMenuReady) {
+      setBootComplete(true);
     }
-  }, [activeIndex, dismissSwipeCoach]);
+  }, [introMinElapsed, firstMenuReady]);
+
+  const showIntro = !bootComplete;
+  const showMenuLoading =
+    bootComplete && ((loading && !currentEntry) || waitingForPage || (loadingMore && !currentEntry));
 
   return (
     <div
@@ -237,13 +258,15 @@ export default function BrowseMenus() {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
+        <MenuCatalogIntroSplash visible={showIntro} progress={introProgress} />
+
         {showMenuLoading ? (
           <div style={{ padding: 24, fontSize: 14, fontWeight: 600, color: "#667085" }}>
             {t("menuCatalog.loadingMenu", "Loading menu…")}
           </div>
         ) : null}
 
-        {error ? (
+        {error && !showIntro ? (
           <div style={{ padding: 24 }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
               {t("menuCatalog.loadError", "Couldn't load menus")}
@@ -252,7 +275,7 @@ export default function BrowseMenus() {
           </div>
         ) : null}
 
-        {isEmpty && !loading ? (
+        {isEmpty && !loading && !showIntro ? (
           <div style={{ padding: 24 }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
               {t("menuBrowser.emptyTitle", "No menus in this category yet")}
@@ -264,19 +287,26 @@ export default function BrowseMenus() {
         ) : null}
 
         {currentEntry ? (
-          <CatalogMenuRenderer
-            key={`${activeSection}-${currentEntry.restaurant_id}-${activeIndex}`}
-            entry={currentEntry}
-            locationParams={locationParams}
-            isMobile={isMobile}
-          />
-        ) : null}
-
-        {showSwipeCoach ? (
-          <MenuCatalogSwipeCoach
-            index={activeIndex}
-            visible
-          />
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              visibility: showIntro ? "hidden" : "visible",
+              pointerEvents: showIntro ? "none" : "auto",
+            }}
+            aria-hidden={showIntro}
+          >
+            <CatalogMenuRenderer
+              key={`${activeSection}-${currentEntry.restaurant_id}-${activeIndex}`}
+              entry={currentEntry}
+              locationParams={locationParams}
+              isMobile={isMobile}
+              onLoadStateChange={handleMenuLoadStateChange}
+            />
+          </div>
         ) : null}
       </div>
 
