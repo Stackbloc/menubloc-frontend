@@ -181,6 +181,10 @@ export default function PublicMenuItemCard({
   const inCartCount = cartState.totalQuantity;
   const isTablet = useIsTabletRange();
   const ed = ED_PALETTES[editorialColorScheme] || ED_PALETTES.light;
+  // TEMPORARY, scoped experiment: share sits inline next to the item name
+  // instead of anchored to the trailing edge. Emmy Squared Pizza (id 678)
+  // only — see matching flag in ClassicMenuTemplate.jsx.
+  const shareInlineExperiment = editorialRefresh && String(currentRestaurantId) === "678";
   // Cap descriptive badges at 2 (editorialRefresh only) so the row never shows
   // a wall of tags. Priority: unavailability status, then deal, then diet flags.
   const visibleBadges = editorialRefresh
@@ -331,23 +335,50 @@ export default function PublicMenuItemCard({
         <div style={{ minWidth: 0, flex: 1 }}>
           {editorialRefresh ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span
+              <div
                 style={{
-                  fontSize: titleSize,
-                  fontWeight: 600,
-                  color: ed.ink,
-                  lineHeight: 1.3,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
                   minWidth: 0,
-                  flex: 1,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "normal",
+                  flex: shareInlineExperiment ? "0 1 auto" : 1,
                 }}
               >
-                {name}
-              </span>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-                {dishShareData ? (
+                <span
+                  style={{
+                    fontSize: titleSize,
+                    fontWeight: 600,
+                    color: ed.ink,
+                    lineHeight: 1.3,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "normal",
+                  }}
+                >
+                  {name}
+                </span>
+                {shareInlineExperiment && dishShareData ? (
+                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
+                    <ShareButton
+                      variant="dish"
+                      iconOnly={true}
+                      tone="inline"
+                      shareData={dishShareData}
+                      analyticsContext={{
+                        restaurantId: currentRestaurantId,
+                        restaurantSlug: data?.slug || null,
+                        menuItemId: it.id,
+                        menuItemName: name,
+                        pageType: "public_menu",
+                        shareTarget: "dish",
+                      }}
+                    />
+                  </div>
+                ) : null}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, marginLeft: shareInlineExperiment ? "auto" : undefined }}>
+                {!shareInlineExperiment && dishShareData ? (
                   <div onClick={(e) => e.stopPropagation()}>
                     <ShareButton
                       variant="dish"

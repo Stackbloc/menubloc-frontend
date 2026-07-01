@@ -104,6 +104,11 @@ export default function ClassicMenuTemplate(ctx) {
   // (PublicMenuPage.jsx uses the same isMobile 900px cutoff: 12px vs 20px).
   const edgeBleed = isMobile ? -12 : -20;
   const accent = brand?.accent ?? "#0071E3";
+  // TEMPORARY, scoped experiment: share sits inline next to the name instead
+  // of anchored to the trailing edge. Requested for Emmy Squared Pizza (id
+  // 678) only, to compare against the default anchored-right placement
+  // before deciding whether to change it platform-wide.
+  const shareInlineExperiment = String(currentRestaurantId) === "678";
 
   return (
     <div style={{ fontFamily: FONT_STACK, background: "#FFFFFF", marginLeft: edgeBleed, marginRight: edgeBleed }}>
@@ -133,7 +138,7 @@ export default function ClassicMenuTemplate(ctx) {
           {showLogo && <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "nowrap" }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
                 {restaurantProfileHref ? (
                   <Link
                     to={restaurantProfileHref}
@@ -146,6 +151,8 @@ export default function ClassicMenuTemplate(ctx) {
                       color: INK,
                       textDecoration: "none",
                       display: "block",
+                      minWidth: 0,
+                      flexShrink: shareInlineExperiment ? 1 : undefined,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -161,6 +168,8 @@ export default function ClassicMenuTemplate(ctx) {
                       letterSpacing: "-0.02em",
                       lineHeight: 1.15,
                       color: INK,
+                      minWidth: 0,
+                      flexShrink: shareInlineExperiment ? 1 : undefined,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -169,17 +178,31 @@ export default function ClassicMenuTemplate(ctx) {
                     {restaurantName}
                   </div>
                 )}
+
+                {shareInlineExperiment ? (
+                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
+                    <ShareButton
+                      variant="menu"
+                      iconOnly={true}
+                      tone="inline"
+                      shareData={shareData}
+                      analyticsContext={shareAnalyticsContext}
+                    />
+                  </div>
+                ) : null}
               </div>
 
-              <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4 }}>
-                <ShareButton
-                  variant="menu"
-                  iconOnly={true}
-                  tone="inline"
-                  shareData={shareData}
-                  analyticsContext={shareAnalyticsContext}
-                />
-              </div>
+              {!shareInlineExperiment ? (
+                <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4 }}>
+                  <ShareButton
+                    variant="menu"
+                    iconOnly={true}
+                    tone="inline"
+                    shareData={shareData}
+                    analyticsContext={shareAnalyticsContext}
+                  />
+                </div>
+              ) : null}
             </div>
 
             {addressLine ? (
