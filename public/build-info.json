@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "32f4d1eec424afc92819475fbd8f6327b51cc516",
-  "gitShortSha": "32f4d1e",
+  "gitSha": "4ce5298ae59d0ac013d69c61d09e5bd657db95a4",
+  "gitShortSha": "4ce5298",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-01T17:59:07.845Z",
+  "buildTime": "2026-07-01T18:10:37.556Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "style(nav): add brand green color to Browse Menus book icon."
+  "commitMessage": "feat(browse): replace category grid with single-menu catalog reader."
 }

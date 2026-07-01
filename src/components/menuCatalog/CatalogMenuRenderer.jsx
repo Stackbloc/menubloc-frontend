@@ -589,11 +589,16 @@ export default function CatalogMenuRenderer({
       ) : null}
 
       <div
+        className="menu-catalog-scroll"
         style={{
           flex: 1,
           minHeight: 0,
           overflowY: "auto",
           WebkitOverflowScrolling: "touch",
+          // Catalog scrolls inside the menu pane — sticky header sticks to pane top, not viewport.
+          "--sph-h": "0px",
+          position: "relative",
+          isolation: "isolate",
         }}
       >
         <div style={{

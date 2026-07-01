@@ -181,19 +181,27 @@ export default function BrowseMenus() {
     else goPrev();
   }
 
-  const catalogHeight = "calc(100vh - var(--sph-h, 73px) - var(--bottom-nav-h, 72px))";
   const showMenuLoading = (loading && !currentEntry) || waitingForPage || (loadingMore && !currentEntry);
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--gb-color-page)", color: "var(--gb-color-ink)" }}>
+    <div
+      style={{
+        height: "100vh",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        background: "var(--gb-color-page)",
+        color: "var(--gb-color-ink)",
+      }}
+    >
       <StickyPageHeader />
 
       <div
         style={{
+          flex: 1,
+          minHeight: 0,
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
-          height: catalogHeight,
-          maxHeight: catalogHeight,
           overflow: "hidden",
         }}
       >
@@ -207,6 +215,7 @@ export default function BrowseMenus() {
           style={{
             flex: 1,
             minWidth: 0,
+            minHeight: 0,
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
