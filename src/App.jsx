@@ -70,8 +70,7 @@ import OperatorDisplaySettings from "./pages/operator/OperatorDisplaySettings.js
 import RestaurantHelpCenter from "./pages/operator/RestaurantHelpCenter.jsx";
 import OwnerLogin from "./pages/owner/OwnerLogin.jsx";
 import OwnerDashboard from "./pages/owner/OwnerDashboard.jsx";
-import OwnerSiteAnalytics from "./pages/owner/OwnerSiteAnalytics.jsx";
-import OwnerSearchAnalytics from "./pages/owner/OwnerSearchAnalytics.jsx";
+import OwnerPlatformIntelligence from "./pages/owner/intelligence/OwnerPlatformIntelligence.jsx";
 import OwnerRestaurants from "./pages/owner/OwnerRestaurants.jsx";
 import OwnerRevenue from "./pages/owner/OwnerRevenue.jsx";
 import OwnerSupportTickets from "./pages/owner/OwnerSupportTickets.jsx";
@@ -676,8 +675,9 @@ function AppShell({ easyMenu, crmHost }) {
 
         <Route path="/owner/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OwnerLogin />} />
         <Route path="/owner" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerDashboard /></OwnerRoute>} />
-        <Route path="/owner/analytics" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSiteAnalytics /></OwnerRoute>} />
-        <Route path="/owner/search-analytics" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSearchAnalytics /></OwnerRoute>} />
+        <Route path="/owner/intelligence/*" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerPlatformIntelligence /></OwnerRoute>} />
+        <Route path="/owner/analytics" element={<Navigate to="/owner/intelligence/site-activity" replace />} />
+        <Route path="/owner/search-analytics" element={<Navigate to="/owner/intelligence/search-demand" replace />} />
         <Route path="/owner/restaurants" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRestaurants /></OwnerRoute>} />
         <Route path="/owner/revenue" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerRevenue /></OwnerRoute>} />
         <Route path="/owner/support" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerSupportTickets /></OwnerRoute>} />

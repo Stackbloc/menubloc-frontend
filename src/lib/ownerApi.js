@@ -60,6 +60,32 @@ export const getOwnerSearchAnalytics = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/analytics/searches${qs ? `?${qs}` : ""}`);
 };
+
+function intelligenceQueryString(params = {}) {
+  const qs = new URLSearchParams();
+  if (params.start_date) qs.set("start_date", params.start_date);
+  if (params.end_date) qs.set("end_date", params.end_date);
+  if (params.timezone) qs.set("timezone", params.timezone);
+  const serialized = qs.toString();
+  return serialized ? `?${serialized}` : "";
+}
+
+export const getOwnerIntelligenceOverview = (params = {}) =>
+  get(`/api/owner/intelligence/overview${intelligenceQueryString(params)}`);
+export const getOwnerIntelligenceSearchDemand = (params = {}) =>
+  get(`/api/owner/intelligence/search-demand${intelligenceQueryString(params)}`);
+export const getOwnerIntelligenceSiteActivity = (params = {}) =>
+  get(`/api/owner/intelligence/site-activity${intelligenceQueryString(params)}`);
+export const getOwnerIntelligenceGeo = (params = {}) =>
+  get(`/api/owner/intelligence/geo${intelligenceQueryString(params)}`);
+export const getOwnerIntelligenceMenu = (params = {}) =>
+  get(`/api/owner/intelligence/menu${intelligenceQueryString(params)}`);
+export const getOwnerIntelligenceRestaurant = (params = {}) =>
+  get(`/api/owner/intelligence/restaurant${intelligenceQueryString(params)}`);
+export const getOwnerIntelligenceMarket = (params = {}) =>
+  get(`/api/owner/intelligence/market${intelligenceQueryString(params)}`);
+export const getOwnerIntelligenceRevenue = (params = {}) =>
+  get(`/api/owner/intelligence/revenue${intelligenceQueryString(params)}`);
 export const getOwnerRestaurantSignups = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/restaurants/signups${qs ? `?${qs}` : ""}`);
