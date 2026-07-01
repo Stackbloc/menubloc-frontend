@@ -2,9 +2,6 @@ import { useEffect, useRef } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { MENU_CATALOG_TABS, toMenuCatalogTranslationKey } from "../../lib/menuCatalogCategories.js";
 
-const TAB_INK = "#1a1a1a";
-const TAB_BORDER = "#1a1a1a";
-
 export default function MenuCatalogCategoryTabs({
   activeSection,
   onSelect,
@@ -35,7 +32,7 @@ export default function MenuCatalogCategoryTabs({
         style={{
           display: "flex",
           gap: 8,
-          padding: "10px 12px",
+          padding: "10px 0",
           overflowX: "auto",
           WebkitOverflowScrolling: "touch",
           scrollbarWidth: "none",
@@ -44,6 +41,7 @@ export default function MenuCatalogCategoryTabs({
         {MENU_CATALOG_TABS.map((entry) => {
           const isActive = entry.id === activeSection;
           const label = t(toMenuCatalogTranslationKey(entry.id), entry.label);
+          const accent = entry.accent || "#1a1a1a";
 
           return (
             <button
@@ -54,15 +52,16 @@ export default function MenuCatalogCategoryTabs({
               onClick={() => onSelect(entry.id)}
               style={{
                 flexShrink: 0,
-                border: isActive ? `2px solid ${TAB_BORDER}` : "2px solid transparent",
-                background: "transparent",
-                color: TAB_INK,
+                border: isActive ? `2px solid ${accent}` : `2px solid ${accent}33`,
+                background: isActive ? `${accent}18` : `${accent}0d`,
+                color: accent,
                 fontSize: 13,
                 fontWeight: isActive ? 800 : 600,
                 padding: "7px 14px",
                 borderRadius: 999,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
+                transition: "background 150ms ease, border-color 150ms ease",
               }}
             >
               {label}

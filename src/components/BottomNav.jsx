@@ -14,7 +14,7 @@ export default function BottomNav() {
   const tabs = useMemo(() => [
     { label: t("nav.home", "Home"), icon: "🏠", to: "/" },
     { label: t("nav.waiter", "Waiter"), iconComponent: WaiterFaceIcon, iconSize: 28, to: "/waiter" },
-    { label: t("nav.browseMenus", "Browse"), iconComponent: BrowseMenusIcon, iconSize: 24, to: "/browse-menus" },
+    { label: t("nav.browseMenus", "Browse"), iconComponent: BrowseMenusIcon, to: "/browse-menus" },
     { label: t("nav.basket", "Basket"), icon: "🛒", to: "/checkout" },
   ], [t]);
 

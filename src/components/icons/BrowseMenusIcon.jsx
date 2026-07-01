@@ -1,8 +1,8 @@
 import React from "react";
 
-/** Open book / catalog icon — Menu Browser entry point (yellow). */
+/** Open book — loose nod to Yellow Browser, sized for bottom nav. */
 export default function BrowseMenusIcon({
-  size = 24,
+  size = 22,
   title,
   className,
   style,
@@ -13,11 +13,8 @@ export default function BrowseMenusIcon({
     ? { role: "img", "aria-label": title }
     : { "aria-hidden": true };
 
-  const leftCover = active ? "#CA8A04" : "#EAB308";
-  const rightCover = active ? "#A16207" : "#CA8A04";
-  const leftFill = active ? "#FDE047" : "#FACC15";
-  const rightFill = active ? "#FEF08A" : "#FDE047";
-  const lineColor = active ? "#854D0E" : "#A16207";
+  const page = active ? "#FDE047" : "#FACC15";
+  const stroke = active ? "#A16207" : "#CA8A04";
 
   return (
     <svg
@@ -32,32 +29,23 @@ export default function BrowseMenusIcon({
       {...props}
     >
       <path
-        d="M5 4.5C5 3.67 5.67 3 6.5 3H11v18H6.5A1.5 1.5 0 0 1 5 19.5v-15Z"
-        fill={leftFill}
-        fillOpacity={0.95}
-        stroke={leftCover}
-        strokeWidth="1.5"
+        d="M4.5 6.2C4.5 5.4 5.1 4.8 5.9 4.8H11v14.4H6.2c-.9 0-1.7-.7-1.7-1.6V6.2Z"
+        fill={page}
+        stroke={stroke}
+        strokeWidth="1.4"
         strokeLinejoin="round"
       />
       <path
-        d="M19 4.5C19 3.67 18.33 3 17.5 3H13v18h4.5A1.5 1.5 0 0 0 19 19.5v-15Z"
-        fill={rightFill}
-        fillOpacity={0.98}
-        stroke={rightCover}
-        strokeWidth="1.5"
+        d="M19.5 6.2c0-.8-.6-1.4-1.4-1.4H13v14.4h4.8c.9 0 1.7-.7 1.7-1.6V6.2Z"
+        fill={page}
+        stroke={stroke}
+        strokeWidth="1.4"
         strokeLinejoin="round"
       />
       <path
-        d="M11 3v18"
-        stroke={leftCover}
-        strokeWidth="1.25"
-        strokeLinecap="round"
-        opacity="0.55"
-      />
-      <path
-        d="M11 7.5h2M11 10.5h2M11 13.5h2"
-        stroke={lineColor}
-        strokeWidth="1.25"
+        d="M12 4.8v14.4"
+        stroke={stroke}
+        strokeWidth="1.2"
         strokeLinecap="round"
       />
     </svg>
