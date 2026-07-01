@@ -34,7 +34,7 @@ const ACCENT_PRESETS = [
 ];
 
 export default function OperatorDisplaySettings() {
-  const { selectedRestaurant, hasBenefit } = useOperator();
+  const { selectedRestaurant, hasBenefit, isEmailVerified } = useOperator();
   const rid = selectedRestaurant?.id;
 
   const [settings, setSettings] = useState({
@@ -353,24 +353,27 @@ export default function OperatorDisplaySettings() {
               {/* Menu presentation style */}
               <Field label="Menu Design Lab Presets">
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {MENU_DESIGN_LAB_THEMES.map(({ style, name, bestFit, description, preset }) => {
+                  {MENU_DESIGN_LAB_THEMES.map((theme) => {
+                    const { style, name, bestFit, description, preset, subscriberOnly } = theme;
                     const isSelected = (settings.menu_style || "v1") === style;
+                    const isLocked = !!(subscriberOnly && !isEmailVerified);
                     return (
                       <div
                         key={style}
-                      onClick={() => setSettings((s) => ({
+                        onClick={isLocked ? undefined : () => setSettings((s) => ({
                           ...s,
                           ...buildMenuThemeSettingsFromPreset({ style, preset }),
                         }))}
                         style={{
-                          border: `2px solid ${isSelected ? "#1F4E3D" : "#e4e9f0"}`,
+                          border: `2px solid ${isSelected ? "#1F4E3D" : isLocked ? "#e5e7eb" : "#e4e9f0"}`,
                           borderRadius: 10,
                           padding: "10px 14px",
-                          background: isSelected ? "#edf7f2" : "#fff",
-                          cursor: "pointer",
+                          background: isSelected ? "#edf7f2" : isLocked ? "#f9fafb" : "#fff",
+                          cursor: isLocked ? "default" : "pointer",
                           display: "flex",
                           alignItems: "flex-start",
                           gap: 10,
+                          opacity: isLocked ? 0.72 : 1,
                         }}
                       >
                         <div style={{
@@ -378,8 +381,11 @@ export default function OperatorDisplaySettings() {
                           border: `2px solid ${isSelected ? "#1F4E3D" : "#d1d5db"}`,
                           background: isSelected ? "#1F4E3D" : "transparent",
                         }} />
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1720" }}>{name}</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1720", display: "flex", alignItems: "center", gap: 6 }}>
+                            {name}
+                            {isLocked && <span style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", padding: "2px 6px", borderRadius: 999, background: "#f3f4f6", border: "1px solid #e5e7eb" }}>Verified only</span>}
+                          </div>
                           <div style={{ fontSize: 12, color: "#5b6675", marginTop: 2 }}>{bestFit}</div>
                           <div style={{ fontSize: 12, color: "#8a9ab0", marginTop: 2 }}>{description}</div>
                         </div>

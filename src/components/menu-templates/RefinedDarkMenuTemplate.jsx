@@ -6,7 +6,7 @@ import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 
-function RestaurantLogoSlot({ logoUrl, restaurantName, size = 56, accentBorder = "rgba(34,197,94,0.30)" }) {
+function RestaurantLogoSlot({ logoUrl, restaurantName, size = 48, accentBorder = "rgba(34,197,94,0.22)" }) {
   if (logoUrl) {
     return (
       <img
@@ -17,7 +17,7 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 56, accentBorder =
         style={{
           width: size,
           height: size,
-          borderRadius: 16,
+          borderRadius: 14,
           objectFit: "cover",
           flexShrink: 0,
           border: `1.5px solid ${accentBorder}`,
@@ -33,7 +33,7 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 56, accentBorder =
       style={{
         width: size,
         height: size,
-        borderRadius: 16,
+        borderRadius: 14,
         flexShrink: 0,
         background: "#121A14",
         border: `1.5px solid ${accentBorder}`,
@@ -43,9 +43,10 @@ function RestaurantLogoSlot({ logoUrl, restaurantName, size = 56, accentBorder =
 }
 
 /**
- * V1 Classic — readable list, sticky header, logo slot (baseline).
+ * V10 Refined Dark — quieter cards, icon-only share, refined header and section markers.
+ * Available to verified subscribers only.
  */
-export default function ClassicMenuTemplate(ctx) {
+export default function RefinedDarkMenuTemplate(ctx) {
   const {
     isMobile,
     language,
@@ -97,6 +98,7 @@ export default function ClassicMenuTemplate(ctx) {
   const showItemImages = shouldShowItemImages(menuThemeSettings);
   const showSectionImages = shouldShowSectionImages(menuThemeSettings);
   const showLogo = logoPlacement !== "hidden";
+  const accent = brand?.accent ?? "#22C55E";
 
   return (
     <>
@@ -130,6 +132,7 @@ export default function ClassicMenuTemplate(ctx) {
           />
         </div>
       ) : null}
+
       <div
         style={{
           position: "sticky",
@@ -142,30 +145,30 @@ export default function ClassicMenuTemplate(ctx) {
           marginBottom: isMobile ? 20 : 24,
           marginLeft: isMobile ? -12 : -20,
           marginRight: isMobile ? -12 : -20,
-          padding: isMobile ? "12px 12px" : "14px 20px",
+          padding: isMobile ? "10px 12px" : "12px 20px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 10, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
           {showLogo && <RestaurantLogoSlot
             logoUrl={logoUrl}
             restaurantName={restaurantName}
-            accentBorder={brand?.accentBorder ?? "rgba(34,197,94,0.30)"}
+            accentBorder={brand?.accentBorder ?? "rgba(34,197,94,0.22)"}
           />}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", marginBottom: addressLine ? 2 : 0 }}>
-              <div style={{ minWidth: 0, flex: "0 1 auto", display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 {restaurantProfileHref ? (
                   <Link
                     to={restaurantProfileHref}
                     title={`Open ${restaurantName} profile`}
                     style={{
-                      fontSize: isMobile ? 20 : 24,
+                      fontSize: isMobile ? 18 : 21,
                       fontWeight: 800,
                       letterSpacing: "-0.01em",
                       lineHeight: 1.15,
                       color: "#FFFFFF",
                       textDecoration: "none",
-                      minWidth: 0,
+                      display: "block",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -176,12 +179,11 @@ export default function ClassicMenuTemplate(ctx) {
                 ) : (
                   <div
                     style={{
-                      fontSize: isMobile ? 20 : 24,
+                      fontSize: isMobile ? 18 : 21,
                       fontWeight: 800,
                       letterSpacing: "-0.01em",
                       lineHeight: 1.15,
                       color: "#FFFFFF",
-                      minWidth: 0,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -192,41 +194,49 @@ export default function ClassicMenuTemplate(ctx) {
                 )}
               </div>
 
-              <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
-                <ShareButton
-                  variant="menu"
-                  label="Share Menu"
-                  shareData={shareData}
-                  analyticsContext={shareAnalyticsContext}
-                  size="compact"
-                  tone="subtle"
-                />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <ShareButton
+                    variant="menu"
+                    label="Share Menu"
+                    shareData={shareData}
+                    analyticsContext={shareAnalyticsContext}
+                    iconOnly={true}
+                    tone="ghost"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onOpenFilters}
+                  style={{
+                    flexShrink: 0,
+                    border: filtersActive
+                      ? `1px solid ${accent}`
+                      : "1px solid rgba(255,255,255,0.18)",
+                    borderRadius: 999,
+                    background: filtersActive ? `${accent}18` : "transparent",
+                    color: filtersActive ? accent : "rgba(255,255,255,0.60)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    cursor: "pointer",
+                    letterSpacing: "0.02em",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 5,
+                  }}
+                >
+                  {filtersActive && (
+                    <span aria-hidden="true" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: accent, flexShrink: 0 }} />
+                  )}
+                  Filters
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={onOpenFilters}
-                style={{
-                  flexShrink: 0,
-                  border: `1px solid ${brand?.accentBorder ?? "rgba(34,197,94,0.30)"}`,
-                  borderRadius: 8,
-                  background: "transparent",
-                  color: brand?.accent ?? "#22C55E",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  padding: "5px 11px",
-                  cursor: "pointer",
-                  letterSpacing: "0.01em",
-                }}
-              >
-                Filters
-              </button>
-
-              <div style={{ flex: 1 }} />
             </div>
 
             {addressLine ? (
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontWeight: 500, marginTop: 2 }}>
                 {directionsHref ? (
                   <a
                     href={directionsHref}
@@ -238,10 +248,10 @@ export default function ClassicMenuTemplate(ctx) {
                       textDecoration: "none",
                       display: "inline-flex",
                       alignItems: "flex-start",
-                      gap: 5,
+                      gap: 4,
                     }}
                   >
-                    <span style={{ flexShrink: 0, fontSize: 13 }}>📍</span>
+                    <span style={{ flexShrink: 0, fontSize: 12 }}>📍</span>
                     <span style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                       {addressLine1 ? <span>{addressLine1}</span> : null}
                       {addressLine2 ? <span>{addressLine2}</span> : null}
@@ -256,7 +266,7 @@ export default function ClassicMenuTemplate(ctx) {
               </div>
             ) : null}
 
-            <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               {scheduledActiveMenuLabel ? (
                 <div
                   style={{
@@ -265,7 +275,7 @@ export default function ClassicMenuTemplate(ctx) {
                     gap: 5,
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "rgba(255,255,255,0.45)",
+                    color: "rgba(255,255,255,0.38)",
                     letterSpacing: "0.02em",
                   }}
                 >
@@ -279,7 +289,7 @@ export default function ClassicMenuTemplate(ctx) {
                     alignItems: "center",
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "rgba(255,255,255,0.45)",
+                    color: "rgba(255,255,255,0.38)",
                     letterSpacing: "0.02em",
                   }}
                 >
@@ -358,7 +368,7 @@ export default function ClassicMenuTemplate(ctx) {
                       background: "none",
                       border: "none",
                       cursor: "pointer",
-                      color: brand?.accent ?? "#22C55E",
+                      color: accent,
                       fontWeight: 700,
                       fontSize: 14,
                       padding: 0,
@@ -387,21 +397,21 @@ export default function ClassicMenuTemplate(ctx) {
                       aria-hidden="true"
                       style={{
                         display: "inline-block",
-                        width: 6,
-                        height: 6,
-                        borderRadius: "50%",
-                        background: brand?.accent ?? "#22C55E",
+                        width: 3,
+                        height: 14,
+                        borderRadius: 2,
+                        background: accent,
                         flexShrink: 0,
-                        opacity: 0.7,
+                        opacity: 0.6,
                       }}
                     />
                     <span
                       style={{
-                        fontSize: 14,
+                        fontSize: 11,
                         fontWeight: 800,
-                        letterSpacing: "0.08em",
+                        letterSpacing: "0.10em",
                         textTransform: "uppercase",
-                        color: "rgba(255,255,255,0.6)",
+                        color: "rgba(255,255,255,0.42)",
                       }}
                     >
                       {title}
@@ -433,11 +443,12 @@ export default function ClassicMenuTemplate(ctx) {
                     </div>
                   ) : null}
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {items.map((it, iIdx) => (
                       <PublicMenuItemCard
                         key={String(it?.id ?? `${sIdx}-${iIdx}`)}
                         density="classic"
+                        compactActions={true}
                         it={it}
                         sIdx={sIdx}
                         iIdx={iIdx}
@@ -455,12 +466,12 @@ export default function ClassicMenuTemplate(ctx) {
                         setItemSheet={setItemSheet}
                         setAddedConfirmation={setAddedConfirmation}
                         commitMenuItemToBasket={commitMenuItemToBasket}
-                      fmtMoney={fmtMoney}
-                      getConsumerDisplayPrice={getConsumerDisplayPrice}
-                      brand={brand}
-                      menuThemeSettings={menuThemeSettings}
-                      showImage={showItemImages}
-                    />
+                        fmtMoney={fmtMoney}
+                        getConsumerDisplayPrice={getConsumerDisplayPrice}
+                        brand={brand}
+                        menuThemeSettings={menuThemeSettings}
+                        showImage={showItemImages}
+                      />
                     ))}
                   </div>
                 </div>

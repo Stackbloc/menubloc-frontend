@@ -458,6 +458,53 @@ const THEMES = [
       supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
     },
   },
+  {
+    style: "v10",
+    name: "Refined Dark",
+    bestFit: "Any restaurant — polished product feel",
+    description: "A quieter take on Classic. Icon-only share, lighter card borders, refined header, and subtle section markers.",
+    subscriberOnly: true,
+    visibleInGallery: false,
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
+      restaurant_name: "Refined Demo",
+      name: "Refined Demo",
+      slug: "refined-demo",
+      accent_color: "#22C55E",
+      menu_name: "Menu",
+    }),
+    preset: {
+      id: "v10",
+      layoutStyle: "refined dark",
+      colorDefaults: {
+        primary: "#1F4E3D",
+        accent: "#22C55E",
+        background: "#0B0F0C",
+      },
+      typographyDefaults: {
+        heading: "classic",
+        body: "default",
+      },
+      imageRules: {
+        hero: "optional",
+        itemImages: "thumbnails",
+        sectionImages: "optional",
+      },
+      sectionHeadingStyle: "quiet uppercase",
+      itemPresentationStyle: "compact rows",
+      buttonStyle: "ghost",
+      pricePlacement: "right",
+      intelligence: makeIntelligencePreset({
+        intelligenceDisplayStyle: "subtle",
+        nutritionDisplay: "compact",
+        allergenDisplay: "icon",
+        insightDisplay: "compact",
+        compareEnabled: true,
+        similarEnabled: true,
+        indulgenceDisplay: "compact",
+      }),
+      supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
+    },
+  },
 ];
 
 export const MENU_DESIGN_LAB_THEMES = THEMES;

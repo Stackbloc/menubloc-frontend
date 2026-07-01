@@ -265,15 +265,15 @@ function UploadCard({ icon, label, sub, onClick }) {
   );
 }
 
-function MenuLabPresetCard({ theme, selected, onPreview, onEdit }) {
+function MenuLabPresetCard({ theme, selected, locked, onPreview, onEdit }) {
   const accent = theme?.preset?.colorDefaults?.accent || theme?.preset?.colorDefaults?.primary || "#1F4E3D";
   return (
     <div
       style={{
         padding: "14px 14px 13px",
         borderRadius: 14,
-        border: `1.5px solid ${selected ? accent : "#dbe3eb"}`,
-        background: selected ? `${accent}12` : "#fff",
+        border: `1.5px solid ${selected ? accent : locked ? "#e5e7eb" : "#dbe3eb"}`,
+        background: selected ? `${accent}12` : locked ? "#f9fafb" : "#fff",
         boxShadow: selected ? `0 0 0 1px ${accent}22 inset` : "none",
         textAlign: "left",
         fontFamily: "inherit",
@@ -281,6 +281,7 @@ function MenuLabPresetCard({ theme, selected, onPreview, onEdit }) {
         display: "flex",
         flexDirection: "column",
         gap: 7,
+        opacity: locked ? 0.72 : 1,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -288,6 +289,11 @@ function MenuLabPresetCard({ theme, selected, onPreview, onEdit }) {
         {selected && (
           <div style={{ fontSize: 11, fontWeight: 700, color: accent, padding: "3px 8px", borderRadius: 999, background: `${accent}14` }}>
             Active
+          </div>
+        )}
+        {locked && !selected && (
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", padding: "3px 8px", borderRadius: 999, background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
+            Verified only
           </div>
         )}
       </div>
@@ -303,17 +309,18 @@ function MenuLabPresetCard({ theme, selected, onPreview, onEdit }) {
         </button>
         <button
           type="button"
-          onClick={() => onEdit(theme.style)}
-          style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", background: accent, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}
+          onClick={locked ? undefined : () => onEdit(theme.style)}
+          disabled={locked}
+          style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", background: locked ? "#e5e7eb" : accent, color: locked ? "#9ca3af" : "#fff", fontSize: 12, fontWeight: 800, cursor: locked ? "not-allowed" : "pointer", fontFamily: "inherit" }}
         >
-          Edit
+          {locked ? "Locked" : "Edit"}
         </button>
       </div>
     </div>
   );
 }
 
-function MenuLabPanel({ rid }) {
+function MenuLabPanel({ rid, isEmailVerified }) {
   const navigate = useNavigate();
   const [settings, setSettings] = useState(() => ({
     menu_style: "v1",
@@ -511,6 +518,7 @@ function MenuLabPanel({ rid }) {
                 key={theme.style}
                 theme={theme}
                 selected={(settings.menu_style || "v1") === theme.style}
+                locked={!!(theme.subscriberOnly && !isEmailVerified)}
                 onPreview={(style) => window.open(`/menu-template-preview?previewStyle=${encodeURIComponent(style)}`, "_blank", "noopener,noreferrer")}
                 onEdit={(style) => navigate(`/operator/menudesign?style=${encodeURIComponent(style)}`)}
               />
@@ -671,7 +679,7 @@ function MenuLabPanel({ rid }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function OperatorMenuEditor() {
-  const { selectedRestaurant } = useOperator();
+  const { selectedRestaurant, isEmailVerified } = useOperator();
   const rid = selectedRestaurant?.id;
   const navigate = useNavigate();
   const location = useLocation();
@@ -1023,7 +1031,7 @@ export default function OperatorMenuEditor() {
 
   return (
     <OperatorLayout title="Menu Lab">
-      <MenuLabPanel rid={rid} />
+      <MenuLabPanel rid={rid} isEmailVerified={isEmailVerified} />
 
       <div className="operator-responsive-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
         <div>
