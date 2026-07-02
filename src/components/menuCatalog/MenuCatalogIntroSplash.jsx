@@ -20,28 +20,32 @@ export default function MenuCatalogIntroSplash({
     <div
       role="status"
       aria-live="polite"
-      aria-label={`Loading Yellow Browser, ${pct} percent`}
+      aria-label={`Loading menus, ${pct} percent`}
       style={{
         position: "absolute",
         inset: 0,
         zIndex: 40,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
         background: "#FACC15",
         borderRadius: 16,
         boxSizing: "border-box",
+        padding: "24px 16px clamp(20px, 4vw, 28px)",
         overflow: "hidden",
       }}
     >
-      {/* Hero artwork — true vertical center of panel, nudged up ~6% */}
+      {/* Hero artwork — centered in remaining space above the download tracker */}
       <div
         style={{
-          position: "absolute",
-          inset: 0,
+          flex: 1,
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "24px 20px 96px",
-          transform: "translateY(-6%)",
+          width: "100%",
+          transform: "translateY(-4%)",
           pointerEvents: "none",
         }}
       >
@@ -150,14 +154,14 @@ export default function MenuCatalogIntroSplash({
         </div>
       </div>
 
-      {/* Loading progress — pinned to bottom, does not pull hero down */}
+      {/* Menu download tracker — flex footer so it never sits under the hero art */}
       <div
         style={{
-          position: "absolute",
-          left: "50%",
-          bottom: "clamp(20px, 4vw, 28px)",
-          transform: "translateX(-50%)",
           width: "min(78%, 300px)",
+          flexShrink: 0,
+          marginTop: "clamp(8px, 2vw, 14px)",
+          position: "relative",
+          zIndex: 2,
         }}
       >
         <div
