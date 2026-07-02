@@ -34,10 +34,10 @@ export default function MenuCatalogIntroSplash({
         src={logoSrc}
         alt="Yellow Browser"
         style={{
-          width: "min(88%, 340px)",
-          maxHeight: "min(52%, 420px)",
+          width: "min(92%, 400px)",
+          maxHeight: "min(58%, 440px)",
           objectFit: "contain",
-          marginBottom: 28,
+          marginBottom: 20,
         }}
       />
 

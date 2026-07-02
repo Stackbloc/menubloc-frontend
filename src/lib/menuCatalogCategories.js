@@ -8,6 +8,7 @@ export const MENU_CATALOG_TABS = [
   { id: "asian", label: "Asian", accent: "#6366f1" },
   { id: "italian", label: "Italian", accent: "#dc2626" },
   { id: "mexican", label: "Mexican", accent: "#f97316" },
+  { id: "dine_in", label: "Dine In", accent: "#7c2d12" },
   { id: "qsr", label: "QSR", accent: "#16a34a" },
 ];
 
@@ -21,7 +22,7 @@ export const MENU_CATALOG_SIDEBAR = MENU_CATALOG_TABS;
 
 export const MENU_CATALOG_DEFAULT_SECTION = "nearby";
 
-/** Drop your logo at public/menu-browser-logo.png */
+/** Official Yellow Browser splash artwork at public/menu-browser-logo.png */
 export const MENU_BROWSER_INTRO_LOGO_SRC = "/menu-browser-logo.png";
 
 /** Minimum intro splash duration (ms). */
