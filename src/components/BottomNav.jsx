@@ -122,7 +122,21 @@ export default function BottomNav() {
                 </span>
               ) : null}
             </span>
-            <span>{tab.label}</span>
+            {isBrowseTab ? (
+              <span
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  lineHeight: 1,
+                }}
+              >
+                <span>Menu</span>
+                <span>Browser</span>
+              </span>
+            ) : (
+              <span>{tab.label}</span>
+            )}
           </Link>
         );
       })}
