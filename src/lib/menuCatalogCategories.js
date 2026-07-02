@@ -23,7 +23,7 @@ export const MENU_CATALOG_SIDEBAR = MENU_CATALOG_TABS;
 export const MENU_CATALOG_DEFAULT_SECTION = "nearby";
 
 /** Menu book artwork (top crop of official Yellow Browser splash). */
-export const MENU_BROWSER_BOOK_SRC = "/menu-browser-book.png?v=20260702";
+export const MENU_BROWSER_BOOK_SRC = "/menu-browser-book.png?v=20260702b";
 
 /** @deprecated full composite; splash now renders book + spaced text in CSS */
 export const MENU_BROWSER_INTRO_LOGO_SRC = "/menu-browser-logo.png?v=20260702";

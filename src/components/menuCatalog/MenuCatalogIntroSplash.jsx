@@ -5,8 +5,7 @@ import {
 const INK = "#1a1a1a";
 
 /**
- * Yellow Browser intro — centered book art + live loading progress.
- * SWIPE / YELLOW BROWSER lines use explicit horizontal spacing (not baked PNG).
+ * Yellow Browser intro — centered book hero + spaced SWIPE / YELLOW BROWSER lines.
  */
 export default function MenuCatalogIntroSplash({
   visible = true,
@@ -21,113 +20,144 @@ export default function MenuCatalogIntroSplash({
     <div
       role="status"
       aria-live="polite"
-      aria-label={`Loading menus, ${pct} percent`}
+      aria-label={`Loading Yellow Browser, ${pct} percent`}
       style={{
         position: "absolute",
         inset: 0,
         zIndex: 40,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
         background: "#FACC15",
         borderRadius: 16,
-        padding: "24px 16px",
         boxSizing: "border-box",
+        overflow: "hidden",
       }}
     >
+      {/* Hero artwork — true vertical center of panel, nudged up ~6% */}
       <div
         style={{
-          flex: 1,
+          position: "absolute",
+          inset: 0,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          width: "100%",
-          maxWidth: 480,
-          margin: "0 auto",
+          padding: "24px 20px 96px",
+          transform: "translateY(-6%)",
+          pointerEvents: "none",
         }}
       >
-        <img
-          src={bookSrc}
-          alt=""
-          aria-hidden
-          style={{
-            display: "block",
-            width: "min(88vw, 340px)",
-            maxWidth: "100%",
-            height: "auto",
-            objectFit: "contain",
-            margin: "0 auto",
-          }}
-        />
-
-        <div
-          aria-hidden
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "clamp(18px, 6vw, 36px)",
-            marginTop: "clamp(8px, 2vw, 14px)",
-            color: INK,
-            fontWeight: 800,
-            fontSize: "clamp(15px, 4.2vw, 20px)",
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            whiteSpace: "nowrap",
-          }}
-        >
-          <span aria-hidden style={{ fontSize: "1.05em", letterSpacing: 0 }}>«</span>
-          <span>SWIPE</span>
-          <span aria-hidden style={{ fontSize: "1.05em", letterSpacing: 0 }}>»</span>
-        </div>
-
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            marginTop: "clamp(6px, 1.5vw, 10px)",
             width: "100%",
+            maxWidth: 520,
           }}
         >
+          <img
+            src={bookSrc}
+            alt=""
+            aria-hidden
+            style={{
+              display: "block",
+              width: "min(92vw, 440px)",
+              maxWidth: "100%",
+              height: "auto",
+              objectFit: "contain",
+              margin: "0 auto",
+            }}
+          />
+
           <div
             aria-hidden
             style={{
               display: "flex",
-              alignItems: "baseline",
+              alignItems: "center",
               justifyContent: "center",
-              gap: "clamp(20px, 7vw, 44px)",
+              gap: "clamp(20px, 6.5vw, 40px)",
+              marginTop: "clamp(10px, 2.5vw, 16px)",
               color: INK,
-              fontWeight: 900,
-              fontSize: "clamp(28px, 8.5vw, 46px)",
-              lineHeight: 1,
-              letterSpacing: "0.04em",
+              fontWeight: 800,
+              fontSize: "clamp(18px, 5vw, 24px)",
+              letterSpacing: "0.12em",
               textTransform: "uppercase",
               whiteSpace: "nowrap",
             }}
           >
-            <span>YELLOW</span>
-            <span>BROWSER</span>
+            <span
+              aria-hidden
+              style={{
+                fontSize: "0.92em",
+                fontWeight: 900,
+                letterSpacing: 0,
+                lineHeight: 1,
+              }}
+            >
+              ≪
+            </span>
+            <span>SWIPE</span>
+            <span
+              aria-hidden
+              style={{
+                fontSize: "0.92em",
+                fontWeight: 900,
+                letterSpacing: 0,
+                lineHeight: 1,
+              }}
+            >
+              ≫
+            </span>
           </div>
+
           <div
-            aria-hidden
             style={{
-              marginTop: "clamp(4px, 1vw, 8px)",
-              width: "min(92%, 320px)",
-              height: "clamp(5px, 1.2vw, 8px)",
-              background: INK,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              marginTop: "clamp(18px, 4.5vw, 32px)",
+              width: "100%",
             }}
-          />
+          >
+            <div
+              aria-hidden
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "center",
+                gap: "clamp(24px, 8vw, 52px)",
+                color: INK,
+                fontWeight: 900,
+                fontSize: "clamp(28px, 8.5vw, 46px)",
+                lineHeight: 1,
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span>YELLOW</span>
+              <span>BROWSER</span>
+            </div>
+            <div
+              aria-hidden
+              style={{
+                marginTop: "clamp(6px, 1.4vw, 10px)",
+                width: "min(94%, 340px)",
+                height: "clamp(5px, 1.2vw, 8px)",
+                background: INK,
+              }}
+            />
+          </div>
         </div>
       </div>
 
+      {/* Loading progress — pinned to bottom, does not pull hero down */}
       <div
         style={{
+          position: "absolute",
+          left: "50%",
+          bottom: "clamp(20px, 4vw, 28px)",
+          transform: "translateX(-50%)",
           width: "min(78%, 300px)",
-          marginTop: "clamp(12px, 3vw, 20px)",
-          flexShrink: 0,
         }}
       >
         <div
