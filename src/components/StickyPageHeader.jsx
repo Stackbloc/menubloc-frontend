@@ -120,7 +120,7 @@ export default function StickyPageHeader({
                   color: accent, fontSize: 13, fontWeight: 800,
                   textDecoration: "none", whiteSpace: "nowrap", letterSpacing: "0.01em",
                 }}
-              >🔥 {t("nav.deals", "Deals")}</Link>
+              >🔥 {t("nav.deals", "Following/Deals")}</Link>
               {!consumerLoading && (
                 consumerLoggedIn
                   ? <Link to="/account" aria-label={t("nav.myAccount", "My account")} style={{ fontSize: 22, textDecoration: "none" }}>👤</Link>

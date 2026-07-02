@@ -4,7 +4,7 @@
 // Grubbid discovery page (sticky header, cream bg, card feed).
 // ============================================================
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
@@ -15,6 +15,7 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildLocalizedApiUrl, withLanguageHeaders } from "../lib/languageApi.js";
 import { restaurantMenuPath } from "../lib/canonicalUrl.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
+import { getFollowedRestaurants } from "../lib/consumerApi.js";
 import FollowingFeed from "../components/consumer/FollowingFeed.jsx";
 
 // Matches SearchResultModeSelector's exact visual pattern (GrubbidSearchResults.jsx) —
@@ -259,18 +260,47 @@ export default function DealsPage() {
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const { search } = useLocation();
   const navigate = useNavigate();
-  // Signed-in users land on Following by default; anonymous users only ever
-  // see Deals (no toggle shown — there is no following data to show them).
-  // Auth resolves asynchronously, so the default is applied once when it
-  // settles rather than guessed on first render; a manual toggle after that
-  // is never overridden.
+
+  // Fetched here (not left to FollowingFeed alone) because the default toggle
+  // state depends on the actual followed-restaurant count: a signed-in user
+  // following nobody should still land on Deals, same as an anonymous user —
+  // an empty Following tab is not a useful default landing view.
+  const [followingItems, setFollowingItems] = useState([]);
+  const [followingLoading, setFollowingLoading] = useState(true);
+  const [followingError, setFollowingError] = useState("");
+  const loadFollowing = useCallback(async () => {
+    setFollowingLoading(true);
+    setFollowingError("");
+    try {
+      const data = await getFollowedRestaurants();
+      setFollowingItems(Array.isArray(data?.restaurants) ? data.restaurants : []);
+    } catch (err) {
+      setFollowingError(err.message || "Failed to load followed restaurants.");
+    } finally {
+      setFollowingLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) { setFollowingLoading(false); return; }
+    loadFollowing();
+  }, [authLoading, isAuthenticated, loadFollowing]);
+
+  // Toggle only shows, and only defaults to Following, when the user is
+  // signed in AND actually follows at least one restaurant. Everyone else
+  // (anonymous, or signed in but following nobody) just sees Deals. Auth +
+  // the follow list both resolve asynchronously, so the default is applied
+  // once when both are known rather than guessed on first render; a manual
+  // toggle after that is never overridden.
   const [mode, setMode] = useState(null);
   const modeDefaultedRef = useRef(false);
+  const hasFollows = followingItems.length > 0;
   useEffect(() => {
-    if (authLoading || modeDefaultedRef.current) return;
+    if (authLoading || followingLoading || modeDefaultedRef.current) return;
     modeDefaultedRef.current = true;
-    setMode(isAuthenticated ? "following" : "deals");
-  }, [authLoading, isAuthenticated]);
+    setMode(isAuthenticated && hasFollows ? "following" : "deals");
+  }, [authLoading, followingLoading, isAuthenticated, hasFollows]);
+  const showToggle = isAuthenticated && hasFollows && mode;
   const urlParams = new URLSearchParams(search);
   const urlCity = urlParams.get("city") || "";
   const urlState = urlParams.get("state") || "";
@@ -425,7 +455,7 @@ export default function DealsPage() {
       <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--gb-color-page)" }}>
         <StickyPageHeader />
         <div style={{ borderBottom: "1px solid #1F2937", paddingBottom: 12 }}>
-          {isAuthenticated && mode ? (
+          {showToggle ? (
             <DealsFollowingModeSelector mode={mode} onModeChange={setMode} />
           ) : null}
 
@@ -465,7 +495,15 @@ export default function DealsPage() {
 
       {mode === "following" ? (
         <div style={{ padding: "16px 10px 80px" }}>
-          <FollowingFeed redirectIfUnauthenticated={false} />
+          <FollowingFeed
+            redirectIfUnauthenticated={false}
+            externalData={{
+              items: followingItems,
+              loading: followingLoading,
+              error: followingError,
+              reload: loadFollowing,
+            }}
+          />
         </div>
       ) : (
       <>

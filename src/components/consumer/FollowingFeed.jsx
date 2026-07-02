@@ -77,32 +77,39 @@ function formatBillboardDateRange(startsAt, endsAt) {
  * signed out (its normal behavior). Embedded contexts (like the Deals page
  * toggle) already gate on auth themselves and pass `false` so this component
  * never navigates the host page away on their behalf.
+ *
+ * `externalData`: when the host already fetched followed restaurants itself
+ * (e.g. DealsPage needs the count before it can decide its default toggle
+ * state), pass `{ items, loading, error, reload }` here so this component
+ * renders that data instead of fetching its own copy. Omit for the standalone
+ * /account/following route, which still self-fetches as before.
  */
-export default function FollowingFeed({ redirectIfUnauthenticated = true }) {
+export default function FollowingFeed({ redirectIfUnauthenticated = true, externalData = null }) {
   const { isAuthenticated, loading: authLoading } = useConsumer();
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [items, setItems] = useState([]);
+  const [ownLoading, setOwnLoading] = useState(true);
+  const [ownError, setOwnError] = useState("");
+  const [ownItems, setOwnItems] = useState([]);
 
   const loadFollowedRestaurants = useCallback(async () => {
-    setLoading(true);
-    setError("");
+    setOwnLoading(true);
+    setOwnError("");
     try {
       const data = await getFollowedRestaurants();
-      setItems(Array.isArray(data?.restaurants) ? data.restaurants : []);
+      setOwnItems(Array.isArray(data?.restaurants) ? data.restaurants : []);
     } catch (err) {
-      setError(err.message || "Failed to load followed restaurants.");
+      setOwnError(err.message || "Failed to load followed restaurants.");
     } finally {
-      setLoading(false);
+      setOwnLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    if (externalData) return;
     if (authLoading) return;
     if (!isAuthenticated) {
-      setLoading(false);
+      setOwnLoading(false);
       if (redirectIfUnauthenticated) {
         navigate("/account/login", {
           replace: true,
@@ -112,7 +119,12 @@ export default function FollowingFeed({ redirectIfUnauthenticated = true }) {
       return;
     }
     loadFollowedRestaurants();
-  }, [authLoading, isAuthenticated, loadFollowedRestaurants, navigate, redirectIfUnauthenticated]);
+  }, [externalData, authLoading, isAuthenticated, loadFollowedRestaurants, navigate, redirectIfUnauthenticated]);
+
+  const loading = externalData ? externalData.loading : ownLoading;
+  const error = externalData ? externalData.error : ownError;
+  const items = externalData ? externalData.items : ownItems;
+  const reload = externalData ? externalData.reload : loadFollowedRestaurants;
 
   const headingCopy = useMemo(() => {
     const count = items.length;
@@ -120,7 +132,7 @@ export default function FollowingFeed({ redirectIfUnauthenticated = true }) {
     return `${count} restaurants followed`;
   }, [items.length]);
 
-  if (authLoading || loading) {
+  if ((!externalData && authLoading) || loading) {
     return (
       <div style={styles.pageInner}>
         <p style={styles.helperText}>Loading your following feed…</p>
@@ -128,7 +140,7 @@ export default function FollowingFeed({ redirectIfUnauthenticated = true }) {
     );
   }
 
-  if (!isAuthenticated) return null;
+  if (!externalData && !isAuthenticated) return null;
 
   return (
     <div style={styles.pageInner}>
@@ -143,7 +155,7 @@ export default function FollowingFeed({ redirectIfUnauthenticated = true }) {
       {error ? (
         <div style={styles.errorCard}>
           <p style={styles.errorText}>{error}</p>
-          <button type="button" onClick={loadFollowedRestaurants} style={styles.retryBtn}>
+          <button type="button" onClick={reload} style={styles.retryBtn}>
             Retry
           </button>
         </div>
