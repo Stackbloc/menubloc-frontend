@@ -77,6 +77,7 @@ export default function BrowseMenus() {
     entries,
     currentEntry,
     activeIndex,
+    totalCount,
     loading,
     loadingMore,
     error,
@@ -214,6 +215,8 @@ export default function BrowseMenus() {
   const initialHold = !introMinElapsed;
   const showSplash = initialHold || listPending || menuPending;
   const introProgress = useSmoothedProgress(loadTarget, showSplash);
+  const currentMenuNumber = currentEntry ? (activeIndex + 1) : 0;
+  const totalMenuCount = Math.max(totalCount || 0, entries.length || 0);
 
   const browseShellStyle = {
     flex: 1,
@@ -260,6 +263,30 @@ export default function BrowseMenus() {
           onTouchEnd={handleTouchEnd}
         >
         <MenuCatalogIntroSplash visible={showSplash} progress={introProgress} />
+
+        {!showSplash && totalMenuCount > 0 ? (
+          <div
+            aria-live="polite"
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              zIndex: 55,
+              padding: "7px 10px",
+              borderRadius: 10,
+              background: "rgba(0,0,0,0.78)",
+              color: "#fff",
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              fontVariantNumeric: "tabular-nums",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Menu {currentMenuNumber} of {totalMenuCount}
+          </div>
+        ) : null}
 
         {error && !showSplash ? (
           <div style={{ padding: 24 }}>
