@@ -160,7 +160,7 @@ export default function DiscoveryCard({
   }
 
   const itemWord = t(itemCount === 1 ? "common.itemSingular" : "common.itemPlural", itemCount === 1 ? "item" : "items");
-  const itemCountLabel = itemCount > 0
+  const itemCountLabel = itemCount > 0 && !paneVariant
     ? (activeFilterLabel ? `${itemCount} ${activeFilterLabel} ${itemWord}` : `${itemCount} ${itemWord}`)
     : null;
 
