@@ -20,6 +20,8 @@ import {
   getFoodsToAvoid,
   updateFoodsToAvoid,
   changePassword,
+  getLikedMenuItems,
+  unlikeMenuItem,
 } from "../../lib/consumerApi.js";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 
@@ -130,6 +132,9 @@ export default function ConsumerProfile() {
     lifetime_redeemed_cents: 0,
   });
 
+  const [likedMeals, setLikedMeals] = useState([]);
+  const [mealsToUnlike, setMealsToUnlike] = useState(new Set());
+
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState("");
@@ -145,9 +150,10 @@ export default function ConsumerProfile() {
   const loadProfile = useCallback(async () => {
     try {
       setPageError(null);
-      const [data, avoidData] = await Promise.all([
+      const [data, avoidData, likedData] = await Promise.all([
         getConsumerProfile(),
         getFoodsToAvoid().catch(() => ({ foods_to_avoid: [] })),
+        getLikedMenuItems().catch(() => ({ likes: [] })),
       ]);
       const { profile, dietary_preferences, allergen_preferences, saved_locations, coins_wallet } = data;
 
@@ -179,6 +185,8 @@ export default function ConsumerProfile() {
         !allergen_preferences.some((pref) => pref.is_enabled)
       );
 
+      setLikedMeals(likedData?.likes || []);
+      setMealsToUnlike(new Set());
       setSavedLocations(saved_locations || []);
       setCoinsWallet({
         balance_cents: Number(coins_wallet?.balance_cents || 0),
@@ -242,6 +250,7 @@ export default function ConsumerProfile() {
         .filter(({ key }) => Boolean(foodsToAvoid[key]))
         .map(({ key }) => key);
 
+      const unlikes = [...mealsToUnlike].map((id) => unlikeMenuItem(id));
       await Promise.all([
         updateConsumerProfile({
           display_name: displayName.trim() || null,
@@ -254,8 +263,12 @@ export default function ConsumerProfile() {
           allergen_preferences,
         }),
         updateFoodsToAvoid(avoid_keys),
+        ...unlikes,
       ]);
 
+      const likedData = await getLikedMenuItems().catch(() => ({ likes: [] }));
+      setLikedMeals(likedData?.likes || []);
+      setMealsToUnlike(new Set());
       await refreshSession().catch(() => {});
       setSaveMessage("Profile preferences saved.");
     } catch (err) {
@@ -453,6 +466,33 @@ export default function ConsumerProfile() {
           </div>
         </Section>
 
+        <Section title="Meals You've Liked" id="meals-liked">
+          <p style={styles.sectionDesc}>
+            Uncheck any meal to remove it from your liked list. Waiter uses these to personalize recommendations under "Based on Meals You've Liked." Changes take effect when you save.
+          </p>
+          {likedMeals.length === 0 ? (
+            <p style={styles.sectionDesc}>No liked meals yet. Like dishes from any menu to see them here.</p>
+          ) : (
+            <div style={styles.prefGrid}>
+              {likedMeals.map((meal) => (
+                <PreferenceToggle
+                  key={meal.menu_item_id}
+                  label={`${meal.item_name} — ${meal.restaurant_name}`}
+                  checked={!mealsToUnlike.has(meal.menu_item_id)}
+                  onChange={(checked) => {
+                    setMealsToUnlike((prev) => {
+                      const next = new Set(prev);
+                      if (!checked) next.add(meal.menu_item_id);
+                      else next.delete(meal.menu_item_id);
+                      return next;
+                    });
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </Section>
+
         <Section title="Default Location">
           {locationSummary ? (
             <div style={styles.currentLocation}>
@@ -471,7 +511,7 @@ export default function ConsumerProfile() {
           )}
         </Section>
 
-        <Section title="G-Coins">
+        <Section title="Mx Coins">
           <p style={styles.sectionDesc}>
             Platform credit applied automatically toward qualifying Menuply Checkout orders.
           </p>

@@ -81,6 +81,8 @@ export const unfollowRestaurant = (restaurantId) =>
   del(`/api/restaurants/${encodeURIComponent(String(restaurantId))}/follow`);
 
 // ── Menu Item Likes ────────────────────────────────────────────────────────────
+export const getLikedMenuItems = () =>
+  get(`/api/consumer/menu-item-likes`);
 export const getMenuItemLikeStatus = (menuItemId) =>
   get(`/api/consumer/menu-item-likes/${encodeURIComponent(String(menuItemId))}`);
 export const likeMenuItem = (menuItemId) =>

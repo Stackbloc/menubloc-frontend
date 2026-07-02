@@ -20,7 +20,7 @@ const EN = {
   "checkout.postalCode": "Postal code",
   "checkout.deliveryNotes": "Delivery notes",
   "checkout.orderNotes": "Order notes",
-  "checkout.applyGCoins": "Apply G-Coins",
+  "checkout.applyGCoins": "Apply Mx Coins",
   "checkout.staleCart": "This cart contains outdated items. Please re-add them from the current menu.",
   "checkout.calculatingTotals": "Calculating server-side totals…",
   "checkout.itemsSubtotal": "Items subtotal",

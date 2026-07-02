@@ -767,7 +767,7 @@ export default function CheckoutPage() {
                   }}
                 >
                   <div style={{ fontSize: 13, fontWeight: 900, color: "#FFFFFF" }}>
-                    G-Coins balance: {formatMoney(previewState.data.coins.available_balance_cents)}
+                    Mx Coins balance: {formatMoney(previewState.data.coins.available_balance_cents)}
                   </div>
                   <label
                     style={{
@@ -793,7 +793,7 @@ export default function CheckoutPage() {
                         )
                       }
                     />
-                    <span>{t("checkout.applyGCoins", "Apply G-Coins")}</span>
+                    <span>{t("checkout.applyGCoins", "Apply Mx Coins")}</span>
                   </label>
                   {!previewState.data?.coins?.can_redeem && !previewState.data?.coins?.applied && previewState.data?.coins?.user_message ? (
                     <div style={{ marginTop: 8, fontSize: 12, color: "#9CA3AF" }}>

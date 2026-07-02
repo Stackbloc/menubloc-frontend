@@ -161,7 +161,7 @@ export default function OrderConfirmationPage() {
                 </div>
                 {Number(state.order.coins_redeemed_cents || 0) > 0 ? (
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <span style={{ color: "#9CA3AF", fontWeight: 700 }}>G-Coins applied</span>
+                    <span style={{ color: "#9CA3AF", fontWeight: 700 }}>Mx Coins applied</span>
                     <strong>-{formatMoney(state.order.coins_redeemed_cents)}</strong>
                   </div>
                 ) : null}
@@ -178,7 +178,7 @@ export default function OrderConfirmationPage() {
                       fontWeight: 800,
                     }}
                   >
-                    You earned {formatMoney(state.order.coins_earned_cents)} in G-Coins
+                    You earned {formatMoney(state.order.coins_earned_cents)} in Mx Coins
                   </div>
                 ) : null}
               </div>
