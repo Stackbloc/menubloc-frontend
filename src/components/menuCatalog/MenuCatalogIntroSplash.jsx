@@ -31,7 +31,7 @@ export default function MenuCatalogIntroSplash({
         background: "#FACC15",
         borderRadius: 16,
         boxSizing: "border-box",
-        padding: "24px 16px clamp(20px, 4vw, 28px)",
+        padding: "24px 16px clamp(48px, 12vh, 80px)",
         overflow: "hidden",
       }}
     >
@@ -66,6 +66,7 @@ export default function MenuCatalogIntroSplash({
               display: "block",
               width: "min(92vw, 440px)",
               maxWidth: "100%",
+              maxHeight: "46vh",
               height: "auto",
               objectFit: "contain",
               margin: "0 auto",
@@ -154,13 +155,14 @@ export default function MenuCatalogIntroSplash({
         </div>
       </div>
 
-      {/* Menu download tracker — flex footer so it never sits under the hero art */}
+      {/* Menu download tracker — anchored above bottom nav / fold */}
       <div
         style={{
           width: "min(78%, 300px)",
-          flexShrink: 0,
-          marginTop: "clamp(8px, 2vw, 14px)",
-          position: "relative",
+          position: "absolute",
+          left: "50%",
+          bottom: "clamp(56px, 14vh, 96px)",
+          transform: "translateX(-50%)",
           zIndex: 2,
         }}
       >
