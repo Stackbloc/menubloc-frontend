@@ -1,6 +1,6 @@
 import React from "react";
 
-/** Three vertical lines — nod to Yellow Browser menu marks. */
+/** Mini Yellow Browser splash — yellow square + three horizontal menu lines. */
 export default function BrowseMenusIcon({
   size = 22,
   title,
@@ -13,8 +13,9 @@ export default function BrowseMenusIcon({
     ? { role: "img", "aria-label": title }
     : { "aria-hidden": true };
 
+  const yellow = active ? "#EAB308" : "#FACC15";
   const ink = "#1a1a1a";
-  const strokeW = active ? 2.2 : 2;
+  const strokeW = active ? 2.1 : 1.9;
 
   return (
     <svg
@@ -28,9 +29,10 @@ export default function BrowseMenusIcon({
       {...ariaProps}
       {...props}
     >
-      <line x1="8" y1="6.5" x2="8" y2="17.5" stroke={ink} strokeWidth={strokeW} strokeLinecap="round" />
-      <line x1="12" y1="5.5" x2="12" y2="18.5" stroke={ink} strokeWidth={strokeW} strokeLinecap="round" />
-      <line x1="16" y1="7" x2="16" y2="17" stroke={ink} strokeWidth={strokeW} strokeLinecap="round" />
+      <rect x="3" y="3" width="18" height="18" rx="3.5" fill={yellow} />
+      <line x1="7.5" y1="9.5" x2="16.5" y2="9.5" stroke={ink} strokeWidth={strokeW} strokeLinecap="round" />
+      <line x1="7.5" y1="12" x2="14.5" y2="12" stroke={ink} strokeWidth={strokeW} strokeLinecap="round" />
+      <line x1="7.5" y1="14.5" x2="17" y2="14.5" stroke={ink} strokeWidth={strokeW} strokeLinecap="round" />
     </svg>
   );
 }

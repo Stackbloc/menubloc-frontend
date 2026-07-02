@@ -7,6 +7,7 @@ export const MENU_CATALOG_TABS = [
   { id: "american", label: "American", accent: "#d97706" },
   { id: "asian", label: "Asian", accent: "#6366f1" },
   { id: "italian", label: "Italian", accent: "#dc2626" },
+  { id: "mexican", label: "Mexican", accent: "#f97316" },
   { id: "qsr", label: "QSR", accent: "#16a34a" },
 ];
 

@@ -360,7 +360,7 @@ export default function CatalogMenuRenderer({
     if (fromEntry != null) return fromEntry;
     return asFiniteNumber(data?.distance_miles ?? data?.restaurant_distance_miles);
   }, [data?.distance_miles, data?.restaurant_distance_miles, entry?.distance_miles, entry?.restaurant_distance_miles]);
-  const showDistanceBelowAddress = browseSection === "nearby" && distanceMiles != null;
+  const showDistanceBelowAddress = distanceMiles != null;
   const sections = tabSections?.sections ?? normalizeSections(data);
   const displaySections = getFilteredDisplaySections(sections, dietPrefs, enabledAllergenKeys);
   const displayableItemCount = displaySections.reduce(
