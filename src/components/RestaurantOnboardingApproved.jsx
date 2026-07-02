@@ -395,7 +395,7 @@ export default function RestaurantOnboardingApproved({ onContinue }) {
         </div>
 
         <div className="callout">
-          Menuply partners with restaurants that prioritize customer value without compromising quality. Restaurants aligned with these principles may receive increased visibility opportunities throughout the platform.
+          “Menuply partners with restaurants committed to delivering exceptional value and keeping menu prices as affordable as practical. Restaurants that demonstrate this commitment may receive enhanced visibility and promotional opportunities throughout the platform.”
         </div>
 
         <div className="info-card">
