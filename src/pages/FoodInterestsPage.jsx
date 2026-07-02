@@ -20,7 +20,8 @@ function parseSessionLocation(raw) {
   return { city: str.slice(0, comma).trim(), state: str.slice(comma + 1).trim() };
 }
 
-// ONE group per type — enforces the one-card-per-category rule
+// ONE group per type — enforces the one-card-per-category rule.
+// Deduplicates items by title within each group (prevents duplicate franchise entries).
 function groupByType(recommendations) {
   const order = [];
   const map = new Map();
@@ -32,7 +33,17 @@ function groupByType(recommendations) {
     }
     map.get(key).items.push(rec);
   }
-  return order.map((key) => map.get(key));
+  return order.map((key) => {
+    const group = map.get(key);
+    const seen = new Set();
+    group.items = group.items.filter((item) => {
+      const normalized = String(item.title || "").toLowerCase().trim();
+      if (!normalized || seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    });
+    return group;
+  }).filter((group) => group.items.length > 0);
 }
 
 const CARD_STYLE = {
@@ -43,23 +54,11 @@ const CARD_STYLE = {
 };
 
 const LABEL_STYLE = {
-  fontSize: 10,
+  fontSize: 15,
   fontWeight: 800,
   color: "#86EFAC",
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  marginBottom: 8,
-};
-
-const LINK_STYLE = {
-  display: "inline-block",
-  marginTop: 10,
-  fontSize: 12,
-  fontWeight: 800,
-  color: "#86EFAC",
-  textDecoration: "none",
-  borderBottom: "1px solid rgba(134,239,172,0.28)",
-  paddingBottom: 1,
+  letterSpacing: "-0.01em",
+  marginBottom: 10,
 };
 
 const ITEM_LINK_STYLE = {
@@ -69,7 +68,8 @@ const ITEM_LINK_STYLE = {
   lineHeight: 1.45,
 };
 
-// Renders one card for an entire category (e.g. all "New for Dinner" items)
+// Renders one card for an entire category (e.g. all "New for Dinner" items).
+// Each item title is directly clickable — no separate "View dish →" link.
 function CategoryCard({ group }) {
   return (
     <div style={CARD_STYLE}>
@@ -78,17 +78,14 @@ function CategoryCard({ group }) {
         {group.items.map((item, index) => (
           <div key={item.link || item.title || index}>
             {item.link ? (
-              <Link to={item.link} style={{ ...ITEM_LINK_STYLE, display: "block", fontWeight: 700, color: "#F9FAFB" }}>
+              <Link to={item.link} style={{ ...ITEM_LINK_STYLE, display: "block", fontWeight: 600, color: "#E5E7EB" }}>
                 {item.title}
               </Link>
             ) : (
-              <span style={{ ...ITEM_LINK_STYLE, fontWeight: 700, color: "#F9FAFB" }}>{item.title}</span>
+              <span style={{ ...ITEM_LINK_STYLE, fontWeight: 600, color: "#E5E7EB" }}>{item.title}</span>
             )}
             {item.detail ? (
-              <div style={{ fontSize: 12, color: "#9CA3AF", lineHeight: 1.45, marginTop: 2 }}>{item.detail}</div>
-            ) : null}
-            {item.link && item.link_label ? (
-              <Link to={item.link} style={LINK_STYLE}>{item.link_label}</Link>
+              <div style={{ fontSize: 11, color: "#6B7280", lineHeight: 1.4, marginTop: 2 }}>{item.detail}</div>
             ) : null}
           </div>
         ))}
