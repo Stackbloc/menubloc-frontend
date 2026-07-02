@@ -31,7 +31,7 @@ export default function MenuCatalogIntroSplash({
         background: "#FACC15",
         borderRadius: 16,
         boxSizing: "border-box",
-        padding: "24px 16px clamp(20px, 4vw, 28px)",
+        padding: "12px 16px clamp(20px, 4vw, 28px)",
         overflow: "hidden",
       }}
     >
@@ -45,7 +45,7 @@ export default function MenuCatalogIntroSplash({
           alignItems: "center",
           justifyContent: "center",
           width: "100%",
-          transform: "translateY(-4%)",
+          transform: "translateY(-11%)",
           pointerEvents: "none",
         }}
       >
