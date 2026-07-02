@@ -128,7 +128,9 @@ export default function BottomNav() {
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  lineHeight: 1,
+                  lineHeight: 1.05,
+                  fontWeight: active ? 900 : 800,
+                  letterSpacing: "0.01em",
                 }}
               >
                 <span>Menu</span>
