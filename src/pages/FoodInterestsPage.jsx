@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { fetchWaiterBriefing } from "../lib/waiterApi.js";
+import { WAITER_MEAL_PERIODS, getDefaultMealPeriod, normalizeMealPeriodId } from "../lib/waiterMealPeriod.js";
+import { getTimezoneForUsState } from "../lib/timeZoneUtils.js";
 
-// ⚠️ WAITER PROTECTION GUARDRAIL (2026-07-01)
-// This file is FROZEN. Do NOT add meal period chips, greetings, MarketFallback,
-// CommunityGrowthCard, or any new imports without explicit user instruction.
+// ⚠️ WAITER PROTECTION GUARDRAIL (2026-07-02)
+// This file is FROZEN. Do NOT add MarketFallback, CommunityGrowthCard, or
+// remove the meal period selector without explicit user instruction.
 // One card per recommendation category. See CLAUDE.md Waiter guardrail.
 
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
@@ -97,6 +99,7 @@ function CategoryCard({ group }) {
 export default function FoodInterestsPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useConsumer();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [locationLabel] = useState(() => {
     if (typeof window === "undefined") return "";
@@ -108,6 +111,12 @@ export default function FoodInterestsPage() {
 
   const location = parseSessionLocation(locationLabel);
 
+  const [mealPeriod, setMealPeriod] = useState(() => {
+    const fromUrl = normalizeMealPeriodId(searchParams.get("meal_period"));
+    if (fromUrl) return fromUrl;
+    return getDefaultMealPeriod(new Date(), getTimezoneForUsState(location.state));
+  });
+
   const [briefing, setBriefing] = useState(null);
   const [briefingLoading, setBriefingLoading] = useState(
     Boolean(location.city && location.state)
@@ -117,12 +126,21 @@ export default function FoodInterestsPage() {
     if (!location.city || !location.state) return undefined;
     let cancelled = false;
     setBriefingLoading(true);
-    fetchWaiterBriefing(location.city, location.state)
+    fetchWaiterBriefing(location.city, location.state, mealPeriod)
       .then((data) => { if (!cancelled) setBriefing(data?.ok ? data : null); })
       .catch(() => { if (!cancelled) setBriefing(null); })
       .finally(() => { if (!cancelled) setBriefingLoading(false); });
     return () => { cancelled = true; };
-  }, [location.city, location.state]);
+  }, [location.city, location.state, mealPeriod]);
+
+  function selectMealPeriod(id) {
+    setMealPeriod(id);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("meal_period", id);
+      return next;
+    });
+  }
 
   const subheading = locationLabel
     ? `Food picks for ${locationLabel}.`
@@ -157,8 +175,31 @@ export default function FoodInterestsPage() {
           ) : null}
         </div>
 
+        {/* Meal period selector */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+          {WAITER_MEAL_PERIODS.map((period) => (
+            <button
+              key={period.id}
+              type="button"
+              onClick={() => selectMealPeriod(period.id)}
+              style={{
+                borderRadius: 999,
+                padding: "7px 14px",
+                fontSize: 13,
+                fontWeight: 700,
+                border: mealPeriod === period.id ? "1px solid #22C55E" : "1px solid rgba(134,239,172,0.2)",
+                background: mealPeriod === period.id ? "rgba(34,197,94,0.15)" : "transparent",
+                color: mealPeriod === period.id ? "#22C55E" : "#9CA3AF",
+                cursor: "pointer",
+              }}
+            >
+              {period.label}
+            </button>
+          ))}
+        </div>
+
         {/* Recommendations */}
-        <section style={{ marginTop: 20 }} aria-live="polite">
+        <section style={{ marginTop: 14 }} aria-live="polite">
           {briefingLoading ? (
             <div style={{ fontSize: 14, color: "#9CA3AF", padding: "12px 0" }}>Loading recommendations…</div>
           ) : !location.city ? (

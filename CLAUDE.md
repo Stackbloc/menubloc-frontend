@@ -23,21 +23,22 @@ Every task response must include:
 
 If any Waiter file was modified without explicit user instruction → revert immediately.
 
-### Canonical Waiter behavior — do not deviate
+### Canonical Waiter behavior (as of 2026-07-02) — do not deviate
 
 - Header: "Today's food highlights" + location subtitle
+- Meal period chips: Breakfast, Brunch, Lunch, Dinner, Late Night — auto-selects via `getDefaultMealPeriod()` + `getTimezoneForUsState()`; persists in `?meal_period=` URL param
 - One `CategoryCard` per unique recommendation `type` (grouped by `groupByType()`)
-- Each card lists all items of that type
+- Each card lists all items of that type (deduplicated by title)
+- Item titles directly clickable — no separate "View dish →" / "View restaurant →" links
 - BottomNav preserved
-- NO meal period chips, NO greeting, NO MarketFallback, NO CommunityGrowthCard
+- Sign-in prompt when not authenticated
+- Imports: waiterMealPeriod.js and timeZoneUtils.js ARE used; waiterRecommendations.js is NOT used
 
 ### Permanently prohibited content
 
-- Meal period selector / chips
-- Greeting ("Good morning" / "Good afternoon" etc.)
+- Greeting text ("Good morning" / "Good afternoon" / "Good evening")
 - `MarketFallback` ("We're actively expanding coverage")
 - `CommunityGrowthCard` ("Help Menuply Grow")
-- Imports from `waiterMealPeriod.js` or `waiterRecommendations.js` in `FoodInterestsPage.jsx`
 - Reading `briefing.cards` — correct field is `briefing.recommendations`
 
 ---
