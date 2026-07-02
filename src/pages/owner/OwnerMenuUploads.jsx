@@ -22,6 +22,7 @@ import {
   getUploadReviewItems,
   approveReviewItem,
   rejectReviewItem,
+  bulkReviewItems,
   getOwnerMenuUpload,
   retryOwnerMenuUpload,
 } from "../../lib/ownerApi.js";
@@ -280,6 +281,7 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
 
   // ── recent uploads (for selected restaurant)
   const [recentUploads, setRecentUploads] = useState([]);
+  const [publishedMenuReloadToken, setPublishedMenuReloadToken] = useState(0);
 
   // ── item search state (within selected restaurant)
   const [itemQ, setItemQ]               = useState("");
@@ -809,6 +811,12 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
             .then((r) => setRecentUploads(r.uploads || []))
             .catch(() => {});
         }}
+        onPublishedMenuRefresh={() => setPublishedMenuReloadToken((t) => t + 1)}
+      />
+
+      <PublishedMenuEditorPanel
+        restaurantId={selectedRestaurant.id}
+        reloadToken={publishedMenuReloadToken}
       />
 
       {/* ── Upload History ──────────────────────────────────────────────── */}
@@ -1186,6 +1194,79 @@ function ReviewItemRow({ item, onApprove, onReject }) {
   );
 }
 
+function PublicMenuItemEditorRow({ restaurantId, item, onSaved }) {
+  const [name, setName] = useState(item.name || "");
+  const [price, setPrice] = useState(item.price == null ? "" : String(item.price));
+  const [description, setDescription] = useState(item.description || "");
+  const [section, setSection] = useState(item.section || "");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [ok, setOk] = useState(true);
+
+  async function saveChanges() {
+    setSaving(true);
+    setMsg("");
+    try {
+      const res = await updateMenuConsoleItem(restaurantId, item.menu_id, item.id, {
+        name: name.trim(),
+        price: price === "" ? null : Number(price),
+        description: description.trim() || null,
+        section: section.trim() || null,
+      });
+      onSaved?.(res.item);
+      setOk(true);
+      setMsg("Saved");
+    } catch (err) {
+      setOk(false);
+      setMsg(err?.payload?.error || "Save failed");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMsg(""), 2500);
+    }
+  }
+
+  return (
+    <div style={{ padding: "12px 14px", borderRadius: 10, background: "#fafafa", border: "1px solid #e5e7eb" }}>
+      <div style={{ fontSize: 11, color: "#475569", marginBottom: 8, fontWeight: 700 }}>
+        Public menu item
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+        <div>
+          <label style={labelStyle}>Name *</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} style={{ ...inputStyle, fontSize: 12, color: "#334155" }} />
+        </div>
+        <div>
+          <label style={labelStyle}>Price</label>
+          <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" step="0.01" min="0" style={{ ...inputStyle, fontSize: 12, color: "#334155" }} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={labelStyle}>Description</label>
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} style={{ ...inputStyle, resize: "vertical", minHeight: 44, lineHeight: 1.5, fontSize: 12, color: "#334155" }} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={labelStyle}>Section</label>
+        <input value={section} onChange={(e) => setSection(e.target.value)} style={{ ...inputStyle, fontSize: 12, color: "#334155" }} />
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <button
+          type="button"
+          onClick={saveChanges}
+          disabled={saving || !name.trim()}
+          style={{ padding: "7px 14px", borderRadius: 8, background: "#1d4ed8", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: (saving || !name.trim()) ? "not-allowed" : "pointer", opacity: (saving || !name.trim()) ? 0.5 : 1 }}
+        >
+          {saving ? "Saving…" : "Save"}
+        </button>
+        {msg && (
+          <span style={{ fontSize: 12, fontWeight: 700, color: ok ? "#166534" : "#991b1b" }}>
+            {msg}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function UploadReviewGroup({ upload, items, pages, photoUrl, onApprove, onReject }) {
   const [photoExpanded, setPhotoExpanded] = useState(false);
   const [activePage, setActivePage]       = useState(0);
@@ -1266,7 +1347,137 @@ function UploadReviewGroup({ upload, items, pages, photoUrl, onApprove, onReject
   );
 }
 
-function WorkspaceReviewPanel({ uploads, restaurantId, onItemActioned }) {
+function PublishedMenuEditorPanel({ restaurantId, reloadToken = 0 }) {
+  const [expanded, setExpanded] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [itemsByMenu, setItemsByMenu] = useState([]);
+
+  useEffect(() => {
+    if (!restaurantId) {
+      setItemsByMenu([]);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+
+    (async () => {
+      try {
+        const menusData = await getMenuConsoleRestaurantMenus(restaurantId);
+        const publishedMenus = (menusData.menus || []).filter((m) => m.status === "published");
+        if (!publishedMenus.length) {
+          if (!cancelled) setItemsByMenu([]);
+          return;
+        }
+
+        const details = await Promise.all(
+          publishedMenus.map((menu) =>
+            getMenuConsoleMenu(restaurantId, menu.id).then((detail) => ({ menu, detail }))
+          )
+        );
+
+        if (cancelled) return;
+
+        setItemsByMenu(
+          details.map(({ menu, detail }) => ({
+            menuId: menu.id,
+            menuName: menu.display_name || menu.name || `Menu ${menu.id}`,
+            items: (detail.sections || []).flatMap((section) =>
+              (section.items || []).map((item) => ({
+                ...item,
+                section: item.section || section.name || "",
+                menu_id: menu.id,
+              }))
+            ),
+          }))
+        );
+      } catch (err) {
+        if (!cancelled) {
+          setError(err?.payload?.error || "Unable to load published menu items.");
+          setItemsByMenu([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [restaurantId, reloadToken]);
+
+  const totalItems = itemsByMenu.reduce((sum, group) => sum + group.items.length, 0);
+  if (!restaurantId) return null;
+
+  return (
+    <PageCard style={{ padding: "16px 20px", marginBottom: 16, background: "#f8fafc", border: "1px solid #cbd5e1" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: expanded ? 14 : 0 }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>
+            Published Menu Items
+          </div>
+          <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+            Edit live menu prices and details anytime.
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "#475569", fontWeight: 700, fontSize: 12, padding: "2px 6px" }}
+        >
+          {expanded ? "Collapse ▲" : "Expand ▼"}
+        </button>
+      </div>
+
+      {expanded && (
+        <>
+          {loading ? (
+            <div style={{ color: "#64748b", fontSize: 13 }}>Loading published menu items…</div>
+          ) : error ? (
+            <div style={{ color: "#991b1b", fontSize: 13 }}>{error}</div>
+          ) : totalItems === 0 ? (
+            <div style={{ color: "#64748b", fontSize: 13 }}>No published menu items found for this restaurant.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {itemsByMenu.map((group) => (
+                group.items.length > 0 ? (
+                  <div key={group.menuId} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#475569", marginBottom: 8 }}>
+                      {group.menuName} · {group.items.length} item{group.items.length !== 1 ? "s" : ""}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {group.items.map((item) => (
+                        <PublicMenuItemEditorRow
+                          key={item.id}
+                          restaurantId={restaurantId}
+                          item={item}
+                          onSaved={(updated) => {
+                            setItemsByMenu((prev) =>
+                              prev.map((g) =>
+                                g.menuId !== group.menuId
+                                  ? g
+                                  : {
+                                      ...g,
+                                      items: g.items.map((it) => (it.id === item.id ? { ...it, ...updated } : it)),
+                                    }
+                              )
+                            );
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </PageCard>
+  );
+}
+
+function WorkspaceReviewPanel({ uploads, restaurantId, onItemActioned, onPublishedMenuRefresh }) {
   const pending = uploads.filter((u) => (u.human_review_items || 0) > 0);
   const uploadKey = pending.map((u) => u.id).join(",");
 
@@ -1276,6 +1487,7 @@ function WorkspaceReviewPanel({ uploads, restaurantId, onItemActioned }) {
   const [expanded,      setExpanded]      = useState(true);
   const [actionMsg,     setActionMsg]     = useState("");
   const [actionOk,      setActionOk]      = useState(true);
+  const [bulkActing,    setBulkActing]    = useState(false);
 
   useEffect(() => {
     if (!pending.length) return;
@@ -1341,8 +1553,68 @@ function WorkspaceReviewPanel({ uploads, restaurantId, onItemActioned }) {
       }));
       flashMsg("Item rejected.");
       onItemActioned?.();
+      onPublishedMenuRefresh?.();
     } catch (err) {
       flashMsg(err?.payload?.error || "Reject failed.", false);
+    }
+  }
+
+  async function handleAcceptAll() {
+    const byUpload = pending
+      .map((u) => ({
+        uploadId: u.id,
+        itemIds: (itemsByUpload[u.id] || [])
+          .filter((item) => item.status === "open" || item.status === "edited")
+          .map((item) => item.id),
+      }))
+      .filter((entry) => entry.itemIds.length > 0);
+    if (!byUpload.length) return;
+    setBulkActing(true);
+    try {
+      for (const entry of byUpload) {
+        await bulkReviewItems(entry.uploadId, { action: "approve", item_ids: entry.itemIds });
+      }
+      setItemsByUpload((prev) => {
+        const next = { ...prev };
+        for (const entry of byUpload) next[entry.uploadId] = [];
+        return next;
+      });
+      flashMsg("Accepted all pending items.");
+      onItemActioned?.();
+    } catch (err) {
+      flashMsg(err?.payload?.error || "Accept all failed.", false);
+    } finally {
+      setBulkActing(false);
+    }
+  }
+
+  async function handleRejectAll() {
+    const byUpload = pending
+      .map((u) => ({
+        uploadId: u.id,
+        itemIds: (itemsByUpload[u.id] || [])
+          .filter((item) => item.status === "open" || item.status === "edited")
+          .map((item) => item.id),
+      }))
+      .filter((entry) => entry.itemIds.length > 0);
+    if (!byUpload.length) return;
+    setBulkActing(true);
+    try {
+      for (const entry of byUpload) {
+        await bulkReviewItems(entry.uploadId, { action: "reject", item_ids: entry.itemIds });
+      }
+      setItemsByUpload((prev) => {
+        const next = { ...prev };
+        for (const entry of byUpload) next[entry.uploadId] = [];
+        return next;
+      });
+      flashMsg("Rejected all pending items.");
+      onItemActioned?.();
+      onPublishedMenuRefresh?.();
+    } catch (err) {
+      flashMsg(err?.payload?.error || "Reject all failed.", false);
+    } finally {
+      setBulkActing(false);
     }
   }
 
@@ -1399,6 +1671,24 @@ function WorkspaceReviewPanel({ uploads, restaurantId, onItemActioned }) {
               })}
             </div>
           )}
+          <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px dashed #f59e0b", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+            <button
+              type="button"
+              onClick={handleAcceptAll}
+              disabled={bulkActing || openItems.length === 0}
+              style={{ padding: "8px 14px", borderRadius: 8, background: "#15803d", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: (bulkActing || openItems.length === 0) ? "not-allowed" : "pointer", opacity: (bulkActing || openItems.length === 0) ? 0.5 : 1 }}
+            >
+              {bulkActing ? "Working…" : "Accept All"}
+            </button>
+            <button
+              type="button"
+              onClick={handleRejectAll}
+              disabled={bulkActing || openItems.length === 0}
+              style={{ padding: "8px 14px", borderRadius: 8, background: "#fff", color: "#991b1b", border: "1px solid #fca5a5", fontWeight: 700, fontSize: 12, cursor: (bulkActing || openItems.length === 0) ? "not-allowed" : "pointer", opacity: (bulkActing || openItems.length === 0) ? 0.5 : 1 }}
+            >
+              {bulkActing ? "Working…" : "Reject All"}
+            </button>
+          </div>
         </>
       )}
     </PageCard>
