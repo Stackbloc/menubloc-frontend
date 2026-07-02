@@ -1,5 +1,47 @@
 # GUARDRAIL: LOW-COST AUDIT-FIRST WORKFLOW
 
+---
+
+## 🔴 WAITER PAGE PROTECTION GUARDRAIL (ABSOLUTE — ZERO EXCEPTIONS)
+
+**Established:** 2026-07-01
+
+### ZERO-TOUCH RULE
+
+No agent may modify ANY Waiter file unless the user's message in the CURRENT turn explicitly names "Waiter" and describes exactly what to change.
+
+### Protected files
+- `src/pages/FoodInterestsPage.jsx`
+- `src/lib/waiterApi.js`
+- `src/lib/waiterMealPeriod.js`
+- `src/lib/waiterRecommendations.js`
+
+### Mandatory certification on EVERY task
+
+Every task response must include:
+> ☐ WAITER CERTIFICATION: No Waiter files were modified in this task.
+
+If any Waiter file was modified without explicit user instruction → revert immediately.
+
+### Canonical Waiter behavior — do not deviate
+
+- Header: "Today's food highlights" + location subtitle
+- One `CategoryCard` per unique recommendation `type` (grouped by `groupByType()`)
+- Each card lists all items of that type
+- BottomNav preserved
+- NO meal period chips, NO greeting, NO MarketFallback, NO CommunityGrowthCard
+
+### Permanently prohibited content
+
+- Meal period selector / chips
+- Greeting ("Good morning" / "Good afternoon" etc.)
+- `MarketFallback` ("We're actively expanding coverage")
+- `CommunityGrowthCard` ("Help Menuply Grow")
+- Imports from `waiterMealPeriod.js` or `waiterRecommendations.js` in `FoodInterestsPage.jsx`
+- Reading `briefing.cards` — correct field is `briefing.recommendations`
+
+---
+
 Objective:
 Prevent speculative rewrites, unnecessary token/credit usage, production regressions, and architecture drift caused by agents implementing changes before understanding the existing system.
 
