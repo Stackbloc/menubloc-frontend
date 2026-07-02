@@ -31,7 +31,7 @@ export default function MenuCatalogIntroSplash({
         background: "#FACC15",
         borderRadius: 16,
         boxSizing: "border-box",
-        padding: "12px 16px clamp(20px, 4vw, 28px)",
+        padding: "24px 16px clamp(20px, 4vw, 28px)",
         overflow: "hidden",
       }}
     >
@@ -45,7 +45,7 @@ export default function MenuCatalogIntroSplash({
           alignItems: "center",
           justifyContent: "center",
           width: "100%",
-          transform: "translateY(-11%)",
+          transform: "translateY(-4%)",
           pointerEvents: "none",
         }}
       >
@@ -66,7 +66,6 @@ export default function MenuCatalogIntroSplash({
               display: "block",
               width: "min(92vw, 440px)",
               maxWidth: "100%",
-              maxHeight: "52vh",
               height: "auto",
               objectFit: "contain",
               margin: "0 auto",
@@ -119,7 +118,7 @@ export default function MenuCatalogIntroSplash({
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              marginTop: "clamp(12px, 3vw, 22px)",
+              marginTop: "clamp(18px, 4.5vw, 32px)",
               width: "100%",
             }}
           >

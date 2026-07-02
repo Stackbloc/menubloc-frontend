@@ -77,7 +77,6 @@ export default function BrowseMenus() {
     entries,
     currentEntry,
     activeIndex,
-    totalCount,
     loading,
     loadingMore,
     error,
@@ -215,9 +214,6 @@ export default function BrowseMenus() {
   const initialHold = !introMinElapsed;
   const showSplash = initialHold || listPending || menuPending;
   const introProgress = useSmoothedProgress(loadTarget, showSplash);
-  const showLoadCounter = listPending || menuPending;
-  const currentMenuNumber = currentEntry ? (activeIndex + 1) : 0;
-  const totalMenuCount = Math.max(totalCount || 0, entries.length || 0);
 
   const browseShellStyle = {
     flex: 1,
@@ -264,84 +260,6 @@ export default function BrowseMenus() {
           onTouchEnd={handleTouchEnd}
         >
         <MenuCatalogIntroSplash visible={showSplash} progress={introProgress} />
-
-        <div
-          style={{
-            position: "absolute",
-            top: 12,
-            left: 12,
-            right: 12,
-            zIndex: 55,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            pointerEvents: "none",
-            gap: 8,
-          }}
-        >
-          <div
-            aria-live="polite"
-            style={{
-              padding: "7px 10px",
-              borderRadius: 10,
-              background: "rgba(0,0,0,0.78)",
-              color: "#fff",
-              fontSize: 12,
-              fontWeight: 800,
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
-              fontVariantNumeric: "tabular-nums",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Menu {currentMenuNumber || 0} of {totalMenuCount || 0}
-          </div>
-
-          {showLoadCounter ? (
-            <div
-              aria-live="polite"
-              style={{
-                padding: "7px 10px",
-                borderRadius: 10,
-                background: "rgba(0,0,0,0.78)",
-                color: "#fff",
-                fontSize: 12,
-                fontWeight: 800,
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-                fontVariantNumeric: "tabular-nums",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Download {Math.max(0, Math.min(100, Math.round(introProgress)))}%
-            </div>
-          ) : (
-            <div />
-          )}
-        </div>
-
-        {showLoadCounter && showSplash ? (
-          <div
-            aria-live="polite"
-            style={{
-              position: "absolute",
-              right: 12,
-              bottom: 12,
-              zIndex: 56,
-              padding: "8px 10px",
-              borderRadius: 10,
-              background: "rgba(0,0,0,0.78)",
-              color: "#fff",
-              fontSize: 12,
-              fontWeight: 800,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            Download {Math.max(0, Math.min(100, Math.round(introProgress)))}%
-          </div>
-        ) : null}
 
         {error && !showSplash ? (
           <div style={{ padding: 24 }}>
