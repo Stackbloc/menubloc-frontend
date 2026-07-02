@@ -19,7 +19,7 @@ export const DEFAULT_MENU_THEME_SETTINGS = {
   accent_color: null,
   background_style: "dark",
   hero_enabled: true,
-  image_density: "all",
+  image_density: "none",
   section_heading_style: "default",
   item_image_style: "auto",
   price_placement: "right",
