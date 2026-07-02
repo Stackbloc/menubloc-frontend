@@ -21,7 +21,9 @@
  */
 
 import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Navigate, useParams, useLocation } from "react-router-dom";
+import SentryRoutePerformance from "./components/SentryRoutePerformance.jsx";
+import { SentryRoutes } from "./instrument.js";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { useCanonical } from "./hooks/useCanonical.js";
 import { captureEvent, initPostHog } from "./services/posthog.js";
@@ -533,7 +535,7 @@ function AppShell({ easyMenu, crmHost }) {
       {hidePublicChrome ? null : <CartDrawer />}
       {hidePublicChrome ? null : <OrderCartDrawer />}
       {hidePublicChrome ? null : <BasketResumePrompt />}
-      <Routes>
+      <SentryRoutes>
         <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <HomeRoot />} />
         <Route path="/home-legacy" element={crmHost ? <HostRouteRedirect to="/crm" /> : <LegacyDiscoveryHome />} />
         <Route path="/home-next" element={crmHost ? <HostRouteRedirect to="/crm" /> : <HomeNext />} />
@@ -724,7 +726,7 @@ function AppShell({ easyMenu, crmHost }) {
 
         <Route path="/build-info" element={<BuildInfoPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      </SentryRoutes>
 
       {hidePublicChrome ? null : <SiteFooter />}
     </>
@@ -744,6 +746,7 @@ export default function App() {
               <LanguageProvider>
                 <OrderCartProvider>
                   <BrowserRouter>
+                    <SentryRoutePerformance />
                     <AppShell easyMenu={easyMenu} crmHost={crmHost} />
               </BrowserRouter>
                 </OrderCartProvider>

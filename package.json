@@ -22,6 +22,7 @@
     "ui:update-baselines": "npx playwright test tests/playwright/visual.spec.js --update-snapshots --reporter=list"
   },
   "dependencies": {
+    "@sentry/react": "^10.63.0",
     "@stripe/react-stripe-js": "^6.1.0",
     "@stripe/stripe-js": "^9.0.1",
     "posthog-js": "^1.368.0",
