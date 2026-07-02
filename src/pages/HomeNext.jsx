@@ -33,6 +33,7 @@ export default function HomeNext() {
   const helpSectionRef = useRef(null);
   const [draftQuery, setDraftQuery] = useState("");
   const [searching, setSearching] = useState(false);
+  const [inlineError, setInlineError] = useState("");
   const [expandedSectionId, setExpandedSectionId] = useState(null);
   const [homeResetSignal, setHomeResetSignal] = useState(0);
 
@@ -90,6 +91,8 @@ export default function HomeNext() {
       shouldUseGeoBrowse,
     });
 
+    setInlineError("");
+
     if (!qTerm) {
       navigate(target);
       return;
@@ -107,8 +110,13 @@ export default function HomeNext() {
       const res = await fetch(`${API}/search?${params.toString()}`, { credentials: "include" });
       const json = await res.json().catch(() => ({}));
       const count = Array.isArray(json?.results) ? json.results.length : 0;
-      if (count > 0) navigate(target);
-      else navigate(target);
+      if (count === 0) {
+        const loc = params.get("location_label") || [params.get("city"), params.get("state")].filter(Boolean).join(", ");
+        const nearText = loc ? ` near ${loc}` : "";
+        setInlineError(t("discovery.noResultsFoundFor", `No results found for "${qTerm}"${nearText}`, { query: qTerm, nearText }));
+      } else {
+        navigate(target);
+      }
     } catch {
       navigate(target);
     } finally {
@@ -306,7 +314,7 @@ export default function HomeNext() {
                   inputMode="search"
                   enterKeyHint="search"
                   value={draftQuery}
-                  onChange={(e) => setDraftQuery(e.target.value)}
+                  onChange={(e) => { setDraftQuery(e.target.value); setInlineError(""); }}
                   placeholder={t("homeNext.searchPlaceholder", "Search dishes, restaurants, or ingredients")}
                   style={{
                     width: "100%",
@@ -365,6 +373,25 @@ export default function HomeNext() {
                 </button>
               </div>
             </form>
+
+            {inlineError ? (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: "14px 18px",
+                  borderRadius: 14,
+                  border: "1px solid rgba(239,68,68,0.25)",
+                  background: "rgba(239,68,68,0.06)",
+                }}
+              >
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#B91C1C", marginBottom: 4 }}>
+                  {inlineError}
+                </div>
+                <div style={{ fontSize: 13, color: "#6B7280" }}>
+                  {t("discovery.tryDifferent", "Try a different search or location.")}
+                </div>
+              </div>
+            ) : null}
           </div>
         </header>
 
