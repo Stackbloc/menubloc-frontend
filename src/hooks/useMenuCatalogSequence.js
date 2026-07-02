@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getBrowseMenus, toConsumerErrorMessage } from "../lib/api.js";
 import { dedupeDiscoveryMenus } from "../lib/discoveryFeedGuardrails.js";
-import { buildBrowseLocationParams, reverseGeocode } from "../lib/locationUtils.js";
+import {
+  buildMenuCatalogBrowseParams,
+  menuCatalogLocationLabel,
+  readMenuCatalogAppliedLocation,
+} from "../lib/menuCatalogBrowseLocation.js";
+import useDiscoveryAutoLocation from "./useDiscoveryAutoLocation.js";
 
 const PAGE_SIZE = 24;
 
@@ -9,28 +14,6 @@ function extractMenus(response) {
   if (Array.isArray(response?.menus)) return response.menus;
   const firstRow = Array.isArray(response?.rows) ? response.rows[0] : null;
   return Array.isArray(firstRow?.menus) ? firstRow.menus : [];
-}
-
-function getUserCoords() {
-  return new Promise((resolve) => {
-    if (typeof window === "undefined" || !navigator?.geolocation) {
-      resolve({ lat: null, lng: null });
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = Number(position?.coords?.latitude);
-        const lng = Number(position?.coords?.longitude);
-        resolve(
-          Number.isFinite(lat) && Number.isFinite(lng)
-            ? { lat, lng }
-            : { lat: null, lng: null }
-        );
-      },
-      () => resolve({ lat: null, lng: null }),
-      { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
-    );
-  });
 }
 
 function readErrorMessage(error) {
@@ -46,7 +29,7 @@ export default function useMenuCatalogSequence({
   urlState = "",
   index = 0,
 }) {
-  const hasCityStateParams = Boolean(urlCity);
+  const autoLocation = useDiscoveryAutoLocation();
   const [entries, setEntries] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [browseOffset, setBrowseOffset] = useState(0);
@@ -54,40 +37,42 @@ export default function useMenuCatalogSequence({
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
-  const [locationLabel, setLocationLabel] = useState(() => [urlCity, urlState].filter(Boolean).join(", "));
   const requestRef = useRef(0);
-  const radiusMiles = hasCityStateParams ? null : 10;
+
+  const appliedLocation = useMemo(() => readMenuCatalogAppliedLocation(), [section, urlCity, urlState]);
 
   const scopeKey = useMemo(
-    () => `${hasCityStateParams ? `${urlCity}|${urlState}` : "geo"}::${section}`,
-    [hasCityStateParams, urlCity, urlState, section]
+    () => [
+      urlCity || autoLocation.city || appliedLocation || "pending",
+      urlState || autoLocation.state || "",
+      autoLocation.lat ?? "",
+      autoLocation.lng ?? "",
+      autoLocation.status,
+      section,
+    ].join("::"),
+    [appliedLocation, autoLocation.city, autoLocation.lat, autoLocation.lng, autoLocation.state, autoLocation.status, section, urlCity, urlState]
   );
 
-  const buildApiParams = useCallback(async (loadMoreOffset = 0) => {
-    const coords = await getUserCoords();
-    const hasCoords = coords.lat !== null && coords.lng !== null;
+  const locationLabel = useMemo(
+    () => menuCatalogLocationLabel({
+      urlCity,
+      urlState,
+      appliedLocation,
+      autoLocation,
+    }),
+    [appliedLocation, autoLocation, urlCity, urlState]
+  );
 
-    if (!hasCityStateParams && hasCoords) {
-      reverseGeocode(coords.lat, coords.lng)
-        .then((geo) => {
-          if (geo?.label) setLocationLabel(geo.label);
-        })
-        .catch(() => {});
-    } else if (hasCityStateParams) {
-      setLocationLabel([urlCity, urlState].filter(Boolean).join(", "));
-    }
-
-    return {
-      ...buildBrowseLocationParams(
-        hasCityStateParams
-          ? { urlCity, urlState, coords: hasCoords ? coords : null, radiusMiles }
-          : { coords: hasCoords ? coords : null, radiusMiles }
-      ),
-      limit: PAGE_SIZE,
-      offset: loadMoreOffset,
-      browse_section: section,
-    };
-  }, [hasCityStateParams, radiusMiles, section, urlCity, urlState]);
+  const buildApiParams = useCallback((loadMoreOffset = 0) => {
+    return buildMenuCatalogBrowseParams({
+      urlCity,
+      urlState,
+      appliedLocation,
+      autoLocation,
+      loadMoreOffset,
+      section,
+    });
+  }, [appliedLocation, autoLocation, section, urlCity, urlState]);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,8 +89,10 @@ export default function useMenuCatalogSequence({
       setTotalCount(0);
 
       try {
-        const apiParams = await buildApiParams(0);
+        const apiParams = buildApiParams(0);
+        if (!apiParams) return;
         if (cancelled) return;
+
         const response = await getBrowseMenus(apiParams, { signal: controller.signal });
         if (cancelled || requestId !== requestRef.current) return;
 
@@ -137,7 +124,8 @@ export default function useMenuCatalogSequence({
     setLoadingMore(true);
     const requestId = requestRef.current;
     try {
-      const apiParams = await buildApiParams(browseOffset);
+      const apiParams = buildApiParams(browseOffset);
+      if (!apiParams) return false;
       const response = await getBrowseMenus(apiParams);
       if (requestId !== requestRef.current) return false;
       const more = dedupeDiscoveryMenus(extractMenus(response));
@@ -160,7 +148,6 @@ export default function useMenuCatalogSequence({
   const currentEntry = activeIndex < entries.length ? entries[activeIndex] : null;
   const waitingForPage = entries.length > 0 && activeIndex >= entries.length && (hasMore || loadingMore);
 
-  // Prefetch next page when browsing near the end of the loaded batch.
   useEffect(() => {
     if (!entries.length || loading || loadingMore || !hasMore) return;
     if (activeIndex >= entries.length - 2) {
@@ -168,7 +155,6 @@ export default function useMenuCatalogSequence({
     }
   }, [activeIndex, entries.length, hasMore, loadMore, loading, loadingMore]);
 
-  // If user navigated past the last available menu, load until index is reachable.
   useEffect(() => {
     if (!waitingForPage || loadingMore) return;
     loadMore();
@@ -196,5 +182,6 @@ export default function useMenuCatalogSequence({
     waitingForPage,
     clampToIndex,
     isEmpty: !loading && entries.length === 0,
+    locationPending: !buildApiParams(0),
   };
 }

@@ -71,7 +71,6 @@ export default function BrowseMenus() {
   const [locationParams, setLocationParams] = useState({ city: urlCity || null, state: urlState || null });
   const [introMinElapsed, setIntroMinElapsed] = useState(false);
   const [menuLoadStatus, setMenuLoadStatus] = useState("idle");
-  const [bootComplete, setBootComplete] = useState(false);
   const swipeRef = useRef({ startX: 0, startY: 0 });
 
   const {
@@ -86,6 +85,7 @@ export default function BrowseMenus() {
     waitingForPage,
     clampToIndex,
     isEmpty,
+    locationPending,
   } = useMenuCatalogSequence({
     section: activeSection,
     urlCity,
@@ -191,7 +191,7 @@ export default function BrowseMenus() {
 
   useEffect(() => {
     setMenuLoadStatus("idle");
-  }, [currentEntry?.restaurant_id, activeIndex]);
+  }, [currentEntry?.restaurant_id, activeIndex, activeSection]);
 
   const handleMenuLoadStateChange = useCallback((status) => {
     setMenuLoadStatus(status);
@@ -200,33 +200,20 @@ export default function BrowseMenus() {
   const loadTarget = useMemo(
     () =>
       computeMenuBrowserLoadTarget({
-        loading,
+        loading: loading || locationPending,
         currentEntry,
         menuStatus: menuLoadStatus,
         isEmpty,
         error,
       }),
-    [loading, currentEntry, menuLoadStatus, isEmpty, error]
+    [loading, locationPending, currentEntry, menuLoadStatus, isEmpty, error]
   );
 
-  const introProgress = useSmoothedProgress(loadTarget, !bootComplete);
-
-  const firstMenuReady = useMemo(() => {
-    if (error) return introMinElapsed;
-    if (isEmpty && !loading) return true;
-    if (!currentEntry) return false;
-    return menuLoadStatus === "ok" || menuLoadStatus === "error";
-  }, [error, isEmpty, loading, currentEntry, menuLoadStatus, introMinElapsed]);
-
-  useEffect(() => {
-    if (introMinElapsed && firstMenuReady) {
-      setBootComplete(true);
-    }
-  }, [introMinElapsed, firstMenuReady]);
-
-  const showIntro = !bootComplete;
-  const showMenuLoading =
-    bootComplete && ((loading && !currentEntry) || waitingForPage || (loadingMore && !currentEntry));
+  const listPending = loading || locationPending || waitingForPage || (loadingMore && !currentEntry);
+  const menuPending = currentEntry && (menuLoadStatus === "idle" || menuLoadStatus === "loading");
+  const initialHold = !introMinElapsed;
+  const showSplash = initialHold || listPending || menuPending;
+  const introProgress = useSmoothedProgress(loadTarget, showSplash);
 
   const browseShellStyle = {
     flex: 1,
@@ -272,15 +259,9 @@ export default function BrowseMenus() {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-        <MenuCatalogIntroSplash visible={showIntro} progress={introProgress} />
+        <MenuCatalogIntroSplash visible={showSplash} progress={introProgress} />
 
-        {showMenuLoading ? (
-          <div style={{ padding: 24, fontSize: 14, fontWeight: 600, color: "#667085" }}>
-            {t("menuCatalog.loadingMenu", "Loading menu…")}
-          </div>
-        ) : null}
-
-        {error && !showIntro ? (
+        {error && !showSplash ? (
           <div style={{ padding: 24 }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
               {t("menuCatalog.loadError", "Couldn't load menus")}
@@ -289,7 +270,7 @@ export default function BrowseMenus() {
           </div>
         ) : null}
 
-        {isEmpty && !loading && !showIntro ? (
+        {isEmpty && !loading && !showSplash ? (
           <div style={{ padding: 24 }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
               {t("menuBrowser.emptyTitle", "No menus in this category yet")}
@@ -308,10 +289,10 @@ export default function BrowseMenus() {
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
-              visibility: showIntro ? "hidden" : "visible",
-              pointerEvents: showIntro ? "none" : "auto",
+              visibility: showSplash ? "hidden" : "visible",
+              pointerEvents: showSplash ? "none" : "auto",
             }}
-            aria-hidden={showIntro}
+            aria-hidden={showSplash}
           >
             <CatalogMenuRenderer
               key={`${activeSection}-${currentEntry.restaurant_id}-${activeIndex}`}

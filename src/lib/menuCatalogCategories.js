@@ -23,7 +23,7 @@ export const MENU_CATALOG_SIDEBAR = MENU_CATALOG_TABS;
 export const MENU_CATALOG_DEFAULT_SECTION = "nearby";
 
 /** Official Yellow Browser splash artwork at public/menu-browser-logo.png */
-export const MENU_BROWSER_INTRO_LOGO_SRC = "/menu-browser-logo.png";
+export const MENU_BROWSER_INTRO_LOGO_SRC = "/menu-browser-logo.png?v=20260702";
 
 /** Minimum intro splash duration (ms). */
 export const MENU_BROWSER_INTRO_MIN_MS = 4000;
