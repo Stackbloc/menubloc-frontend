@@ -1,6 +1,6 @@
 import React from "react";
 
-/** Open book — logo book shape only; inherits nav tab color. */
+/** Open book outline — white spine gap in the middle, no solid fill. */
 export default function BrowseMenusIcon({
   size = 22,
   title,
@@ -12,6 +12,8 @@ export default function BrowseMenusIcon({
   const ariaProps = title
     ? { role: "img", "aria-label": title }
     : { "aria-hidden": true };
+
+  const strokeW = active ? 1.65 : 1.5;
 
   return (
     <svg
@@ -25,37 +27,32 @@ export default function BrowseMenusIcon({
       {...ariaProps}
       {...props}
     >
-      {/* Page stack hints — like the logo */}
+      {/* Pages fan open at top */}
       <path
-        d="M5.5 7.2v9.8M6.4 6.7v10.8M7.3 6.2v11.8"
+        d="M6.6 5.6L12 4.5L17.4 5.6"
+        fill="none"
         stroke="currentColor"
-        strokeWidth="1"
+        strokeWidth={strokeW}
         strokeLinecap="round"
-        opacity={active ? 0.35 : 0.22}
+        strokeLinejoin="round"
       />
+      {/* Left page — open toward center spine */}
       <path
-        d="M18.5 7.2v9.8M17.6 6.7v10.8M16.7 6.2v11.8"
+        d="M5.6 18V6.8L6.6 5.6L11 5.6V18"
+        fill="none"
         stroke="currentColor"
-        strokeWidth="1"
+        strokeWidth={strokeW}
         strokeLinecap="round"
-        opacity={active ? 0.35 : 0.22}
+        strokeLinejoin="round"
       />
-
-      {/* Open book spread */}
+      {/* Right page */}
       <path
-        d="M6.2 5.4C5.5 5.4 5 5.9 5 6.6v11.2c0 .7.6 1.2 1.2 1.2H11.8V5.4H6.2Z"
-        fill="currentColor"
-      />
-      <path
-        d="M17.8 5.4c.7 0 1.2.5 1.2 1.2v11.2c0 .7-.5 1.2-1.2 1.2H12.2V5.4h5.6Z"
-        fill="currentColor"
-      />
-      <path
-        d="M12 5.1v14.3"
+        d="M18.4 18V6.8L17.4 5.6L13 5.6V18"
+        fill="none"
         stroke="currentColor"
-        strokeWidth={active ? 1.1 : 0.9}
+        strokeWidth={strokeW}
         strokeLinecap="round"
-        opacity="0.55"
+        strokeLinejoin="round"
       />
     </svg>
   );

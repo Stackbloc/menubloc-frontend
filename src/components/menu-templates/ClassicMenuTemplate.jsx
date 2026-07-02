@@ -8,6 +8,7 @@ import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettin
 import { useIsTabletRange, getRestaurantInitials } from "./menuPresentationUtils.js";
 import MapPinIcon from "./MapPinIcon.jsx";
 import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
+import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 const INK = "#1D1D1F";
@@ -155,7 +156,11 @@ export default function ClassicMenuTemplate(ctx) {
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", gap: 16, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
-          {showLogo && <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />}
+          {showLogo ? (
+            <RestaurantProfileLogoLink profileHref={restaurantProfileHref} restaurantName={restaurantName}>
+              <RestaurantLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} />
+            </RestaurantProfileLogoLink>
+          ) : null}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "nowrap" }}>
               <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
@@ -176,6 +181,7 @@ export default function ClassicMenuTemplate(ctx) {
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
+                      cursor: "pointer",
                     }}
                   >
                     {restaurantName}
@@ -226,22 +232,35 @@ export default function ClassicMenuTemplate(ctx) {
             </div>
 
             {addressLine ? (
-              <div style={{ fontSize: 14, color: SUBTLE, fontWeight: 400, marginTop: 7, display: "flex", alignItems: "flex-start", gap: 5 }}>
-                <MapPinIcon size={13} stroke={SUBTLE} />
-                {directionsHref ? (
-                  <a
-                    href={directionsHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`Get directions to ${restaurantName}`}
-                    style={{ color: "inherit", textDecoration: "none" }}
-                  >
+              directionsHref ? (
+                <a
+                  href={directionsHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Get directions to ${restaurantName}`}
+                  style={{
+                    fontSize: 14,
+                    color: SUBTLE,
+                    fontWeight: 400,
+                    marginTop: 7,
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 5,
+                    textDecoration: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  <MapPinIcon size={13} stroke={SUBTLE} />
+                  <span>
                     {addressLine1}{addressLine2 ? `, ${addressLine2}` : ""}
-                  </a>
-                ) : (
+                  </span>
+                </a>
+              ) : (
+                <div style={{ fontSize: 14, color: SUBTLE, fontWeight: 400, marginTop: 7, display: "flex", alignItems: "flex-start", gap: 5 }}>
+                  <MapPinIcon size={13} stroke={SUBTLE} />
                   <span>{addressLine1}{addressLine2 ? `, ${addressLine2}` : ""}</span>
-                )}
-              </div>
+                </div>
+              )
             ) : null}
 
             {showDistanceBelowAddress ? (

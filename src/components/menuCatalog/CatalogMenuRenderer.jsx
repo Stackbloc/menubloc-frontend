@@ -19,10 +19,11 @@ import {
   asFiniteNumber,
   asStr,
   buildAddressLocalityLine,
-  buildGoogleMapsDirectionsUrl,
+  buildGoogleMapsUrlForRestaurant,
   getCartItemState,
   getFilteredDisplaySections,
   isFoodTruckCategory,
+  resolveRestaurantProfileHref,
   normalizeSections,
 } from "../../lib/catalogMenuUtils.js";
 
@@ -334,18 +335,26 @@ export default function CatalogMenuRenderer({
     isFoodTruckCategory(data?.category) ||
     isFoodTruckCategory(data?.restaurant_category) ||
     isFoodTruckCategory(data?.type);
-  const restaurantProfileTarget = asStr(data?.slug || data?.restaurant_id || restaurantId).trim();
-  const restaurantProfileHref = restaurantProfileTarget
-    ? {
-        pathname: `${isFoodTruck ? "/foodtrucks" : "/restaurants"}/${encodeURIComponent(restaurantProfileTarget)}`,
-        search: "",
-      }
-    : null;
+  const restaurantProfileHref = resolveRestaurantProfileHref({
+    data,
+    entry,
+    restaurantId,
+    isFoodTruck,
+  });
 
   const addressLine1 = asStr(data?.address_line1 || data?.address).trim();
   const addressLine2 = buildAddressLocalityLine(data?.city, data?.state, data?.zip);
   const addressLine = asStr(data?.address_line).trim() || [addressLine1, addressLine2].filter(Boolean).join(", ");
-  const directionsHref = buildGoogleMapsDirectionsUrl(addressLine);
+  const directionsHref = buildGoogleMapsUrlForRestaurant({
+    addressLine,
+    addressLine1,
+    addressLine2,
+    city: data?.city,
+    state: data?.state,
+    zip: data?.zip,
+    lat: data?.lat ?? entry?.lat,
+    lng: data?.lng ?? entry?.lng,
+  });
   const distanceMiles = useMemo(() => {
     const fromEntry = asFiniteNumber(entry?.distance_miles ?? entry?.restaurant_distance_miles);
     if (fromEntry != null) return fromEntry;
