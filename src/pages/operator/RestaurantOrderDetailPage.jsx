@@ -173,6 +173,11 @@ export default function RestaurantOrderDetailPage() {
                       <div style={{ marginTop: 4, fontSize: 12, color: "#5b6675" }}>
                         Qty {item.quantity} • {formatMoney(item.price_cents)} each
                       </div>
+                      {item.preparation_instructions || item.special_instructions ? (
+                        <div style={{ marginTop: 4, fontSize: 12, color: "#dc7f2b", fontStyle: "italic" }}>
+                          Prep: {item.preparation_instructions || item.special_instructions}
+                        </div>
+                      ) : null}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 800, color: "#0f1720" }}>
                       {formatMoney(item.line_total_cents)}

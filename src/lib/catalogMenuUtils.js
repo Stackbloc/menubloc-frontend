@@ -135,7 +135,7 @@ export function getCartItemState(cartItems, menuItemId) {
   const simpleLine = matchingLines.find(
     (line) =>
       (!Array.isArray(line?.modifiers) || line.modifiers.length === 0) &&
-      !asStr(line?.specialInstructions).trim()
+      !asStr(line?.preparationInstructions || line?.specialInstructions).trim()
   ) || null;
 
   return {

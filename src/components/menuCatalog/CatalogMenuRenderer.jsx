@@ -429,7 +429,7 @@ export default function CatalogMenuRenderer({
     return m;
   }, [pageState.data]);
 
-  function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = [], specialInstructions = null) {
+  function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = [], preparationInstructions = null) {
     return addMenuItem({
       restaurant: cartRestaurant,
       item: {
@@ -439,7 +439,7 @@ export default function CatalogMenuRenderer({
         basePriceCents: getConsumerDisplayPrice(item) ?? 0,
         originalBasePriceCents: getBaseMenuPrice(item) ?? getConsumerDisplayPrice(item) ?? 0,
         modifiers,
-        specialInstructions: specialInstructions || null,
+        preparationInstructions: preparationInstructions || null,
       },
     });
   }
@@ -637,14 +637,14 @@ export default function CatalogMenuRenderer({
         item={modifierItem}
         initialSpecialInstructions={modifierInitialInstructions}
         onClose={() => { setModifierItem(null); setModifierInitialInstructions(""); }}
-        onConfirm={(modifiers, specialInstructions) => {
+        onConfirm={(modifiers, preparationInstructions) => {
           if (!modifierItem) return;
           commitMenuItemToBasket(
             modifierItem,
             modifierItem.name,
             modifierItem.description,
             modifiers,
-            specialInstructions
+            preparationInstructions
           );
           setModifierItem(null);
           setModifierInitialInstructions("");
@@ -656,8 +656,8 @@ export default function CatalogMenuRenderer({
         item={smartSheetItem}
         foodsToAvoid={foodsToAvoid}
         onClose={() => setSmartSheetItem(null)}
-        onAddToCart={(item, specialInstructions) => {
-          commitMenuItemToBasket(item, item.name, item.description, [], specialInstructions);
+        onAddToCart={(item, preparationInstructions) => {
+          commitMenuItemToBasket(item, item.name, item.description, [], preparationInstructions);
           setSmartSheetItem(null);
         }}
         onCustomize={(item, initialInstructions) => {

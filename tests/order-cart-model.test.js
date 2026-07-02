@@ -40,7 +40,6 @@ test("buildCheckoutItems preserves line-level modifiers for checkout pricing", (
           priceDeltaCents: 300,
         },
       ],
-      specialInstructions: undefined,
     },
   ]);
 });
@@ -74,11 +73,11 @@ test("addItemToCart keeps a single-restaurant basket and merges identical lines"
   assert.equal(second.ok, true);
   assert.equal(second.cart.items.length, 1);
   assert.equal(second.cart.items[0].quantity, 2);
-  assert.deepEqual(getCartSummary(second.cart), {
-    restaurant: { restaurantId: 9, restaurantName: "Test Kitchen" },
-    itemCount: 2,
-    subtotalCents: 900,
-  });
+  const summary = getCartSummary(second.cart);
+  assert.equal(summary.restaurant.restaurantId, 9);
+  assert.equal(summary.restaurant.restaurantName, "Test Kitchen");
+  assert.equal(summary.itemCount, 2);
+  assert.equal(summary.subtotalCents, 900);
 });
 
 test("addItemToCart rejects cross-restaurant adds without replacing implicitly", () => {

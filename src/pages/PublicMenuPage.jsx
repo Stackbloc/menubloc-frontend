@@ -143,7 +143,7 @@ function getCartItemState(cartItems, menuItemId) {
   const simpleLine = matchingLines.find(
     (line) =>
       (!Array.isArray(line?.modifiers) || line.modifiers.length === 0) &&
-      !asStr(line?.specialInstructions).trim()
+      !asStr(line?.preparationInstructions || line?.specialInstructions).trim()
   ) || null;
 
   return {
@@ -1271,7 +1271,7 @@ export default function PublicMenuPage() {
   }
 
 
-  function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = [], specialInstructions = null) {
+  function commitMenuItemToBasket(item, itemName, itemDescription, modifiers = [], preparationInstructions = null) {
     return addMenuItem({
       restaurant: cartRestaurant,
       item: {
@@ -1281,7 +1281,7 @@ export default function PublicMenuPage() {
         basePriceCents: getConsumerDisplayPrice(item) ?? 0,
         originalBasePriceCents: getBaseMenuPrice(item) ?? getConsumerDisplayPrice(item) ?? 0,
         modifiers,
-        specialInstructions: specialInstructions || null,
+        preparationInstructions: preparationInstructions || null,
       },
     });
   }
@@ -1494,14 +1494,14 @@ export default function PublicMenuPage() {
         item={modifierItem}
         initialSpecialInstructions={modifierInitialInstructions}
         onClose={() => { setModifierItem(null); setModifierInitialInstructions(""); }}
-        onConfirm={(modifiers, specialInstructions) => {
+        onConfirm={(modifiers, preparationInstructions) => {
           if (!modifierItem) return;
           commitMenuItemToBasket(
             modifierItem,
             modifierItem.name,
             modifierItem.description,
             modifiers,
-            specialInstructions
+            preparationInstructions
           );
           setModifierItem(null);
           setModifierInitialInstructions("");
@@ -1513,8 +1513,8 @@ export default function PublicMenuPage() {
         item={smartSheetItem}
         foodsToAvoid={foodsToAvoid}
         onClose={() => setSmartSheetItem(null)}
-        onAddToCart={(item, specialInstructions) => {
-          commitMenuItemToBasket(item, item.name, item.description, [], specialInstructions);
+        onAddToCart={(item, preparationInstructions) => {
+          commitMenuItemToBasket(item, item.name, item.description, [], preparationInstructions);
           setSmartSheetItem(null);
         }}
         onCustomize={(item, initialInstructions) => {

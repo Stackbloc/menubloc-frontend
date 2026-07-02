@@ -101,7 +101,12 @@ export function normalizeCartLine(line) {
     description: String(line?.description ?? "").trim(),
     quantity: toPositiveInteger(line?.quantity, 1),
     modifiers: Array.isArray(line?.modifiers) ? line.modifiers : [],
-    specialInstructions: line?.specialInstructions ?? line?.special_instructions ?? null,
+    preparationInstructions:
+      line?.preparationInstructions ??
+      line?.preparation_instructions ??
+      line?.specialInstructions ??
+      line?.special_instructions ??
+      null,
     basePriceCents: toInteger(
       line?.basePriceCents ?? line?.base_price_cents ?? line?.priceCents ?? line?.price_cents,
       0
@@ -177,7 +182,7 @@ export function buildLineIdentity(line) {
   return [
     toInteger(line?.menuItemId, 0),
     buildModifierIdentity(line?.modifiers),
-    String(line?.specialInstructions ?? "").trim(),
+    String(line?.preparationInstructions ?? line?.specialInstructions ?? "").trim(),
   ].join("::");
 }
 
@@ -216,7 +221,11 @@ export function createCartLine({ restaurant, item }) {
     pricingLabel: item?.pricingLabel ?? item?.pricing_label ?? "",
     quantity: item?.quantity,
     modifiers: item?.modifiers,
-    specialInstructions: item?.specialInstructions ?? null,
+    preparationInstructions:
+      item?.preparationInstructions ??
+      item?.preparation_instructions ??
+      item?.specialInstructions ??
+      null,
   });
 }
 
@@ -329,6 +338,11 @@ export function buildCheckoutItems(cartItems) {
         name: modifier.name,
         priceDeltaCents: modifier.priceDeltaCents,
       })),
-      specialInstructions: item.specialInstructions || undefined,
+      ...(item.preparationInstructions
+        ? {
+            preparationInstructions: item.preparationInstructions,
+            specialInstructions: item.preparationInstructions,
+          }
+        : {}),
     }));
 }

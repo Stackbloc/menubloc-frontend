@@ -1129,6 +1129,11 @@ export default function CheckoutPage() {
                           ))}
                         </div>
                       ) : null}
+                      {item.preparationInstructions ? (
+                        <div style={{ marginTop: 6, fontSize: 12, color: "#9CA3AF", fontStyle: "italic" }}>
+                          Prep: {item.preparationInstructions}
+                        </div>
+                      ) : null}
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 900 }}>
                       {formatMoney(item.lineTotalCents)}

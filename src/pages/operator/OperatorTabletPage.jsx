@@ -243,7 +243,7 @@ function PrintTicket({ order, restaurantName }) {
       {(order.items || []).map((item, index) => (
         <div key={item.id || index} className="ot-ticket-item">
           <div><strong>{item.quantity} x {item.name_snapshot}</strong></div>
-          {item.special_instructions ? <div>* {item.special_instructions}</div> : null}
+          {item.preparation_instructions || item.special_instructions ? <div>* Prep: {item.preparation_instructions || item.special_instructions}</div> : null}
           <div className="ot-ticket-price">{currency(item.line_total_cents, order.currency)}</div>
         </div>
       ))}
@@ -367,7 +367,7 @@ function OrderItems({ order }) {
             {Array.isArray(item.modifiers) && item.modifiers.length > 0 ? (
               <span>{item.modifiers.map((modifier) => modifier.name).join(", ")}</span>
             ) : null}
-            {item.special_instructions ? <em>{item.special_instructions}</em> : null}
+            {item.preparation_instructions || item.special_instructions ? <em>Prep: {item.preparation_instructions || item.special_instructions}</em> : null}
           </div>
           <b>{currency(item.line_total_cents, order.currency)}</b>
         </div>

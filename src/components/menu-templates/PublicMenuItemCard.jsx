@@ -83,7 +83,7 @@ function getCartItemStateForItem(cartItems, menuItemId) {
     matchingLines.find(
       (line) =>
         (!Array.isArray(line?.modifiers) || line.modifiers.length === 0) &&
-        !String(line?.specialInstructions || "").trim()
+        !String(line?.preparationInstructions || line?.specialInstructions || "").trim()
     ) || null;
 
   return {

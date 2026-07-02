@@ -81,6 +81,11 @@ export default function AdminOrderDetailPage() {
                     <div style={{ marginTop: 4, fontSize: 12, color: "#64748b" }}>
                       Qty {item.quantity} • {formatMoney(item.price_cents)} each
                     </div>
+                    {item.preparation_instructions || item.special_instructions ? (
+                      <div style={{ marginTop: 4, fontSize: 12, color: "#dc7f2b", fontStyle: "italic" }}>
+                        Prep: {item.preparation_instructions || item.special_instructions}
+                      </div>
+                    ) : null}
                   </div>
                   <div style={{ fontWeight: 800 }}>{formatMoney(item.line_total_cents)}</div>
                 </div>

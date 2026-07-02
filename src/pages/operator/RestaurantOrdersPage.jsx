@@ -202,9 +202,9 @@ function ItemList({ items }) {
               {item.modifiers.map((m) => m.name).join(", ")}
             </div>
           )}
-          {item.special_instructions && (
+          {(item.preparation_instructions || item.special_instructions) && (
             <div style={{ marginTop: 4, fontSize: 12, color: "#dc7f2b", fontStyle: "italic" }}>
-              Note: {item.special_instructions}
+              Prep: {item.preparation_instructions || item.special_instructions}
             </div>
           )}
         </div>
@@ -280,8 +280,8 @@ function PrintTicket({ order }) {
           {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
             <div style={{ paddingLeft: 12, fontSize: 12 }}>+ {item.modifiers.map((m) => m.name).join(", ")}</div>
           )}
-          {item.special_instructions && (
-            <div style={{ paddingLeft: 12, fontSize: 12 }}>* {item.special_instructions}</div>
+          {(item.preparation_instructions || item.special_instructions) && (
+            <div style={{ paddingLeft: 12, fontSize: 12 }}>* Prep: {item.preparation_instructions || item.special_instructions}</div>
           )}
           <div style={{ textAlign: "right" }}>{fmt$(item.line_total_cents)}</div>
         </div>

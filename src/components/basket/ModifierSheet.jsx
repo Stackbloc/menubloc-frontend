@@ -226,14 +226,14 @@ export default function ModifierSheet({ item, open, onClose, onConfirm, initialS
             <label
               style={{ display: "block", fontSize: 12, fontWeight: 800, color: "#475467", marginBottom: 6 }}
             >
-              {t("modifier.specialInstructions", "Special instructions")}
+              {t("modifier.preparationInstructions", "Preparation instructions")}
             </label>
             <textarea
               value={specialInstructions}
               onChange={(e) => setSpecialInstructions(e.target.value)}
               maxLength={280}
               rows={2}
-              placeholder={t("modifier.specialInstructionsPlaceholder", "Example: no onions, sauce on side, light mayo")}
+              placeholder={t("modifier.preparationInstructionsPlaceholder", "Example: medium rare, sauce on the side, no onions")}
               style={{
                 width: "100%",
                 boxSizing: "border-box",
