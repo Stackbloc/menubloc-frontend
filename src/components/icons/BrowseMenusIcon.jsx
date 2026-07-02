@@ -1,6 +1,6 @@
 import React from "react";
 
-/** Open book outline — white spine gap in the middle, no solid fill. */
+/** Three vertical lines — nod to Yellow Browser menu marks. */
 export default function BrowseMenusIcon({
   size = 22,
   title,
@@ -13,7 +13,8 @@ export default function BrowseMenusIcon({
     ? { role: "img", "aria-label": title }
     : { "aria-hidden": true };
 
-  const strokeW = active ? 1.65 : 1.5;
+  const ink = "#1a1a1a";
+  const strokeW = active ? 2.2 : 2;
 
   return (
     <svg
@@ -23,37 +24,13 @@ export default function BrowseMenusIcon({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      style={{ display: "block", flexShrink: 0, color: "currentColor", ...style }}
+      style={{ display: "block", flexShrink: 0, ...style }}
       {...ariaProps}
       {...props}
     >
-      {/* Pages fan open at top */}
-      <path
-        d="M6.6 5.6L12 4.5L17.4 5.6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={strokeW}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Left page — open toward center spine */}
-      <path
-        d="M5.6 18V6.8L6.6 5.6L11 5.6V18"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={strokeW}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Right page */}
-      <path
-        d="M18.4 18V6.8L17.4 5.6L13 5.6V18"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={strokeW}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <line x1="8" y1="6.5" x2="8" y2="17.5" stroke={ink} strokeWidth={strokeW} strokeLinecap="round" />
+      <line x1="12" y1="5.5" x2="12" y2="18.5" stroke={ink} strokeWidth={strokeW} strokeLinecap="round" />
+      <line x1="16" y1="7" x2="16" y2="17" stroke={ink} strokeWidth={strokeW} strokeLinecap="round" />
     </svg>
   );
 }
