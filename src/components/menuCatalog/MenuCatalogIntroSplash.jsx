@@ -66,6 +66,7 @@ export default function MenuCatalogIntroSplash({
               display: "block",
               width: "min(92vw, 440px)",
               maxWidth: "100%",
+              maxHeight: "52vh",
               height: "auto",
               objectFit: "contain",
               margin: "0 auto",
@@ -118,7 +119,7 @@ export default function MenuCatalogIntroSplash({
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              marginTop: "clamp(18px, 4.5vw, 32px)",
+              marginTop: "clamp(12px, 3vw, 22px)",
               width: "100%",
             }}
           >
