@@ -1,4 +1,5 @@
 import ShareButton from "../share/ShareButton.jsx";
+import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
@@ -386,26 +387,34 @@ export default function PublicMenuItemCard({
                 >
                   {name}
                 </span>
-                {shareInlineExperiment && dishShareData ? (
-                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
-                    <ShareButton
-                      variant="dish"
-                      iconOnly={true}
-                      tone="inline"
-                      shareData={dishShareData}
-                      analyticsContext={{
-                        restaurantId: currentRestaurantId,
-                        restaurantSlug: data?.slug || null,
-                        menuItemId: it.id,
-                        menuItemName: name,
-                        pageType: "public_menu",
-                        shareTarget: "dish",
-                      }}
-                    />
+                {shareInlineExperiment && canNavigate ? (
+                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
+                    <LikeMenuItemButton menuItemId={it.id} tone="inline" />
+                    {dishShareData ? (
+                      <ShareButton
+                        variant="dish"
+                        iconOnly={true}
+                        tone="inline"
+                        shareData={dishShareData}
+                        analyticsContext={{
+                          restaurantId: currentRestaurantId,
+                          restaurantSlug: data?.slug || null,
+                          menuItemId: it.id,
+                          menuItemName: name,
+                          pageType: "public_menu",
+                          shareTarget: "dish",
+                        }}
+                      />
+                    ) : null}
                   </div>
                 ) : null}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, marginLeft: shareInlineExperiment ? "auto" : undefined }}>
+                {!shareInlineExperiment && canNavigate ? (
+                  <div style={{ width: 28, display: "flex", justifyContent: "center", flexShrink: 0 }}>
+                    <LikeMenuItemButton menuItemId={it.id} tone="inline" />
+                  </div>
+                ) : null}
                 {!shareInlineExperiment ? (
                   <div style={{ width: 28, display: "flex", justifyContent: "center", flexShrink: 0 }}>
                     {dishShareData ? (
@@ -463,6 +472,9 @@ export default function PublicMenuItemCard({
                 {name}
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                {canNavigate ? (
+                  <LikeMenuItemButton menuItemId={it.id} tone="ghost" />
+                ) : null}
                 {dishShareData ? (
                   <div onClick={(e) => e.stopPropagation()}>
                     <ShareButton
@@ -504,6 +516,11 @@ export default function PublicMenuItemCard({
                 >
                   {name}
                 </span>
+                {canNavigate ? (
+                  <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0 }}>
+                    <LikeMenuItemButton menuItemId={it.id} tone="ghost" />
+                  </div>
+                ) : null}
                 {dishShareData ? (
                   <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0, whiteSpace: "nowrap" }}>
                     <ShareButton

@@ -51,8 +51,11 @@ export function normalizeMenuStyle(raw) {
  * First letters of the first two words; for a single-word name, the first
  * two letters of that word.
  */
+const LEADING_ARTICLE_RE = /^(the|a|an)\s+/i;
+
 export function getRestaurantInitials(name) {
-  const words = String(name || "").trim().split(/\s+/).filter(Boolean);
+  const cleaned = String(name || "").trim().replace(LEADING_ARTICLE_RE, "");
+  const words = cleaned.split(/\s+/).filter(Boolean);
   if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return "";

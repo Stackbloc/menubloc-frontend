@@ -1304,7 +1304,6 @@ function ItemRow({
         {dishShareData ? (
           <ShareButton
             variant="dish"
-            label="Share"
             modalTitle={`Share ${name}`}
             shareData={dishShareData}
             analyticsContext={{
@@ -1317,6 +1316,7 @@ function ItemRow({
             }}
             size="compact"
             tone="subtle"
+            iconOnly
             stopPropagation
           />
         ) : null}
@@ -1336,92 +1336,75 @@ function ItemRow({
         </div>
       ) : null}
 
-      {/* 2. Restaurant name */}
-      {!venueRenderedAbove && restDisplayName ? (
-        <div style={{ marginTop: 6 }}>
-          {restHref ? (
-            <Link
-              to={restHref}
-              style={{
-                fontSize: "var(--text-2, 14px)",
-                fontWeight: 700,
-                color: "#9CA3AF",
-                textDecoration: "none",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#22C55E";
-                e.currentTarget.style.textDecoration = "underline";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#9CA3AF";
-                e.currentTarget.style.textDecoration = "none";
-              }}
-            >
-              {restDisplayName}
-            </Link>
-          ) : (
-            <span style={{ fontSize: "var(--text-2, 14px)", fontWeight: 700, color: "#9CA3AF" }}>
-              {restDisplayName}
-            </span>
-          )}
-        </div>
-      ) : null}
-
-      {/* 3. Price / distance / locale / cuisine / deal */}
-      {!venueRenderedAbove && factsLine ? (
+      {/* 2. Restaurant name + facts + diet badges — one merged line */}
+      {!venueRenderedAbove && (restDisplayName || factsLine || popular || isGF || isVegan) ? (
         <div
           style={{
             marginTop: 6,
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "4px 8px",
             fontSize: 13,
             fontWeight: 600,
             color: "#9CA3AF",
             lineHeight: 1.45,
-            overflowWrap: "anywhere",
           }}
         >
-          {factsLine}
+          {restDisplayName ? (
+            restHref ? (
+              <Link
+                to={restHref}
+                style={{ fontWeight: 700, color: "#9CA3AF", textDecoration: "none" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#22C55E";
+                  e.currentTarget.style.textDecoration = "underline";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#9CA3AF";
+                  e.currentTarget.style.textDecoration = "none";
+                }}
+              >
+                {restDisplayName}
+              </Link>
+            ) : (
+              <span style={{ fontWeight: 700 }}>{restDisplayName}</span>
+            )
+          ) : null}
+          {restDisplayName && factsLine ? <span aria-hidden="true">·</span> : null}
+          {factsLine ? <span style={{ overflowWrap: "anywhere" }}>{factsLine}</span> : null}
+          {popular && <DietBadge label="★ Popular" tone="popular" />}
+          {isGF && <DietBadge label="GF" tone="gf" />}
+          {isVegan && <DietBadge label="🌿 Vegan" tone="vegan" />}
         </div>
       ) : null}
 
-      {/* 4. Why it matched */}
-      {matchLineText ? (
+      {/* 3. Why it matched — active refinement takes priority over the generic match label */}
+      {(refinementMatchLabel || matchLineText) ? (
         <div
           style={{
-            marginTop: 8,
+            marginTop: 6,
             fontSize: "13px",
-            lineHeight: 1.55,
-            color: "#C0C8D5",
-            fontWeight: 650,
+            lineHeight: 1.5,
+            fontWeight: 700,
             overflowWrap: "anywhere",
           }}
         >
           <span style={{ color: "#22C55E", fontWeight: 800 }}>{MATCH_LABEL} </span>
-          <span>{matchLineText}</span>
+          <span style={{ color: refinementMatchLabel ? "#22C55E" : "#C0C8D5" }}>
+            {refinementMatchLabel || matchLineText}
+          </span>
         </div>
       ) : null}
 
-      {/* 4b. Active refinement match value */}
-      {refinementMatchLabel ? (
-        <div
-          style={{
-            marginTop: 4,
-            fontSize: "13px",
-            fontWeight: 800,
-            color: "#22C55E",
-          }}
-        >
-          Match: {refinementMatchLabel}
-        </div>
-      ) : null}
-
-      {/* 5. Nutrition preview chips */}
+      {/* 4. Nutrition preview chips */}
       <NutritionPreviewStrip chips={nutritionPreviewChips} />
 
       {/* Pairings teaser */}
       {pairingTeaser ? (
         <div
           style={{
-            marginTop: 8,
+            marginTop: 6,
             fontSize: 12,
             fontWeight: 650,
             color: "#6B7280",
@@ -1432,15 +1415,6 @@ function ItemRow({
           {pairingTeaser}
         </div>
       ) : null}
-
-      {/* Badges — deal text lives in the key-facts row above */}
-      {(popular || isGF || isVegan) && (
-        <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {popular && <DietBadge label="★ Popular" tone="popular" />}
-          {isGF && <DietBadge label="GF" tone="gf" />}
-          {isVegan && <DietBadge label="🌿 Vegan" tone="vegan" />}
-        </div>
-      )}
 
       {(indulgencePresentation || breadScore) ? (
         <CompactScoreSummary presentation={indulgencePresentation} breadScore={breadScore} />

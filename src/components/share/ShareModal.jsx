@@ -21,6 +21,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildShareLinks, copyText, trackShareEvent } from "./shareUtils.js";
 import { trackMenuShare } from "../../lib/analytics.js";
@@ -70,7 +71,6 @@ export default function ShareModal({
     label: t(a.labelKey, a.fallback),
   }));
   const links = useMemo(() => buildShareLinks(shareData), [shareData]);
-  const entityLabel = variant === "dish" ? "dish" : "menu";
 
   useEffect(() => {
     if (!open || typeof document === "undefined") return undefined;
@@ -142,37 +142,41 @@ export default function ShareModal({
     display: "flex",
     alignItems: "flex-end",
     justifyContent: "center",
-    padding: "16px 12px",
+    padding: 0,
   };
 
   const cardStyle = {
     width: "100%",
-    maxWidth: 440,
-    borderRadius: 24,
+    maxWidth: 480,
+    borderRadius: "20px 20px 0 0",
     background: "#ffffff",
     border: "1px solid rgba(15, 23, 42, 0.08)",
-    boxShadow: "0 28px 72px rgba(15, 23, 42, 0.28)",
-    padding: "18px 16px 16px",
+    borderBottom: "none",
+    boxShadow: "0 -12px 40px rgba(15, 23, 42, 0.22)",
+    padding: "10px 18px calc(18px + env(safe-area-inset-bottom, 0px))",
+    boxSizing: "border-box",
   };
 
   const actionStyle = {
     width: "100%",
-    minHeight: 52,
+    minHeight: 44,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
+    borderRadius: 14,
     border: "1px solid rgba(18, 34, 28, 0.12)",
     background: "#f8fafc",
     color: "#11211a",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 800,
     textDecoration: "none",
     cursor: "pointer",
     boxSizing: "border-box",
+    textAlign: "center",
+    padding: "0 6px",
   };
 
-  return (
+  return createPortal(
     <div style={overlayStyle} onClick={() => onClose?.()} role="presentation">
       <div
         role="dialog"
@@ -181,25 +185,22 @@ export default function ShareModal({
         style={cardStyle}
         onClick={(event) => event.stopPropagation()}
       >
+        <div style={{ width: 36, height: 4, borderRadius: 999, background: "rgba(15,23,42,0.14)", margin: "0 auto 12px" }} />
+
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "#11211a" }}>{resolvedTitle}</div>
-            <div style={{ marginTop: 4, fontSize: 13, color: "#667085", lineHeight: 1.45 }}>
-              {`Share the canonical Menuply ${entityLabel} link.`}
-            </div>
-          </div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: "#11211a" }}>{resolvedTitle}</div>
           <button
             type="button"
             aria-label={t("share.close", "Close")}
             onClick={() => onClose?.()}
             style={{
-              width: 38,
-              height: 38,
+              width: 30,
+              height: 30,
               borderRadius: 999,
               border: "1px solid rgba(18, 34, 28, 0.10)",
               background: "#fff",
               color: "#475467",
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: 700,
               cursor: "pointer",
               flexShrink: 0,
@@ -209,7 +210,7 @@ export default function ShareModal({
           </button>
         </div>
 
-        <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
           {actions.map((action) => {
             if (action.key === "copy") {
               return (
@@ -245,10 +246,21 @@ export default function ShareModal({
           </div>
         ) : null}
 
-        <div style={{ marginTop: 14, fontSize: 12, color: "#98a2b3", lineHeight: 1.45, wordBreak: "break-all" }}>
+        <div
+          style={{
+            marginTop: 12,
+            fontSize: 11,
+            color: "#98a2b3",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+          title={shareData?.url}
+        >
           {shareData?.url}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

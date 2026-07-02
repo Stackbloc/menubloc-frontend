@@ -292,6 +292,7 @@ function NutritionSection({ presentation }) {
 function ItemHeader({ item, label, emphasized }) {
   const price = fmtMoney(item?.price);
   const dist = fmtDist(item?.distance_miles);
+  const photoUrl = item?.image_url || null;
 
   return (
     <div
@@ -310,16 +311,33 @@ function ItemHeader({ item, label, emphasized }) {
         gap: 6,
       }}
     >
-      <div
-        style={{
-          fontSize: 10,
-          fontWeight: 900,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          opacity: 0.68,
-        }}
-      >
-        {label}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 900,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            opacity: 0.68,
+          }}
+        >
+          {label}
+        </div>
+        {photoUrl ? (
+          <img
+            src={photoUrl}
+            alt=""
+            loading="lazy"
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              objectFit: "cover",
+              flexShrink: 0,
+              border: emphasized ? "1px solid rgba(255,255,255,0.18)" : "1px solid rgba(20,33,27,0.10)",
+            }}
+          />
+        ) : null}
       </div>
 
       <div style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.25 }}>

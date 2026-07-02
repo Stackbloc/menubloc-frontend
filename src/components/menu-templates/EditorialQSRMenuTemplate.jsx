@@ -9,6 +9,7 @@ import { useIsTabletRange, getRestaurantInitials } from "./menuPresentationUtils
 import MapPinIcon from "./MapPinIcon.jsx";
 import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
 import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
+import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 // Bright, punchy palette for quick-service / fast-casual concepts — bold
@@ -196,7 +197,8 @@ export default function EditorialQSRMenuTemplate(ctx) {
                 )}
               </div>
 
-              <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4 }}>
+              <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} size={32} />
                 <ShareButton
                   variant="menu"
                   iconOnly={true}

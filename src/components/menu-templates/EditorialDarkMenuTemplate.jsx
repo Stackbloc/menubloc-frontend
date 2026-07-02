@@ -9,6 +9,7 @@ import { useIsTabletRange, getRestaurantInitials } from "./menuPresentationUtils
 import MapPinIcon from "./MapPinIcon.jsx";
 import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
 import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
+import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 // Apple iOS dark-mode color tokens — distinct from the old Menuply dark-green
@@ -191,7 +192,8 @@ export default function EditorialDarkMenuTemplate(ctx) {
                 )}
               </div>
 
-              <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4 }}>
+              <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} dark size={32} />
                 <ShareButton
                   variant="menu"
                   iconOnly={true}
