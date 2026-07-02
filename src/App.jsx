@@ -147,6 +147,7 @@ import RestaurantSubscriptionTerms from "./pages/RestaurantSubscriptionTerms.jsx
 import PhotoStandards from "./pages/PhotoStandards.jsx";
 import AboutMenuply from "./pages/AboutMenuply.jsx";
 import Contact from "./pages/Contact.jsx";
+import CreativeProsPage from "./pages/CreativeProsPage.jsx";
 
 import QrCodesPage from "./pages/QrCodesPage.jsx";
 import PdfUploadPage from "./pages/PdfUploadPage.jsx";
@@ -601,6 +602,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/photo-standards" element={<PhotoStandards />} />
         <Route path="/about" element={crmHost ? <HostRouteRedirect to="/crm" /> : <AboutMenuply />} />
         <Route path="/contact" element={crmHost ? <HostRouteRedirect to="/crm" /> : <Contact />} />
+        <Route path="/creative-pros" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CreativeProsPage />} />
 
         <Route path="/restaurant/pdf-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PdfUploadPage />} />
         <Route path="/restaurant/ocr-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PdfUploadPage />} />

@@ -14,6 +14,7 @@ export const BD_ROLE_CATEGORIES = [
   "chamber_or_business_group",
   "investor",
   "strategic_partner",
+  "creative_pro",
   "other",
 ];
 

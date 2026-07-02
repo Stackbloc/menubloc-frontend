@@ -69,6 +69,9 @@ export default function SiteFooter() {
           <Link to="/contact" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.contact")}
           </Link>
+          <Link to="/creative-pros" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
+            Creative Pros
+          </Link>
         </div>
 
         <div
