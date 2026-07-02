@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   getOwnerPhmsHealth,
@@ -22,6 +23,36 @@ const STATUS_COLORS = {
   CRITICAL: { bg: "#fee2e2", border: "#fca5a5", text: "#991b1b" },
 };
 
+/** Where each critical-health probe should route an operator for triage/repair. */
+const HEALTH_CHECK_NAV = {
+  db_connection: { to: "/owner/phms/incidents", actionLabel: "Open incidents" },
+  search_working: { to: "/owner/intelligence/search-demand", actionLabel: "Search intelligence" },
+  browse_working: { to: "/owner/intelligence/market", actionLabel: "Market intelligence" },
+  home_display: { scrollTo: "display-audit", actionLabel: "Display audit" },
+  home_feed_cache: { scrollTo: "home-feed-cache", actionLabel: "Cache diagnostics" },
+  restaurant_profile: { to: "/owner/restaurants", actionLabel: "Restaurant intelligence" },
+  menu_retrieval: { to: "/owner/menu-manager", actionLabel: "Menu manager" },
+  owner_login: { to: "/owner/login", actionLabel: "Test owner login" },
+  email_verification: { to: "/owner/deployments", actionLabel: "Deployment operations" },
+  last_deploy: { to: "/owner/deployments", actionLabel: "Deployment operations" },
+};
+
+function scrollToPhmsSection(sectionId) {
+  document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function applyInteractiveFocusStyle(el) {
+  el.style.outline = `3px solid ${OWNER_COLORS.accent}`;
+  el.style.outlineOffset = "2px";
+  el.style.boxShadow = "0 0 0 4px rgba(159, 58, 34, 0.18)";
+}
+
+function clearInteractiveFocusStyle(el, blurShadow = "0 2px 8px rgba(0,0,0,0.04)") {
+  el.style.outline = "none";
+  el.style.outlineOffset = "0";
+  el.style.boxShadow = blurShadow;
+}
+
 function StatusBadge({ status, style = {} }) {
   const c = STATUS_COLORS[status] || STATUS_COLORS.UNKNOWN;
   return (
@@ -43,18 +74,39 @@ function StatusBadge({ status, style = {} }) {
 }
 
 function HealthCard({ check }) {
+  const navigate = useNavigate();
   const c = STATUS_COLORS[check.status] || STATUS_COLORS.UNKNOWN;
-  return (
-    <div style={{
-      background: "#fff",
-      border: `1.5px solid ${c.border}`,
-      borderRadius: 14,
-      padding: "16px 18px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 6,
-      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-    }}>
+  const nav = HEALTH_CHECK_NAV[check.id];
+  const needsAttention = check.status === "FAIL" || check.status === "WARN" || check.status === "UNKNOWN";
+  const actionLabel = nav?.actionLabel || (needsAttention ? "Investigate" : "View details");
+  const ariaLabel = `${check.label}: ${check.status}. ${actionLabel}.`;
+
+  function handleActivate() {
+    if (!nav) return;
+    if (nav.scrollTo) {
+      scrollToPhmsSection(nav.scrollTo);
+      return;
+    }
+    if (nav.to) navigate(nav.to);
+  }
+
+  const cardStyle = {
+    background: "#fff",
+    border: `1.5px solid ${c.border}`,
+    borderRadius: 14,
+    padding: "16px 18px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+    textAlign: "left",
+    width: "100%",
+    font: "inherit",
+    color: "inherit",
+  };
+
+  const content = (
+    <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.ink, lineHeight: 1.3 }}>
           {check.label}
@@ -67,7 +119,53 @@ function HealthCard({ check }) {
       {check.latencyMs != null && (
         <div style={{ fontSize: 11, color: OWNER_COLORS.muted }}>{check.latencyMs}ms</div>
       )}
-    </div>
+      {nav ? (
+        <div style={{
+          marginTop: 4,
+          fontSize: 11,
+          fontWeight: 700,
+          color: needsAttention ? OWNER_COLORS.accent : OWNER_COLORS.muted,
+        }}>
+          {actionLabel} →
+        </div>
+      ) : null}
+    </>
+  );
+
+  if (!nav) {
+    return <div style={cardStyle}>{content}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleActivate}
+      title={actionLabel}
+      aria-label={ariaLabel}
+      style={{
+        ...cardStyle,
+        cursor: "pointer",
+        transition: "transform 120ms ease, box-shadow 120ms ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-1px)";
+        e.currentTarget.style.boxShadow = "0 6px 18px rgba(86, 47, 29, 0.12)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "none";
+        if (document.activeElement !== e.currentTarget) {
+          clearInteractiveFocusStyle(e.currentTarget);
+        }
+      }}
+      onFocus={(e) => {
+        applyInteractiveFocusStyle(e.currentTarget);
+      }}
+      onBlur={(e) => {
+        clearInteractiveFocusStyle(e.currentTarget);
+      }}
+    >
+      {content}
+    </button>
   );
 }
 
@@ -172,7 +270,7 @@ function MenuStatusSection() {
   const counts = data?.menu_counts || {};
 
   return (
-    <PageCard style={{ padding: "24px 26px", marginBottom: 28 }}>
+    <PageCard id="menu-status" style={{ padding: "24px 26px", marginBottom: 28 }}>
       <SectionTitle title="Menu Status" subtitle="Published, draft, and geo-coverage counts" />
       {error ? <SectionError msg={error} /> : null}
       {loading ? <Spinner /> : null}
@@ -270,7 +368,7 @@ function DisplayAuditSection() {
   const snapshots = data?.snapshots || [];
 
   return (
-    <PageCard style={{ padding: "24px 26px", marginBottom: 28 }}>
+    <PageCard id="display-audit" style={{ padding: "24px 26px", marginBottom: 28 }}>
       <SectionTitle
         title="Display Audit"
         subtitle={`${data?.snapshot_count || 0} snapshots stored · Tracks restaurant visibility per market`}
@@ -428,7 +526,7 @@ function DeploymentHealthSection() {
   }
 
   return (
-    <PageCard style={{ padding: "24px 26px", marginBottom: 28 }}>
+    <PageCard id="deployment-health" style={{ padding: "24px 26px", marginBottom: 28 }}>
       <SectionTitle
         title="Deployment Health"
         subtitle={data ? `Checked ${fmtTime(data.checked_at)}` : "Vercel frontend + Railway backend live check"}
@@ -650,7 +748,7 @@ function HomeFeedCacheSection() {
   ];
 
   return (
-    <PageCard style={{ padding: "24px 26px", marginBottom: 28 }}>
+    <PageCard id="home-feed-cache" style={{ padding: "24px 26px", marginBottom: 28 }}>
       <SectionTitle
         title="Home Feed Cache"
         subtitle="Publish-time homepage cache · self-healing · operational metrics"
@@ -705,8 +803,20 @@ function HomeFeedCacheSection() {
 
 // ── Section: Recent Incidents ─────────────────────────────────────────────────
 function RecentIncidentsSection({ healthData }) {
+  const navigate = useNavigate();
   if (!healthData?.checks) return null;
   const failing = healthData.checks.filter((c) => c.status === "FAIL" || c.status === "WARN");
+
+  function openCheck(check) {
+    const nav = HEALTH_CHECK_NAV[check.id];
+    if (!nav) return;
+    if (nav.scrollTo) {
+      scrollToPhmsSection(nav.scrollTo);
+      return;
+    }
+    if (nav.to) navigate(nav.to);
+  }
+
   return (
     <PageCard style={{ padding: "24px 26px", marginBottom: 28 }}>
       <SectionTitle title="Recent Incidents" subtitle="Failing or degraded checks from the last health probe" />
@@ -716,23 +826,47 @@ function RecentIncidentsSection({ healthData }) {
         </div>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
-          {failing.map((c) => (
-            <div key={c.id} style={{
-              padding: "12px 16px", borderRadius: 10,
-              background: c.status === "FAIL" ? "#fee2e2" : "#fef9c3",
-              border: `1px solid ${c.status === "FAIL" ? "#fca5a5" : "#fde047"}`,
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{c.label}</div>
-                  <div style={{ fontSize: 12, marginTop: 3, color: c.status === "FAIL" ? "#7f1d1d" : "#78350f" }}>
-                    {c.detail}
+          {failing.map((c) => {
+            const nav = HEALTH_CHECK_NAV[c.id];
+            const actionLabel = nav?.actionLabel || "Investigate";
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => openCheck(c)}
+                disabled={!nav}
+                aria-label={`${c.label}: ${c.status}. ${actionLabel}.`}
+                style={{
+                  padding: "12px 16px", borderRadius: 10, textAlign: "left", width: "100%",
+                  background: c.status === "FAIL" ? "#fee2e2" : "#fef9c3",
+                  border: `1px solid ${c.status === "FAIL" ? "#fca5a5" : "#fde047"}`,
+                  cursor: nav ? "pointer" : "default",
+                  font: "inherit",
+                  color: "inherit",
+                  transition: "box-shadow 120ms ease",
+                }}
+                onFocus={(e) => applyInteractiveFocusStyle(e.currentTarget)}
+                onBlur={(e) => {
+                  clearInteractiveFocusStyle(e.currentTarget, "none");
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{c.label}</div>
+                    <div style={{ fontSize: 12, marginTop: 3, color: c.status === "FAIL" ? "#7f1d1d" : "#78350f" }}>
+                      {c.detail}
+                    </div>
+                    {nav ? (
+                      <div style={{ fontSize: 11, fontWeight: 700, marginTop: 8, color: OWNER_COLORS.accent }}>
+                        {actionLabel} →
+                      </div>
+                    ) : null}
                   </div>
+                  <StatusBadge status={c.status} style={{ flexShrink: 0 }} />
                 </div>
-                <StatusBadge status={c.status} style={{ flexShrink: 0 }} />
-              </div>
-            </div>
-          ))}
+              </button>
+            );
+          })}
         </div>
       )}
     </PageCard>
@@ -742,6 +876,11 @@ function RecentIncidentsSection({ healthData }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function OwnerPhms() {
   const [healthData, setHealthData] = useState(null);
+
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, "");
+    if (hash) scrollToPhmsSection(hash);
+  }, []);
 
   return (
     <OwnerLayout title="Platform Health">
