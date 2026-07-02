@@ -468,7 +468,7 @@ export default function ConsumerProfile() {
 
         <Section title="Meals You've Liked" id="meals-liked">
           <p style={styles.sectionDesc}>
-            Uncheck any meal to remove it from your liked list. Waiter uses these to personalize recommendations under "Based on Meals You've Liked." Changes take effect when you save.
+            Uncheck any meal to remove it from your liked list.
           </p>
           {likedMeals.length === 0 ? (
             <p style={styles.sectionDesc}>No liked meals yet. Like dishes from any menu to see them here.</p>
@@ -531,7 +531,7 @@ export default function ConsumerProfile() {
           </div>
         </Section>
 
-        <Section title="Password">
+        <Section title="Change Your Password">
           <div style={styles.field}>
             <label style={styles.fieldLabel}>Current password</label>
             <input

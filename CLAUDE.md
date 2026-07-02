@@ -439,6 +439,39 @@ Then state which invariant is at risk and get explicit user approval. If the inv
 
 ---
 
+### INVARIANT 2 — Zero-result searches must stay on the home screen
+
+**File:** `src/pages/GrubbidDiscovery.jsx`
+**Functions:** `runSearch()`, `handleChipClick()`
+
+When a search (text or chip) returns zero results, the app MUST display the "no results" message via `setInlineError` on the home/discovery screen and NOT navigate to `/search`.
+
+Both `runSearch` and `handleChipClick` accomplish this via a `limit=1` preflight probe before navigating:
+
+```js
+const url = `${API}/search?${params.toString()}&limit=1`;
+const res = await fetch(url, { credentials: "include" });
+const json = await res.json().catch(() => ({}));
+const count = Array.isArray(json?.results) ? json.results.length : 0;
+if (count === 0) {
+  setInlineError(...);   // stay on home, user revises search
+} else {
+  navigate(`/search?...`);  // navigate only when results exist
+}
+```
+
+**Hard rules:**
+- Do NOT remove the `limit=1` preflight probe from either function
+- Do NOT replace `setInlineError` with a direct `navigate` on count === 0
+- Do NOT add a navigate-to-search path for the zero-result branch
+- The catch block may navigate (network failure is not a zero-result case)
+
+**Why:** Navigating to a "no results" page forces the user to go back and retype — unnecessary friction. The home screen already has the search input visible.
+
+Trigger: any edit to the `runSearch` or `handleChipClick` functions' navigate/error branching logic.
+
+---
+
 ### INVARIANT 3 — Browse feed must be hidden when `inlineError` is truthy
 
 **File:** `src/pages/GrubbidDiscovery.jsx`

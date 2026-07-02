@@ -1153,14 +1153,36 @@ export default function GrubbidDiscovery() {
     return true;
   }
 
-  function handleChipClick(chip) {
+  async function handleChipClick(chip) {
     const locationOverride = getEffectiveSearchLocation();
     if (redirectIfInactiveSearchMarket(locationOverride)) return;
     const params = buildSearchParams(chip.query || "", { locationOverride });
     if (chip.filterKey) {
       params.set(chip.filterKey, "true");
     }
-    navigate(`/search?${params.toString()}`);
+    setInlineError("");
+    setSearching(true);
+    try {
+      const url = `${API}/search?${params.toString()}&limit=1`;
+      const res = await fetch(url, { credentials: "include" });
+      const json = await res.json().catch(() => ({}));
+      const count = Array.isArray(json?.results) ? json.results.length : 0;
+      if (count === 0) {
+        const qTerm = String(chip.query || "").trim();
+        const loc = getEffectiveSearchLocation() || "";
+        const nearText = loc ? ` near ${loc}` : "";
+        setInlineError(qTerm
+          ? t("discovery.noResultsFoundFor", `No results found for "${qTerm}"${nearText}`, { query: qTerm, nearText })
+          : t("discovery.noResultsFound", `No results found${nearText}`, { nearText })
+        );
+      } else {
+        navigate(`/search?${params.toString()}`);
+      }
+    } catch {
+      navigate(`/search?${params.toString()}`);
+    } finally {
+      setSearching(false);
+    }
   }
 
   function handleFilterToggle(key) {
