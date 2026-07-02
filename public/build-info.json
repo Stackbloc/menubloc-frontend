@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "71a319edc1ac9891fe08055eb5f49f6b5ae6a68f",
-  "gitShortSha": "71a319e",
+  "gitSha": "dc4d1cd7389e7bcb140065792653b91e985fe08b",
+  "gitShortSha": "dc4d1cd",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-01T22:49:52.153Z",
+  "buildTime": "2026-07-02T04:15:22.081Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Revert \"chore: remove unused homeContextChipApi module, tidy home-next food grid and navigation\""
+  "commitMessage": "polish(nav): bold Menu Browser label under browse icon."
 }

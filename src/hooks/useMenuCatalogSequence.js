@@ -182,6 +182,9 @@ export default function useMenuCatalogSequence({
     waitingForPage,
     clampToIndex,
     isEmpty: !loading && entries.length === 0,
-    locationPending: !buildApiParams(0),
+    // Only hold the splash while geo is actively resolving. If location is
+    // "unavailable" or "ready" but yields no usable city, let the browse
+    // page surface its empty/error state instead of staying hidden forever.
+    locationPending: autoLocation.status === "locating" && !buildApiParams(0),
   };
 }

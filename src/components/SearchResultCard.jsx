@@ -278,7 +278,7 @@ function hl(text, query) {
     i % 2 === 1
       ? React.createElement(
           "span",
-          { key: i, style: { fontWeight: 900, color: "#22C55E" } },
+          { key: i, style: { fontWeight: 900, color: "#FFFFFF" } },
           p
         )
       : React.createElement("span", { key: i }, p)
@@ -1751,22 +1751,22 @@ export default function SearchResultCard({ restaurant, items, item, query, query
               style={{
                 fontSize: "var(--text-2, 14px)",
                 fontWeight: 800,
-                color: "#E5E7EB",
+                color: "#22C55E",
                 textDecoration: "none",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#22C55E";
+                e.currentTarget.style.color = "#16A34A";
                 e.currentTarget.style.textDecoration = "underline";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#E5E7EB";
+                e.currentTarget.style.color = "#22C55E";
                 e.currentTarget.style.textDecoration = "none";
               }}
             >
               {restName}
             </Link>
           ) : (
-            <span style={{ fontSize: "var(--text-2, 14px)", fontWeight: 800, color: "#E5E7EB" }}>{restName}</span>
+            <span style={{ fontSize: "var(--text-2, 14px)", fontWeight: 800, color: "#22C55E" }}>{restName}</span>
           )}
           {venueFactsLine ? (
             <div
@@ -1919,13 +1919,13 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   return (
     <article className="gb-card" style={cardStyle}>
       {/* Restaurant name */}
-      <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.01em", color: "#FFFFFF" }}>
+      <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.01em", color: "#22C55E" }}>
         {restHrefS ? (
           <Link
             to={restHrefS}
-            style={{ color: "#FFFFFF", textDecoration: "none" }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "#22C55E"; e.currentTarget.style.textUnderlineOffset = "3px"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "#FFFFFF"; }}
+            style={{ color: "#22C55E", textDecoration: "none" }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "#16A34A"; e.currentTarget.style.textUnderlineOffset = "3px"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "#22C55E"; }}
           >
             {hl(restNameS, query)}
           </Link>
