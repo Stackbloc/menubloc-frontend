@@ -274,6 +274,9 @@ export default function CreativeProsPage() {
             As Menuply grows, participating Creative Pros may be featured or referred to restaurants looking for menu design,
             food photography, branding, and related services.
           </p>
+          <p style={{ ...styles.pageSubtitle, marginTop: 12, marginBottom: 0, fontWeight: 700, color: "#0B0F0C" }}>
+            Join our creative network and grow with us into the future.
+          </p>
         </div>
 
         {success ? (
