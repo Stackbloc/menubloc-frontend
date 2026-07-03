@@ -10,7 +10,7 @@ import SmartCustomizationSheet, { isCustomizableItem } from "../basket/SmartCust
 import PublicMenuMainContent from "../menu-templates/PublicMenuMainContent.jsx";
 import { normalizeMenuStyle, pickHeroImageUrl } from "../menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../menu-templates/restaurantMenuBrand.js";
-import { normalizeMenuThemeSettings } from "../menu-templates/menuThemeSettings.js";
+import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor } from "../menu-templates/menuThemeSettings.js";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 import { buildMenuShareMetadata } from "../share/shareUtils.js";
 import { buildRestaurantStatusLightProps } from "../../lib/restaurantStatusLight.js";
@@ -276,7 +276,8 @@ export default function CatalogMenuRenderer({
   }, [restaurantId, selectedMenuId]);
 
   const data = pageState.status === "ok" ? pageState.data : null;
-  const menuThemeSettings = normalizeMenuThemeSettings(data?.display_settings || data || {});
+  const displaySettingsSource = data?.display_settings || data || {};
+  const menuThemeSettings = normalizeMenuThemeSettings(displaySettingsSource);
   const restaurantName = data
     ? (
       getLocalizedField(data, "restaurant_name", language) ||
@@ -401,12 +402,8 @@ export default function CatalogMenuRenderer({
     font_preset: data?.font_preset || "default",
   }, restaurantName) : null;
 
-  const resolvedPageBackground =
-    menuThemeSettings.background_style === "light" ? "#f7f5ef" :
-    menuThemeSettings.background_style === "paper" ? "#f6efe3" :
-    menuThemeSettings.background_style === "chalkboard" ? "#1a2e1c" :
-    menuThemeSettings.background_style === "charcoal" ? "#1c1c1e" :
-    menuBrand?.pageBackground ?? "#0B0F0C";
+  const resolvedPageBackground = resolveMenuPageBackground(displaySettingsSource, menuBrand);
+  const shellTextColor = resolveMenuShellTextColor(displaySettingsSource);
 
   const dealMap = useMemo(() => {
     const m = new Map();
@@ -596,8 +593,8 @@ export default function CatalogMenuRenderer({
         <div style={{
           maxWidth: 860,
           margin: "0 auto",
-          padding: isMobile ? "12px 10px 24px" : "20px 16px 24px",
-          color: "#FFFFFF",
+          padding: isMobile ? "12px 12px 24px" : "20px 20px 24px",
+          color: shellTextColor,
         }}>
           {templateContext ? (
             <PublicMenuMainContent menuStyle={menuPresentationStyle} templateContext={templateContext} />

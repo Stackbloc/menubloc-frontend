@@ -132,6 +132,15 @@ export function normalizeHexColor(value) {
   return HEX_RE.test(text) ? text : null;
 }
 
+/** Editorial template shell colors — must match ClassicMenuTemplate / Editorial v12–v15 BG constants. */
+export const MENU_STYLE_SHELL_BACKGROUND = {
+  v1: "#FFFFFF",
+  v12: "#000000",
+  v13: "#161210",
+  v14: "#FFFBF5",
+  v15: "#FFF8EF",
+};
+
 function inferBackgroundStyleFromPreset(theme) {
   const bg = String(theme?.preset?.colorDefaults?.background || "").trim().toLowerCase();
   if (!bg) return "dark";
@@ -140,6 +149,52 @@ function inferBackgroundStyleFromPreset(theme) {
   if (bg.includes("chalk")) return "chalkboard";
   if (bg.includes("charcoal")) return "charcoal";
   return "dark";
+}
+
+function inferBackgroundStyleFromMenuStyle(menuStyle) {
+  switch (normalizeMenuStyle(menuStyle)) {
+    case "v12":
+      return "charcoal";
+    case "v13":
+      return "dark";
+    case "v14":
+    case "v15":
+      return "paper";
+    case "v1":
+    default:
+      return "light";
+  }
+}
+
+function backgroundStyleToShellColor(backgroundStyle, menuBrand) {
+  if (backgroundStyle === "light") return "#f7f5ef";
+  if (backgroundStyle === "paper") return "#f6efe3";
+  if (backgroundStyle === "chalkboard") return "#1a2e1c";
+  if (backgroundStyle === "charcoal") return "#1c1c1e";
+  return menuBrand?.pageBackground ?? "#0B0F0C";
+}
+
+export function hasExplicitBackgroundStyle(source = {}) {
+  return BACKGROUND_STYLES.has(String(source?.background_style || "").trim());
+}
+
+export function resolveMenuPageBackground(source = {}, menuBrand = null) {
+  const normalized = normalizeMenuThemeSettings(source);
+  if (!hasExplicitBackgroundStyle(source) && MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style]) {
+    return MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style];
+  }
+  return backgroundStyleToShellColor(normalized.background_style, menuBrand);
+}
+
+export function resolveMenuShellTextColor(source = {}) {
+  const normalized = normalizeMenuThemeSettings(source);
+  if (!hasExplicitBackgroundStyle(source) && MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style]) {
+    return ["v12", "v13"].includes(normalized.menu_style) ? "#F5F5F7" : "#101828";
+  }
+  if (normalized.background_style === "light" || normalized.background_style === "paper") {
+    return "#101828";
+  }
+  return "#FFFFFF";
 }
 
 function inferImageDensityFromPreset(theme) {
@@ -214,7 +269,7 @@ export function normalizeMenuThemeSettings(source = {}) {
   const intelligenceDefaults = INTELLIGENCE_DEFAULTS_BY_STYLE[menuStyle] || INTELLIGENCE_DEFAULTS_BY_STYLE.v1;
   const backgroundStyle = BACKGROUND_STYLES.has(String(raw.background_style || "").trim())
     ? String(raw.background_style).trim()
-    : "dark";
+    : inferBackgroundStyleFromMenuStyle(menuStyle);
   const heroEnabled = raw.hero_enabled !== undefined
     ? Boolean(raw.hero_enabled)
     : raw.hero_image_enabled !== undefined

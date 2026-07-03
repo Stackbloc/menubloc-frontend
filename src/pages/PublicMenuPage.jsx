@@ -53,7 +53,7 @@ import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppl
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu-templates/restaurantMenuBrand.js";
-import { normalizeMenuThemeSettings } from "../components/menu-templates/menuThemeSettings.js";
+import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor } from "../components/menu-templates/menuThemeSettings.js";
 import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
 import useSavedMenuPreferences from "../hooks/useSavedMenuPreferences.js";
 import { getClientPreferenceDisplaySections } from "../lib/menuClientPreferenceFilter.js";
@@ -1056,7 +1056,8 @@ export default function PublicMenuPage() {
   }, [language, pageState.data, pageState.status, routeState.restaurantId, routeState.status]);
 
   const data = pageState.status === "ok" ? pageState.data : null;
-  const menuThemeSettings = normalizeMenuThemeSettings(data?.display_settings || data || {});
+  const displaySettingsSource = data?.display_settings || data || {};
+  const menuThemeSettings = normalizeMenuThemeSettings(displaySettingsSource);
   const restaurantName = data
     ? getLocalizedField(data, "restaurant_name", language) ||
       getLocalizedField(data, "name", language) ||
@@ -1162,12 +1163,8 @@ export default function PublicMenuPage() {
     hero_image_url: menuThemeSettings.hero_enabled === false ? null : data?.hero_image_url || null,
     font_preset: data?.font_preset || "default",
   }, restaurantName) : null;
-  const resolvedPageBackground =
-    menuThemeSettings.background_style === "light" ? "#f7f5ef" :
-    menuThemeSettings.background_style === "paper" ? "#f6efe3" :
-    menuThemeSettings.background_style === "chalkboard" ? "#1a2e1c" :
-    menuThemeSettings.background_style === "charcoal" ? "#1c1c1e" :
-    menuBrand?.pageBackground ?? "#0B0F0C";
+  const resolvedPageBackground = resolveMenuPageBackground(displaySettingsSource, menuBrand);
+  const shellTextColor = resolveMenuShellTextColor(displaySettingsSource);
 
   const pageShellStyle = {
     minHeight: "100vh",
@@ -1388,7 +1385,7 @@ export default function PublicMenuPage() {
         maxWidth: 860,
         margin: "0 auto",
         padding: isMobile ? "16px 12px 80px" : "28px 20px 80px",
-        color: "#FFFFFF",
+        color: shellTextColor,
       }}>
         {isMenuTemplatePreview ? (
           <div
