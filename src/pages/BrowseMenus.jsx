@@ -9,10 +9,13 @@ import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import CatalogMenuRenderer, { prefetchCatalogMenu } from "../components/menuCatalog/CatalogMenuRenderer.jsx";
 import MenuCatalogCategoryTabs from "../components/menuCatalog/MenuCatalogCategoryTabs.jsx";
+import MenuCatalogDrinkCategoryTabs from "../components/menuCatalog/MenuCatalogDrinkCategoryTabs.jsx";
+import MenuCatalogModeTabs from "../components/menuCatalog/MenuCatalogModeTabs.jsx";
 import MenuCatalogIntroSplash from "../components/menuCatalog/MenuCatalogIntroSplash.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import useMenuCatalogSequence from "../hooks/useMenuCatalogSequence.js";
 import { MENU_CATALOG_DEFAULT_SECTION, MENU_BROWSER_INTRO_MIN_MS } from "../lib/menuCatalogCategories.js";
+import { MENU_CATALOG_DRINKS_DEFAULT_SECTION, isDrinksCatalogSection } from "../lib/menuCatalogDrinkCategories.js";
 import { computeMenuBrowserLoadTarget, useSmoothedProgress } from "../lib/menuCatalogIntroProgress.js";
 import { asFiniteNumber } from "../lib/catalogMenuUtils.js";
 
@@ -65,7 +68,10 @@ export default function BrowseMenus() {
   const urlParams = useMemo(() => new URLSearchParams(search), [search]);
   const urlCity = urlParams.get("city") || "";
   const urlState = urlParams.get("state") || "";
-  const activeSection = urlParams.get("section") || MENU_CATALOG_DEFAULT_SECTION;
+  const isDrinksMode = urlParams.get("mode") === "drinks";
+  const activeSection = isDrinksMode
+    ? (urlParams.get("section") || MENU_CATALOG_DRINKS_DEFAULT_SECTION)
+    : (urlParams.get("section") || MENU_CATALOG_DEFAULT_SECTION);
   const urlIndex = asFiniteNumber(urlParams.get("i")) ?? 0;
 
   const [locationParams, setLocationParams] = useState({ city: urlCity || null, state: urlState || null });
@@ -91,6 +97,7 @@ export default function BrowseMenus() {
     locationPending,
   } = useMenuCatalogSequence({
     section: activeSection,
+    drinksMode: isDrinksMode,
     urlCity,
     urlState,
     index: urlIndex,
@@ -102,12 +109,31 @@ export default function BrowseMenus() {
   }, []);
 
   useEffect(() => {
+    if (isDrinksMode) return;
     if (urlParams.get("section")) return;
     const next = new URLSearchParams(search);
     next.set("section", MENU_CATALOG_DEFAULT_SECTION);
     next.set("i", "0");
     navigate({ search: `?${next.toString()}` }, { replace: true });
-  }, [navigate, search, urlParams]);
+  }, [isDrinksMode, navigate, search, urlParams]);
+
+  useEffect(() => {
+    if (!isDrinksMode) return;
+    const next = new URLSearchParams(search);
+    let changed = false;
+    if (urlParams.get("mode") !== "drinks") {
+      next.set("mode", "drinks");
+      changed = true;
+    }
+    const section = urlParams.get("section");
+    if (!section || !isDrinksCatalogSection(section)) {
+      next.set("section", MENU_CATALOG_DRINKS_DEFAULT_SECTION);
+      next.set("i", "0");
+      changed = true;
+    }
+    if (!changed) return;
+    navigate({ search: `?${next.toString()}` }, { replace: true });
+  }, [isDrinksMode, navigate, search, urlParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -124,17 +150,32 @@ export default function BrowseMenus() {
     return () => { cancelled = true; };
   }, [urlCity, urlState]);
 
-  const updateUrl = useCallback((section, index) => {
+  const updateUrl = useCallback((section, index, { drinks = isDrinksMode } = {}) => {
     const next = new URLSearchParams(search);
+    if (drinks) {
+      next.set("mode", "drinks");
+    } else {
+      next.delete("mode");
+    }
     next.set("section", section);
     next.set("i", String(Math.max(0, index)));
     if (urlCity) next.set("city", urlCity);
     if (urlState) next.set("state", urlState);
     navigate({ search: `?${next.toString()}` }, { replace: true });
-  }, [navigate, search, urlCity, urlState]);
+  }, [isDrinksMode, navigate, search, urlCity, urlState]);
 
   function selectSection(sectionId) {
     updateUrl(sectionId, 0);
+  }
+
+  function selectMode(modeId) {
+    if (modeId === "drinks") {
+      if (isDrinksMode) return;
+      updateUrl(MENU_CATALOG_DRINKS_DEFAULT_SECTION, 0, { drinks: true });
+      return;
+    }
+    if (!isDrinksMode) return;
+    updateUrl(MENU_CATALOG_DEFAULT_SECTION, 0, { drinks: false });
   }
 
   const goNext = useCallback(() => {
@@ -312,10 +353,22 @@ export default function BrowseMenus() {
       <StickyPageHeader />
 
       <div style={browseShellStyle}>
-        <MenuCatalogCategoryTabs
-          activeSection={activeSection}
-          onSelect={selectSection}
+        <MenuCatalogModeTabs
+          activeMode={isDrinksMode ? "drinks" : "food"}
+          onSelect={selectMode}
         />
+
+        {isDrinksMode ? (
+          <MenuCatalogDrinkCategoryTabs
+            activeSection={activeSection}
+            onSelect={selectSection}
+          />
+        ) : (
+          <MenuCatalogCategoryTabs
+            activeSection={activeSection}
+            onSelect={selectSection}
+          />
+        )}
 
         <div
           ref={browseAreaRef}

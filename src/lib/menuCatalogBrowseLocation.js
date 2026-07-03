@@ -40,9 +40,23 @@ export function resolveMenuCatalogGeoBrowse({
   return { shouldUseGeoBrowse, geoMarketLocation, appliedMarketLocation };
 }
 
+function withBrowseSection(baseParams, section, drinksMode = false) {
+  const params = {
+    ...baseParams,
+    limit: 24,
+    browse_section: section,
+  };
+  if (drinksMode) {
+    params.browse_mode = "drinks";
+  }
+  return params;
+}
+
 /**
  * Build browse API params. Returns null while location is still resolving,
  * so callers never hit /menus/browse with an unscoped "all markets" query.
+ *
+ * Food mode omits browse_mode so requests match the pre-Drinks browser exactly.
  */
 export function buildMenuCatalogBrowseParams({
   urlCity = "",
@@ -51,23 +65,26 @@ export function buildMenuCatalogBrowseParams({
   autoLocation = null,
   loadMoreOffset = 0,
   section = "",
+  drinksMode = false,
 } = {}) {
   const { shouldUseGeoBrowse } = resolveMenuCatalogGeoBrowse({ appliedLocation, autoLocation });
 
   if (urlCity) {
     return {
-      ...buildBrowseLocationParams({
-        urlCity,
-        urlState,
-        coords:
-          autoLocation?.lat != null && autoLocation?.lng != null
-            ? { lat: autoLocation.lat, lng: autoLocation.lng }
-            : null,
-        radiusMiles: null,
-      }),
-      limit: 24,
+      ...withBrowseSection(
+        buildBrowseLocationParams({
+          urlCity,
+          urlState,
+          coords:
+            autoLocation?.lat != null && autoLocation?.lng != null
+              ? { lat: autoLocation.lat, lng: autoLocation.lng }
+              : null,
+          radiusMiles: null,
+        }),
+        section,
+        drinksMode
+      ),
       offset: loadMoreOffset,
-      browse_section: section,
     };
   }
 
@@ -76,51 +93,57 @@ export function buildMenuCatalogBrowseParams({
     if (loc.zip && !loc.city && !loc.state) return null;
     if (loc.city) {
       return {
-        ...buildBrowseLocationParams({
-          urlCity: loc.city,
-          urlState: loc.state || "",
-          coords:
-            autoLocation?.lat != null && autoLocation?.lng != null
-              ? { lat: autoLocation.lat, lng: autoLocation.lng }
-              : null,
-          radiusMiles: null,
-        }),
-        limit: 24,
+        ...withBrowseSection(
+          buildBrowseLocationParams({
+            urlCity: loc.city,
+            urlState: loc.state || "",
+            coords:
+              autoLocation?.lat != null && autoLocation?.lng != null
+                ? { lat: autoLocation.lat, lng: autoLocation.lng }
+                : null,
+            radiusMiles: null,
+          }),
+          section,
+          drinksMode
+        ),
         offset: loadMoreOffset,
-        browse_section: section,
       };
     }
   }
 
   if (autoLocation?.status === "locating") return null;
 
-  // Prefer reverse-geocoded city/state over tight geo-radius browse so franchise
-  // locations with CK menus (e.g. Taco Bell) appear in category tabs.
   if (autoLocation?.city) {
     return {
-      ...buildBrowseLocationParams({
-        urlCity: autoLocation.city,
-        urlState: autoLocation.state || "",
-        coords:
-          autoLocation.lat != null && autoLocation.lng != null
-            ? { lat: autoLocation.lat, lng: autoLocation.lng }
-            : null,
-        radiusMiles: null,
-      }),
-      limit: 24,
+      ...withBrowseSection(
+        buildBrowseLocationParams({
+          urlCity: autoLocation.city,
+          urlState: autoLocation.state || "",
+          coords:
+            autoLocation.lat != null && autoLocation.lng != null
+              ? { lat: autoLocation.lat, lng: autoLocation.lng }
+              : null,
+          radiusMiles: null,
+        }),
+        section,
+        drinksMode
+      ),
       offset: loadMoreOffset,
-      browse_section: section,
     };
   }
 
   if (shouldUseGeoBrowse) {
     return {
-      lat: autoLocation.lat,
-      lng: autoLocation.lng,
-      radius: MENU_CATALOG_LOCAL_RADIUS_MILES,
-      limit: 24,
+      ...withBrowseSection(
+        {
+          lat: autoLocation.lat,
+          lng: autoLocation.lng,
+          radius: MENU_CATALOG_LOCAL_RADIUS_MILES,
+        },
+        section,
+        drinksMode
+      ),
       offset: loadMoreOffset,
-      browse_section: section,
     };
   }
 

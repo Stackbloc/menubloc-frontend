@@ -25,6 +25,7 @@ function readErrorMessage(error) {
 
 export default function useMenuCatalogSequence({
   section,
+  drinksMode = false,
   urlCity = "",
   urlState = "",
   index = 0,
@@ -48,9 +49,10 @@ export default function useMenuCatalogSequence({
       autoLocation.lat ?? "",
       autoLocation.lng ?? "",
       autoLocation.status,
+      ...(drinksMode ? ["drinks"] : []),
       section,
     ].join("::"),
-    [appliedLocation, autoLocation.city, autoLocation.lat, autoLocation.lng, autoLocation.state, autoLocation.status, section, urlCity, urlState]
+    [appliedLocation, autoLocation.city, autoLocation.lat, autoLocation.lng, autoLocation.state, autoLocation.status, drinksMode, section, urlCity, urlState]
   );
 
   const locationLabel = useMemo(
@@ -71,8 +73,9 @@ export default function useMenuCatalogSequence({
       autoLocation,
       loadMoreOffset,
       section,
+      drinksMode,
     });
-  }, [appliedLocation, autoLocation, section, urlCity, urlState]);
+  }, [appliedLocation, autoLocation, drinksMode, section, urlCity, urlState]);
 
   useEffect(() => {
     let cancelled = false;
