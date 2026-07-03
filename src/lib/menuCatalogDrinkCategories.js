@@ -13,6 +13,8 @@ export const MENU_CATALOG_DRINK_TABS = [
   { id: "smoothies", label: "Smoothies", accent: "#f97316" },
   { id: "juice", label: "Juice", accent: "#eab308" },
   { id: "mocktails", label: "Mocktails", accent: "#ec4899" },
+  { id: "non_alcoholic", label: "Non-Alcoholic", accent: "#0ea5e9" },
+  { id: "happy_hour", label: "Happy Hour", accent: "#f59e0b" },
 ];
 
 export const MENU_CATALOG_DRINKS_DEFAULT_SECTION = "cocktails";

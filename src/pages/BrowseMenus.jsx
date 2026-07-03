@@ -8,6 +8,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import CatalogMenuRenderer, { prefetchCatalogMenu } from "../components/menuCatalog/CatalogMenuRenderer.jsx";
+import CatalogDrinksMenuRenderer, { prefetchCatalogDrinksMenu } from "../components/menuCatalog/CatalogDrinksMenuRenderer.jsx";
 import MenuCatalogCategoryTabs from "../components/menuCatalog/MenuCatalogCategoryTabs.jsx";
 import MenuCatalogDrinkCategoryTabs from "../components/menuCatalog/MenuCatalogDrinkCategoryTabs.jsx";
 import MenuCatalogModePage from "../components/menuCatalog/MenuCatalogModePage.jsx";
@@ -211,9 +212,16 @@ export default function BrowseMenus() {
   useEffect(() => {
     const prev = entries[activeIndex - 1];
     const next = entries[activeIndex + 1];
-    if (prev?.restaurant_id) prefetchCatalogMenu(prev.restaurant_id, locationParams, language);
-    if (next?.restaurant_id) prefetchCatalogMenu(next.restaurant_id, locationParams, language);
-  }, [entries, activeIndex, locationParams, language]);
+    const prefetch = isDrinksMode ? prefetchCatalogDrinksMenu : prefetchCatalogMenu;
+    if (prev?.restaurant_id) {
+      if (isDrinksMode) prefetch(prev.restaurant_id, locationParams);
+      else prefetch(prev.restaurant_id, locationParams, language);
+    }
+    if (next?.restaurant_id) {
+      if (isDrinksMode) prefetch(next.restaurant_id, locationParams);
+      else prefetch(next.restaurant_id, locationParams, language);
+    }
+  }, [entries, activeIndex, isDrinksMode, locationParams, language]);
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -520,14 +528,23 @@ export default function BrowseMenus() {
             }}
             aria-hidden={showBookOverlay}
           >
-            <CatalogMenuRenderer
-              key={`${activeSection}-${currentEntry.restaurant_id}-${activeIndex}`}
-              entry={currentEntry}
-              locationParams={locationParams}
-              isMobile={isMobile}
-              browseSection={activeSection}
-              onLoadStateChange={handleMenuLoadStateChange}
-            />
+            {isDrinksMode ? (
+              <CatalogDrinksMenuRenderer
+                key={`drinks-${activeSection}-${currentEntry.restaurant_id}-${activeIndex}`}
+                entry={currentEntry}
+                locationParams={locationParams}
+                onLoadStateChange={handleMenuLoadStateChange}
+              />
+            ) : (
+              <CatalogMenuRenderer
+                key={`${activeSection}-${currentEntry.restaurant_id}-${activeIndex}`}
+                entry={currentEntry}
+                locationParams={locationParams}
+                isMobile={isMobile}
+                browseSection={activeSection}
+                onLoadStateChange={handleMenuLoadStateChange}
+              />
+            )}
           </div>
         ) : null}
         </div>
