@@ -58,6 +58,7 @@ import { itemPassesDietFilter } from "../hooks/useDietPreferences";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
+import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import TasteIndexBadge from "../components/TasteIndexBadge.jsx";
 
@@ -1391,6 +1392,7 @@ export default function PublicMenuPage() {
           tabLoading,
           tabError,
           menuPresentation: data?.menu_presentation || data?.presentation || {},
+          ...buildRestaurantStatusLightProps(data),
         }
       : null;
 

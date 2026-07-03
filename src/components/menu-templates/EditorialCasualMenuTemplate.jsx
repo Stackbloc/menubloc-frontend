@@ -8,6 +8,7 @@ import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettin
 import { useIsTabletRange, getRestaurantInitials, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import MapPinIcon from "./MapPinIcon.jsx";
 import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
+import MenuRestaurantStatusLightLine from "./MenuRestaurantStatusLightLine.jsx";
 import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
@@ -83,6 +84,11 @@ export default function EditorialCasualMenuTemplate(ctx) {
     directionsHref,
     distanceMiles,
     showDistanceBelowAddress,
+    menuStatus,
+    profileTier,
+    listingStatus,
+    planSlug,
+    isPro,
     logoUrl,
     logoPlacement = "top-left",
     heroImageUrl,
@@ -241,6 +247,14 @@ export default function EditorialCasualMenuTemplate(ctx) {
                 </div>
               )
             ) : null}
+
+            <MenuRestaurantStatusLightLine
+              menuStatus={menuStatus}
+              profileTier={profileTier}
+              listingStatus={listingStatus}
+              planSlug={planSlug}
+              isPro={isPro}
+            />
 
             {showDistanceBelowAddress ? (
               <MenuRestaurantDistanceLine miles={distanceMiles} color={SUBTLE} />

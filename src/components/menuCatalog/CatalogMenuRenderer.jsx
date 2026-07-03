@@ -13,6 +13,7 @@ import { buildRestaurantMenuBrand, fontStackForPreset } from "../menu-templates/
 import { normalizeMenuThemeSettings } from "../menu-templates/menuThemeSettings.js";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
 import { buildMenuShareMetadata } from "../share/shareUtils.js";
+import { buildRestaurantStatusLightProps } from "../../lib/restaurantStatusLight.js";
 import { toConsumerErrorMessage } from "../../lib/api.js";
 import CatalogItemDetailSheet from "./CatalogItemDetailSheet.jsx";
 import {
@@ -526,6 +527,7 @@ export default function CatalogMenuRenderer({
           tabLoading,
           tabError,
           menuPresentation: data?.menu_presentation || data?.presentation || {},
+          ...buildRestaurantStatusLightProps(data),
         }
       : null;
 

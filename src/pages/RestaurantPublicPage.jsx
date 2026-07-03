@@ -48,6 +48,8 @@ import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { restaurantMenuPath, restaurantPath } from "../lib/canonicalUrl.js";
+import RestaurantStatusLight from "../components/RestaurantStatusLight.jsx";
+import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import ShareButton from "../components/share/ShareButton.jsx";
 import { buildRestaurantShareData } from "../components/share/shareUtils.js";
 
@@ -326,6 +328,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
         state: stateVal,
       })
     : null;
+  const unclaimedStatusLightProps = buildRestaurantStatusLightProps(data);
 
   return (
     <>
@@ -398,6 +401,8 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
               >
                 {name}
               </h1>
+
+              <RestaurantStatusLight {...unclaimedStatusLightProps} size={7} />
 
               {restaurantShareData ? (
                 <ShareButton
@@ -681,7 +686,11 @@ export default function RestaurantPublicPage() {
       .then((json) => {
         if (!alive) return;
         if (!json?.ok) throw new Error(json?.error || "Not found");
-        setData(json?.restaurant || json);
+        setData({
+          ...(json?.restaurant || json),
+          menus: json?.menus || [],
+          menu_presentation: json?.menu_presentation || null,
+        });
       })
       .catch((e) => {
         if (alive) {
@@ -800,6 +809,7 @@ export default function RestaurantPublicPage() {
   const t = getTierTheme(tier, isDark);
   const isPro = tier === "pro";
   const isVerified = tier === "verified";
+  const restaurantStatusLightProps = buildRestaurantStatusLightProps(data);
 
   const name =
     getLocalizedField(data, "restaurant_name", language) ||
@@ -979,6 +989,8 @@ export default function RestaurantPublicPage() {
                   >
                     {name}
                   </h1>
+
+                  <RestaurantStatusLight {...restaurantStatusLightProps} size={7} />
 
                   {isPro || isVerified ? (
                     <span
