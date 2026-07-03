@@ -188,12 +188,11 @@ export default function MenuCatalogIntroSplash({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "flex-start",
-        paddingTop: "clamp(28px, 11vh, 72px)",
+        justifyContent: "center",
         background: "#FACC15",
         borderRadius: 16,
         boxSizing: "border-box",
-        padding: "16px 16px 24px",
+        padding: "24px 16px",
         overflow: "auto",
       }}
     >
@@ -204,7 +203,6 @@ export default function MenuCatalogIntroSplash({
           alignItems: "center",
           width: "100%",
           maxWidth: 520,
-          transform: isSplash ? "translateY(-4%)" : "translateY(-6%)",
           pointerEvents: "none",
         }}
       >
