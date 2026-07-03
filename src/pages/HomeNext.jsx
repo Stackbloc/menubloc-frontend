@@ -272,7 +272,7 @@ export default function HomeNext() {
                   textDecoration: "none",
                 }}
               >
-                Deals
+                {t("nav.deals", "Deals")}
               </Link>
               {!consumerLoading &&
                 (consumerLoggedIn ? (
