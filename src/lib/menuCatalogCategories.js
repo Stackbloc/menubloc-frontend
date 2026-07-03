@@ -28,8 +28,11 @@ export const MENU_BROWSER_BOOK_SRC = "/menu-browser-book.png?v=20260702b";
 /** @deprecated full composite; splash now renders book + spaced text in CSS */
 export const MENU_BROWSER_INTRO_LOGO_SRC = "/menu-browser-logo.png?v=20260702";
 
-/** Minimum intro splash duration (ms). */
+/** Minimum intro splash duration (ms) after a mode is selected. */
 export const MENU_BROWSER_INTRO_MIN_MS = 4000;
+
+/** Cover page display before the Food/Drinks chooser (ms). */
+export const MENU_BROWSER_COVER_MS = 1800;
 
 export function toMenuCatalogTranslationKey(id) {
   return `menuBrowser.category.${String(id || "").replace(/-/g, "_")}`;

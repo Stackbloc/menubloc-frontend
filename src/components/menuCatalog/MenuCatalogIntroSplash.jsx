@@ -69,23 +69,27 @@ function LoadingMeter({ pct }) {
 }
 
 /**
- * Yellow Browser intro — centered book hero + spaced SWIPE / YELLOW BROWSER lines.
- * Loading meter sits directly under the branding (not pinned to viewport bottom).
+ * Book cover (image only) or loading spread (branding + meter).
  */
 export default function MenuCatalogIntroSplash({
   visible = true,
   progress = 0,
+  variant = "loading",
   bookSrc = MENU_BROWSER_BOOK_SRC,
 }) {
   if (!visible) return null;
 
+  const isCover = variant === "cover";
   const pct = Math.max(0, Math.min(100, Math.round(progress)));
+  const ariaLabel = isCover
+    ? "Menu browser"
+    : `Loading menus, ${pct} percent`;
 
   return (
     <div
       role="status"
       aria-live="polite"
-      aria-label={`Loading menus, ${pct} percent`}
+      aria-label={ariaLabel}
       style={{
         position: "absolute",
         inset: 0,
@@ -108,7 +112,7 @@ export default function MenuCatalogIntroSplash({
           alignItems: "center",
           width: "100%",
           maxWidth: 520,
-          transform: "translateY(-6%)",
+          transform: isCover ? "none" : "translateY(-6%)",
           pointerEvents: "none",
         }}
       >
@@ -120,94 +124,98 @@ export default function MenuCatalogIntroSplash({
             display: "block",
             width: "min(88vw, 400px)",
             maxWidth: "100%",
-            maxHeight: "36vh",
+            maxHeight: isCover ? "min(52vh, 420px)" : "36vh",
             height: "auto",
             objectFit: "contain",
             margin: "0 auto",
           }}
         />
 
-        <div
-          aria-hidden
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "clamp(20px, 6.5vw, 40px)",
-            marginTop: "clamp(8px, 2vw, 14px)",
-            color: INK,
-            fontWeight: 800,
-            fontSize: "clamp(18px, 5vw, 24px)",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            whiteSpace: "nowrap",
-          }}
-        >
-          <span
-            aria-hidden
-            style={{
-              fontSize: "0.92em",
-              fontWeight: 900,
-              letterSpacing: 0,
-              lineHeight: 1,
-            }}
-          >
-            ≪
-          </span>
-          <span>SWIPE</span>
-          <span
-            aria-hidden
-            style={{
-              fontSize: "0.92em",
-              fontWeight: 900,
-              letterSpacing: 0,
-              lineHeight: 1,
-            }}
-          >
-            ≫
-          </span>
-        </div>
+        {!isCover ? (
+          <>
+            <div
+              aria-hidden
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "clamp(20px, 6.5vw, 40px)",
+                marginTop: "clamp(8px, 2vw, 14px)",
+                color: INK,
+                fontWeight: 800,
+                fontSize: "clamp(18px, 5vw, 24px)",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span
+                aria-hidden
+                style={{
+                  fontSize: "0.92em",
+                  fontWeight: 900,
+                  letterSpacing: 0,
+                  lineHeight: 1,
+                }}
+              >
+                ≪
+              </span>
+              <span>SWIPE</span>
+              <span
+                aria-hidden
+                style={{
+                  fontSize: "0.92em",
+                  fontWeight: 900,
+                  letterSpacing: 0,
+                  lineHeight: 1,
+                }}
+              >
+                ≫
+              </span>
+            </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            marginTop: "clamp(14px, 3.5vw, 24px)",
-            width: "100%",
-          }}
-        >
-          <div
-            aria-hidden
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "center",
-              gap: "clamp(24px, 8vw, 52px)",
-              color: INK,
-              fontWeight: 900,
-              fontSize: "clamp(28px, 8.5vw, 46px)",
-              lineHeight: 1,
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
-              whiteSpace: "nowrap",
-            }}
-          >
-            <span>YELLOW</span>
-            <span>BROWSER</span>
-          </div>
-          <div
-            aria-hidden
-            style={{
-              marginTop: "clamp(6px, 1.4vw, 10px)",
-              width: "min(94%, 340px)",
-              height: "clamp(5px, 1.2vw, 8px)",
-              background: INK,
-            }}
-          />
-        </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                marginTop: "clamp(14px, 3.5vw, 24px)",
+                width: "100%",
+              }}
+            >
+              <div
+                aria-hidden
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "center",
+                  gap: "clamp(24px, 8vw, 52px)",
+                  color: INK,
+                  fontWeight: 900,
+                  fontSize: "clamp(28px, 8.5vw, 46px)",
+                  lineHeight: 1,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span>YELLOW</span>
+                <span>BROWSER</span>
+              </div>
+              <div
+                aria-hidden
+                style={{
+                  marginTop: "clamp(6px, 1.4vw, 10px)",
+                  width: "min(94%, 340px)",
+                  height: "clamp(5px, 1.2vw, 8px)",
+                  background: INK,
+                }}
+              />
+            </div>
 
-        <LoadingMeter pct={pct} />
+            <LoadingMeter pct={pct} />
+          </>
+        ) : null}
       </div>
     </div>
   );

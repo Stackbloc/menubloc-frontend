@@ -10,11 +10,15 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import CatalogMenuRenderer, { prefetchCatalogMenu } from "../components/menuCatalog/CatalogMenuRenderer.jsx";
 import MenuCatalogCategoryTabs from "../components/menuCatalog/MenuCatalogCategoryTabs.jsx";
 import MenuCatalogDrinkCategoryTabs from "../components/menuCatalog/MenuCatalogDrinkCategoryTabs.jsx";
-import MenuCatalogModeTabs from "../components/menuCatalog/MenuCatalogModeTabs.jsx";
+import MenuCatalogModePage from "../components/menuCatalog/MenuCatalogModePage.jsx";
 import MenuCatalogIntroSplash from "../components/menuCatalog/MenuCatalogIntroSplash.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import useMenuCatalogSequence from "../hooks/useMenuCatalogSequence.js";
-import { MENU_CATALOG_DEFAULT_SECTION, MENU_BROWSER_INTRO_MIN_MS } from "../lib/menuCatalogCategories.js";
+import {
+  MENU_CATALOG_DEFAULT_SECTION,
+  MENU_BROWSER_COVER_MS,
+  MENU_BROWSER_INTRO_MIN_MS,
+} from "../lib/menuCatalogCategories.js";
 import { MENU_CATALOG_DRINKS_DEFAULT_SECTION, isDrinksCatalogSection } from "../lib/menuCatalogDrinkCategories.js";
 import { computeMenuBrowserLoadTarget, useSmoothedProgress } from "../lib/menuCatalogIntroProgress.js";
 import { asFiniteNumber } from "../lib/catalogMenuUtils.js";
@@ -69,12 +73,15 @@ export default function BrowseMenus() {
   const urlCity = urlParams.get("city") || "";
   const urlState = urlParams.get("state") || "";
   const isDrinksMode = urlParams.get("mode") === "drinks";
+  const urlSection = urlParams.get("section") || "";
+  const isModeChosen = Boolean(urlSection) || isDrinksMode;
   const activeSection = isDrinksMode
-    ? (urlParams.get("section") || MENU_CATALOG_DRINKS_DEFAULT_SECTION)
-    : (urlParams.get("section") || MENU_CATALOG_DEFAULT_SECTION);
+    ? (urlSection || MENU_CATALOG_DRINKS_DEFAULT_SECTION)
+    : (urlSection || MENU_CATALOG_DEFAULT_SECTION);
   const urlIndex = asFiniteNumber(urlParams.get("i")) ?? 0;
 
   const [locationParams, setLocationParams] = useState({ city: urlCity || null, state: urlState || null });
+  const [bookPhase, setBookPhase] = useState(() => (isModeChosen ? "browse" : "cover"));
   const [introMinElapsed, setIntroMinElapsed] = useState(false);
   const [menuLoadStatus, setMenuLoadStatus] = useState("idle");
   const [initialMenuReady, setInitialMenuReady] = useState(false);
@@ -96,7 +103,7 @@ export default function BrowseMenus() {
     isEmpty,
     locationPending,
   } = useMenuCatalogSequence({
-    section: activeSection,
+    section: isModeChosen ? activeSection : "",
     drinksMode: isDrinksMode,
     urlCity,
     urlState,
@@ -104,18 +111,21 @@ export default function BrowseMenus() {
   });
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setIntroMinElapsed(true), MENU_BROWSER_INTRO_MIN_MS);
+    if (isModeChosen) return;
+    if (bookPhase !== "cover") return;
+    const timer = window.setTimeout(() => setBookPhase("chooseMode"), MENU_BROWSER_COVER_MS);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [bookPhase, isModeChosen]);
 
   useEffect(() => {
-    if (isDrinksMode) return;
-    if (urlParams.get("section")) return;
-    const next = new URLSearchParams(search);
-    next.set("section", MENU_CATALOG_DEFAULT_SECTION);
-    next.set("i", "0");
-    navigate({ search: `?${next.toString()}` }, { replace: true });
-  }, [isDrinksMode, navigate, search, urlParams]);
+    if (!isModeChosen) {
+      setIntroMinElapsed(false);
+      return undefined;
+    }
+    setIntroMinElapsed(false);
+    const timer = window.setTimeout(() => setIntroMinElapsed(true), MENU_BROWSER_INTRO_MIN_MS);
+    return () => window.clearTimeout(timer);
+  }, [isModeChosen, activeSection]);
 
   useEffect(() => {
     if (!isDrinksMode) return;
@@ -174,7 +184,11 @@ export default function BrowseMenus() {
       updateUrl(MENU_CATALOG_DRINKS_DEFAULT_SECTION, 0, { drinks: true });
       return;
     }
-    if (!isDrinksMode) return;
+    if (isDrinksMode) {
+      updateUrl(MENU_CATALOG_DEFAULT_SECTION, 0, { drinks: false });
+      return;
+    }
+    if (isModeChosen) return;
     updateUrl(MENU_CATALOG_DEFAULT_SECTION, 0, { drinks: false });
   }
 
@@ -247,12 +261,14 @@ export default function BrowseMenus() {
     [loading, locationPending, currentEntry, menuLoadStatus, isEmpty, error]
   );
 
-  const listPending = loading || locationPending || waitingForPage || (loadingMore && !currentEntry);
-  const menuPending = currentEntry && (menuLoadStatus === "idle" || menuLoadStatus === "loading");
-  const initialHold = !introMinElapsed;
-  // Splash only for first boot in a category — not on every menu swipe.
-  const showSplash = initialHold || listPending || (!initialMenuReady && menuPending);
-  const introProgress = useSmoothedProgress(loadTarget, showSplash);
+  const listPending = isModeChosen && (loading || locationPending || waitingForPage || (loadingMore && !currentEntry));
+  const menuPending = isModeChosen && currentEntry && (menuLoadStatus === "idle" || menuLoadStatus === "loading");
+  const initialHold = isModeChosen && !introMinElapsed;
+  const showCover = !isModeChosen && bookPhase === "cover";
+  const showChooseMode = !isModeChosen && bookPhase === "chooseMode";
+  const showLoadingSplash = isModeChosen && (initialHold || listPending || (!initialMenuReady && menuPending));
+  const showBookOverlay = showCover || showChooseMode || showLoadingSplash;
+  const introProgress = useSmoothedProgress(loadTarget, showLoadingSplash);
   const currentMenuNumber = currentEntry ? (activeIndex + 1) : 0;
   const totalMenuCount = Math.max(totalCount || 0, entries.length || 0);
 
@@ -272,7 +288,7 @@ export default function BrowseMenus() {
     }
 
     function handleTouchStart(event) {
-      if (showSplash) return;
+      if (showBookOverlay) return;
       const touch = event.touches?.[0];
       if (!touch) return;
       swipeRef.current = {
@@ -324,7 +340,7 @@ export default function BrowseMenus() {
       el.removeEventListener("touchend", handleTouchEnd, { capture: true });
       el.removeEventListener("touchcancel", resetSwipe, { capture: true });
     };
-  }, [showSplash, trySwipeNavigation]);
+  }, [showBookOverlay, trySwipeNavigation]);
 
   const browseShellStyle = {
     flex: 1,
@@ -353,22 +369,19 @@ export default function BrowseMenus() {
       <StickyPageHeader />
 
       <div style={browseShellStyle}>
-        <MenuCatalogModeTabs
-          activeMode={isDrinksMode ? "drinks" : "food"}
-          onSelect={selectMode}
-        />
-
-        {isDrinksMode ? (
-          <MenuCatalogDrinkCategoryTabs
-            activeSection={activeSection}
-            onSelect={selectSection}
-          />
-        ) : (
-          <MenuCatalogCategoryTabs
-            activeSection={activeSection}
-            onSelect={selectSection}
-          />
-        )}
+        {isModeChosen ? (
+          isDrinksMode ? (
+            <MenuCatalogDrinkCategoryTabs
+              activeSection={activeSection}
+              onSelect={selectSection}
+            />
+          ) : (
+            <MenuCatalogCategoryTabs
+              activeSection={activeSection}
+              onSelect={selectSection}
+            />
+          )
+        ) : null}
 
         <div
           ref={browseAreaRef}
@@ -381,9 +394,19 @@ export default function BrowseMenus() {
             position: "relative",
           }}
         >
-        <MenuCatalogIntroSplash visible={showSplash} progress={introProgress} />
+        {showCover ? (
+          <MenuCatalogIntroSplash visible variant="cover" />
+        ) : null}
 
-        {!showSplash && hasPrev ? (
+        {showChooseMode ? (
+          <MenuCatalogModePage onSelect={selectMode} />
+        ) : null}
+
+        {showLoadingSplash ? (
+          <MenuCatalogIntroSplash visible variant="loading" progress={introProgress} />
+        ) : null}
+
+        {!showBookOverlay && hasPrev ? (
           <button
             type="button"
             aria-label={t("menuBrowser.prevMenu", "Previous menu")}
@@ -411,7 +434,7 @@ export default function BrowseMenus() {
           </button>
         ) : null}
 
-        {!showSplash && hasNext ? (
+        {!showBookOverlay && hasNext ? (
           <button
             type="button"
             aria-label={t("menuBrowser.nextMenu", "Next menu")}
@@ -439,7 +462,7 @@ export default function BrowseMenus() {
           </button>
         ) : null}
 
-        {!showSplash && totalMenuCount > 0 ? (
+        {!showBookOverlay && totalMenuCount > 0 ? (
           <div
             aria-live="polite"
             style={{
@@ -463,7 +486,7 @@ export default function BrowseMenus() {
           </div>
         ) : null}
 
-        {error && !showSplash ? (
+        {error && !showBookOverlay ? (
           <div style={{ padding: 24 }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
               {t("menuCatalog.loadError", "Couldn't load menus")}
@@ -472,7 +495,7 @@ export default function BrowseMenus() {
           </div>
         ) : null}
 
-        {isEmpty && !loading && !showSplash ? (
+        {isEmpty && !loading && !showBookOverlay ? (
           <div style={{ padding: 24 }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
               {t("menuBrowser.emptyTitle", "No menus in this category yet")}
@@ -491,10 +514,10 @@ export default function BrowseMenus() {
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
-              visibility: showSplash ? "hidden" : "visible",
-              pointerEvents: showSplash ? "none" : "auto",
+              visibility: showBookOverlay ? "hidden" : "visible",
+              pointerEvents: showBookOverlay ? "none" : "auto",
             }}
-            aria-hidden={showSplash}
+            aria-hidden={showBookOverlay}
           >
             <CatalogMenuRenderer
               key={`${activeSection}-${currentEntry.restaurant_id}-${activeIndex}`}

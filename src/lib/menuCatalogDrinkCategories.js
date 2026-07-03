@@ -12,7 +12,6 @@ export const MENU_CATALOG_DRINK_TABS = [
   { id: "tea", label: "Tea", accent: "#16a34a" },
   { id: "smoothies", label: "Smoothies", accent: "#f97316" },
   { id: "juice", label: "Juice", accent: "#eab308" },
-  { id: "soft_drinks", label: "Soft Drinks", accent: "#0ea5e9" },
   { id: "mocktails", label: "Mocktails", accent: "#ec4899" },
 ];
 

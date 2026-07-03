@@ -164,7 +164,6 @@ export const UI_LABELS = {
     "menuBrowser.category.tea": "Tea",
     "menuBrowser.category.smoothies": "Smoothies",
     "menuBrowser.category.juice": "Juice",
-    "menuBrowser.category.soft_drinks": "Soft Drinks",
     "menuBrowser.category.mocktails": "Mocktails",
     "menuCatalog.categories": "Categories",
     "menuCatalog.drinkCategories": "Drink categories",
