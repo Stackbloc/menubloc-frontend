@@ -973,9 +973,28 @@ export default function PublicMenuPage() {
     if (contextCity)  params.set("city",  contextCity);
     if (contextState) params.set("state", contextState);
     if (language && language !== "en") params.set("lang", language);
+    if (filtersActive) {
+      for (const [key, active] of Object.entries(dietPrefs)) {
+        if (active) params.set(key, "1");
+      }
+      if (allergenFilterActive && enabledAllergenKeys.size > 0) {
+        params.set("allergen_keys", [...enabledAllergenKeys].join(","));
+      }
+    }
     const qs = params.toString();
     return `${API}/public/restaurants/${rid}/menu${qs ? `?${qs}` : ""}`;
-  }, [routeState.restaurantId, proximityLat, proximityLng, contextCity, contextState, language]);
+  }, [
+    routeState.restaurantId,
+    proximityLat,
+    proximityLng,
+    contextCity,
+    contextState,
+    language,
+    filtersActive,
+    allergenFilterActive,
+    enabledAllergenKeys,
+    dietPrefs,
+  ]);
 
   useEffect(() => {
     if (isMenuTemplatePreview) return;
