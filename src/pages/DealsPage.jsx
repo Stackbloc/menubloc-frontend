@@ -4,8 +4,8 @@
 // Grubbid discovery page (sticky header, cream bg, card feed).
 // ============================================================
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import ShareIcon from "../components/share/ShareIcon.jsx";
@@ -14,61 +14,6 @@ import { trackDealClick } from "../lib/analytics.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildLocalizedApiUrl, withLanguageHeaders } from "../lib/languageApi.js";
 import { restaurantMenuPath } from "../lib/canonicalUrl.js";
-import { useConsumer } from "../context/ConsumerContext.jsx";
-import { getFollowedRestaurants } from "../lib/consumerApi.js";
-import FollowingFeed from "../components/consumer/FollowingFeed.jsx";
-
-// Matches SearchResultModeSelector's exact visual pattern (GrubbidSearchResults.jsx) —
-// same radiogroup structure, option/radio styling — for the Following/Deals toggle.
-function DealsFollowingModeSelector({ mode, onModeChange }) {
-  const optionStyle = (selected) => ({
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 7,
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: selected ? 800 : 600,
-    color: selected ? "#111827" : "#6B7280",
-    userSelect: "none",
-  });
-
-  const radioStyle = {
-    width: 14,
-    height: 14,
-    margin: 0,
-    accentColor: "#22C55E",
-    cursor: "pointer",
-  };
-
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Deals page view"
-      style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px", justifyContent: "center", padding: "10px 16px 0" }}
-    >
-      <label style={optionStyle(mode === "following")}>
-        <input
-          type="radio"
-          name="deals-page-mode"
-          checked={mode === "following"}
-          onChange={() => onModeChange("following")}
-          style={radioStyle}
-        />
-        Following
-      </label>
-      <label style={optionStyle(mode === "deals")}>
-        <input
-          type="radio"
-          name="deals-page-mode"
-          checked={mode === "deals"}
-          onChange={() => onModeChange("deals")}
-          style={radioStyle}
-        />
-        Deals
-      </label>
-    </div>
-  );
-}
 
 // ── Utility ──────────────────────────────────────────────────
 
@@ -257,50 +202,7 @@ function DealRow({ deal, restaurantUrl, onShare, onDealClick }) {
 
 export default function DealsPage() {
   const { t, language } = useLanguage();
-  const { isAuthenticated, loading: authLoading } = useConsumer();
   const { search } = useLocation();
-  const navigate = useNavigate();
-
-  // Fetched here (not left to FollowingFeed alone) because the default toggle
-  // state depends on the actual followed-restaurant count: a signed-in user
-  // following nobody should still land on Deals, same as an anonymous user —
-  // an empty Following tab is not a useful default landing view.
-  const [followingItems, setFollowingItems] = useState([]);
-  const [followingLoading, setFollowingLoading] = useState(true);
-  const [followingError, setFollowingError] = useState("");
-  const loadFollowing = useCallback(async () => {
-    setFollowingLoading(true);
-    setFollowingError("");
-    try {
-      const data = await getFollowedRestaurants();
-      setFollowingItems(Array.isArray(data?.restaurants) ? data.restaurants : []);
-    } catch (err) {
-      setFollowingError(err.message || "Failed to load followed restaurants.");
-    } finally {
-      setFollowingLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    if (authLoading) return;
-    if (!isAuthenticated) { setFollowingLoading(false); return; }
-    loadFollowing();
-  }, [authLoading, isAuthenticated, loadFollowing]);
-
-  // Toggle only shows, and only defaults to Following, when the user is
-  // signed in AND actually follows at least one restaurant. Everyone else
-  // (anonymous, or signed in but following nobody) just sees Deals. Auth +
-  // the follow list both resolve asynchronously, so the default is applied
-  // once when both are known rather than guessed on first render; a manual
-  // toggle after that is never overridden.
-  const [mode, setMode] = useState(null);
-  const modeDefaultedRef = useRef(false);
-  const hasFollows = followingItems.length > 0;
-  useEffect(() => {
-    if (authLoading || followingLoading || modeDefaultedRef.current) return;
-    modeDefaultedRef.current = true;
-    setMode(isAuthenticated && hasFollows ? "following" : "deals");
-  }, [authLoading, followingLoading, isAuthenticated, hasFollows]);
-  const showToggle = isAuthenticated && hasFollows && mode;
   const urlParams = new URLSearchParams(search);
   const urlCity = urlParams.get("city") || "";
   const urlState = urlParams.get("state") || "";
@@ -401,7 +303,7 @@ export default function DealsPage() {
       if (aD !== bD) return aD - bD;
       return a.originalIndex - b.originalIndex;
     });
-  }, [deals]);
+  }, [filteredDeals]);
 
   const hasLocation = Boolean(effectiveCity) || (userLat != null && userLng != null);
   const locationContextLabel = locationLabel
@@ -455,58 +357,34 @@ export default function DealsPage() {
       <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--gb-color-page)" }}>
         <StickyPageHeader />
         <div style={{ borderBottom: "1px solid #1F2937", paddingBottom: 12 }}>
-          {showToggle ? (
-            <DealsFollowingModeSelector mode={mode} onModeChange={setMode} />
-          ) : null}
+          <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0" }}>
+            <input
+              type="search"
+              placeholder={t("deals.searchPlaceholder", "Search deals or restaurants…")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: "100%", boxSizing: "border-box",
+                height: 36, borderRadius: 999,
+                border: "1.5px solid #1F2937",
+                background: "#121A14", padding: "0 14px",
+                fontSize: 13, fontWeight: 600, color: "#F9FAFB",
+                outline: "none",
+              }}
+            />
+          </div>
 
-          {mode !== "following" ? (
-            <>
-              {/* Search bar */}
-              <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0" }}>
-                <input
-                  type="search"
-                  placeholder={t("deals.searchPlaceholder", "Search deals or restaurants…")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    width: "100%", boxSizing: "border-box",
-                    height: 36, borderRadius: 999,
-                    border: "1.5px solid #1F2937",
-                    background: "#121A14", padding: "0 14px",
-                    fontSize: 13, fontWeight: 600, color: "#F9FAFB",
-                    outline: "none",
-                  }}
-                />
-              </div>
-
-              {/* Page title row */}
-              <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0", textAlign: "center" }}>
-                <span style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.02em" }}>
-                  🔥 {t("deals.nearYou", "Deals Near {location}").replace(
-                    "{location}",
-                    locationLabel || t("discovery.you", "You"),
-                  )}
-                </span>
-              </div>
-            </>
-          ) : null}
+          <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0", textAlign: "center" }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.02em" }}>
+              🔥 {t("deals.nearYou", "Deals Near {location}").replace(
+                "{location}",
+                locationLabel || t("discovery.you", "You"),
+              )}
+            </span>
+          </div>
         </div>
       </div>
 
-      {mode === "following" ? (
-        <div style={{ padding: "16px 10px 80px" }}>
-          <FollowingFeed
-            redirectIfUnauthenticated={false}
-            externalData={{
-              items: followingItems,
-              loading: followingLoading,
-              error: followingError,
-              reload: loadFollowing,
-            }}
-          />
-        </div>
-      ) : (
-      <>
       {/* ── SCROLLABLE FEED ── */}
       <div style={{ maxWidth: 576, margin: "0 auto", padding: "10px 10px 80px" }}>
 
@@ -634,8 +512,6 @@ export default function DealsPage() {
           </div>
         )}
       </div>
-      </>
-      )}
 
       <BottomNav />
     </div>

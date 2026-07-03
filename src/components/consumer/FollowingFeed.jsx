@@ -69,20 +69,13 @@ function formatBillboardDateRange(startsAt, endsAt) {
 }
 
 /**
- * Followed-restaurants feed. Shared between the standalone /account/following
- * route (ConsumerFollowing.jsx) and the "Following" toggle mode on the Deals
- * page — one data-fetch + rendering implementation, no duplicate logic.
+ * Followed-restaurants feed for the standalone /account/following route.
  *
- * `redirectIfUnauthenticated`: the standalone route redirects to login when
- * signed out (its normal behavior). Embedded contexts (like the Deals page
- * toggle) already gate on auth themselves and pass `false` so this component
- * never navigates the host page away on their behalf.
+ * `redirectIfUnauthenticated`: redirects to login when signed out (default).
+ * Pass `false` only when the host page already gates on auth.
  *
- * `externalData`: when the host already fetched followed restaurants itself
- * (e.g. DealsPage needs the count before it can decide its default toggle
- * state), pass `{ items, loading, error, reload }` here so this component
- * renders that data instead of fetching its own copy. Omit for the standalone
- * /account/following route, which still self-fetches as before.
+ * `externalData`: optional `{ items, loading, error, reload }` to render
+ * pre-fetched data instead of fetching inside this component.
  */
 export default function FollowingFeed({ redirectIfUnauthenticated = true, externalData = null }) {
   const { isAuthenticated, loading: authLoading } = useConsumer();
