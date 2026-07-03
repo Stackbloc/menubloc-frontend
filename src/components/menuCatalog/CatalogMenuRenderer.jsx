@@ -16,13 +16,15 @@ import { buildMenuShareMetadata } from "../share/shareUtils.js";
 import { buildRestaurantStatusLightProps } from "../../lib/restaurantStatusLight.js";
 import { toConsumerErrorMessage } from "../../lib/api.js";
 import CatalogItemDetailSheet from "./CatalogItemDetailSheet.jsx";
+import MenuPreferencesAppliedBanner from "../menu/MenuPreferencesAppliedBanner.jsx";
+import useSavedMenuPreferences from "../../hooks/useSavedMenuPreferences.js";
+import { getClientPreferenceDisplaySections } from "../../lib/menuClientPreferenceFilter.js";
 import {
   asFiniteNumber,
   asStr,
   buildAddressLocalityLine,
   buildGoogleMapsUrlForRestaurant,
   getCartItemState,
-  getFilteredDisplaySections,
   isFoodTruckCategory,
   resolveRestaurantProfileHref,
   normalizeSections,
@@ -31,31 +33,6 @@ import {
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
 
 const menuPayloadCache = new Map();
-
-function AllergenFilterBanner({ active, enabledKeys }) {
-  if (!active || !enabledKeys || enabledKeys.size === 0) return null;
-  const labels = [...enabledKeys]
-    .map((key) => String(key || "").replace(/_/g, " ").split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "))
-    .join(", ");
-  return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "9px 14px",
-      borderRadius: 10,
-      background: "rgba(234, 179, 8, 0.08)",
-      border: "1px solid rgba(234, 179, 8, 0.22)",
-      color: "#92400e",
-      fontSize: 12,
-      fontWeight: 700,
-      marginBottom: 12,
-    }}>
-      <span aria-hidden="true" style={{ fontSize: 14 }}>⚠</span>
-      Allergen filter active — items containing {labels} are hidden
-    </div>
-  );
-}
 
 function AddedConfirmation({ name, onRemove, setConfirmation, brand }) {
   const accent = brand?.accent ?? "#22C55E";
@@ -175,7 +152,15 @@ export default function CatalogMenuRenderer({
     updateQuantity,
     removeItem,
   } = useOrderCart();
-  const { isAuthenticated, allergenPreferences, dietaryPreferences, foodsToAvoid = [] } = useConsumer();
+  const { foodsToAvoid = [] } = useConsumer();
+  const {
+    dietPrefs,
+    enabledAllergenKeys,
+    hasSavedPreferences,
+    dietPreferenceActive,
+    allergenPreferenceActive,
+  } = useSavedMenuPreferences();
+  const [applySavedPreferences, setApplySavedPreferences] = useState(false);
 
   const restaurantId = entry?.restaurant_id;
   const [pageState, setPageState] = useState({ status: "idle", data: null, error: null });
@@ -191,29 +176,9 @@ export default function CatalogMenuRenderer({
   const [addedConfirmation, setAddedConfirmation] = useState(null);
   const [hoveredItemId, setHoveredItemId] = useState(null);
 
-  const enabledDietKeys = useMemo(() => {
-    if (!isAuthenticated || !Array.isArray(dietaryPreferences)) return new Set();
-    return new Set(dietaryPreferences.filter((p) => p.is_enabled).map((p) => p.preference_key));
-  }, [isAuthenticated, dietaryPreferences]);
-
-  const dietPrefs = {
-    dairy_free: enabledDietKeys.has("dairy_free"),
-    diabetic_friendly: enabledDietKeys.has("diabetic_friendly"),
-    gluten_free: enabledDietKeys.has("gluten_free"),
-    keto: enabledDietKeys.has("keto"),
-    low_fat: false,
-    low_sodium: enabledDietKeys.has("low_sodium"),
-    vegan: enabledDietKeys.has("vegan"),
-    vegetarian: enabledDietKeys.has("vegetarian"),
-  };
-
-  const enabledAllergenKeys = useMemo(() => {
-    if (!isAuthenticated || !Array.isArray(allergenPreferences)) return new Set();
-    return new Set(allergenPreferences.filter((p) => p.is_enabled).map((p) => p.allergen_key));
-  }, [isAuthenticated, allergenPreferences]);
-
-  const allergenFilterActive = enabledAllergenKeys.size > 0;
-  const filtersActive = Object.values(dietPrefs).some(Boolean) || allergenFilterActive;
+  useEffect(() => {
+    setApplySavedPreferences(false);
+  }, [restaurantId]);
 
   const apiUrl = useMemo(() => {
     if (!restaurantId) return "";
@@ -227,7 +192,14 @@ export default function CatalogMenuRenderer({
     if (language && language !== "en") params.set("lang", language);
     const qs = params.toString();
     return `${API}/public/restaurants/${encodeURIComponent(restaurantId)}/menu${qs ? `?${qs}` : ""}`;
-  }, [language, locationParams.city, locationParams.lat, locationParams.lng, locationParams.state, restaurantId]);
+  }, [
+    language,
+    locationParams.city,
+    locationParams.lat,
+    locationParams.lng,
+    locationParams.state,
+    restaurantId,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -363,7 +335,21 @@ export default function CatalogMenuRenderer({
   }, [data?.distance_miles, data?.restaurant_distance_miles, entry?.distance_miles, entry?.restaurant_distance_miles]);
   const showDistanceBelowAddress = distanceMiles != null;
   const sections = tabSections?.sections ?? normalizeSections(data);
-  const displaySections = getFilteredDisplaySections(sections, dietPrefs, enabledAllergenKeys);
+  const preferencesApplied = applySavedPreferences && hasSavedPreferences;
+  const displaySections = useMemo(() => {
+    if (!preferencesApplied) {
+      return (Array.isArray(sections) ? sections : [])
+        .map((sec) => {
+          const title = asStr(sec?.title || "Menu").trim() || "Menu";
+          const items = (Array.isArray(sec?.items) ? sec.items : []).filter(
+            (item) => asStr(item?.name).trim().length > 0
+          );
+          return { ...sec, title, items };
+        })
+        .filter((sec) => sec.items.length > 0);
+    }
+    return getClientPreferenceDisplaySections(sections, dietPrefs, enabledAllergenKeys);
+  }, [sections, preferencesApplied, dietPrefs, enabledAllergenKeys]);
   const displayableItemCount = displaySections.reduce(
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
     0
@@ -497,11 +483,19 @@ export default function CatalogMenuRenderer({
           shareAnalyticsContext,
           franchiseSlot: null,
           intakeBannerSlot: null,
-          allergenBannerSlot: <AllergenFilterBanner active={allergenFilterActive} enabledKeys={enabledAllergenKeys} />,
+          allergenBannerSlot: (
+            <MenuPreferencesAppliedBanner
+              visible={hasSavedPreferences}
+              applySavedPreferences={applySavedPreferences}
+              onToggle={setApplySavedPreferences}
+              dietPreferenceActive={dietPreferenceActive}
+              allergenPreferenceActive={allergenPreferenceActive}
+            />
+          ),
           displaySections,
           displayableItemCount,
           dealItems: data?.deal_items || [],
-          filtersActive,
+          filtersActive: preferencesApplied,
           data,
           currentRestaurantId,
           dealMap,

@@ -49,12 +49,14 @@ function useIsMobile(breakpoint = 900) {
   return isMobile;
 }
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppliedBanner.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu-templates/restaurantMenuBrand.js";
 import { normalizeMenuThemeSettings } from "../components/menu-templates/menuThemeSettings.js";
 import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
-import { itemPassesDietFilter } from "../hooks/useDietPreferences";
+import useSavedMenuPreferences from "../hooks/useSavedMenuPreferences.js";
+import { getClientPreferenceDisplaySections } from "../lib/menuClientPreferenceFilter.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
@@ -153,77 +155,6 @@ function getCartItemState(cartItems, menuItemId) {
     totalQuantity: matchingLines.reduce((sum, line) => sum + Number(line?.quantity || 0), 0),
     simpleQuantity: simpleLine ? Number(simpleLine.quantity || 0) : 0,
   };
-}
-
-const ALLERGEN_PROFILE_TO_EVIDENCE = {
-  peanuts:   ["peanuts"],
-  tree_nuts: ["tree nuts"],
-  dairy:     ["dairy"],
-  gluten:    ["wheat", "gluten"],
-  shellfish: ["shellfish"],
-  soy:       ["soy"],
-  eggs:      ["eggs", "egg"],
-  fish:      ["fish"],
-  sesame:    ["sesame"],
-  wheat:     ["wheat"],
-};
-
-function itemFailsAllergenFilter(item, enabledAllergenKeys) {
-  if (!enabledAllergenKeys || enabledAllergenKeys.size === 0) return false;
-  const chip = item?.chips?.nutrition_chip || {};
-  const evidence = new Set([
-    ...(Array.isArray(chip.allergens) ? chip.allergens : []),
-    ...(Array.isArray(chip.contains_allergens) ? chip.contains_allergens : []),
-  ].map((a) => String(a || "").toLowerCase().replace(/_/g, " ").trim()));
-  if (evidence.size === 0) return false;
-  for (const key of enabledAllergenKeys) {
-    const matches = ALLERGEN_PROFILE_TO_EVIDENCE[key] || [key.replace(/_/g, " ")];
-    if (matches.some((m) => evidence.has(m))) return true;
-  }
-  return false;
-}
-
-function getFilteredDisplaySections(sections, dietPrefs, enabledAllergenKeys) {
-  return (Array.isArray(sections) ? sections : [])
-    .map((sec) => {
-      const title = asStr(sec?.title || "Menu").trim() || "Menu";
-      const rawItems = Array.isArray(sec?.items) ? sec.items : [];
-      const items = rawItems.filter((it) => {
-        if (!isDisplayableMenuItem(it)) return false;
-        if (!itemPassesDietFilter(it, dietPrefs)) return false;
-        if (itemFailsAllergenFilter(it, enabledAllergenKeys)) return false;
-        return true;
-      });
-      return { ...sec, title, items };
-    })
-    .filter((sec) => sec.items.length > 0);
-}
-
-function allergenKeyToLabel(key) {
-  return String(key || "").replace(/_/g, " ").split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-}
-
-function AllergenFilterBanner({ active, enabledKeys }) {
-  if (!active || !enabledKeys || enabledKeys.size === 0) return null;
-  const labels = [...enabledKeys].map(allergenKeyToLabel).join(", ");
-  return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "9px 14px",
-      borderRadius: 10,
-      background: "rgba(234, 179, 8, 0.08)",
-      border: "1px solid rgba(234, 179, 8, 0.22)",
-      color: "#92400e",
-      fontSize: 12,
-      fontWeight: 700,
-      marginBottom: 12,
-    }}>
-      <span aria-hidden="true" style={{ fontSize: 14 }}>⚠</span>
-      Allergen filter active — items containing {labels} are hidden
-    </div>
-  );
 }
 
 function IntakePreviewBanner({ show }) {
@@ -815,7 +746,15 @@ export default function PublicMenuPage() {
     removeItem,
   } = useOrderCart();
   const isMobile = useIsMobile();
-  const { isAuthenticated, allergenPreferences, dietaryPreferences, foodsToAvoid = [] } = useConsumer();
+  const { foodsToAvoid = [] } = useConsumer();
+  const {
+    dietPrefs,
+    enabledAllergenKeys,
+    hasSavedPreferences,
+    dietPreferenceActive,
+    allergenPreferenceActive,
+  } = useSavedMenuPreferences();
+  const [applySavedPreferences, setApplySavedPreferences] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [modifierItem, setModifierItem] = useState(null);
   const [modifierInitialInstructions, setModifierInitialInstructions] = useState("");
@@ -843,30 +782,6 @@ export default function PublicMenuPage() {
     error: null,
   }));
 
-  // Diet preferences are sourced from the signed-in consumer's saved profile
-  // (same pattern as allergen preferences below) — there is no manual in-page
-  // toggle. Logged-out visitors see no diet-based exclusion, matching allergens.
-  const enabledDietKeys = useMemo(() => {
-    if (!isAuthenticated || !Array.isArray(dietaryPreferences)) return new Set();
-    return new Set(dietaryPreferences.filter((p) => p.is_enabled).map((p) => p.preference_key));
-  }, [isAuthenticated, dietaryPreferences]);
-  const dietPrefs = {
-    dairy_free:        enabledDietKeys.has("dairy_free"),
-    diabetic_friendly: enabledDietKeys.has("diabetic_friendly"),
-    gluten_free:       enabledDietKeys.has("gluten_free"),
-    keto:              enabledDietKeys.has("keto"),
-    // No corresponding profile setting exists today (profile offers low_carb, not low_fat).
-    low_fat:           false,
-    low_sodium:        enabledDietKeys.has("low_sodium"),
-    vegan:             enabledDietKeys.has("vegan"),
-    vegetarian:        enabledDietKeys.has("vegetarian"),
-  };
-  const enabledAllergenKeys = useMemo(() => {
-    if (!isAuthenticated || !Array.isArray(allergenPreferences)) return new Set();
-    return new Set(allergenPreferences.filter((p) => p.is_enabled).map((p) => p.allergen_key));
-  }, [isAuthenticated, allergenPreferences]);
-  const allergenFilterActive = enabledAllergenKeys.size > 0;
-  const filtersActive = Object.values(dietPrefs).some(Boolean) || allergenFilterActive;
   const proximityLat = asFiniteNumber(searchParams.get("lat"));
   const proximityLng = asFiniteNumber(searchParams.get("lng"));
   const contextCity  = searchParams.get("city")  || null;
@@ -964,6 +879,10 @@ export default function PublicMenuPage() {
   ]);
 
 
+  useEffect(() => {
+    setApplySavedPreferences(false);
+  }, [routeState.restaurantId]);
+
   const apiUrl = useMemo(() => {
     const rid = encodeURIComponent(asStr(routeState.restaurantId).trim());
     const params = new URLSearchParams();
@@ -974,14 +893,6 @@ export default function PublicMenuPage() {
     if (contextCity)  params.set("city",  contextCity);
     if (contextState) params.set("state", contextState);
     if (language && language !== "en") params.set("lang", language);
-    if (filtersActive) {
-      for (const [key, active] of Object.entries(dietPrefs)) {
-        if (active) params.set(key, "1");
-      }
-      if (allergenFilterActive && enabledAllergenKeys.size > 0) {
-        params.set("allergen_keys", [...enabledAllergenKeys].join(","));
-      }
-    }
     const qs = params.toString();
     return `${API}/public/restaurants/${rid}/menu${qs ? `?${qs}` : ""}`;
   }, [
@@ -991,10 +902,6 @@ export default function PublicMenuPage() {
     contextCity,
     contextState,
     language,
-    filtersActive,
-    allergenFilterActive,
-    enabledAllergenKeys,
-    dietPrefs,
   ]);
 
   useEffect(() => {
@@ -1195,7 +1102,19 @@ export default function PublicMenuPage() {
   // tabSections?.sections may still show a prior menu's content during a background fetch —
   // this is intentional: never blank the display while waiting for a new tab to load.
   const sections        = tabSections?.sections ?? normalizeSections(data);
-  const displaySections = getFilteredDisplaySections(sections, dietPrefs, enabledAllergenKeys);
+  const preferencesApplied = applySavedPreferences && hasSavedPreferences;
+  const displaySections = useMemo(() => {
+    if (!preferencesApplied) {
+      return (Array.isArray(sections) ? sections : [])
+        .map((sec) => {
+          const title = asStr(sec?.title || "Menu").trim() || "Menu";
+          const items = (Array.isArray(sec?.items) ? sec.items : []).filter(isDisplayableMenuItem);
+          return { ...sec, title, items };
+        })
+        .filter((sec) => sec.items.length > 0);
+    }
+    return getClientPreferenceDisplaySections(sections, dietPrefs, enabledAllergenKeys);
+  }, [sections, preferencesApplied, dietPrefs, enabledAllergenKeys]);
   const displayableItemCount = displaySections.reduce(
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
     0
@@ -1362,11 +1281,19 @@ export default function PublicMenuPage() {
           intakeBannerSlot: (
             <IntakePreviewBanner show={isIntakePreview} />
           ),
-          allergenBannerSlot: <AllergenFilterBanner active={allergenFilterActive} enabledKeys={enabledAllergenKeys} />,
+          allergenBannerSlot: (
+            <MenuPreferencesAppliedBanner
+              visible={hasSavedPreferences}
+              applySavedPreferences={applySavedPreferences}
+              onToggle={setApplySavedPreferences}
+              dietPreferenceActive={dietPreferenceActive}
+              allergenPreferenceActive={allergenPreferenceActive}
+            />
+          ),
           displaySections,
           displayableItemCount,
           dealItems: data?.deal_items || [],
-          filtersActive,
+          filtersActive: preferencesApplied,
           data,
           currentRestaurantId,
           dealMap,
