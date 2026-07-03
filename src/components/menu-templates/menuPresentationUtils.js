@@ -72,3 +72,9 @@ export function pickHeroImageUrl(menuPayload) {
     null
   );
 }
+
+/** Trailing action column on editorial menu rows — header icons use the same grid. */
+export const MENU_ROW_OUTER_GAP = 8;
+export const MENU_ROW_ICON_GAP = 4;
+export const MENU_ROW_ICON_SIZE = 28;
+export const MENU_ROW_PRICE_MIN_WIDTH = 56;

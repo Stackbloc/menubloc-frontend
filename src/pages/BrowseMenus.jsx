@@ -1,6 +1,6 @@
 /**
  * Menu Catalog Reader — one full restaurant menu at a time.
- * Top category tabs pick the sequence; swipe or arrow keys flip through menus.
+ * Top category tabs pick the sequence; touch swipe, arrow keys, or nav buttons flip menus.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -71,7 +71,9 @@ export default function BrowseMenus() {
   const [locationParams, setLocationParams] = useState({ city: urlCity || null, state: urlState || null });
   const [introMinElapsed, setIntroMinElapsed] = useState(false);
   const [menuLoadStatus, setMenuLoadStatus] = useState("idle");
-  const swipeRef = useRef({ startX: 0, startY: 0 });
+  const [initialMenuReady, setInitialMenuReady] = useState(false);
+  const browseAreaRef = useRef(null);
+  const swipeRef = useRef({ startX: 0, startY: 0, active: false, axis: null });
 
   const {
     entries,
@@ -174,21 +176,15 @@ export default function BrowseMenus() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [goNext, goPrev]);
 
-  function handleTouchStart(event) {
-    const touch = event.touches?.[0];
-    if (!touch) return;
-    swipeRef.current = { startX: touch.clientX, startY: touch.clientY };
-  }
+  useEffect(() => {
+    setInitialMenuReady(false);
+  }, [activeSection]);
 
-  function handleTouchEnd(event) {
-    const touch = event.changedTouches?.[0];
-    if (!touch) return;
-    const dx = touch.clientX - swipeRef.current.startX;
-    const dy = touch.clientY - swipeRef.current.startY;
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    if (dx < 0) goNext();
-    else goPrev();
-  }
+  useEffect(() => {
+    if (menuLoadStatus === "ok") {
+      setInitialMenuReady(true);
+    }
+  }, [menuLoadStatus]);
 
   useEffect(() => {
     setMenuLoadStatus("idle");
@@ -213,10 +209,81 @@ export default function BrowseMenus() {
   const listPending = loading || locationPending || waitingForPage || (loadingMore && !currentEntry);
   const menuPending = currentEntry && (menuLoadStatus === "idle" || menuLoadStatus === "loading");
   const initialHold = !introMinElapsed;
-  const showSplash = initialHold || listPending || menuPending;
+  // Splash only for first boot in a category — not on every menu swipe.
+  const showSplash = initialHold || listPending || (!initialMenuReady && menuPending);
   const introProgress = useSmoothedProgress(loadTarget, showSplash);
   const currentMenuNumber = currentEntry ? (activeIndex + 1) : 0;
   const totalMenuCount = Math.max(totalCount || 0, entries.length || 0);
+
+  const trySwipeNavigation = useCallback((dx, dy) => {
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return false;
+    if (dx < 0) goNext();
+    else goPrev();
+    return true;
+  }, [goNext, goPrev]);
+
+  useEffect(() => {
+    const el = browseAreaRef.current;
+    if (!el) return undefined;
+
+    function resetSwipe() {
+      swipeRef.current = { startX: 0, startY: 0, active: false, axis: null };
+    }
+
+    function handleTouchStart(event) {
+      if (showSplash) return;
+      const touch = event.touches?.[0];
+      if (!touch) return;
+      swipeRef.current = {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        active: true,
+        axis: null,
+      };
+    }
+
+    function handleTouchMove(event) {
+      const touch = event.touches?.[0];
+      if (!touch || !swipeRef.current.active) return;
+
+      const dx = touch.clientX - swipeRef.current.startX;
+      const dy = touch.clientY - swipeRef.current.startY;
+
+      if (!swipeRef.current.axis) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        swipeRef.current.axis = Math.abs(dx) >= Math.abs(dy) ? "x" : "y";
+      }
+
+      if (swipeRef.current.axis === "x") {
+        event.preventDefault();
+      }
+    }
+
+    function handleTouchEnd(event) {
+      const touch = event.changedTouches?.[0];
+      if (!touch || !swipeRef.current.active) return;
+
+      const dx = touch.clientX - swipeRef.current.startX;
+      const dy = touch.clientY - swipeRef.current.startY;
+      const wasHorizontal = swipeRef.current.axis === "x";
+      resetSwipe();
+
+      if (!wasHorizontal) return;
+      trySwipeNavigation(dx, dy);
+    }
+
+    el.addEventListener("touchstart", handleTouchStart, { passive: true, capture: true });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false, capture: true });
+    el.addEventListener("touchend", handleTouchEnd, { passive: true, capture: true });
+    el.addEventListener("touchcancel", resetSwipe, { passive: true, capture: true });
+
+    return () => {
+      el.removeEventListener("touchstart", handleTouchStart, { capture: true });
+      el.removeEventListener("touchmove", handleTouchMove, { capture: true });
+      el.removeEventListener("touchend", handleTouchEnd, { capture: true });
+      el.removeEventListener("touchcancel", resetSwipe, { capture: true });
+    };
+  }, [showSplash, trySwipeNavigation]);
 
   const browseShellStyle = {
     flex: 1,
@@ -251,6 +318,7 @@ export default function BrowseMenus() {
         />
 
         <div
+          ref={browseAreaRef}
           style={{
             flex: 1,
             minHeight: 0,
@@ -259,10 +327,64 @@ export default function BrowseMenus() {
             overflow: "hidden",
             position: "relative",
           }}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
         >
         <MenuCatalogIntroSplash visible={showSplash} progress={introProgress} />
+
+        {!showSplash && hasPrev ? (
+          <button
+            type="button"
+            aria-label={t("menuBrowser.prevMenu", "Previous menu")}
+            onClick={goPrev}
+            style={{
+              position: "absolute",
+              left: 4,
+              top: "50%",
+              transform: "translateY(-50%)",
+              zIndex: 56,
+              width: 36,
+              height: 56,
+              borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.35)",
+              background: "rgba(0,0,0,0.55)",
+              color: "#fff",
+              fontSize: 22,
+              fontWeight: 900,
+              cursor: "pointer",
+              lineHeight: 1,
+              padding: 0,
+            }}
+          >
+            ‹
+          </button>
+        ) : null}
+
+        {!showSplash && hasNext ? (
+          <button
+            type="button"
+            aria-label={t("menuBrowser.nextMenu", "Next menu")}
+            onClick={goNext}
+            style={{
+              position: "absolute",
+              right: 4,
+              top: "50%",
+              transform: "translateY(-50%)",
+              zIndex: 56,
+              width: 36,
+              height: 56,
+              borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.35)",
+              background: "rgba(0,0,0,0.55)",
+              color: "#fff",
+              fontSize: 22,
+              fontWeight: 900,
+              cursor: "pointer",
+              lineHeight: 1,
+              padding: 0,
+            }}
+          >
+            ›
+          </button>
+        ) : null}
 
         {!showSplash && totalMenuCount > 0 ? (
           <div

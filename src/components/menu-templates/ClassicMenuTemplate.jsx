@@ -5,11 +5,12 @@ import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
-import { useIsTabletRange, getRestaurantInitials } from "./menuPresentationUtils.js";
+import { useIsTabletRange, getRestaurantInitials, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import MapPinIcon from "./MapPinIcon.jsx";
 import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
 import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
+import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 const INK = "#1D1D1F";
@@ -126,11 +127,6 @@ export default function ClassicMenuTemplate(ctx) {
   // (PublicMenuPage.jsx uses the same isMobile 900px cutoff: 12px vs 20px).
   const edgeBleed = isMobile ? -12 : -20;
   const accent = brand?.accent ?? "#0071E3";
-  // TEMPORARY, scoped experiment: share sits inline next to the name instead
-  // of anchored to the trailing edge. Requested for Emmy Squared Pizza (id
-  // 678) only, to compare against the default anchored-right placement
-  // before deciding whether to change it platform-wide.
-  const shareInlineExperiment = String(currentRestaurantId) === "678";
 
   return (
     <div style={{ fontFamily: FONT_STACK, background: "#FFFFFF", marginLeft: edgeBleed, marginRight: edgeBleed }}>
@@ -163,9 +159,9 @@ export default function ClassicMenuTemplate(ctx) {
             </RestaurantProfileLogoLink>
           ) : null}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "nowrap" }}>
-              <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
-                {restaurantProfileHref ? (
+            <MenuHeaderNameWithActions
+              nameSlot={
+                restaurantProfileHref ? (
                   <Link
                     to={restaurantProfileHref}
                     title={`Open ${restaurantName} profile`}
@@ -177,8 +173,6 @@ export default function ClassicMenuTemplate(ctx) {
                       color: INK,
                       textDecoration: "none",
                       display: "block",
-                      minWidth: 0,
-                      flexShrink: shareInlineExperiment ? 1 : undefined,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -195,8 +189,6 @@ export default function ClassicMenuTemplate(ctx) {
                       letterSpacing: "-0.02em",
                       lineHeight: 1.15,
                       color: INK,
-                      minWidth: 0,
-                      flexShrink: shareInlineExperiment ? 1 : undefined,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -204,35 +196,22 @@ export default function ClassicMenuTemplate(ctx) {
                   >
                     {restaurantName}
                   </div>
-                )}
-
-                {shareInlineExperiment ? (
-                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 6 }}>
-                    <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} size={32} />
-                    <ShareButton
-                      variant="menu"
-                      iconOnly={true}
-                      tone="inline"
-                      shareData={shareData}
-                      analyticsContext={shareAnalyticsContext}
-                    />
-                  </div>
-                ) : null}
-              </div>
-
-              {!shareInlineExperiment ? (
-                <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                  <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} size={32} />
+                )
+              }
+              onActionsClick={(e) => e.stopPropagation()}
+              actions={
+                <>
+                  <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} size={MENU_ROW_ICON_SIZE} />
                   <ShareButton
                     variant="menu"
                     iconOnly={true}
-                    tone="inline"
+                    tone="ghost"
                     shareData={shareData}
                     analyticsContext={shareAnalyticsContext}
                   />
-                </div>
-              ) : null}
-            </div>
+                </>
+              }
+            />
 
             {addressLine ? (
               directionsHref ? (

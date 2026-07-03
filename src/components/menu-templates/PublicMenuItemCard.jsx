@@ -209,10 +209,6 @@ export default function PublicMenuItemCard({
   const inCartCount = cartState.totalQuantity;
   const isTablet = useIsTabletRange();
   const ed = ED_PALETTES[editorialColorScheme] || ED_PALETTES.light;
-  // TEMPORARY, scoped experiment: share sits inline next to the item name
-  // instead of anchored to the trailing edge. Emmy Squared Pizza (id 678)
-  // only — see matching flag in ClassicMenuTemplate.jsx.
-  const shareInlineExperiment = editorialRefresh && String(currentRestaurantId) === "678";
   // Cap descriptive badges at 2 (editorialRefresh only) so the row never shows
   // a wall of tags. Priority: unavailability status, then deal, then diet flags.
   const visibleBadges = editorialRefresh
@@ -362,77 +358,41 @@ export default function PublicMenuItemCard({
         ) : null}
         <div style={{ minWidth: 0, flex: 1 }}>
           {editorialRefresh ? (
-            <div style={{ display: "flex", alignItems: "center", gap: MENU_ROW_OUTER_GAP }}>
-              <div
+            <div style={{ display: "flex", alignItems: "flex-start", gap: MENU_ROW_OUTER_GAP }}>
+              <span
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
+                  fontSize: titleSize,
+                  fontWeight: 600,
+                  color: ed.ink,
+                  lineHeight: 1.3,
                   minWidth: 0,
-                  flex: shareInlineExperiment ? "0 1 auto" : 1,
+                  flex: 1,
                 }}
               >
-                <span
-                  style={{
-                    fontSize: titleSize,
-                    fontWeight: 600,
-                    color: ed.ink,
-                    lineHeight: 1.3,
-                    minWidth: 0,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "normal",
-                  }}
-                >
-                  {name}
-                </span>
-                {shareInlineExperiment && canNavigate ? (
-                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
-                    <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
-                    {dishShareData ? (
-                      <ShareButton
-                        variant="dish"
-                        iconOnly={true}
-                        tone="ghost"
-                        shareData={dishShareData}
-                        analyticsContext={{
-                          restaurantId: currentRestaurantId,
-                          restaurantSlug: data?.slug || null,
-                          menuItemId: it.id,
-                          menuItemName: name,
-                          pageType: "public_menu",
-                          shareTarget: "dish",
-                        }}
-                      />
-                    ) : null}
-                  </div>
+                {name}
+              </span>
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0 }}
+              >
+                {canNavigate ? (
+                  <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
                 ) : null}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0, marginLeft: shareInlineExperiment ? "auto" : undefined }}>
-                {!shareInlineExperiment && canNavigate ? (
-                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
-                    <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
-                  </div>
-                ) : null}
-                {!shareInlineExperiment ? (
-                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
-                    {dishShareData ? (
-                      <ShareButton
-                        variant="dish"
-                        iconOnly={true}
-                        tone="ghost"
-                        shareData={dishShareData}
-                        analyticsContext={{
-                          restaurantId: currentRestaurantId,
-                          restaurantSlug: data?.slug || null,
-                          menuItemId: it.id,
-                          menuItemName: name,
-                          pageType: "public_menu",
-                          shareTarget: "dish",
-                        }}
-                      />
-                    ) : null}
-                  </div>
+                {dishShareData ? (
+                  <ShareButton
+                    variant="dish"
+                    iconOnly={true}
+                    tone="ghost"
+                    shareData={dishShareData}
+                    analyticsContext={{
+                      restaurantId: currentRestaurantId,
+                      restaurantSlug: data?.slug || null,
+                      menuItemId: it.id,
+                      menuItemName: name,
+                      pageType: "public_menu",
+                      shareTarget: "dish",
+                    }}
+                  />
                 ) : null}
                 {price ? (
                   <span
@@ -452,7 +412,7 @@ export default function PublicMenuItemCard({
               </div>
             </div>
           ) : compactActions ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: MENU_ROW_OUTER_GAP }}>
               <span
                 style={{
                   fontSize: titleSize,
@@ -468,78 +428,78 @@ export default function PublicMenuItemCard({
               >
                 {name}
               </span>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0 }}
+              >
                 {canNavigate ? (
-                  <LikeMenuItemButton menuItemId={it.id} tone="ghost" />
+                  <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
                 ) : null}
                 {dishShareData ? (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <ShareButton
-                      variant="dish"
-                      label="Share"
-                      shareData={dishShareData}
-                      analyticsContext={{
-                        restaurantId: currentRestaurantId,
-                        restaurantSlug: data?.slug || null,
-                        menuItemId: it.id,
-                        menuItemName: name,
-                        pageType: "public_menu",
-                        shareTarget: "dish",
-                      }}
-                      iconOnly={true}
-                      tone="ghost"
-                    />
-                  </div>
+                  <ShareButton
+                    variant="dish"
+                    iconOnly={true}
+                    tone="ghost"
+                    shareData={dishShareData}
+                    analyticsContext={{
+                      restaurantId: currentRestaurantId,
+                      restaurantSlug: data?.slug || null,
+                      menuItemId: it.id,
+                      menuItemName: name,
+                      pageType: "public_menu",
+                      shareTarget: "dish",
+                    }}
+                  />
                 ) : null}
                 {price ? (
-                  <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap" }}>{price}</span>
+                  <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap", minWidth: MENU_ROW_PRICE_MIN_WIDTH, textAlign: "right" }}>{price}</span>
                 ) : null}
               </div>
             </div>
           ) : (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1, flexWrap: "nowrap" }}>
-                <span
-                  style={{
-                    fontSize: titleSize,
-                    fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : density === "classic" ? 700 : 600,
-                    color: "#FFFFFF",
-                    lineHeight: 1.2,
-                    minWidth: 0,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: density === "takeout" ? "nowrap" : "normal",
-                  }}
-                >
-                  {name}
-                </span>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: MENU_ROW_OUTER_GAP }}>
+              <span
+                style={{
+                  fontSize: titleSize,
+                  fontWeight: density === "cinematic" || density === "bold-casual" ? 800 : density === "classic" ? 700 : 600,
+                  color: "#FFFFFF",
+                  lineHeight: 1.2,
+                  minWidth: 0,
+                  flex: 1,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: density === "takeout" ? "nowrap" : "normal",
+                }}
+              >
+                {name}
+              </span>
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0 }}
+              >
                 {canNavigate ? (
-                  <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0 }}>
-                    <LikeMenuItemButton menuItemId={it.id} tone="ghost" />
-                  </div>
+                  <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
                 ) : null}
                 {dishShareData ? (
-                  <div onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", flexShrink: 0, whiteSpace: "nowrap" }}>
-                    <ShareButton
-                      variant="dish"
-                      iconOnly={true}
-                      tone="ghost"
-                      shareData={dishShareData}
-                      analyticsContext={{
-                        restaurantId: currentRestaurantId,
-                        restaurantSlug: data?.slug || null,
-                        menuItemId: it.id,
-                        menuItemName: name,
-                        pageType: "public_menu",
-                        shareTarget: "dish",
-                      }}
-                    />
-                  </div>
+                  <ShareButton
+                    variant="dish"
+                    iconOnly={true}
+                    tone="ghost"
+                    shareData={dishShareData}
+                    analyticsContext={{
+                      restaurantId: currentRestaurantId,
+                      restaurantSlug: data?.slug || null,
+                      menuItemId: it.id,
+                      menuItemName: name,
+                      pageType: "public_menu",
+                      shareTarget: "dish",
+                    }}
+                  />
+                ) : null}
+                {price ? (
+                  <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap", minWidth: MENU_ROW_PRICE_MIN_WIDTH, textAlign: "right" }}>{price}</span>
                 ) : null}
               </div>
-              {price ? (
-                <span style={{ fontSize: titleSize, fontWeight: 700, color: accent, whiteSpace: "nowrap" }}>{price}</span>
-              ) : null}
             </div>
           )}
 

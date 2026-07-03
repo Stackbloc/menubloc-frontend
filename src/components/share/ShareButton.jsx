@@ -18,6 +18,7 @@ import React, { useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import ShareModal from "./ShareModal.jsx";
 import ShareIcon from "./ShareIcon.jsx";
+import IconHoverLabel from "../IconHoverLabel.jsx";
 import { trackShareEvent } from "./shareUtils.js";
 import { trackMenuShare } from "../../lib/analytics.js";
 
@@ -57,6 +58,9 @@ export default function ShareButton({
   const normalizedVariant = variant === "dish" ? "dish" : "menu";
   const resolvedLabel = label || (normalizedVariant === "dish" ? "Share Dish" : "Share Menu");
   const resolvedModalTitle = modalTitle || resolvedLabel;
+  const hoverLabel = iconOnly
+    ? (label || (normalizedVariant === "dish" ? "Share" : "Share"))
+    : resolvedLabel;
   const compact = size === "compact";
   const subtle = tone === "subtle";
   const ghost = tone === "ghost";
@@ -154,19 +158,22 @@ export default function ShareButton({
 
   return (
     <>
-      <button
-        type="button"
-        aria-label={resolvedLabel}
-        onClick={handleClick}
-        style={buttonStyles}
-      >
-        <ShareIcon size={inline ? 14 : iconOnly ? (ghost ? 15 : compact ? 15 : 16) : compact ? 15 : 16} />
-        {iconOnly ? (
-          <span style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>
-            {resolvedLabel}
-          </span>
-        ) : resolvedLabel}
-      </button>
+      <IconHoverLabel label={iconOnly ? hoverLabel : null}>
+        <button
+          type="button"
+          aria-label={resolvedLabel}
+          title={iconOnly ? hoverLabel : undefined}
+          onClick={handleClick}
+          style={buttonStyles}
+        >
+          <ShareIcon size={inline ? 14 : iconOnly ? (ghost ? 15 : compact ? 15 : 16) : compact ? 15 : 16} />
+          {iconOnly ? (
+            <span style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>
+              {resolvedLabel}
+            </span>
+          ) : resolvedLabel}
+        </button>
+      </IconHoverLabel>
 
       <ShareModal
         open={isModalOpen}

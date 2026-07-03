@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import ChainLocationsSheet from "./ChainLocationsSheet.jsx";
-import { useConsumer } from "../../context/ConsumerContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { followRestaurant, unfollowRestaurant } from "../../lib/consumerApi.js";
 import { getDisplayItemCount, getMenuAvailabilityLabel, shouldLinkRestaurantCardToMenu } from "../../lib/publicCardCounts.js";
 import { getLocalizedField, getLocalizedPreviewLabel } from "../../utils/getLocalizedField.js";
 import { appendLanguageParam } from "../../lib/languageApi.js";
@@ -95,12 +93,7 @@ export default function DiscoveryCard({
   paneVariant = null,
 }) {
   const [showChainSheet, setShowChainSheet] = useState(false);
-  const [followed, setFollowed] = useState(false);
-  const [followLoading, setFollowLoading] = useState(false);
-  const [followConfirm, setFollowConfirm] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
-  const { isAuthenticated } = useConsumer();
   const { language, t } = useLanguage();
   const id = menu?.restaurant_id;
   const chainId = menu?.chain_id ?? null;
@@ -138,26 +131,6 @@ export default function DiscoveryCard({
     menuReady ? `${menuHref}${cardSearch}` : `${profileHref}${cardSearch}#claim-profile`,
     language
   );
-
-  async function handleFollow(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isAuthenticated) { navigate("/account"); return; }
-    if (followLoading) return;
-    setFollowLoading(true);
-    try {
-      if (followed) {
-        await unfollowRestaurant(id);
-        setFollowed(false);
-      } else {
-        await followRestaurant(id);
-        setFollowed(true);
-        setFollowConfirm(true);
-        setTimeout(() => setFollowConfirm(false), 2500);
-      }
-    } catch {}
-    setFollowLoading(false);
-  }
 
   const itemWord = t(itemCount === 1 ? "common.itemSingular" : "common.itemPlural", itemCount === 1 ? "item" : "items");
   const itemCountLabel = itemCount > 0 && !paneVariant
@@ -241,8 +214,8 @@ export default function DiscoveryCard({
               )}
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            {onSave && (
+          {onSave ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSave(id); }}
@@ -258,48 +231,9 @@ export default function DiscoveryCard({
                   flexShrink: 0,
                 }}
               >🔖</button>
-            )}
-            <button
-              type="button"
-              onClick={handleFollow}
-              disabled={followLoading}
-              aria-label={followed ? `Unfollow ${name}` : `Follow ${name}`}
-              style={{
-                width: 28,
-                height: 28,
-                border: "none",
-                borderRadius: 6,
-                background: followed ? "var(--gb-color-accent)" : "var(--gb-color-border)",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "background 200ms ease",
-              }}
-            >
-              <span style={{
-                fontSize: 11,
-                fontWeight: 900,
-                color: followed ? "#ffffff" : "var(--gb-color-ink-muted)",
-              }}>
-                {followed ? "✓" : "F"}
-              </span>
-            </button>
-          </div>
+            </div>
+          ) : null}
         </div>
-
-        {/* Follow confirmation */}
-        {followConfirm && (
-          <div style={{
-            fontSize: 11,
-            fontWeight: 800,
-            color: "var(--gb-color-accent)",
-            marginBottom: 2,
-            letterSpacing: "0.01em",
-          }}>
-            Following {name}
-          </div>
-        )}
 
         {/* Meta row — pill chips */}
         {(metaItems.length > 0 || paneVariant) && (

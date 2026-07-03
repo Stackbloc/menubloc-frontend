@@ -5,11 +5,12 @@ import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
-import { useIsTabletRange, getRestaurantInitials } from "./menuPresentationUtils.js";
+import { useIsTabletRange, getRestaurantInitials, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import MapPinIcon from "./MapPinIcon.jsx";
 import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
 import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
+import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 // Apple iOS dark-mode color tokens — distinct from the old Menuply dark-green
@@ -152,9 +153,9 @@ export default function EditorialDarkMenuTemplate(ctx) {
             </RestaurantProfileLogoLink>
           ) : null}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "nowrap" }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                {restaurantProfileHref ? (
+            <MenuHeaderNameWithActions
+              nameSlot={
+                restaurantProfileHref ? (
                   <Link
                     to={restaurantProfileHref}
                     title={`Open ${restaurantName} profile`}
@@ -189,20 +190,22 @@ export default function EditorialDarkMenuTemplate(ctx) {
                   >
                     {restaurantName}
                   </div>
-                )}
-              </div>
-
-              <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} dark size={32} />
-                <ShareButton
-                  variant="menu"
-                  iconOnly={true}
-                  tone="inline"
-                  shareData={shareData}
-                  analyticsContext={shareAnalyticsContext}
-                />
-              </div>
-            </div>
+                )
+              }
+              onActionsClick={(e) => e.stopPropagation()}
+              actions={
+                <>
+                  <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} dark size={MENU_ROW_ICON_SIZE} />
+                  <ShareButton
+                    variant="menu"
+                    iconOnly={true}
+                    tone="ghost"
+                    shareData={shareData}
+                    analyticsContext={shareAnalyticsContext}
+                  />
+                </>
+              }
+            />
 
             {addressLine ? (
               directionsHref ? (

@@ -35,6 +35,7 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
+import ThumbsUpIcon from "../components/icons/ThumbsUpIcon.jsx";
 import {
   applyDocumentSocialMetadata,
   buildDishShareData,
@@ -1615,7 +1616,7 @@ export default function MenuItemDetailPage() {
                     transition: "background 0.15s, color 0.15s, border-color 0.15s",
                   }}
                 >
-                  <span style={{ fontSize: 15, lineHeight: 1 }}>{liked ? "♥" : "♡"}</span>
+                  <ThumbsUpIcon size={15} filled={liked} color={liked ? "#22C55E" : "currentColor"} />
                   {liked ? "Liked" : "Like"}
                 </button>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6b7280", flex: "0 0 auto", flexWrap: "wrap" }}>
