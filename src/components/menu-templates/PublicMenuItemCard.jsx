@@ -8,7 +8,12 @@ import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
 import { buildDishShareData } from "../share/shareUtils.js";
 import { getMenuItemImageUrl } from "./menuImageUtils.js";
 import { normalizeMenuThemeSettings } from "./menuThemeSettings.js";
-import { useIsTabletRange } from "./menuPresentationUtils.js";
+import {
+  useIsTabletRange,
+  MENU_ROW_ICON_GAP,
+  MENU_ROW_OUTER_GAP,
+  MENU_ROW_PRICE_MIN_WIDTH,
+} from "./menuPresentationUtils.js";
 
 // Editorial (Apple-inspired) neutral palettes — isolated to editorialRefresh only.
 // "light" backs the new default (Classic/v1). "dark" backs the dark color-scheme
@@ -172,16 +177,10 @@ export default function PublicMenuItemCard({
       String(nutritionChip.allergen_alert || "").trim()
     )
   );
-  const showInsightsInline =
-    themeSettings.insight_display !== "hidden" &&
-    themeSettings.intelligence_density !== "none" &&
-    themeSettings.intelligence_density !== "minimal" &&
-    canNavigate &&
-    itemHasInsightsData(it);
   const showNutritionInline =
     themeSettings.nutrition_display !== "hidden" &&
     themeSettings.intelligence_density !== "none" &&
-    hasNutritionData;
+    (hasNutritionData || itemHasInsightsData(it));
   const showAllergenInline = false;
   const showIndulgenceInline =
     themeSettings.indulgence_display !== "hidden" &&
@@ -363,7 +362,7 @@ export default function PublicMenuItemCard({
         ) : null}
         <div style={{ minWidth: 0, flex: 1 }}>
           {editorialRefresh ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: MENU_ROW_OUTER_GAP }}>
               <div
                 style={{
                   display: "flex",
@@ -389,12 +388,12 @@ export default function PublicMenuItemCard({
                 </span>
                 {shareInlineExperiment && canNavigate ? (
                   <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 4 }}>
-                    <LikeMenuItemButton menuItemId={it.id} tone="inline" />
+                    <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
                     {dishShareData ? (
                       <ShareButton
                         variant="dish"
                         iconOnly={true}
-                        tone="inline"
+                        tone="ghost"
                         shareData={dishShareData}
                         analyticsContext={{
                           restaurantId: currentRestaurantId,
@@ -409,31 +408,29 @@ export default function PublicMenuItemCard({
                   </div>
                 ) : null}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, marginLeft: shareInlineExperiment ? "auto" : undefined }}>
+              <div style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0, marginLeft: shareInlineExperiment ? "auto" : undefined }}>
                 {!shareInlineExperiment && canNavigate ? (
-                  <div style={{ width: 28, display: "flex", justifyContent: "center", flexShrink: 0 }}>
-                    <LikeMenuItemButton menuItemId={it.id} tone="inline" />
+                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
+                    <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
                   </div>
                 ) : null}
                 {!shareInlineExperiment ? (
-                  <div style={{ width: 28, display: "flex", justifyContent: "center", flexShrink: 0 }}>
+                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
                     {dishShareData ? (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <ShareButton
-                          variant="dish"
-                          iconOnly={true}
-                          tone="inline"
-                          shareData={dishShareData}
-                          analyticsContext={{
-                            restaurantId: currentRestaurantId,
-                            restaurantSlug: data?.slug || null,
-                            menuItemId: it.id,
-                            menuItemName: name,
-                            pageType: "public_menu",
-                            shareTarget: "dish",
-                          }}
-                        />
-                      </div>
+                      <ShareButton
+                        variant="dish"
+                        iconOnly={true}
+                        tone="ghost"
+                        shareData={dishShareData}
+                        analyticsContext={{
+                          restaurantId: currentRestaurantId,
+                          restaurantSlug: data?.slug || null,
+                          menuItemId: it.id,
+                          menuItemName: name,
+                          pageType: "public_menu",
+                          shareTarget: "dish",
+                        }}
+                      />
                     ) : null}
                   </div>
                 ) : null}
@@ -445,7 +442,7 @@ export default function PublicMenuItemCard({
                       color: ed.ink,
                       whiteSpace: "nowrap",
                       fontVariantNumeric: "tabular-nums",
-                      minWidth: 56,
+                      minWidth: MENU_ROW_PRICE_MIN_WIDTH,
                       textAlign: "right",
                     }}
                   >
@@ -649,7 +646,7 @@ export default function PublicMenuItemCard({
         }}>{desc}</div>
       ) : null}
 
-      {density !== "takeout" && (showInsightsInline || showNutritionInline || showAllergenInline || showIndulgenceInline) ? (
+      {density !== "takeout" && (showNutritionInline || showAllergenInline || showIndulgenceInline) ? (
         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: editorialRefresh ? 10 : 8, flexWrap: "wrap" }}>
           {showNutritionInline ? (
             <button
@@ -704,62 +701,6 @@ export default function PublicMenuItemCard({
                 border={`1px solid ${softBorder}`}
               />
             )
-          ) : null}
-          {showInsightsInline ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                const navId = it?.canonical_menu_item_id || it?.id;
-                if (navId && navigate) navigate(`/menu-items/${navId}?from=menu`);
-              }}
-              style={editorialRefresh ? {
-                display: "inline-flex",
-                alignItems: "center",
-                height: 22,
-                padding: "0 10px",
-                borderRadius: 999,
-                border: `1px solid ${ed.hairline}`,
-                background: "transparent",
-                color: ed.subtle,
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: "pointer",
-                lineHeight: 1,
-              } : {
-                display: "inline-flex",
-                alignItems: "center",
-                border: compactActions ? "1px solid rgba(255,255,255,0.14)" : "none",
-                background: "transparent",
-                color: compactActions ? "rgba(255,255,255,0.38)" : accent,
-                fontSize: compactActions ? 9.5 : 12,
-                height: compactActions ? 16 : "auto",
-                padding: compactActions ? "0 7px" : 0,
-                borderRadius: compactActions ? 999 : 0,
-                fontWeight: 600,
-                cursor: "pointer",
-                lineHeight: 1,
-                transition: "all 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (editorialRefresh) {
-                  e.currentTarget.style.background = ed.unavailableBg;
-                  return;
-                }
-                e.currentTarget.style.textDecoration = "underline";
-                e.currentTarget.style.opacity = "0.85";
-              }}
-              onMouseLeave={(e) => {
-                if (editorialRefresh) {
-                  e.currentTarget.style.background = "transparent";
-                  return;
-                }
-                e.currentTarget.style.textDecoration = "none";
-                e.currentTarget.style.opacity = "1";
-              }}
-            >
-              {t("common.insights", "Insights")}
-            </button>
           ) : null}
         </div>
       ) : null}

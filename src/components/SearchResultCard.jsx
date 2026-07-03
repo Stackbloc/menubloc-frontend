@@ -19,7 +19,7 @@ import {
 import IndulgenceMeter from "./IndulgenceMeter.jsx";
 import ShareButton from "./share/ShareButton.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
-import InsightCardDeck, { buildInsightCards } from "./InsightCardDeck.jsx";
+import { buildInsightCards } from "./InsightCardDeck.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import buildMatchPreview from "./searchResultMatchPreview.js";
 import {
@@ -33,7 +33,7 @@ import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
 import { trackBillboardClick } from "../lib/analytics.js";
-import { fetchSimilarItems, fetchCompareItems } from "../lib/api.js";
+import { fetchSimilarItems, fetchCompareItems, fetchMenuItemIntelligence } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "./menu/CompareItemsModal.jsx";
 
@@ -50,6 +50,7 @@ const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
   "diabetic_friendly", "low_fat", "low_sodium", "keto",
 ]);
 const searchCardSimilarCache = new Map();
+const searchCardIntelligenceCache = new Map();
 
 /* ---- Billboard banner (compact, search-surface) ---- */
 
@@ -425,8 +426,36 @@ function getPopular(row) {
   return clickCount !== null && clickCount >= 10000;
 }
 
+function resolveCapabilities(row) {
+  return row?.capabilities && typeof row.capabilities === "object" ? row.capabilities : {};
+}
+
 function resolveChips(row) {
   return row?.chips || row?.item?.chips || {};
+}
+
+function mergeRowIntelligence(row, intelligence) {
+  if (!intelligence?.chips) return row;
+  return {
+    ...row,
+    chips: {
+      ...(row?.chips || {}),
+      ...intelligence.chips,
+      nutrition_chip: {
+        ...(row?.chips?.nutrition_chip || {}),
+        ...(intelligence.chips?.nutrition_chip || {}),
+      },
+      insights: {
+        ...(row?.chips?.insights || {}),
+        ...(intelligence.chips?.insights || {}),
+      },
+      pairings_chip: {
+        ...(row?.chips?.pairings_chip || {}),
+        ...(intelligence.chips?.pairings_chip || {}),
+      },
+    },
+    detail_system: intelligence.detail_system || row?.detail_system || null,
+  };
 }
 
 function resolveItemFlag(row, key) {
@@ -787,9 +816,31 @@ function CompactScoreSummary({ presentation, breadScore }) {
 }
 
 
+function nutritionChipHasValues(chip) {
+  const r = (v) => (v != null && Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
+  return (
+    r(chip?.calories_kcal) !== null ||
+    r(chip?.protein_g) !== null ||
+    r(chip?.fat_g) !== null ||
+    r(chip?.sodium_mg) !== null
+  );
+}
+
+function insightsPanelHasRows(chips) {
+  const nutChip = chips?.nutrition_chip || {};
+  const backendScores = chips?.insights?.scores;
+  const clientScores = computeInsights(nutChip);
+  return INSIGHT_DEFS.some(({ backendKey, clientKey }) => {
+    const bs = backendScores?.[backendKey];
+    if (bs && bs.score !== null && Number.isFinite(bs.score)) return true;
+    const cs = clientScores[clientKey];
+    return cs !== null && cs !== undefined;
+  });
+}
+
 /* ---- Detail panel content ---- */
 
-function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels }) {
+function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels, intelligenceLoading = false }) {
   const chips = resolveChips(row);
   const nutChip = chips?.nutrition_chip || {};
   const indulgencePresentation = resolveIndulgencePresentation({ chips });
@@ -806,17 +857,32 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels 
   };
 
   if (tab === "nutrition") {
+    if (intelligenceLoading) {
+      return (
+        <div style={wrap}>
+          <span style={muted}>Loading nutrition...</span>
+        </div>
+      );
+    }
+    const hasNutritionValues = nutritionChipHasValues(nutChip);
+    const hasInsightsValues = insightsPanelHasRows(chips);
     return (
       <div style={wrap}>
-        <NutritionPanel chip={nutChip} />
-      </div>
-    );
-  }
-
-  if (tab === "insights") {
-    return (
-      <div style={wrap}>
-        <InsightsPanel chips={chips} onFindSimilar={onFindSimilar} />
+        {hasNutritionValues ? <NutritionPanel chip={nutChip} /> : null}
+        {hasInsightsValues ? (
+          <div
+            style={
+              hasNutritionValues
+                ? { marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--gb-color-border)" }
+                : undefined
+            }
+          >
+            <InsightsPanel chips={chips} onFindSimilar={onFindSimilar} />
+          </div>
+        ) : null}
+        {!hasNutritionValues && !hasInsightsValues ? (
+          <div style={{ fontSize: 14, color: "#6B7280" }}>Nutrition info unavailable for this item yet.</div>
+        ) : null}
       </div>
     );
   }
@@ -1068,12 +1134,29 @@ function ItemRow({
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState(null);
   const [currentCompareCandidate, setCurrentCompareCandidate] = useState(null);
+  const [intelligenceState, setIntelligenceState] = useState({
+    status: "idle",
+    data: null,
+  });
+  const intelligenceRequestRef = useRef(0);
 
   const mid = getItemId(row);
-  const name = getItemName(row, language);
-  const chips = resolveChips(row);
+
+  const intelligenceCacheKey = useMemo(() => {
+    if (!mid) return "";
+    return `${mid}::${geo?.lat ?? ""}::${geo?.lng ?? ""}`;
+  }, [mid, geo?.lat, geo?.lng]);
+
+  const displayRow = useMemo(() => {
+    const cached = intelligenceState.data || (intelligenceCacheKey && searchCardIntelligenceCache.get(intelligenceCacheKey));
+    return cached ? mergeRowIntelligence(row, cached) : row;
+  }, [row, intelligenceState.data, intelligenceCacheKey]);
+
+  const capabilities = resolveCapabilities(displayRow);
+  const name = getItemName(displayRow, language);
+  const chips = resolveChips(displayRow);
   const indulgencePresentation = resolveIndulgencePresentation({ chips });
-  const breadScore = row?.detail_system?.bread_score || row?.chips?.bread_score || null;
+  const breadScore = displayRow?.detail_system?.bread_score || displayRow?.chips?.bread_score || null;
   const hrefBase = mid ? getCanonicalMenuItemPath({
     restaurant: {
       slug: (restaurantSummary && restaurantSummary.slug) || getRestSlug(row),
@@ -1101,12 +1184,12 @@ function ItemRow({
   const popular = getPopular(row);
   const isVegan = asBool(resolveItemFlag(row, "is_vegan"));
   const isGF = asBool(resolveItemFlag(row, "is_gluten_free"));
-  const whyLabel = buildWhyMatchLabel(row, queryMeta);
-  const matchPreviewFallback = whyLabel ? null : buildMatchPreview(row, queryMeta, matchContext);
+  const whyLabel = buildWhyMatchLabel(displayRow, queryMeta);
+  const matchPreviewFallback = whyLabel ? null : buildMatchPreview(displayRow, queryMeta, matchContext);
   const matchLineText = whyLabel || (matchPreviewFallback && matchPreviewFallback.text) || "";
-  const nutritionPreviewChips = buildNutritionPreviewChips(row, queryMeta);
-  const pairingTeaser = formatPairingTeaser(row);
-  const refinementMatchLabel = buildRefinementMatchLabel(row, activeRefinement);
+  const nutritionPreviewChips = buildNutritionPreviewChips(displayRow, queryMeta);
+  const pairingTeaser = formatPairingTeaser(displayRow);
+  const refinementMatchLabel = buildRefinementMatchLabel(displayRow, activeRefinement);
 
   const factsLine = venueRenderedAbove
     ? ""
@@ -1130,6 +1213,7 @@ function ItemRow({
   const nutChip = chips?.nutrition_chip || {};
 
   const hasNut =
+    capabilities.hasNutrition === true ||
     asStr(nutChip?.status).toLowerCase() === "available" ||
     asNum(nutChip.calories_kcal) !== null ||
     asNum(nutChip.protein_g) !== null ||
@@ -1140,10 +1224,13 @@ function ItemRow({
 
   const insightScores = computeInsights(nutChip);
   const hasIns =
-    buildInsightCards(row).length > 0 ||
+    capabilities.hasInsights === true ||
+    buildInsightCards(displayRow).length > 0 ||
     insightScores.proteinStrength !== null ||
     insightScores.glycemicImpact  !== null ||
     insightScores.sodiumRisk      !== null;
+  const hasNutritionOrInsights = hasNut || hasIns;
+  const intelligenceLoading = intelligenceState.status === "loading";
   // Chip is only shown once we know results exist — pre-fetch on mount resolves this silently.
   const showSimilarChip = Boolean(mid) &&
     similarState.status === "ready" &&
@@ -1156,7 +1243,8 @@ function ItemRow({
   useEffect(() => {
     setOpenTab(null);
     setSimilarState({ status: "idle", items: [], meta: null });
-  }, [similarCacheKey]);
+    setIntelligenceState({ status: "idle", data: null });
+  }, [similarCacheKey, intelligenceCacheKey]);
 
   // Pre-fetch similar items so the chip only appears when results are confirmed.
   useEffect(() => {
@@ -1168,6 +1256,34 @@ function ItemRow({
     void loadSimilarForRow();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [similarCacheKey]);
+
+  async function loadIntelligenceForRow() {
+    if (!mid || !intelligenceCacheKey) return null;
+    if (searchCardIntelligenceCache.has(intelligenceCacheKey)) {
+      const cached = searchCardIntelligenceCache.get(intelligenceCacheKey);
+      setIntelligenceState({ status: "ready", data: cached });
+      return cached;
+    }
+
+    const requestId = intelligenceRequestRef.current + 1;
+    intelligenceRequestRef.current = requestId;
+    setIntelligenceState({ status: "loading", data: null });
+
+    try {
+      const data = await fetchMenuItemIntelligence(mid, {
+        lat: geo?.lat ?? null,
+        lng: geo?.lng ?? null,
+      });
+      if (intelligenceRequestRef.current !== requestId) return data;
+      searchCardIntelligenceCache.set(intelligenceCacheKey, data);
+      setIntelligenceState({ status: "ready", data });
+      return data;
+    } catch {
+      if (intelligenceRequestRef.current !== requestId) return null;
+      setIntelligenceState({ status: "failed", data: null });
+      return null;
+    }
+  }
 
   async function loadSimilarForRow() {
     if (!mid || !similarCacheKey) return;
@@ -1248,13 +1364,10 @@ function ItemRow({
       const next = prev === tab ? null : tab;
       if (next === "similar") {
         trackMenuItemInteraction(mid, "open_similar_items");
-        // Guardrail: search-card Similar must come from the backend item route only.
-        // Never substitute page-level restaurant groups or sibling search rows here.
         void loadSimilarForRow();
-      } else if (next === "insights") {
-        trackMenuItemInteraction(mid, "open_insights");
       } else if (next === "nutrition") {
         trackMenuItemInteraction(mid, "open_nutrition");
+        void loadIntelligenceForRow();
       }
       return next;
     });
@@ -1427,16 +1540,8 @@ function ItemRow({
           <Chip
             label={labels.nutrition}
             active={openTab === "nutrition"}
-            available={hasNut}
+            available={hasNutritionOrInsights}
             onClick={() => toggle("nutrition")}
-          />
-        ) : null}
-        {!indulgencePresentation && hasIns ? (
-          <Chip
-            label={labels.insights}
-            active={openTab === "insights"}
-            available={true}
-            onClick={() => toggle("insights")}
           />
         ) : null}
         {showSimilarChip ? (
@@ -1452,29 +1557,19 @@ function ItemRow({
       {openTab === "nutrition" && (
         <DetailPanel
           tab="nutrition"
-          row={row}
+          row={displayRow}
           similarState={similarState}
           onFindSimilar={() => {}}
           onCompare={handleCompare}
           labels={labels}
-        />
-      )}
-
-      {openTab === "insights" && (
-        <DetailPanel
-          tab="insights"
-          row={row}
-          similarState={similarState}
-          onFindSimilar={() => {}}
-          onCompare={handleCompare}
-          labels={labels}
+          intelligenceLoading={intelligenceLoading}
         />
       )}
 
       {openTab === "similar" && (
         <DetailPanel
           tab={openTab}
-          row={row}
+          row={displayRow}
           similarState={similarState}
           onFindSimilar={() => toggle("similar")}
           onCompare={handleCompare}
@@ -1652,7 +1747,6 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const contextSearch = location.search || "";
   const labels = {
     nutrition: t("common.nutrition", "Nutrition"),
-    insights: t("common.insights", "Insights"),
     showSimilar: t("common.showSimilar", "Show Similar"),
     noSimilar: t("common.noSimilarNearby", SEARCH_CARD_NO_SIMILAR_TEXT),
     viewMenu: t("common.viewMenu"),
