@@ -1536,14 +1536,12 @@ function ItemRow({
 
 
       <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {!indulgencePresentation ? (
-          <Chip
-            label={labels.nutrition}
-            active={openTab === "nutrition"}
-            available={hasNutritionOrInsights}
-            onClick={() => toggle("nutrition")}
-          />
-        ) : null}
+        <Chip
+          label={labels.nutrition}
+          active={openTab === "nutrition"}
+          available={hasNutritionOrInsights}
+          onClick={() => toggle("nutrition")}
+        />
         {showSimilarChip ? (
           <Chip
             label={labels.showSimilar}

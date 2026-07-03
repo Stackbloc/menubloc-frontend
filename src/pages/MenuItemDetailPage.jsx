@@ -34,8 +34,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
-import ShareButton from "../components/share/ShareButton.jsx";
-import ThumbsUpIcon from "../components/icons/ThumbsUpIcon.jsx";
+import MenuItemDetailActionRail from "../components/menu/MenuItemDetailActionRail.jsx";
 import {
   applyDocumentSocialMetadata,
   buildDishShareData,
@@ -55,11 +54,6 @@ import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
-import {
-  getMenuItemLikeStatus,
-  likeMenuItem as apiLikeMenuItem,
-  unlikeMenuItem as apiUnlikeMenuItem,
-} from "../lib/consumerApi.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -793,16 +787,12 @@ function NutritionCard({ detailSystem, t }) {
           ) : null}
         </div>
       ) : null}
-      <div style={{ display: "grid", gap: 10 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {pairs.map((entry) => (
-          <div key={entry.label} style={{ borderRadius: 16, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: "12px 14px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ fontSize: 13, color: "#FFFFFF", fontWeight: 800 }}>
-              {entry.label}
-            </div>
-            <div style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF", textAlign: "right" }}>
-              {entry.value}{entry.dv != null ? ` · ${entry.dv}% DV` : ""}
-            </div>
-          </div>
+          <BadgePill key={entry.label}>
+            <span style={{ color: "#9CA3AF", fontWeight: 600, marginRight: 6 }}>{entry.label}</span>
+            <span>{entry.value}{entry.dv != null ? ` · ${entry.dv}% DV` : ""}</span>
+          </BadgePill>
         ))}
       </div>
       {!isDrink && !isDessertOrBread && perOzRows.length && isReliable ? (
@@ -810,16 +800,12 @@ function NutritionCard({ detailSystem, t }) {
           <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
             Per Ounce
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(120px, 180px))", gap: 10, width: "fit-content", maxWidth: "100%" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {perOzRows.map((row) => (
-              <div key={row.label} style={{ borderRadius: 16, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: "12px 14px" }}>
-                <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  {row.label}
-                </div>
-                <div style={{ marginTop: 6, fontSize: 18, fontWeight: 900, color: "#FFFFFF" }}>
-                  {row.value}
-                </div>
-              </div>
+              <BadgePill key={row.label}>
+                <span style={{ color: "#9CA3AF", fontWeight: 600, marginRight: 6 }}>{row.label}</span>
+                <span>{row.value}</span>
+              </BadgePill>
             ))}
           </div>
         </div>
@@ -1346,9 +1332,6 @@ export default function MenuItemDetailPage() {
   const [loading,  setLoading]  = useState(true);
   const [err,      setErr]      = useState("");
   const [rawItem,  setRawItem]  = useState(null);
-  const [liked,       setLiked]       = useState(false);
-  const [likeLoading, setLikeLoading] = useState(false);
-
   const item = useMemo(() => (rawItem ? normalizeResultItem(rawItem) : null), [rawItem]);
 
   useEffect(() => {
@@ -1361,33 +1344,6 @@ export default function MenuItemDetailPage() {
     // Intentionally fire once when item first loads for this id
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id, id]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !id) return;
-    let cancelled = false;
-    getMenuItemLikeStatus(id)
-      .then((data) => { if (!cancelled) setLiked(data?.liked === true); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [isAuthenticated, id]);
-
-  async function handleLike() {
-    if (likeLoading || !id) return;
-    setLikeLoading(true);
-    try {
-      if (liked) {
-        await apiUnlikeMenuItem(id);
-        setLiked(false);
-      } else {
-        await apiLikeMenuItem(id);
-        setLiked(true);
-      }
-    } catch {
-      // Leave state unchanged on error
-    } finally {
-      setLikeLoading(false);
-    }
-  }
 
   const displayItemName = useMemo(
     () => getDisplayMenuItemName(item, language, item?.name || "Untitled Item"),
@@ -1575,9 +1531,10 @@ export default function MenuItemDetailPage() {
               <div
                 style={{
                   display: "flex",
-                  alignItems: "baseline",
+                  alignItems: "center",
                   gap: 12,
                   flexWrap: "wrap",
+                  rowGap: 8,
                 }}
               >
                 <h1
@@ -1589,102 +1546,28 @@ export default function MenuItemDetailPage() {
                     color: "#FFFFFF",
                     maxWidth: 760,
                     minWidth: 0,
-                    flex: "0 1 auto",
+                    flex: "1 1 auto",
                   }}
                 >
                   {displayItemName}
                 </h1>
-                <button
-                  onClick={isAuthenticated ? handleLike : () => navigate(`/account/login?return=${encodeURIComponent(window.location.pathname + window.location.search)}`)}
-                  disabled={isAuthenticated && likeLoading}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    alignSelf: "center",
-                    gap: 5,
-                    minHeight: 34,
-                    padding: "0 12px",
-                    borderRadius: 999,
-                    background: liked ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.08)",
-                    border: liked ? "1px solid rgba(34,197,94,0.4)" : "1px solid rgba(255,255,255,0.15)",
-                    color: liked ? "#22C55E" : "#9CA3AF",
-                    cursor: likeLoading ? "default" : "pointer",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    flex: "0 0 auto",
-                    opacity: likeLoading ? 0.6 : 1,
-                    transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                <MenuItemDetailActionRail
+                  menuItemId={item.id}
+                  itemName={displayItemName}
+                  shareData={shareData}
+                  shareAnalyticsContext={{
+                    restaurantId: item.restaurant.id,
+                    restaurantSlug: item.restaurant.slug || null,
+                    menuItemId: item.id,
+                    menuItemName: displayItemName,
+                    pageType: "menu_item_detail",
+                    shareTarget: "dish",
                   }}
-                >
-                  <ThumbsUpIcon size={15} filled={liked} color={liked ? "#22C55E" : "currentColor"} />
-                  {liked ? "Liked" : "Like"}
-                </button>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6b7280", flex: "0 0 auto", flexWrap: "wrap" }}>
-                  {shareData ? (
-                    <>
-                      <span style={{ fontSize: 12, opacity: 0.55 }}>•</span>
-                      <ShareButton
-                        variant="dish"
-                        label="Share"
-                        modalTitle={`Share ${displayItemName}`}
-                        shareData={shareData}
-                        analyticsContext={{
-                          restaurantId: item.restaurant.id,
-                          restaurantSlug: item.restaurant.slug || null,
-                          menuItemId: item.id,
-                          menuItemName: displayItemName,
-                          pageType: "menu_item_detail",
-                          shareTarget: "dish",
-                        }}
-                        size="compact"
-                        tone="subtle"
-                      />
-                    </>
-                  ) : null}
-                  {fromSearch ? (
-                    <button
-                      onClick={() => navigate(-1)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 5,
-                        minHeight: 34,
-                        padding: "0 14px",
-                        borderRadius: 999,
-                        background: "rgba(255,255,255,0.10)",
-                        border: "1px solid rgba(255,255,255,0.18)",
-                        color: "#F9FAFB",
-                        cursor: "pointer",
-                        fontSize: 12,
-                        fontWeight: 800,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      <span style={{ fontSize: 13 }}>←</span> Return to search results
-                    </button>
-                  ) : (
-                    <Link
-                      to={fullMenuHref}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        minHeight: 34,
-                        padding: "0 14px",
-                        borderRadius: 999,
-                        background: "var(--gb-color-accent)",
-                        color: "#ffffff",
-                        textDecoration: "none",
-                        fontSize: 12,
-                        fontWeight: 800,
-                        whiteSpace: "nowrap",
-                        boxShadow: "0 10px 24px rgba(15, 23, 42, 0.10)",
-                      }}
-                    >
-                      View Full Menu
-                    </Link>
-                  )}
-                </div>
+                  fullMenuHref={fullMenuHref}
+                  fromSearch={fromSearch}
+                  onBack={() => navigate(-1)}
+                  returnLabel="Return to search results"
+                />
               </div>
               <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 {priceLabel ? (

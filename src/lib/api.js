@@ -201,6 +201,23 @@ export async function fetchCompareItems(baseItemId, candidateItemId, lat, lng, o
 }
 
 /**
+ * Load nutrition/insights chips for a search card on demand (design-first search).
+ * Uses the existing menu item detail route — no new backend endpoint.
+ */
+export async function fetchMenuItemIntelligence(menuItemId, options = {}) {
+  const params = new URLSearchParams();
+  if (options.lat != null) params.set("lat", String(options.lat));
+  if (options.lng != null) params.set("lng", String(options.lng));
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  const data = await apiGet(`/menu-items/${encodeURIComponent(String(menuItemId))}${suffix}`);
+  const item = data?.item || data?.menu_item || data;
+  return {
+    chips: item?.chips || data?.chips || null,
+    detail_system: item?.detail_system || data?.detail_system || null,
+  };
+}
+
+/**
  * Fetch item-specific similar dishes for one menu item.
  * Search-card Similar must use the backend route rather than page-level grouped items.
  */
@@ -238,4 +255,5 @@ export default {
   fetchCompareEligibility,
   fetchCompareItems,
   fetchSimilarItems,
+  fetchMenuItemIntelligence,
 };

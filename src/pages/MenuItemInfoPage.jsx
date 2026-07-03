@@ -19,7 +19,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import IndulgenceMeter from "../components/IndulgenceMeter.jsx";
-import ShareButton from "../components/share/ShareButton.jsx";
+import MenuItemDetailActionRail from "../components/menu/MenuItemDetailActionRail.jsx";
 import {
   applyDocumentSocialMetadata,
   buildDishShareData,
@@ -631,16 +631,12 @@ function NutritionCard({ detailSystem, t }) {
           ) : null}
         </div>
       ) : null}
-      <div style={{ display: "grid", gap: 10 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {pairs.map((entry) => (
-          <div key={entry.label} style={{ borderRadius: 16, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: "12px 14px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ fontSize: 13, color: "#FFFFFF", fontWeight: 800 }}>
-              {entry.label}
-            </div>
-            <div style={{ fontSize: 15, fontWeight: 900, color: "#FFFFFF", textAlign: "right" }}>
-              {entry.value}{entry.dv != null ? ` · ${entry.dv}% DV` : ""}
-            </div>
-          </div>
+          <BadgePill key={entry.label}>
+            <span style={{ color: "#9CA3AF", fontWeight: 600, marginRight: 6 }}>{entry.label}</span>
+            <span>{entry.value}{entry.dv != null ? ` · ${entry.dv}% DV` : ""}</span>
+          </BadgePill>
         ))}
       </div>
       {!isDrink && !isDessertOrBread && perOzRows.length && isReliable ? (
@@ -648,16 +644,12 @@ function NutritionCard({ detailSystem, t }) {
           <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
             Per Ounce
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(120px, 180px))", gap: 10, width: "fit-content", maxWidth: "100%" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {perOzRows.map((row) => (
-              <div key={row.label} style={{ borderRadius: 16, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: "12px 14px" }}>
-                <div style={{ fontSize: 11, color: "#9CA3AF", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  {row.label}
-                </div>
-                <div style={{ marginTop: 6, fontSize: 18, fontWeight: 900, color: "#FFFFFF" }}>
-                  {row.value}
-                </div>
-              </div>
+              <BadgePill key={row.label}>
+                <span style={{ color: "#9CA3AF", fontWeight: 600, marginRight: 6 }}>{row.label}</span>
+                <span>{row.value}</span>
+              </BadgePill>
             ))}
           </div>
         </div>
@@ -1281,9 +1273,10 @@ export default function MenuItemInfoPage() {
               <div
                 style={{
                   display: "flex",
-                  alignItems: "baseline",
-                  gap: 14,
+                  alignItems: "center",
+                  gap: 12,
                   flexWrap: "wrap",
+                  rowGap: 8,
                 }}
               >
                 <h1
@@ -1295,54 +1288,25 @@ export default function MenuItemInfoPage() {
                     color: "#FFFFFF",
                     maxWidth: 760,
                     minWidth: 0,
-                    flex: "0 1 auto",
+                    flex: "1 1 auto",
                   }}
                 >
                   {displayItemName}
                 </h1>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6b7280", flex: "0 0 auto", flexWrap: "wrap" }}>
-                  {shareData ? (
-                    <>
-                      <span style={{ fontSize: 12, opacity: 0.55 }}>•</span>
-                      <ShareButton
-                        variant="dish"
-                        label="Share"
-                        modalTitle={`Share ${displayItemName}`}
-                        shareData={shareData}
-                        analyticsContext={{
-                          restaurantId: item.restaurant.id,
-                          restaurantSlug: item.restaurant.slug || null,
-                          menuItemId: item.id,
-                          menuItemName: displayItemName,
-                          pageType: "menu_item_info",
-                          shareTarget: "dish",
-                        }}
-                        size="compact"
-                        tone="subtle"
-                      />
-                    </>
-                  ) : null}
-                  <Link
-                    to={fullMenuHref}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minHeight: 34,
-                      padding: "0 14px",
-                      borderRadius: 999,
-                      background: "#11211a",
-                      color: "#f8fafc",
-                      textDecoration: "none",
-                      fontSize: 12,
-                      fontWeight: 800,
-                      whiteSpace: "nowrap",
-                      boxShadow: "0 10px 24px rgba(15, 23, 42, 0.10)",
-                    }}
-                  >
-                    View Full Menu
-                  </Link>
-                </div>
+                <MenuItemDetailActionRail
+                  menuItemId={item.id}
+                  itemName={displayItemName}
+                  shareData={shareData}
+                  shareAnalyticsContext={{
+                    restaurantId: item.restaurant.id,
+                    restaurantSlug: item.restaurant.slug || null,
+                    menuItemId: item.id,
+                    menuItemName: displayItemName,
+                    pageType: "menu_item_info",
+                    shareTarget: "dish",
+                  }}
+                  fullMenuHref={fullMenuHref}
+                />
               </div>
               <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 {priceLabel ? (

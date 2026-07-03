@@ -163,6 +163,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
     menu_item_id: initial.menu_item_id || "",
     starts_at: initial.starts_at ? initial.starts_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
     expires_at: initial.expires_at ? initial.expires_at.slice(0, 10) : "",
+    display_on_menu_browser: initial.is_promoted === true,
   });
   const [itemSearch, setItemSearch] = useState(initial.item_name || "");
 
@@ -211,6 +212,7 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
       starts_at: form.starts_at,
       expires_at: form.expires_at,
       menu_item_id: form.menu_item_id || undefined,
+      display_on_menu_browser: form.display_on_menu_browser === true,
     };
     // Backend buildDealFields reads `body.value`:
     // percent_off → value is the percent integer (e.g. 20)
@@ -380,6 +382,17 @@ function DealForm({ allItems, initial = {}, initialBillboard = null, onSave, onC
         <div>
           <label style={LABEL}>Expires *</label>
           <input style={{ ...INPUT, width: "100%" }} type="date" value={form.expires_at} onChange={f("expires_at")} />
+        </div>
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 12, color: "#0f1720", fontWeight: 600 }}>
+            <input
+              type="checkbox"
+              checked={form.display_on_menu_browser === true}
+              onChange={(e) => setForm((p) => ({ ...p, display_on_menu_browser: e.target.checked }))}
+              style={{ width: 15, height: 15, cursor: "pointer", accentColor: "#1F4E3D" }}
+            />
+            Display on Menu Browser (as sponsored ad page)
+          </label>
         </div>
       </div>
 
@@ -612,6 +625,19 @@ function DealRow({ deal, onEdit, onPublish, onPause, onDelete, busy, labels }) {
               fontSize: 10, fontWeight: 700, letterSpacing: 0.3,
             }}>
               Featured
+            </span>
+          )}
+          {deal.is_promoted === true && (
+            <span style={{
+              background: "#dcfce7",
+              color: "#166534",
+              borderRadius: 999,
+              padding: "2px 8px",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 0.2,
+            }}>
+              Menu Browser Ad
             </span>
           )}
         </div>

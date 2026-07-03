@@ -119,6 +119,32 @@ describe("WaiterRefinementPrompt", () => {
     expect(refined.map((o) => o.label)).toEqual(["Sandwich", "Pizza"]);
   });
 
+  it("preserves currency symbols on price refinement labels", () => {
+    const options = [
+      {
+        id: "commerce:under_16",
+        type: "commerce",
+        commerceType: "price",
+        key: "under_16",
+        label: "Under $16",
+        count: 12,
+        test: () => true,
+      },
+      {
+        id: "commerce:16_plus",
+        type: "commerce",
+        commerceType: "price",
+        key: "16_plus",
+        label: "$16+",
+        count: 10,
+        test: () => true,
+      },
+    ];
+
+    const refined = buildContextAwareRefinementOptions(options, "burger");
+    expect(refined.map((o) => o.label)).toEqual(["Under $16", "$16+"]);
+  });
+
   it("renders a single live option as an inline question", () => {
     const { container } = renderPrompt([{ key: "fried", label: "Fried" }], { filteredResultCount: 0 });
 

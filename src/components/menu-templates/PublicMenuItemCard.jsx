@@ -57,6 +57,38 @@ function SoftBadge({ label, color, hairline }) {
   );
 }
 
+function AffordancePillButton({ label, color, hairline, hoverBg, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        height: 22,
+        padding: "0 10px",
+        borderRadius: 999,
+        border: `1px solid ${hairline}`,
+        background: "transparent",
+        color,
+        fontSize: 12,
+        fontWeight: 500,
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => {
+        if (hoverBg) e.currentTarget.style.background = hoverBg;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 function Badge({ label, bg, color, border }) {
   return (
     <span
@@ -609,6 +641,19 @@ export default function PublicMenuItemCard({
       {density !== "takeout" && (showNutritionInline || showAllergenInline || showIndulgenceInline) ? (
         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: editorialRefresh ? 10 : 8, flexWrap: "wrap" }}>
           {showNutritionInline ? (
+            editorialRefresh ? (
+              <AffordancePillButton
+                label={t("common.nutrition", "Nutrition")}
+                color={ed.subtle}
+                hairline={ed.hairline}
+                hoverBg={ed.unavailableBg}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const navId = it?.canonical_menu_item_id || it?.id;
+                  if (navId && navigate) navigate(`/menu-items/${navId}?from=menu`);
+                }}
+              />
+            ) : (
             <button
               type="button"
               onClick={(e) => {
@@ -616,21 +661,7 @@ export default function PublicMenuItemCard({
                 const navId = it?.canonical_menu_item_id || it?.id;
                 if (navId && navigate) navigate(`/menu-items/${navId}?from=menu`);
               }}
-              style={editorialRefresh ? {
-                display: "inline-flex",
-                alignItems: "center",
-                height: 22,
-                padding: "0 10px",
-                borderRadius: 999,
-                border: `1px solid ${ed.hairline}`,
-                background: "transparent",
-                color: ed.subtle,
-                fontSize: 12,
-                fontWeight: 500,
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-                cursor: "pointer",
-              } : {
+              style={{
                 display: "inline-flex",
                 alignItems: "center",
                 height: compactActions ? 16 : 18,
@@ -649,10 +680,11 @@ export default function PublicMenuItemCard({
             >
               {t("common.nutrition", "Nutrition")}
             </button>
+            )
           ) : null}
           {showIndulgenceInline && indulgencePresentation?.indulgence?.score != null ? (
             editorialRefresh ? (
-              <EditorialTag label={`Indulgence ${indulgencePresentation.indulgence.score}`} color={ed.subtle} />
+              <SoftBadge label={`Indulgence ${indulgencePresentation.indulgence.score}`} color={ed.subtle} hairline={ed.hairline} />
             ) : (
               <Badge
                 label={`Indulgence ${indulgencePresentation.indulgence.score}`}

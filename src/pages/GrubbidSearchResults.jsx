@@ -876,6 +876,25 @@ function titleFromTokens(tokens, fallbackLabel = "") {
     .join(" ");
 }
 
+/** Preserve currency in Waiter price refinements — titleFromTokens strips "$". */
+function formatMonetaryRefinementLabel(option) {
+  if (!option) return null;
+  const key = String(option.key || "");
+  const under = /^under_(\d+)$/i.exec(key);
+  if (under) return `Under $${under[1]}`;
+  const plus = /^(\d+)_plus$/i.exec(key);
+  if (plus) return `$${plus[1]}+`;
+  const label = String(option.label || "").trim();
+  if (option.commerceType === "price") {
+    if (/\$/.test(label)) return label;
+    const bareUnder = /^under\s+(\d+)$/i.exec(label);
+    if (bareUnder) return `Under $${bareUnder[1]}`;
+    const barePlus = /^(\d+)\+$/i.exec(label);
+    if (barePlus) return `$${barePlus[1]}+`;
+  }
+  return null;
+}
+
 export function buildContextAwareRefinementOptions(options, query, inventory = null) {
   const source = Array.isArray(options) ? options : [];
   if (!source.length) return [];
@@ -908,7 +927,9 @@ export function buildContextAwareRefinementOptions(options, query, inventory = n
         overlapCount,
         option: {
           ...entry.option,
-          label: titleFromTokens(coreTokens, entry.option?.label || entry.option?.key || ""),
+          label:
+            formatMonetaryRefinementLabel(entry.option) ||
+            titleFromTokens(coreTokens, entry.option?.label || entry.option?.key || ""),
         },
       });
     }

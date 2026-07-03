@@ -4,6 +4,14 @@
 // into the SPA shell HTML so crawlers see page-specific content.
 // On any failure, falls through to normal Vercel routing (no regression from baseline).
 
+import {
+  absoluteCanonicalUrl,
+  cityPath,
+  restaurantMenuPath,
+  restaurantPath,
+} from "./src/lib/canonicalUrlCore.js";
+import { INDEXABLE_STATIC_PAGES } from "./src/lib/sitemapConfig.js";
+
 const BACKEND = "https://menubloc-backend-production.up.railway.app";
 const ORIGIN = "https://menuply.com";
 
@@ -16,6 +24,8 @@ const RESTAURANT_PROFILE_RE = /^\/restaurants\/([^/]+)\/?$/;
 // Legacy numeric from public path
 const LEGACY_NUMERIC_RE = /^\/public\/restaurants\/(\d+)\/menu\/?$/;
 const MENU_ITEM_RE = /^\/menu-items\/(\d+)\/?$/;
+const SITEMAP_CHUNK_RE = /^\/sitemaps\/sitemap-(\d+)\.xml$/;
+const SITEMAP_LIMIT = 45000;
 
 function escapeHtml(str) {
   if (str == null) return "";
@@ -42,6 +52,17 @@ function injectMeta(html, title, description, canonical) {
     .replace(/<meta name="twitter:description" content="[^"]*"[^>]*>/, `<meta name="twitter:description" content="${d}">`);
 }
 
+function injectNoScriptLinks(html, links, label) {
+  const unique = [...new Map(
+    links.filter((link) => link?.href && link?.text).map((link) => [link.href, link])
+  ).values()];
+  if (!unique.length) return html;
+  const anchors = unique
+    .map((link) => `<a href="${escapeHtml(link.href)}">${escapeHtml(link.text)}</a>`)
+    .join(" ");
+  return html.replace("</body>", `<noscript><nav aria-label="${escapeHtml(label)}">${anchors}</nav></noscript></body>`);
+}
+
 async function fetchShell(requestUrl) {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 2000);
@@ -56,9 +77,9 @@ async function fetchShell(requestUrl) {
   }
 }
 
-async function fetchMeta(path) {
+async function fetchMeta(path, timeoutMs = 3000) {
   const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), 3000);
+  const timer = setTimeout(() => ac.abort(), timeoutMs);
   try {
     const res = await fetch(`${BACKEND}${path}`, { signal: ac.signal });
     if (!res.ok) return null;
@@ -70,41 +91,73 @@ async function fetchMeta(path) {
   }
 }
 
-// STATE_NAMES: 2-letter code → full lowercase state slug (mirrors src/lib/slugs.js)
-const STATE_NAMES = {
-  AL:"alabama",AK:"alaska",AZ:"arizona",AR:"arkansas",CA:"california",CO:"colorado",
-  CT:"connecticut",DE:"delaware",FL:"florida",GA:"georgia",HI:"hawaii",ID:"idaho",
-  IL:"illinois",IN:"indiana",IA:"iowa",KS:"kansas",KY:"kentucky",LA:"louisiana",
-  ME:"maine",MD:"maryland",MA:"massachusetts",MI:"michigan",MN:"minnesota",MS:"mississippi",
-  MO:"missouri",MT:"montana",NE:"nebraska",NV:"nevada",NH:"new-hampshire",NJ:"new-jersey",
-  NM:"new-mexico",NY:"new-york",NC:"north-carolina",ND:"north-dakota",OH:"ohio",OK:"oklahoma",
-  OR:"oregon",PA:"pennsylvania",RI:"rhode-island",SC:"south-carolina",SD:"south-dakota",
-  TN:"tennessee",TX:"texas",UT:"utah",VT:"vermont",VA:"virginia",WA:"washington",
-  WV:"west-virginia",WI:"wisconsin",WY:"wyoming",DC:"district-of-columbia",
-};
-
-function toSlugMW(str) {
-  if (!str) return "";
-  return String(str).toLowerCase().replace(/['''""`]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80);
+function escapeXml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
-function toStateSlugMW(code) {
-  if (!code) return "";
-  const upper = String(code).trim().toUpperCase();
-  return STATE_NAMES[upper] || toSlugMW(code);
+function xmlResponse(body) {
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "Content-Type": "application/xml; charset=utf-8",
+      "Cache-Control": "public, max-age=300, stale-while-revalidate=3600",
+    },
+  });
+}
+
+function sitemapUrlset(entries) {
+  const rows = entries.map((entry) => {
+    const lastmod = entry.lastmod ? `<lastmod>${escapeXml(String(entry.lastmod).slice(0, 10))}</lastmod>` : "";
+    const changefreq = entry.changefreq ? `<changefreq>${entry.changefreq}</changefreq>` : "";
+    const priority = entry.priority != null ? `<priority>${entry.priority}</priority>` : "";
+    return `<url><loc>${escapeXml(entry.url)}</loc>${lastmod}${changefreq}${priority}</url>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${rows.join("")}</urlset>`;
+}
+
+function sitemapIndex(count) {
+  const chunks = Math.ceil(count / SITEMAP_LIMIT);
+  const rows = Array.from({ length: chunks }, (_, index) =>
+    `<sitemap><loc>${ORIGIN}/sitemaps/sitemap-${index + 1}.xml</loc></sitemap>`
+  );
+  return `<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${rows.join("")}</sitemapindex>`;
+}
+
+async function buildSitemapEntries() {
+  const inventory = await fetchMeta("/public/sitemap-inventory", 10000);
+  if (!inventory?.ok) return null;
+
+  const entries = INDEXABLE_STATIC_PAGES.map((page) => ({
+    url: page.canonical,
+    changefreq: page.changefreq,
+    priority: page.priority,
+    category: "static",
+  }));
+
+  for (const city of inventory.cities || []) {
+    const path = cityPath(city);
+    if (path) entries.push({ url: absoluteCanonicalUrl(path), changefreq: "daily", priority: 0.7, category: "city" });
+  }
+  for (const restaurant of inventory.restaurants || []) {
+    const profilePath = restaurantPath(restaurant);
+    const menuPath = restaurantMenuPath(restaurant);
+    if (profilePath) entries.push({ url: absoluteCanonicalUrl(profilePath), lastmod: restaurant.updated_at, changefreq: "weekly", priority: 0.8, category: "restaurant" });
+    if (menuPath) entries.push({ url: absoluteCanonicalUrl(menuPath), lastmod: restaurant.updated_at, changefreq: "daily", priority: 0.9, category: "menu" });
+  }
+
+  const seen = new Set();
+  return entries.filter((entry) => entry.url && !seen.has(entry.url) && seen.add(entry.url));
 }
 
 // Returns the canonical path for a restaurant given DB data ({slug, city, state, id}).
 function buildCanonicalRestaurantPath(data, suffix = "") {
-  if (data.slug && data.city && data.state) {
-    const stateSlug = data.state.length === 2 ? toStateSlugMW(data.state) : toSlugMW(data.state);
-    const citySlug = toSlugMW(data.city);
-    return `${ORIGIN}/restaurants/${stateSlug}/${citySlug}/${data.slug}${suffix}`;
-  }
-  // Fallback to legacy 1-segment slug or numeric ID
-  if (data.slug) return `${ORIGIN}/restaurants/${data.slug}${suffix}`;
-  if (suffix === "/menu") return `${ORIGIN}/public/restaurants/${data.id}/menu`;
-  return `${ORIGIN}/public/restaurants/${data.id}`;
+  const path = suffix === "/menu" ? restaurantMenuPath(data) : restaurantPath(data);
+  return absoluteCanonicalUrl(path);
 }
 
 function buildRestaurantMenuMeta(data) {
@@ -156,6 +209,19 @@ function injectedResponse(html) {
 export default async function middleware(request) {
   const { pathname } = new URL(request.url);
 
+  if (pathname === "/sitemap.xml" || SITEMAP_CHUNK_RE.test(pathname)) {
+    const entries = await buildSitemapEntries();
+    if (!entries) return new Response("Sitemap inventory unavailable", { status: 503 });
+    if (pathname === "/sitemap.xml") {
+      return xmlResponse(entries.length > SITEMAP_LIMIT ? sitemapIndex(entries.length) : sitemapUrlset(entries));
+    }
+    const match = SITEMAP_CHUNK_RE.exec(pathname);
+    const chunk = Number(match?.[1] || 0);
+    const start = (chunk - 1) * SITEMAP_LIMIT;
+    if (chunk < 1 || start >= entries.length) return new Response("Not found", { status: 404 });
+    return xmlResponse(sitemapUrlset(entries.slice(start, start + SITEMAP_LIMIT)));
+  }
+
   // --- Canonical 3-segment: /restaurants/:state/:city/:slug/menu ---
   let m = CANONICAL_MENU_RE.exec(pathname);
   if (m) {
@@ -170,7 +236,11 @@ export default async function middleware(request) {
     if (canonical !== `${ORIGIN}${pathname}`) {
       return Response.redirect(canonical, 301);
     }
-    return injectedResponse(injectMeta(shell, title, description, canonical));
+    const cityUrl = absoluteCanonicalUrl(cityPath(meta.data));
+    const html = injectNoScriptLinks(injectMeta(shell, title, description, canonical), [
+      { href: cityUrl, text: `Restaurants in ${meta.data.city}, ${meta.data.state}` },
+    ], "Related city");
+    return injectedResponse(html);
   }
 
   // --- Canonical 3-segment: /restaurants/:state/:city/:slug (profile) ---
@@ -187,7 +257,11 @@ export default async function middleware(request) {
     if (canonical !== `${ORIGIN}${pathname}`) {
       return Response.redirect(canonical, 301);
     }
-    return injectedResponse(injectMeta(shell, title, description, canonical));
+    const cityUrl = absoluteCanonicalUrl(cityPath(meta.data));
+    const html = injectNoScriptLinks(injectMeta(shell, title, description, canonical), [
+      { href: cityUrl, text: `Restaurants in ${meta.data.city}, ${meta.data.state}` },
+    ], "Related city");
+    return injectedResponse(html);
   }
 
   // --- Legacy 1-segment: /restaurants/:slug/menu → redirect to canonical ---
@@ -212,6 +286,29 @@ export default async function middleware(request) {
   m = RESTAURANT_PROFILE_RE.exec(pathname);
   if (m) {
     const slug = m[1];
+    const inventory = await fetchMeta("/public/sitemap-inventory", 10000);
+    const city = inventory?.ok
+      ? (inventory.cities || []).find((entry) => cityPath(entry) === pathname)
+      : null;
+    if (city) {
+      const shell = await fetchShell(request.url);
+      if (!shell) return;
+      const canonical = absoluteCanonicalUrl(cityPath(city));
+      const title = `Restaurants in ${escapeHtml(city.city)}, ${escapeHtml(city.state)} | Menuply`;
+      const description = `Browse published restaurant menus in ${escapeHtml(city.city)}, ${escapeHtml(city.state)} on Menuply.`;
+      const cityRestaurants = (inventory.restaurants || []).filter(
+        (entry) => cityPath(entry) === pathname
+      );
+      const links = cityRestaurants.flatMap((entry) => [
+        { href: absoluteCanonicalUrl(restaurantPath(entry)), text: entry.slug },
+        { href: absoluteCanonicalUrl(restaurantMenuPath(entry)), text: `${entry.slug} menu` },
+      ]);
+      return injectedResponse(injectNoScriptLinks(
+        injectMeta(shell, title, description, canonical),
+        links,
+        `Published restaurants in ${city.city}, ${city.state}`
+      ));
+    }
     const meta = await fetchMeta(`/public/meta/restaurants/${encodeURIComponent(slug)}`);
     if (!meta || !meta.ok) return;
     const canonical = buildCanonicalRestaurantPath(meta.data);
@@ -252,6 +349,8 @@ export default async function middleware(request) {
 
 export const config = {
   matcher: [
+    "/sitemap.xml",
+    "/sitemaps/:path*",
     "/restaurants/:path*",
     "/public/restaurants/:path*",
     "/menu-items/:path*",

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { parseCityStateSlug } from "../lib/cityStateSlug";
+import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../lib/canonicalUrl.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const CANONICAL_BASE = "https://menuply.com";
@@ -107,17 +108,17 @@ export default function MarketAggregatorPage() {
                   )}
                 </div>
                 <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
-                  {r.profile_url && (
+                  {restaurantPathFromRow(r) && (
                     <Link
-                      to={r.profile_url}
+                      to={restaurantPathFromRow(r)}
                       style={{ fontSize: "0.8rem", color: "#555", textDecoration: "underline" }}
                     >
                       Profile
                     </Link>
                   )}
-                  {r.has_menu && r.menu_url && (
+                  {r.has_menu && restaurantMenuPathFromRow(r) && (
                     <Link
-                      to={r.menu_url}
+                      to={restaurantMenuPathFromRow(r)}
                       style={{
                         fontSize: "0.85rem",
                         fontWeight: 600,

@@ -201,7 +201,7 @@ export default function DiscoveryCard({
               {name}
               {isVerified && (
                 <span style={{
-                  marginLeft: 6,
+                  marginLeft: 10,
                   fontSize: 9,
                   fontWeight: 800,
                   color: "#ffffff",

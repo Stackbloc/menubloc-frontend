@@ -55,61 +55,68 @@ const CSS_COLORS = {
   chipBg:  "var(--surface-2, #f8fafc)",
 };
 
-/* ---- MetricGrid (used in colors/menu mode) ---- */
+/* ---- Oval metric pills (menu, search, detail) ---- */
 
-function MetricGrid({ rows, colors }) {
+function nutritionPillStyle(colors, light = false) {
+  if (light) {
+    return {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      height: 26,
+      padding: "0 10px",
+      borderRadius: 999,
+      border: "1px solid var(--border, #e4e9f0)",
+      background: "var(--surface-2, #f8fafc)",
+      fontSize: 12,
+      lineHeight: 1.2,
+      color: "var(--ink, #0f1720)",
+      whiteSpace: "nowrap",
+    };
+  }
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    height: 26,
+    padding: "0 10px",
+    borderRadius: 999,
+    border: `1px solid ${colors.border}`,
+    background: colors.chipBg,
+    fontSize: 12,
+    lineHeight: 1.2,
+    color: colors.text,
+    whiteSpace: "nowrap",
+  };
+}
+
+function NutritionMetricPill({ label, value, colors, light = false, subtextStyle }) {
+  if (value === null || value === undefined || value === "") return null;
+  return (
+    <span style={nutritionPillStyle(colors, light)}>
+      <span style={{ fontWeight: 500, color: light ? "var(--muted, #5b6675)" : (subtextStyle || colors.subtext) }}>
+        {label}
+      </span>
+      <span style={{ fontWeight: 800 }}>{value}</span>
+    </span>
+  );
+}
+
+function MetricPillGrid({ rows, colors, light = false }) {
   const clean = rows.filter(Boolean);
   if (!clean.length) return null;
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(90px, 1fr))",
-        gap: 8,
-      }}
-    >
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {clean.map((row) => (
-        <div
+        <NutritionMetricPill
           key={row.label}
-          style={{
-            background: colors.chipBg,
-            border: `1px solid ${colors.border}`,
-            borderRadius: 10,
-            padding: "8px 10px",
-          }}
-        >
-          <div style={{ fontSize: 11, color: colors.subtext, marginBottom: 3 }}>
-            {row.label}
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: colors.text }}>
-            {row.value}
-          </div>
-        </div>
+          label={row.label}
+          value={row.value}
+          colors={colors}
+          light={light}
+        />
       ))}
-    </div>
-  );
-}
-
-/* ---- Row layout (used in list/search mode) ---- */
-
-function NutritionRow({ label, value }) {
-  if (value === null || value === undefined) return null;
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "baseline",
-        gap: 12,
-        padding: "2px 0",
-        fontSize: "var(--text-2, 14px)",
-        color: "var(--ink, #0f1720)",
-        lineHeight: 1.5,
-      }}
-    >
-      <span>{label}</span>
-      <span style={{ fontWeight: 700, whiteSpace: "nowrap" }}>{value}</span>
     </div>
   );
 }
@@ -183,7 +190,7 @@ export default function NutritionCard({ chip, colors }) {
 
         {hasValues ? (
           <>
-            <MetricGrid rows={metricRows} colors={C} />
+            <MetricPillGrid rows={metricRows} colors={C} />
             {(calPctW !== null || calPctM !== null) && (
               <div
                 style={{
@@ -235,44 +242,29 @@ export default function NutritionCard({ chip, colors }) {
     marginBottom: 4,
   };
 
+  const listRows = [
+    cal !== null ? { label: "Calories", value: String(Math.round(cal)) } : null,
+    pro !== null ? { label: "Protein", value: `${Math.round(pro)}g${proPct !== null ? ` (${Math.round(proPct)}%)` : ""}` } : null,
+    carbs !== null ? { label: "Carbs", value: `${Math.round(carbs)}g` } : null,
+    fib !== null ? { label: "Fiber", value: `${Math.round(fib)}g` } : null,
+    sug !== null ? { label: "Sugar", value: `${Math.round(sug)}g` } : null,
+    fat !== null ? { label: "Fat", value: `${Math.round(fat)}g` } : null,
+    sod !== null ? { label: "Sodium", value: `${Math.round(sod)}mg` } : null,
+    satiety !== null ? { label: "Satiety", value: `${satiety}/10${satietyLabel ? ` · ${satietyLabel}` : ""}` } : null,
+    glycemic !== null ? { label: "Glycemic", value: `${glycemic}/10${glycemicLabel ? ` · ${glycemicLabel}` : ""}` } : null,
+  ].filter(Boolean);
+
   return (
     <div>
       {hasValues ? (
         <>
-          {cal !== null && (
-            <>
-              <NutritionRow label="Calories" value={String(Math.round(cal))} />
-              {(calPctW !== null || calPctM !== null) && (
-                <div style={subStyle}>
-                  {calPctW !== null ? `${Math.round(calPctW)}% Daily (W)` : ""}
-                  {calPctW !== null && calPctM !== null ? " · " : ""}
-                  {calPctM !== null ? `${Math.round(calPctM)}% (M)` : ""}
-                </div>
-              )}
-            </>
-          )}
-          {pro !== null && (
-            <NutritionRow
-              label="Protein"
-              value={`${Math.round(pro)}g${proPct !== null ? ` (${Math.round(proPct)}%)` : ""}`}
-            />
-          )}
-          {carbs !== null && <NutritionRow label="Carbs"  value={`${Math.round(carbs)}g`} />}
-          {fib   !== null && <NutritionRow label="Fiber"  value={`${Math.round(fib)}g`}   />}
-          {sug   !== null && <NutritionRow label="Sugar"  value={`${Math.round(sug)}g`}   />}
-          {fat   !== null && <NutritionRow label="Fat"    value={`${Math.round(fat)}g`}   />}
-          {sod   !== null && <NutritionRow label="Sodium" value={`${Math.round(sod)}mg`}  />}
-          {satiety !== null && (
-            <NutritionRow
-              label="Satiety"
-              value={`${satiety}/10${satietyLabel ? ` · ${satietyLabel}` : ""}`}
-            />
-          )}
-          {glycemic !== null && (
-            <NutritionRow
-              label="Glycemic"
-              value={`${glycemic}/10${glycemicLabel ? ` · ${glycemicLabel}` : ""}`}
-            />
+          <MetricPillGrid rows={listRows} colors={C} light={true} />
+          {(calPctW !== null || calPctM !== null) && (
+            <div style={{ ...subStyle, marginTop: 8 }}>
+              {calPctW !== null ? `${Math.round(calPctW)}% Daily (W)` : ""}
+              {calPctW !== null && calPctM !== null ? " · " : ""}
+              {calPctM !== null ? `${Math.round(calPctM)}% (M)` : ""}
+            </div>
           )}
         </>
       ) : (

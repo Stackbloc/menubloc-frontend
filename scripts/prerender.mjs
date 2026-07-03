@@ -10,78 +10,12 @@ import { load } from "cheerio";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { INDEXABLE_STATIC_META, INDEXABLE_STATIC_PAGES } from "../src/lib/sitemapConfig.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, "../dist");
 
-const SITE_BASE = "https://menuply.com";
-
-const ROUTE_META = {
-  "/": {
-    title: "Menuply | Discover Local Menus, Deals & Nutrition",
-    description: "Browse restaurant menus near you. Find dishes, deals, and nutrition insights on Menuply.",
-    canonical: `${SITE_BASE}/`,
-    ogTitle: "Menuply | Discover Local Menus, Deals & Nutrition",
-    ogDescription: "Browse restaurant menus near you. Find dishes, deals, and nutrition insights on Menuply.",
-    ogImage: `${SITE_BASE}/menuply-share-default.svg`,
-  },
-  "/about": {
-    title: "About Menuply | Food Intelligence Platform",
-    description: "Learn how Menuply helps you explore restaurant menus, compare dishes, and make better food choices.",
-    canonical: `${SITE_BASE}/about`,
-    ogTitle: "About Menuply | Food Intelligence Platform",
-    ogDescription: "Learn how Menuply helps you explore restaurant menus, compare dishes, and make better food choices.",
-    ogImage: `${SITE_BASE}/menuply-share-default.svg`,
-  },
-  "/contact": {
-    title: "Contact Menuply | Get in Touch",
-    description: "Contact the Menuply team for support, restaurant partnerships, or general inquiries.",
-    canonical: `${SITE_BASE}/contact`,
-    ogTitle: "Contact Menuply | Get in Touch",
-    ogDescription: "Contact the Menuply team for support, restaurant partnerships, or general inquiries.",
-    ogImage: `${SITE_BASE}/menuply-share-default.svg`,
-  },
-  "/terms": {
-    title: "Terms of Service | Menuply",
-    description: "Read the Menuply Terms of Service governing use of the platform.",
-    canonical: `${SITE_BASE}/terms`,
-    ogTitle: "Terms of Service | Menuply",
-    ogDescription: "Read the Menuply Terms of Service governing use of the platform.",
-    ogImage: `${SITE_BASE}/menuply-share-default.svg`,
-  },
-  "/privacy": {
-    title: "Privacy Policy | Menuply",
-    description: "Read the Menuply Privacy Policy covering how your data is collected and used.",
-    canonical: `${SITE_BASE}/privacy`,
-    ogTitle: "Privacy Policy | Menuply",
-    ogDescription: "Read the Menuply Privacy Policy covering how your data is collected and used.",
-    ogImage: `${SITE_BASE}/menuply-share-default.svg`,
-  },
-  "/browse-menus": {
-    title: "Browse Restaurant Menus | Menuply",
-    description: "Explore restaurant menus in your area on Menuply. Find the best local dishes near you.",
-    canonical: `${SITE_BASE}/browse-menus`,
-    ogTitle: "Browse Restaurant Menus | Menuply",
-    ogDescription: "Explore restaurant menus in your area on Menuply. Find the best local dishes near you.",
-    ogImage: `${SITE_BASE}/menuply-share-default.svg`,
-  },
-  "/restaurant/onboarding": {
-    title: "List Your Restaurant on Menuply | Get Found Online",
-    description: "Join Menuply and get your restaurant menu in front of local customers searching for food.",
-    canonical: `${SITE_BASE}/restaurant/onboarding`,
-    ogTitle: "List Your Restaurant on Menuply",
-    ogDescription: "Join Menuply and get your restaurant menu in front of local customers searching for food.",
-    ogImage: `${SITE_BASE}/menuply-share-default.svg`,
-  },
-  "/signup": {
-    title: "Restaurant Sign Up | Menuply",
-    description: "Create your Menuply restaurant account and start managing your menu online.",
-    canonical: `${SITE_BASE}/signup`,
-    ogTitle: "Restaurant Sign Up | Menuply",
-    ogDescription: "Create your Menuply restaurant account and start managing your menu online.",
-    ogImage: `${SITE_BASE}/menuply-share-default.svg`,
-  },
-};
+const ROUTE_META = INDEXABLE_STATIC_META;
 
 function upsertMeta($, selector, attr, value) {
   let el = $(selector);
@@ -125,6 +59,14 @@ function applyMetaToHtml(html, meta) {
   upsertMeta($, 'meta[name="twitter:title"]', "content", meta.ogTitle);
   upsertMeta($, 'meta[name="twitter:description"]', "content", meta.ogDescription);
   upsertMeta($, 'meta[name="twitter:image"]', "content", meta.ogImage);
+
+  $("noscript[data-sitemap-navigation]").remove();
+  const navigation = $("<nav>").attr("aria-label", "Public pages");
+  for (const page of INDEXABLE_STATIC_PAGES) {
+    navigation.append($("<a>").attr("href", page.path).text(page.title));
+    navigation.append(" ");
+  }
+  $("body").append($("<noscript>").attr("data-sitemap-navigation", "true").append(navigation));
 
   return $.html();
 }

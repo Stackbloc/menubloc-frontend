@@ -8,11 +8,11 @@ import {
 const INK = "#1a1a1a";
 
 export default function MenuCatalogModeTabs({
-  activeMode,
+  activeMode = null,
   onSelect,
 }) {
   const { t } = useLanguage();
-  const mode = normalizeMenuBrowserMode(activeMode);
+  const mode = activeMode ? normalizeMenuBrowserMode(activeMode) : null;
 
   return (
     <div
