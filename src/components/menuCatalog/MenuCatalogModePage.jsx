@@ -22,11 +22,11 @@ export default function MenuCatalogModePage({ onSelect }) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start",
         background: PAGE_BG,
         borderRadius: 16,
         boxSizing: "border-box",
-        padding: "32px 24px",
+        padding: "clamp(40px, 12vh, 88px) 24px 32px",
         animation: "menuCatalogPageIn 420ms ease-out",
       }}
     >

@@ -81,7 +81,7 @@ export default function BrowseMenus() {
   const urlIndex = asFiniteNumber(urlParams.get("i")) ?? 0;
 
   const [locationParams, setLocationParams] = useState({ city: urlCity || null, state: urlState || null });
-  const [bookPhase, setBookPhase] = useState(() => (isModeChosen ? "browse" : "cover"));
+  const [bookPhase, setBookPhase] = useState(() => (isModeChosen ? "browse" : "splash"));
   const [introMinElapsed, setIntroMinElapsed] = useState(false);
   const [menuLoadStatus, setMenuLoadStatus] = useState("idle");
   const [initialMenuReady, setInitialMenuReady] = useState(false);
@@ -112,7 +112,7 @@ export default function BrowseMenus() {
 
   useEffect(() => {
     if (isModeChosen) return;
-    if (bookPhase !== "cover") return;
+    if (bookPhase !== "splash") return;
     const timer = window.setTimeout(() => setBookPhase("chooseMode"), MENU_BROWSER_COVER_MS);
     return () => window.clearTimeout(timer);
   }, [bookPhase, isModeChosen]);
@@ -264,10 +264,12 @@ export default function BrowseMenus() {
   const listPending = isModeChosen && (loading || locationPending || waitingForPage || (loadingMore && !currentEntry));
   const menuPending = isModeChosen && currentEntry && (menuLoadStatus === "idle" || menuLoadStatus === "loading");
   const initialHold = isModeChosen && !introMinElapsed;
-  const showCover = !isModeChosen && bookPhase === "cover";
+  const showSplashIntro = !isModeChosen && bookPhase === "splash";
   const showChooseMode = !isModeChosen && bookPhase === "chooseMode";
   const showLoadingSplash = isModeChosen && (initialHold || listPending || (!initialMenuReady && menuPending));
-  const showBookOverlay = showCover || showChooseMode || showLoadingSplash;
+  const showBookOverlay = showSplashIntro || showChooseMode || showLoadingSplash;
+  const showCategoryTabs = isModeChosen && !showBookOverlay;
+  const splashProgress = useSmoothedProgress(22, showSplashIntro);
   const introProgress = useSmoothedProgress(loadTarget, showLoadingSplash);
   const currentMenuNumber = currentEntry ? (activeIndex + 1) : 0;
   const totalMenuCount = Math.max(totalCount || 0, entries.length || 0);
@@ -369,7 +371,7 @@ export default function BrowseMenus() {
       <StickyPageHeader />
 
       <div style={browseShellStyle}>
-        {isModeChosen ? (
+        {showCategoryTabs ? (
           isDrinksMode ? (
             <MenuCatalogDrinkCategoryTabs
               activeSection={activeSection}
@@ -394,8 +396,8 @@ export default function BrowseMenus() {
             position: "relative",
           }}
         >
-        {showCover ? (
-          <MenuCatalogIntroSplash visible variant="cover" />
+        {showSplashIntro ? (
+          <MenuCatalogIntroSplash visible variant="loading" progress={splashProgress} />
         ) : null}
 
         {showChooseMode ? (
