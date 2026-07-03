@@ -68,8 +68,96 @@ function LoadingMeter({ pct }) {
   );
 }
 
+function BrandingBlock() {
+  return (
+    <>
+      <div
+        aria-hidden
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "clamp(20px, 6.5vw, 40px)",
+          marginTop: "clamp(8px, 2vw, 14px)",
+          color: INK,
+          fontWeight: 800,
+          fontSize: "clamp(18px, 5vw, 24px)",
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <span
+          aria-hidden
+          style={{
+            fontSize: "0.92em",
+            fontWeight: 900,
+            letterSpacing: 0,
+            lineHeight: 1,
+          }}
+        >
+          ≪
+        </span>
+        <span>SWIPE</span>
+        <span
+          aria-hidden
+          style={{
+            fontSize: "0.92em",
+            fontWeight: 900,
+            letterSpacing: 0,
+            lineHeight: 1,
+          }}
+        >
+          ≫
+        </span>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          marginTop: "clamp(14px, 3.5vw, 24px)",
+          width: "100%",
+        }}
+      >
+        <div
+          aria-hidden
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "center",
+            gap: "clamp(24px, 8vw, 52px)",
+            color: INK,
+            fontWeight: 900,
+            fontSize: "clamp(28px, 8.5vw, 46px)",
+            lineHeight: 1,
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span>YELLOW</span>
+          <span>BROWSER</span>
+        </div>
+        <div
+          aria-hidden
+          style={{
+            marginTop: "clamp(6px, 1.4vw, 10px)",
+            width: "min(94%, 340px)",
+            height: "clamp(5px, 1.2vw, 8px)",
+            background: INK,
+          }}
+        />
+      </div>
+    </>
+  );
+}
+
 /**
- * Book cover (image only) or loading spread (branding + meter).
+ * Yellow Browser splash variants:
+ * - splash: full branded intro (book + SWIPE + YELLOW BROWSER, no meter)
+ * - loading: plain book graphic on yellow + loading meter only (no text)
  */
 export default function MenuCatalogIntroSplash({
   visible = true,
@@ -79,11 +167,14 @@ export default function MenuCatalogIntroSplash({
 }) {
   if (!visible) return null;
 
-  const isCover = variant === "cover";
+  const isSplash = variant === "splash";
+  const isLoading = variant === "loading";
+  const showBranding = isSplash;
+  const showBook = isSplash || isLoading;
   const pct = Math.max(0, Math.min(100, Math.round(progress)));
-  const ariaLabel = isCover
-    ? "Menu browser"
-    : `Loading menus, ${pct} percent`;
+  const ariaLabel = isLoading
+    ? `Loading menus, ${pct} percent`
+    : "Menu browser";
 
   return (
     <div
@@ -97,11 +188,11 @@ export default function MenuCatalogIntroSplash({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "flex-start",
+        justifyContent: "center",
         background: "#FACC15",
         borderRadius: 16,
         boxSizing: "border-box",
-        padding: "clamp(28px, 8vh, 56px) 16px 24px",
+        padding: "16px 16px 24px",
         overflow: "auto",
       }}
     >
@@ -112,11 +203,11 @@ export default function MenuCatalogIntroSplash({
           alignItems: "center",
           width: "100%",
           maxWidth: 520,
-          marginTop: isCover ? 0 : "clamp(0px, 2vh, 12px)",
-          transform: isCover ? "none" : "translateY(-4%)",
+          transform: isSplash ? "translateY(-6%)" : "none",
           pointerEvents: "none",
         }}
       >
+        {showBook ? (
         <img
           src={bookSrc}
           alt=""
@@ -125,98 +216,16 @@ export default function MenuCatalogIntroSplash({
             display: "block",
             width: "min(88vw, 400px)",
             maxWidth: "100%",
-            maxHeight: isCover ? "min(52vh, 420px)" : "36vh",
+            maxHeight: isSplash ? "36vh" : "min(48vh, 380px)",
             height: "auto",
             objectFit: "contain",
             margin: "0 auto",
           }}
         />
-
-        {!isCover ? (
-          <>
-            <div
-              aria-hidden
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "clamp(20px, 6.5vw, 40px)",
-                marginTop: "clamp(8px, 2vw, 14px)",
-                color: INK,
-                fontWeight: 800,
-                fontSize: "clamp(18px, 5vw, 24px)",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                whiteSpace: "nowrap",
-              }}
-            >
-              <span
-                aria-hidden
-                style={{
-                  fontSize: "0.92em",
-                  fontWeight: 900,
-                  letterSpacing: 0,
-                  lineHeight: 1,
-                }}
-              >
-                ≪
-              </span>
-              <span>SWIPE</span>
-              <span
-                aria-hidden
-                style={{
-                  fontSize: "0.92em",
-                  fontWeight: 900,
-                  letterSpacing: 0,
-                  lineHeight: 1,
-                }}
-              >
-                ≫
-              </span>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                marginTop: "clamp(14px, 3.5vw, 24px)",
-                width: "100%",
-              }}
-            >
-              <div
-                aria-hidden
-                style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  justifyContent: "center",
-                  gap: "clamp(24px, 8vw, 52px)",
-                  color: INK,
-                  fontWeight: 900,
-                  fontSize: "clamp(28px, 8.5vw, 46px)",
-                  lineHeight: 1,
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                <span>YELLOW</span>
-                <span>BROWSER</span>
-              </div>
-              <div
-                aria-hidden
-                style={{
-                  marginTop: "clamp(6px, 1.4vw, 10px)",
-                  width: "min(94%, 340px)",
-                  height: "clamp(5px, 1.2vw, 8px)",
-                  background: INK,
-                }}
-              />
-            </div>
-
-            <LoadingMeter pct={pct} />
-          </>
         ) : null}
+
+        {showBranding ? <BrandingBlock /> : null}
+        {isLoading ? <LoadingMeter pct={pct} /> : null}
       </div>
     </div>
   );

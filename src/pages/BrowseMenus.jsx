@@ -269,7 +269,6 @@ export default function BrowseMenus() {
   const showLoadingSplash = isModeChosen && (initialHold || listPending || (!initialMenuReady && menuPending));
   const showBookOverlay = showSplashIntro || showChooseMode || showLoadingSplash;
   const showCategoryTabs = isModeChosen && !showBookOverlay;
-  const splashProgress = useSmoothedProgress(22, showSplashIntro);
   const introProgress = useSmoothedProgress(loadTarget, showLoadingSplash);
   const currentMenuNumber = currentEntry ? (activeIndex + 1) : 0;
   const totalMenuCount = Math.max(totalCount || 0, entries.length || 0);
@@ -397,7 +396,7 @@ export default function BrowseMenus() {
           }}
         >
         {showSplashIntro ? (
-          <MenuCatalogIntroSplash visible variant="loading" progress={splashProgress} />
+          <MenuCatalogIntroSplash visible variant="splash" />
         ) : null}
 
         {showChooseMode ? (

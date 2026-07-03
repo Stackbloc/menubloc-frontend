@@ -22,11 +22,11 @@ export default function MenuCatalogModePage({ onSelect }) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "flex-start",
+        justifyContent: "center",
         background: PAGE_BG,
         borderRadius: 16,
         boxSizing: "border-box",
-        padding: "clamp(40px, 12vh, 88px) 24px 32px",
+        padding: "32px 24px",
         animation: "menuCatalogPageIn 420ms ease-out",
       }}
     >
@@ -37,6 +37,14 @@ export default function MenuCatalogModePage({ onSelect }) {
         }
       `}</style>
 
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          width: "min(100%, 320px)",
+        }}
+      >
       <h2
         style={{
           margin: "0 0 36px",
@@ -88,6 +96,7 @@ export default function MenuCatalogModePage({ onSelect }) {
             </button>
           );
         })}
+      </div>
       </div>
     </div>
   );
