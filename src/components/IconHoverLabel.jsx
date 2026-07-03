@@ -11,7 +11,14 @@ export default function IconHoverLabel({ label, children, style }) {
 
   return (
     <span
-      style={{ position: "relative", display: "inline-flex", flexShrink: 0, ...style }}
+      style={{
+        position: "relative",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        ...style,
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >

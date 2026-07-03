@@ -6,6 +6,7 @@ import {
   activeMarketsShareBrowseScope,
   resolveDiscoveryMarketLocation,
 } from "./marketGate.js";
+import { MENU_CATALOG_BROWSE_PAGE_SIZE } from "./menuCatalogCategories.js";
 
 export const MENU_CATALOG_SESSION_LOCATION_KEY = "grubbid.discovery.location";
 export const MENU_CATALOG_LOCAL_RADIUS_MILES = 8;
@@ -43,7 +44,7 @@ export function resolveMenuCatalogGeoBrowse({
 function withBrowseSection(baseParams, section, drinksMode = false) {
   const params = {
     ...baseParams,
-    limit: 24,
+    limit: MENU_CATALOG_BROWSE_PAGE_SIZE,
     browse_section: section,
   };
   if (drinksMode) {

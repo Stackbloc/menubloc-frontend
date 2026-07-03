@@ -92,7 +92,10 @@ export default function LikeMenuItemButton({ menuItemId, tone = "inline", size =
           justifyContent: "center",
           width: inline ? "auto" : dim,
           height: inline ? "auto" : dim,
+          minWidth: inline ? "auto" : dim,
+          minHeight: inline ? "auto" : dim,
           padding: 0,
+          lineHeight: 0,
           borderRadius: "50%",
           border: inline
             ? "none"

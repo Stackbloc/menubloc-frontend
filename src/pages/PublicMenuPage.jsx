@@ -50,6 +50,7 @@ function useIsMobile(breakpoint = 900) {
 }
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppliedBanner.jsx";
+import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu-templates/restaurantMenuBrand.js";
@@ -1276,7 +1277,10 @@ export default function PublicMenuPage() {
           shareAnalyticsContext,
           franchiseSlot,
           intakeBannerSlot: (
-            <IntakePreviewBanner show={isIntakePreview} />
+            <>
+              <IntakePreviewBanner show={isIntakePreview} />
+              {!isIntakePreview ? <MenuPurchaseWaiterHint /> : null}
+            </>
           ),
           allergenBannerSlot: (
             <MenuPreferencesAppliedBanner

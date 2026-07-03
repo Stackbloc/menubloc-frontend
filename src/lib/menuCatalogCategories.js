@@ -22,6 +22,9 @@ export const MENU_CATALOG_SIDEBAR = MENU_CATALOG_TABS;
 
 export const MENU_CATALOG_DEFAULT_SECTION = "nearby";
 
+/** Restaurants fetched per /menus/browse request (Yellow Browser swipe buffer). */
+export const MENU_CATALOG_BROWSE_PAGE_SIZE = 12;
+
 /** Menu book artwork (top crop of official Yellow Browser splash). */
 export const MENU_BROWSER_BOOK_SRC = "/menu-browser-book.png?v=20260702b";
 

@@ -3,16 +3,18 @@ import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
 import IconHoverLabel from "../IconHoverLabel.jsx";
 import ViewMenuIcon from "../icons/ViewMenuIcon.jsx";
-import { MENU_ROW_ICON_GAP } from "../menu-templates/menuPresentationUtils.js";
+import { MENU_ROW_ICON_GAP, MENU_ROW_ICON_SIZE } from "../menu-templates/menuPresentationUtils.js";
 
-const GHOST_ICON_DIM = 28;
+const GHOST_ICON_SIZE = 14;
 
 const ghostIconStyle = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  width: GHOST_ICON_DIM,
-  height: GHOST_ICON_DIM,
+  width: MENU_ROW_ICON_SIZE,
+  height: MENU_ROW_ICON_SIZE,
+  minWidth: MENU_ROW_ICON_SIZE,
+  minHeight: MENU_ROW_ICON_SIZE,
   padding: 0,
   borderRadius: "50%",
   border: "1px solid rgba(55,65,81,0.22)",
@@ -22,13 +24,15 @@ const ghostIconStyle = {
   boxShadow: "0 2px 8px rgba(15, 23, 42, 0.12)",
   textDecoration: "none",
   cursor: "pointer",
+  lineHeight: 0,
+  verticalAlign: "middle",
 };
 
 function ViewFullMenuLink({ href, label = "View Full Menu" }) {
   return (
     <IconHoverLabel label={label}>
       <Link to={href} aria-label={label} title={label} style={ghostIconStyle}>
-        <ViewMenuIcon size={14} />
+        <ViewMenuIcon size={GHOST_ICON_SIZE} />
       </Link>
     </IconHoverLabel>
   );
@@ -44,7 +48,17 @@ function ReturnToSearchButton({ onClick, label = "Return to results" }) {
         title={label}
         style={ghostIconStyle}
       >
-        <span style={{ fontSize: 15, lineHeight: 1, fontWeight: 700 }} aria-hidden="true">
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: GHOST_ICON_SIZE,
+            lineHeight: 1,
+            fontWeight: 700,
+          }}
+          aria-hidden="true"
+        >
           ←
         </span>
       </button>
@@ -69,11 +83,14 @@ export default function MenuItemDetailActionRail({
   return (
     <div
       style={{
-        display: "flex",
+        display: "inline-flex",
         alignItems: "center",
+        alignSelf: "flex-start",
+        flexWrap: "nowrap",
         gap: MENU_ROW_ICON_GAP,
         flex: "0 0 auto",
         flexShrink: 0,
+        height: MENU_ROW_ICON_SIZE,
       }}
     >
       {fromSearch ? (

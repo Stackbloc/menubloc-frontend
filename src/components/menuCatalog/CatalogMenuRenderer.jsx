@@ -17,6 +17,7 @@ import { buildRestaurantStatusLightProps } from "../../lib/restaurantStatusLight
 import { toConsumerErrorMessage } from "../../lib/api.js";
 import CatalogItemDetailSheet from "./CatalogItemDetailSheet.jsx";
 import MenuPreferencesAppliedBanner from "../menu/MenuPreferencesAppliedBanner.jsx";
+import MenuPurchaseWaiterHint from "../menu/MenuPurchaseWaiterHint.jsx";
 import useSavedMenuPreferences from "../../hooks/useSavedMenuPreferences.js";
 import { getClientPreferenceDisplaySections } from "../../lib/menuClientPreferenceFilter.js";
 import {
@@ -479,7 +480,7 @@ export default function CatalogMenuRenderer({
           shareData,
           shareAnalyticsContext,
           franchiseSlot: null,
-          intakeBannerSlot: null,
+          intakeBannerSlot: <MenuPurchaseWaiterHint />,
           allergenBannerSlot: (
             <MenuPreferencesAppliedBanner
               visible={hasSavedPreferences}

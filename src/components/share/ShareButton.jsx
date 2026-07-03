@@ -73,6 +73,7 @@ export default function ShareButton({
     gap: iconOnly ? 0 : compact ? 6 : 8,
     width: iconOnly ? (ghost ? 28 : compact ? 32 : 36) : "auto",
     minWidth: iconOnly ? (ghost ? 28 : compact ? 32 : 36) : "auto",
+    height: inline ? "auto" : iconOnly ? (ghost ? 28 : compact ? 32 : 36) : "auto",
     minHeight: inline ? "auto" : iconOnly ? (ghost ? 28 : compact ? 32 : 36) : compact ? 34 : 44,
     padding: inline ? 0 : iconOnly ? 0 : compact ? "0 13px" : "0 16px",
     borderRadius: iconOnly ? "50%" : 999,
@@ -166,7 +167,7 @@ export default function ShareButton({
           onClick={handleClick}
           style={buttonStyles}
         >
-          <ShareIcon size={inline ? 14 : iconOnly ? (ghost ? 15 : compact ? 15 : 16) : compact ? 15 : 16} />
+          <ShareIcon size={inline ? 14 : iconOnly ? (ghost ? 14 : compact ? 15 : 16) : compact ? 15 : 16} />
           {iconOnly ? (
             <span style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>
               {resolvedLabel}

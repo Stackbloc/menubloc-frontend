@@ -1531,10 +1531,9 @@ export default function MenuItemDetailPage() {
               <div
                 style={{
                   display: "flex",
-                  alignItems: "center",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
                   gap: 12,
-                  flexWrap: "wrap",
-                  rowGap: 8,
                 }}
               >
                 <h1
@@ -1551,6 +1550,24 @@ export default function MenuItemDetailPage() {
                 >
                   {displayItemName}
                 </h1>
+                {priceLabel ? (
+                  <div
+                    style={{
+                      flexShrink: 0,
+                      fontSize: isMobile ? 24 : 28,
+                      fontWeight: 900,
+                      letterSpacing: "-0.04em",
+                      color: "#22C55E",
+                      lineHeight: 1,
+                      paddingTop: isMobile ? 4 : 6,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {priceLabel}
+                  </div>
+                ) : null}
+              </div>
+              <div style={{ marginTop: 10 }}>
                 <MenuItemDetailActionRail
                   menuItemId={item.id}
                   itemName={displayItemName}
@@ -1568,13 +1585,6 @@ export default function MenuItemDetailPage() {
                   onBack={() => navigate(-1)}
                   returnLabel="Return to search results"
                 />
-              </div>
-              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                {priceLabel ? (
-                  <div style={{ fontSize: isMobile ? 24 : 28, fontWeight: 900, letterSpacing: "-0.04em", color: "#22C55E" }}>
-                    {priceLabel}
-                  </div>
-                ) : null}
               </div>
 
               {indulgencePresentation ? <IndulgenceInline presentation={indulgencePresentation} /> : null}

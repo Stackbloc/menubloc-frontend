@@ -9,7 +9,7 @@ function LoadingMeter({ pct }) {
     <div
       style={{
         width: "min(78%, 300px)",
-        marginTop: "clamp(20px, 5vw, 32px)",
+        marginTop: "clamp(8px, 2.5vw, 16px)",
       }}
     >
       <div
@@ -78,7 +78,7 @@ function BrandingBlock() {
           alignItems: "center",
           justifyContent: "center",
           gap: "clamp(20px, 6.5vw, 40px)",
-          marginTop: "clamp(8px, 2vw, 14px)",
+          marginTop: "clamp(2px, 0.8vw, 6px)",
           color: INK,
           fontWeight: 800,
           fontSize: "clamp(18px, 5vw, 24px)",
@@ -188,7 +188,8 @@ export default function MenuCatalogIntroSplash({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start",
+        paddingTop: "clamp(28px, 11vh, 72px)",
         background: "#FACC15",
         borderRadius: 16,
         boxSizing: "border-box",
@@ -203,7 +204,7 @@ export default function MenuCatalogIntroSplash({
           alignItems: "center",
           width: "100%",
           maxWidth: 520,
-          transform: isSplash ? "translateY(-6%)" : "none",
+          transform: isSplash ? "translateY(-4%)" : "translateY(-6%)",
           pointerEvents: "none",
         }}
       >

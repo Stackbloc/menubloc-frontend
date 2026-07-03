@@ -6,9 +6,10 @@ import {
   menuCatalogLocationLabel,
   readMenuCatalogAppliedLocation,
 } from "../lib/menuCatalogBrowseLocation.js";
+import { MENU_CATALOG_BROWSE_PAGE_SIZE } from "../lib/menuCatalogCategories.js";
 import useDiscoveryAutoLocation from "./useDiscoveryAutoLocation.js";
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = MENU_CATALOG_BROWSE_PAGE_SIZE;
 
 function extractMenus(response) {
   if (Array.isArray(response?.menus)) return response.menus;

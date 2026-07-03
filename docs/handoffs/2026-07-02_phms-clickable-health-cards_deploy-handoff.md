@@ -5,6 +5,7 @@ Deploy the owner PHMS improvement that makes critical health status blocks click
 - Deployed to Vercel production and aliased to `menuply.com`.
 - Change is live in the production bundle.
 - Manual owner-authenticated UI verification is still required by product owner.
+- Accessibility follow-up shipped: keyboard focus ring + ARIA labels on clickable PHMS cards.
 
 # Files Changed
 - `src/pages/owner/OwnerPhms.jsx`
@@ -12,6 +13,7 @@ Deploy the owner PHMS improvement that makes critical health status blocks click
   - Made critical-health cards clickable with action hints.
   - Added clickable recent-incidents rows with same routing behavior.
   - Added in-page section anchors and smooth scroll for PHMS internal destinations.
+  - Added keyboard focus styles and `aria-label` attributes for clickable cards.
 
 # Database Changes
 - None.
@@ -34,10 +36,12 @@ Deploy the owner PHMS improvement that makes critical health status blocks click
 
 # Verification Status
 - `npx vercel --prod --yes` succeeded.
-- Deployment URL: `https://menubloc-frontend-3kyjt16lb-menuply.vercel.app`
-- Alias updated: `https://menuply.com` now points to that deployment.
+- Deployment URL (first): `https://menubloc-frontend-3kyjt16lb-menuply.vercel.app`
+- Deployment URL (post-accessibility commit): `https://menubloc-frontend-9dgbifxek-menuply.vercel.app`
+- Alias updated: `https://menuply.com` now points to the post-accessibility deployment.
 - Bundle hash check:
-  - `src="/assets/index-CJAHhUok.js"` on `menuply.com`.
+  - After first deploy: `src="/assets/index-CJAHhUok.js"`
+  - After accessibility deploy: `src="/assets/index-Civ15MCq.js"`
 - API base URL signature check in production bundle:
   - `localhost:3001`: 6
   - `menubloc-backend-production`: 62
@@ -55,4 +59,5 @@ Deploy the owner PHMS improvement that makes critical health status blocks click
 # Git Status
 - Branch: `stabilize/frontend-safe-baseline`
 - HEAD before deploy: `23cbf0a fix(observability): allow Sentry ingestion in CSP`
+- Commit for this work: `a649df6 feat(owner-phms): add actionable health card navigation`
 - Working tree was dirty at deploy time with multiple unrelated modified/untracked files.
