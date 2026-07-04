@@ -13,6 +13,7 @@ import MenuCatalogCategoryTabs from "../components/menuCatalog/MenuCatalogCatego
 import MenuCatalogDrinkCategoryTabs from "../components/menuCatalog/MenuCatalogDrinkCategoryTabs.jsx";
 import MenuCatalogModePage from "../components/menuCatalog/MenuCatalogModePage.jsx";
 import MenuCatalogIntroSplash from "../components/menuCatalog/MenuCatalogIntroSplash.jsx";
+import MenuCatalogModeToggleFab from "../components/menuCatalog/MenuCatalogModeToggleFab.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import useMenuCatalogSequence from "../hooks/useMenuCatalogSequence.js";
 import {
@@ -179,6 +180,10 @@ export default function BrowseMenus() {
     updateUrl(sectionId, 0);
   }
 
+  function toggleBrowseMode() {
+    selectMode(isDrinksMode ? "food" : "drinks");
+  }
+
   function selectMode(modeId) {
     if (modeId === "drinks") {
       if (isDrinksMode) return;
@@ -277,6 +282,8 @@ export default function BrowseMenus() {
   const showLoadingSplash = isModeChosen && (initialHold || listPending || (!initialMenuReady && menuPending));
   const showBookOverlay = showSplashIntro || showChooseMode || showLoadingSplash;
   const showCategoryTabs = isModeChosen && !showBookOverlay;
+  const showModeToggleFab = isModeChosen && !showSplashIntro && !showChooseMode;
+  const menuRendering = showLoadingSplash || menuPending;
   const introProgress = useSmoothedProgress(loadTarget, showLoadingSplash);
   const currentMenuNumber = currentEntry ? (activeIndex + 1) : 0;
   const totalMenuCount = Math.max(totalCount || 0, entries.length || 0);
@@ -414,6 +421,13 @@ export default function BrowseMenus() {
         {showLoadingSplash ? (
           <MenuCatalogIntroSplash visible variant="loading" progress={introProgress} />
         ) : null}
+
+        <MenuCatalogModeToggleFab
+          visible={showModeToggleFab}
+          isDrinksMode={isDrinksMode}
+          menuLoading={menuRendering}
+          onToggle={toggleBrowseMode}
+        />
 
         {!showBookOverlay && hasPrev ? (
           <button
