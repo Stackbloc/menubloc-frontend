@@ -8,6 +8,7 @@ import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
 import { buildDishShareData } from "../share/shareUtils.js";
 import { getMenuItemImageUrl } from "./menuImageUtils.js";
 import { normalizeMenuThemeSettings } from "./menuThemeSettings.js";
+import { getNormalizedMenuItemId } from "../../lib/menuItemIdentity.js";
 import {
   useIsTabletRange,
   MENU_ROW_ICON_GAP,
@@ -177,7 +178,8 @@ export default function PublicMenuItemCard({
   const onAccent = brand?.onAccent ?? "#0B0F0C";
   const softBg = brand?.accentSoftBg ?? "rgba(34,197,94,0.12)";
   const softBorder = brand?.accentBorder ?? "rgba(34,197,94,0.32)";
-  const itemKey = String(it?.id ?? `${sIdx}-${iIdx}`);
+  const normalizedItemId = getNormalizedMenuItemId(it);
+  const itemKey = String(normalizedItemId ?? `${sIdx}-${iIdx}`);
   const name = getDisplayMenuItemName(it, language, "Item");
   const desc = String(
     getLocalizedField(it, "description", language) ||
@@ -188,7 +190,7 @@ export default function PublicMenuItemCard({
   ).trim();
   const price = fmtMoney(it);
   const imageUrl = getMenuItemImageUrl(it);
-  const canNavigate = it?.id != null;
+  const canNavigate = normalizedItemId != null;
   const indulgencePresentation = resolveIndulgencePresentation({ chips: it?.chips });
   const nutritionChip = it?.chips?.nutrition_chip || null;
   const hasNutritionData = !!(
@@ -650,7 +652,7 @@ export default function PublicMenuItemCard({
                 hoverBg={ed.unavailableBg}
                 onClick={(e) => {
                   e.stopPropagation();
-                  const navId = it?.canonical_menu_item_id || it?.id;
+                  const navId = normalizedItemId;
                   if (navId && navigate) navigate(`/menu-items/${navId}?from=menu`);
                 }}
               />
@@ -659,7 +661,7 @@ export default function PublicMenuItemCard({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                const navId = it?.canonical_menu_item_id || it?.id;
+                const navId = normalizedItemId;
                 if (navId && navigate) navigate(`/menu-items/${navId}?from=menu`);
               }}
               style={{

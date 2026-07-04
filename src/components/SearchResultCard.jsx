@@ -39,6 +39,7 @@ import { trackBillboardClick } from "../lib/analytics.js";
 import { fetchSimilarItems, fetchCompareItems, fetchMenuItemIntelligence, fetchFranchiseLocation } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "./menu/CompareItemsModal.jsx";
+import { getNormalizedMenuItemId, normalizeMenuItemIdentity } from "../lib/menuItemIdentity.js";
 
 import {
   getQualitativeLabel,
@@ -47,7 +48,7 @@ import {
 } from "../lib/nutritionInsights.js";
 
 const MATCH_LABEL = "Match:";
-const SEARCH_CARD_NO_SIMILAR_TEXT = "No close similar items found nearby";
+const SEARCH_CARD_NO_SIMILAR_TEXT = "No similar items found yet.";
 const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
   "vegan", "vegetarian", "gluten_free", "dairy_free",
   "diabetic_friendly", "low_fat", "low_sodium", "keto",
@@ -291,10 +292,10 @@ function hl(text, query) {
 }
 
 function getItemId(row) {
-  return asStr(pick(row, ["menu_item_id", "menuItemId", "id"]));
+  return asStr(getNormalizedMenuItemId(row));
 }
 function getRestId(row) {
-  return asStr(pick(row, ["restaurant_id", "restaurantId", "id"]));
+  return asStr(normalizeMenuItemIdentity(row).restaurantId);
 }
 function getRestSlug(row) {
   return asStr(pick(row, ["restaurant_slug", "restaurantSlug", "slug"]));
@@ -1482,31 +1483,29 @@ function ItemRow({
   }
 
   function handleCompare(similarEntry) {
-    if (!isSimilarRowCompareEligible(similarEntry) || !mid) return;
+    const candidateId = getNormalizedMenuItemId(similarEntry);
+    if (!isSimilarRowCompareEligible(similarEntry) || !mid || !candidateId) return;
     setCurrentCompareCandidate(similarEntry);
     setCompareData(null);
     setCompareError(null);
     setCompareLoading(true);
     setCompareOpen(true);
-    fetchCompareItems(mid, similarEntry.id, geo?.lat ?? null, geo?.lng ?? null, {
+    fetchCompareItems(mid, candidateId, geo?.lat ?? null, geo?.lng ?? null, {
       skipEligibilityCheck: true,
     })
       .then((data) => {
-        // If the backend returned no usable comparison, close silently rather
-        // than showing a dead-end error screen.
         if (!data?.baseItem && !data?.candidateItem) {
-          setCompareOpen(false);
           setCompareLoading(false);
+          setCompareError("This comparison is no longer available.");
           return;
         }
         setCompareData(data);
         setCompareLoading(false);
       })
-      .catch(() => {
-        // Close modal silently — Compare button stays visible for retry.
-        setCompareOpen(false);
+      .catch((error) => {
         setCompareLoading(false);
         setCompareData(null);
+        setCompareError(error?.message || "This comparison is no longer available.");
       });
   }
 
@@ -1788,7 +1787,7 @@ function ItemRow({
           onClose={() => setCompareOpen(false)}
           onSwap={(candidateItem) => {
             setCompareOpen(false);
-            const candidateId = candidateItem?.id || currentCompareCandidate?.id;
+            const candidateId = getNormalizedMenuItemId(candidateItem) || getNormalizedMenuItemId(currentCompareCandidate);
             if (candidateId) navigate(`/menu-items/${candidateId}?from=search`);
           }}
           onViewBase={() => {

@@ -54,6 +54,7 @@ import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
+import { getNormalizedMenuItemId } from "../lib/menuItemIdentity.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -127,7 +128,7 @@ function normalizeResultItem(raw) {
     raw?.item_photo_url || raw?.itemPhotoUrl || raw?.photo_url || raw?.image_url || null;
 
   return {
-    id: raw?.menu_item_id || raw?.id || null,
+    id: getNormalizedMenuItemId(raw),
     name: raw?.name || raw?.item_name || raw?.title || "Untitled Item",
     description: raw?.description || raw?.notes || raw?.snippet || "",
     translations: raw?.translations || null,
@@ -1133,9 +1134,10 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
   const [failed, setFailed] = useState(false);
 
   function buildSimilarLink(entry) {
+    const normalizedEntryId = getNormalizedMenuItemId(entry);
     const basePath = getCanonicalMenuItemPath({
       restaurant: { slug: entry.restaurant_slug || null, id: entry.restaurant_id || null },
-      menuItem: { id: entry.id },
+      menuItem: { id: normalizedEntryId },
     });
     const params = new URLSearchParams();
     if (geoLat && geoLng) { params.set("lat", geoLat); params.set("lng", geoLng); }
@@ -1182,41 +1184,41 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
   }, [geoLat, geoLng, itemId]);
 
   function handleCompare(similarEntry) {
-    if (!isSimilarRowCompareEligible(similarEntry)) return;
+    const candidateId = getNormalizedMenuItemId(similarEntry);
+    if (!isSimilarRowCompareEligible(similarEntry) || !itemId || !candidateId) return;
     setCompareData(null);
     setCompareError(null);
     setCompareLoading(true);
     setCompareOpen(true);
-    fetchCompareItems(itemId, similarEntry.id, geoLat || null, geoLng || null, {
+    fetchCompareItems(itemId, candidateId, geoLat || null, geoLng || null, {
       skipEligibilityCheck: true,
     })
       .then((data) => {
         if (!data?.baseItem && !data?.candidateItem) {
-          setCompareOpen(false);
           setCompareLoading(false);
+          setCompareError("This comparison is no longer available.");
           return;
         }
         setCompareData(data);
         setCompareLoading(false);
       })
-      .catch(() => {
-        setCompareOpen(false);
+      .catch((error) => {
         setCompareLoading(false);
         setCompareData(null);
-        setCompareError(null);
+        setCompareError(error?.message || "This comparison is no longer available.");
       });
   }
 
   function handleSwap(candidateItem) {
     setCompareOpen(false);
     const slug = candidateItem?.restaurant_slug || null;
-    const id = candidateItem?.id;
+    const id = getNormalizedMenuItemId(candidateItem);
     if (!id) return;
     navigate(buildSimilarLink({ ...candidateItem, restaurant_slug: slug, restaurant_id: candidateItem?.restaurant_id }));
   }
 
   if (itemCount > 0) return null;
-  if (failed || similar === null || similar.length === 0) return null;
+  if (similar === null) return null;
 
   return (
     <>
@@ -1226,8 +1228,12 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
         style={{ marginTop: 24 }}
       >
         <div style={{ display: "grid", gap: 14 }}>
-          {similar.map((entry) => (
-            <div key={entry.id} style={{ borderRadius: 18, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: 16 }}>
+          {failed ? (
+            <div style={{ color: "#9CA3AF", fontSize: 14 }}>Could not load similar items. Try again.</div>
+          ) : similar.length === 0 ? (
+            <div style={{ color: "#9CA3AF", fontSize: 14 }}>No similar items found yet.</div>
+          ) : similar.map((entry) => (
+            <div key={getNormalizedMenuItemId(entry)} style={{ borderRadius: 18, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
                 {entry.restaurant_name}
                 {entry.distance_miles != null && (
@@ -1369,6 +1375,12 @@ export default function MenuItemDetailPage() {
       setErr("");
       setRawItem(null);
 
+      if (!id || !/^\d+$/.test(String(id)) || Number(id) <= 0) {
+        setErr("A valid menu item ID is required.");
+        setLoading(false);
+        return;
+      }
+
       try {
         const geoSuffix = geoLat && geoLng ? `?lat=${geoLat}&lng=${geoLng}` : "";
         const tryUrls = [`${BACKEND_BASE}/menu-items/${encodeURIComponent(id)}${geoSuffix}`];
@@ -1388,7 +1400,7 @@ export default function MenuItemDetailPage() {
           }
         }
 
-        if (!found) throw new Error("");
+        if (!found) throw new Error("This item was not found. Return to the restaurant menu and choose another item.");
 
         if (!cancelled) {
           setRawItem(found);

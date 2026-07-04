@@ -3,6 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { fetchCompareItems } from "../lib/api.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 
+function isValidItemId(value) {
+  return /^\d+$/.test(String(value || "")) && Number(value) > 0;
+}
+
 export default function ComparePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -17,7 +21,7 @@ export default function ComparePage() {
   const [error,      setError]      = useState(null);
 
   useEffect(() => {
-    if (!baseId || !candidateId) {
+    if (!isValidItemId(baseId) || !isValidItemId(candidateId)) {
       setError("Missing item IDs");
       setLoading(false);
       return;
@@ -40,7 +44,7 @@ export default function ComparePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseId, candidateId]);
 
-  if (!baseId || !candidateId) {
+  if (!isValidItemId(baseId) || !isValidItemId(candidateId)) {
     return (
       <div style={{
         minHeight: "100dvh", display: "flex", flexDirection: "column",
