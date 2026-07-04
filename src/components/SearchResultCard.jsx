@@ -19,7 +19,7 @@ import {
   rowHasNutritionMacros,
 } from "../lib/searchResultEnrichment.js";
 import IndulgenceMeter from "./IndulgenceMeter.jsx";
-import ShareButton from "./share/ShareButton.jsx";
+import MenuItemDetailActionRail from "./menu/MenuItemDetailActionRail.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildInsightCards } from "./InsightCardDeck.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
@@ -1055,25 +1055,73 @@ function buildKeyFactsLine({ row, restaurantSummary, matchContext, omitPrice = f
   return parts.length ? parts.join(" · ") : "";
 }
 
-function NutritionPreviewStrip({ chips }) {
+function NutritionPreviewStrip({ chips, active = false, onSelect }) {
   if (!Array.isArray(chips) || !chips.length) return null;
   return (
     <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
       {chips.map((c) => {
         const label = typeof c === "string" ? c : c.label;
         const primary = typeof c === "object" && c.primary === true;
+        const isSelected = active === true;
+        const sharedStyle = {
+          fontSize: 11,
+          fontWeight: 700,
+          borderRadius: 999,
+          padding: "4px 10px",
+          lineHeight: 1.2,
+          border: "1px solid",
+          transition: "background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease",
+        };
+        const selectedStyle = {
+          color: "#22C55E",
+          background: primary ? "rgba(34,197,94,0.10)" : "rgba(34,197,94,0.08)",
+          borderColor: primary ? "rgba(34,197,94,0.28)" : "rgba(34,197,94,0.22)",
+          boxShadow: "none",
+        };
+        const idleStyle = {
+          color: "#0B0F0C",
+          background: "#FFFFFF",
+          borderColor: "rgba(255,255,255,0.92)",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+        };
+
+        if (onSelect) {
+          return (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={isSelected}
+              aria-label={`${label} nutrition details`}
+              onClick={onSelect}
+              style={{
+                ...sharedStyle,
+                ...(isSelected ? selectedStyle : idleStyle),
+                cursor: "pointer",
+                font: "inherit",
+                fontFamily: "inherit",
+              }}
+              onMouseEnter={(e) => {
+                if (isSelected) return;
+                e.currentTarget.style.borderColor = "rgba(34,197,94,0.45)";
+                e.currentTarget.style.boxShadow = "0 1px 4px rgba(34,197,94,0.18)";
+              }}
+              onMouseLeave={(e) => {
+                if (isSelected) return;
+                e.currentTarget.style.borderColor = idleStyle.borderColor;
+                e.currentTarget.style.boxShadow = idleStyle.boxShadow;
+              }}
+            >
+              {label}
+            </button>
+          );
+        }
+
         return (
           <span
             key={label}
             style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: primary ? "#22C55E" : "#D1D5DB",
-              background: primary ? "rgba(34,197,94,0.10)" : "rgba(255,255,255,0.10)",
-              border: primary ? "1px solid rgba(34,197,94,0.28)" : "1px solid rgba(255,255,255,0.20)",
-              borderRadius: 999,
-              padding: "4px 10px",
-              lineHeight: 1.2,
+              ...sharedStyle,
+              ...(isSelected ? selectedStyle : idleStyle),
             }}
           >
             {label}
@@ -1124,6 +1172,7 @@ function ItemRow({
   activeRefinement = null,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [openTab, setOpenTab] = useState(null);
   const [similarState, setSimilarState] = useState({
     status: "idle",
@@ -1198,11 +1247,11 @@ function ItemRow({
       intelligenceState.status === "ready");
   const pairingTeaser = formatPairingTeaser(displayRow);
   const refinementMatchLabel = buildRefinementMatchLabel(displayRow, activeRefinement);
+  const priceLabel = fmtPrice(row);
 
   const factsLine = venueRenderedAbove
     ? ""
-    : buildKeyFactsLine({ row, restaurantSummary, matchContext });
-  const itemPriceOnly = venueRenderedAbove ? fmtPrice(row) : "";
+    : buildKeyFactsLine({ row, restaurantSummary, matchContext, omitPrice: Boolean(priceLabel) });
 
   const restDisplayName =
     (restaurantSummary &&
@@ -1217,6 +1266,11 @@ function ItemRow({
   const restProfileTarget = restSlugForLink || restIdForLink;
   const restHref = restaurantPath({ slug: restSlugForLink, city: restCityForLink, state: restStateForLink }) ||
     (restProfileTarget ? "/restaurants/" + restProfileTarget : null);
+  const contextSearch = location.search || "";
+  const fullMenuHref = restIdForLink
+    ? (restaurantMenuPath({ slug: restSlugForLink, city: restCityForLink, state: restStateForLink, id: restIdForLink }) ||
+        buildCanonicalMenuPath({ restaurantSlug: restSlugForLink, restaurantId: restIdForLink })) + contextSearch
+    : null;
 
   const nutChip = chips?.nutrition_chip || {};
 
@@ -1388,21 +1442,29 @@ function ItemRow({
   return (
     <div
       style={{
-        paddingTop: 14,
-        paddingBottom: 14,
+        paddingTop: 16,
+        paddingBottom: 16,
         borderBottom: "1px solid var(--gb-color-border)",
       }}
     >
-      {/* 1. Item name + share */}
-      <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 12px" }}>
+      {/* 1. Item name + price */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
         <span
           style={{
-            fontSize: "20px",
-            fontWeight: 800,
-            lineHeight: 1.25,
-            letterSpacing: "-0.01em",
+            fontSize: "clamp(22px, 4.5vw, 26px)",
+            fontWeight: 900,
+            lineHeight: 1.1,
+            letterSpacing: "-0.03em",
             color: "#FFFFFF",
             minWidth: 0,
+            flex: "1 1 auto",
           }}
         >
           {href ? (
@@ -1426,12 +1488,32 @@ function ItemRow({
             hl(name, query)
           )}
         </span>
-        {dishShareData ? (
-          <ShareButton
-            variant="dish"
-            modalTitle={`Share ${name}`}
+        {priceLabel ? (
+          <div
+            style={{
+              flexShrink: 0,
+              fontSize: "clamp(16px, 3.5vw, 20px)",
+              fontWeight: 900,
+              letterSpacing: "-0.03em",
+              color: "#22C55E",
+              lineHeight: 1,
+              paddingTop: 2,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {priceLabel}
+          </div>
+        ) : null}
+      </div>
+
+      {/* 2. Action icons — view menu, like, share */}
+      {mid || dishShareData || fullMenuHref ? (
+        <div style={{ marginTop: 12, marginBottom: 2 }}>
+          <MenuItemDetailActionRail
+            menuItemId={mid}
+            itemName={name}
             shareData={dishShareData}
-            analyticsContext={{
+            shareAnalyticsContext={{
               restaurantId: restIdForLink,
               restaurantSlug: restSlugForLink || null,
               menuItemId: mid,
@@ -1439,33 +1521,18 @@ function ItemRow({
               pageType: "search_results",
               shareTarget: "dish",
             }}
-            size="compact"
-            tone="subtle"
-            iconOnly
-            stopPropagation
+            fullMenuHref={fullMenuHref}
+            iconGap={SEARCH_ITEM_ACTION_GAP}
+            shareStopPropagation
           />
-        ) : null}
-      </div>
-
-      {venueRenderedAbove && itemPriceOnly ? (
-        <div
-          style={{
-            marginTop: 6,
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#9CA3AF",
-            lineHeight: 1.45,
-          }}
-        >
-          {itemPriceOnly}
         </div>
       ) : null}
 
-      {/* 2. Restaurant name + facts + diet badges — one merged line */}
+      {/* 3. Restaurant name + facts + diet badges — one merged line */}
       {!venueRenderedAbove && (restDisplayName || factsLine || popular || isGF || isVegan) ? (
         <div
           style={{
-            marginTop: 6,
+            marginTop: 10,
             display: "flex",
             alignItems: "center",
             flexWrap: "wrap",
@@ -1480,7 +1547,7 @@ function ItemRow({
             restHref ? (
               <Link
                 to={restHref}
-                style={{ fontWeight: 700, color: "#9CA3AF", textDecoration: "none" }}
+                style={{ fontWeight: 800, color: "#9CA3AF", textDecoration: "none" }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = "#22C55E";
                   e.currentTarget.style.textDecoration = "underline";
@@ -1493,7 +1560,7 @@ function ItemRow({
                 {restDisplayName}
               </Link>
             ) : (
-              <span style={{ fontWeight: 700 }}>{restDisplayName}</span>
+              <span style={{ fontWeight: 800 }}>{restDisplayName}</span>
             )
           ) : null}
           {restDisplayName && factsLine ? <span aria-hidden="true">·</span> : null}
@@ -1504,11 +1571,11 @@ function ItemRow({
         </div>
       ) : null}
 
-      {/* 3. Why it matched — active refinement takes priority over the generic match label */}
+      {/* 4. Why it matched — active refinement takes priority over the generic match label */}
       {(refinementMatchLabel || matchLineText) ? (
         <div
           style={{
-            marginTop: 6,
+            marginTop: 8,
             fontSize: "13px",
             lineHeight: 1.5,
             fontWeight: 700,
@@ -1522,8 +1589,14 @@ function ItemRow({
         </div>
       ) : null}
 
-      {/* 4. Nutrition preview chips — only after pill press loads intelligence */}
-      {showNutritionPreview ? <NutritionPreviewStrip chips={nutritionPreviewChips} /> : null}
+      {/* 4. Nutrition preview chips — tap to open full nutrition panel */}
+      {showNutritionPreview ? (
+        <NutritionPreviewStrip
+          chips={nutritionPreviewChips}
+          active={openTab === "nutrition"}
+          onSelect={() => toggle("nutrition")}
+        />
+      ) : null}
 
       {/* Pairings teaser */}
       {pairingTeaser ? (
@@ -1649,13 +1722,15 @@ const cardStyle = {
   border: "1px solid var(--gb-color-border)",
   borderRadius: "var(--gb-radius-card)",
   background: "var(--gb-color-surface-strong)",
-  padding: "12px 14px",
+  padding: "16px 18px",
   boxShadow: "var(--gb-shadow-card)",
   width: "100%",
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
 };
+
+const SEARCH_ITEM_ACTION_GAP = 12;
 
 function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCount }) {
   const pieces = [];
@@ -1790,10 +1865,6 @@ export default function SearchResultCard({ restaurant, items, item, query, query
     const restCity = asStr(restaurant?.city || restaurant?.restaurant_city);
     const restState = asStr(restaurant?.state || restaurant?.restaurant_state);
 
-    const menuHref = restId
-      ? (restaurantMenuPath({ slug: restSlug, city: restCity, state: restState, id: restId }) || buildCanonicalMenuPath({ restaurantSlug: restSlug, restaurantId: restId })) + contextSearch
-      : null;
-
     const restaurantSummary = {
       id: restId,
       slug: restSlug,
@@ -1902,28 +1973,6 @@ export default function SearchResultCard({ restaurant, items, item, query, query
             +{hiddenMatchCount} more matching items
           </div>
         ) : null}
-
-        {menuHref && (
-          <div style={{ marginTop: 10 }}>
-            <Link
-              to={menuHref}
-              style={{
-                fontSize: "var(--text-3, 15px)",
-                fontWeight: 800,
-                color: "#22C55E",
-                textDecoration: "none",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.textDecoration = "underline";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.textDecoration = "none";
-              }}
-            >
-              {labels.viewMenu}
-            </Link>
-          </div>
-        )}
       </article>
     );
   }
@@ -1962,27 +2011,6 @@ export default function SearchResultCard({ restaurant, items, item, query, query
           restaurantSummary={null}
           activeRefinement={activeRefinement}
         />
-        {menuHrefS && (
-          <div style={{ marginTop: 10 }}>
-            <Link
-              to={menuHrefS}
-              style={{
-                fontSize: "var(--text-3, 15px)",
-                fontWeight: 800,
-                color: "#22C55E",
-                textDecoration: "none",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.textDecoration = "underline";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.textDecoration = "none";
-              }}
-            >
-              {labels.viewMenu}
-            </Link>
-          </div>
-        )}
       </article>
     );
   }

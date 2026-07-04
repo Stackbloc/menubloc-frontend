@@ -79,6 +79,8 @@ export default function MenuItemDetailActionRail({
   fromSearch = false,
   onBack,
   returnLabel = "Return to results",
+  iconGap = MENU_ROW_ICON_GAP,
+  shareStopPropagation = false,
 }) {
   return (
     <div
@@ -87,7 +89,7 @@ export default function MenuItemDetailActionRail({
         alignItems: "center",
         alignSelf: "flex-start",
         flexWrap: "nowrap",
-        gap: MENU_ROW_ICON_GAP,
+        gap: iconGap,
         flex: "0 0 auto",
         flexShrink: 0,
         height: MENU_ROW_ICON_SIZE,
@@ -108,6 +110,7 @@ export default function MenuItemDetailActionRail({
           modalTitle={`Share ${itemName || "dish"}`}
           shareData={shareData}
           analyticsContext={shareAnalyticsContext}
+          stopPropagation={shareStopPropagation}
         />
       ) : null}
     </div>
