@@ -36,7 +36,7 @@ import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
 import { trackBillboardClick } from "../lib/analytics.js";
-import { fetchSimilarItems, fetchCompareItems, fetchMenuItemIntelligence } from "../lib/api.js";
+import { fetchSimilarItems, fetchCompareItems, fetchMenuItemIntelligence, fetchFranchiseLocation } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "./menu/CompareItemsModal.jsx";
 
@@ -54,6 +54,7 @@ const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
 ]);
 const searchCardSimilarCache = new Map();
 const searchCardIntelligenceCache = new Map();
+const searchCardFranchiseLocationCache = new Map();
 
 /* ---- Billboard banner (compact, search-surface) ---- */
 
@@ -308,6 +309,29 @@ function getRestName(row, language = "en") {
 }
 function getItemName(row, language = "en") {
   return getDisplayMenuItemName(row, language, "Menu item");
+}
+
+function isFranchiseLocationDeferred(row) {
+  if (!row || row.location_deferred !== true) return false;
+  return !getRestId(row);
+}
+
+function mergeFranchiseLocationIntoRow(row, location) {
+  if (!location) return row;
+  return {
+    ...row,
+    location_deferred: false,
+    franchise_details_available: true,
+    restaurant_id: location.restaurant_id ?? row.restaurant_id ?? null,
+    restaurant_name: location.restaurant_name || row.restaurant_name || row.chain_name || null,
+    restaurant_slug: location.slug ?? row.restaurant_slug ?? null,
+    city: location.city ?? row.city ?? null,
+    state: location.state ?? row.state ?? null,
+    lat: location.lat ?? row.lat ?? null,
+    lng: location.lng ?? row.lng ?? null,
+    distance_miles: location.distance_miles ?? row.distance_miles ?? null,
+    restaurant_distance_miles: location.distance_miles ?? row.restaurant_distance_miles ?? null,
+  };
 }
 
 function normalizeTier(raw) {
@@ -1191,18 +1215,40 @@ function ItemRow({
     data: null,
   });
   const intelligenceRequestRef = useRef(0);
+  const [franchiseLocationState, setFranchiseLocationState] = useState({
+    status: "idle",
+    location: null,
+  });
+  const franchiseLocationRequestRef = useRef(0);
 
   const mid = getItemId(row);
+  const franchiseLocationDeferred = isFranchiseLocationDeferred(row);
 
   const intelligenceCacheKey = useMemo(() => {
     if (!mid) return "";
     return `${mid}::${geo?.lat ?? ""}::${geo?.lng ?? ""}`;
   }, [mid, geo?.lat, geo?.lng]);
 
-  const displayRow = useMemo(() => {
+  const franchiseLocationCacheKey = useMemo(() => {
+    if (!mid || !franchiseLocationDeferred) return "";
+    return `${mid}::${geo?.lat ?? ""}::${geo?.lng ?? ""}`;
+  }, [mid, franchiseLocationDeferred, geo?.lat, geo?.lng]);
+
+  const intelligenceRow = useMemo(() => {
     const cached = intelligenceState.data || (intelligenceCacheKey && searchCardIntelligenceCache.get(intelligenceCacheKey));
     return cached ? mergeRowIntelligence(row, cached) : row;
   }, [row, intelligenceState.data, intelligenceCacheKey]);
+
+  const displayRow = useMemo(() => {
+    const loc = franchiseLocationState.status === "ready"
+      ? franchiseLocationState.location
+      : null;
+    if (loc) return mergeFranchiseLocationIntoRow(intelligenceRow, loc);
+    return intelligenceRow;
+  }, [intelligenceRow, franchiseLocationState]);
+
+  const franchiseLocationPending =
+    franchiseLocationDeferred && franchiseLocationState.status !== "ready";
 
   const capabilities = resolveCapabilities(displayRow);
   const name = getItemName(displayRow, language);
@@ -1211,8 +1257,10 @@ function ItemRow({
   const breadScore = displayRow?.detail_system?.bread_score || displayRow?.chips?.bread_score || null;
   const hrefBase = mid ? getCanonicalMenuItemPath({
     restaurant: {
-      slug: (restaurantSummary && restaurantSummary.slug) || getRestSlug(row),
-      id: (restaurantSummary && restaurantSummary.id) || getRestId(row),
+      slug: (restaurantSummary && restaurantSummary.slug) || getRestSlug(displayRow),
+      id: (restaurantSummary && restaurantSummary.id) || getRestId(displayRow),
+      city: getCityLike(displayRow),
+      state: getStateLike(displayRow),
     },
     menuItem: { id: mid },
   }) : null;
@@ -1221,10 +1269,10 @@ function ItemRow({
     : hrefBase;
   const dishShareData = mid ? buildDishShareData({
     restaurant: {
-      id: getRestId(row),
-      slug: getRestSlug(row),
-      name: getRestName(row, language),
-      logoUrl: pick(row, ["restaurant_logo_url", "logo_url"], row?.restaurant?.logo_url || row?.restaurant?.logoUrl || null),
+      id: getRestId(displayRow),
+      slug: getRestSlug(displayRow),
+      name: getRestName(displayRow, language),
+      logoUrl: pick(displayRow, ["restaurant_logo_url", "logo_url"], displayRow?.restaurant?.logo_url || displayRow?.restaurant?.logoUrl || null),
     },
     menuItem: {
       id: mid,
@@ -1252,18 +1300,18 @@ function ItemRow({
 
   const factsLine = venueRenderedAbove
     ? ""
-    : buildKeyFactsLine({ row, restaurantSummary, matchContext, omitPrice: Boolean(priceLabel) });
+    : buildKeyFactsLine({ row: displayRow, restaurantSummary, matchContext, omitPrice: Boolean(priceLabel) });
 
   const restDisplayName =
     (restaurantSummary &&
       (getLocalizedField(restaurantSummary, "restaurant_name", language) ||
         getLocalizedField(restaurantSummary, "name", language) ||
         asStr(restaurantSummary.name || restaurantSummary.restaurant_name))) ||
-    getRestName(row, language);
-  const restIdForLink = (restaurantSummary && restaurantSummary.id) || getRestId(row);
-  const restSlugForLink = (restaurantSummary && restaurantSummary.slug) || getRestSlug(row);
-  const restCityForLink = getCityLike(restaurantSummary || row);
-  const restStateForLink = getStateLike(restaurantSummary || row);
+    getRestName(displayRow, language);
+  const restIdForLink = (restaurantSummary && restaurantSummary.id) || getRestId(displayRow);
+  const restSlugForLink = (restaurantSummary && restaurantSummary.slug) || getRestSlug(displayRow);
+  const restCityForLink = getCityLike(restaurantSummary || displayRow);
+  const restStateForLink = getStateLike(restaurantSummary || displayRow);
   const restProfileTarget = restSlugForLink || restIdForLink;
   const restHref = restaurantPath({ slug: restSlugForLink, city: restCityForLink, state: restStateForLink }) ||
     (restProfileTarget ? "/restaurants/" + restProfileTarget : null);
@@ -1310,6 +1358,50 @@ function ItemRow({
     setSimilarState({ status: "idle", items: [], meta: null });
     setIntelligenceState({ status: "idle", data: null });
   }, [similarCacheKey, intelligenceCacheKey]);
+
+  useEffect(() => {
+    if (!franchiseLocationCacheKey) {
+      setFranchiseLocationState({ status: "idle", location: null });
+      return;
+    }
+    const cached = searchCardFranchiseLocationCache.get(franchiseLocationCacheKey);
+    if (cached) {
+      setFranchiseLocationState({ status: "ready", location: cached.location ?? null });
+      return;
+    }
+    setFranchiseLocationState({ status: "idle", location: null });
+  }, [franchiseLocationCacheKey]);
+
+  async function loadFranchiseLocationForRow() {
+    if (!mid || !franchiseLocationDeferred || !franchiseLocationCacheKey) return;
+    if (searchCardFranchiseLocationCache.has(franchiseLocationCacheKey)) {
+      setFranchiseLocationState({
+        status: "ready",
+        location: searchCardFranchiseLocationCache.get(franchiseLocationCacheKey).location ?? null,
+      });
+      return;
+    }
+
+    const requestId = franchiseLocationRequestRef.current + 1;
+    franchiseLocationRequestRef.current = requestId;
+    setFranchiseLocationState({ status: "loading", location: null });
+
+    try {
+      const json = await fetchFranchiseLocation(mid, {
+        lat: geo?.lat ?? null,
+        lng: geo?.lng ?? null,
+        city: geo?.city ?? null,
+        state: geo?.state ?? null,
+      });
+      if (franchiseLocationRequestRef.current !== requestId) return;
+      const nextLocation = json?.location ?? null;
+      searchCardFranchiseLocationCache.set(franchiseLocationCacheKey, { location: nextLocation });
+      setFranchiseLocationState({ status: "ready", location: nextLocation });
+    } catch {
+      if (franchiseLocationRequestRef.current !== requestId) return;
+      setFranchiseLocationState({ status: "failed", location: null });
+    }
+  }
 
   async function loadIntelligenceForRow() {
     if (!mid || !intelligenceCacheKey) return null;
@@ -1418,9 +1510,11 @@ function ItemRow({
       const next = prev === tab ? null : tab;
       if (next === "similar") {
         trackMenuItemInteraction(mid, "open_similar_items");
+        if (franchiseLocationPending) void loadFranchiseLocationForRow();
         void loadSimilarForRow();
       } else if (next === "nutrition") {
         trackMenuItemInteraction(mid, "open_nutrition");
+        if (franchiseLocationPending) void loadFranchiseLocationForRow();
         void loadIntelligenceForRow();
       }
       return next;
@@ -1532,7 +1626,39 @@ function ItemRow({
           }}
         >
           {restDisplayName ? (
-            restHref ? (
+            franchiseLocationPending ? (
+              <>
+                <span style={{ fontWeight: 800 }}>{restDisplayName}</span>
+                <span aria-hidden="true">·</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void loadFranchiseLocationForRow();
+                  }}
+                  disabled={franchiseLocationState.status === "loading"}
+                  style={{
+                    font: "inherit",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: "#22C55E",
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: franchiseLocationState.status === "loading" ? "wait" : "pointer",
+                    textDecoration: "underline",
+                    textUnderlineOffset: "2px",
+                  }}
+                >
+                  {franchiseLocationState.status === "loading"
+                    ? "Loading…"
+                    : franchiseLocationState.status === "failed"
+                    ? "Retry details"
+                    : "Details"}
+                </button>
+              </>
+            ) : restHref ? (
               <Link
                 to={restHref}
                 style={{ fontWeight: 800, color: "#9CA3AF", textDecoration: "none" }}
@@ -1551,8 +1677,8 @@ function ItemRow({
               <span style={{ fontWeight: 800 }}>{restDisplayName}</span>
             )
           ) : null}
-          {restDisplayName && factsLine ? <span aria-hidden="true">·</span> : null}
-          {factsLine ? <span style={{ overflowWrap: "anywhere" }}>{factsLine}</span> : null}
+          {!franchiseLocationPending && restDisplayName && factsLine ? <span aria-hidden="true">·</span> : null}
+          {franchiseLocationPending ? null : factsLine ? <span style={{ overflowWrap: "anywhere" }}>{factsLine}</span> : null}
           {popular && <DietBadge label="★ Popular" tone="popular" />}
           {isGF && <DietBadge label="GF" tone="gf" />}
           {isVegan && <DietBadge label="🌿 Vegan" tone="vegan" />}

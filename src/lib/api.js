@@ -237,6 +237,20 @@ export async function fetchSimilarItems(menuItemId, options = {}) {
   return apiGet(`/menu-items/${encodeURIComponent(String(menuItemId))}/similar${suffix}`);
 }
 
+/**
+ * Resolve nearest franchise store for a deferred search row (cmi: IDs).
+ * Search returns chain-level cards; location is fetched on demand when the user opens Details.
+ */
+export async function fetchFranchiseLocation(menuItemId, options = {}) {
+  const params = new URLSearchParams();
+  if (options.lat != null) params.set("lat", String(options.lat));
+  if (options.lng != null) params.set("lng", String(options.lng));
+  if (options.city) params.set("city", String(options.city));
+  if (options.state) params.set("state", String(options.state));
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return apiGet(`/menu-items/${encodeURIComponent(String(menuItemId))}/franchise-location${suffix}`);
+}
+
 export default {
   apiGet,
   apiPost,
@@ -256,4 +270,5 @@ export default {
   fetchCompareItems,
   fetchSimilarItems,
   fetchMenuItemIntelligence,
+  fetchFranchiseLocation,
 };
