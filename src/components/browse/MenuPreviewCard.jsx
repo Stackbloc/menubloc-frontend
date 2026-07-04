@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { isRestaurantVerifiedMenuStatus } from "../../lib/menuVerificationLabels.js";
+import RestaurantVerificationBadge, { verificationBadgePropsFromRow } from "../RestaurantVerificationBadge.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayItemCount, getMenuAvailabilityLabel, shouldLinkRestaurantCardToMenu } from "../../lib/publicCardCounts.js";
 import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/canonicalUrl.js";
@@ -279,7 +279,7 @@ export default function MenuPreviewCard({
   const phone = menu?.phone || null;
   const websiteUrl = menu?.website_url || null;
   const theme = CARD_THEMES[index % CARD_THEMES.length];
-  const isVerified = menuReady && isRestaurantVerifiedMenuStatus(menu?.menu_status);
+  const verificationProps = verificationBadgePropsFromRow(menu);
   const distance = formatDistance(menu?.distance_miles);
   const restaurantName = (
     getLocalizedField(menu, "restaurant_name", language) ||
@@ -363,25 +363,6 @@ export default function MenuPreviewCard({
           pointerEvents: "none",
         }} />
 
-        {/* Verified badge — top right */}
-        {isVerified ? (
-          <div style={{
-            position: "absolute", top: 12, right: 12, zIndex: 4,
-            display: "inline-flex", alignItems: "center", gap: 4,
-            padding: "3px 9px",
-            borderRadius: 999,
-            fontSize: 9, fontWeight: 800, letterSpacing: 0.8,
-            background: "rgba(255,255,255,0.22)",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.35)",
-            color: "#fff",
-            textShadow: "0 1px 3px rgba(0,0,0,0.3)",
-          }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80", flexShrink: 0, boxShadow: "0 0 5px #4ade80" }} />
-            {t("browse.liveMenu")}
-          </div>
-        ) : null}
-
 
         {/* Center content — emoji + name + meta */}
         <div style={{
@@ -410,19 +391,28 @@ export default function MenuPreviewCard({
 
           {/* Restaurant name */}
           <div style={{
-            fontSize: 19,
-            fontWeight: 900,
-            lineHeight: 1.15,
-            letterSpacing: -0.4,
-            textShadow: "0 2px 12px rgba(0,0,0,0.6)",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
             maxWidth: "100%",
-            color: "#fff",
             marginBottom: 6,
           }}>
-            {restaurantName}
+            <span style={{
+              fontSize: 19,
+              fontWeight: 900,
+              lineHeight: 1.15,
+              letterSpacing: -0.4,
+              textShadow: "0 2px 12px rgba(0,0,0,0.6)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              minWidth: 0,
+              color: "#fff",
+            }}>
+              {restaurantName}
+            </span>
+            <RestaurantVerificationBadge {...verificationProps} />
           </div>
 
           {/* Multi-location badge */}

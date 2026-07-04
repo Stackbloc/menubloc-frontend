@@ -11,6 +11,7 @@ import { normalizeMenuThemeSettings } from "./menuThemeSettings.js";
 import {
   useIsTabletRange,
   MENU_ROW_ICON_GAP,
+  MENU_ROW_ACTIONS_INSET_RIGHT,
   MENU_ROW_OUTER_GAP,
   MENU_ROW_PRICE_MIN_WIDTH,
 } from "./menuPresentationUtils.js";
@@ -405,7 +406,7 @@ export default function PublicMenuItemCard({
               </span>
               <div
                 onClick={(e) => e.stopPropagation()}
-                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0 }}
+                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0, paddingRight: MENU_ROW_ACTIONS_INSET_RIGHT }}
               >
                 {canNavigate ? (
                   <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
@@ -462,7 +463,7 @@ export default function PublicMenuItemCard({
               </span>
               <div
                 onClick={(e) => e.stopPropagation()}
-                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0 }}
+                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0, paddingRight: MENU_ROW_ACTIONS_INSET_RIGHT }}
               >
                 {canNavigate ? (
                   <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
@@ -507,7 +508,7 @@ export default function PublicMenuItemCard({
               </span>
               <div
                 onClick={(e) => e.stopPropagation()}
-                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0 }}
+                style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0, paddingRight: MENU_ROW_ACTIONS_INSET_RIGHT }}
               >
                 {canNavigate ? (
                   <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />

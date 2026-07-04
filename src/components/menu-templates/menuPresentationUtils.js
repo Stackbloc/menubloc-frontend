@@ -74,7 +74,10 @@ export function pickHeroImageUrl(menuPayload) {
 }
 
 /** Trailing action column on editorial menu rows — header icons use the same grid. */
-export const MENU_ROW_OUTER_GAP = 8;
-export const MENU_ROW_ICON_GAP = 4;
+export const MENU_ROW_OUTER_GAP = 10;
+export const MENU_ROW_ICON_GAP = 10;
+export const MENU_ROW_HEADER_ICON_GAP = 10;
+/** Keeps like/share from clipping past the right screen edge on narrow viewports. */
+export const MENU_ROW_ACTIONS_INSET_RIGHT = 6;
 export const MENU_ROW_ICON_SIZE = 28;
 export const MENU_ROW_PRICE_MIN_WIDTH = 56;

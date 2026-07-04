@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "a94b2aba8271ac187dbd8a2d85b4e7371f550a6f",
-  "gitShortSha": "a94b2ab",
+  "gitSha": "721c9d5b311836253dc73d5b35a31b79be03a60a",
+  "gitShortSha": "721c9d5",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-04T03:21:47.090Z",
+  "buildTime": "2026-07-04T04:38:31.477Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(browse): skip loading splash on drinks tab changes."
+  "commitMessage": "fix(consumer): persist green like state for dishes and restaurants."
 }

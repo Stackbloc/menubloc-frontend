@@ -8,7 +8,6 @@ import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettin
 import { useIsTabletRange, getRestaurantInitials, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import MapPinIcon from "./MapPinIcon.jsx";
 import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
-import MenuRestaurantStatusLightLine from "./MenuRestaurantStatusLightLine.jsx";
 import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
@@ -91,6 +90,7 @@ export default function ClassicMenuTemplate(ctx) {
     listingStatus,
     planSlug,
     isPro,
+    isPaidSubscriber,
     logoUrl,
     logoPlacement = "top-left",
     heroImageUrl,
@@ -166,6 +166,12 @@ export default function ClassicMenuTemplate(ctx) {
           ) : null}
           <div style={{ minWidth: 0, flex: 1 }}>
             <MenuHeaderNameWithActions
+              menuStatus={menuStatus}
+              profileTier={profileTier}
+              listingStatus={listingStatus}
+              planSlug={planSlug}
+              isPro={isPro}
+              isPaidSubscriber={isPaidSubscriber}
               nameSlot={
                 restaurantProfileHref ? (
                   <Link
@@ -250,14 +256,6 @@ export default function ClassicMenuTemplate(ctx) {
                 </div>
               )
             ) : null}
-
-            <MenuRestaurantStatusLightLine
-              menuStatus={menuStatus}
-              profileTier={profileTier}
-              listingStatus={listingStatus}
-              planSlug={planSlug}
-              isPro={isPro}
-            />
 
             {showDistanceBelowAddress ? (
               <MenuRestaurantDistanceLine miles={distanceMiles} color={SUBTLE} />

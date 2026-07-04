@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { toConsumerErrorMessage } from "../../lib/api.js";
 import { formatMoney } from "../../lib/pricingDisplay.js";
+import RestaurantVerificationBadge from "../RestaurantVerificationBadge.jsx";
 import { buildRestaurantStatusLightProps } from "../../lib/restaurantStatusLight.js";
 import {
   asFiniteNumber,
@@ -258,10 +259,7 @@ export default function CatalogDrinksMenuRenderer({
     entry,
     restaurantId,
   });
-  const statusLight = buildRestaurantStatusLightProps({
-    openNow: restaurant.open_now ?? data?.open_now,
-    compact: true,
-  });
+  const verificationProps = buildRestaurantStatusLightProps({ ...data, ...restaurant });
   const browserSections = useMemo(
     () => orderBrowserSectionsForActiveTab(
       Array.isArray(data?.browser_sections) ? data.browser_sections : [],
@@ -305,11 +303,14 @@ export default function CatalogDrinksMenuRenderer({
           {t("menuBrowser.mode.drinks", "Drinks Menu")}
         </div>
         <h1 style={{ margin: "8px 0 6px", fontSize: 28, lineHeight: 1.1, fontWeight: 900, color: "#11211a" }}>
-          {restaurantProfileHref ? (
-            <Link to={restaurantProfileHref} style={{ color: "inherit", textDecoration: "none" }}>
-              {restaurantName}
-            </Link>
-          ) : restaurantName}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            {restaurantProfileHref ? (
+              <Link to={restaurantProfileHref} style={{ color: "inherit", textDecoration: "none" }}>
+                {restaurantName}
+              </Link>
+            ) : restaurantName}
+            <RestaurantVerificationBadge {...verificationProps} size="md" />
+          </span>
         </h1>
         {addressLine ? (
           <div style={{ fontSize: 14, color: "#667085", lineHeight: 1.45 }}>
@@ -325,11 +326,7 @@ export default function CatalogDrinksMenuRenderer({
             {distanceMiles.toFixed(1)} mi away
           </div>
         ) : null}
-        {statusLight?.label ? (
-          <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: statusLight.color || "#16a34a" }}>
-            {statusLight.label}
-          </div>
-        ) : null}
+
         <div style={{ marginTop: 10, fontSize: 13, color: "#667085" }}>
           {asStr(data?.menu_title || "Drinks Menu").trim()}
           {data?.item_count != null ? ` · ${data.item_count} beverages` : ""}

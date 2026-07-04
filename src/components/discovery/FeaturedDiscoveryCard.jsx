@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ChainLocationsSheet from "./ChainLocationsSheet.jsx";
+import RestaurantVerificationBadge, { verificationBadgePropsFromRow } from "../RestaurantVerificationBadge.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { getDisplayItemCount, getMenuAvailabilityLabel, shouldLinkRestaurantCardToMenu } from "../../lib/publicCardCounts.js";
 import { getLocalizedField, getLocalizedPreviewLabel } from "../../utils/getLocalizedField.js";
@@ -117,7 +118,7 @@ export default function FeaturedDiscoveryCard({
   const itemCount = getDisplayItemCount({ restaurant: menu, hasActiveFilters });
   const menuReady = shouldLinkRestaurantCardToMenu(menu);
   const availabilityLabel = getMenuAvailabilityLabel(menu, t);
-  const isVerified = menuReady && menu?.menu_status === "published";
+  const verificationProps = verificationBadgePropsFromRow(menu);
   const hasDeals = menuReady && (menu?.has_deals || false);
   const previewSource = menuReady && Array.isArray(menu?.preview_menu_items) && menu.preview_menu_items.length
     ? menu.preview_menu_items
@@ -191,24 +192,6 @@ export default function FeaturedDiscoveryCard({
           ✦ Featured Nearby
         </div>
 
-        {/* Verified badge — top right */}
-        {isVerified && (
-          <div style={{
-            position: "absolute", top: 12, right: 12, zIndex: 4,
-            display: "inline-flex", alignItems: "center", gap: 4,
-            padding: "3px 9px",
-            borderRadius: 999,
-            fontSize: 9, fontWeight: 800, letterSpacing: 0.8,
-            background: "rgba(255,255,255,0.20)",
-            backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255,255,255,0.30)",
-            color: "#fff",
-          }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ade80", flexShrink: 0 }} />
-            LIVE MENU
-          </div>
-        )}
-
         {/* Main content */}
         <div style={{
           position: "relative", zIndex: 3,
@@ -224,12 +207,21 @@ export default function FeaturedDiscoveryCard({
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontSize: 17, fontWeight: 900, color: "#fff",
-                lineHeight: 1.15, letterSpacing: "-0.02em",
-                textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                minWidth: 0,
               }}>
-                {name}
+                <span style={{
+                  fontSize: 17, fontWeight: 900, color: "#fff",
+                  lineHeight: 1.15, letterSpacing: "-0.02em",
+                  textShadow: "0 2px 8px rgba(0,0,0,0.6)",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  minWidth: 0,
+                }}>
+                  {name}
+                </span>
+                <RestaurantVerificationBadge {...verificationProps} />
               </div>
               {cuisine && (
                 <div style={{

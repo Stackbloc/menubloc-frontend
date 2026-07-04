@@ -21,11 +21,14 @@ export function resolveRestaurantStatusLightTone({
   listingStatus,
   planSlug,
   isPro,
+  isPaidSubscriber,
 } = {}) {
   const tier = normalizeRestaurantProfileTier(profileTier, listingStatus);
   if (tier === "pro" || tier === "verified") return "green";
   if (isPro === true) return "green";
+  if (isPaidSubscriber === true) return "green";
   const plan = String(planSlug || "").trim().toLowerCase();
+  if (plan && plan !== "free") return "green";
   if (plan === "pro" || plan === "enterprise" || plan.includes("verified")) return "green";
   if (isRestaurantVerifiedMenuStatus(menuStatus)) return "green";
   return "yellow";
@@ -50,6 +53,8 @@ export function buildRestaurantStatusLightProps(data, menus = data?.menus) {
     profileTier: data?.profile_tier || null,
     listingStatus: data?.listing_status || data?.verification_status || null,
     planSlug: presentation?.plan_slug || null,
-    isPro: presentation?.is_pro === true,
+    isPro: presentation?.is_pro === true || data?.is_pro === true,
+    isPaidSubscriber:
+      presentation?.is_paid_subscriber === true || data?.is_paid_subscriber === true,
   };
 }
