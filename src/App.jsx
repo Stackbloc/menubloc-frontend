@@ -105,6 +105,7 @@ import RestaurantMenuLive from "./pages/RestaurantMenuLive.jsx";
 import FranchisesPage from "./pages/FranchisesPage.jsx";
 import RestaurantFreeProfileSignup from "./pages/RestaurantFreeProfileSignup.jsx";
 import RestaurantPhilosophy from "./pages/RestaurantPhilosophy.jsx";
+import RestaurantsLandingPage from "./pages/RestaurantsLandingPage.jsx";
 import RestaurantFoundersSignup from "./pages/RestaurantFoundersSignup.jsx";
 import JoinPage from "./pages/JoinPage.jsx";
 import JoinDinersPage from "./pages/JoinDinersPage.jsx";
@@ -557,6 +558,7 @@ function AppShell({ easyMenu, crmHost }) {
 
         <Route path="/restaurants/:slugOrId/billboard" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantBillboard />} />
         {/* Canonical 3-segment routes — /restaurants/:state/:city/:restaurantSlug */}
+        <Route path="/restaurants" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantsLandingPage />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug/menu-items/:itemSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MarketMenuItemPage />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CanonicalRestaurantProfile />} />

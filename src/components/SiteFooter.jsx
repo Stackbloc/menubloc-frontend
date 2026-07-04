@@ -51,11 +51,8 @@ export default function SiteFooter() {
             flex: "0 0 auto",
           }}
         >
-          <Link to="/restaurant/onboarding" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
-            {t("discovery.footer.signup")}
-          </Link>
-          <Link to="/operator/login" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
-            {t("discovery.footer.signin")}
+          <Link to="/restaurants" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
+            {t("discovery.footer.restaurants", "Restaurants")}
           </Link>
           <Link to="/terms" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
             {t("discovery.footer.terms")}
@@ -70,7 +67,7 @@ export default function SiteFooter() {
             {t("discovery.footer.contact")}
           </Link>
           <Link to="/creative-pros" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
-            Creative Pros
+            {t("discovery.footer.marketplace", "Marketplace")}
           </Link>
         </div>
 
