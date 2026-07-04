@@ -22,7 +22,6 @@ export default function MenuCatalogModePage({ onSelect }) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
         background: PAGE_BG,
         borderRadius: 16,
         boxSizing: "border-box",
@@ -37,8 +36,11 @@ export default function MenuCatalogModePage({ onSelect }) {
         }
       `}</style>
 
+      <div aria-hidden style={{ flex: "1 1 0", minHeight: 4, width: "100%" }} />
+
       <div
         style={{
+          flex: "0 0 auto",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -98,6 +100,8 @@ export default function MenuCatalogModePage({ onSelect }) {
         })}
       </div>
       </div>
+
+      <div aria-hidden style={{ flex: "1.12 1 0", minHeight: 4, width: "100%" }} />
     </div>
   );
 }

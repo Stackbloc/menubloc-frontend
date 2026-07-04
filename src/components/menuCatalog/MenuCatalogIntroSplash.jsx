@@ -4,6 +4,47 @@ import {
 
 const INK = "#1a1a1a";
 
+/** Bottom spacer weight — lifts the book when SWIPE / YELLOW BROWSER sit below it. */
+const SPLASH_BOTTOM_SPACER = 1.28;
+const LOADING_BOTTOM_SPACER = 1.06;
+
+function IntroVerticalFrame({ bottomSpacerWeight = 1, children, style = {} }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        boxSizing: "border-box",
+        padding: "16px",
+        overflow: "auto",
+        ...style,
+      }}
+    >
+      <div aria-hidden style={{ flex: "1 1 0", minHeight: 4, width: "100%" }} />
+      <div
+        style={{
+          flex: "0 0 auto",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          width: "100%",
+          maxWidth: 520,
+          pointerEvents: "none",
+        }}
+      >
+        {children}
+      </div>
+      <div
+        aria-hidden
+        style={{ flex: `${bottomSpacerWeight} 1 0`, minHeight: 4, width: "100%" }}
+      />
+    </div>
+  );
+}
+
 function LoadingMeter({ pct }) {
   return (
     <div
@@ -177,33 +218,23 @@ export default function MenuCatalogIntroSplash({
     : "Menu browser";
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label={ariaLabel}
+    <IntroVerticalFrame
+      bottomSpacerWeight={isSplash ? SPLASH_BOTTOM_SPACER : LOADING_BOTTOM_SPACER}
       style={{
-        position: "absolute",
-        inset: 0,
         zIndex: 40,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
         background: "#FACC15",
         borderRadius: 16,
-        boxSizing: "border-box",
-        padding: "24px 16px",
-        overflow: "auto",
       }}
     >
       <div
+        role="status"
+        aria-live="polite"
+        aria-label={ariaLabel}
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           width: "100%",
-          maxWidth: 520,
-          pointerEvents: "none",
         }}
       >
         {showBook ? (
@@ -226,6 +257,6 @@ export default function MenuCatalogIntroSplash({
         {showBranding ? <BrandingBlock /> : null}
         {isLoading ? <LoadingMeter pct={pct} /> : null}
       </div>
-    </div>
+    </IntroVerticalFrame>
   );
 }
