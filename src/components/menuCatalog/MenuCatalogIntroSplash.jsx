@@ -4,13 +4,7 @@ import {
 
 const INK = "#1a1a1a";
 
-/** Bottom spacer weight — lifts the book when SWIPE / YELLOW BROWSER sit below it. */
-const SPLASH_BOTTOM_SPACER = 1.85;
-const LOADING_BOTTOM_SPACER = 1.55;
-const SPLASH_TOP_SPACER = 0.42;
-const LOADING_TOP_SPACER = 0.48;
-
-function IntroVerticalFrame({ bottomSpacerWeight = 1, topSpacerWeight = 1, children, style = {} }) {
+function IntroVerticalFrame({ children, style = {} }) {
   return (
     <div
       style={{
@@ -19,13 +13,13 @@ function IntroVerticalFrame({ bottomSpacerWeight = 1, topSpacerWeight = 1, child
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        justifyContent: "center",
         boxSizing: "border-box",
         padding: "16px",
         overflow: "auto",
         ...style,
       }}
     >
-      <div aria-hidden style={{ flex: `${topSpacerWeight} 1 0`, minHeight: 4, width: "100%" }} />
       <div
         style={{
           flex: "0 0 auto",
@@ -39,10 +33,6 @@ function IntroVerticalFrame({ bottomSpacerWeight = 1, topSpacerWeight = 1, child
       >
         {children}
       </div>
-      <div
-        aria-hidden
-        style={{ flex: `${bottomSpacerWeight} 1 0`, minHeight: 4, width: "100%" }}
-      />
     </div>
   );
 }
@@ -221,8 +211,6 @@ export default function MenuCatalogIntroSplash({
 
   return (
     <IntroVerticalFrame
-      bottomSpacerWeight={isSplash ? SPLASH_BOTTOM_SPACER : LOADING_BOTTOM_SPACER}
-      topSpacerWeight={isSplash ? SPLASH_TOP_SPACER : LOADING_TOP_SPACER}
       style={{
         zIndex: 40,
         background: "#FACC15",
