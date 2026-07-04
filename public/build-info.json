@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "592cb0b7b8eba34c476500790b47bfd2d395e6f6",
-  "gitShortSha": "592cb0b",
+  "gitSha": "49c81cd1a032571f5e54b0fb7e1220cdc037417f",
+  "gitShortSha": "49c81cd",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-04T01:09:13.818Z",
+  "buildTime": "2026-07-04T03:05:14.318Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(ui): drinks MKS category headers, deals label contrast, Waiter caps."
+  "commitMessage": "fix(browse): center Yellow Browser intro graphics on screen."
 }

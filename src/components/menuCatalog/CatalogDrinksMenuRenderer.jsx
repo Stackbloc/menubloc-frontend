@@ -43,6 +43,16 @@ async function fetchDrinksMenuPayload(restaurantId, apiUrl) {
   }
 }
 
+function orderBrowserSectionsForActiveTab(sections, activeBrowseSection) {
+  const activeId = String(activeBrowseSection || "").trim().toLowerCase();
+  if (!activeId || !Array.isArray(sections) || sections.length === 0) return sections;
+
+  const active = sections.filter((section) => section.browser_category_id === activeId);
+  const rest = sections.filter((section) => section.browser_category_id !== activeId);
+  if (!active.length) return sections;
+  return [...active, ...rest];
+}
+
 export function prefetchCatalogDrinksMenu(restaurantId, locationParams = {}, browseSection = "") {
   if (!restaurantId) return;
   const params = new URLSearchParams();
@@ -252,7 +262,13 @@ export default function CatalogDrinksMenuRenderer({
     openNow: restaurant.open_now ?? data?.open_now,
     compact: true,
   });
-  const browserSections = Array.isArray(data?.browser_sections) ? data.browser_sections : [];
+  const browserSections = useMemo(
+    () => orderBrowserSectionsForActiveTab(
+      Array.isArray(data?.browser_sections) ? data.browser_sections : [],
+      asStr(data?.active_browse_section || browseSection).trim().toLowerCase()
+    ),
+    [browseSection, data?.active_browse_section, data?.browser_sections]
+  );
   const activeBrowseSection = asStr(data?.active_browse_section || browseSection).trim().toLowerCase();
 
   if (pageState.status === "loading") {

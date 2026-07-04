@@ -277,9 +277,10 @@ export default function BrowseMenus() {
     [loading, locationPending, currentEntry, menuLoadStatus, isEmpty, error]
   );
 
+  // After the first browse boot, never show the yellow loading splash for category tab changes.
   useEffect(() => {
     if (!isModeChosen || browseBootComplete) return;
-    if (introMinElapsed && menuLoadStatus === "ok" && currentEntry && !loading && !locationPending) {
+    if (introMinElapsed && menuLoadStatus === "ok" && currentEntry) {
       setBrowseBootComplete(true);
     }
   }, [
@@ -287,8 +288,6 @@ export default function BrowseMenus() {
     currentEntry,
     introMinElapsed,
     isModeChosen,
-    loading,
-    locationPending,
     menuLoadStatus,
   ]);
 
@@ -297,6 +296,7 @@ export default function BrowseMenus() {
   const initialHold = isModeChosen && !browseBootComplete && !introMinElapsed;
   const showSplashIntro = !isModeChosen && bookPhase === "splash";
   const showChooseMode = !isModeChosen && bookPhase === "chooseMode";
+  // browseBootComplete stays true across drinks/food category tab changes; resets only on mode switch or leaving browse.
   const showLoadingSplash = isModeChosen && !browseBootComplete && (initialHold || listPending || (!initialMenuReady && menuPending));
   const showBookOverlay = showSplashIntro || showChooseMode || showLoadingSplash;
   const showCategoryTabs = isModeChosen && !showBookOverlay;
