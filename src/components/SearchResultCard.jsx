@@ -1298,10 +1298,8 @@ function ItemRow({
     ));
   const hasNutritionOrInsights = hasNut || hasIns;
   const intelligenceLoading = intelligenceState.status === "loading";
-  // Chip is only shown once we know results exist — pre-fetch on mount resolves this silently.
-  const showSimilarChip = Boolean(mid) &&
-    similarState.status === "ready" &&
-    similarState.items.length > 0;
+  // Show Similar chip is always available; similar pool is fetched only when the user opens the tab.
+  const showSimilarChip = Boolean(mid);
   const similarCacheKey = useMemo(() => {
     if (!mid) return "";
     return `${mid}::${similarRequest?.cacheKey || ""}`;
@@ -1312,17 +1310,6 @@ function ItemRow({
     setSimilarState({ status: "idle", items: [], meta: null });
     setIntelligenceState({ status: "idle", data: null });
   }, [similarCacheKey, intelligenceCacheKey]);
-
-  // Pre-fetch similar items so the chip only appears when results are confirmed.
-  useEffect(() => {
-    if (!mid || !similarCacheKey) return;
-    if (searchCardSimilarCache.has(similarCacheKey)) {
-      setSimilarState(searchCardSimilarCache.get(similarCacheKey));
-      return;
-    }
-    void loadSimilarForRow();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [similarCacheKey]);
 
   async function loadIntelligenceForRow() {
     if (!mid || !intelligenceCacheKey) return null;
