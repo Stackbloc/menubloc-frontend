@@ -64,6 +64,41 @@ export function hasSavedMenuPreferences(dietPrefs, enabledAllergenKeys) {
   return hasActiveDietPrefs(dietPrefs) || (enabledAllergenKeys && enabledAllergenKeys.size > 0);
 }
 
+/** @deprecated diet-only menu filtering — allergens are not applied on menus */
+export const EMPTY_DIET_PREFS = Object.freeze({
+  dairy_free: false,
+  diabetic_friendly: false,
+  gluten_free: false,
+  keto: false,
+  low_fat: false,
+  low_sodium: false,
+  vegan: false,
+  vegetarian: false,
+});
+
+export function normalizeMenuDisplaySections(sections) {
+  return (Array.isArray(sections) ? sections : [])
+    .map((sec) => {
+      const title = asStr(sec?.title || "Menu").trim() || "Menu";
+      const items = (Array.isArray(sec?.items) ? sec.items : []).filter(isDisplayableMenuItem);
+      return { ...sec, title, items };
+    })
+    .filter((sec) => sec.items.length > 0);
+}
+
+/**
+ * Dietary prefs apply only when applyDietaryPreferences is true (menu toggle).
+ * Allergen exclusions are not applied on menus — search/browse only.
+ */
+export function getMenuDisplaySectionsWithPreferences(
+  sections,
+  { applyDietaryPreferences = false, dietPrefs }
+) {
+  const normalized = normalizeMenuDisplaySections(sections);
+  if (!applyDietaryPreferences) return normalized;
+  return getClientPreferenceDisplaySections(normalized, dietPrefs, new Set());
+}
+
 /**
  * Diet: hide only when persisted flag is explicitly false.
  * Missing metadata → keep item visible (no guesswork).

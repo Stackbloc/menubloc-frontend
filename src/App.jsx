@@ -40,6 +40,7 @@ import { OperatorProvider, useOperator } from "./context/OperatorContext.jsx";
 import { OwnerProvider, useOwner } from "./context/OwnerContext.jsx";
 import { CrmProvider, useCrm } from "./context/CrmContext.jsx";
 import { ConsumerProvider } from "./context/ConsumerContext.jsx";
+import ConsumerSessionToast from "./components/ConsumerSessionToast.jsx";
 import ConsumerSignup from "./pages/consumer/ConsumerSignup.jsx";
 import ConsumerLogin from "./pages/consumer/ConsumerLogin.jsx";
 import AppleAuthCallback from "./pages/consumer/AppleAuthCallback.jsx";
@@ -536,6 +537,7 @@ function AppShell({ easyMenu, crmHost }) {
       {hidePublicChrome ? null : <CartDrawer />}
       {hidePublicChrome ? null : <OrderCartDrawer />}
       {hidePublicChrome ? null : <BasketResumePrompt />}
+      {hidePublicChrome ? null : <ConsumerSessionToast />}
       <SentryRoutes>
         <Route path="/" element={crmHost ? <CrmHostRoot /> : easyMenu ? <EasyMenuLanding /> : <HomeRoot />} />
         <Route path="/home-legacy" element={crmHost ? <HostRouteRedirect to="/crm" /> : <LegacyDiscoveryHome />} />

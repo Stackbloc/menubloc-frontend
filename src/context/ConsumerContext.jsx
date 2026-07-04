@@ -21,6 +21,11 @@ import {
   logoutConsumer,
   verifySmsCode as verifyConsumerSmsCode,
 } from "../lib/consumerApi.js";
+import {
+  clearAllergenExclusionSessionToastMarker,
+  hasActiveAllergenExclusions,
+  maybeBuildAllergenExclusionSessionToast,
+} from "../lib/allergenExclusionSessionToast.js";
 
 const ConsumerContext = createContext(null);
 
@@ -51,6 +56,17 @@ export function ConsumerProvider({ children }) {
     setAllergenPreferences([]);
     setFoodsToAvoid([]);
     setAuthToast("");
+    clearAllergenExclusionSessionToastMarker();
+  }, []);
+
+  const publishSessionToast = useCallback((data, preferences) => {
+    const message = maybeBuildAllergenExclusionSessionToast({
+      consumerId: data?.consumer?.id || null,
+      profile: data?.profile || null,
+      allergenFilter: preferences?.allergen_filter || data?.allergen_filter || null,
+      allergenPreferences: preferences?.allergen_preferences || [],
+    });
+    if (message) setAuthToast(message);
   }, []);
 
   const loadMe = useCallback(async () => {
@@ -65,6 +81,7 @@ export function ConsumerProvider({ children }) {
       const avoidData = await getFoodsToAvoid().catch(() => ({ foods_to_avoid: [] }));
       const avoidKeys = Array.isArray(avoidData?.foods_to_avoid) ? avoidData.foods_to_avoid : [];
       applySession(data, preferences, avoidKeys);
+      publishSessionToast(data, preferences);
       return {
         ...data,
         dietary_preferences: preferences?.dietary_preferences || [],
@@ -76,7 +93,7 @@ export function ConsumerProvider({ children }) {
       if (err?.status === 401) clearSession();
       throw err;
     }
-  }, [applySession, clearSession]);
+  }, [applySession, clearSession, publishSessionToast]);
 
   useEffect(() => {
     loadMe()
@@ -120,7 +137,14 @@ export function ConsumerProvider({ children }) {
   const verifySmsCode = useCallback(async (phoneNumber, code) => {
     await verifyConsumerSmsCode(phoneNumber, code);
     const data = await loadMe();
-    setAuthToast("You're signed in ✓");
+    if (
+      !hasActiveAllergenExclusions(
+        data?.allergen_filter || null,
+        data?.allergen_preferences || []
+      )
+    ) {
+      setAuthToast("You're signed in ✓");
+    }
     return data;
   }, [loadMe]);
 

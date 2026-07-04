@@ -57,7 +57,7 @@ import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu
 import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor } from "../components/menu-templates/menuThemeSettings.js";
 import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
 import useSavedMenuPreferences from "../hooks/useSavedMenuPreferences.js";
-import { getClientPreferenceDisplaySections } from "../lib/menuClientPreferenceFilter.js";
+import { getMenuDisplaySectionsWithPreferences } from "../lib/menuClientPreferenceFilter.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
@@ -750,10 +750,7 @@ export default function PublicMenuPage() {
   const { foodsToAvoid = [] } = useConsumer();
   const {
     dietPrefs,
-    enabledAllergenKeys,
-    hasSavedPreferences,
     dietPreferenceActive,
-    allergenPreferenceActive,
   } = useSavedMenuPreferences();
   const [applySavedPreferences, setApplySavedPreferences] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1104,19 +1101,15 @@ export default function PublicMenuPage() {
   // tabSections?.sections may still show a prior menu's content during a background fetch —
   // this is intentional: never blank the display while waiting for a new tab to load.
   const sections        = tabSections?.sections ?? normalizeSections(data);
-  const preferencesApplied = applySavedPreferences && hasSavedPreferences;
-  const displaySections = useMemo(() => {
-    if (!preferencesApplied) {
-      return (Array.isArray(sections) ? sections : [])
-        .map((sec) => {
-          const title = asStr(sec?.title || "Menu").trim() || "Menu";
-          const items = (Array.isArray(sec?.items) ? sec.items : []).filter(isDisplayableMenuItem);
-          return { ...sec, title, items };
-        })
-        .filter((sec) => sec.items.length > 0);
-    }
-    return getClientPreferenceDisplaySections(sections, dietPrefs, enabledAllergenKeys);
-  }, [sections, preferencesApplied, dietPrefs, enabledAllergenKeys]);
+  const dietaryFilterActive = applySavedPreferences && dietPreferenceActive;
+  const displaySections = useMemo(
+    () =>
+      getMenuDisplaySectionsWithPreferences(sections, {
+        applyDietaryPreferences: dietaryFilterActive,
+        dietPrefs,
+      }),
+    [sections, dietaryFilterActive, dietPrefs]
+  );
   const displayableItemCount = displaySections.reduce(
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
     0
@@ -1284,17 +1277,15 @@ export default function PublicMenuPage() {
           ),
           allergenBannerSlot: (
             <MenuPreferencesAppliedBanner
-              visible={hasSavedPreferences}
+              visible={dietPreferenceActive}
               applySavedPreferences={applySavedPreferences}
               onToggle={setApplySavedPreferences}
-              dietPreferenceActive={dietPreferenceActive}
-              allergenPreferenceActive={allergenPreferenceActive}
             />
           ),
           displaySections,
           displayableItemCount,
           dealItems: data?.deal_items || [],
-          filtersActive: preferencesApplied,
+          filtersActive: dietaryFilterActive,
           data,
           currentRestaurantId,
           dealMap,

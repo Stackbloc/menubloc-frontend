@@ -1,59 +1,28 @@
 import { useLanguage } from "../../context/LanguageContext.jsx";
 
 /**
- * Toggle + status for locally applied saved dietary/allergen preferences.
- * Does not mutate account preferences or refetch the menu.
+ * Toggle + status for locally applied saved dietary preferences.
+ * Allergen preferences apply automatically elsewhere — not surfaced here.
  */
 export default function MenuPreferencesAppliedBanner({
   visible = false,
   applySavedPreferences = false,
   onToggle,
-  dietPreferenceActive = false,
-  allergenPreferenceActive = false,
   browseSessionScope = false,
 }) {
   const { t } = useLanguage();
 
   if (!visible) return null;
 
-  let appliedMessage;
-  if (browseSessionScope) {
-    if (dietPreferenceActive && allergenPreferenceActive) {
-      appliedMessage = t(
-        "publicMenu.preferencesAppliedBothBrowseSession",
-        "Your saved dietary and allergen preferences are applied for this browse session."
-      );
-    } else if (dietPreferenceActive) {
-      appliedMessage = t(
+  const appliedMessage = browseSessionScope
+    ? t(
         "publicMenu.preferencesAppliedDietBrowseSession",
         "Your saved dietary preferences are applied for this browse session."
+      )
+    : t(
+        "publicMenu.preferencesAppliedDiet",
+        "Your saved dietary preferences are applied to this menu."
       );
-    } else if (allergenPreferenceActive) {
-      appliedMessage = t(
-        "publicMenu.preferencesAppliedAllergenBrowseSession",
-        "Your saved allergen preferences are applied for this browse session."
-      );
-    } else {
-      appliedMessage = "";
-    }
-  } else if (dietPreferenceActive && allergenPreferenceActive) {
-    appliedMessage = t(
-      "publicMenu.preferencesAppliedBoth",
-      "Your saved dietary and allergen preferences are applied to this menu."
-    );
-  } else if (dietPreferenceActive) {
-    appliedMessage = t(
-      "publicMenu.preferencesAppliedDiet",
-      "Your saved dietary preferences are applied to this menu."
-    );
-  } else if (allergenPreferenceActive) {
-    appliedMessage = t(
-      "publicMenu.preferencesAppliedAllergen",
-      "Your saved allergen preferences are applied to this menu."
-    );
-  } else {
-    appliedMessage = "";
-  }
 
   const statusMessage = applySavedPreferences
     ? appliedMessage

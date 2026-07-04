@@ -20,7 +20,7 @@ import MenuPreferencesAppliedBanner from "../menu/MenuPreferencesAppliedBanner.j
 import MenuPurchaseWaiterHint from "../menu/MenuPurchaseWaiterHint.jsx";
 import useSavedMenuPreferences from "../../hooks/useSavedMenuPreferences.js";
 import useCatalogDietaryPreferencesSession from "../../hooks/useCatalogDietaryPreferencesSession.js";
-import { getClientPreferenceDisplaySections } from "../../lib/menuClientPreferenceFilter.js";
+import { getMenuDisplaySectionsWithPreferences } from "../../lib/menuClientPreferenceFilter.js";
 import {
   asFiniteNumber,
   asStr,
@@ -157,10 +157,7 @@ export default function CatalogMenuRenderer({
   const { foodsToAvoid = [] } = useConsumer();
   const {
     dietPrefs,
-    enabledAllergenKeys,
-    hasSavedPreferences,
     dietPreferenceActive,
-    allergenPreferenceActive,
   } = useSavedMenuPreferences();
   const [applySavedPreferences, setApplySavedPreferences] = useCatalogDietaryPreferencesSession();
 
@@ -334,21 +331,15 @@ export default function CatalogMenuRenderer({
   }, [data?.distance_miles, data?.restaurant_distance_miles, entry?.distance_miles, entry?.restaurant_distance_miles]);
   const showDistanceBelowAddress = distanceMiles != null;
   const sections = tabSections?.sections ?? normalizeSections(data);
-  const preferencesApplied = applySavedPreferences && hasSavedPreferences;
-  const displaySections = useMemo(() => {
-    if (!preferencesApplied) {
-      return (Array.isArray(sections) ? sections : [])
-        .map((sec) => {
-          const title = asStr(sec?.title || "Menu").trim() || "Menu";
-          const items = (Array.isArray(sec?.items) ? sec.items : []).filter(
-            (item) => asStr(item?.name).trim().length > 0
-          );
-          return { ...sec, title, items };
-        })
-        .filter((sec) => sec.items.length > 0);
-    }
-    return getClientPreferenceDisplaySections(sections, dietPrefs, enabledAllergenKeys);
-  }, [sections, preferencesApplied, dietPrefs, enabledAllergenKeys]);
+  const dietaryFilterActive = applySavedPreferences && dietPreferenceActive;
+  const displaySections = useMemo(
+    () =>
+      getMenuDisplaySectionsWithPreferences(sections, {
+        applyDietaryPreferences: dietaryFilterActive,
+        dietPrefs,
+      }),
+    [sections, dietaryFilterActive, dietPrefs]
+  );
   const displayableItemCount = displaySections.reduce(
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
     0
@@ -480,18 +471,16 @@ export default function CatalogMenuRenderer({
           intakeBannerSlot: <MenuPurchaseWaiterHint />,
           allergenBannerSlot: (
             <MenuPreferencesAppliedBanner
-              visible={hasSavedPreferences}
+              visible={dietPreferenceActive}
               applySavedPreferences={applySavedPreferences}
               onToggle={setApplySavedPreferences}
-              dietPreferenceActive={dietPreferenceActive}
-              allergenPreferenceActive={allergenPreferenceActive}
               browseSessionScope
             />
           ),
           displaySections,
           displayableItemCount,
           dealItems: data?.deal_items || [],
-          filtersActive: preferencesApplied,
+          filtersActive: dietaryFilterActive,
           data,
           currentRestaurantId,
           dealMap,
