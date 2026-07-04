@@ -202,6 +202,8 @@ const US_STATE_ABBREVS = new Set([
 
 const WAITER_MIN_RESULTS = 8;
 const WAITER_PRICE_MIN_RESULTS = 15;
+/** Never offer "Under $1" (or other nonsense thresholds) — real menu prices only. */
+const WAITER_MIN_PRICE_PROMPT_DOLLARS = 5;
 const WAITER_FOLLOW_UP_MAX_RESULTS = 5;
 const WAITER_MIN_OPTIONS = 1;
 const WAITER_MAX_OPTIONS = 3;
@@ -1505,7 +1507,12 @@ function buildPriceCommerceCandidates(inventory) {
       ? (prices[midpointIndex - 1] + prices[midpointIndex]) / 2
       : prices[midpointIndex];
     const displayThreshold = Math.ceil(threshold);
-    if (Number.isFinite(threshold) && threshold > 0 && Number.isFinite(displayThreshold)) {
+    if (
+      Number.isFinite(threshold) &&
+      threshold > 0 &&
+      Number.isFinite(displayThreshold) &&
+      displayThreshold >= WAITER_MIN_PRICE_PROMPT_DOLLARS
+    ) {
       addCandidate(
         candidates,
         `under_${displayThreshold}`,
@@ -2680,24 +2687,13 @@ export default function GrubbidSearchResults() {
 
   const restaurantGroups = useMemo(() => {
     if (!activeRestaurantGroupedRendering) return [];
-    if (searchMeta?.result_type === "restaurant_cards") {
-      return rows.map((card) => ({
-        restaurant_id: card.restaurant_id,
-        restaurant_slug: card.restaurant_slug || card.slug,
-        restaurant_name: card.restaurant_name || card.name,
-        hidden_match_count: Number(card.hidden_match_count) || 0,
-        matched_item_count:
-          Number(card.matched_item_count ?? card.menu_item_count) ||
-          (Array.isArray(card.matches) ? card.matches.length : 0),
-        items: card.matches || [],
-        _first: card.matches?.[0] || card,
-      }));
-    }
+    // Always group from waiter-filtered dish rows so refinement narrows visible results
+    // (restaurant_cards previously used unfiltered card.matches and ignored the stack).
     return buildRestaurantGroups(
       dishRows,
       relaxPerRestaurantItemCap ? Number.MAX_SAFE_INTEGER : MAX_MENU_ITEMS_PER_RESTAURANT_GROUP
     );
-  }, [dishRows, relaxPerRestaurantItemCap, activeRestaurantGroupedRendering, rows, searchMeta?.result_type]);
+  }, [dishRows, relaxPerRestaurantItemCap, activeRestaurantGroupedRendering]);
 
   function toggleSearchFilter(key) {
     const next = { ...activeFilters, [key]: !activeFilters[key] };

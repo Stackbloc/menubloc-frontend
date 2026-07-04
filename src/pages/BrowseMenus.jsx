@@ -85,6 +85,7 @@ export default function BrowseMenus() {
   const [locationParams, setLocationParams] = useState({ city: urlCity || null, state: urlState || null });
   const [bookPhase, setBookPhase] = useState(() => (isModeChosen ? "browse" : "splash"));
   const [introMinElapsed, setIntroMinElapsed] = useState(false);
+  const [browseBootComplete, setBrowseBootComplete] = useState(false);
   const [menuLoadStatus, setMenuLoadStatus] = useState("idle");
   const [initialMenuReady, setInitialMenuReady] = useState(false);
   const browseAreaRef = useRef(null);
@@ -122,12 +123,14 @@ export default function BrowseMenus() {
   useEffect(() => {
     if (!isModeChosen) {
       setIntroMinElapsed(false);
+      setBrowseBootComplete(false);
       return undefined;
     }
     setIntroMinElapsed(false);
+    setBrowseBootComplete(false);
     const timer = window.setTimeout(() => setIntroMinElapsed(true), MENU_BROWSER_INTRO_MIN_MS);
     return () => window.clearTimeout(timer);
-  }, [isModeChosen, activeSection]);
+  }, [isModeChosen, isDrinksMode]);
 
   useEffect(() => {
     if (!isDrinksMode) return;
@@ -246,7 +249,7 @@ export default function BrowseMenus() {
 
   useEffect(() => {
     setInitialMenuReady(false);
-  }, [activeSection]);
+  }, [currentEntry?.restaurant_id, activeIndex, isDrinksMode]);
 
   useEffect(() => {
     if (menuLoadStatus === "ok") {
@@ -274,16 +277,31 @@ export default function BrowseMenus() {
     [loading, locationPending, currentEntry, menuLoadStatus, isEmpty, error]
   );
 
+  useEffect(() => {
+    if (!isModeChosen || browseBootComplete) return;
+    if (introMinElapsed && menuLoadStatus === "ok" && currentEntry && !loading && !locationPending) {
+      setBrowseBootComplete(true);
+    }
+  }, [
+    browseBootComplete,
+    currentEntry,
+    introMinElapsed,
+    isModeChosen,
+    loading,
+    locationPending,
+    menuLoadStatus,
+  ]);
+
   const listPending = isModeChosen && (loading || locationPending || waitingForPage || (loadingMore && !currentEntry));
   const menuPending = isModeChosen && currentEntry && (menuLoadStatus === "idle" || menuLoadStatus === "loading");
-  const initialHold = isModeChosen && !introMinElapsed;
+  const initialHold = isModeChosen && !browseBootComplete && !introMinElapsed;
   const showSplashIntro = !isModeChosen && bookPhase === "splash";
   const showChooseMode = !isModeChosen && bookPhase === "chooseMode";
-  const showLoadingSplash = isModeChosen && (initialHold || listPending || (!initialMenuReady && menuPending));
+  const showLoadingSplash = isModeChosen && !browseBootComplete && (initialHold || listPending || (!initialMenuReady && menuPending));
   const showBookOverlay = showSplashIntro || showChooseMode || showLoadingSplash;
   const showCategoryTabs = isModeChosen && !showBookOverlay;
   const showModeToggleFab = isModeChosen && !showSplashIntro && !showChooseMode;
-  const menuRendering = showLoadingSplash || menuPending;
+  const menuRendering = showLoadingSplash;
   const introProgress = useSmoothedProgress(loadTarget, showLoadingSplash);
   const currentMenuNumber = currentEntry ? (activeIndex + 1) : 0;
   const totalMenuCount = Math.max(totalCount || 0, entries.length || 0);

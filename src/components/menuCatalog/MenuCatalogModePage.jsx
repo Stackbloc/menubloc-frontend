@@ -36,7 +36,7 @@ export default function MenuCatalogModePage({ onSelect }) {
         }
       `}</style>
 
-      <div aria-hidden style={{ flex: "1 1 0", minHeight: 4, width: "100%" }} />
+      <div aria-hidden style={{ flex: "0.42 1 0", minHeight: 4, width: "100%" }} />
 
       <div
         style={{
@@ -101,7 +101,7 @@ export default function MenuCatalogModePage({ onSelect }) {
       </div>
       </div>
 
-      <div aria-hidden style={{ flex: "1.12 1 0", minHeight: 4, width: "100%" }} />
+      <div aria-hidden style={{ flex: "1.75 1 0", minHeight: 4, width: "100%" }} />
     </div>
   );
 }

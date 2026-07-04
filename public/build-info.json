@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "6f3742c1bcb0865f16f8e637c9aa77b34513f31a",
-  "gitShortSha": "6f3742c",
+  "gitSha": "592cb0b7b8eba34c476500790b47bfd2d395e6f6",
+  "gitShortSha": "592cb0b",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-04T00:37:25.479Z",
+  "buildTime": "2026-07-04T01:09:13.818Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(browse): add floating Yellow Browser Food/Drinks toggle FAB."
+  "commitMessage": "fix(ui): drinks MKS category headers, deals label contrast, Waiter caps."
 }

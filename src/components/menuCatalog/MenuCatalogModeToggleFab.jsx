@@ -1,11 +1,52 @@
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { MENU_BROWSER_BOOK_SRC } from "../../lib/menuCatalogCategories.js";
-import {
-  toMenuBrowserModeTranslationKey,
-} from "../../lib/menuBrowserModes.js";
 
 const INK = "#1a1a1a";
 const YELLOW = "#FACC15";
+
+function FoodModeIcon({ size = 13 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <path d="M6 3v8" />
+      <path d="M3 3v5" />
+      <path d="M9 3v5" />
+      <path d="M6 11v10" />
+      <path d="M14 3c2.5 0 4 2.2 4 5.5V12" />
+      <path d="M18 12v9" />
+    </svg>
+  );
+}
+
+function DrinkModeIcon({ size = 13 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M8 3h8l-2 9.5" />
+      <path d="M6 12.5h12" />
+      <path d="M9 21h6" />
+      <path d="M10 12.5v6.5" />
+      <path d="M14 12.5v6.5" />
+    </svg>
+  );
+}
 
 /**
  * Floating Food ↔ Drinks toggle for Yellow Browser.
@@ -22,10 +63,7 @@ export default function MenuCatalogModeToggleFab({
   if (!visible || typeof onToggle !== "function") return null;
 
   const targetMode = isDrinksMode ? "food" : "drinks";
-  const targetLabel = t(
-    toMenuBrowserModeTranslationKey(targetMode),
-    targetMode === "drinks" ? "Drinks" : "Food"
-  );
+  const TargetIcon = targetMode === "drinks" ? DrinkModeIcon : FoodModeIcon;
   const ariaLabel = isDrinksMode
     ? t("menuBrowser.switchToFood", "Switch to Food menus")
     : t("menuBrowser.switchToDrinks", "Switch to Drinks menus");
@@ -37,9 +75,9 @@ export default function MenuCatalogModeToggleFab({
       aria-label={ariaLabel}
       title={ariaLabel}
       style={{
-        position: "absolute",
+        position: "fixed",
         right: "clamp(12px, 3.5vw, 20px)",
-        bottom: "clamp(14px, 3.5vh, 24px)",
+        bottom: "calc(var(--bottom-nav-h, 72px) + 14px)",
         zIndex: 62,
         width: 56,
         height: 56,
@@ -102,7 +140,7 @@ export default function MenuCatalogModeToggleFab({
           pointerEvents: "none",
         }}
       >
-        {targetLabel.slice(0, 1)}
+        <TargetIcon size={13} />
       </span>
     </button>
   );

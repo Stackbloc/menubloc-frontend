@@ -5,6 +5,8 @@ import {
   buildWhyMatchLabel,
   buildNutritionPreviewChips,
   formatPairingTeaser,
+  queryRequiresNutritionDisplay,
+  rowHasNutritionMacros,
 } from "../src/lib/searchResultEnrichment.js";
 
 test("buildWhyMatchLabel prefers match_reasons_v1", () => {
@@ -74,7 +76,33 @@ test("buildWhyMatchLabel uses broader identity when template confidence is low",
 
 test("buildNutritionPreviewChips omits missing values", () => {
   const chips = buildNutritionPreviewChips({ protein_g: 30 }, {});
-  assert.deepEqual(chips, ["30g protein"]);
+  assert.deepEqual(chips, [{ label: "30g protein", primary: false }]);
+});
+
+test("buildNutritionPreviewChips highlights calories for low-calorie intent", () => {
+  const chips = buildNutritionPreviewChips(
+    { chips: { nutrition_chip: { calories_kcal: 420, protein_g: 18 } } },
+    { nutrition_intent: { low_calorie: true }, nutrient_constraints: {}, diet: {} }
+  );
+  assert.equal(chips[0]?.label, "420 cal");
+  assert.equal(chips[0]?.primary, true);
+});
+
+test("queryRequiresNutritionDisplay detects nutrient constraints", () => {
+  assert.equal(
+    queryRequiresNutritionDisplay({
+      nutrient_constraints: { calories: { explicit: true, max: 500, direction: "low" } },
+    }),
+    true
+  );
+  assert.equal(queryRequiresNutritionDisplay({ nutrition_intent: { high_protein: true } }), true);
+  assert.equal(queryRequiresNutritionDisplay({ text_terms: ["burger"] }), false);
+});
+
+test("rowHasNutritionMacros reads chip and row fields", () => {
+  assert.equal(rowHasNutritionMacros({ protein_g: 25 }), true);
+  assert.equal(rowHasNutritionMacros({ chips: { nutrition_chip: { calories_kcal: 400 } } }), true);
+  assert.equal(rowHasNutritionMacros({ item_name: "Salad" }), false);
 });
 
 test("buildNutritionPreviewChips respects three-chip cap", () => {

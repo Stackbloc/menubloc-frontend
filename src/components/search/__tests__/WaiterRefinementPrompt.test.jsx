@@ -883,6 +883,25 @@ describe("WaiterRefinementPrompt", () => {
     expect(result?.dimension).toBe("commerce");
   });
 
+  it("never offers Under $1 or other sub-$5 price refinements", () => {
+    const rows = Array.from({ length: 15 }, (_, i) =>
+      makeRow({
+        id: i + 1,
+        name: `Snack ${i + 1}`,
+        restaurantId: i + 1,
+        restaurantName: `R${i + 1}`,
+        sectionName: "Snacks",
+        price: 0.5 + (i % 4) * 0.25,
+        categories: ["Snacks"],
+      })
+    );
+
+    const result = buildWaiterOptions(rows, "snack");
+    const labels = (result?.options || []).map((option) => option.label);
+
+    expect(labels.some((label) => /Under \$[0-4](?:\b|$)/.test(label))).toBe(false);
+  });
+
   it("does not offer Burgers on a chicken search when burger-tagged items are named as sandwiches", () => {
     const rows = [
       makeRow({ id: 1, name: "Nashville Hot Chicken Sandwich", restaurantId: 1, restaurantName: "R1", sectionName: "Burgers", price: 12, foodForm: "burger", categories: ["burger"] }),

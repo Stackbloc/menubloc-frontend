@@ -15,6 +15,8 @@ import {
   buildWhyMatchLabel,
   buildNutritionPreviewChips,
   formatPairingTeaser,
+  queryRequiresNutritionDisplay,
+  rowHasNutritionMacros,
 } from "../lib/searchResultEnrichment.js";
 import IndulgenceMeter from "./IndulgenceMeter.jsx";
 import ShareButton from "./share/ShareButton.jsx";
@@ -1188,9 +1190,12 @@ function ItemRow({
   const matchPreviewFallback = whyLabel ? null : buildMatchPreview(displayRow, queryMeta, matchContext);
   const matchLineText = whyLabel || (matchPreviewFallback && matchPreviewFallback.text) || "";
   const nutritionPreviewChips = buildNutritionPreviewChips(displayRow, queryMeta);
+  const nutritionQueryActive = queryRequiresNutritionDisplay(queryMeta);
   const showNutritionPreview =
-    (openTab === "nutrition" || intelligenceState.status === "ready") &&
-    nutritionPreviewChips.length > 0;
+    nutritionPreviewChips.length > 0 &&
+    ((nutritionQueryActive && rowHasNutritionMacros(displayRow)) ||
+      openTab === "nutrition" ||
+      intelligenceState.status === "ready");
   const pairingTeaser = formatPairingTeaser(displayRow);
   const refinementMatchLabel = buildRefinementMatchLabel(displayRow, activeRefinement);
 

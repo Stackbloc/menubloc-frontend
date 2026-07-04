@@ -61,6 +61,32 @@ function getNutritionChip(row) {
   return {};
 }
 
+/** True when the search query expects calories/macros on the first results screen. */
+export function queryRequiresNutritionDisplay(queryMeta) {
+  const parsed = queryMeta && typeof queryMeta === "object" ? queryMeta : {};
+  const nutritionIntent = parsed.nutrition_intent || {};
+  if (Object.values(nutritionIntent).some(Boolean)) return true;
+
+  const constraints = parsed.nutrient_constraints || {};
+  for (const entry of Object.values(constraints)) {
+    if (!entry || typeof entry !== "object") continue;
+    if (entry.explicit || entry.mentioned || entry.direction) return true;
+  }
+
+  const smartNc = parsed.smart?.nutrition_constraints || {};
+  if (Object.keys(smartNc).length > 0) return true;
+
+  return false;
+}
+
+export function rowHasNutritionMacros(row) {
+  const chip = getNutritionChip(row);
+  return (
+    asNum(chip.calories_kcal ?? chip.calories ?? row?.calories) !== null ||
+    asNum(chip.protein_g ?? row?.protein_g) !== null
+  );
+}
+
 function getPairingsChip(row) {
   if (row?.chips?.pairings_chip) return row.chips.pairings_chip;
   if (row?.item?.chips?.pairings_chip) return row.item.chips.pairings_chip;
@@ -214,6 +240,12 @@ export function buildNutritionPreviewChips(row, queryMeta) {
     constraints?.fiber?.direction === "high" ||
     nutritionIntent.high_fiber === true ||
     diet.high_fiber === true;
+  const wantsCalories =
+    constraints?.calories?.direction === "low" ||
+    constraints?.calories?.explicit === true ||
+    nutritionIntent.low_calorie === true ||
+    diet.low_calorie === true ||
+    parsed.smart?.nutrition_constraints?.calories_max != null;
 
   const backendScores = row?.chips?.insights?.scores || row?.item?.chips?.insights?.scores;
 
@@ -251,9 +283,15 @@ export function buildNutritionPreviewChips(row, queryMeta) {
     else push("Fiber —", true);
   }
 
+  if (wantsCalories) {
+    if (cal != null) push(`${Math.round(cal)} cal`, true);
+    else push("Calories —", true);
+  }
+
   // Fill remaining slots with cal / protein (if not already shown)
   const alreadyHasProtein = out.some((c) => c.label.includes("protein"));
-  if (cal != null) push(`${Math.round(cal)} cal`);
+  const alreadyHasCalories = out.some((c) => c.label.includes(" cal"));
+  if (cal != null && !alreadyHasCalories) push(`${Math.round(cal)} cal`);
   if (pro != null && !alreadyHasProtein) push(`${Math.round(pro)}g protein`);
 
   return out.slice(0, 3);
