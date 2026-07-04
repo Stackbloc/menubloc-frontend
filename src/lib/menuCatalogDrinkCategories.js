@@ -19,6 +19,10 @@ export const MENU_CATALOG_DRINK_TABS = [
 
 export const MENU_CATALOG_DRINKS_DEFAULT_SECTION = "cocktails";
 
+export function getDrinkCatalogTab(sectionId) {
+  return MENU_CATALOG_DRINK_TABS.find((tab) => tab.id === sectionId) || null;
+}
+
 export function isDrinksCatalogSection(sectionId) {
   return MENU_CATALOG_DRINK_TABS.some((entry) => entry.id === sectionId);
 }

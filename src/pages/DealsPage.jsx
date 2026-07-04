@@ -375,12 +375,21 @@ export default function DealsPage() {
           </div>
 
           <div style={{ maxWidth: 520, margin: "0 auto", padding: "10px 16px 0", textAlign: "center" }}>
-            <span style={{ fontSize: 18, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.02em" }}>
-              🔥 {t("deals.nearYou", "Deals Near {location}").replace(
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 16,
+                fontWeight: 800,
+                color: "#11211a",
+                letterSpacing: "-0.02em",
+                lineHeight: 1.35,
+              }}
+            >
+              {t("deals.nearYou", "Deals Near {location}").replace(
                 "{location}",
-                locationLabel || t("discovery.you", "You"),
+                locationLabel || t("discovery.you", "you"),
               )}
-            </span>
+            </h2>
           </div>
         </div>
       </div>

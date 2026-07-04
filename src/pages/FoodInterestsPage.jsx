@@ -70,12 +70,18 @@ const ITEM_LINK_STYLE = {
   lineHeight: 1.45,
 };
 
+function capitalizeHeading(value) {
+  const text = String(value || "").trim();
+  if (!text) return text;
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 // Renders one card for an entire category (e.g. all "New for Dinner" items).
 // Each item title is directly clickable — no separate "View dish →" link.
 function CategoryCard({ group }) {
   return (
     <div style={CARD_STYLE}>
-      {group.label ? <div style={LABEL_STYLE}>{group.label}</div> : null}
+      {group.label ? <div style={LABEL_STYLE}>{capitalizeHeading(group.label)}</div> : null}
       <div style={{ display: "grid", gap: 10 }}>
         {group.items.map((item, index) => (
           <div key={item.link || item.title || index}>

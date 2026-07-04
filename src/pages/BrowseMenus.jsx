@@ -219,14 +219,14 @@ export default function BrowseMenus() {
     const next = entries[activeIndex + 1];
     const prefetch = isDrinksMode ? prefetchCatalogDrinksMenu : prefetchCatalogMenu;
     if (prev?.restaurant_id) {
-      if (isDrinksMode) prefetch(prev.restaurant_id, locationParams);
+      if (isDrinksMode) prefetch(prev.restaurant_id, locationParams, activeSection);
       else prefetch(prev.restaurant_id, locationParams, language);
     }
     if (next?.restaurant_id) {
-      if (isDrinksMode) prefetch(next.restaurant_id, locationParams);
+      if (isDrinksMode) prefetch(next.restaurant_id, locationParams, activeSection);
       else prefetch(next.restaurant_id, locationParams, language);
     }
-  }, [entries, activeIndex, isDrinksMode, locationParams, language]);
+  }, [activeSection, entries, activeIndex, isDrinksMode, locationParams, language]);
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -547,6 +547,7 @@ export default function BrowseMenus() {
                 key={`drinks-${activeSection}-${currentEntry.restaurant_id}-${activeIndex}`}
                 entry={currentEntry}
                 locationParams={locationParams}
+                browseSection={activeSection}
                 onLoadStateChange={handleMenuLoadStateChange}
               />
             ) : (

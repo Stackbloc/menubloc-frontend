@@ -11,6 +11,7 @@ import {
   buildGoogleMapsUrlForRestaurant,
   resolveRestaurantProfileHref,
 } from "../../lib/catalogMenuUtils.js";
+import { getDrinkCatalogTab } from "../../lib/menuCatalogDrinkCategories.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
 
@@ -42,7 +43,7 @@ async function fetchDrinksMenuPayload(restaurantId, apiUrl) {
   }
 }
 
-export function prefetchCatalogDrinksMenu(restaurantId, locationParams = {}) {
+export function prefetchCatalogDrinksMenu(restaurantId, locationParams = {}, browseSection = "") {
   if (!restaurantId) return;
   const params = new URLSearchParams();
   if (locationParams.lat != null && locationParams.lng != null) {
@@ -51,6 +52,7 @@ export function prefetchCatalogDrinksMenu(restaurantId, locationParams = {}) {
   }
   if (locationParams.city) params.set("city", locationParams.city);
   if (locationParams.state) params.set("state", locationParams.state);
+  if (browseSection) params.set("browse_section", browseSection);
   const qs = params.toString();
   const apiUrl = `${API}/public/restaurants/${encodeURIComponent(restaurantId)}/drinks-menu${qs ? `?${qs}` : ""}`;
   fetchDrinksMenuPayload(restaurantId, apiUrl).catch(() => {});
@@ -63,27 +65,48 @@ function formatItemPrice(item) {
   return Number.isFinite(Number(cents)) ? formatMoney(Number(cents)) : "";
 }
 
-function DrinksMenuSection({ section }) {
+function DrinksBrowserCategorySection({ section, isActiveBrowseSection = false }) {
   const items = Array.isArray(section?.items) ? section.items : [];
   if (!items.length) return null;
 
+  const accent = asStr(section.accent || getDrinkCatalogTab(section.browser_category_id)?.accent || "#11211a").trim();
+  const label = asStr(section.label || getDrinkCatalogTab(section.browser_category_id)?.label || "Beverages").trim();
+
   return (
     <section style={{ marginBottom: 28 }}>
-      <h2
+      <div
         style={{
-          margin: "0 0 12px",
-          fontSize: 18,
-          fontWeight: 800,
-          letterSpacing: "-0.02em",
-          color: "#11211a",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 12,
+          padding: "6px 12px",
+          borderRadius: 999,
+          background: `${accent}18`,
+          border: `1px solid ${accent}44`,
+          boxShadow: isActiveBrowseSection ? `0 0 0 2px ${accent}33` : "none",
         }}
       >
-        {asStr(section.display_section_name || section.title || "Beverages").trim()}
-      </h2>
+        {section.emoji ? (
+          <span aria-hidden="true" style={{ fontSize: 14 }}>{section.emoji}</span>
+        ) : null}
+        <h2
+          style={{
+            margin: 0,
+            fontSize: 14,
+            fontWeight: 800,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: accent,
+          }}
+        >
+          {label}
+        </h2>
+      </div>
       <div style={{ display: "grid", gap: 14 }}>
         {items.map((item) => {
           const price = formatItemPrice(item);
-          const key = `${section.canonical_section_id || "section"}-${item.id || item.name}`;
+          const key = `${section.browser_category_id || "section"}-${item.id || item.name}`;
           return (
             <article
               key={key}
@@ -142,6 +165,7 @@ function DrinksMenuSection({ section }) {
 export default function CatalogDrinksMenuRenderer({
   entry,
   locationParams = {},
+  browseSection = "",
   onLoadStateChange,
 }) {
   const { t } = useLanguage();
@@ -159,9 +183,10 @@ export default function CatalogDrinksMenuRenderer({
     }
     if (locationParams.city) params.set("city", locationParams.city);
     if (locationParams.state) params.set("state", locationParams.state);
+    if (browseSection) params.set("browse_section", browseSection);
     const qs = params.toString();
     return `${API}/public/restaurants/${encodeURIComponent(restaurantId)}/drinks-menu${qs ? `?${qs}` : ""}`;
-  }, [entry?.distance_miles, entry?.restaurant_distance_miles, locationParams.city, locationParams.lat, locationParams.lng, locationParams.state, restaurantId]);
+  }, [browseSection, entry?.distance_miles, entry?.restaurant_distance_miles, locationParams.city, locationParams.lat, locationParams.lng, locationParams.state, restaurantId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -227,7 +252,8 @@ export default function CatalogDrinksMenuRenderer({
     openNow: restaurant.open_now ?? data?.open_now,
     compact: true,
   });
-  const sections = Array.isArray(data?.sections) ? data.sections : [];
+  const browserSections = Array.isArray(data?.browser_sections) ? data.browser_sections : [];
+  const activeBrowseSection = asStr(data?.active_browse_section || browseSection).trim().toLowerCase();
 
   if (pageState.status === "loading") {
     return (
@@ -294,15 +320,16 @@ export default function CatalogDrinksMenuRenderer({
         </div>
       </header>
 
-      {sections.length === 0 ? (
+      {browserSections.length === 0 ? (
         <div style={{ color: "#667085", fontSize: 14 }}>
           {t("menuCatalog.noDrinksSections", "No beverage sections are available for this restaurant yet.")}
         </div>
       ) : (
-        sections.map((section) => (
-          <DrinksMenuSection
-            key={`${section.canonical_section_id}-${section.display_section_name}`}
+        browserSections.map((section) => (
+          <DrinksBrowserCategorySection
+            key={section.browser_category_id}
             section={section}
+            isActiveBrowseSection={activeBrowseSection === section.browser_category_id}
           />
         ))
       )}
