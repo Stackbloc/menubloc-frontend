@@ -52,7 +52,7 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppliedBanner.jsx";
 import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
-import { normalizeMenuStyle, pickHeroImageUrl } from "../components/menu-templates/menuPresentationUtils.js";
+import { normalizeMenuStyle, pickHeroImageUrl, resolveTemplateMenuStyle } from "../components/menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu-templates/restaurantMenuBrand.js";
 import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor } from "../components/menu-templates/menuThemeSettings.js";
 import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
@@ -1244,7 +1244,7 @@ export default function PublicMenuPage() {
     }
   }
 
-  const menuPresentationStyle = normalizeMenuStyle(
+  const menuPresentationStyle = resolveTemplateMenuStyle(
     searchParams.get("menuStyle") || searchParams.get("previewStyle") || pageState.data?.menu_style
   );
 

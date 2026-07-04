@@ -17,7 +17,7 @@ export const DEFAULT_MENU_THEME_SETTINGS = {
   menu_style: "v1",
   primary_color: null,
   accent_color: null,
-  background_style: "dark",
+  background_style: "light",
   hero_enabled: true,
   image_density: "none",
   section_heading_style: "default",
@@ -160,10 +160,42 @@ function inferBackgroundStyleFromMenuStyle(menuStyle) {
     case "v14":
     case "v15":
       return "paper";
+    case "v4":
+    case "v10":
+      return "dark";
+    case "v6":
+    case "v7":
+      return "chalkboard";
     case "v1":
     default:
       return "light";
   }
+}
+
+/** Light templates must not keep a stale dark shell (and vice versa). */
+function reconcileBackgroundStyleWithMenuStyle(menuStyle, backgroundStyle) {
+  const style = normalizeMenuStyle(menuStyle);
+  const bg = String(backgroundStyle || "").trim();
+  const lightShellStyles = new Set(["v1", "v14", "v15", "v2", "v3", "v5", "v8", "v9"]);
+  const darkShellStyles = new Set(["v12", "v13", "v4", "v10"]);
+  const chalkShellStyles = new Set(["v6", "v7"]);
+
+  if (lightShellStyles.has(style)) {
+    if (bg === "dark" || bg === "charcoal" || bg === "chalkboard") {
+      return inferBackgroundStyleFromMenuStyle(style);
+    }
+  }
+  if (darkShellStyles.has(style)) {
+    if (bg === "light" || bg === "paper") {
+      return inferBackgroundStyleFromMenuStyle(style);
+    }
+  }
+  if (chalkShellStyles.has(style)) {
+    if (bg === "light" || bg === "paper") {
+      return inferBackgroundStyleFromMenuStyle(style);
+    }
+  }
+  return bg;
 }
 
 function backgroundStyleToShellColor(backgroundStyle, menuBrand) {
@@ -180,7 +212,8 @@ export function hasExplicitBackgroundStyle(source = {}) {
 
 export function resolveMenuPageBackground(source = {}, menuBrand = null) {
   const normalized = normalizeMenuThemeSettings(source);
-  if (!hasExplicitBackgroundStyle(source) && MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style]) {
+  // Editorial menu styles own the outer shell; stale background_style rows must not fight the template.
+  if (MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style]) {
     return MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style];
   }
   return backgroundStyleToShellColor(normalized.background_style, menuBrand);
@@ -188,7 +221,7 @@ export function resolveMenuPageBackground(source = {}, menuBrand = null) {
 
 export function resolveMenuShellTextColor(source = {}) {
   const normalized = normalizeMenuThemeSettings(source);
-  if (!hasExplicitBackgroundStyle(source) && MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style]) {
+  if (MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style]) {
     return ["v12", "v13"].includes(normalized.menu_style) ? "#F5F5F7" : "#101828";
   }
   if (normalized.background_style === "light" || normalized.background_style === "paper") {
@@ -267,9 +300,10 @@ export function normalizeMenuThemeSettings(source = {}) {
   const primaryColor = normalizeHexColor(raw.primary_color || raw.accent_color || null);
   const accentColor = normalizeHexColor(raw.accent_color || raw.secondary_color || raw.primary_color || null);
   const intelligenceDefaults = INTELLIGENCE_DEFAULTS_BY_STYLE[menuStyle] || INTELLIGENCE_DEFAULTS_BY_STYLE.v1;
-  const backgroundStyle = BACKGROUND_STYLES.has(String(raw.background_style || "").trim())
+  const backgroundStyleRaw = BACKGROUND_STYLES.has(String(raw.background_style || "").trim())
     ? String(raw.background_style).trim()
     : inferBackgroundStyleFromMenuStyle(menuStyle);
+  const backgroundStyle = reconcileBackgroundStyleWithMenuStyle(menuStyle, backgroundStyleRaw);
   const heroEnabled = raw.hero_enabled !== undefined
     ? Boolean(raw.hero_enabled)
     : raw.hero_image_enabled !== undefined

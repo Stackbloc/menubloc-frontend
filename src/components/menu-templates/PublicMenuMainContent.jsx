@@ -3,7 +3,7 @@ import EditorialDarkMenuTemplate from "./EditorialDarkMenuTemplate.jsx";
 import EditorialSteakhouseMenuTemplate from "./EditorialSteakhouseMenuTemplate.jsx";
 import EditorialQSRMenuTemplate from "./EditorialQSRMenuTemplate.jsx";
 import EditorialCasualMenuTemplate from "./EditorialCasualMenuTemplate.jsx";
-import { normalizeMenuStyle } from "./menuPresentationUtils.js";
+import { normalizeMenuStyle, resolveTemplateMenuStyle } from "./menuPresentationUtils.js";
 
 /**
  * Presentation-only layer: same structured ctx object for every template.
@@ -23,7 +23,7 @@ import { normalizeMenuStyle } from "./menuPresentationUtils.js";
  * on disk for reference/rollback but are not imported here.
  */
 export default function PublicMenuMainContent({ menuStyle: rawStyle, templateContext: ctx }) {
-  const menuStyle = normalizeMenuStyle(rawStyle);
+  const menuStyle = resolveTemplateMenuStyle(rawStyle);
 
   if (menuStyle === "v12") return <EditorialDarkMenuTemplate {...ctx} />;
   if (menuStyle === "v13") return <EditorialSteakhouseMenuTemplate {...ctx} />;

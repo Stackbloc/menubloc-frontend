@@ -47,6 +47,20 @@ export function normalizeMenuStyle(raw) {
 }
 
 /**
+ * Map retired boutique style IDs (v2–v10) to the current editorial templates so
+ * restaurants that still have legacy menu_style values render coherently.
+ */
+export function resolveTemplateMenuStyle(raw) {
+  const style = normalizeMenuStyle(raw);
+  if (style === "v4" || style === "v10") return "v13";
+  if (style === "v6" || style === "v7") return "v12";
+  if (style === "v3") return "v14";
+  if (style === "v5") return "v15";
+  if (style === "v2" || style === "v8" || style === "v9") return "v1";
+  return style;
+}
+
+/**
  * Initials shown in the logo placeholder when a restaurant has no logo image.
  * First letters of the first two words; for a single-word name, the first
  * two letters of that word.

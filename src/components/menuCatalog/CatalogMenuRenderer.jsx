@@ -8,7 +8,7 @@ import BasketSummaryBar from "../basket/BasketSummaryBar.jsx";
 import ModifierSheet from "../basket/ModifierSheet.jsx";
 import SmartCustomizationSheet, { isCustomizableItem } from "../basket/SmartCustomizationSheet.jsx";
 import PublicMenuMainContent from "../menu-templates/PublicMenuMainContent.jsx";
-import { normalizeMenuStyle, pickHeroImageUrl } from "../menu-templates/menuPresentationUtils.js";
+import { pickHeroImageUrl, resolveTemplateMenuStyle } from "../menu-templates/menuPresentationUtils.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../menu-templates/restaurantMenuBrand.js";
 import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor } from "../menu-templates/menuThemeSettings.js";
 import { formatMoney, getBaseMenuPrice, getConsumerDisplayPrice } from "../../lib/pricingDisplay.js";
@@ -457,7 +457,7 @@ export default function CatalogMenuRenderer({
     setAddedConfirmation(null);
   }
 
-  const menuPresentationStyle = normalizeMenuStyle(data?.menu_style);
+  const menuPresentationStyle = resolveTemplateMenuStyle(data?.menu_style);
 
   const templateContext =
     data && pageState.status === "ok"
