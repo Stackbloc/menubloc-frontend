@@ -1188,6 +1188,9 @@ function ItemRow({
   const matchPreviewFallback = whyLabel ? null : buildMatchPreview(displayRow, queryMeta, matchContext);
   const matchLineText = whyLabel || (matchPreviewFallback && matchPreviewFallback.text) || "";
   const nutritionPreviewChips = buildNutritionPreviewChips(displayRow, queryMeta);
+  const showNutritionPreview =
+    (openTab === "nutrition" || intelligenceState.status === "ready") &&
+    nutritionPreviewChips.length > 0;
   const pairingTeaser = formatPairingTeaser(displayRow);
   const refinementMatchLabel = buildRefinementMatchLabel(displayRow, activeRefinement);
 
@@ -1214,21 +1217,25 @@ function ItemRow({
 
   const hasNut =
     capabilities.hasNutrition === true ||
-    asStr(nutChip?.status).toLowerCase() === "available" ||
-    asNum(nutChip.calories_kcal) !== null ||
-    asNum(nutChip.protein_g) !== null ||
-    asNum(nutChip.fat_g) !== null ||
-    asNum(nutChip.sodium_mg) !== null ||
-    asNum(nutChip.sugar_g) !== null ||
-    (Array.isArray(nutChip.allergens) && nutChip.allergens.length > 0);
+    (intelligenceState.status === "ready" && (
+      asStr(nutChip?.status).toLowerCase() === "available" ||
+      asNum(nutChip.calories_kcal) !== null ||
+      asNum(nutChip.protein_g) !== null ||
+      asNum(nutChip.fat_g) !== null ||
+      asNum(nutChip.sodium_mg) !== null ||
+      asNum(nutChip.sugar_g) !== null ||
+      (Array.isArray(nutChip.allergens) && nutChip.allergens.length > 0)
+    ));
 
   const insightScores = computeInsights(nutChip);
   const hasIns =
     capabilities.hasInsights === true ||
-    buildInsightCards(displayRow).length > 0 ||
-    insightScores.proteinStrength !== null ||
-    insightScores.glycemicImpact  !== null ||
-    insightScores.sodiumRisk      !== null;
+    (intelligenceState.status === "ready" && (
+      buildInsightCards(displayRow).length > 0 ||
+      insightScores.proteinStrength !== null ||
+      insightScores.glycemicImpact  !== null ||
+      insightScores.sodiumRisk      !== null
+    ));
   const hasNutritionOrInsights = hasNut || hasIns;
   const intelligenceLoading = intelligenceState.status === "loading";
   // Chip is only shown once we know results exist — pre-fetch on mount resolves this silently.
@@ -1510,8 +1517,8 @@ function ItemRow({
         </div>
       ) : null}
 
-      {/* 4. Nutrition preview chips */}
-      <NutritionPreviewStrip chips={nutritionPreviewChips} />
+      {/* 4. Nutrition preview chips — only after pill press loads intelligence */}
+      {showNutritionPreview ? <NutritionPreviewStrip chips={nutritionPreviewChips} /> : null}
 
       {/* Pairings teaser */}
       {pairingTeaser ? (
