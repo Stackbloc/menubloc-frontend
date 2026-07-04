@@ -923,6 +923,14 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels,
       );
     }
 
+    if (similarState?.status === "failed") {
+      return (
+        <div style={wrap}>
+          <span style={muted}>Could not load similar items. Try again.</span>
+        </div>
+      );
+    }
+
     const groups = groupSimilarResultsByRestaurant(similarState?.items || []);
     const helperLabel = buildSimilarItemsLabel(similarState?.meta || null);
     return (
@@ -1357,7 +1365,7 @@ function ItemRow({
     setOpenTab(null);
     setSimilarState({ status: "idle", items: [], meta: null });
     setIntelligenceState({ status: "idle", data: null });
-  }, [similarCacheKey, intelligenceCacheKey]);
+  }, [mid]);
 
   useEffect(() => {
     if (!franchiseLocationCacheKey) {
@@ -1456,9 +1464,6 @@ function ItemRow({
       };
       searchCardSimilarCache.set(similarCacheKey, nextState);
       setSimilarState(nextState);
-      if (nextState.items.length === 0) {
-        setOpenTab(null);
-      }
     } catch {
       if (similarRequestRef.current !== requestId) return;
       const nextState = { status: "failed", items: [], meta: null };
