@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "721c9d5b311836253dc73d5b35a31b79be03a60a",
-  "gitShortSha": "721c9d5",
+  "gitSha": "b4bffb40932e1d65e4a4d5f77f2704b73e69cb96",
+  "gitShortSha": "b4bffb4",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-04T04:38:31.477Z",
+  "buildTime": "2026-07-04T12:54:33.116Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(consumer): persist green like state for dishes and restaurants."
+  "commitMessage": "fix(nav): place Marketplace second in footer after Restaurants."
 }

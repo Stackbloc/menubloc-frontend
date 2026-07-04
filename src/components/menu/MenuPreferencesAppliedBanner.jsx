@@ -10,13 +10,33 @@ export default function MenuPreferencesAppliedBanner({
   onToggle,
   dietPreferenceActive = false,
   allergenPreferenceActive = false,
+  browseSessionScope = false,
 }) {
   const { t } = useLanguage();
 
   if (!visible) return null;
 
   let appliedMessage;
-  if (dietPreferenceActive && allergenPreferenceActive) {
+  if (browseSessionScope) {
+    if (dietPreferenceActive && allergenPreferenceActive) {
+      appliedMessage = t(
+        "publicMenu.preferencesAppliedBothBrowseSession",
+        "Your saved dietary and allergen preferences are applied for this browse session."
+      );
+    } else if (dietPreferenceActive) {
+      appliedMessage = t(
+        "publicMenu.preferencesAppliedDietBrowseSession",
+        "Your saved dietary preferences are applied for this browse session."
+      );
+    } else if (allergenPreferenceActive) {
+      appliedMessage = t(
+        "publicMenu.preferencesAppliedAllergenBrowseSession",
+        "Your saved allergen preferences are applied for this browse session."
+      );
+    } else {
+      appliedMessage = "";
+    }
+  } else if (dietPreferenceActive && allergenPreferenceActive) {
     appliedMessage = t(
       "publicMenu.preferencesAppliedBoth",
       "Your saved dietary and allergen preferences are applied to this menu."
@@ -68,7 +88,9 @@ export default function MenuPreferencesAppliedBanner({
           style={{ marginTop: 2, flexShrink: 0 }}
         />
         <span>
-          {t("publicMenu.applySavedPreferences", "Apply My Saved Preferences")}
+          {applySavedPreferences
+            ? t("publicMenu.removeDietaryPreferences", "Remove dietary preferences")
+            : t("publicMenu.applyDietaryPreferences", "Apply Dietary Preferences")}
         </span>
       </label>
       <div role="status" style={{ marginTop: 8, fontWeight: 600 }}>

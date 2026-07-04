@@ -19,6 +19,7 @@ import CatalogItemDetailSheet from "./CatalogItemDetailSheet.jsx";
 import MenuPreferencesAppliedBanner from "../menu/MenuPreferencesAppliedBanner.jsx";
 import MenuPurchaseWaiterHint from "../menu/MenuPurchaseWaiterHint.jsx";
 import useSavedMenuPreferences from "../../hooks/useSavedMenuPreferences.js";
+import useCatalogDietaryPreferencesSession from "../../hooks/useCatalogDietaryPreferencesSession.js";
 import { getClientPreferenceDisplaySections } from "../../lib/menuClientPreferenceFilter.js";
 import {
   asFiniteNumber,
@@ -161,7 +162,7 @@ export default function CatalogMenuRenderer({
     dietPreferenceActive,
     allergenPreferenceActive,
   } = useSavedMenuPreferences();
-  const [applySavedPreferences, setApplySavedPreferences] = useState(false);
+  const [applySavedPreferences, setApplySavedPreferences] = useCatalogDietaryPreferencesSession();
 
   const restaurantId = entry?.restaurant_id;
   const [pageState, setPageState] = useState({ status: "idle", data: null, error: null });
@@ -176,10 +177,6 @@ export default function CatalogMenuRenderer({
   const [itemSheet, setItemSheet] = useState(null);
   const [addedConfirmation, setAddedConfirmation] = useState(null);
   const [hoveredItemId, setHoveredItemId] = useState(null);
-
-  useEffect(() => {
-    setApplySavedPreferences(false);
-  }, [restaurantId]);
 
   const apiUrl = useMemo(() => {
     if (!restaurantId) return "";
@@ -488,6 +485,7 @@ export default function CatalogMenuRenderer({
               onToggle={setApplySavedPreferences}
               dietPreferenceActive={dietPreferenceActive}
               allergenPreferenceActive={allergenPreferenceActive}
+              browseSessionScope
             />
           ),
           displaySections,
