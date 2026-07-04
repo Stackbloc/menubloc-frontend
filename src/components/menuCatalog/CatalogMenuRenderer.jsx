@@ -468,7 +468,9 @@ export default function CatalogMenuRenderer({
           shareData,
           shareAnalyticsContext,
           franchiseSlot: null,
-          intakeBannerSlot: <MenuPurchaseWaiterHint />,
+          intakeBannerSlot: (
+            <MenuPurchaseWaiterHint sticky stickyBackground={resolvedPageBackground} />
+          ),
           allergenBannerSlot: (
             <MenuPreferencesAppliedBanner
               visible={dietPreferenceActive}
