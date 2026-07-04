@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "49c81cd1a032571f5e54b0fb7e1220cdc037417f",
-  "gitShortSha": "49c81cd",
+  "gitSha": "a94b2aba8271ac187dbd8a2d85b4e7371f550a6f",
+  "gitShortSha": "a94b2ab",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-04T03:05:14.318Z",
+  "buildTime": "2026-07-04T03:21:47.090Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(browse): center Yellow Browser intro graphics on screen."
+  "commitMessage": "fix(browse): skip loading splash on drinks tab changes."
 }

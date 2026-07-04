@@ -20,6 +20,7 @@ import {
 } from "../lib/searchResultEnrichment.js";
 import IndulgenceMeter from "./IndulgenceMeter.jsx";
 import MenuItemDetailActionRail from "./menu/MenuItemDetailActionRail.jsx";
+import FollowRestaurantButton from "./FollowRestaurantButton.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildInsightCards } from "./InsightCardDeck.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
@@ -1894,6 +1895,15 @@ export default function SearchResultCard({ restaurant, items, item, query, query
             borderBottom: "1px solid #1F2937",
           }}
         >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
+            <div style={{ minWidth: 0, flex: 1 }}>
           {restHrefHeader ? (
             <Link
               to={restHrefHeader}
@@ -1931,6 +1941,17 @@ export default function SearchResultCard({ restaurant, items, item, query, query
               {venueFactsLine}
             </div>
           ) : null}
+            </div>
+            {restId ? (
+              <FollowRestaurantButton
+                restaurantId={restId}
+                restaurantName={restName}
+                source="search_results"
+                dark
+                size={28}
+              />
+            ) : null}
+          </div>
           <SearchBillboardBanner
             billboard={restaurant?.raw?.primary_billboard}
             restaurantId={restId}
@@ -2024,8 +2045,9 @@ export default function SearchResultCard({ restaurant, items, item, query, query
 
   return (
     <article className="gb-card" style={cardStyle}>
-      {/* Restaurant name */}
-      <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.01em", color: "#22C55E" }}>
+      {/* Restaurant name + like */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, letterSpacing: "-0.01em", color: "#22C55E", minWidth: 0, flex: 1 }}>
         {restHrefS ? (
           <Link
             to={restHrefS}
@@ -2038,6 +2060,16 @@ export default function SearchResultCard({ restaurant, items, item, query, query
         ) : (
           hl(restNameS, query)
         )}
+        </div>
+        {restIdS ? (
+          <FollowRestaurantButton
+            restaurantId={restIdS}
+            restaurantName={restNameS}
+            source="search_results"
+            dark
+            size={32}
+          />
+        ) : null}
       </div>
 
       {!isRestaurantBrowse && cuisineS && (

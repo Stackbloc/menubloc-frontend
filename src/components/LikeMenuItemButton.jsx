@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { getMenuItemLikeStatus, likeMenuItem, unlikeMenuItem } from "../lib/consumerApi.js";
+import { LIKE_ACCENT, likeButtonVisualStyle } from "../lib/likeButtonStyles.js";
 import IconHoverLabel from "./IconHoverLabel.jsx";
 import ThumbsUpIcon from "./icons/ThumbsUpIcon.jsx";
 
@@ -22,8 +23,9 @@ export default function LikeMenuItemButton({ menuItemId, tone = "inline", size =
 
   useEffect(() => {
     let alive = true;
-    setLiked(false);
     if (!valid || !isAuthenticated) {
+      setLiked(false);
+      setLoading(false);
       return () => {
         alive = false;
       };
@@ -56,16 +58,16 @@ export default function LikeMenuItemButton({ menuItemId, tone = "inline", size =
     }
 
     setBusy(true);
+    const wasLiked = liked;
+    setLiked(!wasLiked);
     try {
-      if (liked) {
+      if (wasLiked) {
         await unlikeMenuItem(id);
-        setLiked(false);
       } else {
         await likeMenuItem(id);
-        setLiked(true);
       }
     } catch {
-      // Keep prior state on failure — button stays clickable for retry.
+      setLiked(wasLiked);
     } finally {
       setBusy(false);
     }
@@ -74,7 +76,6 @@ export default function LikeMenuItemButton({ menuItemId, tone = "inline", size =
   const inline = tone === "inline";
   const ghost = tone === "ghost";
   const dim = size === "row" ? 28 : size === "compact" ? 32 : 36;
-  const accent = "#22C55E";
   const hoverLabel = liked ? "Liked" : "Like";
 
   return (
@@ -82,45 +83,23 @@ export default function LikeMenuItemButton({ menuItemId, tone = "inline", size =
       <button
         type="button"
         onClick={handleClick}
-        disabled={loading}
+        disabled={loading || busy}
         aria-label={liked ? "Unlike this dish" : "Like this dish"}
         aria-pressed={liked}
         title={hoverLabel}
         style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
+          ...likeButtonVisualStyle({ selected: liked, inline, ghost, loading: loading || busy }),
           width: inline ? "auto" : dim,
           height: inline ? "auto" : dim,
           minWidth: inline ? "auto" : dim,
           minHeight: inline ? "auto" : dim,
-          padding: 0,
-          lineHeight: 0,
-          borderRadius: "50%",
-          border: inline
-            ? "none"
-            : ghost
-              ? "1px solid rgba(55,65,81,0.22)"
-              : "1px solid rgba(15,23,42,0.16)",
-          background: inline
-            ? "transparent"
-            : liked
-              ? "rgba(34,197,94,0.12)"
-              : ghost
-                ? "rgba(255,255,255,0.96)"
-                : "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.96) 100%)",
-          color: liked ? accent : inline ? "inherit" : "#0f172a",
-          cursor: loading ? "wait" : "pointer",
-          opacity: loading ? 0.6 : 1,
-          flexShrink: 0,
-          boxShadow: inline
-            ? "none"
-            : ghost
-              ? "0 2px 8px rgba(15, 23, 42, 0.12)"
-              : "0 8px 18px rgba(15, 23, 42, 0.12)",
         }}
       >
-        <ThumbsUpIcon size={size === "row" ? 14 : size === "compact" ? 15 : 16} filled={liked} color={liked ? accent : "currentColor"} />
+        <ThumbsUpIcon
+          size={size === "row" ? 14 : size === "compact" ? 15 : 16}
+          filled={liked}
+          color={liked ? LIKE_ACCENT : "currentColor"}
+        />
       </button>
     </IconHoverLabel>
   );

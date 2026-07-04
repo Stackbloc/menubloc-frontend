@@ -17,13 +17,21 @@ export default function useRestaurantFollow(restaurantId, { source = "menu_page"
 
   useEffect(() => {
     let alive = true;
-    setFollowed(false);
-    setFollowerCount(0);
     setError("");
     setNotice("");
 
     const id = Number(restaurantId);
     if (!Number.isInteger(id) || id <= 0) {
+      setFollowed(false);
+      setFollowerCount(0);
+      return () => {
+        alive = false;
+      };
+    }
+
+    if (!isAuthenticated) {
+      setFollowed(false);
+      setFollowerCount(0);
       return () => {
         alive = false;
       };
@@ -62,15 +70,17 @@ export default function useRestaurantFollow(restaurantId, { source = "menu_page"
     }
 
     setActionLoading(true);
+    const wasFollowed = followed;
+    setFollowed(!wasFollowed);
     try {
-      const wasFollowed = followed;
-      const result = followed ? await unfollowRestaurant(id) : await followRestaurant(id);
+      const result = wasFollowed ? await unfollowRestaurant(id) : await followRestaurant(id);
       setFollowed(result?.followed === true);
       setFollowerCount(Number(result?.follower_count || 0));
       if (!wasFollowed && result?.followed === true) {
         trackRestaurantFollow({ restaurantId: id, restaurantName, source });
       }
     } catch (err) {
+      setFollowed(wasFollowed);
       if (err?.status === 401) {
         setNotice("Log in to follow this restaurant.");
       } else {
