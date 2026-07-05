@@ -70,7 +70,7 @@ export default function SiteFooter() {
           </Link>
 
           <Link to="/creative-pros" style={footerLinkStyle}>
-            {t("discovery.footer.marketplace", "Marketplace")}
+            {t("discovery.footer.creators", "Creators")}
           </Link>
 
           <Link to="/terms" style={footerLinkStyle}>

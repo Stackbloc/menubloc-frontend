@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import SiteFooter from "../components/SiteFooter.jsx";
 
@@ -30,6 +31,8 @@ const EMPTY_FORM = {
   instagram_url: "",
   short_note: "",
   referral_interest: false,
+  terms_accepted: false,
+  marketing_opt_in: false,
 };
 
 const styles = {
@@ -140,6 +143,10 @@ const styles = {
     color: "#374151",
     fontWeight: 600,
   },
+  legalLink: {
+    color: "#1F4E3D",
+    fontWeight: 700,
+  },
   errorBanner: {
     background: "#FFF0F0",
     border: "1px solid #FECACA",
@@ -217,6 +224,9 @@ export default function CreativeProsPage() {
     if (!form.city.trim()) nextErrors.city = "City is required.";
     if (!form.state.trim()) nextErrors.state = "State is required.";
     if (!services.length) nextErrors.services = "Select at least one service.";
+    if (!form.terms_accepted) {
+      nextErrors.terms_accepted = "You must agree to the Terms of Use and Privacy Policy.";
+    }
     return nextErrors;
   }
 
@@ -246,6 +256,8 @@ export default function CreativeProsPage() {
           services,
           referral_interest: form.referral_interest,
           short_note: form.short_note.trim() || null,
+          terms_accepted: form.terms_accepted,
+          marketing_opt_in: form.marketing_opt_in,
         }),
       });
       const data = await response.json().catch(() => null);
@@ -265,13 +277,13 @@ export default function CreativeProsPage() {
       <main style={styles.pageMain}>
         <div style={styles.header}>
           <BrandLogo height={48} radius={14} matchPageBackground={false} />
-          <div style={styles.pageTitle}>Creative Pros</div>
+          <div style={styles.pageTitle}>Creators</div>
           <div style={styles.pageSubtitle}>
-            Join Menuply’s Creative Pros Network.
+            Creator Pro is Menuply’s featured creator program.
           </div>
           <p style={{ ...styles.pageSubtitle, marginTop: 12, marginBottom: 0 }}>
-            We’re building a network of designers, photographers, and other creative professionals who serve restaurants.
-            As Menuply grows, participating Creative Pros may be featured or referred to restaurants looking for menu design,
+            We’re building a network of designers, photographers, and other creators who serve restaurants.
+            As Menuply grows, participating Creator Pro members may be featured or referred to restaurants looking for menu design,
             food photography, branding, and related services.
           </p>
           <p style={{ ...styles.pageSubtitle, marginTop: 12, marginBottom: 0, fontWeight: 700, color: "#0B0F0C" }}>
@@ -281,7 +293,7 @@ export default function CreativeProsPage() {
 
         {success ? (
           <div style={styles.successBanner}>
-            Thanks — you’re on the Creative Pros list. We’ll reach out as opportunities develop.
+            Thanks — your Creator Pro application was submitted. We’ll reach out as opportunities develop.
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate>
@@ -457,10 +469,37 @@ export default function CreativeProsPage() {
                   I’m interested in receiving potential referrals from Menuply.
                 </span>
               </label>
+
+              <label style={styles.checkboxRow}>
+                <input
+                  type="checkbox"
+                  name="terms_accepted"
+                  checked={form.terms_accepted}
+                  onChange={handleChange}
+                  style={styles.checkbox}
+                />
+                <span style={styles.checkboxLabel}>
+                  I have read and agree to the <Link to="/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>Terms of Use</Link> and <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.legalLink}>Privacy Policy</Link>.
+                </span>
+              </label>
+              {errors.terms_accepted ? <div style={styles.fieldError}>{errors.terms_accepted}</div> : null}
+
+              <label style={{ ...styles.checkboxRow, marginTop: 12 }}>
+                <input
+                  type="checkbox"
+                  name="marketing_opt_in"
+                  checked={form.marketing_opt_in}
+                  onChange={handleChange}
+                  style={styles.checkbox}
+                />
+                <span style={styles.checkboxLabel}>
+                  Yes, send me Creator updates, Creator Pro announcements, partnership opportunities, product news, and other emails from Menuply. I understand I can unsubscribe at any time.
+                </span>
+              </label>
             </div>
 
             <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
-              {submitting ? "Submitting..." : "Join the Creative Pros Network"}
+              {submitting ? "Submitting..." : "Apply to Creator Pro"}
             </button>
           </form>
         )}
