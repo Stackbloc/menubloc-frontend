@@ -4,16 +4,27 @@ import test from "node:test";
 
 const dinerSignup = fs.readFileSync("src/pages/consumer/DinerSignup.jsx", "utf8");
 const consumerSignup = fs.readFileSync("src/pages/consumer/ConsumerSignup.jsx", "utf8");
+const consumerLogin = fs.readFileSync("src/pages/consumer/ConsumerLogin.jsx", "utf8");
 const consumerContext = fs.readFileSync("src/context/ConsumerContext.jsx", "utf8");
 
-test("diner signup requires the Twilio modal before navigation", () => {
-  assert.match(dinerSignup, /<SmsAuthModal/);
-  assert.match(dinerSignup, /setSmsOpen\(true\)/);
-  assert.match(dinerSignup, /onSuccess=.*account\/welcome/);
+test("signup uses email and password with one-time phone verification", () => {
+  assert.match(consumerSignup, /type="email"/);
   assert.match(consumerSignup, /<SmsAuthModal/);
+  assert.match(consumerSignup, /requires_phone_verification/);
   assert.match(consumerSignup, /onSuccess=.*account\/welcome/);
-  assert.doesNotMatch(dinerSignup, /type="email"/);
-  assert.doesNotMatch(consumerSignup, /type="email"/);
+  assert.doesNotMatch(consumerSignup, /Sign up with phone number/);
+
+  assert.match(dinerSignup, /type="email"/);
+  assert.match(dinerSignup, /<SmsAuthModal/);
+  assert.match(dinerSignup, /requires_phone_verification/);
+  assert.match(dinerSignup, /onSuccess=.*account\/welcome/);
+  assert.doesNotMatch(dinerSignup, /Create account with phone number/);
+});
+
+test("login keeps phone verification only for unverified accounts", () => {
+  assert.match(consumerLogin, /phone_verification_required/);
+  assert.match(consumerLogin, /<SmsAuthModal/);
+  assert.doesNotMatch(consumerLogin, /Sign in with phone number/);
 });
 
 test("email signup does not load an authenticated session before verification", () => {

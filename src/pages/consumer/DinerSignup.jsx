@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../../components/BrandLogo.jsx";
 import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
 import SiteFooter from "../../components/SiteFooter.jsx";
+import { useConsumer } from "../../context/ConsumerContext.jsx";
+import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
+import { FormError, PasswordField } from "../../components/consumer/ConsumerAuthShared.jsx";
 
 const styles = {
   pageWrap: {
@@ -54,17 +57,6 @@ const styles = {
     boxSizing: "border-box",
     fontFamily: "inherit",
   },
-  inputError: { borderColor: "#FECACA" },
-  fieldError: { fontSize: 12, color: "#DC2626", marginTop: 5 },
-  errorBanner: {
-    background: "#FFF0F0",
-    border: "1px solid #FECACA",
-    borderRadius: 10,
-    padding: "12px 16px",
-    marginBottom: 16,
-    fontSize: 13,
-    color: "#DC2626",
-  },
   checkboxRow: { display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" },
   checkbox: { marginTop: 3, width: 16, height: 16, accentColor: "#4caf50", flexShrink: 0 },
   checkboxLabel: { fontSize: 12, color: "#374151", lineHeight: 1.55 },
@@ -86,7 +78,48 @@ const styles = {
 
 export default function DinerSignup() {
   const navigate = useNavigate();
+  const { signup } = useConsumer();
+  const redirectTo = useMemo(() => "/", []);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [legalConsent, setLegalConsent] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [smsOpen, setSmsOpen] = useState(false);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setFormError("");
+
+    if (!email.trim()) { setFormError("Email is required."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setFormError("Enter a valid email address."); return; }
+    if (!password) { setFormError("Password is required."); return; }
+    if (password.length < 8) { setFormError("Password must be at least 8 characters."); return; }
+    if (!legalConsent) {
+      setFormError("You must agree to the Terms of Use and Privacy Policy and consent to electronic communications.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await signup({
+        email: email.trim(),
+        password,
+        confirm_password: password,
+        ...buildLegalConsentPayload(),
+      });
+      if (result?.requires_phone_verification) {
+        setSmsOpen(true);
+        return;
+      }
+      navigate("/account/welcome", { replace: true, state: { redirectTo } });
+    } catch (error) {
+      setFormError(error.message || "Sign up failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div style={styles.pageWrap}>
@@ -106,16 +139,66 @@ export default function DinerSignup() {
           </p>
         </header>
 
-        <button type="button" onClick={() => setSmsOpen(true)} style={styles.submitButton}>
-          Create account with phone number
-        </button>
-        <p style={styles.signIn}>Already have an account? <Link to="/account/login" style={styles.legalLink}>Sign in</Link></p>
+        <section style={styles.section}>
+          <div style={styles.sectionTitle}>Create your account</div>
+          <form onSubmit={handleSubmit} noValidate>
+            <div style={styles.fieldGroup}>
+              <label htmlFor="diner-signup-email" style={styles.label}>Email</label>
+              <input
+                id="diner-signup-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={styles.input}
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+
+            <PasswordField
+              id="diner-signup-password"
+              label="Password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Min. 8 characters"
+            />
+
+            <label style={{ ...styles.checkboxRow, marginBottom: 14 }}>
+              <input
+                type="checkbox"
+                checked={legalConsent}
+                onChange={(event) => setLegalConsent(event.target.checked)}
+                style={styles.checkbox}
+              />
+              <span style={styles.checkboxLabel}>
+                I agree to the{" "}
+                <Link to="/terms" target="_blank" rel="noreferrer" style={styles.legalLink}>
+                  Terms of Use
+                </Link>
+                {" "}and{" "}
+                <Link to="/privacy" target="_blank" rel="noreferrer" style={styles.legalLink}>
+                  Privacy Policy
+                </Link>
+                {" "}and consent to receive electronic communications from Menuply regarding my account, orders, services, and important updates.
+              </span>
+            </label>
+
+            <FormError error={formError} />
+
+            <button type="submit" disabled={loading} style={styles.submitButton}>
+              {loading ? "Creating account…" : "Create account"}
+            </button>
+          </form>
+          <p style={styles.signIn}>Already have an account? <Link to="/account/login" style={styles.legalLink}>Sign in</Link></p>
+        </section>
       </main>
       <SiteFooter />
       <SmsAuthModal
         open={smsOpen}
         onClose={() => setSmsOpen(false)}
-        onSuccess={() => navigate("/account/welcome", { replace: true, state: { redirectTo: "/" } })}
+        onSuccess={() => navigate("/account/welcome", { replace: true, state: { redirectTo } })}
       />
     </div>
   );

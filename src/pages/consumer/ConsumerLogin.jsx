@@ -216,16 +216,6 @@ export default function ConsumerLogin() {
           onGoogleCredential={handleGoogle}
           onApplePayload={handleApple}
         />
-
-        <div style={{ textAlign: "center", marginTop: 16 }}>
-          <button
-            type="button"
-            onClick={() => setSmsOpen(true)}
-            style={{ background: "none", border: "none", color: "#1F4E3D", fontWeight: 800, fontSize: 14, cursor: "pointer", textDecoration: "underline" }}
-          >
-            {t("auth.signInWithPhone", "Sign in with phone number")}
-          </button>
-        </div>
       </AuthPageFrame>
 
       <SmsAuthModal
