@@ -37,7 +37,6 @@ import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { trackMenuItemInteraction } from "../lib/interactionTracking.js";
 import { trackBillboardClick } from "../lib/analytics.js";
 import { fetchSimilarItems, fetchCompareItems, fetchMenuItemIntelligence, fetchFranchiseLocation } from "../lib/api.js";
-import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "./menu/CompareItemsModal.jsx";
 import { getNormalizedMenuItemId, normalizeMenuItemIdentity } from "../lib/menuItemIdentity.js";
 import {
@@ -1017,19 +1016,7 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                           ) : null}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                          {siPrice ? (
-                            <span
-                              style={{
-                                fontSize: "14px",
-                                fontWeight: 800,
-                                whiteSpace: "nowrap",
-                                color: "#22C55E",
-                              }}
-                            >
-                              {siPrice}
-                            </span>
-                          ) : null}
-                          {isSimilarRowCompareEligible(si) ? (
+                          {siId ? (
                             <button
                               type="button"
                               onClick={() => onCompare(si)}
@@ -1047,6 +1034,18 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                             >
                               Compare
                             </button>
+                          ) : null}
+                          {siPrice ? (
+                            <span
+                              style={{
+                                fontSize: "14px",
+                                fontWeight: 800,
+                                whiteSpace: "nowrap",
+                                color: "#22C55E",
+                              }}
+                            >
+                              {siPrice}
+                            </span>
                           ) : null}
                         </div>
                       </div>
@@ -1547,15 +1546,13 @@ function ItemRow({
 
   function handleCompare(similarEntry) {
     const candidateId = getNormalizedMenuItemId(similarEntry);
-    if (!isSimilarRowCompareEligible(similarEntry) || !mid || !candidateId) return;
+    if (!mid || !candidateId) return;
     setCurrentCompareCandidate(similarEntry);
     setCompareData(null);
     setCompareError(null);
     setCompareLoading(true);
     setCompareOpen(true);
-    fetchCompareItems(mid, candidateId, geo?.lat ?? null, geo?.lng ?? null, {
-      skipEligibilityCheck: true,
-    })
+    fetchCompareItems(mid, candidateId, geo?.lat ?? null, geo?.lng ?? null)
       .then((data) => {
         if (!data?.baseItem && !data?.candidateItem) {
           setCompareLoading(false);

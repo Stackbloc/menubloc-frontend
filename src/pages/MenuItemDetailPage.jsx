@@ -1218,11 +1218,6 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
     navigate(buildSimilarLink({ ...candidateItem, restaurant_slug: slug, restaurant_id: candidateItem?.restaurant_id }));
   }
 
-  const firstComparableEntry = useMemo(
-    () => (Array.isArray(similar) ? similar.find((entry) => isSimilarRowCompareEligible(entry)) : null),
-    [similar]
-  );
-
   if (itemCount > 0) return null;
 
   return (
@@ -1310,42 +1305,6 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
             ))}
           </div>
         </SectionCard>
-      </div>
-
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-        <button
-          type="button"
-          onClick={() => sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-          style={{
-            border: "1px solid rgba(34,197,94,0.2)",
-            background: "rgba(34,197,94,0.09)",
-            color: "#22C55E",
-            borderRadius: 999,
-            padding: "10px 14px",
-            fontSize: 13,
-            fontWeight: 800,
-            cursor: "pointer",
-          }}
-        >
-          Show Similar
-        </button>
-        <button
-          type="button"
-          disabled={!firstComparableEntry}
-          onClick={() => firstComparableEntry && handleCompare(firstComparableEntry)}
-          style={{
-            border: "1px solid rgba(34,197,94,0.2)",
-            background: firstComparableEntry ? "rgba(34,197,94,0.09)" : "rgba(255,255,255,0.04)",
-            color: firstComparableEntry ? "#22C55E" : "#6B7280",
-            borderRadius: 999,
-            padding: "10px 14px",
-            fontSize: 13,
-            fontWeight: 800,
-            cursor: firstComparableEntry ? "pointer" : "not-allowed",
-          }}
-        >
-          Compare
-        </button>
       </div>
 
       <CompareItemsModal
