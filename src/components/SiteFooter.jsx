@@ -62,7 +62,7 @@ export default function SiteFooter() {
           }}
         >
           <Link to="/diner/signup" style={footerLinkStyle}>
-            Diner
+            Diners
           </Link>
 
           <Link to="/restaurants" style={footerLinkStyle}>

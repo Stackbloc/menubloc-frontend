@@ -85,6 +85,11 @@ export default function ConsumerLogin() {
 
       if (!res.ok) {
         const message = payload?.error || `Login failed (${res.status})`;
+        if (payload?.code === "phone_verification_required") {
+          setFormError(message);
+          setSmsOpen(true);
+          return;
+        }
         throw new Error(message);
       }
 
@@ -107,6 +112,9 @@ export default function ConsumerLogin() {
       navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error("GOOGLE LOGIN ERROR", error);
+      if (error?.payload?.code === "phone_verification_required") {
+        setSmsOpen(true);
+      }
       setSocialError(error.message || t("auth.googleSignInFailed", "Google sign-in failed. Please try again."));
     } finally {
       setLoading(false);
@@ -122,6 +130,9 @@ export default function ConsumerLogin() {
       navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error("APPLE LOGIN ERROR", error);
+      if (error?.payload?.code === "phone_verification_required") {
+        setSmsOpen(true);
+      }
       setSocialError(error.message || t("auth.appleSignInFailed", "Apple sign-in failed. Please try again."));
     } finally {
       setLoading(false);

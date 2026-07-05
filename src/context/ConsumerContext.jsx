@@ -120,10 +120,8 @@ export function ConsumerProvider({ children }) {
   }, [loadMe]);
 
   const signup = useCallback(async (signupData) => {
-    await signupConsumer(signupData);
-    const data = await loadMe();
-    return data;
-  }, [loadMe]);
+    return signupConsumer(signupData);
+  }, []);
 
   const logout = useCallback(async () => {
     await logoutConsumer().catch(() => {});
