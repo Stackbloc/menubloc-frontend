@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import SmsAuthModal from "../components/auth/SmsAuthModal.jsx";
@@ -218,6 +218,7 @@ function PaymentStep({ orderId, onSuccess }) {
 export default function CheckoutPage() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { consumer, isAuthenticated, authToast, clearAuthToast } = useConsumer();
   const { restaurant, items, clearCart, updateQuantity, removeItem } = useOrderCart();
@@ -309,8 +310,19 @@ export default function CheckoutPage() {
 
   const currentPreviewData = previewState.data;
   const canUseBmt = consumer?.is_phone_verified === true;
-  const bmtGateTitle = isAuthenticated ? "Verify your phone to send this order" : "Sign in by text to use Buy Me This";
-  const bmtGateButton = isAuthenticated ? "Verify by text" : "Sign in by text";
+  const bmtGateTitle = isAuthenticated ? "Verify your phone to send this order" : "Create an account to use Buy Me This";
+  const bmtGateButton = isAuthenticated ? "Verify by text" : "Create account or sign in";
+
+  function openBmtAuthGate() {
+    if (!isAuthenticated) {
+      const redirectTo = `${location.pathname}${location.search}`;
+      navigate(`/account/signup?redirect=${encodeURIComponent(redirectTo)}`, {
+        state: { redirectTo },
+      });
+      return;
+    }
+    setShowSmsAuthModal(true);
+  }
   const eligibleHybridItemCount = currentPreviewData?.hybrid_eligibility?.eligible_item_count || 0;
   const hybridNegotiationEnabled =
     currentPreviewData?.hybrid_eligibility?.negotiation_enabled ??
@@ -565,7 +577,7 @@ export default function CheckoutPage() {
     setSubmitError("");
 
     if (!canUseBmt) {
-      setShowSmsAuthModal(true);
+      openBmtAuthGate();
       return;
     }
 
@@ -1033,7 +1045,7 @@ export default function CheckoutPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setShowSmsAuthModal(true)}
+                        onClick={openBmtAuthGate}
                         style={{
                           marginTop: 6,
                           border: "none",
@@ -1445,6 +1457,7 @@ export default function CheckoutPage() {
       <SmsAuthModal
         open={showSmsAuthModal}
         onClose={() => setShowSmsAuthModal(false)}
+        purpose="checkout"
         onSuccess={() => {
           setShowSmsAuthModal(false);
           setShowBmtConfirm(true);

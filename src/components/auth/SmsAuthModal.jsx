@@ -4,9 +4,10 @@ import {
   formatCodeSentNotice,
   resolveSmsAuthErrorMessage,
   SMS_AUTH_MESSAGES,
+  SMS_AUTH_MODAL_COPY,
 } from "../../lib/smsAuthMessages.js";
 
-export default function SmsAuthModal({ open, onClose, onSuccess }) {
+export default function SmsAuthModal({ open, onClose, onSuccess, purpose = "signup" }) {
   const { sendSmsCode, verifySmsCode } = useConsumer();
   const [step, setStep] = useState("phone");
   const [phoneInput, setPhoneInput] = useState("");
@@ -41,6 +42,8 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
   }, [resendTimer]);
 
   if (!open) return null;
+
+  const copy = SMS_AUTH_MODAL_COPY[purpose] || SMS_AUTH_MODAL_COPY.signup;
 
   function applySendResult(result) {
     const canonicalPhone = result?.phone_number || verifiedPhone || phoneInput;
@@ -129,11 +132,11 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Sign in by text"
+        aria-label={copy.title}
       >
-        <div style={{ fontSize: 20, fontWeight: 900, color: "#11211a" }}>Verify your phone to continue</div>
+        <div style={{ fontSize: 20, fontWeight: 900, color: "#11211a" }}>{copy.title}</div>
         <div style={{ marginTop: 8, fontSize: 13, color: "#667085", lineHeight: 1.6 }}>
-          We'll text you a one-time code. No password needed.
+          {copy.body}
         </div>
         {expirationHint ? (
           <div style={{ marginTop: 8, fontSize: 12, color: "#667085", fontWeight: 700 }}>
@@ -144,9 +147,12 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
         {step === "phone" ? (
           <form onSubmit={handleSendCode} style={{ marginTop: 18, display: "grid", gap: 12 }}>
             <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel-national"
               value={phoneInput}
               onChange={(event) => setPhoneInput(event.target.value)}
-              placeholder="+1 213 555 1234"
+              placeholder="(213) 555-1234"
               style={{
                 width: "100%",
                 boxSizing: "border-box",

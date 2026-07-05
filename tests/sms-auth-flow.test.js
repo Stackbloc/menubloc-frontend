@@ -8,12 +8,14 @@ const consumerContext = fs.readFileSync("src/context/ConsumerContext.jsx", "utf8
 
 test("SmsAuthModal uses canonical phone from send response for verify", () => {
   assert.match(smsModal, /setVerifiedPhone\(canonicalPhone\)/);
-  assert.match(smsModal, /verifySmsCode\(verifiedPhone, code\)/);
+  assert.match(smsModal, /verifySmsCode\(verifiedPhone, code, verificationSid/);
   assert.match(smsModal, /verifiedPhone \|\| phoneInput/);
+  assert.match(smsModal, /purpose = "signup"/);
+  assert.doesNotMatch(smsModal, /No password needed/);
 });
 
 test("SmsAuthModal does not call onSuccess before backend verify resolves", () => {
-  assert.match(smsModal, /await verifySmsCode\(verifiedPhone, code\)/);
+  assert.match(smsModal, /await verifySmsCode\(verifiedPhone, code, verificationSid/);
   assert.doesNotMatch(smsModal, /onSuccess\?\.\(\);\s*await verifySmsCode/);
 });
 
@@ -44,4 +46,11 @@ test("resolveSmsAuthErrorMessage maps HTTP status when message missing", () => {
   assert.equal(resolveSmsAuthErrorMessage({ status: 404 }), SMS_AUTH_MESSAGES.codeExpired);
   assert.equal(resolveSmsAuthErrorMessage({ status: 429 }), SMS_AUTH_MESSAGES.tooManyAttempts);
   assert.equal(resolveSmsAuthErrorMessage({ status: 400 }), SMS_AUTH_MESSAGES.invalidCode);
+});
+
+test("resolveSmsAuthErrorMessage maps missing verification session clearly", () => {
+  assert.equal(
+    resolveSmsAuthErrorMessage({ payload: { code: "verification_session_required" } }),
+    SMS_AUTH_MESSAGES.verificationSessionRequired
+  );
 });

@@ -221,6 +221,7 @@ export default function ConsumerLogin() {
       <SmsAuthModal
         open={smsOpen}
         onClose={() => setSmsOpen(false)}
+        purpose="login"
         onSuccess={() => navigate(redirectTo, { replace: true })}
       />
       <BottomNav />

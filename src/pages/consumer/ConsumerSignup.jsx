@@ -167,6 +167,7 @@ export default function ConsumerSignup() {
       <SmsAuthModal
         open={smsOpen}
         onClose={() => setSmsOpen(false)}
+        purpose="signup"
         onSuccess={() => navigate("/account/welcome", { replace: true, state: { redirectTo } })}
       />
     </>
