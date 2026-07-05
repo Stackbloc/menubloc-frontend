@@ -11,6 +11,7 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
   const [step, setStep] = useState("phone");
   const [phoneInput, setPhoneInput] = useState("");
   const [verifiedPhone, setVerifiedPhone] = useState("");
+  const [verificationSid, setVerificationSid] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -23,6 +24,7 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
       setStep("phone");
       setPhoneInput("");
       setVerifiedPhone("");
+      setVerificationSid("");
       setCode("");
       setLoading(false);
       setError("");
@@ -43,6 +45,7 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
   function applySendResult(result) {
     const canonicalPhone = result?.phone_number || verifiedPhone || phoneInput;
     setVerifiedPhone(canonicalPhone);
+    setVerificationSid(result?.verification_sid || "");
     setStep("code");
     setNotice(
       formatCodeSentNotice({
@@ -88,7 +91,7 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
     setError("");
 
     try {
-      await verifySmsCode(verifiedPhone, code);
+      await verifySmsCode(verifiedPhone, code, verificationSid || null);
       onSuccess?.();
       onClose?.();
     } catch (err) {

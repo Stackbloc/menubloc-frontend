@@ -132,8 +132,8 @@ export function ConsumerProvider({ children }) {
     return sendConsumerSmsCode(phoneNumber);
   }, []);
 
-  const verifySmsCode = useCallback(async (phoneNumber, code) => {
-    const verified = await verifyConsumerSmsCode(phoneNumber, code);
+  const verifySmsCode = useCallback(async (phoneNumber, code, verificationSid = null) => {
+    const verified = await verifyConsumerSmsCode(phoneNumber, code, verificationSid);
     if (verified?.consumer) {
       applySession(verified);
       if (

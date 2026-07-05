@@ -51,7 +51,7 @@ export const validateResetToken    = (token)               => get(`/api/consumer
 export const resetPassword         = (token, password)     => post("/api/consumer-auth/reset-password", { token, password });
 export const changePassword        = (currentPassword, newPassword) => post("/api/consumer-auth/change-password", { current_password: currentPassword, new_password: newPassword });
 export const sendSmsCode           = (phone_number)        => post("/api/consumer-auth/sms/send",   { phone_number });
-export const verifySmsCode         = (phone_number, code)  => post("/api/consumer-auth/sms/verify", { phone_number, code });
+export const verifySmsCode         = (phone_number, code, verification_sid = null)  => post("/api/consumer-auth/sms/verify", { phone_number, code, verification_sid });
 
 // ── Profile ───────────────────────────────────────────────────────────────
 export const getConsumerProfile    = ()     => get("/api/consumer/profile");
