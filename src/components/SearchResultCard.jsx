@@ -40,6 +40,17 @@ import { fetchSimilarItems, fetchCompareItems, fetchMenuItemIntelligence, fetchF
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import CompareItemsModal from "./menu/CompareItemsModal.jsx";
 import { getNormalizedMenuItemId, normalizeMenuItemIdentity } from "../lib/menuItemIdentity.js";
+import {
+  SEARCH_CARD_NO_SIMILAR_TEXT,
+  SIMILAR_INITIAL_LIMIT,
+  SIMILAR_PAGE_SIZE,
+  buildSimilarStateFromResponse,
+  cacheSimilarState,
+  getCachedSimilarState,
+  getSimilarMoreButtonLabel,
+  isShowSimilarChipVisible,
+  shouldShowSimilarMoreButton,
+} from "../lib/searchCardSimilar.js";
 
 import {
   getQualitativeLabel,
@@ -48,12 +59,10 @@ import {
 } from "../lib/nutritionInsights.js";
 
 const MATCH_LABEL = "Match:";
-const SEARCH_CARD_NO_SIMILAR_TEXT = "No similar items found yet.";
 const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
   "vegan", "vegetarian", "gluten_free", "dairy_free",
   "diabetic_friendly", "low_fat", "low_sodium", "keto",
 ]);
-const searchCardSimilarCache = new Map();
 const searchCardIntelligenceCache = new Map();
 const searchCardFranchiseLocationCache = new Map();
 
@@ -868,7 +877,7 @@ function insightsPanelHasRows(chips) {
 
 /* ---- Detail panel content ---- */
 
-function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels, intelligenceLoading = false }) {
+function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadMoreSimilar, labels, intelligenceLoading = false }) {
   const chips = resolveChips(row);
   const nutChip = chips?.nutrition_chip || {};
   const indulgencePresentation = resolveIndulgencePresentation({ chips });
@@ -934,6 +943,8 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels,
 
     const groups = groupSimilarResultsByRestaurant(similarState?.items || []);
     const helperLabel = buildSimilarItemsLabel(similarState?.meta || null);
+    const hasMoreSimilar = shouldShowSimilarMoreButton(similarState?.pagination);
+    const loadingMoreSimilar = similarState?.status === "loading_more";
     return (
       <div style={wrap}>
         {helperLabel ? (
@@ -1042,6 +1053,28 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, labels,
                 </div>
               </div>
             ))}
+            {hasMoreSimilar ? (
+              <button
+                type="button"
+                onClick={onLoadMoreSimilar}
+                disabled={loadingMoreSimilar}
+                style={{
+                  marginTop: 4,
+                  alignSelf: "flex-start",
+                  background: "rgba(34,197,94,0.09)",
+                  border: "1px solid rgba(34,197,94,0.2)",
+                  borderRadius: 999,
+                  padding: "8px 14px",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: "#22C55E",
+                  cursor: loadingMoreSimilar ? "wait" : "pointer",
+                  opacity: loadingMoreSimilar ? 0.7 : 1,
+                }}
+              >
+                {getSimilarMoreButtonLabel({ loadingMore: loadingMoreSimilar, pageSize: SIMILAR_PAGE_SIZE })}
+              </button>
+            ) : null}
           </div>
         ) : (
           <span style={muted}>{labels.noSimilar}</span>
@@ -1212,6 +1245,7 @@ function ItemRow({
     status: "idle",
     items: [],
     meta: null,
+    pagination: null,
   });
   const similarRequestRef = useRef(0);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -1356,7 +1390,7 @@ function ItemRow({
   const hasNutritionOrInsights = hasNut || hasIns;
   const intelligenceLoading = intelligenceState.status === "loading";
   // Show Similar chip is always available; similar pool is fetched only when the user opens the tab.
-  const showSimilarChip = Boolean(mid);
+  const showSimilarChip = isShowSimilarChipVisible(mid);
   const similarCacheKey = useMemo(() => {
     if (!mid) return "";
     return `${mid}::${similarRequest?.cacheKey || ""}`;
@@ -1364,7 +1398,7 @@ function ItemRow({
 
   useEffect(() => {
     setOpenTab(null);
-    setSimilarState({ status: "idle", items: [], meta: null });
+    setSimilarState({ status: "idle", items: [], meta: null, pagination: null });
     setIntelligenceState({ status: "idle", data: null });
   }, [mid]);
 
@@ -1442,34 +1476,61 @@ function ItemRow({
 
   async function loadSimilarForRow() {
     if (!mid || !similarCacheKey) return;
-    if (searchCardSimilarCache.has(similarCacheKey)) {
-      setSimilarState(searchCardSimilarCache.get(similarCacheKey));
+    const cached = getCachedSimilarState(similarCacheKey);
+    if (cached) {
+      setSimilarState(cached);
       return;
     }
 
     const requestId = similarRequestRef.current + 1;
     similarRequestRef.current = requestId;
-    setSimilarState({ status: "loading", items: [], meta: null });
+    setSimilarState({ status: "loading", items: [], meta: null, pagination: null });
 
     try {
       const json = await fetchSimilarItems(mid, {
         lat: similarRequest?.lat ?? null,
         lng: similarRequest?.lng ?? null,
         filters: similarRequest?.filters || {},
+        limit: SIMILAR_INITIAL_LIMIT,
+        offset: 0,
       });
       if (similarRequestRef.current !== requestId) return;
-      const nextState = {
-        status: "ready",
-        items: Array.isArray(json?.similar) ? json.similar : [],
-        meta: json?.meta || null,
-      };
-      searchCardSimilarCache.set(similarCacheKey, nextState);
+      const nextState = buildSimilarStateFromResponse(json);
+      cacheSimilarState(similarCacheKey, nextState);
       setSimilarState(nextState);
     } catch {
       if (similarRequestRef.current !== requestId) return;
-      const nextState = { status: "failed", items: [], meta: null };
-      searchCardSimilarCache.set(similarCacheKey, nextState);
+      const nextState = { status: "failed", items: [], meta: null, pagination: null };
       setSimilarState(nextState);
+    }
+  }
+
+  async function loadMoreSimilarForRow() {
+    if (!mid || !similarCacheKey) return;
+    if (similarState.status === "loading" || similarState.status === "loading_more") return;
+    if (similarState.pagination?.has_more !== true) return;
+
+    const requestId = similarRequestRef.current + 1;
+    similarRequestRef.current = requestId;
+    const existingItems = similarState.items || [];
+    const nextOffset = existingItems.length;
+    setSimilarState((prev) => ({ ...prev, status: "loading_more" }));
+
+    try {
+      const json = await fetchSimilarItems(mid, {
+        lat: similarRequest?.lat ?? null,
+        lng: similarRequest?.lng ?? null,
+        filters: similarRequest?.filters || {},
+        limit: SIMILAR_PAGE_SIZE,
+        offset: nextOffset,
+      });
+      if (similarRequestRef.current !== requestId) return;
+      const nextState = buildSimilarStateFromResponse(json, { appendItems: existingItems });
+      cacheSimilarState(similarCacheKey, nextState);
+      setSimilarState(nextState);
+    } catch {
+      if (similarRequestRef.current !== requestId) return;
+      setSimilarState((prev) => ({ ...prev, status: "ready" }));
     }
   }
 
@@ -1774,6 +1835,7 @@ function ItemRow({
           similarState={similarState}
           onFindSimilar={() => toggle("similar")}
           onCompare={handleCompare}
+          onLoadMoreSimilar={() => { void loadMoreSimilarForRow(); }}
           labels={labels}
         />
       )}

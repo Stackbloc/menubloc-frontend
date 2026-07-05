@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "b4bffb40932e1d65e4a4d5f77f2704b73e69cb96",
-  "gitShortSha": "b4bffb4",
+  "gitSha": "ce75b372b1f7539d333e962b4a6e32b705931597",
+  "gitShortSha": "ce75b37",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-04T12:54:33.116Z",
+  "buildTime": "2026-07-05T21:03:34.324Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(nav): place Marketplace second in footer after Restaurants."
+  "commitMessage": "Add frontend API base URL guardrail doc to frontend repo."
 }
