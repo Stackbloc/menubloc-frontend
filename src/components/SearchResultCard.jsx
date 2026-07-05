@@ -49,6 +49,7 @@ import {
   getCachedSimilarState,
   getSimilarMoreButtonLabel,
   isShowSimilarChipVisible,
+  mergeSimilarItems,
   shouldShowSimilarMoreButton,
 } from "../lib/searchCardSimilar.js";
 
@@ -261,8 +262,9 @@ function buildSearchCardSimilarFilters(search) {
 }
 
 function groupSimilarResultsByRestaurant(items) {
+  const deduped = mergeSimilarItems([], items, (row) => row?.menu_item_id || row?.menuItemId || row?.id);
   const grouped = new Map();
-  for (const item of Array.isArray(items) ? items : []) {
+  for (const item of Array.isArray(deduped) ? deduped : []) {
     const restaurantId = asStr(item?.restaurant_id);
     const restaurantName = asStr(item?.restaurant_name) || "Nearby restaurant";
     const key = restaurantId || restaurantName;

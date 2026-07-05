@@ -15,22 +15,34 @@ export function cacheSimilarState(cacheKey, state) {
   searchCardSimilarCache.set(cacheKey, state);
 }
 
+import { canonicalSimilarItemKey } from "./similarCanonicalDedupe.js";
+
+export { canonicalSimilarItemKey };
+
 export function mergeSimilarItems(existingItems, incomingItems, getItemId) {
-  const seen = new Set((existingItems || []).map((item) => getItemId(item)).filter(Boolean));
-  const merged = [...(existingItems || [])];
-  for (const item of incomingItems || []) {
+  const seenIds = new Set();
+  const seenCanonical = new Set();
+  const merged = [];
+
+  const tryAdd = (item) => {
     const itemId = getItemId(item);
-    if (!itemId || seen.has(itemId)) continue;
-    seen.add(itemId);
+    const canonicalKey = canonicalSimilarItemKey(item);
+    if (itemId && seenIds.has(itemId)) return;
+    if (canonicalKey && seenCanonical.has(canonicalKey)) return;
+    if (itemId) seenIds.add(itemId);
+    if (canonicalKey) seenCanonical.add(canonicalKey);
     merged.push(item);
-  }
+  };
+
+  for (const item of existingItems || []) tryAdd(item);
+  for (const item of incomingItems || []) tryAdd(item);
   return merged;
 }
 
 export function buildSimilarStateFromResponse(json, { appendItems = [] } = {}) {
   const batch = Array.isArray(json?.similar) ? json.similar : [];
   const resolveId = (row) => row?.menu_item_id || row?.menuItemId || row?.id || null;
-  const items = appendItems.length ? mergeSimilarItems(appendItems, batch, resolveId) : batch;
+  const items = mergeSimilarItems(appendItems, batch, resolveId);
   return {
     status: "ready",
     items,

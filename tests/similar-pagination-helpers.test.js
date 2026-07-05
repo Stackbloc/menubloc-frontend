@@ -62,6 +62,47 @@ test("mergeSimilarItems appends without duplicates and preserves order", () => {
   assert.deepEqual(merged.map((row) => row.id), [1, 2, 3]);
 });
 
+test("mergeSimilarItems collapses same franchise dish at different locations", () => {
+  const existing = [
+    { menu_item_id: "101", chain_menu_item_id: 55, name: "Big Mac" },
+  ];
+  const incoming = [
+    { menu_item_id: "202", chain_menu_item_id: 55, name: "Big Mac" },
+    { menu_item_id: "303", chain_menu_item_id: 77, name: "Quarter Pounder" },
+  ];
+  const merged = mergeSimilarItems(existing, incoming, getItemId);
+  assert.deepEqual(merged.map(getItemId), ["101", "303"]);
+});
+
+test("mergeSimilarItems collapses fries salads and sandwiches by canonical name", () => {
+  const merged = mergeSimilarItems(
+    [],
+    [
+      { menu_item_id: "1", name: "Medium French Fries" },
+      { menu_item_id: "2", name: "Side of Fries" },
+      { menu_item_id: "3", name: "Caesar Salad" },
+      { menu_item_id: "4", name: "Classic Caesar Salad" },
+      { menu_item_id: "5", name: "Turkey Sandwich" },
+      { menu_item_id: "6", name: "Turkey Sandwich" },
+    ],
+    getItemId
+  );
+  assert.deepEqual(merged.map(getItemId), ["1", "3", "5"]);
+});
+
+test("first similar page dedupes backend duplicates", () => {
+  const state = buildSimilarStateFromResponse({
+    ok: true,
+    similar: [
+      { menu_item_id: "a", name: "French Fries" },
+      { menu_item_id: "b", name: "Medium Fries" },
+      { menu_item_id: "c", name: "Club Sandwich" },
+      { menu_item_id: "d", name: "Club Sandwich" },
+    ],
+  });
+  assert.deepEqual(state.items.map(getItemId), ["a", "c"]);
+});
+
 test("load-more merge does not duplicate cards after More", () => {
   const firstPage = buildSimilarStateFromResponse({
     ok: true,
