@@ -224,7 +224,7 @@ export default function PublicMenuItemCard({
     (themeSettings.intelligence_density === "standard" ||
       themeSettings.intelligence_density === "detailed" ||
       themeSettings.intelligence_density === "functional");
-  const deal = it?.id != null ? dealMap.get(it.id) : undefined;
+  const deal = normalizedItemId != null ? dealMap.get(normalizedItemId) : undefined;
   const hasDeal = !!deal;
   const itemIsOrderable = isItemOrderable(it, getConsumerDisplayPrice);
   const dishShareData = canNavigate
@@ -237,10 +237,10 @@ export default function PublicMenuItemCard({
           state: data?.state || null,
           logoUrl: data?.logo_url || null,
         },
-        menuItem: { ...it, id: it.id, name },
+        menuItem: { ...it, id: normalizedItemId, name },
       })
     : null;
-  const cartState = getCartItemStateForItem(activeCartItems, it?.id);
+  const cartState = getCartItemStateForItem(activeCartItems, normalizedItemId);
   const inCartCount = cartState.totalQuantity;
   const isTablet = useIsTabletRange();
   const ed = ED_PALETTES[editorialColorScheme] || ED_PALETTES.light;
@@ -305,12 +305,12 @@ export default function PublicMenuItemCard({
           if (itemHasRequiredModifiers(it)) openSheet();
           else {
             commitMenuItemToBasket(it, name, desc);
-            setAddedConfirmation({ itemId: it.id, name });
+            setAddedConfirmation({ itemId: normalizedItemId, name });
           }
         }
       }}
       onMouseEnter={() => {
-        if (inCartCount > 0) setHoveredItemId(it.id);
+        if (inCartCount > 0) setHoveredItemId(normalizedItemId);
       }}
       onMouseLeave={() => setHoveredItemId(null)}
       onClick={() => {
@@ -322,7 +322,7 @@ export default function PublicMenuItemCard({
           openSheet();
         } else {
           commitMenuItemToBasket(it, name, desc);
-          setAddedConfirmation({ itemId: it.id, name });
+          setAddedConfirmation({ itemId: normalizedItemId, name });
         }
       }}
       style={{
@@ -411,7 +411,7 @@ export default function PublicMenuItemCard({
                 style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0, paddingRight: MENU_ROW_ACTIONS_INSET_RIGHT }}
               >
                 {canNavigate ? (
-                  <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
+                  <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                 ) : null}
                 {dishShareData ? (
                   <ShareButton
@@ -422,7 +422,7 @@ export default function PublicMenuItemCard({
                     analyticsContext={{
                       restaurantId: currentRestaurantId,
                       restaurantSlug: data?.slug || null,
-                      menuItemId: it.id,
+                      menuItemId: normalizedItemId,
                       menuItemName: name,
                       pageType: "public_menu",
                       shareTarget: "dish",
@@ -468,7 +468,7 @@ export default function PublicMenuItemCard({
                 style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0, paddingRight: MENU_ROW_ACTIONS_INSET_RIGHT }}
               >
                 {canNavigate ? (
-                  <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
+                  <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                 ) : null}
                 {dishShareData ? (
                   <ShareButton
@@ -479,7 +479,7 @@ export default function PublicMenuItemCard({
                     analyticsContext={{
                       restaurantId: currentRestaurantId,
                       restaurantSlug: data?.slug || null,
-                      menuItemId: it.id,
+                      menuItemId: normalizedItemId,
                       menuItemName: name,
                       pageType: "public_menu",
                       shareTarget: "dish",
@@ -513,7 +513,7 @@ export default function PublicMenuItemCard({
                 style={{ display: "flex", alignItems: "center", gap: MENU_ROW_ICON_GAP, flexShrink: 0, paddingRight: MENU_ROW_ACTIONS_INSET_RIGHT }}
               >
                 {canNavigate ? (
-                  <LikeMenuItemButton menuItemId={it.id} tone="ghost" size="row" />
+                  <LikeMenuItemButton menuItemId={normalizedItemId} tone="ghost" size="row" />
                 ) : null}
                 {dishShareData ? (
                   <ShareButton
@@ -524,7 +524,7 @@ export default function PublicMenuItemCard({
                     analyticsContext={{
                       restaurantId: currentRestaurantId,
                       restaurantSlug: data?.slug || null,
-                      menuItemId: it.id,
+                      menuItemId: normalizedItemId,
                       menuItemName: name,
                       pageType: "public_menu",
                       shareTarget: "dish",
@@ -541,7 +541,7 @@ export default function PublicMenuItemCard({
           {(editorialRefresh ? visibleBadges.length > 0 : (hasDeal || it?.is_vegan || it?.is_gluten_free || !itemIsOrderable)) || inCartCount > 0 ? (
             <div style={{ display: "flex", alignItems: "center", gap: editorialRefresh ? 8 : 6, flexWrap: "wrap", marginTop: 6 }}>
               {inCartCount > 0 ? (
-                hoveredItemId === it.id ? (
+                hoveredItemId === normalizedItemId ? (
                   <button
                     type="button"
                     onClick={(e) => {

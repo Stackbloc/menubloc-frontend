@@ -406,7 +406,10 @@ export default function CatalogMenuRenderer({
     return addMenuItem({
       restaurant: cartRestaurant,
       item: {
-        menuItemId: item?.id,
+        menu_item_id: item?.menu_item_id,
+        restaurant_id: item?.restaurant_id,
+        menu_id: item?.menu_id,
+        product_key: item?.product_key ?? null,
         name: itemName,
         description: itemDescription,
         basePriceCents: getConsumerDisplayPrice(item) ?? 0,

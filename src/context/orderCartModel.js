@@ -1,4 +1,5 @@
 import { getBaseMenuPrice, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
+import { requireMenuItemIdentity } from "../lib/menuItemIdentity.js";
 
 function toInteger(value, fallback = 0) {
   const normalized = Number(value);
@@ -187,6 +188,7 @@ export function buildLineIdentity(line) {
 }
 
 export function createCartLine({ restaurant, item }) {
+  const identity = requireMenuItemIdentity(item, { menuContext: item?.menu_id != null });
   const normalizedRestaurantId = toInteger(
     restaurant?.restaurantId ?? restaurant?.restaurant_id,
     0
@@ -204,7 +206,7 @@ export function createCartLine({ restaurant, item }) {
         ? crypto.randomUUID()
         : `line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     restaurantId: normalizedRestaurantId,
-    menuItemId: item?.menuItemId,
+    menuItemId: identity.menuItemId,
     name: item?.name,
     description: item?.description,
     basePriceCents,

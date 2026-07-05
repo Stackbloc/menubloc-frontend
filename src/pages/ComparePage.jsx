@@ -83,7 +83,7 @@ export default function ComparePage() {
           if (baseId) navigate(`/menu-items/${baseId}?from=search`);
         }}
         onSwap={(candidateItem) => {
-          const id = candidateItem?.id;
+          const id = candidateItem?.menu_item_id;
           if (id) navigate(`/menu-items/${id}?from=search`);
         }}
         baseLabel="Base Item"

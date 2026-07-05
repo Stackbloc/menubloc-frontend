@@ -144,11 +144,11 @@ function PremiumMenuItem({
       item?.notes
   );
   const price = fmtMoney(item);
-  const canNavigate = item?.id != null;
-  const hasDeal = canNavigate ? !!dealMap.get(item.id) : false;
+  const canNavigate = item?.menu_item_id != null;
+  const hasDeal = canNavigate ? !!dealMap.get(item.menu_item_id) : false;
   const orderable = isItemOrderable(item, getConsumerDisplayPrice);
   const matchingCartLines = (Array.isArray(activeCartItems) ? activeCartItems : []).filter(
-    (line) => Number(line?.menuItemId) === Number(item?.id)
+    (line) => Number(line?.menuItemId) === Number(item?.menu_item_id)
   );
   const inCartCount = matchingCartLines.reduce((sum, line) => sum + Number(line?.quantity || 0), 0);
   const indulgencePresentation = resolveIndulgencePresentation({ chips: item?.chips });
@@ -170,7 +170,7 @@ function PremiumMenuItem({
           name: restaurantName,
           logoUrl: data?.logo_url || null,
         },
-        menuItem: { ...item, id: item.id, name },
+        menuItem: { ...item, menu_item_id: item.menu_item_id, name },
       })
     : null;
 
@@ -196,7 +196,7 @@ function PremiumMenuItem({
       return;
     }
     commitMenuItemToBasket(item, name, desc);
-    setAddedConfirmation({ itemId: item.id, name });
+    setAddedConfirmation({ itemId: item.menu_item_id, name });
   }
 
   return (
@@ -553,7 +553,7 @@ export default function PremiumBistroMenuTemplate(ctx) {
                   <div style={{ display: "grid", gap: 0 }}>
                     {items.map((item, iIdx) => (
                       <PremiumMenuItem
-                        key={String(item?.id ?? `${sIdx}-${iIdx}`)}
+                        key={String(item?.menu_item_id ?? `${sIdx}-${iIdx}`)}
                         item={item}
                         ctx={ctx}
                         accent={accent}

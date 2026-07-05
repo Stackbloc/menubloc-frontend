@@ -24,8 +24,8 @@ function SectionItem({ item, ctx, accent }) {
   ).trim();
   const price = fmtMoney(item);
   const imageUrl = getMenuItemImageUrl(item);
-  const canNavigate = item?.id != null;
-  const deal = canNavigate ? dealMap.get(item.id) : null;
+  const canNavigate = item?.menu_item_id != null;
+  const deal = canNavigate ? dealMap.get(item.menu_item_id) : null;
 
   function openItem() {
     if (!canNavigate) return;
@@ -215,7 +215,7 @@ export default function RusticItalianMenuTemplate(ctx) {
                     <div style={{ display: "grid", gap: 0 }}>
                       {items.map((item) => (
                         <SectionItem
-                          key={String(item?.id || item?.name)}
+                          key={String(item?.menu_item_id || item?.name)}
                           item={item}
                           ctx={{ ...ctx, dealMap, setItemSheet, fmtMoney, showImage: showItemImages }}
                           accent={accent}

@@ -110,7 +110,7 @@ function normalizeResultItem(raw) {
     raw?.item_photo_url || raw?.itemPhotoUrl || raw?.photo_url || raw?.image_url || null;
 
   return {
-    id: raw?.menu_item_id || raw?.id || null,
+    menu_item_id: raw?.menu_item_id || null,
     name: raw?.name || raw?.item_name || raw?.title || "Untitled Item",
     description: raw?.description || raw?.notes || raw?.snippet || "",
     translations: raw?.translations || null,
@@ -1014,7 +1014,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t })
     setCompareError(null);
     setCompareLoading(true);
     setCompareOpen(true);
-    fetchCompareItems(itemId, similarEntry.id, geoLat || null, geoLng || null, {
+    fetchCompareItems(itemId, similarEntry.menu_item_id, geoLat || null, geoLng || null, {
       skipEligibilityCheck: true,
     })
       .then((data) => { setCompareData(data); setCompareLoading(false); })
@@ -1024,7 +1024,7 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t })
   function handleSwap(candidateItem) {
     setCompareOpen(false);
     const slug = candidateItem?.restaurant_slug || null;
-    const id = candidateItem?.id;
+    const id = candidateItem?.menu_item_id;
     if (!id) return;
     const geoSuffix = geoLat && geoLng ? `?lat=${geoLat}&lng=${geoLng}` : "";
     navigate(slug ? `/restaurants/${slug}/menu-item-info/${id}${geoSuffix}` : `/menu-item-info/${id}${geoSuffix}`);
@@ -1048,14 +1048,14 @@ function ExploreSimilarDishes({ itemId, geoLat, geoLng, activeSearchParams, t })
             </div>
           )}
           {similar.map((entry) => (
-            <div key={entry.id} style={{ borderRadius: 18, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: 16 }}>
+            <div key={entry.menu_item_id} style={{ borderRadius: 18, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
                 {entry.restaurant_name}
                 {entry.distance_miles != null && <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>}
               </div>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
                 <Link
-                  to={`${getCanonicalMenuItemPath({ restaurant: { slug: entry.restaurant_slug || null, id: entry.restaurant_id || null }, menuItem: { id: entry.id } })}${searchSuffix}`}
+                  to={`${getCanonicalMenuItemPath({ restaurant: { slug: entry.restaurant_slug || null, id: entry.restaurant_id || null }, menuItem: { id: entry.menu_item_id } })}${searchSuffix}`}
                   style={{ textDecoration: "none", color: "#22C55E", fontWeight: 800, fontSize: 15, lineHeight: 1.35, flex: "1 1 0", minWidth: 0 }}
                 >
                   {formatMenuItemName(entry.name)}
@@ -1124,7 +1124,7 @@ export default function MenuItemInfoPage() {
       restaurant: item.restaurant,
       menuItem: {
         ...item,
-        id: item.id,
+        menu_item_id: item.menu_item_id,
         name: displayItemName,
       },
     });
@@ -1294,13 +1294,13 @@ export default function MenuItemInfoPage() {
                   {displayItemName}
                 </h1>
                 <MenuItemDetailActionRail
-                  menuItemId={item.id}
+                  menuItemId={item.menu_item_id}
                   itemName={displayItemName}
                   shareData={shareData}
                   shareAnalyticsContext={{
                     restaurantId: item.restaurant.id,
                     restaurantSlug: item.restaurant.slug || null,
-                    menuItemId: item.id,
+                    menuItemId: item.menu_item_id,
                     menuItemName: displayItemName,
                     pageType: "menu_item_info",
                     shareTarget: "dish",
@@ -1382,7 +1382,7 @@ export default function MenuItemInfoPage() {
       )}
 
       <ExploreSimilarDishes
-        itemId={item.id}
+        itemId={item.menu_item_id}
         geoLat={geoLat}
         geoLng={geoLng}
         activeSearchParams={searchParams}

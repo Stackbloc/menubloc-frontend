@@ -475,7 +475,7 @@ function ItemDetailSheet({
   );
   const hasRequiredOptions = itemHasRequiredModifiers(item);
   const canAddToOrder = isItemOrderable(item);
-  const cartState = getCartItemState(activeCartItems, item?.id);
+  const cartState = getCartItemState(activeCartItems, item?.menu_item_id);
   const hasSelected = hasRequiredOptions ? cartState.totalQuantity > 0 : cartState.simpleQuantity > 0;
   const selectedQty = hasRequiredOptions ? cartState.totalQuantity : cartState.simpleQuantity;
 
@@ -522,7 +522,7 @@ function ItemDetailSheet({
                 {item?.is_gluten_free && <Badge label="GF" bg="#1c1a0a" color="#FCD34D" border="1px solid #44400a" />}
               </div>
             )}
-            {item?.id && <TasteIndexBadge menuItemId={item.id} accent={accent} />}
+            {item?.menu_item_id && <TasteIndexBadge menuItemId={item.menu_item_id} accent={accent} />}
           </div>
 
           {/* Price */}
@@ -557,7 +557,7 @@ function ItemDetailSheet({
           {canNavigate && navigate ? (
             <button
               type="button"
-              onClick={() => { onClose(); navigate(`/menu-items/${item.canonical_menu_item_id || item.id}?from=menu`); }}
+              onClick={() => { onClose(); navigate(`/menu-items/${item.menu_item_id}?from=menu`); }}
               style={{
                 display: "block",
                 width: "100%",
@@ -1205,7 +1205,10 @@ export default function PublicMenuPage() {
     return addMenuItem({
       restaurant: cartRestaurant,
       item: {
-        menuItemId: item?.id,
+        menu_item_id: item?.menu_item_id,
+        restaurant_id: item?.restaurant_id,
+        menu_id: item?.menu_id,
+        product_key: item?.product_key ?? null,
         name: itemName,
         description: itemDescription,
         basePriceCents: getConsumerDisplayPrice(item) ?? 0,

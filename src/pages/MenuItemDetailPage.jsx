@@ -128,7 +128,7 @@ function normalizeResultItem(raw) {
     raw?.item_photo_url || raw?.itemPhotoUrl || raw?.photo_url || raw?.image_url || null;
 
   return {
-    id: getNormalizedMenuItemId(raw),
+    menu_item_id: getNormalizedMenuItemId(raw),
     name: raw?.name || raw?.item_name || raw?.title || "Untitled Item",
     description: raw?.description || raw?.notes || raw?.snippet || "",
     translations: raw?.translations || null,
@@ -1349,7 +1349,7 @@ export default function MenuItemDetailPage() {
     });
     // Intentionally fire once when item first loads for this id
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item?.id, id]);
+  }, [item?.menu_item_id, id]);
 
   const displayItemName = useMemo(
     () => getDisplayMenuItemName(item, language, item?.name || "Untitled Item"),
@@ -1361,7 +1361,7 @@ export default function MenuItemDetailPage() {
       restaurant: item.restaurant,
       menuItem: {
         ...item,
-        id: item.id,
+        menu_item_id: item.menu_item_id,
         name: displayItemName,
       },
     });
@@ -1581,13 +1581,13 @@ export default function MenuItemDetailPage() {
               </div>
               <div style={{ marginTop: 10 }}>
                 <MenuItemDetailActionRail
-                  menuItemId={item.id}
+                  menuItemId={item.menu_item_id}
                   itemName={displayItemName}
                   shareData={shareData}
                   shareAnalyticsContext={{
                     restaurantId: item.restaurant.id,
                     restaurantSlug: item.restaurant.slug || null,
-                    menuItemId: item.id,
+                    menuItemId: item.menu_item_id,
                     menuItemName: displayItemName,
                     pageType: "menu_item_detail",
                     shareTarget: "dish",
@@ -1654,7 +1654,7 @@ export default function MenuItemDetailPage() {
       )}
 
       <ExploreSimilarDishes
-        itemId={item.id}
+        itemId={item.menu_item_id}
         itemName={displayItemName}
         currentSlug={item.restaurant.slug || null}
         geoLat={geoLat}

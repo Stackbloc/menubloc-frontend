@@ -13,7 +13,6 @@
  */
 
 import { useEffect, useState } from "react";
-import { useLanguage } from "../../context/LanguageContext.jsx";
 import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
 import { copyText } from "../share/shareUtils.js";
 
@@ -515,7 +514,6 @@ export default function CompareItemsModal({
   onViewBase,
   baseLabel = "Current",
 }) {
-  const { t } = useLanguage();
   const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
@@ -588,8 +586,8 @@ export default function CompareItemsModal({
               <button
                 onClick={async () => {
                   const url = new URL("/compare", window.location.origin);
-                  url.searchParams.set("base", String(base.id));
-                  url.searchParams.set("candidate", String(candidate.id));
+                  url.searchParams.set("base", String(base.menu_item_id));
+                  url.searchParams.set("candidate", String(candidate.menu_item_id));
                   await copyText(url.toString());
                   setShareCopied(true);
                   setTimeout(() => setShareCopied(false), 2200);

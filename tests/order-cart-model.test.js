@@ -50,7 +50,8 @@ test("addItemToCart keeps a single-restaurant basket and merges identical lines"
     {
       restaurant: { restaurantId: 9, restaurantName: "Test Kitchen" },
       item: {
-        menuItemId: 101,
+        menu_item_id: 101,
+        restaurant_id: 9,
         name: "Fries",
         quantity: 1,
         basePriceCents: 450,
@@ -63,7 +64,8 @@ test("addItemToCart keeps a single-restaurant basket and merges identical lines"
   const second = addItemToCart(first.cart, {
     restaurant: { restaurantId: 9, restaurantName: "Test Kitchen" },
     item: {
-      menuItemId: 101,
+      menu_item_id: 101,
+      restaurant_id: 9,
       name: "Fries",
       quantity: 1,
       basePriceCents: 450,
@@ -86,7 +88,8 @@ test("addItemToCart rejects cross-restaurant adds without replacing implicitly",
     {
       restaurant: { restaurantId: 9, restaurantName: "Test Kitchen" },
       item: {
-        menuItemId: 101,
+        menu_item_id: 101,
+        restaurant_id: 9,
         name: "Fries",
         quantity: 1,
         basePriceCents: 450,
@@ -97,7 +100,8 @@ test("addItemToCart rejects cross-restaurant adds without replacing implicitly",
   const blocked = addItemToCart(seed.cart, {
     restaurant: { restaurantId: 14, restaurantName: "Other Place" },
     item: {
-      menuItemId: 201,
+      menu_item_id: 201,
+      restaurant_id: 14,
       name: "Taco",
       quantity: 1,
       basePriceCents: 650,

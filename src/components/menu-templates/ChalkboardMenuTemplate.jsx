@@ -37,7 +37,7 @@ function ChalkItem({ item, sectionIndex, itemIndex, ctx, accent }) {
       item?.notes
   );
   const price = fmtMoney(item);
-  const canNavigate = item?.id != null;
+  const canNavigate = item?.menu_item_id != null;
   const dishShareData = canNavigate
     ? buildDishShareData({
         restaurant: {
@@ -46,10 +46,10 @@ function ChalkItem({ item, sectionIndex, itemIndex, ctx, accent }) {
           name: restaurantName,
           logoUrl: data?.logo_url || null,
         },
-        menuItem: { ...item, id: item.id, name },
+        menuItem: { ...item, menu_item_id: item.menu_item_id, name },
       })
     : null;
-  const deal = canNavigate ? dealMap.get(item.id) : null;
+  const deal = canNavigate ? dealMap.get(item.menu_item_id) : null;
   const indulgencePresentation = resolveIndulgencePresentation({ chips: item?.chips });
 
   function openItem() {
@@ -148,7 +148,7 @@ function ChalkSection({ section, sectionIndex, ctx, accent }) {
       <div style={{ display: "grid", gap: 0 }}>
         {items.map((item, itemIndex) => (
           <ChalkItem
-            key={String(item?.id ?? `${sectionIndex}-${itemIndex}`)}
+            key={String(item?.menu_item_id ?? `${sectionIndex}-${itemIndex}`)}
             item={item}
             sectionIndex={sectionIndex}
             itemIndex={itemIndex}

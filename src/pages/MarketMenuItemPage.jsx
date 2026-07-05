@@ -62,7 +62,8 @@ export default function MarketMenuItemPage() {
         const found = findItemBySlug(menuData.sections, itemSlug);
         if (!found) throw new Error("item_not_found");
 
-        const menuItemId = found.id || found.canonical_menu_item_id;
+        const menuItemId = found.menu_item_id;
+        if (!menuItemId) throw new Error("menu_item_identity_missing");
 
         // Step 3: load full item detail
         const itemRes = await fetch(`${API}/menu-items/${encodeURIComponent(menuItemId)}`, {
