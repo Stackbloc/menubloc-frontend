@@ -9,9 +9,9 @@ const consumerContext = fs.readFileSync("src/context/ConsumerContext.jsx", "utf8
 test("diner signup requires the Twilio modal before navigation", () => {
   assert.match(dinerSignup, /<SmsAuthModal/);
   assert.match(dinerSignup, /setSmsOpen\(true\)/);
-  assert.doesNotMatch(dinerSignup, /account\/welcome/);
+  assert.match(dinerSignup, /onSuccess=.*account\/welcome/);
   assert.match(consumerSignup, /<SmsAuthModal/);
-  assert.doesNotMatch(consumerSignup, /account\/welcome/);
+  assert.match(consumerSignup, /onSuccess=.*account\/welcome/);
   assert.doesNotMatch(dinerSignup, /type="email"/);
   assert.doesNotMatch(consumerSignup, /type="email"/);
 });

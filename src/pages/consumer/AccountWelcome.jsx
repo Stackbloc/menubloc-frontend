@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import StickyPageHeader from "../../components/StickyPageHeader.jsx";
 import BottomNav from "../../components/BottomNav.jsx";
-import { useConsumer } from "../../context/ConsumerContext.jsx";
-import { styles } from "../../components/consumer/ConsumerAuthShared.jsx";
 
 const VITE_ENV = import.meta.env || {};
 const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
@@ -34,7 +32,6 @@ const DIETARY_OPTIONS = [
 export default function AccountWelcome() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { consumer } = useConsumer();
   const redirectTo = location.state?.redirectTo || "/";
 
   const [zip, setZip] = useState("");
@@ -107,10 +104,6 @@ export default function AccountWelcome() {
     }
   }
 
-  function handleSkip() {
-    navigate(redirectTo, { replace: true });
-  }
-
   return (
     <>
       <StickyPageHeader />
@@ -127,12 +120,12 @@ export default function AccountWelcome() {
             {/* ZIP Code — required */}
             <div style={{ marginBottom: 24 }}>
               <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 14 }}>
-                Your ZIP Code <span style={{ color: "#c0392b" }}>*</span>
+                ZIP Code <span style={{ color: "#c0392b" }}>(required)</span>
               </label>
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder="e.g. 90210"
+                placeholder="Enter your ZIP code"
                 value={zip}
                 onChange={(e) => {
                   setZip(e.target.value);
@@ -240,23 +233,6 @@ export default function AccountWelcome() {
               {saving ? "Saving..." : "Get Started"}
             </button>
 
-            <button
-              type="button"
-              onClick={handleSkip}
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: 12,
-                background: "transparent",
-                color: "#888",
-                fontSize: 14,
-                fontWeight: 500,
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              Skip for now
-            </button>
           </form>
         </div>
       </div>

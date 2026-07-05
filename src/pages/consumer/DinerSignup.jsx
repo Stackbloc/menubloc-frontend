@@ -115,7 +115,7 @@ export default function DinerSignup() {
       <SmsAuthModal
         open={smsOpen}
         onClose={() => setSmsOpen(false)}
-        onSuccess={() => navigate("/", { replace: true })}
+        onSuccess={() => navigate("/account/welcome", { replace: true, state: { redirectTo: "/" } })}
       />
     </div>
   );
