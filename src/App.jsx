@@ -201,6 +201,11 @@ function CrmLegacyRedirect() {
   return <Navigate to={`${nextPath}${location.search || ""}${location.hash || ""}`} replace />;
 }
 
+export function ConsumerLegacyRedirect({ nextPath }) {
+  const location = useLocation();
+  return <Navigate to={`${nextPath}${location.search || ""}${location.hash || ""}`} replace />;
+}
+
 function OwnerRoute({ children }) {
   const { isAuthenticated, loading } = useOwner();
   if (loading) return <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #f7f1ea 0%, #efe5db 100%)" }} />;
@@ -636,8 +641,8 @@ function AppShell({ easyMenu, crmHost }) {
         />
 
         <Route path="/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <Navigate to="/account/login" replace />} />
-        <Route path="/forgot-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <Navigate to="/account/forgot-password" replace />} />
-        <Route path="/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <Navigate to="/account/reset-password" replace />} />
+        <Route path="/forgot-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerLegacyRedirect nextPath="/account/forgot-password" />} />
+        <Route path="/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerLegacyRedirect nextPath="/account/reset-password" />} />
         <Route path="/account/signup" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerSignup />} />
         <Route path="/diner/signup" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <DinerSignup />} />
         <Route path="/account/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerLogin />} />

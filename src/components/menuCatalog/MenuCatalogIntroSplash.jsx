@@ -6,7 +6,7 @@ const INK = "#1a1a1a";
 
 function IntroVerticalFrame({ children, style = {} }) {
   return (
-    <div
+    <divyes
       style={{
         position: "absolute",
         inset: 0,

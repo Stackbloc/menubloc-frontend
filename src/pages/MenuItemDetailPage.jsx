@@ -29,7 +29,7 @@
  * ============================================================
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
@@ -1130,6 +1130,7 @@ const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
 function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, activeSearchParams, t }) {
   const navigate = useNavigate();
   const { itemCount } = useOrderCart();
+  const sectionRef = useRef(null);
   const [similar, setSimilar] = useState(null);
   const [failed, setFailed] = useState(false);
 
@@ -1217,91 +1218,135 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
     navigate(buildSimilarLink({ ...candidateItem, restaurant_slug: slug, restaurant_id: candidateItem?.restaurant_id }));
   }
 
+  const firstComparableEntry = useMemo(
+    () => (Array.isArray(similar) ? similar.find((entry) => isSimilarRowCompareEligible(entry)) : null),
+    [similar]
+  );
+
   if (itemCount > 0) return null;
-  if (similar === null) return null;
 
   return (
     <>
-      <SectionCard
-        title={t("menuItemDetail.similarItems", "Similar Items")}
-        eyebrow={t("menuItemDetail.similarItems", "Similar Items")}
-        style={{ marginTop: 24 }}
-      >
-        <div style={{ display: "grid", gap: 14 }}>
-          {failed ? (
-            <div style={{ color: "#9CA3AF", fontSize: 14 }}>Could not load similar items. Try again.</div>
-          ) : similar.length === 0 ? (
-            <div style={{ color: "#9CA3AF", fontSize: 14 }}>No similar items found yet.</div>
-          ) : similar.map((entry) => (
-            <div key={getNormalizedMenuItemId(entry)} style={{ borderRadius: 18, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
-                {entry.restaurant_name}
-                {entry.distance_miles != null && (
-                  <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>
-                )}
-              </div>
+      <div ref={sectionRef}>
+        <SectionCard
+          title={t("menuItemDetail.similarItems", "Similar Items")}
+          eyebrow={t("menuItemDetail.similarItems", "Similar Items")}
+          style={{ marginTop: 24 }}
+        >
+          <div style={{ display: "grid", gap: 14 }}>
+            {failed ? (
+              <div style={{ color: "#9CA3AF", fontSize: 14 }}>Could not load similar items. Try again.</div>
+            ) : similar === null ? (
+              <div style={{ color: "#9CA3AF", fontSize: 14 }}>Loading similar items...</div>
+            ) : similar.length === 0 ? (
+              <div style={{ color: "#9CA3AF", fontSize: 14 }}>No similar items found yet.</div>
+            ) : similar.map((entry) => (
+              <div key={getNormalizedMenuItemId(entry)} style={{ borderRadius: 18, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>
+                  {entry.restaurant_name}
+                  {entry.distance_miles != null && (
+                    <span style={{ fontWeight: 400, marginLeft: 6 }}>· {entry.distance_miles} mi</span>
+                  )}
+                </div>
 
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-                <Link
-                  to={buildSimilarLink(entry)}
-                  style={{
-                    textDecoration: "none",
-                    color: "#22C55E",
-                    fontWeight: 800,
-                    fontSize: 15,
-                    lineHeight: 1.35,
-                    flex: "1 1 0",
-                    minWidth: 0,
-                  }}
-                >
-                  {formatMenuItemName(entry.name)}
-                </Link>
-                {isSimilarRowCompareEligible(entry) ? (
-                  <button
-                    type="button"
-                    onClick={() => handleCompare(entry)}
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+                  <Link
+                    to={buildSimilarLink(entry)}
                     style={{
-                      flexShrink: 0,
-                      background: "rgba(34,197,94,0.09)",
-                      border: "1px solid rgba(34,197,94,0.2)",
-                      borderRadius: 999,
-                      padding: "5px 13px",
-                      fontSize: 12,
-                      fontWeight: 800,
+                      textDecoration: "none",
                       color: "#22C55E",
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                      lineHeight: 1.4,
+                      fontWeight: 800,
+                      fontSize: 15,
+                      lineHeight: 1.35,
+                      flex: "1 1 0",
+                      minWidth: 0,
                     }}
                   >
-                    Compare
-                  </button>
-                ) : null}
-              </div>
-
-              {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-                  {entry.profile_differences.map((phrase) => (
-                    <span
-                      key={phrase}
+                    {formatMenuItemName(entry.name)}
+                  </Link>
+                  {isSimilarRowCompareEligible(entry) ? (
+                    <button
+                      type="button"
+                      onClick={() => handleCompare(entry)}
                       style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "#9CA3AF",
-                        background: "rgba(255,255,255,0.05)",
-                        borderRadius: 20,
-                        padding: "3px 10px",
+                        flexShrink: 0,
+                        background: "rgba(34,197,94,0.09)",
+                        border: "1px solid rgba(34,197,94,0.2)",
+                        borderRadius: 999,
+                        padding: "5px 13px",
+                        fontSize: 12,
+                        fontWeight: 800,
+                        color: "#22C55E",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        lineHeight: 1.4,
                       }}
                     >
-                      {phrase}
-                    </span>
-                  ))}
+                      Compare
+                    </button>
+                  ) : null}
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </SectionCard>
+
+                {Array.isArray(entry.profile_differences) && entry.profile_differences.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                    {entry.profile_differences.map((phrase) => (
+                      <span
+                        key={phrase}
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: "#9CA3AF",
+                          background: "rgba(255,255,255,0.05)",
+                          borderRadius: 20,
+                          padding: "3px 10px",
+                        }}
+                      >
+                        {phrase}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      </div>
+
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+        <button
+          type="button"
+          onClick={() => sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          style={{
+            border: "1px solid rgba(34,197,94,0.2)",
+            background: "rgba(34,197,94,0.09)",
+            color: "#22C55E",
+            borderRadius: 999,
+            padding: "10px 14px",
+            fontSize: 13,
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          Show Similar
+        </button>
+        <button
+          type="button"
+          disabled={!firstComparableEntry}
+          onClick={() => firstComparableEntry && handleCompare(firstComparableEntry)}
+          style={{
+            border: "1px solid rgba(34,197,94,0.2)",
+            background: firstComparableEntry ? "rgba(34,197,94,0.09)" : "rgba(255,255,255,0.04)",
+            color: firstComparableEntry ? "#22C55E" : "#6B7280",
+            borderRadius: 999,
+            padding: "10px 14px",
+            fontSize: 13,
+            fontWeight: 800,
+            cursor: firstComparableEntry ? "pointer" : "not-allowed",
+          }}
+        >
+          Compare
+        </button>
+      </div>
 
       <CompareItemsModal
         open={compareOpen}

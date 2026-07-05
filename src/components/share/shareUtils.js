@@ -100,7 +100,7 @@ export function buildMenuShareMetadata({
 }
 
 export function getCanonicalMenuItemPath({ restaurant, menuItem }) {
-  const itemId = pickFirstText(menuItem?.menu_item_id);
+  const itemId = pickFirstText(menuItem?.menu_item_id, menuItem?.id, menuItem?.menuItemId);
   if (!itemId) return "/menu-items";
   const slug = pickFirstText(restaurant?.slug, restaurant?.restaurant_slug);
   const city = pickFirstText(restaurant?.city, restaurant?.restaurant_city);
