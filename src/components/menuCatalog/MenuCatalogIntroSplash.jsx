@@ -240,6 +240,7 @@ export default function MenuCatalogIntroSplash({
             maxHeight: isSplash ? "36vh" : "min(48vh, 380px)",
             height: "auto",
             objectFit: "contain",
+            transform: "translateY(clamp(-28px, -4vw, -12px))",
             margin: "0 auto",
           }}
         />
