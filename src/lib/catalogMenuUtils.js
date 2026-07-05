@@ -54,10 +54,10 @@ export function resolveRestaurantProfileHref({
     return target ? `/foodtrucks/${encodeURIComponent(target)}` : null;
   }
 
+  if (id) return `/restaurants/${encodeURIComponent(id)}`;
   const canonical = restaurantPath({ slug, city, state });
   if (canonical) return canonical;
   if (slug) return `/restaurants/${encodeURIComponent(slug)}`;
-  if (id) return `/restaurants/${encodeURIComponent(id)}`;
   return null;
 }
 

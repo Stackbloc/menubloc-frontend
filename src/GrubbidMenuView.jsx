@@ -442,11 +442,10 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
   }, [restaurant, userGeo, rLatLng]);
 
   const profileRestaurantId = safeText(restaurant?.id || restaurantId);
-  // ✅ Link to Restaurant Public Page (slug preferred, id fallback)
-  const publicLink = restaurant?.slug
-    ? `/r/${restaurant.slug}`
-    : profileRestaurantId
-    ? `/r/${profileRestaurantId}`
+  const publicLink = profileRestaurantId
+    ? `/restaurants/${encodeURIComponent(profileRestaurantId)}`
+    : restaurant?.slug
+    ? `/restaurants/${encodeURIComponent(String(restaurant.slug))}`
     : "/";
 
   function handleMenuItemClick(item) {
@@ -472,7 +471,8 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                 to={publicLink}
                 style={{
                   color: COLORS.text,
-                  textDecoration: "none",
+                  textDecoration: "underline",
+                  textUnderlineOffset: 3,
                   fontWeight: 900,
                   fontSize: 18,
                   letterSpacing: 0.2,
@@ -481,6 +481,7 @@ export default function GrubbidMenuView({ restaurantId = null, menuData = null }
                   whiteSpace: "nowrap",
                   display: "inline-block",
                   maxWidth: "100%",
+                  cursor: "pointer",
                 }}
                 title="Open restaurant public page"
               >

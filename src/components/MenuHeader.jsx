@@ -71,9 +71,15 @@ export default function MenuHeader({ restaurant }) {
 
   const r = restaurant || {};
   const slug = slugOf(r);
+  const restaurantId = String(r?.id || r?.restaurant_id || r?.restaurantId || "").trim();
   const hero = heroOf(r);
   const title = nameOf(r);
   const sub = subOf(r);
+  const profileHref = restaurantId
+    ? `/restaurants/${encodeURIComponent(restaurantId)}`
+    : slug
+    ? `/restaurants/${encodeURIComponent(slug)}`
+    : null;
 
   return (
     <div style={{ width: "100%", background: "transparent", overflowX: "hidden" }}>
@@ -105,13 +111,15 @@ export default function MenuHeader({ restaurant }) {
             wordBreak: "break-word",
           }}
         >
-          {slug ? (
+          {profileHref ? (
             <Link
-              to={`/r/${slug}`}
+              to={profileHref}
               style={{
                 color: "inherit",
-                textDecoration: "none",
+                textDecoration: "underline",
+                textUnderlineOffset: 3,
                 wordBreak: "break-word",
+                cursor: "pointer",
               }}
               title="View public restaurant page"
             >
