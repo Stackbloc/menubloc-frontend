@@ -42,6 +42,7 @@ import { CrmProvider, useCrm } from "./context/CrmContext.jsx";
 import { ConsumerProvider } from "./context/ConsumerContext.jsx";
 import ConsumerSessionToast from "./components/ConsumerSessionToast.jsx";
 import ConsumerSignup from "./pages/consumer/ConsumerSignup.jsx";
+import DinerSignup from "./pages/consumer/DinerSignup.jsx";
 import ConsumerLogin from "./pages/consumer/ConsumerLogin.jsx";
 import AppleAuthCallback from "./pages/consumer/AppleAuthCallback.jsx";
 import ConsumerForgotPassword from "./pages/consumer/ConsumerForgotPassword.jsx";
@@ -106,7 +107,6 @@ import RestaurantMenuLive from "./pages/RestaurantMenuLive.jsx";
 import FranchisesPage from "./pages/FranchisesPage.jsx";
 import RestaurantFreeProfileSignup from "./pages/RestaurantFreeProfileSignup.jsx";
 import RestaurantPhilosophy from "./pages/RestaurantPhilosophy.jsx";
-import RestaurantsLandingPage from "./pages/RestaurantsLandingPage.jsx";
 import RestaurantFoundersSignup from "./pages/RestaurantFoundersSignup.jsx";
 import JoinPage from "./pages/JoinPage.jsx";
 import JoinDinersPage from "./pages/JoinDinersPage.jsx";
@@ -522,12 +522,14 @@ function AppShell({ easyMenu, crmHost }) {
   const joinLandingRoute = isJoinLandingPath(location.pathname);
   const joinSignupRoute =
     location.pathname === "/restaurant/signup/free-profile" ||
-    location.pathname === "/restaurant/signup/account";
+    location.pathname === "/restaurant/signup/account" ||
+    location.pathname === "/diner/signup";
   const restaurantOnboardingRoute =
     location.pathname === "/restaurant/onboarding" ||
     location.pathname.startsWith("/restaurant/onboarding/");
   const operatorTabletRoute = location.pathname === "/operator/tablet";
-  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute || restaurantOnboardingRoute || operatorTabletRoute;
+  const restaurantSignInRoute = location.pathname === "/restaurants";
+  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute || restaurantOnboardingRoute || operatorTabletRoute || restaurantSignInRoute;
 
   return (
     <>
@@ -560,7 +562,7 @@ function AppShell({ easyMenu, crmHost }) {
 
         <Route path="/restaurants/:slugOrId/billboard" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantBillboard />} />
         {/* Canonical 3-segment routes — /restaurants/:state/:city/:restaurantSlug */}
-        <Route path="/restaurants" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantsLandingPage />} />
+        <Route path="/restaurants" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorLogin />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug/menu-items/:itemSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MarketMenuItemPage />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CanonicalRestaurantProfile />} />
@@ -637,6 +639,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/forgot-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <Navigate to="/account/forgot-password" replace />} />
         <Route path="/reset-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <Navigate to="/account/reset-password" replace />} />
         <Route path="/account/signup" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerSignup />} />
+        <Route path="/diner/signup" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <DinerSignup />} />
         <Route path="/account/login" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerLogin />} />
         <Route path="/auth/apple/callback" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <AppleAuthCallback />} />
         <Route path="/account/forgot-password" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <ConsumerForgotPassword />} />

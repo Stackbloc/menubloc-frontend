@@ -1,3 +1,7 @@
+// Path: menubloc-frontend/src/components/SiteFooter.jsx
+// Date: 2026-07-04
+// Purpose: Public site footer navigation.
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -9,6 +13,12 @@ function isPublicPath(pathname) {
   const path = String(pathname || "");
   return !FOOTER_LINK_PATH_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
+
+const footerLinkStyle = {
+  color: "#6B7280",
+  fontWeight: 700,
+  textDecoration: "none",
+};
 
 export default function SiteFooter() {
   const location = useLocation();
@@ -51,23 +61,32 @@ export default function SiteFooter() {
             flex: "0 0 auto",
           }}
         >
-          <Link to="/restaurants" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
+          <Link to="/diner/signup" style={footerLinkStyle}>
+            Diner
+          </Link>
+
+          <Link to="/restaurants" style={footerLinkStyle}>
             {t("discovery.footer.restaurants", "Restaurants")}
           </Link>
-          <Link to="/creative-pros" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
+
+          <Link to="/creative-pros" style={footerLinkStyle}>
             {t("discovery.footer.marketplace", "Marketplace")}
           </Link>
-          <Link to="/terms" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
-            {t("discovery.footer.terms")}
+
+          <Link to="/terms" style={footerLinkStyle}>
+            {t("discovery.footer.terms", "Terms of Use")}
           </Link>
-          <Link to="/privacy" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
+
+          <Link to="/privacy" style={footerLinkStyle}>
             {t("footer.privacy", "Privacy Policy")}
           </Link>
-          <Link to="/about" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
+
+          <Link to="/about" style={footerLinkStyle}>
             {t("footer.about", "About Menuply")}
           </Link>
-          <Link to="/contact" style={{ color: "#6B7280", fontWeight: 700, textDecoration: "none" }}>
-            {t("discovery.footer.contact")}
+
+          <Link to="/contact" style={footerLinkStyle}>
+            {t("discovery.footer.contact", "Contact Us")}
           </Link>
         </div>
 
@@ -93,10 +112,11 @@ export default function SiteFooter() {
           >
             🌐
           </span>
+
           <select
             value={language}
             onChange={(event) => setLanguage(event.target.value)}
-            aria-label={t("footer.language")}
+            aria-label={t("footer.language", "Language")}
             style={{
               height: 34,
               borderRadius: 10,
@@ -109,9 +129,9 @@ export default function SiteFooter() {
               cursor: "pointer",
             }}
           >
-            <option value="en">{t("language.english")}</option>
-            <option value="es">{t("language.spanish")}</option>
-            <option value="zh">{t("language.chinese")}</option>
+            <option value="en">{t("language.english", "English")}</option>
+            <option value="es">{t("language.spanish", "Spanish")}</option>
+            <option value="zh">{t("language.chinese", "Chinese")}</option>
           </select>
         </div>
       </div>
