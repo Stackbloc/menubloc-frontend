@@ -133,7 +133,19 @@ export function ConsumerProvider({ children }) {
   }, []);
 
   const verifySmsCode = useCallback(async (phoneNumber, code) => {
-    await verifyConsumerSmsCode(phoneNumber, code);
+    const verified = await verifyConsumerSmsCode(phoneNumber, code);
+    if (verified?.consumer) {
+      applySession(verified);
+      if (
+        !hasActiveAllergenExclusions(
+          verified?.allergen_filter || null,
+          verified?.allergen_preferences || []
+        )
+      ) {
+        setAuthToast("You're signed in ✓");
+      }
+      return verified;
+    }
     const data = await loadMe();
     if (
       !hasActiveAllergenExclusions(
@@ -144,7 +156,7 @@ export function ConsumerProvider({ children }) {
       setAuthToast("You're signed in ✓");
     }
     return data;
-  }, [loadMe]);
+  }, [applySession, loadMe]);
 
   const clearAuthToast = useCallback(() => {
     setAuthToast("");

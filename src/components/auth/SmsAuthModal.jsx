@@ -1,27 +1,34 @@
 import { useEffect, useState } from "react";
-import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useConsumer } from "../../context/ConsumerContext.jsx";
+import {
+  formatCodeSentNotice,
+  resolveSmsAuthErrorMessage,
+  SMS_AUTH_MESSAGES,
+} from "../../lib/smsAuthMessages.js";
 
 export default function SmsAuthModal({ open, onClose, onSuccess }) {
-  const { t } = useLanguage();
   const { sendSmsCode, verifySmsCode } = useConsumer();
   const [step, setStep] = useState("phone");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
+  const [verifiedPhone, setVerifiedPhone] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+  const [expirationHint, setExpirationHint] = useState("");
 
   useEffect(() => {
     if (!open) {
       setStep("phone");
-      setPhoneNumber("");
+      setPhoneInput("");
+      setVerifiedPhone("");
       setCode("");
       setLoading(false);
       setError("");
       setNotice("");
       setResendTimer(0);
+      setExpirationHint("");
     }
   }, [open]);
 
@@ -33,19 +40,37 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
 
   if (!open) return null;
 
+  function applySendResult(result) {
+    const canonicalPhone = result?.phone_number || verifiedPhone || phoneInput;
+    setVerifiedPhone(canonicalPhone);
+    setStep("code");
+    setNotice(
+      formatCodeSentNotice({
+        verificationTtlMinutes: result?.verification_ttl_minutes,
+        expiresInSeconds: result?.expires_in_seconds,
+      })
+    );
+    setExpirationHint(
+      formatCodeSentNotice({
+        verificationTtlMinutes: result?.verification_ttl_minutes,
+        expiresInSeconds: result?.expires_in_seconds,
+      })
+    );
+    setResendTimer(30);
+  }
+
   async function handleSendCode(event) {
-    event.preventDefault();
+    if (event?.preventDefault) event.preventDefault();
     setLoading(true);
     setError("");
     setNotice("");
 
     try {
-      await sendSmsCode(phoneNumber);
-      setStep("code");
-      setNotice("Code sent. Check your messages.");
-      setResendTimer(30);
+      const phoneToSend = verifiedPhone || phoneInput;
+      const result = await sendSmsCode(phoneToSend);
+      applySendResult(result);
     } catch (err) {
-      setError(err?.message || "Unable to send code.");
+      setError(resolveSmsAuthErrorMessage(err, SMS_AUTH_MESSAGES.sendFailed));
     } finally {
       setLoading(false);
     }
@@ -53,15 +78,21 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
 
   async function handleVerifyCode(event) {
     event.preventDefault();
+    if (!verifiedPhone) {
+      setError(SMS_AUTH_MESSAGES.sendFailed);
+      setStep("phone");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      await verifySmsCode(phoneNumber, code);
+      await verifySmsCode(verifiedPhone, code);
       onSuccess?.();
       onClose?.();
     } catch (err) {
-      setError(err?.message || "Unable to verify code.");
+      setError(resolveSmsAuthErrorMessage(err, SMS_AUTH_MESSAGES.verifyFailed));
     } finally {
       setLoading(false);
     }
@@ -101,15 +132,17 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
         <div style={{ marginTop: 8, fontSize: 13, color: "#667085", lineHeight: 1.6 }}>
           We'll text you a one-time code. No password needed.
         </div>
-        <div style={{ marginTop: 8, fontSize: 12, color: "#667085", fontWeight: 700 }}>
-          Code expires in 10 minutes
-        </div>
+        {expirationHint ? (
+          <div style={{ marginTop: 8, fontSize: 12, color: "#667085", fontWeight: 700 }}>
+            {expirationHint}
+          </div>
+        ) : null}
 
         {step === "phone" ? (
           <form onSubmit={handleSendCode} style={{ marginTop: 18, display: "grid", gap: 12 }}>
             <input
-              value={phoneNumber}
-              onChange={(event) => setPhoneNumber(event.target.value)}
+              value={phoneInput}
+              onChange={(event) => setPhoneInput(event.target.value)}
               placeholder="+1 213 555 1234"
               style={{
                 width: "100%",
@@ -140,6 +173,9 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
           </form>
         ) : (
           <form onSubmit={handleVerifyCode} style={{ marginTop: 18, display: "grid", gap: 12 }}>
+            <div style={{ fontSize: 13, color: "#667085", fontWeight: 700 }}>
+              Code sent to {verifiedPhone}
+            </div>
             <input
               value={code}
               onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -159,7 +195,7 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
             />
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || code.length !== 6}
               style={{
                 border: "none",
                 borderRadius: 16,
@@ -169,6 +205,7 @@ export default function SmsAuthModal({ open, onClose, onSuccess }) {
                 fontSize: 15,
                 fontWeight: 900,
                 cursor: loading ? "wait" : "pointer",
+                opacity: code.length !== 6 ? 0.7 : 1,
               }}
             >
               {loading ? "Verifying..." : "Verify code"}

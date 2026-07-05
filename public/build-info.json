@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "ce75b372b1f7539d333e962b4a6e32b705931597",
-  "gitShortSha": "ce75b37",
+  "gitSha": "e2fbba8a64f347a83dbbe28dd033395f62fb0b3f",
+  "gitShortSha": "e2fbba8",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-05T21:03:34.324Z",
+  "buildTime": "2026-07-05T21:18:23.208Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Add frontend API base URL guardrail doc to frontend repo."
+  "commitMessage": "Add lazy Show Similar pagination with zero-result cache."
 }
