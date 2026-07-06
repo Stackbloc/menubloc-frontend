@@ -26,9 +26,11 @@ import { buildInsightCards } from "./InsightCardDeck.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
 import buildMatchPreview from "./searchResultMatchPreview.js";
 import {
+  appendMenuHighlightQuery,
   buildCanonicalMenuPath,
   buildDishShareData,
   getCanonicalMenuItemPath,
+  highlightMenuLinkExtrasFromSearch,
 } from "./share/shareUtils.js";
 import { restaurantPath, restaurantMenuPath } from "../lib/canonicalUrl.js";
 import { getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
@@ -257,6 +259,10 @@ function buildSearchCardSimilarFilters(search) {
     const value = routeParams.get(key);
     if (value === "1" || value === "true") filters[key] = "1";
   }
+  const city = routeParams.get("city");
+  const state = routeParams.get("state");
+  if (city) filters.city = city;
+  if (state) filters.state = state;
   return filters;
 }
 
@@ -1360,9 +1366,15 @@ function ItemRow({
   const restHref = restaurantPath({ slug: restSlugForLink, city: restCityForLink, state: restStateForLink }) ||
     (restProfileTarget ? "/restaurants/" + restProfileTarget : null);
   const contextSearch = location.search || "";
-  const fullMenuHref = restIdForLink
-    ? (restaurantMenuPath({ slug: restSlugForLink, city: restCityForLink, state: restStateForLink, id: restIdForLink }) ||
-        buildCanonicalMenuPath({ restaurantSlug: restSlugForLink, restaurantId: restIdForLink })) + contextSearch
+  const fullMenuHref = restIdForLink && mid
+    ? appendMenuHighlightQuery(
+        restaurantMenuPath({ slug: restSlugForLink, city: restCityForLink, state: restStateForLink, id: restIdForLink }) ||
+          buildCanonicalMenuPath({ restaurantSlug: restSlugForLink, restaurantId: restIdForLink }),
+        {
+          menuItemId: mid,
+          extraParams: highlightMenuLinkExtrasFromSearch(contextSearch),
+        },
+      )
     : null;
 
   const nutChip = chips?.nutrition_chip || {};
@@ -1491,6 +1503,8 @@ function ItemRow({
       const json = await fetchSimilarItems(mid, {
         lat: similarRequest?.lat ?? null,
         lng: similarRequest?.lng ?? null,
+        city: similarRequest?.city ?? null,
+        state: similarRequest?.state ?? null,
         filters: similarRequest?.filters || {},
         limit: SIMILAR_INITIAL_LIMIT,
         offset: 0,
@@ -1521,6 +1535,8 @@ function ItemRow({
       const json = await fetchSimilarItems(mid, {
         lat: similarRequest?.lat ?? null,
         lng: similarRequest?.lng ?? null,
+        city: similarRequest?.city ?? null,
+        state: similarRequest?.state ?? null,
         filters: similarRequest?.filters || {},
         limit: SIMILAR_PAGE_SIZE,
         offset: nextOffset,
@@ -2020,19 +2036,26 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const grouped = Array.isArray(items) && items.length > 0;
   const similarRequest = useMemo(() => {
     const filters = buildSearchCardSimilarFilters(contextSearch);
+    const routeParams = new URLSearchParams(contextSearch || "");
+    const browseCity = filters.city || routeParams.get("city") || geo?.city || null;
+    const browseState = filters.state || routeParams.get("state") || geo?.state || null;
     return {
       lat: geo?.lat ?? null,
       lng: geo?.lng ?? null,
+      city: browseCity,
+      state: browseState,
       filters,
       cacheKey: JSON.stringify({
         query: query || "",
         search: contextSearch,
         lat: geo?.lat ?? null,
         lng: geo?.lng ?? null,
+        city: browseCity,
+        state: browseState,
         filters,
       }),
     };
-  }, [contextSearch, geo?.lat, geo?.lng, query]);
+  }, [contextSearch, geo?.lat, geo?.lng, geo?.city, geo?.state, query]);
 
   if (grouped) {
     const restId = asStr(restaurant?.restaurant_id || restaurant?.id);

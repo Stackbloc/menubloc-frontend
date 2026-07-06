@@ -40,6 +40,7 @@ import {
   buildDishShareData,
   buildCanonicalMenuPath,
   appendMenuHighlightQuery,
+  highlightMenuLinkExtrasFromSearch,
   getCanonicalMenuItemPath,
 } from "../components/share/shareUtils.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
@@ -1099,6 +1100,10 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
       params.set("lat", geoLat);
       params.set("lng", geoLng);
     }
+    const browseCity = activeSearchParams?.get("city");
+    const browseState = activeSearchParams?.get("state");
+    if (browseCity) params.set("city", browseCity);
+    if (browseState) params.set("state", browseState);
     const suffix = params.toString() ? `?${params.toString()}` : "";
     fetch(`${BACKEND_BASE}/menu-items/${encodeURIComponent(itemId)}/similar${suffix}`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
@@ -1113,7 +1118,7 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
     return () => {
       cancelled = true;
     };
-  }, [geoLat, geoLng, itemId]);
+  }, [geoLat, geoLng, itemId, activeSearchParams]);
 
   function handleCompare(similarEntry) {
     const candidateId = getNormalizedMenuItemId(similarEntry);
@@ -1423,10 +1428,7 @@ export default function MenuItemDetailPage() {
         }),
         {
           menuItemId: item.menu_item_id,
-          extraParams: {
-            ...(geoLat ? { lat: geoLat } : {}),
-            ...(geoLng ? { lng: geoLng } : {}),
-          },
+          extraParams: highlightMenuLinkExtrasFromSearch(searchParams),
         },
       )
     : "/menus";

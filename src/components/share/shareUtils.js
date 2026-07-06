@@ -63,6 +63,31 @@ export function buildCanonicalMenuPath({ restaurantSlug, restaurantId, city, sta
 
 export const MENU_ITEM_HIGHLIGHT_QUERY_KEY = "highlightItem";
 
+const HIGHLIGHT_PRESERVED_QUERY_KEYS = Object.freeze([
+  "lat",
+  "lng",
+  "radius_miles",
+  "city",
+  "state",
+  "location_label",
+  "q",
+  "near",
+  "zip",
+]);
+
+/** Copy geo/search context onto a menu highlight link (not highlightItem/from). */
+export function highlightMenuLinkExtrasFromSearch(searchOrParams) {
+  const params = searchOrParams instanceof URLSearchParams
+    ? searchOrParams
+    : new URLSearchParams(String(searchOrParams || "").replace(/^\?/, ""));
+  const extras = {};
+  for (const key of HIGHLIGHT_PRESERVED_QUERY_KEYS) {
+    const value = params.get(key);
+    if (value != null && String(value).trim() !== "") extras[key] = value;
+  }
+  return extras;
+}
+
 /** Append ?highlightItem= so PublicMenuPage can scroll + flash the row. */
 export function appendMenuHighlightQuery(path, { menuItemId, extraParams = {} } = {}) {
   if (!path) return "/menus";

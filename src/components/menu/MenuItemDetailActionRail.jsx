@@ -95,9 +95,10 @@ export default function MenuItemDetailActionRail({
         height: MENU_ROW_ICON_SIZE,
       }}
     >
-      {fromSearch ? (
+      {fromSearch && onBack ? (
         <ReturnToSearchButton onClick={onBack} label={returnLabel} />
-      ) : fullMenuHref ? (
+      ) : null}
+      {fullMenuHref ? (
         <ViewFullMenuLink href={fullMenuHref} />
       ) : null}
       {menuItemId ? <LikeMenuItemButton menuItemId={menuItemId} tone="ghost" size="row" /> : null}
