@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { MenuEditor, StatusChip, inputStyle } from "./ownerMenuEditorComponents.jsx";
 import {
@@ -99,8 +99,8 @@ function ReviewItemRow({ item, onApprove, onReject }) {
   );
 }
 
-function MenuUploadPanel({ restaurantId, onUploaded }) {
-  const [open, setOpen] = useState(false);
+function MenuUploadPanel({ restaurantId, onUploaded, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
   const [mode, setMode] = useState("file");
   const [menuText, setMenuText] = useState("");
   const [file, setFile] = useState(null);
@@ -232,7 +232,9 @@ function MenuUploadPanel({ restaurantId, onUploaded }) {
 
 export default function OwnerMenuEditorPage() {
   const { restaurantId, menuId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const autoOpenUpload = searchParams.get("upload") === "1";
   const rid = Number(restaurantId);
   const mid = Number(menuId);
 
@@ -354,7 +356,17 @@ export default function OwnerMenuEditorPage() {
         </div>
       </PageCard>
 
-      {Number.isFinite(rid) && <MenuUploadPanel restaurantId={rid} onUploaded={handleUploaded} />}
+      {autoOpenUpload && (
+        <PageCard style={{ padding: "14px 18px", marginBottom: 16, background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#15803d" }}>
+            Restaurant created — upload a menu PDF or photo below to get started.
+          </div>
+        </PageCard>
+      )}
+
+      {Number.isFinite(rid) && (
+        <MenuUploadPanel restaurantId={rid} onUploaded={handleUploaded} defaultOpen={autoOpenUpload} />
+      )}
 
       {reviewItems.length > 0 && (
         <PageCard style={{ padding: 20, marginBottom: 16 }}>

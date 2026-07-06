@@ -174,6 +174,8 @@ export const searchMenuConsoleRestaurants = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return get(`/api/owner/menu-console/restaurant-search${qs ? `?${qs}` : ""}`);
 };
+export const createMenuConsoleRestaurant = (body) =>
+  post("/api/owner/menu-console/restaurants", body);
 export const getMenuConsoleRestaurantMenus = (restaurantId) =>
   get(`/api/owner/menu-console/restaurants/${restaurantId}/menus`);
 export const getMenuConsoleMenu = (restaurantId, menuId) =>

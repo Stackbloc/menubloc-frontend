@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "b2a34101349eacfcfa1017cf47ad2f985646967a",
-  "gitShortSha": "b2a3410",
+  "gitSha": "07b855b597355db6fa07cac434752eaf0a36e266",
+  "gitShortSha": "07b855b",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-06T20:15:13.003Z",
+  "buildTime": "2026-07-06T20:28:39.286Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Fix menu dietary/allergen filters to auto-apply from saved profile."
+  "commitMessage": "Split Menu Manager into dashboard and focused menu editor."
 }

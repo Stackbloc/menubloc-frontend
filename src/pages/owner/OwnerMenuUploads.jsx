@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
+import OwnerCreateRestaurantForm from "./OwnerCreateRestaurantForm.jsx";
 import {
   getOwnerMenuUploads,
   searchOwnerRestaurantsForUpload,
@@ -570,6 +571,10 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
   if (!selectedRestaurant) {
     return (
       <div>
+        <div style={{ marginBottom: 12 }}>
+          <OwnerCreateRestaurantForm />
+        </div>
+
         {/* Search bar */}
         <PageCard style={{ padding: "14px 18px", marginBottom: 12 }}>
           <div style={{ position: "relative" }}>
