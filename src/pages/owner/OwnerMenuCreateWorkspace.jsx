@@ -44,6 +44,7 @@ const EMPTY_PROFILE = {
   service_model: [],
   menu_offering_type: "",
   status: "draft",
+  subscription_plan: "unverified",
   phone: "",
   website: "",
 };
@@ -396,6 +397,7 @@ export default function OwnerMenuCreateWorkspace() {
           <SelectField label="Country" value={profile.country_code} onChange={(v) => updateProfile("country_code", v)} options={schema?.countries} required />
           <SelectField label="Primary cuisine" value={profile.cuisine} onChange={(v) => updateProfile("cuisine", v)} options={schema?.cuisines} required />
           <SelectField label="Price tier" value={profile.price_tier} onChange={(v) => updateProfile("price_tier", v)} options={schema?.price_tiers} required />
+          <SelectField label="Subscription plan" value={profile.subscription_plan} onChange={(v) => updateProfile("subscription_plan", v)} options={schema?.subscription_plans} required />
           <SelectField label="Alcohol / menu category" value={profile.menu_offering_type} onChange={(v) => updateProfile("menu_offering_type", v)} options={schema?.menu_offering_types} required />
           <SelectField label="Status" value={profile.status} onChange={(v) => updateProfile("status", v)} options={schema?.profile_statuses} required />
           <div>
