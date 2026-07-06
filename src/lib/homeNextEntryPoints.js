@@ -47,7 +47,7 @@ const FOOD_ENTRY_STATIC = [
   { id: "salads", icon: "🥗", label: "Salads", query: "salads" },
   { id: "tacos", icon: "🌮", label: "Tacos", query: "tacos" },
   { id: "sandwiches", icon: "🥪", label: "Sandwiches", query: "sandwiches" },
-  { id: "asian", icon: "🥡", label: "Asian", query: "asian food", cuisine: "asian" },
+  { id: "asian", icon: "🥡", label: "Asian", query: "asian food" },
   { id: "mexican", icon: "🌮", label: "Mexican", query: "mexican food", cuisine: "mexican" },
   { id: "comfort", icon: "🍲", label: "Comfort Food", query: "comfort food" },
 ];

@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "92fe0a553cede56fc81682b63b2d1de31829a5f7",
-  "gitShortSha": "92fe0a5",
+  "gitSha": "509262a76ae9478217c40d8e17d6688c3a12f0fe",
+  "gitShortSha": "509262a",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-06T21:30:27.727Z",
+  "buildTime": "2026-07-06T23:04:02.262Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Add platform-owner manual restaurant creation from Menu Manager."
+  "commitMessage": "fix(similar-ui): abbreviate long similar names for clean rows"
 }

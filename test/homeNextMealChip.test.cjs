@@ -63,7 +63,7 @@ function testLateNightMealPeriodMapping() {
   assert.match(url, /q=late(\+|%20)night/);
 }
 
-function testAsianChipUsesCuisineParam() {
+function testAsianChipRoutesToConceptSearch() {
   const chips = getFoodEntryPoints(atLocalHour(12));
   const asian = chips.find((c) => c.id === "asian");
   assert.ok(asian);
@@ -73,7 +73,7 @@ function testAsianChipUsesCuisineParam() {
     shouldUseGeoBrowse: false,
   });
   assert.match(url, /q=asian\+food/);
-  assert.match(url, /cuisine=asian/);
+  assert.doesNotMatch(url, /cuisine=asian/);
 }
 
 function testSomethingElseNotInBlankStateChips() {
@@ -96,7 +96,7 @@ testWeekendBrunch();
 testFoodEntryPointsMealSlot();
 testContextMealChipRoutesToSearch();
 testLateNightMealPeriodMapping();
-testAsianChipUsesCuisineParam();
+testAsianChipRoutesToConceptSearch();
 testSomethingElseNotInBlankStateChips();
 testSplitFoodRowsIndependently();
 console.log("homeNextMealChip tests passed");

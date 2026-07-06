@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   addOwnerRestaurantToCrm,
@@ -307,6 +308,7 @@ function RowActions({ row, onDetail, onCrm }) {
   const menuUrl = publicUrl ? `${publicUrl}/menu` : null;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <ActionLink href={`/owner/menu-manager?restaurant=${row.restaurant_id}`} label="Manage menu" />
       {publicUrl ? <ActionLink href={publicUrl} label="Public" external /> : null}
       <button type="button" style={linkBtnStyle} onClick={() => onDetail(row.restaurant_id)}>Internal</button>
       {menuUrl ? <ActionLink href={menuUrl} label="Menu" external /> : null}
@@ -366,6 +368,7 @@ function DetailDrawer({ loading, restaurant, onClose, onCrm }) {
               ))}
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <ActionLink href={`/owner/menu-manager?restaurant=${restaurant.restaurant_id}`} label="Manage menu" />
               {restaurant.public_url ? <ActionLink href={restaurant.public_url} label="Public page" external /> : null}
               {restaurant.crm_lead_id ? (
                 <ActionLink href={`/crm/leads/${restaurant.crm_lead_id}`} label="Open CRM lead" />

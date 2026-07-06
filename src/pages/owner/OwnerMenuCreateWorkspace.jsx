@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { MenuEditor, StatusChip, inputStyle } from "./ownerMenuEditorComponents.jsx";
+import OwnerMenuRestaurantFinder, { saveRecentRestaurant } from "./OwnerMenuRestaurantFinder.jsx";
 import {
   approveReviewItem,
+  createMenuConsoleMenu,
   createMenuConsoleRestaurant,
   getMenuConsoleMenu,
   getMenuConsoleProfileSchema,
+  getMenuConsoleRestaurantMenus,
   getOwnerMenuUploads,
   getUploadReviewItems,
   publishMenuConsoleMenu,
@@ -151,7 +154,20 @@ function ReviewItemRow({ item, onApprove, onReject }) {
   );
 }
 
+function profileFromRestaurant(r = {}) {
+  return {
+    ...EMPTY_PROFILE,
+    restaurant_name: r.restaurant_name || r.name || "",
+    address_line1: r.address_line1 || "",
+    city: r.city || "",
+    state: r.state || "",
+    phone: r.phone || "",
+    website: r.website || r.website_url || "",
+  };
+}
+
 export default function OwnerMenuCreateWorkspace() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [schema, setSchema] = useState(null);
   const [schemaError, setSchemaError] = useState("");
   const [profile, setProfile] = useState(EMPTY_PROFILE);
@@ -160,6 +176,10 @@ export default function OwnerMenuCreateWorkspace() {
   const [creatingProfile, setCreatingProfile] = useState(false);
 
   const [restaurant, setRestaurant] = useState(null);
+  const [existingRestaurant, setExistingRestaurant] = useState(false);
+  const [availableMenus, setAvailableMenus] = useState([]);
+  const [loadingRestaurant, setLoadingRestaurant] = useState(false);
+  const [loadRestaurantErr, setLoadRestaurantErr] = useState("");
   const [menu, setMenu] = useState(null);
   const [menuDetail, setMenuDetail] = useState(null);
 
@@ -183,6 +203,94 @@ export default function OwnerMenuCreateWorkspace() {
       .then((data) => setSchema(data))
       .catch(() => setSchemaError("Could not load profile options."));
   }, []);
+
+  async function loadExistingRestaurant(restaurantId, seed = null) {
+    const ridNum = Number(restaurantId);
+    if (!Number.isFinite(ridNum)) return;
+    setLoadingRestaurant(true);
+    setLoadRestaurantErr("");
+    setDuplicateMatches(null);
+    setProfileErr("");
+    setUploadMsg(null);
+    setActionMsg("");
+    try {
+      const data = await getMenuConsoleRestaurantMenus(ridNum);
+      const loadedRestaurant = data.restaurant || seed || { id: ridNum };
+      const normalizedRestaurant = {
+        ...loadedRestaurant,
+        id: loadedRestaurant.id || ridNum,
+        restaurant_name: loadedRestaurant.restaurant_name || loadedRestaurant.name,
+      };
+      const menus = Array.isArray(data.menus) ? data.menus : [];
+      let activeMenu = menus.find((m) => m.is_primary) || menus.find((m) => m.menu_type === "main") || menus[0] || null;
+      if (!activeMenu) {
+        const created = await createMenuConsoleMenu(ridNum, {
+          display_name: menuName.trim() || "Main Menu",
+          menu_type: menuType || "main",
+        });
+        activeMenu = created.menu;
+        menus.push(activeMenu);
+      }
+      setRestaurant(normalizedRestaurant);
+      setExistingRestaurant(true);
+      setAvailableMenus(menus);
+      setProfile(profileFromRestaurant(normalizedRestaurant));
+      setMenu(activeMenu);
+      if (activeMenu?.display_name) setMenuName(activeMenu.display_name);
+      if (activeMenu?.menu_type) setMenuType(activeMenu.menu_type);
+      saveRecentRestaurant(normalizedRestaurant);
+      setSearchParams((params) => {
+        const next = new URLSearchParams(params);
+        next.set("restaurant", String(ridNum));
+        return next;
+      }, { replace: true });
+    } catch (err) {
+      setLoadRestaurantErr(err?.payload?.error || err?.message || "Could not load restaurant.");
+    } finally {
+      setLoadingRestaurant(false);
+    }
+  }
+
+  useEffect(() => {
+    const restaurantParam = searchParams.get("restaurant");
+    if (!restaurantParam || restaurant) return;
+    loadExistingRestaurant(restaurantParam);
+  }, [searchParams, restaurant]);
+
+  function clearSelectedRestaurant() {
+    setRestaurant(null);
+    setExistingRestaurant(false);
+    setAvailableMenus([]);
+    setMenu(null);
+    setMenuDetail(null);
+    setReviewItems([]);
+    setProfile(EMPTY_PROFILE);
+    setLoadRestaurantErr("");
+    setSearchParams((params) => {
+      const next = new URLSearchParams(params);
+      next.delete("restaurant");
+      return next;
+    }, { replace: true });
+  }
+
+  async function selectExistingRestaurant(row) {
+    await loadExistingRestaurant(row.id, row);
+  }
+
+  async function switchMenu(nextMenu) {
+    if (!nextMenu?.id || !rid) return;
+    setMenu(nextMenu);
+    if (nextMenu.display_name) setMenuName(nextMenu.display_name);
+    if (nextMenu.menu_type) setMenuType(nextMenu.menu_type);
+    setMenuDetail(null);
+    try {
+      const detail = await getMenuConsoleMenu(rid, nextMenu.id);
+      setMenuDetail(detail);
+      setMenu(detail.menu || nextMenu);
+    } catch {
+      setMenuDetail(null);
+    }
+  }
 
   function updateProfile(key, value) {
     setProfile((prev) => ({ ...prev, [key]: value }));
@@ -218,10 +326,16 @@ export default function OwnerMenuCreateWorkspace() {
       };
       const data = await createMenuConsoleRestaurant(payload);
       setRestaurant(data.restaurant);
+      setExistingRestaurant(false);
       setMenu(data.menu);
       setDuplicateMatches(null);
       if (data.menu?.display_name) setMenuName(data.menu.display_name);
       if (data.menu?.menu_type) setMenuType(data.menu.menu_type);
+      setSearchParams((params) => {
+        const next = new URLSearchParams(params);
+        next.set("restaurant", String(data.restaurant.id));
+        return next;
+      }, { replace: true });
     } catch (ex) {
       if (ex?.status === 409 && ex?.payload?.duplicate_warning) {
         setDuplicateMatches(ex.payload.matches || []);
@@ -347,9 +461,22 @@ export default function OwnerMenuCreateWorkspace() {
 
   return (
     <OwnerLayout
-      title="Create Restaurant + Menu"
-      subtitle="Create a full restaurant profile, attach a menu PDF or photo, review parsed items, then save or publish."
+      title={existingRestaurant ? "Menu Manager" : "Create Restaurant + Menu"}
+      subtitle={existingRestaurant
+        ? "Upload, review, edit, and publish menus for an existing restaurant."
+        : "Find an existing restaurant or create a new profile, attach a menu PDF or photo, review parsed items, then save or publish."}
     >
+      <OwnerMenuRestaurantFinder
+        selectedRestaurant={restaurant}
+        loading={loadingRestaurant}
+        onSelect={selectExistingRestaurant}
+        onClear={clearSelectedRestaurant}
+      />
+
+      {loadRestaurantErr ? (
+        <PageCard style={{ padding: 16, marginBottom: 16, color: "#991b1b" }}>{loadRestaurantErr}</PageCard>
+      ) : null}
+
       <StepHeader current={step} />
 
       {schemaError && (
@@ -357,9 +484,9 @@ export default function OwnerMenuCreateWorkspace() {
       )}
 
       {/* ── Step 1: Profile ───────────────────────────────────── */}
-      <PageCard style={{ padding: 20, marginBottom: 16, opacity: restaurant ? 0.72 : 1 }}>
+      <PageCard style={{ padding: 20, marginBottom: 16, opacity: restaurant ? 0.72 : 1, display: existingRestaurant ? "none" : "block" }}>
         <SectionTitle
-          title="Restaurant Profile"
+          title="Create New Restaurant"
           subtitle="Required fields use schema-controlled dropdowns from the platform catalog."
         />
 
@@ -453,12 +580,57 @@ export default function OwnerMenuCreateWorkspace() {
           </button>
         )}
 
-        {restaurant && (
+        {restaurant && !existingRestaurant && (
           <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", fontSize: 13, color: "#15803d", fontWeight: 600 }}>
             Profile created: {restaurant.restaurant_name || restaurant.name} (#{restaurant.id})
           </div>
         )}
       </PageCard>
+
+      {existingRestaurant && restaurant && (
+        <PageCard style={{ padding: 20, marginBottom: 16 }}>
+          <SectionTitle
+            title={restaurant.restaurant_name || restaurant.name}
+            subtitle={`Restaurant #${restaurant.id}${restaurant.city || restaurant.state ? ` · ${[restaurant.city, restaurant.state].filter(Boolean).join(", ")}` : ""}`}
+          />
+          {availableMenus.length > 1 ? (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+              {availableMenus.map((m) => {
+                const active = m.id === mid;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => switchMenu(m)}
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: 999,
+                      border: `1px solid ${active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
+                      background: active ? OWNER_COLORS.accentSoft : "#fff",
+                      color: active ? OWNER_COLORS.accent : OWNER_COLORS.ink,
+                      fontWeight: active ? 700 : 600,
+                      fontSize: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {m.display_name || m.name || `Menu #${m.id}`}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+          {mid ? (
+            <div style={{ marginTop: 12 }}>
+              <Link
+                to={`/owner/restaurants/${rid}/menus/${mid}/edit`}
+                style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
+              >
+                Open full editor (items, OCR review, upload history) →
+              </Link>
+            </div>
+          ) : null}
+        </PageCard>
+      )}
 
       {/* ── Step 2: Attach menu ───────────────────────────────── */}
       {restaurant && (
