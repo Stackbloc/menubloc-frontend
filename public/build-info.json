@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "07b855b597355db6fa07cac434752eaf0a36e266",
-  "gitShortSha": "07b855b",
+  "gitSha": "92fe0a553cede56fc81682b63b2d1de31829a5f7",
+  "gitShortSha": "92fe0a5",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-06T20:28:39.286Z",
+  "buildTime": "2026-07-06T21:30:27.727Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Split Menu Manager into dashboard and focused menu editor."
+  "commitMessage": "Add platform-owner manual restaurant creation from Menu Manager."
 }

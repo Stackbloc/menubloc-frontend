@@ -176,6 +176,8 @@ export const searchMenuConsoleRestaurants = (params = {}) => {
 };
 export const createMenuConsoleRestaurant = (body) =>
   post("/api/owner/menu-console/restaurants", body);
+export const getMenuConsoleProfileSchema = () =>
+  get("/api/owner/menu-console/profile-schema");
 export const getMenuConsoleRestaurantMenus = (restaurantId) =>
   get(`/api/owner/menu-console/restaurants/${restaurantId}/menus`);
 export const getMenuConsoleMenu = (restaurantId, menuId) =>
