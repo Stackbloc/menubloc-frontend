@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   getOwnerMenuUploads,
@@ -253,6 +253,7 @@ const ITEM_SEARCH_LIMIT = 50;
 // ─── Menu Manager tab ─────────────────────────────────────────────────────────
 
 function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParams, setSearchParams }) {
+  const navigate = useNavigate();
   // race-condition guard: each selectRestaurant call gets a version; stale responses are discarded
   const restaurantVersionRef = useRef(0);
 
@@ -511,8 +512,7 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
 
   function onMenuCreated(newMenu) {
     setMenus((prev) => [...prev, newMenu]);
-    setActiveMenuType(newMenu.menu_type || "main");
-    loadMenu(newMenu.id);
+    navigate(`/owner/restaurants/${selectedRestaurant.id}/menus/${newMenu.id}/edit`);
   }
 
   function handleBack() {
@@ -726,11 +726,13 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
   }
 
   // ══════════════════════════════════════════════════════════════
-  // RESTAURANT VIEW
+  // RESTAURANT VIEW — menu list only; editing happens on /owner/restaurants/:id/menus/:menuId/edit
   // ══════════════════════════════════════════════════════════════
+  const publishedCount = menus.filter((m) => m.status === "published").length;
+  const draftCount = menus.filter((m) => m.status !== "published").length;
+
   return (
     <div>
-      {/* Back to search */}
       <div style={{ marginBottom: 16 }}>
         <button
           type="button"
@@ -740,1605 +742,84 @@ function MenuManagerTab({ selectedRestaurant, setSelectedRestaurant, searchParam
             cursor: "pointer", color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 13, padding: 0,
           }}
         >
-          ← Menu Manager
+          ← All Restaurants
         </button>
       </div>
 
-      {/* Restaurant summary panel */}
       <PageCard style={{ padding: 20, marginBottom: 16 }}>
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
-            Restaurant Menu Detail
-          </div>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+          <div>
             <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: OWNER_COLORS.ink }}>
               {selectedRestaurant.name}
             </h2>
-            <a
-              href={`/public/restaurants/${selectedRestaurant.id}/menu`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none", whiteSpace: "nowrap", marginTop: 4 }}
-            >
-              View public menu ↗
-            </a>
-          </div>
-          <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginTop: 4 }}>
-            {[selectedRestaurant.address_line1, selectedRestaurant.city, selectedRestaurant.state].filter(Boolean).join(", ")}
-            {selectedRestaurant.email && ` · ${selectedRestaurant.email}`}
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 12 }}>
-          <StatBox label="Published Items"  value={publishedItems.toLocaleString()} />
-          <StatBox label="Draft Items"      value={draftItems.toLocaleString()} />
-          {needsReviewItems !== null && (
-            <StatBox label="Needs Review"   value={needsReviewItems.toLocaleString()} warn={needsReviewItems > 0} />
-          )}
-          {duplicateCount !== null && duplicateCount > 0 && (
-            <StatBox label="Duplicates"     value={duplicateCount.toLocaleString()} warn />
-          )}
-        </div>
-        {/* Compact restaurant details */}
-        {(() => {
-          const lastUpload = recentUploads.length > 0 ? recentUploads[0].created_at : null;
-          const lastPublished = menus
-            .filter((m) => m.status === "published")
-            .reduce((max, m) => !m.updated_at ? max : (!max || m.updated_at > max ? m.updated_at : max), null);
-          return (
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", paddingTop: 10, borderTop: `1px solid ${OWNER_COLORS.line}` }}>
-              {[
-                { label: "ID",            value: `#${selectedRestaurant.id}` },
-                { label: "Created",       value: selectedRestaurant.created_at ? formatDate(selectedRestaurant.created_at) : null },
-                { label: "First Upload",  value: selectedRestaurant.first_menu_date ? formatDate(selectedRestaurant.first_menu_date) : null },
-                { label: "Last Upload",   value: lastUpload ? formatDate(lastUpload) : null },
-                { label: "Last Published",value: lastPublished ? formatDate(lastPublished) : null },
-              ].filter((d) => d.value).map((d) => (
-                <div key={d.label} style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
-                  <span style={{ fontWeight: 600 }}>{d.label}:</span> {d.value}
-                </div>
-              ))}
+            <div style={{ fontSize: 13, color: OWNER_COLORS.muted, marginTop: 4 }}>
+              {[selectedRestaurant.address_line1, selectedRestaurant.city, selectedRestaurant.state].filter(Boolean).join(", ")}
             </div>
-          );
-        })()}
-      </PageCard>
-
-      {/* ── Review Queue — inline approve/reject within workspace ─────────── */}
-      <WorkspaceReviewPanel
-        uploads={recentUploads}
-        restaurantId={selectedRestaurant.id}
-        onItemActioned={() => {
-          getOwnerMenuUploads({ restaurant_id: selectedRestaurant.id, limit: 50 })
-            .then((r) => setRecentUploads(r.uploads || []))
-            .catch(() => {});
-        }}
-        onPublishedMenuRefresh={() => setPublishedMenuReloadToken((t) => t + 1)}
-      />
-
-      <PublishedMenuEditorPanel
-        restaurantId={selectedRestaurant.id}
-        reloadToken={publishedMenuReloadToken}
-      />
-
-      {/* ── Upload History ──────────────────────────────────────────────── */}
-      <PageCard style={{ padding: "16px 20px", marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.ink }}>Upload History</div>
-          <NewUploadSection
-            onSuccess={() => {
-              getOwnerMenuUploads({ restaurant_id: selectedRestaurant.id, limit: 50 })
-                .then((r) => setRecentUploads(r.uploads || []))
-                .catch(() => {});
-            }}
-            initialRestaurant={selectedRestaurant}
-            compact
-          />
-        </div>
-        {recentUploads.length === 0 ? (
-          <div style={{ color: OWNER_COLORS.muted, fontSize: 13 }}>
-            No uploads yet for this restaurant.{" "}
-            <span style={{ opacity: 0.7 }}>Use "+ New Upload" above to add a PDF, photo, or paste menu text.</span>
           </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {recentUploads.map((u) => {
-              const isReview = (u.human_review_items || 0) > 0;
-              const isFailed = u.status === "failed" || u.display_status === "failed";
-              return (
-                <div key={u.id} style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  gap: 12, padding: "8px 12px", borderRadius: 8,
-                  background: isReview ? OWNER_COLORS.accentSoft : "#f9fafb",
-                  border: `1px solid ${isReview ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 15 }}>
-                        {(u.upload_type || "").includes("photo") ? "📸" : (u.upload_type || "") === "pdf" ? "📄" : "📝"}
-                      </span>
-                      <StatusChip status={u.display_status || u.status} />
-                      <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
-                        {u.source_filename || u.upload_type || "upload"} · {formatDate(u.created_at)}
-                      </span>
-                      {(u.inserted_item_count > 0 || u.parsed_item_count > 0) && (
-                        <span style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
-                          {u.inserted_item_count} inserted / {u.parsed_item_count} parsed
-                        </span>
-                      )}
-                      {(u.human_review_items || 0) > 0 && (
-                        <span style={{ fontSize: 11, color: OWNER_COLORS.accent, fontWeight: 700 }}>
-                          {u.human_review_items} need review
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
-                    {isFailed && (
-                      <RetryUploadButton
-                        uploadId={u.id}
-                        onSuccess={() => {
-                          getOwnerMenuUploads({ restaurant_id: selectedRestaurant.id, limit: 50 })
-                            .then((r) => setRecentUploads(r.uploads || []))
-                            .catch(() => {});
-                        }}
-                      />
-                    )}
-                    {isReview && (
-                      <Link
-                        to={`/owner/menu-manager/uploads/${u.id}/review-items`}
-                        style={{
-                          padding: "6px 12px", borderRadius: 7, textDecoration: "none",
-                          background: OWNER_COLORS.accent, color: "#fff",
-                          fontSize: 12, fontWeight: 700,
-                        }}
-                      >
-                        Review Items →
-                      </Link>
-                    )}
-                    {((u.upload_type || "").includes("photo") || (u.upload_type || "") === "pdf") && (
-                      <FileDownloadButton uploadId={u.id} />
-                    )}
-                    <Link
-                      to={`/owner/menu-manager/uploads/${u.id}`}
-                      style={{
-                        padding: "6px 10px", borderRadius: 7, textDecoration: "none",
-                        background: "#fff", color: isFailed ? "#991b1b" : OWNER_COLORS.ink,
-                        border: `1px solid ${OWNER_COLORS.line}`, fontSize: 12, fontWeight: 600,
-                      }}
-                    >
-                      Inspect →
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </PageCard>
-
-      {/* ── Publishing Status — all menus draft/published overview ──────────── */}
-      <PublishingStatusPanel
-        menus={menus}
-        restaurantId={selectedRestaurant.id}
-        onMenuUpdated={onMenuUpdated}
-      />
-
-      {/* ── Draft vs Published comparison (P2.1 — satisfies AC-08) ────────── */}
-      <DraftPublishedComparisonPanel
-        restaurantId={selectedRestaurant.id}
-        menus={menus}
-      />
-
-      {/* ── Item search bar + filter chips ─────────────────────────────────── */}
-      <PageCard style={{ padding: "14px 18px", marginBottom: 12 }}>
-        <div style={{ position: "relative" }}>
-          <span style={{
-            position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
-            fontSize: 15, color: OWNER_COLORS.muted, pointerEvents: "none",
-          }}>🔍</span>
-          <input
-            type="text"
-            value={itemQ}
-            onChange={handleItemQChange}
-            placeholder="Search items by name, description, or section…"
-            style={{ ...inputStyle, paddingLeft: 38, fontSize: 13 }}
-            autoComplete="off"
-          />
-          {itemSearching && (
-            <span style={{
-              position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-              fontSize: 11, color: OWNER_COLORS.muted,
-            }}>Searching…</span>
-          )}
-          {isItemSearchActive && !itemSearching && (
-            <button
-              type="button"
-              onClick={resetItemSearch}
-              style={{
-                position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                background: "none", border: "none", cursor: "pointer",
-                fontSize: 13, color: OWNER_COLORS.muted, padding: "0 2px",
-              }}
-            >✕ Clear</button>
-          )}
-        </div>
-        {itemSearchErr && <div style={{ marginTop: 6, fontSize: 12, color: "#991b1b" }}>{itemSearchErr}</div>}
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-          {ITEM_FILTER_CHIPS.map((fc) => {
-            const active = itemFilter === fc.key;
-            return (
-              <button
-                key={fc.key}
-                type="button"
-                onClick={() => handleItemFilterChange(fc.key)}
-                style={{
-                  padding: "5px 12px", borderRadius: 16, fontSize: 11, fontWeight: active ? 700 : 500,
-                  border: `1px solid ${active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
-                  background: active ? OWNER_COLORS.accentSoft : "#fff",
-                  color: active ? OWNER_COLORS.accent : OWNER_COLORS.ink,
-                  cursor: "pointer",
-                }}
-              >
-                {fc.label}
-              </button>
-            );
-          })}
-        </div>
-      </PageCard>
-
-      {/* ── Item search results (replaces tabs+editor when active) ─────────── */}
-      {isItemSearchActive ? (
-        <ItemSearchResults
-          results={itemResults}
-          total={itemTotal}
-          page={itemPage}
-          totalPages={itemTotalPages}
-          searching={itemSearching}
-          selectedIds={selectedItemIds}
-          onSelectItem={handleSelectItem}
-          onSelectAll={handleSelectAll}
-          onPage={handleItemPage}
-          menus={menus}
-          bulkAction={bulkAction}
-          setBulkAction={setBulkAction}
-          bulkTargetMenuId={bulkTargetMenuId}
-          setBulkTargetMenuId={setBulkTargetMenuId}
-          bulkSectionInput={bulkSectionInput}
-          setBulkSectionInput={setBulkSectionInput}
-          bulkLoading={bulkLoading}
-          bulkErr={bulkErr}
-          onBulkOp={handleBulkOp}
-          onOpenMenu={handleJumpToMenu}
-          restaurantId={selectedRestaurant?.id}
-          onSaved={() => runItemSearch(itemQ, itemPage, itemFilter)}
-        />
-      ) : (
-      <>
-
-      {/* Menu type tabs */}
-      {menusLoading ? (
-        <div style={{ fontSize: 13, color: OWNER_COLORS.muted, padding: "10px 0", marginBottom: 12 }}>
-          Loading menus…
-        </div>
-      ) : (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
-            {availableTypeTabs.map((tab) => {
-              const tabMenus = tab.key === "__custom__"
-                ? menus.filter((m) => !STANDARD_MENU_TYPES.has(m.menu_type))
-                : menus.filter((m) => m.menu_type === tab.key);
-              const tabItemCount = tabMenus.reduce((s, m) => s + (m.item_count || 0), 0);
-              const tabLastUpdated = tabMenus.reduce((latest, m) => {
-                if (!m.updated_at) return latest;
-                return !latest || new Date(m.updated_at) > new Date(latest) ? m.updated_at : latest;
-              }, null);
-              const isActive = activeMenuType === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => handleMenuTypeTab(tab.key)}
-                  style={{
-                    padding: "7px 14px", borderRadius: 10, textAlign: "left",
-                    border: `1px solid ${isActive ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
-                    background: isActive ? OWNER_COLORS.accentSoft : "#fff",
-                    color: isActive ? OWNER_COLORS.accent : OWNER_COLORS.ink,
-                    fontWeight: isActive ? 700 : 600, fontSize: 13, cursor: "pointer",
-                  }}
-                >
-                  {tab.label}
-                  <span style={{ display: "block", fontSize: 10, opacity: 0.65, fontWeight: 500, marginTop: 1 }}>
-                    {tabItemCount} item{tabItemCount !== 1 ? "s" : ""}
-                    {tabLastUpdated ? ` · ${formatDate(tabLastUpdated)}` : ""}
-                  </span>
-                </button>
-              );
-            })}
-
-            {/* Inline create-menu button sits at end of tab row */}
-            <CreateMenuForm restaurantId={selectedRestaurant.id} onCreated={onMenuCreated} inline />
-          </div>
-
-          {/* Sub-nav when multiple menus share the same type */}
-          {menusOfActiveType.length > 1 && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {menusOfActiveType.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => loadMenu(m.id)}
-                  style={{
-                    padding: "5px 12px", borderRadius: 8,
-                    border: `1px solid ${selectedMenuId === m.id ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
-                    background: selectedMenuId === m.id ? OWNER_COLORS.accentSoft : "transparent",
-                    color: selectedMenuId === m.id ? OWNER_COLORS.accent : OWNER_COLORS.ink,
-                    fontWeight: selectedMenuId === m.id ? 700 : 500, fontSize: 12, cursor: "pointer",
-                  }}
-                >
-                  {m.display_name || m.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Menu editor */}
-      {!selectedMenuId ? (
-        <PageCard style={{ padding: 40 }}>
-          <EmptyState>
-            {menus.length === 0
-              ? "No menus yet — create one above."
-              : "Select a menu tab above to view and edit it."}
-          </EmptyState>
-        </PageCard>
-      ) : menuDetailLoading ? (
-        <PageCard style={{ padding: 40, color: OWNER_COLORS.muted, fontSize: 14 }}>Loading menu…</PageCard>
-      ) : menuDetailErr ? (
-        <PageCard style={{ padding: 24 }}><ErrorBanner message={menuDetailErr} /></PageCard>
-      ) : menuDetail ? (
-        <MenuEditor
-          restaurantId={selectedRestaurant.id}
-          menuDetail={menuDetail}
-          onMenuUpdated={onMenuUpdated}
-          onMenuDeleted={onMenuDeleted}
-          onReload={() => loadMenu(selectedMenuId)}
-        />
-      ) : null}
-
-      </>
-      )}
-    </div>
-  );
-}
-
-// ─── Workspace Review Panel ──────────────────────────────────────────────────
-
-const HOLD_REASON_LABELS = {
-  price_zero_unverified: "Missing price",
-  low_confidence:        "Low confidence",
-  mojibake:              "Encoding issue",
-  identity_conflict:     "Identity conflict",
-  incoherent_parse:      "Parse error",
-};
-
-function ReviewItemRow({ item, onApprove, onReject }) {
-  // ocr_menu_review_items uses parsed_name/proposed_item_name, proposed_price, etc.
-  const [name,        setName]        = useState(item.parsed_name || item.proposed_item_name || "");
-  const [price,       setPrice]       = useState(item.proposed_price != null ? String(item.proposed_price) : "");
-  const [description, setDescription] = useState(item.parsed_description || item.proposed_description || "");
-  const [section,     setSection]     = useState(item.section_name || "");
-  const [acting,      setActing]      = useState(false);
-
-  async function doApprove() {
-    setActing(true);
-    await onApprove({
-      name:        name.trim(),
-      price:       price === "" ? null : Number(price),
-      description: description.trim() || null,
-      section:     section.trim() || null,
-    });
-    setActing(false);
-  }
-
-  async function doReject() {
-    setActing(true);
-    await onReject();
-    setActing(false);
-  }
-
-  return (
-    <div style={{ padding: "12px 14px", borderRadius: 10, background: "#fff", border: "1px solid #fde68a" }}>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 5 }}>
-          {(Array.isArray(item.hold_reasons) ? item.hold_reasons : []).map((r) => HOLD_REASON_LABELS[r] || r).filter(Boolean).join(", ") || "Needs review"}
-        </span>
-        {item.section_name && <span style={{ fontSize: 11, color: OWNER_COLORS.muted }}>{item.section_name}</span>}
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-        <div>
-          <label style={labelStyle}>Name *</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} placeholder="Item name" />
-        </div>
-        <div>
-          <label style={labelStyle}>Price</label>
-          <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" step="0.01" min="0" style={{ ...inputStyle, fontSize: 12 }} placeholder="0.00" />
-        </div>
-      </div>
-      <div style={{ marginBottom: 8 }}>
-        <label style={labelStyle}>Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} style={{ ...inputStyle, resize: "vertical", minHeight: 44, lineHeight: 1.5, fontSize: 12 }} placeholder="Optional description" />
-      </div>
-      <div style={{ marginBottom: 10 }}>
-        <label style={labelStyle}>Section</label>
-        <input value={section} onChange={(e) => setSection(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} placeholder="e.g. Appetizers" />
-      </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          type="button"
-          onClick={doApprove}
-          disabled={acting || !name.trim()}
-          style={{ padding: "7px 16px", borderRadius: 8, background: "#15803d", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: (acting || !name.trim()) ? "not-allowed" : "pointer", opacity: (acting || !name.trim()) ? 0.5 : 1 }}
-        >
-          {acting ? "…" : "Approve"}
-        </button>
-        <button
-          type="button"
-          onClick={doReject}
-          disabled={acting}
-          style={{ padding: "7px 14px", borderRadius: 8, background: "#fff", color: "#991b1b", border: "1px solid #fca5a5", fontWeight: 700, fontSize: 12, cursor: acting ? "not-allowed" : "pointer", opacity: acting ? 0.5 : 1 }}
-        >
-          Reject
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function PublicMenuItemEditorRow({ restaurantId, item, onSaved }) {
-  const [name, setName] = useState(item.name || "");
-  const [price, setPrice] = useState(item.price == null ? "" : String(item.price));
-  const [description, setDescription] = useState(item.description || "");
-  const [section, setSection] = useState(item.section || "");
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [ok, setOk] = useState(true);
-
-  async function saveChanges() {
-    setSaving(true);
-    setMsg("");
-    try {
-      const res = await updateMenuConsoleItem(restaurantId, item.menu_id, item.id, {
-        name: name.trim(),
-        price: price === "" ? null : Number(price),
-        description: description.trim() || null,
-        section: section.trim() || null,
-      });
-      onSaved?.(res.item);
-      setOk(true);
-      setMsg("Saved");
-    } catch (err) {
-      setOk(false);
-      setMsg(err?.payload?.error || "Save failed");
-    } finally {
-      setSaving(false);
-      setTimeout(() => setMsg(""), 2500);
-    }
-  }
-
-  return (
-    <div style={{ padding: "12px 14px", borderRadius: 10, background: "#fafafa", border: "1px solid #e5e7eb" }}>
-      <div style={{ fontSize: 11, color: "#475569", marginBottom: 8, fontWeight: 700 }}>
-        Public menu item
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-        <div>
-          <label style={labelStyle}>Name *</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} style={{ ...inputStyle, fontSize: 12, color: "#334155" }} />
-        </div>
-        <div>
-          <label style={labelStyle}>Price</label>
-          <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" step="0.01" min="0" style={{ ...inputStyle, fontSize: 12, color: "#334155" }} />
-        </div>
-      </div>
-      <div style={{ marginBottom: 8 }}>
-        <label style={labelStyle}>Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} style={{ ...inputStyle, resize: "vertical", minHeight: 44, lineHeight: 1.5, fontSize: 12, color: "#334155" }} />
-      </div>
-      <div style={{ marginBottom: 10 }}>
-        <label style={labelStyle}>Section</label>
-        <input value={section} onChange={(e) => setSection(e.target.value)} style={{ ...inputStyle, fontSize: 12, color: "#334155" }} />
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <button
-          type="button"
-          onClick={saveChanges}
-          disabled={saving || !name.trim()}
-          style={{ padding: "7px 14px", borderRadius: 8, background: "#1d4ed8", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: (saving || !name.trim()) ? "not-allowed" : "pointer", opacity: (saving || !name.trim()) ? 0.5 : 1 }}
-        >
-          {saving ? "Saving…" : "Save"}
-        </button>
-        {msg && (
-          <span style={{ fontSize: 12, fontWeight: 700, color: ok ? "#166534" : "#991b1b" }}>
-            {msg}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function UploadReviewGroup({ upload, items, pages, photoUrl, onApprove, onReject }) {
-  const [photoExpanded, setPhotoExpanded] = useState(false);
-  const [activePage, setActivePage]       = useState(0);
-
-  const activeUrl = pages[activePage]?.image_url || pages[activePage]?.pdf_storage_url || null;
-
-  return (
-    <div style={{ border: "1px solid #fde68a", borderRadius: 10, overflow: "hidden", background: "#fff" }}>
-      {/* Upload label bar */}
-      <div style={{ padding: "8px 12px", background: "#fef3c7", borderBottom: "1px solid #fde68a", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#92400e" }}>
-          {(upload.upload_type || "").includes("photo") ? "📸" : (upload.upload_type || "") === "pdf" ? "📄" : "📝"}
-          {" "}{upload.source_filename || upload.upload_type || "upload"}
-        </span>
-        <span style={{ fontSize: 11, color: "#b45309" }}>{items.length} item{items.length !== 1 ? "s" : ""}</span>
-        {pages.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setPhotoExpanded((v) => !v)}
-            style={{ marginLeft: "auto", background: "none", border: "1px solid #f59e0b", borderRadius: 6, cursor: "pointer", color: "#92400e", fontWeight: 700, fontSize: 11, padding: "2px 8px" }}
+          <a
+            href={`/public/restaurants/${selectedRestaurant.id}/menu`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
           >
-            {photoExpanded ? "Hide Source ▲" : "Show Source ▼"}
-          </button>
-        )}
+            View public menu ↗
+          </a>
+        </div>
+        <div style={{ display: "flex", gap: 20, marginTop: 14, flexWrap: "wrap" }}>
+          <StatBox label="Published menus" value={publishedCount} />
+          <StatBox label="Draft / review" value={draftCount} />
+          <StatBox label="Total items" value={totalItems.toLocaleString()} small />
+        </div>
+      </PageCard>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
+        <SectionTitle title="Menus" subtitle="Open a menu in the editor to upload, edit items, and publish." />
+        <CreateMenuForm restaurantId={selectedRestaurant.id} onCreated={onMenuCreated} inline />
       </div>
 
-      {/* Source photo viewer */}
-      {photoExpanded && pages.length > 0 && (
-        <div style={{ padding: 12, borderBottom: "1px solid #fde68a", background: "#fffbeb" }}>
-          {activeUrl ? (
-            <img
-              src={activeUrl}
-              alt={`Page ${activePage + 1}`}
-              style={{ width: "100%", maxHeight: 480, objectFit: "contain", borderRadius: 6, border: "1px solid #fde68a", display: "block" }}
-            />
-          ) : (
-            <div style={{ color: "#b45309", fontSize: 12, padding: 8 }}>No preview available for this page.</div>
-          )}
-          {pages.length > 1 && (
-            <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-              {pages.map((p, i) => {
-                const thumb = p.image_url || p.pdf_storage_url;
-                return thumb ? (
-                  <img
-                    key={i}
-                    src={thumb}
-                    alt={`Page ${i + 1}`}
-                    onClick={() => setActivePage(i)}
-                    style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 4, cursor: "pointer", border: i === activePage ? "2px solid #f59e0b" : "2px solid transparent", opacity: i === activePage ? 1 : 0.6 }}
-                  />
-                ) : (
-                  <div
-                    key={i}
-                    onClick={() => setActivePage(i)}
-                    style={{ width: 56, height: 56, borderRadius: 4, cursor: "pointer", background: "#fef3c7", border: i === activePage ? "2px solid #f59e0b" : "2px solid transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#92400e" }}
-                  >
-                    p{i + 1}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Review items */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12 }}>
-        {items.map((item) => (
-          <ReviewItemRow
-            key={item.id}
-            item={item}
-            onApprove={(edits) => onApprove(item.id, edits)}
-            onReject={() => onReject(item.id)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PublishedMenuEditorPanel({ restaurantId, reloadToken = 0 }) {
-  const [expanded, setExpanded] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [itemsByMenu, setItemsByMenu] = useState([]);
-
-  useEffect(() => {
-    if (!restaurantId) {
-      setItemsByMenu([]);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-    setError("");
-
-    (async () => {
-      try {
-        const menusData = await getMenuConsoleRestaurantMenus(restaurantId);
-        const publishedMenus = (menusData.menus || []).filter((m) => m.status === "published");
-        if (!publishedMenus.length) {
-          if (!cancelled) setItemsByMenu([]);
-          return;
-        }
-
-        const details = await Promise.all(
-          publishedMenus.map((menu) =>
-            getMenuConsoleMenu(restaurantId, menu.id).then((detail) => ({ menu, detail }))
-          )
-        );
-
-        if (cancelled) return;
-
-        setItemsByMenu(
-          details.map(({ menu, detail }) => ({
-            menuId: menu.id,
-            menuName: menu.display_name || menu.name || `Menu ${menu.id}`,
-            items: (detail.sections || []).flatMap((section) =>
-              (section.items || []).map((item) => ({
-                ...item,
-                section: item.section || section.name || "",
-                menu_id: menu.id,
-              }))
-            ),
-          }))
-        );
-      } catch (err) {
-        if (!cancelled) {
-          setError(err?.payload?.error || "Unable to load published menu items.");
-          setItemsByMenu([]);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [restaurantId, reloadToken]);
-
-  const totalItems = itemsByMenu.reduce((sum, group) => sum + group.items.length, 0);
-  if (!restaurantId) return null;
-
-  return (
-    <PageCard style={{ padding: "16px 20px", marginBottom: 16, background: "#f8fafc", border: "1px solid #cbd5e1" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: expanded ? 14 : 0 }}>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>
-            Published Menu Items
-          </div>
-          <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-            Edit live menu prices and details anytime.
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          style={{ background: "none", border: "none", cursor: "pointer", color: "#475569", fontWeight: 700, fontSize: 12, padding: "2px 6px" }}
-        >
-          {expanded ? "Collapse ▲" : "Expand ▼"}
-        </button>
-      </div>
-
-      {expanded && (
-        <>
-          {loading ? (
-            <div style={{ color: "#64748b", fontSize: 13 }}>Loading published menu items…</div>
-          ) : error ? (
-            <div style={{ color: "#991b1b", fontSize: 13 }}>{error}</div>
-          ) : totalItems === 0 ? (
-            <div style={{ color: "#64748b", fontSize: 13 }}>No published menu items found for this restaurant.</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {itemsByMenu.map((group) => (
-                group.items.length > 0 ? (
-                  <div key={group.menuId} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: 12 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: "#475569", marginBottom: 8 }}>
-                      {group.menuName} · {group.items.length} item{group.items.length !== 1 ? "s" : ""}
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      {group.items.map((item) => (
-                        <PublicMenuItemEditorRow
-                          key={item.id}
-                          restaurantId={restaurantId}
-                          item={item}
-                          onSaved={(updated) => {
-                            setItemsByMenu((prev) =>
-                              prev.map((g) =>
-                                g.menuId !== group.menuId
-                                  ? g
-                                  : {
-                                      ...g,
-                                      items: g.items.map((it) => (it.id === item.id ? { ...it, ...updated } : it)),
-                                    }
-                              )
-                            );
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null
-              ))}
-            </div>
-          )}
-        </>
-      )}
-    </PageCard>
-  );
-}
-
-function WorkspaceReviewPanel({ uploads, restaurantId, onItemActioned, onPublishedMenuRefresh }) {
-  const pending = uploads.filter((u) => (u.human_review_items || 0) > 0);
-  const uploadKey = pending.map((u) => u.id).join(",");
-
-  const [itemsByUpload, setItemsByUpload] = useState({});
-  const [pagesByUpload, setPagesByUpload] = useState({});
-  const [loadingSet,    setLoadingSet]    = useState(new Set());
-  const [expanded,      setExpanded]      = useState(true);
-  const [actionMsg,     setActionMsg]     = useState("");
-  const [actionOk,      setActionOk]      = useState(true);
-  const [bulkActing,    setBulkActing]    = useState(false);
-
-  useEffect(() => {
-    if (!pending.length) return;
-    pending.forEach((u) => {
-      if (itemsByUpload[u.id] !== undefined) return;
-      setLoadingSet((prev) => new Set([...prev, u.id]));
-      Promise.allSettled([
-        getUploadReviewItems(u.id),
-        getOwnerMenuUpload(u.id),
-      ]).then(([reviewResult, detailResult]) => {
-        if (reviewResult.status === "fulfilled") {
-          setItemsByUpload((prev) => ({ ...prev, [u.id]: reviewResult.value.items || [] }));
-        } else {
-          setItemsByUpload((prev) => ({ ...prev, [u.id]: [] }));
-        }
-        if (detailResult.status === "fulfilled") {
-          const detail = detailResult.value;
-          const pages = detail.pages || detail.upload?.pages || [];
-          setPagesByUpload((prev) => ({ ...prev, [u.id]: pages }));
-        }
-      }).finally(() => {
-        setLoadingSet((prev) => { const next = new Set(prev); next.delete(u.id); return next; });
-      });
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uploadKey]);
-
-  if (!pending.length) return null;
-
-  const openItems = pending.flatMap((u) =>
-    (itemsByUpload[u.id] || [])
-      .filter((item) => item.status === "open" || item.status === "edited")
-      .map((item) => ({ ...item, uploadId: u.id }))
-  );
-  const isLoading = loadingSet.size > 0;
-
-  function flashMsg(text, ok = true) {
-    setActionMsg(text);
-    setActionOk(ok);
-    setTimeout(() => setActionMsg(""), 3000);
-  }
-
-  async function handleApprove(uploadId, itemId, edits) {
-    try {
-      await approveReviewItem(uploadId, itemId, edits);
-      setItemsByUpload((prev) => ({
-        ...prev,
-        [uploadId]: (prev[uploadId] || []).filter((i) => i.id !== itemId),
-      }));
-      flashMsg("Item approved.");
-      onItemActioned?.();
-    } catch (err) {
-      flashMsg(err?.payload?.error || "Approve failed.", false);
-    }
-  }
-
-  async function handleReject(uploadId, itemId) {
-    try {
-      await rejectReviewItem(uploadId, itemId);
-      setItemsByUpload((prev) => ({
-        ...prev,
-        [uploadId]: (prev[uploadId] || []).filter((i) => i.id !== itemId),
-      }));
-      flashMsg("Item rejected.");
-      onItemActioned?.();
-      onPublishedMenuRefresh?.();
-    } catch (err) {
-      flashMsg(err?.payload?.error || "Reject failed.", false);
-    }
-  }
-
-  async function handleAcceptAll() {
-    const byUpload = pending
-      .map((u) => ({
-        uploadId: u.id,
-        itemIds: (itemsByUpload[u.id] || [])
-          .filter((item) => item.status === "open" || item.status === "edited")
-          .map((item) => item.id),
-      }))
-      .filter((entry) => entry.itemIds.length > 0);
-    if (!byUpload.length) return;
-    setBulkActing(true);
-    try {
-      for (const entry of byUpload) {
-        await bulkReviewItems(entry.uploadId, { action: "approve", item_ids: entry.itemIds });
-      }
-      setItemsByUpload((prev) => {
-        const next = { ...prev };
-        for (const entry of byUpload) next[entry.uploadId] = [];
-        return next;
-      });
-      flashMsg("Accepted all pending items.");
-      onItemActioned?.();
-    } catch (err) {
-      flashMsg(err?.payload?.error || "Accept all failed.", false);
-    } finally {
-      setBulkActing(false);
-    }
-  }
-
-  async function handleRejectAll() {
-    const byUpload = pending
-      .map((u) => ({
-        uploadId: u.id,
-        itemIds: (itemsByUpload[u.id] || [])
-          .filter((item) => item.status === "open" || item.status === "edited")
-          .map((item) => item.id),
-      }))
-      .filter((entry) => entry.itemIds.length > 0);
-    if (!byUpload.length) return;
-    setBulkActing(true);
-    try {
-      for (const entry of byUpload) {
-        await bulkReviewItems(entry.uploadId, { action: "reject", item_ids: entry.itemIds });
-      }
-      setItemsByUpload((prev) => {
-        const next = { ...prev };
-        for (const entry of byUpload) next[entry.uploadId] = [];
-        return next;
-      });
-      flashMsg("Rejected all pending items.");
-      onItemActioned?.();
-      onPublishedMenuRefresh?.();
-    } catch (err) {
-      flashMsg(err?.payload?.error || "Reject all failed.", false);
-    } finally {
-      setBulkActing(false);
-    }
-  }
-
-  return (
-    <PageCard style={{ padding: "16px 20px", marginBottom: 16, background: "#fffbeb", border: "1px solid #fde68a" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: expanded ? 14 : 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e" }}>
-          Review Queue —{" "}
-          {isLoading
-            ? "Loading…"
-            : openItems.length > 0
-              ? `${openItems.length} item${openItems.length !== 1 ? "s" : ""} awaiting review`
-              : "All items resolved"}
-        </div>
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          style={{ background: "none", border: "none", cursor: "pointer", color: "#92400e", fontWeight: 700, fontSize: 12, padding: "2px 6px" }}
-        >
-          {expanded ? "Collapse ▲" : "Expand ▼"}
-        </button>
-      </div>
-
-      {expanded && (
-        <>
-          {actionMsg && (
-            <div style={{ marginBottom: 10, padding: "6px 12px", borderRadius: 8, background: actionOk ? "#f0fdf4" : "#fff1ef", color: actionOk ? "#15803d" : "#8b2e1a", fontWeight: 700, fontSize: 13 }}>
-              {actionMsg}
-            </div>
-          )}
-          {isLoading ? (
-            <div style={{ color: "#92400e", fontSize: 13 }}>Loading review items…</div>
-          ) : openItems.length === 0 ? (
-            <div style={{ color: "#92400e", fontSize: 13 }}>No items pending review.</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              {pending.map((u) => {
-                const uploadItems = (itemsByUpload[u.id] || [])
-                  .filter((item) => item.status === "open" || item.status === "edited");
-                if (!uploadItems.length) return null;
-                const pages = pagesByUpload[u.id] || [];
-                const photoUrl = pages.find((p) => p.image_url)?.image_url || null;
-                return (
-                  <UploadReviewGroup
-                    key={u.id}
-                    upload={u}
-                    items={uploadItems}
-                    pages={pages}
-                    photoUrl={photoUrl}
-                    onApprove={(itemId, edits) => handleApprove(u.id, itemId, edits)}
-                    onReject={(itemId) => handleReject(u.id, itemId)}
-                  />
-                );
-              })}
-            </div>
-          )}
-          <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px dashed #f59e0b", display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <button
-              type="button"
-              onClick={handleAcceptAll}
-              disabled={bulkActing || openItems.length === 0}
-              style={{ padding: "8px 14px", borderRadius: 8, background: "#15803d", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: (bulkActing || openItems.length === 0) ? "not-allowed" : "pointer", opacity: (bulkActing || openItems.length === 0) ? 0.5 : 1 }}
-            >
-              {bulkActing ? "Working…" : "Accept All"}
-            </button>
-            <button
-              type="button"
-              onClick={handleRejectAll}
-              disabled={bulkActing || openItems.length === 0}
-              style={{ padding: "8px 14px", borderRadius: 8, background: "#fff", color: "#991b1b", border: "1px solid #fca5a5", fontWeight: 700, fontSize: 12, cursor: (bulkActing || openItems.length === 0) ? "not-allowed" : "pointer", opacity: (bulkActing || openItems.length === 0) ? 0.5 : 1 }}
-            >
-              {bulkActing ? "Working…" : "Reject All"}
-            </button>
-          </div>
-        </>
-      )}
-    </PageCard>
-  );
-}
-
-// ─── Publishing Status Panel ──────────────────────────────────────────────────
-
-function PublishingStatusPanel({ menus, restaurantId, onMenuUpdated }) {
-  const [savingId, setSavingId] = useState(null);
-  const [msg,      setMsg]      = useState("");
-  const [msgOk,    setMsgOk]    = useState(true);
-
-  if (!menus.length) return null;
-
-  async function togglePublish(menu) {
-    setSavingId(menu.id);
-    setMsg("");
-    try {
-      const data = menu.status === "published"
-        ? await unpublishMenuConsoleMenu(restaurantId, menu.id)
-        : await publishMenuConsoleMenu(restaurantId, menu.id);
-      onMenuUpdated(data.menu);
-      setMsg(menu.status === "published" ? "Set to draft." : "Published.");
-      setMsgOk(true);
-    } catch (err) {
-      setMsg(err?.payload?.error || "Action failed.");
-      setMsgOk(false);
-    } finally {
-      setSavingId(null);
-      setTimeout(() => setMsg(""), 3000);
-    }
-  }
-
-  const publishedMenus = menus.filter((m) => m.status === "published");
-  const draftMenus     = menus.filter((m) => m.status !== "published");
-
-  return (
-    <PageCard style={{ padding: "16px 20px", marginBottom: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.ink, marginBottom: 14 }}>
-        Publishing Status
-      </div>
-
-      {msg && (
-        <div style={{ marginBottom: 12, padding: "6px 12px", borderRadius: 8, background: msgOk ? "#f0fdf4" : "#fff1ef", color: msgOk ? "#15803d" : "#8b2e1a", fontWeight: 700, fontSize: 13 }}>
-          {msg}
-        </div>
-      )}
-
-      <div style={{ display: "flex", gap: 24, marginBottom: 16, flexWrap: "wrap" }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#15803d", marginBottom: 2 }}>Published</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#15803d" }}>{publishedMenus.length}</div>
-          <div style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
-            {publishedMenus.reduce((s, m) => s + (m.item_count || 0), 0)} items live
-          </div>
-        </div>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#92400e", marginBottom: 2 }}>Draft</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#92400e" }}>{draftMenus.length}</div>
-          <div style={{ fontSize: 11, color: OWNER_COLORS.muted }}>
-            {draftMenus.reduce((s, m) => s + (m.item_count || 0), 0)} items pending
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {menus.map((menu) => {
-          const isPublished = menu.status === "published";
-          const isSaving    = savingId === menu.id;
-          return (
-            <div key={menu.id} style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "8px 12px", borderRadius: 8, gap: 12,
-              background: isPublished ? "#f0fdf4" : "#fffbeb",
-              border: `1px solid ${isPublished ? "#bbf7d0" : "#fde68a"}`,
-            }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: OWNER_COLORS.ink }}>
-                  {menu.display_name || menu.name}
-                </div>
-                <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 2 }}>
-                  {menu.menu_type} · {menu.item_count || 0} items
-                  {menu.updated_at ? ` · ${formatDate(menu.updated_at)}` : ""}
-                </div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                <StatusChip status={menu.status} />
-                <button
-                  type="button"
-                  disabled={isSaving}
-                  onClick={() => togglePublish(menu)}
-                  style={{
-                    padding: "6px 14px", borderRadius: 8, fontWeight: 700, fontSize: 12,
-                    background: isPublished ? "#fff" : "#15803d",
-                    color:      isPublished ? OWNER_COLORS.ink : "#fff",
-                    border:     isPublished ? `1px solid ${OWNER_COLORS.line}` : "none",
-                    cursor:  isSaving ? "not-allowed" : "pointer",
-                    opacity: isSaving ? 0.6 : 1,
-                  }}
-                >
-                  {isSaving ? "…" : isPublished ? "Set Draft" : "Publish"}
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </PageCard>
-  );
-}
-
-// ─── P2.1: Draft vs Published Comparison Panel ───────────────────────────────
-
-function DraftPublishedComparisonPanel({ restaurantId, menus }) {
-  const [view,    setView]    = useState("draft");   // "draft" | "published"
-  const [items,   setItems]   = useState({ draft: null, published: null });
-  const [loading, setLoading] = useState(false);
-  const [err,     setErr]     = useState("");
-
-  useEffect(() => {
-    if (!restaurantId) return;
-    setLoading(true);
-    setErr("");
-    Promise.all([
-      searchMenuConsoleItems(restaurantId, { filter: "draft",     limit: 200 }),
-      searchMenuConsoleItems(restaurantId, { filter: "published", limit: 200 }),
-    ])
-      .then(([d, p]) => setItems({ draft: d.items || [], published: p.items || [] }))
-      .catch(() => setErr("Could not load comparison data."))
-      .finally(() => setLoading(false));
-  }, [restaurantId]);
-
-  if (!menus.length) return null;
-
-  const current = items[view] || [];
-  const draftCount     = items.draft     != null ? items.draft.length     : "…";
-  const publishedCount = items.published != null ? items.published.length : "…";
-
-  return (
-    <PageCard style={{ padding: "16px 20px", marginBottom: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 12, flexWrap: "wrap" }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: OWNER_COLORS.ink }}>
-          Draft vs Published
-        </div>
-        <div style={{ display: "flex", gap: 4 }}>
-          {[
-            { key: "draft",     label: `Draft (${draftCount})` },
-            { key: "published", label: `Published (${publishedCount})` },
-          ].map(({ key, label }) => {
-            const active = view === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setView(key)}
-                style={{
-                  padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: active ? 700 : 500,
-                  border: `1px solid ${active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
-                  background: active ? OWNER_COLORS.accent : "#fff",
-                  color: active ? "#fff" : OWNER_COLORS.ink,
-                  cursor: "pointer",
-                }}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {err && <div style={{ fontSize: 13, color: "#991b1b", marginBottom: 10 }}>{err}</div>}
-
-      {loading ? (
-        <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>Loading…</div>
-      ) : current.length === 0 ? (
-        <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>
-          No items in {view} menus for this restaurant.
-        </div>
+      {menusLoading ? (
+        <PageCard style={{ padding: 32, color: OWNER_COLORS.muted }}>Loading menus…</PageCard>
+      ) : menus.length === 0 ? (
+        <PageCard style={{ padding: 40 }}>
+          <EmptyState>No menus yet. Create one above, then open it in the editor to add items or upload a PDF/photo.</EmptyState>
+        </PageCard>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+        <PageCard style={{ padding: 0, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ borderBottom: `2px solid ${OWNER_COLORS.line}` }}>
-                {["Name", "Price", "Section", "Menu", "Updated"].map((h) => (
-                  <th key={h} style={{ textAlign: "left", padding: "4px 8px", color: OWNER_COLORS.muted, fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+              <tr style={{ background: "#f8f7f4", borderBottom: `1px solid ${OWNER_COLORS.line}` }}>
+                {["Menu", "Type", "Status", "Items", "Last updated", ""].map((h) => (
+                  <th key={h} style={{ textAlign: "left", padding: "12px 16px", fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {current.map((item) => (
-                <tr key={item.id} style={{ borderBottom: `1px solid ${OWNER_COLORS.line}` }}>
-                  <td style={{ padding: "6px 8px", fontWeight: 600, color: OWNER_COLORS.ink }}>{item.name}</td>
-                  <td style={{ padding: "6px 8px", color: OWNER_COLORS.ink }}>{item.price != null ? `$${Number(item.price).toFixed(2)}` : "—"}</td>
-                  <td style={{ padding: "6px 8px", color: OWNER_COLORS.muted }}>{item.section || "—"}</td>
-                  <td style={{ padding: "6px 8px", color: OWNER_COLORS.muted }}>{item.menu_name || "—"}</td>
-                  <td style={{ padding: "6px 8px", color: OWNER_COLORS.muted, whiteSpace: "nowrap" }}>{item.updated_at ? formatDate(item.updated_at) : "—"}</td>
+              {menus.map((m) => (
+                <tr key={m.id} style={{ borderBottom: `1px solid ${OWNER_COLORS.line}` }}>
+                  <td style={{ padding: "12px 16px", fontWeight: 600 }}>{m.display_name || m.name || "Unnamed"}</td>
+                  <td style={{ padding: "12px 16px", color: OWNER_COLORS.muted }}>{m.menu_type || "—"}</td>
+                  <td style={{ padding: "12px 16px" }}><StatusChip status={m.status} /></td>
+                  <td style={{ padding: "12px 16px" }}>{m.item_count ?? 0}</td>
+                  <td style={{ padding: "12px 16px", color: OWNER_COLORS.muted }}>{formatDate(m.updated_at)}</td>
+                  <td style={{ padding: "12px 16px", textAlign: "right" }}>
+                    <Link
+                      to={`/owner/restaurants/${selectedRestaurant.id}/menus/${m.id}/edit`}
+                      style={{
+                        display: "inline-block", padding: "7px 14px", borderRadius: 8,
+                        background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700,
+                        fontSize: 12, textDecoration: "none",
+                      }}
+                    >
+                      Edit →
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {current.length === 200 && (
-            <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 8 }}>Showing first 200 items.</div>
-          )}
-        </div>
-      )}
-    </PageCard>
-  );
-}
-
-// ─── P2.3: File Download Button ───────────────────────────────────────────────
-
-function FileDownloadButton({ uploadId }) {
-  const [fetching, setFetching] = useState(false);
-  const [err,      setErr]      = useState("");
-
-  async function openFile() {
-    setFetching(true);
-    setErr("");
-    try {
-      const data = await getOwnerMenuUpload(uploadId);
-      const pages = data.pages || data.upload?.pages || [];
-      const firstPage = pages[0];
-      const url = firstPage?.image_url || firstPage?.pdf_storage_url || null;
-      if (url) {
-        window.open(url, "_blank", "noopener,noreferrer");
-      } else {
-        setErr("No file URL available.");
-      }
-    } catch {
-      setErr("Could not fetch file.");
-    } finally {
-      setFetching(false);
-    }
-  }
-
-  return (
-    <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start" }}>
-      <button
-        type="button"
-        onClick={openFile}
-        disabled={fetching}
-        style={{
-          padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
-          background: "#fff", border: `1px solid ${OWNER_COLORS.line}`,
-          color: OWNER_COLORS.ink, cursor: fetching ? "not-allowed" : "pointer",
-          opacity: fetching ? 0.6 : 1,
-        }}
-      >
-        {fetching ? "Opening…" : "Open file ↗"}
-      </button>
-      {err && <span style={{ fontSize: 10, color: "#991b1b", marginTop: 2 }}>{err}</span>}
-    </div>
-  );
-}
-
-// ─── P2.4: Retry Button ───────────────────────────────────────────────────────
-
-function RetryUploadButton({ uploadId, onSuccess }) {
-  const [retrying, setRetrying] = useState(false);
-  const [err,      setErr]      = useState("");
-
-  async function handleRetry() {
-    setRetrying(true);
-    setErr("");
-    try {
-      await retryOwnerMenuUpload(uploadId);
-      onSuccess?.();
-    } catch (e) {
-      setErr(e?.payload?.error || "Retry failed.");
-    } finally {
-      setRetrying(false);
-    }
-  }
-
-  return (
-    <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start" }}>
-      <button
-        type="button"
-        onClick={handleRetry}
-        disabled={retrying}
-        style={{
-          padding: "6px 12px", borderRadius: 7, fontSize: 12, fontWeight: 700,
-          background: "#fff", border: "1px solid #fca5a5",
-          color: "#991b1b", cursor: retrying ? "not-allowed" : "pointer",
-          opacity: retrying ? 0.6 : 1,
-        }}
-      >
-        {retrying ? "Retrying…" : "Retry ↺"}
-      </button>
-      {err && <span style={{ fontSize: 11, color: "#991b1b", marginTop: 2 }}>{err}</span>}
-    </div>
-  );
-}
-
-// ─── Item Search Results ──────────────────────────────────────────────────────
-
-function ItemSearchResults({
-  results, total, page, totalPages, searching,
-  selectedIds, onSelectItem, onSelectAll, onPage,
-  menus, bulkAction, setBulkAction,
-  bulkTargetMenuId, setBulkTargetMenuId,
-  bulkSectionInput, setBulkSectionInput,
-  bulkLoading, bulkErr, onBulkOp, onOpenMenu,
-  restaurantId, onSaved,
-}) {
-  const from = (page - 1) * 50 + 1;
-  const to   = Math.min(page * 50, total);
-  const allSelected = results && results.length > 0 && selectedIds.size === results.length;
-  const hasSelection = selectedIds.size > 0;
-
-  if (searching && !results) {
-    return (
-      <div style={{ padding: "20px 0", color: OWNER_COLORS.muted, fontSize: 13 }}>Searching items…</div>
-    );
-  }
-
-  if (!results) return null;
-
-  return (
-    <div>
-      {/* Count row */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <div style={{ fontSize: 13, color: OWNER_COLORS.muted }}>
-          {searching
-            ? "Searching…"
-            : total === 0
-              ? "No items found."
-              : `${total.toLocaleString()} item${total !== 1 ? "s" : ""}${total > 1 ? ` (${from}–${to})` : ""}`}
-        </div>
-        {hasSelection && (
-          <div style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent }}>
-            {selectedIds.size} selected
-          </div>
-        )}
-      </div>
-
-      {/* Bulk toolbar */}
-      {hasSelection && (
-        <PageCard style={{ padding: "10px 16px", marginBottom: 12, background: OWNER_COLORS.accentSoft, border: `1px solid ${OWNER_COLORS.accent}` }}>
-          {bulkErr && <div style={{ fontSize: 12, color: "#991b1b", marginBottom: 8 }}>{bulkErr}</div>}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.ink }}>
-              {selectedIds.size} selected:
-            </span>
-            <BulkBtn label="Move to…" disabled={bulkLoading}
-              active={bulkAction === "move"}
-              onClick={() => setBulkAction(bulkAction === "move" ? null : "move")} />
-            <BulkBtn label="Change section…" disabled={bulkLoading}
-              active={bulkAction === "change_section"}
-              onClick={() => setBulkAction(bulkAction === "change_section" ? null : "change_section")} />
-            <BulkBtn label="Remove" disabled={bulkLoading} danger
-              onClick={() => {
-                if (window.confirm(
-                  `Remove ${selectedIds.size} item${selectedIds.size !== 1 ? "s" : ""}?\n\nItems will be soft-deleted (status = removed). They can be recovered by an admin if needed.`
-                )) {
-                  onBulkOp("delete");
-                }
-              }} />
-          </div>
-
-          {/* Move: select target menu, then confirm before executing */}
-          {bulkAction === "move" && (
-            <div style={{ marginTop: 10 }}>
-              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <select
-                  value={bulkTargetMenuId}
-                  onChange={(e) => setBulkTargetMenuId(e.target.value)}
-                  style={{ ...inputStyle, fontSize: 12, width: "auto", minWidth: 200 }}
-                >
-                  <option value="">Select target menu…</option>
-                  {menus.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.display_name || m.name} ({m.menu_type} · {m.status})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {bulkTargetMenuId && (
-                <div style={{
-                  marginTop: 10, padding: "10px 14px", borderRadius: 8,
-                  border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", fontSize: 12,
-                }}>
-                  <div style={{ fontWeight: 700, marginBottom: 6, color: OWNER_COLORS.ink }}>Confirm move</div>
-                  <div style={{ color: OWNER_COLORS.muted, marginBottom: 10 }}>
-                    Move <strong>{selectedIds.size} item{selectedIds.size !== 1 ? "s" : ""}</strong> to{" "}
-                    <strong>{menus.find((m) => String(m.id) === String(bulkTargetMenuId))?.display_name || "selected menu"}</strong>?
-                    This will update the menu assignment for all selected items.
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      type="button"
-                      disabled={bulkLoading}
-                      onClick={() => onBulkOp("move", { target_menu_id: Number(bulkTargetMenuId) })}
-                      style={{
-                        padding: "7px 18px", borderRadius: 8, fontSize: 12, fontWeight: 700,
-                        background: OWNER_COLORS.accent, color: "#fff", border: "none",
-                        cursor: !bulkLoading ? "pointer" : "not-allowed", opacity: !bulkLoading ? 1 : 0.5,
-                      }}
-                    >{bulkLoading ? "Moving…" : "Confirm Move"}</button>
-                    <button
-                      type="button"
-                      onClick={() => { setBulkAction(null); setBulkTargetMenuId(""); }}
-                      style={{
-                        padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-                        background: "#fff", color: OWNER_COLORS.ink,
-                        border: `1px solid ${OWNER_COLORS.line}`, cursor: "pointer",
-                      }}
-                    >Cancel</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Section change input */}
-          {bulkAction === "change_section" && (
-            <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
-              <input
-                type="text"
-                value={bulkSectionInput}
-                onChange={(e) => setBulkSectionInput(e.target.value)}
-                placeholder="New section name (leave blank to clear)"
-                style={{ ...inputStyle, fontSize: 12, width: "auto", minWidth: 220 }}
-              />
-              <button
-                type="button"
-                disabled={bulkLoading}
-                onClick={() => onBulkOp("change_section", { section: bulkSectionInput })}
-                style={{
-                  padding: "7px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700,
-                  background: OWNER_COLORS.accent, color: "#fff", border: "none",
-                  cursor: !bulkLoading ? "pointer" : "not-allowed", opacity: !bulkLoading ? 1 : 0.5,
-                }}
-              >Apply</button>
-            </div>
-          )}
         </PageCard>
       )}
-
-      {/* Results table */}
-      {results.length > 0 ? (
-        <PageCard style={{ padding: 0, overflow: "hidden" }}>
-          {/* Select-all row */}
-          <div style={{
-            padding: "8px 16px", borderBottom: `1px solid ${OWNER_COLORS.line}`,
-            display: "flex", alignItems: "center", gap: 12,
-            background: OWNER_COLORS.panel,
-          }}>
-            <input
-              type="checkbox"
-              checked={allSelected}
-              onChange={onSelectAll}
-              style={{ width: 15, height: 15, cursor: "pointer", accentColor: OWNER_COLORS.accent }}
-            />
-            <span style={{ fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-              {allSelected ? "Deselect all" : "Select all on this page"}
-            </span>
-          </div>
-
-          {results.map((item, idx) => (
-            <ItemResultRow
-              key={item.id}
-              item={item}
-              checked={selectedIds.has(item.id)}
-              onCheck={() => onSelectItem(item.id)}
-              onOpenMenu={() => onOpenMenu(item)}
-              isLast={idx === results.length - 1}
-              restaurantId={restaurantId}
-              onSaved={onSaved}
-            />
-          ))}
-        </PageCard>
-      ) : (
-        !searching && (
-          <PageCard style={{ padding: 40 }}>
-            <EmptyState>No items match the current search or filter.</EmptyState>
-          </PageCard>
-        )
-      )}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <SearchPagination page={page} total={total} limit={50} onPage={onPage} />
-      )}
     </div>
-  );
-}
-
-function ItemResultRow({ item, checked, onCheck, onOpenMenu, isLast, restaurantId, onSaved }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [saveErr, setSaveErr] = useState("");
-
-  function startEdit() {
-    setDraft({
-      name: item.name || "",
-      description: item.description || "",
-      price: item.price != null ? String(item.price) : "",
-      section: item.section || "",
-    });
-    setSaveErr("");
-    setEditing(true);
-  }
-
-  async function handleSave(e) {
-    e.preventDefault();
-    if (!draft.name.trim()) { setSaveErr("Name is required."); return; }
-    setSaving(true);
-    setSaveErr("");
-    try {
-      await updateMenuConsoleItem(restaurantId, item.menu_id, item.id, {
-        name: draft.name.trim(),
-        description: draft.description.trim() || null,
-        price: draft.price === "" ? null : Number(draft.price),
-        section: draft.section.trim() || null,
-      });
-      setEditing(false);
-      if (onSaved) onSaved();
-    } catch (err) {
-      setSaveErr(err?.payload?.error || err?.message || "Save failed.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (editing) {
-    return (
-      <div style={{
-        padding: "14px 16px",
-        borderBottom: isLast ? "none" : `1px solid ${OWNER_COLORS.line}`,
-        background: "#f8f7f4",
-        borderLeft: `3px solid ${OWNER_COLORS.accent}`,
-      }}>
-        <form onSubmit={handleSave}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
-            <div>
-              <label style={labelStyle}>Name *</label>
-              <input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
-                style={inputStyle} placeholder="Item name" autoFocus />
-            </div>
-            <div>
-              <label style={labelStyle}>Price</label>
-              <input value={draft.price} onChange={(e) => setDraft((p) => ({ ...p, price: e.target.value }))}
-                style={inputStyle} placeholder="9.99" type="number" step="0.01" min="0" />
-            </div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
-            <div>
-              <label style={labelStyle}>Description</label>
-              <input value={draft.description} onChange={(e) => setDraft((p) => ({ ...p, description: e.target.value }))}
-                style={inputStyle} placeholder="Optional" />
-            </div>
-            <div>
-              <label style={labelStyle}>Section</label>
-              <input value={draft.section} onChange={(e) => setDraft((p) => ({ ...p, section: e.target.value }))}
-                style={inputStyle} placeholder="e.g. Appetizers" />
-            </div>
-          </div>
-          {saveErr && <div style={{ fontSize: 12, color: "#991b1b", marginBottom: 8 }}>{saveErr}</div>}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button type="submit" disabled={saving} style={{
-              padding: "7px 16px", borderRadius: 8, background: OWNER_COLORS.accent,
-              color: "#fff", border: "none", fontWeight: 700, fontSize: 12,
-              cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1,
-            }}>{saving ? "Saving…" : "Save"}</button>
-            <button type="button" onClick={() => setEditing(false)} style={{
-              padding: "7px 12px", borderRadius: 8, background: "#fff",
-              border: `1px solid ${OWNER_COLORS.line}`, fontWeight: 600, fontSize: 12, cursor: "pointer",
-            }}>Cancel</button>
-          </div>
-        </form>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{
-      padding: "12px 16px",
-      borderBottom: isLast ? "none" : `1px solid ${OWNER_COLORS.line}`,
-      display: "flex", alignItems: "flex-start", gap: 12,
-      background: checked ? OWNER_COLORS.accentSoft : "#fff",
-      transition: "background 0.1s",
-    }}>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onCheck}
-        style={{ marginTop: 3, width: 15, height: 15, cursor: "pointer", flexShrink: 0, accentColor: OWNER_COLORS.accent }}
-      />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: 14, color: OWNER_COLORS.ink, marginBottom: 2 }}>
-          {item.name}
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", fontSize: 12, color: OWNER_COLORS.muted }}>
-          {item.section && <span>{item.section}</span>}
-          <span style={{ fontStyle: "italic" }}>
-            {item.menu_name || "Unnamed menu"}
-            {item.menu_type ? ` · ${item.menu_type}` : ""}
-          </span>
-          {item.price != null && (
-            <span style={{ fontWeight: 600, color: OWNER_COLORS.ink }}>
-              ${Number(item.price).toFixed(2)}
-            </span>
-          )}
-        </div>
-      </div>
-      <div style={{ flexShrink: 0, display: "flex", gap: 8, alignItems: "flex-start" }}>
-        <StatusChip status={item.menu_status || "draft"} />
-        <button
-          type="button"
-          onClick={startEdit}
-          style={{
-            padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
-            border: `1px solid ${OWNER_COLORS.line}`, background: "#fff",
-            color: OWNER_COLORS.ink, cursor: "pointer", whiteSpace: "nowrap",
-          }}
-        >Edit</button>
-        <button
-          type="button"
-          onClick={onOpenMenu}
-          style={{
-            padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
-            border: `1px solid ${OWNER_COLORS.line}`, background: "#fff",
-            color: OWNER_COLORS.accent, cursor: "pointer", whiteSpace: "nowrap",
-          }}
-        >Open menu →</button>
-      </div>
-    </div>
-  );
-}
-
-function BulkBtn({ label, onClick, disabled, danger, active }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        padding: "6px 13px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-        border: `1px solid ${danger ? "#ef4444" : active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
-        background: active ? OWNER_COLORS.accent : danger ? "#fef2f2" : "#fff",
-        color: active ? "#fff" : danger ? "#ef4444" : OWNER_COLORS.ink,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.5 : 1,
-      }}
-    >
-      {label}
-    </button>
   );
 }
 
@@ -2346,102 +827,49 @@ function BulkBtn({ label, onClick, disabled, danger, active }) {
 
 function RestaurantCard({ restaurant: r, onSelect }) {
   return (
-    <div style={{
-      padding: "18px 20px", borderRadius: 14,
-      border: `1px solid ${OWNER_COLORS.line}`, background: "#fff",
-      display: "flex", flexDirection: "column",
-    }}>
-      <div style={{ fontWeight: 700, fontSize: 15, color: OWNER_COLORS.ink, marginBottom: 3 }}>
-        {r.name}
+    <button
+      type="button"
+      onClick={onSelect}
+      style={{
+        textAlign: "left", padding: "16px 18px", borderRadius: 14,
+        border: `1px solid ${OWNER_COLORS.line}`, background: "#fff",
+        cursor: "pointer", width: "100%",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+      }}
+    >
+      <div style={{ fontWeight: 700, fontSize: 14, color: OWNER_COLORS.ink, marginBottom: 4 }}>{r.name}</div>
+      <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 10 }}>
+        {[r.city, r.state].filter(Boolean).join(", ")}
+        {r.id ? ` · #${r.id}` : ""}
       </div>
-      <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 12 }}>
-        {[r.city, r.state].filter(Boolean).join(", ")} · ID #{r.id}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <StatBox label="Menus" value={r.menu_count ?? 0} small />
+        <StatBox label="Items" value={r.item_count ?? 0} small />
+        {(r.published_count ?? 0) > 0 && <StatBox label="Published" value={r.published_count} small />}
+        {(r.draft_count ?? 0) > 0 && <StatBox label="Draft" value={r.draft_count} small />}
       </div>
-
-      <div style={{ display: "flex", gap: 18, marginBottom: 14, flexWrap: "wrap" }}>
-        <StatBox label="Menus"     value={r.menu_count       ?? 0} small />
-        <StatBox label="Items"     value={(r.item_count ?? 0).toLocaleString()} small />
-        <StatBox label="Published" value={r.published_count  ?? 0} small />
-        <StatBox label="Draft"     value={r.draft_count      ?? 0} small />
-      </div>
-
-      {r.last_menu_updated && (
-        <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginBottom: 14 }}>
-          Updated {formatDate(r.last_menu_updated)}
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={onSelect}
-        style={{
-          marginTop: "auto", padding: "9px 0", borderRadius: 9,
-          background: OWNER_COLORS.accent, color: "#fff",
-          border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer",
-        }}
-      >
-        Open Menu Manager
-      </button>
-    </div>
+    </button>
   );
 }
 
 function StatBox({ label, value, small, warn }) {
   return (
-    <div>
-      <div style={{ fontWeight: 700, fontSize: small ? 15 : 18, color: warn ? "#b45309" : OWNER_COLORS.ink }}>{value}</div>
-      <div style={{ fontSize: small ? 10 : 11, color: warn ? "#b45309" : OWNER_COLORS.muted }}>{label}</div>
+    <div style={{ minWidth: small ? 56 : 72 }}>
+      <div style={{ fontSize: small ? 16 : 20, fontWeight: 800, color: warn ? "#b45309" : OWNER_COLORS.ink }}>{value}</div>
+      <div style={{ fontSize: 10, fontWeight: 600, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
     </div>
   );
 }
 
 function SearchPagination({ page, total, limit, onPage }) {
   const totalPages = Math.ceil(total / limit);
-  const from = (page - 1) * limit + 1;
-  const to   = Math.min(page * limit, total);
-  const btn = (disabled) => ({
-    padding: "7px 14px", borderRadius: 8,
-    border: `1px solid ${OWNER_COLORS.line}`,
-    background: disabled ? "#f3f4f6" : "#fff",
-    color: disabled ? OWNER_COLORS.muted : OWNER_COLORS.ink,
-    fontWeight: 700, fontSize: 13, cursor: disabled ? "not-allowed" : "pointer",
-  });
+  if (totalPages <= 1) return null;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "center", padding: "10px 0" }}>
-      <button style={btn(page <= 1)} disabled={page <= 1} onClick={() => onPage(page - 1)}>
-        ← Prev
-      </button>
-      <span style={{ fontSize: 13, color: OWNER_COLORS.muted }}>
-        {from}–{to} of {total.toLocaleString()} · Page {page} / {totalPages}
-      </span>
-      <button style={btn(page >= totalPages)} disabled={page >= totalPages} onClick={() => onPage(page + 1)}>
-        Next →
-      </button>
+    <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 8 }}>
+      <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", cursor: page <= 1 ? "not-allowed" : "pointer", opacity: page <= 1 ? 0.5 : 1 }}>← Prev</button>
+      <span style={{ fontSize: 13, color: OWNER_COLORS.muted, alignSelf: "center" }}>Page {page} of {totalPages}</span>
+      <button type="button" disabled={page >= totalPages} onClick={() => onPage(page + 1)} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", cursor: page >= totalPages ? "not-allowed" : "pointer", opacity: page >= totalPages ? 0.5 : 1 }}>Next →</button>
     </div>
-  );
-}
-
-function MenuListItem({ menu, selected, onClick }) {
-  const displayName = menu.display_name || menu.name || "Unnamed Menu";
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        display: "block", width: "100%", textAlign: "left",
-        padding: "10px 12px", borderRadius: 10, border: "none",
-        background: selected ? OWNER_COLORS.accentSoft : "transparent",
-        cursor: "pointer", transition: "background 0.15s",
-      }}
-    >
-      <div style={{ fontWeight: selected ? 700 : 600, fontSize: 13, color: OWNER_COLORS.ink }}>
-        {displayName}
-      </div>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 3 }}>
-        <StatusChip status={menu.status} />
-        <span style={{ fontSize: 11, color: OWNER_COLORS.muted }}>{menu.item_count} items</span>
-      </div>
-    </button>
   );
 }
 
@@ -2525,519 +953,6 @@ function CreateMenuForm({ restaurantId, onCreated, inline }) {
     </div>
   );
 }
-
-// ─── Menu Editor ──────────────────────────────────────────────────────────────
-
-function MenuEditor({ restaurantId, menuDetail, onMenuUpdated, onMenuDeleted, onReload }) {
-  const { menu, sections: initialSections, item_count } = menuDetail;
-  const [sections, setSections] = useState(initialSections || []);
-  const [unsaved, setUnsaved] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saveMsg, setSaveMsg] = useState("");
-  const [saveMsgOk, setSaveMsgOk] = useState(true);
-
-  // Pending edits: { itemId: { name, description, price, section } }
-  const [pendingEdits, setPendingEdits] = useState({});
-  const [editingItemId, setEditingItemId] = useState(null);
-
-  // New item form state per section
-  const [newItemSection, setNewItemSection] = useState(null);
-  const [newItem, setNewItem] = useState({ name: "", description: "", price: "", section: "" });
-  const [addingItem, setAddingItem] = useState(false);
-  const [addItemErr, setAddItemErr] = useState("");
-
-  // Menu name edit
-  const [editingMenuName, setEditingMenuName] = useState(false);
-  const [menuNameDraft, setMenuNameDraft] = useState(menu.display_name || menu.name || "");
-  const [menuNameSaving, setMenuNameSaving] = useState(false);
-
-  // New section name
-  const [newSectionName, setNewSectionName] = useState("");
-  const [addingSection, setAddingSection] = useState(false);
-
-  useEffect(() => {
-    setSections(menuDetail.sections || []);
-    setUnsaved(false);
-    setPendingEdits({});
-    setEditingItemId(null);
-    setSaveMsg("");
-    setMenuNameDraft(menuDetail.menu?.display_name || menuDetail.menu?.name || "");
-  }, [menuDetail]);
-
-  function startEditItem(itemId) {
-    const allItems = sections.flatMap((s) => s.items);
-    const item = allItems.find((i) => i.id === itemId);
-    if (!item) return;
-    setPendingEdits((prev) => ({
-      ...prev,
-      [itemId]: prev[itemId] || {
-        name: item.name || "",
-        description: item.description || "",
-        price: item.price != null ? String(item.price) : "",
-        section: item.section || "",
-      },
-    }));
-    setEditingItemId(itemId);
-  }
-
-  function updatePendingEdit(itemId, field, value) {
-    setPendingEdits((prev) => ({
-      ...prev,
-      [itemId]: { ...prev[itemId], [field]: value },
-    }));
-    setUnsaved(true);
-  }
-
-  function cancelEditItem(itemId) {
-    setPendingEdits((prev) => {
-      const next = { ...prev };
-      delete next[itemId];
-      return next;
-    });
-    setEditingItemId(null);
-  }
-
-  async function saveEditItem(itemId) {
-    const edits = pendingEdits[itemId];
-    if (!edits) return;
-    setSaving(true);
-    setSaveMsg("");
-    try {
-      const body = {};
-      if (edits.name !== undefined) body.name = edits.name;
-      if (edits.description !== undefined) body.description = edits.description;
-      if (edits.price !== undefined) body.price = edits.price === "" ? null : Number(edits.price);
-      if (edits.section !== undefined) body.section = edits.section || null;
-
-      const data = await updateMenuConsoleItem(restaurantId, menu.id, itemId, body);
-
-      if (data.ok) {
-        setSaveMsg("Saved.");
-        setSaveMsgOk(true);
-        setPendingEdits((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
-        setEditingItemId(null);
-        onReload();
-      }
-    } catch (err) {
-      setSaveMsg(err?.payload?.error || err?.message || "Save failed.");
-      setSaveMsgOk(false);
-    } finally {
-      setSaving(false);
-      setTimeout(() => setSaveMsg(""), 3000);
-    }
-  }
-
-  async function handleDeleteItem(itemId) {
-    if (!window.confirm("Delete this item?")) return;
-    setSaving(true);
-    try {
-      await deleteMenuConsoleItem(restaurantId, menu.id, itemId);
-      setSaveMsg("Item deleted.");
-      setSaveMsgOk(true);
-      onReload();
-    } catch (err) {
-      setSaveMsg(err?.payload?.error || err?.message || "Delete failed.");
-      setSaveMsgOk(false);
-    } finally {
-      setSaving(false);
-      setTimeout(() => setSaveMsg(""), 3000);
-    }
-  }
-
-  function openAddItem(sectionName) {
-    setNewItemSection(sectionName);
-    setNewItem({ name: "", description: "", price: "", section: sectionName || "" });
-    setAddItemErr("");
-  }
-
-  async function handleAddItem(e) {
-    e.preventDefault();
-    if (!newItem.name.trim()) { setAddItemErr("Item name is required."); return; }
-    setAddingItem(true);
-    setAddItemErr("");
-    try {
-      await addMenuConsoleItem(restaurantId, menu.id, {
-        name: newItem.name.trim(),
-        description: newItem.description.trim() || null,
-        price: newItem.price === "" ? null : Number(newItem.price),
-        section: newItem.section.trim() || null,
-      });
-      setSaveMsg("Item added.");
-      setSaveMsgOk(true);
-      setNewItemSection(null);
-      onReload();
-    } catch (err) {
-      setAddItemErr(err?.payload?.error || err?.message || "Could not add item.");
-    } finally {
-      setAddingItem(false);
-      setTimeout(() => setSaveMsg(""), 3000);
-    }
-  }
-
-  async function handleAddSection(e) {
-    e.preventDefault();
-    if (!newSectionName.trim()) return;
-    // Add the first item in that section to create it
-    setAddingSection(true);
-    setNewItemSection(newSectionName.trim());
-    setNewItem({ name: "", description: "", price: "", section: newSectionName.trim() });
-    setNewSectionName("");
-    setAddingSection(false);
-  }
-
-  async function handlePublish() {
-    setSaving(true);
-    setSaveMsg("");
-    try {
-      const data = menu.status === "published"
-        ? await unpublishMenuConsoleMenu(restaurantId, menu.id)
-        : await publishMenuConsoleMenu(restaurantId, menu.id);
-      setSaveMsg(menu.status === "published" ? "Menu set to draft." : "Menu published.");
-      setSaveMsgOk(true);
-      onMenuUpdated(data.menu);
-    } catch (err) {
-      setSaveMsg(err?.payload?.error || err?.message || "Action failed.");
-      setSaveMsgOk(false);
-    } finally {
-      setSaving(false);
-      setTimeout(() => setSaveMsg(""), 4000);
-    }
-  }
-
-  async function handleDeleteMenu() {
-    if (!window.confirm(`Delete the menu "${menu.display_name || menu.name}"? This cannot be undone.`)) return;
-    setSaving(true);
-    try {
-      await deleteMenuConsoleMenu(restaurantId, menu.id);
-      onMenuDeleted(menu.id);
-    } catch (err) {
-      setSaveMsg(err?.payload?.error || err?.message || "Delete failed.");
-      setSaveMsgOk(false);
-      setSaving(false);
-    }
-  }
-
-  async function saveMenuName() {
-    if (!menuNameDraft.trim()) return;
-    setMenuNameSaving(true);
-    try {
-      const data = await updateMenuConsoleMenu(restaurantId, menu.id, { display_name: menuNameDraft.trim() });
-      setEditingMenuName(false);
-      onMenuUpdated(data.menu);
-      setSaveMsg("Menu name saved.");
-      setSaveMsgOk(true);
-    } catch (err) {
-      setSaveMsg(err?.payload?.error || err?.message || "Save failed.");
-      setSaveMsgOk(false);
-    } finally {
-      setMenuNameSaving(false);
-      setTimeout(() => setSaveMsg(""), 3000);
-    }
-  }
-
-  const isPublished = menu.status === "published";
-
-  return (
-    <PageCard style={{ padding: 22 }}>
-      {/* Menu header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 20 }}>
-        <div style={{ flex: 1 }}>
-          {editingMenuName ? (
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input
-                type="text"
-                value={menuNameDraft}
-                onChange={(e) => setMenuNameDraft(e.target.value)}
-                style={{ ...inputStyle, fontSize: 18, fontWeight: 700, padding: "6px 10px" }}
-                autoFocus
-                onKeyDown={(e) => { if (e.key === "Enter") saveMenuName(); if (e.key === "Escape") setEditingMenuName(false); }}
-              />
-              <button onClick={saveMenuName} disabled={menuNameSaving} style={{ padding: "7px 14px", borderRadius: 8, background: OWNER_COLORS.accent, color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                {menuNameSaving ? "…" : "Save"}
-              </button>
-              <button onClick={() => setEditingMenuName(false)} style={{ padding: "7px 12px", borderRadius: 8, background: "#fff", border: `1px solid ${OWNER_COLORS.line}`, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <h2 style={{ margin: 0, fontSize: 20, color: OWNER_COLORS.ink }}>
-                {menu.display_name || menu.name}
-              </h2>
-              <button onClick={() => setEditingMenuName(true)} style={{ background: "none", border: "none", cursor: "pointer", color: OWNER_COLORS.muted, fontSize: 12, padding: "2px 6px" }}>
-                ✏️ Rename
-              </button>
-            </div>
-          )}
-          <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6 }}>
-            <StatusChip status={menu.status} />
-            <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>{item_count} items</span>
-            {menu.menu_type && <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>{menu.menu_type}</span>}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <button
-            onClick={handlePublish}
-            disabled={saving}
-            style={{
-              padding: "9px 16px", borderRadius: 10,
-              background: isPublished ? "#fff" : "#15803d",
-              color: isPublished ? OWNER_COLORS.ink : "#fff",
-              border: isPublished ? `1px solid ${OWNER_COLORS.line}` : "none",
-              fontWeight: 700, fontSize: 13, cursor: saving ? "not-allowed" : "pointer",
-            }}
-          >
-            {isPublished ? "Set to Draft" : "Publish Menu"}
-          </button>
-          {!menu.is_primary && (
-            <button
-              onClick={handleDeleteMenu}
-              disabled={saving}
-              style={{ padding: "9px 14px", borderRadius: 10, background: "#fff", color: "#991b1b", border: "1px solid #fca5a5", fontWeight: 700, fontSize: 13, cursor: saving ? "not-allowed" : "pointer" }}
-            >
-              Delete Menu
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Save message */}
-      {saveMsg && (
-        <div style={{ marginBottom: 14, padding: "10px 14px", borderRadius: 10, background: saveMsgOk ? "#f0fdf4" : "#fff1ef", color: saveMsgOk ? "#15803d" : "#8b2e1a", fontWeight: 700, fontSize: 13 }}>
-          {saveMsg}
-        </div>
-      )}
-
-      {unsaved && (
-        <div style={{ marginBottom: 14, padding: "10px 14px", borderRadius: 10, background: "#fffbeb", color: "#92400e", fontWeight: 600, fontSize: 13, border: "1px solid #fde68a" }}>
-          You have unsaved changes — save each edited item individually using the Save button next to it.
-        </div>
-      )}
-
-      {/* Add section */}
-      <div style={{ marginBottom: 18 }}>
-        <form onSubmit={handleAddSection} style={{ display: "flex", gap: 8 }}>
-          <input
-            type="text"
-            value={newSectionName}
-            onChange={(e) => setNewSectionName(e.target.value)}
-            placeholder="New section name (e.g. Appetizers)"
-            style={{ ...inputStyle, flex: 1 }}
-          />
-          <button type="submit" disabled={!newSectionName.trim() || addingSection} style={{ padding: "9px 14px", borderRadius: 10, background: "#fff", border: `1px solid ${OWNER_COLORS.line}`, fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>
-            + Add Section
-          </button>
-        </form>
-      </div>
-
-      {/* Sections */}
-      {sections.length === 0 ? (
-        <EmptyState>No items yet. Add a section above, then add items below.</EmptyState>
-      ) : (
-        sections.map((section) => (
-          <SectionEditor
-            key={section.name}
-            section={section}
-            editingItemId={editingItemId}
-            pendingEdits={pendingEdits}
-            saving={saving}
-            onStartEdit={startEditItem}
-            onCancelEdit={cancelEditItem}
-            onUpdateEdit={updatePendingEdit}
-            onSaveEdit={saveEditItem}
-            onDeleteItem={handleDeleteItem}
-            newItemSection={newItemSection}
-            newItem={newItem}
-            onSetNewItem={setNewItem}
-            addItemErr={addItemErr}
-            addingItem={addingItem}
-            onOpenAddItem={openAddItem}
-            onAddItem={handleAddItem}
-            onCancelAdd={() => setNewItemSection(null)}
-          />
-        ))
-      )}
-
-      {/* Add item to "no section" */}
-      {newItemSection === "" && (
-        <AddItemForm
-          sectionName=""
-          newItem={newItem}
-          onSetNewItem={setNewItem}
-          addItemErr={addItemErr}
-          addingItem={addingItem}
-          onSubmit={handleAddItem}
-          onCancel={() => setNewItemSection(null)}
-        />
-      )}
-
-      <div style={{ marginTop: 16, borderTop: `1px solid ${OWNER_COLORS.line}`, paddingTop: 14 }}>
-        <button
-          type="button"
-          onClick={() => openAddItem("")}
-          style={{ padding: "9px 16px", borderRadius: 10, background: "#fff", border: `1px solid ${OWNER_COLORS.line}`, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-        >
-          + Add Item (No Section)
-        </button>
-      </div>
-    </PageCard>
-  );
-}
-
-function SectionEditor({ section, editingItemId, pendingEdits, saving, onStartEdit, onCancelEdit, onUpdateEdit, onSaveEdit, onDeleteItem, newItemSection, newItem, onSetNewItem, addItemErr, addingItem, onOpenAddItem, onAddItem, onCancelAdd }) {
-  const isAddingHere = newItemSection === section.name;
-
-  return (
-    <div style={{ marginBottom: 22 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: OWNER_COLORS.ink, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          {section.name}
-        </h3>
-        <button
-          type="button"
-          onClick={() => onOpenAddItem(section.name)}
-          style={{ padding: "5px 12px", borderRadius: 8, background: "#fff", border: `1px solid ${OWNER_COLORS.line}`, fontWeight: 700, fontSize: 12, cursor: "pointer" }}
-        >
-          + Add Item
-        </button>
-      </div>
-
-      {section.items.map((item) => (
-        <ItemRow
-          key={item.id}
-          item={item}
-          isEditing={editingItemId === item.id}
-          pendingEdit={pendingEdits[item.id]}
-          saving={saving}
-          onStartEdit={() => onStartEdit(item.id)}
-          onCancelEdit={() => onCancelEdit(item.id)}
-          onUpdateEdit={(field, value) => onUpdateEdit(item.id, field, value)}
-          onSaveEdit={() => onSaveEdit(item.id)}
-          onDelete={() => onDeleteItem(item.id)}
-        />
-      ))}
-
-      {isAddingHere && (
-        <AddItemForm
-          sectionName={section.name}
-          newItem={newItem}
-          onSetNewItem={onSetNewItem}
-          addItemErr={addItemErr}
-          addingItem={addingItem}
-          onSubmit={onAddItem}
-          onCancel={onCancelAdd}
-        />
-      )}
-    </div>
-  );
-}
-
-function ItemRow({ item, isEditing, pendingEdit, saving, onStartEdit, onCancelEdit, onUpdateEdit, onSaveEdit, onDelete }) {
-  if (isEditing && pendingEdit) {
-    return (
-      <div style={{ padding: "14px 16px", borderRadius: 12, background: "#f8f7f4", border: `1px solid ${OWNER_COLORS.accent}`, marginBottom: 8 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-          <div>
-            <label style={labelStyle}>Item Name *</label>
-            <input value={pendingEdit.name} onChange={(e) => onUpdateEdit("name", e.target.value)} style={inputStyle} placeholder="Item name" />
-          </div>
-          <div>
-            <label style={labelStyle}>Price</label>
-            <input value={pendingEdit.price} onChange={(e) => onUpdateEdit("price", e.target.value)} style={inputStyle} placeholder="9.99" type="number" step="0.01" min="0" />
-          </div>
-        </div>
-        <div style={{ marginBottom: 10 }}>
-          <label style={labelStyle}>Description</label>
-          <textarea value={pendingEdit.description} onChange={(e) => onUpdateEdit("description", e.target.value)} style={{ ...inputStyle, resize: "vertical", minHeight: 56, lineHeight: 1.5 }} placeholder="Optional description" rows={2} />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={labelStyle}>Section / Category</label>
-          <input value={pendingEdit.section} onChange={(e) => onUpdateEdit("section", e.target.value)} style={inputStyle} placeholder="e.g. Appetizers" />
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onSaveEdit} disabled={saving} style={{ padding: "8px 16px", borderRadius: 8, background: OWNER_COLORS.accent, color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: saving ? "not-allowed" : "pointer" }}>
-            {saving ? "Saving…" : "Save Item"}
-          </button>
-          <button onClick={onCancelEdit} style={{ padding: "8px 12px", borderRadius: 8, background: "#fff", border: `1px solid ${OWNER_COLORS.line}`, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-            Cancel
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 14px", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, marginBottom: 6, background: "#fff", gap: 12 }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: 13 }}>{item.name}</div>
-        {item.description && <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 2, whiteSpace: "pre-wrap" }}>{item.description}</div>}
-        <div style={{ display: "flex", gap: 12, marginTop: 4, fontSize: 12, color: OWNER_COLORS.muted }}>
-          {item.price != null && <span style={{ fontWeight: 600, color: OWNER_COLORS.ink }}>${Number(item.price).toFixed(2)}</span>}
-          {item.section && <span>{item.section}</span>}
-          {item.item_number && <span style={{ opacity: 0.6 }}>{item.item_number}</span>}
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-        <button onClick={onStartEdit} style={{ padding: "5px 10px", borderRadius: 7, background: "#fff", border: `1px solid ${OWNER_COLORS.line}`, fontWeight: 600, fontSize: 11, cursor: "pointer" }}>
-          Edit
-        </button>
-        <button onClick={onDelete} style={{ padding: "5px 10px", borderRadius: 7, background: "#fff", border: "1px solid #fca5a5", color: "#991b1b", fontWeight: 600, fontSize: 11, cursor: "pointer" }}>
-          Delete
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function AddItemForm({ sectionName, newItem, onSetNewItem, addItemErr, addingItem, onSubmit, onCancel }) {
-  return (
-    <div style={{ padding: "14px 16px", borderRadius: 12, background: "#f0fdf4", border: "1px solid #bbf7d0", marginBottom: 8 }}>
-      <div style={{ fontWeight: 700, fontSize: 12, color: "#15803d", marginBottom: 10 }}>
-        New item{sectionName ? ` in "${sectionName}"` : ""}
-      </div>
-      <form onSubmit={onSubmit}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-          <div>
-            <label style={labelStyle}>Name *</label>
-            <input value={newItem.name} onChange={(e) => onSetNewItem((p) => ({ ...p, name: e.target.value }))} style={inputStyle} placeholder="Item name" autoFocus />
-          </div>
-          <div>
-            <label style={labelStyle}>Price</label>
-            <input value={newItem.price} onChange={(e) => onSetNewItem((p) => ({ ...p, price: e.target.value }))} style={inputStyle} placeholder="9.99" type="number" step="0.01" min="0" />
-          </div>
-        </div>
-        <div style={{ marginBottom: 10 }}>
-          <label style={labelStyle}>Description</label>
-          <input value={newItem.description} onChange={(e) => onSetNewItem((p) => ({ ...p, description: e.target.value }))} style={inputStyle} placeholder="Optional" />
-        </div>
-        <div style={{ marginBottom: 10 }}>
-          <label style={labelStyle}>Section</label>
-          <input value={newItem.section} onChange={(e) => onSetNewItem((p) => ({ ...p, section: e.target.value }))} style={inputStyle} placeholder={sectionName || "e.g. Entrees"} />
-        </div>
-        {addItemErr && <div style={{ marginBottom: 8, fontSize: 12, color: "#991b1b" }}>{addItemErr}</div>}
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="submit" disabled={addingItem} style={{ padding: "8px 16px", borderRadius: 8, background: "#15803d", color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: addingItem ? "not-allowed" : "pointer" }}>
-            {addingItem ? "Adding…" : "Add Item"}
-          </button>
-          <button type="button" onClick={onCancel} style={{ padding: "8px 12px", borderRadius: 8, background: "#fff", border: `1px solid ${OWNER_COLORS.line}`, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-const labelStyle = {
-  display: "block",
-  fontSize: 11,
-  fontWeight: 700,
-  color: OWNER_COLORS.muted,
-  marginBottom: 4,
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-};
 
 // ─── Upload helpers (preserved from original) ──────────────────────────────────
 
@@ -3318,15 +1233,78 @@ function formatDate(iso) {
 export default function OwnerMenuUploads() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+  const activeTab = searchParams.get("tab") === "uploads" ? "uploads" : "restaurants";
+
+  useEffect(() => {
+    const rid = searchParams.get("restaurant");
+    if (!rid || selectedRestaurant) return;
+    const id = Number(rid);
+    if (!Number.isFinite(id)) return;
+    getMenuConsoleRestaurantMenus(id)
+      .then((data) => {
+        const r = data.restaurant || { id, name: `Restaurant #${id}` };
+        setSelectedRestaurant({
+          id: r.id,
+          name: r.restaurant_name || r.name,
+          city: r.city,
+          state: r.state,
+          address_line1: r.address_line1,
+          email: r.email,
+        });
+      })
+      .catch(() => {});
+  }, [searchParams, selectedRestaurant]);
+
+  function setTab(tab) {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (tab === "uploads") next.set("tab", "uploads");
+      else next.delete("tab");
+      return next;
+    });
+  }
 
   return (
-    <OwnerLayout title="Menu Manager">
-      <MenuManagerTab
-        selectedRestaurant={selectedRestaurant}
-        setSelectedRestaurant={setSelectedRestaurant}
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
+    <OwnerLayout title="Menu Manager" subtitle="Find restaurants across the platform. Open a menu to edit, upload, and publish.">
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {[
+          { key: "restaurants", label: "Restaurants" },
+          { key: "uploads", label: "Upload Activity" },
+        ].map((t) => {
+          const active = activeTab === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              style={{
+                padding: "8px 16px", borderRadius: 10, fontSize: 13, fontWeight: active ? 700 : 600,
+                border: `1px solid ${active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
+                background: active ? OWNER_COLORS.accentSoft : "#fff",
+                color: active ? OWNER_COLORS.accent : OWNER_COLORS.ink,
+                cursor: "pointer",
+              }}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {activeTab === "uploads" ? (
+        <UploadActivityTab
+          searchParams={searchParams}
+          setSearchParams={setSearchParams}
+          restaurantFilter={selectedRestaurant}
+        />
+      ) : (
+        <MenuManagerTab
+          selectedRestaurant={selectedRestaurant}
+          setSelectedRestaurant={setSelectedRestaurant}
+          searchParams={searchParams}
+          setSearchParams={setSearchParams}
+        />
+      )}
     </OwnerLayout>
   );
 }

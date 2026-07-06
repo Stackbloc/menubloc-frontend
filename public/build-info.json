@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "c2247b06c6f8ec865ca1d1ec66cd3ec041bb9d93",
-  "gitShortSha": "c2247b0",
+  "gitSha": "b2a34101349eacfcfa1017cf47ad2f985646967a",
+  "gitShortSha": "b2a3410",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-06T19:39:20.499Z",
+  "buildTime": "2026-07-06T20:15:13.003Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Pass browse city/state on Show Similar API calls for market-aware geo."
+  "commitMessage": "Fix menu dietary/allergen filters to auto-apply from saved profile."
 }
