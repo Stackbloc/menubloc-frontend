@@ -1,32 +1,90 @@
 import { useLanguage } from "../../context/LanguageContext.jsx";
 
 /**
- * Toggle + status for locally applied saved dietary preferences.
- * Allergen preferences apply automatically elsewhere — not surfaced here.
+ * Saved preference status for public menus.
+ * - First menu view: full list of dietary + allergen preferences applied.
+ * - Later views: compact dietary on/off control (allergens only change in profile).
  */
 export default function MenuPreferencesAppliedBanner({
   visible = false,
-  applySavedPreferences = false,
-  onToggle,
-  browseSessionScope = false,
+  isFirstMenuView = false,
+  dietaryApplied = false,
+  dietLabels = [],
+  allergenLabels = [],
+  onToggleDietary,
 }) {
   const { t } = useLanguage();
 
   if (!visible) return null;
 
-  const appliedMessage = browseSessionScope
-    ? t(
-        "publicMenu.preferencesAppliedDietBrowseSession",
-        "Your saved dietary preferences are applied for this browse session."
-      )
-    : t(
-        "publicMenu.preferencesAppliedDiet",
-        "Your saved dietary preferences are applied to this menu."
-      );
+  const combinedLabels = [...dietLabels, ...allergenLabels].filter(Boolean);
+  const hasDietLabels = dietLabels.length > 0;
+  const hasAllergenLabels = allergenLabels.length > 0;
 
-  const statusMessage = applySavedPreferences
-    ? appliedMessage
-    : t("publicMenu.showingCompleteMenu", "Showing the complete menu.");
+  let statusMessage = "";
+  let actionControl = null;
+
+  if (isFirstMenuView) {
+    const labelText = combinedLabels.length > 0 ? combinedLabels.join(", ") : "";
+    statusMessage = labelText
+      ? t(
+          "publicMenu.preferencesAppliedCombined",
+          "Current preferences/allergens applied: {{labels}}",
+          { labels: labelText }
+        )
+      : t(
+          "publicMenu.preferencesAppliedCombinedEmpty",
+          "Current preferences/allergens applied."
+        );
+  } else if (dietaryApplied && hasDietLabels) {
+    statusMessage = t("publicMenu.dietaryPreferencesOn", "Dietary preferences on");
+    actionControl = (
+      <button
+        type="button"
+        onClick={() => onToggleDietary?.(false)}
+        style={{
+          marginLeft: 6,
+          padding: 0,
+          border: "none",
+          background: "none",
+          color: "inherit",
+          font: "inherit",
+          fontWeight: 700,
+          textDecoration: "underline",
+          cursor: "pointer",
+        }}
+      >
+        {t("publicMenu.clickToRemoveDietary", "click here to remove")}
+      </button>
+    );
+  } else if (hasDietLabels) {
+    statusMessage = t("publicMenu.preferencesOff", "Preferences off");
+    actionControl = (
+      <button
+        type="button"
+        onClick={() => onToggleDietary?.(true)}
+        style={{
+          marginLeft: 6,
+          padding: 0,
+          border: "none",
+          background: "none",
+          color: "inherit",
+          font: "inherit",
+          fontWeight: 700,
+          textDecoration: "underline",
+          cursor: "pointer",
+        }}
+      >
+        {t("publicMenu.clickToReapplyDietary", "click here to re-apply")}
+      </button>
+    );
+  } else if (hasAllergenLabels) {
+    statusMessage = t(
+      "publicMenu.allergenPreferencesApplied",
+      "Allergen preferences applied: {{labels}}",
+      { labels: allergenLabels.join(", ") }
+    );
+  }
 
   return (
     <div
@@ -41,31 +99,19 @@ export default function MenuPreferencesAppliedBanner({
         lineHeight: 1.45,
       }}
     >
-      <label
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 10,
-          cursor: "pointer",
-          fontWeight: 700,
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={applySavedPreferences}
-          onChange={(event) => onToggle?.(event.target.checked)}
-          style={{ marginTop: 2, flexShrink: 0 }}
-        />
-        <span>
-          {applySavedPreferences
-            ? t("publicMenu.removeDietaryPreferences", "Remove dietary preferences")
-            : t("publicMenu.applyDietaryPreferences", "Apply Dietary Preferences")}
-        </span>
-      </label>
-      <div role="status" style={{ marginTop: 8, fontWeight: 600 }}>
+      <div role="status" style={{ fontWeight: 600 }}>
         {statusMessage}
+        {actionControl}
       </div>
-      {applySavedPreferences ? (
+      {isFirstMenuView && hasAllergenLabels ? (
+        <div style={{ marginTop: 6, fontSize: 11, fontWeight: 600, opacity: 0.92 }}>
+          {t(
+            "publicMenu.allergenProfileOnly",
+            "Allergen preferences can only be changed in your profile."
+          )}
+        </div>
+      ) : null}
+      {(dietaryApplied || hasAllergenLabels) && !isFirstMenuView ? (
         <div style={{ marginTop: 6, fontSize: 11, fontWeight: 600, opacity: 0.92 }}>
           {t(
             "publicMenu.preferencesAppliedDisclaimer",

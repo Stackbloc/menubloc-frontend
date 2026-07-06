@@ -5,7 +5,13 @@ import {
   getClientPreferenceDisplaySections,
   getMenuDisplaySectionsWithPreferences,
   hasSavedMenuPreferences,
+  buildCombinedPreferenceLabelList,
 } from "../src/lib/menuClientPreferenceFilter.js";
+import {
+  readCatalogApplyDietaryPreferences,
+  writeCatalogApplyDietaryPreferences,
+  MENU_CATALOG_APPLY_DIETARY_PREFERENCES_KEY,
+} from "../src/lib/menuCatalogBrowsePreferences.js";
 
 function testDietConservative() {
   const veganPrefs = { vegan: true, vegetarian: false, gluten_free: false, dairy_free: false, keto: false, low_fat: false, low_sodium: false, diabetic_friendly: false };
@@ -64,7 +70,7 @@ function testHasSavedPreferences() {
   assert.equal(hasSavedMenuPreferences({}, new Set(["dairy"])), true);
 }
 
-function testMenusDoNotApplyAllergenFilter() {
+function testMenusApplyAllergenFilterAlways() {
   const sections = [
     {
       title: "Mains",
@@ -84,25 +90,68 @@ function testMenusDoNotApplyAllergenFilter() {
     low_sodium: false,
     diabetic_friendly: false,
   };
+  const peanutAvoid = new Set(["peanuts"]);
 
-  const dietOff = getMenuDisplaySectionsWithPreferences(sections, {
+  const dietOffAllergenOn = getMenuDisplaySectionsWithPreferences(sections, {
     applyDietaryPreferences: false,
     dietPrefs: veganPrefs,
+    enabledAllergenKeys: peanutAvoid,
   });
-  assert.equal(dietOff[0].items.length, 2, "allergens do not filter menus when diet toggle off");
+  assert.equal(dietOffAllergenOn[0].items.length, 1, "allergens filter menus even when diet session off");
+  assert.equal(dietOffAllergenOn[0].items[0].name, "Vegan Bowl");
 
   const dietOn = getMenuDisplaySectionsWithPreferences(sections, {
     applyDietaryPreferences: true,
     dietPrefs: veganPrefs,
+    enabledAllergenKeys: peanutAvoid,
   });
-  assert.equal(dietOn[0].items.length, 1, "only dietary prefs filter menus when toggle on");
+  assert.equal(dietOn[0].items.length, 1, "diet + allergen filters combine");
   assert.equal(dietOn[0].items[0].name, "Vegan Bowl");
+}
+
+function testSessionDefaultsApplyDietaryPreferences() {
+  const key = MENU_CATALOG_APPLY_DIETARY_PREFERENCES_KEY;
+  const store = {};
+  const priorWindow = global.window;
+  global.window = {
+    sessionStorage: {
+      getItem(k) {
+        return store[k] ?? null;
+      },
+      setItem(k, v) {
+        store[k] = String(v);
+      },
+      removeItem(k) {
+        delete store[k];
+      },
+    },
+  };
+  try {
+    assert.equal(readCatalogApplyDietaryPreferences(), true, "default apply on");
+    writeCatalogApplyDietaryPreferences(false);
+    assert.equal(readCatalogApplyDietaryPreferences(), false, "explicit session opt-out");
+    writeCatalogApplyDietaryPreferences(true);
+    assert.equal(readCatalogApplyDietaryPreferences(), true, "re-enable clears opt-out");
+  } finally {
+    global.window = priorWindow;
+  }
+}
+
+function testCombinedLabels() {
+  const labels = buildCombinedPreferenceLabelList(
+    { vegan: true, vegetarian: false, gluten_free: false, dairy_free: false, keto: false, low_fat: false, low_sodium: false, diabetic_friendly: false },
+    new Set(["peanuts"])
+  );
+  assert.ok(labels.includes("Vegan"));
+  assert.ok(labels.includes("Peanuts"));
 }
 
 testDietConservative();
 testAllergenConservative();
 testSectionTransform();
 testHasSavedPreferences();
-testMenusDoNotApplyAllergenFilter();
+testMenusApplyAllergenFilterAlways();
+testSessionDefaultsApplyDietaryPreferences();
+testCombinedLabels();
 
 console.log("✅ menuClientPreferenceFilter tests passed");

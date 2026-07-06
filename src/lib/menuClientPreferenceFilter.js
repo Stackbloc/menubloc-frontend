@@ -3,7 +3,30 @@
  * Uses persisted item metadata only — no free-text inference at render time.
  */
 
-import { hasActiveDietPrefs } from "../hooks/useDietPreferences.js";
+import { activePrefLabels, hasActiveDietPrefs } from "../hooks/useDietPreferences.js";
+
+
+const ALLERGEN_KEY_LABELS = {
+  peanuts: "Peanuts",
+  tree_nuts: "Tree nuts",
+  dairy: "Dairy",
+  gluten: "Gluten",
+  shellfish: "Shellfish",
+  soy: "Soy",
+  eggs: "Eggs",
+  fish: "Fish",
+  sesame: "Sesame",
+  wheat: "Wheat",
+};
+
+function formatTokenLabel(value) {
+  return String(value || "")
+    .trim()
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
 const ALLERGEN_PROFILE_TO_EVIDENCE = {
   peanuts: ["peanuts"],
@@ -64,6 +87,23 @@ export function hasSavedMenuPreferences(dietPrefs, enabledAllergenKeys) {
   return hasActiveDietPrefs(dietPrefs) || (enabledAllergenKeys && enabledAllergenKeys.size > 0);
 }
 
+export function buildDietPreferenceLabels(dietPrefs) {
+  if (!hasActiveDietPrefs(dietPrefs)) return [];
+  return activePrefLabels(dietPrefs);
+}
+
+export function buildAllergenPreferenceLabels(enabledAllergenKeys) {
+  if (!enabledAllergenKeys || enabledAllergenKeys.size === 0) return [];
+  return [...enabledAllergenKeys].map((key) => ALLERGEN_KEY_LABELS[key] || formatTokenLabel(key));
+}
+
+export function buildCombinedPreferenceLabelList(dietPrefs, enabledAllergenKeys) {
+  return [
+    ...buildDietPreferenceLabels(dietPrefs),
+    ...buildAllergenPreferenceLabels(enabledAllergenKeys),
+  ];
+}
+
 /** @deprecated diet-only menu filtering — allergens are not applied on menus */
 export const EMPTY_DIET_PREFS = Object.freeze({
   dairy_free: false,
@@ -87,16 +127,26 @@ export function normalizeMenuDisplaySections(sections) {
 }
 
 /**
- * Dietary prefs apply only when applyDietaryPreferences is true (menu toggle).
- * Allergen exclusions are not applied on menus — search/browse only.
+ * Dietary prefs apply when applyDietaryPreferences is true (session opt-out available).
+ * Allergen exclusions always apply when enabledAllergenKeys is non-empty.
  */
 export function getMenuDisplaySectionsWithPreferences(
   sections,
-  { applyDietaryPreferences = false, dietPrefs }
+  { applyDietaryPreferences = false, dietPrefs, enabledAllergenKeys = new Set() }
 ) {
   const normalized = normalizeMenuDisplaySections(sections);
-  if (!applyDietaryPreferences) return normalized;
-  return getClientPreferenceDisplaySections(normalized, dietPrefs, new Set());
+  const allergenKeys =
+    enabledAllergenKeys instanceof Set ? enabledAllergenKeys : new Set(enabledAllergenKeys || []);
+  const dietActive = applyDietaryPreferences && hasActiveDietPrefs(dietPrefs);
+  const allergenActive = allergenKeys.size > 0;
+
+  if (!dietActive && !allergenActive) return normalized;
+
+  return getClientPreferenceDisplaySections(
+    normalized,
+    dietActive ? dietPrefs : EMPTY_DIET_PREFS,
+    allergenKeys
+  );
 }
 
 /**

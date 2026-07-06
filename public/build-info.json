@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "ba0a6ccdb3bac9ce222ebec728e1aa1436da510b",
-  "gitShortSha": "ba0a6cc",
+  "gitSha": "c2247b06c6f8ec865ca1d1ec66cd3ec041bb9d93",
+  "gitShortSha": "c2247b0",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-06T04:50:21.994Z",
+  "buildTime": "2026-07-06T19:39:20.499Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Fix canonical menu item URLs routing to blank detail pages."
+  "commitMessage": "Pass browse city/state on Show Similar API calls for market-aware geo."
 }

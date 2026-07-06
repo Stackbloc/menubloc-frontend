@@ -5,8 +5,8 @@ import {
 } from "../lib/menuCatalogBrowsePreferences.js";
 
 /**
- * Yellow Browser: once the user enables dietary preferences, keep them on for
- * the whole browse tab session (all subsequent menus until removed).
+ * Saved dietary preferences apply by default for the browse tab session.
+ * User may opt out per session; allergens always follow profile settings.
  */
 export default function useCatalogDietaryPreferencesSession() {
   const [applySavedPreferences, setApplySavedPreferences] = useState(
