@@ -225,6 +225,8 @@ export async function fetchSimilarItems(menuItemId, options = {}) {
   const params = new URLSearchParams();
   if (options.lat != null) params.set("lat", String(options.lat));
   if (options.lng != null) params.set("lng", String(options.lng));
+  if (options.city) params.set("city", String(options.city));
+  if (options.state) params.set("state", String(options.state));
   if (options.limit != null) params.set("limit", String(options.limit));
   if (options.offset != null) params.set("offset", String(options.offset));
 

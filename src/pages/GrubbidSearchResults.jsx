@@ -2965,7 +2965,12 @@ export default function GrubbidSearchResults() {
                 wantsNearby: searchMeta?.wants_nearby === true,
                 coordinateSearchActive: hasGeoFilter === true,
               }}
-              geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+              geo={{
+                lat: geo.lat ?? null,
+                lng: geo.lng ?? null,
+                city: city || null,
+                state: state || null,
+              }}
             />
           ))}
         </div>
@@ -2987,7 +2992,12 @@ export default function GrubbidSearchResults() {
                   wantsNearby: searchMeta?.wants_nearby === true,
                   coordinateSearchActive: hasGeoFilter === true,
                 }}
-                geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+                geo={{
+                lat: geo.lat ?? null,
+                lng: geo.lng ?? null,
+                city: city || null,
+                state: state || null,
+              }}
               />
             ))}
           </div>
@@ -3031,7 +3041,12 @@ export default function GrubbidSearchResults() {
                       wantsNearby: searchMeta?.wants_nearby === true,
                       coordinateSearchActive: hasGeoFilter === true,
                     }}
-                    geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+                    geo={{
+                lat: geo.lat ?? null,
+                lng: geo.lng ?? null,
+                city: city || null,
+                state: state || null,
+              }}
                     activeRefinement={activeWaiterRefinement}
                   />
               );
@@ -3058,7 +3073,12 @@ export default function GrubbidSearchResults() {
                     wantsNearby: searchMeta?.wants_nearby === true,
                     coordinateSearchActive: hasGeoFilter === true,
                   }}
-                  geo={geo.lat != null && geo.lng != null ? { lat: geo.lat, lng: geo.lng } : null}
+                  geo={{
+                lat: geo.lat ?? null,
+                lng: geo.lng ?? null,
+                city: city || null,
+                state: state || null,
+              }}
                   activeRefinement={activeWaiterRefinement}
                 />
               );
