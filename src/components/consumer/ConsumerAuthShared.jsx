@@ -92,16 +92,18 @@ export function PasswordField({
   error,
   describedBy,
   hint,
+  variant = "dark",
 }) {
   const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
   const showLabel = t("auth.showPassword", "Show");
   const hideLabel = t("auth.hidePassword", "Hide");
+  const theme = variant === "light" ? lightFieldStyles : styles;
 
   return (
-    <div style={styles.fieldGroup}>
-      <label htmlFor={id} style={styles.label}>{label}</label>
-      <div style={styles.passwordWrapper}>
+    <div style={theme.fieldGroup}>
+      <label htmlFor={id} style={theme.label}>{label}</label>
+      <div style={theme.passwordWrapper}>
         <input
           id={id}
           type={visible ? "text" : "password"}
@@ -109,9 +111,9 @@ export function PasswordField({
           value={value}
           onChange={onChange}
           style={{
-            ...styles.input,
-            ...styles.passwordInput,
-            ...(error ? styles.inputError : null),
+            ...theme.input,
+            ...theme.passwordInput,
+            ...(error ? theme.inputError : null),
           }}
           placeholder={placeholder}
           aria-invalid={error ? "true" : "false"}
@@ -121,7 +123,7 @@ export function PasswordField({
         <button
           type="button"
           onClick={() => setVisible((current) => !current)}
-          style={styles.passwordToggle}
+          style={theme.passwordToggle}
           aria-label={`${visible ? hideLabel : showLabel} ${label.toLowerCase()}`}
           aria-pressed={visible}
         >
@@ -175,9 +177,10 @@ export function PasswordMatchStatus({ password, confirmPassword }) {
   );
 }
 
-export function FormError({ error }) {
+export function FormError({ error, variant = "dark" }) {
   if (!error) return null;
-  return <p style={styles.errorBanner}>{error}</p>;
+  const bannerStyle = variant === "light" ? lightFieldStyles.errorBanner : styles.errorBanner;
+  return <p style={bannerStyle} role="alert">{error}</p>;
 }
 
 export function Divider() {
@@ -647,5 +650,67 @@ export const styles = {
     background: "#111827",
     color: "#fff",
     borderColor: "#111827",
+  },
+};
+
+const lightFieldStyles = {
+  fieldGroup: {
+    marginBottom: 14,
+  },
+  label: {
+    display: "block",
+    fontSize: 13,
+    fontWeight: 700,
+    marginBottom: 6,
+    color: "#374151",
+  },
+  input: {
+    width: "100%",
+    height: 44,
+    borderRadius: 10,
+    border: "1px solid #E5E7EB",
+    padding: "0 12px",
+    fontSize: 14,
+    background: "#ffffff",
+    color: "#0B0F0C",
+    boxSizing: "border-box",
+    fontFamily: "inherit",
+    outline: "none",
+  },
+  inputError: {
+    borderColor: "#d14343",
+    boxShadow: "0 0 0 3px rgba(209, 67, 67, 0.12)",
+  },
+  passwordWrapper: {
+    position: "relative",
+  },
+  passwordInput: {
+    paddingRight: "72px",
+  },
+  passwordToggle: {
+    position: "absolute",
+    top: "50%",
+    right: 8,
+    transform: "translateY(-50%)",
+    border: "none",
+    background: "transparent",
+    color: "#1F4E3D",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    padding: "6px 8px",
+  },
+  errorBanner: {
+    background: "#FEF2F2",
+    border: "1px solid #FECACA",
+    borderRadius: 10,
+    padding: "10px 14px",
+    fontSize: 13,
+    color: "#B42318",
+    margin: "0 0 12px",
+    textAlign: "center",
+    maxWidth: 420,
+    marginLeft: "auto",
+    marginRight: "auto",
   },
 };

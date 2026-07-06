@@ -54,7 +54,7 @@ import { formatMenuItemName } from "../utils/formatMenuItemName.js";
 import { formatMoney, getConsumerDisplayPrice } from "../lib/pricingDisplay.js";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
-import { getNormalizedMenuItemId } from "../lib/menuItemIdentity.js";
+import { getNormalizedMenuItemId, isValidMenuItemRouteId } from "../lib/menuItemIdentity.js";
 
 const BACKEND_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -350,20 +350,6 @@ function toShortVerdictBasis(reason) {
   return simplified.charAt(0).toLowerCase() + simplified.slice(1);
 }
 
-// All 6 of these must be non-null for a verdict to be credible.
-function hasRequiredNutritionForVerdict(nutrition) {
-  if (!nutrition) return false;
-  const cal = nutrition.calories_kcal ?? nutrition.calories;
-  return [
-    cal,
-    nutrition.fat_g,
-    nutrition.saturated_fat_g,
-    nutrition.protein_g,
-    nutrition.sodium_mg,
-    nutrition.carbs_g,
-  ].every((v) => v != null && Number.isFinite(Number(v)));
-}
-
 // Returns a driver-based explanation sentence for the verdict label.
 // Uses backend reason if it is substantive; otherwise derives from actual nutrition values.
 function buildVerdictExplanation(label, verdict, nutrition) {
@@ -434,46 +420,34 @@ function buildVerdictDrivers(verdict, nutrition) {
   return drivers.slice(0, 4);
 }
 
-function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
+// Returns label + brief explanation for sticky verdict surfaces (hero + sticky rail).
+function resolveVerdictPresentation(detailSystem) {
   const verdict = detailSystem?.verdict || {};
   const nutrition = detailSystem?.nutrition || null;
-
-  // Guardrail: a verdict is only shown when all 6 core nutrition fields are present.
-  // Missing fields (displayed as "—" in the nutrition panel) mean the underlying data
-  // is incomplete and any verdict label would be misleading.
-  const nutritionComplete = hasRequiredNutritionForVerdict(nutrition);
-
-  // Compact / sticky-rail variant: hide silently when data is incomplete.
-  if (!nutritionComplete && compact) return null;
-
-  // Full panel: show "Verdict unavailable" when data is incomplete.
-  if (!nutritionComplete) {
-    return (
-      <Surface style={{ marginTop: 20, padding: isMobile ? 22 : 28, background: "rgba(148,163,184,0.08)", border: "1px solid rgba(148,163,184,0.18)", color: "#f8f6ef" }}>
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(148,163,184,0.60)", marginBottom: 10 }}>
-          {t("menuItemDetail.verdict", "Verdict")}
-        </div>
-        <div style={{ fontSize: isMobile ? 24 : 30, fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.03em", color: "#94A3B8" }}>
-          Verdict unavailable
-        </div>
-        <div style={{ marginTop: 10, color: "#6B7280", fontSize: isMobile ? 12 : 13, fontWeight: 600, lineHeight: 1.5 }}>
-          Additional nutrition analysis is required before a recommendation can be generated.
-        </div>
-      </Surface>
-    );
-  }
-
   const normalizedNutrition = nutrition
     ? { ...nutrition, calories_kcal: nutrition.calories_kcal ?? nutrition.calories }
     : null;
-  const fallbackVerdict = resolveCardVerdict({ detailSystem: { ...detailSystem, nutrition: normalizedNutrition } });
+  const fallbackVerdict = resolveCardVerdict({
+    detailSystem: { ...detailSystem, nutrition: normalizedNutrition },
+  });
   const label = verdict.label || (fallbackVerdict !== NOT_AVAILABLE_LABEL ? fallbackVerdict : null);
+  const reason = String(verdict.reason || "").trim();
+  const basis = Array.isArray(verdict.reasons)
+    ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 2)
+    : [];
+  const explanation =
+    reason ||
+    basis[0] ||
+    (label ? buildVerdictExplanation(label, verdict, normalizedNutrition) : "");
+  return { label, explanation };
+}
+
+function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
+  const { label, explanation } = resolveVerdictPresentation(detailSystem);
 
   if (!label) return null;
 
   const theme = getVerdictTheme(label);
-  const explanation = buildVerdictExplanation(label, verdict, normalizedNutrition);
-  const drivers = buildVerdictDrivers(verdict, normalizedNutrition);
 
   if (compact) {
     return (
@@ -492,6 +466,13 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
       </div>
     );
   }
+
+  const verdict = detailSystem?.verdict || {};
+  const nutrition = detailSystem?.nutrition || null;
+  const normalizedNutrition = nutrition
+    ? { ...nutrition, calories_kcal: nutrition.calories_kcal ?? nutrition.calories }
+    : null;
+  const drivers = buildVerdictDrivers(verdict, normalizedNutrition);
 
   return (
     <Surface style={{ marginTop: 20, padding: isMobile ? 22 : 28, background: theme.bg, color: "#f8f6ef" }}>
@@ -525,14 +506,7 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
 }
 
 function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, priceLabel, fromSearch, onBack }) {
-  const verdict = detailSystem?.verdict || {};
-  const nutritionComplete = hasRequiredNutritionForVerdict(detailSystem?.nutrition);
-  const label = nutritionComplete ? verdict.label : null;
-  const reason = String(verdict.reason || "").trim();
-  const basis = Array.isArray(verdict.reasons)
-    ? [...new Set(verdict.reasons.map(toShortVerdictBasis).filter(Boolean))].slice(0, 1)
-    : [];
-  const reasonText = reason || basis[0] || "";
+  const { label, explanation } = resolveVerdictPresentation(detailSystem);
   const breadScore = detailSystem?.bread_score || null;
   const fallbackText = breadScore?.band || t("menuItemDetail.confirmNutritionEstimate", "Nutrition estimate - confirm with restaurant");
   if (isMobile) return null;
@@ -568,7 +542,7 @@ function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, 
                 </span>
                 {" "}
                 {label}
-                {reasonText ? ` · ${reasonText}` : ""}
+                {explanation ? ` · ${explanation}` : ""}
               </>
             ) : (
               fallbackText
@@ -1379,7 +1353,7 @@ export default function MenuItemDetailPage() {
       setErr("");
       setRawItem(null);
 
-      if (!id || !/^\d+$/.test(String(id)) || Number(id) <= 0) {
+      if (!isValidMenuItemRouteId(id)) {
         setErr("A valid menu item ID is required.");
         setLoading(false);
         return;
@@ -1634,6 +1608,19 @@ export default function MenuItemDetailPage() {
         ) : null}
         </div>
       </Surface>
+
+      {!isMobile && showStickyVerdict ? (
+        <StickyVerdictRail
+          detailSystem={detailSystem}
+          t={t}
+          fullMenuHref={fullMenuHref}
+          isMobile={isMobile}
+          itemName={displayItemName}
+          priceLabel={priceLabel}
+          fromSearch={fromSearch}
+          onBack={() => navigate(-1)}
+        />
+      ) : null}
 
       {isBrokenFranchiseLink && (
         <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}>

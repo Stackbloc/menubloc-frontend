@@ -1,6 +1,40 @@
 export const MENU_ITEM_IDENTITY_CONTRACT = "MenuItemIdentityContract";
 
+const CMI_ROUTE_RE = /^cmi:(\d+)$/i;
+
 const present = (value) => value !== undefined && value !== null && String(value).trim() !== "";
+
+/**
+ * Accepts CK numeric IDs or franchise canonical `cmi:{chain_menu_item_id}` route IDs.
+ * Mirrors menubloc-backend franchiseCanonicalRouteResolver.parseMenuItemRouteId.
+ */
+export function parseMenuItemRouteId(raw) {
+  if (raw == null || raw === "") return null;
+  const text = String(raw).trim();
+  const cmiMatch = CMI_ROUTE_RE.exec(text);
+  if (cmiMatch) {
+    const chainMenuItemId = Number(cmiMatch[1]);
+    if (!Number.isInteger(chainMenuItemId) || chainMenuItemId <= 0) return null;
+    return {
+      kind: "cmi",
+      routeId: `cmi:${chainMenuItemId}`,
+      chainMenuItemId,
+    };
+  }
+  const numericId = Number(text);
+  if (Number.isInteger(numericId) && numericId > 0) {
+    return {
+      kind: "ck",
+      routeId: String(numericId),
+      numericId,
+    };
+  }
+  return null;
+}
+
+export function isValidMenuItemRouteId(raw) {
+  return parseMenuItemRouteId(raw) != null;
+}
 
 export function normalizeMenuItemIdentity(item) {
   const row = item && typeof item === "object" ? item : {};

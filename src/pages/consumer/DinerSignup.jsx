@@ -35,7 +35,7 @@ const styles = {
   pitchDivider: {
     height: 1,
     border: 0,
-    margin: "36px 0 0",
+    margin: "48px 0 0",
     background: "linear-gradient(90deg, transparent, #D1D5DB 20%, #D1D5DB 80%, transparent)",
   },
   header: { marginBottom: 0 },
@@ -50,12 +50,18 @@ const styles = {
     fontWeight: 700,
   },
   signupBlock: {
-    marginTop: 32,
+    marginTop: 40,
     background: "#ffffff",
     border: "1px solid #E5E7EB",
     borderRadius: 16,
-    padding: "28px 24px 24px",
+    padding: "32px 28px 28px",
     boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
+  },
+  signupIntro: {
+    fontSize: 14,
+    color: "#6B7280",
+    lineHeight: 1.55,
+    margin: "0 0 20px",
   },
   sectionTitle: {
     fontSize: 11,
@@ -147,7 +153,13 @@ export default function DinerSignup() {
       }
       navigate("/account/welcome", { replace: true, state: { redirectTo } });
     } catch (error) {
-      setFormError(error.message || "Sign up failed. Please try again.");
+      if (error?.status === 409) {
+        setFormError(error.message || "An account with that email already exists.");
+      } else if (error?.status >= 500 || error?.message === "Server error") {
+        setFormError("We couldn't complete signup right now. Please try again in a moment.");
+      } else {
+        setFormError(error.message || "Sign up failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -177,6 +189,7 @@ export default function DinerSignup() {
 
         <section style={styles.signupBlock}>
           <div style={styles.sectionTitle}>Create your account</div>
+          <p style={styles.signupIntro}>Enter your email and password. We&apos;ll verify your phone once before you can order.</p>
           <form onSubmit={handleSubmit} noValidate>
             <div style={styles.fieldGroup}>
               <label htmlFor="diner-signup-email" style={styles.label}>Email</label>
@@ -199,6 +212,7 @@ export default function DinerSignup() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Min. 8 characters"
+              variant="light"
             />
 
             <label style={{ ...styles.checkboxRow, marginBottom: 14 }}>
@@ -221,7 +235,7 @@ export default function DinerSignup() {
               </span>
             </label>
 
-            <FormError error={formError} />
+            <FormError error={formError} variant="light" />
 
             <div style={styles.formActions}>
               <button type="submit" disabled={loading} style={styles.submitButton}>
