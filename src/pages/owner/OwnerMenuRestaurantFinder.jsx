@@ -102,7 +102,17 @@ export default function OwnerMenuRestaurantFinder({
   function handleSelect(restaurant) {
     saveRecentRestaurant(restaurant);
     setRecent(loadRecentRestaurants());
+    setQuery("");
+    setResults(null);
+    setSearchErr("");
     onSelect?.(restaurant);
+  }
+
+  function handleClear() {
+    setQuery("");
+    setResults(null);
+    setSearchErr("");
+    onClear?.();
   }
 
   const selectedName = selectedRestaurant?.restaurant_name || selectedRestaurant?.name;
@@ -135,7 +145,7 @@ export default function OwnerMenuRestaurantFinder({
           </div>
           <button
             type="button"
-            onClick={onClear}
+            onClick={handleClear}
             disabled={loading}
             style={{
               padding: "8px 14px",

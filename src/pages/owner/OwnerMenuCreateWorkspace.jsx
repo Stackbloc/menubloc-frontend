@@ -194,6 +194,9 @@ export default function OwnerMenuCreateWorkspace() {
   const [actionMsg, setActionMsg] = useState("");
   const [publishing, setPublishing] = useState(false);
 
+  const loadGenerationRef = useRef(0);
+  const suppressUrlLoadRef = useRef(false);
+
   const step = !restaurant ? "profile" : reviewItems.length > 0 || menuDetail?.item_count > 0 ? "review" : "attach";
   const rid = restaurant?.id;
   const mid = menu?.id;
@@ -207,6 +210,7 @@ export default function OwnerMenuCreateWorkspace() {
   async function loadExistingRestaurant(restaurantId, seed = null) {
     const ridNum = Number(restaurantId);
     if (!Number.isFinite(ridNum)) return;
+    const generation = ++loadGenerationRef.current;
     setLoadingRestaurant(true);
     setLoadRestaurantErr("");
     setDuplicateMatches(null);
@@ -215,6 +219,7 @@ export default function OwnerMenuCreateWorkspace() {
     setActionMsg("");
     try {
       const data = await getMenuConsoleRestaurantMenus(ridNum);
+      if (generation !== loadGenerationRef.current) return;
       const loadedRestaurant = data.restaurant || seed || { id: ridNum };
       const normalizedRestaurant = {
         ...loadedRestaurant,
@@ -245,19 +250,28 @@ export default function OwnerMenuCreateWorkspace() {
         return next;
       }, { replace: true });
     } catch (err) {
+      if (generation !== loadGenerationRef.current) return;
       setLoadRestaurantErr(err?.payload?.error || err?.message || "Could not load restaurant.");
     } finally {
-      setLoadingRestaurant(false);
+      if (generation === loadGenerationRef.current) {
+        setLoadingRestaurant(false);
+      }
     }
   }
 
   useEffect(() => {
     const restaurantParam = searchParams.get("restaurant");
-    if (!restaurantParam || restaurant) return;
+    if (!restaurantParam) {
+      suppressUrlLoadRef.current = false;
+      return;
+    }
+    if (restaurant || suppressUrlLoadRef.current) return;
     loadExistingRestaurant(restaurantParam);
   }, [searchParams, restaurant]);
 
   function clearSelectedRestaurant() {
+    suppressUrlLoadRef.current = true;
+    loadGenerationRef.current += 1;
     setRestaurant(null);
     setExistingRestaurant(false);
     setAvailableMenus([]);
@@ -265,6 +279,13 @@ export default function OwnerMenuCreateWorkspace() {
     setMenuDetail(null);
     setReviewItems([]);
     setProfile(EMPTY_PROFILE);
+    setMenuName("Main Menu");
+    setMenuType("main");
+    setFile(null);
+    setUploadMsg(null);
+    setActionMsg("");
+    setProfileErr("");
+    setDuplicateMatches(null);
     setLoadRestaurantErr("");
     setSearchParams((params) => {
       const next = new URLSearchParams(params);
@@ -467,6 +488,7 @@ export default function OwnerMenuCreateWorkspace() {
         : "Find an existing restaurant or create a new profile, attach a menu PDF or photo, review parsed items, then save or publish."}
     >
       <OwnerMenuRestaurantFinder
+        key={restaurant?.id || "finder"}
         selectedRestaurant={restaurant}
         loading={loadingRestaurant}
         onSelect={selectExistingRestaurant}
