@@ -17,6 +17,7 @@ export const DEFAULT_MENU_THEME_SETTINGS = {
   menu_style: "v1",
   primary_color: null,
   accent_color: null,
+  shell_background_color: null,
   background_style: "light",
   hero_enabled: true,
   image_density: "none",
@@ -124,6 +125,16 @@ const INTELLIGENCE_DEFAULTS_BY_STYLE = {
     similar_enabled: true,
     indulgence_display: "compact",
   },
+  v16: {
+    intelligence_display_style: "subtle",
+    intelligence_density: "subtle",
+    nutrition_display: "compact",
+    allergen_display: "icon",
+    insight_display: "compact",
+    compare_enabled: true,
+    similar_enabled: true,
+    indulgence_display: "compact",
+  },
 };
 
 export function normalizeHexColor(value) {
@@ -131,6 +142,9 @@ export function normalizeHexColor(value) {
   if (!text) return null;
   return HEX_RE.test(text) ? text : null;
 }
+
+/** Default shell when v16 Brand Tint has no custom color set. */
+export const BRAND_TINT_DEFAULT_SHELL_BACKGROUND = "#FFFBE8";
 
 /** Editorial template shell colors — must match ClassicMenuTemplate / Editorial v12–v15 BG constants. */
 export const MENU_STYLE_SHELL_BACKGROUND = {
@@ -159,6 +173,7 @@ function inferBackgroundStyleFromMenuStyle(menuStyle) {
       return "dark";
     case "v14":
     case "v15":
+    case "v16":
       return "paper";
     case "v4":
     case "v10":
@@ -176,7 +191,7 @@ function inferBackgroundStyleFromMenuStyle(menuStyle) {
 function reconcileBackgroundStyleWithMenuStyle(menuStyle, backgroundStyle) {
   const style = normalizeMenuStyle(menuStyle);
   const bg = String(backgroundStyle || "").trim();
-  const lightShellStyles = new Set(["v1", "v14", "v15", "v2", "v3", "v5", "v8", "v9"]);
+  const lightShellStyles = new Set(["v1", "v14", "v15", "v16", "v2", "v3", "v5", "v8", "v9"]);
   const darkShellStyles = new Set(["v12", "v13", "v4", "v10"]);
   const chalkShellStyles = new Set(["v6", "v7"]);
 
@@ -212,6 +227,9 @@ export function hasExplicitBackgroundStyle(source = {}) {
 
 export function resolveMenuPageBackground(source = {}, menuBrand = null) {
   const normalized = normalizeMenuThemeSettings(source);
+  if (normalized.menu_style === "v16") {
+    return normalized.shell_background_color || BRAND_TINT_DEFAULT_SHELL_BACKGROUND;
+  }
   // Editorial menu styles own the outer shell; stale background_style rows must not fight the template.
   if (MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style]) {
     return MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style];
@@ -221,6 +239,7 @@ export function resolveMenuPageBackground(source = {}, menuBrand = null) {
 
 export function resolveMenuShellTextColor(source = {}) {
   const normalized = normalizeMenuThemeSettings(source);
+  if (normalized.menu_style === "v16") return "#101828";
   if (MENU_STYLE_SHELL_BACKGROUND[normalized.menu_style]) {
     return ["v12", "v13"].includes(normalized.menu_style) ? "#F5F5F7" : "#101828";
   }
@@ -263,6 +282,9 @@ export function buildMenuThemeSettingsFromPreset(theme = {}) {
     menu_style: menuStyle,
     primary_color: normalizeHexColor(preset.colorDefaults?.primary || null),
     accent_color: normalizeHexColor(preset.colorDefaults?.accent || preset.colorDefaults?.primary || null),
+    shell_background_color: normalizeHexColor(
+      preset.colorDefaults?.shell || preset.colorDefaults?.background || null,
+    ),
     background_style: inferBackgroundStyleFromPreset(theme),
     hero_enabled: true,
     image_density: imageDensity,
@@ -350,11 +372,13 @@ export function normalizeMenuThemeSettings(source = {}) {
   const indulgenceDisplay = INDULGENCE_DISPLAY_STYLES.has(String(raw.indulgence_display || raw.intelligence?.indulgence_display || "").trim())
     ? String(raw.indulgence_display || raw.intelligence?.indulgence_display).trim()
     : intelligenceDefaults.indulgence_display;
+  const shellBackgroundColor = normalizeHexColor(raw.shell_background_color || null);
 
   return {
     menu_style: menuStyle,
     primary_color: primaryColor,
     accent_color: accentColor,
+    shell_background_color: shellBackgroundColor,
     background_style: backgroundStyle,
     hero_enabled: heroEnabled,
     image_density: imageDensity,

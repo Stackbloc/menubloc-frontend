@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "ab67078a343bcb44ad2c3e0d2a2cc72dec0eacf3",
-  "gitShortSha": "ab67078",
+  "gitSha": "ba0a6ccdb3bac9ce222ebec728e1aa1436da510b",
+  "gitShortSha": "ba0a6cc",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-06T04:25:14.337Z",
+  "buildTime": "2026-07-06T04:50:21.994Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Polish diner signup UI and improve menu item detail verdict display."
+  "commitMessage": "Fix canonical menu item URLs routing to blank detail pages."
 }

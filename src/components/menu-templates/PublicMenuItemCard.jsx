@@ -5,7 +5,7 @@ import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
 import { itemHasInsightsData } from "../basket/ItemInsightsSheet.jsx";
 import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
-import { buildDishShareData } from "../share/shareUtils.js";
+import { buildDishShareData, menuItemDomId } from "../share/shareUtils.js";
 import { getMenuItemImageUrl } from "./menuImageUtils.js";
 import { normalizeMenuThemeSettings } from "./menuThemeSettings.js";
 import { getNormalizedMenuItemId } from "../../lib/menuItemIdentity.js";
@@ -293,6 +293,7 @@ export default function PublicMenuItemCard({
   return (
     <div
       key={itemKey}
+      id={menuItemDomId(normalizedItemId) || undefined}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {

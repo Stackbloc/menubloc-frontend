@@ -39,6 +39,7 @@ import {
   applyDocumentSocialMetadata,
   buildDishShareData,
   buildCanonicalMenuPath,
+  appendMenuHighlightQuery,
   getCanonicalMenuItemPath,
 } from "../components/share/shareUtils.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
@@ -505,7 +506,7 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   );
 }
 
-function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, priceLabel, fromSearch, onBack }) {
+function StickyVerdictRail({ detailSystem, t, isMobile, itemName, priceLabel }) {
   const { label, explanation } = resolveVerdictPresentation(detailSystem);
   const breadScore = detailSystem?.bread_score || null;
   const fallbackText = breadScore?.band || t("menuItemDetail.confirmNutritionEstimate", "Nutrition estimate - confirm with restaurant");
@@ -522,75 +523,31 @@ function StickyVerdictRail({ detailSystem, t, fullMenuHref, isMobile, itemName, 
         border: "1px solid var(--gb-color-border)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ minWidth: 0, flex: "0 1 auto" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.1, color: "#FFFFFF" }}>
-              {itemName}
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.1, color: "#FFFFFF" }}>
+            {itemName}
+          </div>
+          {priceLabel ? (
+            <div style={{ fontSize: 14, fontWeight: 900, color: "#22C55E" }}>
+              {priceLabel}
             </div>
-            {priceLabel ? (
-              <div style={{ fontSize: 14, fontWeight: 900, color: "#22C55E" }}>
-                {priceLabel}
-              </div>
-            ) : null}
-          </div>
-          <div style={{ marginTop: 4, fontSize: 12, lineHeight: 1.35, color: "#D1D5DB", fontWeight: 700 }}>
-            {label ? (
-              <>
-                <span style={{ color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.08em", fontSize: 10, fontWeight: 900 }}>
-                  {t("menuItemDetail.verdict", "Verdict")}
-                </span>
-                {" "}
-                {label}
-                {explanation ? ` · ${explanation}` : ""}
-              </>
-            ) : (
-              fallbackText
-            )}
-          </div>
+          ) : null}
         </div>
-        {fromSearch ? (
-          <button
-            onClick={onBack}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              minHeight: 32,
-              padding: "0 12px",
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.10)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              color: "#F9FAFB",
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: 800,
-              whiteSpace: "nowrap",
-            }}
-          >
-            <span style={{ fontSize: 13 }}>←</span> Return to results
-          </button>
-        ) : (
-          <Link
-            to={fullMenuHref}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: 32,
-              padding: "0 12px",
-              borderRadius: 999,
-              background: "var(--gb-color-accent)",
-              color: "#ffffff",
-              textDecoration: "none",
-              fontSize: 12,
-              fontWeight: 800,
-              whiteSpace: "nowrap",
-            }}
-          >
-            View Full Menu
-          </Link>
-        )}
+        <div style={{ marginTop: 4, fontSize: 12, lineHeight: 1.35, color: "#D1D5DB", fontWeight: 700 }}>
+          {label ? (
+            <>
+              <span style={{ color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.08em", fontSize: 10, fontWeight: 900 }}>
+                {t("menuItemDetail.verdict", "Verdict")}
+              </span>
+              {" "}
+              {label}
+              {explanation ? ` · ${explanation}` : ""}
+            </>
+          ) : (
+            fallbackText
+          )}
+        </div>
       </div>
     </Surface>
   );
@@ -1456,10 +1413,23 @@ export default function MenuItemDetailPage() {
   const effectiveAllergenFilter = isAuthenticated ? allergenFilter || null : null;
   const showStickyVerdict = !indulgencePresentation && !detailSystem?.bread_score;
   const itemDescription = getLocalizedField(item, "description", language) || item.description;
-  const fullMenuHref = buildCanonicalMenuPath({
-    restaurantSlug: item.restaurant.slug || null,
-    restaurantId: item.restaurant.id || null,
-  });
+  const fullMenuHref = item
+    ? appendMenuHighlightQuery(
+        buildCanonicalMenuPath({
+          restaurantSlug: item.restaurant.slug || null,
+          restaurantId: item.restaurant.id || null,
+          city: item.restaurant.city || null,
+          state: item.restaurant.state || null,
+        }),
+        {
+          menuItemId: item.menu_item_id,
+          extraParams: {
+            ...(geoLat ? { lat: geoLat } : {}),
+            ...(geoLng ? { lng: geoLng } : {}),
+          },
+        },
+      )
+    : "/menus";
 
   return (
     <PageShell isMobile={isMobile}>
@@ -1614,12 +1584,9 @@ export default function MenuItemDetailPage() {
         <StickyVerdictRail
           detailSystem={detailSystem}
           t={t}
-          fullMenuHref={fullMenuHref}
           isMobile={isMobile}
           itemName={displayItemName}
           priceLabel={priceLabel}
-          fromSearch={fromSearch}
-          onBack={() => navigate(-1)}
         />
       ) : null}
 

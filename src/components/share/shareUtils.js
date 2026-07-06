@@ -61,6 +61,27 @@ export function buildCanonicalMenuPath({ restaurantSlug, restaurantId, city, sta
   return path || "/menus";
 }
 
+export const MENU_ITEM_HIGHLIGHT_QUERY_KEY = "highlightItem";
+
+/** Append ?highlightItem= so PublicMenuPage can scroll + flash the row. */
+export function appendMenuHighlightQuery(path, { menuItemId, extraParams = {} } = {}) {
+  if (!path) return "/menus";
+  if (!menuItemId) return path;
+  const [pathname, existingQuery = ""] = String(path).split("?");
+  const params = new URLSearchParams(existingQuery);
+  params.set(MENU_ITEM_HIGHLIGHT_QUERY_KEY, String(menuItemId));
+  for (const [key, value] of Object.entries(extraParams)) {
+    if (value != null && String(value).trim() !== "") params.set(key, String(value));
+  }
+  const qs = params.toString();
+  return qs ? `${pathname}?${qs}` : pathname;
+}
+
+export function menuItemDomId(menuItemId) {
+  if (menuItemId == null || menuItemId === "") return null;
+  return `menu-item-${String(menuItemId)}`;
+}
+
 export function buildCanonicalMenuUrl({ restaurantSlug, restaurantId, city, state, origin = getPublicOrigin() }) {
   return toAbsoluteUrl(buildCanonicalMenuPath({ restaurantSlug, restaurantId, city, state }), origin);
 }

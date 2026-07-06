@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import useMenuItemHighlight from "../hooks/useMenuItemHighlight.js";
 import { useLocation, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOrderCart } from "../context/OrderCartContext.jsx";
@@ -1114,6 +1115,14 @@ export default function PublicMenuPage() {
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
     0
   );
+
+  useMenuItemHighlight({
+    highlightMenuItemId: searchParams.get("highlightItem"),
+    ready: pageState.status === "ok",
+    displaySections,
+    setSearchParams,
+  });
+
   const isIntakePreview = data?.menu_source === "intake";
   const franchiseGroup  = data?.franchise_group || null;
   const currentRestaurantId = data?.restaurant_id || routeState.restaurantId;

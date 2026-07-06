@@ -44,6 +44,7 @@ export default function OperatorDisplaySettings() {
     accent_color:     null,
     menu_style:       "v1",
     primary_color:    null,
+    shell_background_color: null,
     background_style: "dark",
     image_density:    "all",
     item_image_style: "auto",
@@ -98,6 +99,7 @@ export default function OperatorDisplaySettings() {
         ...settings,
         menu_style: settings.menu_style || "v1",
         primary_color: settings.primary_color || null,
+        shell_background_color: settings.shell_background_color || null,
         accent_color: settings.accent_color || settings.primary_color || null,
         hero_enabled: settings.hero_enabled !== false,
         image_density: settings.image_density || "all",
@@ -405,6 +407,44 @@ export default function OperatorDisplaySettings() {
                   })}
                 </div>
               </Field>
+
+              {(settings.menu_style || "v1") === "v16" ? (
+                <Field label="Brand Tint shell color (v16)">
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input
+                      type="color"
+                      value={settings.shell_background_color || "#FFFBE8"}
+                      onChange={(e) => setSettings((s) => ({
+                        ...s,
+                        shell_background_color: e.target.value,
+                      }))}
+                      style={{ width: 44, height: 36, border: "none", background: "transparent", cursor: "pointer" }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="#FFFBE8"
+                      value={settings.shell_background_color || ""}
+                      onChange={(e) => setSettings((s) => ({
+                        ...s,
+                        shell_background_color: e.target.value || null,
+                      }))}
+                      style={{
+                        fontSize: 13,
+                        padding: "6px 10px",
+                        borderRadius: 8,
+                        border: "1px solid #e4e9f0",
+                        fontFamily: "monospace",
+                        width: 110,
+                        color: "#0f1720",
+                        background: "#fff",
+                      }}
+                    />
+                    <span style={{ fontSize: 12, color: "#8a9ab0" }}>
+                      Page background tint behind the menu
+                    </span>
+                  </div>
+                </Field>
+              ) : null}
 
               <Field label="Design Lab Controls">
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>

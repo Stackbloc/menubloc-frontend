@@ -24,6 +24,13 @@ test("MenuItemDetailPage accepts cmi: franchise route IDs", () => {
   assert.doesNotMatch(source, /\/\\^\\d\+\\\$\/\.test\(String\(id\)\)/);
 });
 
+test("MenuItemDetailPage sticky verdict rail is verdict-only (no duplicate full-menu CTA)", () => {
+  const source = fs.readFileSync(DETAIL_PAGE, "utf8");
+  const stickyBlock = source.slice(source.indexOf("function StickyVerdictRail"), source.indexOf("function IndulgenceInline"));
+  assert.doesNotMatch(stickyBlock, /View Full Menu/);
+  assert.match(source, /MenuItemDetailActionRail/);
+});
+
 test("canonical menu item URLs with numeric itemSlug route to MenuItemDetailPage", () => {
   const appSource = fs.readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
   const routeSource = fs.readFileSync(new URL("../src/pages/MenuItemCanonicalRoute.jsx", import.meta.url), "utf8");

@@ -16,6 +16,7 @@ import { normalizeMenuStyle, resolveTemplateMenuStyle } from "./menuPresentation
  *   v13 Steakhouse / Fine Dining (warm dark, brass accent)
  *   v14 QSR / Fast Casual (bright, bold, orange-red accent)
  *   v15 Casual / Family Dining (warm cream, terracotta accent)
+ *   v16 Brand Tint (Classic layout + operator-set shell background color)
  *
  * The former boutique layout templates (v2-v10: Modern Fast Casual, Takeout,
  * Dark Premium, Family Diner, Premium Bistro, Chalkboard, Rustic Italian,

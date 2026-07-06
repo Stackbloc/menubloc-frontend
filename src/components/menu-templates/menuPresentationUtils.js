@@ -42,6 +42,7 @@ export function normalizeMenuStyle(raw) {
   if (s === "v13" || s === "steakhouse" || s === "fine-dining" || s === "editorial-steakhouse") return "v13";
   if (s === "v14" || s === "qsr" || s === "fast-casual" || s === "quick-service") return "v14";
   if (s === "v15" || s === "casual" || s === "family-diner" || s === "family" || s === "diner") return "v15";
+  if (s === "v16" || s === "brand-tint" || s === "brandtint" || s === "tinted") return "v16";
   if (s === "v1" || s === "classic") return "v1";
   return "v1";
 }
@@ -57,6 +58,7 @@ export function resolveTemplateMenuStyle(raw) {
   if (style === "v3") return "v14";
   if (style === "v5") return "v15";
   if (style === "v2" || style === "v8" || style === "v9") return "v1";
+  if (style === "v16") return "v1";
   return style;
 }
 

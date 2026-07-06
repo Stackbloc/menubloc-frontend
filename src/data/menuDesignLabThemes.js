@@ -597,6 +597,53 @@ const THEMES = [
       supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
     },
   },
+  {
+    style: "v16",
+    name: "Brand Tint",
+    bestFit: "Franchises and brands with a signature page color (e.g. golden QSR, café cream)",
+    description: "Same Apple-inspired Classic layout with a custom page shell tint you control — ideal for brand-color homage without changing the menu structure.",
+    visibleInGallery: true,
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
+      restaurant_name: "Brand Tint Sample",
+      name: "Brand Tint Sample",
+      slug: "brand-tint-sample",
+      accent_color: "#FFC72C",
+      menu_name: "Main Menu",
+    }),
+    preset: {
+      id: "v16",
+      layoutStyle: "editorial foundation",
+      colorDefaults: {
+        primary: "#ffc72c",
+        accent: "#ffc72c",
+        shell: "#fffbe8",
+        background: "#fffbe8",
+      },
+      typographyDefaults: {
+        heading: "system",
+        body: "system",
+      },
+      imageRules: {
+        hero: "optional",
+        itemImages: "thumbnails",
+        sectionImages: "optional",
+      },
+      sectionHeadingStyle: "quiet uppercase",
+      itemPresentationStyle: "hairline rows",
+      buttonStyle: "inline icon",
+      pricePlacement: "right",
+      intelligence: makeIntelligencePreset({
+        intelligenceDisplayStyle: "subtle",
+        nutritionDisplay: "compact",
+        allergenDisplay: "icon",
+        insightDisplay: "compact",
+        compareEnabled: true,
+        similarEnabled: true,
+        indulgenceDisplay: "compact",
+      }),
+      supportedCustomizationControls: CUSTOMIZATION_CONTROLS,
+    },
+  },
 ];
 
 export const MENU_DESIGN_LAB_THEMES = THEMES;
