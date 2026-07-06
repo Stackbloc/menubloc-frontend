@@ -1552,7 +1552,9 @@ function ItemRow({
     setCompareError(null);
     setCompareLoading(true);
     setCompareOpen(true);
-    fetchCompareItems(mid, candidateId, geo?.lat ?? null, geo?.lng ?? null)
+    fetchCompareItems(mid, candidateId, geo?.lat ?? null, geo?.lng ?? null, {
+      skipEligibilityCheck: true,
+    })
       .then((data) => {
         if (!data?.baseItem && !data?.candidateItem) {
           setCompareLoading(false);

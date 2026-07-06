@@ -45,6 +45,50 @@ export default function SmsAuthModal({ open, onClose, onSuccess, purpose = "sign
 
   const copy = SMS_AUTH_MODAL_COPY[purpose] || SMS_AUTH_MODAL_COPY.signup;
 
+  const primaryBtn = {
+    border: "none",
+    borderRadius: 999,
+    background: "#11211a",
+    color: "#fff",
+    padding: "12px 28px",
+    fontSize: 15,
+    fontWeight: 900,
+    cursor: loading ? "wait" : "pointer",
+    width: "auto",
+    minWidth: 148,
+    maxWidth: "100%",
+  };
+
+  const secondaryBtn = {
+    border: "1px solid rgba(17,33,26,0.12)",
+    borderRadius: 999,
+    background: "#fff",
+    color: "#11211a",
+    padding: "10px 24px",
+    fontSize: 14,
+    fontWeight: 800,
+    cursor: loading || resendTimer > 0 ? "not-allowed" : "pointer",
+    opacity: loading || resendTimer > 0 ? 0.6 : 1,
+    width: "auto",
+    minWidth: 148,
+    maxWidth: "100%",
+  };
+
+  const formGrid = {
+    marginTop: 18,
+    display: "grid",
+    gap: 12,
+    justifyItems: "stretch",
+  };
+
+  const actionRow = {
+    display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 10,
+    marginTop: 2,
+  };
+
   function applySendResult(result) {
     const canonicalPhone = result?.phone_number || verifiedPhone || phoneInput;
     setVerifiedPhone(canonicalPhone);
@@ -145,7 +189,7 @@ export default function SmsAuthModal({ open, onClose, onSuccess, purpose = "sign
         ) : null}
 
         {step === "phone" ? (
-          <form onSubmit={handleSendCode} style={{ marginTop: 18, display: "grid", gap: 12 }}>
+          <form onSubmit={handleSendCode} style={formGrid}>
             <input
               type="tel"
               inputMode="tel"
@@ -163,26 +207,15 @@ export default function SmsAuthModal({ open, onClose, onSuccess, purpose = "sign
                 background: "#fff",
               }}
             />
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                border: "none",
-                borderRadius: 16,
-                background: "#11211a",
-                color: "#fff",
-                padding: "14px 16px",
-                fontSize: 15,
-                fontWeight: 900,
-                cursor: loading ? "wait" : "pointer",
-              }}
-            >
-              {loading ? "Sending code..." : "Send code"}
-            </button>
+            <div style={actionRow}>
+              <button type="submit" disabled={loading} style={primaryBtn}>
+                {loading ? "Sending code..." : "Send code"}
+              </button>
+            </div>
           </form>
         ) : (
-          <form onSubmit={handleVerifyCode} style={{ marginTop: 18, display: "grid", gap: 12 }}>
-            <div style={{ fontSize: 13, color: "#667085", fontWeight: 700 }}>
+          <form onSubmit={handleVerifyCode} style={formGrid}>
+            <div style={{ fontSize: 13, color: "#667085", fontWeight: 700, textAlign: "center" }}>
               Code sent to {verifiedPhone}
             </div>
             <input
@@ -192,6 +225,8 @@ export default function SmsAuthModal({ open, onClose, onSuccess, purpose = "sign
               inputMode="numeric"
               style={{
                 width: "100%",
+                maxWidth: 220,
+                justifySelf: "center",
                 boxSizing: "border-box",
                 borderRadius: 14,
                 border: "1px solid #d0d5dd",
@@ -202,41 +237,26 @@ export default function SmsAuthModal({ open, onClose, onSuccess, purpose = "sign
                 background: "#fff",
               }}
             />
-            <button
-              type="submit"
-              disabled={loading || code.length !== 6}
-              style={{
-                border: "none",
-                borderRadius: 16,
-                background: "#11211a",
-                color: "#fff",
-                padding: "14px 16px",
-                fontSize: 15,
-                fontWeight: 900,
-                cursor: loading ? "wait" : "pointer",
-                opacity: code.length !== 6 ? 0.7 : 1,
-              }}
-            >
-              {loading ? "Verifying..." : "Verify code"}
-            </button>
-            <button
-              type="button"
-              onClick={handleSendCode}
-              disabled={loading || resendTimer > 0}
-              style={{
-                border: "1px solid rgba(17,33,26,0.12)",
-                borderRadius: 16,
-                background: "#fff",
-                color: "#11211a",
-                padding: "12px 14px",
-                fontSize: 14,
-                fontWeight: 800,
-                cursor: loading || resendTimer > 0 ? "not-allowed" : "pointer",
-                opacity: loading || resendTimer > 0 ? 0.6 : 1,
-              }}
-            >
-              {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend code"}
-            </button>
+            <div style={actionRow}>
+              <button
+                type="submit"
+                disabled={loading || code.length !== 6}
+                style={{
+                  ...primaryBtn,
+                  opacity: code.length !== 6 ? 0.7 : 1,
+                }}
+              >
+                {loading ? "Verifying..." : "Verify code"}
+              </button>
+              <button
+                type="button"
+                onClick={handleSendCode}
+                disabled={loading || resendTimer > 0}
+                style={secondaryBtn}
+              >
+                {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend code"}
+              </button>
+            </div>
           </form>
         )}
 
@@ -247,7 +267,8 @@ export default function SmsAuthModal({ open, onClose, onSuccess, purpose = "sign
           type="button"
           onClick={() => onClose?.()}
           style={{
-            marginTop: 16,
+            display: "block",
+            margin: "16px auto 0",
             border: "none",
             background: "transparent",
             color: "#667085",

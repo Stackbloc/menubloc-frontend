@@ -20,28 +20,57 @@ const styles = {
   pageMain: {
     flex: 1,
     width: "100%",
-    maxWidth: 680,
+    maxWidth: 640,
     margin: "0 auto",
-    padding: "32px 20px 56px",
+    padding: "40px 20px 56px",
     boxSizing: "border-box",
   },
-  header: { marginBottom: 28 },
-  pageTitle: { fontSize: 28, fontWeight: 800, marginTop: 16, marginBottom: 8, letterSpacing: "-0.03em" },
-  intro: { fontSize: 15, color: "#374151", lineHeight: 1.6, maxWidth: 640, margin: "0 0 14px" },
-  section: {
-    background: "#F9FAFB",
+  pitchBlock: {
+    padding: "28px 24px 32px",
+    borderRadius: 16,
+    background: "#ffffff",
     border: "1px solid #E5E7EB",
-    borderRadius: 10,
-    padding: 20,
-    marginBottom: 16,
+    boxShadow: "0 1px 3px rgba(15, 23, 42, 0.06)",
+  },
+  pitchDivider: {
+    height: 1,
+    border: 0,
+    margin: "36px 0 0",
+    background: "linear-gradient(90deg, transparent, #D1D5DB 20%, #D1D5DB 80%, transparent)",
+  },
+  header: { marginBottom: 0 },
+  pageTitle: { fontSize: 28, fontWeight: 800, marginTop: 16, marginBottom: 10, letterSpacing: "-0.03em" },
+  intro: { fontSize: 15, color: "#374151", lineHeight: 1.65, maxWidth: 560, margin: "0 0 12px" },
+  introLast: {
+    fontSize: 15,
+    color: "#111827",
+    lineHeight: 1.65,
+    maxWidth: 560,
+    margin: "4px 0 0",
+    fontWeight: 700,
+  },
+  signupBlock: {
+    marginTop: 32,
+    background: "#ffffff",
+    border: "1px solid #E5E7EB",
+    borderRadius: 16,
+    padding: "28px 24px 24px",
+    boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: 700,
     color: "#6B7280",
-    marginBottom: 14,
+    marginBottom: 18,
     textTransform: "uppercase",
     letterSpacing: "0.1em",
+  },
+  formActions: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 4,
   },
   fieldGroup: { marginBottom: 14 },
   label: { display: "block", fontSize: 13, fontWeight: 700, marginBottom: 6, color: "#374151" },
@@ -62,9 +91,11 @@ const styles = {
   checkboxLabel: { fontSize: 12, color: "#374151", lineHeight: 1.55 },
   legalLink: { color: "#1F4E3D", fontWeight: 700 },
   submitButton: {
-    width: "100%",
-    height: 48,
-    borderRadius: 10,
+    width: "auto",
+    minWidth: 168,
+    maxWidth: "100%",
+    height: 44,
+    borderRadius: 999,
     border: 0,
     background: "#4caf50",
     color: "#fff",
@@ -72,8 +103,9 @@ const styles = {
     fontSize: 15,
     cursor: "pointer",
     fontFamily: "inherit",
+    padding: "0 28px",
   },
-  signIn: { textAlign: "center", color: "#6B7280", fontSize: 13, marginTop: 16 },
+  signIn: { textAlign: "center", color: "#6B7280", fontSize: 13, marginTop: 20 },
 };
 
 export default function DinerSignup() {
@@ -124,22 +156,26 @@ export default function DinerSignup() {
   return (
     <div style={styles.pageWrap}>
       <main style={styles.pageMain}>
-        <header style={styles.header}>
-          <BrandLogo height={48} radius={14} matchPageBackground={false} />
-          <h1 style={styles.pageTitle}>Diner Signup</h1>
-          <p style={styles.intro}>Menuply is different.</p>
-          <p style={styles.intro}>
-            We built Menuply to help you discover <strong>all</strong> restaurant menus in your city—not just the restaurants that sell through our platform. We enhance menus with estimated nutrition information, giving you new ways to search for food based on your dietary preferences and nutrition goals.
-          </p>
-          <p style={styles.intro}>
-            We believe ordering food shouldn&apos;t cost a small fortune. That&apos;s why Menuply keeps restaurant fees low, giving participating restaurants more room to offer better prices to diners. We encourage every participating restaurant to pass those savings on to you.
-          </p>
-          <p style={{ ...styles.intro, fontWeight: 800, marginBottom: 0 }}>
-            Join today and discover a smarter way to search for food—and better value every time you order.
-          </p>
-        </header>
+        <div style={styles.pitchBlock}>
+          <header style={styles.header}>
+            <BrandLogo height={48} radius={14} matchPageBackground={false} />
+            <h1 style={styles.pageTitle}>Diner Signup</h1>
+            <p style={styles.intro}>Menuply is different.</p>
+            <p style={styles.intro}>
+              We built Menuply to help you discover <strong>all</strong> restaurant menus in your city—not just the restaurants that sell through our platform. We enhance menus with estimated nutrition information, giving you new ways to search for food based on your dietary preferences and nutrition goals.
+            </p>
+            <p style={styles.intro}>
+              We believe ordering food shouldn&apos;t cost a small fortune. That&apos;s why Menuply keeps restaurant fees low, giving participating restaurants more room to offer better prices to diners. We encourage every participating restaurant to pass those savings on to you.
+            </p>
+            <p style={styles.introLast}>
+              Join today and discover a smarter way to search for food—and better value every time you order.
+            </p>
+          </header>
+        </div>
 
-        <section style={styles.section}>
+        <hr style={styles.pitchDivider} aria-hidden="true" />
+
+        <section style={styles.signupBlock}>
           <div style={styles.sectionTitle}>Create your account</div>
           <form onSubmit={handleSubmit} noValidate>
             <div style={styles.fieldGroup}>
@@ -187,9 +223,11 @@ export default function DinerSignup() {
 
             <FormError error={formError} />
 
-            <button type="submit" disabled={loading} style={styles.submitButton}>
-              {loading ? "Creating account…" : "Create account"}
-            </button>
+            <div style={styles.formActions}>
+              <button type="submit" disabled={loading} style={styles.submitButton}>
+                {loading ? "Creating account…" : "Create account"}
+              </button>
+            </div>
           </form>
           <p style={styles.signIn}>Already have an account? <Link to="/account/login" style={styles.legalLink}>Sign in</Link></p>
         </section>
