@@ -432,7 +432,11 @@ function ensureGoogleAnalyticsLoaded() {
 
 function ScrollToTop() {
   const location = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.has("highlightItem")) return;
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
   return null;
 }
 

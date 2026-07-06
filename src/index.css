@@ -486,4 +486,6 @@ textarea:focus-visible {
   border: 2px solid #22c55e !important;
   outline: none !important;
   box-shadow: none !important;
+  scroll-margin-top: calc(var(--sph-h, 64px) + 12px);
+  scroll-margin-bottom: 24px;
 }

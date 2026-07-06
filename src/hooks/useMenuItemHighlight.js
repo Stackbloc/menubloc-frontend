@@ -5,21 +5,59 @@ const HIGHLIGHT_CLASS = "menuply-menu-item-highlight";
 const HIGHLIGHT_MS = 7000;
 const RETRY_MS = 200;
 const RETRY_MAX_MS = 3500;
+const SCROLL_RETRY_DELAYS_MS = [0, 50, 150, 350, 700, 1200];
 
-function scrollItemIntoViewOnce(el) {
-  if (!el || el.dataset.menuplyHighlightScrolled === "1") return;
+function getStickyHeaderOffsetPx() {
+  if (typeof document === "undefined") return 64;
+  const raw = getComputedStyle(document.documentElement).getPropertyValue("--sph-h");
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 64;
+}
+
+function isElementVisiblyInViewport(el) {
+  if (!el || !document.contains(el)) return false;
   const rect = el.getBoundingClientRect();
-  const inView = rect.top >= 0 && rect.bottom <= window.innerHeight;
-  if (!inView) {
-    el.scrollIntoView({ block: "center", behavior: "instant" });
+  if (rect.height < 8 || rect.width < 8) return false;
+  const topBound = getStickyHeaderOffsetPx() + 12;
+  const bottomBound = window.innerHeight - 12;
+  return rect.top >= topBound && rect.bottom <= bottomBound;
+}
+
+function scrollMenuItemIntoView(el) {
+  if (!el || !document.contains(el)) return;
+  el.scrollIntoView({ block: "center", behavior: "auto" });
+}
+
+function scheduleScrollUntilVisible(el) {
+  const timers = [];
+
+  const cleanup = () => {
+    timers.forEach((id) => window.clearTimeout(id));
+    timers.length = 0;
+  };
+
+  for (const delay of SCROLL_RETRY_DELAYS_MS) {
+    timers.push(
+      window.setTimeout(() => {
+        if (!document.contains(el)) {
+          cleanup();
+          return;
+        }
+        if (isElementVisiblyInViewport(el)) {
+          cleanup();
+          return;
+        }
+        scrollMenuItemIntoView(el);
+      }, delay),
+    );
   }
-  el.dataset.menuplyHighlightScrolled = "1";
+
+  return cleanup;
 }
 
 function clearHighlightElement(el) {
   if (!el) return;
   el.classList.remove(HIGHLIGHT_CLASS);
-  delete el.dataset.menuplyHighlightScrolled;
 }
 
 function applyHighlightElement(el) {
@@ -31,6 +69,7 @@ function finishSession(sessionRef) {
   const session = sessionRef.current;
   if (!session) return;
   if (session.timerId) window.clearTimeout(session.timerId);
+  if (session.scrollCleanup) session.scrollCleanup();
   clearHighlightElement(session.element);
   sessionRef.current = null;
 }
@@ -64,7 +103,8 @@ function reapplyActiveHighlight(sessionRef) {
 
   session.element = el;
   applyHighlightElement(el);
-  scrollItemIntoViewOnce(el);
+  if (session.scrollCleanup) session.scrollCleanup();
+  session.scrollCleanup = scheduleScrollUntilVisible(el);
   scheduleSessionEnd(sessionRef);
   return true;
 }
@@ -72,6 +112,7 @@ function reapplyActiveHighlight(sessionRef) {
 function beginHighlight(sessionRef, targetId, el) {
   const prev = sessionRef.current;
   if (prev?.timerId) window.clearTimeout(prev.timerId);
+  if (prev?.scrollCleanup) prev.scrollCleanup();
   if (prev?.element) clearHighlightElement(prev.element);
 
   sessionRef.current = {
@@ -79,10 +120,11 @@ function beginHighlight(sessionRef, targetId, el) {
     element: el,
     endsAt: Date.now() + HIGHLIGHT_MS,
     timerId: null,
+    scrollCleanup: null,
   };
 
   applyHighlightElement(el);
-  scrollItemIntoViewOnce(el);
+  sessionRef.current.scrollCleanup = scheduleScrollUntilVisible(el);
   scheduleSessionEnd(sessionRef);
 }
 
