@@ -47,4 +47,9 @@ test("menu highlight uses 7s green border without smooth scroll", () => {
   assert.match(hookSource, /behavior: "instant"/);
   assert.doesNotMatch(hookSource, /behavior: "smooth"/);
   assert.match(cssSource, /\.menuply-menu-item-highlight[\s\S]*border: 2px solid #22c55e/);
+  assert.match(hookSource, /reapplyActiveHighlight/);
+  assert.doesNotMatch(
+    hookSource,
+    /return \(\) => \{[\s\S]*clearHighlight\(document\.getElementById/,
+  );
 });
