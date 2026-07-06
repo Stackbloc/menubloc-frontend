@@ -71,3 +71,21 @@ Layout-only in similar list rows. `handleCompare`, eligibility gate, and Compare
 
 ### Approval basis
 Explicit user instruction: keep UI clean so Compare buttons are all aligned.
+
+---
+
+## Date: 2026-07-06 (b)
+
+## Change: Truncate similar item and restaurant names
+
+### Files modified
+- `src/components/SearchResultCard.jsx` (`DetailPanel` similar list)
+
+### What changed
+Similar rows abbreviate long item names (28 chars) and restaurant headers (36 chars) with ellipsis fallback via CSS. Full names remain in `title` tooltips. Fixed Compare column width preserves alignment on narrow viewports.
+
+### Impact on Similar/Compare
+Display-only in similar list. Compare handler and eligibility unchanged.
+
+### Approval basis
+Explicit user instruction: UI must always stay clean, even if similar item names are abbreviated.

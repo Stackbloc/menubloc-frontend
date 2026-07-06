@@ -245,6 +245,23 @@ function fmtPrice(row) {
   return "";
 }
 
+const SIMILAR_NAME_DISPLAY_MAX = 28;
+const SIMILAR_RESTAURANT_NAME_MAX = 36;
+
+const SIMILAR_ROW_TRUNCATE_STYLE = {
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  minWidth: 0,
+};
+
+function abbreviateDisplayLabel(text, max = SIMILAR_NAME_DISPLAY_MAX) {
+  const raw = String(text || "").trim();
+  if (!raw) return "";
+  if (raw.length <= max) return raw;
+  return `${raw.slice(0, max - 1).trim()}…`;
+}
+
 function buildSimilarItemsLabel(meta) {
   if (!meta) return null;
   if (meta.used_broad_fallback) return "Showing broader matches because nearby similar dishes were limited";
@@ -969,9 +986,11 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                     color: "#9CA3AF",
                     fontWeight: 700,
                     marginBottom: 6,
+                    ...SIMILAR_ROW_TRUNCATE_STYLE,
                   }}
+                  title={restaurant_name}
                 >
-                  {restaurant_name}
+                  {abbreviateDisplayLabel(restaurant_name, SIMILAR_RESTAURANT_NAME_MAX)}
                 </div>
                 <div style={{ display: "grid", gap: 6 }}>
                   {(Array.isArray(siItems) ? siItems : []).map((si) => {
@@ -985,7 +1004,7 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                         key={siId || siName}
                         style={{
                           display: "grid",
-                          gridTemplateColumns: "minmax(0, 1fr) auto 4.25rem",
+                          gridTemplateColumns: "minmax(0, 1fr) 5.75rem 4.25rem",
                           alignItems: "center",
                           columnGap: 8,
                         }}
@@ -996,12 +1015,19 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                             fontWeight: 600,
                             color: "#FFFFFF",
                             minWidth: 0,
+                            overflow: "hidden",
                           }}
                         >
                           {siHref ? (
                             <Link
                               to={siHref}
-                              style={{ color: "#FFFFFF", textDecoration: "none" }}
+                              title={siName}
+                              style={{
+                                color: "#FFFFFF",
+                                textDecoration: "none",
+                                display: "block",
+                                ...SIMILAR_ROW_TRUNCATE_STYLE,
+                              }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.textDecoration = "underline";
                               }}
@@ -1009,18 +1035,29 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                                 e.currentTarget.style.textDecoration = "none";
                               }}
                             >
-                              {siName}
+                              {abbreviateDisplayLabel(siName)}
                             </Link>
                           ) : (
-                            siName
+                            <span title={siName} style={SIMILAR_ROW_TRUNCATE_STYLE}>
+                              {abbreviateDisplayLabel(siName)}
+                            </span>
                           )}
                           {similarIndulgence?.indulgence ? (
-                            <div style={{ marginTop: 4, fontSize: "11.5px", color: "#FB923C", fontWeight: 800 }}>
+                            <div
+                              title={`Indulgent · ${similarIndulgence.indulgence.score}`}
+                              style={{
+                                marginTop: 4,
+                                fontSize: "11.5px",
+                                color: "#FB923C",
+                                fontWeight: 800,
+                                ...SIMILAR_ROW_TRUNCATE_STYLE,
+                              }}
+                            >
                               Indulgent · {similarIndulgence.indulgence.score}
                             </div>
                           ) : null}
                         </div>
-                        <div style={{ justifySelf: "end" }}>
+                        <div style={{ justifySelf: "end", width: "100%" }}>
                           {siId ? (
                             <button
                               type="button"
