@@ -2,13 +2,23 @@ import { useEffect } from "react";
 import { MENU_ITEM_HIGHLIGHT_QUERY_KEY, menuItemDomId } from "../components/share/shareUtils.js";
 
 const HIGHLIGHT_CLASS = "menuply-menu-item-highlight";
-const HIGHLIGHT_MS = 4000;
+const HIGHLIGHT_MS = 7000;
 const RETRY_MS = 200;
 const RETRY_MAX_MS = 3500;
 
+function scrollItemIntoViewOnce(el) {
+  if (!el || el.dataset.menuplyHighlightScrolled === "1") return;
+  const rect = el.getBoundingClientRect();
+  const inView = rect.top >= 0 && rect.bottom <= window.innerHeight;
+  if (!inView) {
+    el.scrollIntoView({ block: "center", behavior: "instant" });
+  }
+  el.dataset.menuplyHighlightScrolled = "1";
+}
+
 /**
  * When arriving from menu item detail (?highlightItem=), scroll the menu row
- * into view and pulse a green outline so the user can add to basket quickly.
+ * into view once (no smooth-scroll hijack) and show a green border for 7s.
  */
 export default function useMenuItemHighlight({
   highlightMenuItemId,
@@ -34,9 +44,12 @@ export default function useMenuItemHighlight({
       const el = document.getElementById(domId);
       if (!el || cancelled) return !!el;
 
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      scrollItemIntoViewOnce(el);
       el.classList.add(HIGHLIGHT_CLASS);
-      highlightTimer = window.setTimeout(() => clearHighlight(el), HIGHLIGHT_MS);
+      highlightTimer = window.setTimeout(() => {
+        clearHighlight(el);
+        delete el.dataset.menuplyHighlightScrolled;
+      }, HIGHLIGHT_MS);
 
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev);
