@@ -53,3 +53,21 @@ signatures were modified.
 ## Approval basis
 Explicit user instruction: "restore only the previously approved visual treatment."
 Recovery/june-11 functional behavior preserved throughout.
+
+---
+
+## Date: 2026-07-06
+
+## Change: Align Compare buttons in Show Similar rows
+
+### Files modified
+- `src/components/SearchResultCard.jsx` (`DetailPanel` similar item rows)
+
+### What changed
+Similar rows use a 3-column CSS grid (`minmax(0,1fr) auto 4.25rem`) so Compare buttons align vertically regardless of whether a price is present. Price occupies a fixed-width right column; rows without price reserve the column with a transparent placeholder.
+
+### Impact on Similar/Compare
+Layout-only in similar list rows. `handleCompare`, eligibility gate, and Compare modal behavior unchanged.
+
+### Approval basis
+Explicit user instruction: keep UI clean so Compare buttons are all aligned.

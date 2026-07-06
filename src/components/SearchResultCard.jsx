@@ -984,10 +984,10 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                       <div
                         key={siId || siName}
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
+                          display: "grid",
+                          gridTemplateColumns: "minmax(0, 1fr) auto 4.25rem",
                           alignItems: "center",
-                          gap: 10,
+                          columnGap: 8,
                         }}
                       >
                         <div
@@ -996,7 +996,6 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                             fontWeight: 600,
                             color: "#FFFFFF",
                             minWidth: 0,
-                            flex: "1 1 0",
                           }}
                         >
                           {siHref ? (
@@ -1021,7 +1020,7 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                             </div>
                           ) : null}
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <div style={{ justifySelf: "end" }}>
                           {siId ? (
                             <button
                               type="button"
@@ -1041,19 +1040,20 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                               Compare
                             </button>
                           ) : null}
-                          {siPrice ? (
-                            <span
-                              style={{
-                                fontSize: "14px",
-                                fontWeight: 800,
-                                whiteSpace: "nowrap",
-                                color: "#22C55E",
-                              }}
-                            >
-                              {siPrice}
-                            </span>
-                          ) : null}
                         </div>
+                        <span
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: 800,
+                            whiteSpace: "nowrap",
+                            color: siPrice ? "#22C55E" : "transparent",
+                            textAlign: "right",
+                            justifySelf: "end",
+                          }}
+                          aria-hidden={!siPrice}
+                        >
+                          {siPrice || "—"}
+                        </span>
                       </div>
                     );
                   })}
