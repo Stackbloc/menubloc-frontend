@@ -1,9 +1,13 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { parseCityStateSlug } from "../lib/cityStateSlug";
 import { findItemBySlug } from "../lib/itemSlug";
+import { STATE_NAMES } from "../lib/slugs.js";
 
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+const API = (
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? "http://localhost:3001" : "https://menubloc-backend-production.up.railway.app")
+).replace(/\/$/, "");
 const CANONICAL_BASE = "https://menuply.com";
 
 function setCanonical(href) {
@@ -16,24 +20,58 @@ function setCanonical(href) {
   link.href = href;
 }
 
+function resolveMarketRouteParams({ slugOrId, state, city }) {
+  const fromLegacy = parseCityStateSlug(slugOrId);
+  if (fromLegacy && slugOrId) {
+    return {
+      marketSlug: slugOrId,
+      parsed: fromLegacy,
+      pathPrefix: `/restaurants/${slugOrId}`,
+    };
+  }
+  if (state && city) {
+    const stateCode = Object.entries(STATE_NAMES).find(
+      ([, slug]) => slug === String(state).toLowerCase(),
+    )?.[0];
+    if (stateCode) {
+      const marketSlug = `${city}-${stateCode.toLowerCase()}`;
+      const parsed = parseCityStateSlug(marketSlug);
+      if (parsed) {
+        return {
+          marketSlug,
+          parsed,
+          pathPrefix: `/restaurants/${state}/${city}`,
+        };
+      }
+    }
+  }
+  return {
+    marketSlug: slugOrId || null,
+    parsed: null,
+    pathPrefix: slugOrId ? `/restaurants/${slugOrId}` : null,
+  };
+}
+
 export default function MarketMenuItemPage() {
-  const { slugOrId, restaurantSlug, itemSlug } = useParams();
-  const navigate = useNavigate();
-  const parsed = parseCityStateSlug(slugOrId);
+  const params = useParams();
+  const { restaurantSlug, itemSlug } = params;
+  const { marketSlug, parsed, pathPrefix } = resolveMarketRouteParams(params);
 
   const [status, setStatus] = useState("loading");
   const [item, setItem] = useState(null);
   const [restaurantName, setRestaurantName] = useState("");
   const [restaurantId, setRestaurantId] = useState(null);
 
-  const canonicalUrl = `${CANONICAL_BASE}/restaurants/${slugOrId}/${restaurantSlug}/menu-items/${itemSlug}`;
+  const canonicalUrl = pathPrefix && itemSlug
+    ? `${CANONICAL_BASE}${pathPrefix}/${restaurantSlug}/menu-items/${itemSlug}`
+    : null;
 
   useEffect(() => {
-    setCanonical(canonicalUrl);
+    if (canonicalUrl) setCanonical(canonicalUrl);
   }, [canonicalUrl]);
 
   useEffect(() => {
-    if (!parsed || !restaurantSlug || !itemSlug) return;
+    if (!parsed || !marketSlug || !restaurantSlug || !itemSlug) return;
     setStatus("loading");
     setItem(null);
 
@@ -41,10 +79,9 @@ export default function MarketMenuItemPage() {
 
     async function resolve() {
       try {
-        // Step 1: resolve restaurant_id
         const marketRes = await fetch(
-          `${API}/public/market/${encodeURIComponent(slugOrId)}/restaurants/${encodeURIComponent(restaurantSlug)}`,
-          { credentials: "include" }
+          `${API}/public/market/${encodeURIComponent(marketSlug)}/restaurants/${encodeURIComponent(restaurantSlug)}`,
+          { credentials: "include" },
         );
         if (!marketRes.ok) throw new Error("restaurant_not_found");
         const marketData = await marketRes.json();
@@ -54,7 +91,6 @@ export default function MarketMenuItemPage() {
         if (!cancelled) setRestaurantId(rid);
         if (!cancelled) setRestaurantName(marketData.restaurant_name || "");
 
-        // Step 2: get menu to find item slug → item id
         const menuRes = await fetch(`${API}/public/restaurants/${rid}/menu`, { credentials: "include" });
         if (!menuRes.ok) throw new Error("menu_not_found");
         const menuData = await menuRes.json();
@@ -65,7 +101,6 @@ export default function MarketMenuItemPage() {
         const menuItemId = found.menu_item_id;
         if (!menuItemId) throw new Error("menu_item_identity_missing");
 
-        // Step 3: load full item detail
         const itemRes = await fetch(`${API}/menu-items/${encodeURIComponent(menuItemId)}`, {
           credentials: "include",
         });
@@ -86,9 +121,9 @@ export default function MarketMenuItemPage() {
 
     resolve();
     return () => { cancelled = true; };
-  }, [slugOrId, restaurantSlug, itemSlug]);
+  }, [marketSlug, restaurantSlug, itemSlug, parsed]);
 
-  const menuUrl = `/restaurants/${slugOrId}/${restaurantSlug}/menu`;
+  const menuUrl = pathPrefix && restaurantSlug ? `${pathPrefix}/${restaurantSlug}/menu` : "/";
   const { city, state: stateCode } = parsed || {};
 
   const nutrition = useMemo(() => {
@@ -133,9 +168,8 @@ export default function MarketMenuItemPage() {
 
   return (
     <div style={{ maxWidth: 680, margin: "0 auto", padding: "1.5rem 1rem" }}>
-      {/* Breadcrumb */}
       <nav style={{ fontSize: "0.8rem", color: "#888", marginBottom: "1rem" }}>
-        <Link to={`/restaurants/${slugOrId}`} style={{ color: "#555" }}>
+        <Link to={pathPrefix || "/restaurants"} style={{ color: "#555" }}>
           {city}, {stateCode}
         </Link>
         {" › "}
@@ -146,7 +180,6 @@ export default function MarketMenuItemPage() {
         <span>{name}</span>
       </nav>
 
-      {/* Item header */}
       <div style={{ marginBottom: "1rem" }}>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: "0.25rem" }}>{name}</h1>
         {price && (
@@ -157,7 +190,6 @@ export default function MarketMenuItemPage() {
         )}
       </div>
 
-      {/* Nutrition */}
       {nutrition && (
         <div
           style={{
@@ -190,7 +222,6 @@ export default function MarketMenuItemPage() {
         </div>
       )}
 
-      {/* Full item page link */}
       {item._menuItemId && (
         <div style={{ marginBottom: "1rem" }}>
           <Link

@@ -1301,7 +1301,8 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
 // ── Page ─────────────────────────────────────────────────────
 
 export default function MenuItemDetailPage() {
-  const { id, restaurantSlug } = useParams();
+  const { id: routeId, restaurantSlug, itemSlug } = useParams();
+  const id = routeId ?? itemSlug;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();

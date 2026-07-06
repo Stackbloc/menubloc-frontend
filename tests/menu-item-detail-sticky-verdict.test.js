@@ -23,3 +23,14 @@ test("MenuItemDetailPage accepts cmi: franchise route IDs", () => {
   assert.match(source, /isValidMenuItemRouteId/);
   assert.doesNotMatch(source, /\/\\^\\d\+\\\$\/\.test\(String\(id\)\)/);
 });
+
+test("canonical menu item URLs with numeric itemSlug route to MenuItemDetailPage", () => {
+  const appSource = fs.readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+  const routeSource = fs.readFileSync(new URL("../src/pages/MenuItemCanonicalRoute.jsx", import.meta.url), "utf8");
+  const detailSource = fs.readFileSync(DETAIL_PAGE, "utf8");
+
+  assert.match(appSource, /restaurants\/:state\/:city\/:restaurantSlug\/menu-items\/:itemSlug[\s\S]*MenuItemCanonicalRoute/);
+  assert.match(routeSource, /isValidMenuItemRouteId\(itemSlug\)/);
+  assert.match(routeSource, /<MenuItemDetailPage/);
+  assert.match(detailSource, /const id = routeId \?\? itemSlug/);
+});

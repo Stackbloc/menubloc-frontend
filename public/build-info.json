@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "e2fbba8a64f347a83dbbe28dd033395f62fb0b3f",
-  "gitShortSha": "e2fbba8",
+  "gitSha": "ab67078a343bcb44ad2c3e0d2a2cc72dec0eacf3",
+  "gitShortSha": "ab67078",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-05T21:18:23.208Z",
+  "buildTime": "2026-07-06T04:25:14.337Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "Add lazy Show Similar pagination with zero-result cache."
+  "commitMessage": "Polish diner signup UI and improve menu item detail verdict display."
 }

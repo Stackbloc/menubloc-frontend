@@ -124,6 +124,7 @@ import PublicMenuPage from "./pages/PublicMenuPage.jsx";
 import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
 import MarketAggregatorPage from "./pages/MarketAggregatorPage.jsx";
 import MarketMenuItemPage from "./pages/MarketMenuItemPage.jsx";
+import MenuItemCanonicalRoute from "./pages/MenuItemCanonicalRoute.jsx";
 import MenuThemesPage from "./pages/MenuThemesPage.jsx";
 import MenuDesignLabPage from "./pages/MenuDesignLabPage.jsx";
 import DemoPage from "./pages/DemoPage.jsx";
@@ -569,11 +570,11 @@ function AppShell({ easyMenu, crmHost }) {
         {/* Canonical 3-segment routes — /restaurants/:state/:city/:restaurantSlug */}
         <Route path="/restaurants" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorLogin />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
-        <Route path="/restaurants/:state/:city/:restaurantSlug/menu-items/:itemSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MarketMenuItemPage />} />
+        <Route path="/restaurants/:state/:city/:restaurantSlug/menu-items/:itemSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemCanonicalRoute />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CanonicalRestaurantProfile />} />
         {/* Legacy 2-segment market-scoped routes (kept for backward compat — middleware redirects to canonical) */}
         <Route path="/restaurants/:slugOrId/:restaurantSlug/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
-        <Route path="/restaurants/:slugOrId/:restaurantSlug/menu-items/:itemSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MarketMenuItemPage />} />
+        <Route path="/restaurants/:slugOrId/:restaurantSlug/menu-items/:itemSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemCanonicalRoute />} />
         {/* Single-segment: market aggregator when slug is city-state, profile otherwise */}
         <Route path="/restaurants/:slugOrId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOrMarketRouter />} />
         <Route path="/restaurants/:slugOrId/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
