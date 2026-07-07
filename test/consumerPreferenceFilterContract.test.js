@@ -46,8 +46,8 @@ function testBannerShowsCombinedFirstView() {
 
 function testBannerShowsItemCounts() {
   const src = read("src/components/menu/MenuPreferencesAppliedBanner.jsx");
-  assert.match(src, /preferenceFilterCountActive/);
-  assert.match(src, /preferenceFilterCountOff/);
+  assert.match(src, /Showing \{\{filtered\}\} out of \{\{total\}\} menu items\./);
+  assert.match(src, /Showing \{\{total\}\} menu items/);
   assert.match(src, /filteredItemCount/);
 }
 

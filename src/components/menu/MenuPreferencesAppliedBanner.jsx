@@ -97,22 +97,15 @@ export default function MenuPreferencesAppliedBanner({
   let countMessage = "";
   if (hasCounts) {
     if (filtersActive) {
-      countMessage =
-        filteredItemCount === totalMenuItemCount
-          ? t(
-              "publicMenu.preferenceFilterCountAllMatch",
-              "Showing all {{total}} menu items (none hidden by your preferences)",
-              { total: totalMenuItemCount }
-            )
-          : t(
-              "publicMenu.preferenceFilterCountActive",
-              "Showing {{filtered}} of {{total}} menu items",
-              { filtered: filteredItemCount, total: totalMenuItemCount }
-            );
+      countMessage = t(
+        "publicMenu.preferenceFilterCountActive",
+        "Showing {{filtered}} out of {{total}} menu items.",
+        { filtered: filteredItemCount, total: totalMenuItemCount }
+      );
     } else {
       countMessage = t(
         "publicMenu.preferenceFilterCountOff",
-        "Showing all {{total}} menu items (preferences off)",
+        "Showing {{total}} menu items",
         { total: totalMenuItemCount }
       );
     }
