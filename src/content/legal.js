@@ -1,7 +1,7 @@
-export const LEGAL_EFFECTIVE_DATE = "2026-07-06";
+export const LEGAL_EFFECTIVE_DATE = "2026-07-07";
 
 export const LEGAL_VERSIONS = {
-  consumerTerms: "terms_of_use_v2026_07_06",
+  consumerTerms: "terms_of_use_v2026_07_07",
   privacyPolicy: "privacy_policy_v2026_04_09",
   merchantTerms: "merchant_terms_v2026_05_31",
   subscriptionTerms: "subscription_terms_v2026_04_09",
@@ -118,6 +118,15 @@ export const TERMS_DOCUMENT = {
       paragraphs: [
         "You agree to provide accurate account, contact, payment, and delivery information, to review allergy and ingredient information directly with the restaurant when needed, and to use the platform only for lawful purposes.",
         "You may not misuse the platform, interfere with restaurant operations, submit fraudulent orders, reverse engineer the service, scrape protected content, or upload or transmit malicious code.",
+      ],
+    },
+    {
+      heading: "Creator Accounts",
+      paragraphs: [
+        "Businesses, organizations, and other entities participating in Menuply's Creator program are subject to these Terms of Use in addition to any Creator-specific policies or agreements that may apply.",
+        "Creators are responsible for ensuring that information they publish or submit through Menuply is accurate, lawful, and does not infringe the rights of others. Creators may not publish false, misleading, deceptive, defamatory, or unlawful content or misrepresent their relationship with any business, organization, or individual.",
+        "Menuply may review, modify, suspend, or remove Creator accounts or content that violates these Terms or otherwise creates legal, security, or operational risks for the platform or its users.",
+        "Participation in the Creator program does not create a partnership, agency, employment, franchise, joint venture, or exclusive business relationship between the Creator and Menuply. Unless expressly agreed in writing, Creators act as independent participants on the platform.",
       ],
     },
     {
