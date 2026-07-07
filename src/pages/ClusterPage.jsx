@@ -10,6 +10,11 @@ import {
 } from "../components/share/shareUtils.js";
 import { fetchClusterMetadata, fetchClusterRestaurants, searchCluster } from "../lib/clusterApi.js";
 import { clusterTypeLabel } from "../lib/clusterUrl.js";
+import {
+  getClusterDisclaimer,
+  getClusterOverviewDescription,
+  getClusterPageHeading,
+} from "../lib/clusterLegalCopy.js";
 import { CLUSTER_TABS, DEFAULT_CLUSTER_TAB } from "../components/cluster/clusterTabs.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
@@ -18,21 +23,23 @@ const CANONICAL_BASE = "https://menuply.com";
 function ClusterOverviewTab({ cluster }) {
   if (!cluster) return null;
 
+  const areaName = cluster.area_name || cluster.name;
+  const overviewText = getClusterOverviewDescription(cluster);
+
   return (
     <section style={{ display: "grid", gap: "1rem" }}>
       <div style={{ color: "#666", fontSize: "0.95rem" }}>
         <p style={{ margin: 0 }}>
-          {clusterTypeLabel(cluster.type)} in {cluster.city}, {cluster.state}
+          {clusterTypeLabel(cluster.type)} near {areaName}, {cluster.city}, {cluster.state}
         </p>
         {cluster.address ? <p style={{ margin: "0.5rem 0 0" }}>{cluster.address}</p> : null}
         <p style={{ margin: "0.75rem 0 0" }}>
-          {cluster.restaurant_count} restaurant{cluster.restaurant_count === 1 ? "" : "s"} in this destination
+          {cluster.restaurant_count} restaurant{cluster.restaurant_count === 1 ? "" : "s"} listed in this area
         </p>
       </div>
-      <p style={{ margin: 0, color: "#444", lineHeight: 1.5 }}>
-        Browse restaurants and search dishes across every venue in {cluster.name}.
-        Open the Restaurants tab to see who is here, or Search This Cluster to find a specific dish.
-      </p>
+      {overviewText ? (
+        <p style={{ margin: 0, color: "#444", lineHeight: 1.5 }}>{overviewText}</p>
+      ) : null}
     </section>
   );
 }
@@ -65,7 +72,7 @@ function ClusterRestaurantsTab({ clusterSlug, enabled }) {
   }, [clusterSlug, enabled]);
 
   if (!enabled) {
-    return <p style={{ color: "#888" }}>Open the Restaurants tab to load venues in this destination.</p>;
+    return <p style={{ color: "#888" }}>Open the Restaurants tab to load venues in this area.</p>;
   }
 
   if (status === "loading") {
@@ -141,7 +148,7 @@ function ClusterSearchTab({ clusterSlug, enabled }) {
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search dishes and restaurants in this cluster"
+          placeholder="Search dishes and restaurants in this area"
           aria-label="Search this cluster"
           style={{
             flex: "1 1 220px",
@@ -236,10 +243,10 @@ export default function ClusterPage() {
   }, [shareData]);
 
   useEffect(() => {
-    if (cluster?.name && !shareData?.title) {
-      document.title = `${cluster.name} | Menuply`;
+    if (cluster?.page_heading && !shareData?.title) {
+      document.title = cluster.share_title || `${cluster.page_title || cluster.page_heading} | Menuply`;
     }
-  }, [cluster?.name, shareData?.title]);
+  }, [cluster?.page_heading, cluster?.page_title, cluster?.share_title, shareData?.title]);
 
   if (status === "loading") {
     return (
@@ -257,6 +264,9 @@ export default function ClusterPage() {
     );
   }
 
+  const pageHeading = getClusterPageHeading(cluster);
+  const disclaimer = getClusterDisclaimer(cluster);
+
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem" }}>
       <header style={{ marginBottom: "1.25rem" }}>
@@ -272,7 +282,7 @@ export default function ClusterPage() {
             marginTop: "0.25rem",
           }}
         >
-          <h1 style={{ margin: 0, fontSize: "1.75rem", lineHeight: 1.2, flex: 1 }}>{cluster.name}</h1>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", lineHeight: 1.2, flex: 1 }}>{pageHeading}</h1>
           {shareData ? (
             <ShareButton
               shareData={shareData}
@@ -343,6 +353,19 @@ export default function ClusterPage() {
           <p style={{ color: "#888" }}>This tab is reserved for a future cluster release.</p>
         ) : null}
       </main>
+
+      <footer
+        style={{
+          marginTop: "2rem",
+          paddingTop: "1rem",
+          borderTop: "1px solid #e5e7eb",
+          color: "#6b7280",
+          fontSize: "0.8rem",
+          lineHeight: 1.5,
+        }}
+      >
+        <p style={{ margin: 0 }}>{disclaimer}</p>
+      </footer>
 
       <BottomNav />
     </div>
