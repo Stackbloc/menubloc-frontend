@@ -122,6 +122,7 @@ import MenuItemInfoPage from "./pages/MenuItemInfoPage.jsx";
 import PublicMenuPage from "./pages/PublicMenuPage.jsx";
 import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
 import MarketAggregatorPage from "./pages/MarketAggregatorPage.jsx";
+import ClusterPage from "./pages/ClusterPage.jsx";
 import MarketMenuItemPage from "./pages/MarketMenuItemPage.jsx";
 import MenuItemCanonicalRoute from "./pages/MenuItemCanonicalRoute.jsx";
 import MenuThemesPage from "./pages/MenuThemesPage.jsx";
@@ -554,6 +555,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/home-legacy" element={crmHost ? <HostRouteRedirect to="/crm" /> : <LegacyDiscoveryHome />} />
         <Route path="/home-next" element={crmHost ? <HostRouteRedirect to="/crm" /> : <HomeNext />} />
 
+        <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
         <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />
         <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />
