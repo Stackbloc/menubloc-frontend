@@ -13,9 +13,10 @@ import {
   getMenuConsoleRestaurantMenus,
   getOwnerMenuUploads,
   getUploadReviewItems,
-  publishMenuConsoleMenu,
+  publishUpload,
   rejectReviewItem,
   submitOwnerMenuFilePdf,
+  unpublishMenuConsoleMenu,
   updateMenuConsoleMenu,
   updateMenuConsoleRestaurant,
   deleteMenuConsoleMenu,
@@ -35,8 +36,8 @@ const fieldLabel = {
 
 const STEPS = [
   { key: "profile", label: "1. Restaurant Profile" },
-  { key: "attach", label: "2. Attach Menu" },
-  { key: "review", label: "3. Review & Publish" },
+  { key: "attach", label: "2. Upload Menu" },
+  { key: "review", label: "3. Review & Edit" },
 ];
 
 const EMPTY_PROFILE = {
@@ -50,7 +51,6 @@ const EMPTY_PROFILE = {
   cuisine: "",
   price_tier: "",
   service_model: [],
-  menu_offering_type: "",
   status: "draft",
   subscription_plan: "unverified",
   phone: "",
@@ -180,7 +180,6 @@ function profileFromRestaurant(r = {}) {
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
-    menu_offering_type: r.menu_offering_type || "",
     status: r.status || "draft",
     subscription_plan: r.subscription_plan || "unverified",
     phone: r.phone || "",
@@ -216,6 +215,8 @@ export default function OwnerMenuCreateWorkspace() {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
+  const [pendingUploadId, setPendingUploadId] = useState(null);
+  const [importingParsed, setImportingParsed] = useState(false);
   const fileRef = useRef(null);
 
   const [reviewItems, setReviewItems] = useState([]);
@@ -244,6 +245,7 @@ export default function OwnerMenuCreateWorkspace() {
     setDuplicateMatches(null);
     setProfileErr("");
     setUploadMsg(null);
+    setPendingUploadId(null);
     setActionMsg("");
     try {
       const data = await getMenuConsoleRestaurantMenus(ridNum);
@@ -319,6 +321,7 @@ export default function OwnerMenuCreateWorkspace() {
     setMenuType("main");
     setFile(null);
     setUploadMsg(null);
+    setPendingUploadId(null);
     setActionMsg("");
     setProfileErr("");
     setDuplicateMatches(null);
@@ -569,6 +572,26 @@ export default function OwnerMenuCreateWorkspace() {
     }
   }, [rid, mid]);
 
+  async function importParsedToMenuDraft(uploadId) {
+    if (!uploadId || !rid || !mid) return false;
+    setImportingParsed(true);
+    setActionMsg("");
+    try {
+      await publishUpload(uploadId);
+      await unpublishMenuConsoleMenu(rid, mid);
+      await loadMenuState();
+      await reloadMenus();
+      setPendingUploadId(null);
+      setActionMsg("Parsed items saved to this menu. Edit below, then publish when ready.");
+      return true;
+    } catch (err) {
+      setActionMsg(err?.payload?.error || err?.message || "Could not save parsed items to menu.");
+      return false;
+    } finally {
+      setImportingParsed(false);
+    }
+  }
+
   async function handleUpload() {
     if (!file || !rid) {
       setUploadMsg({ ok: false, message: "Choose a PDF or image file first." });
@@ -576,6 +599,7 @@ export default function OwnerMenuCreateWorkspace() {
     }
     setUploading(true);
     setUploadMsg(null);
+    setPendingUploadId(null);
     try {
       if (mid && (menuName.trim() || menuType)) {
         await updateMenuConsoleMenu(rid, mid, {
@@ -586,10 +610,25 @@ export default function OwnerMenuCreateWorkspace() {
       const json = await submitOwnerMenuFilePdf(rid, file);
       const inserted = (json.inserted_items || json.inserted || 0) + (json.updated_items || json.updated || 0);
       const reviewCount = json.review_count || 0;
-      setUploadMsg({
-        ok: true,
-        message: `Processed — ${inserted} item${inserted !== 1 ? "s" : ""} added${reviewCount ? `, ${reviewCount} need review` : ""}.`,
-      });
+      const uploadId = json.upload_id || null;
+      if (uploadId) setPendingUploadId(uploadId);
+
+      if (reviewCount === 0 && uploadId && inserted > 0) {
+        const saved = await importParsedToMenuDraft(uploadId);
+        setUploadMsg({
+          ok: saved,
+          message: saved
+            ? `Parsed ${inserted} item${inserted !== 1 ? "s" : ""} — saved to menu below. Edit, then publish when ready.`
+            : `Parsed ${inserted} item${inserted !== 1 ? "s" : ""}, but saving to the menu editor failed. Use Save to Menu after fixing any errors.`,
+        });
+      } else {
+        setUploadMsg({
+          ok: true,
+          message: reviewCount > 0
+            ? `Parsed ${inserted} item${inserted !== 1 ? "s" : ""} — ${reviewCount} need review below before saving to the menu.`
+            : `Parsed ${inserted} item${inserted !== 1 ? "s" : ""}.`,
+        });
+      }
       setFile(null);
       if (fileRef.current) fileRef.current.value = "";
       await loadMenuState();
@@ -601,59 +640,12 @@ export default function OwnerMenuCreateWorkspace() {
     }
   }
 
-  async function saveDraft() {
-    if (!rid || !mid) return;
-    setPublishing(true);
-    setActionMsg("");
-    try {
-      await updateMenuConsoleMenu(rid, mid, { display_name: menuName.trim(), menu_type: menuType });
-      setActionMsg("Saved as draft.");
-      await loadMenuState();
-    } catch (err) {
-      setActionMsg(err?.payload?.error || err?.message || "Could not save draft.");
-    } finally {
-      setPublishing(false);
-    }
-  }
-
-  async function processForReview() {
-    if (!rid || !mid) return;
-    setPublishing(true);
-    setActionMsg("");
-    try {
-      await updateMenuConsoleMenu(rid, mid, { display_name: menuName.trim(), menu_type: menuType });
-      setActionMsg("Menu saved for review. Approve parsed items below, then publish.");
-      await loadMenuState();
-      await loadReviewItems();
-    } catch (err) {
-      setActionMsg(err?.payload?.error || err?.message || "Could not save for review.");
-    } finally {
-      setPublishing(false);
-    }
-  }
-
-  async function publishMenu() {
-    if (!rid || !mid) return;
-    setPublishing(true);
-    setActionMsg("");
-    try {
-      await updateMenuConsoleMenu(rid, mid, { display_name: menuName.trim(), menu_type: menuType });
-      await publishMenuConsoleMenu(rid, mid);
-      setActionMsg("Menu published.");
-      await loadMenuState();
-    } catch (err) {
-      setActionMsg(err?.payload?.error || err?.message || "Could not publish menu.");
-    } finally {
-      setPublishing(false);
-    }
-  }
-
   return (
     <OwnerLayout
       title={existingRestaurant ? "Menu Manager" : "Create Restaurant + Menu"}
       subtitle={existingRestaurant
-        ? "Upload, review, edit, and publish menus for an existing restaurant."
-        : "Find an existing restaurant or create a new profile, attach a menu PDF or photo, review parsed items, then save or publish."}
+        ? "Upload a new file to parse items, review and edit the menu below, then publish when ready."
+        : "Find or create a restaurant, upload a menu file, review parsed items, edit, then publish."}
     >
       <OwnerMenuRestaurantFinder
         key={restaurant?.id || "finder"}
@@ -717,7 +709,6 @@ export default function OwnerMenuCreateWorkspace() {
           <SelectField label="Primary cuisine" value={profile.cuisine} onChange={(v) => updateProfile("cuisine", v)} options={schema?.cuisines} required />
           <SelectField label="Price tier" value={profile.price_tier} onChange={(v) => updateProfile("price_tier", v)} options={schema?.price_tiers} required />
           <SelectField label="Subscription plan" value={profile.subscription_plan} onChange={(v) => updateProfile("subscription_plan", v)} options={schema?.subscription_plans} required />
-          <SelectField label="Alcohol / menu category" value={profile.menu_offering_type} onChange={(v) => updateProfile("menu_offering_type", v)} options={schema?.menu_offering_types} required />
           <SelectField label="Status" value={profile.status} onChange={(v) => updateProfile("status", v)} options={schema?.profile_statuses} required />
           <div>
             <label style={fieldLabel}>Phone</label>
@@ -942,7 +933,10 @@ export default function OwnerMenuCreateWorkspace() {
       {/* ── Step 2: Attach menu ───────────────────────────────── */}
       {restaurant && (
         <PageCard style={{ padding: 20, marginBottom: 16 }}>
-          <SectionTitle title="Attach Menu PDF / Photo" subtitle="Upload a file to parse menu items for this restaurant." />
+          <SectionTitle
+            title="Upload Menu PDF / Photo"
+            subtitle="Parses items from your file. Review flagged items if shown, then edit in Menu Items below. Publish only when the menu is ready to go live."
+          />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
             <div>
               <label style={fieldLabel}>Menu name</label>
@@ -965,22 +959,35 @@ export default function OwnerMenuCreateWorkspace() {
             <button type="button" disabled={uploading} onClick={handleUpload} style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: uploading ? "not-allowed" : "pointer" }}>
               {uploading ? "Uploading…" : "Upload & Parse Menu"}
             </button>
-            <button type="button" disabled={publishing} onClick={saveDraft} style={{ padding: "9px 16px", borderRadius: 9, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Save as Draft</button>
-            <button type="button" disabled={publishing} onClick={processForReview} style={{ padding: "9px 16px", borderRadius: 9, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Process for Review</button>
-            <button type="button" disabled={publishing} onClick={publishMenu} style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: "#15803d", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Publish</button>
           </div>
           {(uploadMsg || actionMsg) && (
-            <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 9, background: (uploadMsg?.ok ?? true) ? "#f0fdf4" : "#fff1ef", color: (uploadMsg?.ok ?? true) ? "#15803d" : "#991b1b", fontSize: 13, fontWeight: 600 }}>
+            <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 9, background: uploadMsg?.ok === false ? "#fff1ef" : "#f0fdf4", color: uploadMsg?.ok === false ? "#991b1b" : "#15803d", fontSize: 13, fontWeight: 600 }}>
               {uploadMsg?.message || actionMsg}
             </div>
           )}
         </PageCard>
       )}
 
-      {/* ── Step 3: Review + editor ───────────────────────────── */}
+      {restaurant && pendingUploadId && reviewItems.length === 0 && (menuDetail?.item_count ?? 0) === 0 && (
+        <PageCard style={{ padding: 20, marginBottom: 16 }}>
+          <SectionTitle
+            title="Save Parsed Items"
+            subtitle="Parsed items are ready. Save them into the menu editor below before publishing."
+          />
+          <button
+            type="button"
+            disabled={importingParsed}
+            onClick={() => importParsedToMenuDraft(pendingUploadId)}
+            style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: importingParsed ? "not-allowed" : "pointer" }}
+          >
+            {importingParsed ? "Saving…" : "Save to Menu"}
+          </button>
+        </PageCard>
+      )}
+
       {restaurant && reviewItems.length > 0 && (
         <PageCard style={{ padding: 20, marginBottom: 16 }}>
-          <SectionTitle title="Items Needing Review" subtitle="Approve or reject parsed items before publishing." />
+          <SectionTitle title="Items Needing Review" subtitle="Approve or reject parsed items, then click Save to Menu." />
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
             {reviewItems.map((item) => (
               <ReviewItemRow
@@ -998,6 +1005,23 @@ export default function OwnerMenuCreateWorkspace() {
               />
             ))}
           </div>
+          {pendingUploadId ? (
+            <div style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                disabled={importingParsed || reviewItems.length > 0}
+                onClick={() => importParsedToMenuDraft(pendingUploadId)}
+                style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: importingParsed ? "not-allowed" : "pointer" }}
+              >
+                {importingParsed ? "Saving…" : "Save to Menu"}
+              </button>
+              {reviewItems.length > 0 ? (
+                <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
+                  Finish reviewing all items above, then save to the menu editor.
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </PageCard>
       )}
 
@@ -1005,7 +1029,14 @@ export default function OwnerMenuCreateWorkspace() {
         <PageCard style={{ padding: 20, marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
             <div>
-              <SectionTitle title="Menu Items" subtitle={`${menuDetail.item_count ?? 0} items on ${menuName}`} />
+              <SectionTitle
+                title="Menu Items"
+                subtitle={
+                  menuDetail.menu?.status === "published"
+                    ? `${menuDetail.item_count ?? 0} items on ${menuName}. Edit here anytime — use Set to Draft before major changes, then Publish when ready.`
+                    : `${menuDetail.item_count ?? 0} items on ${menuName}. Edit sections and items, then Publish Menu when ready to go live.`
+                }
+              />
               <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
                 <StatusChip status={menuDetail.menu?.status} />
               </div>

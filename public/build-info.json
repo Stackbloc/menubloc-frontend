@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "8af9e7ef95e921b707c800b660a3a6e084cc6c19",
-  "gitShortSha": "8af9e7e",
+  "gitSha": "43e7c9beb93c656d78b48b7561cdd45519e0aa78",
+  "gitShortSha": "43e7c9b",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-07T00:20:10.107Z",
+  "buildTime": "2026-07-07T00:36:12.017Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(consumer): reapply saved diet/allergen prefs after login and profile save."
+  "commitMessage": "fix(owner): stop Menu Manager finder flicker and irrelevant results."
 }
