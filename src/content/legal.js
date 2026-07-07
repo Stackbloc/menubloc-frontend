@@ -1,7 +1,7 @@
-export const LEGAL_EFFECTIVE_DATE = "2026-06-03";
+export const LEGAL_EFFECTIVE_DATE = "2026-07-06";
 
 export const LEGAL_VERSIONS = {
-  consumerTerms: "terms_of_use_v2026_06_03",
+  consumerTerms: "terms_of_use_v2026_07_06",
   privacyPolicy: "privacy_policy_v2026_04_09",
   merchantTerms: "merchant_terms_v2026_05_31",
   subscriptionTerms: "subscription_terms_v2026_04_09",
@@ -47,9 +47,26 @@ export const TERMS_DOCUMENT = {
       ],
     },
     {
+      heading: "Restaurant Information and Verification Status",
+      paragraphs: [
+        "Menuply collects, organizes, and displays restaurant information from a variety of sources, including restaurants, restaurant owners, publicly available information, user submissions, menu documents, and automated data processing systems. While Menuply works to maintain accurate and current information, we cannot guarantee that all information displayed is complete, current, or error-free.",
+        "Information displayed on Menuply—including, but not limited to, menu items, descriptions, prices, hours of operation, promotions, availability, restaurant amenities, photographs, dietary information, and other restaurant-related content—may change without notice and may differ by restaurant location or region.",
+        "Menu prices displayed on Menuply may not reflect regional pricing differences, temporary promotions, franchise pricing, local market conditions, or recent restaurant updates. Users should verify prices, availability, and other important information directly with the restaurant before placing an order or making purchasing decisions.",
+        "Restaurants displayed on Menuply may be identified using the following verification status indicators. Each indicator includes a color and an accessible text label:",
+        "Verification status indicates the level of restaurant participation on the Menuply platform. Verification does not constitute a guarantee that all information is complete, current, or accurate at all times.",
+        "If you believe restaurant information is inaccurate, you should notify Menuply through the available reporting tools or contact the restaurant directly. Menuply may review reported inaccuracies and update information in its sole discretion.",
+      ],
+      items: [
+        "Red – Unverified: Restaurant information has not yet been verified by the restaurant owner or an authorized representative.",
+        "Yellow – Verified: The restaurant has verified its profile and may update its own menu and restaurant information through Menuply.",
+        'Green – Verified with Online Ordering: The restaurant has verified its profile, manages its menu through Menuply, and currently accepts online orders through the platform (accessible text label: "Verified • Ordering Available").',
+      ],
+    },
+    {
       heading: "Restaurant Partner Terms",
       paragraphs: [
         'These Restaurant Partner Terms describe additional restaurant-facing terms for Menuply. Menuply is operated by Stackbloc Corporation, doing business as Menuply ("Menuply"). Restaurants remain the merchant of record and remain responsible for pricing, fulfillment, taxes, legal compliance, and their own customer-facing operations.',
+        "Restaurants are responsible for promptly updating their menus, prices, hours, availability, tax settings, promotions, fulfillment options, and other customer-facing information when changes occur.",
         "Menuply is designed to align restaurant sustainability, customer value, and long-term demand. Menuply is designed to operate without reliance on high-markup pricing models, while preserving restaurant flexibility outside the Menuply platform.",
         "The price integrity requirements in this section apply only to pricing displayed on Menuply. Restaurants remain free to set pricing independently on other platforms, channels, and direct ordering surfaces. For Menuply-listed items, prices generally should not materially exceed in-store or direct ordering prices except for reasonable adjustments, and as a general guideline prices ordinarily should not materially exceed approximately 15% above in-store pricing unless approved by Menuply. Menuply may review pricing across channels, request verification, audit supporting information, and enforce pricing integrity in good faith and consistent with platform policies.",
         "If Menuply identifies pricing concerns, Menuply may remove or suppress items, disable ordering for specific items or locations, revoke benefits including commission protection, downgrade plan status, or suspend or terminate restaurant access where appropriate.",
@@ -108,10 +125,8 @@ export const TERMS_DOCUMENT = {
       paragraphs: [
         "Menuply may display nutrition values, wellness insights, dietary indicators, allergen-related information, and similar food intelligence to help you explore and compare menus. When official nutrition information is not available from a restaurant, Menuply may present estimated menu intelligence alongside or in place of those official values so you still have useful, directional context.",
         "Nutrition values, wellness insights, dietary indicators, allergen-related information, and similar food intelligence features may include estimates generated from restaurant menus, restaurant-provided information, ingredient analysis, preparation methods (including preparation inference from menu text), publicly available nutrition data, and automated menu intelligence systems.",
-        "Actual values may vary based on recipe changes, portion size, substitutions, preparation method, restaurant location, and kitchen practices.",
-        "Allergen-related information shown on Menuply may not reflect cross-contact, shared equipment, fryer oil, or other kitchen preparation conditions. You should not rely on it as a complete picture of how a restaurant prepares food at a specific location or time.",
-        "Users with dietary restrictions, medical conditions, or severe allergies should confirm relevant information directly with the restaurant before ordering or consuming food.",
-        "Menuply does not provide medical, dietary, or nutritional advice. That content is informational only, and you remain responsible for confirming ingredients, allergens, and suitability directly with the restaurant when it matters to you.",
+        "Nutrition, ingredient, dietary, allergen, and related food intelligence information provided by Menuply is for general informational purposes only and should not be relied upon for medical, dietary, allergy, or other health-related decisions. Users should consult the restaurant directly to confirm ingredients, allergens, preparation methods, nutritional information, and any other information that may affect their purchasing or consumption decisions.",
+        "Allergen-related information displayed on Menuply may be incomplete, estimated, outdated, or inaccurate and may not reflect recipe changes, substitutions, cross-contact, shared equipment, fryer oil, or other kitchen practices. Individuals with food allergies, dietary restrictions, or medical conditions should not rely on information displayed on Menuply and should verify all relevant information directly with the restaurant before ordering or consuming any food.",
       ],
     },
     {
@@ -125,6 +140,7 @@ export const TERMS_DOCUMENT = {
       heading: "Limitation of liability",
       paragraphs: [
         "To the fullest extent permitted by law, Stackbloc Corporation and its affiliates, officers, employees, and service providers will not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, or for any loss of profits, revenues, goodwill, data, or business opportunities arising out of or related to Menuply.",
+        "To the fullest extent permitted by law, Menuply shall not be liable for losses arising from inaccuracies, omissions, delays, or changes in restaurant information supplied by restaurants, third parties, public sources, user submissions, or automated processing systems.",
         "To the fullest extent permitted by law, the total liability of Stackbloc Corporation for any claim arising out of or relating to the platform will not exceed the greater of one hundred U.S. dollars (US $100) or the amount paid by you to Menuply, if any, for the specific transaction giving rise to the claim in the twelve months before the event.",
       ],
     },
