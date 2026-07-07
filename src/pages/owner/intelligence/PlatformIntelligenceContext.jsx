@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useMemo, useCallback, useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 const PlatformIntelligenceContext = createContext(null);
+
+const KNOWN_PRESETS = new Set(["today", "yesterday", "7d", "30d"]);
 
 /** Calendar date in the user's local timezone (YYYY-MM-DD). */
 function localDateYmd(date = new Date()) {
@@ -45,18 +47,50 @@ function applyPreset(preset) {
   return { start_date: start, end_date: end };
 }
 
+function resolveRange(searchParams, defaults) {
+  const preset = searchParams.get("preset") || "30d";
+  const timezone = searchParams.get("timezone") || defaults.timezone;
+  const hasStart = searchParams.has("start_date");
+  const hasEnd = searchParams.has("end_date");
+
+  if (KNOWN_PRESETS.has(preset) && (!hasStart || !hasEnd)) {
+    return { ...applyPreset(preset), timezone, preset };
+  }
+
+  return {
+    start_date: searchParams.get("start_date") || defaults.start_date,
+    end_date: searchParams.get("end_date") || defaults.end_date,
+    timezone,
+    preset,
+  };
+}
+
 export function PlatformIntelligenceProvider({ children }) {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
   const defaults = useMemo(() => buildDefaultRange(), []);
 
-  const range = useMemo(() => ({
-    start_date: searchParams.get("start_date") || defaults.start_date,
-    end_date: searchParams.get("end_date") || defaults.end_date,
-    timezone: searchParams.get("timezone") || defaults.timezone,
-    preset: searchParams.get("preset") || "30d",
-  }), [searchParams, defaults]);
+  const range = useMemo(
+    () => resolveRange(searchParams, defaults),
+    [searchParams, defaults]
+  );
+
+  useEffect(() => {
+    const preset = searchParams.get("preset");
+    if (!preset || !KNOWN_PRESETS.has(preset)) return;
+    if (searchParams.has("start_date") && searchParams.has("end_date")) return;
+
+    const next = applyPreset(preset);
+    const params = new URLSearchParams(searchParams);
+    params.set("start_date", next.start_date);
+    params.set("end_date", next.end_date);
+    if (!params.get("timezone")) params.set("timezone", defaults.timezone);
+    navigate(
+      { pathname: location.pathname, search: `?${params.toString()}` },
+      { replace: true }
+    );
+  }, [searchParams, location.pathname, navigate, defaults.timezone]);
 
   const setRange = useCallback((next) => {
     const params = new URLSearchParams(searchParams);

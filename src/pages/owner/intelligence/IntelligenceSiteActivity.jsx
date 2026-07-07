@@ -47,8 +47,15 @@ export default function IntelligenceSiteActivity() {
       </IntelligenceSection>
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-        <IntelligenceSection title="Top Pages" subtitle="Most visited paths.">
-          <SimpleTable rows={data.top_pages} columns={[["Path", "path"], ["Visits", "visits"]]} />
+        <IntelligenceSection title="Top Pages" subtitle="Consumer page views by path. Browse carousel steps (&i=N) are rolled up.">
+          <SimpleTable
+            rows={data.top_pages}
+            columns={[
+              ["Path", "path"],
+              ["Page views", "visits"],
+              ["Sessions", "sessions"],
+            ]}
+          />
         </IntelligenceSection>
         <IntelligenceSection title="Referral Sources" subtitle="Where traffic originates.">
           <SimpleTable rows={data.referral_sources} columns={[["Source", "source"], ["Visits", "visits"]]} />
