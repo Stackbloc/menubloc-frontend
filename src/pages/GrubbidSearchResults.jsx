@@ -39,6 +39,7 @@ import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.
 import { parseFiltersFromUrl, filtersToUrlParams } from "../lib/filterUtils.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import { trackSearchPerformed } from "../lib/analytics.js";
+import { appendSearchAnalyticsParams, getAnalyticsSessionId } from "../lib/analyticsPageVisitSend.js";
 import {
   buildRestaurantBrowseRows,
   countUniqueRestaurants,
@@ -47,7 +48,6 @@ import {
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
-const SEARCH_SESSION_KEY = "grubbid.search.session_id";
 
 /* ---- Mobile hook ---- */
 
@@ -331,18 +331,7 @@ function parseLocation(rawValue) {
 }
 
 function getOrCreateSearchSessionId() {
-  if (typeof window === "undefined") return "";
-
-  const existing = String(window.sessionStorage.getItem(SEARCH_SESSION_KEY) || "").trim();
-  if (existing) return existing;
-
-  const created =
-    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `search-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-
-  window.sessionStorage.setItem(SEARCH_SESSION_KEY, created);
-  return created;
+  return getAnalyticsSessionId();
 }
 
 function compactObject(value) {
@@ -2286,6 +2275,8 @@ export default function GrubbidSearchResults() {
         geoAdded = true;
       }
     }
+
+    appendSearchAnalyticsParams(u.searchParams);
 
     return { primaryUrl: u.toString(), fallbackUrl: baseUrl, hasGeoFilter: geoAdded };
   }, [

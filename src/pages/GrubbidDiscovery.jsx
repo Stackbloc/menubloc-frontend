@@ -29,6 +29,7 @@ import {
   reverseGeocode,
 } from "../lib/locationUtils.js";
 import { captureEvent } from "../services/posthog.js";
+import { appendSearchAnalyticsParams } from "../lib/analyticsPageVisitSend.js";
 import ActiveFilterChips from "../components/discovery/ActiveFilterChips.jsx";
 import ChipRail from "../components/chips/ChipRail.jsx";
 import DiscoveryDrawer from "../components/grubbid/DiscoveryDrawer.jsx";
@@ -1022,6 +1023,7 @@ export default function GrubbidDiscovery() {
     });
     setSearching(true);
     try {
+      appendSearchAnalyticsParams(params);
       const url = `${API}/search?${params.toString()}&limit=1`;
       const res = await fetch(url, { credentials: "include" });
       const json = await res.json().catch(() => ({}));
@@ -1163,6 +1165,7 @@ export default function GrubbidDiscovery() {
     setInlineError("");
     setSearching(true);
     try {
+      appendSearchAnalyticsParams(params);
       const url = `${API}/search?${params.toString()}&limit=1`;
       const res = await fetch(url, { credentials: "include" });
       const json = await res.json().catch(() => ({}));

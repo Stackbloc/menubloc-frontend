@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import { Card } from "../components/grubbid/GrubbidPrimitives.jsx";
+import { appendSearchAnalyticsParams } from "../lib/analyticsPageVisitSend.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const SESSION_LOCATION_KEY = "grubbid.discovery.location";
@@ -117,6 +118,8 @@ export default function FoodTrucksPage() {
           params.set("lng", area.lng);
           params.set("radius_miles", area.radius || String(DEFAULT_RADIUS_MILES));
         }
+
+        appendSearchAnalyticsParams(params);
 
         const res = await fetch(`${API}/search?${params.toString()}`, {
           credentials: "include",

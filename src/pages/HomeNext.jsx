@@ -22,6 +22,7 @@ import HomeNextDiscoverySection from "../components/homeNext/HomeNextDiscoverySe
 import HomeNextSectionExpanded from "../components/homeNext/HomeNextSectionExpanded.jsx";
 import HomeNextLocationSelector from "../components/homeNext/HomeNextLocationSelector.jsx";
 import { captureEvent } from "../services/posthog.js";
+import { appendSearchAnalyticsParams } from "../lib/analyticsPageVisitSend.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -107,6 +108,7 @@ export default function HomeNext() {
     try {
       const params = new URLSearchParams(target.split("?")[1] || "");
       params.set("limit", "1");
+      appendSearchAnalyticsParams(params);
       const res = await fetch(`${API}/search?${params.toString()}`, { credentials: "include" });
       const json = await res.json().catch(() => ({}));
       const count = Array.isArray(json?.results) ? json.results.length : 0;

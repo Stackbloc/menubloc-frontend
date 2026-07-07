@@ -1,20 +1,8 @@
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-const SESSION_KEY = "grubbid.analytics.session_id";
+import { getAnalyticsSessionId } from "./analyticsSessionId.js";
 
-export function getAnalyticsSessionId() {
-  try {
-    let id = String(window.sessionStorage.getItem(SESSION_KEY) || "");
-    if (!id) {
-      id = typeof window.crypto?.randomUUID === "function"
-        ? window.crypto.randomUUID()
-        : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      window.sessionStorage.setItem(SESSION_KEY, id);
-    }
-    return id;
-  } catch {
-    return "";
-  }
-}
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+
+export { getAnalyticsSessionId, appendSearchAnalyticsParams } from "./analyticsSessionId.js";
 
 export function sendPageVisit({ path, restaurant_id = null, menu_item_id = null, market = null, user_id = null } = {}) {
   if (!path) return;
