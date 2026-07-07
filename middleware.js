@@ -10,6 +10,7 @@ import {
   restaurantMenuPath,
   restaurantPath,
 } from "./src/lib/canonicalUrlCore.js";
+import { clusterPath } from "./src/lib/clusterUrl.js";
 import { INDEXABLE_STATIC_PAGES } from "./src/lib/sitemapConfig.js";
 
 const BACKEND = "https://menubloc-backend-production.up.railway.app";
@@ -24,6 +25,7 @@ const RESTAURANT_PROFILE_RE = /^\/restaurants\/([^/]+)\/?$/;
 // Legacy numeric from public path
 const LEGACY_NUMERIC_RE = /^\/public\/restaurants\/(\d+)\/menu\/?$/;
 const MENU_ITEM_RE = /^\/menu-items\/(\d+)\/?$/;
+const CLUSTER_RE = /^\/clusters\/([^/]+)\/([^/]+)\/([^/]+)\/?$/;
 const SITEMAP_CHUNK_RE = /^\/sitemaps\/sitemap-(\d+)\.xml$/;
 const SITEMAP_LIMIT = 45000;
 
@@ -37,11 +39,10 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-function injectMeta(html, title, description, canonical) {
+function injectMeta(html, title, description, canonical, image) {
   const t = escapeHtml(title);
   const d = escapeHtml(description);
-  // canonical is constructed by the middleware — not from user data — so no escaping needed
-  return html
+  let next = html
     .replace(/<title>[^<]*<\/title>/, `<title>${t}</title>`)
     .replace(/<link rel="canonical" href="[^"]*"[^>]*>/, `<link rel="canonical" href="${canonical}">`)
     .replace(/<meta name="description" content="[^"]*"[^>]*>/, `<meta name="description" content="${d}">`)
@@ -50,6 +51,15 @@ function injectMeta(html, title, description, canonical) {
     .replace(/<meta property="og:url" content="[^"]*"[^>]*>/, `<meta property="og:url" content="${canonical}">`)
     .replace(/<meta name="twitter:title" content="[^"]*"[^>]*>/, `<meta name="twitter:title" content="${t}">`)
     .replace(/<meta name="twitter:description" content="[^"]*"[^>]*>/, `<meta name="twitter:description" content="${d}">`);
+
+  if (image) {
+    const img = escapeHtml(image);
+    next = next
+      .replace(/<meta property="og:image" content="[^"]*"[^>]*>/, `<meta property="og:image" content="${img}">`)
+      .replace(/<meta name="twitter:image" content="[^"]*"[^>]*>/, `<meta name="twitter:image" content="${img}">`);
+  }
+
+  return next;
 }
 
 function injectNoScriptLinks(html, links, label) {
@@ -196,6 +206,20 @@ function buildMenuItemMeta(data, itemId) {
   return { title, description, canonical };
 }
 
+function buildClusterMeta(cluster, pathname) {
+  const name = escapeHtml(cluster.name);
+  const title = `${name} | Menuply`;
+  const description = `Browse menus, compare restaurants, and discover where to eat at ${name}.`;
+  const path = clusterPath({
+    state: cluster.state,
+    city: cluster.city,
+    slug: cluster.slug,
+  });
+  const canonical = path ? `${ORIGIN}${path}` : `${ORIGIN}${pathname}`;
+  const image = cluster.og_image_url || null;
+  return { title, description, canonical, image };
+}
+
 function injectedResponse(html) {
   return new Response(html, {
     headers: {
@@ -331,6 +355,26 @@ export default async function middleware(request) {
     return Response.redirect(canonical, 301);
   }
 
+  // --- /clusters/:state/:city/:slug ---
+  m = CLUSTER_RE.exec(pathname);
+  if (m) {
+    const clusterSlug = m[3];
+    const stateSlug = m[1];
+    const citySlug = m[2];
+    const [shell, meta] = await Promise.all([
+      fetchShell(request.url),
+      fetchMeta(
+        `/public/clusters/${encodeURIComponent(clusterSlug)}?stateSlug=${encodeURIComponent(stateSlug)}&citySlug=${encodeURIComponent(citySlug)}`
+      ),
+    ]);
+    if (!shell || !meta?.ok || !meta.cluster) return;
+    const { title, description, canonical, image } = buildClusterMeta(meta.cluster, pathname);
+    if (canonical !== `${ORIGIN}${pathname}`) {
+      return Response.redirect(canonical, 301);
+    }
+    return injectedResponse(injectMeta(shell, title, description, canonical, image));
+  }
+
   // --- /menu-items/:id ---
   m = MENU_ITEM_RE.exec(pathname);
   if (m) {
@@ -351,6 +395,7 @@ export const config = {
   matcher: [
     "/sitemap.xml",
     "/sitemaps/:path*",
+    "/clusters/:path*",
     "/restaurants/:path*",
     "/public/restaurants/:path*",
     "/menu-items/:path*",

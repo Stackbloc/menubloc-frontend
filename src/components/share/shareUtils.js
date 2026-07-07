@@ -18,6 +18,7 @@
 
 import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
 import { menuItemPath, restaurantMenuPath, restaurantPath } from "../../lib/canonicalUrl.js";
+import { clusterPath } from "../../lib/clusterUrl.js";
 
 const DEFAULT_PUBLIC_ORIGIN = "https://menuply.com";
 const DEFAULT_SHARE_IMAGE_PATH = "/menuply-share-default.svg";
@@ -232,6 +233,23 @@ export function buildRestaurantShareData({
   );
   const image = resolveShareImageUrl({ imageUrl: logoUrl, origin });
   return { title, text, url, image, restaurantName: safeRestaurantName };
+}
+
+export function buildClusterShareData({ cluster, origin = getPublicOrigin() }) {
+  const name = pickFirstText(cluster?.name, "this destination");
+  const city = pickFirstText(cluster?.city);
+  const state = pickFirstText(cluster?.state);
+  const slug = pickFirstText(cluster?.slug);
+  const path = clusterPath({ state, city, slug });
+  const url = toAbsoluteUrl(path || "/", origin);
+  const image = resolveShareImageUrl({
+    imageUrl: pickFirstText(cluster?.og_image_url),
+    origin,
+  });
+  const title = `${name} | Menuply`;
+  const description = `Browse menus, compare restaurants, and discover where to eat at ${name}.`;
+  const text = description;
+  return { title, text, url, image, description, clusterName: name };
 }
 
 export function buildShareLinks({ title, text, url }) {

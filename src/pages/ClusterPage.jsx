@@ -3,8 +3,13 @@ import { useParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
 import SearchResultCard from "../components/SearchResultCard.jsx";
+import ShareButton from "../components/share/ShareButton.jsx";
+import {
+  applyDocumentSocialMetadata,
+  buildClusterShareData,
+} from "../components/share/shareUtils.js";
 import { fetchClusterMetadata, fetchClusterRestaurants, searchCluster } from "../lib/clusterApi.js";
-import { clusterPath, clusterTypeLabel } from "../lib/clusterUrl.js";
+import { clusterTypeLabel } from "../lib/clusterUrl.js";
 import { CLUSTER_TABS, DEFAULT_CLUSTER_TAB } from "../components/cluster/clusterTabs.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
@@ -189,9 +194,9 @@ export default function ClusterPage() {
   const [cluster, setCluster] = useState(null);
   const [error, setError] = useState("");
 
-  const canonicalPath = useMemo(
-    () => clusterPath({ state: stateSlug, city: citySlug, slug: clusterSlug }),
-    [stateSlug, citySlug, clusterSlug]
+  const shareData = useMemo(
+    () => (cluster ? buildClusterShareData({ cluster, origin: CANONICAL_BASE }) : null),
+    [cluster]
   );
 
   useEffect(() => {
@@ -221,21 +226,20 @@ export default function ClusterPage() {
   }, [clusterSlug, stateSlug, citySlug]);
 
   useEffect(() => {
-    if (!canonicalPath) return;
-    let link = document.querySelector("link[rel='canonical']");
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "canonical";
-      document.head.appendChild(link);
-    }
-    link.href = `${CANONICAL_BASE}${canonicalPath}`;
-  }, [canonicalPath]);
+    if (!shareData) return undefined;
+    return applyDocumentSocialMetadata({
+      title: shareData.title,
+      description: shareData.description || shareData.text,
+      url: shareData.url,
+      image: shareData.image,
+    });
+  }, [shareData]);
 
   useEffect(() => {
-    if (cluster?.name) {
-      document.title = `${cluster.name} — Menuply`;
+    if (cluster?.name && !shareData?.title) {
+      document.title = `${cluster.name} | Menuply`;
     }
-  }, [cluster?.name]);
+  }, [cluster?.name, shareData?.title]);
 
   if (status === "loading") {
     return (
@@ -259,7 +263,31 @@ export default function ClusterPage() {
         <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
           {cluster.city}, {cluster.state}
         </p>
-        <h1 style={{ margin: "0.25rem 0 0", fontSize: "1.75rem", lineHeight: 1.2 }}>{cluster.name}</h1>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: "0.75rem",
+            marginTop: "0.25rem",
+          }}
+        >
+          <h1 style={{ margin: 0, fontSize: "1.75rem", lineHeight: 1.2, flex: 1 }}>{cluster.name}</h1>
+          {shareData ? (
+            <ShareButton
+              shareData={shareData}
+              analyticsContext={{
+                pageType: "cluster",
+                clusterSlug: cluster.slug,
+                clusterName: cluster.name,
+              }}
+              label="Share destination"
+              iconOnly
+              tone="ghost"
+              size="compact"
+            />
+          ) : null}
+        </div>
       </header>
 
       <nav
