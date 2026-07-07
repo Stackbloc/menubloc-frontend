@@ -45,8 +45,10 @@ function ClusterOverviewTab({ cluster }) {
 }
 
 function ClusterRestaurantsTab({ clusterSlug, enabled }) {
+  const PAGE_SIZE = 20;
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [restaurants, setRestaurants] = useState([]);
+  const [pagination, setPagination] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -55,11 +57,14 @@ function ClusterRestaurantsTab({ clusterSlug, enabled }) {
     const controller = new AbortController();
     setStatus("loading");
     setError("");
+    setRestaurants([]);
+    setPagination(null);
 
-    fetchClusterRestaurants(clusterSlug, { signal: controller.signal })
+    fetchClusterRestaurants(clusterSlug, { limit: PAGE_SIZE, offset: 0, signal: controller.signal })
       .then((data) => {
         if (!data?.ok) throw new Error(data?.error || "Could not load restaurants");
         setRestaurants(Array.isArray(data.restaurants) ? data.restaurants : []);
+        setPagination(data.pagination || null);
         setStatus("ok");
       })
       .catch((err) => {
@@ -70,6 +75,30 @@ function ClusterRestaurantsTab({ clusterSlug, enabled }) {
 
     return () => controller.abort();
   }, [clusterSlug, enabled]);
+
+  async function loadMore() {
+    if (!clusterSlug || !pagination?.has_more || status === "loading-more") return;
+    setStatus("loading-more");
+    setError("");
+
+    try {
+      const data = await fetchClusterRestaurants(clusterSlug, {
+        limit: PAGE_SIZE,
+        offset: restaurants.length,
+      });
+      if (!data?.ok) throw new Error(data?.error || "Could not load more restaurants");
+      const nextRows = Array.isArray(data.restaurants) ? data.restaurants : [];
+      setRestaurants((prev) => {
+        const seen = new Set(prev.map((row) => row.restaurant_id));
+        return [...prev, ...nextRows.filter((row) => !seen.has(row.restaurant_id))];
+      });
+      setPagination(data.pagination || null);
+      setStatus("ok");
+    } catch (err) {
+      setError(toConsumerErrorMessage(err, "Could not load more restaurants."));
+      setStatus("ok");
+    }
+  }
 
   if (!enabled) {
     return <p style={{ color: "#888" }}>Open the Restaurants tab to load venues in this area.</p>;
@@ -87,11 +116,34 @@ function ClusterRestaurantsTab({ clusterSlug, enabled }) {
     return <p style={{ color: "#888" }}>No restaurants are assigned to this cluster yet.</p>;
   }
 
+  const totalLabel = pagination?.total_menu_ready ?? restaurants.length;
+
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
+      <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
+        Showing {restaurants.length} of {totalLabel} restaurant{totalLabel === 1 ? "" : "s"}
+      </p>
       {restaurants.map((restaurant) => (
         <DiscoveryCard key={restaurant.restaurant_id} menu={restaurant} />
       ))}
+      {pagination?.has_more ? (
+        <button
+          type="button"
+          onClick={loadMore}
+          disabled={status === "loading-more"}
+          style={{
+            marginTop: "0.25rem",
+            padding: "0.65rem 1rem",
+            borderRadius: 8,
+            border: "1px solid #d1d5db",
+            background: "#fff",
+            cursor: status === "loading-more" ? "wait" : "pointer",
+          }}
+        >
+          {status === "loading-more" ? "Loading…" : "Load more restaurants"}
+        </button>
+      ) : null}
+      {error ? <p style={{ color: "#b91c1c", margin: 0 }}>{error}</p> : null}
     </div>
   );
 }

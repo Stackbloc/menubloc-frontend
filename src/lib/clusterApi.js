@@ -9,8 +9,13 @@ export async function fetchClusterMetadata(clusterSlug, { stateSlug, citySlug, s
   return apiGet(path, { signal });
 }
 
-export async function fetchClusterRestaurants(clusterSlug, { signal } = {}) {
-  return apiGet(`/public/clusters/${encodeURIComponent(clusterSlug)}/restaurants`, { signal });
+export async function fetchClusterRestaurants(clusterSlug, { limit = 20, offset = 0, signal } = {}) {
+  const params = new URLSearchParams();
+  if (limit != null) params.set("limit", String(limit));
+  if (offset != null) params.set("offset", String(offset));
+  const qs = params.toString();
+  const path = `/public/clusters/${encodeURIComponent(clusterSlug)}/restaurants${qs ? `?${qs}` : ""}`;
+  return apiGet(path, { signal });
 }
 
 export async function searchCluster(clusterSlug, { q, limit = 24, offset = 0, signal } = {}) {
