@@ -147,6 +147,8 @@ export default function OwnerRestaurants() {
   const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 50)));
   const appliedBrandQuery = String(filters.q || "").trim();
   const showBrandBreakdown = Boolean(breakdown && appliedBrandQuery && draft.q === filters.q);
+  const hasActiveSearch = Boolean(filters.q || filters.city || filters.state);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   return (
     <OwnerLayout
@@ -193,23 +195,107 @@ export default function OwnerRestaurants() {
             <MetricCard label="Active menus" value={breakdown.active_menus} />
             <MetricCard label="Pending menus" value={breakdown.pending_menus} />
             <MetricCard label="No menu" value={breakdown.no_menu} />
-            <MetricCard label="Independent claimed" value={breakdown.independent_claimed} />
-            <MetricCard label="Independent verified" value={breakdown.independent_verified} />
-            <MetricCard label="Chain locations" value={breakdown.chain_locations} />
           </div>
-          {breakdown.markets?.length ? (
+          {results.length > 0 ? (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                Open a location
+              </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                {results.slice(0, 8).map((row) => (
+                  <LocationActionRow key={row.restaurant_id} row={row} onDetail={openDetail} />
+                ))}
+              </div>
+            </div>
+          ) : (
             <div style={{ marginTop: 12, fontSize: 13, color: OWNER_COLORS.muted }}>
-              Markets: {breakdown.markets.join(", ")}
+              Summary only — scroll to the results table below or widen filters to list individual locations.
             </div>
-          ) : null}
-          {breakdown.states?.length ? (
-            <div style={{ marginTop: 6, fontSize: 13, color: OWNER_COLORS.muted }}>
-              States: {breakdown.states.join(", ")}
-            </div>
-          ) : null}
+          )}
         </PageCard>
       ) : null}
 
+      <PageCard style={{ padding: 18, marginBottom: 16 }}>
+        <SectionTitle
+          title="Restaurants"
+          subtitle={`${pagination.total || 0} matches — select a row to manage menus or edit profile`}
+        />
+        {loading ? (
+          <div style={{ padding: 24, textAlign: "center", color: OWNER_COLORS.muted }}>Loading…</div>
+        ) : !results.length ? (
+          <EmptyState>
+            {hasActiveSearch
+              ? "No restaurants match the current filters."
+              : "Enter a name, city, state, or ID above and click Apply Filters."}
+          </EmptyState>
+        ) : (
+          <>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1100 }}>
+                <thead>
+                  <tr>
+                    {["Restaurant", "Chain", "City", "State", "Market", "Menu", "Claim", "Source", "Updated", "Actions"].map((label) => (
+                      <th key={label} style={thStyle}>{label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((row) => (
+                    <tr key={row.restaurant_id} style={{ cursor: "pointer" }} onClick={() => openDetail(row.restaurant_id)}>
+                      <td style={tdStyle}>
+                        <div style={{ fontWeight: 700 }}>{row.restaurant_name}</div>
+                        <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>#{row.restaurant_id}</div>
+                        {row.missing_flags?.length ? (
+                          <div style={{ marginTop: 4, fontSize: 11, color: "#9f3a22" }}>
+                            Missing: {row.missing_flags.join(", ")}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td style={tdStyle}>{row.chain_name || (row.is_chain_location ? "Chain" : "—")}</td>
+                      <td style={tdStyle}>{row.city || "—"}</td>
+                      <td style={tdStyle}>{row.state || "—"}</td>
+                      <td style={tdStyle}>{row.market || "—"}</td>
+                      <td style={tdStyle}>
+                        <StatusPill value={row.menu_status} />
+                        <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 4 }}>
+                          A{row.active_menu_count} / P{row.pending_menu_count} / D{row.draft_menu_count}
+                        </div>
+                      </td>
+                      <td style={tdStyle}>{row.claim_status}</td>
+                      <td style={tdStyle}>{row.data_origin || row.signup_source || "—"}</td>
+                      <td style={tdStyle}>{formatDate(row.last_updated)}</td>
+                      <td style={tdStyle} onClick={(e) => e.stopPropagation()}>
+                        <RowActions row={row} onDetail={openDetail} onCrm={handleAddToCrm} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination page={pagination.page} totalPages={totalPages} onChange={goToPage} />
+          </>
+        )}
+      </PageCard>
+
+      <PageCard style={{ padding: 18, marginBottom: 16 }}>
+        <button
+          type="button"
+          onClick={() => setShowAnalytics((v) => !v)}
+          style={{
+            ...secondaryBtnStyle,
+            width: "100%",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span>{showAnalytics ? "Hide" : "Show"} portfolio analytics</span>
+          <span style={{ color: OWNER_COLORS.muted, fontWeight: 600 }}>{showAnalytics ? "▲" : "▼"}</span>
+        </button>
+      </PageCard>
+
+      {showAnalytics ? (
+        <>
       <div className="owner-responsive-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(150px, 1fr))", gap: 12, marginBottom: 16 }}>
         <MetricCard label="Total restaurants" value={summary?.total_restaurants} loading={loading} />
         <MetricCard label="Independent restaurants" value={summary?.total_independent} loading={loading} />
@@ -234,61 +320,8 @@ export default function OwnerRestaurants() {
           <SimpleTable rows={(summary?.counts_by_state || []).slice(0, 10)} columns={[["State", "state"], ["Count", "count"]]} emptyLabel="No state counts." />
         </PageCard>
       </div>
-
-      <PageCard style={{ padding: 18 }}>
-        <SectionTitle title="Restaurants" subtitle={`${pagination.total || 0} matches`} />
-        {loading ? (
-          <div style={{ padding: 24, textAlign: "center", color: OWNER_COLORS.muted }}>Loading…</div>
-        ) : !results.length ? (
-          <EmptyState>No restaurants match the current filters.</EmptyState>
-        ) : (
-          <>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1100 }}>
-                <thead>
-                  <tr>
-                    {["Restaurant", "Chain", "City", "State", "Market", "Menu", "Claim", "Source", "Updated", "Actions"].map((label) => (
-                      <th key={label} style={thStyle}>{label}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.map((row) => (
-                    <tr key={row.restaurant_id}>
-                      <td style={tdStyle}>
-                        <div style={{ fontWeight: 700 }}>{row.restaurant_name}</div>
-                        <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>#{row.restaurant_id}</div>
-                        {row.missing_flags?.length ? (
-                          <div style={{ marginTop: 4, fontSize: 11, color: "#9f3a22" }}>
-                            Missing: {row.missing_flags.join(", ")}
-                          </div>
-                        ) : null}
-                      </td>
-                      <td style={tdStyle}>{row.chain_name || (row.is_chain_location ? "Chain" : "—")}</td>
-                      <td style={tdStyle}>{row.city || "—"}</td>
-                      <td style={tdStyle}>{row.state || "—"}</td>
-                      <td style={tdStyle}>{row.market || "—"}</td>
-                      <td style={tdStyle}>
-                        <StatusPill value={row.menu_status} />
-                        <div style={{ fontSize: 11, color: OWNER_COLORS.muted, marginTop: 4 }}>
-                          A{row.active_menu_count} / P{row.pending_menu_count} / D{row.draft_menu_count}
-                        </div>
-                      </td>
-                      <td style={tdStyle}>{row.claim_status}</td>
-                      <td style={tdStyle}>{row.data_origin || row.signup_source || "—"}</td>
-                      <td style={tdStyle}>{formatDate(row.last_updated)}</td>
-                      <td style={tdStyle}>
-                        <RowActions row={row} onDetail={openDetail} onCrm={handleAddToCrm} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <Pagination page={pagination.page} totalPages={totalPages} onChange={goToPage} />
-          </>
-        )}
-      </PageCard>
+        </>
+      ) : null}
 
       {detail || detailLoading ? (
         <DetailDrawer
@@ -303,19 +336,38 @@ export default function OwnerRestaurants() {
   );
 }
 
+function LocationActionRow({ row, onDetail }) {
+  const name = row.restaurant_name || "Restaurant";
+  const location = [row.city, row.state].filter(Boolean).join(", ");
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap", padding: "12px 14px", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff" }}>
+      <div>
+        <div style={{ fontWeight: 700, fontSize: 14 }}>{name}</div>
+        <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginTop: 4 }}>
+          #{row.restaurant_id}{location ? ` · ${location}` : ""}
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <ActionLink href={`/owner/menu-manager?restaurant=${row.restaurant_id}`} label="Open Menu Manager" primary />
+        <button type="button" style={linkBtnStyle} onClick={() => onDetail(row.restaurant_id)}>Details</button>
+      </div>
+    </div>
+  );
+}
+
 function RowActions({ row, onDetail, onCrm }) {
   const publicUrl = row.public_url;
   const menuUrl = publicUrl ? `${publicUrl}/menu` : null;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <ActionLink href={`/owner/menu-manager?restaurant=${row.restaurant_id}`} label="Manage menu" />
-      {publicUrl ? <ActionLink href={publicUrl} label="Public" external /> : null}
-      <button type="button" style={linkBtnStyle} onClick={() => onDetail(row.restaurant_id)}>Internal</button>
-      {menuUrl ? <ActionLink href={menuUrl} label="Menu" external /> : null}
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <ActionLink href={`/owner/menu-manager?restaurant=${row.restaurant_id}`} label="Open Menu Manager" primary />
+      <button type="button" style={linkBtnStyle} onClick={() => onDetail(row.restaurant_id)}>View details</button>
+      {publicUrl ? <ActionLink href={publicUrl} label="Public page" external /> : null}
+      {menuUrl ? <ActionLink href={menuUrl} label="Public menu" external /> : null}
       {row.crm_lead_id ? (
-        <ActionLink href={`/crm/leads/${row.crm_lead_id}`} label="CRM" />
+        <ActionLink href={`/crm/leads/${row.crm_lead_id}`} label="CRM lead" />
       ) : (
-        <button type="button" style={linkBtnStyle} onClick={() => onCrm(row.restaurant_id)}>Add CRM</button>
+        <button type="button" style={linkBtnStyle} onClick={() => onCrm(row.restaurant_id)}>Add to CRM</button>
       )}
     </div>
   );
@@ -368,7 +420,7 @@ function DetailDrawer({ loading, restaurant, onClose, onCrm }) {
               ))}
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <ActionLink href={`/owner/menu-manager?restaurant=${restaurant.restaurant_id}`} label="Manage menu" />
+              <ActionLink href={`/owner/menu-manager?restaurant=${restaurant.restaurant_id}`} label="Open Menu Manager" primary />
               {restaurant.public_url ? <ActionLink href={restaurant.public_url} label="Public page" external /> : null}
               {restaurant.crm_lead_id ? (
                 <ActionLink href={`/crm/leads/${restaurant.crm_lead_id}`} label="Open CRM lead" />
@@ -627,11 +679,21 @@ function Pagination({ page, totalPages, onChange }) {
   );
 }
 
-function ActionLink({ href, label, external = false }) {
+function ActionLink({ href, label, external = false, primary = false }) {
+  const style = primary
+    ? { ...primaryBtnStyle, textDecoration: "none", display: "inline-block", fontSize: 12, padding: "8px 12px" }
+    : { ...linkBtnStyle, textDecoration: "none", display: "inline-block" };
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" style={style}>
+        {label}
+      </a>
+    );
+  }
   return (
-    <a href={href} target={external ? "_blank" : undefined} rel={external ? "noreferrer" : undefined} style={{ ...linkBtnStyle, textDecoration: "none", display: "inline-block" }}>
+    <Link to={href} style={style}>
       {label}
-    </a>
+    </Link>
   );
 }
 

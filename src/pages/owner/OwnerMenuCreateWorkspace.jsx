@@ -9,6 +9,7 @@ import {
   createMenuConsoleRestaurant,
   getMenuConsoleMenu,
   getMenuConsoleProfileSchema,
+  getMenuConsoleRestaurant,
   getMenuConsoleRestaurantMenus,
   getOwnerMenuUploads,
   getUploadReviewItems,
@@ -16,6 +17,10 @@ import {
   rejectReviewItem,
   submitOwnerMenuFilePdf,
   updateMenuConsoleMenu,
+  updateMenuConsoleRestaurant,
+  deleteMenuConsoleMenu,
+  deleteMenuConsoleRestaurant,
+  getMenuConsoleRestaurantDeleteImpact,
 } from "../../lib/ownerApi.js";
 
 const fieldLabel = {
@@ -50,6 +55,8 @@ const EMPTY_PROFILE = {
   subscription_plan: "unverified",
   phone: "",
   website: "",
+  lat: "",
+  lng: "",
 };
 
 function StepHeader({ current }) {
@@ -155,14 +162,31 @@ function ReviewItemRow({ item, onApprove, onReject }) {
 }
 
 function profileFromRestaurant(r = {}) {
+  const serviceModel = r.service_model;
   return {
     ...EMPTY_PROFILE,
     restaurant_name: r.restaurant_name || r.name || "",
+    restaurant_type: r.restaurant_type || "",
     address_line1: r.address_line1 || "",
     city: r.city || "",
     state: r.state || "",
+    postal_code: r.postal_code || "",
+    country_code: r.country_code || "US",
+    cuisine: r.cuisine || "",
+    price_tier: r.price_tier || "",
+    service_model: Array.isArray(serviceModel)
+      ? serviceModel
+      : String(serviceModel || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+    menu_offering_type: r.menu_offering_type || "",
+    status: r.status || "draft",
+    subscription_plan: r.subscription_plan || "unverified",
     phone: r.phone || "",
     website: r.website || r.website_url || "",
+    lat: r.lat != null ? String(r.lat) : "",
+    lng: r.lng != null ? String(r.lng) : "",
   };
 }
 
@@ -174,6 +198,10 @@ export default function OwnerMenuCreateWorkspace() {
   const [profileErr, setProfileErr] = useState("");
   const [duplicateMatches, setDuplicateMatches] = useState(null);
   const [creatingProfile, setCreatingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [deleteImpact, setDeleteImpact] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deletingRestaurant, setDeletingRestaurant] = useState(false);
 
   const [restaurant, setRestaurant] = useState(null);
   const [existingRestaurant, setExistingRestaurant] = useState(false);
@@ -221,10 +249,18 @@ export default function OwnerMenuCreateWorkspace() {
       const data = await getMenuConsoleRestaurantMenus(ridNum);
       if (generation !== loadGenerationRef.current) return;
       const loadedRestaurant = data.restaurant || seed || { id: ridNum };
+      let fullProfile = loadedRestaurant;
+      try {
+        const profileRes = await getMenuConsoleRestaurant(ridNum);
+        if (generation !== loadGenerationRef.current) return;
+        if (profileRes?.restaurant) fullProfile = { ...loadedRestaurant, ...profileRes.restaurant };
+      } catch {
+        // menus payload is enough for minimal load
+      }
       const normalizedRestaurant = {
-        ...loadedRestaurant,
-        id: loadedRestaurant.id || ridNum,
-        restaurant_name: loadedRestaurant.restaurant_name || loadedRestaurant.name,
+        ...fullProfile,
+        id: fullProfile.id || ridNum,
+        restaurant_name: fullProfile.restaurant_name || fullProfile.name,
       };
       const menus = Array.isArray(data.menus) ? data.menus : [];
       let activeMenu = menus.find((m) => m.is_primary) || menus.find((m) => m.menu_type === "main") || menus[0] || null;
@@ -298,6 +334,71 @@ export default function OwnerMenuCreateWorkspace() {
     await loadExistingRestaurant(row.id, row);
   }
 
+  async function reloadMenus(preferredMenuId = null) {
+    if (!rid) return;
+    const data = await getMenuConsoleRestaurantMenus(rid);
+    const menus = Array.isArray(data.menus) ? data.menus : [];
+    setAvailableMenus(menus);
+    const nextMenu = menus.find((m) => m.id === preferredMenuId)
+      || menus.find((m) => m.id === mid)
+      || menus.find((m) => m.is_primary)
+      || menus[0]
+      || null;
+    if (nextMenu) {
+      await switchMenu(nextMenu);
+    } else {
+      setMenu(null);
+      setMenuDetail(null);
+    }
+    return menus;
+  }
+
+  async function handleMenuDeleted(deletedMenuId) {
+    setActionMsg("Menu deleted.");
+    const menus = await reloadMenus();
+    if (!menus.length) {
+      setMenuName("Main Menu");
+      setMenuType("main");
+    }
+  }
+
+  async function handleAddMenu() {
+    if (!rid) return;
+    setPublishing(true);
+    setActionMsg("");
+    try {
+      const created = await createMenuConsoleMenu(rid, {
+        display_name: menuName.trim() || "New Menu",
+        menu_type: menuType || "main",
+      });
+      await reloadMenus(created.menu?.id);
+      setActionMsg(`Menu "${created.menu?.display_name || "New Menu"}" created.`);
+    } catch (err) {
+      setActionMsg(err?.payload?.error || err?.message || "Could not create menu.");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  async function handleDeleteMenuRow(targetMenu) {
+    if (!rid || !targetMenu?.id) return;
+    if (targetMenu.is_primary) {
+      setActionMsg("Cannot delete the primary menu.");
+      return;
+    }
+    const label = targetMenu.display_name || targetMenu.name || `Menu #${targetMenu.id}`;
+    if (!window.confirm(`Delete "${label}" and its items? This cannot be undone.`)) return;
+    setPublishing(true);
+    try {
+      await deleteMenuConsoleMenu(rid, targetMenu.id);
+      await handleMenuDeleted(targetMenu.id);
+    } catch (err) {
+      setActionMsg(err?.payload?.error || err?.message || "Could not delete menu.");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   async function switchMenu(nextMenu) {
     if (!nextMenu?.id || !rid) return;
     setMenu(nextMenu);
@@ -328,6 +429,69 @@ export default function OwnerMenuCreateWorkspace() {
     });
   }
 
+  useEffect(() => {
+    if (!existingRestaurant || !rid) {
+      setDeleteImpact(null);
+      return;
+    }
+    getMenuConsoleRestaurantDeleteImpact(rid)
+      .then((res) => setDeleteImpact(res.impact || null))
+      .catch(() => setDeleteImpact(null));
+  }, [existingRestaurant, rid]);
+
+  async function handleDeleteRestaurant() {
+    if (!rid || !deleteImpact) return;
+    const expected = `DELETE ${rid}`;
+    if (deleteConfirm.trim() !== expected) {
+      setProfileErr(`Type "${expected}" to confirm.`);
+      return;
+    }
+    const mode = deleteImpact.recommended_mode || "quarantine";
+    const label = mode === "hard" ? "permanently delete" : "quarantine (hide from discovery)";
+    if (!window.confirm(`${label} restaurant #${rid} (${restaurant?.restaurant_name || restaurant?.name})?`)) return;
+
+    setDeletingRestaurant(true);
+    setProfileErr("");
+    try {
+      await deleteMenuConsoleRestaurant(rid, { mode, confirm: expected });
+      clearSelectedRestaurant();
+      setActionMsg(mode === "hard" ? "Restaurant permanently deleted." : "Restaurant quarantined and hidden from discovery.");
+    } catch (ex) {
+      setProfileErr(ex?.payload?.error || ex?.message || "Could not delete restaurant.");
+    } finally {
+      setDeletingRestaurant(false);
+    }
+  }
+
+  async function saveExistingProfile() {
+    if (!rid) return;
+    setSavingProfile(true);
+    setProfileErr("");
+    try {
+      const payload = {
+        ...profile,
+        restaurant_name: profile.restaurant_name.trim(),
+        address_line1: profile.address_line1.trim(),
+        city: profile.city.trim(),
+        state: profile.state.trim().toUpperCase(),
+        postal_code: profile.postal_code.trim(),
+        primary_cuisine: profile.cuisine,
+        service_models: profile.service_model,
+        lat: profile.lat === "" ? null : Number(profile.lat),
+        lng: profile.lng === "" ? null : Number(profile.lng),
+        geo_source: profile.lat !== "" && profile.lng !== "" ? "manual" : undefined,
+      };
+      const data = await updateMenuConsoleRestaurant(rid, payload);
+      setRestaurant(data.restaurant);
+      setProfile(profileFromRestaurant(data.restaurant));
+      setActionMsg("Restaurant profile saved.");
+    } catch (ex) {
+      setProfileErr(ex?.payload?.error || ex?.message || "Could not save restaurant profile.");
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
   async function createProfile(confirmDuplicate = false) {
     setCreatingProfile(true);
     setProfileErr("");
@@ -341,6 +505,9 @@ export default function OwnerMenuCreateWorkspace() {
         postal_code: profile.postal_code.trim(),
         primary_cuisine: profile.cuisine,
         service_models: profile.service_model,
+        lat: profile.lat === "" ? null : Number(profile.lat),
+        lng: profile.lng === "" ? null : Number(profile.lng),
+        geo_source: profile.lat !== "" && profile.lng !== "" ? "manual" : undefined,
         menu_name: menuName.trim() || "Main Menu",
         menu_type: menuType,
         confirm_duplicate: confirmDuplicate || undefined,
@@ -349,6 +516,7 @@ export default function OwnerMenuCreateWorkspace() {
       setRestaurant(data.restaurant);
       setExistingRestaurant(false);
       setMenu(data.menu);
+      setAvailableMenus(data.menu ? [data.menu] : []);
       setDuplicateMatches(null);
       if (data.menu?.display_name) setMenuName(data.menu.display_name);
       if (data.menu?.menu_type) setMenuType(data.menu.menu_type);
@@ -506,10 +674,12 @@ export default function OwnerMenuCreateWorkspace() {
       )}
 
       {/* ── Step 1: Profile ───────────────────────────────────── */}
-      <PageCard style={{ padding: 20, marginBottom: 16, opacity: restaurant ? 0.72 : 1, display: existingRestaurant ? "none" : "block" }}>
+      <PageCard style={{ padding: 20, marginBottom: 16, opacity: restaurant && !existingRestaurant ? 0.72 : 1 }}>
         <SectionTitle
-          title="Create New Restaurant"
-          subtitle="Required fields use schema-controlled dropdowns from the platform catalog."
+          title={existingRestaurant ? "Restaurant Profile" : "Create New Restaurant"}
+          subtitle={existingRestaurant
+            ? "Update platform-owned restaurant fields. Changes are audit-logged."
+            : "Required fields use schema-controlled dropdowns from the platform catalog."}
         />
 
         {duplicateMatches && (
@@ -524,24 +694,24 @@ export default function OwnerMenuCreateWorkspace() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={fieldLabel}>Restaurant name *</label>
-            <input value={profile.restaurant_name} onChange={(e) => updateProfile("restaurant_name", e.target.value)} style={inputStyle} disabled={!!restaurant} />
+            <input value={profile.restaurant_name} onChange={(e) => updateProfile("restaurant_name", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} />
           </div>
           <SelectField label="Restaurant type" value={profile.restaurant_type} onChange={(v) => updateProfile("restaurant_type", v)} options={schema?.restaurant_types} required />
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={fieldLabel}>Address *</label>
-            <input value={profile.address_line1} onChange={(e) => updateProfile("address_line1", e.target.value)} style={inputStyle} disabled={!!restaurant} />
+            <input value={profile.address_line1} onChange={(e) => updateProfile("address_line1", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} />
           </div>
           <div>
             <label style={fieldLabel}>City *</label>
-            <input value={profile.city} onChange={(e) => updateProfile("city", e.target.value)} style={inputStyle} disabled={!!restaurant} />
+            <input value={profile.city} onChange={(e) => updateProfile("city", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} />
           </div>
           <div>
             <label style={fieldLabel}>State *</label>
-            <input value={profile.state} onChange={(e) => updateProfile("state", e.target.value.toUpperCase().slice(0, 2))} maxLength={2} style={inputStyle} disabled={!!restaurant} />
+            <input value={profile.state} onChange={(e) => updateProfile("state", e.target.value.toUpperCase().slice(0, 2))} maxLength={2} style={inputStyle} disabled={!!restaurant && !existingRestaurant} />
           </div>
           <div>
             <label style={fieldLabel}>ZIP *</label>
-            <input value={profile.postal_code} onChange={(e) => updateProfile("postal_code", e.target.value)} style={inputStyle} disabled={!!restaurant} />
+            <input value={profile.postal_code} onChange={(e) => updateProfile("postal_code", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} />
           </div>
           <SelectField label="Country" value={profile.country_code} onChange={(v) => updateProfile("country_code", v)} options={schema?.countries} required />
           <SelectField label="Primary cuisine" value={profile.cuisine} onChange={(v) => updateProfile("cuisine", v)} options={schema?.cuisines} required />
@@ -551,11 +721,19 @@ export default function OwnerMenuCreateWorkspace() {
           <SelectField label="Status" value={profile.status} onChange={(v) => updateProfile("status", v)} options={schema?.profile_statuses} required />
           <div>
             <label style={fieldLabel}>Phone</label>
-            <input value={profile.phone} onChange={(e) => updateProfile("phone", e.target.value)} style={inputStyle} disabled={!!restaurant} />
+            <input value={profile.phone} onChange={(e) => updateProfile("phone", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} />
           </div>
           <div>
             <label style={fieldLabel}>Website</label>
-            <input value={profile.website} onChange={(e) => updateProfile("website", e.target.value)} style={inputStyle} disabled={!!restaurant} />
+            <input value={profile.website} onChange={(e) => updateProfile("website", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} />
+          </div>
+          <div>
+            <label style={fieldLabel}>Latitude</label>
+            <input value={profile.lat} onChange={(e) => updateProfile("lat", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} placeholder="31.2234" />
+          </div>
+          <div>
+            <label style={fieldLabel}>Longitude</label>
+            <input value={profile.lng} onChange={(e) => updateProfile("lng", e.target.value)} style={inputStyle} disabled={!!restaurant && !existingRestaurant} placeholder="-85.3902" />
           </div>
         </div>
 
@@ -568,14 +746,14 @@ export default function OwnerMenuCreateWorkspace() {
                 <button
                   key={opt.value}
                   type="button"
-                  disabled={!!restaurant}
+                  disabled={!!restaurant && !existingRestaurant}
                   onClick={() => toggleServiceModel(opt.value)}
                   style={{
                     padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: active ? 700 : 500,
                     border: `1px solid ${active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
                     background: active ? OWNER_COLORS.accentSoft : "#fff",
                     color: active ? OWNER_COLORS.accent : OWNER_COLORS.ink,
-                    cursor: restaurant ? "not-allowed" : "pointer",
+                    cursor: restaurant && !existingRestaurant ? "not-allowed" : "pointer",
                   }}
                 >
                   {opt.label}
@@ -602,6 +780,57 @@ export default function OwnerMenuCreateWorkspace() {
           </button>
         )}
 
+        {existingRestaurant && restaurant && (
+          <button
+            type="button"
+            disabled={savingProfile || !schema}
+            onClick={saveExistingProfile}
+            style={{
+              marginTop: 16, padding: "10px 18px", borderRadius: 10, border: "none",
+              background: savingProfile ? OWNER_COLORS.muted : OWNER_COLORS.accent,
+              color: "#fff", fontWeight: 700, fontSize: 13, cursor: savingProfile ? "not-allowed" : "pointer",
+            }}
+          >
+            {savingProfile ? "Saving profile…" : "Save Restaurant Profile"}
+          </button>
+        )}
+
+        {existingRestaurant && restaurant && deleteImpact && (
+          <div style={{ marginTop: 20, padding: 14, borderRadius: 10, border: "1px solid #fca5a5", background: "#fff1f2" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#991b1b", marginBottom: 8 }}>Delete restaurant record</div>
+            <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 10 }}>
+              {deleteImpact.recommended_mode === "hard"
+                ? "No linked menus or CK items — permanent delete is allowed."
+                : "Quarantine hides this profile from discovery (recommended for duplicates with data). Hard delete is blocked while linked data exists."}
+            </div>
+            <div style={{ fontSize: 12, color: OWNER_COLORS.muted, marginBottom: 10 }}>
+              Linked: {deleteImpact.counts?.menus ?? 0} menu(s), {deleteImpact.counts?.public_items ?? 0} public item(s), {deleteImpact.counts?.ck_items ?? 0} CK item(s)
+              {deleteImpact.blockers?.length ? ` · Blockers: ${deleteImpact.blockers.join("; ")}` : ""}
+            </div>
+            <input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder={`Type DELETE ${rid} to confirm`}
+              style={{ ...inputStyle, marginBottom: 10 }}
+            />
+            <button
+              type="button"
+              disabled={deletingRestaurant}
+              onClick={handleDeleteRestaurant}
+              style={{
+                padding: "9px 14px", borderRadius: 9, border: "1px solid #fca5a5",
+                background: "#fff", color: "#991b1b", fontWeight: 700, fontSize: 13, cursor: "pointer",
+              }}
+            >
+              {deletingRestaurant
+                ? "Processing…"
+                : deleteImpact.recommended_mode === "hard"
+                  ? "Permanently delete restaurant"
+                  : "Quarantine restaurant (soft delete)"}
+            </button>
+          </div>
+        )}
+
         {restaurant && !existingRestaurant && (
           <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", fontSize: 13, color: "#15803d", fontWeight: 600 }}>
             Profile created: {restaurant.restaurant_name || restaurant.name} (#{restaurant.id})
@@ -609,48 +838,104 @@ export default function OwnerMenuCreateWorkspace() {
         )}
       </PageCard>
 
-      {existingRestaurant && restaurant && (
+      {restaurant && (
         <PageCard style={{ padding: 20, marginBottom: 16 }}>
           <SectionTitle
-            title={restaurant.restaurant_name || restaurant.name}
-            subtitle={`Restaurant #${restaurant.id}${restaurant.city || restaurant.state ? ` · ${[restaurant.city, restaurant.state].filter(Boolean).join(", ")}` : ""}`}
+            title="Menus"
+            subtitle={existingRestaurant
+              ? "Select a menu to edit items, publish, or delete. Primary menu cannot be deleted."
+              : "Menus attached to this restaurant."}
           />
-          {availableMenus.length > 1 ? (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+          {availableMenus.length === 0 ? (
+            <div style={{ marginTop: 12, fontSize: 13, color: OWNER_COLORS.muted }}>
+              No menus yet — create one below or upload a PDF.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
               {availableMenus.map((m) => {
                 const active = m.id === mid;
+                const label = m.display_name || m.name || `Menu #${m.id}`;
                 return (
-                  <button
+                  <div
                     key={m.id}
-                    type="button"
-                    onClick={() => switchMenu(m)}
                     style={{
-                      padding: "8px 12px",
-                      borderRadius: 999,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 12,
+                      flexWrap: "wrap",
+                      padding: "12px 14px",
+                      borderRadius: 10,
                       border: `1px solid ${active ? OWNER_COLORS.accent : OWNER_COLORS.line}`,
                       background: active ? OWNER_COLORS.accentSoft : "#fff",
-                      color: active ? OWNER_COLORS.accent : OWNER_COLORS.ink,
-                      fontWeight: active ? 700 : 600,
-                      fontSize: 12,
-                      cursor: "pointer",
                     }}
                   >
-                    {m.display_name || m.name || `Menu #${m.id}`}
-                  </button>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>{label}</div>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4, flexWrap: "wrap" }}>
+                        <StatusChip status={m.status} />
+                        <span style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
+                          #{m.id}{m.menu_type ? ` · ${m.menu_type}` : ""}{m.item_count != null ? ` · ${m.item_count} items` : ""}
+                          {m.is_primary ? " · primary" : ""}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <button
+                        type="button"
+                        onClick={() => switchMenu(m)}
+                        style={{
+                          padding: "8px 12px", borderRadius: 8,
+                          background: active ? OWNER_COLORS.accent : "#fff",
+                          color: active ? "#fff" : OWNER_COLORS.ink,
+                          border: active ? "none" : `1px solid ${OWNER_COLORS.line}`,
+                          fontWeight: 700, fontSize: 12, cursor: "pointer",
+                        }}
+                      >
+                        {active ? "Editing" : "Edit items"}
+                      </button>
+                      <Link
+                        to={`/owner/restaurants/${rid}/menus/${m.id}/edit`}
+                        style={{
+                          padding: "8px 12px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`,
+                          background: "#fff", fontWeight: 700, fontSize: 12, textDecoration: "none",
+                          color: OWNER_COLORS.accent,
+                        }}
+                      >
+                        Full editor
+                      </Link>
+                      {!m.is_primary ? (
+                        <button
+                          type="button"
+                          disabled={publishing}
+                          onClick={() => handleDeleteMenuRow(m)}
+                          style={{
+                            padding: "8px 12px", borderRadius: 8, border: "1px solid #fca5a5",
+                            background: "#fff", color: "#991b1b", fontWeight: 700, fontSize: 12, cursor: "pointer",
+                          }}
+                        >
+                          Delete
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
                 );
               })}
             </div>
-          ) : null}
-          {mid ? (
-            <div style={{ marginTop: 12 }}>
-              <Link
-                to={`/owner/restaurants/${rid}/menus/${mid}/edit`}
-                style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
-              >
-                Open full editor (items, OCR review, upload history) →
-              </Link>
-            </div>
-          ) : null}
+          )}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+            <button
+              type="button"
+              disabled={publishing}
+              onClick={handleAddMenu}
+              style={{
+                padding: "9px 14px", borderRadius: 9, border: "none",
+                background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer",
+              }}
+            >
+              + Add menu
+            </button>
+          </div>
         </PageCard>
       )}
 
@@ -736,7 +1021,7 @@ export default function OwnerMenuCreateWorkspace() {
             restaurantId={rid}
             menuDetail={menuDetail}
             onMenuUpdated={(updated) => setMenuDetail((prev) => (prev ? { ...prev, menu: { ...prev.menu, ...updated } } : prev))}
-            onMenuDeleted={() => {}}
+            onMenuDeleted={handleMenuDeleted}
             onReload={loadMenuState}
           />
         </PageCard>

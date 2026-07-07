@@ -176,6 +176,24 @@ export const searchMenuConsoleRestaurants = (params = {}) => {
 };
 export const createMenuConsoleRestaurant = (body) =>
   post("/api/owner/menu-console/restaurants", body);
+export const getMenuConsoleRestaurant = (restaurantId) =>
+  get(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}`);
+export const updateMenuConsoleRestaurant = (restaurantId, body) =>
+  req(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+export const getMenuConsoleRestaurantActivity = (restaurantId, params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/activity${qs ? `?${qs}` : ""}`);
+};
+export const getMenuConsoleRestaurantDeleteImpact = (restaurantId) =>
+  get(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}/delete-impact`);
+export const deleteMenuConsoleRestaurant = (restaurantId, body) =>
+  req(`/api/owner/menu-console/restaurants/${encodeURIComponent(restaurantId)}`, {
+    method: "DELETE",
+    body: JSON.stringify(body),
+  });
 export const getMenuConsoleProfileSchema = () =>
   get("/api/owner/menu-console/profile-schema");
 export const getMenuConsoleRestaurantMenus = (restaurantId) =>
