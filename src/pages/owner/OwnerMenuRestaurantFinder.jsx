@@ -71,21 +71,39 @@ export default function OwnerMenuRestaurantFinder({
   const [searchErr, setSearchErr] = useState("");
   const [recent, setRecent] = useState(loadRecentRestaurants);
   const searchTimeout = useRef(null);
+  const searchSeqRef = useRef(0);
 
   useEffect(() => () => clearTimeout(searchTimeout.current), []);
 
   function runSearch(q) {
     const trimmed = String(q || "").trim();
     if (trimmed.length < 2) {
+      searchSeqRef.current += 1;
       setResults(null);
+      setSearching(false);
       return;
     }
+    const seq = ++searchSeqRef.current;
     setSearching(true);
     setSearchErr("");
-    searchMenuConsoleRestaurants({ q: trimmed, page: 1, limit: SEARCH_LIMIT, filter: "all" })
-      .then((data) => setResults(data.restaurants || []))
-      .catch(() => setSearchErr("Search unavailable. Please try again."))
-      .finally(() => setSearching(false));
+    searchMenuConsoleRestaurants({
+      q: trimmed,
+      page: 1,
+      limit: SEARCH_LIMIT,
+      filter: "all",
+      scope: "restaurant",
+    })
+      .then((data) => {
+        if (seq !== searchSeqRef.current) return;
+        setResults(data.restaurants || []);
+      })
+      .catch(() => {
+        if (seq !== searchSeqRef.current) return;
+        setSearchErr("Search unavailable. Please try again.");
+      })
+      .finally(() => {
+        if (seq === searchSeqRef.current) setSearching(false);
+      });
   }
 
   function handleQueryChange(e) {
@@ -93,10 +111,12 @@ export default function OwnerMenuRestaurantFinder({
     setQuery(next);
     clearTimeout(searchTimeout.current);
     if (!next.trim()) {
+      searchSeqRef.current += 1;
       setResults(null);
+      setSearching(false);
       return;
     }
-    searchTimeout.current = setTimeout(() => runSearch(next), 300);
+    searchTimeout.current = setTimeout(() => runSearch(next), 350);
   }
 
   function handleSelect(restaurant) {
@@ -109,9 +129,11 @@ export default function OwnerMenuRestaurantFinder({
   }
 
   function handleClear() {
+    searchSeqRef.current += 1;
     setQuery("");
     setResults(null);
     setSearchErr("");
+    setSearching(false);
     onClear?.();
   }
 
