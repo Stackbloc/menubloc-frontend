@@ -690,6 +690,16 @@ export default function RestaurantPublicPage() {
           ...(json?.restaurant || json),
           menus: json?.menus || [],
           menu_presentation: json?.menu_presentation || null,
+          claim_status: json?.claim_status ?? json?.restaurant?.claim_status ?? null,
+          subscription_plan:
+            json?.subscription_plan ?? json?.restaurant?.subscription_plan ?? null,
+          order_acceptance_status:
+            json?.order_acceptance_status ?? json?.restaurant?.order_acceptance_status ?? null,
+          menu_last_verified_at:
+            json?.menu_last_verified_at ?? json?.restaurant?.menu_last_verified_at ?? null,
+          status_light_tone: json?.status_light_tone ?? json?.verification_badge_tone ?? null,
+          verification_badge_tone: json?.verification_badge_tone ?? json?.status_light_tone ?? null,
+          menu_status: json?.menu_status ?? null,
         });
       })
       .catch((e) => {

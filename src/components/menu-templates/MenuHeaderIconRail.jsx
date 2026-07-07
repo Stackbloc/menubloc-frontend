@@ -6,12 +6,16 @@ export default function MenuHeaderNameWithActions({
   nameSlot,
   onActionsClick,
   actions,
+  tone,
+  claimStatus,
+  subscriptionPlan,
   menuStatus,
   profileTier,
   listingStatus,
   planSlug,
   isPro,
   isPaidSubscriber,
+  orderAcceptanceStatus,
 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "nowrap", minWidth: 0 }}>
@@ -28,12 +32,16 @@ export default function MenuHeaderNameWithActions({
         <div style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{nameSlot}</div>
         <RestaurantVerificationBadge
           size="md"
+          tone={tone}
+          claimStatus={claimStatus}
+          subscriptionPlan={subscriptionPlan}
           menuStatus={menuStatus}
           profileTier={profileTier}
           listingStatus={listingStatus}
           planSlug={planSlug}
           isPro={isPro}
           isPaidSubscriber={isPaidSubscriber}
+          orderAcceptanceStatus={orderAcceptanceStatus}
           style={{ marginLeft: 8 }}
         />
       </div>

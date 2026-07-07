@@ -1,35 +1,53 @@
-import { resolveRestaurantStatusLightTone } from "../lib/restaurantStatusLight.js";
+import {
+  resolveRestaurantStatusLightTone,
+  shouldShowMenuVerificationAttribution,
+} from "../lib/restaurantStatusLight.js";
 
 const BADGE_PALETTE = {
+  red: { background: "#ef4444", color: "#ffffff" },
   green: { background: "var(--gb-color-accent, #22c55e)", color: "#ffffff" },
   yellow: { background: "#facc15", color: "#422006" },
 };
 
+function resolveBadgeLabel(tone) {
+  if (tone === "green") return "LIVE";
+  if (tone === "yellow") return "VERIFIED";
+  return "UNVERIFIED";
+}
+
 /**
- * Inline verification pill — green LIVE (verified / Pro) or yellow PEND (unverified).
+ * Inline verification pill — red UNVERIFIED, yellow VERIFIED, green LIVE.
  * Placed immediately after the restaurant name.
  */
 export default function RestaurantVerificationBadge({
+  tone,
+  claimStatus,
+  subscriptionPlan,
   menuStatus,
   profileTier,
   listingStatus,
   planSlug,
   isPro,
   isPaidSubscriber,
+  orderAcceptanceStatus,
   size = "sm",
   style,
 }) {
-  const tone = resolveRestaurantStatusLightTone({
-    menuStatus,
-    profileTier,
-    listingStatus,
-    planSlug,
-    isPro,
-    isPaidSubscriber,
-  });
-  const verified = tone === "green";
-  const palette = verified ? BADGE_PALETTE.green : BADGE_PALETTE.yellow;
-  const label = verified ? "LIVE" : "PEND";
+  const resolvedTone =
+    tone ||
+    resolveRestaurantStatusLightTone({
+      claimStatus,
+      subscriptionPlan,
+      menuStatus,
+      profileTier,
+      listingStatus,
+      planSlug,
+      isPro,
+      isPaidSubscriber,
+      orderAcceptanceStatus,
+    });
+  const palette = BADGE_PALETTE[resolvedTone] || BADGE_PALETTE.red;
+  const label = resolveBadgeLabel(resolvedTone);
 
   const sizeStyles =
     size === "md"
@@ -38,7 +56,13 @@ export default function RestaurantVerificationBadge({
 
   return (
     <span
-      aria-label={verified ? "Verified restaurant" : "Pending verification"}
+      aria-label={
+        resolvedTone === "green"
+          ? "Paid restaurant with online ordering"
+          : resolvedTone === "yellow"
+            ? "Verified restaurant"
+            : "Unverified restaurant"
+      }
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -64,7 +88,29 @@ export default function RestaurantVerificationBadge({
 export function verificationBadgePropsFromRow(row) {
   if (!row || typeof row !== "object") return {};
   const presentation = row.menu_presentation || {};
+  const tone =
+    row.status_light_tone ||
+    row.verification_badge_tone ||
+    resolveRestaurantStatusLightTone({
+      claimStatus: row.claim_status || presentation.claim_status,
+      subscriptionPlan:
+        row.subscription_plan || row.subscription_plan_code || presentation.subscription_plan,
+      menuStatus: row.menu_status,
+      profileTier: row.profile_tier,
+      listingStatus: row.listing_status || row.verification_status,
+      planSlug: presentation.plan_slug || row.plan_slug,
+      isPro: presentation.is_pro === true || row.is_pro === true,
+      isPaidSubscriber:
+        presentation.is_paid_subscriber === true || row.is_paid_subscriber === true,
+      orderAcceptanceStatus:
+        row.order_acceptance_status || presentation.order_acceptance_status,
+    });
+
   return {
+    tone,
+    claimStatus: row.claim_status || presentation.claim_status,
+    subscriptionPlan:
+      row.subscription_plan || row.subscription_plan_code || presentation.subscription_plan,
     menuStatus: row.menu_status,
     profileTier: row.profile_tier,
     listingStatus: row.listing_status || row.verification_status,
@@ -72,5 +118,13 @@ export function verificationBadgePropsFromRow(row) {
     isPro: presentation.is_pro === true || row.is_pro === true,
     isPaidSubscriber:
       presentation.is_paid_subscriber === true || row.is_paid_subscriber === true,
+    orderAcceptanceStatus:
+      row.order_acceptance_status || presentation.order_acceptance_status,
+    menuLastVerifiedAt:
+      row.menu_last_verified_at || presentation.menu_last_verified_at || null,
+    showMenuVerificationAttribution:
+      row.show_menu_verification_attribution === true ||
+      (shouldShowMenuVerificationAttribution(tone) &&
+        Boolean(row.menu_last_verified_at || presentation.menu_last_verified_at)),
   };
 }

@@ -3,7 +3,8 @@ import EditorialDarkMenuTemplate from "./EditorialDarkMenuTemplate.jsx";
 import EditorialSteakhouseMenuTemplate from "./EditorialSteakhouseMenuTemplate.jsx";
 import EditorialQSRMenuTemplate from "./EditorialQSRMenuTemplate.jsx";
 import EditorialCasualMenuTemplate from "./EditorialCasualMenuTemplate.jsx";
-import { normalizeMenuStyle, resolveTemplateMenuStyle } from "./menuPresentationUtils.js";
+import MenuVerificationFooter from "./MenuVerificationFooter.jsx";
+import { resolveTemplateMenuStyle } from "./menuPresentationUtils.js";
 
 /**
  * Presentation-only layer: same structured ctx object for every template.
@@ -25,10 +26,24 @@ import { normalizeMenuStyle, resolveTemplateMenuStyle } from "./menuPresentation
  */
 export default function PublicMenuMainContent({ menuStyle: rawStyle, templateContext: ctx }) {
   const menuStyle = resolveTemplateMenuStyle(rawStyle);
+  const footerColor =
+    menuStyle === "v12" || menuStyle === "v13"
+      ? "rgba(255,255,255,0.55)"
+      : "#64748b";
 
-  if (menuStyle === "v12") return <EditorialDarkMenuTemplate {...ctx} />;
-  if (menuStyle === "v13") return <EditorialSteakhouseMenuTemplate {...ctx} />;
-  if (menuStyle === "v14") return <EditorialQSRMenuTemplate {...ctx} />;
-  if (menuStyle === "v15") return <EditorialCasualMenuTemplate {...ctx} />;
-  return <ClassicMenuTemplate {...ctx} />;
+  let content = null;
+  if (menuStyle === "v12") content = <EditorialDarkMenuTemplate {...ctx} />;
+  else if (menuStyle === "v13") content = <EditorialSteakhouseMenuTemplate {...ctx} />;
+  else if (menuStyle === "v14") content = <EditorialQSRMenuTemplate {...ctx} />;
+  else if (menuStyle === "v15") content = <EditorialCasualMenuTemplate {...ctx} />;
+  else content = <ClassicMenuTemplate {...ctx} />;
+
+  return (
+    <>
+      {content}
+      <div style={{ padding: menuStyle === "v12" || menuStyle === "v13" ? "0 16px 24px" : "0 24px 24px" }}>
+        <MenuVerificationFooter data={ctx?.data} tone={ctx?.tone} menuLastVerifiedAt={ctx?.menuLastVerifiedAt} color={footerColor} />
+      </div>
+    </>
+  );
 }

@@ -8,36 +8,49 @@ import {
  */
 export default function RestaurantStatusLight({
   tone,
+  claimStatus,
+  subscriptionPlan,
   menuStatus,
   profileTier,
   listingStatus,
   planSlug,
   isPro,
+  isPaidSubscriber,
+  orderAcceptanceStatus,
   size = 5,
   style,
   className,
   ariaLabel,
 }) {
   const resolvedTone =
-    tone || resolveRestaurantStatusLightTone({
+    tone ||
+    resolveRestaurantStatusLightTone({
+      claimStatus,
+      subscriptionPlan,
       menuStatus,
       profileTier,
       listingStatus,
       planSlug,
       isPro,
+      isPaidSubscriber,
+      orderAcceptanceStatus,
     });
   const palette =
     RESTAURANT_STATUS_LIGHT_COLORS[resolvedTone] ||
-    RESTAURANT_STATUS_LIGHT_COLORS.yellow;
+    RESTAURANT_STATUS_LIGHT_COLORS.red;
+
+  const defaultAriaLabel =
+    resolvedTone === "green"
+      ? "Paid restaurant with online ordering"
+      : resolvedTone === "yellow"
+        ? "Verified restaurant"
+        : "Unverified restaurant";
 
   return (
     <span
       className={className}
       role="img"
-      aria-label={
-        ariaLabel ||
-        (resolvedTone === "green" ? "Verified restaurant" : "Unverified menu")
-      }
+      aria-label={ariaLabel || defaultAriaLabel}
       style={{
         width: size,
         height: size,

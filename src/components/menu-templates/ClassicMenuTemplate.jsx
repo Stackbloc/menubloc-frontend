@@ -91,6 +91,11 @@ export default function ClassicMenuTemplate(ctx) {
     planSlug,
     isPro,
     isPaidSubscriber,
+    tone,
+    claimStatus,
+    subscriptionPlan,
+    orderAcceptanceStatus,
+    menuLastVerifiedAt,
     logoUrl,
     logoPlacement = "top-left",
     heroImageUrl,
@@ -166,12 +171,16 @@ export default function ClassicMenuTemplate(ctx) {
           ) : null}
           <div style={{ minWidth: 0, flex: 1 }}>
             <MenuHeaderNameWithActions
+              tone={tone}
+              claimStatus={claimStatus}
+              subscriptionPlan={subscriptionPlan}
               menuStatus={menuStatus}
               profileTier={profileTier}
               listingStatus={listingStatus}
               planSlug={planSlug}
               isPro={isPro}
               isPaidSubscriber={isPaidSubscriber}
+              orderAcceptanceStatus={orderAcceptanceStatus}
               nameSlot={
                 restaurantProfileHref ? (
                   <Link
