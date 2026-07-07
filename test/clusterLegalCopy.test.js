@@ -49,7 +49,7 @@ test("buildClusterShareData returns legal-safe cluster share payload", () => {
   });
 
   assert.equal(payload.title, "L.A. Live Area Restaurants | Menuply");
-  assert.equal(payload.url, "https://menuply.com/clusters/ca/los-angeles/la-live");
+  assert.equal(payload.url, "https://menuply.com/clusters/california/los-angeles/la-live");
   assert.match(payload.description, /independent menu discovery platform/);
   assert.doesNotMatch(payload.title, /official|partner|sponsored|endorsed|affiliated/i);
   assert.doesNotMatch(payload.description, /official|partner|sponsored|endorsed|affiliated/i);

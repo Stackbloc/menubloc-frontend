@@ -22,7 +22,7 @@ test("buildClusterShareData returns canonical cluster share payload with OG imag
   });
 
   assert.equal(payload.title, "L.A. Live Area Restaurants | Menuply");
-  assert.equal(payload.url, "https://menuply.com/clusters/ca/los-angeles/la-live");
+  assert.equal(payload.url, "https://menuply.com/clusters/california/los-angeles/la-live");
   assert.equal(
     payload.image,
     "https://menubloc-backend-production.up.railway.app/public/clusters/la-live/og-image"

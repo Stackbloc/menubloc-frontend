@@ -1,14 +1,6 @@
-export function toCitySlug(city) {
-  return String(city || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, "")
-    .trim()
-    .replace(/\s+/g, "-");
-}
+import { toCitySlug, toStateSlug } from "./slugs.js";
 
-export function toStateSlug(state) {
-  return String(state || "").trim().toLowerCase().slice(0, 2);
-}
+export { toCitySlug, toStateSlug };
 
 export function clusterPath({ state, city, slug }) {
   const stateSlug = toStateSlug(state);
@@ -25,7 +17,28 @@ export function clusterTypeLabel(type) {
     stadium: "Stadium district",
     casino: "Casino",
     entertainment_complex: "Entertainment complex",
+    university: "University area",
     other: "Destination",
   };
   return labels[String(type || "").toLowerCase()] || "Destination";
 }
+
+/** Reserved for future cluster tabs/sections — not rendered yet. */
+export const CLUSTER_RESERVED_FUTURE_SECTIONS = Object.freeze([
+  "events",
+  "parking",
+  "hotels",
+  "directions",
+  "deals",
+  "maps",
+  "student_discounts",
+  "campus_dining_dollars",
+  "late_night",
+  "study_friendly",
+  "outdoor_seating",
+  "open_late",
+  "game_day_dining",
+]);
+
+/** Future walking-time presets (minutes) — routing not implemented yet. */
+export const CLUSTER_WALKING_TIME_PRESETS_MINUTES = Object.freeze([5, 10, 15, 20]);

@@ -4,7 +4,7 @@
  */
 
 const DEFAULT_DISCLAIMER =
-  "Menuply is an independent menu discovery platform and is not affiliated with, endorsed by, or sponsored by any venue, property owner, event organizer, restaurant, or brand shown on this page unless expressly stated.";
+  "Menuply is an independent menu discovery platform and is not affiliated with, endorsed by, or sponsored by any venue, university, property owner, restaurant, or organization shown unless expressly stated.";
 
 function asText(value) {
   return value == null ? "" : String(value).trim();
