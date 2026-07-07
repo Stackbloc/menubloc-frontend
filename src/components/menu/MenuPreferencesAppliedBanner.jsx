@@ -4,11 +4,15 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
  * Saved preference status for public menus.
  * - First menu view: full list of dietary + allergen preferences applied.
  * - Later views: compact dietary on/off control (allergens only change in profile).
+ * - Item counts show filtered vs total so users can see the filter working.
  */
 export default function MenuPreferencesAppliedBanner({
   visible = false,
   isFirstMenuView = false,
   dietaryApplied = false,
+  filtersActive = false,
+  filteredItemCount = null,
+  totalMenuItemCount = null,
   dietLabels = [],
   allergenLabels = [],
   onToggleDietary,
@@ -20,6 +24,10 @@ export default function MenuPreferencesAppliedBanner({
   const combinedLabels = [...dietLabels, ...allergenLabels].filter(Boolean);
   const hasDietLabels = dietLabels.length > 0;
   const hasAllergenLabels = allergenLabels.length > 0;
+  const hasCounts =
+    Number.isFinite(filteredItemCount) &&
+    Number.isFinite(totalMenuItemCount) &&
+    totalMenuItemCount >= 0;
 
   let statusMessage = "";
   let actionControl = null;
@@ -86,6 +94,30 @@ export default function MenuPreferencesAppliedBanner({
     );
   }
 
+  let countMessage = "";
+  if (hasCounts) {
+    if (filtersActive) {
+      countMessage =
+        filteredItemCount === totalMenuItemCount
+          ? t(
+              "publicMenu.preferenceFilterCountAllMatch",
+              "Showing all {{total}} menu items (none hidden by your preferences)",
+              { total: totalMenuItemCount }
+            )
+          : t(
+              "publicMenu.preferenceFilterCountActive",
+              "Showing {{filtered}} of {{total}} menu items",
+              { filtered: filteredItemCount, total: totalMenuItemCount }
+            );
+    } else {
+      countMessage = t(
+        "publicMenu.preferenceFilterCountOff",
+        "Showing all {{total}} menu items (preferences off)",
+        { total: totalMenuItemCount }
+      );
+    }
+  }
+
   return (
     <div
       style={{
@@ -103,6 +135,9 @@ export default function MenuPreferencesAppliedBanner({
         {statusMessage}
         {actionControl}
       </div>
+      {countMessage ? (
+        <div style={{ marginTop: 8, fontWeight: 700 }}>{countMessage}</div>
+      ) : null}
       {isFirstMenuView && hasAllergenLabels ? (
         <div style={{ marginTop: 6, fontSize: 11, fontWeight: 600, opacity: 0.92 }}>
           {t(

@@ -126,6 +126,13 @@ export function normalizeMenuDisplaySections(sections) {
     .filter((sec) => sec.items.length > 0);
 }
 
+export function countMenuDisplayItems(sections) {
+  return normalizeMenuDisplaySections(sections).reduce(
+    (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
+    0
+  );
+}
+
 /**
  * Dietary prefs apply when applyDietaryPreferences is true (session opt-out available).
  * Allergen exclusions always apply when enabledAllergenKeys is non-empty.

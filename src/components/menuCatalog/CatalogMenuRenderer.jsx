@@ -24,6 +24,7 @@ import useMenuPreferenceBannerSession from "../../hooks/useMenuPreferenceBannerS
 import {
   buildAllergenPreferenceLabels,
   buildDietPreferenceLabels,
+  countMenuDisplayItems,
   getMenuDisplaySectionsWithPreferences,
 } from "../../lib/menuClientPreferenceFilter.js";
 import {
@@ -358,6 +359,7 @@ export default function CatalogMenuRenderer({
       }),
     [sections, dietaryFilterActive, dietPrefs, enabledAllergenKeys]
   );
+  const totalMenuItemCount = useMemo(() => countMenuDisplayItems(sections), [sections]);
   const displayableItemCount = displaySections.reduce(
     (count, sec) => count + (Array.isArray(sec?.items) ? sec.items.length : 0),
     0
@@ -497,6 +499,9 @@ export default function CatalogMenuRenderer({
               visible={preferenceBannerVisible}
               isFirstMenuView={isFirstMenuView}
               dietaryApplied={dietaryFilterActive}
+              filtersActive={filtersActive}
+              filteredItemCount={displayableItemCount}
+              totalMenuItemCount={totalMenuItemCount}
               dietLabels={dietLabels}
               allergenLabels={allergenLabels}
               onToggleDietary={setApplySavedPreferences}

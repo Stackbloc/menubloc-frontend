@@ -44,10 +44,18 @@ function testBannerShowsCombinedFirstView() {
   assert.match(src, /clickToRemoveDietary/);
 }
 
+function testBannerShowsItemCounts() {
+  const src = read("src/components/menu/MenuPreferencesAppliedBanner.jsx");
+  assert.match(src, /preferenceFilterCountActive/);
+  assert.match(src, /preferenceFilterCountOff/);
+  assert.match(src, /filteredItemCount/);
+}
+
 testPublicMenuUsesSessionDefaultApply();
 testCatalogMenuUsesSessionDefaultApply();
 testSessionDefaultIsApplyOn();
 testAllergensAlwaysAppliedOnMenus();
 testBannerShowsCombinedFirstView();
+testBannerShowsItemCounts();
 
 console.log("✅ consumerPreferenceFilterContract tests passed");

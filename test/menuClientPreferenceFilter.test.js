@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   itemPassesPersistedDietFilter,
   itemConflictsAllergenPreferences,
+  countMenuDisplayItems,
   getClientPreferenceDisplaySections,
   getMenuDisplaySectionsWithPreferences,
   hasSavedMenuPreferences,
@@ -146,6 +147,14 @@ function testCombinedLabels() {
   assert.ok(labels.includes("Peanuts"));
 }
 
+function testCountMenuDisplayItems() {
+  const sections = [
+    { title: "A", items: [{ name: "One" }, { name: "Two" }, { name: "" }] },
+    { title: "B", items: [{ name: "Three" }] },
+  ];
+  assert.equal(countMenuDisplayItems(sections), 3);
+}
+
 testDietConservative();
 testAllergenConservative();
 testSectionTransform();
@@ -153,5 +162,6 @@ testHasSavedPreferences();
 testMenusApplyAllergenFilterAlways();
 testSessionDefaultsApplyDietaryPreferences();
 testCombinedLabels();
+testCountMenuDisplayItems();
 
 console.log("✅ menuClientPreferenceFilter tests passed");
