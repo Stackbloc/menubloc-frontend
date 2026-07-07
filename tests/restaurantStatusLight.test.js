@@ -37,6 +37,18 @@ test("buildMenuVerificationAttributionText formats rep verification copy", () =>
   assert.match(text, /^Last verified by rep\. on /);
 });
 
+test("resolveRestaurantStatusLightTone keeps unclaimed restaurants red even with ordering enabled", () => {
+  assert.equal(
+    resolveRestaurantStatusLightTone({
+      claimStatus: "unclaimed",
+      subscriptionPlan: "pro",
+      isPro: true,
+      orderAcceptanceStatus: "accepting_orders",
+    }),
+    "red"
+  );
+});
+
 test("buildRestaurantStatusLightProps includes subscription and claim fields", () => {
   const props = buildRestaurantStatusLightProps({
     claim_status: "unclaimed",

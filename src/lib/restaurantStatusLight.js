@@ -65,6 +65,9 @@ export function resolveRestaurantStatusLightTone({
   isPaidSubscriber,
   orderAcceptanceStatus,
 } = {}) {
+  const claimed = isClaimedRestaurantProfile(claimStatus);
+  if (!claimed) return "red";
+
   const paid = hasPaidSubscriptionPlan({
     subscriptionPlan,
     planSlug,
@@ -74,7 +77,6 @@ export function resolveRestaurantStatusLightTone({
   const ordering = hasOnlineOrderingEnabled({ orderAcceptanceStatus });
   if (paid && ordering) return "green";
 
-  const claimed = isClaimedRestaurantProfile(claimStatus);
   const verified = isVerifiedRestaurantProfile({
     menuStatus,
     subscriptionPlan,
@@ -87,7 +89,7 @@ export function resolveRestaurantStatusLightTone({
 }
 
 export const RESTAURANT_STATUS_LIGHT_COLORS = {
-  red: { background: "#ef4444", glow: "0 0 5px #ef4444" },
+  red: { background: "#b86b6b", glow: "0 0 4px rgba(184, 107, 107, 0.55)" },
   green: { background: "#4ade80", glow: "0 0 5px #4ade80" },
   yellow: { background: "#facc15", glow: "0 0 5px #facc15" },
 };

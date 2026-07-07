@@ -4,7 +4,7 @@ import {
 } from "../lib/restaurantStatusLight.js";
 
 const BADGE_PALETTE = {
-  red: { background: "#ef4444", color: "#ffffff" },
+  red: { background: "#b86b6b", color: "#fff8f8" },
   green: { background: "var(--gb-color-accent, #22c55e)", color: "#ffffff" },
   yellow: { background: "#facc15", color: "#422006" },
 };
@@ -12,11 +12,11 @@ const BADGE_PALETTE = {
 function resolveBadgeLabel(tone) {
   if (tone === "green") return "LIVE";
   if (tone === "yellow") return "VERIFIED";
-  return "UNVERIFIED";
+  return "PEND";
 }
 
 /**
- * Inline verification pill — red UNVERIFIED, yellow VERIFIED, green LIVE.
+ * Inline verification pill — dull red PEND, yellow VERIFIED, green LIVE.
  * Placed immediately after the restaurant name.
  */
 export default function RestaurantVerificationBadge({
@@ -61,7 +61,7 @@ export default function RestaurantVerificationBadge({
           ? "Paid restaurant with online ordering"
           : resolvedTone === "yellow"
             ? "Verified restaurant"
-            : "Unverified restaurant"
+            : "Pending verification"
       }
       style={{
         display: "inline-flex",

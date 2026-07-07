@@ -44,7 +44,7 @@ export default function RestaurantStatusLight({
       ? "Paid restaurant with online ordering"
       : resolvedTone === "yellow"
         ? "Verified restaurant"
-        : "Unverified restaurant";
+        : "Pending verification";
 
   return (
     <span
