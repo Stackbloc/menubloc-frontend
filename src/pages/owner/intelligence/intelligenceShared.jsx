@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, useSearchParams } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle, EmptyState } from "../OwnerLayout.jsx";
 import { PlatformIntelligenceProvider, usePlatformIntelligenceRange } from "./PlatformIntelligenceContext.jsx";
 
@@ -26,9 +26,7 @@ export function PlatformIntelligenceShell({ children }) {
 }
 
 function IntelligenceSubNav() {
-  const [searchParams] = useSearchParams();
-  const qs = searchParams.toString();
-  const suffix = qs ? `?${qs}` : "";
+  const { search } = useLocation();
 
   return (
     <div
@@ -42,7 +40,7 @@ function IntelligenceSubNav() {
       {INTELLIGENCE_TABS.map((tab) => (
         <NavLink
           key={tab.to}
-          to={`${tab.to}${suffix}`}
+          to={{ pathname: tab.to, search }}
           end={tab.end}
           style={({ isActive }) => ({
             padding: "8px 14px",
@@ -125,6 +123,15 @@ export function formatMetricValue(value) {
   return value;
 }
 
+export function AnalyticsScopeNote({ note }) {
+  if (!note) return null;
+  return (
+    <PageCard style={{ padding: "14px 18px", background: "#faf7f4", border: `1px solid ${OWNER_COLORS.line}` }}>
+      <div style={{ fontSize: 13, color: OWNER_COLORS.muted, lineHeight: 1.5 }}>{note}</div>
+    </PageCard>
+  );
+}
+
 export function SimpleTable({ rows, columns, emptyLabel = "No rows for this range." }) {
   if (!rows?.length) return <EmptyState>{emptyLabel}</EmptyState>;
   return (
@@ -173,9 +180,9 @@ export function LoadingState({ label = "Loading intelligence…" }) {
   return <div style={{ padding: 40, textAlign: "center", color: OWNER_COLORS.muted, fontSize: 14 }}>{label}</div>;
 }
 
-export function IntelligenceSection({ title, subtitle, children }) {
+export function IntelligenceSection({ id, title, subtitle, children }) {
   return (
-    <PageCard style={{ padding: 22 }}>
+    <PageCard id={id} style={{ padding: 22 }}>
       <SectionTitle title={title} subtitle={subtitle} />
       {children}
     </PageCard>

@@ -7,6 +7,7 @@ import {
   LoadingState,
   MetricCard,
   SimpleTable,
+  AnalyticsScopeNote,
   useIntelligenceData,
 } from "./intelligenceShared.jsx";
 import { getOwnerIntelligenceGeo } from "../../../lib/ownerApi.js";
@@ -21,6 +22,8 @@ export default function IntelligenceGeo() {
 
   return (
     <div style={{ display: "grid", gap: 18 }}>
+      <AnalyticsScopeNote note={data.analytics_scope} />
+
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <MetricCard label="Searches by Country" value={data.searches_by_country} />
         <MetricCard label="Visits by Country" value={data.visits_by_country} />
@@ -30,11 +33,24 @@ export default function IntelligenceGeo() {
       </div>
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-        <IntelligenceSection title="Searches by City" subtitle="Reporting-normalized city labels (e.g. Dothan, AL).">
-          <SimpleTable rows={data.searches_by_city} columns={[["City", "location_label"], ["Searches", "searches"]]} />
+        <IntelligenceSection title="Searches by City" subtitle="Consumer searches by market (city/state).">
+          <SimpleTable
+            rows={data.searches_by_city}
+            columns={[
+              ["City", "location_label"],
+              ["Searches", "searches"],
+            ]}
+          />
         </IntelligenceSection>
-        <IntelligenceSection title="Visits by City" subtitle="From page_visits.market field.">
-          <SimpleTable rows={data.visits_by_city} columns={[["City", "location_label"], ["Visits", "visits"]]} />
+        <IntelligenceSection title="Visitors by City" subtitle="Distinct visitor sessions and page views by market.">
+          <SimpleTable
+            rows={data.visits_by_city}
+            columns={[
+              ["City", "location_label"],
+              ["Visitors", "visitors"],
+              ["Page views", "visits"],
+            ]}
+          />
         </IntelligenceSection>
       </div>
 

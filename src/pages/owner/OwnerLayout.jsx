@@ -7,7 +7,6 @@ import "./ownerResponsive.css";
 const NAV = [
   { to: "/owner", label: "Dashboard" },
   { to: "/owner/phms", label: "Platform Health" },
-  { to: "/owner/phms/incidents", label: "Incidents" },
   { to: "/owner/deployments", label: "Deployment Operations" },
   { to: "/owner/intelligence", label: "Platform Intelligence" },
   { to: "/owner/restaurants", label: "Restaurant Intelligence" },

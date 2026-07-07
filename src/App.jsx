@@ -85,9 +85,7 @@ import OwnerMenuUploadDetail from "./pages/owner/OwnerMenuUploadDetail.jsx";
 import OwnerMenuUploadReviewItems from "./pages/owner/OwnerMenuUploadReviewItems.jsx";
 import OwnerQrStickers from "./pages/owner/OwnerQrStickers.jsx";
 import OwnerMarketExpansion from "./pages/owner/OwnerMarketExpansion.jsx";
-import OwnerPhms from "./pages/owner/OwnerPhms.jsx";
-import OwnerPhmsIncidents from "./pages/owner/OwnerPhmsIncidents.jsx";
-import OwnerPhmsIncidentDetail from "./pages/owner/OwnerPhmsIncidentDetail.jsx";
+import OwnerPhmsRouter from "./pages/owner/phms/OwnerPhmsRouter.jsx";
 import OwnerDeploymentOperations from "./pages/owner/OwnerDeploymentOperations.jsx";
 import OperatorQrStickers from "./pages/operator/OperatorQrStickers.jsx";
 import OperatorMenuStudio from "./pages/operator/OperatorMenuStudio.jsx";
@@ -713,9 +711,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/owner/menu-uploads/:uploadId/review-items" element={<OldUploadReviewRedirect />} />
         <Route path="/owner/qr-stickers" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerQrStickers /></OwnerRoute>} />
         <Route path="/owner/market-expansion" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerMarketExpansion /></OwnerRoute>} />
-        <Route path="/owner/phms" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerPhms /></OwnerRoute>} />
-        <Route path="/owner/phms/incidents" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerPhmsIncidents /></OwnerRoute>} />
-        <Route path="/owner/phms/incidents/:incidentId" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerPhmsIncidentDetail /></OwnerRoute>} />
+        <Route path="/owner/phms/*" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerPhmsRouter /></OwnerRoute>} />
         <Route path="/owner/deployments" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OwnerRoute><OwnerDeploymentOperations /></OwnerRoute>} />
 
         <Route path="/crm/login" element={<CrmLogin />} />

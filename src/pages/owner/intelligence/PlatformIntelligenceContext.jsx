@@ -1,40 +1,54 @@
-import React, { createContext, useContext, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { createContext, useContext, useMemo, useCallback } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 const PlatformIntelligenceContext = createContext(null);
 
+/** Calendar date in the user's local timezone (YYYY-MM-DD). */
+function localDateYmd(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function addLocalDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
 function buildDefaultRange() {
   const today = new Date();
-  const prior = new Date(today.getTime() - 29 * 24 * 60 * 60 * 1000);
   return {
-    start_date: prior.toISOString().slice(0, 10),
-    end_date: today.toISOString().slice(0, 10),
+    start_date: localDateYmd(addLocalDays(today, -29)),
+    end_date: localDateYmd(today),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
   };
 }
 
 function applyPreset(preset) {
   const today = new Date();
-  const end = today.toISOString().slice(0, 10);
-  const dayMs = 24 * 60 * 60 * 1000;
+  const end = localDateYmd(today);
 
   if (preset === "today") {
     return { start_date: end, end_date: end };
   }
   if (preset === "yesterday") {
-    const y = new Date(today.getTime() - dayMs).toISOString().slice(0, 10);
+    const y = localDateYmd(addLocalDays(today, -1));
     return { start_date: y, end_date: y };
   }
   if (preset === "7d") {
-    const start = new Date(today.getTime() - 6 * dayMs).toISOString().slice(0, 10);
+    const start = localDateYmd(addLocalDays(today, -6));
     return { start_date: start, end_date: end };
   }
-  const start = new Date(today.getTime() - 29 * dayMs).toISOString().slice(0, 10);
+  const start = localDateYmd(addLocalDays(today, -29));
   return { start_date: start, end_date: end };
 }
 
 export function PlatformIntelligenceProvider({ children }) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const defaults = useMemo(() => buildDefaultRange(), []);
 
   const range = useMemo(() => ({
@@ -44,21 +58,25 @@ export function PlatformIntelligenceProvider({ children }) {
     preset: searchParams.get("preset") || "30d",
   }), [searchParams, defaults]);
 
-  const setRange = (next) => {
+  const setRange = useCallback((next) => {
     const params = new URLSearchParams(searchParams);
     if (next.start_date) params.set("start_date", next.start_date);
     if (next.end_date) params.set("end_date", next.end_date);
     if (next.timezone) params.set("timezone", next.timezone);
     if (next.preset) params.set("preset", next.preset);
-    setSearchParams(params, { replace: true });
-  };
+    const search = params.toString();
+    navigate(
+      { pathname: location.pathname, search: search ? `?${search}` : "" },
+      { replace: true }
+    );
+  }, [searchParams, location.pathname, navigate]);
 
-  const setPreset = (preset) => {
+  const setPreset = useCallback((preset) => {
     const next = applyPreset(preset);
     setRange({ ...next, preset });
-  };
+  }, [setRange]);
 
-  const value = useMemo(() => ({ range, setRange, setPreset }), [range]);
+  const value = useMemo(() => ({ range, setRange, setPreset }), [range, setRange, setPreset]);
 
   return (
     <PlatformIntelligenceContext.Provider value={value}>

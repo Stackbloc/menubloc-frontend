@@ -1,95 +1,227 @@
 import React from "react";
-import { EmptyState } from "../OwnerLayout.jsx";
+import { Link, useLocation } from "react-router-dom";
+import { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "../OwnerLayout.jsx";
 import { usePlatformIntelligenceRange } from "./PlatformIntelligenceContext.jsx";
 import {
   ErrorBanner,
-  IntelligenceSection,
+  INTELLIGENCE_TABS,
   LoadingState,
   MetricCard,
+  AnalyticsScopeNote,
   SimpleTable,
   useIntelligenceData,
 } from "./intelligenceShared.jsx";
 import { getOwnerIntelligenceOverview } from "../../../lib/ownerApi.js";
 
+const DRILL_DOWN_AREAS = [
+  {
+    id: "search-demand",
+    title: "Search Demand",
+    description: "Top queries, zero-result repair queue, intent breakdown, and search trends.",
+    path: "search-demand",
+  },
+  {
+    id: "site-activity",
+    title: "Site Activity",
+    description: "Page visits, top pages, referrers, and device mix.",
+    path: "site-activity",
+  },
+  {
+    id: "geo",
+    title: "Geo Intelligence",
+    description: "Searches and visits by city, zero-result rates, and top queries per market.",
+    path: "geo",
+  },
+  {
+    id: "menu",
+    title: "Menu Intelligence",
+    description: "Most-viewed menus and menu items.",
+    path: "menu",
+  },
+  {
+    id: "restaurant",
+    title: "Restaurant Intelligence",
+    description: "Per-restaurant profile and menu views.",
+    path: "restaurant",
+  },
+  {
+    id: "market",
+    title: "Market Intelligence",
+    description: "Market onboarding priorities and coverage gaps.",
+    path: "market",
+  },
+  {
+    id: "revenue",
+    title: "Revenue Intelligence",
+    description: "Subscription MRR, billing history, and payment failures.",
+    path: "revenue",
+  },
+];
+
+function rangeLabel(range) {
+  if (range.preset === "today") return "today";
+  if (range.preset === "yesterday") return "yesterday";
+  if (range.preset === "7d") return "the last 7 days";
+  if (range.preset === "30d") return "the last 30 days";
+  return `${range.start_date} – ${range.end_date}`;
+}
+
 export default function IntelligenceOverview() {
+  const { search } = useLocation();
   const { range } = usePlatformIntelligenceRange();
   const { data, error, loading } = useIntelligenceData(getOwnerIntelligenceOverview, range);
 
-  if (loading) return <LoadingState />;
-  if (error) return <ErrorBanner message={error} />;
-  if (!data?.available) {
-    return <EmptyState>No platform activity recorded in this date range yet.</EmptyState>;
-  }
-
-  const s = data.summary || {};
-  const t = data.trends || {};
-  const c = data.charts || {};
+  const s = data?.summary || {};
+  const c = data?.charts || {};
 
   return (
     <div style={{ display: "grid", gap: 18 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 14 }}>
-        <MetricCard label="Total Visits" value={s.total_visits} />
-        <MetricCard label="Unique Visitors" value={s.unique_visitors} />
-        <MetricCard label="Total Searches" value={s.total_searches} />
-        <MetricCard label="Unique Searchers" value={s.unique_searchers} />
-        <MetricCard label="Search Success Rate" value={`${s.search_success_rate_pct}%`} />
-        <MetricCard label="Zero Result Rate" value={`${s.zero_result_rate_pct}%`} />
-        <MetricCard label="Menu Views" value={s.menu_views} />
-        <MetricCard label="Restaurant Views" value={s.restaurant_views} />
-        <MetricCard label="Menu Item Views" value={s.menu_item_views} />
-        <MetricCard label="Order Clicks" value={s.order_clicks} />
-        <MetricCard label="Call Clicks" value={s.call_clicks} />
-        <MetricCard label="Directions Clicks" value={s.directions_clicks} />
-        <MetricCard label="Share Clicks" value={s.share_clicks} />
-      </div>
+      <PageCard style={{ padding: "18px 22px" }}>
+        <div style={{ fontSize: 14, color: OWNER_COLORS.ink, lineHeight: 1.55 }}>
+          Summary for <strong>{rangeLabel(range)}</strong>. Use the date presets above to change the range —
+          data on this page and all intelligence tabs updates in place. For today&apos;s executive snapshot,
+          see the{" "}
+          <Link to="/owner" style={{ color: OWNER_COLORS.accent, fontWeight: 700 }}>
+            Platform Overview
+          </Link>
+          {" "}dashboard.
+        </div>
+      </PageCard>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 14 }}>
-        <MetricCard label="Visits Today" value={t.visits_today} />
-        <MetricCard label="Searches Today" value={t.searches_today} />
-        <MetricCard label="7-Day Growth" value={`${t.growth_7_day_pct}%`} />
-        <MetricCard label="30-Day Growth" value={`${t.growth_30_day_pct}%`} />
-        <MetricCard label="Avg Searches / User" value={t.avg_searches_per_user} />
-        <MetricCard label="Avg Response Time" value={t.avg_response_time_ms != null ? `${t.avg_response_time_ms} ms` : t.avg_response_time_ms} />
-      </div>
+      {loading ? <LoadingState label="Loading summary for this range…" /> : null}
+      {error ? <ErrorBanner message={error} /> : null}
 
-      <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-        <IntelligenceSection title="Visits by Day" subtitle="Daily page visits.">
-          <SimpleTable rows={c.visits_by_day} columns={[["Day", "day"], ["Visits", "visits"]]} />
-        </IntelligenceSection>
-        <IntelligenceSection title="Searches by Day" subtitle="Daily search volume.">
-          <SimpleTable rows={c.searches_by_day} columns={[["Day", "day"], ["Searches", "searches"]]} />
-        </IntelligenceSection>
-      </div>
+      {!loading && !error && !data?.available ? (
+        <EmptyState>No platform activity recorded for {rangeLabel(range)}.</EmptyState>
+      ) : null}
 
-      <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-        <IntelligenceSection title="Top Queries" subtitle="What diners are searching for.">
-          <SimpleTable rows={c.top_queries} columns={[["Query", "query"], ["Count", "count"]]} />
-        </IntelligenceSection>
-        <IntelligenceSection title="Top Cities" subtitle="Search demand by city (reporting-normalized).">
-          <SimpleTable rows={c.top_cities} columns={[["City", "location_label"], ["Searches", "count"]]} />
-        </IntelligenceSection>
-      </div>
+      {!loading && data?.available ? (
+        <>
+          <AnalyticsScopeNote note={data.analytics_scope} />
 
-      <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-        <IntelligenceSection title="Top Menus" subtitle="Restaurant menu page views (by restaurant_id).">
-          <SimpleTable
-            rows={c.top_menus}
-            columns={[["Restaurant ID", "restaurant_id"], ["Views", "views"]]}
+          <SectionTitle
+            title="Range summary"
+            subtitle={`Consumer traffic and search for ${rangeLabel(range)}. Click a number to drill down.`}
           />
-        </IntelligenceSection>
-        <IntelligenceSection title="Top Menu Items" subtitle="Menu item page views.">
-          <SimpleTable rows={c.top_menu_items} columns={[["Menu Item ID", "menu_item_id"], ["Views", "views"]]} />
-        </IntelligenceSection>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+            <LinkedMetric
+              label="Visitor sessions"
+              value={s.unique_visitors}
+              to={{ pathname: "/owner/intelligence/site-activity", search }}
+            />
+            <LinkedMetric
+              label="Page views"
+              value={s.total_visits}
+              to={{ pathname: "/owner/intelligence/site-activity", search }}
+            />
+            <LinkedMetric
+              label="Searches"
+              value={s.total_searches}
+              to={{ pathname: "/owner/intelligence/search-demand", search }}
+            />
+            <LinkedMetric
+              label="Zero-result rate"
+              value={`${s.zero_result_rate_pct}%`}
+              to={{ pathname: "/owner/intelligence/search-demand", search, hash: "zero-results" }}
+            />
+            <LinkedMetric
+              label="Menu views"
+              value={s.menu_views}
+              to={{ pathname: "/owner/intelligence/menu", search }}
+            />
+            <LinkedMetric
+              label="Restaurant views"
+              value={s.restaurant_views}
+              to={{ pathname: "/owner/intelligence/restaurant", search }}
+            />
+          </div>
+
+          <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+            <PageCard style={{ padding: 22 }}>
+              <SectionTitle title="Top queries" subtitle="For this date range." />
+              <SimpleTable rows={c.top_queries?.slice(0, 8)} columns={[["Query", "query"], ["Count", "count"]]} />
+              <div style={{ marginTop: 12 }}>
+                <TabLink path="search-demand" search={search} label="All search demand →" />
+              </div>
+            </PageCard>
+            <PageCard style={{ padding: 22 }}>
+              <SectionTitle title="Top search cities" subtitle="Where diners are searching." />
+              <SimpleTable
+                rows={c.top_cities?.slice(0, 8)}
+                columns={[["City", "location_label"], ["Searches", "count"]]}
+              />
+              <div style={{ marginTop: 12 }}>
+                <TabLink path="geo" search={search} label="Geo intelligence →" />
+              </div>
+            </PageCard>
+          </div>
+
+          <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+            <PageCard style={{ padding: 22 }}>
+              <SectionTitle title="Top visitor cities" subtitle="Distinct sessions by market." />
+              <SimpleTable
+                rows={c.visitors_by_city?.slice(0, 8)}
+                columns={[
+                  ["City", "location_label"],
+                  ["Visitors", "visitors"],
+                  ["Page views", "page_views"],
+                ]}
+              />
+              <div style={{ marginTop: 12 }}>
+                <TabLink path="site-activity" search={search} label="Site activity →" />
+              </div>
+            </PageCard>
+          </div>
+        </>
+      ) : null}
+
+      <SectionTitle
+        title="Explore by area"
+        subtitle="Pick a category for full detail in this date range."
+      />
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
+        {DRILL_DOWN_AREAS.map((area) => (
+          <Link
+            key={area.id}
+            to={{ pathname: `/owner/intelligence/${area.path}`, search }}
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
+            <PageCard style={{ padding: 20, height: "100%", cursor: "pointer" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: OWNER_COLORS.ink }}>{area.title}</div>
+              <div style={{ marginTop: 8, fontSize: 13, color: OWNER_COLORS.muted, lineHeight: 1.5 }}>
+                {area.description}
+              </div>
+              <div style={{ marginTop: 14, fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent }}>
+                Open →
+              </div>
+            </PageCard>
+          </Link>
+        ))}
       </div>
 
-      <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-        <IntelligenceSection title="Top Referrers" subtitle="Traffic sources.">
-          <SimpleTable rows={c.top_referrers} columns={[["Source", "source"], ["Visits", "visits"]]} />
-        </IntelligenceSection>
-        <IntelligenceSection title="Device Breakdown" subtitle="Captured device types.">
-          <SimpleTable rows={c.device_breakdown} columns={[["Device", "device_type"], ["Visits", "visits"]]} />
-        </IntelligenceSection>
-      </div>
+      <EmptyState>
+        Tabs above mirror these categories: {INTELLIGENCE_TABS.filter((t) => !t.end).map((t) => t.label).join(", ")}.
+      </EmptyState>
     </div>
+  );
+}
+
+function LinkedMetric({ label, value, to }) {
+  return (
+    <Link to={to} style={{ textDecoration: "none", color: "inherit" }}>
+      <MetricCard label={label} value={value} />
+    </Link>
+  );
+}
+
+function TabLink({ path, search, label }) {
+  return (
+    <Link
+      to={{ pathname: `/owner/intelligence/${path}`, search }}
+      style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent }}
+    >
+      {label}
+    </Link>
   );
 }

@@ -1,172 +1,197 @@
 import React, { useEffect, useState } from "react";
-import { useLanguage } from "../../context/LanguageContext.jsx";
 import { Link } from "react-router-dom";
-import OwnerLayout, { EmptyState, OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
+import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { getOwnerDashboardSummary } from "../../lib/ownerApi.js";
+import { SimpleTable } from "./intelligence/intelligenceShared.jsx";
 
-const CARD_GRID = {
+const METRIC_GRID = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
   gap: 14,
 };
 
 export default function OwnerDashboard() {
-  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     getOwnerDashboardSummary()
       .then(setData)
-      .catch(() => setError("Owner dashboard data is temporarily unavailable."));
+      .catch(() => setError("Dashboard data is temporarily unavailable."));
   }, []);
 
-  const summary = data?.summary || {};
-
   return (
-    <OwnerLayout title="Owner Dashboard">
+    <OwnerLayout
+      title="Platform Overview"
+      actions={
+        <Link
+          to="/owner/intelligence?preset=30d"
+          style={{
+            padding: "8px 14px",
+            borderRadius: 10,
+            border: `1px solid ${OWNER_COLORS.line}`,
+            background: "#fff",
+            color: OWNER_COLORS.ink,
+            textDecoration: "none",
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
+          Full intelligence →
+        </Link>
+      }
+    >
       {error ? <ErrorBanner message={error} /> : null}
 
-      {/* Platform metrics */}
-      <SectionTitle title="Platform Overview" subtitle="Live platform metrics." />
-      <div style={CARD_GRID}>
-        {[
-          ["Total Site Visits", summary.total_site_visits],
-          ["Visits Today", summary.visits_today],
-          ["Visits Last 7 Days", summary.visits_last_7_days],
-          ["Total Searches", summary.total_searches],
-          ["Searches Today", summary.searches_today],
-          ["New Restaurant Signups", summary.new_restaurant_signups],
-          ["Claimed Restaurants", summary.claimed_restaurants],
-          ["Active Subscriptions", summary.active_subscriptions],
-          ["MRR", formatMoney(summary.current_subscription_revenue_cents)],
-          ["Open Support Tickets", summary.support_tickets_open],
-          ["Awaiting Response", summary.support_tickets_awaiting_response],
-          ["Recent Failed Jobs", summary.recent_failed_jobs ?? "N/A"],
-        ].map(([label, value]) => (
-          <MetricCard key={label} label={label} value={value} />
-        ))}
-      </div>
-
-      {/* Menu Upload metrics */}
-      <div style={{ marginTop: 28 }}>
-        <SectionTitle title="Menu Manager" subtitle="Ingestion and upload activity across the platform." />
-        <div style={CARD_GRID}>
-          <MetricCard
-            label="Total Uploads"
-            value={summary.menu_uploads_total}
-            href="/owner/menu-manager"
-          />
-          <MetricCard
-            label="Uploads Today"
-            value={summary.menu_uploads_today}
-            href="/owner/menu-manager?status=today"
-          />
-          <MetricCard
-            label="Pending"
-            value={summary.menu_uploads_pending}
-            href="/owner/menu-manager?status=pending"
-          />
-          <MetricCard
-            label="Failed"
-            value={summary.menu_uploads_failed}
-            href="/owner/menu-manager?status=failed"
-            highlight={Number(summary.menu_uploads_failed) > 0}
-          />
-          <MetricCard
-            label="Needs Review"
-            value={summary.menu_uploads_needs_review}
-            href="/owner/menu-manager?status=needs_review"
-            highlight={Number(summary.menu_uploads_needs_review) > 0}
-          />
-          <MetricCard
-            label="Published"
-            value={summary.menu_uploads_published}
-            href="/owner/menu-manager?status=published"
-          />
+      <PageCard style={{ padding: "18px 22px", marginBottom: 22 }}>
+        <div style={{ fontSize: 14, color: OWNER_COLORS.ink, lineHeight: 1.55 }}>
+          Real consumer traffic and search for today. Visitor sessions are distinct browsers —
+          page views count every route change. Owner console and internal routes are excluded.
         </div>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 18, marginTop: 28 }}>
-        <PageCard style={{ padding: 22 }}>
-          <SectionTitle title="Trends" subtitle="Last 7 days across the platform." />
-          <div style={{ display: "grid", gap: 18 }}>
-            <MiniSeries title="Visits" rows={data?.trend?.visits || []} valueKey="count" />
-            <MiniSeries title="Searches" rows={data?.trend?.searches || []} valueKey="count" />
-            <MiniSeries title="Signups" rows={data?.trend?.signups || []} valueKey="count" />
-            <MiniSeries title="Revenue" rows={data?.trend?.revenue || []} valueKey="amount_cents" formatter={formatMoney} />
-            <MiniSeries title="Support Volume" rows={data?.trend?.support || []} valueKey="count" />
+        {data?.analytics_scope ? (
+          <div style={{ marginTop: 10, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
+            {data.analytics_scope}
           </div>
-        </PageCard>
+        ) : null}
+        {data?.as_of ? (
+          <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
+            Data as of {data.as_of}. Click any tracked metric to explore.
+          </div>
+        ) : null}
+      </PageCard>
 
-        <PageCard style={{ padding: 22 }}>
-          <SectionTitle title="Tracking Coverage" subtitle="Owner views only show data that is actually tracked." />
-          {data?.availability ? (
-            <div style={{ display: "grid", gap: 10 }}>
-              {Object.entries(data.availability).map(([key, available]) => (
-                <div key={key} style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", borderRadius: 12, background: "#fff" }}>
-                  <span style={{ textTransform: "capitalize" }}>{key.replaceAll("_", " ")}</span>
-                  <span style={{ color: available ? "#16794f" : OWNER_COLORS.muted, fontWeight: 700 }}>
-                    {available ? "Tracked" : "Not available"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState>Loading tracking availability.</EmptyState>
-          )}
-        </PageCard>
-      </div>
+      {!data && !error ? <LoadingState /> : null}
+
+      {data?.sections?.map((section) => (
+        <section key={section.id} style={{ marginBottom: 28 }}>
+          <SectionTitle title={section.title} subtitle={section.subtitle} />
+          <div style={METRIC_GRID}>
+            {section.metrics.map((item) => (
+              <DrillDownMetric key={item.id} metric={item} />
+            ))}
+          </div>
+        </section>
+      ))}
+
+      {data?.market_snapshot ? (
+        <section style={{ marginBottom: 28 }}>
+          <SectionTitle
+            title="Today's markets"
+            subtitle="Top cities for visitors and searches — full breakdown in Geo Intelligence."
+          />
+          <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+            <PageCard style={{ padding: 22 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 12, color: OWNER_COLORS.ink }}>Visitors by city</div>
+              <SimpleTable
+                rows={data.market_snapshot.visitors_by_city?.slice(0, 8)}
+                columns={[
+                  ["City", "location_label"],
+                  ["Visitors", "visitors"],
+                  ["Page views", "page_views"],
+                ]}
+                emptyLabel="No visitor geo data for today yet."
+              />
+            </PageCard>
+            <PageCard style={{ padding: 22 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 12, color: OWNER_COLORS.ink }}>Searches by city</div>
+              <SimpleTable
+                rows={data.market_snapshot.searches_by_city?.slice(0, 8)}
+                columns={[
+                  ["City", "location_label"],
+                  ["Searches", "searches"],
+                  ["Zero results", "zero_results"],
+                ]}
+                emptyLabel="No search geo data for today yet."
+              />
+            </PageCard>
+          </div>
+        </section>
+      ) : null}
+
+      {data?.placeholders?.length ? (
+        <section style={{ marginTop: 8 }}>
+          <SectionTitle
+            title="Coming soon"
+            subtitle="These need more than simple SQL — shown as placeholders until event tracking ships."
+          />
+          <div style={METRIC_GRID}>
+            {data.placeholders.map((item) => (
+              <PlaceholderMetric key={item.id} metric={item} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </OwnerLayout>
   );
 }
 
-function MetricCard({ label, value, href, highlight }) {
+function DrillDownMetric({ metric }) {
+  const isLink = metric.status === "tracked" && metric.drill_down;
   const card = (
     <PageCard
       style={{
         padding: 18,
-        cursor: href ? "pointer" : "default",
-        border: highlight ? `1px solid ${OWNER_COLORS.accent}` : undefined,
-        transition: "box-shadow 0.15s",
+        height: "100%",
+        cursor: isLink ? "pointer" : "default",
+        transition: "box-shadow 0.15s, border-color 0.15s",
+        border: isLink ? `1px solid ${OWNER_COLORS.line}` : `1px dashed ${OWNER_COLORS.line}`,
       }}
     >
-      <div style={{ color: OWNER_COLORS.muted, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-        {label}
+      <div style={{ color: OWNER_COLORS.muted, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        {metric.label}
       </div>
-      <div style={{ marginTop: 10, fontSize: 28, fontWeight: 800, letterSpacing: "-0.05em", color: highlight ? OWNER_COLORS.accent : undefined }}>
-        {value ?? "N/A"}
+      <div style={{ marginTop: 10, fontSize: 30, fontWeight: 800, letterSpacing: "-0.04em", color: OWNER_COLORS.ink }}>
+        {formatMetricValue(metric.value)}
       </div>
+      {metric.hint ? (
+        <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
+          {metric.hint}
+        </div>
+      ) : null}
+      {isLink ? (
+        <div style={{ marginTop: 12, fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent }}>
+          View details →
+        </div>
+      ) : null}
     </PageCard>
   );
 
-  if (href) {
-    return (
-      <Link to={href} style={{ textDecoration: "none", display: "block" }}>
-        {card}
-      </Link>
-    );
-  }
-  return card;
-}
-
-function MiniSeries({ title, rows, valueKey, formatter = (value) => value }) {
-  if (!rows.length) return <EmptyState>{title} data will appear here as tracking accumulates.</EmptyState>;
+  if (!isLink) return card;
 
   return (
-    <div>
-      <div style={{ fontWeight: 700, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "grid", gap: 8 }}>
-        {rows.map((row) => (
-          <div key={`${title}-${row.day}`} style={{ display: "grid", gridTemplateColumns: "92px 1fr auto", gap: 12, alignItems: "center" }}>
-            <div style={{ color: OWNER_COLORS.muted, fontSize: 12 }}>{row.day}</div>
-            <div style={{ height: 10, borderRadius: 999, background: "#f1e3d8", overflow: "hidden" }}>
-              <div style={{ width: `${Math.min(100, Number(row[valueKey] || 0))}%`, height: "100%", background: OWNER_COLORS.accent }} />
-            </div>
-            <div style={{ fontWeight: 700, fontSize: 12 }}>{formatter(row[valueKey])}</div>
-          </div>
-        ))}
+    <Link to={metric.drill_down} style={{ textDecoration: "none", display: "block", color: "inherit" }}>
+      {card}
+    </Link>
+  );
+}
+
+function PlaceholderMetric({ metric }) {
+  return (
+    <PageCard style={{ padding: 18, height: "100%", border: `1px dashed #d7c5b8`, background: "#faf7f4" }}>
+      <div style={{ color: OWNER_COLORS.muted, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        {metric.label}
       </div>
+      <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: OWNER_COLORS.muted }}>
+        Not tracked yet
+      </div>
+      {metric.hint ? (
+        <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.45 }}>
+          {metric.hint}
+        </div>
+      ) : null}
+    </PageCard>
+  );
+}
+
+function formatMetricValue(value) {
+  if (value == null || value === "") return "—";
+  return value;
+}
+
+function LoadingState() {
+  return (
+    <div style={{ padding: 40, textAlign: "center", color: OWNER_COLORS.muted, fontSize: 14 }}>
+      Loading platform overview…
     </div>
   );
 }
@@ -177,9 +202,4 @@ function ErrorBanner({ message }) {
       {message}
     </div>
   );
-}
-
-function formatMoney(cents) {
-  if (cents == null) return "N/A";
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(cents || 0) / 100);
 }

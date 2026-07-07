@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
+import { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   getOwnerPhmsIncident,
   assignOwnerPhmsIncident,
@@ -64,9 +64,9 @@ export default function OwnerPhmsIncidentDetail() {
   };
 
   return (
-    <OwnerLayout title={inc?.title || "Incident Detail"}>
+    <>
       <div style={{ marginBottom: 16, fontSize: 13, color: OWNER_COLORS.muted }}>
-        <Link to="/owner/phms/incidents" style={{ color: OWNER_COLORS.accent }}>← Incident Manager</Link>
+        <Link to="/owner/phms/incidents" style={{ color: OWNER_COLORS.accent, fontWeight: 700 }}>← All incidents</Link>
       </div>
 
       {loading && <div style={{ color: OWNER_COLORS.muted }}>Loading…</div>}
@@ -171,6 +171,6 @@ export default function OwnerPhmsIncidentDetail() {
           </PageCard>
         </>
       )}
-    </OwnerLayout>
+    </>
   );
 }

@@ -7,6 +7,7 @@ import {
   LoadingState,
   MetricCard,
   SimpleTable,
+  AnalyticsScopeNote,
   useIntelligenceData,
 } from "./intelligenceShared.jsx";
 import { getOwnerIntelligenceSiteActivity } from "../../../lib/ownerApi.js";
@@ -21,8 +22,28 @@ export default function IntelligenceSiteActivity() {
 
   return (
     <div style={{ display: "grid", gap: 18 }}>
-      <IntelligenceSection title="Visits by Day" subtitle="Traditional site traffic trend.">
-        <SimpleTable rows={data.visits_by_day} columns={[["Day", "day"], ["Visits", "visits"]]} />
+      <AnalyticsScopeNote note={data.analytics_scope} />
+
+      <IntelligenceSection title="Visits by Day" subtitle="Visitor sessions (distinct) and consumer page views per day.">
+        <SimpleTable
+          rows={data.visits_by_day}
+          columns={[
+            ["Day", "day"],
+            ["Visitor sessions", "visitor_sessions"],
+            ["Page views", "page_views"],
+          ]}
+        />
+      </IntelligenceSection>
+
+      <IntelligenceSection title="Visitors by City" subtitle="Distinct sessions and page views by market (city/state).">
+        <SimpleTable
+          rows={data.visitors_by_city}
+          columns={[
+            ["City", "location_label"],
+            ["Visitors", "visitors"],
+            ["Page views", "page_views"],
+          ]}
+        />
       </IntelligenceSection>
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>

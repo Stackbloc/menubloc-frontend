@@ -1,8 +1,6 @@
-"use strict";
-
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
+import { OWNER_COLORS, PageCard } from "./OwnerLayout.jsx";
 import { getOwnerPhmsIncidents } from "../../lib/ownerApi.js";
 
 const STATUS_COLORS = {
@@ -76,10 +74,9 @@ export default function OwnerPhmsIncidents() {
   const incidents = data?.incidents || [];
 
   return (
-    <OwnerLayout title="Incident Manager">
+    <>
       <div style={{ marginBottom: 16, fontSize: 13, color: OWNER_COLORS.muted }}>
-        PHMS operational workflow — persistent incidents with lifecycle tracking.{" "}
-        <Link to="/owner/phms" style={{ color: OWNER_COLORS.accent }}>← Platform Health</Link>
+        Persistent incidents with lifecycle tracking. Failed PHMS checks sync here automatically.
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10, marginBottom: 24 }}>
@@ -158,6 +155,6 @@ export default function OwnerPhmsIncidents() {
           ))}
         </div>
       </PageCard>
-    </OwnerLayout>
+    </>
   );
 }

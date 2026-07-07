@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
+import { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
   getOwnerPhmsHealth,
   getOwnerPhmsMenuStatus,
@@ -883,10 +883,9 @@ export default function OwnerPhms() {
   }, []);
 
   return (
-    <OwnerLayout title="Platform Health">
-      <div style={{ marginBottom: 10, fontSize: 13, color: OWNER_COLORS.muted, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <span>Live critical-health monitoring · Display disappearance detection · Deployment verification</span>
-        <a href="/owner/phms/incidents" style={{ color: OWNER_COLORS.accent, fontWeight: 700, fontSize: 12 }}>Incident Manager →</a>
+    <>
+      <div style={{ marginBottom: 10, fontSize: 13, color: OWNER_COLORS.muted }}>
+        Live critical-health monitoring · Display disappearance detection · Deployment verification
       </div>
 
       <CriticalHealthSection onHealthLoaded={setHealthData} onDataChange={setHealthData} />
@@ -897,6 +896,6 @@ export default function OwnerPhms() {
       <DeploymentHealthSection />
       <RepairTicketsSection />
       <RecentIncidentsSection healthData={healthData} />
-    </OwnerLayout>
+    </>
   );
 }

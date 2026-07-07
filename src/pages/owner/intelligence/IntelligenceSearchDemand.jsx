@@ -92,6 +92,7 @@ export default function IntelligenceSearchDemand() {
       </IntelligenceSection>
 
       <IntelligenceSection
+        id="zero-results"
         title="Zero Result Intelligence"
         subtitle="Engineering repair queue — failure reasons default to Unknown until automated diagnosis ships."
       >
