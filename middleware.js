@@ -357,6 +357,16 @@ export default async function middleware(request) {
     return Response.redirect(canonical, 301);
   }
 
+  // --- /clusters directory ---
+  if (pathname === "/clusters" || pathname === "/clusters/") {
+    const shell = await fetchShell(request.url);
+    if (!shell) return;
+    const title = "Restaurant Clusters | Menuply";
+    const description =
+      "Browse destination areas — malls, campuses, entertainment districts, airports, and more.";
+    return injectedResponse(injectMeta(shell, title, description, `${ORIGIN}/clusters`));
+  }
+
   // --- /clusters/:state/:city/:slug ---
   m = CLUSTER_RE.exec(pathname);
   if (m) {
@@ -397,6 +407,7 @@ export const config = {
   matcher: [
     "/sitemap.xml",
     "/sitemaps/:path*",
+    "/clusters",
     "/clusters/:path*",
     "/restaurants/:path*",
     "/public/restaurants/:path*",

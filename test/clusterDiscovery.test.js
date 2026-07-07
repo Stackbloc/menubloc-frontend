@@ -1,0 +1,33 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  clusterMembershipAction,
+  clusterMembershipHeading,
+  groupClustersByStateCity,
+  stateDisplayName,
+} from "../src/lib/clusterUrl.js";
+
+test("stateDisplayName formats abbreviations", () => {
+  assert.equal(stateDisplayName("CA"), "California");
+  assert.equal(stateDisplayName("GA"), "Georgia");
+});
+
+test("groupClustersByStateCity groups clusters for directory rendering", () => {
+  const grouped = groupClustersByStateCity([
+    { name: "USC", slug: "usc", city: "Los Angeles", state: "CA" },
+    { name: "L.A. Live", slug: "la-live", city: "Los Angeles", state: "CA" },
+    { name: "Atlanta Airport", slug: "atl-airport", city: "Atlanta", state: "GA" },
+  ]);
+
+  assert.equal(grouped.length, 2);
+  assert.equal(grouped[0].stateLabel, "California");
+  assert.equal(grouped[0].cities[0].clusters.length, 2);
+  assert.equal(grouped[1].stateLabel, "Georgia");
+});
+
+test("cluster membership copy varies by cluster type", () => {
+  assert.equal(clusterMembershipHeading("university"), "Part of");
+  assert.equal(clusterMembershipHeading("entertainment_complex"), "Located in");
+  assert.equal(clusterMembershipAction("university"), "View Cluster →");
+  assert.equal(clusterMembershipAction("mall"), "Explore Cluster →");
+});

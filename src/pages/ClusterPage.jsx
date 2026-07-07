@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
+import ClusterDirectoryCard from "../components/cluster/ClusterDirectoryCard.jsx";
+import { ClusterPageBreadcrumb } from "../components/cluster/ClusterBreadcrumbs.jsx";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
 import SearchResultCard from "../components/SearchResultCard.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
@@ -322,9 +324,7 @@ export default function ClusterPage() {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem" }}>
       <header style={{ marginBottom: "1.25rem" }}>
-        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
-          {cluster.city}, {cluster.state}
-        </p>
+        <ClusterPageBreadcrumb cluster={cluster} />
         <div
           style={{
             display: "flex",
@@ -405,6 +405,23 @@ export default function ClusterPage() {
           <p style={{ color: "#888" }}>This tab is reserved for a future cluster release.</p>
         ) : null}
       </main>
+
+      {Array.isArray(cluster.related_clusters) && cluster.related_clusters.length > 0 ? (
+        <section style={{ marginTop: "2rem" }}>
+          <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.15rem" }}>Nearby Clusters</h2>
+          <div
+            style={{
+              display: "grid",
+              gap: "0.75rem",
+              gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+            }}
+          >
+            {cluster.related_clusters.map((related) => (
+              <ClusterDirectoryCard key={related.slug} cluster={related} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <footer
         style={{

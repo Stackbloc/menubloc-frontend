@@ -33,6 +33,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import RestaurantClusterLinks from "../components/cluster/RestaurantClusterLinks.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import RestaurantBillboardStrip from "../components/RestaurantBillboardStrip.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -700,6 +701,7 @@ export default function RestaurantPublicPage() {
           status_light_tone: json?.status_light_tone ?? json?.verification_badge_tone ?? null,
           verification_badge_tone: json?.verification_badge_tone ?? json?.status_light_tone ?? null,
           menu_status: json?.menu_status ?? null,
+          clusters: json?.clusters || [],
         });
       })
       .catch((e) => {
@@ -1077,6 +1079,8 @@ export default function RestaurantPublicPage() {
                   </div>
                 ) : null}
                 {cityLine ? <div>{cityLine}</div> : null}
+
+                <RestaurantClusterLinks clusters={data?.clusters} linkColor={linkColor} />
 
                 {cuisineLine ? (
                   <div style={{ color: t.metaColor, fontWeight: 500 }}>{cuisineLine}</div>
