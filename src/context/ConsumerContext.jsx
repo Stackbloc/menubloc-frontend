@@ -26,6 +26,7 @@ import {
   hasActiveAllergenExclusions,
   maybeBuildAllergenExclusionSessionToast,
 } from "../lib/allergenExclusionSessionToast.js";
+import { resetMenuPreferenceSessionForLogin } from "../lib/menuCatalogBrowsePreferences.js";
 
 const ConsumerContext = createContext(null);
 
@@ -101,23 +102,45 @@ export function ConsumerProvider({ children }) {
       .finally(() => setLoading(false));
   }, [loadMe]);
 
+  const maybeResetMenuPreferenceSession = useCallback((data, preferences) => {
+    const dietEnabled = Array.isArray(preferences?.dietary_preferences)
+      && preferences.dietary_preferences.some((row) => row?.is_enabled === true);
+    const allergenEnabled = Array.isArray(preferences?.allergen_preferences)
+      && preferences.allergen_preferences.some((row) => row?.is_enabled === true);
+    if (data?.consumer?.id && (dietEnabled || allergenEnabled)) {
+      resetMenuPreferenceSessionForLogin();
+    }
+  }, []);
+
   const login = useCallback(async (email, password) => {
     await loginConsumer(email, password);
     const data = await loadMe();
+    maybeResetMenuPreferenceSession(data, {
+      dietary_preferences: data?.dietary_preferences,
+      allergen_preferences: data?.allergen_preferences,
+    });
     return data;
-  }, [loadMe]);
+  }, [loadMe, maybeResetMenuPreferenceSession]);
 
   const loginWithGoogle = useCallback(async (credential, consent) => {
     await loginConsumerWithGoogle(credential, consent);
     const data = await loadMe();
+    maybeResetMenuPreferenceSession(data, {
+      dietary_preferences: data?.dietary_preferences,
+      allergen_preferences: data?.allergen_preferences,
+    });
     return data;
-  }, [loadMe]);
+  }, [loadMe, maybeResetMenuPreferenceSession]);
 
   const loginWithApple = useCallback(async (payload) => {
     await loginConsumerWithApple(payload);
     const data = await loadMe();
+    maybeResetMenuPreferenceSession(data, {
+      dietary_preferences: data?.dietary_preferences,
+      allergen_preferences: data?.allergen_preferences,
+    });
     return data;
-  }, [loadMe]);
+  }, [loadMe, maybeResetMenuPreferenceSession]);
 
   const signup = useCallback(async (signupData) => {
     return signupConsumer(signupData);
@@ -136,6 +159,10 @@ export function ConsumerProvider({ children }) {
     const verified = await verifyConsumerSmsCode(phoneNumber, code, verificationSid);
     if (verified?.consumer) {
       applySession(verified);
+      maybeResetMenuPreferenceSession(verified, {
+        dietary_preferences: verified?.dietary_preferences,
+        allergen_preferences: verified?.allergen_preferences,
+      });
       if (
         !hasActiveAllergenExclusions(
           verified?.allergen_filter || null,
@@ -147,6 +174,10 @@ export function ConsumerProvider({ children }) {
       return verified;
     }
     const data = await loadMe();
+    maybeResetMenuPreferenceSession(data, {
+      dietary_preferences: data?.dietary_preferences,
+      allergen_preferences: data?.allergen_preferences,
+    });
     if (
       !hasActiveAllergenExclusions(
         data?.allergen_filter || null,
@@ -156,7 +187,7 @@ export function ConsumerProvider({ children }) {
       setAuthToast("You're signed in ✓");
     }
     return data;
-  }, [applySession, loadMe]);
+  }, [applySession, loadMe, maybeResetMenuPreferenceSession]);
 
   const clearAuthToast = useCallback(() => {
     setAuthToast("");

@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "509262a76ae9478217c40d8e17d6688c3a12f0fe",
-  "gitShortSha": "509262a",
+  "gitSha": "dd4f8ef5eee2b24748455d1c8e943698cde34f66",
+  "gitShortSha": "dd4f8ef",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-06T23:04:02.262Z",
+  "buildTime": "2026-07-07T00:06:15.331Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(similar-ui): abbreviate long similar names for clean rows"
+  "commitMessage": "feat(owner): restaurant profile edit, lat/lng, and quarantine delete UI."
 }

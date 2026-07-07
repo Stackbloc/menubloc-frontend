@@ -41,3 +41,21 @@ export function writeMenuPreferenceDetailedBannerSeen() {
     window.sessionStorage.setItem(MENU_PREFERENCE_DETAILED_BANNER_SEEN_KEY, "1");
   } catch {}
 }
+
+/** Clear per-session dietary opt-out so saved profile prefs apply on next menu. */
+export function clearDietaryPreferencesSessionOptOut() {
+  writeCatalogApplyDietaryPreferences(true);
+}
+
+export function clearMenuPreferenceBannerSeen() {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(MENU_PREFERENCE_DETAILED_BANNER_SEEN_KEY);
+  } catch {}
+}
+
+/** Fresh authenticated session — saved prefs apply; show expanded banner on first menu. */
+export function resetMenuPreferenceSessionForLogin() {
+  clearDietaryPreferencesSessionOptOut();
+  clearMenuPreferenceBannerSeen();
+}

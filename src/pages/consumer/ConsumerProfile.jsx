@@ -23,6 +23,7 @@ import {
   getLikedMenuItems,
   unlikeMenuItem,
 } from "../../lib/consumerApi.js";
+import { resetMenuPreferenceSessionForLogin } from "../../lib/menuCatalogBrowsePreferences.js";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 
 const DIETARY_OPTIONS = [
@@ -270,6 +271,10 @@ export default function ConsumerProfile() {
       setLikedMeals(likedData?.likes || []);
       setMealsToUnlike(new Set());
       await refreshSession().catch(() => {});
+      const hasEnabledPrefs =
+        dietary_preferences.some((row) => row.is_enabled) ||
+        allergen_preferences.some((row) => row.is_enabled);
+      if (hasEnabledPrefs) resetMenuPreferenceSessionForLogin();
       setSaveMessage("Profile preferences saved.");
     } catch (err) {
       setSaveError(err.message || "Could not save profile preferences.");
