@@ -89,8 +89,8 @@ export default function ClustersDirectoryPage() {
       const json = await createCommunityCluster({
         ...form,
         state: String(form.state || "").trim().toUpperCase(),
-        lat: Number(form.lat),
-        lng: Number(form.lng),
+        lat: form.lat === "" ? null : Number(form.lat),
+        lng: form.lng === "" ? null : Number(form.lng),
         radius_miles: Number(form.radius_miles),
       });
       if (json?.cluster) {
@@ -98,7 +98,12 @@ export default function ClustersDirectoryPage() {
       }
       setForm(INITIAL_FORM);
     } catch (err) {
-      setError(toConsumerErrorMessage(err, "Could not submit cluster request."));
+      const message = toConsumerErrorMessage(err, "Could not submit cluster request.");
+      if (String(message).toLowerCase().includes("authentication required")) {
+        setError("Your session expired. Please sign in again, then submit your cluster.");
+      } else {
+        setError(message);
+      }
     } finally {
       setSubmitBusy(false);
     }
@@ -170,8 +175,9 @@ export default function ClustersDirectoryPage() {
             Clusters
           </h1>
           <p style={{ margin: 0, color: "#475569", maxWidth: 760 }}>
-            Discover destination-based dining hubs, then create new clusters for places your community
-            actually goes.
+            Clusters organize restaurants around the places people actually go—universities, downtowns,
+            airports, entertainment districts, tourist destinations, and more. Know of a great location
+            that belongs as a Cluster? Submit it!
           </p>
         </header>
 
@@ -286,29 +292,12 @@ export default function ClustersDirectoryPage() {
                   required
                   value={form.anchor_location}
                   onChange={(event) => setForm((c) => ({ ...c, anchor_location: event.target.value }))}
+                  placeholder="Street address or landmark"
                   style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
                 />
               </label>
-              <div style={{ display: "grid", gap: "0.65rem", gridTemplateColumns: "1fr 1fr 140px" }}>
-                <label style={{ display: "grid", gap: 4 }}>
-                  <span style={{ fontSize: 13, color: "#334155" }}>Latitude</span>
-                  <input
-                    required
-                    value={form.lat}
-                    onChange={(event) => setForm((c) => ({ ...c, lat: event.target.value }))}
-                    style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
-                  />
-                </label>
-                <label style={{ display: "grid", gap: 4 }}>
-                  <span style={{ fontSize: 13, color: "#334155" }}>Longitude</span>
-                  <input
-                    required
-                    value={form.lng}
-                    onChange={(event) => setForm((c) => ({ ...c, lng: event.target.value }))}
-                    style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
-                  />
-                </label>
-                <label style={{ display: "grid", gap: 4 }}>
+              <div style={{ display: "grid", gap: "0.65rem", gridTemplateColumns: "220px minmax(0,1fr)" }}>
+                <label style={{ display: "grid", gap: 4, maxWidth: 220 }}>
                   <span style={{ fontSize: 13, color: "#334155" }}>Radius (mi)</span>
                   <input
                     required
@@ -321,6 +310,29 @@ export default function ClustersDirectoryPage() {
                     style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
                   />
                 </label>
+                <div style={{ display: "grid", gap: "0.65rem", gridTemplateColumns: "1fr 1fr" }}>
+                  <label style={{ display: "grid", gap: 4 }}>
+                    <span style={{ fontSize: 13, color: "#334155" }}>Latitude (optional)</span>
+                    <input
+                      value={form.lat}
+                      onChange={(event) => setForm((c) => ({ ...c, lat: event.target.value }))}
+                      placeholder="34.0224"
+                      style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 4 }}>
+                    <span style={{ fontSize: 13, color: "#334155" }}>Longitude (optional)</span>
+                    <input
+                      value={form.lng}
+                      onChange={(event) => setForm((c) => ({ ...c, lng: event.target.value }))}
+                      placeholder="-118.2851"
+                      style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                    />
+                  </label>
+                </div>
+                <div style={{ gridColumn: "1 / -1", color: "#64748b", fontSize: 12 }}>
+                  Anchor location is required. Latitude/longitude is optional.
+                </div>
               </div>
               <label style={{ display: "grid", gap: 4 }}>
                 <span style={{ fontSize: 13, color: "#334155" }}>Short description</span>
