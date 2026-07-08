@@ -13,6 +13,7 @@ const NAV = [
   { to: "/crm/companies", label: "Companies" },
   { to: "/crm/tasks", label: "Tasks" },
   { to: "/crm/seed-explorer", label: "Seed Explorer" },
+  { to: "/crm/clusters", label: "Cluster Manager" },
   { to: "/crm/reports", label: "Reports" },
   { to: "/crm/qr-inventory", label: "QR Inventory" },
 ];

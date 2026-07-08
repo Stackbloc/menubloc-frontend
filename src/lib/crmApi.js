@@ -109,6 +109,42 @@ export const getCrmDiscountCodes = () => get("/api/crm/discount-codes");
 export const createCrmDiscountCode = (body) => post("/api/crm/discount-codes", body);
 export const updateCrmDiscountCode = (id, body) => req(`/api/crm/discount-codes/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 
+export const getCrmClusters = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/clusters${qs ? `?${qs}` : ""}`);
+};
+export const getCrmCluster = (clusterId) => get(`/api/crm/clusters/${encodeURIComponent(clusterId)}`);
+export const createCrmCluster = (body) => post("/api/crm/clusters", body);
+export const updateCrmCluster = (clusterId, body) => put(`/api/crm/clusters/${encodeURIComponent(clusterId)}`, body);
+export const cloneCrmCluster = (clusterId, body = {}) =>
+  post(`/api/crm/clusters/${encodeURIComponent(clusterId)}/clone`, body);
+export const getCrmClusterStats = (clusterId) => get(`/api/crm/clusters/${encodeURIComponent(clusterId)}/stats`);
+export const getCrmClusterPreview = (clusterId) => get(`/api/crm/clusters/${encodeURIComponent(clusterId)}/preview`);
+export const getCrmClusterRestaurants = (clusterId) =>
+  get(`/api/crm/clusters/${encodeURIComponent(clusterId)}/restaurants`);
+export const previewCrmClusterRadius = (clusterId, body = {}) =>
+  post(`/api/crm/clusters/${encodeURIComponent(clusterId)}/restaurants/preview-radius`, body);
+export const searchCrmClusterRestaurants = (clusterId, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/api/crm/clusters/${encodeURIComponent(clusterId)}/restaurants/search${qs ? `?${qs}` : ""}`);
+};
+export const replaceCrmClusterRestaurants = (clusterId, restaurant_ids) =>
+  put(`/api/crm/clusters/${encodeURIComponent(clusterId)}/restaurants`, { restaurant_ids });
+export const addCrmClusterRestaurant = (clusterId, restaurant_id) =>
+  post(`/api/crm/clusters/${encodeURIComponent(clusterId)}/restaurants`, { restaurant_id });
+export const removeCrmClusterRestaurant = (clusterId, restaurantId) =>
+  req(`/api/crm/clusters/${encodeURIComponent(clusterId)}/restaurants/${encodeURIComponent(restaurantId)}`, {
+    method: "DELETE",
+  });
+export const reorderCrmClusterRestaurants = (clusterId, ordered_restaurant_ids) =>
+  put(`/api/crm/clusters/${encodeURIComponent(clusterId)}/restaurants/order`, { ordered_restaurant_ids });
+export const checkCrmClusterDuplicates = (clusterId, restaurant_ids) =>
+  post(`/api/crm/clusters/${encodeURIComponent(clusterId)}/duplicates/check`, { restaurant_ids });
+
 export const forgotCrmPassword = (email) => post("/api/crm/auth/forgot", { email });
 export const verifyCrmResetToken = (token) => get(`/api/crm/auth/reset-password?token=${encodeURIComponent(token)}`);
 export const resetCrmPassword = (token, password) => post("/api/crm/auth/reset-password", { token, password });
