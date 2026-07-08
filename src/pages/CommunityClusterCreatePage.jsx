@@ -4,6 +4,11 @@ import BottomNav from "../components/BottomNav.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { createCommunityCluster, previewCommunityClusterCandidates } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
+import {
+  CLUSTER_DESTINATION_TYPES,
+  clusterDestinationCategoryLabel,
+  clusterPath,
+} from "../lib/clusterUrl.js";
 
 const INITIAL_FORM = {
   name: "",
@@ -13,9 +18,25 @@ const INITIAL_FORM = {
   anchor_location: "",
   lat: "",
   lng: "",
-  radius_miles: "1.5",
+  radius_miles: 1.5,
   short_description: "",
 };
+
+const FIELD_LABELS = {
+  name: "Cluster name",
+  type: "Cluster type",
+  city: "City",
+  state: "State",
+  anchor_location: "Anchor location",
+  lat: "Latitude",
+  lng: "Longitude",
+  short_description: "Short description",
+};
+
+function adjustRadius(current, delta) {
+  const next = Math.round((Number(current) + delta) * 10) / 10;
+  return Math.max(0.25, Math.min(25, next));
+}
 
 export default function CommunityClusterCreatePage() {
   const navigate = useNavigate();
@@ -94,7 +115,16 @@ export default function CommunityClusterCreatePage() {
       });
       const cluster = json?.cluster;
       if (!cluster?.slug) throw new Error("Cluster created but missing slug");
-      navigate(`/clusters/${String(cluster.state || "").toLowerCase()}/${String(cluster.city || "").toLowerCase().replace(/\s+/g, "-")}/${cluster.slug}`);
+      const path =
+        clusterPath({
+          state: cluster.state,
+          city: cluster.city,
+          slug: cluster.slug,
+        }) ||
+        `/clusters/${String(cluster.state || "").toLowerCase()}/${String(cluster.city || "")
+          .toLowerCase()
+          .replace(/\s+/g, "-")}/${cluster.slug}`;
+      navigate(path);
     } catch (err) {
       setError(toConsumerErrorMessage(err, "Could not create community cluster."));
     } finally {
@@ -133,20 +163,112 @@ export default function CommunityClusterCreatePage() {
       </p>
       {error ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
 
-      <div style={{ display: "grid", gap: "0.65rem", marginBottom: "1rem" }}>
-        {Object.keys(INITIAL_FORM).map((key) => (
-          <label key={key} style={{ display: "grid", gap: 4 }}>
-            <span style={{ fontSize: 13, color: "#374151" }}>{key.replace(/_/g, " ")}</span>
+      <div style={{ display: "grid", gap: "0.75rem", marginBottom: "1rem" }}>
+        <label style={{ display: "grid", gap: 4 }}>
+          <span style={{ fontSize: 13, color: "#374151" }}>{FIELD_LABELS.name}</span>
+          <input
+            value={form.name}
+            onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+            style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "0.55rem 0.6rem" }}
+          />
+        </label>
+
+        <label style={{ display: "grid", gap: 4 }}>
+          <span style={{ fontSize: 13, color: "#374151" }}>{FIELD_LABELS.type}</span>
+          <select
+            value={form.type}
+            onChange={(event) => setForm((current) => ({ ...current, type: event.target.value }))}
+            style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "0.55rem 0.6rem" }}
+          >
+            {CLUSTER_DESTINATION_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {clusterDestinationCategoryLabel(type)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 120px", gap: "0.65rem" }}>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ fontSize: 13, color: "#374151" }}>{FIELD_LABELS.city}</span>
             <input
-              value={form[key]}
-              onChange={(event) => setForm((current) => ({ ...current, [key]: event.target.value }))}
+              value={form.city}
+              onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
               style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "0.55rem 0.6rem" }}
             />
           </label>
-        ))}
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ fontSize: 13, color: "#374151" }}>{FIELD_LABELS.state}</span>
+            <input
+              value={form.state}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, state: event.target.value.toUpperCase() }))
+              }
+              maxLength={2}
+              placeholder="CA"
+              style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "0.55rem 0.6rem" }}
+            />
+          </label>
+        </div>
+
+        <label style={{ display: "grid", gap: 4 }}>
+          <span style={{ fontSize: 13, color: "#374151" }}>{FIELD_LABELS.anchor_location}</span>
+          <input
+            value={form.anchor_location}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, anchor_location: event.target.value }))
+            }
+            placeholder="Street address or landmark near the destination center"
+            style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "0.55rem 0.6rem" }}
+          />
+        </label>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem" }}>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ fontSize: 13, color: "#374151" }}>{FIELD_LABELS.lat}</span>
+            <input
+              value={form.lat}
+              onChange={(event) => setForm((current) => ({ ...current, lat: event.target.value }))}
+              style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "0.55rem 0.6rem" }}
+            />
+          </label>
+          <label style={{ display: "grid", gap: 4 }}>
+            <span style={{ fontSize: 13, color: "#374151" }}>{FIELD_LABELS.lng}</span>
+            <input
+              value={form.lng}
+              onChange={(event) => setForm((current) => ({ ...current, lng: event.target.value }))}
+              style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "0.55rem 0.6rem" }}
+            />
+          </label>
+        </div>
+
+        <div style={{ display: "grid", gap: 4 }}>
+          <span style={{ fontSize: 13, color: "#374151" }}>Radius (miles)</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <button type="button" onClick={() => setForm((c) => ({ ...c, radius_miles: adjustRadius(c.radius_miles, -0.25) }))}>
+              −
+            </button>
+            <span style={{ minWidth: 48, textAlign: "center" }}>{form.radius_miles}</span>
+            <button type="button" onClick={() => setForm((c) => ({ ...c, radius_miles: adjustRadius(c.radius_miles, 0.25) }))}>
+              +
+            </button>
+          </div>
+        </div>
+
+        <label style={{ display: "grid", gap: 4 }}>
+          <span style={{ fontSize: 13, color: "#374151" }}>{FIELD_LABELS.short_description}</span>
+          <textarea
+            value={form.short_description}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, short_description: event.target.value }))
+            }
+            rows={3}
+            style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "0.55rem 0.6rem" }}
+          />
+        </label>
       </div>
 
-      <div style={{ display: "flex", gap: "0.6rem", marginBottom: "1rem" }}>
+      <div style={{ display: "flex", gap: "0.6rem", marginBottom: "1rem", flexWrap: "wrap" }}>
         <button type="button" onClick={loadPreview} disabled={busy || !canSubmit}>
           Preview nearby CK restaurants
         </button>

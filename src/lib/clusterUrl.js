@@ -30,12 +30,30 @@ export function clusterPath({ state, city, slug }) {
   return `/clusters/${stateSlug}/${citySlug}/${clusterSlug}`;
 }
 
+/** Standard destination taxonomy — every state uses the same category list. */
+export const CLUSTER_DESTINATION_TYPES = Object.freeze([
+  "university",
+  "downtown",
+  "airport",
+  "entertainment_complex",
+  "tourist_destination",
+  "stadium",
+  "convention_district",
+  "historic_district",
+  "waterfront",
+  "casino",
+  "theme_park",
+  "business_district",
+]);
+
+export const FEATURED_CLUSTER_FALLBACK_SLUGS = Object.freeze(["usc", "la-live"]);
+
 export function clusterTypeLabel(type) {
   const labels = {
     mall: "Shopping mall",
-    airport: "Airport terminal",
+    airport: "Airport",
     stadium: "Stadium district",
-    casino: "Casino",
+    casino: "Casino resort",
     entertainment_complex: "Entertainment district",
     university: "University",
     downtown: "Downtown",
@@ -48,6 +66,26 @@ export function clusterTypeLabel(type) {
     other: "Destination",
   };
   return labels[String(type || "").toLowerCase()] || "Destination";
+}
+
+export function clusterDestinationCategoryLabel(type) {
+  const labels = {
+    university: "Universities",
+    downtown: "Downtowns",
+    airport: "Airports",
+    entertainment_complex: "Entertainment Districts",
+    tourist_destination: "Tourist Destinations",
+    stadium: "Stadium Districts",
+    convention_district: "Convention Districts",
+    historic_district: "Historic Districts",
+    waterfront: "Waterfronts",
+    casino: "Casino Resorts",
+    theme_park: "Theme Parks",
+    business_district: "Business Districts",
+    mall: "Shopping Malls",
+    other: "Other Destinations",
+  };
+  return labels[String(type || "").toLowerCase()] || "Destinations";
 }
 
 export function clusterVerificationBadge(level) {
@@ -107,6 +145,65 @@ export function groupClustersByStateCity(clusters) {
 
 function cityEntryExists(stateEntry, cityKey) {
   return stateEntry.cities.has(cityKey);
+}
+
+export function listUsStateCodes() {
+  return Object.keys(STATE_NAMES)
+    .sort((a, b) => stateDisplayName(a).localeCompare(stateDisplayName(b)));
+}
+
+/**
+ * United States → State → Destination Type → Cluster
+ * Every state exposes the same destination categories (empty types included).
+ */
+export function groupClustersByStateAndType(clusters, { destinationTypes = CLUSTER_DESTINATION_TYPES } = {}) {
+  const types = Array.isArray(destinationTypes) ? destinationTypes : CLUSTER_DESTINATION_TYPES;
+  const clustersByStateType = new Map();
+
+  if (Array.isArray(clusters)) {
+    for (const cluster of clusters) {
+      const stateKey = String(cluster.state || "").trim().toUpperCase();
+      const typeKey = String(cluster.type || "").trim().toLowerCase();
+      if (!stateKey || !typeKey) continue;
+      if (!clustersByStateType.has(stateKey)) clustersByStateType.set(stateKey, new Map());
+      const typeMap = clustersByStateType.get(stateKey);
+      if (!typeMap.has(typeKey)) typeMap.set(typeKey, []);
+      typeMap.get(typeKey).push(cluster);
+    }
+  }
+
+  return listUsStateCodes().map((state) => {
+    const typeMap = clustersByStateType.get(state) || new Map();
+    const destinationTypesForState = types.map((type) => {
+      const items = [...(typeMap.get(type) || [])].sort((a, b) =>
+        String(a.name || "").localeCompare(String(b.name || ""))
+      );
+      return {
+        type,
+        label: clusterDestinationCategoryLabel(type),
+        clusters: items,
+        count: items.length,
+      };
+    });
+    const clusterCount = destinationTypesForState.reduce((sum, entry) => sum + entry.count, 0);
+    return {
+      state,
+      stateLabel: stateDisplayName(state),
+      stateSlug: toStateSlug(state),
+      destinationTypes: destinationTypesForState,
+      clusterCount,
+    };
+  });
+}
+
+export function resolveFeaturedClusters(featured = [], clusters = []) {
+  if (Array.isArray(featured) && featured.length > 0) return featured;
+  const pool = Array.isArray(clusters) ? clusters : [];
+  const fallback = pool.filter((cluster) =>
+    FEATURED_CLUSTER_FALLBACK_SLUGS.includes(String(cluster.slug || "").toLowerCase())
+  );
+  if (fallback.length > 0) return fallback;
+  return pool.slice(0, 6);
 }
 
 /** Reserved for future cluster tabs/sections — not rendered yet. */
