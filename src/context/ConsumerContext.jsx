@@ -96,12 +96,6 @@ export function ConsumerProvider({ children }) {
     }
   }, [applySession, clearSession, publishSessionToast]);
 
-  useEffect(() => {
-    loadMe()
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [loadMe]);
-
   const maybeResetMenuPreferenceSession = useCallback((data, preferences) => {
     const dietEnabled = Array.isArray(preferences?.dietary_preferences)
       && preferences.dietary_preferences.some((row) => row?.is_enabled === true);
@@ -111,6 +105,23 @@ export function ConsumerProvider({ children }) {
       resetMenuPreferenceSessionForLogin();
     }
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadMe()
+      .then((data) => {
+        if (cancelled || !data?.consumer?.id) return;
+        maybeResetMenuPreferenceSession(data, {
+          dietary_preferences: data?.dietary_preferences,
+          allergen_preferences: data?.allergen_preferences,
+        });
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [loadMe, maybeResetMenuPreferenceSession]);
 
   const login = useCallback(async (email, password) => {
     await loginConsumer(email, password);

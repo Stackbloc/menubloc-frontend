@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  MENU_CATALOG_APPLY_DIETARY_PREFERENCES_KEY,
   MENU_PREFERENCE_DETAILED_BANNER_SEEN_KEY,
   readCatalogApplyDietaryPreferences,
   writeCatalogApplyDietaryPreferences,
   resetMenuPreferenceSessionForLogin,
+  __resetDietaryPreferencesOptOutForTests,
 } from "../src/lib/menuCatalogBrowsePreferences.js";
 
 const storage = new Map();
@@ -18,24 +18,24 @@ global.window = {
   },
 };
 
-test("catalog dietary preferences default on (opt-out only)", () => {
+test.beforeEach(() => {
   storage.clear();
+  __resetDietaryPreferencesOptOutForTests();
+});
+
+test("catalog dietary preferences default on (opt-out only)", () => {
   assert.equal(readCatalogApplyDietaryPreferences(), true);
 });
 
-test("catalog dietary preferences persist opt-out for browse session", () => {
-  storage.clear();
+test("catalog dietary preferences opt-out is in-memory for SPA navigation", () => {
   writeCatalogApplyDietaryPreferences(false);
-  assert.equal(storage.get(MENU_CATALOG_APPLY_DIETARY_PREFERENCES_KEY), "0");
   assert.equal(readCatalogApplyDietaryPreferences(), false);
 
   writeCatalogApplyDietaryPreferences(true);
   assert.equal(readCatalogApplyDietaryPreferences(), true);
-  assert.equal(storage.has(MENU_CATALOG_APPLY_DIETARY_PREFERENCES_KEY), false);
 });
 
 test("login reset clears opt-out and first-menu banner flag", () => {
-  storage.clear();
   writeCatalogApplyDietaryPreferences(false);
   storage.set(MENU_PREFERENCE_DETAILED_BANNER_SEEN_KEY, "1");
 

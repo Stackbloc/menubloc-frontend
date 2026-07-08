@@ -168,7 +168,9 @@ export default function CatalogMenuRenderer({
     dietPreferenceActive,
     allergenPreferenceActive,
   } = useSavedMenuPreferences();
-  const [applySavedPreferences, setApplySavedPreferences] = useCatalogDietaryPreferencesSession();
+  const [applySavedPreferences, setApplySavedPreferences] = useCatalogDietaryPreferencesSession(
+    dietPreferenceActive
+  );
   const preferenceBannerVisible = hasSavedPreferences;
   const { isFirstMenuView } = useMenuPreferenceBannerSession(preferenceBannerVisible);
 

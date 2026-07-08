@@ -16,7 +16,7 @@ function read(rel) {
 function testPublicMenuUsesSessionDefaultApply() {
   const src = read("src/pages/PublicMenuPage.jsx");
   assert.match(src, /useCatalogDietaryPreferencesSession/);
-  assert.match(src, /const \[applySavedPreferences, setApplySavedPreferences\] = useCatalogDietaryPreferencesSession\(\)/);
+  assert.match(src, /useCatalogDietaryPreferencesSession\(\s*dietPreferenceActive\s*\)/);
 }
 
 function testCatalogMenuUsesSessionDefaultApply() {
@@ -27,8 +27,8 @@ function testCatalogMenuUsesSessionDefaultApply() {
 
 function testSessionDefaultIsApplyOn() {
   const src = read("src/lib/menuCatalogBrowsePreferences.js");
-  assert.match(src, /stored === "0"/);
-  assert.match(src, /return true/);
+  assert.match(src, /dietaryPreferencesOptedOut/);
+  assert.match(src, /return !dietaryPreferencesOptedOut/);
 }
 
 function testAllergensAlwaysAppliedOnMenus() {

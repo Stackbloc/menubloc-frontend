@@ -67,13 +67,13 @@ import {
   getMenuDisplaySectionsWithPreferences,
 } from "../lib/menuClientPreferenceFilter.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
-import { toConsumerErrorMessage } from "../lib/api.js";
+import { toConsumerErrorMessage, API_BASE } from "../lib/api.js";
 import { trackRestaurantView } from "../lib/analytics.js";
 import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import TasteIndexBadge from "../components/TasteIndexBadge.jsx";
 
-const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
+const API = API_BASE;
 
 /* ---- Utilities ---- */
 
@@ -763,7 +763,9 @@ export default function PublicMenuPage() {
     dietPreferenceActive,
     allergenPreferenceActive,
   } = useSavedMenuPreferences();
-  const [applySavedPreferences, setApplySavedPreferences] = useCatalogDietaryPreferencesSession();
+  const [applySavedPreferences, setApplySavedPreferences] = useCatalogDietaryPreferencesSession(
+    dietPreferenceActive
+  );
   const preferenceBannerVisible = hasSavedPreferences;
   const { isFirstMenuView } = useMenuPreferenceBannerSession(preferenceBannerVisible);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -828,14 +830,16 @@ export default function PublicMenuPage() {
           json?.restaurant?.restaurant_id
         );
         if (!res.ok || resolvedRestaurantId == null) {
+          const msg = toConsumerErrorMessage(
+            json?.detail || json?.error || "We couldn't resolve this menu link.",
+            "We couldn't resolve this menu link right now."
+          );
           setResolvedRouteState({
             status: "error",
             restaurantId: "",
-            error: toConsumerErrorMessage(
-              json?.detail || json?.error || "We couldn't resolve this menu link.",
-              "We couldn't resolve this menu link right now."
-            ),
+            error: msg,
           });
+          setPageState({ status: "error", data: null, error: msg });
           return;
         }
 
@@ -846,14 +850,16 @@ export default function PublicMenuPage() {
         });
       } catch (error) {
         if (cancelled) return;
+        const msg = toConsumerErrorMessage(
+          error,
+          "We couldn't resolve this menu link right now."
+        );
         setResolvedRouteState({
           status: "error",
           restaurantId: "",
-          error: toConsumerErrorMessage(
-            error,
-            "We couldn't resolve this menu link right now."
-          ),
+          error: msg,
         });
+        setPageState({ status: "error", data: null, error: msg });
       }
     }
 
@@ -1305,7 +1311,9 @@ export default function PublicMenuPage() {
           intakeBannerSlot: (
             <>
               <IntakePreviewBanner show={isIntakePreview} />
-              {!isIntakePreview ? <MenuPurchaseWaiterHint /> : null}
+              {!isIntakePreview ? (
+                <MenuPurchaseWaiterHint sticky stickyBackground={resolvedPageBackground} />
+              ) : null}
             </>
           ),
           allergenBannerSlot: (
@@ -1354,7 +1362,24 @@ export default function PublicMenuPage() {
         }
       : null;
 
-  if (!isMenuTemplatePreview && (routeState.status === "loading" || pageState.status === "loading")) {
+  if (!isMenuTemplatePreview && routeState.status === "loading") {
+    return (
+      <div style={pageShellStyle}>
+        <StickyPageHeader
+          barBackground={resolvedPageBackground}
+          linkAccent={menuBrand?.accent}
+          dealsPillBackground={menuBrand?.accentSoftBg}
+          dealsPillBorder={menuBrand ? `1.5px solid ${menuBrand.accentBorder}` : undefined}
+          logoPageColor={resolvedPageBackground}
+        />
+        <div style={{ maxWidth: 860, margin: "0 auto", padding: isMobile ? "16px 12px" : "28px 20px", color: "#101828" }}>
+          <div style={{ fontSize: 14, color: "#667085", fontWeight: 600 }}>Loading menu…</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isMenuTemplatePreview && routeState.status === "ok" && pageState.status === "loading") {
     return (
       <div style={pageShellStyle}>
         <StickyPageHeader
