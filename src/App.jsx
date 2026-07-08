@@ -205,6 +205,13 @@ function CrmLegacyRedirect() {
   return <Navigate to={`${nextPath}${location.search || ""}${location.hash || ""}`} replace />;
 }
 
+function CrmClustersAdminRedirect() {
+  const { id } = useParams();
+  const location = useLocation();
+  const base = id ? `/clusters/admin/${id}` : "/clusters/admin";
+  return <Navigate to={`${base}${location.search || ""}${location.hash || ""}`} replace />;
+}
+
 export function ConsumerLegacyRedirect({ nextPath }) {
   const location = useLocation();
   return <Navigate to={`${nextPath}${location.search || ""}${location.hash || ""}`} replace />;
@@ -559,6 +566,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/home-next" element={crmHost ? <HostRouteRedirect to="/crm" /> : <HomeNext />} />
 
         <Route path="/clusters" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClustersDirectoryPage />} />
+        <Route path="/clusters/admin" element={<CrmRoute><CrmClusterList /></CrmRoute>} />
+        <Route path="/clusters/admin/:id" element={<CrmRoute><CrmClusterDetail /></CrmRoute>} />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
         <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />
@@ -737,8 +746,8 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/crm/referral-prospects/:id" element={<CrmRoute><CrmBusinessDevelopmentDetail /></CrmRoute>} />
         <Route path="/crm/tasks" element={<CrmRoute><CrmTasks /></CrmRoute>} />
         <Route path="/crm/seed-explorer" element={<CrmRoute><CrmSeedExplorer /></CrmRoute>} />
-        <Route path="/crm/clusters" element={<CrmRoute><CrmClusterList /></CrmRoute>} />
-        <Route path="/crm/clusters/:id" element={<CrmRoute><CrmClusterDetail /></CrmRoute>} />
+        <Route path="/crm/clusters" element={<Navigate to="/clusters/admin" replace />} />
+        <Route path="/crm/clusters/:id" element={<CrmClustersAdminRedirect />} />
         <Route path="/crm/reports" element={<CrmRoute><CrmReports /></CrmRoute>} />
         <Route path="/crm/qr-inventory" element={<CrmRoute><CrmQrInventory /></CrmRoute>} />
         <Route path="/admin/crm" element={<CrmLegacyRedirect />} />

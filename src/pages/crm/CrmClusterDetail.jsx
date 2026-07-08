@@ -263,7 +263,7 @@ export default function CrmClusterDetail() {
           <button type="button" onClick={() => setShowClone(true)} style={secondaryButtonStyle}>
             Clone Cluster
           </button>
-          <Link to="/crm/clusters" style={{ ...secondaryButtonStyle, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+          <Link to="/clusters/admin" style={{ ...secondaryButtonStyle, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
             Back to list
           </Link>
           {preview?.cluster?.public_path ? (

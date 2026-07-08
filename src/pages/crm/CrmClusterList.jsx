@@ -97,7 +97,7 @@ export default function CrmClusterList() {
         label: "Cluster",
         render: (row) => (
           <div>
-            <Link to={`/crm/clusters/${row.id}`} style={{ color: CRM_COLORS.accent, fontWeight: 700, textDecoration: "none" }}>
+            <Link to={`/clusters/admin/${row.id}`} style={{ color: CRM_COLORS.accent, fontWeight: 700, textDecoration: "none" }}>
               {row.name}
             </Link>
             <div style={{ marginTop: 4, fontSize: 12, color: CRM_COLORS.muted }}>{row.slug}</div>

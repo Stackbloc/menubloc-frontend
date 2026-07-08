@@ -183,7 +183,7 @@ export default function CrmClusterCloneModal({ source, types = [], onClose, onCr
       }
       onCreated?.(json.cluster);
       setStep("done");
-      navigate(`/crm/clusters/${json.cluster.id}`);
+      navigate(`/clusters/admin/${json.cluster.id}`);
     } catch (err) {
       setError(err.message || "Unable to clone cluster");
     } finally {
