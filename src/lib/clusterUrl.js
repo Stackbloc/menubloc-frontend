@@ -38,9 +38,22 @@ export function clusterTypeLabel(type) {
     casino: "Casino",
     entertainment_complex: "Entertainment district",
     university: "University",
+    downtown: "Downtown",
+    tourist_destination: "Tourist destination",
+    convention_district: "Convention district",
+    historic_district: "Historic district",
+    waterfront: "Waterfront",
+    theme_park: "Theme park",
+    business_district: "Business district",
     other: "Destination",
   };
   return labels[String(type || "").toLowerCase()] || "Destination";
+}
+
+export function clusterVerificationBadge(level) {
+  const normalized = String(level || "").toLowerCase();
+  if (normalized === "community") return "🟡 Community Cluster";
+  return "🟢 Verified Cluster";
 }
 
 export function clusterMembershipHeading(type) {

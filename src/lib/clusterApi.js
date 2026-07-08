@@ -1,4 +1,4 @@
-import { apiGet } from "./api.js";
+import { apiGet, apiPost } from "./api.js";
 
 export async function fetchClustersDirectory({ q, state, city, type, limit = 100, offset = 0, signal } = {}) {
   const params = new URLSearchParams();
@@ -10,6 +10,20 @@ export async function fetchClustersDirectory({ q, state, city, type, limit = 100
   if (offset != null) params.set("offset", String(offset));
   const qs = params.toString();
   return apiGet(`/public/clusters${qs ? `?${qs}` : ""}`, { signal });
+}
+
+export async function previewCommunityClusterCandidates(payload, { signal } = {}) {
+  if (signal) {
+    // apiPost does not support AbortSignal yet.
+  }
+  return apiPost("/public/clusters/community/preview-candidates", payload || {});
+}
+
+export async function createCommunityCluster(payload, { signal } = {}) {
+  if (signal) {
+    // apiPost does not support AbortSignal yet.
+  }
+  return apiPost("/public/clusters/community", payload || {});
 }
 
 export async function fetchClusterMetadata(clusterSlug, { stateSlug, citySlug, signal } = {}) {

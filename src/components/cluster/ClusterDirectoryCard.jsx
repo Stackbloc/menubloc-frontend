@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { clusterPath, clusterTypeLabel } from "../../lib/clusterUrl.js";
+import { clusterPath, clusterTypeLabel, clusterVerificationBadge } from "../../lib/clusterUrl.js";
 
 export default function ClusterDirectoryCard({ cluster }) {
   if (!cluster) return null;
@@ -32,6 +32,9 @@ export default function ClusterDirectoryCard({ cluster }) {
     >
       <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "#111827" }}>{title}</div>
       <div style={{ color: "#6b7280", fontSize: "0.9rem" }}>{typeLabel}</div>
+      <div style={{ color: "#374151", fontSize: "0.82rem", fontWeight: 600 }}>
+        {clusterVerificationBadge(cluster.verification_level)}
+      </div>
       {cluster.city && cluster.state ? (
         <div style={{ color: "#6b7280", fontSize: "0.85rem" }}>
           {cluster.city}, {cluster.state}

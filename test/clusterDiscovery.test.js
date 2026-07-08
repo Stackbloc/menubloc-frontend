@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   clusterMembershipAction,
   clusterMembershipHeading,
+  clusterTypeLabel,
+  clusterVerificationBadge,
   groupClustersByStateCity,
   stateDisplayName,
 } from "../src/lib/clusterUrl.js";
@@ -30,4 +32,11 @@ test("cluster membership copy varies by cluster type", () => {
   assert.equal(clusterMembershipHeading("entertainment_complex"), "Located in");
   assert.equal(clusterMembershipAction("university"), "View Cluster →");
   assert.equal(clusterMembershipAction("mall"), "Explore Cluster →");
+});
+
+test("cluster type and verification labels include community discovery types", () => {
+  assert.equal(clusterTypeLabel("downtown"), "Downtown");
+  assert.equal(clusterTypeLabel("tourist_destination"), "Tourist destination");
+  assert.equal(clusterVerificationBadge("community"), "🟡 Community Cluster");
+  assert.equal(clusterVerificationBadge("verified"), "🟢 Verified Cluster");
 });

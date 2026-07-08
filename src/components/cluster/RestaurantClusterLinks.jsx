@@ -4,6 +4,7 @@ import {
   clusterMembershipAction,
   clusterMembershipHeading,
   clusterPath,
+  clusterVerificationBadge,
 } from "../../lib/clusterUrl.js";
 
 export default function RestaurantClusterLinks({ clusters, linkColor = "#1d4ed8" }) {
@@ -28,6 +29,9 @@ export default function RestaurantClusterLinks({ clusters, linkColor = "#1d4ed8"
               {heading}:
             </div>
             <div style={{ fontWeight: 600 }}>{label}</div>
+            <div style={{ fontSize: 12, opacity: 0.85 }}>
+              {clusterVerificationBadge(cluster.verification_level)}
+            </div>
             <Link
               to={href}
               style={{

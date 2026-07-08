@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { parseCityStateSlug } from "../lib/cityStateSlug";
 import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../lib/canonicalUrl.js";
+import { fetchClustersDirectory } from "../lib/clusterApi.js";
+import { clusterPath } from "../lib/clusterUrl.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const CANONICAL_BASE = "https://menuply.com";
@@ -11,6 +13,7 @@ export default function MarketAggregatorPage() {
   const parsed = parseCityStateSlug(slugOrId);
 
   const [state, setState] = useState({ status: "loading", market: null, restaurants: [] });
+  const [clusters, setClusters] = useState([]);
 
   // Canonical URL
   useEffect(() => {
@@ -22,6 +25,13 @@ export default function MarketAggregatorPage() {
     }
     link.href = `${CANONICAL_BASE}/restaurants/${slugOrId}`;
   }, [slugOrId]);
+
+  useEffect(() => {
+    if (!parsed) return;
+    fetchClustersDirectory({ state: parsed.state, city: parsed.city, limit: 20 })
+      .then((json) => setClusters(Array.isArray(json?.clusters) ? json.clusters : []))
+      .catch(() => setClusters([]));
+  }, [parsed]);
 
   // Page title
   useEffect(() => {
@@ -82,6 +92,39 @@ export default function MarketAggregatorPage() {
       <p style={{ color: "#666", marginBottom: "1.5rem" }}>
         {market.restaurant_count} restaurant{market.restaurant_count !== 1 ? "s" : ""}
       </p>
+
+      {clusters.length > 0 ? (
+        <section style={{ marginBottom: "1.5rem" }}>
+          <h2 style={{ margin: "0 0 0.55rem", fontSize: "1.05rem" }}>Explore Nearby Clusters</h2>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            {clusters.map((cluster) => {
+              const href = clusterPath({
+                state: cluster.state,
+                city: cluster.city,
+                slug: cluster.slug,
+              });
+              if (!href) return null;
+              return (
+                <Link
+                  key={cluster.slug}
+                  to={href}
+                  style={{
+                    border: "1px solid #d1d5db",
+                    borderRadius: 999,
+                    padding: "0.3rem 0.65rem",
+                    textDecoration: "none",
+                    color: "#111827",
+                    fontSize: "0.86rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  {cluster.area_name || cluster.name}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       {restaurants.length === 0 ? (
         <p style={{ color: "#888" }}>No restaurants found in this market yet.</p>

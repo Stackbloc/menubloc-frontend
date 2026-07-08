@@ -124,6 +124,7 @@ import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
 import MarketAggregatorPage from "./pages/MarketAggregatorPage.jsx";
 import ClusterPage from "./pages/ClusterPage.jsx";
 import ClustersDirectoryPage from "./pages/ClustersDirectoryPage.jsx";
+import CommunityClusterCreatePage from "./pages/CommunityClusterCreatePage.jsx";
 import MarketMenuItemPage from "./pages/MarketMenuItemPage.jsx";
 import MenuItemCanonicalRoute from "./pages/MenuItemCanonicalRoute.jsx";
 import MenuThemesPage from "./pages/MenuThemesPage.jsx";
@@ -567,6 +568,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/home-next" element={crmHost ? <HostRouteRedirect to="/crm" /> : <HomeNext />} />
 
         <Route path="/clusters" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClustersDirectoryPage />} />
+        <Route path="/clusters/community/new" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CommunityClusterCreatePage />} />
         <Route path="/clusters/admin" element={<CrmRoute><CrmClusterList /></CrmRoute>} />
         <Route path="/clusters/admin/:id" element={<CrmRoute><CrmClusterDetail /></CrmRoute>} />
         <Route path="/clusters/admin/:id/preview" element={<CrmRoute><CrmClusterPreviewPage /></CrmRoute>} />
