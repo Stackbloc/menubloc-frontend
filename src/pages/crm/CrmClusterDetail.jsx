@@ -4,6 +4,7 @@ import {
   addCrmClusterRestaurant,
   checkCrmClusterDuplicates,
   getCrmCluster,
+  getCrmClusterPublishChecklist,
   getCrmClusterPreview,
   previewCrmClusterRadius,
   removeCrmClusterRestaurant,
@@ -56,6 +57,7 @@ export default function CrmClusterDetail() {
   const [restaurants, setRestaurants] = useState([]);
   const [stats, setStats] = useState(null);
   const [types, setTypes] = useState([]);
+  const [statuses, setStatuses] = useState([]);
   const [form, setForm] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -71,7 +73,9 @@ export default function CrmClusterDetail() {
   const [manualResults, setManualResults] = useState([]);
   const [duplicateWarnings, setDuplicateWarnings] = useState([]);
   const [preview, setPreview] = useState(null);
+  const [checklist, setChecklist] = useState(null);
   const [showClone, setShowClone] = useState(false);
+  const [lifecycleBusy, setLifecycleBusy] = useState(false);
 
   async function load() {
     setError("");
@@ -80,6 +84,7 @@ export default function CrmClusterDetail() {
     setRestaurants(Array.isArray(json.restaurants) ? json.restaurants : []);
     setStats(json.stats || null);
     setTypes(Array.isArray(json.types) ? json.types : []);
+    setStatuses(Array.isArray(json.statuses) ? json.statuses : []);
     setForm({
       name: json.cluster?.name || "",
       slug: json.cluster?.slug || "",
@@ -97,12 +102,19 @@ export default function CrmClusterDetail() {
       disclaimer_override: json.cluster?.disclaimer_override || "",
       is_public: json.cluster?.is_public !== false,
       is_active: json.cluster?.is_active !== false,
+      status: json.cluster?.status || "draft",
     });
     setSelectedIds(new Set((json.restaurants || []).map((row) => Number(row.restaurant_id))));
   }
 
   useEffect(() => {
     load().catch((err) => setError(err.message || "Unable to load cluster"));
+  }, [id]);
+
+  useEffect(() => {
+    getCrmClusterPublishChecklist(id)
+      .then((json) => setChecklist(json.checklist || null))
+      .catch((err) => setError(err.message || "Unable to load publish checklist"));
   }, [id]);
 
   const orderedIds = useMemo(
@@ -138,6 +150,37 @@ export default function CrmClusterDetail() {
       setError(err.message || "Unable to save cluster");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function applyLifecycle(action) {
+    const updatesByAction = {
+      draft: { status: "draft", is_public: false, is_active: true, message: "Saved as draft." },
+      review: { status: "review", is_public: false, is_active: true, message: "Marked ready for review." },
+      publish: { status: "published", is_public: true, is_active: true, message: "Cluster published." },
+      archive: { status: "archived", is_public: false, is_active: false, message: "Cluster archived." },
+      unpublish: { status: "review", is_public: false, is_active: true, message: "Cluster unpublished." },
+    };
+    const next = updatesByAction[action];
+    if (!next) return;
+
+    if (action === "publish" && !window.confirm("Publish this cluster publicly now?")) return;
+    if (action === "archive" && !window.confirm("Archive this cluster? It will be hidden from public pages.")) return;
+    if (action === "unpublish" && !window.confirm("Unpublish this cluster? It will be hidden from public pages.")) return;
+
+    setLifecycleBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      await updateCrmCluster(id, { ...form, ...next });
+      setSuccess(next.message);
+      await load();
+      const checklistJson = await getCrmClusterPublishChecklist(id);
+      setChecklist(checklistJson.checklist || null);
+    } catch (err) {
+      setError(err.message || "Unable to update cluster lifecycle.");
+    } finally {
+      setLifecycleBusy(false);
     }
   }
 
@@ -266,6 +309,12 @@ export default function CrmClusterDetail() {
           <Link to="/clusters/admin" style={{ ...secondaryButtonStyle, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
             Back to list
           </Link>
+          <Link
+            to={`/clusters/admin/${id}/preview`}
+            style={{ ...secondaryButtonStyle, textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+          >
+            Open admin preview
+          </Link>
           {preview?.cluster?.public_path ? (
             <a href={preview.cluster.public_path} target="_blank" rel="noreferrer" style={{ ...secondaryButtonStyle, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
               Open public page
@@ -304,7 +353,7 @@ export default function CrmClusterDetail() {
               <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" style={inputStyle} />
               <input required value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="Slug" style={inputStyle} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 90px", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 90px 1fr", gap: 8 }}>
               <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} style={inputStyle}>
                 {types.map((type) => (
                   <option key={type} value={type}>
@@ -314,6 +363,13 @@ export default function CrmClusterDetail() {
               </select>
               <input required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="City" style={inputStyle} />
               <input required value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value.toUpperCase().slice(0, 2) })} placeholder="ST" style={inputStyle} />
+              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} style={inputStyle}>
+                {(statuses.length ? statuses : ["draft", "review", "published", "archived"]).map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
             </div>
             <input value={form.address_line1} onChange={(e) => setForm({ ...form, address_line1: e.target.value })} placeholder="Address" style={inputStyle} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -385,6 +441,47 @@ export default function CrmClusterDetail() {
           )}
         </CrmCard>
       </div>
+
+      <CrmCard title="Lifecycle controls" subtitle="Draft, review, publish, archive, and unpublish controls.">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <button type="button" onClick={() => applyLifecycle("draft")} disabled={lifecycleBusy} style={secondaryButtonStyle}>
+            Save Draft
+          </button>
+          <button type="button" onClick={() => applyLifecycle("review")} disabled={lifecycleBusy} style={secondaryButtonStyle}>
+            Mark Ready for Review
+          </button>
+          <button type="button" onClick={() => applyLifecycle("publish")} disabled={lifecycleBusy} style={buttonStyle}>
+            Publish
+          </button>
+          <button type="button" onClick={() => applyLifecycle("archive")} disabled={lifecycleBusy} style={secondaryButtonStyle}>
+            Archive
+          </button>
+          <button type="button" onClick={() => applyLifecycle("unpublish")} disabled={lifecycleBusy} style={secondaryButtonStyle}>
+            Unpublish
+          </button>
+        </div>
+        <div style={{ marginTop: 10, fontSize: 13, color: CRM_COLORS.muted }}>
+          Current status: <strong>{form.status || "draft"}</strong>
+        </div>
+        {checklist?.checks?.length ? (
+          <div style={{ marginTop: 10, display: "grid", gap: 4 }}>
+            {checklist.checks.map((check) => (
+              <div
+                key={check.key}
+                style={{
+                  fontSize: 13,
+                  color: check.ok ? "#065f46" : check.required ? "#b91c1c" : "#9a3412",
+                }}
+              >
+                {check.ok ? "✓" : check.required ? "!" : "•"} {check.label}
+                {check.required ? " (required)" : " (recommended)"}
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </CrmCard>
+
+      <div style={{ height: 18 }} />
 
       <CrmCard title="Automatic Assignment" subtitle="Enter a radius, preview candidates, then confirm before saving.">
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>

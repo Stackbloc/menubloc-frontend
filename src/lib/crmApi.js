@@ -122,6 +122,8 @@ export const cloneCrmCluster = (clusterId, body = {}) =>
   post(`/api/crm/clusters/${encodeURIComponent(clusterId)}/clone`, body);
 export const getCrmClusterStats = (clusterId) => get(`/api/crm/clusters/${encodeURIComponent(clusterId)}/stats`);
 export const getCrmClusterPreview = (clusterId) => get(`/api/crm/clusters/${encodeURIComponent(clusterId)}/preview`);
+export const getCrmClusterPublishChecklist = (clusterId) =>
+  get(`/api/crm/clusters/${encodeURIComponent(clusterId)}/publish-checklist`);
 export const getCrmClusterRestaurants = (clusterId) =>
   get(`/api/crm/clusters/${encodeURIComponent(clusterId)}/restaurants`);
 export const previewCrmClusterRadius = (clusterId, body = {}) =>

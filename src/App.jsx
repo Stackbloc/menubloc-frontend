@@ -173,6 +173,7 @@ import CrmTasks from "./pages/crm/CrmTasks.jsx";
 import CrmSeedExplorer from "./pages/crm/CrmSeedExplorer.jsx";
 import CrmClusterList from "./pages/crm/CrmClusterList.jsx";
 import CrmClusterDetail from "./pages/crm/CrmClusterDetail.jsx";
+import CrmClusterPreviewPage from "./pages/crm/CrmClusterPreviewPage.jsx";
 import CrmBusinessDevelopment from "./pages/crm/CrmBusinessDevelopment.jsx";
 import CrmBusinessDevelopmentDetail from "./pages/crm/CrmBusinessDevelopmentDetail.jsx";
 import CrmReports from "./pages/crm/CrmReports.jsx";
@@ -568,6 +569,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/clusters" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClustersDirectoryPage />} />
         <Route path="/clusters/admin" element={<CrmRoute><CrmClusterList /></CrmRoute>} />
         <Route path="/clusters/admin/:id" element={<CrmRoute><CrmClusterDetail /></CrmRoute>} />
+        <Route path="/clusters/admin/:id/preview" element={<CrmRoute><CrmClusterPreviewPage /></CrmRoute>} />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
         <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />

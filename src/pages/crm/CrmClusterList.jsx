@@ -35,6 +35,7 @@ const EMPTY_CREATE = {
   description: "",
   website: "",
   hero_image_url: "",
+  status: "draft",
 };
 
 const inputStyle = {
@@ -69,6 +70,7 @@ export default function CrmClusterList() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [clusters, setClusters] = useState([]);
   const [types, setTypes] = useState([]);
+  const [statuses, setStatuses] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [creating, setCreating] = useState(false);
@@ -81,6 +83,7 @@ export default function CrmClusterList() {
       const json = await getCrmClusters(nextFilters);
       setClusters(Array.isArray(json.clusters) ? json.clusters : []);
       setTypes(Array.isArray(json.types) ? json.types : []);
+      setStatuses(Array.isArray(json.statuses) ? json.statuses : []);
     } catch (err) {
       setError(err.message || "Unable to load clusters");
     }
@@ -116,10 +119,7 @@ export default function CrmClusterList() {
         key: "status",
         label: "Status",
         render: (row) => (
-          <Badge
-            type="account"
-            value={row.is_active === false ? "inactive" : row.is_public === false ? "private" : "active"}
-          />
+          <Badge type="account" value={row.status || "published"} />
         ),
       },
       {
@@ -244,6 +244,13 @@ export default function CrmClusterList() {
                   </option>
                 )
               )}
+            </select>
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} style={inputStyle}>
+              {(statuses.length ? statuses : ["draft", "review", "published", "archived"]).map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
             </select>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", gap: 8 }}>
               <input required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="City" style={inputStyle} />
