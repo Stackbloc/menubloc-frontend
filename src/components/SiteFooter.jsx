@@ -61,16 +61,12 @@ export default function SiteFooter() {
             flex: "0 0 auto",
           }}
         >
-          <Link to="/diner/signup" style={footerLinkStyle}>
-            Diners
+          <Link to="/restaurant/onboarding" style={footerLinkStyle}>
+            {t("discovery.footer.signup", "Signup")}
           </Link>
 
-          <Link to="/restaurants" style={footerLinkStyle}>
-            {t("discovery.footer.restaurants", "Restaurants")}
-          </Link>
-
-          <Link to="/creative-pros" style={footerLinkStyle}>
-            {t("discovery.footer.creators", "Creators")}
+          <Link to="/operator/login" style={footerLinkStyle}>
+            {t("discovery.footer.signin", "Sign in")}
           </Link>
 
           <Link to="/terms" style={footerLinkStyle}>
