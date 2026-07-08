@@ -1,385 +1,363 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
-import ClusterDirectoryCard from "../components/cluster/ClusterDirectoryCard.jsx";
-import { fetchClustersDirectory } from "../lib/clusterApi.js";
+import { BrandLogo } from "../components/BrandLogo.jsx";
+import { useConsumer } from "../context/ConsumerContext.jsx";
+import { createCommunityCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
-import { reverseGeocode } from "../lib/locationUtils.js";
 import {
   CLUSTER_DESTINATION_TYPES,
   clusterDestinationCategoryLabel,
-  groupClustersByStateAndType,
-  resolveFeaturedClusters,
+  clusterPath,
+  clusterTypeLabel,
   stateDisplayName,
 } from "../lib/clusterUrl.js";
 
-const BENEFIT_CARDS = [
-  {
-    title: "Discover",
-    body: "Explore restaurants by destination instead of searching one restaurant at a time.",
-  },
-  {
-    title: "Compare",
-    body: "Browse menus from multiple nearby restaurants from one destination.",
-  },
-  {
-    title: "Share",
-    body: "Share destinations with friends before you meet, travel, attend an event, or explore a city.",
-  },
+const TYPE_ACCENTS = {
+  university: { border: "#8b5cf6", bg: "#f5f3ff" },
+  airport: { border: "#0ea5e9", bg: "#ecfeff" },
+  downtown: { border: "#f97316", bg: "#fff7ed" },
+  entertainment_complex: { border: "#ec4899", bg: "#fdf2f8" },
+  tourist_destination: { border: "#16a34a", bg: "#f0fdf4" },
+  stadium: { border: "#2563eb", bg: "#eff6ff" },
+  convention_district: { border: "#14b8a6", bg: "#f0fdfa" },
+  historic_district: { border: "#a16207", bg: "#fefce8" },
+  waterfront: { border: "#0891b2", bg: "#ecfeff" },
+  casino: { border: "#b91c1c", bg: "#fef2f2" },
+  theme_park: { border: "#7c3aed", bg: "#f5f3ff" },
+  business_district: { border: "#4b5563", bg: "#f9fafb" },
+};
+
+const INITIAL_FORM = {
+  name: "",
+  state: "",
+  city: "",
+  type: "university",
+  anchor_location: "",
+  lat: "",
+  lng: "",
+  radius_miles: "1.5",
+  short_description: "",
+};
+
+const US_STATE_CODES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC",
 ];
 
-function emptyTypeMessage(type, globalTypeCounts) {
-  const globalCount = globalTypeCounts.get(type) || 0;
-  return globalCount > 0 ? "No Community Clusters Yet" : "Coming Soon";
-}
-
 export default function ClustersDirectoryPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { isAuthenticated, consumer } = useConsumer();
   const [clusters, setClusters] = useState([]);
-  const [featuredClusters, setFeaturedClusters] = useState([]);
-  const [typeCounts, setTypeCounts] = useState([]);
+  const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [query, setQuery] = useState(() => String(searchParams.get("q") || ""));
-  const [typeFilter, setTypeFilter] = useState(() => String(searchParams.get("type") || ""));
-  const [expandedStates, setExpandedStates] = useState(() => {
-    const state = String(searchParams.get("state") || "").trim().toUpperCase();
-    return state ? new Set([state]) : new Set();
-  });
-  const [detectedState, setDetectedState] = useState(null);
+  const [submitBusy, setSubmitBusy] = useState(false);
+  const [form, setForm] = useState(INITIAL_FORM);
 
   useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) return undefined;
-    let cancelled = false;
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const geo = await reverseGeocode(position.coords.latitude, position.coords.longitude);
-          const state = String(geo?.state || "").trim().toUpperCase();
-          if (!cancelled && state) {
-            setDetectedState(state);
-            setExpandedStates((current) => {
-              if (current.size > 0) return current;
-              return new Set([state]);
-            });
-          }
-        } catch {
-          // Location is optional — browsing remains unrestricted.
-        }
-      },
-      () => {},
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
     async function load() {
       setLoading(true);
       setError("");
       try {
-        const json = await fetchClustersDirectory({
-          q: query.trim() || undefined,
-          type: typeFilter || undefined,
-          limit: 200,
-          signal: controller.signal,
-        });
+        const json = await fetchClustersDirectory({ limit: 200 });
         setClusters(Array.isArray(json.clusters) ? json.clusters : []);
-        setFeaturedClusters(Array.isArray(json.featured_clusters) ? json.featured_clusters : []);
-        setTypeCounts(Array.isArray(json.type_counts) ? json.type_counts : []);
       } catch (err) {
-        if (err?.name === "AbortError") return;
         setError(toConsumerErrorMessage(err, "Could not load clusters."));
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        setLoading(false);
       }
     }
     load();
-    return () => controller.abort();
-  }, [query, typeFilter]);
+  }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("q", query.trim());
-    if (typeFilter) params.set("type", typeFilter);
-    const expanded = [...expandedStates][0];
-    if (expanded) params.set("state", expanded);
-    setSearchParams(params, { replace: true });
-  }, [query, typeFilter, expandedStates, setSearchParams]);
-
-  const globalTypeCounts = useMemo(() => {
-    const map = new Map();
-    for (const entry of typeCounts) {
-      map.set(String(entry.type || "").toLowerCase(), Number(entry.count) || 0);
-    }
-    if (map.size === 0 && clusters.length > 0) {
-      for (const cluster of clusters) {
-        const key = String(cluster.type || "").trim().toLowerCase();
-        if (!key) continue;
-        map.set(key, (map.get(key) || 0) + 1);
-      }
-    }
-    return map;
-  }, [typeCounts, clusters]);
-
-  const featured = useMemo(
-    () => resolveFeaturedClusters(featuredClusters, clusters),
-    [featuredClusters, clusters]
-  );
-
-  const stateGroups = useMemo(
-    () => groupClustersByStateAndType(clusters, { destinationTypes: CLUSTER_DESTINATION_TYPES }),
+  const sortedClusters = useMemo(
+    () =>
+      [...clusters].sort(
+        (a, b) =>
+          String(a.city || "").localeCompare(String(b.city || "")) ||
+          String(a.name || "").localeCompare(String(b.name || ""))
+      ),
     [clusters]
   );
 
-  const visibleStateGroups = useMemo(() => {
-    if (!typeFilter) return stateGroups;
-    return stateGroups
-      .map((stateEntry) => ({
-        ...stateEntry,
-        destinationTypes: stateEntry.destinationTypes.filter((entry) => entry.type === typeFilter),
-        clusterCount: stateEntry.destinationTypes
-          .filter((entry) => entry.type === typeFilter)
-          .reduce((sum, entry) => sum + entry.count, 0),
-      }))
-      .filter((stateEntry) => stateEntry.clusterCount > 0 || expandedStates.has(stateEntry.state));
-  }, [stateGroups, typeFilter, expandedStates]);
-
-  function toggleState(state) {
-    setExpandedStates((current) => {
-      const next = new Set(current);
-      if (next.has(state)) next.delete(state);
-      else next.add(state);
-      return next;
-    });
+  async function submitCluster(event) {
+    event.preventDefault();
+    if (!isAuthenticated) return;
+    if (consumer?.email_verified !== true) return;
+    setSubmitBusy(true);
+    setError("");
+    try {
+      const json = await createCommunityCluster({
+        ...form,
+        state: String(form.state || "").trim().toUpperCase(),
+        lat: Number(form.lat),
+        lng: Number(form.lng),
+        radius_miles: Number(form.radius_miles),
+      });
+      if (json?.cluster) {
+        setPendingSubmissions((current) => [json.cluster, ...current]);
+      }
+      setForm(INITIAL_FORM);
+    } catch (err) {
+      setError(toConsumerErrorMessage(err, "Could not submit cluster request."));
+    } finally {
+      setSubmitBusy(false);
+    }
   }
 
-  const showSearchResults = Boolean(query.trim());
+  function clusterStatusLabel(cluster) {
+    const status = String(cluster?.status || "").toLowerCase();
+    if (status === "review" || status === "draft") return "🟠 Pending";
+    const level = String(cluster?.verification_level || "").toLowerCase();
+    if (level === "community") return "🟡 Community";
+    return "🟢 Approved";
+  }
+
+  function renderClusterCard(cluster, isPending = false) {
+    const type = String(cluster.type || "").toLowerCase();
+    const accent = TYPE_ACCENTS[type] || { border: "#d1d5db", bg: "#f9fafb" };
+    const href = clusterPath({ state: cluster.state, city: cluster.city, slug: cluster.slug });
+    const container = (
+      <article
+        key={`${cluster.id || cluster.slug}-${isPending ? "pending" : "active"}`}
+        style={{
+          border: `1px solid ${accent.border}`,
+          background: accent.bg,
+          borderRadius: 14,
+          padding: "0.95rem",
+          display: "grid",
+          gap: "0.35rem",
+          boxShadow: "0 2px 10px rgba(15,23,42,0.03)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+          <strong style={{ color: "#111827" }}>{cluster.name}</strong>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>{clusterStatusLabel(cluster)}</span>
+        </div>
+        <div style={{ fontSize: 13, color: "#374151" }}>
+          {clusterTypeLabel(cluster.type)} · {cluster.city}, {cluster.state}
+        </div>
+      </article>
+    );
+    if (isPending || !href) return container;
+    return (
+      <Link key={`${cluster.id || cluster.slug}-link`} to={href} style={{ textDecoration: "none", color: "inherit" }}>
+        {container}
+      </Link>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: 960, margin: "0 auto", padding: "1.25rem 1rem 5rem" }}>
-      <header style={{ marginBottom: "1.25rem" }}>
-        <h1 style={{ margin: "0 0 0.5rem", fontSize: "1.85rem", lineHeight: 1.2 }}>
-          Explore Menuply Clusters
-        </h1>
-        <p style={{ margin: 0, color: "#4b5563", lineHeight: 1.55, maxWidth: 720 }}>
-          Clusters organize restaurants around the places people actually go—universities, downtowns,
-          airports, entertainment districts, tourist destinations, and more. Explore multiple
-          restaurants, compare menus, and discover dining options from a single destination page.
-        </p>
-      </header>
-
-      <section style={{ marginBottom: "1.25rem" }}>
-        <label htmlFor="cluster-search" style={{ display: "block", fontSize: 13, color: "#374151", marginBottom: 6 }}>
-          Search clusters by name, city, state, or destination type
-        </label>
-        <input
-          id="cluster-search"
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Try USC, Los Angeles, California, or university"
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
+        padding: "1.25rem 1rem 5rem",
+      }}
+    >
+      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+        <header
           style={{
-            width: "100%",
-            border: "1px solid #d1d5db",
-            borderRadius: 10,
-            padding: "0.7rem 0.85rem",
-            fontSize: 16,
-          }}
-        />
-      </section>
-
-      <section
-        aria-label="Cluster benefits"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "0.75rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        {BENEFIT_CARDS.map((card) => (
-          <article
-            key={card.title}
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: 12,
-              padding: "0.85rem 0.95rem",
-              background: "#fafafa",
-            }}
-          >
-            <h2 style={{ margin: "0 0 0.35rem", fontSize: "1rem" }}>{card.title}</h2>
-            <p style={{ margin: 0, color: "#6b7280", fontSize: 14, lineHeight: 1.45 }}>{card.body}</p>
-          </article>
-        ))}
-      </section>
-
-      {featured.length > 0 ? (
-        <section style={{ marginBottom: "1.5rem" }}>
-          <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.2rem" }}>Featured Clusters</h2>
-          <div style={{ display: "grid", gap: "0.75rem" }}>
-            {featured.map((cluster) => (
-              <ClusterDirectoryCard key={cluster.id || cluster.slug} cluster={cluster} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <section style={{ marginBottom: "1.25rem" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", alignItems: "center" }}>
-          <span style={{ fontSize: 13, color: "#6b7280", marginRight: 4 }}>Filter by type:</span>
-          <button
-            type="button"
-            onClick={() => setTypeFilter("")}
-            style={{
-              borderRadius: 999,
-              border: `1px solid ${typeFilter ? "#d1d5db" : "#111827"}`,
-              background: typeFilter ? "#fff" : "#111827",
-              color: typeFilter ? "#111827" : "#fff",
-              padding: "0.3rem 0.7rem",
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            All types
-          </button>
-          {CLUSTER_DESTINATION_TYPES.map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => setTypeFilter(typeFilter === type ? "" : type)}
-              style={{
-                borderRadius: 999,
-                border: `1px solid ${typeFilter === type ? "#111827" : "#d1d5db"}`,
-                background: typeFilter === type ? "#111827" : "#fff",
-                color: typeFilter === type ? "#fff" : "#111827",
-                padding: "0.3rem 0.7rem",
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
-              {clusterDestinationCategoryLabel(type)}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {error ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
-      {loading ? <p style={{ color: "#6b7280" }}>Loading clusters…</p> : null}
-
-      {showSearchResults && !loading ? (
-        <section style={{ marginBottom: "1.5rem" }}>
-          <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.15rem" }}>
-            Search results ({clusters.length})
-          </h2>
-          {clusters.length === 0 ? (
-            <p style={{ color: "#6b7280" }}>No clusters matched your search.</p>
-          ) : (
-            <div style={{ display: "grid", gap: "0.75rem" }}>
-              {clusters.map((cluster) => (
-                <ClusterDirectoryCard key={cluster.id || cluster.slug} cluster={cluster} />
-              ))}
-            </div>
-          )}
-        </section>
-      ) : null}
-
-      <section style={{ marginBottom: "2rem" }}>
-        <h2 style={{ margin: "0 0 0.35rem", fontSize: "1.2rem" }}>United States</h2>
-        <p style={{ margin: "0 0 1rem", color: "#6b7280", fontSize: 14 }}>
-          Browse every state using the same destination categories.
-          {detectedState ? ` ${stateDisplayName(detectedState)} is expanded based on your location.` : ""}
-        </p>
-
-        <div style={{ display: "grid", gap: "0.65rem" }}>
-          {visibleStateGroups.map((stateEntry) => {
-            const isExpanded = expandedStates.has(stateEntry.state);
-            return (
-              <div
-                key={stateEntry.state}
-                style={{ border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}
-              >
-                <button
-                  type="button"
-                  onClick={() => toggleState(stateEntry.state)}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    border: "none",
-                    background: isExpanded ? "#f9fafb" : "#fff",
-                    padding: "0.8rem 0.95rem",
-                    cursor: "pointer",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 12,
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>{stateEntry.stateLabel}</span>
-                  <span style={{ color: "#6b7280", fontSize: 13 }}>
-                    {stateEntry.clusterCount} cluster{stateEntry.clusterCount === 1 ? "" : "s"}
-                    {isExpanded ? " ▾" : " ▸"}
-                  </span>
-                </button>
-
-                {isExpanded ? (
-                  <div style={{ padding: "0 0.95rem 0.95rem", display: "grid", gap: "0.85rem" }}>
-                    {stateEntry.destinationTypes.map((typeEntry) => (
-                      <div key={`${stateEntry.state}-${typeEntry.type}`}>
-                        <h3 style={{ margin: "0 0 0.45rem", fontSize: "0.98rem" }}>{typeEntry.label}</h3>
-                        {typeEntry.clusters.length > 0 ? (
-                          <div style={{ display: "grid", gap: "0.65rem" }}>
-                            {typeEntry.clusters.map((cluster) => (
-                              <ClusterDirectoryCard key={cluster.id || cluster.slug} cluster={cluster} />
-                            ))}
-                          </div>
-                        ) : (
-                          <p style={{ margin: 0, color: "#9ca3af", fontSize: 14 }}>
-                            {emptyTypeMessage(typeEntry.type, globalTypeCounts)}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section
-        style={{
-          border: "1px solid #fcd34d",
-          background: "#fffbeb",
-          borderRadius: 14,
-          padding: "1rem 1.1rem",
-        }}
-      >
-        <h2 style={{ margin: "0 0 0.35rem", fontSize: "1.1rem" }}>Can&apos;t find your destination?</h2>
-        <p style={{ margin: "0 0 0.75rem", color: "#4b5563", lineHeight: 1.5 }}>
-          Create a Community Cluster and help expand Menuply. Registered users with verified email
-          addresses can publish immediately as a 🟡 Community Cluster.
-        </p>
-        <Link
-          to="/clusters/community/new"
-          style={{
-            display: "inline-block",
-            background: "#111827",
-            color: "#fff",
-            textDecoration: "none",
-            borderRadius: 10,
-            padding: "0.55rem 0.9rem",
-            fontWeight: 600,
+            border: "1px solid #dbe7df",
+            background: "#ffffff",
+            borderRadius: 18,
+            padding: "1rem 1.1rem",
+            marginBottom: "1rem",
+            boxShadow: "0 8px 24px rgba(15,23,42,0.05)",
           }}
         >
-          Create Community Cluster
-        </Link>
-      </section>
+          <BrandLogo height={36} radius={10} matchPageBackground={false} />
+          <h1 style={{ margin: "0.75rem 0 0.4rem", fontSize: "1.7rem", lineHeight: 1.2 }}>
+            Clusters
+          </h1>
+          <p style={{ margin: 0, color: "#475569", maxWidth: 760 }}>
+            Discover destination-based dining hubs, then create new clusters for places your community
+            actually goes.
+          </p>
+        </header>
 
+        {error ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
+
+        <section
+          style={{
+            border: "1px solid #dbe7df",
+            background: "#fff",
+            borderRadius: 18,
+            padding: "1rem 1.1rem",
+            marginBottom: "1rem",
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Current Clusters</h2>
+          <p style={{ margin: "0.4rem 0 0.9rem", color: "#64748b", fontSize: 14 }}>
+            Cluster name/type and location are shown below.
+          </p>
+          {loading ? <p style={{ color: "#64748b" }}>Loading clusters…</p> : null}
+          {!loading && sortedClusters.length === 0 ? (
+            <p style={{ color: "#64748b" }}>No approved clusters yet.</p>
+          ) : null}
+          {!loading && sortedClusters.length > 0 ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(255px, 1fr))", gap: "0.7rem" }}>
+              {sortedClusters.map((cluster) => renderClusterCard(cluster, false))}
+              {pendingSubmissions.map((cluster) => renderClusterCard(cluster, true))}
+            </div>
+          ) : null}
+        </section>
+
+        <section
+          style={{
+            border: "1px solid #dbe7df",
+            background: "#fff",
+            borderRadius: 18,
+            padding: "1rem 1.1rem",
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Create a Cluster</h2>
+          <p style={{ margin: "0.4rem 0 0.9rem", color: "#64748b", fontSize: 14 }}>
+            New submissions are listed as <strong>Pending</strong> until approved.
+          </p>
+
+          {!isAuthenticated ? (
+            <p style={{ margin: 0, color: "#475569" }}>
+              <Link to="/account/login" state={{ redirectTo: "/clusters" }}>
+                Sign in
+              </Link>{" "}
+              to submit a cluster.
+            </p>
+          ) : consumer?.email_verified !== true ? (
+            <p style={{ margin: 0, color: "#475569" }}>
+              Verify your email first to submit a cluster.
+            </p>
+          ) : (
+            <form onSubmit={submitCluster} style={{ display: "grid", gap: "0.75rem" }}>
+              <label style={{ display: "grid", gap: 4 }}>
+                <span style={{ fontSize: 13, color: "#334155" }}>Cluster name</span>
+                <input
+                  required
+                  value={form.name}
+                  onChange={(event) => setForm((c) => ({ ...c, name: event.target.value }))}
+                  style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                />
+              </label>
+              <div style={{ display: "grid", gap: "0.65rem", gridTemplateColumns: "140px minmax(0,1fr)" }}>
+                <label style={{ display: "grid", gap: 4 }}>
+                  <span style={{ fontSize: 13, color: "#334155" }}>State</span>
+                  <select
+                    required
+                    value={form.state}
+                    onChange={(event) => setForm((c) => ({ ...c, state: event.target.value }))}
+                    style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                  >
+                    <option value="">Select</option>
+                    {US_STATE_CODES.map((code) => (
+                      <option key={code} value={code}>
+                        {stateDisplayName(code)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ display: "grid", gap: 4 }}>
+                  <span style={{ fontSize: 13, color: "#334155" }}>City</span>
+                  <input
+                    required
+                    value={form.city}
+                    onChange={(event) => setForm((c) => ({ ...c, city: event.target.value }))}
+                    placeholder="Los Angeles"
+                    style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                  />
+                </label>
+              </div>
+              <label style={{ display: "grid", gap: 4 }}>
+                <span style={{ fontSize: 13, color: "#334155" }}>Cluster type</span>
+                <select
+                  required
+                  value={form.type}
+                  onChange={(event) => setForm((c) => ({ ...c, type: event.target.value }))}
+                  style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                >
+                  {CLUSTER_DESTINATION_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {clusterDestinationCategoryLabel(type)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label style={{ display: "grid", gap: 4 }}>
+                <span style={{ fontSize: 13, color: "#334155" }}>Anchor location</span>
+                <input
+                  required
+                  value={form.anchor_location}
+                  onChange={(event) => setForm((c) => ({ ...c, anchor_location: event.target.value }))}
+                  style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                />
+              </label>
+              <div style={{ display: "grid", gap: "0.65rem", gridTemplateColumns: "1fr 1fr 140px" }}>
+                <label style={{ display: "grid", gap: 4 }}>
+                  <span style={{ fontSize: 13, color: "#334155" }}>Latitude</span>
+                  <input
+                    required
+                    value={form.lat}
+                    onChange={(event) => setForm((c) => ({ ...c, lat: event.target.value }))}
+                    style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 4 }}>
+                  <span style={{ fontSize: 13, color: "#334155" }}>Longitude</span>
+                  <input
+                    required
+                    value={form.lng}
+                    onChange={(event) => setForm((c) => ({ ...c, lng: event.target.value }))}
+                    style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 4 }}>
+                  <span style={{ fontSize: 13, color: "#334155" }}>Radius (mi)</span>
+                  <input
+                    required
+                    type="number"
+                    min="0.25"
+                    max="25"
+                    step="0.25"
+                    value={form.radius_miles}
+                    onChange={(event) => setForm((c) => ({ ...c, radius_miles: event.target.value }))}
+                    style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                  />
+                </label>
+              </div>
+              <label style={{ display: "grid", gap: 4 }}>
+                <span style={{ fontSize: 13, color: "#334155" }}>Short description</span>
+                <textarea
+                  required
+                  rows={3}
+                  value={form.short_description}
+                  onChange={(event) => setForm((c) => ({ ...c, short_description: event.target.value }))}
+                  style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={submitBusy}
+                style={{
+                  justifySelf: "start",
+                  border: "none",
+                  borderRadius: 10,
+                  background: "#0f172a",
+                  color: "#fff",
+                  padding: "0.58rem 0.95rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                {submitBusy ? "Submitting..." : "Submit Cluster"}
+              </button>
+            </form>
+          )}
+        </section>
+      </div>
+
+      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+        <p style={{ marginTop: "0.85rem", color: "#64748b", fontSize: 12 }}>
+          Pending clusters are not public until approved.
+        </p>
+      </div>
       <BottomNav />
     </div>
   );
