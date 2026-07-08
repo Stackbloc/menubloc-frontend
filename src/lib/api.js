@@ -15,7 +15,7 @@ import { appendLanguageParam, readStoredLanguage, withLanguageHeaders } from "./
 const VITE_ENV = import.meta.env || {};
 const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
 
-export export const API_BASE = (
+export const API_BASE = (
   VITE_ENV.VITE_API_BASE_URL ||
   (VITE_ENV.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
 ).replace(/\/$/, "");
