@@ -9,25 +9,21 @@
  *
  *   On submit: calls POST /owner/profile with category='food_truck'
  *   Returns { restaurant, owner_token }.
- *   Then calls POST /owner/subscription/checkout-session and
- *   redirects to Stripe Checkout.
+ *   Subscription checkout occurs later in the operator flow.
  *
  * Route: /foodtruck/signup
  * ============================================================
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { BrandLockup } from "../components/BrandLogo.jsx";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
-import { LEGAL_VERSIONS } from "../content/legal.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-const SESSION_KEY = "grubbid.foodtruck.signup";
-
 const PLAN_FEATURES = [
   "Public food truck profile page",
   "Marketplace ordering for pickup and delivery",
@@ -272,15 +268,6 @@ const styles = {
     color: "#166534",
     fontWeight: 600,
   },
-  cancelledBanner: {
-    background: "#fff7ed",
-    border: "1px solid #fdba74",
-    borderRadius: 12,
-    padding: "12px 16px",
-    marginBottom: 16,
-    fontSize: 13,
-    color: "#9a3412",
-  },
   fieldError: { fontSize: 12, color: "#c00", marginTop: 5 },
   helperText: { fontSize: 12, color: "#667085", marginTop: 6 },
   checkboxRow: {
@@ -363,8 +350,8 @@ function PasswordInput({
 
 export default function FoodTruckSignup() {
   const { t } = useLanguage();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const checkoutResult = searchParams.get("checkout");
+  const [searchParams] = useSearchParams();
+  const accountCreatedFromUrl = searchParams.get("created") === "1";
 
   const [form, setForm] = useState({
     email: "",
@@ -375,26 +362,10 @@ export default function FoodTruckSignup() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  const [accountCreated, setAccountCreated] = useState(accountCreatedFromUrl);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreements, setAgreements] = useState({ legalConsent: false });
-
-  useEffect(() => {
-    if (checkoutResult === "success") {
-      setCheckoutSuccess(true);
-      setSearchParams({}, { replace: true });
-      try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
-    } else if (checkoutResult === "cancelled") {
-      setSearchParams({}, { replace: true });
-      try {
-        const saved = sessionStorage.getItem(SESSION_KEY);
-        if (saved) setForm(JSON.parse(saved));
-      } catch {
-        /* ignore */
-      }
-    }
-  }, [checkoutResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -452,46 +423,15 @@ export default function FoodTruckSignup() {
         throw new Error(data?.error || `Signup failed (${res.status})`);
       }
 
-      const { restaurant, owner_token } = data;
-      const email = form.email.trim();
-      const origin = window.location.origin;
-
-      try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(form)); } catch { /* ignore */ }
-
-      const checkoutRes = await fetch(`${API}/owner/subscription/checkout-session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          restaurant_id: restaurant.id,
-          owner_token,
-          email,
-          plan_code: "food_truck_annual",
-          success_url: `${origin}/foodtruck/signup?checkout=success`,
-          cancel_url: `${origin}/foodtruck/signup?checkout=cancelled`,
-          legal_acceptance: {
-            document_key: "merchant_terms",
-            document_version: LEGAL_VERSIONS.merchantTerms,
-          },
-        }),
-      });
-
-      const checkoutData = await checkoutRes.json().catch(() => null);
-      if (!checkoutRes.ok || !checkoutData?.ok) {
-        throw new Error(checkoutData?.error || "Failed to start checkout.");
-      }
-
-      if (!checkoutData.checkout_url) {
-        throw new Error("No checkout URL returned.");
-      }
-
-      window.location.href = checkoutData.checkout_url;
+      setAccountCreated(true);
+      setSubmitting(false);
     } catch (err) {
       setServerError(err.message || "Signup failed. Please try again.");
       setSubmitting(false);
     }
   }
 
-  if (checkoutSuccess) {
+  if (accountCreated) {
     return (
       <div style={styles.page}>
         <div style={styles.shell}>
@@ -500,11 +440,11 @@ export default function FoodTruckSignup() {
             wrapperStyle={{ marginBottom: 18 }}
           />
         <div style={styles.successBanner}>
-          <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>You are listed!</div>
-          Your Menuply Food Truck Annual plan is active. You can finish your truck profile, menu, and live location details from the operator dashboard.
+          <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}>Account created</div>
+          You can now sign in to the operator dashboard to finish your truck profile, menus, service locations, and the remaining onboarding steps.
         </div>
           <a
-            href="/foodtruck/dashboard"
+            href="/operator/login"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -519,7 +459,7 @@ export default function FoodTruckSignup() {
               boxShadow: "0 12px 24px rgba(31, 78, 61, 0.18)",
             }}
           >
-            Go to your dashboard
+            Continue to operator sign in
           </a>
         </div>
       </div>
@@ -544,12 +484,6 @@ export default function FoodTruckSignup() {
             </div>
           </div>
         </header>
-
-        {checkoutResult === "cancelled" && !serverError ? (
-          <div style={styles.cancelledBanner}>
-            Checkout was cancelled. No charge was made. Complete your details below and try again.
-          </div>
-        ) : null}
 
         {serverError ? <div style={styles.errorBanner}>{serverError}</div> : null}
 
@@ -675,7 +609,7 @@ export default function FoodTruckSignup() {
                 </div>
 
                 <button type="submit" style={submitBtnStyle(submitting)} disabled={submitting}>
-                  {submitting ? "Redirecting to Stripe..." : "Create account"}
+                  {submitting ? "Creating account..." : "Create account"}
                 </button>
               </form>
             </div>
