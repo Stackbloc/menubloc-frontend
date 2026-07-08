@@ -5,11 +5,10 @@ import { BrandLogo } from "../components/BrandLogo.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { createCommunityCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
+import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import {
   CLUSTER_DESTINATION_TYPES,
   clusterDestinationCategoryLabel,
-  clusterPath,
-  clusterTypeLabel,
   stateDisplayName,
 } from "../lib/clusterUrl.js";
 
@@ -120,34 +119,14 @@ export default function ClustersDirectoryPage() {
   function renderClusterCard(cluster, isPending = false) {
     const type = String(cluster.type || "").toLowerCase();
     const accent = TYPE_ACCENTS[type] || { border: "#d1d5db", bg: "#f9fafb" };
-    const href = clusterPath({ state: cluster.state, city: cluster.city, slug: cluster.slug });
-    const container = (
-      <article
-        key={`${cluster.id || cluster.slug}-${isPending ? "pending" : "active"}`}
-        style={{
-          border: `1px solid ${accent.border}`,
-          background: accent.bg,
-          borderRadius: 14,
-          padding: "0.95rem",
-          display: "grid",
-          gap: "0.35rem",
-          boxShadow: "0 2px 10px rgba(15,23,42,0.03)",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
-          <strong style={{ color: "#111827" }}>{cluster.name}</strong>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>{clusterStatusLabel(cluster)}</span>
-        </div>
-        <div style={{ fontSize: 13, color: "#374151" }}>
-          {clusterTypeLabel(cluster.type)} · {cluster.city}, {cluster.state}
-        </div>
-      </article>
-    );
-    if (isPending || !href) return container;
     return (
-      <Link key={`${cluster.id || cluster.slug}-link`} to={href} style={{ textDecoration: "none", color: "inherit" }}>
-        {container}
-      </Link>
+      <ClusterDirectoryCard
+        key={`${cluster.id || cluster.slug}-${isPending ? "pending" : "active"}`}
+        cluster={cluster}
+        accent={accent}
+        statusLabel={clusterStatusLabel(cluster)}
+        isPending={isPending}
+      />
     );
   }
 
@@ -201,7 +180,7 @@ export default function ClustersDirectoryPage() {
             <p style={{ color: "#64748b" }}>No approved clusters yet.</p>
           ) : null}
           {!loading && sortedClusters.length > 0 ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(255px, 1fr))", gap: "0.7rem" }}>
+            <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
               {sortedClusters.map((cluster) => renderClusterCard(cluster, false))}
               {pendingSubmissions.map((cluster) => renderClusterCard(cluster, true))}
             </div>

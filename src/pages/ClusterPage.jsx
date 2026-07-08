@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
-import ClusterDirectoryCard from "../components/cluster/ClusterDirectoryCard.jsx";
+import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
+import ClusterRestaurantListingCard from "../components/cluster/ClusterRestaurantListingCard.jsx";
+import { ClusterPlaceholderSection } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
 import { ClusterPageBreadcrumb } from "../components/cluster/ClusterBreadcrumbs.jsx";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
 import {
@@ -25,12 +27,22 @@ import { CLUSTER_TABS, DEFAULT_CLUSTER_TAB } from "../components/cluster/cluster
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const CANONICAL_BASE = "https://menuply.com";
+const CLUSTER_SECTION_SCROLL_MARGIN = 88;
+const ENABLED_CLUSTER_TABS = CLUSTER_TABS.filter((tab) => tab.enabled);
+
+function clusterSectionId(tabId) {
+  return `cluster-section-${tabId}`;
+}
 
 function ClusterOverviewTab({ cluster }) {
   if (!cluster) return null;
 
   const areaName = cluster.area_name || cluster.name;
   const overviewText = getClusterOverviewDescription(cluster);
+  const progressive = cluster.progressive_listing === true;
+  const placeholderCount = Number(cluster.placeholder_count || cluster.listing_stats?.total_placeholders || 0);
+  const menuReadyCount = Number(cluster.menu_ready_count ?? cluster.listing_stats?.total_menu_ready ?? 0);
+  const listedCount = Number(cluster.restaurant_count || cluster.listing_stats?.total_listed || 0);
 
   return (
     <section style={{ display: "grid", gap: "1rem" }}>
@@ -39,10 +51,29 @@ function ClusterOverviewTab({ cluster }) {
           {clusterTypeLabel(cluster.type)} near {areaName}, {cluster.city}, {cluster.state}
         </p>
         {cluster.address ? <p style={{ margin: "0.5rem 0 0" }}>{cluster.address}</p> : null}
-        <p style={{ margin: "0.75rem 0 0" }}>
-          {cluster.restaurant_count} restaurant{cluster.restaurant_count === 1 ? "" : "s"} listed in this area
-        </p>
+        {progressive ? (
+          <p style={{ margin: "0.75rem 0 0" }}>
+            {listedCount} restaurant profile{listedCount === 1 ? "" : "s"} listed
+            {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus available now` : ""}
+            {placeholderCount > 0
+              ? ` · ${placeholderCount} placeholder listing${placeholderCount === 1 ? "" : "s"} pending verification`
+              : ""}
+          </p>
+        ) : (
+          <p style={{ margin: "0.75rem 0 0" }}>
+            {listedCount} restaurant{listedCount === 1 ? "" : "s"} listed in this area
+          </p>
+        )}
       </div>
+      {progressive ? (
+        <p style={{ margin: 0, color: "#444", lineHeight: 1.5 }}>
+          Menus and profiles update automatically as verified restaurant data is published — no manual
+          cluster refresh is required for assigned locations.
+        </p>
+      ) : null}
+      {cluster.placeholder_intro ? (
+        <p style={{ margin: 0, color: "#444", lineHeight: 1.5 }}>{cluster.placeholder_intro}</p>
+      ) : null}
       {overviewText ? (
         <p style={{ margin: 0, color: "#444", lineHeight: 1.5 }}>{overviewText}</p>
       ) : null}
@@ -50,10 +81,13 @@ function ClusterOverviewTab({ cluster }) {
   );
 }
 
-function ClusterRestaurantsTab({ clusterSlug, enabled }) {
+function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
   const PAGE_SIZE = 20;
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [restaurants, setRestaurants] = useState([]);
+  const [placeholders, setPlaceholders] = useState([]);
+  const [placeholderIntro, setPlaceholderIntro] = useState("");
+  const [progressiveListing, setProgressiveListing] = useState(false);
   const [pagination, setPagination] = useState(null);
   const [error, setError] = useState("");
 
@@ -64,12 +98,20 @@ function ClusterRestaurantsTab({ clusterSlug, enabled }) {
     setStatus("loading");
     setError("");
     setRestaurants([]);
+    setPlaceholders([]);
+    setPlaceholderIntro("");
+    setProgressiveListing(false);
     setPagination(null);
 
     fetchClusterRestaurants(clusterSlug, { limit: PAGE_SIZE, offset: 0, signal: controller.signal })
       .then((data) => {
         if (!data?.ok) throw new Error(data?.error || "Could not load restaurants");
         setRestaurants(Array.isArray(data.restaurants) ? data.restaurants : []);
+        setPlaceholders(Array.isArray(data.placeholders) ? data.placeholders : []);
+        setPlaceholderIntro(data.placeholder_intro || "");
+        setProgressiveListing(
+          data.progressive_listing === true || data.cluster?.progressive_listing === true
+        );
         setPagination(data.pagination || null);
         setStatus("ok");
       })
@@ -118,20 +160,50 @@ function ClusterRestaurantsTab({ clusterSlug, enabled }) {
     return <p style={{ color: "#b91c1c" }}>{error}</p>;
   }
 
-  if (restaurants.length === 0) {
-    return <p style={{ color: "#888" }}>No restaurants are assigned to this cluster yet.</p>;
+  if (restaurants.length === 0 && placeholders.length === 0) {
+    const emptyCopy = cluster?.progressive_listing || progressiveListing
+      ? "No verified restaurant profiles are assigned to this cluster yet. Placeholder listings may appear below as this destination is built out."
+      : "No restaurants are assigned to this cluster yet.";
+    return <p style={{ color: "#888" }}>{emptyCopy}</p>;
   }
 
-  const totalLabel = pagination?.total_menu_ready ?? restaurants.length;
+  const totalLabel = pagination?.progressive_listing
+    ? pagination?.total_listed ?? restaurants.length
+    : pagination?.total_menu_ready ?? restaurants.length;
+  const menuReadyCount = pagination?.total_menu_ready ?? 0;
+  const CardComponent = progressiveListing ? ClusterRestaurantListingCard : DiscoveryCard;
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
-      <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
-        Showing {restaurants.length} of {totalLabel} restaurant{totalLabel === 1 ? "" : "s"}
-      </p>
-      {restaurants.map((restaurant) => (
-        <DiscoveryCard key={restaurant.restaurant_id} menu={restaurant} />
-      ))}
+      {progressiveListing ? (
+        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45 }}>
+          Menu status updates live when published menus are attached to assigned restaurant profiles.
+          {menuReadyCount > 0 ? ` ${menuReadyCount} menu${menuReadyCount === 1 ? "" : "s"} available now.` : ""}
+        </p>
+      ) : null}
+      {placeholderIntro ? (
+        <p style={{ margin: 0, color: "#444", fontSize: "0.9rem", lineHeight: 1.45 }}>{placeholderIntro}</p>
+      ) : null}
+      {restaurants.length > 0 ? (
+        <>
+          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
+            Showing {restaurants.length} of {totalLabel} verified profile{totalLabel === 1 ? "" : "s"}
+          </p>
+          {restaurants.map((restaurant) => (
+            <CardComponent key={restaurant.restaurant_id} restaurant={restaurant} menu={restaurant} />
+          ))}
+        </>
+      ) : null}
+      {placeholders.length > 0 ? (
+        <div style={{ display: "grid", gap: "1rem", marginTop: restaurants.length > 0 ? "0.5rem" : 0 }}>
+          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
+            Placeholder listings (not verified restaurant records)
+          </p>
+          {placeholders.map((section) => (
+            <ClusterPlaceholderSection key={section.area} section={section} />
+          ))}
+        </div>
+      ) : null}
       {pagination?.has_more ? (
         <button
           type="button"
@@ -374,9 +446,15 @@ function ClusterSearchTab({ clusterSlug, enabled }) {
 export default function ClusterPage() {
   const { stateSlug, citySlug, clusterSlug } = useParams();
   const [activeTab, setActiveTab] = useState(DEFAULT_CLUSTER_TAB);
+  const [enabledTabs, setEnabledTabs] = useState(
+    () => new Set(ENABLED_CLUSTER_TABS.filter((tab) => !tab.lazy).map((tab) => tab.id))
+  );
   const [status, setStatus] = useState("loading");
   const [cluster, setCluster] = useState(null);
   const [error, setError] = useState("");
+  const navRef = useRef(null);
+  const sectionRefs = useRef({});
+  const scrollLockRef = useRef(false);
 
   const shareData = useMemo(
     () => (cluster ? buildClusterShareData({ cluster, origin: CANONICAL_BASE }) : null),
@@ -424,6 +502,85 @@ export default function ClusterPage() {
       document.title = cluster.share_title || `${cluster.page_title || cluster.page_heading} | Menuply`;
     }
   }, [cluster?.page_heading, cluster?.page_title, cluster?.share_title, shareData?.title]);
+
+  useEffect(() => {
+    if (!cluster) return undefined;
+    setEnabledTabs(new Set(ENABLED_CLUSTER_TABS.map((tab) => tab.id)));
+  }, [cluster]);
+
+  useEffect(() => {
+    if (!cluster) return undefined;
+
+    const sections = ENABLED_CLUSTER_TABS
+      .map((tab) => sectionRefs.current[tab.id])
+      .filter(Boolean);
+
+    if (sections.length === 0) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (scrollLockRef.current) return;
+
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        const nextTab = visible[0]?.target?.dataset?.sectionId;
+        if (nextTab) {
+          setActiveTab(nextTab);
+        }
+      },
+      {
+        root: null,
+        rootMargin: `-${CLUSTER_SECTION_SCROLL_MARGIN}px 0px -55% 0px`,
+        threshold: [0, 0.15, 0.35],
+      }
+    );
+
+    for (const section of sections) {
+      observer.observe(section);
+    }
+
+    return () => observer.disconnect();
+  }, [cluster]);
+
+  useEffect(() => {
+    const button = navRef.current?.querySelector(`[data-tab-id="${activeTab}"]`);
+    button?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [activeTab]);
+
+  function scrollToSection(tabId) {
+    const section = sectionRefs.current[tabId];
+    if (!section) return;
+
+    scrollLockRef.current = true;
+    setActiveTab(tabId);
+    setEnabledTabs((current) => new Set([...current, tabId]));
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => {
+      scrollLockRef.current = false;
+    }, 700);
+  }
+
+  function registerSectionRef(tabId) {
+    return (node) => {
+      if (node) sectionRefs.current[tabId] = node;
+      else delete sectionRefs.current[tabId];
+    };
+  }
+
+  const sectionShellStyle = {
+    scrollMarginTop: CLUSTER_SECTION_SCROLL_MARGIN,
+    paddingTop: "0.25rem",
+    paddingBottom: "2rem",
+  };
+
+  const sectionHeadingStyle = {
+    margin: "0 0 0.85rem",
+    fontSize: "1.15rem",
+    lineHeight: 1.25,
+    color: "#111827",
+  };
 
   if (status === "loading") {
     return (
@@ -476,6 +633,7 @@ export default function ClusterPage() {
       </header>
 
       <nav
+        ref={navRef}
         aria-label="Cluster sections"
         style={{
           display: "flex",
@@ -484,6 +642,10 @@ export default function ClusterPage() {
           paddingBottom: "0.5rem",
           marginBottom: "1rem",
           borderBottom: "1px solid #e5e7eb",
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
+          background: "#fff",
         }}
       >
         {CLUSTER_TABS.map((tab) => {
@@ -493,9 +655,11 @@ export default function ClusterPage() {
             <button
               key={tab.id}
               type="button"
+              data-tab-id={tab.id}
               disabled={disabled}
+              aria-current={isActive ? "true" : undefined}
               onClick={() => {
-                if (!disabled) setActiveTab(tab.id);
+                if (!disabled) scrollToSection(tab.id);
               }}
               style={{
                 flex: "0 0 auto",
@@ -516,32 +680,74 @@ export default function ClusterPage() {
         })}
       </nav>
 
-      <main>
-        {activeTab === "overview" ? <ClusterOverviewTab cluster={cluster} /> : null}
-        {activeTab === "menu-explorer" ? (
-          <ClusterMenuExplorerTab clusterSlug={cluster.slug} enabled={activeTab === "menu-explorer"} />
-        ) : null}
-        {activeTab === "restaurants" ? (
-          <ClusterRestaurantsTab clusterSlug={cluster.slug} enabled={activeTab === "restaurants"} />
-        ) : null}
-        {activeTab === "search" ? (
-          <ClusterSearchTab clusterSlug={cluster.slug} enabled={activeTab === "search"} />
-        ) : null}
-        {activeTab === "compare" || activeTab === "deals" || activeTab === "map" ? (
-          <p style={{ color: "#888" }}>This tab is reserved for a future cluster release.</p>
-        ) : null}
+      <main style={{ display: "grid", gap: "0.5rem" }}>
+        <section
+          id={clusterSectionId("overview")}
+          ref={registerSectionRef("overview")}
+          data-section-id="overview"
+          aria-labelledby="cluster-heading-overview"
+          style={sectionShellStyle}
+        >
+          <h2 id="cluster-heading-overview" style={sectionHeadingStyle}>
+            Overview
+          </h2>
+          <ClusterOverviewTab cluster={cluster} />
+        </section>
+
+        <section
+          id={clusterSectionId("menu-explorer")}
+          ref={registerSectionRef("menu-explorer")}
+          data-section-id="menu-explorer"
+          aria-labelledby="cluster-heading-menu-explorer"
+          style={sectionShellStyle}
+        >
+          <h2 id="cluster-heading-menu-explorer" style={sectionHeadingStyle}>
+            Menu Explorer
+          </h2>
+          <ClusterMenuExplorerTab
+            clusterSlug={cluster.slug}
+            enabled={enabledTabs.has("menu-explorer")}
+          />
+        </section>
+
+        <section
+          id={clusterSectionId("restaurants")}
+          ref={registerSectionRef("restaurants")}
+          data-section-id="restaurants"
+          aria-labelledby="cluster-heading-restaurants"
+          style={sectionShellStyle}
+        >
+          <h2 id="cluster-heading-restaurants" style={sectionHeadingStyle}>
+            Restaurants
+          </h2>
+          <ClusterRestaurantsTab
+            clusterSlug={cluster.slug}
+            cluster={cluster}
+            enabled={enabledTabs.has("restaurants")}
+          />
+        </section>
+
+        <section
+          id={clusterSectionId("search")}
+          ref={registerSectionRef("search")}
+          data-section-id="search"
+          aria-labelledby="cluster-heading-search"
+          style={sectionShellStyle}
+        >
+          <h2 id="cluster-heading-search" style={sectionHeadingStyle}>
+            Search Menus
+          </h2>
+          <ClusterSearchTab
+            clusterSlug={cluster.slug}
+            enabled={enabledTabs.has("search")}
+          />
+        </section>
       </main>
 
       {Array.isArray(cluster.related_clusters) && cluster.related_clusters.length > 0 ? (
         <section style={{ marginTop: "2rem" }}>
           <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.15rem" }}>Nearby Clusters</h2>
-          <div
-            style={{
-              display: "grid",
-              gap: "0.75rem",
-              gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-            }}
-          >
+          <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
             {cluster.related_clusters.map((related) => (
               <ClusterDirectoryCard key={related.slug} cluster={related} />
             ))}
