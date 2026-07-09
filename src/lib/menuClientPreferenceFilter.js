@@ -3,7 +3,11 @@
  * Uses persisted item metadata only — no free-text inference at render time.
  */
 
-import { activePrefLabels, hasActiveDietPrefs } from "../hooks/useDietPreferences.js";
+import {
+  activePrefLabels,
+  hasActiveDietPrefs,
+  itemPassesDietFilter,
+} from "../hooks/useDietPreferences.js";
 
 
 const ALLERGEN_KEY_LABELS = {
@@ -41,7 +45,25 @@ const ALLERGEN_PROFILE_TO_EVIDENCE = {
   wheat: ["wheat"],
 };
 
-const PERSISTED_ALLERGEN_CHIP_SOURCES = new Set(["chain_official", "reference_dataset"]);
+const PERSISTED_ALLERGEN_CHIP_SOURCES = new Set([
+  "chain_official",
+  "reference_dataset",
+  "Menuply inference",
+  "Grubbid inference",
+]);
+
+const MENU_TEXT_ALLERGEN_KEYWORDS = {
+  peanuts: ["peanut", "peanuts", "pb&j", "groundnut"],
+  tree_nuts: ["almond", "walnut", "pecan", "cashew", "pistachio", "hazelnut", "macadamia", "tree nut"],
+  dairy: ["cheese", "milk", "cream", "butter", "yogurt", "whey", "lactose", "alfredo", "queso"],
+  gluten: ["wheat", "gluten", "bread", "flour", "breadcrumb", "crouton", "pasta", "noodle", "tortilla"],
+  shellfish: ["shrimp", "crab", "lobster", "crawfish", "clam", "mussel", "oyster", "scallop"],
+  soy: ["soy", "tofu", "edamame", "miso", "tempeh"],
+  eggs: ["egg", "eggs", "omelet", "omelette", "mayo", "mayonnaise", "meringue"],
+  fish: ["fish", "salmon", "tuna", "cod", "anchovy", "anchovies", "tilapia", "trout"],
+  sesame: ["sesame", "tahini"],
+  wheat: ["wheat", "flour", "bread", "breadcrumb", "crouton"],
+};
 
 function asStr(v) {
   return v === undefined || v === null ? "" : String(v);
@@ -68,9 +90,12 @@ export function buildDietPrefsFromProfile(dietaryPreferences, isAuthenticated) {
     dairy_free: enabledDietKeys.has("dairy_free"),
     diabetic_friendly: enabledDietKeys.has("diabetic_friendly"),
     gluten_free: enabledDietKeys.has("gluten_free"),
+    high_protein: enabledDietKeys.has("high_protein"),
     keto: enabledDietKeys.has("keto") || enabledDietKeys.has("low_carb"),
+    low_carb: enabledDietKeys.has("low_carb"),
     low_fat: enabledDietKeys.has("low_fat"),
     low_sodium: enabledDietKeys.has("low_sodium"),
+    nut_free: enabledDietKeys.has("nut_free"),
     vegan: enabledDietKeys.has("vegan"),
     vegetarian: enabledDietKeys.has("vegetarian"),
   };
@@ -109,9 +134,12 @@ export const EMPTY_DIET_PREFS = Object.freeze({
   dairy_free: false,
   diabetic_friendly: false,
   gluten_free: false,
+  high_protein: false,
   keto: false,
+  low_carb: false,
   low_fat: false,
   low_sodium: false,
+  nut_free: false,
   vegan: false,
   vegetarian: false,
 });
@@ -156,24 +184,97 @@ export function getMenuDisplaySectionsWithPreferences(
   );
 }
 
+const MENU_TEXT_MEAT_KEYWORDS = [
+  "beef",
+  "pork",
+  "bacon",
+  "ham",
+  "sausage",
+  "chicken",
+  "turkey",
+  "steak",
+  "fish",
+  "shrimp",
+  "salmon",
+  "tuna",
+  "crab",
+  "lobster",
+  "pepperoni",
+  "salami",
+  "chorizo",
+  "prosciutto",
+  "meatball",
+  "brisket",
+  "ribs",
+  "lamb",
+  "duck",
+  "anchovy",
+];
+
+const MENU_TEXT_VEG_OVERRIDE_PHRASES = [
+  "veggie burger",
+  "vegetable burger",
+  "vegan burger",
+  "plant based",
+  "plant-based",
+  "meatless",
+  "veggie sausage",
+  "impossible",
+  "beyond burger",
+];
+
+function normalizeMenuText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function menuTextHasKeyword(text, keyword) {
+  const escaped = keyword.replace(/[-\s]+/g, "[-\\s]?");
+  const re = new RegExp(`(?<![a-z])${escaped}(?![a-z])`, "i");
+  return re.test(text);
+}
+
 /**
- * Diet: hide only when persisted flag is explicitly false.
- * Missing metadata → keep item visible (no guesswork).
+ * Belt-and-suspenders when API chips are missing: obvious meat in item title/description.
+ */
+export function itemHasObviousMenuTextDietConflict(item, prefs) {
+  if (!hasActiveDietPrefs(prefs)) return false;
+  if (!prefs.vegan && !prefs.vegetarian) return false;
+
+  const text = normalizeMenuText(
+    [item?.name, item?.item_name, item?.description, item?.item_description].filter(Boolean).join(" ")
+  );
+  if (!text) return false;
+
+  if (MENU_TEXT_VEG_OVERRIDE_PHRASES.some((phrase) => text.includes(phrase))) {
+    return false;
+  }
+
+  return MENU_TEXT_MEAT_KEYWORDS.some((keyword) => menuTextHasKeyword(text, keyword));
+}
+
+function itemHasObviousMenuTextDietPass(item, prefs) {
+  if (!prefs.vegan && !prefs.vegetarian) return false;
+  const text = normalizeMenuText(
+    [item?.name, item?.item_name, item?.description, item?.item_description].filter(Boolean).join(" ")
+  );
+  if (!text) return false;
+  if (/\b(vegan|vegetarian)\b/i.test(text)) return true;
+  return MENU_TEXT_VEG_OVERRIDE_PHRASES.some((phrase) => text.includes(phrase));
+}
+
+/**
+ * Strict diet filter — uses backend tri-state chips when present, otherwise DB flags
+ * and menu-text meat detection. Unknown/unconfirmed items are hidden for hard filters.
  */
 export function itemPassesPersistedDietFilter(item, prefs) {
   if (!hasActiveDietPrefs(prefs)) return true;
-
-  if (prefs.vegan && item?.is_vegan === false) return false;
-  if (prefs.vegetarian) {
-    if (item?.is_vegetarian === false && item?.is_vegan !== true) return false;
-  }
-  if (prefs.gluten_free && item?.is_gluten_free === false) return false;
-  if (prefs.dairy_free && item?.is_dairy_free === false) return false;
-  if (prefs.keto && item?.is_keto === false) return false;
-  if (prefs.low_sodium && item?.is_low_sodium === false) return false;
-  if (prefs.diabetic_friendly && item?.is_diabetic_friendly === false) return false;
-  if (prefs.low_fat && item?.is_low_fat === false) return false;
-
+  if (itemHasObviousMenuTextDietConflict(item, prefs)) return false;
+  if (itemHasObviousMenuTextDietPass(item, prefs)) return true;
+  if (!itemPassesDietFilter(item, prefs)) return false;
   return true;
 }
 
@@ -191,24 +292,48 @@ function collectPersistedAllergenEvidence(item) {
   }
 
   const chip = item?.chips?.nutrition_chip;
-  if (chip && PERSISTED_ALLERGEN_CHIP_SOURCES.has(chip.source)) {
-    for (const list of [chip.allergens, chip.contains_allergens]) {
-      if (!Array.isArray(list)) continue;
-      for (const entry of list) addToken(entry);
+  if (chip) {
+    const useChipAllergens =
+      !chip.source || PERSISTED_ALLERGEN_CHIP_SOURCES.has(chip.source);
+    if (useChipAllergens) {
+      for (const list of [chip.allergens, chip.contains_allergens]) {
+        if (!Array.isArray(list)) continue;
+        for (const entry of list) addToken(entry);
+      }
     }
   }
 
   return evidence;
 }
 
+function collectMenuTextAllergenEvidence(item) {
+  const evidence = new Set();
+  const text = normalizeMenuText(
+    [item?.name, item?.item_name, item?.description, item?.item_description].filter(Boolean).join(" ")
+  );
+  if (!text) return evidence;
+
+  for (const [key, keywords] of Object.entries(MENU_TEXT_ALLERGEN_KEYWORDS)) {
+    if (keywords.some((keyword) => menuTextHasKeyword(text, keyword))) {
+      evidence.add(normalizeAllergenToken(key));
+      for (const alias of ALLERGEN_PROFILE_TO_EVIDENCE[key] || []) {
+        evidence.add(normalizeAllergenToken(alias));
+      }
+    }
+  }
+  return evidence;
+}
+
 /**
- * Allergen: hide only when persisted metadata shows a conflict.
- * Missing allergen metadata → keep item visible (conservative).
+ * Allergen: hide when persisted or inferred metadata shows a conflict.
  */
 export function itemConflictsAllergenPreferences(item, enabledAllergenKeys) {
   if (!enabledAllergenKeys || enabledAllergenKeys.size === 0) return false;
 
-  const evidence = collectPersistedAllergenEvidence(item);
+  const evidence = new Set([
+    ...collectPersistedAllergenEvidence(item),
+    ...collectMenuTextAllergenEvidence(item),
+  ]);
   if (evidence.size === 0) return false;
 
   for (const key of enabledAllergenKeys) {

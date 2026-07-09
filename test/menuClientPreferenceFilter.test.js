@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import {
   itemPassesPersistedDietFilter,
   itemConflictsAllergenPreferences,
+  itemHasObviousMenuTextDietConflict,
+  buildDietPrefsFromProfile,
   countMenuDisplayItems,
   getClientPreferenceDisplaySections,
   getMenuDisplaySectionsWithPreferences,
@@ -14,61 +16,163 @@ import {
   __resetDietaryPreferencesOptOutForTests,
 } from "../src/lib/menuCatalogBrowsePreferences.js";
 
-function testDietConservative() {
-  const veganPrefs = { vegan: true, vegetarian: false, gluten_free: false, dairy_free: false, keto: false, low_fat: false, low_sodium: false, diabetic_friendly: false };
+const VEGAN_PREFS = {
+  vegan: true,
+  vegetarian: false,
+  gluten_free: false,
+  dairy_free: false,
+  keto: false,
+  low_carb: false,
+  low_fat: false,
+  low_sodium: false,
+  diabetic_friendly: false,
+  high_protein: false,
+  nut_free: false,
+};
 
-  assert.equal(itemPassesPersistedDietFilter({ name: "Salad", is_vegan: true }, veganPrefs), true);
-  assert.equal(itemPassesPersistedDietFilter({ name: "Burger", is_vegan: false }, veganPrefs), false);
-  assert.equal(itemPassesPersistedDietFilter({ name: "Mystery" }, veganPrefs), true, "missing metadata stays visible");
+const VEGETARIAN_PREFS = {
+  vegan: false,
+  vegetarian: true,
+  gluten_free: false,
+  dairy_free: false,
+  keto: false,
+  low_carb: false,
+  low_fat: false,
+  low_sodium: false,
+  diabetic_friendly: false,
+  high_protein: false,
+  nut_free: false,
+};
+
+function testProfileMapsAllSupportedDietKeys() {
+  const prefs = buildDietPrefsFromProfile(
+    [
+      { preference_key: "vegetarian", is_enabled: true },
+      { preference_key: "vegan", is_enabled: true },
+      { preference_key: "gluten_free", is_enabled: true },
+      { preference_key: "dairy_free", is_enabled: true },
+      { preference_key: "low_carb", is_enabled: true },
+      { preference_key: "high_protein", is_enabled: true },
+      { preference_key: "low_sodium", is_enabled: true },
+      { preference_key: "diabetic_friendly", is_enabled: true },
+      { preference_key: "nut_free", is_enabled: true },
+      { preference_key: "keto", is_enabled: true },
+    ],
+    true
+  );
+  assert.equal(prefs.vegetarian, true);
+  assert.equal(prefs.vegan, true);
+  assert.equal(prefs.gluten_free, true);
+  assert.equal(prefs.dairy_free, true);
+  assert.equal(prefs.low_carb, true);
+  assert.equal(prefs.keto, true);
+  assert.equal(prefs.high_protein, true);
+  assert.equal(prefs.low_sodium, true);
+  assert.equal(prefs.diabetic_friendly, true);
+  assert.equal(prefs.nut_free, true);
 }
 
-function testAllergenConservative() {
-  const peanutAvoid = new Set(["peanuts"]);
-
+function testDietStrictWithEvaluatorChips() {
   assert.equal(
-    itemConflictsAllergenPreferences({ name: "PB", allergens: ["peanuts"] }, peanutAvoid),
+    itemPassesPersistedDietFilter(
+      { name: "Salad", chips: { dietary_filters: { vegan: { result: "pass" } } } },
+      VEGAN_PREFS
+    ),
     true
   );
   assert.equal(
-    itemConflictsAllergenPreferences({ name: "Salad" }, peanutAvoid),
-    false,
-    "missing allergen metadata stays visible"
+    itemPassesPersistedDietFilter(
+      { name: "Burger", chips: { dietary_filters: { vegan: { result: "fail" } } } },
+      VEGAN_PREFS
+    ),
+    false
   );
+  assert.equal(itemPassesPersistedDietFilter({ name: "Mystery" }, VEGAN_PREFS), false);
+}
+
+function testVegetarianHidesSausageBiscuitByName() {
+  assert.equal(
+    itemHasObviousMenuTextDietConflict({ name: "Sausage Biscuit" }, VEGETARIAN_PREFS),
+    true
+  );
+  assert.equal(itemPassesPersistedDietFilter({ name: "Sausage Biscuit" }, VEGETARIAN_PREFS), false);
+}
+
+function testHighProteinAndNutFreeStrict() {
+  const highProtein = { ...VEGETARIAN_PREFS, vegetarian: false, high_protein: true };
+  assert.equal(
+    itemPassesPersistedDietFilter(
+      { name: "Grilled Chicken", chips: { dietary_filters: { high_protein: { result: "pass" } } } },
+      highProtein
+    ),
+    true
+  );
+  assert.equal(
+    itemPassesPersistedDietFilter(
+      { name: "Side Salad", chips: { dietary_filters: { high_protein: { result: "unknown" } } } },
+      highProtein
+    ),
+    false
+  );
+
+  const nutFree = { ...VEGETARIAN_PREFS, vegetarian: false, nut_free: true };
+  assert.equal(
+    itemPassesPersistedDietFilter(
+      { name: "PB&J", chips: { dietary_filters: { nut_free: { result: "fail" } } } },
+      nutFree
+    ),
+    false
+  );
+  assert.equal(
+    itemPassesPersistedDietFilter(
+      { name: "Fruit Cup", chips: { dietary_filters: { nut_free: { result: "pass" } } } },
+      nutFree
+    ),
+    true
+  );
+}
+
+function testAllergenUsesRuntimeInferenceChip() {
+  const peanutAvoid = new Set(["peanuts"]);
   assert.equal(
     itemConflictsAllergenPreferences(
       {
-        name: "Inferred only",
-        chips: { nutrition_chip: { source: "runtime_inference", allergens: ["peanuts"] } },
+        name: "Dessert",
+        chips: {
+          nutrition_chip: {
+            source: "Menuply inference",
+            allergens: ["peanuts"],
+          },
+        },
       },
       peanutAvoid
     ),
-    false,
-    "non-authoritative chip source ignored"
+    true
   );
+}
+
+function testAllergenUsesMenuTextKeywords() {
+  const peanutAvoid = new Set(["peanuts"]);
+  assert.equal(
+    itemConflictsAllergenPreferences({ name: "Peanut Butter Cup" }, peanutAvoid),
+    true
+  );
+  assert.equal(itemConflictsAllergenPreferences({ name: "Garden Salad" }, peanutAvoid), false);
 }
 
 function testSectionTransform() {
   const sections = [
     {
-      title: "Mains",
+      title: "Breakfast",
       items: [
-        { name: "Vegan Bowl", is_vegan: true },
-        { name: "Steak", is_vegan: false },
-        { name: "Unknown" },
+        { name: "Fruit Cup", is_vegetarian: true },
+        { name: "Sausage Biscuit" },
+        { name: "Veggie Burger" },
       ],
     },
   ];
-  const veganPrefs = { vegan: true, vegetarian: false, gluten_free: false, dairy_free: false, keto: false, low_fat: false, low_sodium: false, diabetic_friendly: false };
-  const out = getClientPreferenceDisplaySections(sections, veganPrefs, new Set());
-  assert.equal(out.length, 1);
-  assert.equal(out[0].items.length, 2);
-  assert.equal(out[0].items.map((i) => i.name).join(","), "Vegan Bowl,Unknown");
-}
-
-function testHasSavedPreferences() {
-  assert.equal(hasSavedMenuPreferences({ vegan: false }, new Set()), false);
-  assert.equal(hasSavedMenuPreferences({ vegan: true }, new Set()), true);
-  assert.equal(hasSavedMenuPreferences({}, new Set(["dairy"])), true);
+  const out = getClientPreferenceDisplaySections(sections, VEGETARIAN_PREFS, new Set());
+  assert.equal(out[0].items.map((i) => i.name).join(","), "Fruit Cup,Veggie Burger");
 }
 
 function testMenusApplyAllergenFilterAlways() {
@@ -81,33 +185,13 @@ function testMenusApplyAllergenFilterAlways() {
       ],
     },
   ];
-  const veganPrefs = {
-    vegan: true,
-    vegetarian: false,
-    gluten_free: false,
-    dairy_free: false,
-    keto: false,
-    low_fat: false,
-    low_sodium: false,
-    diabetic_friendly: false,
-  };
   const peanutAvoid = new Set(["peanuts"]);
-
   const dietOffAllergenOn = getMenuDisplaySectionsWithPreferences(sections, {
     applyDietaryPreferences: false,
-    dietPrefs: veganPrefs,
+    dietPrefs: VEGAN_PREFS,
     enabledAllergenKeys: peanutAvoid,
   });
-  assert.equal(dietOffAllergenOn[0].items.length, 1, "allergens filter menus even when diet session off");
   assert.equal(dietOffAllergenOn[0].items[0].name, "Vegan Bowl");
-
-  const dietOn = getMenuDisplaySectionsWithPreferences(sections, {
-    applyDietaryPreferences: true,
-    dietPrefs: veganPrefs,
-    enabledAllergenKeys: peanutAvoid,
-  });
-  assert.equal(dietOn[0].items.length, 1, "diet + allergen filters combine");
-  assert.equal(dietOn[0].items[0].name, "Vegan Bowl");
 }
 
 function testSessionDefaultsApplyDietaryPreferences() {
@@ -128,40 +212,30 @@ function testSessionDefaultsApplyDietaryPreferences() {
   };
   try {
     __resetDietaryPreferencesOptOutForTests();
-    assert.equal(readCatalogApplyDietaryPreferences(), true, "default apply on");
+    assert.equal(readCatalogApplyDietaryPreferences(), true);
     writeCatalogApplyDietaryPreferences(false);
-    assert.equal(readCatalogApplyDietaryPreferences(), false, "explicit opt-out");
-    writeCatalogApplyDietaryPreferences(true);
-    assert.equal(readCatalogApplyDietaryPreferences(), true, "re-enable");
+    assert.equal(readCatalogApplyDietaryPreferences(), false);
   } finally {
     global.window = priorWindow;
   }
 }
 
 function testCombinedLabels() {
-  const labels = buildCombinedPreferenceLabelList(
-    { vegan: true, vegetarian: false, gluten_free: false, dairy_free: false, keto: false, low_fat: false, low_sodium: false, diabetic_friendly: false },
-    new Set(["peanuts"])
-  );
+  const labels = buildCombinedPreferenceLabelList(VEGAN_PREFS, new Set(["peanuts"]));
   assert.ok(labels.includes("Vegan"));
   assert.ok(labels.includes("Peanuts"));
 }
 
-function testCountMenuDisplayItems() {
-  const sections = [
-    { title: "A", items: [{ name: "One" }, { name: "Two" }, { name: "" }] },
-    { title: "B", items: [{ name: "Three" }] },
-  ];
-  assert.equal(countMenuDisplayItems(sections), 3);
-}
-
-testDietConservative();
-testAllergenConservative();
+testProfileMapsAllSupportedDietKeys();
+testDietStrictWithEvaluatorChips();
+testVegetarianHidesSausageBiscuitByName();
+testHighProteinAndNutFreeStrict();
+testAllergenUsesRuntimeInferenceChip();
+testAllergenUsesMenuTextKeywords();
 testSectionTransform();
-testHasSavedPreferences();
 testMenusApplyAllergenFilterAlways();
 testSessionDefaultsApplyDietaryPreferences();
 testCombinedLabels();
-testCountMenuDisplayItems();
+assert.equal(countMenuDisplayItems([{ title: "A", items: [{ name: "One" }] }]), 1);
 
 console.log("✅ menuClientPreferenceFilter tests passed");

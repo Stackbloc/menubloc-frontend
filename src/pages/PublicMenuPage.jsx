@@ -68,6 +68,7 @@ import {
 } from "../lib/menuClientPreferenceFilter.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { toConsumerErrorMessage, API_BASE } from "../lib/api.js";
+import { appendSavedMenuPreferenceQueryParams } from "../lib/dietaryParams.js";
 import { trackRestaurantView } from "../lib/analytics.js";
 import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
@@ -766,6 +767,9 @@ export default function PublicMenuPage() {
   const [applySavedPreferences, setApplySavedPreferences] = useCatalogDietaryPreferencesSession(
     dietPreferenceActive
   );
+  const dietaryFilterActive = applySavedPreferences && dietPreferenceActive;
+  const allergenFilterActive = allergenPreferenceActive;
+  const filtersActive = dietaryFilterActive || allergenFilterActive;
   const preferenceBannerVisible = hasSavedPreferences;
   const { isFirstMenuView } = useMenuPreferenceBannerSession(preferenceBannerVisible);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -896,10 +900,6 @@ export default function PublicMenuPage() {
   ]);
 
 
-  useEffect(() => {
-    setApplySavedPreferences(false);
-  }, [routeState.restaurantId]);
-
   const apiUrl = useMemo(() => {
     const rid = encodeURIComponent(asStr(routeState.restaurantId).trim());
     const params = new URLSearchParams();
@@ -910,6 +910,11 @@ export default function PublicMenuPage() {
     if (contextCity)  params.set("city",  contextCity);
     if (contextState) params.set("state", contextState);
     if (language && language !== "en") params.set("lang", language);
+    appendSavedMenuPreferenceQueryParams(params, {
+      applyDietaryPreferences: dietaryFilterActive,
+      dietPrefs,
+      enabledAllergenKeys,
+    });
     const qs = params.toString();
     return `${API}/public/restaurants/${rid}/menu${qs ? `?${qs}` : ""}`;
   }, [
@@ -919,6 +924,9 @@ export default function PublicMenuPage() {
     contextCity,
     contextState,
     language,
+    dietaryFilterActive,
+    dietPrefs,
+    enabledAllergenKeys,
   ]);
 
   useEffect(() => {
@@ -1013,7 +1021,14 @@ export default function PublicMenuPage() {
     setTabLoading(true);
     try {
       const rid = encodeURIComponent(asStr(routeState.restaurantId).trim());
-      const res = await fetch(`${API}/public/restaurants/${rid}/menu?menu=${menuId}`);
+      const params = new URLSearchParams();
+      params.set("menu", String(menuId));
+      appendSavedMenuPreferenceQueryParams(params, {
+        applyDietaryPreferences: dietaryFilterActive,
+        dietPrefs,
+        enabledAllergenKeys,
+      });
+      const res = await fetch(`${API}/public/restaurants/${rid}/menu?${params.toString()}`);
       const json = await res.json().catch(() => null);
       if (res.ok && json?.ok) {
         const newSections = normalizeSections(json);
@@ -1034,7 +1049,7 @@ export default function PublicMenuPage() {
     } finally {
       setTabLoading(false);
     }
-  }, [selectedMenuId, routeState.restaurantId]);
+  }, [selectedMenuId, routeState.restaurantId, dietaryFilterActive, dietPrefs, enabledAllergenKeys]);
 
   const dealMap = useMemo(() => {
     const m = new Map();
@@ -1120,9 +1135,6 @@ export default function PublicMenuPage() {
   // tabSections?.sections may still show a prior menu's content during a background fetch —
   // this is intentional: never blank the display while waiting for a new tab to load.
   const sections        = tabSections?.sections ?? normalizeSections(data);
-  const dietaryFilterActive = applySavedPreferences && dietPreferenceActive;
-  const allergenFilterActive = allergenPreferenceActive;
-  const filtersActive = dietaryFilterActive || allergenFilterActive;
   const dietLabels = useMemo(() => buildDietPreferenceLabels(dietPrefs), [dietPrefs]);
   const allergenLabels = useMemo(
     () => buildAllergenPreferenceLabels(enabledAllergenKeys),

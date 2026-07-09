@@ -25,8 +25,8 @@ const DIETARY_OPTIONS = [
   { key: "high_protein", label: "High-Protein" },
   { key: "low_sodium", label: "Low-Sodium" },
   { key: "diabetic_friendly", label: "Diabetic-Friendly" },
+  { key: "nut_free", label: "Nut-Free" },
   { key: "keto", label: "Keto" },
-  { key: "paleo", label: "Paleo" },
 ];
 
 export default function AccountWelcome() {

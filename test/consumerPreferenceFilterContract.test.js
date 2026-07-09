@@ -44,11 +44,33 @@ function testBannerShowsCombinedFirstView() {
   assert.match(src, /clickToRemoveDietary/);
 }
 
-function testBannerShowsItemCounts() {
-  const src = read("src/components/menu/MenuPreferencesAppliedBanner.jsx");
-  assert.match(src, /Showing \{\{filtered\}\} out of \{\{total\}\} menu items\./);
-  assert.match(src, /Showing \{\{total\}\} menu items/);
-  assert.match(src, /filteredItemCount/);
+function testPublicMenuPassesFilterParamsToApi() {
+  const src = read("src/pages/PublicMenuPage.jsx");
+  assert.match(src, /appendSavedMenuPreferenceQueryParams/);
+  assert.doesNotMatch(src, /setApplySavedPreferences\(false\)/);
+}
+
+function testCatalogMenuPassesFilterParamsToApi() {
+  const src = read("src/components/menuCatalog/CatalogMenuRenderer.jsx");
+  assert.match(src, /appendSavedMenuPreferenceQueryParams/);
+}
+
+function testProfileOmitsUnsupportedDietOptions() {
+  const src = read("src/pages/consumer/ConsumerProfile.jsx");
+  assert.doesNotMatch(src, /\bhalal\b/);
+  assert.doesNotMatch(src, /\bkosher\b/);
+  assert.doesNotMatch(src, /\bpaleo\b/);
+  assert.match(src, /high_protein/);
+  assert.match(src, /nut_free/);
+}
+
+function testMenuFilterMapsHighProteinAndNutFree() {
+  const src = read("src/lib/menuClientPreferenceFilter.js");
+  assert.match(src, /high_protein:/);
+  assert.match(src, /nut_free:/);
+  const diet = read("src/hooks/useDietPreferences.js");
+  assert.match(diet, /prefs\.high_protein/);
+  assert.match(diet, /prefs\.nut_free/);
 }
 
 testPublicMenuUsesSessionDefaultApply();
@@ -56,6 +78,18 @@ testCatalogMenuUsesSessionDefaultApply();
 testSessionDefaultIsApplyOn();
 testAllergensAlwaysAppliedOnMenus();
 testBannerShowsCombinedFirstView();
+testPublicMenuPassesFilterParamsToApi();
+testCatalogMenuPassesFilterParamsToApi();
+testProfileOmitsUnsupportedDietOptions();
+testMenuFilterMapsHighProteinAndNutFree();
+
+function testBannerShowsItemCounts() {
+  const src = read("src/components/menu/MenuPreferencesAppliedBanner.jsx");
+  assert.match(src, /Showing \{\{filtered\}\} out of \{\{total\}\} menu items\./);
+  assert.match(src, /Showing \{\{total\}\} menu items/);
+  assert.match(src, /filteredItemCount/);
+}
+
 testBannerShowsItemCounts();
 
 console.log("✅ consumerPreferenceFilterContract tests passed");

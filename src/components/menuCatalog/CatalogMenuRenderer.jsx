@@ -37,6 +37,7 @@ import {
   resolveRestaurantProfileHref,
   normalizeSections,
 } from "../../lib/catalogMenuUtils.js";
+import { appendSavedMenuPreferenceQueryParams } from "../../lib/dietaryParams.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3001" : "")).replace(/\/$/, "");
 
@@ -171,6 +172,9 @@ export default function CatalogMenuRenderer({
   const [applySavedPreferences, setApplySavedPreferences] = useCatalogDietaryPreferencesSession(
     dietPreferenceActive
   );
+  const dietaryFilterActive = applySavedPreferences && dietPreferenceActive;
+  const allergenFilterActive = allergenPreferenceActive;
+  const filtersActive = dietaryFilterActive || allergenFilterActive;
   const preferenceBannerVisible = hasSavedPreferences;
   const { isFirstMenuView } = useMenuPreferenceBannerSession(preferenceBannerVisible);
 
@@ -198,9 +202,17 @@ export default function CatalogMenuRenderer({
     if (locationParams.city) params.set("city", locationParams.city);
     if (locationParams.state) params.set("state", locationParams.state);
     if (language && language !== "en") params.set("lang", language);
+    appendSavedMenuPreferenceQueryParams(params, {
+      applyDietaryPreferences: dietaryFilterActive,
+      dietPrefs,
+      enabledAllergenKeys,
+    });
     const qs = params.toString();
     return `${API}/public/restaurants/${encodeURIComponent(restaurantId)}/menu${qs ? `?${qs}` : ""}`;
   }, [
+    dietaryFilterActive,
+    dietPrefs,
+    enabledAllergenKeys,
     language,
     locationParams.city,
     locationParams.lat,
@@ -261,7 +273,14 @@ export default function CatalogMenuRenderer({
     setTabLoading(true);
     try {
       const rid = encodeURIComponent(asStr(restaurantId).trim());
-      const res = await fetch(`${API}/public/restaurants/${rid}/menu?menu=${menuId}`);
+      const params = new URLSearchParams();
+      params.set("menu", String(menuId));
+      appendSavedMenuPreferenceQueryParams(params, {
+        applyDietaryPreferences: dietaryFilterActive,
+        dietPrefs,
+        enabledAllergenKeys,
+      });
+      const res = await fetch(`${API}/public/restaurants/${rid}/menu?${params.toString()}`);
       const json = await res.json().catch(() => null);
       if (res.ok && json?.ok) {
         const newSections = normalizeSections(json);
@@ -281,7 +300,7 @@ export default function CatalogMenuRenderer({
     } finally {
       setTabLoading(false);
     }
-  }, [restaurantId, selectedMenuId]);
+  }, [restaurantId, selectedMenuId, dietaryFilterActive, dietPrefs, enabledAllergenKeys]);
 
   const data = pageState.status === "ok" ? pageState.data : null;
   const displaySettingsSource = data?.display_settings || data || {};
@@ -344,9 +363,6 @@ export default function CatalogMenuRenderer({
   }, [data?.distance_miles, data?.restaurant_distance_miles, entry?.distance_miles, entry?.restaurant_distance_miles]);
   const showDistanceBelowAddress = distanceMiles != null;
   const sections = tabSections?.sections ?? normalizeSections(data);
-  const dietaryFilterActive = applySavedPreferences && dietPreferenceActive;
-  const allergenFilterActive = allergenPreferenceActive;
-  const filtersActive = dietaryFilterActive || allergenFilterActive;
   const dietLabels = useMemo(() => buildDietPreferenceLabels(dietPrefs), [dietPrefs]);
   const allergenLabels = useMemo(
     () => buildAllergenPreferenceLabels(enabledAllergenKeys),

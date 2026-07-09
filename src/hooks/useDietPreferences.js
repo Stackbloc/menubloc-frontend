@@ -12,10 +12,13 @@ export const EMPTY_PREFS = {
   vegetarian: false,
   gluten_free: false,
   keto: false,
+  low_carb: false,
   low_fat: false,
   low_sodium: false,
   dairy_free: false,
   diabetic_friendly: false,
+  high_protein: false,
+  nut_free: false,
   glp1_friendly: false,
 };
 
@@ -58,10 +61,13 @@ const PREF_LABELS = {
   vegetarian: "Vegetarian",
   gluten_free: "Gluten Free",
   keto: "Keto",
+  low_carb: "Low Carb",
   low_fat: "Low Fat",
   low_sodium: "Low Sodium",
   dairy_free: "Dairy Free",
   diabetic_friendly: "Diabetic Friendly",
+  high_protein: "High Protein",
+  nut_free: "Nut Free",
   glp1_friendly: "GLP-1 Friendly",
 };
 
@@ -142,6 +148,18 @@ export function itemPassesDietFilter(item, prefs) {
     if (r === "pass") { /* ok */ }
     else if (r === "fail") return false;
     else if (item?.is_diabetic_friendly !== true) return false;
+  }
+  if (prefs.high_protein) {
+    const r = df.high_protein?.result;
+    if (r === "pass") { /* ok */ }
+    else if (r === "fail" || r === "unknown") return false;
+    else return false;
+  }
+  if (prefs.nut_free) {
+    const r = df.nut_free?.result;
+    if (r === "pass") { /* ok */ }
+    else if (r === "fail" || r === "unknown") return false;
+    else return false;
   }
 
   return true;

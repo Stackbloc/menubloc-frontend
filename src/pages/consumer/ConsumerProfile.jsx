@@ -37,9 +37,6 @@ const DIETARY_OPTIONS = [
   { key: "low_sodium", label: "Low sodium" },
   { key: "diabetic_friendly", label: "Diabetic-friendly" },
   { key: "nut_free", label: "Nut-free" },
-  { key: "halal", label: "Halal" },
-  { key: "kosher", label: "Kosher" },
-  { key: "paleo", label: "Paleo" },
   { key: "keto", label: "Keto" },
 ];
 
