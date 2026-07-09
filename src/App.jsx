@@ -114,6 +114,7 @@ import ProfileSearchPage from "./pages/ProfileSearchPage.jsx";
 import RestaurantProfile from "./pages/RestaurantProfile.jsx";
 import RestaurantBillboard from "./pages/RestaurantBillboard.jsx";
 import RestaurantPublicPage from "./pages/RestaurantPublicPage.jsx";
+import RestaurantsLandingPage from "./pages/RestaurantsLandingPage.jsx";
 
 import MenuPage from "./pages/MenuPage.jsx";
 import MenuItemDetailPage from "./pages/MenuItemDetailPage.jsx";
@@ -550,8 +551,7 @@ function AppShell({ easyMenu, crmHost }) {
     location.pathname === "/restaurant/onboarding" ||
     location.pathname.startsWith("/restaurant/onboarding/");
   const operatorTabletRoute = location.pathname === "/operator/tablet";
-  const restaurantSignInRoute = location.pathname === "/restaurants";
-  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute || restaurantOnboardingRoute || operatorTabletRoute || restaurantSignInRoute;
+  const hidePublicChrome = crmHost || joinLandingRoute || joinSignupRoute || restaurantOnboardingRoute || operatorTabletRoute;
 
   return (
     <>
@@ -590,7 +590,7 @@ function AppShell({ easyMenu, crmHost }) {
 
         <Route path="/restaurants/:slugOrId/billboard" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantBillboard />} />
         {/* Canonical 3-segment routes — /restaurants/:state/:city/:restaurantSlug */}
-        <Route path="/restaurants" element={crmHost ? <HostRouteRedirect to="/crm/login" /> : <OperatorLogin />} />
+        <Route path="/restaurants" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantsLandingPage />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug/menu" element={crmHost ? <HostRouteRedirect to="/crm" /> : <PublicMenuPage />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug/menu-items/:itemSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <MenuItemCanonicalRoute />} />
         <Route path="/restaurants/:state/:city/:restaurantSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <CanonicalRestaurantProfile />} />
