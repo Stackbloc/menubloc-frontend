@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { clusterPath, clusterTypeLabel, clusterVerificationBadge } from "../../lib/clusterUrl.js";
+import { clusterPath, clusterTypeLabel, clusterVerificationBadge, formatClusterOutletCountLabel } from "../../lib/clusterUrl.js";
 
 export const CLUSTER_DIRECTORY_GRID_STYLE = {
   display: "grid",
@@ -52,7 +52,7 @@ export default function ClusterDirectoryCard({
 
   const title = cluster.area_name || cluster.name;
   const typeLabel = clusterTypeLabel(cluster.type);
-  const count = Number(cluster.restaurant_count) || 0;
+  const countLabel = formatClusterOutletCountLabel(cluster);
   const resolvedAccent = accent || DEFAULT_ACCENT;
   const verification = statusLabel || clusterVerificationBadge(cluster.verification_level);
 
@@ -125,7 +125,7 @@ export default function ClusterDirectoryCard({
           </div>
         ) : null}
         <div style={{ fontWeight: 700, color: "#111827", fontSize: "0.92rem" }}>
-          {count} Restaurant{count === 1 ? "" : "s"}
+          {countLabel || "Dining directory"}
         </div>
       </div>
     </article>

@@ -18,7 +18,7 @@ import {
   buildClusterShareData,
 } from "../components/share/shareUtils.js";
 import { fetchClusterMetadata, fetchClusterMenuItems, fetchClusterRestaurants, searchCluster } from "../lib/clusterApi.js";
-import { clusterTypeLabel, isClusterGrowing } from "../lib/clusterUrl.js";
+import { clusterTypeLabel, isClusterGrowing, resolveClusterDirectoryCount } from "../lib/clusterUrl.js";
 import {
   getClusterDisclaimer,
   getClusterOverviewDescription,
@@ -43,7 +43,10 @@ function ClusterOverviewTab({ cluster }) {
   const progressive = cluster.progressive_listing === true;
   const placeholderCount = Number(cluster.placeholder_count || cluster.listing_stats?.total_placeholders || 0);
   const menuReadyCount = Number(cluster.menu_ready_count ?? cluster.listing_stats?.total_menu_ready ?? 0);
-  const listedCount = Number(cluster.restaurant_count || cluster.listing_stats?.total_listed || 0);
+  const directoryCount = resolveClusterDirectoryCount(cluster);
+  const verifiedCount = Number(cluster.verified_profile_count ?? cluster.listing_stats?.total_listed ?? 0);
+  const isAirport = String(cluster.type || "").toLowerCase() === "airport";
+  const outletNoun = isAirport ? "dining outlet" : "restaurant";
 
   return (
     <section style={{ display: "grid", gap: "1rem" }}>
@@ -52,24 +55,27 @@ function ClusterOverviewTab({ cluster }) {
           {clusterTypeLabel(cluster.type)} near {areaName}, {cluster.city}, {cluster.state}
         </p>
         {cluster.address ? <p style={{ margin: "0.5rem 0 0" }}>{cluster.address}</p> : null}
-        {progressive ? (
+        {progressive || placeholderCount > 0 ? (
           <p style={{ margin: "0.75rem 0 0" }}>
-            {listedCount} restaurant profile{listedCount === 1 ? "" : "s"} listed
-            {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus available now` : ""}
-            {placeholderCount > 0
-              ? ` · ${placeholderCount} placeholder listing${placeholderCount === 1 ? "" : "s"} pending verification`
+            {directoryCount > 0
+              ? `${directoryCount} ${outletNoun}${directoryCount === 1 ? "" : "s"} in this directory`
+              : null}
+            {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus on Menuply now` : " · Menus being added"}
+            {verifiedCount > 0 && verifiedCount < directoryCount
+              ? ` · ${verifiedCount} verified profile${verifiedCount === 1 ? "" : "s"} linked`
               : ""}
           </p>
         ) : (
           <p style={{ margin: "0.75rem 0 0" }}>
-            {listedCount} restaurant{listedCount === 1 ? "" : "s"} listed in this area
+            {directoryCount} {outletNoun}
+            {directoryCount === 1 ? "" : "s"} listed in this area
           </p>
         )}
       </div>
-      {progressive ? (
+      {progressive || placeholderCount > 0 ? (
         <p style={{ margin: 0, color: "#444", lineHeight: 1.5 }}>
-          Menus and profiles update automatically as verified restaurant data is published — no manual
-          cluster refresh is required for assigned locations.
+          Menuply is publishing this directory while structured menus are added for each location. Menu
+          availability updates automatically as data is published.
         </p>
       ) : null}
       {cluster.placeholder_intro ? (
@@ -162,21 +168,33 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
   }
 
   if (restaurants.length === 0 && placeholders.length === 0) {
-    const emptyCopy = cluster?.progressive_listing || progressiveListing
-      ? "No verified restaurant profiles are assigned to this cluster yet. Placeholder listings may appear below as this destination is built out."
-      : "No restaurants are assigned to this cluster yet.";
-    return <p style={{ color: "#888" }}>{emptyCopy}</p>;
+    return (
+      <p style={{ color: "#888" }}>
+        Menuply is building the dining directory for this destination. Check back soon as outlets are
+        published.
+      </p>
+    );
   }
 
-  const totalLabel = pagination?.progressive_listing
-    ? pagination?.total_listed ?? restaurants.length
-    : pagination?.total_menu_ready ?? restaurants.length;
+  const directoryTotal = pagination?.total_placeholders ?? placeholders.reduce(
+    (sum, section) => sum + (Array.isArray(section?.listings) ? section.listings.length : 0),
+    0
+  );
+  const verifiedTotal = pagination?.total_listed ?? restaurants.length;
   const menuReadyCount = pagination?.total_menu_ready ?? 0;
+  const isAirport = String(cluster?.type || "").toLowerCase() === "airport";
+  const outletNoun = isAirport ? "dining outlet" : "restaurant";
   const CardComponent = progressiveListing ? ClusterRestaurantListingCard : DiscoveryCard;
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
-      {progressiveListing ? (
+      {directoryTotal > 0 ? (
+        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45 }}>
+          {directoryTotal} {outletNoun}
+          {directoryTotal === 1 ? "" : "s"} in this directory
+          {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus on Menuply now` : " · Menus being added"}
+        </p>
+      ) : progressiveListing ? (
         <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45 }}>
           Menu status updates live when published menus are attached to assigned restaurant profiles.
           {menuReadyCount > 0 ? ` ${menuReadyCount} menu${menuReadyCount === 1 ? "" : "s"} available now.` : ""}
@@ -188,7 +206,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
       {restaurants.length > 0 ? (
         <>
           <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
-            Showing {restaurants.length} of {totalLabel} verified profile{totalLabel === 1 ? "" : "s"}
+            {verifiedTotal} verified profile{verifiedTotal === 1 ? "" : "s"} with Menuply data
           </p>
           {restaurants.map((restaurant) => (
             <CardComponent key={restaurant.restaurant_id} restaurant={restaurant} menu={restaurant} />
@@ -197,9 +215,11 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
       ) : null}
       {placeholders.length > 0 ? (
         <div style={{ display: "grid", gap: "1rem", marginTop: restaurants.length > 0 ? "0.5rem" : 0 }}>
-          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
-            Placeholder listings (not verified restaurant records)
-          </p>
+          {restaurants.length === 0 ? null : (
+            <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
+              Browse by terminal and concourse
+            </p>
+          )}
           {placeholders.map((section) => (
             <ClusterPlaceholderSection key={section.area} section={section} />
           ))}

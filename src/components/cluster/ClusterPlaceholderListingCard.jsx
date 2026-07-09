@@ -1,15 +1,17 @@
-const PENDING_LABEL = "Placeholder listing — menu/profile not yet verified";
-
 function placeholderStatusLabel(status) {
   const normalized = String(status || "").trim().toLowerCase();
-  if (normalized === "pending_verification") {
-    return "Listing Pending Verification";
+  if (normalized === "menu_pending") {
+    return "Menu data in progress";
   }
-  return "Menu Coming Soon";
+  if (normalized === "pending_verification") {
+    return "Listing pending verification";
+  }
+  return "Menu coming soon";
 }
 
 export default function ClusterPlaceholderListingCard({ listing }) {
   const name = listing?.name || "Unnamed listing";
+  const location = listing?.location ? String(listing.location).trim() : "";
   const statusLabel = placeholderStatusLabel(listing?.status);
 
   return (
@@ -19,19 +21,21 @@ export default function ClusterPlaceholderListingCard({ listing }) {
         gap: "0.35rem",
         padding: "0.9rem 1rem",
         borderRadius: 12,
-        border: "1px dashed #d1d5db",
-        background: "#fafafa",
+        border: "1px solid #e5e7eb",
+        background: "#fff",
       }}
     >
-      <div style={{ fontWeight: 600, color: "#374151" }}>{name}</div>
-      <div style={{ color: "#6b7280", fontSize: "0.85rem" }}>{PENDING_LABEL}</div>
+      <div style={{ fontWeight: 600, color: "#111827" }}>{name}</div>
+      {location ? (
+        <div style={{ color: "#6b7280", fontSize: "0.85rem", lineHeight: 1.4 }}>{location}</div>
+      ) : null}
       <div
         style={{
           alignSelf: "flex-start",
           fontSize: "0.75rem",
           fontWeight: 600,
-          color: "#92400e",
-          background: "#fef3c7",
+          color: "#1d4ed8",
+          background: "#eff6ff",
           borderRadius: 999,
           padding: "0.2rem 0.55rem",
         }}

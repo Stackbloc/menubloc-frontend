@@ -68,6 +68,21 @@ export function clusterCoverageBadge(cluster) {
   return isClusterGrowing(cluster) ? "🟡 Growing" : null;
 }
 
+export function resolveClusterDirectoryCount(cluster) {
+  const directory = Number(cluster?.directory_count ?? cluster?.placeholder_count) || 0;
+  const verified = Number(cluster?.verified_profile_count ?? cluster?.restaurant_count) || 0;
+  if (directory > 0) return directory;
+  return verified;
+}
+
+export function formatClusterOutletCountLabel(cluster) {
+  const count = resolveClusterDirectoryCount(cluster);
+  if (count <= 0) return null;
+  const type = String(cluster?.type || "").toLowerCase();
+  const noun = type === "airport" ? "Dining outlet" : "Restaurant";
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
 export function clusterTypeLabel(type) {
   const labels = {
     mall: "Shopping mall",
