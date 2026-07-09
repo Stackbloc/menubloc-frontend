@@ -159,6 +159,18 @@ async function buildSitemapEntries() {
     if (profilePath) entries.push({ url: absoluteCanonicalUrl(profilePath), lastmod: restaurant.updated_at, changefreq: "weekly", priority: 0.8, category: "restaurant" });
     if (menuPath) entries.push({ url: absoluteCanonicalUrl(menuPath), lastmod: restaurant.updated_at, changefreq: "daily", priority: 0.9, category: "menu" });
   }
+  for (const cluster of inventory.clusters || []) {
+    const path = cluster.path || clusterPath(cluster);
+    if (path) {
+      entries.push({
+        url: absoluteCanonicalUrl(path),
+        lastmod: cluster.updated_at,
+        changefreq: "weekly",
+        priority: 0.75,
+        category: "cluster",
+      });
+    }
+  }
 
   const seen = new Set();
   return entries.filter((entry) => entry.url && !seen.has(entry.url) && seen.add(entry.url));

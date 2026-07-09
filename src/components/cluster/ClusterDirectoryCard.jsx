@@ -39,6 +39,7 @@ export default function ClusterDirectoryCard({
   cluster,
   accent = DEFAULT_ACCENT,
   statusLabel = null,
+  statusTitle = null,
   isPending = false,
 }) {
   if (!cluster) return null;
@@ -70,7 +71,10 @@ export default function ClusterDirectoryCard({
             {title}
           </div>
           {statusLabel ? (
-            <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: "#374151", lineHeight: 1.25 }}>
+            <span
+              title={statusTitle || undefined}
+              style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: "#374151", lineHeight: 1.25 }}
+            >
               {statusLabel}
             </span>
           ) : null}

@@ -46,7 +46,27 @@ export const CLUSTER_DESTINATION_TYPES = Object.freeze([
   "business_district",
 ]);
 
-export const FEATURED_CLUSTER_FALLBACK_SLUGS = Object.freeze(["usc", "la-live"]);
+export const FEATURED_CLUSTER_FALLBACK_SLUGS = Object.freeze(["usc", "la-live", "lax", "atl-airport"]);
+
+export const CLUSTER_GROWING_HELP_TEXT =
+  "This Cluster is actively expanding. Menuply is continuously adding restaurants, menus, and structured menu data. Some restaurants or menus may still be missing.";
+
+export const CLUSTER_GROWING_NOTICE = Object.freeze({
+  title: "Growing Cluster",
+  body:
+    "Menuply is actively expanding this collection. Restaurants, menus, and structured menu data are continuously being added. If you know of a restaurant that's missing, you can help improve this Cluster.",
+});
+
+export function isClusterGrowing(cluster) {
+  const coverage = String(cluster?.coverage_status || "").trim().toLowerCase();
+  if (coverage === "growing") return true;
+  if (coverage === "complete") return false;
+  return cluster?.progressive_listing === true;
+}
+
+export function clusterCoverageBadge(cluster) {
+  return isClusterGrowing(cluster) ? "🟡 Growing" : null;
+}
 
 export function clusterTypeLabel(type) {
   const labels = {

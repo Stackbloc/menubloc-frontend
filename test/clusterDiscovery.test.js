@@ -6,6 +6,8 @@ import {
   clusterMembershipHeading,
   clusterTypeLabel,
   clusterVerificationBadge,
+  clusterCoverageBadge,
+  isClusterGrowing,
   groupClustersByStateAndType,
   groupClustersByStateCity,
   resolveFeaturedClusters,
@@ -69,4 +71,11 @@ test("resolveFeaturedClusters falls back to known showcase slugs", () => {
   const featured = resolveFeaturedClusters([], clusters);
   assert.equal(featured.length, 2);
   assert.equal(featured[0].slug, "usc");
+});
+
+test("growing coverage badge replaces pending public state", () => {
+  assert.equal(clusterCoverageBadge({ coverage_status: "growing" }), "🟡 Growing");
+  assert.equal(clusterCoverageBadge({ coverage_status: "complete" }), null);
+  assert.equal(isClusterGrowing({ progressive_listing: true }), true);
+  assert.equal(isClusterGrowing({ coverage_status: "complete" }), false);
 });

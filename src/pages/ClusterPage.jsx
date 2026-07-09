@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
+import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx";
 import ClusterRestaurantListingCard from "../components/cluster/ClusterRestaurantListingCard.jsx";
 import { ClusterPlaceholderSection } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
 import { ClusterPageBreadcrumb } from "../components/cluster/ClusterBreadcrumbs.jsx";
@@ -17,7 +18,7 @@ import {
   buildClusterShareData,
 } from "../components/share/shareUtils.js";
 import { fetchClusterMetadata, fetchClusterMenuItems, fetchClusterRestaurants, searchCluster } from "../lib/clusterApi.js";
-import { clusterTypeLabel } from "../lib/clusterUrl.js";
+import { clusterTypeLabel, isClusterGrowing } from "../lib/clusterUrl.js";
 import {
   getClusterDisclaimer,
   getClusterOverviewDescription,
@@ -498,6 +499,34 @@ export default function ClusterPage() {
   }, [shareData]);
 
   useEffect(() => {
+    if (!cluster || !isClusterGrowing(cluster)) return undefined;
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-cluster-growing-schema", "true");
+    script.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: cluster.name,
+      description:
+        cluster.share_description ||
+        cluster.short_description ||
+        `Restaurants and menus around ${cluster.area_name || cluster.name}.`,
+      url: shareData?.url || undefined,
+      isPartOf: {
+        "@type": "WebSite",
+        name: "Menuply",
+        url: CANONICAL_BASE,
+      },
+    });
+    document.head.appendChild(script);
+
+    return () => {
+      if (script.parentNode) script.parentNode.removeChild(script);
+    };
+  }, [cluster, shareData?.url]);
+
+  useEffect(() => {
     if (cluster?.page_heading && !shareData?.title) {
       document.title = cluster.share_title || `${cluster.page_title || cluster.page_heading} | Menuply`;
     }
@@ -600,6 +629,7 @@ export default function ClusterPage() {
 
   const pageHeading = getClusterPageHeading(cluster);
   const disclaimer = getClusterDisclaimer(cluster);
+  const showGrowingNotice = isClusterGrowing(cluster);
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem" }}>
@@ -631,6 +661,8 @@ export default function ClusterPage() {
           ) : null}
         </div>
       </header>
+
+      {showGrowingNotice ? <ClusterGrowingNotice /> : null}
 
       <nav
         ref={navRef}

@@ -6,7 +6,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { createCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
-import { stateDisplayName } from "../lib/clusterUrl.js";
+import { stateDisplayName, clusterCoverageBadge, CLUSTER_GROWING_HELP_TEXT } from "../lib/clusterUrl.js";
 
 const TYPE_ACCENTS = {
   university: { border: "#8b5cf6", bg: "#f5f3ff" },
@@ -105,7 +105,13 @@ export default function ClustersDirectoryPage() {
         radius_miles: Number(form.radius_miles),
       });
       if (json?.cluster) {
-        setPendingSubmissions((current) => [json.cluster, ...current]);
+        const created = json.cluster;
+        const visibility = String(created.visibility || "").toUpperCase();
+        if (visibility === "PUBLIC") {
+          setClusters((current) => [created, ...current]);
+        } else {
+          setPendingSubmissions((current) => [created, ...current]);
+        }
       }
       setForm(INITIAL_FORM);
     } catch (err) {
@@ -121,23 +127,29 @@ export default function ClustersDirectoryPage() {
   }
 
   function clusterStatusLabel(cluster) {
-    const status = String(cluster?.status || "").toLowerCase();
-    if (status === "review" || status === "draft") return "🟠 Pending";
+    const growingBadge = clusterCoverageBadge(cluster);
+    if (growingBadge) {
+      return { label: growingBadge, title: CLUSTER_GROWING_HELP_TEXT };
+    }
     const visibility = String(cluster?.visibility || "").toUpperCase();
-    if (visibility === "PRIVATE") return "🔒 Private";
-    if (visibility === "SHARED") return "🔗 Shared";
-    return "🟢 Approved";
+    if (visibility === "PRIVATE") return { label: "🔒 Private", title: null };
+    if (visibility === "SHARED") return { label: "🔗 Shared", title: null };
+    const status = String(cluster?.status || "").toLowerCase();
+    if (status === "draft" || status === "review") return { label: "🟠 Draft", title: null };
+    return { label: null, title: null };
   }
 
   function renderClusterCard(cluster, isPending = false) {
     const type = String(cluster.type || "").toLowerCase();
     const accent = TYPE_ACCENTS[type] || { border: "#d1d5db", bg: "#f9fafb" };
+    const status = clusterStatusLabel(cluster);
     return (
       <ClusterDirectoryCard
         key={`${cluster.id || cluster.slug}-${isPending ? "pending" : "active"}`}
         cluster={cluster}
         accent={accent}
-        statusLabel={clusterStatusLabel(cluster)}
+        statusLabel={status.label}
+        statusTitle={status.title}
         isPending={isPending}
       />
     );
@@ -193,7 +205,7 @@ export default function ClustersDirectoryPage() {
           </p>
           {loading ? <p style={{ color: "#64748b" }}>Loading clusters…</p> : null}
           {!loading && sortedClusters.length === 0 ? (
-            <p style={{ color: "#64748b" }}>No approved clusters yet.</p>
+            <p style={{ color: "#64748b" }}>No public clusters yet.</p>
           ) : null}
           {!loading && sortedClusters.length > 0 ? (
             <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
@@ -213,7 +225,8 @@ export default function ClustersDirectoryPage() {
         >
           <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Create a Cluster</h2>
           <p style={{ margin: "0.4rem 0 0.9rem", color: "#64748b", fontSize: 14 }}>
-            New submissions are listed as <strong>Pending</strong> until approved.
+            Public clusters publish immediately as <strong>Growing</strong> while restaurant and menu coverage
+            expands. Private and shared clusters stay off the public directory.
           </p>
 
           {!isAuthenticated ? (
@@ -379,7 +392,8 @@ export default function ClustersDirectoryPage() {
 
       <div style={{ maxWidth: 1080, margin: "0 auto" }}>
         <p style={{ marginTop: "0.85rem", color: "#64748b", fontSize: 12 }}>
-          Pending clusters are not public until approved.
+          Private and shared clusters are not indexed. Growing public clusters are searchable and included in the
+          sitemap.
         </p>
       </div>
       <BottomNav />
