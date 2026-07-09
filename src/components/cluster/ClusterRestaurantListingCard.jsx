@@ -7,11 +7,7 @@ function clusterMenuStatusLabel(restaurant) {
   if (menuReady === true || restaurant?.menu_availability_state === "menu_available") {
     return { text: "Menu Available", tone: "#166534", background: "#dcfce7" };
   }
-  return {
-    text: "Menu Coming Soon",
-    tone: "#92400e",
-    background: "#fef3c7",
-  };
+  return null;
 }
 
 export default function ClusterRestaurantListingCard({ restaurant }) {
@@ -44,20 +40,22 @@ export default function ClusterRestaurantListingCard({ restaurant }) {
         {cuisine ? <div style={{ color: "#6b7280", fontSize: "0.9rem" }}>{cuisine}</div> : null}
         {area ? <div style={{ color: "#9ca3af", fontSize: "0.85rem", marginTop: "0.15rem" }}>{area}</div> : null}
       </div>
-      <span
-        style={{
-          flexShrink: 0,
-          fontSize: "0.75rem",
-          fontWeight: 600,
-          color: status.tone,
-          background: status.background,
-          borderRadius: 999,
-          padding: "0.2rem 0.55rem",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {status.text}
-      </span>
+      {status ? (
+        <span
+          style={{
+            flexShrink: 0,
+            fontSize: "0.75rem",
+            fontWeight: 600,
+            color: status.tone,
+            background: status.background,
+            borderRadius: 999,
+            padding: "0.2rem 0.55rem",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {status.text}
+        </span>
+      ) : null}
     </div>
     <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontSize: "0.85rem" }}>
       {canLinkProfile ? (

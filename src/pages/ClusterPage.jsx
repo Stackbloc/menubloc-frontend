@@ -65,7 +65,7 @@ function ClusterOverviewTab({ cluster }) {
             {drinksCount > 0
               ? ` · ${drinksCount} drink spot${drinksCount === 1 ? "" : "s"} (coffee, cocktails, wine)`
               : ""}
-            {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus on Menuply now` : " · Menus being added"}
+            {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus on Menuply` : ""}
             {verifiedCount > 0 && verifiedCount < directoryCount
               ? ` · ${verifiedCount} verified profile${verifiedCount === 1 ? "" : "s"} linked`
               : ""}
@@ -77,12 +77,6 @@ function ClusterOverviewTab({ cluster }) {
           </p>
         )}
       </div>
-      {progressive || placeholderCount > 0 ? (
-        <p style={{ margin: 0, color: "#444", lineHeight: 1.5 }}>
-          Menuply is publishing this directory while structured menus are added for each location. Menu
-          availability updates automatically as data is published.
-        </p>
-      ) : null}
       {cluster.placeholder_intro ? (
         <p style={{ margin: 0, color: "#444", lineHeight: 1.5 }}>{cluster.placeholder_intro}</p>
       ) : null}
@@ -218,12 +212,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
           {drinksTotal > 0
             ? `${diningTotal > 0 ? " · " : ""}${drinksTotal} drink spot${drinksTotal === 1 ? "" : "s"}`
             : ""}
-          {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus on Menuply now` : " · Menus being added"}
-        </p>
-      ) : progressiveListing ? (
-        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45 }}>
-          Menu status updates live when published menus are attached to assigned restaurant profiles.
-          {menuReadyCount > 0 ? ` ${menuReadyCount} menu${menuReadyCount === 1 ? "" : "s"} available now.` : ""}
+          {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus on Menuply` : ""}
         </p>
       ) : null}
       {restaurants.length > 0 ? (
@@ -256,11 +245,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
             <p style={{ margin: 0, color: "#444", fontSize: "0.9rem", lineHeight: 1.45 }}>
               {drinksPlaceholderIntro}
             </p>
-          ) : (
-            <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45 }}>
-              Find coffee, cocktails, wine, and beer by terminal or concourse. Drink menus are being added on Menuply.
-            </p>
-          )}
+          ) : null}
           <ClusterDrinksDirectory
             sections={drinksPlaceholders}
             beverageFilter={drinksFilter}

@@ -1,19 +1,6 @@
-function placeholderStatusLabel(status) {
-  const normalized = String(status || "").trim().toLowerCase();
-  if (normalized === "menu_pending") {
-    return "Drink menu in progress";
-  }
-  if (normalized === "pending_verification") {
-    return "Listing pending verification";
-  }
-  return "Menu coming soon";
-}
-
 export default function ClusterPlaceholderListingCard({ listing, showBeverageType = false }) {
   const name = listing?.name || "Unnamed listing";
   const location = listing?.location ? String(listing.location).trim() : "";
-  const statusLabel = placeholderStatusLabel(listing?.status);
-  const isDrink = String(listing?.listing_kind || "").trim().toLowerCase() === "drinks";
   const beverageLabel =
     showBeverageType && listing?.beverage_type
       ? String(listing.beverage_type).trim()
@@ -34,35 +21,22 @@ export default function ClusterPlaceholderListingCard({ listing, showBeverageTyp
       {location ? (
         <div style={{ color: "#6b7280", fontSize: "0.85rem", lineHeight: 1.4 }}>{location}</div>
       ) : null}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-        {beverageLabel ? (
-          <div
-            style={{
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              color: "#7c3aed",
-              background: "#f5f3ff",
-              borderRadius: 999,
-              padding: "0.2rem 0.55rem",
-              textTransform: "capitalize",
-            }}
-          >
-            {beverageLabel}
-          </div>
-        ) : null}
+      {beverageLabel ? (
         <div
           style={{
+            alignSelf: "flex-start",
             fontSize: "0.75rem",
             fontWeight: 600,
-            color: isDrink ? "#7c3aed" : "#1d4ed8",
-            background: isDrink ? "#f5f3ff" : "#eff6ff",
+            color: "#7c3aed",
+            background: "#f5f3ff",
             borderRadius: 999,
             padding: "0.2rem 0.55rem",
+            textTransform: "capitalize",
           }}
         >
-          {statusLabel}
+          {beverageLabel}
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
@@ -126,7 +100,7 @@ export function ClusterDrinksDirectory({ sections, beverageFilter = "all", onFil
         ))
       ) : (
         <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
-          No drink listings match this filter yet.
+          No drink listings match this filter.
         </p>
       )}
     </div>
@@ -160,4 +134,3 @@ function countVisibleDrinkListings(sections) {
     0
   );
 }
-
