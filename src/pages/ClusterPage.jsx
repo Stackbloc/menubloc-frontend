@@ -4,7 +4,7 @@ import BottomNav from "../components/BottomNav.jsx";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx";
 import ClusterRestaurantListingCard from "../components/cluster/ClusterRestaurantListingCard.jsx";
-import { ClusterPlaceholderSection } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
+import { ClusterPlaceholderSection, ClusterDrinksDirectory } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
 import { ClusterPageBreadcrumb } from "../components/cluster/ClusterBreadcrumbs.jsx";
 import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
 import {
@@ -44,6 +44,8 @@ function ClusterOverviewTab({ cluster }) {
   const placeholderCount = Number(cluster.placeholder_count || cluster.listing_stats?.total_placeholders || 0);
   const menuReadyCount = Number(cluster.menu_ready_count ?? cluster.listing_stats?.total_menu_ready ?? 0);
   const directoryCount = resolveClusterDirectoryCount(cluster);
+  const diningCount = Number(cluster.dining_count ?? cluster.listing_stats?.total_dining_placeholders) || 0;
+  const drinksCount = Number(cluster.drinks_count ?? cluster.listing_stats?.total_drinks_placeholders) || 0;
   const verifiedCount = Number(cluster.verified_profile_count ?? cluster.listing_stats?.total_listed ?? 0);
   const isAirport = String(cluster.type || "").toLowerCase() === "airport";
   const outletNoun = isAirport ? "dining outlet" : "restaurant";
@@ -60,6 +62,9 @@ function ClusterOverviewTab({ cluster }) {
             {directoryCount > 0
               ? `${directoryCount} ${outletNoun}${directoryCount === 1 ? "" : "s"} in this directory`
               : null}
+            {drinksCount > 0
+              ? ` · ${drinksCount} drink spot${drinksCount === 1 ? "" : "s"} (coffee, cocktails, wine)`
+              : ""}
             {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus on Menuply now` : " · Menus being added"}
             {verifiedCount > 0 && verifiedCount < directoryCount
               ? ` · ${verifiedCount} verified profile${verifiedCount === 1 ? "" : "s"} linked`
@@ -93,7 +98,10 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [restaurants, setRestaurants] = useState([]);
   const [placeholders, setPlaceholders] = useState([]);
+  const [drinksPlaceholders, setDrinksPlaceholders] = useState([]);
   const [placeholderIntro, setPlaceholderIntro] = useState("");
+  const [drinksPlaceholderIntro, setDrinksPlaceholderIntro] = useState("");
+  const [drinksFilter, setDrinksFilter] = useState("all");
   const [progressiveListing, setProgressiveListing] = useState(false);
   const [pagination, setPagination] = useState(null);
   const [error, setError] = useState("");
@@ -106,7 +114,10 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
     setError("");
     setRestaurants([]);
     setPlaceholders([]);
+    setDrinksPlaceholders([]);
     setPlaceholderIntro("");
+    setDrinksPlaceholderIntro("");
+    setDrinksFilter("all");
     setProgressiveListing(false);
     setPagination(null);
 
@@ -115,7 +126,9 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
         if (!data?.ok) throw new Error(data?.error || "Could not load restaurants");
         setRestaurants(Array.isArray(data.restaurants) ? data.restaurants : []);
         setPlaceholders(Array.isArray(data.placeholders) ? data.placeholders : []);
+        setDrinksPlaceholders(Array.isArray(data.drinks_placeholders) ? data.drinks_placeholders : []);
         setPlaceholderIntro(data.placeholder_intro || "");
+        setDrinksPlaceholderIntro(data.drinks_placeholder_intro || "");
         setProgressiveListing(
           data.progressive_listing === true || data.cluster?.progressive_listing === true
         );
@@ -167,7 +180,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
     return <p style={{ color: "#b91c1c" }}>{error}</p>;
   }
 
-  if (restaurants.length === 0 && placeholders.length === 0) {
+  if (restaurants.length === 0 && placeholders.length === 0 && drinksPlaceholders.length === 0) {
     return (
       <p style={{ color: "#888" }}>
         Menuply is building the dining directory for this destination. Check back soon as outlets are
@@ -176,10 +189,19 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
     );
   }
 
-  const directoryTotal = pagination?.total_placeholders ?? placeholders.reduce(
-    (sum, section) => sum + (Array.isArray(section?.listings) ? section.listings.length : 0),
-    0
-  );
+  const diningTotal =
+    pagination?.total_dining_placeholders ??
+    placeholders.reduce(
+      (sum, section) => sum + (Array.isArray(section?.listings) ? section.listings.length : 0),
+      0
+    );
+  const drinksTotal =
+    pagination?.total_drinks_placeholders ??
+    drinksPlaceholders.reduce(
+      (sum, section) => sum + (Array.isArray(section?.listings) ? section.listings.length : 0),
+      0
+    );
+  const directoryTotal = pagination?.total_placeholders ?? diningTotal + drinksTotal;
   const verifiedTotal = pagination?.total_listed ?? restaurants.length;
   const menuReadyCount = pagination?.total_menu_ready ?? 0;
   const isAirport = String(cluster?.type || "").toLowerCase() === "airport";
@@ -190,8 +212,12 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
     <div style={{ display: "grid", gap: "0.75rem" }}>
       {directoryTotal > 0 ? (
         <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45 }}>
-          {directoryTotal} {outletNoun}
-          {directoryTotal === 1 ? "" : "s"} in this directory
+          {diningTotal > 0
+            ? `${diningTotal} ${outletNoun}${diningTotal === 1 ? "" : "s"}`
+            : null}
+          {drinksTotal > 0
+            ? `${diningTotal > 0 ? " · " : ""}${drinksTotal} drink spot${drinksTotal === 1 ? "" : "s"}`
+            : ""}
           {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus on Menuply now` : " · Menus being added"}
         </p>
       ) : progressiveListing ? (
@@ -199,9 +225,6 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
           Menu status updates live when published menus are attached to assigned restaurant profiles.
           {menuReadyCount > 0 ? ` ${menuReadyCount} menu${menuReadyCount === 1 ? "" : "s"} available now.` : ""}
         </p>
-      ) : null}
-      {placeholderIntro ? (
-        <p style={{ margin: 0, color: "#444", fontSize: "0.9rem", lineHeight: 1.45 }}>{placeholderIntro}</p>
       ) : null}
       {restaurants.length > 0 ? (
         <>
@@ -215,14 +238,34 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
       ) : null}
       {placeholders.length > 0 ? (
         <div style={{ display: "grid", gap: "1rem", marginTop: restaurants.length > 0 ? "0.5rem" : 0 }}>
-          {restaurants.length === 0 ? null : (
-            <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
-              Browse by terminal and concourse
-            </p>
-          )}
+          <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#111827" }}>Dining by terminal</h3>
+          {placeholderIntro ? (
+            <p style={{ margin: 0, color: "#444", fontSize: "0.9rem", lineHeight: 1.45 }}>{placeholderIntro}</p>
+          ) : null}
           {placeholders.map((section) => (
             <ClusterPlaceholderSection key={section.area} section={section} />
           ))}
+        </div>
+      ) : placeholderIntro ? (
+        <p style={{ margin: 0, color: "#444", fontSize: "0.9rem", lineHeight: 1.45 }}>{placeholderIntro}</p>
+      ) : null}
+      {drinksPlaceholders.length > 0 ? (
+        <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
+          <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#111827" }}>Drinks — coffee, cocktails &amp; wine</h3>
+          {drinksPlaceholderIntro ? (
+            <p style={{ margin: 0, color: "#444", fontSize: "0.9rem", lineHeight: 1.45 }}>
+              {drinksPlaceholderIntro}
+            </p>
+          ) : (
+            <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45 }}>
+              Find coffee, cocktails, wine, and beer by terminal or concourse. Drink menus are being added on Menuply.
+            </p>
+          )}
+          <ClusterDrinksDirectory
+            sections={drinksPlaceholders}
+            beverageFilter={drinksFilter}
+            onFilterChange={setDrinksFilter}
+          />
         </div>
       ) : null}
       {pagination?.has_more ? (

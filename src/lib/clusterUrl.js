@@ -76,9 +76,16 @@ export function resolveClusterDirectoryCount(cluster) {
 }
 
 export function formatClusterOutletCountLabel(cluster) {
+  const dining = Number(cluster?.dining_count ?? cluster?.listing_stats?.total_dining_placeholders) || 0;
+  const drinks = Number(cluster?.drinks_count ?? cluster?.listing_stats?.total_drinks_placeholders) || 0;
   const count = resolveClusterDirectoryCount(cluster);
   if (count <= 0) return null;
   const type = String(cluster?.type || "").toLowerCase();
+  if (type === "airport" && drinks > 0) {
+    const diningLabel = dining > 0 ? `${dining} dining` : "";
+    const drinksLabel = `${drinks} drink${drinks === 1 ? "" : "s"}`;
+    return diningLabel ? `${diningLabel} · ${drinksLabel}` : drinksLabel;
+  }
   const noun = type === "airport" ? "Dining outlet" : "Restaurant";
   return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
