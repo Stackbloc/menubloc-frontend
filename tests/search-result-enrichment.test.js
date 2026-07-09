@@ -7,6 +7,8 @@ import {
   formatPairingTeaser,
   queryRequiresNutritionDisplay,
   rowHasNutritionMacros,
+  resolveNutritionIntentDisplayKeys,
+  isNutritionIntentDisplayActive,
 } from "../src/lib/searchResultEnrichment.js";
 
 test("buildWhyMatchLabel prefers match_reasons_v1", () => {
@@ -84,8 +86,77 @@ test("buildNutritionPreviewChips highlights calories for low-calorie intent", ()
     { chips: { nutrition_chip: { calories_kcal: 420, protein_g: 18 } } },
     { nutrition_intent: { low_calorie: true }, nutrient_constraints: {}, diet: {} }
   );
+  assert.equal(chips.length, 1);
   assert.equal(chips[0]?.label, "420 cal");
   assert.equal(chips[0]?.primary, true);
+});
+
+test("intent-aware low sodium shows sodium only", () => {
+  const queryMeta = { nutrition_intent: { low_sodium: true } };
+  const chips = buildNutritionPreviewChips(
+    {
+      chips: {
+        nutrition_chip: {
+          sodium_mg: 180,
+          protein_g: 35,
+          calories_kcal: 400,
+          fat_g: 10,
+        },
+      },
+    },
+    queryMeta
+  );
+  assert.deepEqual(chips, [{ label: "180mg sodium", primary: true }]);
+});
+
+test("intent-aware low carbs and keto show carbs only", () => {
+  const lowCarb = buildNutritionPreviewChips(
+    {
+      chips: {
+        nutrition_chip: { carbs_g: 12, fiber_g: 4, protein_g: 28, sodium_mg: 500 },
+      },
+    },
+    { nutrition_intent: { low_carb: true } }
+  );
+  assert.deepEqual(lowCarb, [{ label: "8g net carbs", primary: true }]);
+
+  const keto = buildNutritionPreviewChips(
+    {
+      chips: {
+        nutrition_chip: { carbs_g: 6, protein_g: 20, calories_kcal: 300 },
+      },
+    },
+    { diet: { keto: true } }
+  );
+  assert.deepEqual(keto, [{ label: "6g net carbs", primary: true }]);
+});
+
+test("intent-aware high protein shows protein only", () => {
+  const chips = buildNutritionPreviewChips(
+    {
+      chips: {
+        nutrition_chip: { protein_g: 42, calories_kcal: 390, sodium_mg: 620 },
+      },
+    },
+    { nutrition_intent: { high_protein: true } }
+  );
+  assert.deepEqual(chips, [{ label: "42g protein", primary: true }]);
+});
+
+test("intent-aware low calories shows calories only", () => {
+  const chips = buildNutritionPreviewChips(
+    {
+      chips: {
+        nutrition_chip: { calories_kcal: 310, protein_g: 24, sodium_mg: 480 },
+      },
+    },
+    { nutrition_intent: { low_calorie: true } }
+  );
+  assert.deepEqual(chips, [{ label: "310 cal", primary: true }]);
+});
+
+test("resolveNutritionIntentDisplayKeys maps keto to low_carb", () => {
+  assert.deepEqual(resolveNutritionIntentDisplayKeys({ diet: { keto: true } }), ["low_carb"]);
 });
 
 test("queryRequiresNutritionDisplay detects nutrient constraints", () => {
@@ -99,10 +170,33 @@ test("queryRequiresNutritionDisplay detects nutrient constraints", () => {
   assert.equal(queryRequiresNutritionDisplay({ text_terms: ["burger"] }), false);
 });
 
+test("isNutritionIntentDisplayActive detects nutrition intents", () => {
+  assert.equal(isNutritionIntentDisplayActive({ nutrition_intent: { low_sodium: true } }), true);
+  assert.equal(isNutritionIntentDisplayActive({ text_terms: ["salad"] }), false);
+});
+
 test("rowHasNutritionMacros reads chip and row fields", () => {
   assert.equal(rowHasNutritionMacros({ protein_g: 25 }), true);
   assert.equal(rowHasNutritionMacros({ chips: { nutrition_chip: { calories_kcal: 400 } } }), true);
   assert.equal(rowHasNutritionMacros({ item_name: "Salad" }), false);
+});
+
+test("rowHasNutritionMacros respects intent fields for low sodium", () => {
+  const queryMeta = { nutrition_intent: { low_sodium: true } };
+  assert.equal(
+    rowHasNutritionMacros(
+      { chips: { nutrition_chip: { sodium_mg: 220, protein_g: null, calories_kcal: null } } },
+      queryMeta
+    ),
+    true
+  );
+  assert.equal(
+    rowHasNutritionMacros(
+      { chips: { nutrition_chip: { protein_g: 30, sodium_mg: null } } },
+      queryMeta
+    ),
+    false
+  );
 });
 
 test("buildNutritionPreviewChips respects three-chip cap", () => {
@@ -118,6 +212,7 @@ test("buildNutritionPreviewChips respects three-chip cap", () => {
     { nutrition_intent: { high_protein: true }, nutrient_constraints: {}, diet: {} }
   );
   assert.ok(chips.length <= 3);
+  assert.equal(chips.length, 1);
 });
 
 test("formatPairingTeaser returns null for empty suggestions", () => {

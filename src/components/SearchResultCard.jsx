@@ -1378,7 +1378,7 @@ function ItemRow({
   const nutritionQueryActive = queryRequiresNutritionDisplay(queryMeta);
   const showNutritionPreview =
     nutritionPreviewChips.length > 0 &&
-    ((nutritionQueryActive && rowHasNutritionMacros(displayRow)) ||
+    ((nutritionQueryActive && rowHasNutritionMacros(displayRow, queryMeta)) ||
       openTab === "nutrition" ||
       intelligenceState.status === "ready");
   const pairingTeaser = formatPairingTeaser(displayRow);

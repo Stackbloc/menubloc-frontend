@@ -4,6 +4,13 @@
  *
  * Match-line identity: consumer-safe labels only — never ontology fallbacks,
  * similarity tiers, or structural compatibility jargon ({@link foodIdentityDisplay.js}).
+ *
+ * Intent-aware nutrition display contract:
+ * - Nutrition-intent queries (e.g. "low sodium", "high protein", "keto") show
+ *   ONLY the matching macro on the initial search card preview strip.
+ * - Unrelated macros must not appear until the user opens the Nutrition panel.
+ * - Backend may trim search payloads to intent fields; these helpers mirror that
+ *   contract on the client for preview chips and macro presence checks.
  */
 
 import {
@@ -49,6 +56,16 @@ function toTitleWords(s) {
 /** Query-aligned match reasons — OK on the Match strip before canonical identity. */
 const USER_QUERY_MATCH_TYPES = new Set(["nutrient", "dietary", "ingredient", "price"]);
 
+const MACRO_FIELD_GROUPS = Object.freeze({
+  low_sodium: ["sodium_mg"],
+  high_protein: ["protein_g"],
+  low_carb: ["carbs_g", "net_carbs"],
+  low_calorie: ["calories_kcal", "calories"],
+  low_sugar: ["sugar_g"],
+  low_fat: ["fat_g"],
+  high_fiber: ["fiber_g"],
+});
+
 function sanitizeIdentityCandidate(raw) {
   const t = asStr(raw);
   if (!t || isLeakyOntologyLabel(t)) return null;
@@ -61,8 +78,99 @@ function getNutritionChip(row) {
   return {};
 }
 
+function readMacroValue(row, chip, field) {
+  if (field === "calories_kcal" || field === "calories") {
+    return asNum(chip.calories_kcal ?? chip.calories ?? row?.calories_kcal ?? row?.calories);
+  }
+  if (field === "net_carbs") {
+    const carbs = asNum(chip.carbs_g ?? row?.carbs_g);
+    const fiber = asNum(chip.fiber_g ?? row?.fiber_g);
+    if (chip.net_carbs != null) return asNum(chip.net_carbs);
+    if (carbs == null) return null;
+    return fiber != null ? Math.max(0, Math.round((carbs - fiber) * 10) / 10) : carbs;
+  }
+  return asNum(chip[field] ?? row?.[field]);
+}
+
+/** Active nutrition-intent keys for the current query (e.g. low_sodium, low_carb). */
+export function resolveNutritionIntentDisplayKeys(queryMeta) {
+  const parsed = queryMeta && typeof queryMeta === "object" ? queryMeta : {};
+  const nutritionIntent = parsed.nutrition_intent || {};
+  const constraints = parsed.nutrient_constraints || {};
+  const diet = parsed.diet || {};
+  const smartNc = parsed.smart?.nutrition_constraints || {};
+  const active = [];
+
+  if (
+    nutritionIntent.low_sodium === true ||
+    diet.low_sodium === true ||
+    constraints?.sodium?.direction === "low" ||
+    smartNc.sodium_max != null
+  ) {
+    active.push("low_sodium");
+  }
+  if (
+    nutritionIntent.high_protein === true ||
+    diet.high_protein === true ||
+    constraints?.protein?.direction === "high" ||
+    smartNc.protein_min != null
+  ) {
+    active.push("high_protein");
+  }
+  if (
+    nutritionIntent.low_carb === true ||
+    diet.keto === true ||
+    diet.low_carb === true ||
+    constraints?.carbs?.direction === "low" ||
+    smartNc.carbs_max != null ||
+    smartNc.net_carbs_max != null
+  ) {
+    active.push("low_carb");
+  }
+  if (
+    nutritionIntent.low_calorie === true ||
+    diet.low_calorie === true ||
+    constraints?.calories?.direction === "low" ||
+    constraints?.calories?.explicit === true ||
+    smartNc.calories_max != null
+  ) {
+    active.push("low_calorie");
+  }
+  if (
+    nutritionIntent.low_sugar === true ||
+    constraints?.sugar?.direction === "low" ||
+    smartNc.sugar_max != null
+  ) {
+    active.push("low_sugar");
+  }
+  if (
+    nutritionIntent.low_fat === true ||
+    diet.low_fat === true ||
+    constraints?.fat?.direction === "low" ||
+    smartNc.fat_max != null
+  ) {
+    active.push("low_fat");
+  }
+  if (
+    nutritionIntent.high_fiber === true ||
+    diet.high_fiber === true ||
+    constraints?.fiber?.direction === "high" ||
+    smartNc.fiber_min != null
+  ) {
+    active.push("high_fiber");
+  }
+
+  return active;
+}
+
+export function isNutritionIntentDisplayActive(queryMeta) {
+  return resolveNutritionIntentDisplayKeys(queryMeta).length > 0;
+}
+
 /** True when the search query expects calories/macros on the first results screen. */
 export function queryRequiresNutritionDisplay(queryMeta) {
+  if (isNutritionIntentDisplayActive(queryMeta)) return true;
+
   const parsed = queryMeta && typeof queryMeta === "object" ? queryMeta : {};
   const nutritionIntent = parsed.nutrition_intent || {};
   if (Object.values(nutritionIntent).some(Boolean)) return true;
@@ -79,11 +187,26 @@ export function queryRequiresNutritionDisplay(queryMeta) {
   return false;
 }
 
-export function rowHasNutritionMacros(row) {
+export function rowHasNutritionMacros(row, queryMeta = null) {
   const chip = getNutritionChip(row);
+  const intentKeys = resolveNutritionIntentDisplayKeys(queryMeta);
+
+  if (intentKeys.length > 0) {
+    for (const intentKey of intentKeys) {
+      for (const field of MACRO_FIELD_GROUPS[intentKey] || []) {
+        if (readMacroValue(row, chip, field) !== null) return true;
+      }
+    }
+    return false;
+  }
+
   return (
     asNum(chip.calories_kcal ?? chip.calories ?? row?.calories) !== null ||
-    asNum(chip.protein_g ?? row?.protein_g) !== null
+    asNum(chip.protein_g ?? row?.protein_g) !== null ||
+    asNum(chip.sodium_mg ?? row?.sodium_mg) !== null ||
+    asNum(chip.carbs_g ?? row?.carbs_g) !== null ||
+    asNum(chip.sugar_g ?? row?.sugar_g) !== null ||
+    asNum(chip.fat_g ?? row?.fat_g) !== null
   );
 }
 
@@ -201,51 +324,27 @@ function fatPass(backendScores, fatG) {
 }
 
 /**
- * Up to 3 compact nutrition / intent chips; omit missing data (no "unavailable").
- * Returns [{ label: string, primary: boolean }]. The primary chip is the one matching
- * the user's search intent — rendered first and highlighted in green.
+ * Compact nutrition preview chips for the initial search card.
+ * Intent-aware mode: one chip per active nutrition intent only — no unrelated fillers.
+ * Returns [{ label: string, primary: boolean }].
  */
 export function buildNutritionPreviewChips(row, queryMeta) {
   const parsed = queryMeta && typeof queryMeta === "object" ? queryMeta : {};
   const nutritionIntent = parsed.nutrition_intent || {};
   const constraints = parsed.nutrient_constraints || {};
   const diet = parsed.diet || {};
+  const intentKeys = resolveNutritionIntentDisplayKeys(queryMeta);
+  const intentDisplayActive = intentKeys.length > 0;
 
   const chip = getNutritionChip(row);
-  const cal = asNum(chip.calories_kcal ?? chip.calories ?? row?.calories);
-  const pro = asNum(chip.protein_g ?? row?.protein_g);
-  const fat = asNum(chip.fat_g ?? row?.fat_g);
-  const carbs = asNum(chip.carbs_g ?? row?.carbs_g);
-  const sodium = asNum(chip.sodium_mg ?? row?.sodium_mg);
-  const fiber = asNum(chip.fiber_g ?? row?.fiber_g);
-
-  const wantsProtein =
-    constraints?.protein?.direction === "high" ||
-    nutritionIntent.high_protein === true ||
-    diet.high_protein === true;
-  const wantsSodium =
-    constraints?.sodium?.direction === "low" ||
-    nutritionIntent.low_sodium === true ||
-    diet.low_sodium === true;
-  const wantsFat =
-    constraints?.fat?.direction === "low" ||
-    nutritionIntent.low_fat === true ||
-    diet.low_fat === true;
-  const wantsCarbs =
-    constraints?.carbs?.direction === "low" ||
-    nutritionIntent.low_carb === true ||
-    diet.low_carb === true ||
-    diet.keto === true;
-  const wantsFiber =
-    constraints?.fiber?.direction === "high" ||
-    nutritionIntent.high_fiber === true ||
-    diet.high_fiber === true;
-  const wantsCalories =
-    constraints?.calories?.direction === "low" ||
-    constraints?.calories?.explicit === true ||
-    nutritionIntent.low_calorie === true ||
-    diet.low_calorie === true ||
-    parsed.smart?.nutrition_constraints?.calories_max != null;
+  const cal = readMacroValue(row, chip, "calories_kcal");
+  const pro = readMacroValue(row, chip, "protein_g");
+  const fat = readMacroValue(row, chip, "fat_g");
+  const carbs = readMacroValue(row, chip, "carbs_g");
+  const netCarbs = readMacroValue(row, chip, "net_carbs");
+  const sodium = readMacroValue(row, chip, "sodium_mg");
+  const fiber = readMacroValue(row, chip, "fiber_g");
+  const sugar = readMacroValue(row, chip, "sugar_g");
 
   const backendScores = row?.chips?.insights?.scores || row?.item?.chips?.insights?.scores;
 
@@ -255,11 +354,47 @@ export function buildNutritionPreviewChips(row, queryMeta) {
     out.push({ label, primary });
   };
 
-  // Intent chips go first so the matched attribute is prominent
+  const wantsProtein =
+    intentKeys.includes("high_protein") ||
+    constraints?.protein?.direction === "high" ||
+    nutritionIntent.high_protein === true ||
+    diet.high_protein === true;
+  const wantsSodium =
+    intentKeys.includes("low_sodium") ||
+    constraints?.sodium?.direction === "low" ||
+    nutritionIntent.low_sodium === true ||
+    diet.low_sodium === true;
+  const wantsFat =
+    intentKeys.includes("low_fat") ||
+    constraints?.fat?.direction === "low" ||
+    nutritionIntent.low_fat === true ||
+    diet.low_fat === true;
+  const wantsCarbs =
+    intentKeys.includes("low_carb") ||
+    constraints?.carbs?.direction === "low" ||
+    nutritionIntent.low_carb === true ||
+    diet.low_carb === true ||
+    diet.keto === true;
+  const wantsFiber =
+    intentKeys.includes("high_fiber") ||
+    constraints?.fiber?.direction === "high" ||
+    nutritionIntent.high_fiber === true ||
+    diet.high_fiber === true;
+  const wantsCalories =
+    intentKeys.includes("low_calorie") ||
+    constraints?.calories?.direction === "low" ||
+    constraints?.calories?.explicit === true ||
+    nutritionIntent.low_calorie === true ||
+    diet.low_calorie === true ||
+    parsed.smart?.nutrition_constraints?.calories_max != null;
+  const wantsSugar =
+    intentKeys.includes("low_sugar") ||
+    constraints?.sugar?.direction === "low" ||
+    nutritionIntent.low_sugar === true;
+
   if (wantsProtein) {
-    const ok = proteinPass(backendScores, pro);
     if (pro != null) push(`${Math.round(pro)}g protein`, true);
-    else push(ok ? "High protein ✓" : "High protein —", true);
+    else push(proteinPass(backendScores, pro) ? "High protein ✓" : "High protein —", true);
   }
 
   if (wantsSodium) {
@@ -272,10 +407,15 @@ export function buildNutritionPreviewChips(row, queryMeta) {
     else push(fatPass(backendScores, fat) ? "Low fat ✓" : "Low fat —", true);
   }
 
-  if (wantsCarbs && carbs != null) {
-    const net =
-      fiber != null ? Math.max(0, Math.round((carbs - fiber) * 10) / 10) : Math.round(carbs * 10) / 10;
-    push(`${net}g net carbs`, true);
+  if (wantsCarbs) {
+    if (netCarbs != null) push(`${netCarbs}g net carbs`, true);
+    else if (carbs != null) push(`${Math.round(carbs)}g carbs`, true);
+    else push("Carbs —", true);
+  }
+
+  if (wantsSugar) {
+    if (sugar != null) push(`${Math.round(sugar * 10) / 10}g sugar`, true);
+    else push("Sugar —", true);
   }
 
   if (wantsFiber) {
@@ -288,7 +428,11 @@ export function buildNutritionPreviewChips(row, queryMeta) {
     else push("Calories —", true);
   }
 
-  // Fill remaining slots with cal / protein (if not already shown)
+  // Intent-aware contract: never backfill unrelated macros on nutrition-intent searches.
+  if (intentDisplayActive) {
+    return out.slice(0, 3);
+  }
+
   const alreadyHasProtein = out.some((c) => c.label.includes("protein"));
   const alreadyHasCalories = out.some((c) => c.label.includes(" cal"));
   if (cal != null && !alreadyHasCalories) push(`${Math.round(cal)} cal`);
