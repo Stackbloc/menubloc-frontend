@@ -24,6 +24,7 @@ import {
   unlikeMenuItem,
 } from "../../lib/consumerApi.js";
 import { resetMenuPreferenceSessionForLogin } from "../../lib/menuCatalogBrowsePreferences.js";
+import { fetchMyClusters } from "../../lib/clusterApi.js";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 
 const DIETARY_OPTIONS = [
@@ -127,6 +128,7 @@ export default function ConsumerProfile() {
   const [allergenNoneSelected, setAllergenNoneSelected] = useState(false);
   const [foodsToAvoid, setFoodsToAvoid] = useState({});
   const [savedLocations, setSavedLocations] = useState([]);
+  const [myClusters, setMyClusters] = useState([]);
   const [coinsWallet, setCoinsWallet] = useState({
     balance_cents: 0,
     lifetime_earned_cents: 0,
@@ -151,10 +153,11 @@ export default function ConsumerProfile() {
   const loadProfile = useCallback(async () => {
     try {
       setPageError(null);
-      const [data, avoidData, likedData] = await Promise.all([
+      const [data, avoidData, likedData, clusterData] = await Promise.all([
         getConsumerProfile(),
         getFoodsToAvoid().catch(() => ({ foods_to_avoid: [] })),
         getLikedMenuItems().catch(() => ({ likes: [] })),
+        fetchMyClusters().catch(() => ({ clusters: [] })),
       ]);
       const { profile, dietary_preferences, allergen_preferences, saved_locations, coins_wallet } = data;
 
@@ -189,6 +192,7 @@ export default function ConsumerProfile() {
       setLikedMeals(likedData?.likes || []);
       setMealsToUnlike(new Set());
       setSavedLocations(saved_locations || []);
+      setMyClusters(Array.isArray(clusterData?.clusters) ? clusterData.clusters : []);
       setCoinsWallet({
         balance_cents: Number(coins_wallet?.balance_cents || 0),
         lifetime_earned_cents: Number(coins_wallet?.lifetime_earned_cents || 0),
@@ -362,6 +366,30 @@ export default function ConsumerProfile() {
             See the restaurants you follow and remove them from one place.
           </p>
           <Link to="/account/following" style={styles.followingLink}>Open Following feed</Link>
+        </Section>
+
+        <Section title="My Clusters">
+          {myClusters.length === 0 ? (
+            <p style={styles.sectionDesc}>You have not created any clusters yet.</p>
+          ) : (
+            <div style={{ display: "grid", gap: "10px" }}>
+              {myClusters.map((cluster) => (
+                <div key={cluster.id} style={styles.currentLocation}>
+                  <div style={{ flex: 1 }}>
+                    <strong>{cluster.name}</strong>
+                    <div style={styles.locationHint}>
+                      {cluster.visibility} · {cluster.status} · {cluster.restaurant_count || 0} restaurants
+                    </div>
+                    <div style={styles.locationHint}>
+                      <Link to={`/clusters`}>Open directory</Link>
+                      {" · "}
+                      <span>{cluster.share_token ? "Share link ready" : "Share link unavailable"}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Section>
 
         <Section title="Account">

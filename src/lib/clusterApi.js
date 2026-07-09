@@ -26,6 +26,25 @@ export async function createCommunityCluster(payload, { signal } = {}) {
   return apiPost("/public/clusters/community", payload || {});
 }
 
+export async function createCluster(payload, { signal } = {}) {
+  if (signal) {
+    // apiPost does not support AbortSignal yet.
+  }
+  return apiPost("/public/clusters/create", payload || {});
+}
+
+export async function fetchMyClusters({ signal } = {}) {
+  return apiGet("/public/clusters/my", { signal });
+}
+
+export async function fetchFeaturedClusters({ signal } = {}) {
+  return apiGet("/public/clusters/featured", { signal });
+}
+
+export async function fetchClusterByAccessKey(key, { signal } = {}) {
+  return apiGet(`/public/clusters/access/${encodeURIComponent(key)}`, { signal });
+}
+
 export async function fetchClusterMetadata(clusterSlug, { stateSlug, citySlug, signal } = {}) {
   const params = new URLSearchParams();
   if (stateSlug) params.set("stateSlug", stateSlug);

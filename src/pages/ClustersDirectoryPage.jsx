@@ -3,14 +3,10 @@ import { Link } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
-import { createCommunityCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
+import { createCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
-import {
-  CLUSTER_DESTINATION_TYPES,
-  clusterDestinationCategoryLabel,
-  stateDisplayName,
-} from "../lib/clusterUrl.js";
+import { stateDisplayName } from "../lib/clusterUrl.js";
 
 const TYPE_ACCENTS = {
   university: { border: "#8b5cf6", bg: "#f5f3ff" },
@@ -27,15 +23,29 @@ const TYPE_ACCENTS = {
   business_district: { border: "#4b5563", bg: "#f9fafb" },
 };
 
+const TYPE_OPTIONS = [
+  { id: "university", label: "University", radius: 2 },
+  { id: "downtown", label: "Downtown", radius: 3 },
+  { id: "airport", label: "Airport", radius: 2 },
+  { id: "entertainment_district", label: "Entertainment District", radius: 1 },
+  { id: "tourist_destination", label: "Tourist Destination", radius: 2 },
+  { id: "stadium_arena", label: "Stadium / Arena", radius: 1 },
+  { id: "shopping_district", label: "Shopping District", radius: 1 },
+  { id: "hospital_medical_district", label: "Hospital / Medical District", radius: 1 },
+  { id: "neighborhood", label: "Neighborhood", radius: 2 },
+  { id: "custom", label: "Custom", radius: 2 },
+];
+
 const INITIAL_FORM = {
   name: "",
   state: "",
   city: "",
   type: "university",
+  visibility: "PRIVATE",
   anchor_location: "",
   lat: "",
   lng: "",
-  radius_miles: "1.5",
+  radius_miles: "2",
   short_description: "",
 };
 
@@ -85,11 +95,13 @@ export default function ClustersDirectoryPage() {
     setSubmitBusy(true);
     setError("");
     try {
-      const json = await createCommunityCluster({
+      const json = await createCluster({
         ...form,
+        cluster_type: form.type,
         state: String(form.state || "").trim().toUpperCase(),
-        lat: form.lat === "" ? null : Number(form.lat),
-        lng: form.lng === "" ? null : Number(form.lng),
+        latitude: form.lat === "" ? null : Number(form.lat),
+        longitude: form.lng === "" ? null : Number(form.lng),
+        formatted_address: form.anchor_location,
         radius_miles: Number(form.radius_miles),
       });
       if (json?.cluster) {
@@ -111,8 +123,9 @@ export default function ClustersDirectoryPage() {
   function clusterStatusLabel(cluster) {
     const status = String(cluster?.status || "").toLowerCase();
     if (status === "review" || status === "draft") return "🟠 Pending";
-    const level = String(cluster?.verification_level || "").toLowerCase();
-    if (level === "community") return "🟡 Community";
+    const visibility = String(cluster?.visibility || "").toUpperCase();
+    if (visibility === "PRIVATE") return "🔒 Private";
+    if (visibility === "SHARED") return "🔗 Shared";
     return "🟢 Approved";
   }
 
@@ -154,9 +167,12 @@ export default function ClustersDirectoryPage() {
             Clusters
           </h1>
           <p style={{ margin: 0, color: "#475569", maxWidth: 760 }}>
-            Clusters organize restaurants around the places people actually go—universities, downtowns,
-            airports, entertainment districts, tourist destinations, and more. Know of a great location
-            that belongs as a Cluster? Submit it!
+            Clusters help you discover restaurants around the places people actually go—universities,
+            downtowns, airports, entertainment districts, tourist destinations, and more.
+          </p>
+          <p style={{ margin: "0.5rem 0 0", color: "#475569", maxWidth: 760 }}>
+            Know a location that's missing? Create your own Cluster. Keep it private, share it with
+            friends, or make it public for everyone to explore.
           </p>
         </header>
 
@@ -171,7 +187,7 @@ export default function ClustersDirectoryPage() {
             marginBottom: "1rem",
           }}
         >
-          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Current Clusters</h2>
+          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Featured Clusters</h2>
           <p style={{ margin: "0.4rem 0 0.9rem", color: "#64748b", fontSize: 14 }}>
             Cluster name/type and location are shown below.
           </p>
@@ -255,14 +271,31 @@ export default function ClustersDirectoryPage() {
                 <select
                   required
                   value={form.type}
-                  onChange={(event) => setForm((c) => ({ ...c, type: event.target.value }))}
+                  onChange={(event) => {
+                    const type = event.target.value;
+                    const defaults = TYPE_OPTIONS.find((entry) => entry.id === type);
+                    setForm((c) => ({ ...c, type, radius_miles: String(defaults?.radius || 2) }));
+                  }}
                   style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
                 >
-                  {CLUSTER_DESTINATION_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {clusterDestinationCategoryLabel(type)}
+                  {TYPE_OPTIONS.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.label}
                     </option>
                   ))}
+                </select>
+              </label>
+              <label style={{ display: "grid", gap: 4 }}>
+                <span style={{ fontSize: 13, color: "#334155" }}>Visibility</span>
+                <select
+                  required
+                  value={form.visibility}
+                  onChange={(event) => setForm((c) => ({ ...c, visibility: event.target.value }))}
+                  style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                >
+                  <option value="PRIVATE">Private</option>
+                  <option value="SHARED">Shared (link only)</option>
+                  <option value="PUBLIC">Public</option>
                 </select>
               </label>
               <label style={{ display: "grid", gap: 4 }}>
