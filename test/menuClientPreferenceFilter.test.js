@@ -11,7 +11,7 @@ import {
 import {
   readCatalogApplyDietaryPreferences,
   writeCatalogApplyDietaryPreferences,
-  MENU_CATALOG_APPLY_DIETARY_PREFERENCES_KEY,
+  __resetDietaryPreferencesOptOutForTests,
 } from "../src/lib/menuCatalogBrowsePreferences.js";
 
 function testDietConservative() {
@@ -111,28 +111,28 @@ function testMenusApplyAllergenFilterAlways() {
 }
 
 function testSessionDefaultsApplyDietaryPreferences() {
-  const key = MENU_CATALOG_APPLY_DIETARY_PREFERENCES_KEY;
-  const store = {};
   const priorWindow = global.window;
   global.window = {
     sessionStorage: {
+      _data: {},
       getItem(k) {
-        return store[k] ?? null;
+        return this._data[k] ?? null;
       },
       setItem(k, v) {
-        store[k] = String(v);
+        this._data[k] = String(v);
       },
       removeItem(k) {
-        delete store[k];
+        delete this._data[k];
       },
     },
   };
   try {
+    __resetDietaryPreferencesOptOutForTests();
     assert.equal(readCatalogApplyDietaryPreferences(), true, "default apply on");
     writeCatalogApplyDietaryPreferences(false);
-    assert.equal(readCatalogApplyDietaryPreferences(), false, "explicit session opt-out");
+    assert.equal(readCatalogApplyDietaryPreferences(), false, "explicit opt-out");
     writeCatalogApplyDietaryPreferences(true);
-    assert.equal(readCatalogApplyDietaryPreferences(), true, "re-enable clears opt-out");
+    assert.equal(readCatalogApplyDietaryPreferences(), true, "re-enable");
   } finally {
     global.window = priorWindow;
   }

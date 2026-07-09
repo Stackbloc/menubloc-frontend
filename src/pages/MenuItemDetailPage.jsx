@@ -507,52 +507,6 @@ function VerdictBlock({ detailSystem, isMobile, t, compact = false }) {
   );
 }
 
-function StickyVerdictRail({ detailSystem, t, isMobile, itemName, priceLabel }) {
-  const { label, explanation } = resolveVerdictPresentation(detailSystem);
-  const breadScore = detailSystem?.bread_score || null;
-  const fallbackText = breadScore?.band || t("menuItemDetail.confirmNutritionEstimate", "Nutrition estimate - confirm with restaurant");
-  if (isMobile) return null;
-  return (
-    <Surface
-      style={{
-        marginTop: 12,
-        padding: "10px 14px",
-        position: "sticky",
-        top: STICKY_ITEM_HERO_TOP_PX,
-        zIndex: 39,
-        background: "var(--gb-color-surface-muted)",
-        border: "1px solid var(--gb-color-border)",
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-          <div style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.1, color: "#FFFFFF" }}>
-            {itemName}
-          </div>
-          {priceLabel ? (
-            <div style={{ fontSize: 14, fontWeight: 900, color: "#22C55E" }}>
-              {priceLabel}
-            </div>
-          ) : null}
-        </div>
-        <div style={{ marginTop: 4, fontSize: 12, lineHeight: 1.35, color: "#D1D5DB", fontWeight: 700 }}>
-          {label ? (
-            <>
-              <span style={{ color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.08em", fontSize: 10, fontWeight: 900 }}>
-                {t("menuItemDetail.verdict", "Verdict")}
-              </span>
-              {" "}
-              {label}
-              {explanation ? ` · ${explanation}` : ""}
-            </>
-          ) : (
-            fallbackText
-          )}
-        </div>
-      </div>
-    </Surface>
-  );
-}
 function IndulgenceInline({ presentation }) {
   if (!presentation) return null;
   if (!presentation?.indulgence?.score && presentation?.indulgence?.score !== 0) {
@@ -1581,16 +1535,6 @@ export default function MenuItemDetailPage() {
         ) : null}
         </div>
       </Surface>
-
-      {!isMobile && showStickyVerdict ? (
-        <StickyVerdictRail
-          detailSystem={detailSystem}
-          t={t}
-          isMobile={isMobile}
-          itemName={displayItemName}
-          priceLabel={priceLabel}
-        />
-      ) : null}
 
       {isBrokenFranchiseLink && (
         <Surface style={{ marginTop: 20, padding: isMobile ? 16 : 20, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}>

@@ -4,10 +4,12 @@ import fs from "node:fs";
 
 const DETAIL_PAGE = new URL("../src/pages/MenuItemDetailPage.jsx", import.meta.url);
 
-test("MenuItemDetailPage mounts StickyVerdictRail on desktop when verdict is eligible", () => {
+test("MenuItemDetailPage sticky hero carries compact verdict (no duplicate rail)", () => {
   const source = fs.readFileSync(DETAIL_PAGE, "utf8");
-  assert.match(source, /<StickyVerdictRail[\s\S]*detailSystem=\{detailSystem\}/);
   assert.match(source, /position:\s*"sticky"/);
+  assert.match(source, /showStickyVerdict/);
+  assert.match(source, /<VerdictBlock[\s\S]*compact/);
+  assert.doesNotMatch(source, /<StickyVerdictRail/);
 });
 
 test("MenuItemDetailPage compact VerdictBlock renders brief explanation", () => {
@@ -24,11 +26,10 @@ test("MenuItemDetailPage accepts cmi: franchise route IDs", () => {
   assert.doesNotMatch(source, /\/\\^\\d\+\\\$\/\.test\(String\(id\)\)/);
 });
 
-test("MenuItemDetailPage sticky verdict rail is verdict-only (no duplicate full-menu CTA)", () => {
+test("MenuItemDetailPage action rail remains in hero (no duplicate full-menu CTA in removed rail)", () => {
   const source = fs.readFileSync(DETAIL_PAGE, "utf8");
-  const stickyBlock = source.slice(source.indexOf("function StickyVerdictRail"), source.indexOf("function IndulgenceInline"));
-  assert.doesNotMatch(stickyBlock, /View Full Menu/);
   assert.match(source, /MenuItemDetailActionRail/);
+  assert.doesNotMatch(source, /function StickyVerdictRail/);
 });
 
 test("canonical menu item URLs with numeric itemSlug route to MenuItemDetailPage", () => {
