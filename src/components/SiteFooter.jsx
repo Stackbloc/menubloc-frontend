@@ -65,7 +65,7 @@ export default function SiteFooter() {
             Diners
           </Link>
 
-          <Link to="/restaurants" style={footerLinkStyle}>
+          <Link to="/restaurant/onboarding" style={footerLinkStyle}>
             {t("discovery.footer.restaurants", "Restaurants")}
           </Link>
 
