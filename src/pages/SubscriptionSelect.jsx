@@ -5,8 +5,8 @@
  * Date:    2026-05-06
  * Purpose:
  *   Onboarding step 2 — choose a restaurant plan after account
- *   creation. Verified stays free, Pro Partner uses Stripe
- *   checkout, and the Founders plan uses annual Stripe checkout.
+ *   creation. Verified stays free, paid plans use PayPal
+ *   subscription checkout.
  * ============================================================
  */
 
@@ -30,12 +30,11 @@ const API = (
 
 const PLAN_LABELS = {
   verified: "Verified",
-  pro_partner: "Pro Partner",
+  menu_manager_monthly: "Menu Manager",
   founders_annual: "Founder's",
-  pro_monthly: "Pro Partner",
-  pro_annual: "Pro Partner",
 };
 
+const MENU_MANAGER_PLAN = { planCode: "menu_manager_monthly", priceLabel: "$39/month" };
 const FOUNDERS_PLAN = { planCode: "founders_annual", priceLabel: "$299/year" };
 
 const OPTIONAL_ONBOARDING_MODULES = [
@@ -79,6 +78,17 @@ const PLAN_CARDS = {
       "Guaranteed, no increase pricing for 24 months",
       "Publish Deals free during first year (subject to quantity limits)",
       "Premium menu tools",
+    ],
+  },
+  menu_manager_monthly: {
+    title: "Menu Manager",
+    price: "$39/month",
+    description: "Full menu management tools with a simple monthly PayPal subscription.",
+    features: [
+      "Unlimited menus",
+      "Restaurant logo and advanced profile",
+      "Menu upload and editing tools",
+      "PayPal subscription billing",
     ],
   },
 };
@@ -682,8 +692,8 @@ export default function SubscriptionSelect() {
         return;
       }
 
-      if (json.checkout_url) {
-        window.location.href = json.checkout_url;
+      if (json.checkout_url || json.approval_url) {
+        window.location.href = json.approval_url || json.checkout_url;
         return;
       }
 
@@ -699,6 +709,10 @@ export default function SubscriptionSelect() {
         )
       );
     }
+  }
+
+  async function handleMenuManager() {
+    await submitRestaurantPlan("menu_manager_monthly");
   }
 
   async function handleFounder() {
@@ -745,7 +759,7 @@ export default function SubscriptionSelect() {
               <strong>Multipliers</strong> are restaurants aligned with that approach. They are central to the Menuply ecosystem, and restaurants that more closely reflect those principles may receive increased visibility opportunities within the platform.
             </div>
             <div>
-              Paid plan checkout keeps Menuply's existing Stripe-powered restaurant banking flow in place. Restaurant deposits stay tied to that restaurant banking setup when enabled.
+              Paid plan checkout uses PayPal subscriptions. Restaurant payouts for future ordering will use PayPal marketplace seller onboarding when enabled.
             </div>
           </div>
         </section>
@@ -793,6 +807,31 @@ export default function SubscriptionSelect() {
             </button>
           </article>
 
+          <article style={s.planCard(false)}>
+            <div style={s.planEyebrow}>Menu Manager</div>
+            <div style={s.planName}>Menu Manager</div>
+            <div style={s.planDesc}>{PLAN_CARDS.menu_manager_monthly.description}</div>
+            <div style={s.priceValue}>{MENU_MANAGER_PLAN.priceLabel}</div>
+
+            <ul style={s.featureList}>
+              {PLAN_CARDS.menu_manager_monthly.features.map((feature) => (
+                <li key={feature} style={s.featureItem}>
+                  <span style={s.featureMark(false)}>&#10003;</span>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              type="button"
+              disabled={isSubmittingPlan}
+              style={s.button(false, isSubmittingPlan)}
+              onClick={handleMenuManager}
+            >
+              {isSubmittingPlan ? "Preparing checkout..." : "Subscribe with PayPal"}
+            </button>
+          </article>
+
           <article style={s.planCard(true)}>
             <div style={s.limitedBadge}>Limited Availability</div>
             <div style={s.planEyebrow}>Founder&apos;s</div>
@@ -817,7 +856,7 @@ export default function SubscriptionSelect() {
               style={s.button(true, isSubmittingPlan)}
               onClick={handleFounder}
             >
-              {isSubmittingPlan ? "Preparing checkout..." : "Continue with Founder's"}
+              {isSubmittingPlan ? "Preparing checkout..." : "Subscribe with PayPal"}
             </button>
           </article>
         </section>

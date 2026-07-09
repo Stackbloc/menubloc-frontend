@@ -231,9 +231,23 @@ export const deactivateOperatorQrSticker = (rid, qrCode) =>
 export const replaceOperatorQrSticker = (rid, qrCode) =>
   post(`/operator/restaurants/${rid}/qr-stickers/${encodeURIComponent(qrCode)}/replace`, {});
 
-// ── Stripe Platform Billing ───────────────────────────────────────────────
+// ── PayPal Platform Billing (primary for restaurant subscriptions) ───────
+export const getPayPalCheckoutPlans = () =>
+  get("/api/paypal/platform/plans");
+export const createPayPalSubscriptionCheckout = (body) =>
+  post("/api/paypal/platform/subscription-checkout", body);
+export const cancelPayPalSubscription = (body) =>
+  post("/api/paypal/platform/subscriptions/cancel", body);
+export const getPayPalSubscriptionStatus = (restaurantId) =>
+  get(`/api/paypal/platform/subscriptions/${restaurantId}`);
+export const createPayPalMarketplaceReferral = (body) =>
+  post("/api/paypal/platform/marketplace/referral-link", body);
+export const getPayPalMarketplaceStatus = (restaurantId) =>
+  get(`/api/paypal/platform/marketplace/status/${restaurantId}`);
+
+// ── Stripe Platform Billing (legacy — QR kits, deprecated subscription path) ─
 export const getCheckoutPlans = () =>
-  get("/api/stripe/platform/plans");
+  getPayPalCheckoutPlans();
 export const createPlatformPaymentIntent = (body) =>
   post("/api/stripe/platform/payment-intents", body);
 export const createPlatformCheckoutSession = (body) =>

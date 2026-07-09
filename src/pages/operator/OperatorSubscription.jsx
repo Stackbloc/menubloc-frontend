@@ -24,14 +24,16 @@ function formatWholeDollarAmount(cents) {
 function getPlanTier(planCode) {
   if (!planCode) return "verified";
   if (planCode === "founders_annual") return "founders";
+  if (planCode === "menu_manager_monthly") return "menu_manager";
   if (planCode?.startsWith("pro")) return "pro";
   return "verified";
 }
 
 function getMarketplaceSetupStatus(sub) {
   if (!sub) return "Not started";
-  if (sub.stripe_subscription_id) return "Connected";
-  if (sub.stripe_customer_id) return "In progress";
+  if (sub.paypal_merchant_id || sub.merchant_id) return "Connected";
+  if (sub.paypal_seller_tracking_id || sub.tracking_id) return "In progress";
+  if (sub.paypal_subscription_id) return "Subscription active";
   return "Not started";
 }
 
@@ -46,11 +48,12 @@ function getBillingIntervalLabel(planCode) {
   return "Free";
 }
 
-function getPlanPriceLabel(planCode, foundersPlan) {
-  if (planCode === "pro_annual") return "$399/year";
-  if (planCode === "pro_monthly") return "$49/month";
+function getPlanPriceLabel(planCode, foundersPlan, menuManagerPlan) {
+  if (planCode === "menu_manager_monthly") {
+    return menuManagerPlan ? `${formatWholeDollarAmount(menuManagerPlan.amount_cents)}/month` : "$39/month";
+  }
   if (planCode === "founders_annual") {
-    return foundersPlan ? `${formatWholeDollarAmount(foundersPlan.amount_cents)}/year` : "Founders annual";
+    return foundersPlan ? `${formatWholeDollarAmount(foundersPlan.amount_cents)}/year` : "$299/year";
   }
   return "Free";
 }
@@ -73,7 +76,6 @@ export default function OperatorSubscription() {
 
   const [planOptions, setPlanOptions] = useState([]);
   const [subscription, setSubscription] = useState(null);
-  const [proInterval, setProInterval] = useState("monthly");
   const [loading, setLoading] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [message, setMessage] = useState("");
@@ -81,9 +83,16 @@ export default function OperatorSubscription() {
   const [selectedPlanCode, setSelectedPlanCode] = useState(null);
   const [showPlanSelection, setShowPlanSelection] = useState(false);
 
-  const monthlyPlan = planOptions.find((p) => p.code === "pro_monthly");
-  const annualPlan = planOptions.find((p) => p.code === "pro_annual");
-  const foundersPlan = planOptions.find((p) => p.code === "founders_annual") || { code: "founders_annual", amount_cents: 29900, billing_interval: "year" };
+  const menuManagerPlan = planOptions.find((p) => p.code === "menu_manager_monthly") || {
+    code: "menu_manager_monthly",
+    amount_cents: 3900,
+    billing_interval: "month",
+  };
+  const foundersPlan = planOptions.find((p) => p.code === "founders_annual") || {
+    code: "founders_annual",
+    amount_cents: 29900,
+    billing_interval: "year",
+  };
 
   const currentPlanCode = subscription?.plan_code || null;
   const currentTier = getPlanTier(currentPlanCode);
@@ -97,7 +106,7 @@ export default function OperatorSubscription() {
   const shouldShowAccountManagement = hasPaidSubscription;
 
   const canCancel =
-    Boolean(subscription?.stripe_subscription_id && subscription?.current_period_end) &&
+    Boolean(subscription?.paypal_subscription_id) &&
     ["active", "trialing", "past_due"].includes(normalizedStatus) &&
     !subscription?.cancel_at_period_end;
 
@@ -109,15 +118,14 @@ export default function OperatorSubscription() {
     getCheckoutPlans()
       .then((data) => {
         const filtered = (data.plans || []).filter((p) =>
-          ["pro_monthly", "pro_annual", "founders_annual"].includes(p.code)
+          ["menu_manager_monthly", "founders_annual"].includes(p.code)
         );
         if (filtered.length) setPlanOptions(filtered);
       })
       .catch(() => {
         setPlanOptions([
-          { code: "pro_monthly", checkout_label: "Pro Monthly", amount_cents: 4900, billing_interval: "month" },
-          { code: "pro_annual", checkout_label: "Pro Annual", amount_cents: 39900, billing_interval: "year" },
-          { code: "founders_annual", checkout_label: "Founders Annual", amount_cents: 29900, billing_interval: "year" },
+          { code: "menu_manager_monthly", checkout_label: "Menu Manager Monthly", amount_cents: 3900, billing_interval: "month" },
+          { code: "founders_annual", checkout_label: "Founder's Plan Annual", amount_cents: 29900, billing_interval: "year" },
         ]);
       });
   }, []);
@@ -130,7 +138,7 @@ export default function OperatorSubscription() {
     setLoading(true);
     setError("");
     try {
-      const response = await api.getPlatformSubscriptionStatus(selectedRestaurant.id);
+      const response = await api.getPayPalSubscriptionStatus(selectedRestaurant.id);
       setSubscription(response);
     } catch (err) {
       setError(err.message || "Unable to load subscription status.");
@@ -174,7 +182,7 @@ export default function OperatorSubscription() {
       return;
     }
     try {
-      await api.cancelPlatformSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
+      await api.cancelPayPalSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
       setMessage("Verified selected. Your menu and data are preserved.");
       await refreshSubscription();
       setTimeout(() => navigate("/operator/menulab"), 1500);
@@ -183,7 +191,7 @@ export default function OperatorSubscription() {
     }
   }
 
-  async function handleStripeCheckout(planCode) {
+  async function handlePayPalCheckout(planCode) {
     if (!selectedRestaurant?.id) {
       setError("Select a restaurant before starting checkout.");
       return;
@@ -193,7 +201,7 @@ export default function OperatorSubscription() {
     setMessage("");
     try {
       const origin = window.location.origin;
-      const result = await api.createPlatformCheckoutSession({
+      const result = await api.createPayPalSubscriptionCheckout({
         restaurantId: selectedRestaurant.id,
         planCode,
         successUrl: `${origin}/operator/subscription?checkout=success`,
@@ -206,8 +214,9 @@ export default function OperatorSubscription() {
         setIsCheckingOut(false);
         return;
       }
-      if (!result.checkout_url) throw new Error("No checkout URL returned.");
-      window.location.href = result.checkout_url;
+      const redirectUrl = result.approval_url || result.checkout_url;
+      if (!redirectUrl) throw new Error("No PayPal approval URL returned.");
+      window.location.href = redirectUrl;
     } catch (err) {
       setError(err.message || "Unable to start checkout.");
       setIsCheckingOut(false);
@@ -222,7 +231,7 @@ export default function OperatorSubscription() {
     setError("");
     setMessage("");
     try {
-      await api.cancelPlatformSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
+      await api.cancelPayPalSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
       setMessage("Auto-renewal turned off. Subscription ends at the current period end.");
       await refreshSubscription();
     } catch (err) {
@@ -258,7 +267,7 @@ export default function OperatorSubscription() {
               <StatusRow label="Billing interval" value={getBillingIntervalLabel(currentPlanCode)} />
               <StatusRow label="Subscription status" value={loading ? "Loading…" : getSubscriptionStatusLabel(subscription?.status)} />
               <StatusRow label="Next billing / renewal" value={loading ? "Loading…" : currentPeriodEnd} />
-              <StatusRow label="Price" value={getPlanPriceLabel(currentPlanCode, foundersPlan)} />
+              <StatusRow label="Price" value={getPlanPriceLabel(currentPlanCode, foundersPlan, menuManagerPlan)} />
               <StatusRow label="Auto Renew" value={loading ? "Loading…" : getAutoRenewLabel(subscription)} />
               <StatusRow label="Marketplace Setup" value={loading ? "Loading…" : getMarketplaceSetupStatus(subscription)} />
             </div>
@@ -342,68 +351,31 @@ export default function OperatorSubscription() {
               <div
                 role="button"
                 tabIndex={0}
-                onClick={() => setSelectedPlanCode(proInterval === "annual" ? "pro_annual" : "pro_monthly")}
+                onClick={() => setSelectedPlanCode("menu_manager_monthly")}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") setSelectedPlanCode(proInterval === "annual" ? "pro_annual" : "pro_monthly");
+                  if (event.key === "Enter" || event.key === " ") setSelectedPlanCode("menu_manager_monthly");
                 }}
-                style={{ ...planCard("#fff", GREEN, selectedPlanCode === "pro_monthly" || selectedPlanCode === "pro_annual"), cursor: "pointer" }}
+                style={{ ...planCard("#fff", GREEN, selectedPlanCode === "menu_manager_monthly"), cursor: "pointer" }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Pro</span>
-                  {currentTier === "pro"
+                  <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Menu Manager</span>
+                  {currentTier === "menu_manager"
                     ? <span style={currentBadge(GREEN)}>Current plan</span>
                     : <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, background: "#d1fae5", color: "#065f46" }}>Most popular</span>}
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {[
-                    { key: "monthly", plan: monthlyPlan, label: "Monthly", sub: "$49/month" },
-                    { key: "annual", plan: annualPlan, label: "Annual", sub: "$399/year" },
-                  ].map(({ key, plan, label, sub }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => {
-                        setProInterval(key);
-                        setSelectedPlanCode(key === "annual" ? "pro_annual" : "pro_monthly");
-                      }}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "9px 12px",
-                        borderRadius: 10,
-                        border: proInterval === key ? `1.5px solid ${GREEN}` : "1.5px solid #e4e9f0",
-                        background: proInterval === key ? "#f0f7f4" : "#fff",
-                        cursor: "pointer",
-                        fontFamily: "inherit",
-                        width: "100%",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${proInterval === key ? GREEN : "#d1d5db"}`, background: proInterval === key ? GREEN : "transparent", flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: proInterval === key ? GREEN : "#374151" }}>
-                          {label}
-                          <span style={{ fontSize: 11, fontWeight: 600, color: "#059669", marginLeft: 6 }}>{sub}</span>
-                        </span>
-                      </div>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "#0f1720" }}>
-                        {plan ? formatWholeDollarAmount(plan.amount_cents) : "—"}
-                        <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7280" }}>
-                          {key === "monthly" ? "/mo" : "/yr"}
-                        </span>
-                      </span>
-                    </button>
-                  ))}
+                <div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.04em" }}>
+                    {formatWholeDollarAmount(menuManagerPlan.amount_cents)}
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "#6b7280" }}>/month</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#8a9ab0", marginTop: 2 }}>PayPal subscription</div>
                 </div>
                 <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 6 }}>
                   {[
                     "Unlimited menus",
                     "Restaurant logo",
                     "Advanced public profile",
-                    "Online ordering",
-                    "Free deal posting",
-                    "Public profile billboard/promotional placement",
-                    "Menu/customer tools available to paid operators",
+                    "Menu/customer tools for paid operators",
                   ].map((benefit) => (
                     <li key={benefit} style={{ fontSize: 13, color: "#374151", display: "flex", gap: 7, alignItems: "flex-start" }}>
                       <span style={{ color: GREEN, fontWeight: 700, flexShrink: 0 }}>✓</span>
@@ -411,18 +383,18 @@ export default function OperatorSubscription() {
                     </li>
                   ))}
                 </ul>
-                {currentTier !== "pro" ? (
+                {currentTier !== "menu_manager" ? (
                   <button
                     type="button"
                     style={{ ...planBtn("primary", GREEN), opacity: isCheckingOut ? 0.6 : 1 }}
                     disabled={isCheckingOut}
-                    onClick={() => handleStripeCheckout(proInterval === "annual" ? "pro_annual" : "pro_monthly")}
+                    onClick={() => handlePayPalCheckout("menu_manager_monthly")}
                   >
-                    {isCheckingOut ? "Redirecting…" : proInterval === "annual" ? "Choose Annual" : "Choose Monthly"}
+                    {isCheckingOut ? "Redirecting…" : "Subscribe with PayPal"}
                   </button>
                 ) : (
                   <div style={{ padding: "10px 12px", borderRadius: 10, background: "#f0f7f4", textAlign: "center", fontSize: 13, fontWeight: 700, color: GREEN }}>
-                    ✓ You're on Pro
+                    ✓ You're on Menu Manager
                   </div>
                 )}
               </div>
@@ -456,9 +428,9 @@ export default function OperatorSubscription() {
                     type="button"
                     style={{ ...planBtn("founders", AMBER), opacity: isCheckingOut ? 0.6 : 1 }}
                     disabled={isCheckingOut}
-                    onClick={() => handleStripeCheckout(foundersPlan?.code || "founders_annual")}
+                    onClick={() => handlePayPalCheckout(foundersPlan?.code || "founders_annual")}
                   >
-                    {isCheckingOut ? "Redirecting…" : "Choose Founders Plan"}
+                    {isCheckingOut ? "Redirecting…" : "Subscribe with PayPal"}
                   </button>
                 ) : (
                   <div style={{ padding: "10px 12px", borderRadius: 10, background: "#fef3c7", textAlign: "center", fontSize: 13, fontWeight: 700, color: AMBER }}>

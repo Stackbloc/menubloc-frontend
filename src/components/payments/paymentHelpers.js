@@ -23,6 +23,8 @@ export function getQrProductCode(packageType) {
 }
 
 export function getSubscriptionPlanLabel(planCode) {
+  if (planCode === "menu_manager_monthly") return "Menu Manager";
+  if (planCode === "founders_annual") return "Founder's";
   if (planCode === "pro_annual") return "Pro Annual";
   if (planCode === "pro_monthly") return "Pro Monthly";
   return "No active subscription";
