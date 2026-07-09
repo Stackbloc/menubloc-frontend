@@ -46,7 +46,7 @@ export const CLUSTER_DESTINATION_TYPES = Object.freeze([
   "business_district",
 ]);
 
-export const FEATURED_CLUSTER_FALLBACK_SLUGS = Object.freeze(["usc", "la-live", "lax", "atl-airport"]);
+export const FEATURED_CLUSTER_FALLBACK_SLUGS = Object.freeze(["usc", "la-live", "lax", "atl-airport", "ucla"]);
 
 export const CLUSTER_GROWING_HELP_TEXT =
   "This Cluster is actively expanding. Menuply is continuously adding restaurants, menus, and structured menu data. Some restaurants or menus may still be missing.";
