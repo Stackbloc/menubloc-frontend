@@ -510,7 +510,11 @@ export default function CatalogMenuRenderer({
           shareAnalyticsContext,
           franchiseSlot: null,
           intakeBannerSlot: (
-            <MenuPurchaseWaiterHint sticky stickyBackground={resolvedPageBackground} />
+            <MenuPurchaseWaiterHint
+              sticky
+              pinWithStickyMenuHeader
+              stickyBackground={resolvedPageBackground}
+            />
           ),
           allergenBannerSlot: (
             <MenuPreferencesAppliedBanner

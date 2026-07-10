@@ -4,8 +4,13 @@ import WaiterFaceIcon from "../icons/WaiterFaceIcon.jsx";
 /**
  * Waiter-style coach on public menu surfaces — tap inside an item row to add to cart.
  */
-export default function MenuPurchaseWaiterHint({ sticky = false, stickyBackground = "#ffffff" }) {
+export default function MenuPurchaseWaiterHint({
+  sticky = false,
+  pinWithStickyMenuHeader = false,
+  stickyBackground = "#ffffff",
+}) {
   const { t } = useLanguage();
+  const useOwnSticky = sticky && !pinWithStickyMenuHeader;
 
   return (
     <section
@@ -14,9 +19,9 @@ export default function MenuPurchaseWaiterHint({ sticky = false, stickyBackgroun
         display: "flex",
         alignItems: "center",
         gap: 10,
-        margin: "0 0 12px",
+        margin: pinWithStickyMenuHeader ? "12px 0 0" : "0 0 12px",
         padding: sticky ? "8px 0" : 0,
-        ...(sticky
+        ...(useOwnSticky
           ? {
               position: "sticky",
               top: 0,
@@ -24,7 +29,11 @@ export default function MenuPurchaseWaiterHint({ sticky = false, stickyBackgroun
               background: stickyBackground,
               boxShadow: "0 1px 0 rgba(15, 23, 42, 0.08)",
             }
-          : {}),
+          : pinWithStickyMenuHeader
+            ? {
+                background: stickyBackground,
+              }
+            : {}),
       }}
     >
       <WaiterFaceIcon size={28} title={t("publicMenu.purchaseHintWaiter", "Waiter tip")} />

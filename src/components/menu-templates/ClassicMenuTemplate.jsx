@@ -277,13 +277,18 @@ export default function ClassicMenuTemplate(ctx) {
             ) : null}
 
             {franchiseSlot}
+
+            {intakeBannerSlot ? (
+              <div style={{ marginTop: 12, paddingTop: 4, borderTop: `1px solid ${HAIRLINE}` }}>
+                {intakeBannerSlot}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
 
       <div style={{ padding: isTablet ? "0 16px" : isMobile ? "0 16px" : "0 24px" }}>
         <main style={{ minWidth: 0, width: "100%" }}>
-          {intakeBannerSlot}
           {allergenBannerSlot}
 
           {menuPresentation?.tabs_allowed_for_public_view && menus.length > 1 && (

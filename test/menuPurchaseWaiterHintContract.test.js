@@ -15,22 +15,33 @@ function read(rel) {
 function testComponentSupportsSticky() {
   const src = read("src/components/menu/MenuPurchaseWaiterHint.jsx");
   assert.match(src, /sticky = false/);
+  assert.match(src, /pinWithStickyMenuHeader/);
   assert.match(src, /position: "sticky"/);
   assert.match(src, /stickyBackground/);
 }
 
-function testPublicMenuUsesStickyHint() {
-  const src = read("src/pages/PublicMenuPage.jsx");
-  assert.match(src, /<MenuPurchaseWaiterHint sticky stickyBackground=\{resolvedPageBackground\} \/>/);
+function testClassicTemplatePinsIntakeInStickyHeader() {
+  const src = read("src/components/menu-templates/ClassicMenuTemplate.jsx");
+  const stickyIdx = src.indexOf('position: "sticky"');
+  const intakeIdx = src.indexOf("{intakeBannerSlot");
+  assert.ok(stickyIdx >= 0 && intakeIdx > stickyIdx, "intakeBannerSlot must render inside sticky menu header");
 }
 
-function testCatalogMenuUsesStickyHint() {
+function testPublicMenuUsesPinnedHint() {
+  const src = read("src/pages/PublicMenuPage.jsx");
+  assert.match(src, /pinWithStickyMenuHeader/);
+  assert.match(src, /stickyBackground=\{resolvedPageBackground\}/);
+}
+
+function testCatalogMenuUsesPinnedHint() {
   const src = read("src/components/menuCatalog/CatalogMenuRenderer.jsx");
-  assert.match(src, /<MenuPurchaseWaiterHint sticky stickyBackground=\{resolvedPageBackground\} \/>/);
+  assert.match(src, /pinWithStickyMenuHeader/);
+  assert.match(src, /stickyBackground=\{resolvedPageBackground\}/);
 }
 
 testComponentSupportsSticky();
-testPublicMenuUsesStickyHint();
-testCatalogMenuUsesStickyHint();
+testClassicTemplatePinsIntakeInStickyHeader();
+testPublicMenuUsesPinnedHint();
+testCatalogMenuUsesPinnedHint();
 
 console.log("✅ menuPurchaseWaiterHintContract tests passed");

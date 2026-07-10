@@ -1324,7 +1324,11 @@ export default function PublicMenuPage() {
             <>
               <IntakePreviewBanner show={isIntakePreview} />
               {!isIntakePreview ? (
-                <MenuPurchaseWaiterHint sticky stickyBackground={resolvedPageBackground} />
+                <MenuPurchaseWaiterHint
+                  sticky
+                  pinWithStickyMenuHeader
+                  stickyBackground={resolvedPageBackground}
+                />
               ) : null}
             </>
           ),

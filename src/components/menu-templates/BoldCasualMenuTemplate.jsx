@@ -224,13 +224,18 @@ export default function BoldCasualMenuTemplate(ctx) {
             ) : null}
 
             {franchiseSlot}
+
+            {intakeBannerSlot ? (
+              <div style={{ marginTop: 12, paddingTop: 4, borderTop: `1px solid ${accent}` }}>
+                {intakeBannerSlot}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
 
       <div style={{ fontFamily: fontStack }}>
         <main style={{ minWidth: 0, width: "100%" }}>
-          {intakeBannerSlot}
           {allergenBannerSlot}
 
           {/* Deal banner strip */}
