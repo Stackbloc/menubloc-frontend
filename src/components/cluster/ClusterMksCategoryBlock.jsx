@@ -28,7 +28,7 @@ export function ClusterMksCategoryBlock({ category, onSelect }) {
 
   const accent = MKS_ACCENTS[category.code] || DEFAULT_ACCENT;
   const title = category.label || category.code;
-  const subtitle = category.description || "Explore dishes in this category";
+  const subtitle = category.description || "Explore food in this category";
 
   return (
     <button

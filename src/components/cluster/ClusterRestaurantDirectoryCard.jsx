@@ -4,7 +4,6 @@ import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/cano
 import { isRestaurantMenuReady } from "../../lib/publicCardCounts.js";
 import {
   formatRestaurantCuisineLabel,
-  formatRestaurantLocationLabel,
   formatRestaurantPriceTier,
   resolveClusterRestaurantAccent,
   resolveClusterRestaurantStatus,
@@ -25,10 +24,9 @@ export default function ClusterRestaurantDirectoryCard({ restaurant }) {
   const name = restaurant?.restaurant_name || restaurant?.name || "Restaurant";
   const accent = resolveClusterRestaurantAccent(restaurant);
   const cuisineLabel = formatRestaurantCuisineLabel(restaurant);
-  const locationLabel = formatRestaurantLocationLabel(restaurant);
+  const addressHint = String(restaurant?.address_line1 || "").trim() || null;
   const priceTierLabel = formatRestaurantPriceTier(restaurant);
   const status = resolveClusterRestaurantStatus(restaurant);
-  const locationCount = Number(restaurant?.location_count) || 1;
   const menuReady = isRestaurantMenuReady(restaurant);
   const profileHref = restaurantPathFromRow(restaurant);
   const menuHref = restaurantMenuPathFromRow(restaurant);
@@ -85,18 +83,13 @@ export default function ClusterRestaurantDirectoryCard({ restaurant }) {
             {cuisineLabel}
           </div>
         ) : null}
-        {locationLabel ? (
+        {addressHint ? (
           <div style={{ color: "#6b7280", fontSize: "0.88rem", lineHeight: 1.4, overflowWrap: "anywhere" }}>
-            {locationLabel}
+            {addressHint}
           </div>
         ) : null}
         {priceTierLabel ? (
           <div style={{ color: "#374151", fontSize: "0.88rem", fontWeight: 700 }}>{priceTierLabel}</div>
-        ) : null}
-        {locationCount > 1 ? (
-          <div style={{ color: "#6b7280", fontSize: "0.84rem" }}>
-            {locationCount} locations in this area
-          </div>
         ) : null}
       </div>
 

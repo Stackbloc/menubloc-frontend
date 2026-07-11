@@ -206,19 +206,12 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
     );
   }
 
-  const listedTotal = pagination?.total_listed ?? restaurants.length;
-  const isAirport = String(cluster?.type || "").toLowerCase() === "airport";
-  const outletNoun = isAirport ? "dining outlet" : "restaurant";
   const cuisineGroups = groupClusterRestaurantsByCuisine(restaurants);
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
       {restaurants.length > 0 ? (
         <>
-          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45 }}>
-            {listedTotal} {outletNoun}
-            {listedTotal === 1 ? "" : "s"} in this area
-          </p>
           {cuisineGroups.map((group) => (
             <section key={group.id} style={{ display: "grid", gap: "0.65rem" }}>
               <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#111827" }}>{group.label}</h3>
@@ -340,14 +333,14 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
       signal: controller.signal,
     })
       .then((data) => {
-        if (!data?.ok) throw new Error(data?.error || "Could not load dishes");
+        if (!data?.ok) throw new Error(data?.error || "Could not load food for this category.");
         setItems(Array.isArray(data.menu_items) ? data.menu_items : []);
         setPagination(data.pagination || null);
         setStatus("ok");
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
-        setError(toConsumerErrorMessage(err, "Could not load dishes for this category."));
+        setError(toConsumerErrorMessage(err, "Could not load food for this category."));
         setStatus("error");
       });
 
@@ -392,7 +385,7 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
         limit: PAGE_SIZE,
         offset: items.length,
       });
-      if (!data?.ok) throw new Error(data?.error || "Could not load more dishes");
+      if (!data?.ok) throw new Error(data?.error || "Could not load more food");
       const nextItems = Array.isArray(data.menu_items) ? data.menu_items : [];
       setItems((prev) => {
         const seen = new Set(prev.map((row) => `${row.menu_item_id}-${row.restaurant_id}`));
@@ -401,7 +394,7 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
       setPagination(data.pagination || null);
       setStatus("ok");
     } catch (err) {
-      setError(toConsumerErrorMessage(err, "Could not load more dishes."));
+      setError(toConsumerErrorMessage(err, "Could not load more food."));
       setStatus("ok");
     }
   }
@@ -420,7 +413,7 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
   }
 
   if (!enabled) {
-    return <p style={{ color: "#888" }}>Select Food to browse dishes across this area.</p>;
+    return <p style={{ color: "#888" }}>Select Food to browse what you can eat in this area.</p>;
   }
 
   const categoryTitle = selectedCategory?.label || null;
@@ -432,8 +425,8 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
           type="search"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="Search dishes in this area (burger, pizza, salad…)"
-          aria-label="Search dishes in this cluster"
+          placeholder="Search food in this area (burger, pizza, salad…)"
+          aria-label="Search food in this cluster"
           style={{
             flex: "1 1 220px",
             minWidth: 0,
@@ -478,7 +471,7 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
           {searchStatus === "loading" ? <p style={{ color: "#666", margin: 0 }}>Searching {submittedSearch}…</p> : null}
           {searchStatus === "error" ? <p style={{ color: "#b91c1c", margin: 0 }}>{searchError}</p> : null}
           {searchStatus === "ok" && searchGroups.length === 0 ? (
-            <p style={{ color: "#888", margin: 0 }}>No dishes in this area match “{submittedSearch}”.</p>
+            <p style={{ color: "#888", margin: 0 }}>No food in this area matches “{submittedSearch}”.</p>
           ) : null}
           <ClusterDishList items={flattenClusterSearchGroups(searchGroups)} />
         </div>
@@ -519,7 +512,7 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
                 cursor: status === "loading-more" ? "wait" : "pointer",
               }}
             >
-              {status === "loading-more" ? "Loading…" : "Load more dishes"}
+              {status === "loading-more" ? "Loading…" : "Load more"}
             </button>
           ) : null}
           {error ? <p style={{ color: "#b91c1c", margin: 0 }}>{error}</p> : null}
@@ -527,12 +520,12 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
       ) : (
         <div style={{ display: "grid", gap: "1rem" }}>
           <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
-            What can you eat here? Pick a category to browse dishes from every restaurant in this area.
+            What can you eat here? Pick a category to browse food from every restaurant in this area.
           </p>
           {status === "loading" ? <p style={{ color: "#666" }}>Loading food categories…</p> : null}
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
           {mksCategories.length === 0 && status === "ok" ? (
-            <p style={{ color: "#888" }}>No dishes are listed in this area yet.</p>
+            <p style={{ color: "#888" }}>No food is listed in this area yet.</p>
           ) : null}
           <ClusterMksCategoryGrid categories={mksCategories} onSelect={setSelectedCategory} />
         </div>

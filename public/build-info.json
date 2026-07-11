@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "6ae3aafec40192649dca0cb8a5bfd6938329aa42",
-  "gitShortSha": "6ae3aaf",
+  "gitSha": "7191c0aba3ed19e8d57794d80b434e8f5846d24a",
+  "gitShortSha": "7191c0a",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-11T01:03:09.327Z",
+  "buildTime": "2026-07-11T03:13:32.737Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(clusters): wireframe layout with stats, search, and view toggle"
+  "commitMessage": "fix(clusters): keep /clusters directory visible and drop restaurant cluster links"
 }

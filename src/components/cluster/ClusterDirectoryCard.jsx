@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { clusterPath, clusterTypeLabel, clusterVerificationBadge, formatClusterOutletCountLabel } from "../../lib/clusterUrl.js";
+import { clusterPath, clusterTypeLabel, clusterVerificationBadge } from "../../lib/clusterUrl.js";
 
 export const CLUSTER_DIRECTORY_GRID_STYLE = {
   display: "grid",
@@ -55,7 +55,6 @@ export default function ClusterDirectoryCard({
 
   const title = cluster.area_name || cluster.name;
   const typeLabel = clusterTypeLabel(cluster.type);
-  const countLabel = formatClusterOutletCountLabel(cluster);
   const resolvedAccent = accent || DEFAULT_ACCENT;
   const verification = statusLabel || clusterVerificationBadge(cluster.verification_level);
 
@@ -143,8 +142,8 @@ export default function ClusterDirectoryCard({
             {verification}
           </div>
         ) : null}
-        <div style={{ fontWeight: 700, color: "#111827", fontSize: "0.92rem", overflowWrap: "anywhere" }}>
-          {countLabel || "Dining directory"}
+        <div style={{ fontWeight: 700, color: resolvedAccent.border, fontSize: "0.92rem", overflowWrap: "anywhere" }}>
+          Explore →
         </div>
       </div>
     </article>
