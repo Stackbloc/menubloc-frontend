@@ -63,6 +63,8 @@ import {
   buildItemRowDetailHref,
   buildMenuItemDetailQuery,
   returnNavigationExtraParams,
+  isPlaceScopedReturn,
+  isSinglePlaceReturn,
 } from "../lib/clusterReturnNavigation.js";
 
 const MATCH_LABEL = "Match:";
@@ -1137,7 +1139,7 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
 
 /* ---- Key facts (price / distance / locale / cuisine / deal) ---- */
 
-function buildKeyFactsLine({ row, restaurantSummary, matchContext, omitPrice = false }) {
+function buildKeyFactsLine({ row, restaurantSummary, matchContext, omitPrice = false, omitLocation = false }) {
   const parts = [];
   const price = fmtPrice(row);
   if (price && !omitPrice) parts.push(price);
@@ -1153,7 +1155,7 @@ function buildKeyFactsLine({ row, restaurantSummary, matchContext, omitPrice = f
 
   const city = getCityLike(row);
   const state = getStateLike(row);
-  if (city || state) parts.push([city, state].filter(Boolean).join(", "));
+  if (!omitLocation && (city || state)) parts.push([city, state].filter(Boolean).join(", "));
 
   const cuisine =
     (restaurantSummary && getCuisineLike(restaurantSummary)) || getCuisineLike(row);
@@ -1386,12 +1388,22 @@ function ItemRow({
       openTab === "nutrition" ||
       intelligenceState.status === "ready");
   const pairingTeaser = formatPairingTeaser(displayRow);
+  const clusterAttributionName =
+    !isSinglePlaceReturn(returnNavigation) &&
+    (displayRow?.cluster_name || displayRow?.cluster_attribution?.name || null);
+  const omitPlaceLocation = isPlaceScopedReturn(returnNavigation);
   const refinementMatchLabel = buildRefinementMatchLabel(displayRow, activeRefinement);
   const priceLabel = fmtPrice(row);
 
   const factsLine = venueRenderedAbove
     ? ""
-    : buildKeyFactsLine({ row: displayRow, restaurantSummary, matchContext, omitPrice: Boolean(priceLabel) });
+    : buildKeyFactsLine({
+        row: displayRow,
+        restaurantSummary,
+        matchContext,
+        omitPrice: Boolean(priceLabel),
+        omitLocation: omitPlaceLocation,
+      });
 
   const restDisplayName =
     (restaurantSummary &&
@@ -1425,6 +1437,7 @@ function ItemRow({
 
   const hasNut =
     capabilities.hasNutrition === true ||
+    asStr(nutChip?.status).toLowerCase() === "deferred" ||
     (intelligenceState.status === "ready" && (
       asStr(nutChip?.status).toLowerCase() === "available" ||
       asNum(nutChip.calories_kcal) !== null ||
@@ -1803,6 +1816,12 @@ function ItemRow({
               <span style={{ fontWeight: 800 }}>{restDisplayName}</span>
             )
           ) : null}
+          {clusterAttributionName ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span style={{ fontWeight: 700 }}>{clusterAttributionName}</span>
+            </>
+          ) : null}
           {!franchiseLocationPending && restDisplayName && factsLine ? <span aria-hidden="true">·</span> : null}
           {franchiseLocationPending ? null : factsLine ? <span style={{ overflowWrap: "anywhere" }}>{factsLine}</span> : null}
           {popular && <DietBadge label="★ Popular" tone="popular" />}
@@ -2077,6 +2096,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
     viewMenu: t("common.viewMenu"),
   };
   const grouped = Array.isArray(items) && items.length > 0;
+  const omitPlaceLocation = isPlaceScopedReturn(returnNavigation);
   const similarRequest = useMemo(() => {
     const filters = buildSearchCardSimilarFilters(contextSearch);
     const routeParams = new URLSearchParams(contextSearch || "");
@@ -2130,6 +2150,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
       restaurantSummary,
       matchContext,
       omitPrice: true,
+      omitLocation: omitPlaceLocation,
     });
 
     return (
@@ -2284,9 +2305,11 @@ export default function SearchResultCard({ restaurant, items, item, query, query
     );
   }
 
-  const cityStateLine = [cityS, stateS ? (postalS ? `${stateS} ${postalS}` : stateS) : postalS]
-    .filter(Boolean)
-    .join(", ");
+  const cityStateLine = omitPlaceLocation
+    ? ""
+    : [cityS, stateS ? (postalS ? `${stateS} ${postalS}` : stateS) : postalS]
+        .filter(Boolean)
+        .join(", ");
   const mapsUrl = buildGoogleMapsUrl(item);
   const addressDisplay = [addressLine1S, cityStateLine].filter(Boolean).join(", ");
   const isRestaurantBrowse = resultView === "restaurant";
