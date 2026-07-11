@@ -12,9 +12,7 @@ function clusterMenuStatusLabel(restaurant) {
 
 export default function ClusterRestaurantListingCard({ restaurant }) {
   const name = restaurant?.restaurant_name || restaurant?.name || "Restaurant";
-  const area = [restaurant?.address_line1, restaurant?.city, restaurant?.state]
-    .filter(Boolean)
-    .join(", ");
+  const area = String(restaurant?.address_line1 || "").trim() || null;
   const cuisine = restaurant?.cuisine || restaurant?.category || null;
   const menuReady = isRestaurantMenuReady(restaurant);
   const profileHref = restaurantPathFromRow(restaurant);

@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "7191c0aba3ed19e8d57794d80b434e8f5846d24a",
-  "gitShortSha": "7191c0a",
+  "gitSha": "7ad37b895d4fdd6b0dd7a66509ddebe422d4bff2",
+  "gitShortSha": "7ad37b8",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-11T03:13:32.737Z",
+  "buildTime": "2026-07-11T11:54:57.202Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(clusters): keep /clusters directory visible and drop restaurant cluster links"
+  "commitMessage": "fix(clusters): remove all count stats from cluster UI"
 }

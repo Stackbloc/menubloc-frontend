@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
-import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
+import { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx";
 import ClusterRestaurantDirectoryCard from "../components/cluster/ClusterRestaurantDirectoryCard.jsx";
 import { ClusterPlaceholderSection, ClusterDrinksDirectory } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
@@ -43,7 +43,7 @@ function ClusterDescription({ cluster }) {
         <p style={{ margin: 0, color: "#374151", lineHeight: 1.55, fontSize: "0.98rem" }}>{shortDescription}</p>
       ) : null}
       <p style={{ margin: 0, color: "#6b7280", fontSize: "0.92rem", lineHeight: 1.45, overflowWrap: "anywhere" }}>
-        {clusterTypeLabel(cluster.type)} near {areaName}, {cluster.city}, {cluster.state}
+        {clusterTypeLabel(cluster.type)} near {areaName}
         {cluster.address ? ` · ${cluster.address}` : ""}
       </p>
       {cluster.placeholder_intro ? (
@@ -717,28 +717,6 @@ export default function ClusterPage() {
           <ClusterRestaurantsTab clusterSlug={cluster.slug} cluster={cluster} enabled />
         )}
       </main>
-
-      {Array.isArray(cluster.related_clusters) && cluster.related_clusters.length > 0 ? (
-        <section
-          style={{
-            marginTop: "1.5rem",
-            padding: "1.25rem 1rem",
-            borderRadius: 14,
-            border: "1px solid #dbeafe",
-            background: "linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%)",
-          }}
-        >
-          <h2 style={{ margin: "0 0 0.35rem", fontSize: "1.15rem" }}>Explore Other Restaurant Clusters</h2>
-          <p style={{ margin: "0 0 0.85rem", color: "#64748b", fontSize: "0.92rem" }}>
-            Nearby destinations with their own restaurant directories and combined menus.
-          </p>
-          <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
-            {cluster.related_clusters.map((related) => (
-              <ClusterDirectoryCard key={related.slug} cluster={related} />
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       <footer
         style={{
