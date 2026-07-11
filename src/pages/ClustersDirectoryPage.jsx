@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
@@ -82,13 +82,12 @@ const STACKED_FIELDS = {
 
 export default function ClustersDirectoryPage() {
   const { isAuthenticated, consumer } = useConsumer();
-  const [searchParams] = useSearchParams();
   const storedMarket = useMemo(() => resolveClusterMarketFromStoredLocation(), []);
+  const [clusters, setClusters] = useState([]);
   const autoOpenPath = useMemo(
     () => resolveClusterAutoOpenPath(clusters, storedMarket),
     [clusters, storedMarket]
   );
-  const [clusters, setClusters] = useState([]);
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -188,10 +187,6 @@ export default function ClustersDirectoryPage() {
     );
   }
 
-  if (searchParams.get("stay") !== "1" && autoOpenPath && !loading) {
-    return <Navigate to={autoOpenPath} replace />;
-  }
-
   return (
     <div
       style={{
@@ -219,17 +214,30 @@ export default function ClustersDirectoryPage() {
             Clusters
           </h1>
           <p style={{ margin: 0, color: "#475569", maxWidth: 760 }}>
-            Clusters are destination dining guides — one combined menu across every restaurant in a
-            place people actually go. Universities, downtowns, airports, entertainment districts, and more.
-          </p>
-          <p style={{ margin: "0.5rem 0 0", color: "#475569", maxWidth: 760 }}>
-            Browse all public clusters below, or{" "}
-            <Link to="/clusters?stay=1" style={{ color: "#1d4ed8" }}>
-              stay on this directory
-            </Link>{" "}
-            if you want the full national list.
+            A cluster groups every restaurant in a destination into one browsable food guide — campuses,
+            downtowns, airports, entertainment districts, and more. Tap any cluster below to explore what
+            you can eat there.
           </p>
         </header>
+
+        {autoOpenPath && storedMarket?.label ? (
+          <section
+            style={{
+              border: "1px solid #bfdbfe",
+              background: "#eff6ff",
+              borderRadius: 14,
+              padding: "0.85rem 1rem",
+              marginBottom: "1rem",
+            }}
+          >
+            <p style={{ margin: 0, color: "#1e3a8a", fontSize: "0.95rem", lineHeight: 1.45 }}>
+              Near {storedMarket.label}?{" "}
+              <Link to={autoOpenPath} style={{ color: "#1d4ed8", fontWeight: 700 }}>
+                Open your local cluster →
+              </Link>
+            </p>
+          </section>
+        ) : null}
 
         {error ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
 
@@ -242,9 +250,9 @@ export default function ClustersDirectoryPage() {
             marginBottom: "1rem",
           }}
         >
-          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Featured Clusters</h2>
+          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>All clusters on Menuply</h2>
           <p style={{ margin: "0.4rem 0 0.9rem", color: "#64748b", fontSize: 14 }}>
-            Cluster name/type and location are shown below.
+            Every public destination cluster — tap a card to open it.
           </p>
           {loading ? <p style={{ color: "#64748b" }}>Loading clusters…</p> : null}
           {!loading && sortedClusters.length === 0 ? (
