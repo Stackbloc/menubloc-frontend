@@ -8,6 +8,7 @@ import { ClusterPlaceholderSection, ClusterDrinksDirectory } from "../components
 import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
 import {
   ClusterDishList,
+  ClusterPlaceholderFoodCard,
 } from "../components/cluster/ClusterMenuExplorer.jsx";
 import SearchResultCard from "../components/SearchResultCard.jsx";
 import { ClusterMksCategoryGrid } from "../components/cluster/ClusterMksCategoryBlock.jsx";
@@ -403,8 +404,15 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
       if (!data?.ok) throw new Error(data?.error || "Could not load more food");
       const nextItems = Array.isArray(data.menu_items) ? data.menu_items : [];
       setItems((prev) => {
-        const seen = new Set(prev.map((row) => `${row.menu_item_id}-${row.restaurant_id}`));
-        return [...prev, ...nextItems.filter((row) => !seen.has(`${row.menu_item_id}-${row.restaurant_id}`))];
+        const seen = new Set(
+          prev.map((row) => row.placeholder_key || `${row.menu_item_id}-${row.restaurant_id}`)
+        );
+        return [
+          ...prev,
+          ...nextItems.filter(
+            (row) => !seen.has(row.placeholder_key || `${row.menu_item_id}-${row.restaurant_id}`)
+          ),
+        ];
       });
       setPagination(data.pagination || null);
       setStatus("ok");
@@ -498,6 +506,15 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
           ) : null}
           <div style={CLUSTER_SEARCH_GRID_STYLE}>
             {searchMenuItems.map((row) => {
+              if (row?.placeholder_item) {
+                return (
+                  <ClusterPlaceholderFoodCard
+                    key={`cluster-search-ph-${row.placeholder_key || row.name}`}
+                    item={row}
+                  />
+                );
+              }
+
               const rowId = row?.menu_item_id ?? row?.id;
               const rowName = row?.search_display_name || row?.menu_item_name || row?.name || "item";
               return (

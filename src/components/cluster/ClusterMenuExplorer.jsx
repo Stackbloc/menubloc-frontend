@@ -3,6 +3,41 @@ import { Link } from "react-router-dom";
 import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
 import { appendClusterReturnQuery } from "../../lib/clusterReturnNavigation.js";
 
+export const CLUSTER_PLACEHOLDER_FOOD_CARD_STYLE = {
+  display: "grid",
+  gap: "0.3rem",
+  padding: "0.85rem 1rem",
+  borderRadius: 12,
+  border: "1px solid #e5e7eb",
+  background: "#fff",
+};
+
+export function ClusterPlaceholderFoodCard({ item }) {
+  const itemName = item?.name || item?.menu_item_name || "Menu item";
+  const concessionName = item?.concession_name || item?.restaurant_name || null;
+  const location = item?.location ? String(item.location).trim() : "";
+  const area = item?.area ? String(item.area).trim() : "";
+
+  return (
+    <div style={CLUSTER_PLACEHOLDER_FOOD_CARD_STYLE}>
+      <div style={{ fontWeight: 700, color: "#111827", fontSize: "1rem", overflowWrap: "anywhere" }}>
+        {itemName}
+      </div>
+      {concessionName ? (
+        <div style={{ color: "#374151", fontSize: "0.9rem", overflowWrap: "anywhere" }}>
+          {concessionName}
+        </div>
+      ) : null}
+      {location || area ? (
+        <div style={{ color: "#6b7280", fontSize: "0.82rem", lineHeight: 1.4, overflowWrap: "anywhere" }}>
+          {[area, location].filter(Boolean).join(" · ")}
+        </div>
+      ) : null}
+      <div style={{ color: "#9ca3af", fontSize: "0.75rem" }}>Prices vary by event</div>
+    </div>
+  );
+}
+
 export const CLUSTER_DISH_CHIP_STYLE = {
   display: "block",
   width: "100%",
@@ -23,7 +58,8 @@ export const CLUSTER_DISH_CHIP_STYLE = {
 function buildDishHref(item, clusterReturnTo, clusterReturnLabel) {
   const menuItemId = item?.menu_item_id ?? item?.id;
   if (menuItemId) {
-    const base = `/menu-items/${menuItemId}`;
+    const encodedId = encodeURIComponent(String(menuItemId));
+    const base = `/menu-items/${encodedId}`;
     return clusterReturnTo
       ? appendClusterReturnQuery(base, clusterReturnTo, clusterReturnLabel)
       : `${base}?from=cluster`;
@@ -37,6 +73,11 @@ function buildDishHref(item, clusterReturnTo, clusterReturnLabel) {
 
 export function ClusterDishChip({ item, clusterReturnTo = null, clusterReturnLabel = null }) {
   if (!item?.name) return null;
+
+  if (item?.placeholder_item) {
+    return <ClusterPlaceholderFoodCard item={item} />;
+  }
+
   const href = buildDishHref(item, clusterReturnTo, clusterReturnLabel);
 
   const content = <span>{item.name}</span>;
@@ -74,7 +115,7 @@ export function ClusterDishList({
         if (restaurantId) lastRestaurantId = restaurantId;
 
         return (
-          <React.Fragment key={`${item.menu_item_id}-${item.restaurant_id}-${item.name}`}>
+          <React.Fragment key={item.placeholder_key || `${item.menu_item_id}-${item.restaurant_id}-${item.name}`}>
             {showRestaurantHeading ? (
               <div
                 style={{
