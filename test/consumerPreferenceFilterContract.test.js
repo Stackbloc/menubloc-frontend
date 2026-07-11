@@ -83,13 +83,14 @@ testCatalogMenuPassesFilterParamsToApi();
 testProfileOmitsUnsupportedDietOptions();
 testMenuFilterMapsHighProteinAndNutFree();
 
-function testBannerShowsItemCounts() {
+function testBannerUsesCompactCheckboxToggle() {
   const src = read("src/components/menu/MenuPreferencesAppliedBanner.jsx");
-  assert.match(src, /Showing \{\{filtered\}\} out of \{\{total\}\} menu items\./);
-  assert.match(src, /Showing \{\{total\}\} menu items/);
-  assert.match(src, /filteredItemCount/);
+  assert.match(src, /type="checkbox"/);
+  assert.match(src, /applyDietaryPreferences/);
+  assert.match(src, /TOAST_DISMISS_MS/);
+  assert.doesNotMatch(src, /preferenceFilterCountActive/);
 }
 
-testBannerShowsItemCounts();
+testBannerUsesCompactCheckboxToggle();
 
 console.log("✅ consumerPreferenceFilterContract tests passed");
