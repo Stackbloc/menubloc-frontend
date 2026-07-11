@@ -59,6 +59,11 @@ import {
   getNutritionSummary,
   computeInsights,
 } from "../lib/nutritionInsights.js";
+import {
+  buildItemRowDetailHref,
+  buildMenuItemDetailQuery,
+  returnNavigationExtraParams,
+} from "../lib/clusterReturnNavigation.js";
 
 const MATCH_LABEL = "Match:";
 const SIMILAR_DIET_FILTER_KEYS = Object.freeze([
@@ -1281,6 +1286,7 @@ function ItemRow({
   restaurantSummary = null,
   venueRenderedAbove = false,
   activeRefinement = null,
+  returnNavigation = null,
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -1351,9 +1357,7 @@ function ItemRow({
     },
     menuItem: { id: mid },
   }) : null;
-  const href = hrefBase && geo?.lat != null && geo?.lng != null
-    ? `${hrefBase}?lat=${geo.lat}&lng=${geo.lng}`
-    : hrefBase;
+  const href = buildItemRowDetailHref(hrefBase, { geo, returnNavigation });
   const dishShareData = mid ? buildDishShareData({
     restaurant: {
       id: getRestId(displayRow),
@@ -1409,7 +1413,10 @@ function ItemRow({
           buildCanonicalMenuPath({ restaurantSlug: restSlugForLink, restaurantId: restIdForLink }),
         {
           menuItemId: mid,
-          extraParams: highlightMenuLinkExtrasFromSearch(contextSearch),
+          extraParams: {
+            ...highlightMenuLinkExtrasFromSearch(contextSearch),
+            ...returnNavigationExtraParams(returnNavigation),
+          },
         },
       )
     : null;
@@ -1904,14 +1911,13 @@ function ItemRow({
           onSwap={(candidateItem) => {
             setCompareOpen(false);
             const candidateId = getNormalizedMenuItemId(candidateItem) || getNormalizedMenuItemId(currentCompareCandidate);
-            if (candidateId) navigate(`/menu-items/${candidateId}?from=search`);
+            if (candidateId) {
+              navigate(`/menu-items/${candidateId}${buildMenuItemDetailQuery({ geo, returnNavigation })}`);
+            }
           }}
           onViewBase={() => {
             setCompareOpen(false);
-            if (href) {
-              const sep = href.includes("?") ? "&" : "?";
-              navigate(`${href}${sep}from=search`);
-            }
+            if (href) navigate(href);
           }}
         />
       )}
@@ -2060,7 +2066,7 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
 
 /* ---- Main export ---- */
 
-export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, geo, activeRefinement, resultView, hiddenMatchCount = 0 }) {
+export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, geo, activeRefinement, resultView, hiddenMatchCount = 0, returnNavigation = null }) {
   const location = useLocation();
   const { language, t } = useLanguage();
   const contextSearch = location.search || "";
@@ -2217,6 +2223,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
                 restaurantSummary={restaurantSummary}
                 venueRenderedAbove
                 activeRefinement={activeRefinement}
+                returnNavigation={returnNavigation}
               />
             );
           })}
@@ -2271,6 +2278,7 @@ export default function SearchResultCard({ restaurant, items, item, query, query
           similarRequest={similarRequest}
           restaurantSummary={null}
           activeRefinement={activeRefinement}
+          returnNavigation={returnNavigation}
         />
       </article>
     );

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
+import { appendClusterReturnQuery } from "../../lib/clusterReturnNavigation.js";
 
 export const CLUSTER_DISH_CHIP_STYLE = {
   display: "block",
@@ -19,16 +20,24 @@ export const CLUSTER_DISH_CHIP_STYLE = {
   textAlign: "left",
 };
 
-function buildDishHref(item) {
+function buildDishHref(item, clusterReturnTo, clusterReturnLabel) {
   const menuItemId = item?.menu_item_id ?? item?.id;
-  if (menuItemId) return `/menu-items/${menuItemId}?from=cluster`;
+  if (menuItemId) {
+    const base = `/menu-items/${menuItemId}`;
+    return clusterReturnTo
+      ? appendClusterReturnQuery(base, clusterReturnTo, clusterReturnLabel)
+      : `${base}?from=cluster`;
+  }
 
-  return restaurantMenuPathFromRow(item);
+  const menuPath = restaurantMenuPathFromRow(item);
+  return clusterReturnTo
+    ? appendClusterReturnQuery(menuPath, clusterReturnTo, clusterReturnLabel)
+    : menuPath;
 }
 
-export function ClusterDishChip({ item }) {
+export function ClusterDishChip({ item, clusterReturnTo = null, clusterReturnLabel = null }) {
   if (!item?.name) return null;
-  const href = buildDishHref(item);
+  const href = buildDishHref(item, clusterReturnTo, clusterReturnLabel);
 
   const content = <span>{item.name}</span>;
 
@@ -43,7 +52,12 @@ export function ClusterDishChip({ item }) {
   );
 }
 
-export function ClusterDishList({ items = [], showRestaurantBreaks = false }) {
+export function ClusterDishList({
+  items = [],
+  showRestaurantBreaks = false,
+  clusterReturnTo = null,
+  clusterReturnLabel = null,
+}) {
   if (!Array.isArray(items) || items.length === 0) return null;
 
   let lastRestaurantId = null;
@@ -75,7 +89,11 @@ export function ClusterDishList({ items = [], showRestaurantBreaks = false }) {
                 {item.restaurant_name}
               </div>
             ) : null}
-            <ClusterDishChip item={item} />
+            <ClusterDishChip
+              item={item}
+              clusterReturnTo={clusterReturnTo}
+              clusterReturnLabel={clusterReturnLabel}
+            />
           </React.Fragment>
         );
       })}

@@ -25,6 +25,10 @@ import {
   getClusterPageHeading,
 } from "../lib/clusterLegalCopy.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
+import {
+  buildClusterFoodReturnPath,
+  clusterReturnLabel as getClusterReturnLabel,
+} from "../lib/clusterReturnNavigation.js";
 
 const CANONICAL_BASE = "https://menuply.com";
 const CLUSTER_VIEW_MODES = Object.freeze({
@@ -297,6 +301,23 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
 
   const searchActive = Boolean(submittedSearch.trim());
 
+  const clusterReturnTo = useMemo(
+    () => (cluster ? buildClusterFoodReturnPath(cluster) : null),
+    [cluster],
+  );
+  const clusterDestinationLabel = useMemo(
+    () => (cluster ? getClusterReturnLabel(cluster) : "destination"),
+    [cluster],
+  );
+  const returnNavigation = useMemo(
+    () => (clusterReturnTo ? {
+      returnTo: clusterReturnTo,
+      label: clusterDestinationLabel,
+      from: "cluster",
+    } : null),
+    [clusterReturnTo, clusterDestinationLabel],
+  );
+
   useEffect(() => {
     if (!enabled || !clusterSlug || searchActive) return undefined;
 
@@ -429,21 +450,27 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
 
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
-      <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-        <input
-          type="search"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="Search food in this area (burger, low calories, high protein…)"
-          aria-label="Search food in this cluster"
-          style={{
-            flex: "1 1 220px",
-            minWidth: 0,
-            padding: "0.65rem 0.75rem",
-            borderRadius: 8,
-            border: "1px solid #d1d5db",
-          }}
-        />
+      <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "flex-start" }}>
+        <div style={{ flex: "1 1 220px", minWidth: 0, display: "grid", gap: "0.3rem" }}>
+          <input
+            type="search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Search food in this area"
+            aria-label="Search food in this area. Examples: burger, low calories, high protein."
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "0.65rem 0.75rem",
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+              fontSize: "1rem",
+            }}
+          />
+          <p style={{ margin: 0, fontSize: "0.78rem", color: "#6b7280", lineHeight: 1.35 }}>
+            e.g. burger, low calories, high protein
+          </p>
+        </div>
         <button
           type="submit"
           disabled={!searchInput.trim()}
@@ -454,6 +481,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
             background: searchInput.trim() ? "#111827" : "#9ca3af",
             color: "#fff",
             cursor: searchInput.trim() ? "pointer" : "not-allowed",
+            alignSelf: "flex-start",
           }}
         >
           Search
@@ -468,6 +496,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
               border: "1px solid #d1d5db",
               background: "#fff",
               cursor: "pointer",
+              alignSelf: "flex-start",
             }}
           >
             Clear
@@ -496,6 +525,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
                     city: cluster?.city || null,
                     state: cluster?.state || null,
                   }}
+                  returnNavigation={returnNavigation}
                 />
               );
             })}
@@ -523,7 +553,13 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
           </div>
           {status === "loading" ? <p style={{ color: "#666" }}>Loading {categoryTitle}…</p> : null}
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
-          {items.length > 0 ? <ClusterDishList items={items} /> : null}
+          {items.length > 0 ? (
+            <ClusterDishList
+              items={items}
+              clusterReturnTo={clusterReturnTo}
+              clusterReturnLabel={clusterDestinationLabel}
+            />
+          ) : null}
           {pagination?.has_more ? (
             <button
               type="button"

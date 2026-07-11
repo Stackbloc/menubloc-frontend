@@ -43,6 +43,13 @@ import {
   highlightMenuLinkExtrasFromSearch,
   getCanonicalMenuItemPath,
 } from "../components/share/shareUtils.js";
+import ReturnToSourceBar from "../components/navigation/ReturnToSourceBar.jsx";
+import {
+  hasClusterReturnContext,
+  resolveReturnTarget,
+  resolveReturnLabel,
+  returnContextExtraParams,
+} from "../lib/clusterReturnNavigation.js";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js";
@@ -1229,6 +1236,11 @@ export default function MenuItemDetailPage() {
   const geoLng = searchParams.get("lng");
   const fromSearch = searchParams.get("from") === "search";
   const fromMenu   = searchParams.get("from") === "menu";
+  const fromCluster = hasClusterReturnContext(searchParams);
+  const clusterReturnTo = resolveReturnTarget(searchParams);
+  const clusterBackLabel = fromCluster
+    ? `Back to ${resolveReturnLabel(searchParams)}`
+    : null;
 
   const [loading,  setLoading]  = useState(true);
   const [err,      setErr]      = useState("");
@@ -1299,7 +1311,7 @@ export default function MenuItemDetailPage() {
 
         if (!cancelled) {
           setRawItem(found);
-          if (!restaurantSlug && !fromSearch && !fromMenu) {
+          if (!restaurantSlug && !fromSearch && !fromMenu && !fromCluster) {
             const slug =
               found?.restaurant_slug || found?.restaurant?.slug ||
               toSlug(found?.restaurant_name || found?.restaurant?.name || found?.restaurant);
@@ -1315,7 +1327,7 @@ export default function MenuItemDetailPage() {
 
     load();
     return () => { cancelled = true; };
-  }, [id, navigate, restaurantSlug, fromSearch, fromMenu, geoLat, geoLng]);
+  }, [id, navigate, restaurantSlug, fromSearch, fromMenu, fromCluster, geoLat, geoLng]);
 
   useEffect(() => {
     if (!shareData) return undefined;
@@ -1382,13 +1394,20 @@ export default function MenuItemDetailPage() {
         }),
         {
           menuItemId: item.menu_item_id,
-          extraParams: highlightMenuLinkExtrasFromSearch(searchParams),
+          extraParams: {
+            ...highlightMenuLinkExtrasFromSearch(searchParams),
+            ...returnContextExtraParams(searchParams),
+          },
         },
       )
     : "/menus";
 
   return (
     <PageShell isMobile={isMobile}>
+      {fromCluster && clusterReturnTo ? (
+        <ReturnToSourceBar to={clusterReturnTo} label={clusterBackLabel} />
+      ) : null}
+
       {backUrl && fromItemName && (
         <Link
           to={backUrl}
@@ -1498,9 +1517,12 @@ export default function MenuItemDetailPage() {
                     shareTarget: "dish",
                   }}
                   fullMenuHref={fullMenuHref}
-                  fromSearch={fromSearch}
-                  onBack={() => navigate(-1)}
-                  returnLabel="Return to search results"
+                  fromSearch={fromSearch || fromCluster}
+                  onBack={() => {
+                    if (clusterReturnTo) navigate(clusterReturnTo);
+                    else navigate(-1);
+                  }}
+                  returnLabel={fromCluster ? clusterBackLabel : "Return to search results"}
                 />
               </div>
 

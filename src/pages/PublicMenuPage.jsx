@@ -50,6 +50,12 @@ function useIsMobile(breakpoint = 900) {
   return isMobile;
 }
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
+import ReturnToSourceBar from "../components/navigation/ReturnToSourceBar.jsx";
+import {
+  hasClusterReturnContext,
+  resolveReturnTarget,
+  resolveReturnLabel,
+} from "../lib/clusterReturnNavigation.js";
 import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppliedBanner.jsx";
 import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
@@ -773,6 +779,11 @@ export default function PublicMenuPage() {
   const preferenceBannerVisible = hasSavedPreferences;
   const { isFirstMenuView } = useMenuPreferenceBannerSession(preferenceBannerVisible);
   const [searchParams, setSearchParams] = useSearchParams();
+  const fromCluster = hasClusterReturnContext(searchParams);
+  const clusterReturnTo = resolveReturnTarget(searchParams);
+  const clusterBackLabel = fromCluster
+    ? `Back to ${resolveReturnLabel(searchParams)}`
+    : null;
   const [modifierItem, setModifierItem] = useState(null);
   const [modifierInitialInstructions, setModifierInitialInstructions] = useState("");
   const [smartSheetItem, setSmartSheetItem] = useState(null);
@@ -1462,6 +1473,9 @@ export default function PublicMenuPage() {
         padding: isMobile ? "16px 12px 80px" : "28px 20px 80px",
         color: shellTextColor,
       }}>
+        {fromCluster && clusterReturnTo ? (
+          <ReturnToSourceBar to={clusterReturnTo} label={clusterBackLabel} />
+        ) : null}
         {isMenuTemplatePreview ? (
           <div
             style={{

@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "a928dec044e0d222c1fd8f91f2bb3dff964356c1",
-  "gitShortSha": "a928dec",
+  "gitSha": "0ebd77b4190053020e01345ba8ff4bd98391618c",
+  "gitShortSha": "0ebd77b",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-11T12:11:22.259Z",
+  "buildTime": "2026-07-11T12:42:17.763Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(clusters): remove nearby destinations section from cluster pages"
+  "commitMessage": "feat(clusters): back nav, discovery search cards, reliable dish links"
 }
