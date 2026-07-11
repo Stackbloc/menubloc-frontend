@@ -3,10 +3,9 @@ import { useParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx";
-import ClusterRestaurantListingCard from "../components/cluster/ClusterRestaurantListingCard.jsx";
+import ClusterRestaurantDirectoryCard from "../components/cluster/ClusterRestaurantDirectoryCard.jsx";
 import { ClusterPlaceholderSection, ClusterDrinksDirectory } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
 import { ClusterPageBreadcrumb } from "../components/cluster/ClusterBreadcrumbs.jsx";
-import DiscoveryCard from "../components/discovery/DiscoveryCard.jsx";
 import {
   ClusterMenuCategorySection,
   ClusterMenuExplorerReservedFilters,
@@ -168,7 +167,6 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
   const [placeholderIntro, setPlaceholderIntro] = useState("");
   const [drinksPlaceholderIntro, setDrinksPlaceholderIntro] = useState("");
   const [drinksFilter, setDrinksFilter] = useState("all");
-  const [progressiveListing, setProgressiveListing] = useState(false);
   const [pagination, setPagination] = useState(null);
   const [error, setError] = useState("");
 
@@ -184,7 +182,6 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
     setPlaceholderIntro("");
     setDrinksPlaceholderIntro("");
     setDrinksFilter("all");
-    setProgressiveListing(false);
     setPagination(null);
 
     fetchClusterRestaurants(clusterSlug, { limit: PAGE_SIZE, offset: 0, signal: controller.signal })
@@ -195,9 +192,6 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
         setDrinksPlaceholders(Array.isArray(data.drinks_placeholders) ? data.drinks_placeholders : []);
         setPlaceholderIntro(data.placeholder_intro || "");
         setDrinksPlaceholderIntro(data.drinks_placeholder_intro || "");
-        setProgressiveListing(
-          data.progressive_listing === true || data.cluster?.progressive_listing === true
-        );
         setPagination(data.pagination || null);
         setStatus("ok");
       })
@@ -268,11 +262,11 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
       0
     );
   const directoryTotal = pagination?.total_placeholders ?? diningTotal + drinksTotal;
-  const verifiedTotal = pagination?.total_listed ?? restaurants.length;
+  const listedTotal = pagination?.total_listed ?? restaurants.length;
+  const assignedTotal = pagination?.total_assigned ?? listedTotal;
   const menuReadyCount = pagination?.total_menu_ready ?? 0;
   const isAirport = String(cluster?.type || "").toLowerCase() === "airport";
   const outletNoun = isAirport ? "dining outlet" : "restaurant";
-  const CardComponent = progressiveListing ? ClusterRestaurantListingCard : DiscoveryCard;
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -289,12 +283,21 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
       ) : null}
       {restaurants.length > 0 ? (
         <>
-          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
-            {verifiedTotal} verified profile{verifiedTotal === 1 ? "" : "s"} with Menuply data
+          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45 }}>
+            {listedTotal} {outletNoun}
+            {listedTotal === 1 ? "" : "s"} in this cluster
+            {assignedTotal > listedTotal
+              ? ` · ${assignedTotal} total location${assignedTotal === 1 ? "" : "s"}`
+              : ""}
+            {menuReadyCount > 0 && menuReadyCount < listedTotal
+              ? ` · ${menuReadyCount} with menus on Menuply`
+              : ""}
           </p>
-          {restaurants.map((restaurant) => (
-            <CardComponent key={restaurant.restaurant_id} restaurant={restaurant} menu={restaurant} />
-          ))}
+          <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
+            {restaurants.map((restaurant) => (
+              <ClusterRestaurantDirectoryCard key={restaurant.restaurant_id} restaurant={restaurant} />
+            ))}
+          </div>
         </>
       ) : null}
       {placeholders.length > 0 ? (

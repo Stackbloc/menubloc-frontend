@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "7c78dbb98a2d75d3fddc4919d2fa5287b2365d80",
-  "gitShortSha": "7c78dbb",
+  "gitSha": "6ae3aafec40192649dca0cb8a5bfd6938329aa42",
+  "gitShortSha": "6ae3aaf",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-11T00:25:50.634Z",
+  "buildTime": "2026-07-11T01:03:09.327Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(yellow-browser): pin purchase coach inside sticky menu header"
+  "commitMessage": "feat(clusters): wireframe layout with stats, search, and view toggle"
 }
