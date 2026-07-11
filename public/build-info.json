@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "7ad37b895d4fdd6b0dd7a66509ddebe422d4bff2",
-  "gitShortSha": "7ad37b8",
+  "gitSha": "a928dec044e0d222c1fd8f91f2bb3dff964356c1",
+  "gitShortSha": "a928dec",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-11T11:54:57.202Z",
+  "buildTime": "2026-07-11T12:11:22.259Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(clusters): remove all count stats from cluster UI"
+  "commitMessage": "fix(clusters): remove nearby destinations section from cluster pages"
 }

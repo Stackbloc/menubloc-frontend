@@ -6,6 +6,7 @@ import { useConsumer } from "../context/ConsumerContext.jsx";
 import { createCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
+import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
 import { stateDisplayName, clusterCoverageBadge, CLUSTER_GROWING_HELP_TEXT } from "../lib/clusterUrl.js";
 import { resolveClusterAutoOpenPath, resolveClusterMarketFromStoredLocation } from "../lib/clusterLocation.js";
 
@@ -209,6 +210,7 @@ export default function ClustersDirectoryPage() {
             boxShadow: "0 8px 24px rgba(15,23,42,0.05)",
           }}
         >
+          <ClusterBackButton fallbackTo="/" label="Home" />
           <BrandLogo height={36} radius={10} matchPageBackground={false} />
           <h1 style={{ margin: "0.75rem 0 0.4rem", fontSize: "1.7rem", lineHeight: 1.2 }}>
             Clusters

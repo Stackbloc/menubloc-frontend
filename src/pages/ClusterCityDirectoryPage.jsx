@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
+import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
 import { ClusterDirectoryBreadcrumb } from "../components/cluster/ClusterBreadcrumbs.jsx";
 import { fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
@@ -99,6 +100,7 @@ export default function ClusterCityDirectoryPage() {
             boxShadow: "0 8px 24px rgba(15,23,42,0.05)",
           }}
         >
+          <ClusterBackButton fallbackTo={clusterDirectoryPath()} label="All clusters" />
           <BrandLogo height={36} radius={10} matchPageBackground={false} />
           <ClusterDirectoryBreadcrumb state={stateCode || stateSlug} city={cityLabel} />
           <h1 style={{ margin: "0.5rem 0 0.4rem", fontSize: "1.7rem", lineHeight: 1.2 }}>

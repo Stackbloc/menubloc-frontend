@@ -6,10 +6,11 @@ import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx
 import ClusterRestaurantDirectoryCard from "../components/cluster/ClusterRestaurantDirectoryCard.jsx";
 import { ClusterPlaceholderSection, ClusterDrinksDirectory } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
 import { ClusterPageBreadcrumb } from "../components/cluster/ClusterBreadcrumbs.jsx";
+import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
 import {
   ClusterDishList,
-  flattenClusterSearchGroups,
 } from "../components/cluster/ClusterMenuExplorer.jsx";
+import SearchResultCard from "../components/SearchResultCard.jsx";
 import { ClusterMksCategoryGrid } from "../components/cluster/ClusterMksCategoryBlock.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
 import {
@@ -17,7 +18,7 @@ import {
   buildClusterShareData,
 } from "../components/share/shareUtils.js";
 import { fetchClusterMetadata, fetchClusterMenuItems, fetchClusterRestaurants, searchCluster } from "../lib/clusterApi.js";
-import { clusterTypeLabel, isClusterGrowing } from "../lib/clusterUrl.js";
+import { clusterTypeLabel, isClusterGrowing, clusterCityPath, clusterDirectoryPath } from "../lib/clusterUrl.js";
 import { groupClusterRestaurantsByCuisine } from "../lib/clusterRestaurantCuisineGroups.js";
 import {
   getClusterDisclaimer,
@@ -274,7 +275,12 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
   );
 }
 
-function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
+const CLUSTER_SEARCH_GRID_STYLE = {
+  display: "grid",
+  gap: "0.85rem",
+};
+
+function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
   const PAGE_SIZE = 40;
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [mksCategories, setMksCategories] = useState([]);
@@ -285,7 +291,8 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
   const [searchInput, setSearchInput] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
   const [searchStatus, setSearchStatus] = useState("idle");
-  const [searchGroups, setSearchGroups] = useState([]);
+  const [searchMenuItems, setSearchMenuItems] = useState([]);
+  const [searchQueryMeta, setSearchQueryMeta] = useState(null);
   const [searchError, setSearchError] = useState("");
 
   const searchActive = Boolean(submittedSearch.trim());
@@ -350,7 +357,8 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
   useEffect(() => {
     if (!enabled || !clusterSlug || !searchActive) {
       setSearchStatus("idle");
-      setSearchGroups([]);
+      setSearchMenuItems([]);
+      setSearchQueryMeta(null);
       setSearchError("");
       return undefined;
     }
@@ -362,7 +370,8 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
     searchCluster(clusterSlug, { q: submittedSearch.trim(), signal: controller.signal })
       .then((data) => {
         if (!data?.ok) throw new Error(data?.error || "Search failed");
-        setSearchGroups(Array.isArray(data.groups) ? data.groups : []);
+        setSearchMenuItems(Array.isArray(data.menu_items) ? data.menu_items : []);
+        setSearchQueryMeta(data.query || null);
         setSearchStatus("ok");
       })
       .catch((err) => {
@@ -425,7 +434,7 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
           type="search"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="Search food in this area (burger, pizza, salad…)"
+          placeholder="Search food in this area (burger, low calories, high protein…)"
           aria-label="Search food in this cluster"
           style={{
             flex: "1 1 220px",
@@ -470,10 +479,27 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
         <div style={{ display: "grid", gap: "0.75rem" }}>
           {searchStatus === "loading" ? <p style={{ color: "#666", margin: 0 }}>Searching {submittedSearch}…</p> : null}
           {searchStatus === "error" ? <p style={{ color: "#b91c1c", margin: 0 }}>{searchError}</p> : null}
-          {searchStatus === "ok" && searchGroups.length === 0 ? (
+          {searchStatus === "ok" && searchMenuItems.length === 0 ? (
             <p style={{ color: "#888", margin: 0 }}>No food in this area matches “{submittedSearch}”.</p>
           ) : null}
-          <ClusterDishList items={flattenClusterSearchGroups(searchGroups)} />
+          <div style={CLUSTER_SEARCH_GRID_STYLE}>
+            {searchMenuItems.map((row) => {
+              const rowId = row?.menu_item_id ?? row?.id;
+              const rowName = row?.search_display_name || row?.menu_item_name || row?.name || "item";
+              return (
+                <SearchResultCard
+                  key={`cluster-search-${rowId || rowName}`}
+                  item={row}
+                  query={submittedSearch}
+                  queryMeta={searchQueryMeta}
+                  geo={{
+                    city: cluster?.city || null,
+                    state: cluster?.state || null,
+                  }}
+                />
+              );
+            })}
+          </div>
         </div>
       ) : selectedCategory ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -650,10 +676,12 @@ export default function ClusterPage() {
   const pageHeading = getClusterPageHeading(cluster);
   const disclaimer = getClusterDisclaimer(cluster);
   const showGrowingNotice = isClusterGrowing(cluster);
+  const clusterBackFallback = clusterCityPath(cluster) || clusterDirectoryPath();
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box", overflowX: "clip" }}>
       <header style={{ marginBottom: "1rem", minWidth: 0, display: "grid", gap: "0.85rem" }}>
+        <ClusterBackButton fallbackTo={clusterBackFallback} label="Back" />
         <ClusterPageBreadcrumb cluster={cluster} />
         <div
           style={{
@@ -712,7 +740,7 @@ export default function ClusterPage() {
         }}
       >
         {resolvedViewMode === CLUSTER_VIEW_MODES.MENU ? (
-          <ClusterMenuExplorerTab clusterSlug={cluster.slug} enabled />
+          <ClusterMenuExplorerTab clusterSlug={cluster.slug} cluster={cluster} enabled />
         ) : (
           <ClusterRestaurantsTab clusterSlug={cluster.slug} cluster={cluster} enabled />
         )}

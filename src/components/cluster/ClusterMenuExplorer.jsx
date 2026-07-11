@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { restaurantMenuPathFromRow } from "../../lib/canonicalUrl.js";
-import { appendMenuHighlightQuery } from "../share/shareUtils.js";
 
 export const CLUSTER_DISH_CHIP_STYLE = {
   display: "block",
@@ -20,15 +19,16 @@ export const CLUSTER_DISH_CHIP_STYLE = {
   textAlign: "left",
 };
 
-function buildDishMenuHref(item) {
-  const menuPath = restaurantMenuPathFromRow(item);
-  if (!menuPath || !item?.menu_item_id) return null;
-  return appendMenuHighlightQuery(menuPath, { menuItemId: item.menu_item_id });
+function buildDishHref(item) {
+  const menuItemId = item?.menu_item_id ?? item?.id;
+  if (menuItemId) return `/menu-items/${menuItemId}?from=cluster`;
+
+  return restaurantMenuPathFromRow(item);
 }
 
 export function ClusterDishChip({ item }) {
   if (!item?.name) return null;
-  const href = buildDishMenuHref(item);
+  const href = buildDishHref(item);
 
   const content = <span>{item.name}</span>;
 
