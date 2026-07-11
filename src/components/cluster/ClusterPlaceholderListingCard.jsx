@@ -1,6 +1,9 @@
 export default function ClusterPlaceholderListingCard({ listing, showBeverageType = false }) {
   const name = listing?.name || "Coming soon";
   const location = listing?.location ? String(listing.location).trim() : "";
+  const menuItems = Array.isArray(listing?.menu_items)
+    ? listing.menu_items.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
   const beverageLabel =
     showBeverageType && listing?.beverage_type
       ? String(listing.beverage_type).trim()
@@ -20,6 +23,23 @@ export default function ClusterPlaceholderListingCard({ listing, showBeverageTyp
       <div style={{ fontWeight: 600, color: "#111827", overflowWrap: "anywhere" }}>{name}</div>
       {location ? (
         <div style={{ color: "#6b7280", fontSize: "0.85rem", lineHeight: 1.4, overflowWrap: "anywhere" }}>{location}</div>
+      ) : null}
+      {menuItems.length > 0 ? (
+        <ul
+          style={{
+            margin: "0.15rem 0 0",
+            paddingLeft: "1.1rem",
+            color: "#374151",
+            fontSize: "0.84rem",
+            lineHeight: 1.45,
+          }}
+        >
+          {menuItems.map((item) => (
+            <li key={`${name}-${item}`} style={{ overflowWrap: "anywhere" }}>
+              {item}
+            </li>
+          ))}
+        </ul>
       ) : null}
       {beverageLabel ? (
         <div

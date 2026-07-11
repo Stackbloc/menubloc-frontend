@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
-import { BrandLogo } from "../components/BrandLogo.jsx";
+import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { createCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
@@ -193,13 +193,14 @@ export default function ClustersDirectoryPage() {
       style={{
         minHeight: "100vh",
         background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
-        padding: "1.25rem 1rem 5rem",
+        padding: "0 1rem 5rem",
         width: "100%",
         boxSizing: "border-box",
         overflowX: "clip",
       }}
     >
-      <div style={{ maxWidth: 1080, margin: "0 auto", width: "100%", minWidth: 0 }}>
+      <StickyPageHeader />
+      <div style={{ maxWidth: 1080, margin: "0 auto", width: "100%", minWidth: 0, paddingTop: "1rem" }}>
         <header
           style={{
             border: "1px solid #dbe7df",
@@ -208,11 +209,12 @@ export default function ClustersDirectoryPage() {
             padding: "1rem 1.1rem",
             marginBottom: "1rem",
             boxShadow: "0 8px 24px rgba(15,23,42,0.05)",
+            display: "grid",
+            gap: "0.75rem",
           }}
         >
           <ClusterBackButton fallbackTo="/" label="Home" />
-          <BrandLogo height={36} radius={10} matchPageBackground={false} />
-          <h1 style={{ margin: "0.75rem 0 0.4rem", fontSize: "1.7rem", lineHeight: 1.2 }}>
+          <h1 style={{ margin: 0, fontSize: "1.7rem", lineHeight: 1.2, color: "#0B0F0C" }}>
             Clusters
           </h1>
           <p style={{ margin: 0, color: "#475569", maxWidth: 760 }}>

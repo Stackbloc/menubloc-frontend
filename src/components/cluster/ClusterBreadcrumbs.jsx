@@ -11,7 +11,7 @@ import {
 
 function CrumbList({ crumbs }) {
   return (
-    <nav aria-label="Cluster breadcrumb" style={{ marginBottom: "0.75rem" }}>
+    <nav aria-label="Cluster breadcrumb">
       <ol
         style={{
           display: "flex",
