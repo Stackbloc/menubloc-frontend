@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../../lib/canonicalUrl.js";
 import { isRestaurantMenuReady } from "../../lib/publicCardCounts.js";
+import { appendClusterReturnQuery } from "../../lib/clusterReturnNavigation.js";
 import {
   formatRestaurantCuisineLabel,
   formatRestaurantPriceTier,
@@ -18,7 +19,11 @@ function clampLines(maxLines) {
   };
 }
 
-export default function ClusterRestaurantDirectoryCard({ restaurant }) {
+export default function ClusterRestaurantDirectoryCard({
+  restaurant,
+  placeReturnPath = null,
+  placeReturnLabel = null,
+}) {
   if (!restaurant) return null;
 
   const name = restaurant?.restaurant_name || restaurant?.name || "Restaurant";
@@ -30,7 +35,11 @@ export default function ClusterRestaurantDirectoryCard({ restaurant }) {
   const menuReady = isRestaurantMenuReady(restaurant);
   const profileHref = restaurantPathFromRow(restaurant);
   const menuHref = restaurantMenuPathFromRow(restaurant);
-  const href = menuReady && menuHref ? menuHref : profileHref;
+  const rawHref = menuReady && menuHref ? menuHref : profileHref;
+  const href =
+    rawHref && placeReturnPath
+      ? appendClusterReturnQuery(rawHref, placeReturnPath, placeReturnLabel)
+      : rawHref;
 
   const content = (
     <article

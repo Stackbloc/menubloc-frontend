@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ClusterCityStarterChecklist from "./ClusterCityStarterChecklist.jsx";
 import { clusterPath, clusterTypeLabel, clusterVerificationBadge } from "../../lib/clusterUrl.js";
 
 export const CLUSTER_DIRECTORY_GRID_STYLE = {
@@ -43,7 +44,9 @@ export default function ClusterDirectoryCard({
   accent = DEFAULT_ACCENT,
   statusLabel = null,
   statusTitle = null,
+  starterChecklist = null,
   isPending = false,
+  hideLocation = false,
 }) {
   if (!cluster) return null;
 
@@ -108,7 +111,7 @@ export default function ClusterDirectoryCard({
         >
           {typeLabel}
         </div>
-        {cluster.city && cluster.state ? (
+        {!hideLocation && cluster.city && cluster.state ? (
           <div style={{ color: "#6b7280", fontSize: "0.88rem", lineHeight: 1.4, overflowWrap: "anywhere" }}>
             {cluster.city}, {cluster.state}
           </div>
@@ -118,6 +121,7 @@ export default function ClusterDirectoryCard({
             {cluster.short_description}
           </div>
         ) : null}
+        <ClusterCityStarterChecklist checklist={starterChecklist} />
       </div>
 
       <div

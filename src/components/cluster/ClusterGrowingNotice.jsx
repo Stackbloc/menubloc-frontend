@@ -4,7 +4,7 @@ import { CLUSTER_GROWING_NOTICE } from "../../lib/clusterUrl.js";
 export default function ClusterGrowingNotice() {
   return (
     <section
-      aria-label="Growing cluster notice"
+      aria-label="Growing Cluster notice"
       style={{
         marginBottom: "1rem",
         padding: "0.9rem 1rem",

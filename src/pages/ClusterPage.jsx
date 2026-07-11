@@ -5,7 +5,6 @@ import { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirec
 import ClusterGrowingNotice from "../components/cluster/ClusterGrowingNotice.jsx";
 import ClusterRestaurantDirectoryCard from "../components/cluster/ClusterRestaurantDirectoryCard.jsx";
 import { ClusterPlaceholderSection, ClusterDrinksDirectory } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
-import { ClusterPageBreadcrumb } from "../components/cluster/ClusterBreadcrumbs.jsx";
 import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
 import {
   ClusterDishList,
@@ -18,7 +17,7 @@ import {
   buildClusterShareData,
 } from "../components/share/shareUtils.js";
 import { fetchClusterMetadata, fetchClusterMenuItems, fetchClusterRestaurants, searchCluster } from "../lib/clusterApi.js";
-import { clusterTypeLabel, isClusterGrowing, clusterCityPath, clusterDirectoryPath } from "../lib/clusterUrl.js";
+import { isClusterGrowing, clusterCityPath, clusterDirectoryPath, CLUSTER_ARRIVAL_TAGLINE } from "../lib/clusterUrl.js";
 import { groupClusterRestaurantsByCuisine } from "../lib/clusterRestaurantCuisineGroups.js";
 import {
   getClusterDisclaimer,
@@ -26,7 +25,9 @@ import {
 } from "../lib/clusterLegalCopy.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import {
-  buildClusterFoodReturnPath,
+  buildClusterReturnPath,
+  buildClusterRestaurantsReturnPath,
+  CLUSTER_FROM,
   clusterReturnLabel as getClusterReturnLabel,
 } from "../lib/clusterReturnNavigation.js";
 
@@ -38,26 +39,11 @@ const CLUSTER_VIEW_MODES = Object.freeze({
 
 function ClusterDescription({ cluster }) {
   if (!cluster) return null;
-
-  const areaName = cluster.area_name || cluster.name;
   const shortDescription = cluster.short_description || cluster.description || null;
+  if (!shortDescription) return null;
 
   return (
-    <section style={{ display: "grid", gap: "0.65rem", minWidth: 0 }}>
-      {shortDescription ? (
-        <p style={{ margin: 0, color: "#374151", lineHeight: 1.55, fontSize: "0.98rem" }}>{shortDescription}</p>
-      ) : null}
-      <p style={{ margin: 0, color: "#6b7280", fontSize: "0.92rem", lineHeight: 1.45, overflowWrap: "anywhere" }}>
-        {clusterTypeLabel(cluster.type)} near {areaName}
-        {cluster.address ? ` · ${cluster.address}` : ""}
-      </p>
-      {cluster.placeholder_intro ? (
-        <p style={{ margin: 0, color: "#444", lineHeight: 1.5, fontSize: "0.92rem" }}>{cluster.placeholder_intro}</p>
-      ) : null}
-      <p style={{ margin: 0, color: "#444", lineHeight: 1.5, fontSize: "0.92rem" }}>
-        Browse what you can eat across every restaurant here — like one big combined menu.
-      </p>
-    </section>
+    <p style={{ margin: 0, color: "#374151", lineHeight: 1.55, fontSize: "0.98rem" }}>{shortDescription}</p>
   );
 }
 
@@ -68,15 +54,11 @@ function ClusterViewToggle({ viewMode, onChange, disabled }) {
   ];
 
   return (
-    <div style={{ display: "grid", gap: "0.45rem" }}>
-      <div style={{ fontSize: "0.82rem", color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-        View
-      </div>
-      <div
-        role="radiogroup"
-        aria-label="Cluster content view"
-        style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}
-      >
+    <div
+      role="radiogroup"
+      aria-label="Cluster view"
+      style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}
+    >
         {options.map((option) => {
           const selected = viewMode === option.id;
           return (
@@ -115,12 +97,11 @@ function ClusterViewToggle({ viewMode, onChange, disabled }) {
             </button>
           );
         })}
-      </div>
     </div>
   );
 }
 
-function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
+function ClusterRestaurantsTab({ clusterSlug, cluster, enabled, placeReturnPath, placeReturnLabel }) {
   const PAGE_SIZE = 20;
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [restaurants, setRestaurants] = useState([]);
@@ -159,7 +140,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
-        setError(toConsumerErrorMessage(err, "Could not load restaurants for this cluster."));
+        setError(toConsumerErrorMessage(err, "Could not load restaurants here."));
         setStatus("error");
       });
 
@@ -191,7 +172,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
   }
 
   if (!enabled) {
-    return <p style={{ color: "#888" }}>Select Restaurants to load venues in this area.</p>;
+    return <p style={{ color: "#888" }}>Select Restaurants to see who is here.</p>;
   }
 
   if (status === "loading") {
@@ -205,8 +186,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
   if (restaurants.length === 0 && placeholders.length === 0 && drinksPlaceholders.length === 0) {
     return (
       <p style={{ color: "#888" }}>
-        Menuply is building the dining directory for this destination. Check back soon as outlets are
-        published.
+        Menuply is still adding restaurants here. Check back soon.
       </p>
     );
   }
@@ -222,7 +202,12 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
               <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#111827" }}>{group.label}</h3>
               <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
                 {group.restaurants.map((restaurant) => (
-                  <ClusterRestaurantDirectoryCard key={restaurant.restaurant_id} restaurant={restaurant} />
+                  <ClusterRestaurantDirectoryCard
+                    key={restaurant.restaurant_id}
+                    restaurant={restaurant}
+                    placeReturnPath={placeReturnPath}
+                    placeReturnLabel={placeReturnLabel}
+                  />
                 ))}
               </div>
             </section>
@@ -302,7 +287,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
   const searchActive = Boolean(submittedSearch.trim());
 
   const clusterReturnTo = useMemo(
-    () => (cluster ? buildClusterFoodReturnPath(cluster) : null),
+    () => (cluster ? buildClusterReturnPath(cluster, { view: CLUSTER_VIEW_MODES.MENU }) : null),
     [cluster],
   );
   const clusterDestinationLabel = useMemo(
@@ -313,7 +298,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
     () => (clusterReturnTo ? {
       returnTo: clusterReturnTo,
       label: clusterDestinationLabel,
-      from: "cluster",
+      from: CLUSTER_FROM,
     } : null),
     [clusterReturnTo, clusterDestinationLabel],
   );
@@ -331,14 +316,14 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
 
     fetchClusterMenuItems(clusterSlug, { summary: true, signal: controller.signal })
       .then((data) => {
-        if (!data?.ok) throw new Error(data?.error || "Could not load menu categories");
+        if (!data?.ok) throw new Error(data?.error || "Could not load food categories");
         setMksCategories(Array.isArray(data.mks_categories) ? data.mks_categories : []);
         setPagination(data.pagination || null);
         setStatus("ok");
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
-        setError(toConsumerErrorMessage(err, "Could not load food for this cluster."));
+        setError(toConsumerErrorMessage(err, "Could not load food here."));
         setStatus("error");
       });
 
@@ -397,7 +382,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
-        setSearchError(toConsumerErrorMessage(err, "Could not search menus in this cluster."));
+        setSearchError(toConsumerErrorMessage(err, "Could not search food here."));
         setSearchStatus("error");
       });
 
@@ -443,7 +428,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
   }
 
   if (!enabled) {
-    return <p style={{ color: "#888" }}>Select Food to browse what you can eat in this area.</p>;
+    return <p style={{ color: "#888" }}>Select Food to browse what you can eat here.</p>;
   }
 
   const categoryTitle = selectedCategory?.label || null;
@@ -456,8 +441,8 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
             type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search food in this area"
-            aria-label="Search food in this area. Examples: burger, low calories, high protein."
+            placeholder="Search food here"
+            aria-label={`Search food at ${clusterDestinationLabel}`}
             style={{
               width: "100%",
               boxSizing: "border-box",
@@ -545,7 +530,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
                 cursor: "pointer",
               }}
             >
-              ← All categories
+              ← All food
             </button>
             <h2 style={{ margin: 0, fontSize: "1.15rem" }}>
               {categoryTitle}
@@ -581,10 +566,7 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
         </div>
       ) : (
         <div style={{ display: "grid", gap: "1rem" }}>
-          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
-            What can you eat here? Pick a category to browse food from every restaurant in this area.
-          </p>
-          {status === "loading" ? <p style={{ color: "#666" }}>Loading food categories…</p> : null}
+          {status === "loading" ? <p style={{ color: "#666" }}>Loading food…</p> : null}
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
           {mksCategories.length === 0 && status === "ok" ? (
             <p style={{ color: "#888" }}>No food is listed in this area yet.</p>
@@ -642,7 +624,7 @@ export default function ClusterPage() {
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
-        setError(toConsumerErrorMessage(err, "Could not load this destination."));
+        setError(toConsumerErrorMessage(err, "Could not load this Cluster."));
         setStatus("error");
       });
 
@@ -696,7 +678,7 @@ export default function ClusterPage() {
   if (status === "loading") {
     return (
       <div style={{ padding: "2rem 1rem", textAlign: "center" }}>
-        <p>Loading destination…</p>
+        <p>Loading…</p>
       </div>
     );
   }
@@ -704,7 +686,7 @@ export default function ClusterPage() {
   if (status === "error" || !cluster) {
     return (
       <div style={{ padding: "2rem 1rem", textAlign: "center" }}>
-        <p>{error || "Destination not found."}</p>
+        <p>{error || "Cluster not found."}</p>
       </div>
     );
   }
@@ -712,13 +694,15 @@ export default function ClusterPage() {
   const pageHeading = getClusterPageHeading(cluster);
   const disclaimer = getClusterDisclaimer(cluster);
   const showGrowingNotice = isClusterGrowing(cluster);
-  const clusterBackFallback = clusterCityPath(cluster) || clusterDirectoryPath();
+  const clusterLabel = getClusterReturnLabel(cluster);
+  const clusterCityBack = clusterCityPath(cluster) || clusterDirectoryPath();
+  const cityBackLabel = cluster.city ? `Back to ${cluster.city}` : "All clusters";
+  const restaurantsReturnPath = cluster ? buildClusterRestaurantsReturnPath(cluster) : null;
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box", overflowX: "clip" }}>
-      <header style={{ marginBottom: "1rem", minWidth: 0, display: "grid", gap: "0.85rem" }}>
-        <ClusterBackButton fallbackTo={clusterBackFallback} label="Back" />
-        <ClusterPageBreadcrumb cluster={cluster} />
+      <header style={{ marginBottom: "1rem", minWidth: 0, display: "grid", gap: "0.75rem" }}>
+        <ClusterBackButton fallbackTo={clusterCityBack} label={cityBackLabel} />
         <div
           style={{
             display: "flex",
@@ -731,11 +715,12 @@ export default function ClusterPage() {
           <h1
             style={{
               margin: 0,
-              fontSize: "1.75rem",
-              lineHeight: 1.2,
+              fontSize: "1.85rem",
+              lineHeight: 1.15,
               flex: 1,
               minWidth: 0,
               overflowWrap: "anywhere",
+              letterSpacing: "-0.02em",
             }}
           >
             {pageHeading}
@@ -748,7 +733,7 @@ export default function ClusterPage() {
                 clusterSlug: cluster.slug,
                 clusterName: cluster.name,
               }}
-              label="Share destination"
+              label="Share"
               iconOnly
               tone="ghost"
               size="compact"
@@ -756,31 +741,44 @@ export default function ClusterPage() {
           ) : null}
         </div>
         <ClusterDescription cluster={cluster} />
+        <p
+          style={{
+            margin: 0,
+            fontSize: "1.05rem",
+            fontWeight: 600,
+            color: "#111827",
+            lineHeight: 1.4,
+          }}
+        >
+          {CLUSTER_ARRIVAL_TAGLINE}
+        </p>
+        <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
       </header>
 
-      {showGrowingNotice ? <ClusterGrowingNotice /> : null}
-
-      <section style={{ display: "grid", gap: "1rem", marginBottom: "1.25rem" }}>
-        <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
-      </section>
-
       <main
-        aria-label="Cluster dynamic content"
+        aria-label="Cluster content"
         style={{
           display: "grid",
           gap: "0.75rem",
           minWidth: 0,
           paddingTop: "0.25rem",
           paddingBottom: "1.5rem",
-          borderTop: "1px solid #e5e7eb",
         }}
       >
         {resolvedViewMode === CLUSTER_VIEW_MODES.MENU ? (
           <ClusterMenuExplorerTab clusterSlug={cluster.slug} cluster={cluster} enabled />
         ) : (
-          <ClusterRestaurantsTab clusterSlug={cluster.slug} cluster={cluster} enabled />
+          <ClusterRestaurantsTab
+            clusterSlug={cluster.slug}
+            cluster={cluster}
+            enabled
+            placeReturnPath={restaurantsReturnPath}
+            placeReturnLabel={clusterLabel}
+          />
         )}
       </main>
+
+      {showGrowingNotice ? <ClusterGrowingNotice /> : null}
 
       <footer
         style={{

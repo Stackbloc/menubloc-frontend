@@ -7,7 +7,7 @@ import { createCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
-import { stateDisplayName, clusterCoverageBadge, CLUSTER_GROWING_HELP_TEXT } from "../lib/clusterUrl.js";
+import { stateDisplayName, clusterCoverageBadge, CLUSTER_GROWING_HELP_TEXT, CLUSTER_VIEW_PROMPTS } from "../lib/clusterUrl.js";
 import { resolveClusterAutoOpenPath, resolveClusterMarketFromStoredLocation } from "../lib/clusterLocation.js";
 
 const TYPE_ACCENTS = {
@@ -216,9 +216,12 @@ export default function ClustersDirectoryPage() {
             Clusters
           </h1>
           <p style={{ margin: 0, color: "#475569", maxWidth: 760 }}>
-            A cluster groups every restaurant in a destination into one browsable food guide — campuses,
-            downtowns, airports, entertainment districts, and more. Tap any cluster below to explore what
-            you can eat there.
+            A Cluster groups every restaurant in a real-world destination into one browsable food guide — campuses,
+            downtowns, airports, entertainment districts, and more. Tap any card below to explore what you can eat
+            there.
+          </p>
+          <p style={{ margin: "0.65rem 0 0", color: "#111827", fontWeight: 600, fontSize: "1.05rem" }}>
+            {CLUSTER_VIEW_PROMPTS.directory}
           </p>
         </header>
 
@@ -235,7 +238,7 @@ export default function ClustersDirectoryPage() {
             <p style={{ margin: 0, color: "#1e3a8a", fontSize: "0.95rem", lineHeight: 1.45 }}>
               Near {storedMarket.label}?{" "}
               <Link to={autoOpenPath} style={{ color: "#1d4ed8", fontWeight: 700 }}>
-                Open your local cluster →
+                Open my local Cluster →
               </Link>
             </p>
           </section>
@@ -254,7 +257,7 @@ export default function ClustersDirectoryPage() {
         >
           <h2 style={{ margin: 0, fontSize: "1.2rem" }}>All clusters on Menuply</h2>
           <p style={{ margin: "0.4rem 0 0.9rem", color: "#64748b", fontSize: 14 }}>
-            Every public destination cluster — tap a card to open it.
+            Every public Cluster on Menuply — tap a card to explore.
           </p>
           {loading ? <p style={{ color: "#64748b" }}>Loading clusters…</p> : null}
           {!loading && sortedClusters.length === 0 ? (

@@ -1,27 +1,52 @@
 import { clusterPath } from "./clusterUrl.js";
+import { clusterCityPath } from "./clusterUrl.js";
 
 export const CLUSTER_FROM = "cluster";
+export const CLUSTER_CITY_FROM = "cluster_city";
 export const RETURN_TO_QUERY_KEY = "returnTo";
 export const RETURN_LABEL_QUERY_KEY = "returnLabel";
 
-export function buildClusterFoodReturnPath(cluster = {}) {
+export function buildClusterReturnPath(cluster = {}, { view = "menu" } = {}) {
   const path = clusterPath({
     state: cluster.state,
     city: cluster.city,
     slug: cluster.slug,
   });
-  return path ? `${path}?view=menu` : "/clusters";
+  if (!path) return "/clusters";
+  const normalizedView = String(view || "").trim().toLowerCase();
+  if (normalizedView === "restaurants" || normalizedView === "menu" || normalizedView === "menu-items") {
+    const viewParam = normalizedView === "menu-items" ? "menu" : normalizedView;
+    return `${path}?view=${viewParam}`;
+  }
+  return path;
+}
+
+export function buildClusterFoodReturnPath(cluster = {}) {
+  return buildClusterReturnPath(cluster, { view: "menu" });
+}
+
+export function buildClusterRestaurantsReturnPath(cluster = {}) {
+  return buildClusterReturnPath(cluster, { view: "restaurants" });
+}
+
+export function isPlaceScopedReturn(returnNavigation) {
+  const from = String(returnNavigation?.from || "").trim();
+  return from === CLUSTER_FROM || from === CLUSTER_CITY_FROM;
+}
+
+export function isSinglePlaceReturn(returnNavigation) {
+  return String(returnNavigation?.from || "").trim() === CLUSTER_FROM;
 }
 
 export function clusterReturnLabel(cluster = {}) {
   return cluster.area_name || cluster.name || "destination";
 }
 
-export function appendClusterReturnQuery(path, returnTo, label) {
+export function appendClusterReturnQuery(path, returnTo, label, { from = CLUSTER_FROM } = {}) {
   if (!path || !returnTo) return path;
   const [pathname, existingQuery = ""] = String(path).split("?");
   const params = new URLSearchParams(existingQuery);
-  params.set("from", CLUSTER_FROM);
+  params.set("from", from);
   params.set(RETURN_TO_QUERY_KEY, returnTo);
   if (label) params.set(RETURN_LABEL_QUERY_KEY, label);
   const qs = params.toString();
@@ -30,10 +55,10 @@ export function appendClusterReturnQuery(path, returnTo, label) {
 
 export function resolveReturnTarget(searchParams, { fallback = "/clusters" } = {}) {
   const from = String(searchParams?.get("from") || "").trim();
-  if (from !== CLUSTER_FROM && from !== "search") return null;
+  if (from !== CLUSTER_FROM && from !== CLUSTER_CITY_FROM && from !== "search") return null;
   const returnTo = String(searchParams?.get(RETURN_TO_QUERY_KEY) || "").trim();
   if (returnTo.startsWith("/")) return returnTo;
-  if (from === CLUSTER_FROM) return fallback;
+  if (from === CLUSTER_FROM || from === CLUSTER_CITY_FROM) return fallback;
   return null;
 }
 
@@ -43,14 +68,20 @@ export function resolveReturnLabel(searchParams, fallback = "destination") {
 }
 
 export function hasClusterReturnContext(searchParams) {
-  return String(searchParams?.get("from") || "").trim() === CLUSTER_FROM;
+  const from = String(searchParams?.get("from") || "").trim();
+  return from === CLUSTER_FROM || from === CLUSTER_CITY_FROM;
+}
+
+export function buildClusterCityReturnPath({ state, city }) {
+  return clusterCityPath({ state, city }) || "/clusters";
 }
 
 export function returnContextExtraParams(searchParams) {
-  if (!hasClusterReturnContext(searchParams)) return {};
+  const from = String(searchParams?.get("from") || "").trim();
+  if (from !== CLUSTER_FROM && from !== CLUSTER_CITY_FROM) return {};
   const returnTo = resolveReturnTarget(searchParams);
   if (!returnTo) return {};
-  const extras = { from: CLUSTER_FROM, returnTo };
+  const extras = { from, returnTo };
   const label = resolveReturnLabel(searchParams, "");
   if (label) extras[RETURN_LABEL_QUERY_KEY] = label;
   return extras;

@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const BACK_BUTTON_STYLE = {
   display: "inline-flex",
@@ -14,30 +14,20 @@ const BACK_BUTTON_STYLE = {
   fontWeight: 600,
   cursor: "pointer",
   lineHeight: 1.2,
+  textDecoration: "none",
 };
 
 export default function ClusterBackButton({ fallbackTo = "/clusters", label = "Back" }) {
-  const navigate = useNavigate();
-
-  function handleBack() {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-    navigate(fallbackTo);
-  }
-
   return (
-    <button
-      type="button"
-      onClick={handleBack}
-      aria-label={label === "Back" ? "Go back" : `Go back: ${label}`}
+    <Link
+      to={fallbackTo}
+      aria-label={label === "Back" ? "Go back" : label}
       style={BACK_BUTTON_STYLE}
     >
       <span aria-hidden="true" style={{ fontSize: "1.05rem", lineHeight: 1 }}>
         ←
       </span>
       <span>{label}</span>
-    </button>
+    </Link>
   );
 }

@@ -56,13 +56,26 @@ export const CLUSTER_DESTINATION_TYPES = Object.freeze([
 export const FEATURED_CLUSTER_FALLBACK_SLUGS = Object.freeze(["usc", "la-live", "lax", "atl-airport", "ucla"]);
 
 export const CLUSTER_GROWING_HELP_TEXT =
-  "This Cluster is actively expanding. Menuply is continuously adding restaurants and outlets to this directory.";
+  "This Cluster is still growing. Menuply is continuously adding restaurants and menus here.";
 
 export const CLUSTER_GROWING_NOTICE = Object.freeze({
   title: "Growing Cluster",
   body:
-    "Menuply is actively expanding this collection with more restaurants and outlets. If you know of a location that's missing, you can help improve this Cluster.",
+    "Menuply is still adding restaurants and menus here. If something is missing, you can suggest it for review.",
 });
+
+export const CLUSTER_ARRIVAL_TAGLINE = "You're here. Now let's find something great to eat.";
+
+/** Consumer-facing prompts on Cluster surfaces. */
+export const CLUSTER_VIEW_PROMPTS = Object.freeze({
+  food: "What can I eat here?",
+  restaurants: "Who is here?",
+  directory: "Explore clusters",
+  clusterCity: "Where should I explore?",
+});
+
+/** @deprecated Use CLUSTER_VIEW_PROMPTS */
+export const PLACE_VIEW_PROMPTS = CLUSTER_VIEW_PROMPTS;
 
 export function isClusterGrowing(cluster) {
   const coverage = String(cluster?.coverage_status || "").trim().toLowerCase();
@@ -124,7 +137,7 @@ export function clusterDestinationCategoryLabel(type) {
     airport: "Airports",
     entertainment_complex: "Entertainment Districts",
     tourist_destination: "Tourist Destinations",
-    stadium: "Stadium Districts",
+    stadium: "Stadiums & Arenas",
     convention_district: "Convention Districts",
     historic_district: "Historic Districts",
     waterfront: "Waterfronts",
@@ -151,8 +164,8 @@ export function clusterMembershipHeading(type) {
 
 export function clusterMembershipAction(type) {
   const normalized = String(type || "").toLowerCase();
-  if (normalized === "university") return "View Cluster →";
-  return "Explore Cluster →";
+  if (normalized === "university") return "View cluster →";
+  return "Explore cluster →";
 }
 
 export function groupClustersByStateCity(clusters) {

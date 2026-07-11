@@ -1,5 +1,5 @@
 export default function ClusterPlaceholderListingCard({ listing, showBeverageType = false }) {
-  const name = listing?.name || "Unnamed listing";
+  const name = listing?.name || "Coming soon";
   const location = listing?.location ? String(listing.location).trim() : "";
   const beverageLabel =
     showBeverageType && listing?.beverage_type
@@ -100,7 +100,7 @@ export function ClusterDrinksDirectory({ sections, beverageFilter = "all", onFil
         ))
       ) : (
         <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
-          No drink listings match this filter.
+          No drinks match this filter.
         </p>
       )}
     </div>

@@ -35,8 +35,8 @@ test("groupClustersByStateCity groups clusters for directory rendering", () => {
 test("cluster membership copy varies by cluster type", () => {
   assert.equal(clusterMembershipHeading("university"), "Part of");
   assert.equal(clusterMembershipHeading("entertainment_complex"), "Located in");
-  assert.equal(clusterMembershipAction("university"), "View Cluster →");
-  assert.equal(clusterMembershipAction("mall"), "Explore Cluster →");
+  assert.equal(clusterMembershipAction("university"), "View cluster →");
+  assert.equal(clusterMembershipAction("mall"), "Explore cluster →");
 });
 
 test("cluster type and verification labels include community discovery types", () => {

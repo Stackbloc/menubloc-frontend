@@ -16,13 +16,13 @@ function pickAreaName(cluster = {}) {
 
 export function buildClusterShareTitle(cluster = {}) {
   if (cluster.share_title) return cluster.share_title;
-  return `${pickAreaName(cluster)} Area Restaurants | Menuply`;
+  return `${pickAreaName(cluster)} | Menuply`;
 }
 
 export function buildClusterShareDescription(cluster = {}) {
   if (cluster.share_description) return cluster.share_description;
   const area = pickAreaName(cluster);
-  return `Browse menu information for restaurants around ${area}. Menuply is an independent menu discovery platform.`;
+  return `Explore what you can eat at ${area}. Menuply is an independent menu discovery platform.`;
 }
 
 export function getClusterDisclaimer(cluster = {}) {
@@ -30,7 +30,7 @@ export function getClusterDisclaimer(cluster = {}) {
 }
 
 export function getClusterPageHeading(cluster = {}) {
-  return asText(cluster.page_heading) || `${pickAreaName(cluster)} area dining options`;
+  return asText(cluster.page_heading) || pickAreaName(cluster);
 }
 
 export function getClusterOverviewDescription(cluster = {}) {

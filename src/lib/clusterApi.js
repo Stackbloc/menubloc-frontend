@@ -86,3 +86,28 @@ export async function searchCluster(clusterSlug, { q, limit = 24, offset = 0, si
     signal,
   });
 }
+
+export async function fetchClusterCityPage(stateSlug, citySlug, { signal } = {}) {
+  return apiGet(
+    `/public/clusters/cities/${encodeURIComponent(stateSlug)}/${encodeURIComponent(citySlug)}`,
+    { signal }
+  );
+}
+
+export async function searchClusterCity(stateSlug, citySlug, { q, limit = 24, offset = 0, signal } = {}) {
+  const params = new URLSearchParams();
+  params.set("q", q);
+  if (limit != null) params.set("limit", String(limit));
+  if (offset != null) params.set("offset", String(offset));
+  return apiGet(
+    `/public/clusters/cities/${encodeURIComponent(stateSlug)}/${encodeURIComponent(citySlug)}/search?${params.toString()}`,
+    { signal }
+  );
+}
+
+export async function submitClusterContribution(payload, { signal } = {}) {
+  if (signal) {
+    // apiPost does not support AbortSignal yet.
+  }
+  return apiPost("/public/clusters/contributions", payload || {});
+}
