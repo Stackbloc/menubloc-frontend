@@ -26,6 +26,7 @@ const RESTAURANT_PROFILE_RE = /^\/restaurants\/([^/]+)\/?$/;
 const LEGACY_NUMERIC_RE = /^\/public\/restaurants\/(\d+)\/menu\/?$/;
 const MENU_ITEM_RE = /^\/menu-items\/(\d+)\/?$/;
 const CLUSTER_RE = /^\/clusters\/([^/]+)\/([^/]+)\/([^/]+)\/?$/;
+const CLUSTER_CITY_RE = /^\/clusters\/([^/]+)\/([^/]+)\/?$/;
 const SITEMAP_CHUNK_RE = /^\/sitemaps\/sitemap-(\d+)\.xml$/;
 const SITEMAP_LIMIT = 45000;
 
@@ -397,6 +398,21 @@ export default async function middleware(request) {
       return Response.redirect(canonical, 301);
     }
     return injectedResponse(injectMeta(shell, title, description, canonical, image));
+  }
+
+  // --- /clusters/:state/:city ---
+  m = CLUSTER_CITY_RE.exec(pathname);
+  if (m) {
+    const shell = await fetchShell(request.url);
+    if (!shell) return;
+    const citySlug = m[2];
+    const cityLabel = citySlug
+      .split("-")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+    const title = `${cityLabel} Restaurant Clusters | Menuply`;
+    const description = `Browse restaurant clusters around ${cityLabel} — campuses, entertainment districts, airports, and more.`;
+    return injectedResponse(injectMeta(shell, title, description, `${ORIGIN}${pathname}`));
   }
 
   // --- /menu-items/:id ---

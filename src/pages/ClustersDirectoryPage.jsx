@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
@@ -7,6 +7,7 @@ import { createCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import { stateDisplayName, clusterCoverageBadge, CLUSTER_GROWING_HELP_TEXT } from "../lib/clusterUrl.js";
+import { resolveClusterMarketFromStoredLocation } from "../lib/clusterLocation.js";
 
 const TYPE_ACCENTS = {
   university: { border: "#8b5cf6", bg: "#f5f3ff" },
@@ -81,6 +82,8 @@ const STACKED_FIELDS = {
 
 export default function ClustersDirectoryPage() {
   const { isAuthenticated, consumer } = useConsumer();
+  const [searchParams] = useSearchParams();
+  const storedMarket = useMemo(() => resolveClusterMarketFromStoredLocation(), []);
   const [clusters, setClusters] = useState([]);
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -179,6 +182,10 @@ export default function ClustersDirectoryPage() {
         isPending={isPending}
       />
     );
+  }
+
+  if (searchParams.get("stay") !== "1" && storedMarket?.cityPath) {
+    return <Navigate to={storedMarket.cityPath} replace />;
   }
 
   return (

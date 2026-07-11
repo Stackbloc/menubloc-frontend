@@ -63,10 +63,15 @@ export async function fetchClusterRestaurants(clusterSlug, { limit = 20, offset 
   return apiGet(path, { signal });
 }
 
-export async function fetchClusterMenuItems(clusterSlug, { limit = 40, offset = 0, signal } = {}) {
+export async function fetchClusterMenuItems(
+  clusterSlug,
+  { limit = 40, offset = 0, summary = false, mksCategory = null, signal } = {}
+) {
   const params = new URLSearchParams();
   if (limit != null) params.set("limit", String(limit));
   if (offset != null) params.set("offset", String(offset));
+  if (summary) params.set("summary", "1");
+  if (mksCategory) params.set("mks_category", String(mksCategory));
   const qs = params.toString();
   const path = `/public/clusters/${encodeURIComponent(clusterSlug)}/menu-items${qs ? `?${qs}` : ""}`;
   return apiGet(path, { signal });

@@ -73,18 +73,20 @@ export default function ClusterRestaurantDirectoryCard({ restaurant }) {
         >
           {name}
         </div>
-        <div
-          style={{
-            fontSize: "0.8rem",
-            fontWeight: 700,
-            color: "#4b5563",
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-            overflowWrap: "anywhere",
-          }}
-        >
-          {cuisineLabel}
-        </div>
+        {cuisineLabel ? (
+          <div
+            style={{
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "#4b5563",
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+              overflowWrap: "anywhere",
+            }}
+          >
+            {cuisineLabel}
+          </div>
+        ) : null}
         {locationLabel ? (
           <div style={{ color: "#6b7280", fontSize: "0.88rem", lineHeight: 1.4, overflowWrap: "anywhere" }}>
             {locationLabel}

@@ -54,11 +54,8 @@ export function formatRestaurantPriceTier(restaurant = {}) {
 export function formatRestaurantCuisineLabel(restaurant = {}) {
   const cuisine = restaurant?.cuisine || restaurant?.category || null;
   if (cuisine) return String(cuisine).trim();
-  const type = String(restaurant?.restaurant_type || "").trim();
-  if (!type) return "Restaurant";
-  return type
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+  if (restaurant?.cuisine_display) return String(restaurant.cuisine_display).trim();
+  return null;
 }
 
 export function formatRestaurantMenuCount(restaurant = {}) {
@@ -82,10 +79,10 @@ export function formatRestaurantLocationLabel(restaurant = {}) {
 export function resolveClusterRestaurantStatus(restaurant = {}) {
   const menuReady = isRestaurantMenuReady(restaurant);
   if (menuReady === true || restaurant?.menu_availability_state === "menu_available") {
-    return { text: "Menu on Menuply", tone: "#166534", background: "#dcfce7" };
+    return { text: "MENU AVAILABLE", tone: "#166534", background: "#dcfce7" };
   }
   if (restaurant?.restaurant_id) {
-    return { text: "Profile listed", tone: "#92400e", background: "#fef3c7" };
+    return { text: "PROFILE LISTED", tone: "#92400e", background: "#fef3c7" };
   }
-  return { text: "Coming soon", tone: "#475569", background: "#e2e8f0" };
+  return { text: "Menu not yet available", tone: "#475569", background: "#e2e8f0" };
 }

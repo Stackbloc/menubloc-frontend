@@ -125,6 +125,7 @@ import PublicMenuDisplayPage from "./pages/PublicMenuDisplayPage.jsx";
 import MarketAggregatorPage from "./pages/MarketAggregatorPage.jsx";
 import ClusterPage from "./pages/ClusterPage.jsx";
 import ClustersDirectoryPage from "./pages/ClustersDirectoryPage.jsx";
+import ClusterCityDirectoryPage from "./pages/ClusterCityDirectoryPage.jsx";
 import CommunityClusterCreatePage from "./pages/CommunityClusterCreatePage.jsx";
 import MarketMenuItemPage from "./pages/MarketMenuItemPage.jsx";
 import MenuItemCanonicalRoute from "./pages/MenuItemCanonicalRoute.jsx";
@@ -573,6 +574,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/clusters/admin/:id" element={<CrmRoute><CrmClusterDetail /></CrmRoute>} />
         <Route path="/clusters/admin/:id/preview" element={<CrmRoute><CrmClusterPreviewPage /></CrmRoute>} />
         <Route path="/clusters/:stateSlug/:citySlug/:clusterSlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterPage />} />
+        <Route path="/clusters/:stateSlug/:citySlug" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ClusterCityDirectoryPage />} />
         <Route path="/search" element={crmHost ? <HostRouteRedirect to="/crm" /> : <GrubbidSearchResults />} />
         <Route path="/compare" element={crmHost ? <HostRouteRedirect to="/crm" /> : <ComparePage />} />
         <Route path="/browse-menus" element={crmHost ? <HostRouteRedirect to="/crm" /> : <BrowseMenus />} />

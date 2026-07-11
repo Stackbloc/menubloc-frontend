@@ -1,25 +1,15 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { clusterDirectoryPath, clusterPath, stateDisplayName, toCitySlug, toStateSlug } from "../../lib/clusterUrl.js";
+import {
+  clusterCityPath,
+  clusterDirectoryPath,
+  clusterPath,
+  stateDisplayName,
+  toCitySlug,
+  toStateSlug,
+} from "../../lib/clusterUrl.js";
 
-export default function ClusterBreadcrumbs({ cluster }) {
-  if (!cluster) return null;
-
-  const stateSlug = toStateSlug(cluster.state);
-  const citySlug = toCitySlug(cluster.city);
-  const stateLabel = stateDisplayName(cluster.state);
-  const clusterLabel = cluster.area_name || cluster.name;
-
-  const crumbs = [
-    { label: "Clusters", to: clusterDirectoryPath() },
-    { label: stateLabel, to: `${clusterDirectoryPath()}?state=${encodeURIComponent(stateSlug)}` },
-    {
-      label: cluster.city,
-      to: `${clusterDirectoryPath()}?state=${encodeURIComponent(stateSlug)}&city=${encodeURIComponent(citySlug)}`,
-    },
-    { label: clusterLabel, to: null },
-  ];
-
+function CrumbList({ crumbs }) {
   return (
     <nav aria-label="Cluster breadcrumb" style={{ marginBottom: "0.75rem" }}>
       <ol
@@ -62,14 +52,50 @@ export default function ClusterBreadcrumbs({ cluster }) {
   );
 }
 
+export default function ClusterBreadcrumbs({ cluster }) {
+  if (!cluster) return null;
+
+  const stateSlug = toStateSlug(cluster.state);
+  const citySlug = toCitySlug(cluster.city);
+  const stateLabel = stateDisplayName(cluster.state);
+  const clusterLabel = cluster.area_name || cluster.name;
+  const cityPath = clusterCityPath({ state: cluster.state, city: cluster.city });
+
+  const crumbs = [
+    { label: "Clusters", to: clusterDirectoryPath() },
+    { label: stateLabel, to: clusterDirectoryPath() },
+    { label: cluster.city, to: cityPath },
+    { label: clusterLabel, to: null },
+  ];
+
+  return <CrumbList crumbs={crumbs} />;
+}
+
 export function ClusterPageBreadcrumb({ cluster }) {
   if (!cluster) return null;
+  return <ClusterBreadcrumbs cluster={cluster} />;
+}
+
+export function ClusterDirectoryBreadcrumb({ state, city }) {
+  const stateSlug = toStateSlug(state);
+  const stateLabel = stateDisplayName(state);
+  const cityPath = city ? clusterCityPath({ state, city }) : null;
+
+  const crumbs = [
+    { label: "Clusters", to: clusterDirectoryPath() },
+    { label: stateLabel, to: clusterDirectoryPath() },
+    { label: city, to: cityPath },
+  ];
+
+  return <CrumbList crumbs={crumbs} />;
+}
+
+export function clusterBreadcrumbHref(cluster) {
   return (
-    <ClusterBreadcrumbs
-      cluster={{
-        ...cluster,
-        name: cluster.name,
-      }}
-    />
+    clusterPath({
+      state: cluster.state,
+      city: cluster.city,
+      slug: cluster.slug,
+    }) || null
   );
 }

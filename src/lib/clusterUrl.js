@@ -30,6 +30,13 @@ export function clusterPath({ state, city, slug }) {
   return `/clusters/${stateSlug}/${citySlug}/${clusterSlug}`;
 }
 
+export function clusterCityPath({ state, city }) {
+  const stateSlug = toStateSlug(state);
+  const citySlug = toCitySlug(city);
+  if (!stateSlug || !citySlug) return null;
+  return `/clusters/${stateSlug}/${citySlug}`;
+}
+
 /** Standard destination taxonomy — every state uses the same category list. */
 export const CLUSTER_DESTINATION_TYPES = Object.freeze([
   "university",
