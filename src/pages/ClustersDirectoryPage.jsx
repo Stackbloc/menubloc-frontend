@@ -7,7 +7,7 @@ import { createCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import { stateDisplayName, clusterCoverageBadge, CLUSTER_GROWING_HELP_TEXT } from "../lib/clusterUrl.js";
-import { resolveClusterMarketFromStoredLocation } from "../lib/clusterLocation.js";
+import { resolveClusterAutoOpenPath, resolveClusterMarketFromStoredLocation } from "../lib/clusterLocation.js";
 
 const TYPE_ACCENTS = {
   university: { border: "#8b5cf6", bg: "#f5f3ff" },
@@ -84,6 +84,10 @@ export default function ClustersDirectoryPage() {
   const { isAuthenticated, consumer } = useConsumer();
   const [searchParams] = useSearchParams();
   const storedMarket = useMemo(() => resolveClusterMarketFromStoredLocation(), []);
+  const autoOpenPath = useMemo(
+    () => resolveClusterAutoOpenPath(clusters, storedMarket),
+    [clusters, storedMarket]
+  );
   const [clusters, setClusters] = useState([]);
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -184,8 +188,8 @@ export default function ClustersDirectoryPage() {
     );
   }
 
-  if (searchParams.get("stay") !== "1" && storedMarket?.cityPath) {
-    return <Navigate to={storedMarket.cityPath} replace />;
+  if (searchParams.get("stay") !== "1" && autoOpenPath && !loading) {
+    return <Navigate to={autoOpenPath} replace />;
   }
 
   return (
@@ -215,12 +219,15 @@ export default function ClustersDirectoryPage() {
             Clusters
           </h1>
           <p style={{ margin: 0, color: "#475569", maxWidth: 760 }}>
-            Clusters help you discover restaurants around the places people actually go—universities,
-            downtowns, airports, entertainment districts, tourist destinations, and more.
+            Clusters are destination dining guides — one combined menu across every restaurant in a
+            place people actually go. Universities, downtowns, airports, entertainment districts, and more.
           </p>
           <p style={{ margin: "0.5rem 0 0", color: "#475569", maxWidth: 760 }}>
-            Know a location that's missing? Create your own Cluster. Keep it private, share it with
-            friends, or make it public for everyone to explore.
+            Browse all public clusters below, or{" "}
+            <Link to="/clusters?stay=1" style={{ color: "#1d4ed8" }}>
+              stay on this directory
+            </Link>{" "}
+            if you want the full national list.
           </p>
         </header>
 

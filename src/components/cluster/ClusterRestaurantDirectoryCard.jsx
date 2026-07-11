@@ -5,7 +5,6 @@ import { isRestaurantMenuReady } from "../../lib/publicCardCounts.js";
 import {
   formatRestaurantCuisineLabel,
   formatRestaurantLocationLabel,
-  formatRestaurantMenuCount,
   formatRestaurantPriceTier,
   resolveClusterRestaurantAccent,
   resolveClusterRestaurantStatus,
@@ -28,7 +27,6 @@ export default function ClusterRestaurantDirectoryCard({ restaurant }) {
   const cuisineLabel = formatRestaurantCuisineLabel(restaurant);
   const locationLabel = formatRestaurantLocationLabel(restaurant);
   const priceTierLabel = formatRestaurantPriceTier(restaurant);
-  const menuCountLabel = formatRestaurantMenuCount(restaurant);
   const status = resolveClusterRestaurantStatus(restaurant);
   const locationCount = Number(restaurant?.location_count) || 1;
   const menuReady = isRestaurantMenuReady(restaurant);
@@ -127,13 +125,8 @@ export default function ClusterRestaurantDirectoryCard({ restaurant }) {
           {status.text}
         </span>
         <div style={{ fontWeight: 700, color: "#111827", fontSize: "0.92rem", overflowWrap: "anywhere" }}>
-          {menuCountLabel || "Menu details coming soon"}
+          {menuReady ? "View menu →" : "View profile →"}
         </div>
-        {href ? (
-          <div style={{ fontSize: "0.84rem", fontWeight: 700, color: accent.border }}>
-            {menuReady ? "View menu →" : "View profile →"}
-          </div>
-        ) : null}
       </div>
     </article>
   );

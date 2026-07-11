@@ -23,13 +23,12 @@ function clampLines(maxLines) {
   };
 }
 
-export function ClusterMksCategoryBlock({ category, clusterName, onSelect }) {
+export function ClusterMksCategoryBlock({ category, onSelect }) {
   if (!category) return null;
 
   const accent = MKS_ACCENTS[category.code] || DEFAULT_ACCENT;
-  const itemCount = Number(category.item_count) || 0;
   const title = category.label || category.code;
-  const subtitle = category.description || `${itemCount} item${itemCount === 1 ? "" : "s"}`;
+  const subtitle = category.description || "Explore dishes in this category";
 
   return (
     <button
@@ -72,7 +71,7 @@ export function ClusterMksCategoryBlock({ category, clusterName, onSelect }) {
         >
           {title}
         </div>
-        <div style={{ color: "#6b7280", fontSize: "0.88rem", lineHeight: 1.4, ...clampLines(3) }}>
+        <div style={{ color: "#6b7280", fontSize: "0.88rem", lineHeight: 1.4, ...clampLines(4) }}>
           {subtitle}
         </div>
       </div>
@@ -86,25 +85,19 @@ export function ClusterMksCategoryBlock({ category, clusterName, onSelect }) {
           fontSize: "0.92rem",
         }}
       >
-        {itemCount.toLocaleString()} item{itemCount === 1 ? "" : "s"}
-        {clusterName ? ` in ${clusterName}` : ""} →
+        Explore →
       </div>
     </button>
   );
 }
 
-export function ClusterMksCategoryGrid({ categories, clusterName, onSelect }) {
+export function ClusterMksCategoryGrid({ categories, onSelect }) {
   if (!Array.isArray(categories) || categories.length === 0) return null;
 
   return (
     <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
       {categories.map((category) => (
-        <ClusterMksCategoryBlock
-          key={category.code}
-          category={category}
-          clusterName={clusterName}
-          onSelect={onSelect}
-        />
+        <ClusterMksCategoryBlock key={category.code} category={category} onSelect={onSelect} />
       ))}
     </div>
   );

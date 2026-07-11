@@ -7,9 +7,8 @@ import ClusterRestaurantDirectoryCard from "../components/cluster/ClusterRestaur
 import { ClusterPlaceholderSection, ClusterDrinksDirectory } from "../components/cluster/ClusterPlaceholderListingCard.jsx";
 import { ClusterPageBreadcrumb } from "../components/cluster/ClusterBreadcrumbs.jsx";
 import {
-  ClusterMenuItemRow,
-  ClusterMenuExplorerReservedFilters,
-  ClusterMenuRestaurantGroup,
+  ClusterDishList,
+  flattenClusterSearchGroups,
 } from "../components/cluster/ClusterMenuExplorer.jsx";
 import { ClusterMksCategoryGrid } from "../components/cluster/ClusterMksCategoryBlock.jsx";
 import ShareButton from "../components/share/ShareButton.jsx";
@@ -18,11 +17,10 @@ import {
   buildClusterShareData,
 } from "../components/share/shareUtils.js";
 import { fetchClusterMetadata, fetchClusterMenuItems, fetchClusterRestaurants, searchCluster } from "../lib/clusterApi.js";
-import { clusterTypeLabel, isClusterGrowing, resolveClusterDirectoryCount } from "../lib/clusterUrl.js";
+import { clusterTypeLabel, isClusterGrowing } from "../lib/clusterUrl.js";
 import { groupClusterRestaurantsByCuisine } from "../lib/clusterRestaurantCuisineGroups.js";
 import {
   getClusterDisclaimer,
-  getClusterOverviewDescription,
   getClusterPageHeading,
 } from "../lib/clusterLegalCopy.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
@@ -37,7 +35,6 @@ function ClusterDescription({ cluster }) {
   if (!cluster) return null;
 
   const areaName = cluster.area_name || cluster.name;
-  const overviewText = getClusterOverviewDescription(cluster);
   const shortDescription = cluster.short_description || cluster.description || null;
 
   return (
@@ -52,81 +49,16 @@ function ClusterDescription({ cluster }) {
       {cluster.placeholder_intro ? (
         <p style={{ margin: 0, color: "#444", lineHeight: 1.5, fontSize: "0.92rem" }}>{cluster.placeholder_intro}</p>
       ) : null}
-      {overviewText ? (
-        <p style={{ margin: 0, color: "#444", lineHeight: 1.5, fontSize: "0.92rem" }}>{overviewText}</p>
-      ) : null}
-    </section>
-  );
-}
-
-function ClusterStatCounts({ cluster, menuItemCount, menuItemCountStatus }) {
-  const stats = cluster?.listing_stats || {};
-  const restaurantCount = resolveClusterDirectoryCount(cluster);
-  const deduped = Number(stats.total_deduped ?? stats.total_listed ?? restaurantCount) || restaurantCount;
-  const assigned = Number(stats.total_assigned ?? cluster?.restaurant_count) || 0;
-  const menuReady = Number(stats.total_menu_ready ?? cluster?.menu_ready_count) || 0;
-  const isAirport = String(cluster?.type || "").toLowerCase() === "airport";
-  const restaurantLabel = isAirport ? "Dining outlet" : "Restaurant";
-
-  return (
-    <div style={{ display: "grid", gap: "0.65rem" }}>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.75rem 1.25rem",
-          padding: "0.85rem 1rem",
-          borderRadius: 12,
-          border: "1px solid #e5e7eb",
-          background: "#f9fafb",
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: "0.78rem", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            Unique {restaurantLabel.toLowerCase()}s
-          </div>
-          <div style={{ marginTop: "0.2rem", fontSize: "1.2rem", fontWeight: 600, color: "#111827" }}>
-            {deduped.toLocaleString()}
-          </div>
-        </div>
-        {assigned > deduped ? (
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: "0.78rem", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-              Assigned locations
-            </div>
-            <div style={{ marginTop: "0.2rem", fontSize: "1.2rem", fontWeight: 600, color: "#111827" }}>
-              {assigned.toLocaleString()}
-            </div>
-          </div>
-        ) : null}
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: "0.78rem", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            Menus on Menuply
-          </div>
-          <div style={{ marginTop: "0.2rem", fontSize: "1.2rem", fontWeight: 600, color: "#111827" }}>
-            {menuReady.toLocaleString()}
-          </div>
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: "0.78rem", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            Menu item count
-          </div>
-          <div style={{ marginTop: "0.2rem", fontSize: "1.2rem", fontWeight: 600, color: "#111827" }}>
-            {menuItemCountStatus === "loading" ? "…" : (menuItemCount ?? 0).toLocaleString()}
-          </div>
-        </div>
-      </div>
-      <p style={{ margin: 0, color: "#6b7280", fontSize: "0.82rem", lineHeight: 1.45 }}>
-        Unique venues dedupe duplicate chains (e.g. multiple Starbucks count once). Menu items include all visible
-        dishes from cluster members, not only menu-ready venues.
+      <p style={{ margin: 0, color: "#444", lineHeight: 1.5, fontSize: "0.92rem" }}>
+        Browse what you can eat across every restaurant here — like one big combined menu.
       </p>
-    </div>
+    </section>
   );
 }
 
 function ClusterViewToggle({ viewMode, onChange, disabled }) {
   const options = [
-    { id: CLUSTER_VIEW_MODES.MENU, label: "Menu Items" },
+    { id: CLUSTER_VIEW_MODES.MENU, label: "Food" },
     { id: CLUSTER_VIEW_MODES.RESTAURANTS, label: "Restaurants" },
   ];
 
@@ -274,50 +206,18 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
     );
   }
 
-  const diningTotal =
-    pagination?.total_dining_placeholders ??
-    placeholders.reduce(
-      (sum, section) => sum + (Array.isArray(section?.listings) ? section.listings.length : 0),
-      0
-    );
-  const drinksTotal =
-    pagination?.total_drinks_placeholders ??
-    drinksPlaceholders.reduce(
-      (sum, section) => sum + (Array.isArray(section?.listings) ? section.listings.length : 0),
-      0
-    );
-  const directoryTotal = pagination?.total_placeholders ?? diningTotal + drinksTotal;
   const listedTotal = pagination?.total_listed ?? restaurants.length;
-  const assignedTotal = pagination?.total_assigned ?? listedTotal;
-  const menuReadyCount = pagination?.total_menu_ready ?? 0;
   const isAirport = String(cluster?.type || "").toLowerCase() === "airport";
   const outletNoun = isAirport ? "dining outlet" : "restaurant";
   const cuisineGroups = groupClusterRestaurantsByCuisine(restaurants);
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
-      {directoryTotal > 0 ? (
-        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45, overflowWrap: "anywhere" }}>
-          {diningTotal > 0
-            ? `${diningTotal} ${outletNoun}${diningTotal === 1 ? "" : "s"}`
-            : null}
-          {drinksTotal > 0
-            ? `${diningTotal > 0 ? " · " : ""}${drinksTotal} drink spot${drinksTotal === 1 ? "" : "s"}`
-            : ""}
-          {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus on Menuply` : ""}
-        </p>
-      ) : null}
       {restaurants.length > 0 ? (
         <>
           <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45 }}>
-            {listedTotal} unique {outletNoun}
-            {listedTotal === 1 ? "" : "s"} in this cluster
-            {assignedTotal > listedTotal
-              ? ` · ${assignedTotal} assigned location${assignedTotal === 1 ? "" : "s"}`
-              : ""}
-            {menuReadyCount > 0 && menuReadyCount < listedTotal
-              ? ` · ${menuReadyCount} with menus on Menuply`
-              : ""}
+            {listedTotal} {outletNoun}
+            {listedTotal === 1 ? "" : "s"} in this area
           </p>
           {cuisineGroups.map((group) => (
             <section key={group.id} style={{ display: "grid", gap: "0.65rem" }}>
@@ -381,7 +281,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
   );
 }
 
-function ClusterMenuExplorerTab({ clusterSlug, clusterName, enabled }) {
+function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
   const PAGE_SIZE = 40;
   const [status, setStatus] = useState(enabled ? "loading" : "idle");
   const [mksCategories, setMksCategories] = useState([]);
@@ -417,7 +317,7 @@ function ClusterMenuExplorerTab({ clusterSlug, clusterName, enabled }) {
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
-        setError(toConsumerErrorMessage(err, "Could not load menu items for this cluster."));
+        setError(toConsumerErrorMessage(err, "Could not load food for this cluster."));
         setStatus("error");
       });
 
@@ -440,14 +340,14 @@ function ClusterMenuExplorerTab({ clusterSlug, clusterName, enabled }) {
       signal: controller.signal,
     })
       .then((data) => {
-        if (!data?.ok) throw new Error(data?.error || "Could not load menu items");
+        if (!data?.ok) throw new Error(data?.error || "Could not load dishes");
         setItems(Array.isArray(data.menu_items) ? data.menu_items : []);
         setPagination(data.pagination || null);
         setStatus("ok");
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
-        setError(toConsumerErrorMessage(err, "Could not load menu items for this category."));
+        setError(toConsumerErrorMessage(err, "Could not load dishes for this category."));
         setStatus("error");
       });
 
@@ -492,7 +392,7 @@ function ClusterMenuExplorerTab({ clusterSlug, clusterName, enabled }) {
         limit: PAGE_SIZE,
         offset: items.length,
       });
-      if (!data?.ok) throw new Error(data?.error || "Could not load more menu items");
+      if (!data?.ok) throw new Error(data?.error || "Could not load more dishes");
       const nextItems = Array.isArray(data.menu_items) ? data.menu_items : [];
       setItems((prev) => {
         const seen = new Set(prev.map((row) => `${row.menu_item_id}-${row.restaurant_id}`));
@@ -501,7 +401,7 @@ function ClusterMenuExplorerTab({ clusterSlug, clusterName, enabled }) {
       setPagination(data.pagination || null);
       setStatus("ok");
     } catch (err) {
-      setError(toConsumerErrorMessage(err, "Could not load more menu items."));
+      setError(toConsumerErrorMessage(err, "Could not load more dishes."));
       setStatus("ok");
     }
   }
@@ -520,10 +420,9 @@ function ClusterMenuExplorerTab({ clusterSlug, clusterName, enabled }) {
   }
 
   if (!enabled) {
-    return <p style={{ color: "#888" }}>Select Menu Items to browse dishes across this area.</p>;
+    return <p style={{ color: "#888" }}>Select Food to browse dishes across this area.</p>;
   }
 
-  const totalItems = pagination?.total ?? 0;
   const categoryTitle = selectedCategory?.label || null;
 
   return (
@@ -533,8 +432,8 @@ function ClusterMenuExplorerTab({ clusterSlug, clusterName, enabled }) {
           type="search"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="Search menu items in this cluster (burger, pizza, salad…)"
-          aria-label="Search menus in this cluster"
+          placeholder="Search dishes in this area (burger, pizza, salad…)"
+          aria-label="Search dishes in this cluster"
           style={{
             flex: "1 1 220px",
             minWidth: 0,
@@ -579,11 +478,9 @@ function ClusterMenuExplorerTab({ clusterSlug, clusterName, enabled }) {
           {searchStatus === "loading" ? <p style={{ color: "#666", margin: 0 }}>Searching {submittedSearch}…</p> : null}
           {searchStatus === "error" ? <p style={{ color: "#b91c1c", margin: 0 }}>{searchError}</p> : null}
           {searchStatus === "ok" && searchGroups.length === 0 ? (
-            <p style={{ color: "#888", margin: 0 }}>No menu matches in this cluster for “{submittedSearch}”.</p>
+            <p style={{ color: "#888", margin: 0 }}>No dishes in this area match “{submittedSearch}”.</p>
           ) : null}
-          {searchGroups.map((group) => (
-            <ClusterMenuRestaurantGroup key={group.restaurant_id} group={group} />
-          ))}
+          <ClusterDishList items={flattenClusterSearchGroups(searchGroups)} />
         </div>
       ) : selectedCategory ? (
         <div style={{ display: "grid", gap: "0.75rem" }}>
@@ -602,18 +499,12 @@ function ClusterMenuExplorerTab({ clusterSlug, clusterName, enabled }) {
               ← All categories
             </button>
             <h2 style={{ margin: 0, fontSize: "1.15rem" }}>
-              {categoryTitle} in the {clusterName} Cluster
+              {categoryTitle}
             </h2>
           </div>
           {status === "loading" ? <p style={{ color: "#666" }}>Loading {categoryTitle}…</p> : null}
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
-          {items.length > 0 ? (
-            <div style={{ display: "grid" }}>
-              {items.map((item) => (
-                <ClusterMenuItemRow key={`${item.menu_item_id}-${item.restaurant_id}`} item={item} />
-              ))}
-            </div>
-          ) : null}
+          {items.length > 0 ? <ClusterDishList items={items} /> : null}
           {pagination?.has_more ? (
             <button
               type="button"
@@ -628,7 +519,7 @@ function ClusterMenuExplorerTab({ clusterSlug, clusterName, enabled }) {
                 cursor: status === "loading-more" ? "wait" : "pointer",
               }}
             >
-              {status === "loading-more" ? "Loading…" : "Load more items"}
+              {status === "loading-more" ? "Loading…" : "Load more dishes"}
             </button>
           ) : null}
           {error ? <p style={{ color: "#b91c1c", margin: 0 }}>{error}</p> : null}
@@ -636,19 +527,14 @@ function ClusterMenuExplorerTab({ clusterSlug, clusterName, enabled }) {
       ) : (
         <div style={{ display: "grid", gap: "1rem" }}>
           <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
-            What can you eat here? Browse {totalItems.toLocaleString()} menu items by category.
+            What can you eat here? Pick a category to browse dishes from every restaurant in this area.
           </p>
-          <ClusterMenuExplorerReservedFilters />
-          {status === "loading" ? <p style={{ color: "#666" }}>Loading menu categories…</p> : null}
+          {status === "loading" ? <p style={{ color: "#666" }}>Loading food categories…</p> : null}
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
           {mksCategories.length === 0 && status === "ok" ? (
-            <p style={{ color: "#888" }}>No menu items are available in this cluster yet.</p>
+            <p style={{ color: "#888" }}>No dishes are listed in this area yet.</p>
           ) : null}
-          <ClusterMksCategoryGrid
-            categories={mksCategories}
-            clusterName={clusterName}
-            onSelect={setSelectedCategory}
-          />
+          <ClusterMksCategoryGrid categories={mksCategories} onSelect={setSelectedCategory} />
         </div>
       )}
     </div>
@@ -661,9 +547,6 @@ export default function ClusterPage() {
   const [status, setStatus] = useState("loading");
   const [cluster, setCluster] = useState(null);
   const [error, setError] = useState("");
-  const [menuItemCount, setMenuItemCount] = useState(null);
-  const [menuItemCountStatus, setMenuItemCountStatus] = useState("idle");
-  const [defaultViewResolved, setDefaultViewResolved] = useState(false);
 
   const viewMode = useMemo(() => {
     const raw = String(searchParams.get("view") || "").trim().toLowerCase();
@@ -672,13 +555,7 @@ export default function ClusterPage() {
     return null;
   }, [searchParams]);
 
-  const resolvedViewMode =
-    viewMode ||
-    (defaultViewResolved
-      ? (menuItemCount ?? 0) > 0
-        ? CLUSTER_VIEW_MODES.MENU
-        : CLUSTER_VIEW_MODES.RESTAURANTS
-      : CLUSTER_VIEW_MODES.MENU);
+  const resolvedViewMode = viewMode || CLUSTER_VIEW_MODES.MENU;
 
   const shareData = useMemo(
     () => (cluster ? buildClusterShareData({ cluster, origin: CANONICAL_BASE }) : null),
@@ -716,28 +593,6 @@ export default function ClusterPage() {
 
     return () => controller.abort();
   }, [clusterSlug, stateSlug, citySlug]);
-
-  useEffect(() => {
-    if (!cluster?.slug) return undefined;
-
-    const controller = new AbortController();
-    setMenuItemCountStatus("loading");
-
-    fetchClusterMenuItems(cluster.slug, { summary: true, limit: 1, offset: 0, signal: controller.signal })
-      .then((data) => {
-        if (!data?.ok) throw new Error(data?.error || "Could not load menu item count");
-        setMenuItemCount(Number(data.pagination?.total ?? 0));
-        setMenuItemCountStatus("ok");
-        setDefaultViewResolved(true);
-      })
-      .catch((err) => {
-        if (err?.name === "AbortError") return;
-        setMenuItemCount(null);
-        setMenuItemCountStatus("error");
-      });
-
-    return () => controller.abort();
-  }, [cluster?.slug]);
 
   useEffect(() => {
     if (!shareData) return undefined;
@@ -849,12 +704,6 @@ export default function ClusterPage() {
       {showGrowingNotice ? <ClusterGrowingNotice /> : null}
 
       <section style={{ display: "grid", gap: "1rem", marginBottom: "1.25rem" }}>
-        <ClusterStatCounts
-          cluster={cluster}
-          menuItemCount={menuItemCount}
-          menuItemCountStatus={menuItemCountStatus}
-        />
-
         <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
       </section>
 
@@ -870,11 +719,7 @@ export default function ClusterPage() {
         }}
       >
         {resolvedViewMode === CLUSTER_VIEW_MODES.MENU ? (
-          <ClusterMenuExplorerTab
-            clusterSlug={cluster.slug}
-            clusterName={cluster.area_name || cluster.name}
-            enabled
-          />
+          <ClusterMenuExplorerTab clusterSlug={cluster.slug} enabled />
         ) : (
           <ClusterRestaurantsTab clusterSlug={cluster.slug} cluster={cluster} enabled />
         )}
