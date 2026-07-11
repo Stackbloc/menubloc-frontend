@@ -34,11 +34,15 @@ export default function ClusterRestaurantListingCard({ restaurant }) {
       background: "#fff",
     }}
   >
-    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "flex-start" }}>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 600, color: "#111827" }}>{name}</div>
-        {cuisine ? <div style={{ color: "#6b7280", fontSize: "0.9rem" }}>{cuisine}</div> : null}
-        {area ? <div style={{ color: "#9ca3af", fontSize: "0.85rem", marginTop: "0.15rem" }}>{area}</div> : null}
+    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "flex-start", flexWrap: "wrap" }}>
+      <div style={{ minWidth: 0, flex: "1 1 12rem" }}>
+        <div style={{ fontWeight: 600, color: "#111827", overflowWrap: "anywhere" }}>{name}</div>
+        {cuisine ? <div style={{ color: "#6b7280", fontSize: "0.9rem", overflowWrap: "anywhere" }}>{cuisine}</div> : null}
+        {area ? (
+          <div style={{ color: "#9ca3af", fontSize: "0.85rem", marginTop: "0.15rem", overflowWrap: "anywhere" }}>
+            {area}
+          </div>
+        ) : null}
       </div>
       {status ? (
         <span

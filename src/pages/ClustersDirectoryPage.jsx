@@ -53,6 +53,32 @@ const US_STATE_CODES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC",
 ];
 
+const FIELD_STYLE = {
+  display: "block",
+  width: "100%",
+  maxWidth: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
+  border: "1px solid #cbd5e1",
+  borderRadius: 10,
+  padding: "0.55rem 0.6rem",
+};
+
+const FORM_LABEL_STYLE = {
+  display: "grid",
+  gap: 4,
+  minWidth: 0,
+  width: "100%",
+};
+
+const STACKED_FIELDS = {
+  display: "grid",
+  gap: "0.65rem",
+  gridTemplateColumns: "1fr",
+  width: "100%",
+  minWidth: 0,
+};
+
 export default function ClustersDirectoryPage() {
   const { isAuthenticated, consumer } = useConsumer();
   const [clusters, setClusters] = useState([]);
@@ -161,9 +187,12 @@ export default function ClustersDirectoryPage() {
         minHeight: "100vh",
         background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
         padding: "1.25rem 1rem 5rem",
+        width: "100%",
+        boxSizing: "border-box",
+        overflowX: "clip",
       }}
     >
-      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto", width: "100%", minWidth: 0 }}>
         <header
           style={{
             border: "1px solid #dbe7df",
@@ -221,6 +250,8 @@ export default function ClustersDirectoryPage() {
             background: "#fff",
             borderRadius: 18,
             padding: "1rem 1.1rem",
+            minWidth: 0,
+            overflow: "hidden",
           }}
         >
           <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Create a Cluster</h2>
@@ -241,24 +272,24 @@ export default function ClustersDirectoryPage() {
               Verify your email first to submit a cluster.
             </p>
           ) : (
-            <form onSubmit={submitCluster} style={{ display: "grid", gap: "0.75rem" }}>
-              <label style={{ display: "grid", gap: 4 }}>
+            <form onSubmit={submitCluster} style={{ display: "grid", gap: "0.75rem", minWidth: 0, width: "100%" }}>
+              <label style={FORM_LABEL_STYLE}>
                 <span style={{ fontSize: 13, color: "#334155" }}>Cluster name</span>
                 <input
                   required
                   value={form.name}
                   onChange={(event) => setForm((c) => ({ ...c, name: event.target.value }))}
-                  style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                  style={FIELD_STYLE}
                 />
               </label>
-              <div style={{ display: "grid", gap: "0.65rem", gridTemplateColumns: "140px minmax(0,1fr)" }}>
-                <label style={{ display: "grid", gap: 4 }}>
+              <div style={STACKED_FIELDS}>
+                <label style={FORM_LABEL_STYLE}>
                   <span style={{ fontSize: 13, color: "#334155" }}>State</span>
                   <select
                     required
                     value={form.state}
                     onChange={(event) => setForm((c) => ({ ...c, state: event.target.value }))}
-                    style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                    style={FIELD_STYLE}
                   >
                     <option value="">Select</option>
                     {US_STATE_CODES.map((code) => (
@@ -268,18 +299,18 @@ export default function ClustersDirectoryPage() {
                     ))}
                   </select>
                 </label>
-                <label style={{ display: "grid", gap: 4 }}>
+                <label style={FORM_LABEL_STYLE}>
                   <span style={{ fontSize: 13, color: "#334155" }}>City</span>
                   <input
                     required
                     value={form.city}
                     onChange={(event) => setForm((c) => ({ ...c, city: event.target.value }))}
                     placeholder="Los Angeles"
-                    style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                    style={FIELD_STYLE}
                   />
                 </label>
               </div>
-              <label style={{ display: "grid", gap: 4 }}>
+              <label style={FORM_LABEL_STYLE}>
                 <span style={{ fontSize: 13, color: "#334155" }}>Cluster type</span>
                 <select
                   required
@@ -289,7 +320,7 @@ export default function ClustersDirectoryPage() {
                     const defaults = TYPE_OPTIONS.find((entry) => entry.id === type);
                     setForm((c) => ({ ...c, type, radius_miles: String(defaults?.radius || 2) }));
                   }}
-                  style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                  style={FIELD_STYLE}
                 >
                   {TYPE_OPTIONS.map((type) => (
                     <option key={type.id} value={type.id}>
@@ -298,31 +329,31 @@ export default function ClustersDirectoryPage() {
                   ))}
                 </select>
               </label>
-              <label style={{ display: "grid", gap: 4 }}>
+              <label style={FORM_LABEL_STYLE}>
                 <span style={{ fontSize: 13, color: "#334155" }}>Visibility</span>
                 <select
                   required
                   value={form.visibility}
                   onChange={(event) => setForm((c) => ({ ...c, visibility: event.target.value }))}
-                  style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                  style={FIELD_STYLE}
                 >
                   <option value="PRIVATE">Private</option>
                   <option value="SHARED">Shared (link only)</option>
                   <option value="PUBLIC">Public</option>
                 </select>
               </label>
-              <label style={{ display: "grid", gap: 4 }}>
+              <label style={FORM_LABEL_STYLE}>
                 <span style={{ fontSize: 13, color: "#334155" }}>Anchor location</span>
                 <input
                   required
                   value={form.anchor_location}
                   onChange={(event) => setForm((c) => ({ ...c, anchor_location: event.target.value }))}
                   placeholder="Street address or landmark"
-                  style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                  style={FIELD_STYLE}
                 />
               </label>
-              <div style={{ display: "grid", gap: "0.65rem", gridTemplateColumns: "220px minmax(0,1fr)" }}>
-                <label style={{ display: "grid", gap: 4, maxWidth: 220 }}>
+              <div style={STACKED_FIELDS}>
+                <label style={FORM_LABEL_STYLE}>
                   <span style={{ fontSize: 13, color: "#334155" }}>Radius (mi)</span>
                   <input
                     required
@@ -332,41 +363,39 @@ export default function ClustersDirectoryPage() {
                     step="0.25"
                     value={form.radius_miles}
                     onChange={(event) => setForm((c) => ({ ...c, radius_miles: event.target.value }))}
-                    style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                    style={FIELD_STYLE}
                   />
                 </label>
-                <div style={{ display: "grid", gap: "0.65rem", gridTemplateColumns: "1fr 1fr" }}>
-                  <label style={{ display: "grid", gap: 4 }}>
-                    <span style={{ fontSize: 13, color: "#334155" }}>Latitude (optional)</span>
-                    <input
-                      value={form.lat}
-                      onChange={(event) => setForm((c) => ({ ...c, lat: event.target.value }))}
-                      placeholder="34.0224"
-                      style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: 4 }}>
-                    <span style={{ fontSize: 13, color: "#334155" }}>Longitude (optional)</span>
-                    <input
-                      value={form.lng}
-                      onChange={(event) => setForm((c) => ({ ...c, lng: event.target.value }))}
-                      placeholder="-118.2851"
-                      style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
-                    />
-                  </label>
-                </div>
-                <div style={{ gridColumn: "1 / -1", color: "#64748b", fontSize: 12 }}>
+                <label style={FORM_LABEL_STYLE}>
+                  <span style={{ fontSize: 13, color: "#334155" }}>Latitude (optional)</span>
+                  <input
+                    value={form.lat}
+                    onChange={(event) => setForm((c) => ({ ...c, lat: event.target.value }))}
+                    placeholder="34.0224"
+                    style={FIELD_STYLE}
+                  />
+                </label>
+                <label style={FORM_LABEL_STYLE}>
+                  <span style={{ fontSize: 13, color: "#334155" }}>Longitude (optional)</span>
+                  <input
+                    value={form.lng}
+                    onChange={(event) => setForm((c) => ({ ...c, lng: event.target.value }))}
+                    placeholder="-118.2851"
+                    style={FIELD_STYLE}
+                  />
+                </label>
+                <div style={{ color: "#64748b", fontSize: 12 }}>
                   Anchor location is required. Latitude/longitude is optional.
                 </div>
               </div>
-              <label style={{ display: "grid", gap: 4 }}>
+              <label style={FORM_LABEL_STYLE}>
                 <span style={{ fontSize: 13, color: "#334155" }}>Short description</span>
                 <textarea
                   required
                   rows={3}
                   value={form.short_description}
                   onChange={(event) => setForm((c) => ({ ...c, short_description: event.target.value }))}
-                  style={{ border: "1px solid #cbd5e1", borderRadius: 10, padding: "0.55rem 0.6rem" }}
+                  style={FIELD_STYLE}
                 />
               </label>
               <button

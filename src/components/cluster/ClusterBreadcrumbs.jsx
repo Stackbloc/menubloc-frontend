@@ -43,7 +43,13 @@ export default function ClusterBreadcrumbs({ cluster }) {
                   {crumb.label}
                 </Link>
               ) : (
-                <span style={{ color: isLast ? "#111827" : "#6b7280", fontWeight: isLast ? 600 : 400 }}>
+                <span
+                  style={{
+                    color: isLast ? "#111827" : "#6b7280",
+                    fontWeight: isLast ? 600 : 400,
+                    overflowWrap: "anywhere",
+                  }}
+                >
                   {crumb.label}
                 </span>
               )}

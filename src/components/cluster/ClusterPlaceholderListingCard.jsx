@@ -17,9 +17,9 @@ export default function ClusterPlaceholderListingCard({ listing, showBeverageTyp
         background: "#fff",
       }}
     >
-      <div style={{ fontWeight: 600, color: "#111827" }}>{name}</div>
+      <div style={{ fontWeight: 600, color: "#111827", overflowWrap: "anywhere" }}>{name}</div>
       {location ? (
-        <div style={{ color: "#6b7280", fontSize: "0.85rem", lineHeight: 1.4 }}>{location}</div>
+        <div style={{ color: "#6b7280", fontSize: "0.85rem", lineHeight: 1.4, overflowWrap: "anywhere" }}>{location}</div>
       ) : null}
       {beverageLabel ? (
         <div

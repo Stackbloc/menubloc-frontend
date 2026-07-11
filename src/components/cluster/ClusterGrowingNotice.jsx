@@ -15,7 +15,7 @@ export default function ClusterGrowingNotice() {
       }}
     >
       <div style={{ fontWeight: 700, marginBottom: "0.35rem" }}>{CLUSTER_GROWING_NOTICE.title}</div>
-      <p style={{ margin: 0, lineHeight: 1.5, fontSize: "0.95rem" }}>{CLUSTER_GROWING_NOTICE.body}</p>
+      <p style={{ margin: 0, lineHeight: 1.5, fontSize: "0.95rem", overflowWrap: "anywhere" }}>{CLUSTER_GROWING_NOTICE.body}</p>
     </section>
   );
 }

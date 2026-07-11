@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav.jsx";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
@@ -24,66 +24,138 @@ import {
   getClusterOverviewDescription,
   getClusterPageHeading,
 } from "../lib/clusterLegalCopy.js";
-import { CLUSTER_TABS, DEFAULT_CLUSTER_TAB } from "../components/cluster/clusterTabs.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 
 const CANONICAL_BASE = "https://menuply.com";
-const CLUSTER_SECTION_SCROLL_MARGIN = 88;
-const ENABLED_CLUSTER_TABS = CLUSTER_TABS.filter((tab) => tab.enabled);
+const CLUSTER_VIEW_MODES = Object.freeze({
+  MENU_ITEMS: "menu-items",
+  RESTAURANTS: "restaurants",
+});
 
-function clusterSectionId(tabId) {
-  return `cluster-section-${tabId}`;
+function formatCountLabel(count, singular, plural = `${singular}s`) {
+  const value = Number(count) || 0;
+  return `${value.toLocaleString()} ${value === 1 ? singular : plural}`;
 }
 
-function ClusterOverviewTab({ cluster }) {
+function ClusterDescription({ cluster }) {
   if (!cluster) return null;
 
   const areaName = cluster.area_name || cluster.name;
   const overviewText = getClusterOverviewDescription(cluster);
-  const progressive = cluster.progressive_listing === true;
-  const placeholderCount = Number(cluster.placeholder_count || cluster.listing_stats?.total_placeholders || 0);
-  const menuReadyCount = Number(cluster.menu_ready_count ?? cluster.listing_stats?.total_menu_ready ?? 0);
-  const directoryCount = resolveClusterDirectoryCount(cluster);
-  const diningCount = Number(cluster.dining_count ?? cluster.listing_stats?.total_dining_placeholders) || 0;
-  const drinksCount = Number(cluster.drinks_count ?? cluster.listing_stats?.total_drinks_placeholders) || 0;
-  const verifiedCount = Number(cluster.verified_profile_count ?? cluster.listing_stats?.total_listed ?? 0);
-  const isAirport = String(cluster.type || "").toLowerCase() === "airport";
-  const outletNoun = isAirport ? "dining outlet" : "restaurant";
+  const shortDescription = cluster.short_description || cluster.description || null;
 
   return (
-    <section style={{ display: "grid", gap: "1rem" }}>
-      <div style={{ color: "#666", fontSize: "0.95rem" }}>
-        <p style={{ margin: 0 }}>
-          {clusterTypeLabel(cluster.type)} near {areaName}, {cluster.city}, {cluster.state}
-        </p>
-        {cluster.address ? <p style={{ margin: "0.5rem 0 0" }}>{cluster.address}</p> : null}
-        {progressive || placeholderCount > 0 ? (
-          <p style={{ margin: "0.75rem 0 0" }}>
-            {directoryCount > 0
-              ? `${directoryCount} ${outletNoun}${directoryCount === 1 ? "" : "s"} in this directory`
-              : null}
-            {drinksCount > 0
-              ? ` · ${drinksCount} drink spot${drinksCount === 1 ? "" : "s"} (coffee, cocktails, wine)`
-              : ""}
-            {menuReadyCount > 0 ? ` · ${menuReadyCount} with menus on Menuply` : ""}
-            {verifiedCount > 0 && verifiedCount < directoryCount
-              ? ` · ${verifiedCount} verified profile${verifiedCount === 1 ? "" : "s"} linked`
-              : ""}
-          </p>
-        ) : (
-          <p style={{ margin: "0.75rem 0 0" }}>
-            {directoryCount} {outletNoun}
-            {directoryCount === 1 ? "" : "s"} listed in this area
-          </p>
-        )}
-      </div>
+    <section style={{ display: "grid", gap: "0.65rem", minWidth: 0 }}>
+      {shortDescription ? (
+        <p style={{ margin: 0, color: "#374151", lineHeight: 1.55, fontSize: "0.98rem" }}>{shortDescription}</p>
+      ) : null}
+      <p style={{ margin: 0, color: "#6b7280", fontSize: "0.92rem", lineHeight: 1.45, overflowWrap: "anywhere" }}>
+        {clusterTypeLabel(cluster.type)} near {areaName}, {cluster.city}, {cluster.state}
+        {cluster.address ? ` · ${cluster.address}` : ""}
+      </p>
       {cluster.placeholder_intro ? (
-        <p style={{ margin: 0, color: "#444", lineHeight: 1.5 }}>{cluster.placeholder_intro}</p>
+        <p style={{ margin: 0, color: "#444", lineHeight: 1.5, fontSize: "0.92rem" }}>{cluster.placeholder_intro}</p>
       ) : null}
       {overviewText ? (
-        <p style={{ margin: 0, color: "#444", lineHeight: 1.5 }}>{overviewText}</p>
+        <p style={{ margin: 0, color: "#444", lineHeight: 1.5, fontSize: "0.92rem" }}>{overviewText}</p>
       ) : null}
     </section>
+  );
+}
+
+function ClusterStatCounts({ cluster, menuItemCount, menuItemCountStatus }) {
+  const restaurantCount = resolveClusterDirectoryCount(cluster);
+  const isAirport = String(cluster?.type || "").toLowerCase() === "airport";
+  const restaurantLabel = isAirport ? "Dining outlet" : "Restaurant";
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "0.75rem 1.25rem",
+        padding: "0.85rem 1rem",
+        borderRadius: 12,
+        border: "1px solid #e5e7eb",
+        background: "#f9fafb",
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: "0.78rem", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          {restaurantLabel} count
+        </div>
+        <div style={{ marginTop: "0.2rem", fontSize: "1.2rem", fontWeight: 600, color: "#111827" }}>
+          {restaurantCount.toLocaleString()}
+        </div>
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: "0.78rem", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          Menu item count
+        </div>
+        <div style={{ marginTop: "0.2rem", fontSize: "1.2rem", fontWeight: 600, color: "#111827" }}>
+          {menuItemCountStatus === "loading" ? "…" : (menuItemCount ?? 0).toLocaleString()}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ClusterViewToggle({ viewMode, onChange, disabled }) {
+  const options = [
+    { id: CLUSTER_VIEW_MODES.MENU_ITEMS, label: "Menu Items" },
+    { id: CLUSTER_VIEW_MODES.RESTAURANTS, label: "Restaurants" },
+  ];
+
+  return (
+    <div style={{ display: "grid", gap: "0.45rem" }}>
+      <div style={{ fontSize: "0.82rem", color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+        View
+      </div>
+      <div
+        role="radiogroup"
+        aria-label="Cluster content view"
+        style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}
+      >
+        {options.map((option) => {
+          const selected = viewMode === option.id;
+          return (
+            <button
+              key={option.id}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              disabled={disabled}
+              onClick={() => onChange(option.id)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.45rem",
+                padding: "0.55rem 0.9rem",
+                borderRadius: 999,
+                border: selected ? "1px solid #111827" : "1px solid #d1d5db",
+                background: selected ? "#111827" : "#fff",
+                color: disabled ? "#9ca3af" : selected ? "#fff" : "#111827",
+                cursor: disabled ? "not-allowed" : "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  border: selected ? "3px solid #fff" : "1px solid #9ca3af",
+                  boxSizing: "border-box",
+                  background: selected ? "#111827" : "#fff",
+                }}
+              />
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -163,7 +235,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
   }
 
   if (!enabled) {
-    return <p style={{ color: "#888" }}>Open the Restaurants tab to load venues in this area.</p>;
+    return <p style={{ color: "#888" }}>Select Restaurants to load venues in this area.</p>;
   }
 
   if (status === "loading") {
@@ -205,7 +277,7 @@ function ClusterRestaurantsTab({ clusterSlug, cluster, enabled }) {
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
       {directoryTotal > 0 ? (
-        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45 }}>
+        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.45, overflowWrap: "anywhere" }}>
           {diningTotal > 0
             ? `${diningTotal} ${outletNoun}${diningTotal === 1 ? "" : "s"}`
             : null}
@@ -348,7 +420,7 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
   }
 
   if (!enabled) {
-    return <p style={{ color: "#888" }}>Open Menu Explorer to browse dishes across this area.</p>;
+    return <p style={{ color: "#888" }}>Select Menu Items to browse dishes across this area.</p>;
   }
 
   if (status === "loading") {
@@ -402,21 +474,24 @@ function ClusterMenuExplorerTab({ clusterSlug, enabled }) {
   );
 }
 
-function ClusterSearchTab({ clusterSlug, enabled }) {
-  const [query, setQuery] = useState("");
-  const [submittedQuery, setSubmittedQuery] = useState("");
+function ClusterSearchResults({ clusterSlug, query }) {
   const [status, setStatus] = useState("idle");
   const [groups, setGroups] = useState([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!enabled || !clusterSlug || !submittedQuery.trim()) return undefined;
+    if (!clusterSlug || !query.trim()) {
+      setStatus("idle");
+      setGroups([]);
+      setError("");
+      return undefined;
+    }
 
     const controller = new AbortController();
     setStatus("loading");
     setError("");
 
-    searchCluster(clusterSlug, { q: submittedQuery.trim(), signal: controller.signal })
+    searchCluster(clusterSlug, { q: query.trim(), signal: controller.signal })
       .then((data) => {
         if (!data?.ok) throw new Error(data?.error || "Search failed");
         setGroups(Array.isArray(data.groups) ? data.groups : []);
@@ -429,86 +504,51 @@ function ClusterSearchTab({ clusterSlug, enabled }) {
       });
 
     return () => controller.abort();
-  }, [clusterSlug, enabled, submittedQuery]);
+  }, [clusterSlug, query]);
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    const trimmed = query.trim();
-    if (!trimmed) return;
-    setSubmittedQuery(trimmed);
+  if (!query.trim()) return null;
+
+  if (status === "loading") {
+    return <p style={{ color: "#666", margin: 0 }}>Searching {query}…</p>;
   }
 
-  if (!enabled) {
-    return <p style={{ color: "#888" }}>Search runs only after you enter a query in this tab.</p>;
+  if (status === "error") {
+    return <p style={{ color: "#b91c1c", margin: 0 }}>{error}</p>;
+  }
+
+  if (groups.length === 0) {
+    return <p style={{ color: "#888", margin: 0 }}>No menu matches in this cluster for “{query}”.</p>;
   }
 
   return (
-    <div style={{ display: "grid", gap: "1rem" }}>
-      <form onSubmit={handleSubmit} style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search menu items in this area (burger, pizza, salad…)"
-          aria-label="Search menus in this cluster"
-          style={{
-            flex: "1 1 220px",
-            minWidth: 0,
-            padding: "0.65rem 0.75rem",
-            borderRadius: 8,
-            border: "1px solid #d1d5db",
-          }}
-        />
-        <button
-          type="submit"
-          disabled={!query.trim()}
-          style={{
-            padding: "0.65rem 1rem",
-            borderRadius: 8,
-            border: "none",
-            background: query.trim() ? "#111827" : "#9ca3af",
-            color: "#fff",
-            cursor: query.trim() ? "pointer" : "not-allowed",
-          }}
-        >
-          Search
-        </button>
-      </form>
-
-      {status === "loading" ? <p style={{ color: "#666" }}>Searching {submittedQuery}…</p> : null}
-      {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
-      {status === "ok" && submittedQuery ? (
-        groups.length === 0 ? (
-          <p style={{ color: "#888" }}>No menu matches in this cluster for “{submittedQuery}”.</p>
-        ) : (
-          <div style={{ display: "grid", gap: "0.75rem" }}>
-            {groups.map((group) => (
-              <ClusterMenuRestaurantGroup key={group.restaurant_id} group={group} />
-            ))}
-          </div>
-        )
-      ) : null}
+    <div style={{ display: "grid", gap: "0.75rem" }}>
+      <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>
+        {formatCountLabel(groups.reduce((sum, group) => sum + (group.menu_items?.length || 0), 0), "result")} for “{query}”
+      </p>
+      {groups.map((group) => (
+        <ClusterMenuRestaurantGroup key={group.restaurant_id} group={group} />
+      ))}
     </div>
   );
 }
 
 export default function ClusterPage() {
   const { stateSlug, citySlug, clusterSlug } = useParams();
-  const [activeTab, setActiveTab] = useState(DEFAULT_CLUSTER_TAB);
-  const [enabledTabs, setEnabledTabs] = useState(
-    () => new Set(ENABLED_CLUSTER_TABS.filter((tab) => !tab.lazy).map((tab) => tab.id))
-  );
+  const [viewMode, setViewMode] = useState(CLUSTER_VIEW_MODES.MENU_ITEMS);
+  const [searchInput, setSearchInput] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
   const [status, setStatus] = useState("loading");
   const [cluster, setCluster] = useState(null);
   const [error, setError] = useState("");
-  const navRef = useRef(null);
-  const sectionRefs = useRef({});
-  const scrollLockRef = useRef(false);
+  const [menuItemCount, setMenuItemCount] = useState(null);
+  const [menuItemCountStatus, setMenuItemCountStatus] = useState("idle");
 
   const shareData = useMemo(
     () => (cluster ? buildClusterShareData({ cluster, origin: CANONICAL_BASE }) : null),
     [cluster]
   );
+
+  const searchActive = Boolean(submittedSearch.trim());
 
   useEffect(() => {
     if (!clusterSlug) return undefined;
@@ -535,6 +575,27 @@ export default function ClusterPage() {
 
     return () => controller.abort();
   }, [clusterSlug, stateSlug, citySlug]);
+
+  useEffect(() => {
+    if (!cluster?.slug) return undefined;
+
+    const controller = new AbortController();
+    setMenuItemCountStatus("loading");
+
+    fetchClusterMenuItems(cluster.slug, { limit: 1, offset: 0, signal: controller.signal })
+      .then((data) => {
+        if (!data?.ok) throw new Error(data?.error || "Could not load menu item count");
+        setMenuItemCount(Number(data.pagination?.total ?? 0));
+        setMenuItemCountStatus("ok");
+      })
+      .catch((err) => {
+        if (err?.name === "AbortError") return;
+        setMenuItemCount(null);
+        setMenuItemCountStatus("error");
+      });
+
+    return () => controller.abort();
+  }, [cluster?.slug]);
 
   useEffect(() => {
     if (!shareData) return undefined;
@@ -580,84 +641,17 @@ export default function ClusterPage() {
     }
   }, [cluster?.page_heading, cluster?.page_title, cluster?.share_title, shareData?.title]);
 
-  useEffect(() => {
-    if (!cluster) return undefined;
-    setEnabledTabs(new Set(ENABLED_CLUSTER_TABS.map((tab) => tab.id)));
-  }, [cluster]);
-
-  useEffect(() => {
-    if (!cluster) return undefined;
-
-    const sections = ENABLED_CLUSTER_TABS
-      .map((tab) => sectionRefs.current[tab.id])
-      .filter(Boolean);
-
-    if (sections.length === 0) return undefined;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (scrollLockRef.current) return;
-
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-
-        const nextTab = visible[0]?.target?.dataset?.sectionId;
-        if (nextTab) {
-          setActiveTab(nextTab);
-        }
-      },
-      {
-        root: null,
-        rootMargin: `-${CLUSTER_SECTION_SCROLL_MARGIN}px 0px -55% 0px`,
-        threshold: [0, 0.15, 0.35],
-      }
-    );
-
-    for (const section of sections) {
-      observer.observe(section);
-    }
-
-    return () => observer.disconnect();
-  }, [cluster]);
-
-  useEffect(() => {
-    const button = navRef.current?.querySelector(`[data-tab-id="${activeTab}"]`);
-    button?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [activeTab]);
-
-  function scrollToSection(tabId) {
-    const section = sectionRefs.current[tabId];
-    if (!section) return;
-
-    scrollLockRef.current = true;
-    setActiveTab(tabId);
-    setEnabledTabs((current) => new Set([...current, tabId]));
-    section.scrollIntoView({ behavior: "smooth", block: "start" });
-    window.setTimeout(() => {
-      scrollLockRef.current = false;
-    }, 700);
+  function handleSearchSubmit(event) {
+    event.preventDefault();
+    const trimmed = searchInput.trim();
+    if (!trimmed) return;
+    setSubmittedSearch(trimmed);
   }
 
-  function registerSectionRef(tabId) {
-    return (node) => {
-      if (node) sectionRefs.current[tabId] = node;
-      else delete sectionRefs.current[tabId];
-    };
+  function clearSearch() {
+    setSearchInput("");
+    setSubmittedSearch("");
   }
-
-  const sectionShellStyle = {
-    scrollMarginTop: CLUSTER_SECTION_SCROLL_MARGIN,
-    paddingTop: "0.25rem",
-    paddingBottom: "2rem",
-  };
-
-  const sectionHeadingStyle = {
-    margin: "0 0 0.85rem",
-    fontSize: "1.15rem",
-    lineHeight: 1.25,
-    color: "#111827",
-  };
 
   if (status === "loading") {
     return (
@@ -680,8 +674,8 @@ export default function ClusterPage() {
   const showGrowingNotice = isClusterGrowing(cluster);
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem" }}>
-      <header style={{ marginBottom: "1.25rem" }}>
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box", overflowX: "clip" }}>
+      <header style={{ marginBottom: "1rem", minWidth: 0, display: "grid", gap: "0.85rem" }}>
         <ClusterPageBreadcrumb cluster={cluster} />
         <div
           style={{
@@ -689,10 +683,21 @@ export default function ClusterPage() {
             alignItems: "flex-start",
             justifyContent: "space-between",
             gap: "0.75rem",
-            marginTop: "0.25rem",
+            minWidth: 0,
           }}
         >
-          <h1 style={{ margin: 0, fontSize: "1.75rem", lineHeight: 1.2, flex: 1 }}>{pageHeading}</h1>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "1.75rem",
+              lineHeight: 1.2,
+              flex: 1,
+              minWidth: 0,
+              overflowWrap: "anywhere",
+            }}
+          >
+            {pageHeading}
+          </h1>
           {shareData ? (
             <ShareButton
               shareData={shareData}
@@ -708,124 +713,93 @@ export default function ClusterPage() {
             />
           ) : null}
         </div>
+        <ClusterDescription cluster={cluster} />
       </header>
 
       {showGrowingNotice ? <ClusterGrowingNotice /> : null}
 
-      <nav
-        ref={navRef}
-        aria-label="Cluster sections"
+      <section style={{ display: "grid", gap: "1rem", marginBottom: "1.25rem" }}>
+        <ClusterStatCounts
+          cluster={cluster}
+          menuItemCount={menuItemCount}
+          menuItemCountStatus={menuItemCountStatus}
+        />
+
+        <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <input
+            type="search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Search menu items in this area (burger, pizza, salad…)"
+            aria-label="Search menus in this cluster"
+            style={{
+              flex: "1 1 220px",
+              minWidth: 0,
+              padding: "0.65rem 0.75rem",
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!searchInput.trim()}
+            style={{
+              padding: "0.65rem 1rem",
+              borderRadius: 8,
+              border: "none",
+              background: searchInput.trim() ? "#111827" : "#9ca3af",
+              color: "#fff",
+              cursor: searchInput.trim() ? "pointer" : "not-allowed",
+            }}
+          >
+            Search
+          </button>
+          {searchActive ? (
+            <button
+              type="button"
+              onClick={clearSearch}
+              style={{
+                padding: "0.65rem 1rem",
+                borderRadius: 8,
+                border: "1px solid #d1d5db",
+                background: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              Clear
+            </button>
+          ) : null}
+        </form>
+
+        <ClusterViewToggle
+          viewMode={viewMode}
+          onChange={setViewMode}
+          disabled={searchActive}
+        />
+      </section>
+
+      <main
+        aria-label="Cluster dynamic content"
         style={{
-          display: "flex",
-          gap: "0.5rem",
-          overflowX: "auto",
-          paddingBottom: "0.5rem",
-          marginBottom: "1rem",
-          borderBottom: "1px solid #e5e7eb",
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
-          background: "#fff",
+          display: "grid",
+          gap: "0.75rem",
+          minWidth: 0,
+          paddingTop: "0.25rem",
+          paddingBottom: "1.5rem",
+          borderTop: "1px solid #e5e7eb",
         }}
       >
-        {CLUSTER_TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const disabled = !tab.enabled;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              data-tab-id={tab.id}
-              disabled={disabled}
-              aria-current={isActive ? "true" : undefined}
-              onClick={() => {
-                if (!disabled) scrollToSection(tab.id);
-              }}
-              style={{
-                flex: "0 0 auto",
-                padding: "0.5rem 0.85rem",
-                borderRadius: 999,
-                border: isActive ? "1px solid #111827" : "1px solid #d1d5db",
-                background: isActive ? "#111827" : "#fff",
-                color: disabled ? "#9ca3af" : isActive ? "#fff" : "#111827",
-                cursor: disabled ? "not-allowed" : "pointer",
-                whiteSpace: "nowrap",
-              }}
-              title={tab.comingSoon ? "Coming soon" : undefined}
-            >
-              {tab.label}
-              {tab.comingSoon ? " (soon)" : ""}
-            </button>
-          );
-        })}
-      </nav>
-
-      <main style={{ display: "grid", gap: "0.5rem" }}>
-        <section
-          id={clusterSectionId("overview")}
-          ref={registerSectionRef("overview")}
-          data-section-id="overview"
-          aria-labelledby="cluster-heading-overview"
-          style={sectionShellStyle}
-        >
-          <h2 id="cluster-heading-overview" style={sectionHeadingStyle}>
-            Overview
-          </h2>
-          <ClusterOverviewTab cluster={cluster} />
-        </section>
-
-        <section
-          id={clusterSectionId("menu-explorer")}
-          ref={registerSectionRef("menu-explorer")}
-          data-section-id="menu-explorer"
-          aria-labelledby="cluster-heading-menu-explorer"
-          style={sectionShellStyle}
-        >
-          <h2 id="cluster-heading-menu-explorer" style={sectionHeadingStyle}>
-            Menu Explorer
-          </h2>
-          <ClusterMenuExplorerTab
-            clusterSlug={cluster.slug}
-            enabled={enabledTabs.has("menu-explorer")}
-          />
-        </section>
-
-        <section
-          id={clusterSectionId("restaurants")}
-          ref={registerSectionRef("restaurants")}
-          data-section-id="restaurants"
-          aria-labelledby="cluster-heading-restaurants"
-          style={sectionShellStyle}
-        >
-          <h2 id="cluster-heading-restaurants" style={sectionHeadingStyle}>
-            Restaurants
-          </h2>
-          <ClusterRestaurantsTab
-            clusterSlug={cluster.slug}
-            cluster={cluster}
-            enabled={enabledTabs.has("restaurants")}
-          />
-        </section>
-
-        <section
-          id={clusterSectionId("search")}
-          ref={registerSectionRef("search")}
-          data-section-id="search"
-          aria-labelledby="cluster-heading-search"
-          style={sectionShellStyle}
-        >
-          <h2 id="cluster-heading-search" style={sectionHeadingStyle}>
-            Search Menus
-          </h2>
-          <ClusterSearchTab
-            clusterSlug={cluster.slug}
-            enabled={enabledTabs.has("search")}
-          />
-        </section>
+        {searchActive ? (
+          <ClusterSearchResults clusterSlug={cluster.slug} query={submittedSearch} />
+        ) : viewMode === CLUSTER_VIEW_MODES.MENU_ITEMS ? (
+          <ClusterMenuExplorerTab clusterSlug={cluster.slug} enabled />
+        ) : (
+          <ClusterRestaurantsTab clusterSlug={cluster.slug} cluster={cluster} enabled />
+        )}
       </main>
 
       {Array.isArray(cluster.related_clusters) && cluster.related_clusters.length > 0 ? (
-        <section style={{ marginTop: "2rem" }}>
+        <section style={{ marginTop: "0.5rem", paddingTop: "1.25rem", borderTop: "1px solid #e5e7eb" }}>
           <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.15rem" }}>Nearby Clusters</h2>
           <div style={CLUSTER_DIRECTORY_GRID_STYLE}>
             {cluster.related_clusters.map((related) => (

@@ -4,9 +4,9 @@ import { clusterPath, clusterTypeLabel, clusterVerificationBadge, formatClusterO
 
 export const CLUSTER_DIRECTORY_GRID_STYLE = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 240px))",
+  gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 11.25rem), 1fr))",
   gap: "0.85rem",
-  justifyContent: "start",
+  width: "100%",
 };
 
 const DEFAULT_ACCENT = { border: "#d1d5db", bg: "#f9fafb" };
@@ -16,6 +16,8 @@ const blockShellStyle = {
   flexDirection: "column",
   justifyContent: "space-between",
   width: "100%",
+  maxWidth: "100%",
+  minWidth: 0,
   minHeight: 220,
   aspectRatio: "1 / 1",
   padding: "1.1rem",
@@ -24,6 +26,7 @@ const blockShellStyle = {
   borderStyle: "solid",
   boxSizing: "border-box",
   boxShadow: "0 2px 0 rgba(15, 23, 42, 0.08)",
+  overflow: "hidden",
 };
 
 function clampLines(maxLines) {
@@ -65,15 +68,30 @@ export default function ClusterDirectoryCard({
         color: "inherit",
       }}
     >
-      <div style={{ display: "grid", gap: "0.55rem", minHeight: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "flex-start" }}>
-          <div style={{ ...clampLines(3), fontSize: "1.05rem", fontWeight: 700, color: "#111827", lineHeight: 1.3 }}>
+      <div style={{ display: "grid", gap: "0.55rem", minHeight: 0, minWidth: 0 }}>
+        <div style={{ display: "grid", gap: "0.35rem", minWidth: 0 }}>
+          <div
+            style={{
+              ...clampLines(3),
+              fontSize: "1.05rem",
+              fontWeight: 700,
+              color: "#111827",
+              lineHeight: 1.3,
+              overflowWrap: "anywhere",
+            }}
+          >
             {title}
           </div>
           {statusLabel ? (
             <span
               title={statusTitle || undefined}
-              style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: "#374151", lineHeight: 1.25 }}
+              style={{
+                alignSelf: "flex-start",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#374151",
+                lineHeight: 1.25,
+              }}
             >
               {statusLabel}
             </span>
@@ -86,12 +104,13 @@ export default function ClusterDirectoryCard({
             color: "#4b5563",
             textTransform: "uppercase",
             letterSpacing: "0.04em",
+            overflowWrap: "anywhere",
           }}
         >
           {typeLabel}
         </div>
         {cluster.city && cluster.state ? (
-          <div style={{ color: "#6b7280", fontSize: "0.88rem", lineHeight: 1.4 }}>
+          <div style={{ color: "#6b7280", fontSize: "0.88rem", lineHeight: 1.4, overflowWrap: "anywhere" }}>
             {cluster.city}, {cluster.state}
           </div>
         ) : null}
@@ -124,7 +143,7 @@ export default function ClusterDirectoryCard({
             {verification}
           </div>
         ) : null}
-        <div style={{ fontWeight: 700, color: "#111827", fontSize: "0.92rem" }}>
+        <div style={{ fontWeight: 700, color: "#111827", fontSize: "0.92rem", overflowWrap: "anywhere" }}>
           {countLabel || "Dining directory"}
         </div>
       </div>
@@ -134,7 +153,7 @@ export default function ClusterDirectoryCard({
   if (isPending || !href) return content;
 
   return (
-    <Link to={href} style={{ display: "block", color: "inherit", textDecoration: "none" }}>
+    <Link to={href} style={{ display: "block", color: "inherit", textDecoration: "none", minWidth: 0, maxWidth: "100%" }}>
       {content}
     </Link>
   );

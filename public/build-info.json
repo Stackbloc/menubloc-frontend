@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "43e7c9beb93c656d78b48b7561cdd45519e0aa78",
-  "gitShortSha": "43e7c9b",
+  "gitSha": "7c78dbb98a2d75d3fddc4919d2fa5287b2365d80",
+  "gitShortSha": "7c78dbb",
   "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-07T00:36:12.017Z",
+  "buildTime": "2026-07-11T00:25:50.634Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(owner): stop Menu Manager finder flicker and irrelevant results."
+  "commitMessage": "fix(yellow-browser): pin purchase coach inside sticky menu header"
 }
