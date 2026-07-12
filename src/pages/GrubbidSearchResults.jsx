@@ -37,7 +37,7 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildDietaryQueryParams } from "../lib/dietaryParams.js";
 import { buildRestaurantFilterQueryParams } from "../lib/restaurantFilterParams.js";
 import { parseFiltersFromUrl, filtersToUrlParams } from "../lib/filterUtils.js";
-import { toConsumerErrorMessage } from "../lib/api.js";
+import { toConsumerErrorMessage, fetchSimilarAvailabilityBatch } from "../lib/api.js";
 import { trackSearchPerformed } from "../lib/analytics.js";
 import { appendSearchAnalyticsParams, getAnalyticsSessionId } from "../lib/analyticsPageVisitSend.js";
 import {
@@ -207,7 +207,6 @@ const WAITER_MIN_PRICE_PROMPT_DOLLARS = 5;
 const WAITER_FOLLOW_UP_MAX_RESULTS = 5;
 const WAITER_MIN_OPTIONS = 1;
 const WAITER_MAX_OPTIONS = 3;
-const MAX_MENU_ITEMS_PER_RESTAURANT_GROUP = 3;
 const WAITER_MIN_ITEM_SIGNALS = 6;
 const WAITER_FOLLOW_UP_MIN_ITEM_SIGNALS = 4;
 const WAITER_MIN_OPTION_MATCHES = 1;
@@ -219,6 +218,8 @@ const WAITER_MIN_OPTION_SHARE = 0.1;
 const WAITER_TIER_FOOD = 3;
 const WAITER_TIER_NUTRITION = 2;
 const WAITER_TIER_COMMERCE = 1;
+/** Legacy client grouping only — backend `per_restaurant_initial_cap` is authoritative. */
+const LEGACY_CLIENT_GROUP_SLICE = Number.MAX_SAFE_INTEGER;
 const WAITER_STOP_WORDS = new Set([
   "the",
   "and",
@@ -1830,7 +1831,36 @@ function isBetterRow(nextRow, currentRow) {
   return false;
 }
 
-function buildRestaurantGroups(dishRows, maxItemsPerRestaurantGroup = MAX_MENU_ITEMS_PER_RESTAURANT_GROUP) {
+function mapBackendRestaurantCard(card, visibleLimit, initialCap) {
+  const qualified = Array.isArray(card?.qualified_matches)
+    ? card.qualified_matches
+    : Array.isArray(card?.matches)
+      ? card.matches
+      : [];
+  const qualifiedTotal = Number(card?.qualified_total ?? card?.matched_item_count ?? qualified.length) || qualified.length;
+  const defaultVisible = Number(card?.visible_count ?? initialCap) || initialCap;
+  const limit = Number.isFinite(visibleLimit) ? visibleLimit : defaultVisible;
+  const visibleEnd = Math.min(qualifiedTotal, Math.max(defaultVisible, limit));
+  const items = qualified.slice(0, visibleEnd);
+
+  return {
+    restaurant_id: asString(card?.restaurant_id || card?.id),
+    restaurant_slug: asString(card?.restaurant_slug || card?.slug),
+    restaurant_name: asString(card?.restaurant_name || card?.name || "Restaurant"),
+    _first: card,
+    items,
+    qualified_matches: qualified,
+    qualified_total: qualifiedTotal,
+    visible_count: items.length,
+    has_more: items.length < qualifiedTotal,
+    next_offset: items.length,
+    hidden_match_count: Math.max(0, qualifiedTotal - items.length),
+    matched_item_count: qualifiedTotal,
+    expansion_batch_size: Number(card?.expansion_batch_size) || initialCap,
+  };
+}
+
+function buildRestaurantGroups(dishRows, maxItemsPerRestaurantGroup = LEGACY_CLIENT_GROUP_SLICE) {
   const restaurantMap = new Map();
 
   for (const row of dishRows) {
@@ -2092,6 +2122,7 @@ export default function GrubbidSearchResults() {
   const [searchHasMore, setSearchHasMore] = useState(false);
   const [searchTotalCount, setSearchTotalCount] = useState(0);
   const [searchViewMode, setSearchViewMode] = useState("dishes");
+  const [restaurantVisibleLimits, setRestaurantVisibleLimits] = useState({});
   const SEARCH_LIMIT = 24;
   const [shareCopied, setShareCopied] = useState(false);
   const handleShareResults = useCallback(async () => {
@@ -2150,6 +2181,7 @@ export default function GrubbidSearchResults() {
   useEffect(() => {
     setWaiterRefinementStack([]);
     waiterRestoredRef.current = false;
+    setRestaurantVisibleLimits({});
   }, [q, city, state, zip, near]);
 
   // Keep ?waiter= in the URL in sync with the active refinement stack (silent, no re-render).
@@ -2667,24 +2699,109 @@ export default function GrubbidSearchResults() {
     preferRestaurantView ||
     (useRestaurantGroupedRendering && searchMeta?.suppress_menu_items === true);
 
-  const relaxPerRestaurantItemCap = useMemo(() => {
-    if (!activeRestaurantGroupedRendering) return false;
-    if (hasDietFilter) return true;
-    const n = normalizedQuery;
-    return /\b(high[\s-]?protein|protein[\s-]?(rich|packed)|low[\s-]?carb|low[\s-]?sodium|keto|vegan|vegetarian|gluten[\s-]?free|diabetic|heart[\s-]?healthy)\b/i.test(
-      n
-    );
-  }, [hasDietFilter, normalizedQuery, activeRestaurantGroupedRendering]);
+  const perRestaurantInitialCap = Number(searchMeta?.per_restaurant_initial_cap) || 4;
+  const perRestaurantExpansionBatch = Number(searchMeta?.per_restaurant_expansion_batch) || perRestaurantInitialCap;
 
   const restaurantGroups = useMemo(() => {
     if (!activeRestaurantGroupedRendering) return [];
-    // Always group from waiter-filtered dish rows so refinement narrows visible results
-    // (restaurant_cards previously used unfiltered card.matches and ignored the stack).
-    return buildRestaurantGroups(
-      dishRows,
-      relaxPerRestaurantItemCap ? Number.MAX_SAFE_INTEGER : MAX_MENU_ITEMS_PER_RESTAURANT_GROUP
-    );
-  }, [dishRows, relaxPerRestaurantItemCap, activeRestaurantGroupedRendering]);
+
+    if (searchMeta?.restaurant_grouped_results === true && waiterRefinementStack.length === 0) {
+      return rows
+        .filter((row) => Array.isArray(row?.matches) || row?.row_type === "restaurant")
+        .map((card) => {
+          const rid = asString(card?.restaurant_id || card?.id);
+          const visibleLimit = restaurantVisibleLimits[rid];
+          return mapBackendRestaurantCard(card, visibleLimit, perRestaurantInitialCap);
+        });
+    }
+
+    return buildRestaurantGroups(dishRows, LEGACY_CLIENT_GROUP_SLICE);
+  }, [
+    dishRows,
+    rows,
+    activeRestaurantGroupedRendering,
+    searchMeta?.restaurant_grouped_results,
+    restaurantVisibleLimits,
+    perRestaurantInitialCap,
+    waiterRefinementStack.length,
+  ]);
+
+  const applySimilarAvailabilityToRows = useCallback((targetRows, availabilityMap) => {
+    if (!availabilityMap || typeof availabilityMap !== "object") return targetRows;
+    return targetRows.map((row) => {
+      const id = asString(pickFirst(row, ["menu_item_id", "id"], ""));
+      if (!id || !Object.prototype.hasOwnProperty.call(availabilityMap, id)) return row;
+      const value = availabilityMap[id];
+      if (value === null || value === undefined) {
+        return { ...row, has_similar_items: null, similar_availability: "unknown" };
+      }
+      return {
+        ...row,
+        has_similar_items: value === true,
+        similar_availability: value === true ? "available" : "none",
+      };
+    });
+  }, []);
+
+  const handleRestaurantExpandMore = useCallback(
+    async (group) => {
+      const rid = asString(group?.restaurant_id);
+      if (!rid) return;
+
+      const qualified = group?.qualified_matches || group?.items || [];
+      const qualifiedTotal = Number(group?.qualified_total ?? qualified.length) || qualified.length;
+      const batch = Number(group?.expansion_batch_size) || perRestaurantExpansionBatch;
+      const currentVisible = Number(group?.visible_count ?? group?.items?.length ?? perRestaurantInitialCap);
+      const nextVisible = Math.min(qualifiedTotal, currentVisible + batch);
+
+      const newlyRevealed = qualified.slice(currentVisible, nextVisible);
+      const needsAvailability = newlyRevealed.filter((row) => resolveRowSimilarAvailabilityUnknown(row));
+      if (needsAvailability.length) {
+        try {
+          const json = await fetchSimilarAvailabilityBatch(
+            needsAvailability.map((row) => pickFirst(row, ["menu_item_id", "id"], "")),
+            {
+              city: city || null,
+              state: state || null,
+              clusterScoped: searchMeta?.cluster_scoped === true,
+              clusterId: searchMeta?.cluster_id ?? null,
+            }
+          );
+          const availability = json?.availability || {};
+          setRows((prev) =>
+            prev.map((card) => {
+              const cardId = asString(card?.restaurant_id || card?.id);
+              if (cardId !== rid || !Array.isArray(card?.qualified_matches)) return card;
+              return {
+                ...card,
+                qualified_matches: applySimilarAvailabilityToRows(card.qualified_matches, availability),
+                matches: applySimilarAvailabilityToRows(card.matches || [], availability),
+              };
+            })
+          );
+        } catch (_) {
+          // Preserve unknown availability on failure — do not mark false.
+        }
+      }
+
+      setRestaurantVisibleLimits((prev) => ({ ...prev, [rid]: nextVisible }));
+    },
+    [
+      applySimilarAvailabilityToRows,
+      city,
+      state,
+      searchMeta?.cluster_scoped,
+      searchMeta?.cluster_id,
+      perRestaurantExpansionBatch,
+      perRestaurantInitialCap,
+    ]
+  );
+
+  function resolveRowSimilarAvailabilityUnknown(row) {
+    if (row?.has_similar_items === true || row?.has_similar_items === false) return false;
+    if (row?.similar_availability === "available" || row?.similar_availability === "none") return false;
+    return true;
+  }
 
   function toggleSearchFilter(key) {
     const next = { ...activeFilters, [key]: !activeFilters[key] };
@@ -3001,10 +3118,8 @@ export default function GrubbidSearchResults() {
           <div style={styles.grid}>
             {restaurantGroups.map((g) => {
               const rMeta = restaurantMetaMap.get(asString(g.restaurant_id));
-              const hiddenCount =
-                Number(g.hidden_match_count) > 0
-                  ? Number(g.hidden_match_count)
-                  : Math.max(0, Number(g.matched_item_count || 0) - (g.items?.length || 0));
+              const qualifiedTotal = Number(g.qualified_total ?? g.matched_item_count ?? g.items?.length ?? 0);
+              const showExpansion = g.has_more === true && qualifiedTotal > (g.items?.length || 0);
               return (
                 <SearchResultCard
                   key={`rg-${g.restaurant_id || g.restaurant_name}`}
@@ -3025,7 +3140,10 @@ export default function GrubbidSearchResults() {
                       raw: g._first,
                     }}
                     items={g.items}
-                    hiddenMatchCount={hiddenCount}
+                    qualifiedTotal={qualifiedTotal}
+                    showExpansion={showExpansion}
+                    onExpandMore={() => { void handleRestaurantExpandMore(g); }}
+                    hiddenMatchCount={showExpansion ? 0 : Number(g.hidden_match_count || 0)}
                     query={q}
                     queryMeta={queryMeta}
                     matchContext={{

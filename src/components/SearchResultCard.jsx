@@ -269,6 +269,14 @@ function abbreviateDisplayLabel(text, max = SIMILAR_NAME_DISPLAY_MAX) {
   return `${raw.slice(0, max - 1).trim()}…`;
 }
 
+function resolveSimilarAvailability(row) {
+  if (row?.has_similar_items === true) return true;
+  if (row?.has_similar_items === false) return false;
+  if (row?.similar_availability === "available") return true;
+  if (row?.similar_availability === "none") return false;
+  return null;
+}
+
 function buildSimilarItemsLabel(meta) {
   if (!meta) return null;
   if (meta.used_broad_fallback) return "Showing broader matches because nearby similar dishes were limited";
@@ -803,11 +811,15 @@ function InsightsPanel({ chips, onFindSimilar }) {
 
 /* ---- Chip button ---- */
 
-function Chip({ label, active, available, onClick }) {
+function Chip({ label, active, available, disabled, onClick, ariaLabel }) {
+  const isDisabled = disabled === true || available === false;
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={isDisabled ? undefined : onClick}
+      disabled={isDisabled}
+      aria-label={ariaLabel || label}
+      aria-disabled={isDisabled}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -816,7 +828,8 @@ function Chip({ label, active, available, onClick }) {
         fontSize: "12px",
         fontWeight: 700,
         lineHeight: 1,
-        cursor: "pointer",
+        cursor: isDisabled ? "not-allowed" : "pointer",
+        opacity: isDisabled ? 0.45 : 1,
         border: active
           ? "1px solid var(--gb-color-accent)"
           : available
@@ -1459,8 +1472,10 @@ function ItemRow({
     ));
   const hasNutritionOrInsights = hasNut || hasIns;
   const intelligenceLoading = intelligenceState.status === "loading";
-  // Show Similar chip is always available; similar pool is fetched only when the user opens the tab.
   const showSimilarChip = isShowSimilarChipVisible(mid);
+  const similarAvailability = resolveSimilarAvailability(displayRow);
+  const similarChipDisabled = similarAvailability === false;
+  const similarChipAvailable = similarAvailability !== false;
   const similarCacheKey = useMemo(() => {
     if (!mid) return "";
     return `${mid}::${similarRequest?.cacheKey || ""}`;
@@ -1890,8 +1905,17 @@ function ItemRow({
           <Chip
             label={labels.showSimilar}
             active={openTab === "similar"}
-            available={true}
-            onClick={() => toggle("similar")}
+            available={similarChipAvailable}
+            disabled={similarChipDisabled}
+            onClick={() => {
+              if (similarChipDisabled) return;
+              toggle("similar");
+            }}
+            ariaLabel={
+              similarChipDisabled
+                ? `${labels.showSimilar} — no similar items available`
+                : labels.showSimilar
+            }
           />
         ) : null}
       </div>
@@ -2085,7 +2109,7 @@ function RestaurantMeta({ cuisine, phone, distanceMiles, profileTier, locationCo
 
 /* ---- Main export ---- */
 
-export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, geo, activeRefinement, resultView, hiddenMatchCount = 0, returnNavigation = null }) {
+export default function SearchResultCard({ restaurant, items, item, query, queryMeta, matchContext, geo, activeRefinement, resultView, hiddenMatchCount = 0, qualifiedTotal = 0, showExpansion = false, onExpandMore = null, returnNavigation = null }) {
   const location = useLocation();
   const { language, t } = useLanguage();
   const contextSearch = location.search || "";
@@ -2250,7 +2274,44 @@ export default function SearchResultCard({ restaurant, items, item, query, query
           })}
         </div>
 
-        {hiddenMatchCount > 0 ? (
+        {showExpansion && qualifiedTotal > (items?.length || 0) ? (
+          <div
+            style={{
+              marginTop: 10,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#9CA3AF",
+              }}
+            >
+              Showing {items?.length || 0} of {qualifiedTotal}
+            </span>
+            <button
+              type="button"
+              onClick={onExpandMore}
+              aria-label={`Show more results for ${restName}`}
+              style={{
+                fontSize: 13,
+                fontWeight: 800,
+                color: "#22C55E",
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              More
+            </button>
+          </div>
+        ) : hiddenMatchCount > 0 ? (
           <div
             style={{
               marginTop: 8,

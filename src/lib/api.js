@@ -255,6 +255,24 @@ export async function fetchFranchiseLocation(menuItemId, options = {}) {
   return apiGet(`/menu-items/${encodeURIComponent(String(menuItemId))}/franchise-location${suffix}`);
 }
 
+/**
+ * Batched similar-item existence probe for search expansion rows.
+ */
+export async function fetchSimilarAvailabilityBatch(itemIds, options = {}) {
+  const ids = (Array.isArray(itemIds) ? itemIds : [])
+    .map((id) => Number(id))
+    .filter((id) => Number.isFinite(id) && id > 0);
+  if (!ids.length) return { ok: true, availability: {} };
+
+  return apiPost("/menu-items/similar-availability/batch", {
+    item_ids: ids,
+    city: options.city ?? null,
+    state: options.state ?? null,
+    cluster_scoped: options.clusterScoped === true,
+    cluster_id: options.clusterId ?? null,
+  });
+}
+
 export default {
   API_BASE,
   apiGet,
