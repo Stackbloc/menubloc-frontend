@@ -555,6 +555,11 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
           </div>
           {status === "loading" ? <p style={{ color: "#666" }}>Loading {categoryTitle}…</p> : null}
           {status === "error" ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
+          {status === "ok" && items.length === 0 ? (
+            <p style={{ color: "#6b7280", margin: 0 }}>
+              No items are listed in {categoryTitle} yet for this area.
+            </p>
+          ) : null}
           {items.length > 0 ? (
             <ClusterDishList
               items={items}

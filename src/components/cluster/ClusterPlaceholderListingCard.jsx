@@ -1,8 +1,15 @@
+import { placeholderMenuItemDescription, placeholderMenuItemLabel } from "../../lib/placeholderMenuItems.js";
+
 export default function ClusterPlaceholderListingCard({ listing, showBeverageType = false }) {
   const name = listing?.name || "Coming soon";
   const location = listing?.location ? String(listing.location).trim() : "";
   const menuItems = Array.isArray(listing?.menu_items)
-    ? listing.menu_items.map((item) => String(item || "").trim()).filter(Boolean)
+    ? listing.menu_items
+        .map((item) => ({
+          name: placeholderMenuItemLabel(item),
+          description: placeholderMenuItemDescription(item),
+        }))
+        .filter((item) => item.name)
     : [];
   const beverageLabel =
     showBeverageType && listing?.beverage_type
@@ -35,8 +42,11 @@ export default function ClusterPlaceholderListingCard({ listing, showBeverageTyp
           }}
         >
           {menuItems.map((item) => (
-            <li key={`${name}-${item}`} style={{ overflowWrap: "anywhere" }}>
-              {item}
+            <li key={`${name}-${item.name}-${item.description || ""}`} style={{ overflowWrap: "anywhere" }}>
+              <span>{item.name}</span>
+              {item.description ? (
+                <span style={{ color: "#6b7280" }}> — {item.description}</span>
+              ) : null}
             </li>
           ))}
         </ul>

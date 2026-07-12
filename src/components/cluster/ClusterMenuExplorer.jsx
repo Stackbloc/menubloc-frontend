@@ -14,6 +14,7 @@ export const CLUSTER_PLACEHOLDER_FOOD_CARD_STYLE = {
 
 export function ClusterPlaceholderFoodCard({ item }) {
   const itemName = item?.name || item?.menu_item_name || "Menu item";
+  const description = String(item?.description || item?.item_description || "").trim();
   const concessionName = item?.concession_name || item?.restaurant_name || null;
   const location = item?.location ? String(item.location).trim() : "";
   const area = item?.area ? String(item.area).trim() : "";
@@ -23,6 +24,11 @@ export function ClusterPlaceholderFoodCard({ item }) {
       <div style={{ fontWeight: 700, color: "#111827", fontSize: "1rem", overflowWrap: "anywhere" }}>
         {itemName}
       </div>
+      {description ? (
+        <div style={{ color: "#4b5563", fontSize: "0.86rem", lineHeight: 1.45, overflowWrap: "anywhere" }}>
+          {description}
+        </div>
+      ) : null}
       {concessionName ? (
         <div style={{ color: "#374151", fontSize: "0.9rem", overflowWrap: "anywhere" }}>
           {concessionName}
