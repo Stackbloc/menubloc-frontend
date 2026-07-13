@@ -122,7 +122,7 @@ test.describe("Cluster SEO copy screenshots", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/clusters/california/los-angeles/lax");
     await expect(page.getByText(/Los Angeles International Airport/i).first()).toBeVisible();
-    await expect(page.getByPlaceholder("Search food at LAX")).toBeVisible();
+    await expect(page.getByPlaceholder("Search Dining Options at LAX")).toBeVisible();
     expect(await page.title()).toBe(CLUSTER_SEO_CONTENT.lax.seoTitle);
     await page.screenshot({ path: path.join(OUT_DIR, "lax-mobile.png"), fullPage: true });
   });
@@ -132,7 +132,7 @@ test.describe("Cluster SEO copy screenshots", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/clusters/california/los-angeles/ucla");
     await expect(page.getByText(/near UCLA in Westwood/i).first()).toBeVisible();
-    await expect(page.getByPlaceholder("Search restaurants near UCLA")).toBeVisible();
+    await expect(page.getByPlaceholder("Search Dining Options near UCLA")).toBeVisible();
     expect(await page.title()).toBe(CLUSTER_SEO_CONTENT.ucla.seoTitle);
     await page.screenshot({ path: path.join(OUT_DIR, "ucla-desktop.png"), fullPage: true });
   });

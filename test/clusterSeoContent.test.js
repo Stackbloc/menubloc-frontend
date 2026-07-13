@@ -69,8 +69,22 @@ test("resolveClusterDocumentMeta and search placeholders are slug-specific", () 
   assert.match(laLive.title, /L\.A\. Live/);
   assert.match(lax.title, /LAX/);
   assert.notEqual(laLive.description, lax.description);
-  assert.equal(resolveClusterSearchPlaceholder({ slug: "ucla" }), "Search restaurants near UCLA");
-  assert.equal(resolveClusterSearchPlaceholder({ slug: "usc" }), "Search menus near USC");
+  assert.equal(resolveClusterSearchPlaceholder({ slug: "la-live" }), "Search L.A. Live menus");
+  assert.equal(
+    resolveClusterSearchPlaceholder({ slug: "american-airlines-center" }),
+    "Search food at American Airlines Center",
+  );
+  assert.equal(resolveClusterSearchPlaceholder({ slug: "lax" }), "Search Dining Options at LAX");
+  assert.equal(resolveClusterSearchPlaceholder({ slug: "ucla" }), "Search Dining Options near UCLA");
+  assert.equal(resolveClusterSearchPlaceholder({ slug: "usc" }), "Search Dining Options near USC");
+  assert.equal(
+    resolveClusterSearchPlaceholder({ slug: "atl-airport" }),
+    "Search Dining Options at Hartsfield",
+  );
+  assert.equal(
+    resolveClusterSearchPlaceholder({ slug: "att-stadium" }),
+    "Search Dining Options at AT&T Stadium",
+  );
   assert.equal(resolveClusterSearchPlaceholder({ slug: "unknown" }), "Search food here");
 });
 

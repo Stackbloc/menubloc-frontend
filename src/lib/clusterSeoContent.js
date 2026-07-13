@@ -67,7 +67,7 @@ export const CLUSTER_SEO_CONTENT = Object.freeze({
     seoTitle: "LAX Restaurants, Menus & Food | Menuply",
     metaDescription:
       "Explore available restaurant menus, airport food, coffee, and drinks at Los Angeles International Airport (LAX). Search dining options with Menuply.",
-    searchPlaceholder: "Search food at LAX",
+    searchPlaceholder: "Search Dining Options at LAX",
   }),
   "atl-airport": Object.freeze({
     slug: "atl-airport",
@@ -82,7 +82,7 @@ export const CLUSTER_SEO_CONTENT = Object.freeze({
     seoTitle: "ATL Airport Restaurants, Menus & Food | Menuply",
     metaDescription:
       "Explore available restaurant menus, airport dining, coffee, and drinks at Hartsfield-Jackson Atlanta International Airport. Search with Menuply.",
-    searchPlaceholder: "Search airport dining",
+    searchPlaceholder: "Search Dining Options at Hartsfield",
   }),
   "american-airlines-center": Object.freeze({
     slug: "american-airlines-center",
@@ -112,7 +112,7 @@ export const CLUSTER_SEO_CONTENT = Object.freeze({
     seoTitle: "AT&T Stadium Restaurants, Menus & Food | Menuply",
     metaDescription:
       "Explore available food, drinks, restaurants, and menus associated with AT&T Stadium in Arlington, TX. Search dining options with Menuply.",
-    searchPlaceholder: "Search food at AT&T Stadium",
+    searchPlaceholder: "Search Dining Options at AT&T Stadium",
   }),
   ucla: Object.freeze({
     slug: "ucla",
@@ -127,7 +127,7 @@ export const CLUSTER_SEO_CONTENT = Object.freeze({
     seoTitle: "UCLA Restaurants, Menus & Food | Menuply",
     metaDescription:
       "Explore available restaurants, cafés, coffee shops, and menus near UCLA in Westwood, Los Angeles. Search dining options with Menuply.",
-    searchPlaceholder: "Search restaurants near UCLA",
+    searchPlaceholder: "Search Dining Options near UCLA",
   }),
   usc: Object.freeze({
     slug: "usc",
@@ -142,7 +142,7 @@ export const CLUSTER_SEO_CONTENT = Object.freeze({
     seoTitle: "USC Restaurants, Menus & Food | Menuply",
     metaDescription:
       "Explore available restaurants and menus near USC in Los Angeles, CA. Search nearby dining options with Menuply.",
-    searchPlaceholder: "Search menus near USC",
+    searchPlaceholder: "Search Dining Options near USC",
   }),
 });
 
