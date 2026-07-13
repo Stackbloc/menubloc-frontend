@@ -762,8 +762,8 @@ export default function ClusterPage() {
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            gap: "0.75rem",
+            justifyContent: "flex-start",
+            gap: "0.55rem",
             flexWrap: "wrap",
             minWidth: 0,
             marginTop: "1.5rem",
