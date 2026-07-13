@@ -49,7 +49,7 @@ function ClusterDescription({ cluster }) {
   if (!intro) return null;
 
   return (
-    <p style={{ margin: 0, color: "#374151", lineHeight: 1.55, fontSize: "0.98rem" }}>{intro}</p>
+    <p style={{ margin: "0 0 0.5rem", color: "#374151", lineHeight: 1.55, fontSize: "0.98rem" }}>{intro}</p>
   );
 }
 
