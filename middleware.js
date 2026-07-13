@@ -221,15 +221,14 @@ function buildMenuItemMeta(data, itemId) {
 }
 
 function buildClusterMeta(cluster, pathname) {
+  // Do not HTML-escape here — injectMeta() escapes title/description once.
   const seo = getClusterSeoContent(cluster?.slug);
-  const title = escapeHtml(
-    seo?.seoTitle || cluster.share_title || `${cluster.name || "Area Restaurants"} | Menuply`
-  );
-  const description = escapeHtml(
+  const title =
+    seo?.seoTitle || cluster.share_title || `${cluster.name || "Area Restaurants"} | Menuply`;
+  const description =
     seo?.metaDescription
       || cluster.share_description
-      || `Browse menu information for restaurants around ${cluster.area_name || cluster.name || "this area"}. Menuply is an independent menu discovery platform.`
-  );
+      || `Browse menu information for restaurants around ${cluster.area_name || cluster.name || "this area"}. Menuply is an independent menu discovery platform.`;
   const path = clusterPath({
     state: cluster.state,
     city: cluster.city,
