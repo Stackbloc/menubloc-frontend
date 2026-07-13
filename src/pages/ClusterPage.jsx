@@ -49,7 +49,16 @@ function ClusterDescription({ cluster }) {
   if (!intro) return null;
 
   return (
-    <p style={{ margin: "0 0 0.5rem", color: "#374151", lineHeight: 1.55, fontSize: "0.98rem" }}>{intro}</p>
+    <p
+      style={{
+        margin: 0,
+        color: "#374151",
+        lineHeight: 1.55,
+        fontSize: "0.98rem",
+      }}
+    >
+      {intro}
+    </p>
   );
 }
 
@@ -736,28 +745,32 @@ export default function ClusterPage() {
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem 1rem 5rem", width: "100%", boxSizing: "border-box", overflowX: "clip" }}>
       <header style={{ marginBottom: "1rem", minWidth: 0, display: "grid", gap: "0.75rem" }}>
         <ClusterBackButton fallbackTo={clusterCityBack} label={cityBackLabel} />
+        <h1
+          style={{
+            margin: 0,
+            fontSize: "1.85rem",
+            lineHeight: 1.15,
+            minWidth: 0,
+            overflowWrap: "anywhere",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {pageHeading}
+        </h1>
+        <ClusterDescription cluster={cluster} />
         <div
           style={{
             display: "flex",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "space-between",
             gap: "0.75rem",
+            flexWrap: "wrap",
             minWidth: 0,
+            marginTop: "1.5rem",
+            paddingTop: "0.25rem",
           }}
         >
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "1.85rem",
-              lineHeight: 1.15,
-              flex: 1,
-              minWidth: 0,
-              overflowWrap: "anywhere",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {pageHeading}
-          </h1>
+          <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
           {shareData ? (
             <ShareButton
               shareData={shareData}
@@ -773,8 +786,6 @@ export default function ClusterPage() {
             />
           ) : null}
         </div>
-        <ClusterDescription cluster={cluster} />
-        <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
       </header>
 
       <main
