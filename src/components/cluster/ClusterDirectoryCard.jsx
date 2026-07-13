@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import ClusterCityStarterChecklist from "./ClusterCityStarterChecklist.jsx";
 import { clusterPath, clusterTypeLabel, clusterVerificationBadge } from "../../lib/clusterUrl.js";
+import { resolveClusterCardDescription } from "../../lib/clusterSeoContent.js";
 
 export const CLUSTER_DIRECTORY_GRID_STYLE = {
   display: "grid",
@@ -60,6 +61,7 @@ export default function ClusterDirectoryCard({
   const typeLabel = clusterTypeLabel(cluster.type);
   const resolvedAccent = accent || DEFAULT_ACCENT;
   const verification = statusLabel || clusterVerificationBadge(cluster.verification_level);
+  const cardDescription = resolveClusterCardDescription(cluster);
 
   const content = (
     <article
@@ -116,9 +118,9 @@ export default function ClusterDirectoryCard({
             {cluster.city}, {cluster.state}
           </div>
         ) : null}
-        {cluster.short_description ? (
+        {cardDescription ? (
           <div style={{ ...clampLines(3), color: "#4b5563", fontSize: "0.84rem", lineHeight: 1.45 }}>
-            {cluster.short_description}
+            {cardDescription}
           </div>
         ) : null}
         <ClusterCityStarterChecklist checklist={starterChecklist} />

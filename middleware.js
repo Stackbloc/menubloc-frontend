@@ -11,6 +11,7 @@ import {
   restaurantPath,
 } from "./src/lib/canonicalUrlCore.js";
 import { clusterPath } from "./src/lib/clusterUrl.js";
+import { getClusterSeoContent } from "./src/lib/clusterSeoContent.js";
 import { INDEXABLE_STATIC_PAGES } from "./src/lib/sitemapConfig.js";
 
 const BACKEND = "https://menubloc-backend-production.up.railway.app";
@@ -220,9 +221,13 @@ function buildMenuItemMeta(data, itemId) {
 }
 
 function buildClusterMeta(cluster, pathname) {
-  const title = escapeHtml(cluster.share_title || `${cluster.name || "Area Restaurants"} | Menuply`);
+  const seo = getClusterSeoContent(cluster?.slug);
+  const title = escapeHtml(
+    seo?.seoTitle || cluster.share_title || `${cluster.name || "Area Restaurants"} | Menuply`
+  );
   const description = escapeHtml(
-    cluster.share_description
+    seo?.metaDescription
+      || cluster.share_description
       || `Browse menu information for restaurants around ${cluster.area_name || cluster.name || "this area"}. Menuply is an independent menu discovery platform.`
   );
   const path = clusterPath({

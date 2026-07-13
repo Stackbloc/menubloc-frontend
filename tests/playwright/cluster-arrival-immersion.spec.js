@@ -97,7 +97,8 @@ test.describe("Cluster arrival immersion", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/clusters/california/los-angeles/la-live");
     await expect(page.getByRole("heading", { name: "L.A. Live", level: 1 })).toBeVisible();
-    await expect(page.getByText("You're here. Now let's find something great to eat.")).toBeVisible();
+    await expect(page.getByText(/L\.A\. Live in downtown Los Angeles/i)).toBeVisible();
+    await expect(page.getByText("You're here. Now let's find something great to eat.")).toHaveCount(0);
     await page.screenshot({ path: path.join(OUT_DIR, "la-live-desktop-food.png"), fullPage: true });
   });
 

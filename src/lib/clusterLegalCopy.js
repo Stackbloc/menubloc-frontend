@@ -1,7 +1,10 @@
 /**
  * Legal-safe copy helpers for public cluster destination pages.
  * Mirrors backend clusterLegalCopy.js so share metadata stays consistent client-side.
+ * Document title/description prefer clusterSeoContent when the slug is configured.
  */
+
+import { resolveClusterDocumentMeta } from "./clusterSeoContent.js";
 
 const DEFAULT_DISCLAIMER =
   "Menuply is an independent menu discovery platform and is not affiliated with, endorsed by, or sponsored by any venue, university, property owner, restaurant, or organization shown unless expressly stated.";
@@ -15,11 +18,15 @@ function pickAreaName(cluster = {}) {
 }
 
 export function buildClusterShareTitle(cluster = {}) {
+  const seoTitle = resolveClusterDocumentMeta(cluster).title;
+  if (seoTitle) return seoTitle;
   if (cluster.share_title) return cluster.share_title;
   return `${pickAreaName(cluster)} | Menuply`;
 }
 
 export function buildClusterShareDescription(cluster = {}) {
+  const seoDescription = resolveClusterDocumentMeta(cluster).description;
+  if (seoDescription) return seoDescription;
   if (cluster.share_description) return cluster.share_description;
   const area = pickAreaName(cluster);
   return `Explore what you can eat at ${area}. Menuply is an independent menu discovery platform.`;

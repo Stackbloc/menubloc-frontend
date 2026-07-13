@@ -7,8 +7,13 @@ import { createCluster, fetchClustersDirectory } from "../lib/clusterApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import ClusterDirectoryCard, { CLUSTER_DIRECTORY_GRID_STYLE } from "../components/cluster/ClusterDirectoryCard.jsx";
 import ClusterBackButton from "../components/cluster/ClusterBackButton.jsx";
-import { stateDisplayName, clusterCoverageBadge, CLUSTER_GROWING_HELP_TEXT, CLUSTER_VIEW_PROMPTS } from "../lib/clusterUrl.js";
+import { stateDisplayName, clusterCoverageBadge, CLUSTER_GROWING_HELP_TEXT, CLUSTER_VIEW_PROMPTS, clusterDirectoryPath } from "../lib/clusterUrl.js";
 import { resolveClusterAutoOpenPath, resolveClusterMarketFromStoredLocation } from "../lib/clusterLocation.js";
+
+const DIRECTORY_PAGE_TITLE = "Menuply Clusters — Destination Dining Guides";
+const DIRECTORY_META_DESCRIPTION =
+  "A Menuply Cluster organizes available restaurants and menu information around a defined real-world destination — campuses, airports, downtowns, arenas, and entertainment districts.";
+const DIRECTORY_CANONICAL_PATH = clusterDirectoryPath();
 
 const TYPE_ACCENTS = {
   university: { border: "#8b5cf6", bg: "#f5f3ff" },
@@ -94,6 +99,25 @@ export default function ClustersDirectoryPage() {
   const [error, setError] = useState("");
   const [submitBusy, setSubmitBusy] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM);
+
+  useEffect(() => {
+    document.title = DIRECTORY_PAGE_TITLE;
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "description");
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", DIRECTORY_META_DESCRIPTION);
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.setAttribute("rel", "canonical");
+      document.head.appendChild(canonical);
+    }
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://menuply.com";
+    canonical.setAttribute("href", `${origin}${DIRECTORY_CANONICAL_PATH}`);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -218,9 +242,9 @@ export default function ClustersDirectoryPage() {
             Clusters
           </h1>
           <p style={{ margin: 0, color: "#475569", maxWidth: 760 }}>
-            A Cluster groups every restaurant in a real-world destination into one browsable food guide — campuses,
-            downtowns, airports, entertainment districts, and more. Tap any card below to explore what you can eat
-            there.
+            A Menuply Cluster organizes available restaurants and menu information around a defined
+            real-world destination — campuses, downtowns, airports, entertainment districts, arenas,
+            and more. Tap any card below to explore participating dining options listed for that place.
           </p>
           <p style={{ margin: "0.65rem 0 0", color: "#111827", fontWeight: 600, fontSize: "1.05rem" }}>
             {CLUSTER_VIEW_PROMPTS.directory}

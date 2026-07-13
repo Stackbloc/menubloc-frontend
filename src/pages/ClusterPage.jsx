@@ -18,12 +18,17 @@ import {
   buildClusterShareData,
 } from "../components/share/shareUtils.js";
 import { fetchClusterMetadata, fetchClusterMenuItems, fetchClusterRestaurants, searchCluster } from "../lib/clusterApi.js";
-import { isClusterGrowing, clusterCityPath, clusterDirectoryPath, CLUSTER_ARRIVAL_TAGLINE } from "../lib/clusterUrl.js";
+import { isClusterGrowing, clusterCityPath, clusterDirectoryPath } from "../lib/clusterUrl.js";
 import { groupClusterRestaurantsByCuisine } from "../lib/clusterRestaurantCuisineGroups.js";
 import {
   getClusterDisclaimer,
   getClusterPageHeading,
 } from "../lib/clusterLegalCopy.js";
+import {
+  resolveClusterIntro,
+  resolveClusterSearchPlaceholder,
+  resolveClusterDocumentMeta,
+} from "../lib/clusterSeoContent.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
 import {
   buildClusterReturnPath,
@@ -40,11 +45,11 @@ const CLUSTER_VIEW_MODES = Object.freeze({
 
 function ClusterDescription({ cluster }) {
   if (!cluster) return null;
-  const shortDescription = cluster.short_description || cluster.description || null;
-  if (!shortDescription) return null;
+  const intro = resolveClusterIntro(cluster);
+  if (!intro) return null;
 
   return (
-    <p style={{ margin: 0, color: "#374151", lineHeight: 1.55, fontSize: "0.98rem" }}>{shortDescription}</p>
+    <p style={{ margin: 0, color: "#374151", lineHeight: 1.55, fontSize: "0.98rem" }}>{intro}</p>
   );
 }
 
@@ -295,6 +300,10 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
     () => (cluster ? getClusterReturnLabel(cluster) : "destination"),
     [cluster],
   );
+  const searchPlaceholder = useMemo(
+    () => resolveClusterSearchPlaceholder(cluster),
+    [cluster],
+  );
   const returnNavigation = useMemo(
     () => (clusterReturnTo ? {
       returnTo: clusterReturnTo,
@@ -449,8 +458,8 @@ function ClusterMenuExplorerTab({ clusterSlug, cluster, enabled }) {
             type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search food here"
-            aria-label={`Search food at ${clusterDestinationLabel}`}
+            placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
             style={{
               width: "100%",
               boxSizing: "border-box",
@@ -669,11 +678,13 @@ export default function ClusterPage() {
     const script = document.createElement("script");
     script.type = "application/ld+json";
     script.setAttribute("data-cluster-growing-schema", "true");
+    const seoMeta = resolveClusterDocumentMeta(cluster);
     script.textContent = JSON.stringify({
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       name: cluster.name,
       description:
+        seoMeta.description ||
         cluster.share_description ||
         cluster.short_description ||
         `Restaurants and menus around ${cluster.area_name || cluster.name}.`,
@@ -763,17 +774,6 @@ export default function ClusterPage() {
           ) : null}
         </div>
         <ClusterDescription cluster={cluster} />
-        <p
-          style={{
-            margin: 0,
-            fontSize: "1.05rem",
-            fontWeight: 600,
-            color: "#111827",
-            lineHeight: 1.4,
-          }}
-        >
-          {CLUSTER_ARRIVAL_TAGLINE}
-        </p>
         <ClusterViewToggle viewMode={resolvedViewMode} onChange={setViewMode} disabled={false} />
       </header>
 

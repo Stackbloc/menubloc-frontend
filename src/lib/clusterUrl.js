@@ -64,6 +64,10 @@ export const CLUSTER_GROWING_NOTICE = Object.freeze({
     "Menuply is still adding restaurants and menus here. If something is missing, you can suggest it for review.",
 });
 
+/**
+ * @deprecated Removed from ClusterPage. Unique intros live in clusterSeoContent.js.
+ * Kept only so legacy imports/tests can detect the old generic string.
+ */
 export const CLUSTER_ARRIVAL_TAGLINE = "You're here. Now let's find something great to eat.";
 
 /** Consumer-facing prompts on Cluster surfaces. */
