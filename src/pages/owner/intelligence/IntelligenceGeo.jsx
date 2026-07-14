@@ -81,6 +81,50 @@ export default function IntelligenceGeo() {
         </IntelligenceSection>
       </div>
 
+      <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        <IntelligenceSection
+          title="Trending Brands by City"
+          subtitle="Brand-name searches rising vs the prior equal-length period, by market."
+        >
+          <SimpleTable
+            rows={data.trending_brands_by_city?.rising || []}
+            columns={[
+              ["City", "location_label"],
+              ["Brand", "brand"],
+              ["Current", "current_count"],
+              ["Prior", "prior_count"],
+              ["Change", "change_pct", (row) => `${row.change_pct}%`],
+            ]}
+            emptyLabel="No rising brand searches by city in this range."
+          />
+        </IntelligenceSection>
+        <IntelligenceSection title="Declining Brands by City" subtitle="Brand searches losing volume by market.">
+          <SimpleTable
+            rows={data.trending_brands_by_city?.declining || []}
+            columns={[
+              ["City", "location_label"],
+              ["Brand", "brand"],
+              ["Current", "current_count"],
+              ["Prior", "prior_count"],
+              ["Change", "change_pct", (row) => `${row.change_pct}%`],
+            ]}
+            emptyLabel="No declining brand searches by city in this range."
+          />
+        </IntelligenceSection>
+      </div>
+
+      <IntelligenceSection title="Top Brands by City (this period)" subtitle="Brand-name search volume by market.">
+        <SimpleTable
+          rows={data.trending_brands_by_city?.top_current || []}
+          columns={[
+            ["City", "location_label"],
+            ["Brand", "brand"],
+            ["Searches", "count"],
+          ]}
+          emptyLabel="No brand-name searches with city in this range."
+        />
+      </IntelligenceSection>
+
       <IntelligenceSection title="Device Type by Geography" subtitle="Device mix per city from page visits.">
         <SimpleTable
           rows={data.device_type_by_geography}

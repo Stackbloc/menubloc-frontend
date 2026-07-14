@@ -80,6 +80,47 @@ export default function IntelligenceSearchDemand() {
         </IntelligenceSection>
       </div>
 
+      <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        <IntelligenceSection
+          title="Trending Brands"
+          subtitle="Franchise/brand-name searches rising vs the prior equal-length period."
+        >
+          <SimpleTable
+            rows={data.trending_brands?.rising || data.search_trends?.trending_brands || []}
+            columns={[
+              ["Brand", "brand"],
+              ["Current", "current_count"],
+              ["Prior", "prior_count"],
+              ["Change", "change_pct", (row) => `${row.change_pct}%`],
+            ]}
+            emptyLabel="No rising brand searches in this range."
+          />
+        </IntelligenceSection>
+        <IntelligenceSection title="Declining Brands" subtitle="Brand searches losing volume vs prior period.">
+          <SimpleTable
+            rows={data.trending_brands?.declining || data.search_trends?.declining_brands || []}
+            columns={[
+              ["Brand", "brand"],
+              ["Current", "current_count"],
+              ["Prior", "prior_count"],
+              ["Change", "change_pct", (row) => `${row.change_pct}%`],
+            ]}
+            emptyLabel="No declining brand searches in this range."
+          />
+        </IntelligenceSection>
+      </div>
+
+      <IntelligenceSection title="Top Brands (this period)" subtitle="Brand-name search volume in the selected range.">
+        <SimpleTable
+          rows={data.trending_brands?.top_current || data.search_trends?.top_brands || []}
+          columns={[
+            ["Brand", "brand"],
+            ["Searches", "count"],
+          ]}
+          emptyLabel="No brand-name searches in this range."
+        />
+      </IntelligenceSection>
+
       <IntelligenceSection title="Search Intent" subtitle="How people use Menuply search (conservative classification).">
         <SimpleTable
           rows={data.search_intent || []}
