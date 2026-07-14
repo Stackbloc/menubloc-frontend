@@ -2,6 +2,7 @@ import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle, EmptyState } from "../OwnerLayout.jsx";
 import { PlatformIntelligenceProvider, usePlatformIntelligenceRange } from "./PlatformIntelligenceContext.jsx";
+import { getOwnerIntelligenceSiteActivityCity } from "../../../lib/ownerApi.js";
 
 export const INTELLIGENCE_TABS = [
   { to: "/owner/intelligence", label: "Overview", end: true },
@@ -198,6 +199,238 @@ export function SimpleTable({
         </tbody>
       </table>
     </div>
+  );
+}
+
+export function CityLinkButton({ label, selected, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        background: "none",
+        border: "none",
+        padding: 0,
+        margin: 0,
+        cursor: "pointer",
+        color: OWNER_COLORS.accent,
+        fontWeight: selected ? 800 : 700,
+        fontSize: 14,
+        textAlign: "left",
+        textDecoration: selected ? "underline" : "none",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+/**
+ * On-page city acquisition drill-down for Site Activity / Geo Visitors by City.
+ */
+export function CityVisitorInsightPanel({ locationLabel, range, onClose }) {
+  const [data, setData] = React.useState(null);
+  const [error, setError] = React.useState("");
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!locationLabel) return undefined;
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    setData(null);
+    getOwnerIntelligenceSiteActivityCity({
+      start_date: range.start_date,
+      end_date: range.end_date,
+      timezone: range.timezone,
+      location_label: locationLabel,
+    })
+      .then((payload) => {
+        if (!cancelled) setData(payload);
+      })
+      .catch(() => {
+        if (!cancelled) setError("City insight is temporarily unavailable.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locationLabel, range.start_date, range.end_date, range.timezone]);
+
+  return (
+    <PageCard
+      style={{
+        padding: 22,
+        minWidth: 0,
+        borderColor: OWNER_COLORS.accent,
+        background: "#fffaf6",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
+        <div>
+          <SectionTitle
+            title={`Visitors in ${locationLabel}`}
+            subtitle="How these market-attributed visitor sessions arrived and what they searched or viewed."
+          />
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            flexShrink: 0,
+            padding: "8px 12px",
+            borderRadius: 10,
+            border: `1px solid ${OWNER_COLORS.line}`,
+            background: "#fff",
+            color: OWNER_COLORS.ink,
+            fontWeight: 700,
+            cursor: "pointer",
+            fontSize: 13,
+          }}
+        >
+          Close
+        </button>
+      </div>
+
+      {loading ? <LoadingState label={`Loading insight for ${locationLabel}…`} /> : null}
+      {error ? <ErrorBanner message={error} /> : null}
+
+      {!loading && !error && data ? (
+        <div style={{ display: "grid", gap: 16 }}>
+          <div style={{ fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.5 }}>
+            {data.attribution_note ||
+              "City is market attribution (page market or restaurant city), not IP geolocation."}
+          </div>
+
+          {!data.available ? (
+            <EmptyState>No visitor sessions attributed to this city in the selected range.</EmptyState>
+          ) : (
+            <>
+              <div
+                className="owner-responsive-grid-2"
+                style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(140px, 1fr))", gap: 12 }}
+              >
+                <MetricCard label="Visitor sessions" value={data.summary?.visitors ?? 0} />
+                <MetricCard label="Page views" value={data.summary?.page_views ?? 0} />
+              </div>
+
+              <div
+                className="owner-responsive-grid-2"
+                style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 14, minWidth: 0 }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, color: OWNER_COLORS.ink }}>
+                    How they arrived — referrals
+                  </div>
+                  <SimpleTable
+                    rows={data.referrers || []}
+                    columns={[
+                      ["Source", "source"],
+                      ["Entry sessions", "visits"],
+                    ]}
+                    wrapKeys={["source"]}
+                    emptyLabel="No referral data for these sessions."
+                    maxHeight={280}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, color: OWNER_COLORS.ink }}>
+                    How they arrived — entry paths
+                  </div>
+                  <SimpleTable
+                    rows={data.entry_paths || []}
+                    columns={[
+                      ["Path", "path"],
+                      ["Sessions", "sessions"],
+                    ]}
+                    wrapKeys={["path"]}
+                    emptyLabel="No entry paths for these sessions."
+                    maxHeight={280}
+                  />
+                </div>
+              </div>
+
+              <div
+                className="owner-responsive-grid-2"
+                style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 14, minWidth: 0 }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, color: OWNER_COLORS.ink }}>
+                    Restaurant / brand searches
+                  </div>
+                  <SimpleTable
+                    rows={data.brand_searches || []}
+                    columns={[
+                      ["Query", "query"],
+                      ["Count", "count"],
+                    ]}
+                    wrapKeys={["query"]}
+                    emptyLabel="No restaurant/brand searches linked to these sessions."
+                    maxHeight={280}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, color: OWNER_COLORS.ink }}>
+                    Other searches (same sessions)
+                  </div>
+                  <SimpleTable
+                    rows={data.other_searches || []}
+                    columns={[
+                      ["Query", "query"],
+                      ["Intent", "intent"],
+                      ["Count", "count"],
+                    ]}
+                    wrapKeys={["query"]}
+                    emptyLabel="No other searches linked to these sessions."
+                    maxHeight={280}
+                  />
+                </div>
+              </div>
+
+              <div
+                className="owner-responsive-grid-2"
+                style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 14, minWidth: 0 }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, color: OWNER_COLORS.ink }}>
+                    Restaurants viewed
+                  </div>
+                  <SimpleTable
+                    rows={data.restaurants_viewed || []}
+                    columns={[
+                      ["Restaurant", "restaurant_name"],
+                      ["Views", "views"],
+                      ["Sessions", "sessions"],
+                    ]}
+                    wrapKeys={["restaurant_name"]}
+                    emptyLabel="No restaurant page views in these sessions."
+                    maxHeight={280}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, color: OWNER_COLORS.ink }}>
+                    Menu paths viewed
+                  </div>
+                  <SimpleTable
+                    rows={data.menu_paths || []}
+                    columns={[
+                      ["Path", "path"],
+                      ["Views", "visits"],
+                      ["Sessions", "sessions"],
+                    ]}
+                    wrapKeys={["path"]}
+                    emptyLabel="No menu paths in these sessions."
+                    maxHeight={280}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
+    </PageCard>
   );
 }
 

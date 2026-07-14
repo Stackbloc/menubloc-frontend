@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { EmptyState } from "../OwnerLayout.jsx";
 import { usePlatformIntelligenceRange } from "./PlatformIntelligenceContext.jsx";
 import {
@@ -8,6 +8,8 @@ import {
   MetricCard,
   SimpleTable,
   AnalyticsScopeNote,
+  CityLinkButton,
+  CityVisitorInsightPanel,
   formatMetricValue,
   useIntelligenceData,
 } from "./intelligenceShared.jsx";
@@ -23,6 +25,11 @@ function formatAvgSession(value) {
 export default function IntelligenceSiteActivity() {
   const { range } = usePlatformIntelligenceRange();
   const { data, error, loading } = useIntelligenceData(getOwnerIntelligenceSiteActivity, range);
+  const [selectedCity, setSelectedCity] = useState(null);
+
+  useEffect(() => {
+    setSelectedCity(null);
+  }, [range.start_date, range.end_date, range.timezone]);
 
   if (loading) return <LoadingState label="Loading site activity…" />;
   if (error) return <ErrorBanner message={error} />;
@@ -53,16 +60,41 @@ export default function IntelligenceSiteActivity() {
         />
       </IntelligenceSection>
 
-      <IntelligenceSection title="Visitors by City" subtitle="Distinct sessions and page views by market (city/state).">
+      <IntelligenceSection
+        title="Visitors by City"
+        subtitle="Distinct sessions and page views by market (city/state). Click a city to see how those visitors arrived."
+      >
         <SimpleTable
           rows={data.visitors_by_city}
           columns={[
-            ["City", "location_label"],
+            [
+              "City",
+              "location_label",
+              (row) => (
+                <CityLinkButton
+                  label={row.location_label}
+                  selected={selectedCity === row.location_label}
+                  onClick={() =>
+                    setSelectedCity((prev) =>
+                      prev === row.location_label ? null : row.location_label
+                    )
+                  }
+                />
+              ),
+            ],
             ["Visitors", "visitors"],
             ["Page views", "page_views"],
           ]}
         />
       </IntelligenceSection>
+
+      {selectedCity ? (
+        <CityVisitorInsightPanel
+          locationLabel={selectedCity}
+          range={range}
+          onClose={() => setSelectedCity(null)}
+        />
+      ) : null}
 
       <div
         className="owner-responsive-grid-2"

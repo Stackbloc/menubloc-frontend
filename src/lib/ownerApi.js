@@ -76,6 +76,15 @@ export const getOwnerIntelligenceSearchDemand = (params = {}) =>
   get(`/api/owner/intelligence/search-demand${intelligenceQueryString(params)}`);
 export const getOwnerIntelligenceSiteActivity = (params = {}) =>
   get(`/api/owner/intelligence/site-activity${intelligenceQueryString(params)}`);
+export const getOwnerIntelligenceSiteActivityCity = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.start_date) qs.set("start_date", params.start_date);
+  if (params.end_date) qs.set("end_date", params.end_date);
+  if (params.timezone) qs.set("timezone", params.timezone);
+  if (params.location_label) qs.set("location_label", params.location_label);
+  const serialized = qs.toString();
+  return get(`/api/owner/intelligence/site-activity/city${serialized ? `?${serialized}` : ""}`);
+};
 export const getOwnerIntelligenceGeo = (params = {}) =>
   get(`/api/owner/intelligence/geo${intelligenceQueryString(params)}`);
 export const getOwnerIntelligenceMenu = (params = {}) =>

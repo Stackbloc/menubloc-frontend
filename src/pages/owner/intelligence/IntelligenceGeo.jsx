@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { EmptyState } from "../OwnerLayout.jsx";
 import { usePlatformIntelligenceRange } from "./PlatformIntelligenceContext.jsx";
 import {
@@ -8,6 +8,8 @@ import {
   MetricCard,
   SimpleTable,
   AnalyticsScopeNote,
+  CityLinkButton,
+  CityVisitorInsightPanel,
   useIntelligenceData,
 } from "./intelligenceShared.jsx";
 import { getOwnerIntelligenceGeo } from "../../../lib/ownerApi.js";
@@ -15,6 +17,11 @@ import { getOwnerIntelligenceGeo } from "../../../lib/ownerApi.js";
 export default function IntelligenceGeo() {
   const { range } = usePlatformIntelligenceRange();
   const { data, error, loading } = useIntelligenceData(getOwnerIntelligenceGeo, range);
+  const [selectedCity, setSelectedCity] = useState(null);
+
+  useEffect(() => {
+    setSelectedCity(null);
+  }, [range.start_date, range.end_date, range.timezone]);
 
   if (loading) return <LoadingState label="Loading geo intelligence…" />;
   if (error) return <ErrorBanner message={error} />;
@@ -42,17 +49,42 @@ export default function IntelligenceGeo() {
             ]}
           />
         </IntelligenceSection>
-        <IntelligenceSection title="Visitors by City" subtitle="Distinct visitor sessions and page views by market.">
+        <IntelligenceSection
+          title="Visitors by City"
+          subtitle="Distinct visitor sessions and page views by market. Click a city to see how those visitors arrived."
+        >
           <SimpleTable
             rows={data.visits_by_city}
             columns={[
-              ["City", "location_label"],
+              [
+                "City",
+                "location_label",
+                (row) => (
+                  <CityLinkButton
+                    label={row.location_label}
+                    selected={selectedCity === row.location_label}
+                    onClick={() =>
+                      setSelectedCity((prev) =>
+                        prev === row.location_label ? null : row.location_label
+                      )
+                    }
+                  />
+                ),
+              ],
               ["Visitors", "visitors"],
               ["Page views", "visits"],
             ]}
           />
         </IntelligenceSection>
       </div>
+
+      {selectedCity ? (
+        <CityVisitorInsightPanel
+          locationLabel={selectedCity}
+          range={range}
+          onClose={() => setSelectedCity(null)}
+        />
+      ) : null}
 
       <IntelligenceSection title="Zero Result Rate by City" subtitle="Cities with at least 5 searches in range.">
         <SimpleTable
