@@ -91,7 +91,7 @@ export default function IntelligenceSiteActivity() {
         </IntelligenceSection>
       </div>
 
-      <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 18, minWidth: 0 }}>
+      <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 18, minWidth: 0, alignItems: "start" }}>
         <IntelligenceSection title="Top Entry Pages" subtitle="First path in each visitor session.">
           <SimpleTable
             rows={data.top_entry_pages}
@@ -100,6 +100,7 @@ export default function IntelligenceSiteActivity() {
               ["Sessions", "sessions"],
             ]}
             wrapKeys={["path"]}
+            maxHeight={360}
           />
         </IntelligenceSection>
         <IntelligenceSection title="Top Exit Pages" subtitle="Last path in each visitor session.">
@@ -110,6 +111,7 @@ export default function IntelligenceSiteActivity() {
               ["Sessions", "sessions"],
             ]}
             wrapKeys={["path"]}
+            maxHeight={360}
           />
         </IntelligenceSection>
       </div>

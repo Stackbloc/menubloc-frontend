@@ -132,12 +132,26 @@ export function AnalyticsScopeNote({ note }) {
   );
 }
 
-export function SimpleTable({ rows, columns, emptyLabel = "No rows for this range.", wrapKeys = [] }) {
+export function SimpleTable({
+  rows,
+  columns,
+  emptyLabel = "No rows for this range.",
+  wrapKeys = [],
+  maxHeight = null,
+}) {
   if (!rows?.length) return <EmptyState>{emptyLabel}</EmptyState>;
   const wrapSet = new Set(wrapKeys);
   const hasWrap = wrapSet.size > 0;
   return (
-    <div style={{ overflowX: "auto", maxWidth: "100%", minWidth: 0 }}>
+    <div
+      style={{
+        overflowX: "auto",
+        overflowY: maxHeight ? "auto" : "visible",
+        maxWidth: "100%",
+        minWidth: 0,
+        maxHeight: maxHeight || undefined,
+      }}
+    >
       <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: hasWrap ? "fixed" : "auto" }}>
         <thead>
           <tr>
@@ -148,7 +162,7 @@ export function SimpleTable({ rows, columns, emptyLabel = "No rows for this rang
                   wrapSet.has(key)
                     ? thStyle
                     : hasWrap
-                      ? { ...thStyle, width: "1%", whiteSpace: "nowrap" }
+                      ? { ...thMetricStyle }
                       : thStyle
                 }
               >
@@ -170,7 +184,7 @@ export function SimpleTable({ rows, columns, emptyLabel = "No rows for this rang
                       wraps
                         ? { ...tdStyle, ...tdWrapStyle }
                         : hasWrap
-                          ? { ...tdStyle, width: "1%", whiteSpace: "nowrap" }
+                          ? { ...tdStyle, ...tdMetricStyle }
                           : tdStyle
                     }
                     title={wraps && typeof cell === "string" ? cell : undefined}
@@ -209,7 +223,17 @@ export function LoadingState({ label = "Loading intelligence…" }) {
 
 export function IntelligenceSection({ id, title, subtitle, children }) {
   return (
-    <PageCard id={id} style={{ padding: 22, minWidth: 0, overflow: "hidden" }}>
+    <PageCard
+      id={id}
+      style={{
+        padding: 22,
+        minWidth: 0,
+        // overflowX only — full overflow:hidden zeroes CSS grid auto min-height and
+        // lets tall tables paint over sections below (entry/exit pages regression).
+        overflowX: "hidden",
+        overflowY: "visible",
+      }}
+    >
       <SectionTitle title={title} subtitle={subtitle} />
       {children}
     </PageCard>
@@ -242,8 +266,25 @@ export function useIntelligenceData(fetcher, range) {
 }
 
 const inputStyle = { padding: "10px 12px", borderRadius: 12, border: "1px solid #d7c5b8", background: "#fff" };
-const thStyle = { textAlign: "left", padding: "0 0 12px", fontSize: 12, color: "#667085", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const thStyle = { textAlign: "left", padding: "0 0 12px", fontSize: 12, color: "#667085", whiteSpace: "nowrap" };
+const thMetricStyle = {
+  textAlign: "right",
+  padding: "0 0 12px 12px",
+  fontSize: 12,
+  color: "#667085",
+  whiteSpace: "nowrap",
+  width: 88,
+  minWidth: 72,
+};
 const tdStyle = { padding: "12px 8px 12px 0", borderTop: "1px solid #ead9ce", fontSize: 14, verticalAlign: "top" };
+const tdMetricStyle = {
+  textAlign: "right",
+  padding: "12px 0 12px 12px",
+  whiteSpace: "nowrap",
+  width: 88,
+  minWidth: 72,
+  fontVariantNumeric: "tabular-nums",
+};
 const tdWrapStyle = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
