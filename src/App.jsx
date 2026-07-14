@@ -27,7 +27,7 @@ import { SentryRoutes } from "./instrument.js";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { useCanonical } from "./hooks/useCanonical.js";
 import { captureEvent, initPostHog } from "./services/posthog.js";
-import { getAnalyticsSessionId } from "./lib/analyticsPageVisitSend.js";
+import { sendPageVisit } from "./lib/analyticsPageVisitSend.js";
 import { isCityStateSlug } from "./lib/cityStateSlug.js";
 import { CartProvider } from "./context/CartContext.jsx";
 import { OrderCartProvider } from "./context/OrderCartContext.jsx";
@@ -497,40 +497,19 @@ function AnalyticsTracker() {
     const RESTAURANT_PREFIXES = ["/restaurants/", "/public/restaurants/"];
     if (RESTAURANT_PREFIXES.some((p) => location.pathname.startsWith(p))) return;
 
-    const api = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-    const sessionId = getAnalyticsSessionId();
-
-    fetch(`${api}/api/analytics/page-visit`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      keepalive: true,
-      body: JSON.stringify({
-        path: pagePath,
-        session_id: sessionId || null,
-        user_id: owner?.id || operator?.id || null,
-        referrer: typeof document !== "undefined" ? document.referrer || null : null,
-        device_type: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
-        metadata: {
-          title: pageTitle,
-          ga_enabled: gaReady,
-          ga_measurement_id: gaReady ? GA_ID : null,
-        },
-      }),
-    })
-      .then((response) => {
-        setAnalyticsDebugState({
-          backendVisitStatus: response.ok ? "ok" : "error",
-          backendVisitHttpStatus: response.status,
-          lastBackendVisitAt: new Date().toISOString(),
-        });
-      })
-      .catch(() => {
-        setAnalyticsDebugState({
-          backendVisitStatus: "network_error",
-          lastBackendVisitAt: new Date().toISOString(),
-        });
-      });
+    sendPageVisit({
+      path: pagePath,
+      user_id: owner?.id || operator?.id || null,
+      metadata: {
+        title: pageTitle,
+        ga_enabled: gaReady,
+        ga_measurement_id: gaReady ? GA_ID : null,
+      },
+    });
+    setAnalyticsDebugState({
+      backendVisitStatus: "sent",
+      lastBackendVisitAt: new Date().toISOString(),
+    });
   }, [location, operator?.id, owner?.id]);
 
   return null;
