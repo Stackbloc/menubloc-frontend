@@ -27,7 +27,7 @@ import { SentryRoutes } from "./instrument.js";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { useCanonical } from "./hooks/useCanonical.js";
 import { captureEvent, initPostHog } from "./services/posthog.js";
-import { sendPageVisit } from "./lib/analyticsPageVisitSend.js";
+import { sendPageVisit, setAnalyticsStaffSession } from "./lib/analyticsPageVisitSend.js";
 import { isCityStateSlug } from "./lib/cityStateSlug.js";
 import { CartProvider } from "./context/CartContext.jsx";
 import { OrderCartProvider } from "./context/OrderCartContext.jsx";
@@ -464,12 +464,18 @@ function AnalyticsTracker() {
   }, []);
 
   useEffect(() => {
+    // Sync staff flag for search + page-visit helpers (owner/operator sessions).
+    setAnalyticsStaffSession(Boolean(owner?.id || operator?.id));
+  }, [owner?.id, operator?.id]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
     const gaReady = ensureGoogleAnalyticsLoaded();
     const pagePath = `${location.pathname}${location.search || ""}${location.hash || ""}`;
     const pageTitle = typeof document !== "undefined" ? document.title || "Menuply" : "Menuply";
     const pageLocation = window.location.href;
+    const isStaff = Boolean(owner?.id || operator?.id);
 
     captureEvent("pageview", {
       path: location.pathname,
@@ -497,9 +503,18 @@ function AnalyticsTracker() {
     const RESTAURANT_PREFIXES = ["/restaurants/", "/public/restaurants/"];
     if (RESTAURANT_PREFIXES.some((p) => location.pathname.startsWith(p))) return;
 
+    // Owner/operator traffic is excluded from consumer Platform Intelligence.
+    if (isStaff) {
+      setAnalyticsDebugState({
+        backendVisitStatus: "skipped_staff",
+        lastBackendVisitAt: new Date().toISOString(),
+      });
+      return;
+    }
+
     sendPageVisit({
       path: pagePath,
-      user_id: owner?.id || operator?.id || null,
+      user_id: null,
       metadata: {
         title: pageTitle,
         ga_enabled: gaReady,

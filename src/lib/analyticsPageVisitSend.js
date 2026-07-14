@@ -1,4 +1,9 @@
-import { getAnalyticsSessionId } from "./analyticsSessionId.js";
+import {
+  getAnalyticsSessionId,
+  isAnalyticsStaffSession,
+  appendSearchAnalyticsParams,
+  setAnalyticsStaffSession,
+} from "./analyticsSessionId.js";
 import {
   classifyDeviceType,
   getAnalyticsClientHints,
@@ -9,7 +14,12 @@ const API = (
   (import.meta.env.DEV ? "http://localhost:3001" : "https://menubloc-backend-production.up.railway.app")
 ).replace(/\/$/, "");
 
-export { getAnalyticsSessionId, appendSearchAnalyticsParams } from "./analyticsSessionId.js";
+export {
+  getAnalyticsSessionId,
+  appendSearchAnalyticsParams,
+  setAnalyticsStaffSession,
+  isAnalyticsStaffSession,
+} from "./analyticsSessionId.js";
 export { getAnalyticsClientHints, classifyBrowser, classifyOs, classifyDeviceType } from "./analyticsClientHints.js";
 
 export function sendPageVisit({
@@ -19,9 +29,19 @@ export function sendPageVisit({
   market = null,
   user_id = null,
   metadata = null,
+  is_staff = null,
 } = {}) {
   if (!path) return;
   if (typeof window === "undefined") return;
+
+  const staff =
+    is_staff === true ||
+    is_staff === 1 ||
+    is_staff === "1" ||
+    isAnalyticsStaffSession();
+
+  // Do not pollute consumer analytics with owner/operator browsing.
+  if (staff) return;
 
   const session_id = getAnalyticsSessionId();
   const referrer = document.referrer || null;
@@ -55,6 +75,7 @@ export function sendPageVisit({
       language: hints.language,
       browser_language: hints.browser_language,
       metadata: mergedMetadata,
+      is_staff: false,
     }),
   }).catch(() => {});
 }
