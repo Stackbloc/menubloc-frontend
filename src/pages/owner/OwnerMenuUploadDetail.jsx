@@ -11,8 +11,8 @@ import {
   getUploadItems,
   updateUploadItem,
   publishUpload,
-  OWNER_API_BASE,
 } from "../../lib/ownerApi.js";
+import { buildOwnerUploadImageUrl } from "../../lib/ownerMenuUploadMedia.js";
 
 // ─── Retry / Recovery Panel ───────────────────────────────────────────────────
 function RetryPanel({ upload, uploadId, onComplete }) {
@@ -214,9 +214,7 @@ function resolveDisplayStatus(upload) {
 }
 
 function buildImageUrl(relativePath) {
-  if (!relativePath) return null;
-  if (/^https?:\/\//.test(relativePath)) return relativePath;
-  return `${OWNER_API_BASE}${relativePath}`;
+  return buildOwnerUploadImageUrl(relativePath);
 }
 
 const inputS = {
@@ -619,18 +617,24 @@ export default function OwnerMenuUploadDetail() {
       {actionErr && <ErrorBanner message={actionErr} />}
 
       {/* Header row */}
-      <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 22 }}>
+      <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
         <span style={{ display: "inline-block", padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, ...statusBadge }}>
           {displayStatus}
         </span>
         <span style={{ color: OWNER_COLORS.muted, fontSize: 13 }}>
           ID: <code style={{ fontSize: 12 }}>{upload.id}</code>
         </span>
-        {displayStatus === "needs_review" && upload.human_review_items > 0 && (
+        <span style={{ color: OWNER_COLORS.muted, fontSize: 12, fontWeight: 600 }}>
+          {(upload.upload_type || "photo").toString()}
+        </span>
+      </div>
+
+      {/* Attach / review / create loop CTAs — locked restaurant IDs only (no mid-upload reassignment) */}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 22 }}>
+        {displayStatus === "needs_review" && upload.human_review_items > 0 ? (
           <Link
             to={`/owner/menu-manager/uploads/${uploadId}/review-items`}
             style={{
-              marginLeft: "auto",
               padding: "9px 18px",
               borderRadius: 10,
               background: "#92400e",
@@ -640,10 +644,78 @@ export default function OwnerMenuUploadDetail() {
               textDecoration: "none",
             }}
           >
-            Review {upload.human_review_items} Items →
+            Review {upload.human_review_items} OCR holds →
+          </Link>
+        ) : (
+          <Link
+            to={`/owner/menu-manager/uploads/${uploadId}/review-items`}
+            style={{
+              padding: "9px 18px",
+              borderRadius: 10,
+              border: `1px solid ${OWNER_COLORS.line}`,
+              background: "#fff",
+              color: OWNER_COLORS.ink,
+              fontWeight: 700,
+              fontSize: 13,
+              textDecoration: "none",
+            }}
+          >
+            Open Review Queue
           </Link>
         )}
+        {upload.restaurant_id ? (
+          <Link
+            to={`/owner/menu-manager?tab=workspace&restaurant=${upload.restaurant_id}`}
+            style={{
+              padding: "9px 18px",
+              borderRadius: 10,
+              background: OWNER_COLORS.accent,
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 13,
+              textDecoration: "none",
+            }}
+          >
+            Open restaurant in Create / Edit →
+          </Link>
+        ) : (
+          <Link
+            to={`/owner/menu-manager?tab=workspace&create=1&name=${encodeURIComponent(upload.restaurant_name || "")}&city=${encodeURIComponent(upload.city || "")}&state=${encodeURIComponent(upload.state || "")}`}
+            style={{
+              padding: "9px 18px",
+              borderRadius: 10,
+              background: OWNER_COLORS.accent,
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 13,
+              textDecoration: "none",
+            }}
+          >
+            Create restaurant profile →
+          </Link>
+        )}
+        <Link
+          to="/owner/menu-manager?tab=activity&status=needs_review"
+          style={{
+            padding: "9px 18px",
+            borderRadius: 10,
+            border: `1px solid ${OWNER_COLORS.line}`,
+            background: "#fff",
+            color: OWNER_COLORS.muted,
+            fontWeight: 700,
+            fontSize: 13,
+            textDecoration: "none",
+          }}
+        >
+          ← Upload Activity
+        </Link>
       </div>
+
+      {!upload.restaurant_id ? (
+        <div style={{ marginBottom: 18, padding: "12px 14px", borderRadius: 12, background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", fontSize: 13, fontWeight: 600 }}>
+          This capture has no locked public restaurant id. Create a profile first, then start a new upload/attach for that restaurant — do not reassign this finished session mid-stream.
+        </div>
+      ) : null}
 
       {/* Stalled warning */}
       {displayStatus === "stalled" && (
@@ -1105,8 +1177,8 @@ function StatusActions({ upload, displayStatus, uploadId, doAction, onRetryCompl
 function BackLink() {
   return (
     <div style={{ marginBottom: 20 }}>
-      <Link to="/owner/menu-manager" style={{ color: OWNER_COLORS.muted, fontSize: 13, textDecoration: "none", fontWeight: 600 }}>
-        ← Menu Manager
+      <Link to="/owner/menu-manager?tab=activity&status=needs_review" style={{ color: OWNER_COLORS.muted, fontSize: 13, textDecoration: "none", fontWeight: 600 }}>
+        ← Upload Activity
       </Link>
     </div>
   );

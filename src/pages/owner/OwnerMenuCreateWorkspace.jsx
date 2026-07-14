@@ -3,14 +3,17 @@ import { Link, useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { MenuEditor, StatusChip, inputStyle } from "./ownerMenuEditorComponents.jsx";
 import OwnerMenuRestaurantFinder, { saveRecentRestaurant } from "./OwnerMenuRestaurantFinder.jsx";
+import { buildOwnerUploadImageUrl } from "../../lib/ownerMenuUploadMedia.js";
 import {
   approveReviewItem,
+  bulkReviewItems,
   createMenuConsoleMenu,
   createMenuConsoleRestaurant,
   getMenuConsoleMenu,
   getMenuConsoleProfileSchema,
   getMenuConsoleRestaurant,
   getMenuConsoleRestaurantMenus,
+  getOwnerMenuUpload,
   getOwnerMenuUploads,
   getUploadReviewItems,
   publishUpload,
@@ -189,7 +192,43 @@ function profileFromRestaurant(r = {}) {
   };
 }
 
-export default function OwnerMenuCreateWorkspace() {
+function WorkspaceSourcePhotoStrip({ sessions }) {
+  const pages = (sessions || []).flatMap((session) =>
+    (session.pages || [])
+      .filter((p) => p.image_url)
+      .map((p) => ({ ...p, uploadId: session.id }))
+  );
+  if (!pages.length) return null;
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+        Source photos
+      </div>
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+        {pages.slice(0, 12).map((page) => {
+          const url = buildOwnerUploadImageUrl(page.image_url);
+          return (
+            <Link
+              key={`${page.uploadId}-${page.page_number}`}
+              to={`/owner/menu-manager/uploads/${page.uploadId}`}
+              title={`Open upload ${page.uploadId} photo ${page.page_number}`}
+              style={{ flex: "0 0 auto", display: "block", borderRadius: 8, overflow: "hidden", border: `1px solid ${OWNER_COLORS.line}`, width: 72, height: 72, background: "#111" }}
+            >
+              {url ? (
+                <img src={url} alt={`Page ${page.page_number}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : null}
+            </Link>
+          );
+        })}
+      </div>
+      <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
+        Tap a photo to open upload detail. Use Review Queue for full-size evidence while editing holds.
+      </div>
+    </div>
+  );
+}
+
+export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [schema, setSchema] = useState(null);
   const [schemaError, setSchemaError] = useState("");
@@ -220,21 +259,49 @@ export default function OwnerMenuCreateWorkspace() {
   const fileRef = useRef(null);
 
   const [reviewItems, setReviewItems] = useState([]);
+  const [reviewSessions, setReviewSessions] = useState([]);
+  const [bulkActing, setBulkActing] = useState(false);
   const [actionMsg, setActionMsg] = useState("");
   const [publishing, setPublishing] = useState(false);
 
   const loadGenerationRef = useRef(0);
   const suppressUrlLoadRef = useRef(false);
+  const prefillAppliedRef = useRef(false);
 
   const step = !restaurant ? "profile" : reviewItems.length > 0 || menuDetail?.item_count > 0 ? "review" : "attach";
   const rid = restaurant?.id;
   const mid = menu?.id;
+
+  function patchWorkspaceParams(mutator) {
+    setSearchParams((params) => {
+      const next = new URLSearchParams(params);
+      next.set("tab", "workspace");
+      mutator(next);
+      return next;
+    }, { replace: true });
+  }
 
   useEffect(() => {
     getMenuConsoleProfileSchema()
       .then((data) => setSchema(data))
       .catch(() => setSchemaError("Could not load profile options."));
   }, []);
+
+  useEffect(() => {
+    if (prefillAppliedRef.current || restaurant) return;
+    const wantsCreate = searchParams.get("create") === "1";
+    const name = String(searchParams.get("name") || "").trim();
+    const city = String(searchParams.get("city") || "").trim();
+    const state = String(searchParams.get("state") || "").trim();
+    if (!wantsCreate && !name && !city && !state) return;
+    prefillAppliedRef.current = true;
+    setProfile((prev) => ({
+      ...prev,
+      restaurant_name: name || prev.restaurant_name,
+      city: city || prev.city,
+      state: state || prev.state,
+    }));
+  }, [searchParams, restaurant]);
 
   async function loadExistingRestaurant(restaurantId, seed = null) {
     const ridNum = Number(restaurantId);
@@ -282,11 +349,13 @@ export default function OwnerMenuCreateWorkspace() {
       if (activeMenu?.display_name) setMenuName(activeMenu.display_name);
       if (activeMenu?.menu_type) setMenuType(activeMenu.menu_type);
       saveRecentRestaurant(normalizedRestaurant);
-      setSearchParams((params) => {
-        const next = new URLSearchParams(params);
+      patchWorkspaceParams((next) => {
         next.set("restaurant", String(ridNum));
-        return next;
-      }, { replace: true });
+        next.delete("create");
+        next.delete("name");
+        next.delete("city");
+        next.delete("state");
+      });
     } catch (err) {
       if (generation !== loadGenerationRef.current) return;
       setLoadRestaurantErr(err?.payload?.error || err?.message || "Could not load restaurant.");
@@ -316,6 +385,7 @@ export default function OwnerMenuCreateWorkspace() {
     setMenu(null);
     setMenuDetail(null);
     setReviewItems([]);
+    setReviewSessions([]);
     setProfile(EMPTY_PROFILE);
     setMenuName("Main Menu");
     setMenuType("main");
@@ -328,6 +398,7 @@ export default function OwnerMenuCreateWorkspace() {
     setLoadRestaurantErr("");
     setSearchParams((params) => {
       const next = new URLSearchParams(params);
+      next.set("tab", "workspace");
       next.delete("restaurant");
       return next;
     }, { replace: true });
@@ -525,7 +596,12 @@ export default function OwnerMenuCreateWorkspace() {
       if (data.menu?.menu_type) setMenuType(data.menu.menu_type);
       setSearchParams((params) => {
         const next = new URLSearchParams(params);
+        next.set("tab", "workspace");
         next.set("restaurant", String(data.restaurant.id));
+        next.delete("create");
+        next.delete("name");
+        next.delete("city");
+        next.delete("state");
         return next;
       }, { replace: true });
     } catch (ex) {
@@ -562,7 +638,52 @@ export default function OwnerMenuCreateWorkspace() {
         }
       })
     );
-    setReviewItems(groups.flat());
+    const flat = groups.flat();
+    setReviewItems(flat);
+    const sessions = await Promise.all(
+      pending.map(async (u) => {
+        try {
+          const detail = await getOwnerMenuUpload(u.id);
+          return {
+            id: u.id,
+            pages: detail.upload?.pages || [],
+            human_review_items: u.human_review_items,
+          };
+        } catch {
+          return { id: u.id, pages: [], human_review_items: u.human_review_items };
+        }
+      })
+    );
+    setReviewSessions(sessions);
+    if (!pendingUploadId && pending[0]?.id) setPendingUploadId(pending[0].id);
+  }
+
+  async function runBulkReview(action) {
+    if (!reviewItems.length) return;
+    setBulkActing(true);
+    setActionMsg("");
+    try {
+      const byUpload = new Map();
+      for (const item of reviewItems) {
+        const list = byUpload.get(item.uploadId) || [];
+        list.push(item.id);
+        byUpload.set(item.uploadId, list);
+      }
+      for (const [uploadId, itemIds] of byUpload.entries()) {
+        await bulkReviewItems(uploadId, { action, item_ids: itemIds });
+      }
+      await loadReviewItems();
+      await loadMenuState();
+      setActionMsg(
+        action === "approve"
+          ? "Accepted all pending review items."
+          : "Rejected all pending review items. Public menu items below remain editable."
+      );
+    } catch (err) {
+      setActionMsg(err?.payload?.error || err?.message || `Bulk ${action} failed.`);
+    } finally {
+      setBulkActing(false);
+    }
   }
 
   useEffect(() => {
@@ -640,13 +761,13 @@ export default function OwnerMenuCreateWorkspace() {
     }
   }
 
-  return (
-    <OwnerLayout
-      title={existingRestaurant ? "Menu Manager" : "Create Restaurant + Menu"}
-      subtitle={existingRestaurant
-        ? "Upload a new file to parse items, review and edit the menu below, then publish when ready."
-        : "Find or create a restaurant, upload a menu file, review parsed items, edit, then publish."}
-    >
+  const content = (
+    <>
+      {embedded ? (
+        <div style={{ marginBottom: 12, fontSize: 13, color: OWNER_COLORS.muted, fontWeight: 600 }}>
+          Create restaurant profiles, attach uploads, review held OCR items with source photos, then publish.
+        </div>
+      ) : null}
       <OwnerMenuRestaurantFinder
         key={restaurant?.id || "finder"}
         selectedRestaurant={restaurant}
@@ -987,7 +1108,27 @@ export default function OwnerMenuCreateWorkspace() {
 
       {restaurant && reviewItems.length > 0 && (
         <PageCard style={{ padding: 20, marginBottom: 16 }}>
-          <SectionTitle title="Items Needing Review" subtitle="Approve or reject parsed items, then click Save to Menu." />
+          <SectionTitle
+            title="Items Needing Review"
+            subtitle="Approve or reject held OCR items (with source photos). Accept All uses stored values; Reject All removes holds and leaves the public menu editable below."
+          />
+          <WorkspaceSourcePhotoStrip sessions={reviewSessions} />
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+            {(reviewSessions || []).map((session) => (
+              <Link
+                key={session.id}
+                to={`/owner/menu-manager/uploads/${session.id}/review-items`}
+                style={{ fontSize: 12, fontWeight: 700, color: "#92400e", textDecoration: "none" }}
+              >
+                Open Review Queue →
+              </Link>
+            ))}
+          </div>
+          {actionMsg ? (
+            <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 9, background: "#f8fafc", color: OWNER_COLORS.ink, fontSize: 13, fontWeight: 600 }}>
+              {actionMsg}
+            </div>
+          ) : null}
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
             {reviewItems.map((item) => (
               <ReviewItemRow
@@ -1005,8 +1146,24 @@ export default function OwnerMenuCreateWorkspace() {
               />
             ))}
           </div>
-          {pendingUploadId ? (
-            <div style={{ marginTop: 14 }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
+            <button
+              type="button"
+              disabled={bulkActing}
+              onClick={() => runBulkReview("approve")}
+              style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: "#15803d", color: "#fff", fontWeight: 700, fontSize: 13, cursor: bulkActing ? "not-allowed" : "pointer" }}
+            >
+              {bulkActing ? "Working…" : "Accept All"}
+            </button>
+            <button
+              type="button"
+              disabled={bulkActing}
+              onClick={() => runBulkReview("reject")}
+              style={{ padding: "9px 16px", borderRadius: 9, border: "1px solid #fca5a5", background: "#fff", color: "#991b1b", fontWeight: 700, fontSize: 13, cursor: bulkActing ? "not-allowed" : "pointer" }}
+            >
+              Reject All
+            </button>
+            {pendingUploadId ? (
               <button
                 type="button"
                 disabled={importingParsed || reviewItems.length > 0}
@@ -1015,11 +1172,11 @@ export default function OwnerMenuCreateWorkspace() {
               >
                 {importingParsed ? "Saving…" : "Save to Menu"}
               </button>
-              {reviewItems.length > 0 ? (
-                <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
-                  Finish reviewing all items above, then save to the menu editor.
-                </div>
-              ) : null}
+            ) : null}
+          </div>
+          {reviewItems.length > 0 ? (
+            <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
+              Finish reviewing all items above (or Accept/Reject All), then save to the menu editor.
             </div>
           ) : null}
         </PageCard>
@@ -1065,6 +1222,21 @@ export default function OwnerMenuCreateWorkspace() {
           </a>
         </div>
       )}
+    </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <OwnerLayout
+      title={existingRestaurant ? "Menu Manager" : "Create Restaurant + Menu"}
+      subtitle={
+        existingRestaurant
+          ? "Upload a new file to parse items, review and edit the menu below, then publish when ready."
+          : "Find or create a restaurant, upload a menu file, review parsed items, edit, then publish."
+      }
+    >
+      {content}
     </OwnerLayout>
   );
 }

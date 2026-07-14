@@ -348,7 +348,7 @@ function LocationActionRow({ row, onDetail }) {
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <ActionLink href={`/owner/menu-manager?restaurant=${row.restaurant_id}`} label="Open Menu Manager" primary />
+        <ActionLink href={`/owner/menu-manager?tab=workspace&restaurant=${row.restaurant_id}`} label="Open Menu Manager" primary />
         <button type="button" style={linkBtnStyle} onClick={() => onDetail(row.restaurant_id)}>Details</button>
       </div>
     </div>
@@ -360,7 +360,7 @@ function RowActions({ row, onDetail, onCrm }) {
   const menuUrl = publicUrl ? `${publicUrl}/menu` : null;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <ActionLink href={`/owner/menu-manager?restaurant=${row.restaurant_id}`} label="Open Menu Manager" primary />
+      <ActionLink href={`/owner/menu-manager?tab=workspace&restaurant=${row.restaurant_id}`} label="Open Menu Manager" primary />
       <button type="button" style={linkBtnStyle} onClick={() => onDetail(row.restaurant_id)}>View details</button>
       {publicUrl ? <ActionLink href={publicUrl} label="Public page" external /> : null}
       {menuUrl ? <ActionLink href={menuUrl} label="Public menu" external /> : null}
@@ -420,7 +420,7 @@ function DetailDrawer({ loading, restaurant, onClose, onCrm }) {
               ))}
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <ActionLink href={`/owner/menu-manager?restaurant=${restaurant.restaurant_id}`} label="Open Menu Manager" primary />
+              <ActionLink href={`/owner/menu-manager?tab=workspace&restaurant=${restaurant.restaurant_id}`} label="Open Menu Manager" primary />
               {restaurant.public_url ? <ActionLink href={restaurant.public_url} label="Public page" external /> : null}
               {restaurant.crm_lead_id ? (
                 <ActionLink href={`/crm/leads/${restaurant.crm_lead_id}`} label="Open CRM lead" />
