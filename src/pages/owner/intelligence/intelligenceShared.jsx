@@ -132,26 +132,53 @@ export function AnalyticsScopeNote({ note }) {
   );
 }
 
-export function SimpleTable({ rows, columns, emptyLabel = "No rows for this range." }) {
+export function SimpleTable({ rows, columns, emptyLabel = "No rows for this range.", wrapKeys = [] }) {
   if (!rows?.length) return <EmptyState>{emptyLabel}</EmptyState>;
+  const wrapSet = new Set(wrapKeys);
+  const hasWrap = wrapSet.size > 0;
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <div style={{ overflowX: "auto", maxWidth: "100%", minWidth: 0 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: hasWrap ? "fixed" : "auto" }}>
         <thead>
           <tr>
-            {columns.map(([label]) => (
-              <th key={label} style={thStyle}>{label}</th>
+            {columns.map(([label, key]) => (
+              <th
+                key={label}
+                style={
+                  wrapSet.has(key)
+                    ? thStyle
+                    : hasWrap
+                      ? { ...thStyle, width: "1%", whiteSpace: "nowrap" }
+                      : thStyle
+                }
+              >
+                {label}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((row, index) => (
             <tr key={index}>
-              {columns.map(([label, key, formatter]) => (
-                <td key={label} style={tdStyle}>
-                  {formatter ? formatter(row) : formatCell(row[key])}
-                </td>
-              ))}
+              {columns.map(([label, key, formatter]) => {
+                const cell = formatter ? formatter(row) : formatCell(row[key]);
+                const wraps = wrapSet.has(key);
+                return (
+                  <td
+                    key={label}
+                    style={
+                      wraps
+                        ? { ...tdStyle, ...tdWrapStyle }
+                        : hasWrap
+                          ? { ...tdStyle, width: "1%", whiteSpace: "nowrap" }
+                          : tdStyle
+                    }
+                    title={wraps && typeof cell === "string" ? cell : undefined}
+                  >
+                    {cell}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
@@ -182,7 +209,7 @@ export function LoadingState({ label = "Loading intelligence…" }) {
 
 export function IntelligenceSection({ id, title, subtitle, children }) {
   return (
-    <PageCard id={id} style={{ padding: 22 }}>
+    <PageCard id={id} style={{ padding: 22, minWidth: 0, overflow: "hidden" }}>
       <SectionTitle title={title} subtitle={subtitle} />
       {children}
     </PageCard>
@@ -215,8 +242,14 @@ export function useIntelligenceData(fetcher, range) {
 }
 
 const inputStyle = { padding: "10px 12px", borderRadius: 12, border: "1px solid #d7c5b8", background: "#fff" };
-const thStyle = { textAlign: "left", padding: "0 0 12px", fontSize: 12, color: "#667085", whiteSpace: "nowrap" };
+const thStyle = { textAlign: "left", padding: "0 0 12px", fontSize: 12, color: "#667085", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
 const tdStyle = { padding: "12px 8px 12px 0", borderTop: "1px solid #ead9ce", fontSize: 14, verticalAlign: "top" };
+const tdWrapStyle = {
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
+  whiteSpace: "normal",
+  maxWidth: "100%",
+};
 
 export function formatCents(cents) {
   const n = Number(cents) || 0;
