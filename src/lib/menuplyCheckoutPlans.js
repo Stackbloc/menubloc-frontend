@@ -28,8 +28,8 @@ export const LEGACY_BLOCKED_CHECKOUT_PLAN_CODES = Object.freeze([
 ]);
 
 export const CHECKOUT_PRICE_LABELS = Object.freeze({
-  [FREE_PLAN_CODE]: "$0",
-  [LEGACY_FREE_PLAN_CODE]: "$0",
+  [FREE_PLAN_CODE]: "Free",
+  [LEGACY_FREE_PLAN_CODE]: "Free",
   starter_monthly: "$20/month",
   starter_annual: "$199/year",
   founders_monthly: "$39/month",

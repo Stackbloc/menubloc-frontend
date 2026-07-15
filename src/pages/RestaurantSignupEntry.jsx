@@ -10,7 +10,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
@@ -20,6 +20,8 @@ import {
 } from "../lib/menuplyCheckoutPlans.js";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
+const FRANCHISE_ROUTE = "/franchises";
+const FOOD_TRUCK_SIGNUP_ROUTE = "/foodtruck/signup";
 
 const SIGNUP_PLAN_OPTIONS = [
   {
@@ -364,6 +366,31 @@ const styles = {
     cursor: enabled ? "pointer" : "not-allowed",
     fontFamily: "inherit",
   }),
+  pathOption: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 6,
+    width: "100%",
+    padding: "18px 20px",
+    borderRadius: 18,
+    border: "1.5px solid #d0d5dd",
+    background: "#ffffff",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    textAlign: "left",
+    color: "#101828",
+  },
+  pathOptionTitle: {
+    fontSize: 16,
+    fontWeight: 800,
+    letterSpacing: "-0.02em",
+  },
+  pathOptionBody: {
+    fontSize: 14,
+    lineHeight: 1.5,
+    color: "#374151",
+  },
   featureItem: {
     display: "flex",
     gap: 10,
@@ -484,10 +511,16 @@ function PlanPrice({ plan }) {
 
 export default function RestaurantSignupEntry() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
+  const fromOperatorClaim = Boolean(
+    location.state?.from === "operator_claim" || location.state?.create_listing
+  );
   const [hoveredPlan, setHoveredPlan] = useState(null);
   const [pendingPlan, setPendingPlan] = useState(null);
   const [billingInterval, setBillingInterval] = useState(null);
+  // Claim → new listing: choose single vs multi before plan / details entry.
+  const [listingScope, setListingScope] = useState(fromOperatorClaim ? null : "single");
 
   const localizedPlans = useMemo(
     () => SIGNUP_PLAN_OPTIONS.map((plan) => {
@@ -506,6 +539,9 @@ export default function RestaurantSignupEntry() {
     navigate(ACCOUNT_ROUTE, {
       state: {
         selected_plan: selectedPlan,
+        ...(fromOperatorClaim
+          ? { from: "operator_claim", create_listing: true }
+          : {}),
       },
     });
   }
@@ -524,6 +560,101 @@ export default function RestaurantSignupEntry() {
     const match = pendingPlan.intervals.find((row) => row.key === billingInterval);
     if (!match?.code) return;
     proceedWithPlanCode(match.code);
+  }
+
+  if (fromOperatorClaim && listingScope == null) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.shell}>
+          <header style={{ ...styles.hero, marginBottom: 36 }}>
+            <div style={styles.heroContent}>
+              <BrandLogo height={48} radius={14} matchPageBackground={false} linkStyle={{ marginBottom: 8 }} />
+              <div style={styles.eyebrow}>
+                {t("signup.entry.createListing.eyebrow", "Create a new listing")}
+              </div>
+            </div>
+          </header>
+
+          <div style={styles.cadenceShell}>
+            <h1 style={styles.cadenceTitle}>
+              {t(
+                "signup.entry.createListing.title",
+                "Is this one restaurant, or more than one?"
+              )}
+            </h1>
+            <p style={styles.cadenceSubtitle}>
+              {t(
+                "signup.entry.createListing.subtitle",
+                "Choose how you operate, then enter your restaurant details on the next screens."
+              )}
+            </p>
+
+            <div style={styles.cadenceOptions}>
+              <button
+                type="button"
+                style={styles.pathOption}
+                onClick={() => setListingScope("single")}
+              >
+                <span style={styles.pathOptionTitle}>
+                  {t("signup.entry.createListing.singleTitle", "Single restaurant")}
+                </span>
+                <span style={styles.pathOptionBody}>
+                  {t(
+                    "signup.entry.createListing.singleBody",
+                    "One independent restaurant location. Choose a plan, then enter restaurant details."
+                  )}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                style={styles.pathOption}
+                onClick={() => navigate(FRANCHISE_ROUTE)}
+              >
+                <span style={styles.pathOptionTitle}>
+                  {t(
+                    "signup.entry.createListing.multiTitle",
+                    "Franchise / multiple locations"
+                  )}
+                </span>
+                <span style={styles.pathOptionBody}>
+                  {t(
+                    "signup.entry.createListing.multiBody",
+                    "Contact Menuply about a brand or multi-location group."
+                  )}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                style={styles.pathOption}
+                onClick={() => navigate(FOOD_TRUCK_SIGNUP_ROUTE)}
+              >
+                <span style={styles.pathOptionTitle}>
+                  {t("signup.entry.createListing.foodTruckTitle", "Food truck")}
+                </span>
+                <span style={styles.pathOptionBody}>
+                  {t(
+                    "signup.entry.createListing.foodTruckBody",
+                    "Use the food truck signup path for mobile operators."
+                  )}
+                </span>
+              </button>
+            </div>
+
+            <div style={styles.cadenceActions}>
+              <button
+                type="button"
+                style={styles.cadenceBack}
+                onClick={() => navigate("/operator/claim")}
+              >
+                {t("signup.entry.createListing.back", "Back to claim search")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (pendingPlan) {
@@ -608,15 +739,48 @@ export default function RestaurantSignupEntry() {
           <div style={styles.heroContent}>
             <BrandLogo height={48} radius={14} matchPageBackground={false} linkStyle={{ marginBottom: 8 }} />
             <div style={styles.eyebrow}>{t("signup.entry.eyebrow", "Restaurant Signup")}</div>
-            <div style={styles.foodTruckRow}>
-              <span style={styles.foodTruckIcon} aria-hidden>
-                <FoodTruckIcon />
-              </span>
-              <span style={styles.foodTruckPrompt}>{t("signup.entry.foodTruckOwner", "Food Truck Owner?")}</span>
-              <Link to="/foodtruck/signup" style={styles.foodTruckLink}>
-                {t("signup.entry.foodTruckSignup", "Sign up")}
-              </Link>
-            </div>
+            {fromOperatorClaim ? (
+              <div style={{
+                marginTop: 10,
+                marginBottom: 4,
+                padding: "12px 14px",
+                borderRadius: 12,
+                background: "rgba(31, 78, 61, 0.08)",
+                border: "1px solid rgba(31, 78, 61, 0.22)",
+                fontSize: 14,
+                fontWeight: 600,
+                color: "#1F4E3D",
+                lineHeight: 1.5,
+                maxWidth: 660,
+              }}>
+                {t(
+                  "signup.entry.createListing.banner",
+                  "Creating a new listing for your operator account. Choose a plan, then enter restaurant details on the next screen."
+                )}{" "}
+                <button
+                  type="button"
+                  onClick={() => setListingScope(null)}
+                  style={{
+                    ...styles.foodTruckLink,
+                    color: "#1F4E3D",
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                  }}
+                >
+                  {t("signup.entry.createListing.changeType", "Change listing type")}
+                </button>
+              </div>
+            ) : (
+              <div style={styles.foodTruckRow}>
+                <span style={styles.foodTruckIcon} aria-hidden>
+                  <FoodTruckIcon />
+                </span>
+                <span style={styles.foodTruckPrompt}>{t("signup.entry.foodTruckOwner", "Food Truck Owner?")}</span>
+                <Link to="/foodtruck/signup" style={styles.foodTruckLink}>
+                  {t("signup.entry.foodTruckSignup", "Sign up")}
+                </Link>
+              </div>
+            )}
             <h1 style={{
               fontSize: "clamp(1.7rem, 3.5vw, 2.6rem)",
               fontWeight: 900,

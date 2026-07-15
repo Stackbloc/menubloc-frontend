@@ -60,7 +60,10 @@ export default function OperatorClaimSearch() {
   const { refreshRestaurants, operator } = useOperator();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const createListingHref = "/restaurant/onboarding";
+  // Manual new listing: plan select → restaurant details (not philosophy/onboarding).
+  // Authenticated operators attach the new restaurant to their existing account on /restaurant/signup/account.
+  const createListingHref = "/restaurant/signup";
+  const createListingState = { from: "operator_claim", create_listing: true };
 
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("");
@@ -171,7 +174,7 @@ export default function OperatorClaimSearch() {
             {t("operator.claim.notListed", "Don't see your restaurant?")}{" "}
             <button
               type="button"
-              onClick={() => navigate(createListingHref)}
+              onClick={() => navigate(createListingHref, { state: createListingState })}
               style={{
                 ...styles.link,
                 background: "none",
@@ -265,7 +268,7 @@ export default function OperatorClaimSearch() {
               )}{" "}
               <button
                 type="button"
-                onClick={() => navigate(createListingHref)}
+                onClick={() => navigate(createListingHref, { state: createListingState })}
                 style={{
                   ...styles.link,
                   background: "none",
