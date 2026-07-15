@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useOwner } from "../../context/OwnerContext.jsx";
+import { BrandLogo } from "../../components/BrandLogo.jsx";
 import "./ownerResponsive.css";
 
 const NAV = [
@@ -18,13 +19,13 @@ const NAV = [
 ];
 
 export const OWNER_COLORS = {
-  ink: "#101828",
+  ink: "#0B0F0C",
   muted: "#667085",
-  panel: "#fffdf8",
-  accent: "#9f3a22",
-  accentSoft: "#fce6dd",
-  line: "#ead9ce",
-  page: "linear-gradient(180deg, #f7f1ea 0%, #efe5db 100%)",
+  panel: "#ffffff",
+  accent: "#22C55E",
+  accentSoft: "rgba(34, 197, 94, 0.12)",
+  line: "#E5E7EB",
+  page: "#F9FAFB",
 };
 
 export function PageCard({ children, style = {}, id }) {
@@ -35,7 +36,7 @@ export function PageCard({ children, style = {}, id }) {
         background: OWNER_COLORS.panel,
         border: `1px solid ${OWNER_COLORS.line}`,
         borderRadius: 18,
-        boxShadow: "0 12px 40px rgba(86, 47, 29, 0.08)",
+        boxShadow: "0 12px 40px rgba(11, 15, 12, 0.06)",
         ...style,
       }}
     >
@@ -80,7 +81,7 @@ export default function OwnerLayout({ title, children, actions = null }) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: OWNER_COLORS.page, fontFamily: '"Instrument Sans", "Avenir Next", sans-serif', color: OWNER_COLORS.ink }}>
+    <div style={{ minHeight: "100vh", background: OWNER_COLORS.page, fontFamily: "var(--gb-font-ui)", color: OWNER_COLORS.ink }}>
       <div
         className={`owner-shell__backdrop${mobileNavOpen ? " owner-shell__backdrop--visible" : ""}`}
         onClick={closeSidebar}
@@ -89,11 +90,19 @@ export default function OwnerLayout({ title, children, actions = null }) {
       <div className="owner-shell">
         <aside
           className={`owner-shell__sidebar${mobileNavOpen ? " owner-shell__sidebar--open" : ""}`}
-          style={{ borderRight: `1px solid ${OWNER_COLORS.line}`, padding: "28px 18px", background: "rgba(255,250,243,0.97)", backdropFilter: "blur(10px)" }}
+          style={{ borderRight: `1px solid ${OWNER_COLORS.line}`, padding: "24px 18px", background: "#fff" }}
         >
           <div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.04em", color: OWNER_COLORS.accent }}>menuply</div>
-            <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: OWNER_COLORS.muted, marginTop: 6 }}>
+            <BrandLogo
+              to="/owner"
+              height={28}
+              radius={6}
+              matchPageBackground={false}
+              pageColor="#ffffff"
+              wordmarkColor={OWNER_COLORS.ink}
+              ariaLabel="Menuply owner control center home"
+            />
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: OWNER_COLORS.muted, marginTop: 8 }}>
               Owner Control Center
             </div>
           </div>
@@ -136,6 +145,7 @@ export default function OwnerLayout({ title, children, actions = null }) {
                 padding: "10px 12px",
                 fontWeight: 700,
                 cursor: "pointer",
+                fontFamily: "inherit",
               }}
             >
               Sign out

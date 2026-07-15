@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext.jsx";
+import { BrandLogo } from "../BrandLogo.jsx";
 
 const GOOGLE_SCRIPT = "https://accounts.google.com/gsi/client";
 const APPLE_SCRIPT = "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
@@ -46,25 +47,18 @@ export function getPasswordChecklist(password) {
 }
 
 function AuthLogo() {
-  const [failed, setFailed] = useState(false);
-  if (failed) {
-    return (
-      <Link to="/" aria-label="Go to Menuply home" style={{ display: "inline-block", marginBottom: 14, fontSize: 22, fontWeight: 800, color: "#22C55E", textDecoration: "none", lineHeight: 1 }}>
-        Menuply
-      </Link>
-    );
-  }
   return (
-    <Link to="/" aria-label="Go to Menuply home" style={{ display: "inline-block", marginBottom: 14, lineHeight: 0 }}>
-      <img
-        src="/menuply-logo5-transparent.png"
-        alt="Menuply"
-        width={120}
-        height={68}
-        style={{ display: "block", objectFit: "contain" }}
-        onError={() => setFailed(true)}
+    <div style={{ marginBottom: 14 }}>
+      <BrandLogo
+        to="/"
+        height={36}
+        radius={8}
+        matchPageBackground={false}
+        pageColor="#0B0F0C"
+        wordmarkColor="#FFFFFF"
+        ariaLabel="Go to Menuply home"
       />
-    </Link>
+    </div>
   );
 }
 
@@ -369,7 +363,7 @@ export const styles = {
     justifyContent: "center",
     background: "#0B0F0C",
     padding: "48px 16px 32px",
-    fontFamily: "Inter, Arial, sans-serif",
+    fontFamily: "var(--gb-font-ui), Inter, Arial, sans-serif",
   },
   card: {
     background: "#121A14",

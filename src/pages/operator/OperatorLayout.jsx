@@ -20,7 +20,19 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 import { getSensitiveSession, verifyOwnerPin } from "../../lib/operatorApi.js";
 import HelpSearchButton from "../../components/helpSearch/HelpSearchButton.jsx";
 import HelpSearchDrawer from "../../components/helpSearch/HelpSearchDrawer.jsx";
+import { BrandLogo } from "../../components/BrandLogo.jsx";
 import "./operatorResponsive.css";
+
+// ── Brand tokens (aligned with site --gb-color-accent) ───────────────────
+const BRAND = {
+  accent: "#22C55E",
+  accentDark: "#16A34A",
+  ink: "#0B0F0C",
+  muted: "#667085",
+  line: "#E5E7EB",
+  page: "#ffffff",
+  soft: "rgba(34, 197, 94, 0.12)",
+};
 
 // ── Sidebar width ────────────────────────────────────────────────────────
 const SIDEBAR_W = 230;
@@ -185,7 +197,7 @@ function PinGateModal({ restaurantId, onSuccess, onClose }) {
           disabled={busy || locked || digits.join("").length !== 4}
           style={{
             width: "100%", minHeight: 52, borderRadius: 14, border: "none",
-            background: "#1F4E3D", color: "#fff",
+            background: BRAND.accentDark, color: "#fff",
             fontSize: 16, fontWeight: 800, cursor: "pointer",
             opacity: (busy || locked || digits.join("").length !== 4) ? 0.5 : 1,
             marginBottom: 12,
@@ -199,8 +211,8 @@ function PinGateModal({ restaurantId, onSuccess, onClose }) {
           onClick={onClose}
           style={{
             width: "100%", minHeight: 44, borderRadius: 12,
-            border: "1px solid #e4e9f0", background: "#fff",
-            fontSize: 14, fontWeight: 600, color: "#5b6675", cursor: "pointer",
+            border: `1px solid ${BRAND.line}`, background: "#fff",
+            fontSize: 14, fontWeight: 600, color: BRAND.muted, cursor: "pointer",
           }}
         >
           {t("auth.cancel", "Cancel")}
@@ -247,10 +259,10 @@ function navLinkStyle(isActive) {
     display: "flex", alignItems: "center", gap: 9,
     padding: "9px 16px",
     fontSize: 13, fontWeight: isActive ? 700 : 500,
-    color: isActive ? "#1F4E3D" : "#4a5568",
-    background: isActive ? "#edf7f2" : "transparent",
+    color: isActive ? BRAND.accentDark : "#4a5568",
+    background: isActive ? BRAND.soft : "transparent",
     textDecoration: "none",
-    borderLeft: isActive ? "3px solid #1F4E3D" : "3px solid transparent",
+    borderLeft: isActive ? `3px solid ${BRAND.accent}` : "3px solid transparent",
     transition: "background 0.1s",
   };
 }
@@ -263,8 +275,8 @@ function SectionHeader({ label, accent }) {
       padding: "10px 16px 4px",
       fontSize: 10, fontWeight: 900, letterSpacing: "0.08em",
       textTransform: "uppercase",
-      color: accent ? "#fff" : "#8a9ab0",
-      background: accent ? "#1F4E3D" : "transparent",
+      color: accent ? "#fff" : BRAND.muted,
+      background: accent ? BRAND.ink : "transparent",
     }}>
       {label}
     </div>
@@ -383,7 +395,7 @@ export default function OperatorLayout({ title, children }) {
   }
 
   return (
-    <div className="operator-shell" style={{ display: "flex", minHeight: "100vh", background: "#f4f3ef", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <div className="operator-shell" style={{ display: "flex", minHeight: "100vh", background: BRAND.page, fontFamily: "var(--gb-font-ui)" }}>
       <div
         className={`operator-shell__backdrop${mobileNavOpen ? " operator-shell__backdrop--visible" : ""}`}
         onClick={() => setMobileNavOpen(false)}
@@ -394,18 +406,24 @@ export default function OperatorLayout({ title, children }) {
         className={`operator-shell__sidebar${mobileNavOpen ? " operator-shell__sidebar--open" : ""}`}
         style={{
         width: SIDEBAR_W, minHeight: "100vh",
-        background: "#fff", borderRight: "1px solid #e4e9f0",
+        background: "#fff", borderRight: `1px solid ${BRAND.line}`,
         display: "flex", flexDirection: "column",
         position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 10,
         overflowY: "auto",
       }}>
 
         {/* Logo */}
-        <div style={{ padding: "18px 16px 10px", borderBottom: "1px solid #f0f0ec" }}>
-          <div style={{ fontWeight: 800, fontSize: 17, color: "#1F4E3D", letterSpacing: "-0.5px" }}>
-            menuply
-          </div>
-          <div style={{ fontSize: 11, color: "#8a9ab0", marginTop: 2, fontWeight: 500 }}>
+        <div style={{ padding: "16px 14px 12px", borderBottom: `1px solid ${BRAND.line}` }}>
+          <BrandLogo
+            to="/operator"
+            height={28}
+            radius={6}
+            matchPageBackground={false}
+            pageColor="#ffffff"
+            wordmarkColor={BRAND.ink}
+            ariaLabel="Menuply restaurant operations home"
+          />
+          <div style={{ fontSize: 11, color: BRAND.muted, marginTop: 6, fontWeight: 600 }}>
             Restaurant Operations
           </div>
         </div>
@@ -466,7 +484,7 @@ export default function OperatorLayout({ title, children }) {
 
         {/* ── OPERATIONS section ─────────────────────────────────── */}
         <nav style={{ flex: 1 }}>
-          <div style={{ background: "#1F4E3D", paddingBottom: 4 }}>
+          <div style={{ background: BRAND.ink, paddingBottom: 4 }}>
             <SectionHeader label={t("operator.section.operations", "Operations")} accent />
             {operationsNav.map(({ to, label, icon }) => (
               <NavLink
@@ -478,9 +496,9 @@ export default function OperatorLayout({ title, children }) {
                   padding: "10px 16px",
                   fontSize: 13, fontWeight: isActive ? 800 : 500,
                   color: isActive ? "#fff" : "rgba(255,255,255,0.72)",
-                  background: isActive ? "rgba(255,255,255,0.15)" : "transparent",
+                  background: isActive ? "rgba(34,197,94,0.18)" : "transparent",
                   textDecoration: "none",
-                  borderLeft: isActive ? "3px solid #7dd3ad" : "3px solid transparent",
+                  borderLeft: isActive ? `3px solid ${BRAND.accent}` : "3px solid transparent",
                 })}
               >
                 <span style={{ fontSize: 14 }}>{icon}</span>

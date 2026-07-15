@@ -10,6 +10,8 @@
  *   2. Results show claim status: unclaimed / already yours / taken
  *   3. Click "Claim" → POST /operator/claim/:id
  *   4. On success → reload restaurants in context → go to dashboard
+ *
+ * UI: AuthPageFrame (same chrome as operator login / signup / verify-email).
  */
 
 import React, { useState, useEffect, useRef } from "react";
@@ -17,21 +19,25 @@ import { useNavigate } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../../lib/legalConsent.js";
-
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+import { API_BASE } from "../../lib/operatorApi.js";
+import {
+  AuthPageFrame,
+  FormError,
+  styles,
+} from "../../components/consumer/ConsumerAuthShared.jsx";
 
 async function searchListings(q, city) {
   const params = new URLSearchParams();
-  if (q)    params.set("q", q);
+  if (q) params.set("q", q);
   if (city) params.set("city", city);
-  const res = await fetch(`${API}/operator/claim/search?${params}`, { credentials: "include" });
+  const res = await fetch(`${API_BASE}/operator/claim/search?${params}`, { credentials: "include" });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error || "Search failed");
   return json.results || [];
 }
 
 async function claimRestaurant(restaurantId, consent) {
-  const res = await fetch(`${API}/operator/claim/${restaurantId}`, {
+  const res = await fetch(`${API_BASE}/operator/claim/${restaurantId}`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -42,16 +48,12 @@ async function claimRestaurant(restaurantId, consent) {
   return json;
 }
 
-const INPUT = {
-  padding: "11px 14px",
-  fontSize: 14,
-  border: "1.5px solid #e4e9f0",
-  borderRadius: 10,
-  outline: "none",
-  color: "#0f1720",
-  background: "#fff",
-  fontFamily: "inherit",
-  boxSizing: "border-box",
+const resultRowBase = {
+  borderRadius: 12,
+  padding: "14px 16px",
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
 };
 
 export default function OperatorClaimSearch() {
@@ -60,14 +62,14 @@ export default function OperatorClaimSearch() {
   const navigate = useNavigate();
   const createListingHref = "/restaurant/onboarding";
 
-  const [query, setQuery]     = useState("");
-  const [city, setCity]       = useState("");
+  const [query, setQuery] = useState("");
+  const [city, setCity] = useState("");
   const [results, setResults] = useState([]);
   const [searched, setSearched] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [claiming, setClaiming] = useState(null); // restaurant id being claimed
-  const [error, setError]     = useState("");
-  const [success, setSuccess] = useState(null);   // claimed restaurant name
+  const [claiming, setClaiming] = useState(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(null);
   const [legalConsent, setLegalConsent] = useState(false);
 
   const debounceRef = useRef(null);
@@ -97,7 +99,9 @@ export default function OperatorClaimSearch() {
 
   async function handleClaim(restaurantId) {
     if (!legalConsent) {
-      setError("Agree to the Terms of Use and Privacy Policy and consent to electronic communications before claiming a listing.");
+      setError(
+        "Agree to the Terms of Use and Privacy Policy and consent to electronic communications before claiming a listing.",
+      );
       return;
     }
     setClaiming(restaurantId);
@@ -115,141 +119,112 @@ export default function OperatorClaimSearch() {
 
   if (success) {
     return (
-      <div style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #f4f3ef 0%, #eef5f2 100%)",
-        fontFamily: "Inter, system-ui, sans-serif",
-        padding: 20,
-      }}>
-        <div style={{
-          maxWidth: 420,
-          width: "100%",
-          background: "#fff",
-          borderRadius: 18,
-          boxShadow: "0 4px 32px rgba(0,0,0,0.08)",
-          padding: "40px 36px",
-          textAlign: "center",
-        }}>
-          <div style={{ fontSize: 48, marginBottom: 18 }}>🎉</div>
-          <h2 style={{ margin: "0 0 10px", fontSize: 20, fontWeight: 800, color: "#1F4E3D" }}>
-            {t("operator.claim.successTitle", "You're in!")}
-          </h2>
-          <p style={{ margin: "0 0 28px", fontSize: 14, color: "#5b6675", lineHeight: 1.6 }}>
-            {t(
-              "operator.claim.successBody",
-              "{name} is now linked to your account. You can start editing your menu and creating deals.",
-            ).replace("{name}", success)}
-          </p>
-          <button
-            onClick={() => navigate("/operator", { replace: true })}
-            style={{
-              background: "#1F4E3D", color: "#fff", border: "none",
-              borderRadius: 10, padding: "12px 32px",
-              fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-            }}
-          >
-            {t("operator.claim.goDashboard", "Go to Dashboard →")}
-          </button>
-        </div>
-      </div>
+      <AuthPageFrame
+        title={t("operator.claim.successTitle", "You're in!")}
+        subtitle={t(
+          "operator.claim.successBody",
+          "{name} is now linked to your account. You can start editing your menu and creating deals.",
+        ).replace("{name}", success)}
+      >
+        <button
+          type="button"
+          onClick={() => navigate("/operator", { replace: true })}
+          style={styles.submitButton}
+        >
+          {t("operator.claim.goDashboard", "Go to Dashboard →")}
+        </button>
+      </AuthPageFrame>
     );
   }
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      background: "linear-gradient(135deg, #f4f3ef 0%, #eef5f2 100%)",
-      fontFamily: "Inter, system-ui, sans-serif",
-      padding: "60px 20px 40px",
-    }}>
-      {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: 36 }}>
-        <div style={{ fontWeight: 800, fontSize: 22, color: "#1F4E3D", letterSpacing: "-0.5px", marginBottom: 8 }}>
-          Menuply
-        </div>
-        <h1 style={{ margin: "0 0 10px", fontSize: 26, fontWeight: 800, color: "#0f1720" }}>
-          {t("operator.claim.title", "Find your restaurant")}
-        </h1>
-        <p style={{ margin: 0, fontSize: 14, color: "#5b6675", maxWidth: 360 }}>
-          {t("operator.claim.subtitle", "Search for your listing. We'll link your account so you can start managing your menu.")}
-        </p>
-        {operator && (
-          <div style={{ marginTop: 12, fontSize: 12, color: "#8a9ab0" }}>
-            {t("operator.claim.signedInAs", "Signed in as")}{" "}
-            <strong>{operator.email}</strong>
+    <AuthPageFrame
+      title={t("operator.claim.title", "Find your restaurant")}
+      subtitle={t(
+        "operator.claim.subtitle",
+        "Search for your listing. We'll link your account so you can start managing your menu.",
+      )}
+      footer={(
+        <>
+          {operator ? (
+            <p style={{ ...styles.footer, marginBottom: 12 }}>
+              {t("operator.claim.signedInAs", "Signed in as")}{" "}
+              <strong style={{ color: "#D1D5DB" }}>{operator.email}</strong>
+              {" · "}
+              <button
+                type="button"
+                onClick={() => navigate("/operator")}
+                style={{
+                  ...styles.link,
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  font: "inherit",
+                }}
+              >
+                {t("operator.claim.skip", "Skip →")}
+              </button>
+            </p>
+          ) : null}
+          <p style={styles.footer}>
+            {t("operator.claim.notListed", "Don't see your restaurant?")}{" "}
             <button
-              onClick={() => navigate("/operator")}
-              style={{ marginLeft: 8, background: "none", border: "none", color: "#1F4E3D", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+              type="button"
+              onClick={() => navigate(createListingHref)}
+              style={{
+                ...styles.link,
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                font: "inherit",
+              }}
             >
-              {t("operator.claim.skip", "Skip →")}
+              {t("operator.claim.createNewListing", "Create a new listing →")}
             </button>
-          </div>
-        )}
-      </div>
-
-      {/* Search card */}
-      <div style={{
-        width: "100%",
-        maxWidth: 540,
-        background: "#fff",
-        borderRadius: 18,
-        boxShadow: "0 4px 32px rgba(0,0,0,0.08)",
-        padding: "28px 28px 24px",
-      }}>
-        {/* Search inputs */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, marginBottom: 20 }}>
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#5b6675", display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+          </p>
+        </>
+      )}
+    >
+      <div style={styles.form}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr minmax(110px, 140px)",
+            gap: 12,
+          }}
+        >
+          <div style={styles.fieldGroup}>
+            <label htmlFor="operator-claim-name" style={styles.label}>
               {t("operator.claim.restaurantName", "Restaurant name")}
             </label>
             <input
-              style={{ ...INPUT, width: "100%" }}
+              id="operator-claim-name"
+              style={styles.input}
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="e.g. Joe's Diner"
               autoFocus
             />
           </div>
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#5b6675", display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+          <div style={styles.fieldGroup}>
+            <label htmlFor="operator-claim-city" style={styles.label}>
               {t("operator.claim.city", "City")}
             </label>
             <input
-              style={{ ...INPUT, width: 130 }}
+              id="operator-claim-city"
+              style={styles.input}
               value={city}
-              onChange={e => setCity(e.target.value)}
+              onChange={(e) => setCity(e.target.value)}
               placeholder="e.g. Austin"
             />
           </div>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div style={{
-            background: "#fef2f2", border: "1px solid #fecaca",
-            borderRadius: 8, padding: "9px 12px",
-            color: "#b91c1c", fontSize: 13, marginBottom: 14,
-          }}>
-            {error}
-          </div>
-        )}
+        <FormError error={error} />
 
-        <label style={{
-          display: "grid",
-          gridTemplateColumns: "18px 1fr",
-          gap: 10,
-          alignItems: "start",
-          color: "#475467",
-          fontSize: 13,
-          lineHeight: 1.45,
-          marginBottom: 14,
-        }}>
+        <label style={{ ...styles.checkboxRow, color: "#9CA3AF" }}>
           <input
             type="checkbox"
             checked={legalConsent}
@@ -257,97 +232,122 @@ export default function OperatorClaimSearch() {
               setLegalConsent(event.target.checked);
               setError("");
             }}
-            style={{ width: 16, height: 16, marginTop: 2, accentColor: "#1F4E3D" }}
+            style={styles.checkbox}
           />
-          <span>
+          <span style={{ ...styles.checkboxLabel, color: "#9CA3AF" }}>
             I agree to the{" "}
-            <a href="/terms" target="_blank" rel="noreferrer" style={{ color: "#1F4E3D", fontWeight: 800 }}>
+            <a href="/terms" target="_blank" rel="noreferrer" style={styles.link}>
               Terms of Use
             </a>
             {" "}and{" "}
-            <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: "#1F4E3D", fontWeight: 800 }}>
+            <a href="/privacy" target="_blank" rel="noreferrer" style={styles.link}>
               Privacy Policy
             </a>
             {" "}and consent to receive electronic communications from Menuply regarding my account, orders, services, and important updates.
           </span>
         </label>
 
-        {/* Loading */}
-        {searching && (
-          <div style={{ color: "#8a9ab0", fontSize: 13, padding: "8px 0" }}>
+        {searching ? (
+          <div style={{ ...styles.fieldHint, color: "#9CA3AF" }}>
             {t("operator.claim.searching", "Searching…")}
           </div>
-        )}
+        ) : null}
 
-        {/* Results */}
-        {!searching && searched && results.length === 0 && (
-          <div style={{ textAlign: "center", padding: "24px 0", color: "#8a9ab0" }}>
-            <div style={{ fontSize: 28, marginBottom: 10 }}>🔍</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#5b6675", marginBottom: 6 }}>
+        {!searching && searched && results.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "8px 0", color: "#9CA3AF" }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#D1D5DB", marginBottom: 6 }}>
               {t("operator.claim.noResults", "No listings found")}
             </div>
-            <div style={{ fontSize: 13 }}>
-              {t("operator.claim.tryDifferent", "Try a different name or city. If your restaurant isn't listed yet,")}{" "}
+            <div style={{ fontSize: 13, lineHeight: 1.5 }}>
+              {t(
+                "operator.claim.tryDifferent",
+                "Try a different name or city. If your restaurant isn't listed yet,",
+              )}{" "}
               <button
                 type="button"
                 onClick={() => navigate(createListingHref)}
-                style={{ background: "none", border: "none", padding: 0, color: "#1F4E3D", fontWeight: 600, cursor: "pointer", font: "inherit" }}
+                style={{
+                  ...styles.link,
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  font: "inherit",
+                }}
               >
                 {t("operator.claim.createListing", "create a new listing")}
-              </button>.
+              </button>
+              .
             </div>
           </div>
-        )}
+        ) : null}
 
-        {!searching && results.length > 0 && (
+        {!searching && results.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {results.map(r => (
+            {results.map((r) => (
               <div
                 key={r.id}
                 style={{
-                  border: `1.5px solid ${r.already_linked ? "#bbf7d0" : "#e4e9f0"}`,
-                  borderRadius: 12,
-                  padding: "14px 16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  background: r.already_linked ? "#f0fdf4" : "#fff",
+                  ...resultRowBase,
+                  border: `1.5px solid ${r.already_linked ? "rgba(34,197,94,0.35)" : "#1F2937"}`,
+                  background: r.already_linked ? "rgba(34,197,94,0.08)" : "#0B0F0C",
                 }}
               >
-                {/* Info */}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "#0f1720" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#F9FAFB" }}>
                     {r.restaurant_name}
                   </div>
-                  <div style={{ fontSize: 12, color: "#8a9ab0", marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>
                     {[r.address_line1, r.city, r.state].filter(Boolean).join(", ")}
                   </div>
-                  {r.cuisine && (
-                    <div style={{ fontSize: 11, color: "#b0bbc8", marginTop: 2 }}>{r.cuisine}</div>
-                  )}
+                  {r.cuisine ? (
+                    <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{r.cuisine}</div>
+                  ) : null}
                 </div>
 
-                {/* Status + action */}
                 {r.already_linked ? (
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a", background: "#dcfce7", borderRadius: 999, padding: "4px 10px" }}>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#22C55E",
+                      background: "rgba(34,197,94,0.15)",
+                      borderRadius: 999,
+                      padding: "4px 10px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     ✓ {t("operator.claim.linked", "Linked")}
                   </span>
                 ) : r.claimed_by_other ? (
-                  <span style={{ fontSize: 12, color: "#8a9ab0", background: "#f4f3ef", borderRadius: 999, padding: "4px 10px", fontWeight: 600 }}>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: "#9CA3AF",
+                      background: "#121A14",
+                      border: "1px solid #1F2937",
+                      borderRadius: 999,
+                      padding: "4px 10px",
+                      fontWeight: 600,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {t("operator.claim.claimed", "Claimed")}
                   </span>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => handleClaim(r.id)}
                     disabled={claiming === r.id || !legalConsent}
                     style={{
-                      background: "#1F4E3D", color: "#fff",
-                      border: "none", borderRadius: 8,
-                      padding: "8px 16px", fontSize: 13, fontWeight: 700,
-                      cursor: claiming === r.id || !legalConsent ? "not-allowed" : "pointer",
-                      opacity: claiming === r.id || !legalConsent ? 0.65 : 1,
-                      fontFamily: "inherit",
+                      ...styles.submitButton,
+                      minHeight: 40,
+                      padding: "8px 14px",
+                      fontSize: 13,
                       whiteSpace: "nowrap",
+                      width: "auto",
+                      opacity: claiming === r.id || !legalConsent ? 0.65 : 1,
+                      cursor: claiming === r.id || !legalConsent ? "not-allowed" : "pointer",
                     }}
                   >
                     {claiming === r.id
@@ -358,24 +358,8 @@ export default function OperatorClaimSearch() {
               </div>
             ))}
           </div>
-        )}
-
-        {/* Not listed CTA */}
-        {searched && (
-          <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid #f0f0ec", textAlign: "center" }}>
-            <span style={{ fontSize: 13, color: "#8a9ab0" }}>
-              {t("operator.claim.notListed", "Don't see your restaurant?")}{" "}
-              <button
-                type="button"
-                onClick={() => navigate(createListingHref)}
-                style={{ background: "none", border: "none", padding: 0, color: "#1F4E3D", fontWeight: 700, textDecoration: "none", cursor: "pointer", font: "inherit" }}
-              >
-                {t("operator.claim.createNewListing", "Create a new listing →")}
-              </button>
-            </span>
-          </div>
-        )}
+        ) : null}
       </div>
-    </div>
+    </AuthPageFrame>
   );
 }
