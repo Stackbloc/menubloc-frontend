@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import {
@@ -9,6 +9,16 @@ import {
   bulkReviewItems,
   OWNER_API_BASE,
 } from "../../lib/ownerApi.js";
+
+function resolveItemSection(item) {
+  return String(
+    item?.section_name ||
+      item?.parsed_section ||
+      item?.proposed_section ||
+      item?.section ||
+      ""
+  ).trim();
+}
 
 function buildImageUrl(relativePath) {
   if (!relativePath) return null;
@@ -45,6 +55,51 @@ const inputStyle = {
   outline: "none",
   boxSizing: "border-box",
 };
+
+const descriptionTextareaStyle = {
+  ...inputStyle,
+  minHeight: 88,
+  resize: "vertical",
+  lineHeight: 1.45,
+  whiteSpace: "pre-wrap",
+};
+
+/** Combobox: pick an existing section or type a new one (added to the shared option list). */
+function SectionCombobox({ value, options, onChange, disabled, invalid }) {
+  const listId = "owner-review-section-options";
+  return (
+    <div>
+      <input
+        type="text"
+        list={listId}
+        value={value || ""}
+        disabled={disabled}
+        required
+        aria-required="true"
+        aria-invalid={invalid ? "true" : "false"}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Section (required)"
+        style={{
+          ...inputStyle,
+          width: 120,
+          minWidth: 110,
+          borderColor: invalid ? "#dc2626" : OWNER_COLORS.line,
+          background: invalid ? "#fef2f2" : "#fff",
+        }}
+      />
+      <datalist id={listId}>
+        {options.map((opt) => (
+          <option key={opt} value={opt} />
+        ))}
+      </datalist>
+      {invalid ? (
+        <div style={{ marginTop: 3, fontSize: 10, color: "#991b1b", fontWeight: 600 }}>
+          Required
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function approveBtn(disabled) {
   return {
@@ -157,6 +212,8 @@ export default function OwnerMenuUploadReviewItems() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
+  /** Rows that failed validation for missing section (show required styling). */
+  const [sectionErrors, setSectionErrors] = useState(() => new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -177,7 +234,7 @@ export default function OwnerMenuUploadReviewItems() {
             name: it.parsed_name || it.proposed_item_name || "",
             description: it.parsed_description || it.proposed_description || "",
             price: it.proposed_price != null ? String(it.proposed_price) : "",
-            section: "",
+            section: resolveItemSection(it),
           };
         }
         setEdits(initEdits);
@@ -202,10 +259,38 @@ export default function OwnerMenuUploadReviewItems() {
 
   function updateEdit(id, field, value) {
     setEdits((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+    if (field === "section" && String(value || "").trim()) {
+      setSectionErrors((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
   }
+
+  /** Sections typed on any row become dropdown options for all subsequent rows. */
+  const sectionOptions = useMemo(() => {
+    const set = new Set();
+    for (const edit of Object.values(edits)) {
+      const s = String(edit?.section || "").trim();
+      if (s) set.add(s);
+    }
+    for (const it of items) {
+      const s = resolveItemSection(it);
+      if (s) set.add(s);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  }, [edits, items]);
 
   async function handleApprove(item) {
     const edit = getEdit(item.id);
+    const section = String(edit.section || "").trim();
+    if (!section) {
+      setSectionErrors((prev) => new Set([...prev, item.id]));
+      setError("Section is required before approving an item.");
+      return;
+    }
     const approvedPrice = edit.price !== "" ? Number(edit.price) : undefined;
     setBusy((prev) => new Set([...prev, item.id]));
     setStatusMsg("");
@@ -215,7 +300,7 @@ export default function OwnerMenuUploadReviewItems() {
         name: edit.name || undefined,
         description: edit.description !== undefined ? edit.description : undefined,
         price: approvedPrice,
-        section: edit.section || undefined,
+        section,
       });
       setCounts(result.counts || { open: 0, edited: 0, approved: 0, rejected: 0 });
       // Update local item to reflect the user's edits in the done-state display
@@ -227,6 +312,8 @@ export default function OwnerMenuUploadReviewItems() {
           parsed_name: edit.name || it.parsed_name,
           proposed_price: approvedPrice !== undefined ? approvedPrice : it.proposed_price,
           parsed_description: edit.description !== undefined ? edit.description : it.parsed_description,
+          section_name: section,
+          section,
         };
       }));
       setStatusMsg(`"${edit.name || item.parsed_name || item.proposed_item_name}" approved.`);
@@ -259,10 +346,66 @@ export default function OwnerMenuUploadReviewItems() {
       return it && ["open", "edited"].includes(it.status);
     });
     if (!ids.length) return;
+    if (action === "approve") {
+      const missingSection = ids.filter((id) => !String(getEdit(id).section || "").trim());
+      if (missingSection.length) {
+        setSectionErrors((prev) => new Set([...prev, ...missingSection]));
+        setError(
+          `Section is required before approving. ${missingSection.length} selected item${
+            missingSection.length === 1 ? "" : "s"
+          } still need a section.`
+        );
+        return;
+      }
+    }
     setBulkBusy(true);
     setStatusMsg("");
     setError("");
     try {
+      // Approve one-by-one when sections/descriptions must be sent; bulk reject stays batched.
+      if (action === "approve") {
+        let approved = 0;
+        let lastCounts = counts;
+        for (const id of ids) {
+          const it = items.find((x) => x.id === id);
+          if (!it) continue;
+          const edit = getEdit(id);
+          const section = String(edit.section || "").trim();
+          const approvedPrice = edit.price !== "" ? Number(edit.price) : undefined;
+          const result = await approveReviewItem(uploadId, id, {
+            name: edit.name || undefined,
+            description: edit.description !== undefined ? edit.description : undefined,
+            price: approvedPrice,
+            section,
+          });
+          lastCounts = result.counts || lastCounts;
+          approved += 1;
+          setItems((prev) =>
+            prev.map((row) =>
+              row.id === id
+                ? {
+                    ...row,
+                    status: "approved",
+                    parsed_name: edit.name || row.parsed_name,
+                    proposed_price:
+                      approvedPrice !== undefined ? approvedPrice : row.proposed_price,
+                    parsed_description:
+                      edit.description !== undefined
+                        ? edit.description
+                        : row.parsed_description,
+                    section_name: section,
+                    section,
+                  }
+                : row
+            )
+          );
+        }
+        setCounts(lastCounts);
+        setSelected(new Set());
+        setStatusMsg(`Approved ${approved} item${approved === 1 ? "" : "s"}.`);
+        return;
+      }
+
       const result = await bulkReviewItems(uploadId, { action, item_ids: ids });
       setCounts(result.counts);
       const newStatus = action === "approve" ? "approved" : "rejected";
@@ -494,10 +637,10 @@ export default function OwnerMenuUploadReviewItems() {
                   <th style={th}>
                     <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: "pointer" }} />
                   </th>
-                  <th style={{ ...th, width: 200 }}>Name</th>
-                  <th style={{ ...th, width: 80 }}>Price</th>
-                  <th style={{ ...th, width: 160 }}>Description</th>
-                  <th style={{ ...th, width: 100 }}>Section</th>
+                  <th style={{ ...th, width: 180 }}>Name</th>
+                  <th style={{ ...th, width: 72 }}>Price</th>
+                  <th style={{ ...th, minWidth: 260, width: "32%" }}>Description</th>
+                  <th style={{ ...th, width: 130 }}>Section *</th>
                   <th style={{ ...th, width: 160 }}>Hold Reasons</th>
                   <th style={{ ...th, width: 80, textAlign: "center" }}>Quality</th>
                   <th style={{ ...th, width: 70, textAlign: "center" }}>Status</th>
@@ -584,34 +727,44 @@ export default function OwnerMenuUploadReviewItems() {
                         )}
                       </td>
 
-                      {/* Description */}
-                      <td style={td}>
+                      {/* Description — largest text field */}
+                      <td style={{ ...td, minWidth: 260 }}>
                         {isDone ? (
-                          <span style={{ color: OWNER_COLORS.muted, fontSize: 11 }}>
+                          <span
+                            style={{
+                              color: OWNER_COLORS.muted,
+                              fontSize: 12,
+                              whiteSpace: "pre-wrap",
+                              lineHeight: 1.45,
+                              display: "block",
+                            }}
+                          >
                             {item.parsed_description || item.proposed_description || "—"}
                           </span>
                         ) : (
-                          <input
-                            type="text"
+                          <textarea
                             value={edit.description || ""}
                             onChange={(e) => updateEdit(item.id, "description", e.target.value)}
-                            style={inputStyle}
+                            style={descriptionTextareaStyle}
                             placeholder="Description"
+                            rows={4}
                           />
                         )}
                       </td>
 
-                      {/* Section */}
+                      {/* Section — required combobox that grows from prior inputs */}
                       <td style={td}>
                         {isDone ? (
-                          <span style={{ color: OWNER_COLORS.muted }}>—</span>
+                          <span style={{ color: OWNER_COLORS.ink, fontWeight: 600 }}>
+                            {resolveItemSection(item) || edit.section || "—"}
+                          </span>
                         ) : (
-                          <input
-                            type="text"
+                          <SectionCombobox
                             value={edit.section || ""}
-                            onChange={(e) => updateEdit(item.id, "section", e.target.value)}
-                            style={{ ...inputStyle, width: 90 }}
-                            placeholder="Section"
+                            options={sectionOptions}
+                            disabled={isBusy}
+                            invalid={sectionErrors.has(item.id) && !String(edit.section || "").trim()}
+                            onChange={(value) => updateEdit(item.id, "section", value)}
                           />
                         )}
                       </td>
@@ -646,9 +799,14 @@ export default function OwnerMenuUploadReviewItems() {
                         {isOpen && (
                           <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                             <button
-                              disabled={isBusy}
+                              disabled={isBusy || !String(edit.section || "").trim()}
                               onClick={() => handleApprove(item)}
-                              style={approveBtn(isBusy)}
+                              title={
+                                !String(edit.section || "").trim()
+                                  ? "Enter a section before approving"
+                                  : undefined
+                              }
+                              style={approveBtn(isBusy || !String(edit.section || "").trim())}
                             >
                               {isBusy ? "…" : "Approve"}
                             </button>
