@@ -28,7 +28,7 @@ const SIGNUP_PLAN_OPTIONS = [
     name: "Published",
     price: CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE],
     description: "A simple published restaurant presence with public menu access on Menuply.",
-    cta: "Continue with Published",
+    cta: "Select Published",
     tone: "default",
     features: [
       "100% Free Profile with Fully Searchable, Verified Menu",
@@ -47,7 +47,7 @@ const SIGNUP_PLAN_OPTIONS = [
     price: `${CHECKOUT_PRICE_LABELS.starter_monthly} or ${CHECKOUT_PRICE_LABELS.starter_annual}`,
     description:
       "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, online ordering, and standard marketplace commission.",
-    cta: "Continue with Starter",
+    cta: "Select Starter",
     tone: "starter",
     intervals: [
       { key: "monthly", code: "starter_monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.starter_monthly },
@@ -70,7 +70,7 @@ const SIGNUP_PLAN_OPTIONS = [
     price: `${CHECKOUT_PRICE_LABELS.founders_monthly} or ${CHECKOUT_PRICE_LABELS.founders_annual}`,
     description:
       "Founders are early adopters who want to take back their restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
-    cta: "Continue with Founder's",
+    cta: "Select Founder's",
     tone: "founder",
     intervals: [
       { key: "monthly", code: "founders_monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.founders_monthly },
@@ -333,23 +333,22 @@ const styles = {
     flexShrink: 0,
     color: "#6EE7B7",
   },
-  button: (tone) => ({
+  selectHint: (tone, visible) => ({
     width: "100%",
-    minHeight: 50,
-    borderRadius: 16,
-    border: tone === "default" ? "1px solid #d0d5dd" : "1px solid #1F4E3D",
-    background: tone === "default" ? "#ffffff" : "#1F4E3D",
-    color: tone === "default" ? "#101828" : "#ffffff",
-    fontSize: 15,
-    fontWeight: 900,
-    cursor: "pointer",
-    fontFamily: "inherit",
+    minHeight: 44,
     marginTop: "auto",
-    boxShadow: tone === "default" ? "none" : "0 12px 24px rgba(31, 78, 61, 0.18)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     textAlign: "center",
+    fontSize: 15,
+    fontWeight: 800,
+    letterSpacing: "0.01em",
+    color: tone === "founder" ? "#ffffff" : "#1F4E3D",
+    opacity: visible ? 1 : 0,
+    transition: "opacity 120ms ease",
+    pointerEvents: "none",
+    userSelect: "none",
   }),
 };
 
@@ -411,7 +410,6 @@ export default function RestaurantSignupEntry() {
         name: t(`signup.entry.plan.${key}.name`, plan.name),
         price: t(`signup.entry.plan.${key}.price`, plan.price),
         description: t(`signup.entry.plan.${key}.description`, plan.description),
-        cta: t(`signup.entry.plan.${key}.cta`, plan.cta),
       };
     }),
     [t]
@@ -492,17 +490,19 @@ export default function RestaurantSignupEntry() {
                 ? foundersInterval
                 : null;
             const dark = plan.tone === "founder";
+            const isHovered = hoveredPlan === plan.family;
+            const selectLabel = `Select ${plan.name}`;
 
             return (
               <article
                 key={plan.family}
-                style={styles.card(plan.tone, hoveredPlan === plan.family)}
+                style={styles.card(plan.tone, isHovered)}
                 onClick={() => handlePlanSelect(selectedCode)}
                 onMouseEnter={() => setHoveredPlan(plan.family)}
                 onMouseLeave={() => setHoveredPlan(null)}
                 tabIndex={0}
                 role="button"
-                aria-label={plan.cta}
+                aria-label={selectLabel}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -546,11 +546,8 @@ export default function RestaurantSignupEntry() {
                   ))}
                 </ul>
 
-                <div
-                  style={styles.button(plan.tone)}
-                  role="presentation"
-                >
-                  {plan.cta}
+                <div style={styles.selectHint(plan.tone, isHovered)} aria-hidden={!isHovered}>
+                  {selectLabel}
                 </div>
               </article>
             );

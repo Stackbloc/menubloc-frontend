@@ -53,10 +53,6 @@ import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js
 import ShareButton from "../components/share/ShareButton.jsx";
 import { buildRestaurantShareData } from "../components/share/shareUtils.js";
 import { clusterTypeLabel } from "../lib/clusterUrl.js";
-import {
-  fetchRestaurantClaimPlans,
-  formatClaimPlanPrice,
-} from "../lib/restaurantClaimPlans.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -281,29 +277,6 @@ function FieldRow({ label, value, placeholder, isDark }) {
 function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
   const isFoodTruck = detectFoodTruck(data);
   const isMobile = useIsMobile();
-  const [claimPlans, setClaimPlans] = useState([]);
-  const [claimPlansLoading, setClaimPlansLoading] = useState(true);
-  const [claimPlansUnavailable, setClaimPlansUnavailable] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    setClaimPlansLoading(true);
-    setClaimPlansUnavailable(false);
-    fetchRestaurantClaimPlans().then((result) => {
-      if (!alive) return;
-      if (!result.ok) {
-        setClaimPlans([]);
-        setClaimPlansUnavailable(true);
-      } else {
-        setClaimPlans(result.plans);
-        setClaimPlansUnavailable(false);
-      }
-      setClaimPlansLoading(false);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   const name =
     firstNonEmpty(data?.restaurant_name, data?.name) || `Restaurant ${slugOrId}`;
@@ -329,6 +302,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
     cuisine,
     claim_source: "public_restaurant_page",
     public_restaurant_slug_or_id: slugOrId,
+    restaurant_id: data?.id || null,
   };
 
   const pageBg = isDark ? "#0b0b0f" : "transparent";
@@ -458,8 +432,8 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
               }}
             >
               {isFoodTruck
-                ? "This food truck does not yet have a completed Menuply public profile. Core details can appear with a free Verified subscription, while richer brand presentation appears with Pro."
-                : "This restaurant does not yet have a completed Menuply public profile. Core details can appear with a free Verified subscription, while richer brand presentation appears with Pro."}
+                ? "This food truck does not yet have a completed Menuply public profile. Claim it to manage your listing and menu."
+                : "This restaurant does not yet have a completed Menuply public profile. Claim it to manage your listing and menu."}
             </p>
           </div>
 
@@ -551,88 +525,14 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
               lineHeight: 1.65,
             }}
           >
-            {claimPlansLoading ? (
-              <div style={{ fontSize: 13, color: muted }}>Loading subscription options…</div>
-            ) : claimPlansUnavailable ? (
-              <div
-                style={{
-                  borderRadius: 12,
-                  padding: 14,
-                  border: isDark ? "1px solid rgba(251,191,36,0.25)" : "1px solid #fde68a",
-                  background: isDark ? "rgba(251,191,36,0.06)" : "#fffbeb",
-                  color: isDark ? "#fde68a" : "#92400e",
-                  fontSize: 13,
-                  lineHeight: 1.55,
-                }}
-              >
-                Subscription options are temporarily unavailable. You can still claim this
-                profile and choose a plan later.
-              </div>
-            ) : (
-              claimPlans.map((plan, index) => {
-                const palettes = [
-                  {
-                    border: isDark ? "1px solid rgba(74,222,128,0.20)" : "1px solid #bbf7d0",
-                    background: isDark ? "rgba(74,222,128,0.05)" : "#f0fff4",
-                    title: isDark ? "#4ade80" : "#15803d",
-                  },
-                  {
-                    border: isDark ? "1px solid rgba(59,130,246,0.20)" : "1px solid #bfdbfe",
-                    background: isDark ? "rgba(59,130,246,0.05)" : "#eff6ff",
-                    title: isDark ? "#60a5fa" : "#1d4ed8",
-                  },
-                  {
-                    border: isDark ? "1px solid rgba(251,191,36,0.25)" : "1px solid #fde68a",
-                    background: isDark ? "rgba(251,191,36,0.06)" : "#fffbeb",
-                    title: isDark ? "#fbbf24" : "#b45309",
-                  },
-                ];
-                const palette = palettes[index % palettes.length];
-                const interval = String(plan.billing_interval || "").toLowerCase();
-                const intervalHint =
-                  interval === "month"
-                    ? "Billed monthly"
-                    : interval === "year"
-                    ? "Billed annually"
-                    : null;
-                return (
-                  <div
-                    key={plan.code || `${plan.public_name}-${index}`}
-                    style={{
-                      borderRadius: 12,
-                      padding: 14,
-                      border: palette.border,
-                      background: palette.background,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: 800,
-                        color: palette.title,
-                        marginBottom: 4,
-                      }}
-                    >
-                      {plan.public_name || plan.display_name || plan.checkout_label}
-                    </div>
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        marginBottom: intervalHint ? 6 : 0,
-                        color: isDark ? "#e2e8f0" : "#0f172a",
-                      }}
-                    >
-                      {formatClaimPlanPrice(plan)}
-                    </div>
-                    {intervalHint ? (
-                      <div style={{ fontSize: 12, opacity: 0.9 }}>{intervalHint}</div>
-                    ) : null}
-                  </div>
-                );
-              })
-            )}
+            <p style={{ margin: 0 }}>
+              {isFoodTruck
+                ? "Claim this food truck profile on Menuply to manage your listing and menu."
+                : "Claim this restaurant profile on Menuply to manage your listing and menu."}
+            </p>
 
             <Link
-              to="/profilesearch"
+              to="/onboarding"
               state={claimPrefillState}
               style={{
                 display: "inline-flex",
@@ -649,7 +549,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
                 color: "#ffffff",
               }}
             >
-              Claim or Upgrade This Profile
+              Claim this profile
             </Link>
           </div>
         </div>

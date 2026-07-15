@@ -216,6 +216,11 @@ function CrmClustersAdminRedirect() {
   return <Navigate to={`${base}${location.search || ""}${location.hash || ""}`} replace />;
 }
 
+function OnboardingAliasRedirect() {
+  const location = useLocation();
+  return <Navigate to="/restaurant/onboarding" replace state={location.state} />;
+}
+
 export function ConsumerLegacyRedirect({ nextPath }) {
   const location = useLocation();
   return <Navigate to={`${nextPath}${location.search || ""}${location.hash || ""}`} replace />;
@@ -605,6 +610,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant-profile/:id" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantProfile />} />
 
         <Route path="/restaurant/onboarding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantPhilosophy />} />
+        <Route path="/onboarding" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OnboardingAliasRedirect />} />
         <Route path="/restaurant/onboarding/welcome" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOnboardingWelcome />} />
         <Route path="/restaurant/onboarding/processing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOnboardingProcessing />} />
         <Route path="/restaurant/onboarding/success" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantMenuLive />} />
