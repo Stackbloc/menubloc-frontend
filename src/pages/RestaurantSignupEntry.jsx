@@ -127,8 +127,8 @@ const styles = {
   },
   cardsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-    gap: 18,
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: 28,
   },
   foundersNotice: {
     marginBottom: 18,
@@ -224,55 +224,46 @@ const styles = {
     fontWeight: 900,
     letterSpacing: 0,
     lineHeight: 1.12,
-    marginBottom: 10,
+    marginBottom: 14,
   },
-  priceStack: {
+  priceBlock: {
     display: "flex",
     flexDirection: "column",
-    gap: 3,
+    gap: 14,
+    marginBottom: 18,
+    padding: "14px 0",
   },
-  priceSecondary: {
-    fontSize: 20,
+  priceRow: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+  },
+  priceLabel: {
+    fontSize: 12,
     fontWeight: 800,
-    opacity: 0.9,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    opacity: 0.72,
+  },
+  priceValue: {
+    fontSize: 26,
+    fontWeight: 900,
+    letterSpacing: "-0.02em",
+    lineHeight: 1.15,
+  },
+  priceHint: {
+    marginTop: 2,
+    fontSize: 13,
+    fontWeight: 600,
+    opacity: 0.78,
+    lineHeight: 1.45,
   },
   description: {
     fontSize: 15,
     lineHeight: 1.6,
-    marginBottom: 18,
+    marginBottom: 20,
     opacity: 0.92,
   },
-  intervalGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-    marginBottom: 14,
-  },
-  intervalButton: (active, dark) => ({
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: active
-      ? dark
-        ? "1.5px solid #ffffff"
-        : "1.5px solid #1F4E3D"
-      : dark
-        ? "1.5px solid rgba(255,255,255,0.28)"
-        : "1.5px solid #d0d5dd",
-    background: active
-      ? dark
-        ? "rgba(255,255,255,0.16)"
-        : "#ffffff"
-      : dark
-        ? "rgba(15, 23, 32, 0.2)"
-        : "rgba(255,255,255,0.7)",
-    cursor: "pointer",
-    fontFamily: "inherit",
-    width: "100%",
-    color: dark ? "#ffffff" : "#101828",
-  }),
   featureList: {
     listStyle: "none",
     padding: 0,
@@ -280,6 +271,99 @@ const styles = {
     display: "grid",
     gap: 10,
   },
+  cadenceShell: {
+    maxWidth: 560,
+    margin: "0 auto",
+    borderRadius: 28,
+    border: "1px solid #eaecf0",
+    background: "#ffffff",
+    boxShadow: "0 18px 48px rgba(15, 23, 32, 0.08)",
+    padding: "36px 32px 32px",
+  },
+  cadenceEyebrow: {
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#1F4E3D",
+    marginBottom: 12,
+  },
+  cadenceTitle: {
+    fontSize: "clamp(1.5rem, 3vw, 2rem)",
+    fontWeight: 900,
+    letterSpacing: "-0.03em",
+    lineHeight: 1.15,
+    color: "#0B0F0C",
+    margin: "0 0 10px",
+  },
+  cadenceSubtitle: {
+    fontSize: 16,
+    lineHeight: 1.6,
+    color: "#374151",
+    marginBottom: 28,
+  },
+  cadenceOptions: {
+    display: "grid",
+    gap: 14,
+    marginBottom: 28,
+  },
+  cadenceOption: (active) => ({
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 6,
+    width: "100%",
+    padding: "18px 20px",
+    borderRadius: 18,
+    border: active ? "2px solid #1F4E3D" : "1.5px solid #d0d5dd",
+    background: active ? "rgba(31, 78, 61, 0.06)" : "#ffffff",
+    boxShadow: active ? "0 10px 24px rgba(31, 78, 61, 0.10)" : "none",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    textAlign: "left",
+    color: "#101828",
+  }),
+  cadenceOptionLabel: {
+    fontSize: 13,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "#1F4E3D",
+  },
+  cadenceOptionPrice: {
+    fontSize: 28,
+    fontWeight: 900,
+    letterSpacing: "-0.02em",
+    lineHeight: 1.1,
+  },
+  cadenceActions: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 12,
+    alignItems: "center",
+  },
+  cadenceBack: {
+    padding: "12px 18px",
+    borderRadius: 12,
+    border: "1.5px solid #d0d5dd",
+    background: "#fff",
+    color: "#374151",
+    fontWeight: 700,
+    fontSize: 14,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  cadenceContinue: (enabled) => ({
+    padding: "12px 22px",
+    borderRadius: 12,
+    border: "none",
+    background: enabled ? "#1F4E3D" : "#98a2b3",
+    color: "#ffffff",
+    fontWeight: 800,
+    fontSize: 14,
+    cursor: enabled ? "pointer" : "not-allowed",
+    fontFamily: "inherit",
+  }),
   featureItem: {
     display: "flex",
     gap: 10,
@@ -381,13 +465,16 @@ function planTranslationKey(code) {
 }
 
 function PlanPrice({ plan }) {
-  if (Array.isArray(plan.priceLines) && plan.priceLines.length > 0) {
+  if (Array.isArray(plan.intervals) && plan.intervals.length > 0) {
     return (
-      <div style={{ ...styles.price, ...styles.priceStack }}>
-        <span>{plan.priceLines[0]}</span>
-        {plan.priceLines.slice(1).map((line) => (
-          <span key={line} style={styles.priceSecondary}>{line}</span>
+      <div style={styles.priceBlock}>
+        {plan.intervals.map((interval) => (
+          <div key={interval.key} style={styles.priceRow}>
+            <span style={styles.priceLabel}>{interval.label}</span>
+            <span style={styles.priceValue}>{interval.price}</span>
+          </div>
         ))}
+        <div style={styles.priceHint}>Billing period is chosen on the next step.</div>
       </div>
     );
   }
@@ -399,8 +486,8 @@ export default function RestaurantSignupEntry() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [hoveredPlan, setHoveredPlan] = useState(null);
-  const [starterInterval, setStarterInterval] = useState("annual");
-  const [foundersInterval, setFoundersInterval] = useState("annual");
+  const [pendingPlan, setPendingPlan] = useState(null);
+  const [billingInterval, setBillingInterval] = useState(null);
 
   const localizedPlans = useMemo(
     () => SIGNUP_PLAN_OPTIONS.map((plan) => {
@@ -415,22 +502,103 @@ export default function RestaurantSignupEntry() {
     [t]
   );
 
-  function resolveSelectedPlanCode(plan) {
-    if (plan.family === "starter") {
-      return starterInterval === "monthly" ? "starter_monthly" : "starter_annual";
-    }
-    if (plan.family === "founder") {
-      return foundersInterval === "monthly" ? "founders_monthly" : "founders_annual";
-    }
-    return plan.code;
-  }
-
-  function handlePlanSelect(selectedPlan) {
+  function proceedWithPlanCode(selectedPlan) {
     navigate(ACCOUNT_ROUTE, {
       state: {
         selected_plan: selectedPlan,
       },
     });
+  }
+
+  function handlePlanSelect(plan) {
+    if (Array.isArray(plan.intervals) && plan.intervals.length > 0) {
+      setPendingPlan(plan);
+      setBillingInterval(null);
+      return;
+    }
+    proceedWithPlanCode(plan.code);
+  }
+
+  function handleBillingContinue() {
+    if (!pendingPlan || !billingInterval) return;
+    const match = pendingPlan.intervals.find((row) => row.key === billingInterval);
+    if (!match?.code) return;
+    proceedWithPlanCode(match.code);
+  }
+
+  if (pendingPlan) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.shell}>
+          <header style={{ ...styles.hero, marginBottom: 36 }}>
+            <div style={styles.heroContent}>
+              <BrandLogo height={48} radius={14} matchPageBackground={false} linkStyle={{ marginBottom: 8 }} />
+            </div>
+          </header>
+
+          <div style={styles.cadenceShell}>
+            <div style={styles.cadenceEyebrow}>
+              {t("signup.entry.cadence.eyebrow", "Confirm billing")}
+            </div>
+            <h1 style={styles.cadenceTitle}>
+              {t(
+                "signup.entry.cadence.title",
+                `You have chosen the ${pendingPlan.name} subscription plan`
+              )}
+            </h1>
+            <p style={styles.cadenceSubtitle}>
+              {t(
+                "signup.entry.cadence.subtitle",
+                "Monthly or annual billing? Choose one option below, then continue to create your account."
+              )}
+            </p>
+
+            <div style={styles.cadenceOptions} role="radiogroup" aria-label="Billing period">
+              {pendingPlan.intervals.map((interval) => {
+                const active = billingInterval === interval.key;
+                const priceDisplay = String(interval.price || "")
+                  .replace("/month", " per month")
+                  .replace("/year", " per year");
+                return (
+                  <button
+                    key={interval.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    style={styles.cadenceOption(active)}
+                    onClick={() => setBillingInterval(interval.key)}
+                  >
+                    <span style={styles.cadenceOptionLabel}>{interval.label}</span>
+                    <span style={styles.cadenceOptionPrice}>{priceDisplay}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={styles.cadenceActions}>
+              <button
+                type="button"
+                style={styles.cadenceBack}
+                onClick={() => {
+                  setPendingPlan(null);
+                  setBillingInterval(null);
+                }}
+              >
+                {t("signup.entry.cadence.back", "Back to plans")}
+              </button>
+              <button
+                type="button"
+                style={styles.cadenceContinue(Boolean(billingInterval))}
+                disabled={!billingInterval}
+                onClick={handleBillingContinue}
+              >
+                {t("signup.entry.cadence.continue", "Continue to account")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -468,7 +636,7 @@ export default function RestaurantSignupEntry() {
             }}>
               {t(
                 "signup.entry.subtitle",
-                "Select the plan that fits how you want diners to discover and order from your menu."
+                "Select the plan that fits how you want diners to discover and order from your menu. For paid plans, you will choose monthly or annual billing on the next screen."
               )}
             </div>
           </div>
@@ -483,13 +651,6 @@ export default function RestaurantSignupEntry() {
 
         <section style={styles.cardsGrid}>
           {localizedPlans.map((plan) => {
-            const selectedCode = resolveSelectedPlanCode(plan);
-            const selectedInterval = plan.family === "starter"
-              ? starterInterval
-              : plan.family === "founder"
-                ? foundersInterval
-                : null;
-            const dark = plan.tone === "founder";
             const isHovered = hoveredPlan === plan.family;
             const selectLabel = `Select ${plan.name}`;
 
@@ -497,7 +658,7 @@ export default function RestaurantSignupEntry() {
               <article
                 key={plan.family}
                 style={styles.card(plan.tone, isHovered)}
-                onClick={() => handlePlanSelect(selectedCode)}
+                onClick={() => handlePlanSelect(plan)}
                 onMouseEnter={() => setHoveredPlan(plan.family)}
                 onMouseLeave={() => setHoveredPlan(null)}
                 tabIndex={0}
@@ -506,7 +667,7 @@ export default function RestaurantSignupEntry() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    handlePlanSelect(selectedCode);
+                    handlePlanSelect(plan);
                   }
                 }}
               >
@@ -516,26 +677,6 @@ export default function RestaurantSignupEntry() {
                 <div style={styles.planName}>{plan.name}</div>
                 <PlanPrice plan={plan} />
                 <div style={styles.description}>{plan.description}</div>
-
-                {plan.intervals ? (
-                  <div style={styles.intervalGroup}>
-                    {plan.intervals.map((interval) => (
-                      <button
-                        key={interval.key}
-                        type="button"
-                        style={styles.intervalButton(selectedInterval === interval.key, dark)}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          if (plan.family === "starter") setStarterInterval(interval.key);
-                          if (plan.family === "founder") setFoundersInterval(interval.key);
-                        }}
-                      >
-                        <span style={{ fontSize: 13, fontWeight: 700 }}>{interval.label}</span>
-                        <span style={{ fontSize: 13, fontWeight: 800 }}>{interval.price}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
 
                 <ul style={styles.featureList}>
                   {plan.features.map((feature) => (
