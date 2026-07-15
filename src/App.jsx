@@ -61,6 +61,7 @@ import RestaurantOrdersPage from "./pages/operator/RestaurantOrdersPage.jsx";
 import RestaurantOrderDetailPage from "./pages/operator/RestaurantOrderDetailPage.jsx";
 import OperatorTabletPage from "./pages/operator/OperatorTabletPage.jsx";
 import OperatorMenuEditor from "./pages/operator/OperatorMenuEditor.jsx";
+import OperatorCkMenuEditorPage from "./pages/operator/OperatorCkMenuEditorPage.jsx";
 import OperatorMenuCameraUpload from "./pages/operator/OperatorMenuCameraUpload.jsx";
 import OperatorDealsEditor from "./pages/operator/OperatorDealsEditor.jsx";
 import OperatorClaimSearch from "./pages/operator/OperatorClaimSearch.jsx";
@@ -692,6 +693,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/operator/help" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><RestaurantHelpCenter /></OperatorRoute>} />
         <Route path="/operator/profile" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorProfileEditor /></OperatorRoute>} />
         <Route path="/operator/menulab" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuEditor /></OperatorRoute>} />
+        <Route path="/operator/restaurants/:restaurantId/ck-menus/:menuId/edit" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorCkMenuEditorPage /></OperatorRoute>} />
         <Route path="/operator/menu" element={<Navigate to="/operator/menulab" replace />} />
         <Route path="/operator/menu/camera-upload" element={crmHost ? <HostRouteRedirect to="/crm" /> : <OperatorRoute><OperatorMenuCameraUpload /></OperatorRoute>} />
         <Route path="/operator/menu/:menuId/edit" element={<Navigate to="/operator/menulab" replace />} />

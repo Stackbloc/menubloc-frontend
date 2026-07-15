@@ -162,6 +162,58 @@ export const getPriceHistory = (rid, iid) => get(`/operator/restaurants/${rid}/m
 export const submitMenuIntake = (rid, text) =>
   post(`/operator/restaurants/${rid}/menu-intake`, { text });
 
+// ── Restaurant: CK structured menu editor (shared with owner Menu Manager) ─
+function withUploadSession(path, uploadSessionId) {
+  if (!uploadSessionId) return path;
+  const sep = path.includes("?") ? "&" : "?";
+  return `${path}${sep}upload_session_id=${encodeURIComponent(uploadSessionId)}`;
+}
+
+export const getCkMenus = (rid) => get(`/operator/restaurants/${rid}/ck-menus`);
+export const getCkMenuFromUpload = (rid, uploadId) =>
+  get(`/operator/restaurants/${rid}/ck-menus/from-upload/${encodeURIComponent(uploadId)}`);
+export const getCkMenu = (rid, mid, uploadSessionId = null) =>
+  get(withUploadSession(`/operator/restaurants/${rid}/ck-menus/${mid}`, uploadSessionId));
+export const getCkMenuSourcePdf = (rid, mid, uploadSessionId = null) =>
+  get(withUploadSession(`/operator/restaurants/${rid}/ck-menus/${mid}/source-pdf`, uploadSessionId));
+export const updateCkMenu = (rid, mid, body, uploadSessionId = null) =>
+  patch(withUploadSession(`/operator/restaurants/${rid}/ck-menus/${mid}`, uploadSessionId), {
+    ...body,
+    ...(uploadSessionId ? { upload_session_id: uploadSessionId } : {}),
+  });
+export const publishCkMenu = (rid, mid, uploadSessionId = null) =>
+  post(withUploadSession(`/operator/restaurants/${rid}/ck-menus/${mid}/publish`, uploadSessionId), {
+    ...(uploadSessionId ? { upload_session_id: uploadSessionId } : {}),
+  });
+export const unpublishCkMenu = (rid, mid, uploadSessionId = null) =>
+  post(withUploadSession(`/operator/restaurants/${rid}/ck-menus/${mid}/unpublish`, uploadSessionId), {
+    ...(uploadSessionId ? { upload_session_id: uploadSessionId } : {}),
+  });
+export const addCkMenuItem = (rid, mid, body, uploadSessionId = null) =>
+  post(withUploadSession(`/operator/restaurants/${rid}/ck-menus/${mid}/items`, uploadSessionId), {
+    ...body,
+    ...(uploadSessionId ? { upload_session_id: uploadSessionId } : {}),
+  });
+export const updateCkMenuItem = (rid, mid, itemId, body, uploadSessionId = null) =>
+  patch(
+    withUploadSession(`/operator/restaurants/${rid}/ck-menus/${mid}/items/${itemId}`, uploadSessionId),
+    { ...body, ...(uploadSessionId ? { upload_session_id: uploadSessionId } : {}) }
+  );
+export const deleteCkMenuItem = (rid, mid, itemId, uploadSessionId = null) =>
+  del(withUploadSession(`/operator/restaurants/${rid}/ck-menus/${mid}/items/${itemId}`, uploadSessionId));
+
+/** Adapter for SharedMenuEditor — binds optional upload_session_id for edit logging. */
+export function createOperatorCkMenuApi(uploadSessionId = null) {
+  return {
+    updateItem: (rid, mid, itemId, body) => updateCkMenuItem(rid, mid, itemId, body, uploadSessionId),
+    deleteItem: (rid, mid, itemId) => deleteCkMenuItem(rid, mid, itemId, uploadSessionId),
+    addItem: (rid, mid, body) => addCkMenuItem(rid, mid, body, uploadSessionId),
+    updateMenu: (rid, mid, body) => updateCkMenu(rid, mid, body, uploadSessionId),
+    publishMenu: (rid, mid) => publishCkMenu(rid, mid, uploadSessionId),
+    unpublishMenu: (rid, mid) => unpublishCkMenu(rid, mid, uploadSessionId),
+  };
+}
+
 // ── Restaurant: Deals ─────────────────────────────────────────────────────
 export const getDeals = (rid, params = {}) => {
   const qs = new URLSearchParams(params).toString();

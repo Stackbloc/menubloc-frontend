@@ -1122,17 +1122,35 @@ export default function PdfUploadPage() {
                   summaryParts.push(`${itemsProcessed} menu item${itemsProcessed === 1 ? "" : "s"} successfully imported`);
                 }
                 const dash = summaryParts.length ? ` — ${summaryParts.join(", ")}` : "";
+                const publicRestaurantId =
+                  Number(result.public_restaurant_id || result.restaurant_id || restaurant_id) || 0;
+                const publicMenuId = Number(result.public_menu_id) || 0;
+                const uploadSessionId =
+                  result.upload_session_id || result.upload_id || "";
+                const editorHref =
+                  publicRestaurantId && publicMenuId
+                    ? `/operator/restaurants/${publicRestaurantId}/ck-menus/${publicMenuId}/edit${
+                        uploadSessionId
+                          ? `?upload_session_id=${encodeURIComponent(uploadSessionId)}`
+                          : ""
+                      }`
+                    : null;
                 return (
                   <>
                     <div style={s.successTitle}>{`Menu uploaded successfully${dash}.`}</div>
                     <p style={s.successSub}>
-                      Your menu is being reviewed. Once approved, it will appear on your Menuply public profile.
+                      Review and correct the structured menu next to the original PDF, then publish when ready.
                     </p>
+                    {editorHref ? (
+                      <Link to={editorHref} style={s.profileLink}>
+                        Open structured menu editor
+                      </Link>
+                    ) : null}
                   </>
                 );
               })()}
-              <Link to="/operator/menulab" style={s.profileLink}>
-                Back to menu
+              <Link to="/operator/menulab" style={{ ...s.profileLink, marginTop: 10 }}>
+                Back to Menu Lab
               </Link>
               <CompletionNextSteps
                 isOperatorFlow
