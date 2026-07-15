@@ -97,8 +97,8 @@ export default function RestaurantFreeProfileSignup() {
         manager_name: form.restaurant_name.trim(),
         city: market.city || null,
         state: market.state_code || null,
-        selected_plan: "verified",
-        plan: "verified",
+        selected_plan: "published_free",
+        plan: "published_free",
         plan_type: "free",
         payment_required: false,
         signup_source: market.signup_source,
@@ -128,8 +128,8 @@ export default function RestaurantFreeProfileSignup() {
         city: market.city || "",
         state: market.state_code || "",
         ingestion_method: "later",
-        selected_plan: "verified",
-        plan: "verified",
+        selected_plan: "published_free",
+        plan: "published_free",
       });
 
       await syncRestaurantOnboardingProgress(baseState, {
@@ -137,7 +137,7 @@ export default function RestaurantFreeProfileSignup() {
         completed_step_keys: ["create_operator_account", "public_restaurant_information"],
         intake_path: "join_landing_free_profile",
         requested_location_count: 1,
-        selected_plan_code: "verified",
+        selected_plan_code: "published_free",
         manual_review_required: false,
         draft_payload: {
           signup_source: market.signup_source,

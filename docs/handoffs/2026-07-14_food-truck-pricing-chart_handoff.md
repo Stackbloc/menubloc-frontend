@@ -4,7 +4,7 @@ Update consumer-facing Food Truck pricing card/chart to Food Truck / $89/year / 
 
 # Current Status
 
-**LOCAL COMPLETE** — awaiting approval to commit / push / deploy.
+**DEPLOYED** — commits `2947d16` + `a264cdf` on `stabilize/frontend-safe-baseline`; Vercel `dpl_GCKLQESwSx17g5xefBesbk9rG7ea` aliased to `menuply.com` (2026-07-14). OperatorSubscription Food Truck card benefits left uncommitted (bundled with unrelated dirty Stripe/PayPal work).
 
 # Files Changed
 

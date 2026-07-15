@@ -381,10 +381,16 @@ export default function MenuDesignSelectPage() {
   const uploadLaterReady = isUploadLater && searchParams.get("upload_later_ready") === "1";
 
   const isPro =
+    plan === "starter_monthly" ||
+    plan === "starter_annual" ||
+    plan === "founders_monthly" ||
+    plan === "founders_annual" ||
+    plan === "food_truck_annual" ||
+    // Legacy in-progress onboarding resumes may still carry Pro plan codes.
     plan === "pro_monthly" ||
     plan === "pro_annual" ||
     plan === "pro" ||
-    plan === "founders_annual";
+    plan === "founders";
   const visibleStyles = isPro ? DESIGN_STYLES : DESIGN_STYLES.filter((style) => !style.proOnly);
   const [selectedStyle, setSelectedStyle] = useState(null);
   const missingState = !restaurant_id || !email || (!owner_token && !BYPASS_MODE);

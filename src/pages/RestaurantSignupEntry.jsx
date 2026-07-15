@@ -14,16 +14,20 @@ import { useNavigate, Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import PlanComparisonTable from "../components/PlanComparisonTable.jsx";
+import {
+  CHECKOUT_PRICE_LABELS,
+  FREE_PLAN_CODE,
+} from "../lib/menuplyCheckoutPlans.js";
 
 const ACCOUNT_ROUTE = "/restaurant/signup/account";
 
 const SIGNUP_PLAN_OPTIONS = [
   {
-    code: "verified",
-    name: "Verified",
-    price: "$0",
-    description: "A simple verified restaurant presence with public menu access on Menuply.",
-    cta: "Continue with Verified",
+    code: FREE_PLAN_CODE,
+    name: "Published",
+    price: CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE],
+    description: "A simple published restaurant presence with public menu access on Menuply.",
+    cta: "Continue with Published",
     featured: false,
     features: [
       "100% Free Profile with Fully Searchable, Verified Menu",
@@ -37,13 +41,13 @@ const SIGNUP_PLAN_OPTIONS = [
   {
     code: "founders_annual",
     name: "Founder's",
-    price: "$299/year",
+    price: CHECKOUT_PRICE_LABELS.founders_annual,
     description:
       "Be among the first restaurants to join the movement and take back your restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
     cta: "Continue with Founder's",
     featured: true,
     features: [
-      "All benefits in Verified, plus much more.",
+      "All benefits in Published, plus much more.",
       "Guaranteed, no increase pricing for 24 months",
       "Publish Deals free during first year (subject to quantity limits)",
       "Premium menu tools",
@@ -283,9 +287,9 @@ function FoodTruckIcon() {
 }
 
 function planTranslationKey(code) {
-  if (code === "pro_partner") return "pro";
-  if (code === "founders_annual") return "founder";
-  return "verified";
+  if (code === "pro_partner" || code?.startsWith("starter")) return "pro";
+  if (code === "founders_annual" || code === "founders_monthly") return "founder";
+  return "published";
 }
 
 function PlanPrice({ plan }) {

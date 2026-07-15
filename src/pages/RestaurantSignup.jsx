@@ -422,7 +422,10 @@ export default function RestaurantSignup() {
         selected_plan: selectedPlan,
       });
       const draftState = await syncRestaurantOnboardingProgress(baseState, {
-        current_step_key: selectedPlan === "verified" ? "basic_public_profile" : "choose_plan",
+        current_step_key:
+          selectedPlan === "verified" || selectedPlan === "published_free" || selectedPlan === "published"
+            ? "basic_public_profile"
+            : "choose_plan",
         completed_step_keys: ["create_operator_account", "public_restaurant_information"],
         intake_path: "independent_single_location",
         requested_location_count: 1,
@@ -447,7 +450,12 @@ export default function RestaurantSignup() {
           replace: true,
           state: {
             ...draftState,
-            nextPath: selectedPlan === "verified" ? DESIGN_SELECTION_ROUTE : PLAN_SELECTION_ROUTE,
+            nextPath:
+              selectedPlan === "verified" ||
+              selectedPlan === "published_free" ||
+              selectedPlan === "published"
+                ? DESIGN_SELECTION_ROUTE
+                : PLAN_SELECTION_ROUTE,
             autoSend: true,
             plan: selectedPlan,
           },

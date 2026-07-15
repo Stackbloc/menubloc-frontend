@@ -23,8 +23,16 @@ export function getQrProductCode(packageType) {
 }
 
 export function getSubscriptionPlanLabel(planCode) {
+  // menu_manager_monthly / pro_* retained for legacy historical rows only.
   if (planCode === "menu_manager_monthly") return "Menu Manager";
-  if (planCode === "founders_annual") return "Founder's";
+  if (planCode === "published_free" || planCode === "verified") return "Published";
+  if (planCode === "starter_monthly") return "Starter Monthly";
+  if (planCode === "starter_annual") return "Starter Annual";
+  if (planCode === "founders_monthly") return "Founder's Monthly";
+  if (planCode === "founders_annual") return "Founder's Annual";
+  if (planCode === "food_truck_annual" || planCode === "foodtruck_verified_annual") {
+    return "Food Truck Annual";
+  }
   if (planCode === "pro_annual") return "Pro Annual";
   if (planCode === "pro_monthly") return "Pro Monthly";
   return "No active subscription";

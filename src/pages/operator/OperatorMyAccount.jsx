@@ -8,17 +8,25 @@ import { getSubscriptionStatusLabel, formatMoney } from "../../components/paymen
 import PrimaryQrCard from "../../components/qr/PrimaryQrCard.jsx";
 
 function getPlanTier(planCode) {
-  if (!planCode) return "verified";
-  if (planCode === "founders_annual") return "founders";
+  if (!planCode) return "published";
+  if (planCode === "published_free" || planCode === "verified") return "published";
+  if (planCode === "founders_annual" || planCode === "founders_monthly") return "founders";
+  if (planCode?.startsWith("starter")) return "starter";
   if (planCode?.startsWith("pro")) return "pro";
-  return "verified";
+  if (planCode === "foodtruck_verified_annual" || planCode === "food_truck_annual") {
+    return "food_truck";
+  }
+  return "published";
 }
 
 function getPlanDisplayName(planCode) {
-  if (!planCode || planCode === "verified") return "Verified";
+  if (!planCode || planCode === "verified" || planCode === "published_free") return "Published";
+  if (planCode === "starter_monthly") return "Starter — Monthly";
+  if (planCode === "starter_annual") return "Starter — Annual";
   if (planCode === "pro_monthly") return "Pro Partner — Monthly";
   if (planCode === "pro_annual") return "Pro Partner — Annual";
-  if (planCode === "founders_annual") return "Founders - Annual";
+  if (planCode === "founders_monthly") return "Founders — Monthly";
+  if (planCode === "founders_annual") return "Founders — Annual";
   if (planCode === "foodtruck_verified_annual" || planCode === "food_truck_annual") {
     return "Food Truck Annual";
   }
@@ -26,7 +34,7 @@ function getPlanDisplayName(planCode) {
 }
 
 function getBillingIntervalLabel(planCode) {
-  if (!planCode || planCode === "verified") return "Free";
+  if (!planCode || planCode === "verified" || planCode === "published_free") return "Free";
   if (planCode.includes("annual")) return "Annual";
   if (planCode.includes("monthly")) return "Monthly";
   return "—";
@@ -131,7 +139,7 @@ export default function OperatorMyAccount() {
     ? contextSubscription.plan_name
     : null;
   const tier = getPlanTier(planCode);
-  const isFreeTier = tier === "verified";
+  const isFreeTier = tier === "published";
   const normalizedStatus = String(subscription?.status || "").toLowerCase();
 
   const canCancel =

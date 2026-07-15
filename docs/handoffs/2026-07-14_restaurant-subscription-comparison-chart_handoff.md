@@ -4,7 +4,7 @@ Update the existing restaurant subscription comparison chart to Published / Star
 
 # Current Status
 
-**LOCAL COMPLETE** — awaiting approval to commit / push / deploy.
+**DEPLOYED** — commits `2947d16` + `a264cdf` on `stabilize/frontend-safe-baseline`; Vercel `dpl_GCKLQESwSx17g5xefBesbk9rG7ea` aliased to `menuply.com` (2026-07-14).
 
 # Files Changed
 

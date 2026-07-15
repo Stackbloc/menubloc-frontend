@@ -5,8 +5,8 @@
  * Date:    2026-05-06
  * Purpose:
  *   Onboarding step 2 — choose a restaurant plan after account
- *   creation. Verified stays free, paid plans use PayPal
- *   subscription checkout.
+ *   creation. Verified stays free, Pro Partner uses Stripe
+ *   checkout, and the Founders plan uses annual Stripe checkout.
  * ============================================================
  */
 
@@ -22,6 +22,13 @@ import {
   resolveRestaurantOnboardingState,
   syncRestaurantOnboardingProgress,
 } from "../lib/restaurantOnboardingState.js";
+import {
+  CHECKOUT_PRICE_LABELS,
+  FREE_PLAN_CODE,
+  buildOwnerStripeCheckoutBody,
+  isFreePlanCode,
+  resolveReturnedCheckoutPlanCode,
+} from "../lib/menuplyCheckoutPlans.js";
 
 const API = (
   import.meta.env.VITE_API_BASE_URL ||
@@ -29,13 +36,23 @@ const API = (
 ).replace(/\/$/, "");
 
 const PLAN_LABELS = {
-  verified: "Verified",
-  menu_manager_monthly: "Menu Manager",
+  [FREE_PLAN_CODE]: "Published",
+  verified: "Published",
+  published_free: "Published",
+  founders_monthly: "Founder's",
   founders_annual: "Founder's",
+  starter_monthly: "Starter",
+  starter_annual: "Starter",
+  // Legacy display labels for in-progress historical onboarding only.
+  pro_partner: "Pro Partner",
+  pro_monthly: "Pro Partner",
+  pro_annual: "Pro Partner",
 };
 
-const MENU_MANAGER_PLAN = { planCode: "menu_manager_monthly", priceLabel: "$39/month" };
-const FOUNDERS_PLAN = { planCode: "founders_annual", priceLabel: "$299/year" };
+const FOUNDERS_PLAN = {
+  planCode: "founders_annual",
+  priceLabel: CHECKOUT_PRICE_LABELS.founders_annual,
+};
 
 const OPTIONAL_ONBOARDING_MODULES = [
   {
@@ -56,10 +73,10 @@ const OPTIONAL_ONBOARDING_MODULES = [
 ];
 
 const PLAN_CARDS = {
-  verified: {
-    title: "Verified",
-    price: "$0",
-    description: "A simple verified restaurant presence with public menu access on Menuply.",
+  [FREE_PLAN_CODE]: {
+    title: "Published",
+    price: CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE],
+    description: "A simple published restaurant presence with public menu access on Menuply.",
     features: [
       "100% Free Profile with Fully Searchable, Verified Menu",
       "Basic restaurant profile",
@@ -70,25 +87,14 @@ const PLAN_CARDS = {
   },
   founders_annual: {
     title: "Founder's",
-    price: "$299/year",
+    price: CHECKOUT_PRICE_LABELS.founders_annual,
     description:
       "Be among the first restaurants to join the movement and take back your restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
     features: [
-      "All benefits in Verified, plus much more.",
+      "All benefits in Published, plus much more.",
       "Guaranteed, no increase pricing for 24 months",
       "Publish Deals free during first year (subject to quantity limits)",
       "Premium menu tools",
-    ],
-  },
-  menu_manager_monthly: {
-    title: "Menu Manager",
-    price: "$39/month",
-    description: "Full menu management tools with a simple monthly PayPal subscription.",
-    features: [
-      "Unlimited menus",
-      "Restaurant logo and advanced profile",
-      "Menu upload and editing tools",
-      "PayPal subscription billing",
     ],
   },
 };
@@ -445,6 +451,7 @@ export default function SubscriptionSelect() {
 
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
   const [planError, setPlanError] = useState("");
+  const [foundersInterval, setFoundersInterval] = useState("annual");
 
   const {
     restaurant_id,
@@ -462,6 +469,8 @@ export default function SubscriptionSelect() {
   } = onboardingState || {};
 
   const hasOnboardingContext = Boolean(restaurant_id && owner_token);
+  const foundersCheckoutCode =
+    foundersInterval === "monthly" ? "founders_monthly" : "founders_annual";
 
   useEffect(() => {
     const next = resolveRestaurantOnboardingState({
@@ -491,7 +500,9 @@ export default function SubscriptionSelect() {
     if (!checkoutSuccess || !hasOnboardingContext || !onboardingState) return undefined;
 
     (async () => {
-      const planCode = returnedPlanCode === "pro_annual" ? "pro_annual" : "pro_monthly";
+      const planCode = resolveReturnedCheckoutPlanCode(returnedPlanCode, FOUNDERS_PLAN.planCode);
+      // Success URL alone must not imply the paid subscription is already active.
+      // Sync selected plan for onboarding continuity; paid status remains backend-authoritative.
       const nextState = await syncRestaurantOnboardingProgress(onboardingState, {
         current_step_key: "basic_public_profile",
         completed_step_keys: ["choose_plan", "subscription_checkout"],
@@ -500,7 +511,10 @@ export default function SubscriptionSelect() {
         selected_plan_code: planCode,
         manual_review_required: false,
         draft_payload: {
-          temporary_selections: { selected_plan_code: planCode },
+          temporary_selections: {
+            selected_plan_code: planCode,
+            checkout_processing: true,
+          },
         },
       });
       if (cancelled) return;
@@ -508,6 +522,7 @@ export default function SubscriptionSelect() {
       navigateWithRestaurantOnboardingState(nav, "/restaurant/qr-upsell", {
         ...nextState,
         plan: planCode,
+        subscription_status: "processing",
       });
     })().catch((err) => {
       if (!cancelled) {
@@ -570,7 +585,7 @@ export default function SubscriptionSelect() {
     });
   }
 
-  function chooseVerified() {
+  function choosePublished() {
     if (!hasOnboardingContext) {
       nav("/restaurant/signup");
       return;
@@ -580,15 +595,15 @@ export default function SubscriptionSelect() {
       completed_step_keys: ["choose_plan", "subscription_checkout"],
       intake_path: intake_path || "independent_single_location",
       requested_location_count: requested_location_count || 1,
-      selected_plan_code: "verified",
+      selected_plan_code: FREE_PLAN_CODE,
       manual_review_required: false,
       draft_payload: {
-        temporary_selections: { selected_plan_code: "verified" },
+        temporary_selections: { selected_plan_code: FREE_PLAN_CODE },
       },
     })
       .then((stateValue) => {
         setOnboardingState(stateValue);
-        continueToDesign("verified", {}, stateValue);
+        continueToDesign(FREE_PLAN_CODE, {}, stateValue);
       })
       .catch((err) => {
         setPlanError(err.message || "Unable to continue.");
@@ -598,6 +613,11 @@ export default function SubscriptionSelect() {
   async function submitRestaurantPlan(planCode) {
     if (!hasOnboardingContext) {
       nav("/restaurant/signup");
+      return;
+    }
+
+    if (isFreePlanCode(planCode)) {
+      choosePublished();
       return;
     }
 
@@ -627,21 +647,23 @@ export default function SubscriptionSelect() {
       const successUrl = `${origin}/restaurant/subscription?${successParams.toString()}`;
       const cancelUrl = `${origin}/restaurant/subscription?${cancelParams.toString()}`;
 
+      const checkoutBody = buildOwnerStripeCheckoutBody({
+        restaurantId: restaurant_id,
+        ownerToken: owner_token,
+        email,
+        planCode,
+        successUrl,
+        cancelUrl,
+        legalAcceptance: {
+          document_key: "subscription_terms",
+          document_version: LEGAL_VERSIONS.subscriptionTerms,
+        },
+      });
+
       const res = await fetch(`${API}/owner/subscription/checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          restaurant_id,
-          owner_token,
-          email,
-          plan_code: planCode,
-          success_url: successUrl,
-          cancel_url: cancelUrl,
-          legal_acceptance: {
-            document_key: "subscription_terms",
-            document_version: LEGAL_VERSIONS.subscriptionTerms,
-          },
-        }),
+        body: JSON.stringify(checkoutBody),
       });
 
       const json = await res.json().catch(() => ({}));
@@ -692,8 +714,8 @@ export default function SubscriptionSelect() {
         return;
       }
 
-      if (json.checkout_url || json.approval_url) {
-        window.location.href = json.approval_url || json.checkout_url;
+      if (json.checkout_url) {
+        window.location.href = json.checkout_url;
         return;
       }
 
@@ -711,12 +733,8 @@ export default function SubscriptionSelect() {
     }
   }
 
-  async function handleMenuManager() {
-    await submitRestaurantPlan("menu_manager_monthly");
-  }
-
   async function handleFounder() {
-    await submitRestaurantPlan("founders_annual");
+    await submitRestaurantPlan(foundersCheckoutCode);
   }
 
   if (checkoutSuccess) {
@@ -724,12 +742,20 @@ export default function SubscriptionSelect() {
       <div style={s.page}>
         <div style={{ ...s.shell, textAlign: "center", paddingTop: 80 }}>
           <div style={{ fontSize: 48, marginBottom: 14 }}>&#10003;</div>
-          <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>Plan confirmed</div>
-          <div style={{ fontSize: 15, color: "#667085" }}>Continuing to design step...</div>
+          <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>
+            Payment received
+          </div>
+          <div style={{ fontSize: 15, color: "#667085" }}>
+            Confirming your subscription with Stripe. Continuing onboarding while status updates…
+          </div>
         </div>
       </div>
     );
   }
+
+  const publishedCard = PLAN_CARDS[FREE_PLAN_CODE];
+  const isPublishedSelected =
+    selected_plan === FREE_PLAN_CODE || selected_plan === "verified" || selected_plan === "published";
 
   return (
     <div style={s.page}>
@@ -759,7 +785,7 @@ export default function SubscriptionSelect() {
               <strong>Multipliers</strong> are restaurants aligned with that approach. They are central to the Menuply ecosystem, and restaurants that more closely reflect those principles may receive increased visibility opportunities within the platform.
             </div>
             <div>
-              Paid plan checkout uses PayPal subscriptions. Restaurant payouts for future ordering will use PayPal marketplace seller onboarding when enabled.
+              Paid plan checkout keeps Menuply&apos;s existing Stripe-powered restaurant banking flow in place. Restaurant deposits stay tied to that restaurant banking setup when enabled.
             </div>
           </div>
         </section>
@@ -786,15 +812,15 @@ export default function SubscriptionSelect() {
 
         <section style={s.cardsGrid}>
           <article style={s.planCard(false)}>
-            <div style={s.planEyebrow}>Verified</div>
-            <div style={s.planName}>Verified</div>
+            <div style={s.planEyebrow}>Published</div>
+            <div style={s.planName}>Published</div>
             <div style={s.planDesc}>
-              {PLAN_CARDS.verified.description}
+              {publishedCard.description}
             </div>
-            <div style={s.priceValue}>{PLAN_CARDS.verified.price}</div>
+            <div style={s.priceValue}>{publishedCard.price}</div>
 
             <ul style={s.featureList}>
-              {PLAN_CARDS.verified.features.map((feature) => (
+              {publishedCard.features.map((feature) => (
                 <li key={feature} style={s.featureItem}>
                   <span style={s.featureMark(false)}>&#10003;</span>
                   <span>{feature}</span>
@@ -802,33 +828,8 @@ export default function SubscriptionSelect() {
               ))}
             </ul>
 
-            <button type="button" style={s.button(false, false)} onClick={chooseVerified}>
-              {selected_plan === "verified" ? "Continue with Verified" : "Choose Verified"}
-            </button>
-          </article>
-
-          <article style={s.planCard(false)}>
-            <div style={s.planEyebrow}>Menu Manager</div>
-            <div style={s.planName}>Menu Manager</div>
-            <div style={s.planDesc}>{PLAN_CARDS.menu_manager_monthly.description}</div>
-            <div style={s.priceValue}>{MENU_MANAGER_PLAN.priceLabel}</div>
-
-            <ul style={s.featureList}>
-              {PLAN_CARDS.menu_manager_monthly.features.map((feature) => (
-                <li key={feature} style={s.featureItem}>
-                  <span style={s.featureMark(false)}>&#10003;</span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <button
-              type="button"
-              disabled={isSubmittingPlan}
-              style={s.button(false, isSubmittingPlan)}
-              onClick={handleMenuManager}
-            >
-              {isSubmittingPlan ? "Preparing checkout..." : "Subscribe with PayPal"}
+            <button type="button" style={s.button(false, false)} onClick={choosePublished}>
+              {isPublishedSelected ? "Continue with Published" : "Choose Published"}
             </button>
           </article>
 
@@ -839,7 +840,36 @@ export default function SubscriptionSelect() {
             <div style={s.planDesc}>
               {PLAN_CARDS.founders_annual.description}
             </div>
-            <div style={s.priceValue}>{FOUNDERS_PLAN.priceLabel}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+              {[
+                { key: "monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.founders_monthly },
+                { key: "annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.founders_annual },
+              ].map(({ key, label, price }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setFoundersInterval(key)}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: foundersInterval === key ? "1.5px solid #92400e" : "1.5px solid #e4e9f0",
+                    background: foundersInterval === key ? "#fffbeb" : "#fff",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    width: "100%",
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#101828" }}>{label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#92400e" }}>{price}</span>
+                </button>
+              ))}
+            </div>
+            <div style={s.priceValue}>
+              {CHECKOUT_PRICE_LABELS[foundersCheckoutCode]}
+            </div>
 
             <ul style={s.featureList}>
               {PLAN_CARDS.founders_annual.features.map((feature) => (
@@ -856,7 +886,7 @@ export default function SubscriptionSelect() {
               style={s.button(true, isSubmittingPlan)}
               onClick={handleFounder}
             >
-              {isSubmittingPlan ? "Preparing checkout..." : "Subscribe with PayPal"}
+              {isSubmittingPlan ? "Preparing checkout..." : "Continue with Founder's"}
             </button>
           </article>
         </section>
