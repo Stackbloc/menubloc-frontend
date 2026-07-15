@@ -43,6 +43,34 @@ If any Waiter file was modified without explicit user instruction → revert imm
 
 ---
 
+## 🔴 OPERATOR LOGIN AUTHPAGEFRAME GUARDRAIL (ABSOLUTE — ZERO EXCEPTIONS)
+
+**Established:** 2026-07-15  
+**Full rule:** `docs/guardrails/2026-07-15_operator-login-auth-page-frame-guardrail.md` (workspace) / `docs/guardrails/2026-07-15_operator-login-auth-page-frame-guardrail.md` in this repo when present.
+
+### ZERO-TOUCH RULE
+
+No agent may modify `OperatorLogin.jsx` or weaken its AuthPageFrame contract assertions unless the user's message in the CURRENT turn explicitly names operator login / restaurant sign-in and describes exactly what to change.
+
+### Authorized UI
+
+- Dark `AuthPageFrame` + green gradient `styles.submitButton`
+- **Never** PageShell light shell or solid blue `#1d4ed8` Sign in on `/operator/login`
+
+### Protected files
+
+- `src/pages/operator/OperatorLogin.jsx`
+- `test/siteFooterNavigationContract.test.js` (AuthPageFrame / anti-blue assertions)
+
+### Mandatory certification on EVERY task
+
+Every task response must include:
+> ☐ OPERATOR LOGIN CERTIFICATION: AuthPageFrame operator login unchanged (or user-approved change documented).
+
+If redesigned without explicit current-turn instruction → revert immediately.
+
+---
+
 Objective:
 Prevent speculative rewrites, unnecessary token/credit usage, production regressions, and architecture drift caused by agents implementing changes before understanding the existing system.
 

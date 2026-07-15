@@ -1,7 +1,7 @@
 /**
  * ============================================================
  * Path: menubloc-frontend/src/pages/operator/OperatorLogin.jsx
- * Updated: 2026-07-09
+ * Updated: 2026-04-07
  * ============================================================
  */
 
@@ -9,10 +9,12 @@ import React, { useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { PageHero, PageShell } from "../../components/grubbid/GrubbidPrimitives.jsx";
-import { BrandLogo } from "../../components/BrandLogo.jsx";
-import BottomNav from "../../components/BottomNav.jsx";
-import { FormError, PasswordField } from "../../components/consumer/ConsumerAuthShared.jsx";
+import {
+  AuthPageFrame,
+  FormError,
+  PasswordField,
+  styles,
+} from "../../components/consumer/ConsumerAuthShared.jsx";
 
 function resolveOnboardingDest(restaurant) {
   if (!restaurant) return "/operator/claim";
@@ -42,74 +44,6 @@ function resolvePostLoginDest(restaurant, preferredNextPath) {
   if (nextPath.startsWith("/")) return nextPath;
   return resolveOnboardingDest(restaurant);
 }
-
-const formStyles = {
-  form: {
-    display: "grid",
-    gap: 16,
-    maxWidth: 420,
-    marginTop: 8,
-  },
-  fieldGroup: {
-    display: "grid",
-    gap: 6,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: 700,
-    color: "#374151",
-  },
-  input: {
-    width: "100%",
-    padding: "12px 14px",
-    fontSize: 15,
-    border: "1.5px solid #E5E7EB",
-    borderRadius: 12,
-    outline: "none",
-    color: "#0B0F0C",
-    background: "#fff",
-    boxSizing: "border-box",
-    fontFamily: "inherit",
-  },
-  inputError: {
-    borderColor: "#DC2626",
-  },
-  fieldError: {
-    fontSize: 12,
-    color: "#DC2626",
-    fontWeight: 600,
-  },
-  submitButton: {
-    display: "block",
-    width: "100%",
-    textAlign: "center",
-    border: "none",
-    borderRadius: 12,
-    padding: "14px 20px",
-    fontSize: 15,
-    fontWeight: 800,
-    background: "#1d4ed8",
-    color: "#fff",
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-    cursor: "not-allowed",
-  },
-  footer: {
-    marginTop: 20,
-    fontSize: 14,
-    color: "#6B7280",
-    lineHeight: 1.6,
-    maxWidth: 420,
-  },
-  link: {
-    color: "#1d4ed8",
-    fontWeight: 700,
-    textDecoration: "none",
-  },
-};
 
 export default function OperatorLogin() {
   const { login, isAuthenticated, isEmailVerified, loading, operator, restaurants } = useOperator();
@@ -188,78 +122,65 @@ export default function OperatorLogin() {
   }
 
   return (
-    <>
-      <PageShell width="reading">
-        <div style={{ marginBottom: 16 }}>
-          <BrandLogo height={36} radius={8} matchPageBackground={false} />
+    <AuthPageFrame
+      title={t("auth.operatorSignInTitle", "Operator sign in")}
+      subtitle={t("auth.operatorSignInSubtitle", "Manage your restaurant on Menuply.")}
+      footer={(
+        <>
+          <p style={styles.footer}>
+            <Link to="/operator/recover" style={styles.link}>{t("auth.forgotPassword", "Forgot password?")}</Link>
+          </p>
+          <p style={{ ...styles.footer, marginTop: "12px" }}>
+            {t("auth.newToMenuply", "New to Menuply?")}{" "}
+            <Link to="/operator/signup" style={styles.link}>{t("auth.createAccount", "Create operator account")}</Link>
+          </p>
+        </>
+      )}
+    >
+      <form onSubmit={handleSubmit} noValidate style={styles.form}>
+        <div style={styles.fieldGroup}>
+          <label htmlFor="operator-login-email" style={styles.label}>{t("auth.email", "Email")}</label>
+          <input
+            id="operator-login-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setFieldErrors((cur) => ({ ...cur, email: undefined }));
+            }}
+            style={{ ...styles.input, ...(fieldErrors.email ? styles.inputError : null) }}
+            placeholder={t("auth.emailPlaceholder", "you@restaurant.com")}
+            aria-invalid={fieldErrors.email ? "true" : "false"}
+            required
+            autoFocus
+          />
+          {fieldErrors.email ? <div style={styles.fieldError}>{fieldErrors.email}</div> : null}
         </div>
 
-        <PageHero
-          title={t("restaurants.landing.signIn", "Restaurant Sign In")}
-          description={t(
-            "auth.operatorSignInSubtitle",
-            "Manage your restaurant on Menuply."
-          )}
+        <PasswordField
+          id="operator-login-password"
+          label={t("auth.password", "Password")}
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setFieldErrors((cur) => ({ ...cur, password: undefined }));
+          }}
+          placeholder={t("auth.passwordPlaceholder", "Your password")}
+          error={fieldErrors.password}
         />
 
-        <form onSubmit={handleSubmit} noValidate style={formStyles.form}>
-          <div style={formStyles.fieldGroup}>
-            <label htmlFor="operator-login-email" style={formStyles.label}>{t("auth.email", "Email")}</label>
-            <input
-              id="operator-login-email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setFieldErrors((cur) => ({ ...cur, email: undefined }));
-              }}
-              style={{ ...formStyles.input, ...(fieldErrors.email ? formStyles.inputError : null) }}
-              placeholder={t("auth.emailPlaceholder", "you@restaurant.com")}
-              aria-invalid={fieldErrors.email ? "true" : "false"}
-              required
-              autoFocus
-            />
-            {fieldErrors.email ? <div style={formStyles.fieldError}>{fieldErrors.email}</div> : null}
-          </div>
+        <FormError error={formError} />
 
-          <PasswordField
-            id="operator-login-password"
-            label={t("auth.password", "Password")}
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setFieldErrors((cur) => ({ ...cur, password: undefined }));
-            }}
-            placeholder={t("auth.passwordPlaceholder", "Your password")}
-            error={fieldErrors.password}
-          />
-
-          <FormError error={formError} />
-
-          <button
-            type="submit"
-            disabled={busy}
-            style={{ ...formStyles.submitButton, ...(busy ? formStyles.submitButtonDisabled : null) }}
-          >
-            {busy ? t("auth.signingIn", "Signing in...") : t("auth.signIn", "Sign in")}
-          </button>
-        </form>
-
-        <div style={formStyles.footer}>
-          <p style={{ margin: 0 }}>
-            <Link to="/operator/recover" style={formStyles.link}>{t("auth.forgotPassword", "Forgot password?")}</Link>
-          </p>
-          <p style={{ margin: "12px 0 0" }}>
-            {t("auth.newToMenuply", "New to Menuply?")}{" "}
-            <Link to="/restaurant/onboarding" style={formStyles.link}>
-              {t("restaurants.landing.createAccount", "Create Restaurant Account")}
-            </Link>
-          </p>
-        </div>
-      </PageShell>
-      <BottomNav />
-    </>
+        <button
+          type="submit"
+          disabled={busy}
+          style={{ ...styles.submitButton, ...(busy ? styles.submitButtonDisabled : null) }}
+        >
+          {busy ? t("auth.signingIn", "Signing in...") : t("auth.signIn", "Sign in")}
+        </button>
+      </form>
+    </AuthPageFrame>
   );
 }

@@ -1,0 +1,37 @@
+---
+description: Zero-touch protection for /operator/login AuthPageFrame green Sign-in UI.
+alwaysApply: true
+---
+
+# Operator Login AuthPageFrame Guardrail
+
+Full reference: `docs/guardrails/2026-07-15_operator-login-auth-page-frame-guardrail.md`
+
+## Hard rule (ZERO-TOUCH)
+
+**Do not modify `OperatorLogin.jsx` or weaken its AuthPageFrame contract test unless the user's message in the CURRENT turn explicitly names operator login / restaurant sign-in and describes exactly what to change.**
+
+Authorized UI: dark `AuthPageFrame` + green gradient `styles.submitButton`.  
+Forbidden without approval: PageShell / BrandLogo light shell, solid blue `#1d4ed8` Sign in, “Restaurant Sign In” PageHero redesign on `/operator/login`.
+
+## Never implement without explicit user approval
+
+- Rewriting `/operator/login` to match restaurants landing or other light pages
+- Changing Sign in button color/style away from `styles.submitButton`
+- Removing AuthPageFrame / anti-`#1d4ed8` assertions from `siteFooterNavigationContract.test.js`
+
+## Before editing protected files
+
+Output:
+
+> **Per Operator Login AuthPageFrame guardrail: the proposed change will modify [names] and may alter the authorized `/operator/login` AuthPageFrame UI. Explicit approval required.**
+
+Then stop until approved.
+
+## Mandatory on every task completion
+
+End every response with:
+
+> ☐ OPERATOR LOGIN CERTIFICATION: AuthPageFrame operator login [unchanged | user-approved change].
+
+Protected: `OperatorLogin.jsx`, `siteFooterNavigationContract.test.js` (AuthPageFrame assertions).

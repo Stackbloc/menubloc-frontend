@@ -35,15 +35,17 @@ function testRestaurantsRouteUsesLandingPage() {
   );
 }
 
-function testOperatorLoginUsesBrandedShell() {
+function testOperatorLoginUsesAuthPageFrame() {
   const src = read("src/pages/operator/OperatorLogin.jsx");
-  assert.match(src, /PageShell/);
-  assert.match(src, /BrandLogo/);
-  assert.match(src, /restaurants\.landing\.signIn/);
+  assert.match(src, /AuthPageFrame/);
+  assert.match(src, /styles\.submitButton/);
+  assert.match(src, /auth\.operatorSignInTitle/);
+  assert.doesNotMatch(src, /background:\s*"#1d4ed8"/);
+  assert.doesNotMatch(src, /PageShell/);
 }
 
 testFooterMarketplaceLinks();
 testRestaurantsRouteUsesLandingPage();
-testOperatorLoginUsesBrandedShell();
+testOperatorLoginUsesAuthPageFrame();
 
 console.log("✅ siteFooterNavigationContract tests passed");
