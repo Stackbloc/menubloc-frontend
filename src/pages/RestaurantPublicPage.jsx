@@ -52,6 +52,11 @@ import RestaurantStatusLight from "../components/RestaurantStatusLight.jsx";
 import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import ShareButton from "../components/share/ShareButton.jsx";
 import { buildRestaurantShareData } from "../components/share/shareUtils.js";
+import { clusterTypeLabel } from "../lib/clusterUrl.js";
+import {
+  fetchRestaurantClaimPlans,
+  formatClaimPlanPrice,
+} from "../lib/restaurantClaimPlans.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const THEME_KEY = "grubbid_theme";
@@ -276,6 +281,29 @@ function FieldRow({ label, value, placeholder, isDark }) {
 function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
   const isFoodTruck = detectFoodTruck(data);
   const isMobile = useIsMobile();
+  const [claimPlans, setClaimPlans] = useState([]);
+  const [claimPlansLoading, setClaimPlansLoading] = useState(true);
+  const [claimPlansUnavailable, setClaimPlansUnavailable] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    setClaimPlansLoading(true);
+    setClaimPlansUnavailable(false);
+    fetchRestaurantClaimPlans().then((result) => {
+      if (!alive) return;
+      if (!result.ok) {
+        setClaimPlans([]);
+        setClaimPlansUnavailable(true);
+      } else {
+        setClaimPlans(result.plans);
+        setClaimPlansUnavailable(false);
+      }
+      setClaimPlansLoading(false);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const name =
     firstNonEmpty(data?.restaurant_name, data?.name) || `Restaurant ${slugOrId}`;
@@ -523,53 +551,85 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
               lineHeight: 1.65,
             }}
           >
-            <div
-              style={{
-                borderRadius: 12,
-                padding: 14,
-                border: isDark ? "1px solid rgba(74,222,128,0.20)" : "1px solid #bbf7d0",
-                background: isDark ? "rgba(74,222,128,0.05)" : "#f0fff4",
-              }}
-            >
+            {claimPlansLoading ? (
+              <div style={{ fontSize: 13, color: muted }}>Loading subscription options…</div>
+            ) : claimPlansUnavailable ? (
               <div
                 style={{
-                  fontWeight: 800,
-                  color: isDark ? "#4ade80" : "#15803d",
-                  marginBottom: 6,
+                  borderRadius: 12,
+                  padding: 14,
+                  border: isDark ? "1px solid rgba(251,191,36,0.25)" : "1px solid #fde68a",
+                  background: isDark ? "rgba(251,191,36,0.06)" : "#fffbeb",
+                  color: isDark ? "#fde68a" : "#92400e",
+                  fontSize: 13,
+                  lineHeight: 1.55,
                 }}
               >
-                Verified
+                Subscription options are temporarily unavailable. You can still claim this
+                profile and choose a plan later.
               </div>
-              <div>
-                {isFoodTruck
-                  ? "Show core food truck information on Menuply with a free Verified subscription."
-                  : "Show core restaurant information on Menuply with a free Verified subscription."}
-              </div>
-            </div>
-
-            <div
-              style={{
-                borderRadius: 12,
-                padding: 14,
-                border: isDark ? "1px solid rgba(59,130,246,0.20)" : "1px solid #bfdbfe",
-                background: isDark ? "rgba(59,130,246,0.05)" : "#eff6ff",
-              }}
-            >
-              <div
-                style={{
-                  fontWeight: 800,
-                  color: isDark ? "#60a5fa" : "#1d4ed8",
-                  marginBottom: 6,
-                }}
-              >
-                Pro
-              </div>
-              <div>
-                {isFoodTruck
-                  ? "Unlock richer truck presentation, profile storytelling, featured placement, and stronger merchandising."
-                  : "Unlock richer restaurant presentation, profile storytelling, featured placement, and stronger merchandising."}
-              </div>
-            </div>
+            ) : (
+              claimPlans.map((plan, index) => {
+                const palettes = [
+                  {
+                    border: isDark ? "1px solid rgba(74,222,128,0.20)" : "1px solid #bbf7d0",
+                    background: isDark ? "rgba(74,222,128,0.05)" : "#f0fff4",
+                    title: isDark ? "#4ade80" : "#15803d",
+                  },
+                  {
+                    border: isDark ? "1px solid rgba(59,130,246,0.20)" : "1px solid #bfdbfe",
+                    background: isDark ? "rgba(59,130,246,0.05)" : "#eff6ff",
+                    title: isDark ? "#60a5fa" : "#1d4ed8",
+                  },
+                  {
+                    border: isDark ? "1px solid rgba(251,191,36,0.25)" : "1px solid #fde68a",
+                    background: isDark ? "rgba(251,191,36,0.06)" : "#fffbeb",
+                    title: isDark ? "#fbbf24" : "#b45309",
+                  },
+                ];
+                const palette = palettes[index % palettes.length];
+                const interval = String(plan.billing_interval || "").toLowerCase();
+                const intervalHint =
+                  interval === "month"
+                    ? "Billed monthly"
+                    : interval === "year"
+                    ? "Billed annually"
+                    : null;
+                return (
+                  <div
+                    key={plan.code || `${plan.public_name}-${index}`}
+                    style={{
+                      borderRadius: 12,
+                      padding: 14,
+                      border: palette.border,
+                      background: palette.background,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 800,
+                        color: palette.title,
+                        marginBottom: 4,
+                      }}
+                    >
+                      {plan.public_name || plan.display_name || plan.checkout_label}
+                    </div>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        marginBottom: intervalHint ? 6 : 0,
+                        color: isDark ? "#e2e8f0" : "#0f172a",
+                      }}
+                    >
+                      {formatClaimPlanPrice(plan)}
+                    </div>
+                    {intervalHint ? (
+                      <div style={{ fontSize: 12, opacity: 0.9 }}>{intervalHint}</div>
+                    ) : null}
+                  </div>
+                );
+              })
+            )}
 
             <Link
               to="/profilesearch"
@@ -700,6 +760,7 @@ export default function RestaurantPublicPage() {
           status_light_tone: json?.status_light_tone ?? json?.verification_badge_tone ?? null,
           verification_badge_tone: json?.verification_badge_tone ?? json?.status_light_tone ?? null,
           menu_status: json?.menu_status ?? null,
+          display_cluster: json?.display_cluster ?? null,
         });
       })
       .catch((e) => {
@@ -1080,6 +1141,28 @@ export default function RestaurantPublicPage() {
 
                 {cuisineLine ? (
                   <div style={{ color: t.metaColor, fontWeight: 500 }}>{cuisineLine}</div>
+                ) : null}
+
+                {data?.display_cluster?.name && data?.display_cluster?.public_url ? (
+                  <div style={{ marginTop: 4 }}>
+                    <span style={{ color: muted, fontWeight: 600, fontSize: 12, marginRight: 6 }}>
+                      Cluster
+                    </span>
+                    <Link
+                      to={data.display_cluster.public_url}
+                      style={{
+                        color: linkColor,
+                        textDecoration: "none",
+                        fontWeight: 600,
+                        fontSize: 13,
+                      }}
+                    >
+                      {data.display_cluster.name}
+                      {data.display_cluster.cluster_type
+                        ? ` · ${clusterTypeLabel(data.display_cluster.cluster_type)}`
+                        : ""}
+                    </Link>
+                  </div>
                 ) : null}
 
                 {distanceText ? <div>{distanceText}</div> : null}
