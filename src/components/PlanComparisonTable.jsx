@@ -1,119 +1,211 @@
-import { Fragment } from "react";
-import { useLanguage } from "../context/LanguageContext.jsx";
-
 const GREEN = "#1F4E3D";
 const AMBER = "#92400e";
 
-const MATRIX = [
+/**
+ * Restaurant subscription feature comparison.
+ * Display-only marketing content for the public signup and operator
+ * subscription pages. Not sourced from Stripe, entitlements, or the backend.
+ */
+const FEATURES = [
+  { label: "Searchable restaurant listing on Menuply", published: true, starter: true, founders: true },
+  { label: "Searchable menu items", published: true, starter: true, founders: true },
+  { label: "Professional restaurant profile", published: "Limited", starter: true, founders: true },
+  { label: "Restaurant logo on profile", published: false, starter: true, founders: true },
+  { label: "Logo and product photos", published: false, starter: true, founders: true },
+  { label: "Claim restaurant listing", published: true, starter: true, founders: true },
+  { label: "QR Code", published: false, starter: true, founders: true },
+  { label: "Unlimited menus and menu items", published: false, starter: true, founders: true },
+  { label: "Edit menus and menu items", published: false, starter: true, founders: true },
+  { label: "Premium menu management tools", published: false, starter: false, founders: true },
+  { label: "Rich searchable menu data", published: false, starter: true, founders: true },
+  { label: "Social sharing of menus and menu items", published: false, starter: true, founders: true },
+  { label: "Customers can follow your restaurant", published: false, starter: true, founders: true },
+  { label: "Create deals and promotions free of charge", published: false, starter: false, founders: true },
+  { label: "Online ordering", published: false, starter: true, founders: true },
+  { label: "Marketplace commission rate", published: false, starter: "Standard", founders: "Lowest" },
+  { label: "Two-year commission rate guarantee", published: false, starter: false, founders: true },
+];
+
+const PLAN_COLUMNS = [
   {
-    category: "Founder's Membership",
-    rows: [
-      { label: "All benefits in Verified, plus much more.", v: false, f: true },
-      { label: "Guaranteed, no increase pricing for 24 months", v: false, f: true },
-    ],
+    key: "published",
+    name: "Published",
+    prices: ["Free"],
+    nameColor: GREEN,
+    highlight: false,
   },
   {
-    category: "Discovery & Presence",
-    rows: [
-      { label: "Fully searchable restaurant listing on Menuply", v: true, f: true },
-      { label: "Premiere hosted restaurant profile page, including logo, about us, featured dish", v: true, vNote: "(Limited)", f: true },
-      { label: "Dynamic QR Code & menus that are sharable by restaurant", v: true, f: true },
-      { label: "Diners Social Share Menu and Menu Items", v: false, f: true },
-      { label: "Restaurant profile that diner may follow and receive restaurant offers and updates", v: false, f: true },
-    ],
+    key: "starter",
+    name: "Starter",
+    prices: ["$20/month", "or $199/year"],
+    nameColor: GREEN,
+    highlight: false,
   },
   {
-    category: "Menu Management",
-    rows: [
-      { label: "Unlimited menus, unlimited menu items, with scheduled/timed menu display options", v: true, vNote: "(Limited to one menu)", f: true },
-      { label: "Edit menu, menu items, with advanced pricing tools", v: true, f: true },
-      { label: "Premium menu tools", v: false, f: true },
-      { label: "Option to include Menu Item Photos", v: false, f: true },
-    ],
-  },
-  {
-    category: "Menu Intelligence",
-    rows: [
-      { label: "Ingredient rich, fully searchable menu content", v: false, f: true },
-    ],
-  },
-  {
-    category: "Pricing & Deals",
-    rows: [
-      { label: "Publish Deals free during first year (subject to quantity limits)", v: false, f: true },
-    ],
-  },
-  {
-    category: "Marketplace & Commerce",
-    rows: [
-      { label: "Marketplace ordering (pickup and delivery options)", v: false, f: true },
-    ],
+    key: "founders",
+    name: "Founder's*",
+    prices: ["$39/month", "or $319/year"],
+    nameColor: AMBER,
+    highlight: true,
   },
 ];
 
-function CategoryHeader({ label }) {
+function CellValue({ value }) {
+  if (value === true) {
+    return <span style={{ color: GREEN, fontWeight: 800, fontSize: 15 }}>✓</span>;
+  }
+  if (typeof value === "string" && value.trim()) {
+    const display = value === "Limited" ? `(${value})` : value;
+    return (
+      <span style={{ fontSize: 11, fontWeight: 700, color: "#374151", lineHeight: 1.25 }}>
+        {display}
+      </span>
+    );
+  }
+  return <span style={{ color: "#d1d5db", fontSize: 15 }}>—</span>;
+}
+
+function FeatureRow({ label, published, starter, founders, shade }) {
   return (
-    <tr>
-      <td colSpan={3} style={{ padding: "18px 16px 8px", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8a9ab0", background: "#f8faf9", borderTop: "1px solid #e4e9f0" }}>
+    <tr style={{ background: shade ? "#f8faf9" : "#fff" }}>
+      <td
+        style={{
+          padding: "11px 16px",
+          fontSize: 13,
+          color: "#374151",
+          fontWeight: 500,
+          borderRight: "1px solid #f0f4f8",
+        }}
+      >
         {label}
+      </td>
+      <td style={{ padding: "11px 6px", textAlign: "center", width: 100 }}>
+        <CellValue value={published} />
+      </td>
+      <td style={{ padding: "11px 6px", textAlign: "center", width: 110 }}>
+        <CellValue value={starter} />
+      </td>
+      <td
+        style={{
+          padding: "11px 6px",
+          textAlign: "center",
+          width: 120,
+          background: shade ? "#fef9f0" : "#fffdf7",
+        }}
+      >
+        <CellValue value={founders} />
       </td>
     </tr>
   );
 }
 
-function FeatureRow({ label, v, vNote, f, shade }) {
-  const check = (flag, note) => flag ? (
-    <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-      <span style={{ color: GREEN, fontWeight: 800, fontSize: 15 }}>✓</span>
-      {note && <span style={{ fontSize: 10, color: "#8a9ab0", fontWeight: 500, whiteSpace: "nowrap" }}>{note}</span>}
-    </span>
-  ) : (
-    <span style={{ color: "#d1d5db", fontSize: 15 }}>—</span>
-  );
+function PlanHeaderCell({ plan }) {
   return (
-    <tr style={{ background: shade ? "#f8faf9" : "#fff" }}>
-      <td style={{ padding: "11px 16px", fontSize: 13, color: "#374151", fontWeight: 500, borderRight: "1px solid #f0f4f8" }}>{label}</td>
-      <td style={{ padding: "11px 0", textAlign: "center", width: 110 }}>{check(v, vNote)}</td>
-      <td style={{ padding: "11px 0", textAlign: "center", width: 120, background: shade ? "#fef9f0" : "#fffdf7" }}>{check(f)}</td>
-    </tr>
+    <th
+      style={{
+        padding: "6px 8px 10px",
+        textAlign: "center",
+        width: plan.key === "founders" ? 120 : plan.key === "starter" ? 110 : 100,
+        background: plan.highlight ? "#fffdf7" : undefined,
+        verticalAlign: "top",
+      }}
+    >
+      <div style={{ fontSize: 12, fontWeight: 800, color: plan.nameColor, lineHeight: 1.3 }}>
+        {plan.name}
+      </div>
+      <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 1, alignItems: "center" }}>
+        {plan.prices.map((line) => (
+          <div
+            key={line}
+            style={{
+              fontSize: 10,
+              color: plan.highlight ? AMBER : "#6b7280",
+              lineHeight: 1.35,
+              fontWeight: 500,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {line}
+          </div>
+        ))}
+      </div>
+    </th>
   );
 }
 
 export default function PlanComparisonTable() {
-  const { t } = useLanguage();
   return (
-    <div style={{ background: "#fff", border: "1px solid #e4e9f0", borderRadius: 14, overflow: "hidden", marginBottom: 32 }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ background: "#f8faf9", borderBottom: "1px solid #e4e9f0" }}>
-            <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 13, fontWeight: 800, color: "#0f1720", width: "55%" }}>Feature</th>
-            <th colSpan={2} style={{ padding: "12px 0", textAlign: "center", fontSize: 13, fontWeight: 800, color: "#0f1720" }}>Subscription</th>
-          </tr>
-          <tr style={{ background: "#f8faf9", borderBottom: "2px solid #e4e9f0" }}>
-            <th style={{ padding: "6px 16px 10px", width: "55%" }} />
-            <th style={{ padding: "6px 0 10px", textAlign: "center", fontSize: 12, fontWeight: 700, color: GREEN, width: 110 }}>Verified</th>
-            <th style={{ padding: "4px 8px 10px", textAlign: "center", width: 120, background: "#fffdf7" }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: AMBER }}>{t("signup.entry.plan.founder.name", "Founder's")}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#b42318", background: "#fee2e2", borderRadius: 999, padding: "2px 7px", display: "inline-block", marginTop: 3, whiteSpace: "nowrap" }}>
-                {t("signup.entry.limitedAvailability", "Limited Availability")}
-              </div>
-              <div style={{ fontSize: 10, color: AMBER, marginTop: 5, lineHeight: 1.35, fontWeight: 500 }}>
-                {t("signup.entry.plan.founder.price", "$299/year")}
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {MATRIX.map((section) => (
-            <Fragment key={section.category}>
-              <CategoryHeader label={section.category} />
-              {section.rows.map((row, idx) => (
-                <FeatureRow key={row.label} label={row.label} v={row.v} vNote={row.vNote} f={row.f} shade={idx % 2 === 1} />
+    <div style={{ marginBottom: 32 }}>
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #e4e9f0",
+          borderRadius: 14,
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "#f8faf9", borderBottom: "1px solid #e4e9f0" }}>
+                <th
+                  style={{
+                    padding: "12px 16px",
+                    textAlign: "left",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: "#0f1720",
+                    width: "42%",
+                  }}
+                >
+                  Feature
+                </th>
+                <th
+                  colSpan={3}
+                  style={{
+                    padding: "12px 0",
+                    textAlign: "center",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: "#0f1720",
+                  }}
+                >
+                  Subscription
+                </th>
+              </tr>
+              <tr style={{ background: "#f8faf9", borderBottom: "2px solid #e4e9f0" }}>
+                <th style={{ padding: "6px 16px 10px", width: "42%" }} />
+                {PLAN_COLUMNS.map((plan) => (
+                  <PlanHeaderCell key={plan.key} plan={plan} />
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {FEATURES.map((row, idx) => (
+                <FeatureRow
+                  key={row.label}
+                  label={row.label}
+                  published={row.published}
+                  starter={row.starter}
+                  founders={row.founders}
+                  shade={idx % 2 === 1}
+                />
               ))}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <p
+        style={{
+          margin: "10px 4px 0",
+          fontSize: 12,
+          color: "#6b7280",
+          lineHeight: 1.45,
+          fontWeight: 500,
+        }}
+      >
+        * Window QR Code included with Founder&apos;s Annual plan.
+      </p>
     </div>
   );
 }

@@ -20,15 +20,27 @@ import { Link, useSearchParams } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { buildLegalConsentPayload } from "../lib/legalConsent.js";
+import {
+  CHECKOUT_PRICE_LABELS,
+  FOOD_TRUCK_ANNUAL_PLAN_CODE,
+  rememberIntendedCheckoutPlanCode,
+} from "../lib/menuplyCheckoutPlans.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+/** Consumer-facing Food Truck plan features (display copy only). */
 const PLAN_FEATURES = [
-  "Public food truck profile page",
-  "Marketplace ordering for pickup and delivery",
-  "Dynamic QR menu access and shareable menu links",
-  "Deals and billboard visibility tools",
-  "Menu uploads, analytics, and multiple menus",
-  "Live pickup and service location updates",
+  "Professional Food Truck profile",
+  "Logo and product photos",
+  "Full menu",
+  "Edit menus and menu items",
+  "Rich searchable menu data",
+  "QR Code",
+  "Window QR Code included",
+  "Social sharing of menus and menu items",
+  "Customers can follow your Food Truck",
+  "Create deals and promotions free of charge",
+  "Online ordering",
+  "Lowest marketplace commission",
 ];
 
 const styles = {
@@ -421,6 +433,7 @@ export default function FoodTruckSignup() {
         throw new Error(data?.error || `Signup failed (${res.status})`);
       }
 
+      rememberIntendedCheckoutPlanCode(FOOD_TRUCK_ANNUAL_PLAN_CODE);
       setAccountCreated(true);
       setSubmitting(false);
     } catch (err) {
@@ -480,11 +493,11 @@ export default function FoodTruckSignup() {
 
         <div style={styles.contentGrid}>
           <aside style={styles.pricingCard}>
-            <div style={styles.planBadge}>Food Truck Annual</div>
-            <div style={styles.planName}>Menuply Food Truck Plan</div>
-            <div style={styles.planPrice}>$39/year</div>
+            <div style={styles.planBadge}>Annual plan</div>
+            <div style={styles.planName}>Food Truck</div>
+            <div style={styles.planPrice}>{CHECKOUT_PRICE_LABELS[FOOD_TRUCK_ANNUAL_PLAN_CODE]}</div>
             <div style={styles.planDescription}>
-              A Menuply subscription built for food trucks that want full operator tools plus mobile pickup and service location support.
+              Build a professional digital presence for your Food Truck — discovery, menus, social sharing, online ordering, and Menuply&apos;s lowest marketplace commission.
             </div>
             <ul style={styles.featureList}>
               {PLAN_FEATURES.map((feature) => (
@@ -495,7 +508,7 @@ export default function FoodTruckSignup() {
               ))}
             </ul>
             <div style={styles.planFootnote}>
-              Your truck can start with the essentials here. Live service location updates, menu uploads, profile details, and operating setup continue from the operator dashboard after signup.
+              Create your account here. Finish your profile, menus, and live service location from the operator dashboard after signup.
             </div>
           </aside>
 
