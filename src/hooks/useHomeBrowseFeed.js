@@ -114,6 +114,7 @@ export function useHomeBrowseFeed() {
     return String(window.sessionStorage.getItem(SESSION_LOCATION_KEY) || "").trim();
   });
   const [menus, setMenus] = useState([]);
+  const [homepageSectionTitles, setHomepageSectionTitles] = useState(null);
   const [loading, setLoading] = useState(true);
   const requestRef = useRef(0);
   const cacheRef = useRef({});
@@ -181,7 +182,12 @@ export function useHomeBrowseFeed() {
     const controller = new AbortController();
     const hasVisibleMenus = menusRef.current.length > 0;
 
-    if (Array.isArray(cached)) {
+    if (Array.isArray(cached?.menus)) {
+      setMenus(cached.menus);
+      setHomepageSectionTitles(cached.homepageSectionTitles || null);
+      setLoading(false);
+    } else if (Array.isArray(cached)) {
+      // legacy cache shape
       setMenus(cached);
       setLoading(false);
     } else if (hasVisibleMenus) {
@@ -197,8 +203,19 @@ export function useHomeBrowseFeed() {
         if (controller.signal.aborted || requestRef.current !== requestId) return;
         const rows = Array.isArray(json?.menus) ? json.menus : [];
         const next = dedupeDiscoveryMenus(rows);
-        cacheRef.current[feedScopeKey] = next;
+        const titles = Array.isArray(json?.homepage_sections)
+          ? Object.fromEntries(
+              json.homepage_sections
+                .filter((s) => s?.internal_key && s?.display_title)
+                .map((s) => [s.internal_key, s.display_title])
+            )
+          : null;
+        cacheRef.current[feedScopeKey] = {
+          menus: next,
+          homepageSectionTitles: titles,
+        };
         setMenus(next);
+        setHomepageSectionTitles(titles);
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
@@ -220,6 +237,7 @@ export function useHomeBrowseFeed() {
 
   return {
     menus,
+    homepageSectionTitles,
     loading,
     autoLocation,
     appliedLocation,

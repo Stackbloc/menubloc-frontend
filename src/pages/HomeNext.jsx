@@ -40,6 +40,7 @@ export default function HomeNext() {
 
   const {
     menus,
+    homepageSectionTitles,
     loading: feedLoading,
     autoLocation,
     appliedLocation,
@@ -49,8 +50,12 @@ export default function HomeNext() {
   } = useHomeBrowseFeed();
 
   const sections = useMemo(
-    () => buildHomeDiscoverySections(menus, { hasGeo: shouldUseGeoBrowse }),
-    [menus, shouldUseGeoBrowse]
+    () =>
+      buildHomeDiscoverySections(menus, {
+        hasGeo: shouldUseGeoBrowse,
+        titleOverrides: homepageSectionTitles,
+      }),
+    [menus, shouldUseGeoBrowse, homepageSectionTitles]
   );
 
   const expandedSection = useMemo(() => {

@@ -77,19 +77,30 @@ export function getExpandedSectionMenus(menus, sectionId, { hasGeo = false } = {
 /**
  * Slice a location-scoped browse feed into curated sections.
  * Every section includes a human-readable reason for visibility.
+ *
+ * Stable section ids (popular|nearby|discover|more) are immutable taxonomy keys.
+ * Display titles may be overridden via titleOverrides[internal_key] from durable
+ * homepage_sections.display_title — layout/cards/chips unchanged (HPP).
  */
-export function buildHomeDiscoverySections(menus, { hasGeo = false } = {}) {
+export function buildHomeDiscoverySections(menus, { hasGeo = false, titleOverrides = null } = {}) {
   const deduped = dedupeDiscoveryMenus(menus);
   if (!deduped.length) return [];
 
   const used = new Set();
   const sections = [];
+  const titleFor = (id, fallback) => {
+    if (titleOverrides && typeof titleOverrides === "object") {
+      const override = titleOverrides[id];
+      if (override != null && String(override).trim()) return String(override).trim();
+    }
+    return fallback;
+  };
 
   const popular = pickUnique(sortPopular(deduped), used);
   if (popular.length) {
     sections.push({
       id: "popular",
-      title: "Popular Menus",
+      title: titleFor("popular", "Popular Menus"),
       reason: "Restaurants with the most menu items near you",
       menus: popular,
     });
@@ -100,7 +111,7 @@ export function buildHomeDiscoverySections(menus, { hasGeo = false } = {}) {
     if (nearby.length) {
       sections.push({
         id: "nearby",
-        title: "Nearby Picks",
+        title: titleFor("nearby", "Nearby Picks"),
         reason: "Closest restaurants with published menus",
         menus: nearby,
       });
@@ -111,7 +122,7 @@ export function buildHomeDiscoverySections(menus, { hasGeo = false } = {}) {
   if (diverse.length) {
     sections.push({
       id: "discover",
-      title: "Discover More",
+      title: titleFor("discover", "Discover More"),
       reason: "Variety across cuisines in your area",
       menus: diverse,
     });
@@ -121,7 +132,7 @@ export function buildHomeDiscoverySections(menus, { hasGeo = false } = {}) {
   if (remainder.length) {
     sections.push({
       id: "more",
-      title: "More to Explore",
+      title: titleFor("more", "More to Explore"),
       reason: "Additional menus worth a look",
       menus: remainder,
     });

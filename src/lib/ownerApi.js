@@ -28,6 +28,8 @@ async function req(path, opts = {}) {
 const get = (path) => req(path);
 const post = (path, body) => req(path, { method: "POST", body: JSON.stringify(body) });
 const put = (path, body) => req(path, { method: "PUT", body: JSON.stringify(body) });
+const patch = (path, body) => req(path, { method: "PATCH", body: JSON.stringify(body) });
+const del = (path) => req(path, { method: "DELETE" });
 
 async function postFormData(path, formData) {
   const res = await fetch(`${API}${path}`, {
@@ -302,6 +304,28 @@ export const closeOwnerPhmsIncident = (incidentId) =>
   post(`/api/owner/phms/incidents/${encodeURIComponent(incidentId)}/close`, {});
 export const setOwnerPhmsDeploymentBlocker = (incidentId, deploymentBlocker) =>
   post(`/api/owner/phms/incidents/${encodeURIComponent(incidentId)}/deployment-blocker`, { deploymentBlocker });
+
+// Homepage membership + section controls (MDS-DI-01B) — platform owner only
+export const getOwnerHomepageSections = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/homepage/sections${qs ? `?${qs}` : ""}`);
+};
+export const patchOwnerHomepageSection = (sectionId, body) =>
+  patch(`/api/owner/homepage/sections/${encodeURIComponent(sectionId)}`, body);
+export const getOwnerHomepageMemberships = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/homepage/memberships${qs ? `?${qs}` : ""}`);
+};
+export const addOwnerHomepageMembership = (body) =>
+  post("/api/owner/homepage/memberships", body);
+export const patchOwnerHomepageMembership = (membershipId, body) =>
+  patch(`/api/owner/homepage/memberships/${encodeURIComponent(membershipId)}`, body);
+export const disableOwnerHomepageMembership = (membershipId) =>
+  del(`/api/owner/homepage/memberships/${encodeURIComponent(membershipId)}`);
+export const searchOwnerHomepageRestaurants = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return get(`/api/owner/homepage/restaurants/search${qs ? `?${qs}` : ""}`);
+};
 
 // Deployment Operations
 export const getDeploymentOperationsSummary = () => get("/api/owner/deployment-operations/summary");
