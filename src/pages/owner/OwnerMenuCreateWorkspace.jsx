@@ -3,9 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle } from "./OwnerLayout.jsx";
 import { MenuEditor, StatusChip, inputStyle } from "./ownerMenuEditorComponents.jsx";
 import OwnerMenuRestaurantFinder, { saveRecentRestaurant } from "./OwnerMenuRestaurantFinder.jsx";
-import { buildOwnerUploadImageUrl } from "../../lib/ownerMenuUploadMedia.js";
 import {
-  approveReviewItem,
   bulkReviewItems,
   createMenuConsoleMenu,
   createMenuConsoleRestaurant,
@@ -17,7 +15,6 @@ import {
   getOwnerMenuUploads,
   getUploadReviewItems,
   publishUpload,
-  rejectReviewItem,
   submitOwnerMenuFilePdf,
   unpublishMenuConsoleMenu,
   updateMenuConsoleMenu,
@@ -129,41 +126,6 @@ function DuplicateWarning({ matches, onConfirm, onCancel, submitting }) {
   );
 }
 
-function ReviewItemRow({ item, onApprove, onReject }) {
-  const [name, setName] = useState(item.parsed_name || item.proposed_item_name || "");
-  const [price, setPrice] = useState(item.proposed_price != null ? String(item.proposed_price) : "");
-  const [description, setDescription] = useState(item.parsed_description || item.proposed_description || "");
-  const [section, setSection] = useState(item.section_name || "");
-  const [acting, setActing] = useState(false);
-
-  return (
-    <div style={{ padding: "12px 14px", borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-        <div>
-          <label style={fieldLabel}>Name *</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} />
-        </div>
-        <div>
-          <label style={fieldLabel}>Price</label>
-          <input value={price} onChange={(e) => setPrice(e.target.value)} type="number" step="0.01" min="0" style={{ ...inputStyle, fontSize: 12 }} />
-        </div>
-      </div>
-      <div style={{ marginBottom: 8 }}>
-        <label style={fieldLabel}>Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} style={{ ...inputStyle, fontSize: 12, resize: "vertical" }} />
-      </div>
-      <div style={{ marginBottom: 10 }}>
-        <label style={fieldLabel}>Section</label>
-        <input value={section} onChange={(e) => setSection(e.target.value)} style={{ ...inputStyle, fontSize: 12 }} />
-      </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button type="button" disabled={acting || !name.trim()} onClick={async () => { setActing(true); await onApprove({ name: name.trim(), price: price === "" ? null : Number(price), description: description.trim() || null, section: section.trim() || null }); setActing(false); }} style={{ padding: "7px 16px", borderRadius: 8, background: "#15803d", color: "#fff", border: "none", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Approve</button>
-        <button type="button" disabled={acting} onClick={async () => { setActing(true); await onReject(); setActing(false); }} style={{ padding: "7px 14px", borderRadius: 8, background: "#fff", color: "#991b1b", border: "1px solid #fca5a5", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Reject</button>
-      </div>
-    </div>
-  );
-}
-
 function profileFromRestaurant(r = {}) {
   const serviceModel = r.service_model;
   return {
@@ -190,42 +152,6 @@ function profileFromRestaurant(r = {}) {
     lat: r.lat != null ? String(r.lat) : "",
     lng: r.lng != null ? String(r.lng) : "",
   };
-}
-
-function WorkspaceSourcePhotoStrip({ sessions }) {
-  const pages = (sessions || []).flatMap((session) =>
-    (session.pages || [])
-      .filter((p) => p.image_url)
-      .map((p) => ({ ...p, uploadId: session.id }))
-  );
-  if (!pages.length) return null;
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: OWNER_COLORS.muted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-        Source photos
-      </div>
-      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
-        {pages.slice(0, 12).map((page) => {
-          const url = buildOwnerUploadImageUrl(page.image_url);
-          return (
-            <Link
-              key={`${page.uploadId}-${page.page_number}`}
-              to={`/owner/menu-manager/uploads/${page.uploadId}`}
-              title={`Open upload ${page.uploadId} photo ${page.page_number}`}
-              style={{ flex: "0 0 auto", display: "block", borderRadius: 8, overflow: "hidden", border: `1px solid ${OWNER_COLORS.line}`, width: 72, height: 72, background: "#111" }}
-            >
-              {url ? (
-                <img src={url} alt={`Page ${page.page_number}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : null}
-            </Link>
-          );
-        })}
-      </div>
-      <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
-        Tap a photo to open upload detail. Use Review Queue for full-size evidence while editing holds.
-      </div>
-    </div>
-  );
 }
 
 export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
@@ -263,14 +189,23 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const [bulkActing, setBulkActing] = useState(false);
   const [actionMsg, setActionMsg] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [showImportPanel, setShowImportPanel] = useState(false);
+  const [showProfilePanel, setShowProfilePanel] = useState(false);
 
   const loadGenerationRef = useRef(0);
   const suppressUrlLoadRef = useRef(false);
   const prefillAppliedRef = useRef(false);
+  const menuEditorRef = useRef(null);
 
   const step = !restaurant ? "profile" : reviewItems.length > 0 || menuDetail?.item_count > 0 ? "review" : "attach";
   const rid = restaurant?.id;
   const mid = menu?.id;
+
+  function scrollToMenuEditor() {
+    requestAnimationFrame(() => {
+      menuEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 
   function patchWorkspaceParams(mutator) {
     setSearchParams((params) => {
@@ -475,16 +410,23 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
 
   async function switchMenu(nextMenu) {
     if (!nextMenu?.id || !rid) return;
+    const alreadyActive = Number(nextMenu.id) === Number(mid);
+    if (alreadyActive && menuDetail) {
+      scrollToMenuEditor();
+      return;
+    }
     setMenu(nextMenu);
     if (nextMenu.display_name) setMenuName(nextMenu.display_name);
     if (nextMenu.menu_type) setMenuType(nextMenu.menu_type);
-    setMenuDetail(null);
+    if (!alreadyActive) setMenuDetail(null);
     try {
       const detail = await getMenuConsoleMenu(rid, nextMenu.id);
       setMenuDetail(detail);
       setMenu(detail.menu || nextMenu);
-    } catch {
+      scrollToMenuEditor();
+    } catch (err) {
       setMenuDetail(null);
+      setActionMsg(err?.payload?.error || err?.message || "Could not load menu items.");
     }
   }
 
@@ -764,8 +706,9 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
   const content = (
     <>
       {embedded ? (
-        <div style={{ marginBottom: 12, fontSize: 13, color: OWNER_COLORS.muted, fontWeight: 600 }}>
-          Create restaurant profiles, attach uploads, review held OCR items with source photos, then publish.
+        <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "#f8fafc", border: `1px solid ${OWNER_COLORS.line}`, fontSize: 13, color: OWNER_COLORS.ink, lineHeight: 1.5 }}>
+          <strong>Edit Menus</strong> is for a restaurant’s live menu (add/edit dishes, then publish).
+          For camera OCR corrections with source photos, use the <strong>OCR Uploads</strong> tab → Review Queue.
         </div>
       ) : null}
       <OwnerMenuRestaurantFinder
@@ -780,13 +723,14 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         <PageCard style={{ padding: 16, marginBottom: 16, color: "#991b1b" }}>{loadRestaurantErr}</PageCard>
       ) : null}
 
-      <StepHeader current={step} />
+      {!existingRestaurant ? <StepHeader current={step} /> : null}
 
       {schemaError && (
         <PageCard style={{ padding: 16, marginBottom: 16, color: "#991b1b" }}>{schemaError}</PageCard>
       )}
 
-      {/* ── Step 1: Profile ───────────────────────────────────── */}
+      {/* Create flow: profile first. Existing restaurant: menus + editor first (profile below). */}
+      {(!existingRestaurant || showProfilePanel) && (
       <PageCard style={{ padding: 20, marginBottom: 16, opacity: restaurant && !existingRestaurant ? 0.72 : 1 }}>
         <SectionTitle
           title={existingRestaurant ? "Restaurant Profile" : "Create New Restaurant"}
@@ -949,14 +893,28 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
           </div>
         )}
       </PageCard>
+      )}
+
+      {restaurant && existingRestaurant && !showProfilePanel ? (
+        <div style={{ marginBottom: 12 }}>
+          <button
+            type="button"
+            onClick={() => setShowProfilePanel(true)}
+            style={{
+              padding: "8px 12px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`,
+              background: "#fff", color: OWNER_COLORS.muted, fontWeight: 600, fontSize: 12, cursor: "pointer",
+            }}
+          >
+            Edit restaurant profile
+          </button>
+        </div>
+      ) : null}
 
       {restaurant && (
         <PageCard style={{ padding: 20, marginBottom: 16 }}>
           <SectionTitle
             title="Menus"
-            subtitle={existingRestaurant
-              ? "Select a menu to edit items, publish, or delete. Primary menu cannot be deleted."
-              : "Menus attached to this restaurant."}
+            subtitle="Pick which menu to edit below. Primary menu cannot be deleted."
           />
           {availableMenus.length === 0 ? (
             <div style={{ marginTop: 12, fontSize: 13, color: OWNER_COLORS.muted }}>
@@ -992,7 +950,7 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                         </span>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                       <button
                         type="button"
                         onClick={() => switchMenu(m)}
@@ -1006,16 +964,6 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
                       >
                         {active ? "Editing" : "Edit items"}
                       </button>
-                      <Link
-                        to={`/owner/restaurants/${rid}/menus/${m.id}/edit`}
-                        style={{
-                          padding: "8px 12px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`,
-                          background: "#fff", fontWeight: 700, fontSize: 12, textDecoration: "none",
-                          color: OWNER_COLORS.accent,
-                        }}
-                      >
-                        Full editor
-                      </Link>
                       {!m.is_primary ? (
                         <button
                           type="button"
@@ -1051,13 +999,60 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
         </PageCard>
       )}
 
-      {/* ── Step 2: Attach menu ───────────────────────────────── */}
+      {restaurant && menuDetail && (
+        <div ref={menuEditorRef}>
+        <PageCard style={{ padding: 20, marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+            <div>
+              <SectionTitle
+                title="Edit dishes"
+                subtitle={`${menuDetail.item_count ?? 0} items in this menu — this is the main editor. Publish when ready.`}
+              />
+              <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
+                <StatusChip status={menuDetail.menu?.status} />
+                <a
+                  href={`/public/restaurants/${rid}/menu`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
+                >
+                  View live menu ↗
+                </a>
+              </div>
+            </div>
+          </div>
+          <MenuEditor
+            restaurantId={rid}
+            menuDetail={menuDetail}
+            onMenuUpdated={(updated) => setMenuDetail((prev) => (prev ? { ...prev, menu: { ...prev.menu, ...updated } } : prev))}
+            onMenuDeleted={handleMenuDeleted}
+            onReload={loadMenuState}
+          />
+        </PageCard>
+        </div>
+      )}
+
+      {/* Optional OCR import — secondary to live dish editing */}
       {restaurant && (
         <PageCard style={{ padding: 20, marginBottom: 16 }}>
-          <SectionTitle
-            title="Upload Menu PDF / Photo"
-            subtitle="Parses items from your file. Review flagged items if shown, then edit in Menu Items below. Publish only when the menu is ready to go live."
-          />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <SectionTitle
+              title="Optional: import photo / PDF"
+              subtitle="Secondary path — after parsing, use OCR Uploads → Review Queue for held items, then finish here."
+            />
+            <button
+              type="button"
+              onClick={() => setShowImportPanel((v) => !v)}
+              style={{
+                padding: "8px 12px", borderRadius: 8, border: `1px solid ${OWNER_COLORS.line}`,
+                background: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", color: OWNER_COLORS.ink,
+              }}
+            >
+              {showImportPanel ? "Hide import" : "Show import"}
+            </button>
+          </div>
+          {showImportPanel ? (
+            <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
             <div>
               <label style={fieldLabel}>Menu name</label>
@@ -1080,12 +1075,20 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
             <button type="button" disabled={uploading} onClick={handleUpload} style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: uploading ? "not-allowed" : "pointer" }}>
               {uploading ? "Uploading…" : "Upload & Parse Menu"}
             </button>
+            <Link
+              to="/owner/menu-manager?tab=activity"
+              style={{ padding: "9px 14px", borderRadius: 9, border: `1px solid ${OWNER_COLORS.line}`, background: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none", color: OWNER_COLORS.accent }}
+            >
+              OCR Uploads →
+            </Link>
           </div>
           {(uploadMsg || actionMsg) && (
             <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 9, background: uploadMsg?.ok === false ? "#fff1ef" : "#f0fdf4", color: uploadMsg?.ok === false ? "#991b1b" : "#15803d", fontSize: 13, fontWeight: 600 }}>
               {uploadMsg?.message || actionMsg}
             </div>
           )}
+            </>
+          ) : null}
         </PageCard>
       )}
 
@@ -1107,120 +1110,55 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       )}
 
       {restaurant && reviewItems.length > 0 && (
-        <PageCard style={{ padding: 20, marginBottom: 16 }}>
-          <SectionTitle
-            title="Items Needing Review"
-            subtitle="Approve or reject held OCR items (with source photos). Accept All uses stored values; Reject All removes holds and leaves the public menu editable below."
-          />
-          <WorkspaceSourcePhotoStrip sessions={reviewSessions} />
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+        <PageCard style={{ padding: 16, marginBottom: 16, background: "#fffbeb", border: "1px solid #fde68a" }}>
+          <div style={{ fontWeight: 800, fontSize: 14, color: "#92400e", marginBottom: 6 }}>
+            {reviewItems.length} OCR item{reviewItems.length === 1 ? "" : "s"} still need review
+          </div>
+          <div style={{ fontSize: 13, color: OWNER_COLORS.ink, lineHeight: 1.5, marginBottom: 12 }}>
+            Edit those on the dedicated Review Queue (with source photos). This page stays focused on the live dish list above.
+          </div>
+          {actionMsg ? (
+            <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 9, background: "#fff", color: OWNER_COLORS.ink, fontSize: 13, fontWeight: 600 }}>
+              {actionMsg}
+            </div>
+          ) : null}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
             {(reviewSessions || []).map((session) => (
               <Link
                 key={session.id}
                 to={`/owner/menu-manager/uploads/${session.id}/review-items`}
-                style={{ fontSize: 12, fontWeight: 700, color: "#92400e", textDecoration: "none" }}
+                style={{
+                  padding: "9px 14px",
+                  borderRadius: 9,
+                  border: "none",
+                  background: "#92400e",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  textDecoration: "none",
+                }}
               >
                 Open Review Queue →
               </Link>
             ))}
-          </div>
-          {actionMsg ? (
-            <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 9, background: "#f8fafc", color: OWNER_COLORS.ink, fontSize: 13, fontWeight: 600 }}>
-              {actionMsg}
-            </div>
-          ) : null}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
-            {reviewItems.map((item) => (
-              <ReviewItemRow
-                key={`${item.uploadId}-${item.id}`}
-                item={item}
-                onApprove={async (edits) => {
-                  await approveReviewItem(item.uploadId, item.id, edits);
-                  await loadReviewItems();
-                  await loadMenuState();
-                }}
-                onReject={async () => {
-                  await rejectReviewItem(item.uploadId, item.id);
-                  await loadReviewItems();
-                }}
-              />
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
             <button
               type="button"
               disabled={bulkActing}
               onClick={() => runBulkReview("approve")}
-              style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: "#15803d", color: "#fff", fontWeight: 700, fontSize: 13, cursor: bulkActing ? "not-allowed" : "pointer" }}
+              style={{ padding: "9px 14px", borderRadius: 9, border: "none", background: "#15803d", color: "#fff", fontWeight: 700, fontSize: 13, cursor: bulkActing ? "not-allowed" : "pointer" }}
             >
-              {bulkActing ? "Working…" : "Accept All"}
+              {bulkActing ? "Working…" : "Accept all holds"}
             </button>
             <button
               type="button"
               disabled={bulkActing}
               onClick={() => runBulkReview("reject")}
-              style={{ padding: "9px 16px", borderRadius: 9, border: "1px solid #fca5a5", background: "#fff", color: "#991b1b", fontWeight: 700, fontSize: 13, cursor: bulkActing ? "not-allowed" : "pointer" }}
+              style={{ padding: "9px 14px", borderRadius: 9, border: "1px solid #fca5a5", background: "#fff", color: "#991b1b", fontWeight: 700, fontSize: 13, cursor: bulkActing ? "not-allowed" : "pointer" }}
             >
-              Reject All
+              Reject all holds
             </button>
-            {pendingUploadId ? (
-              <button
-                type="button"
-                disabled={importingParsed || reviewItems.length > 0}
-                onClick={() => importParsedToMenuDraft(pendingUploadId)}
-                style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: OWNER_COLORS.accent, color: "#fff", fontWeight: 700, fontSize: 13, cursor: importingParsed ? "not-allowed" : "pointer" }}
-              >
-                {importingParsed ? "Saving…" : "Save to Menu"}
-              </button>
-            ) : null}
           </div>
-          {reviewItems.length > 0 ? (
-            <div style={{ marginTop: 8, fontSize: 12, color: OWNER_COLORS.muted }}>
-              Finish reviewing all items above (or Accept/Reject All), then save to the menu editor.
-            </div>
-          ) : null}
         </PageCard>
-      )}
-
-      {restaurant && menuDetail && (
-        <PageCard style={{ padding: 20, marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-            <div>
-              <SectionTitle
-                title="Menu Items"
-                subtitle={
-                  menuDetail.menu?.status === "published"
-                    ? `${menuDetail.item_count ?? 0} items on ${menuName}. Edit here anytime — use Set to Draft before major changes, then Publish when ready.`
-                    : `${menuDetail.item_count ?? 0} items on ${menuName}. Edit sections and items, then Publish Menu when ready to go live.`
-                }
-              />
-              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
-                <StatusChip status={menuDetail.menu?.status} />
-              </div>
-            </div>
-            <Link
-              to={`/owner/restaurants/${rid}/menus/${mid}/edit`}
-              style={{ fontSize: 12, fontWeight: 700, color: OWNER_COLORS.accent, textDecoration: "none" }}
-            >
-              Open full editor →
-            </Link>
-          </div>
-          <MenuEditor
-            restaurantId={rid}
-            menuDetail={menuDetail}
-            onMenuUpdated={(updated) => setMenuDetail((prev) => (prev ? { ...prev, menu: { ...prev.menu, ...updated } } : prev))}
-            onMenuDeleted={handleMenuDeleted}
-            onReload={loadMenuState}
-          />
-        </PageCard>
-      )}
-
-      {restaurant && (
-        <div style={{ fontSize: 12, color: OWNER_COLORS.muted }}>
-          <a href={`/public/restaurants/${rid}/menu`} target="_blank" rel="noopener noreferrer" style={{ color: OWNER_COLORS.accent, fontWeight: 700 }}>
-            View public menu ↗
-          </a>
-        </div>
       )}
     </>
   );
@@ -1232,8 +1170,8 @@ export default function OwnerMenuCreateWorkspace({ embedded = false } = {}) {
       title={existingRestaurant ? "Menu Manager" : "Create Restaurant + Menu"}
       subtitle={
         existingRestaurant
-          ? "Upload a new file to parse items, review and edit the menu below, then publish when ready."
-          : "Find or create a restaurant, upload a menu file, review parsed items, edit, then publish."
+          ? "Edit the live menu, save item changes, then publish."
+          : "Create a restaurant, add or upload a menu, edit items, then publish."
       }
     >
       {content}

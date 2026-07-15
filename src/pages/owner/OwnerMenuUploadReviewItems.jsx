@@ -56,6 +56,15 @@ const inputStyle = {
   boxSizing: "border-box",
 };
 
+const nameTextareaStyle = {
+  ...inputStyle,
+  minHeight: 56,
+  resize: "vertical",
+  fontSize: 14,
+  fontWeight: 600,
+  lineHeight: 1.35,
+};
+
 const descriptionTextareaStyle = {
   ...inputStyle,
   minHeight: 88,
@@ -63,6 +72,53 @@ const descriptionTextareaStyle = {
   lineHeight: 1.45,
   whiteSpace: "pre-wrap",
 };
+
+/** Short codes for the Hold column; full wording is shown on hover via title. */
+const HOLD_REASON_META = {
+  price_zero_unverified: { code: "PRICE", label: "Missing or unverified price" },
+  price_invalid: { code: "PRICE", label: "Invalid price value" },
+  low_confidence: { code: "LOW", label: "Low extraction confidence" },
+  mojibake: { code: "ENC", label: "Encoding / character issue" },
+  text_corrupted: { code: "ENC", label: "Corrupted or unreadable text" },
+  identity_conflict: { code: "ID", label: "Identity conflict with an existing item" },
+  incoherent_parse: { code: "PARSE", label: "Incoherent or incomplete parse" },
+  name_missing: { code: "NAME", label: "Missing item name" },
+  name_too_long: { code: "NAME", label: "Item name is unusually long" },
+  description_merged_into_name: {
+    code: "MERGE",
+    label: "Description appears merged into the name",
+  },
+  icon_only_name: { code: "ICON", label: "Name looks like icons/symbols only" },
+  fragment_incomplete: { code: "FRAG", label: "Incomplete name fragment" },
+  modifier_not_item: { code: "MOD", label: "Looks like a modifier, not a menu item" },
+  section_heading_row: { code: "HEAD", label: "Looks like a section heading, not an item" },
+  attribution_mismatch: { code: "ATTR", label: "Restaurant attribution mismatch" },
+  attribution_missing: { code: "ATTR", label: "Restaurant attribution missing" },
+  duplicate_conflicting_price: {
+    code: "DUP",
+    label: "Duplicate item with conflicting price",
+  },
+};
+
+function resolveHoldReason(reason) {
+  const raw =
+    typeof reason === "string"
+      ? reason
+      : reason?.code || reason?.reason || reason?.key || "";
+  const key = String(raw || "").trim();
+  const meta = HOLD_REASON_META[key];
+  if (meta) return { code: meta.code, title: `${meta.code}: ${meta.label}` };
+  // Fallback: compact unknown snake_case into a short upper token
+  const code = key
+    ? key
+        .replace(/[^a-zA-Z0-9_]/g, "")
+        .split("_")
+        .map((part) => part.slice(0, 4).toUpperCase())
+        .join("-")
+        .slice(0, 12) || "HOLD"
+    : "HOLD";
+  return { code, title: key || "Hold reason" };
+}
 
 /** Combobox: pick an existing section or type a new one (added to the shared option list). */
 function SectionCombobox({ value, options, onChange, disabled, invalid }) {
@@ -130,14 +186,36 @@ function rejectBtn(disabled) {
 }
 
 function HoldReasonChips({ reasons }) {
-  if (!Array.isArray(reasons) || !reasons.length) return <span style={{ color: OWNER_COLORS.muted }}>—</span>;
+  if (!Array.isArray(reasons) || !reasons.length) {
+    return <span style={{ color: OWNER_COLORS.muted }}>—</span>;
+  }
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-      {reasons.map((r, i) => (
-        <span key={i} style={{ fontSize: 10, padding: "2px 6px", borderRadius: 6, background: "#fffbeb", color: "#92400e", whiteSpace: "nowrap" }}>
-          {typeof r === "string" ? r : (r?.code || JSON.stringify(r))}
-        </span>
-      ))}
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 3, maxWidth: 72 }}>
+      {reasons.map((r, i) => {
+        const { code, title } = resolveHoldReason(r);
+        return (
+          <span
+            key={`${code}-${i}`}
+            title={title}
+            aria-label={title}
+            style={{
+              fontSize: 9,
+              fontWeight: 800,
+              letterSpacing: "0.04em",
+              padding: "2px 5px",
+              borderRadius: 4,
+              background: "#fffbeb",
+              color: "#92400e",
+              border: "1px solid #fde68a",
+              whiteSpace: "nowrap",
+              cursor: "help",
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+            }}
+          >
+            {code}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -637,12 +715,14 @@ export default function OwnerMenuUploadReviewItems() {
                   <th style={th}>
                     <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: "pointer" }} />
                   </th>
-                  <th style={{ ...th, width: 180 }}>Name</th>
+                  <th style={{ ...th, minWidth: 240, width: "24%" }}>Name</th>
                   <th style={{ ...th, width: 72 }}>Price</th>
-                  <th style={{ ...th, minWidth: 260, width: "32%" }}>Description</th>
+                  <th style={{ ...th, minWidth: 280, width: "34%" }}>Description</th>
                   <th style={{ ...th, width: 130 }}>Section *</th>
-                  <th style={{ ...th, width: 160 }}>Hold Reasons</th>
-                  <th style={{ ...th, width: 80, textAlign: "center" }}>Quality</th>
+                  <th style={{ ...th, width: 72 }} title="Hover codes for full hold reason">
+                    Hold
+                  </th>
+                  <th style={{ ...th, width: 70, textAlign: "center" }}>Quality</th>
                   <th style={{ ...th, width: 70, textAlign: "center" }}>Status</th>
                   <th style={{ ...th, textAlign: "right" }}>Actions</th>
                 </tr>
@@ -681,23 +761,23 @@ export default function OwnerMenuUploadReviewItems() {
                         )}
                       </td>
 
-                      {/* Name — primary field */}
-                      <td style={td}>
+                      {/* Name — primary editable field (with description) */}
+                      <td style={{ ...td, minWidth: 240 }}>
                         {isDone ? (
                           <div>
-                            <span style={{ fontWeight: 600 }}>
+                            <span style={{ fontWeight: 700, fontSize: 14 }}>
                               {item.parsed_name || item.proposed_item_name || "—"}
                             </span>
                             <SourceTextToggle text={item.original_text || item.raw_text} />
                           </div>
                         ) : (
                           <div>
-                            <input
-                              type="text"
+                            <textarea
                               value={edit.name || ""}
                               onChange={(e) => updateEdit(item.id, "name", e.target.value)}
-                              style={inputStyle}
+                              style={nameTextareaStyle}
                               placeholder="Item name"
+                              rows={2}
                             />
                             <div style={{ marginTop: 4 }}>
                               <SourceTextToggle text={item.original_text || item.raw_text} />

@@ -71,17 +71,17 @@ export default function OwnerMenuUploads() {
   return (
     <OwnerLayout
       title="Menu Manager"
-      subtitle="Review camera uploads, approve held items, create restaurant profiles, and edit public menus."
+      subtitle="OCR Uploads = camera/photo review queues. Edit Menus = restaurant profile + live menu items."
     >
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
         <TabButton
           active={tab === "activity"}
-          label="Upload Activity"
+          label="OCR Uploads"
           onClick={() => setTab("activity")}
         />
         <TabButton
           active={tab === "workspace"}
-          label="Create / Edit"
+          label="Edit Menus"
           onClick={() => setTab("workspace")}
         />
       </div>
