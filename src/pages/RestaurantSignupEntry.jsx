@@ -132,17 +132,6 @@ const styles = {
     gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: 28,
   },
-  foundersNotice: {
-    marginBottom: 18,
-    padding: "14px 16px",
-    borderRadius: 14,
-    border: "1px solid rgba(252, 211, 77, 0.35)",
-    background: "rgba(252, 211, 77, 0.08)",
-    color: "#101828",
-    fontSize: 14,
-    lineHeight: 1.55,
-    fontWeight: 600,
-  },
   card: (tone, hovered) => {
     if (tone === "founder") {
       return {
@@ -805,13 +794,6 @@ export default function RestaurantSignupEntry() {
             </div>
           </div>
         </header>
-
-        <div style={styles.foundersNotice}>
-          {t(
-            "signup.entry.foundersNotice",
-            "Founder's Membership is available for a limited time to early restaurant partners."
-          )}
-        </div>
 
         <section style={styles.cardsGrid}>
           {localizedPlans.map((plan) => {

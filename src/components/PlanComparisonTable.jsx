@@ -197,14 +197,16 @@ export default function PlanComparisonTable() {
       </div>
       <p
         style={{
-          margin: "10px 4px 0",
-          fontSize: 12,
-          color: "#6b7280",
-          lineHeight: 1.45,
+          margin: "14px 4px 0",
+          fontSize: 15,
+          color: "#374151",
+          lineHeight: 1.65,
           fontWeight: 500,
         }}
       >
         * Window QR Code included with Founder&apos;s Annual plan.
+        {" "}
+        Founder&apos;s Membership is available for a limited time to early restaurant partners.
       </p>
     </div>
   );
