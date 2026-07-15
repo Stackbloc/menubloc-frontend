@@ -1,55 +1,4 @@
-.operator-shell {
-  min-width: 0;
-}
-
-.operator-shell__sidebar {
-  transition: transform 160ms ease;
-}
-
-.operator-shell__main {
-  min-width: 0;
-}
-
-.operator-shell__header-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.operator-shell__menu-button {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border: 1px solid #d7deea;
-  border-radius: 12px;
-  background: #fff;
-  color: #0f1720;
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.operator-shell__title-wrap {
-  min-width: 0;
-}
-
-.operator-shell__mobile-restaurant {
-  display: none;
-  margin-top: 2px;
-  font-size: 12px;
-  color: #667085;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.operator-shell__backdrop {
-  display: none;
-}
+/* Operator page utilities (shell chrome lives in adminConsoleShell.css) */
 
 .operator-responsive-grid-2,
 .operator-responsive-grid-3,
@@ -74,57 +23,6 @@
 }
 
 @media (max-width: 767px) {
-  .operator-shell__backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 32, 0.42);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 160ms ease;
-    z-index: 30;
-    display: block;
-  }
-
-  .operator-shell__backdrop--visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .operator-shell__sidebar {
-    transform: translateX(-100%);
-    width: min(88vw, 320px) !important;
-    max-width: 320px;
-    z-index: 40 !important;
-    box-shadow: 0 24px 48px rgba(15, 23, 32, 0.22);
-  }
-
-  .operator-shell__sidebar--open {
-    transform: translateX(0);
-  }
-
-  .operator-shell__main {
-    margin-left: 0 !important;
-    width: 100%;
-  }
-
-  .operator-shell__header {
-    padding: 12px 16px !important;
-    height: auto !important;
-    min-height: 64px;
-  }
-
-  .operator-shell__menu-button {
-    display: inline-flex;
-  }
-
-  .operator-shell__mobile-restaurant {
-    display: block;
-  }
-
-  .operator-shell__content {
-    padding: 16px !important;
-  }
-
   .operator-responsive-grid-2,
   .operator-responsive-grid-3,
   .operator-responsive-grid-4,

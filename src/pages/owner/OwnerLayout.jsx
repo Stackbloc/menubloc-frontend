@@ -1,31 +1,26 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useOwner } from "../../context/OwnerContext.jsx";
-import { BrandLogo } from "../../components/BrandLogo.jsx";
+import AdminConsoleShell from "../../components/adminConsole/AdminConsoleShell.jsx";
+import {
+  ADMIN_CONSOLE,
+  KB_SESSION_KEYS,
+  readKbPanelOpen,
+  writeKbPanelOpen,
+} from "../../components/adminConsole/adminConsoleTokens.js";
+import KnowledgeBasePanel from "../../components/helpSearch/KnowledgeBasePanel.jsx";
+import { ownerKnowledgeBaseApi } from "../../lib/knowledgeBaseApi.js";
 import "./ownerResponsive.css";
 
-const NAV = [
-  { to: "/owner", label: "Dashboard" },
-  { to: "/owner/phms", label: "Platform Health" },
-  { to: "/owner/deployments", label: "Deployment Operations" },
-  { to: "/owner/intelligence", label: "Platform Intelligence" },
-  { to: "/owner/restaurants", label: "Restaurant Intelligence" },
-  { to: "/owner/revenue", label: "Revenue" },
-  { to: "/owner/market-expansion", label: "Market Expansion" },
-  { to: "/owner/support", label: "Support Tickets" },
-  { to: "/owner/menu-manager", label: "Menu Manager" },
-  { to: "/owner/qr-stickers", label: "QR Stickers" },
-];
-
 export const OWNER_COLORS = {
-  ink: "#0B0F0C",
-  muted: "#667085",
-  panel: "#ffffff",
-  accent: "#22C55E",
-  accentSoft: "rgba(34, 197, 94, 0.12)",
-  line: "#E5E7EB",
-  page: "#F9FAFB",
+  ink: ADMIN_CONSOLE.ink,
+  muted: ADMIN_CONSOLE.muted,
+  panel: ADMIN_CONSOLE.panel,
+  accent: ADMIN_CONSOLE.accent,
+  accentSoft: ADMIN_CONSOLE.accentSoft,
+  line: ADMIN_CONSOLE.line,
+  page: ADMIN_CONSOLE.page,
 };
 
 export function PageCard({ children, style = {}, id }) {
@@ -65,128 +60,112 @@ export function EmptyState({ children }) {
   );
 }
 
+const NAV_SECTIONS = [
+  {
+    id: "platform",
+    label: "Platform",
+    items: [
+      { to: "/owner", label: "Dashboard", end: true },
+      { to: "/owner/phms", label: "Platform Health" },
+      { to: "/owner/deployments", label: "Deployment Operations" },
+      { to: "/owner/intelligence", label: "Platform Intelligence" },
+    ],
+  },
+  {
+    id: "growth",
+    label: "Growth",
+    items: [
+      { to: "/owner/restaurants", label: "Restaurant Intelligence" },
+      { to: "/owner/revenue", label: "Revenue" },
+      { to: "/owner/market-expansion", label: "Market Expansion" },
+      { to: "/owner/menu-manager", label: "Menu Manager" },
+      { to: "/owner/qr-stickers", label: "QR Stickers" },
+    ],
+  },
+  {
+    id: "support",
+    label: "Support",
+    items: [
+      { to: "/owner/support", label: "Support Tickets" },
+      { to: "/owner/help", label: "Knowledge Base", icon: "?" },
+    ],
+  },
+];
+
 export default function OwnerLayout({ title, children, actions = null }) {
   const { t } = useLanguage();
   const { owner, logout } = useOwner();
   const navigate = useNavigate();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [knowledgeOpen, setKnowledgeOpen] = useState(() =>
+    readKbPanelOpen(KB_SESSION_KEYS.owner)
+  );
 
   async function handleLogout() {
     await logout();
     navigate("/owner/login", { replace: true });
   }
 
-  function closeSidebar() {
-    setMobileNavOpen(false);
+  function toggleKnowledge() {
+    setKnowledgeOpen((open) => {
+      const next = !open;
+      writeKbPanelOpen(KB_SESSION_KEYS.owner, next);
+      return next;
+    });
   }
 
+  const sections = useMemo(() => NAV_SECTIONS, []);
+
+  const footer = (
+    <>
+      <div style={{ fontWeight: 700, fontSize: 13 }}>{owner?.full_name || owner?.email}</div>
+      <div style={{ marginTop: 4, color: OWNER_COLORS.muted, fontSize: 12 }}>{owner?.role || "owner_admin"}</div>
+      <button
+        type="button"
+        onClick={handleLogout}
+        style={{
+          marginTop: 12,
+          width: "100%",
+          border: `1px solid ${OWNER_COLORS.line}`,
+          background: "#fff",
+          color: OWNER_COLORS.ink,
+          borderRadius: 10,
+          padding: "9px 12px",
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: "inherit",
+          fontSize: 12,
+        }}
+      >
+        Sign out
+      </button>
+    </>
+  );
+
   return (
-    <div style={{ minHeight: "100vh", background: OWNER_COLORS.page, fontFamily: "var(--gb-font-ui)", color: OWNER_COLORS.ink }}>
-      <div
-        className={`owner-shell__backdrop${mobileNavOpen ? " owner-shell__backdrop--visible" : ""}`}
-        onClick={closeSidebar}
-        aria-hidden="true"
-      />
-      <div className="owner-shell">
-        <aside
-          className={`owner-shell__sidebar${mobileNavOpen ? " owner-shell__sidebar--open" : ""}`}
-          style={{ borderRight: `1px solid ${OWNER_COLORS.line}`, padding: "24px 18px", background: "#fff" }}
-        >
-          <div style={{ marginBottom: 28 }}>
-            <BrandLogo
-              to="/owner"
-              height={28}
-              radius={6}
-              matchPageBackground={false}
-              pageColor="#ffffff"
-              wordmarkColor={OWNER_COLORS.ink}
-              ariaLabel="Menuply owner control center home"
-            />
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: OWNER_COLORS.muted, marginTop: 8 }}>
-              Owner Control Center
-            </div>
-          </div>
-
-          <nav style={{ display: "grid", gap: 8 }}>
-            {NAV.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === "/owner"}
-                onClick={closeSidebar}
-                style={({ isActive }) => ({
-                  padding: "12px 14px",
-                  borderRadius: 14,
-                  textDecoration: "none",
-                  color: isActive ? OWNER_COLORS.accent : OWNER_COLORS.ink,
-                  background: isActive ? OWNER_COLORS.accentSoft : "transparent",
-                  border: isActive ? `1px solid ${OWNER_COLORS.line}` : "1px solid transparent",
-                  fontWeight: isActive ? 700 : 600,
-                  fontSize: 14,
-                })}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-
-          <div style={{ marginTop: 28, paddingTop: 18, borderTop: `1px solid ${OWNER_COLORS.line}` }}>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>{owner?.full_name || owner?.email}</div>
-            <div style={{ marginTop: 4, color: OWNER_COLORS.muted, fontSize: 12 }}>{owner?.role || "owner_admin"}</div>
-            <button
-              onClick={handleLogout}
-              style={{
-                marginTop: 12,
-                width: "100%",
-                border: `1px solid ${OWNER_COLORS.line}`,
-                background: "#fff",
-                color: OWNER_COLORS.ink,
-                borderRadius: 12,
-                padding: "10px 12px",
-                fontWeight: 700,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              Sign out
-            </button>
-          </div>
-        </aside>
-
-        <main className="owner-shell__main">
-          <header
-            className="owner-shell__header"
-            style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", padding: "30px 34px 0", marginBottom: 26 }}
-          >
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, minWidth: 0 }}>
-              <button
-                className="owner-shell__menu-button"
-                onClick={() => setMobileNavOpen((v) => !v)}
-                aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
-                aria-expanded={mobileNavOpen}
-                style={{
-                  border: `1px solid ${OWNER_COLORS.line}`,
-                  background: "#fff",
-                  color: OWNER_COLORS.ink,
-                  marginTop: 4,
-                }}
-              >
-                {mobileNavOpen ? "✕" : "☰"}
-              </button>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: OWNER_COLORS.muted, marginBottom: 8 }}>
-                  Platform Admin
-                </div>
-                <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.05, letterSpacing: "-0.04em" }}>{title}</h1>
-              </div>
-            </div>
-            {actions}
-          </header>
-          <div className="owner-shell__content" style={{ padding: "26px 34px 40px" }}>
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
+    <AdminConsoleShell
+      homeTo="/owner"
+      brandSubtitle="Owner Control Center"
+      brandAriaLabel="Menuply owner control center home"
+      sections={sections}
+      sidebarFooter={footer}
+      eyebrow={t("owner.platformAdmin", "Platform Admin")}
+      title={title}
+      headerActions={actions}
+      knowledgeOpen={knowledgeOpen}
+      onToggleKnowledge={toggleKnowledge}
+      knowledgePanel={
+        <KnowledgeBasePanel
+          onClose={toggleKnowledge}
+          api={ownerKnowledgeBaseApi}
+          helpPath="/owner/help"
+          supportPath="/owner/support"
+        />
+      }
+      mobileNavOpen={mobileNavOpen}
+      onMobileNavOpenChange={setMobileNavOpen}
+    >
+      {children}
+    </AdminConsoleShell>
   );
 }

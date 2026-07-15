@@ -1,0 +1,352 @@
+/* Shared Stripe-style admin console shell (owner + operator) */
+
+.admin-console {
+  display: flex;
+  min-height: 100vh;
+  min-width: 0;
+  background: #f6f7f9;
+  color: #0b0f0c;
+  font-family: var(--gb-font-ui);
+}
+
+.admin-console__backdrop {
+  display: none;
+}
+
+.admin-console__sidebar {
+  width: var(--admin-sidebar-w, 232px);
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: #f6f7f9;
+  border-right: 1px solid #e5e7eb;
+  transition: transform 160ms ease;
+}
+
+.admin-console__brand {
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.admin-console__brand-sub {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #667085;
+  letter-spacing: 0.02em;
+}
+
+.admin-console__sidebar-extra {
+  flex-shrink: 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-console__nav {
+  flex: 1;
+  padding: 10px 0 16px;
+  overflow-y: auto;
+}
+
+.admin-console__section {
+  margin-bottom: 8px;
+}
+
+.admin-console__section-label {
+  padding: 10px 16px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #667085;
+}
+
+.admin-console__section--accent .admin-console__section-label {
+  color: #0b0f0c;
+}
+
+.admin-console__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 1px 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475467;
+  border: none;
+  background: transparent;
+  width: calc(100% - 16px);
+  box-sizing: border-box;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  position: relative;
+  transition: background 0.1s, color 0.1s;
+}
+
+.admin-console__link:hover {
+  background: rgba(11, 15, 12, 0.04);
+  color: #0b0f0c;
+}
+
+.admin-console__link--active {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.admin-console__link--active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: #22c55e;
+}
+
+.admin-console__link-icon {
+  font-size: 14px;
+  line-height: 1;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.admin-console__link-lock {
+  margin-left: auto;
+  font-size: 11px;
+  opacity: 0.55;
+}
+
+.admin-console__sidebar-footer {
+  flex-shrink: 0;
+  padding: 12px 14px 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.admin-console__column {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  margin-left: var(--admin-sidebar-w, 232px);
+}
+
+.admin-console__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+.admin-console__header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 0 28px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-console__header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-console__menu-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  color: #0b0f0c;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.admin-console__title-wrap {
+  min-width: 0;
+}
+
+.admin-console__eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #667085;
+  margin-bottom: 2px;
+}
+
+.admin-console__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0b0f0c;
+  line-height: 1.25;
+}
+
+.admin-console__mobile-subtitle {
+  display: none;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #667085;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-console__header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.admin-console__kb-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #fff;
+  color: #475467;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.admin-console__kb-toggle:hover,
+.admin-console__kb-toggle--active {
+  border-color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.08);
+  color: #16a34a;
+}
+
+.admin-console__content {
+  padding: 28px;
+  flex: 1;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+.admin-console__kb {
+  width: var(--admin-kb-w, 360px);
+  flex-shrink: 0;
+  border-left: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: -8px 0 24px rgba(11, 15, 12, 0.04);
+  display: none;
+}
+
+.admin-console__kb--open {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-console__kb-backdrop {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .admin-console__kb--open {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 55;
+    width: min(100vw, var(--admin-kb-w, 360px));
+    display: flex;
+    box-shadow: -16px 0 48px rgba(15, 23, 32, 0.18);
+  }
+
+  .admin-console__kb-backdrop--visible {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 32, 0.28);
+    z-index: 50;
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-console__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 32, 0.42);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease;
+    z-index: 30;
+  }
+
+  .admin-console__backdrop--visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .admin-console__sidebar {
+    transform: translateX(-100%);
+    width: min(88vw, 300px);
+    z-index: 40;
+    box-shadow: 0 24px 48px rgba(15, 23, 32, 0.22);
+    background: #ffffff;
+  }
+
+  .admin-console__sidebar--open {
+    transform: translateX(0);
+  }
+
+  .admin-console__column {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .admin-console__header {
+    padding: 12px 16px;
+    min-height: 64px;
+  }
+
+  .admin-console__menu-button {
+    display: inline-flex;
+  }
+
+  .admin-console__mobile-subtitle {
+    display: block;
+  }
+
+  .admin-console__content {
+    padding: 16px;
+  }
+
+  .admin-console__kb-toggle span {
+    display: none;
+  }
+}

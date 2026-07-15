@@ -7,6 +7,10 @@ import {
   submitKnowledgeBaseFeedback,
 } from "../../lib/knowledgeBaseApi.js";
 
+/**
+ * Legacy floating drawer — kept for any direct callers.
+ * Operator/Owner shells use KnowledgeBasePanel in the right rail instead.
+ */
 const SUPPORT_PATH = "/operator/help#operations-support-form";
 
 const feedbackButtonStyle = {
