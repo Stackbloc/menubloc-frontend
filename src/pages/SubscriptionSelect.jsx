@@ -11,7 +11,6 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { useLanguage } from "../context/LanguageContext.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
@@ -85,16 +84,31 @@ const PLAN_CARDS = {
       "Menu visibility on Menuply",
     ],
   },
+  starter_annual: {
+    title: "Starter",
+    price: `${CHECKOUT_PRICE_LABELS.starter_monthly} or ${CHECKOUT_PRICE_LABELS.starter_annual}`,
+    description:
+      "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, online ordering, and standard marketplace commission.",
+    features: [
+      "All Published benefits, plus logo and product photos",
+      "Unlimited menus and menu items",
+      "QR Code and social sharing",
+      "Online ordering",
+      "Customers can follow your restaurant",
+      "Standard marketplace commission",
+    ],
+  },
   founders_annual: {
     title: "Founder's",
-    price: CHECKOUT_PRICE_LABELS.founders_annual,
+    price: `${CHECKOUT_PRICE_LABELS.founders_monthly} or ${CHECKOUT_PRICE_LABELS.founders_annual}`,
     description:
-      "Be among the first restaurants to join the movement and take back your restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
+      "Founders are early adopters who want to take back their restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
     features: [
-      "All benefits in Published, plus much more.",
-      "Guaranteed, no increase pricing for 24 months",
-      "Publish Deals free during first year (subject to quantity limits)",
-      "Premium menu tools",
+      "All Starter benefits, plus much more",
+      "Premium menu management tools",
+      "Create deals and promotions free of charge",
+      "Lowest marketplace commission",
+      "Two-year commission rate guarantee",
     ],
   },
 };
@@ -198,6 +212,17 @@ const s = {
     flexDirection: "column",
     minHeight: 420,
   }),
+  planCardStarter: {
+    borderRadius: 28,
+    padding: "24px 22px 22px",
+    border: "2px solid #86b89a",
+    background: "linear-gradient(160deg, #eef6f1 0%, #f7fbf9 55%, #ffffff 100%)",
+    color: "#101828",
+    boxShadow: "0 12px 30px rgba(31, 78, 61, 0.08)",
+    display: "flex",
+    flexDirection: "column",
+    minHeight: 420,
+  },
   planBadge: {
     display: "inline-flex",
     alignItems: "center",
@@ -436,7 +461,6 @@ const s = {
 };
 
 export default function SubscriptionSelect() {
-  const { t } = useLanguage();
   const nav = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -451,8 +475,12 @@ export default function SubscriptionSelect() {
 
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
   const [planError, setPlanError] = useState("");
-  const [foundersInterval, setFoundersInterval] = useState("annual");
-
+  const [starterInterval, setStarterInterval] = useState(
+    recovered.state?.selected_plan === "starter_monthly" ? "monthly" : "annual"
+  );
+  const [foundersInterval, setFoundersInterval] = useState(
+    recovered.state?.selected_plan === "founders_monthly" ? "monthly" : "annual"
+  );
   const {
     restaurant_id,
     restaurant_name,
@@ -469,6 +497,8 @@ export default function SubscriptionSelect() {
   } = onboardingState || {};
 
   const hasOnboardingContext = Boolean(restaurant_id && owner_token);
+  const starterCheckoutCode =
+    starterInterval === "monthly" ? "starter_monthly" : "starter_annual";
   const foundersCheckoutCode =
     foundersInterval === "monthly" ? "founders_monthly" : "founders_annual";
 
@@ -733,6 +763,10 @@ export default function SubscriptionSelect() {
     }
   }
 
+  async function handleStarter() {
+    await submitRestaurantPlan(starterCheckoutCode);
+  }
+
   async function handleFounder() {
     await submitRestaurantPlan(foundersCheckoutCode);
   }
@@ -754,8 +788,13 @@ export default function SubscriptionSelect() {
   }
 
   const publishedCard = PLAN_CARDS[FREE_PLAN_CODE];
+  const starterCard = PLAN_CARDS.starter_annual;
   const isPublishedSelected =
     selected_plan === FREE_PLAN_CODE || selected_plan === "verified" || selected_plan === "published";
+  const isStarterSelected =
+    selected_plan === "starter_monthly" || selected_plan === "starter_annual";
+  const isFoundersSelected =
+    selected_plan === "founders_monthly" || selected_plan === "founders_annual";
 
   return (
     <div style={s.page}>
@@ -833,6 +872,64 @@ export default function SubscriptionSelect() {
             </button>
           </article>
 
+          <article style={s.planCardStarter}>
+            <div style={s.planEyebrow}>Starter</div>
+            <div style={s.planName}>Starter</div>
+            <div style={s.planDesc}>{starterCard.description}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+              {[
+                { key: "monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.starter_monthly },
+                { key: "annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.starter_annual },
+              ].map(({ key, label, price }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setStarterInterval(key)}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: starterInterval === key ? "1.5px solid #1F4E3D" : "1.5px solid #d0d5dd",
+                    background: starterInterval === key ? "#ffffff" : "rgba(255,255,255,0.7)",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    width: "100%",
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#101828" }}>{label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#1F4E3D" }}>{price}</span>
+                </button>
+              ))}
+            </div>
+            <div style={{ ...s.priceValue, color: "#1F4E3D" }}>
+              {CHECKOUT_PRICE_LABELS[starterCheckoutCode]}
+            </div>
+
+            <ul style={s.featureList}>
+              {starterCard.features.map((feature) => (
+                <li key={feature} style={s.featureItem}>
+                  <span style={s.featureMark(false)}>&#10003;</span>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              type="button"
+              disabled={isSubmittingPlan}
+              style={s.button(true, isSubmittingPlan)}
+              onClick={handleStarter}
+            >
+              {isSubmittingPlan
+                ? "Preparing checkout..."
+                : isStarterSelected
+                  ? "Continue with Starter"
+                  : "Choose Starter"}
+            </button>
+          </article>
+
           <article style={s.planCard(true)}>
             <div style={s.limitedBadge}>Limited Availability</div>
             <div style={s.planEyebrow}>Founder&apos;s</div>
@@ -886,7 +983,11 @@ export default function SubscriptionSelect() {
               style={s.button(true, isSubmittingPlan)}
               onClick={handleFounder}
             >
-              {isSubmittingPlan ? "Preparing checkout..." : "Continue with Founder's"}
+              {isSubmittingPlan
+                ? "Preparing checkout..."
+                : isFoundersSelected
+                  ? "Continue with Founder's"
+                  : "Choose Founder's"}
             </button>
           </article>
         </section>

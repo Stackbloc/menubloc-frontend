@@ -161,12 +161,12 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.plan.pro.name": "Starter",
     "signup.entry.plan.pro.price": "$20/month or $199/year",
     "signup.entry.plan.pro.description":
-      "For restaurants that want stronger customer pricing, direct ordering tools, and deeper customer engagement on a lower-cost platform.",
+      "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, online ordering, and standard marketplace commission.",
     "signup.entry.plan.pro.cta": "Continue with Starter",
     "signup.entry.plan.founder.name": "Founder's",
-    "signup.entry.plan.founder.price": "$319/year",
+    "signup.entry.plan.founder.price": "$39/month or $319/year",
     "signup.entry.plan.founder.description":
-      "Be among the first restaurants to join the movement and take back your restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
+      "Founders are early adopters who want to take back their restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
     "signup.entry.plan.founder.cta": "Continue with Founder's",
     "signup.entry.foundersNotice":
       "Founder's Membership is available for a limited time to early restaurant partners.",
