@@ -6,6 +6,7 @@ import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { getSubscriptionStatusLabel, formatMoney } from "../../components/payments/paymentHelpers.js";
 import PrimaryQrCard from "../../components/qr/PrimaryQrCard.jsx";
+import { operatorPublicProfilePath } from "../../lib/canonicalUrl.js";
 
 function getPlanTier(planCode) {
   if (!planCode) return "published";
@@ -328,7 +329,13 @@ export default function OperatorMyAccount() {
               {[
                 { label: "Open Menu Lab", action: () => navigate("/operator/menulab") },
                 { label: "View Public Menu", action: () => window.open(`/public/restaurants/${selectedRestaurant.id}/menu`, "_blank") },
-                { label: "View Public Profile", action: () => window.open(`/restaurant-profile/${selectedRestaurant.id}`, "_blank") },
+                {
+                  label: "View Public Profile",
+                  action: () => {
+                    const href = operatorPublicProfilePath(selectedRestaurant);
+                    if (href) window.open(href, "_blank");
+                  },
+                },
                 { label: "QR Tools", action: () => navigate("/operator/qr-kits/order") },
               ].map(({ label, action }, i) => (
                 <button

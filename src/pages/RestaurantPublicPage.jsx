@@ -30,13 +30,15 @@
  * ============================================================
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import RestaurantBillboardStrip from "../components/RestaurantBillboardStrip.jsx";
+import PublicProfileOwnerChrome from "../components/restaurant/PublicProfileOwnerChrome.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
+import { useOperator } from "../context/OperatorContext.jsx";
 import {
   followRestaurant as followRestaurantRequest,
   getRestaurantFollowStatus,
@@ -602,9 +604,32 @@ function Skel({ w = 160, h = 14, isDark }) {
   );
 }
 
+function applyPublicRestaurantPayload(json) {
+  return {
+    ...(json?.restaurant || json),
+    menus: json?.menus || [],
+    menu_presentation: json?.menu_presentation || null,
+    claim_status: json?.claim_status ?? json?.restaurant?.claim_status ?? null,
+    subscription_plan:
+      json?.subscription_plan ?? json?.restaurant?.subscription_plan ?? null,
+    order_acceptance_status:
+      json?.order_acceptance_status ?? json?.restaurant?.order_acceptance_status ?? null,
+    menu_last_verified_at:
+      json?.menu_last_verified_at ?? json?.restaurant?.menu_last_verified_at ?? null,
+    status_light_tone: json?.status_light_tone ?? json?.verification_badge_tone ?? null,
+    verification_badge_tone: json?.verification_badge_tone ?? json?.status_light_tone ?? null,
+    menu_status: json?.menu_status ?? null,
+    display_cluster: json?.display_cluster ?? null,
+  };
+}
+
 export default function RestaurantPublicPage() {
   const { language, t: translateUi } = useLanguage();
   const { isAuthenticated } = useConsumer();
+  const {
+    isAuthenticated: isOperatorAuthenticated,
+    restaurants: operatorRestaurants,
+  } = useOperator();
   const location = useLocation();
   const navigate = useNavigate();
   const { slugOrId, restaurantSlug: canonicalRestaurantSlug } = useParams();
@@ -631,6 +656,22 @@ export default function RestaurantPublicPage() {
     [resolvedSlug]
   );
 
+  const isOwner = Boolean(
+    data?.id &&
+      isOperatorAuthenticated &&
+      Array.isArray(operatorRestaurants) &&
+      operatorRestaurants.some((r) => String(r.id) === String(data.id))
+  );
+
+  const reloadPublicData = useCallback(async () => {
+    const res = await fetch(dataUrl);
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json?.ok) {
+      throw new Error(json?.error || "Could not reload public profile.");
+    }
+    setData(applyPublicRestaurantPayload(json));
+  }, [dataUrl]);
+
   useEffect(() => {
     saveTheme(theme);
   }, [theme]);
@@ -646,22 +687,7 @@ export default function RestaurantPublicPage() {
       .then((json) => {
         if (!alive) return;
         if (!json?.ok) throw new Error(json?.error || "Not found");
-        setData({
-          ...(json?.restaurant || json),
-          menus: json?.menus || [],
-          menu_presentation: json?.menu_presentation || null,
-          claim_status: json?.claim_status ?? json?.restaurant?.claim_status ?? null,
-          subscription_plan:
-            json?.subscription_plan ?? json?.restaurant?.subscription_plan ?? null,
-          order_acceptance_status:
-            json?.order_acceptance_status ?? json?.restaurant?.order_acceptance_status ?? null,
-          menu_last_verified_at:
-            json?.menu_last_verified_at ?? json?.restaurant?.menu_last_verified_at ?? null,
-          status_light_tone: json?.status_light_tone ?? json?.verification_badge_tone ?? null,
-          verification_badge_tone: json?.verification_badge_tone ?? json?.status_light_tone ?? null,
-          menu_status: json?.menu_status ?? null,
-          display_cluster: json?.display_cluster ?? null,
-        });
+        setData(applyPublicRestaurantPayload(json));
       })
       .catch((e) => {
         if (alive) {
@@ -876,6 +902,10 @@ export default function RestaurantPublicPage() {
         padding: "20px 16px 64px",
       }}
     >
+
+      {!loading && !err && data && isOwner ? (
+        <PublicProfileOwnerChrome restaurant={data} onPublished={reloadPublicData} />
+      ) : null}
 
       <div
         style={{

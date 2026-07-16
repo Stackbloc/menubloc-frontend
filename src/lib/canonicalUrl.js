@@ -41,6 +41,27 @@ export function restaurantPathFromRow(row) {
   return restaurantPath({ slug, city, state }) || (id ? `/public/restaurants/${encodeURIComponent(String(id))}` : null);
 }
 
+/**
+ * Operator console → public profile path (Claim / Public Profile page).
+ * Prefer canonical /restaurants/{state}/{city}/{slug}; fall back to /restaurants/{slug|id}.
+ * Never use legacy /restaurant-profile/:id (restaurant setup form).
+ */
+export function operatorPublicProfilePath(row) {
+  if (!row) return null;
+  const slug =
+    row.slug ||
+    row.restaurant_slug ||
+    row.restaurantSlug ||
+    null;
+  const city = row.city || row.restaurant_city || null;
+  const state = row.state || row.restaurant_state || null;
+  const id = row.id || row.restaurant_id || row.restaurantId || null;
+  const canonical = restaurantPath({ slug, city, state });
+  if (canonical) return canonical;
+  const key = slug || id;
+  return key ? `/restaurants/${encodeURIComponent(String(key))}` : null;
+}
+
 // Returns the canonical path for a menu item within its restaurant context.
 // Falls back to /menu-items/{itemId} when restaurant location data is absent.
 export function menuItemPath({ restaurantSlug, city, state, itemId } = {}) {

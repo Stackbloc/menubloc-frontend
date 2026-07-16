@@ -4,6 +4,7 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+import { operatorPublicProfilePath } from "../../lib/canonicalUrl.js";
 
 const GREEN = "#1F4E3D";
 const BORDER = "#e4e9f0";
@@ -587,7 +588,14 @@ export default function OperatorDashboard() {
             Quick Access
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <QuickBtn icon="◷" label={t("operator.dashboard.publicProfile", "Public Profile")} onClick={() => window.open(`/restaurant-profile/${rid}`, "_blank")} />
+            <QuickBtn
+              icon="◷"
+              label={t("operator.dashboard.publicProfile", "Public Profile")}
+              onClick={() => {
+                const href = operatorPublicProfilePath(selectedRestaurant);
+                if (href) window.open(href, "_blank");
+              }}
+            />
             <QuickBtn icon="▣" label={t("operator.dashboard.menuLab", "Menu Lab")} onClick={() => navigate("/operator/menulab")} />
             <QuickBtn icon="🔥" label={t("operator.dashboard.deals", "Deals")} onClick={() => navigate("/operator/deals")} />
             <QuickBtn icon="▣" label="QR Tools" onClick={() => navigate("/operator/qr-kits/order")} />

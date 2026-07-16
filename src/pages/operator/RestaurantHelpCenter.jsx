@@ -269,7 +269,7 @@ const OPERATIONS_SECTIONS = [
           "The public profile shows your restaurant name, logo, billboard image, about us description, cuisine tags, city/state, hours, and featured dish.",
           "Active deals appear on the profile page with their headline and description.",
           "Customers can follow your restaurant to receive updates when you post deals or make changes.",
-          "The public profile URL is /restaurant-profile/[your-restaurant-id]. Use the Public Profile quick-access button from the Home screen to preview it.",
+          "The public profile URL is /restaurants/[your-restaurant-slug]. Use the Public Profile quick-access button from the Home screen to open it. If you own the listing, you can edit and save profile fields on that page.",
         ],
       },
       {
