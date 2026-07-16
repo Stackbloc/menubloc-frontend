@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import {
@@ -166,11 +166,19 @@ const styles = {
 
 export default function RestaurantOnboardingOrganization() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { operator, restaurants, loading: operatorLoading } = useOperator();
-  const onboarding = useMemo(() => resolveRestaurantOnboardingState(), []);
+  const onboarding = useMemo(
+    () =>
+      resolveRestaurantOnboardingState({
+        routeState: location.state,
+        search: location.search,
+      }).state,
+    [location.state, location.search]
+  );
   const restaurantId = onboarding?.restaurant_id || restaurants?.[0]?.id || null;
 
-  const [form, setForm] = useState(emptyBusinessOrganizationForm);
+  const [form, setForm] = useState(() => emptyBusinessOrganizationForm());
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -181,7 +189,7 @@ export default function RestaurantOnboardingOrganization() {
     if (!operator) {
       navigate("/operator/login", {
         replace: true,
-        state: { nextPath: "/restaurant/onboarding/organization", ...onboarding },
+        state: { nextPath: "/restaurant/onboarding/organization", ...(onboarding || {}) },
       });
       return;
     }
@@ -190,7 +198,9 @@ export default function RestaurantOnboardingOrganization() {
         replace: true,
         state: {
           nextPath: "/restaurant/onboarding/organization",
-          ...onboarding,
+          email: operator?.email || onboarding?.email,
+          autoSend: true,
+          ...(onboarding || {}),
         },
       });
     }
@@ -199,6 +209,7 @@ export default function RestaurantOnboardingOrganization() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      if (operatorLoading) return;
       if (!restaurantId) {
         setLoading(false);
         return;
@@ -230,7 +241,7 @@ export default function RestaurantOnboardingOrganization() {
     return () => {
       cancelled = true;
     };
-  }, [restaurantId, operator?.email, operator?.full_name]);
+  }, [restaurantId, operator?.email, operator?.full_name, operatorLoading]);
 
   function setField(key, value) {
     setForm((prev) => {
@@ -263,14 +274,20 @@ export default function RestaurantOnboardingOrganization() {
     try {
       const payload = buildBusinessOrganizationPayload(form);
       const result = await completeOwnedBusinessOrganization(restaurantId, payload);
-      persistRestaurantOnboardingState({
-        ...onboarding,
+      const nextOnboarding = persistRestaurantOnboardingState({
+        ...(onboarding || {}),
         restaurant_id: restaurantId,
         organization_id: result?.organization?.organization_id || null,
-      });
-      await syncRestaurantOnboardingProgress(restaurantId, {
         current_step_key: "restaurant_information",
-        completed_step_keys_append: "business_organization",
+      });
+      await syncRestaurantOnboardingProgress(nextOnboarding || { restaurant_id: restaurantId }, {
+        current_step_key: "restaurant_information",
+        completed_step_keys: Array.from(
+          new Set([
+            ...((onboarding && onboarding.completed_step_keys) || []),
+            "business_organization",
+          ])
+        ),
       });
       navigateWithRestaurantOnboardingState(
         navigate,
@@ -394,7 +411,7 @@ export default function RestaurantOnboardingOrganization() {
             <input
               id="jurisdiction"
               style={styles.input}
-              value={form.jurisdiction}
+              value={form.jurisdiction || ""}
               onChange={(e) => setField("jurisdiction", e.target.value)}
               placeholder="State / province"
             />
@@ -405,7 +422,7 @@ export default function RestaurantOnboardingOrganization() {
             <input
               id="primary_contact_name"
               style={styles.input}
-              value={form.primary_contact_name}
+              value={form.primary_contact_name || ""}
               onChange={(e) => setField("primary_contact_name", e.target.value)}
             />
 
@@ -416,7 +433,7 @@ export default function RestaurantOnboardingOrganization() {
               id="billing_email"
               type="email"
               style={styles.input}
-              value={form.billing_email}
+              value={form.billing_email || ""}
               onChange={(e) => setField("billing_email", e.target.value)}
             />
             {fieldErrors.billing_email ? (
@@ -429,7 +446,7 @@ export default function RestaurantOnboardingOrganization() {
             <input
               id="billing_phone"
               style={styles.input}
-              value={form.billing_phone}
+              value={form.billing_phone || ""}
               onChange={(e) => setField("billing_phone", e.target.value)}
             />
 

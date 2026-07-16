@@ -100,3 +100,11 @@ test("organization page does not collect Stripe payout fields", () => {
   assert.doesNotMatch(page, /tax_id|ssn|bank_account|routing_number|stripe/i);
   assert.match(page, /Legal entity name/);
 });
+
+test("organization page resolves onboarding state safely (no blank-screen destructure crash)", () => {
+  const page = read("src/pages/RestaurantOnboardingOrganization.jsx");
+  assert.doesNotMatch(page, /resolveRestaurantOnboardingState\(\s*\)/);
+  assert.match(page, /resolveRestaurantOnboardingState\(\s*\{/);
+  assert.match(page, /routeState:\s*location\.state/);
+  assert.match(page, /\)\.state/);
+});
