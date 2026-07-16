@@ -173,7 +173,7 @@ export default function RestaurantQrUpsell() {
             )}
           </ul>
           <button type="button" style={s.ctaBtn} onClick={goToKitOrder} disabled={!hasOnboardingContext}>
-            Add QR Starter Kit &mdash; $9.99
+            Browse QR merchandise
           </button>
           {hasOnboardingContext ? (
             <button type="button" style={s.skipBtn} onClick={goToDesign}>

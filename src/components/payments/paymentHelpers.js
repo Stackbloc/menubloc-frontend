@@ -15,11 +15,19 @@ export function formatMoney(cents, currency = "usd") {
   }).format((Number.isFinite(n) ? n : 0) / 100);
 }
 
-export function getQrProductCode(packageType) {
-  if (packageType === "full") return "qr_full";
-  if (packageType === "table") return "qr_table";
-  if (packageType === "counter") return "qr_counter";
-  return "qr_basic";
+export function getQrProductCode(packageTypeOrSku) {
+  const raw = String(packageTypeOrSku || "").trim();
+  const upper = raw.toUpperCase();
+  if (upper.startsWith("QR-")) return upper;
+  const key = raw.toLowerCase();
+  if (key === "full") return "full"; // legacy — backend rejects as bundle review
+  if (key === "table") return "QR-TABLE";
+  if (key === "counter") return "QR-COUNTER";
+  if (key === "starter" || key === "qr_basic") return "QR-WINDOW";
+  if (key === "qr_table") return "QR-TABLE";
+  if (key === "qr_counter") return "QR-COUNTER";
+  if (key === "qr_full") return "qr_full";
+  return "QR-WINDOW";
 }
 
 export function getSubscriptionPlanLabel(planCode) {

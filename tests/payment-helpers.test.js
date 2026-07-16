@@ -16,8 +16,11 @@ test("payment helpers expose safe defaults outside Vite runtime", () => {
 
 test("payment helpers format platform product display values", () => {
   assert.equal(formatMoney(2999), "$29.99");
-  assert.equal(getQrProductCode("starter"), "qr_basic");
-  assert.equal(getQrProductCode("full"), "qr_full");
+  assert.equal(getQrProductCode("starter"), "QR-WINDOW");
+  assert.equal(getQrProductCode("table"), "QR-TABLE");
+  assert.equal(getQrProductCode("counter"), "QR-COUNTER");
+  assert.equal(getQrProductCode("full"), "full");
+  assert.equal(getQrProductCode("QR-TABLE"), "QR-TABLE");
   assert.equal(getSubscriptionPlanLabel("pro_monthly"), "Pro Monthly");
   assert.equal(getSubscriptionPlanLabel("pro_annual"), "Pro Annual");
   assert.equal(getSubscriptionStatusLabel("past_due"), "past due");
