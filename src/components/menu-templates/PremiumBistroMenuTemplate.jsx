@@ -332,7 +332,6 @@ export default function PremiumBistroMenuTemplate(ctx) {
     onSelectMenu,
     tabLoading,
     tabError,
-    cartLineCount,
     menuThemeSettings = {},
     currentRestaurantId,
     tone,
@@ -375,16 +374,11 @@ export default function PremiumBistroMenuTemplate(ctx) {
         }));
   const statusLabel = scheduledActiveMenuLabel || menuTypeLabel;
 
-  function scrollToMenu() {
-    const target = document.getElementById("premium-bistro-menu-start");
-    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
   return (
     <div
       style={{
         margin: isMobile ? "-16px -12px 0" : "-28px -20px 0",
-        paddingBottom: "calc(var(--bottom-nav-h, 70px) + 110px)",
+        paddingBottom: "calc(var(--bottom-nav-h, 70px) + 24px)",
         fontFamily: fontStack,
         color: "#f8f4ea",
       }}
@@ -621,44 +615,6 @@ export default function PremiumBistroMenuTemplate(ctx) {
           </section>
         </div>
       </main>
-
-      {cartLineCount > 0 ? null : (
-        <div
-          style={{
-            position: "fixed",
-            left: 12,
-            right: 12,
-            bottom: "calc(var(--bottom-nav-h, 70px) + 10px)",
-            zIndex: 260,
-            maxWidth: 540,
-            margin: "0 auto",
-            borderRadius: 3,
-            background: "#064e49",
-            boxShadow: "0 18px 48px rgba(0,0,0,0.3)",
-            padding: 8,
-          }}
-        >
-          <button
-            type="button"
-            onClick={scrollToMenu}
-            style={{
-              width: "100%",
-              minHeight: 54,
-              border: "1px solid rgba(255,255,255,0.28)",
-              borderRadius: 2,
-              background: "transparent",
-              color: "#fff",
-              fontSize: 17,
-              fontWeight: 900,
-              letterSpacing: "0.16em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-            }}
-          >
-            Order
-          </button>
-        </div>
-      )}
     </div>
   );
 }

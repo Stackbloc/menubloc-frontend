@@ -59,9 +59,10 @@ export function resolveTemplateMenuStyle(raw) {
   // Legacy IDs → current gallery layouts
   if (style === "v4" || style === "v6" || style === "v10") return "v13"; // upscale / bistro → Steakhouse
   if (style === "v7") return "v12"; // chalkboard street → Modern Dark family
-  if (style === "v3") return "v14"; // food truck → Fast Casual
+  if (style === "v3" || style === "v2") return "v14"; // fast / truck → Fast Casual photo layout
   if (style === "v5") return "v15"; // family diner ID → Family Dining
-  if (style === "v2" || style === "v8" || style === "v9") return "v14"; // photo-forward casual → Fast Casual grid
+  if (style === "v8") return "v15"; // rustic italian → Family Dining layout
+  if (style === "v9") return "v14"; // modern asian → Fast Casual photo layout
   if (style === "v11") return "v1";
   return style;
 }

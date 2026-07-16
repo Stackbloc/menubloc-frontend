@@ -4,6 +4,8 @@ import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { getMenuSectionImageUrl, getMenuItemImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
+import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
+import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 
 function AsianItem({ item, ctx, accent }) {
   const {
@@ -114,10 +116,12 @@ export default function ModernAsianMenuTemplate(ctx) {
     brand,
     fontStack,
     menuThemeSettings = {},
+    currentRestaurantId,
+    restaurantName: ctxRestaurantName,
   } = ctx;
 
   const accent = brand?.accent ?? "#c9a35b";
-  const restaurantName = data?.restaurant_name || data?.name || "";
+  const restaurantName = ctxRestaurantName || data?.restaurant_name || data?.name || "";
   const heroImage = data?.hero_image_url || data?.cover_image_url || null;
   const showItemImages = shouldShowItemImages(menuThemeSettings);
   const showSectionImages = shouldShowSectionImages(menuThemeSettings);
@@ -177,8 +181,18 @@ export default function ModernAsianMenuTemplate(ctx) {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <ShareButton variant="menu" label="Share" shareData={shareData} analyticsContext={shareAnalyticsContext} size="compact" tone="subtle" />
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{ display: "flex", gap: MENU_ROW_HEADER_ICON_GAP, flexWrap: "wrap", alignItems: "center" }}
+            >
+              <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} size={MENU_ROW_ICON_SIZE} />
+              <ShareButton
+                variant="menu"
+                iconOnly={true}
+                tone="ghost"
+                shareData={shareData}
+                analyticsContext={shareAnalyticsContext}
+              />
             </div>
           </div>
         </div>

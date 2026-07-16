@@ -60,6 +60,10 @@ import MenuPreferencesAppliedBanner from "../components/menu/MenuPreferencesAppl
 import MenuPurchaseWaiterHint from "../components/menu/MenuPurchaseWaiterHint.jsx";
 import PublicMenuMainContent from "../components/menu-templates/PublicMenuMainContent.jsx";
 import { normalizeMenuStyle, pickHeroImageUrl, resolveTemplateMenuStyle } from "../components/menu-templates/menuPresentationUtils.js";
+import {
+  enrichMenuPayloadWithStyleStockPhotos,
+  stylePreviewImageThemeOverrides,
+} from "../components/menu-templates/menuStylePreviewEnrichment.js";
 import { buildRestaurantMenuBrand, fontStackForPreset } from "../components/menu-templates/restaurantMenuBrand.js";
 import { normalizeMenuThemeSettings, resolveMenuPageBackground, resolveMenuShellTextColor } from "../components/menu-templates/menuThemeSettings.js";
 import { MENU_TEMPLATE_PREVIEW_SAMPLE } from "../data/menuTemplatePreviewSample.js";
@@ -1099,8 +1103,17 @@ export default function PublicMenuPage() {
   }, [language, pageState.data, pageState.status, routeState.restaurantId, routeState.status]);
 
   const data = pageState.status === "ok" ? pageState.data : null;
+  const stylePreviewParam = searchParams.get("menuStyle") || searchParams.get("previewStyle");
+  const presentationData = useMemo(() => {
+    if (!data) return null;
+    if (!stylePreviewParam) return data;
+    return enrichMenuPayloadWithStyleStockPhotos(data, stylePreviewParam);
+  }, [data, stylePreviewParam]);
   const displaySettingsSource = data?.display_settings || data || {};
-  const menuThemeSettings = normalizeMenuThemeSettings(displaySettingsSource);
+  const menuThemeSettingsBase = normalizeMenuThemeSettings(displaySettingsSource);
+  const menuThemeSettings = stylePreviewParam
+    ? stylePreviewImageThemeOverrides(menuThemeSettingsBase)
+    : menuThemeSettingsBase;
   const restaurantName = data
     ? getLocalizedField(data, "restaurant_name", language) ||
       getLocalizedField(data, "name", language) ||
@@ -1145,7 +1158,7 @@ export default function PublicMenuPage() {
   // Use tabSections if a tab was explicitly switched to; fall back to initial page data.
   // tabSections?.sections may still show a prior menu's content during a background fetch —
   // this is intentional: never blank the display while waiting for a new tab to load.
-  const sections        = tabSections?.sections ?? normalizeSections(data);
+  const sections        = tabSections?.sections ?? normalizeSections(presentationData || data);
   const dietLabels = useMemo(() => buildDietPreferenceLabels(dietPrefs), [dietPrefs]);
   const allergenLabels = useMemo(
     () => buildAllergenPreferenceLabels(enabledAllergenKeys),
@@ -1360,7 +1373,7 @@ export default function PublicMenuPage() {
           displayableItemCount,
           dealItems: data?.deal_items || [],
           filtersActive,
-          data,
+          data: presentationData || data,
           currentRestaurantId,
           dealMap,
           activeCartItems,
@@ -1373,7 +1386,7 @@ export default function PublicMenuPage() {
           commitMenuItemToBasket,
           fmtMoney,
           getConsumerDisplayPrice,
-          heroImageUrl: menuThemeSettings.hero_enabled === false ? null : pickHeroImageUrl(data),
+          heroImageUrl: menuThemeSettings.hero_enabled === false ? null : pickHeroImageUrl(presentationData || data),
           menuThemeSettings,
           cartLineCount: basketMatchesCurrentRestaurant ? itemCount : 0,
           onGoCheckout: openCheckout,

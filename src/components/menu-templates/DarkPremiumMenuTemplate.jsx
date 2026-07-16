@@ -3,6 +3,8 @@ import ShareButton from "../share/ShareButton.jsx";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
+import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
+import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 
 function LogoMark({ logoUrl, restaurantName, accent }) {
   if (logoUrl) {
@@ -69,6 +71,7 @@ export default function DarkPremiumMenuTemplate(ctx) {
     brand,
     fontStack,
     menuThemeSettings = {},
+    currentRestaurantId,
   } = ctx;
 
   const accent = brand?.accent ?? "#b68b45";
@@ -116,8 +119,18 @@ export default function DarkPremiumMenuTemplate(ctx) {
             )}
           </div>
         ) : null}
-        <div style={{ marginTop: 22, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
-          <ShareButton variant="menu" label="Share" shareData={shareData} analyticsContext={shareAnalyticsContext} size="compact" tone="subtle" />
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{ marginTop: 22, display: "flex", justifyContent: "center", gap: MENU_ROW_HEADER_ICON_GAP, flexWrap: "wrap" }}
+        >
+          <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} size={MENU_ROW_ICON_SIZE} />
+          <ShareButton
+            variant="menu"
+            iconOnly={true}
+            tone="ghost"
+            shareData={shareData}
+            analyticsContext={shareAnalyticsContext}
+          />
         </div>
       </header>
 

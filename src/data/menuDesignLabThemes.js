@@ -240,9 +240,9 @@ const THEMES = [
     style: "v15",
     name: "Family Dining",
     bestFit: "Diners, breakfast places, family-owned comfort food",
-    description: "Bright cream diner card header and classic-density item list — a warmer family layout distinct from Default’s Apple list.",
+    description: "Warm parchment hero wash with section photos and thumb rows — a distinct family/trattoria layout.",
     visibleInGallery: true,
-    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v8, {
       restaurant_name: "Home Table Diner",
       name: "Home Table Diner",
       slug: "home-table-diner",
@@ -508,7 +508,7 @@ const THEMES = [
     style: "v12",
     name: "Modern Dark",
     bestFit: "Bars, lounges, late-night service, dark-mode preference",
-    description: "Dark sticky header, optional hero strip, and quiet cards — a real dark layout, not Default painted black.",
+    description: "Centered dark stage, gold accents, and a framed hero photo — a true premium dark layout, not Default painted black.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
       restaurant_name: "Refined Demo",
@@ -554,9 +554,9 @@ const THEMES = [
     style: "v14",
     name: "Fast Casual",
     bestFit: "Bowls, tacos, sandwiches, coffee, counter-service concepts",
-    description: "Section jump chips and a two-column item card grid for quick scanning — layout built for counter service, not Default recolored.",
+    description: "Photo hero and two-column glass item cards — built for visual menus, not Default recolored.",
     visibleInGallery: true,
-    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v7, {
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v9, {
       restaurant_name: "Fast Casual Sample",
       name: "Fast Casual Sample",
       slug: "fast-casual-sample",
