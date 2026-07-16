@@ -7,6 +7,7 @@ import { itemHasInsightsData } from "../basket/ItemInsightsSheet.jsx";
 import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
 import { buildDishShareData, menuItemDomId } from "../share/shareUtils.js";
 import { getMenuItemImageUrl } from "./menuImageUtils.js";
+import { MenuDesignPhotoSlot, useMenuDesignPhotoEdit } from "./MenuDesignPhotoEditOverlay.jsx";
 import { normalizeMenuThemeSettings } from "./menuThemeSettings.js";
 import { getNormalizedMenuItemId } from "../../lib/menuItemIdentity.js";
 import {
@@ -189,7 +190,13 @@ export default function PublicMenuItemCard({
       ""
   ).trim();
   const price = fmtMoney(it);
-  const imageUrl = getMenuItemImageUrl(it);
+  const imageUrlRaw = getMenuItemImageUrl(it);
+  const designEdit = useMenuDesignPhotoEdit();
+  const itemSlotKey = String(it?.menu_item_id ?? it?.id ?? `${sIdx}-${iIdx}`);
+  const stockHidden = designEdit?.enabled && designEdit.isStockHidden?.(itemSlotKey);
+  const imageUrl = stockHidden ? "" : imageUrlRaw;
+  const imageObjectFit = designEdit?.enabled ? designEdit.getSlotFit?.(itemSlotKey) || "cover" : "cover";
+  const isStockImage = Boolean(imageUrl && !it?.photo_id && !it?.public_menu_item_id);
   const canNavigate = normalizedItemId != null;
   const indulgencePresentation = resolveIndulgencePresentation({ chips: it?.chips });
   const nutritionChip = it?.chips?.nutrition_chip || null;
@@ -360,10 +367,19 @@ export default function PublicMenuItemCard({
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      <div style={{ display: "flex", gap: imageUrl ? 12 : 0, alignItems: imageUrl ? "flex-start" : "baseline" }}>
-        {showImage && imageUrl ? (
-          <div
-            aria-hidden="true"
+      <div style={{ display: "flex", gap: imageUrl || designEdit?.enabled ? 12 : 0, alignItems: imageUrl || designEdit?.enabled ? "flex-start" : "baseline" }}>
+        {(showImage && imageUrl) || designEdit?.enabled ? (
+          <MenuDesignPhotoSlot
+            enabled={Boolean(designEdit?.enabled)}
+            slotKey={itemSlotKey}
+            kind="item"
+            imageUrl={imageUrl || ""}
+            isStock={isStockImage || Boolean(stockHidden)}
+            objectFit={imageObjectFit}
+            onReplaceFile={(file) => designEdit.replaceItemPhoto(it, file)}
+            onDelete={() => designEdit.deleteItemPhoto(it)}
+            onFitChange={(fit) => designEdit.setSlotFit(itemSlotKey, fit)}
+            onRestoreStock={() => designEdit.restoreStock(itemSlotKey, imageUrlRaw)}
             style={editorialRefresh ? {
               width: 64,
               height: 64,
@@ -384,13 +400,17 @@ export default function PublicMenuItemCard({
               marginTop: 2,
             }}
           >
-            <img
-              src={imageUrl}
-              alt=""
-              loading="lazy"
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-            />
-          </div>
+            {showImage && imageUrl ? (
+              <img
+                src={imageUrl}
+                alt=""
+                loading="lazy"
+                style={{ width: "100%", height: "100%", objectFit: imageObjectFit, display: "block" }}
+              />
+            ) : designEdit?.enabled ? (
+              <div style={{ width: "100%", height: "100%", background: "rgba(148,163,184,0.25)" }} />
+            ) : null}
+          </MenuDesignPhotoSlot>
         ) : null}
         <div style={{ minWidth: 0, flex: 1 }}>
           {editorialRefresh ? (

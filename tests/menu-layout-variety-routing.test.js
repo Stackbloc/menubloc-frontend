@@ -15,6 +15,14 @@ const bistro = readFileSync(
   join(root, "src/components/menu-templates/PremiumBistroMenuTemplate.jsx"),
   "utf8",
 );
+const asian = readFileSync(
+  join(root, "src/components/menu-templates/ModernAsianMenuTemplate.jsx"),
+  "utf8",
+);
+const rustic = readFileSync(
+  join(root, "src/components/menu-templates/RusticItalianMenuTemplate.jsx"),
+  "utf8",
+);
 
 test("gallery styles resolve to distinct layout IDs", () => {
   assert.equal(resolveTemplateMenuStyle("v1"), "v1");
@@ -43,6 +51,21 @@ test("Premium Bistro does not render fixed green ORDER CTA", () => {
   assert.doesNotMatch(bistro, /textTransform: "uppercase",\s*cursor: "pointer",\s*\}\}\s*>\s*Order/);
 });
 
+test("boutique gallery templates use PublicMenuItemCard and no Order CTAs", () => {
+  for (const [label, source] of [
+    ["PremiumBistro", bistro],
+    ["ModernAsian", asian],
+    ["RusticItalian", rustic],
+  ]) {
+    assert.match(source, /PublicMenuItemCard/, `${label} must render PublicMenuItemCard`);
+    assert.doesNotMatch(source, />\s*Order\s*</, `${label} must not render Order CTA text`);
+    assert.doesNotMatch(source, /quickAdd/, `${label} must not use quickAdd Order pill`);
+    assert.doesNotMatch(source, /function AsianItem/, `${label} must not keep AsianItem`);
+    assert.doesNotMatch(source, /function SectionItem/, `${label} must not keep SectionItem`);
+    assert.doesNotMatch(source, /function PremiumMenuItem/, `${label} must not keep PremiumMenuItem`);
+  }
+});
+
 test("style preview enrichment fills missing item and hero images", () => {
   const live = {
     restaurant_name: "Test2",
@@ -58,4 +81,24 @@ test("style preview enrichment fills missing item and hero images", () => {
   assert.equal(enriched.restaurant_name, "Test2");
   assert.equal(enriched.sections[0].items[0].name, "Garden Salad");
   assert.equal(enrichMenuPayloadWithStyleStockPhotos(live, "v1"), live);
+});
+
+test("Menu Lab preview opens designEdit mode and overlay exists", () => {
+  const editor = readFileSync(
+    join(root, "src/pages/operator/OperatorMenuEditor.jsx"),
+    "utf8",
+  );
+  const overlay = readFileSync(
+    join(root, "src/components/menu-templates/MenuDesignPhotoEditOverlay.jsx"),
+    "utf8",
+  );
+  const publicMenu = readFileSync(
+    join(root, "src/pages/PublicMenuPage.jsx"),
+    "utf8",
+  );
+  assert.match(editor, /designEdit=1/);
+  assert.match(overlay, /MenuDesignPhotoSlot/);
+  assert.match(overlay, /Photo removed/);
+  assert.match(publicMenu, /MenuDesignPhotoEditProvider/);
+  assert.match(publicMenu, /designEdit/);
 });

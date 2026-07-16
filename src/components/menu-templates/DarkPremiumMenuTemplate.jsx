@@ -5,6 +5,7 @@ import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
+import { MenuDesignHeroSlot } from "./MenuDesignPhotoEditOverlay.jsx";
 
 function LogoMark({ logoUrl, restaurantName, accent }) {
   if (logoUrl) {
@@ -138,25 +139,18 @@ export default function DarkPremiumMenuTemplate(ctx) {
         {intakeBannerSlot}
         {allergenBannerSlot}
 
-        {heroImageUrl ? (
-          <div
-            aria-hidden="true"
-            style={{
-              marginBottom: 28,
-              borderRadius: 18,
-              overflow: "hidden",
-              border: `1px solid rgba(182,139,69,0.32)`,
-              boxShadow: "0 18px 42px rgba(0,0,0,0.34)",
-            }}
-          >
-            <img
-              src={heroImageUrl}
-              alt=""
-              loading="lazy"
-              style={{ width: "100%", height: isMobile ? 180 : 280, objectFit: "cover", display: "block" }}
-            />
-          </div>
-        ) : null}
+        <MenuDesignHeroSlot
+          heroImageUrl={heroImageUrl}
+          isStock={Boolean(ctx?.designHeroIsStock)}
+          style={{
+            marginBottom: 28,
+            borderRadius: 18,
+            overflow: "hidden",
+            border: `1px solid rgba(182,139,69,0.32)`,
+            boxShadow: "0 18px 42px rgba(0,0,0,0.34)",
+            height: isMobile ? 180 : 280,
+          }}
+        />
 
         {displayableItemCount === 0 ? (
           <div style={{ color: muted, padding: "28px 0" }}>

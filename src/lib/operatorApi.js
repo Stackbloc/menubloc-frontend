@@ -142,7 +142,6 @@ export const publishProfile = (rid) => post(`/operator/restaurants/${rid}/profil
 export const setFeaturedDish = (rid, menu_item_id) =>
   patch(`/operator/restaurants/${rid}/profile/featured-dish`, { menu_item_id });
 
-
 // ── Restaurant: Onboarding Business Organization ──────────────────────────
 export const getOwnedBusinessOrganization = (rid) =>
   get(`/operator/restaurants/${rid}/onboarding/organization`);
@@ -273,6 +272,16 @@ export function createOperatorCkMenuApi(uploadSessionId = null) {
   };
 }
 
+// ── Restaurant: Menu Worksheet (post-parse grid) ──────────────────────────
+export const getMenuWorksheet = (rid, mid, uploadSessionId = null) =>
+  get(withUploadSession(`/operator/restaurants/${rid}/menus/${mid}/worksheet`, uploadSessionId));
+
+export const saveMenuWorksheet = (rid, mid, body) =>
+  put(`/operator/restaurants/${rid}/menus/${mid}/worksheet`, body);
+
+export const publishMenuWorksheet = (rid, mid, body = {}) =>
+  post(`/operator/restaurants/${rid}/menus/${mid}/worksheet/publish`, body);
+
 // ── Restaurant: Deals ─────────────────────────────────────────────────────
 export const getDeals = (rid, params = {}) => {
   const qs = new URLSearchParams(params).toString();
@@ -304,6 +313,20 @@ export const getQrKitPreviewUrl = (rid, params = {}) => {
   ).toString();
   return `${API}/operator/restaurants/${rid}/qr-kit-orders/preview${qs ? `?${qs}` : ""}`;
 };
+export const getQrMerchandiseCatalog = (rid) =>
+  get(`/operator/restaurants/${rid}/qr-kit-orders/catalog`);
+export const getQrMerchandiseQuote = (rid, params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  ).toString();
+  return get(`/operator/restaurants/${rid}/qr-kit-orders/quote${qs ? `?${qs}` : ""}`);
+};
+export const requestQrMerchandiseBulkQuote = (rid, body) =>
+  post(`/operator/restaurants/${rid}/qr-kit-orders/bulk-quote-requests`, body);
+export const getQrMerchandiseEntitlements = (rid) =>
+  get(`/operator/restaurants/${rid}/qr-kit-orders/entitlements`);
+export const fulfillQrMerchandiseEntitlement = (rid, body) =>
+  post(`/operator/restaurants/${rid}/qr-kit-orders/entitlements/fulfill`, body);
 export const createQrKitOrder = (rid, body) => post(`/operator/restaurants/${rid}/qr-kit-orders`, body);
 export const getQrKitOrder = (rid, orderId) => get(`/operator/restaurants/${rid}/qr-kit-orders/${orderId}`);
 
@@ -514,6 +537,29 @@ export const uploadBrandLogo = (rid, body) =>
   post(`/operator/restaurants/${rid}/brand/logo`, body);
 export const removeBrandLogo = (rid) =>
   del(`/operator/restaurants/${rid}/brand/logo`);
+export const uploadBrandHero = (rid, file) => {
+  const formData = new FormData();
+  formData.append("hero", file);
+  return reqForm(`/operator/restaurants/${rid}/brand/hero`, formData);
+};
+export const removeBrandHero = (rid) =>
+  del(`/operator/restaurants/${rid}/brand/hero`);
+
+// ── Menu item photos ──────────────────────────────────────────────────────
+export const listMenuItemPhotos = (itemId) =>
+  get(`/operator/menu-items/${itemId}/photos`);
+export const uploadMenuItemPhoto = (itemId, file, { isPrimary = true } = {}) => {
+  const formData = new FormData();
+  formData.append("photo", file);
+  if (isPrimary) formData.append("is_primary", "true");
+  return reqForm(`/operator/menu-items/${itemId}/photo`, formData);
+};
+export const patchMenuItemPhoto = (photoId, body) =>
+  patch(`/operator/menu-item-photos/${photoId}`, body);
+export const deleteMenuItemPhoto = (photoId) =>
+  del(`/operator/menu-item-photos/${photoId}`);
+export const restoreMenuItemPhoto = (photoId) =>
+  patch(`/operator/menu-item-photos/${photoId}`, { status: "active", is_primary: true });
 
 // ── Restaurant: Adobe Usage (Pro) ─────────────────────────────────────────
 export const getAdobeUsageSummary = (rid) =>

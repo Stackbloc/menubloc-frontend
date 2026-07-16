@@ -1,15 +1,11 @@
 import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
-import { getLocalizedField } from "../../utils/getLocalizedField.js";
-import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
-import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
-import { itemHasInsightsData } from "../basket/ItemInsightsSheet.jsx";
-import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
-import { buildDishShareData } from "../share/shareUtils.js";
-import { shouldShowSectionImages } from "./menuThemeSettings.js";
+import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
+import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import RestaurantVerificationBadge from "../RestaurantVerificationBadge.jsx";
+import { MenuDesignHeroSlot } from "./MenuDesignPhotoEditOverlay.jsx";
 
 function text(value) {
   return String(value || "").trim();
@@ -36,269 +32,31 @@ function getSectionImageUrl(section) {
   return items.map(getItemImageUrl).find(Boolean) || "";
 }
 
-function isItemOrderable(item, getConsumerDisplayPrice) {
-  return (getConsumerDisplayPrice(item) ?? 0) > 0;
-}
-
-function PremiumLogoSlot({ logoUrl, restaurantName, accent }) {
-  if (logoUrl) {
-    return (
-      <img
-        src={logoUrl}
-        alt=""
-        width={88}
-        height={88}
-        style={{
-          width: 88,
-          height: 88,
-          borderRadius: 999,
-          objectFit: "cover",
-          border: "2px solid rgba(255,255,255,0.72)",
-          boxShadow: "0 16px 44px rgba(0,0,0,0.34)",
-        }}
-      />
-    );
-  }
-  const initials = text(restaurantName)
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        width: 88,
-        height: 88,
-        borderRadius: 999,
-        display: "grid",
-        placeItems: "center",
-        color: "#f8f4ea",
-        border: "2px solid rgba(255,255,255,0.72)",
-        background: `linear-gradient(135deg, rgba(255,255,255,0.08), ${accent})`,
-        boxShadow: "0 16px 44px rgba(0,0,0,0.34)",
-        fontSize: 26,
-        fontWeight: 800,
-        fontFamily: "Georgia, serif",
-      }}
-    >
-      {initials || "M"}
-    </div>
-  );
-}
-
 function SectionHeading({ title, accent, isMobile }) {
   return (
     <div
       style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(24px, 1fr) auto minmax(24px, 1fr)",
+        display: "flex",
         alignItems: "center",
-        gap: isMobile ? 12 : 18,
-        margin: isMobile ? "34px 0 22px" : "48px 0 28px",
+        gap: 14,
+        margin: isMobile ? "28px 0 16px" : "36px 0 18px",
       }}
     >
-      <div style={{ height: 1, background: "rgba(87,75,67,0.34)" }} />
+      <div style={{ height: 1, flex: 1, background: `${accent}55` }} />
       <h2
         style={{
           margin: 0,
           color: accent,
           fontFamily: "Georgia, Palatino, serif",
-          fontSize: isMobile ? 32 : 42,
+          fontSize: isMobile ? 26 : 34,
           fontWeight: 800,
-          lineHeight: 1,
+          letterSpacing: "0.02em",
           textAlign: "center",
         }}
       >
         {title}
       </h2>
-      <div style={{ height: 1, background: "rgba(87,75,67,0.34)" }} />
-    </div>
-  );
-}
-
-function PremiumMenuItem({
-  item,
-  ctx,
-  accent,
-  muted,
-}) {
-  const {
-    language,
-    restaurantName,
-    data,
-    currentRestaurantId,
-    dealMap,
-    activeCartItems,
-    setItemSheet,
-    setAddedConfirmation,
-    commitMenuItemToBasket,
-    fmtMoney,
-    getConsumerDisplayPrice,
-    menuThemeSettings = {},
-  } = ctx;
-
-  const name = getDisplayMenuItemName(item, language, "Item");
-  const desc = text(
-    getLocalizedField(item, "description", language) ||
-      getLocalizedField(item, "notes", language) ||
-      item?.description ||
-      item?.notes
-  );
-  const price = fmtMoney(item);
-  const canNavigate = item?.menu_item_id != null;
-  const hasDeal = canNavigate ? !!dealMap.get(item.menu_item_id) : false;
-  const orderable = isItemOrderable(item, getConsumerDisplayPrice);
-  const matchingCartLines = (Array.isArray(activeCartItems) ? activeCartItems : []).filter(
-    (line) => Number(line?.menuItemId) === Number(item?.menu_item_id)
-  );
-  const inCartCount = matchingCartLines.reduce((sum, line) => sum + Number(line?.quantity || 0), 0);
-  const indulgencePresentation = resolveIndulgencePresentation({ chips: item?.chips });
-  const nutritionChip = item?.chips?.nutrition_chip || null;
-  const hasAllergenData = !!(
-    nutritionChip &&
-    (
-      (Array.isArray(nutritionChip.allergens) && nutritionChip.allergens.length > 0) ||
-      String(nutritionChip.allergen_alert || "").trim()
-    )
-  );
-  const showInsightsInline = menuThemeSettings?.intelligence_density !== "none" && itemHasInsightsData(item);
-  const showAllergenInline = false;
-  const dishShareData = canNavigate
-    ? buildDishShareData({
-        restaurant: {
-          id: currentRestaurantId,
-          slug: data?.slug || null,
-          name: restaurantName,
-          logoUrl: data?.logo_url || null,
-        },
-        menuItem: { ...item, menu_item_id: item.menu_item_id, name },
-      })
-    : null;
-
-  function openItem() {
-    if (!canNavigate) return;
-    setItemSheet({
-      item,
-      name,
-      desc,
-      price,
-      hasDeal,
-      dishShareData,
-      canNavigate: true,
-      indulgencePresentation,
-    });
-  }
-
-  function quickAdd(e) {
-    e.stopPropagation();
-    if (!orderable) return;
-    if (itemHasRequiredModifiers(item)) {
-      openItem();
-      return;
-    }
-    commitMenuItemToBasket(item, name, desc);
-    setAddedConfirmation({ itemId: item.menu_item_id, name });
-  }
-
-  return (
-    <div
-      role="button"
-      tabIndex={canNavigate ? 0 : -1}
-      onClick={openItem}
-      onKeyDown={(e) => {
-        if ((e.key === "Enter" || e.key === " ") && canNavigate) openItem();
-      }}
-      style={{
-        width: "100%",
-        border: "none",
-        borderRadius: 0,
-        background: "transparent",
-        padding: "0 0 24px",
-        margin: "0 0 24px",
-        textAlign: "left",
-        cursor: canNavigate ? "pointer" : "default",
-        fontFamily: "inherit",
-        color: "#1f1b18",
-        borderBottom: "1px solid rgba(87,75,67,0.14)",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
-        <div style={{ minWidth: 0 }}>
-          <div
-            style={{
-              color: accent,
-              fontSize: 21,
-              fontWeight: 850,
-              lineHeight: 1.18,
-              wordBreak: "break-word",
-            }}
-          >
-            {name}
-          </div>
-          {price ? (
-            <div style={{ marginTop: 5, color: "#6f5c51", fontSize: 15, fontWeight: 800 }}>
-              {price}
-            </div>
-          ) : null}
-        </div>
-        {orderable ? (
-          <span
-            onClick={quickAdd}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") quickAdd(e);
-            }}
-            style={{
-              minHeight: 44,
-              minWidth: 74,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 999,
-              border: `1px solid ${accent}`,
-              color: accent,
-              background: inCartCount > 0 ? "rgba(255,255,255,0.82)" : "transparent",
-              fontSize: 13,
-              fontWeight: 850,
-              flexShrink: 0,
-            }}
-          >
-            {inCartCount > 0 ? `${inCartCount} added` : "Order"}
-          </span>
-        ) : null}
-      </div>
-      {desc ? (
-        <div style={{ marginTop: 8, color: muted, fontSize: 18, lineHeight: 1.48, fontWeight: 450 }}>
-          {desc}
-        </div>
-      ) : null}
-      {showInsightsInline ? (
-        <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {showInsightsInline ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                openItem();
-              }}
-              style={{
-                border: "none",
-                background: "transparent",
-                color: accent,
-                fontSize: 12,
-                fontWeight: 700,
-                padding: 0,
-                cursor: "pointer",
-              }}
-            >
-              Insights →
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      <div style={{ height: 1, flex: 1, background: `${accent}55` }} />
     </div>
   );
 }
@@ -306,6 +64,8 @@ function PremiumMenuItem({
 export default function PremiumBistroMenuTemplate(ctx) {
   const {
     isMobile,
+    language,
+    t,
     restaurantName,
     restaurantProfileHref,
     menuTypeLabel,
@@ -344,15 +104,29 @@ export default function PremiumBistroMenuTemplate(ctx) {
     isPro,
     isPaidSubscriber,
     orderAcceptanceStatus,
+    data,
+    dealMap,
+    activeCartItems,
+    hoveredItemId,
+    setHoveredItemId,
+    removeItem,
+    navigate,
+    setItemSheet,
+    setAddedConfirmation,
+    commitMenuItemToBasket,
+    fmtMoney,
+    getConsumerDisplayPrice,
   } = ctx;
 
   const accent = brand?.accentStrong ?? brand?.accent ?? "#6b211c";
   const accentFill = brand?.accent ?? "#7a2b23";
   const showLogo = logoPlacement !== "hidden";
   const cream = "#fbf7ee";
-  const paper = "#fffdf8";
-  const muted = "#74695f";
+  const paper = "#fffaf3";
+  const muted = "#6f5c51";
   const showSectionImages = shouldShowSectionImages(menuThemeSettings);
+  const showItemImages = shouldShowItemImages(menuThemeSettings);
+
   const collectionButtons =
     Array.isArray(menus) && menus.length > 1
       ? menus
@@ -392,12 +166,16 @@ export default function PremiumBistroMenuTemplate(ctx) {
           justifyContent: "center",
           padding: isMobile ? "26px 20px 38px" : "36px 42px 58px",
           overflow: "hidden",
-          background: heroImageUrl
-            ? `linear-gradient(rgba(9,10,9,0.58), rgba(9,10,9,0.78)), url(${heroImageUrl}) center/cover`
-            : brand?.heroBackdrop || "linear-gradient(135deg, #17130f, #090b0a)",
+          background: brand?.heroBackdrop || "linear-gradient(135deg, #17130f, #090b0a)",
         }}
       >
-        <div style={{ textAlign: "center", maxWidth: 720 }}>
+        <MenuDesignHeroSlot
+          heroImageUrl={heroImageUrl}
+          isStock={Boolean(ctx?.designHeroIsStock)}
+          style={{ position: "absolute", inset: 0, zIndex: 0 }}
+          imgStyle={{ filter: "brightness(0.55)" }}
+        />
+        <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: 720 }}>
           {statusLabel ? (
             <div
               style={{
@@ -413,8 +191,27 @@ export default function PremiumBistroMenuTemplate(ctx) {
             </div>
           ) : null}
           {showLogo && (
-            <div style={{ display: "flex", justifyContent: logoPlacement === "center" ? "center" : "center", marginBottom: 18 }}>
-              <PremiumLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} accent={accentFill} />
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt=""
+                  width={72}
+                  height={72}
+                  style={{ width: 72, height: 72, borderRadius: 999, objectFit: "cover", border: `2px solid ${accentFill}` }}
+                />
+              ) : (
+                <div
+                  aria-hidden
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 999,
+                    border: `2px solid ${accentFill}`,
+                    background: "rgba(255,255,255,0.08)",
+                  }}
+                />
+              )}
             </div>
           )}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
@@ -565,10 +362,7 @@ export default function PremiumBistroMenuTemplate(ctx) {
                 }}
               >
                 <span>{displayableItemCount} matching items</span>
-                <Link
-                  to="/account"
-                  style={{ color: accent, fontWeight: 850, fontSize: 13 }}
-                >
+                <Link to="/account" style={{ color: accent, fontWeight: 850, fontSize: 13 }}>
                   Manage preferences
                 </Link>
               </div>
@@ -581,14 +375,35 @@ export default function PremiumBistroMenuTemplate(ctx) {
               return (
                 <div key={String(section?.id ?? `${title}-${sIdx}`)} id={`premium-bistro-section-${sIdx}`}>
                   <SectionHeading title={title} accent={accent} isMobile={isMobile} />
-                  <div style={{ display: "grid", gap: 0 }}>
-                    {items.map((item, iIdx) => (
-                      <PremiumMenuItem
-                        key={String(item?.menu_item_id ?? `${sIdx}-${iIdx}`)}
-                        item={item}
-                        ctx={ctx}
-                        accent={accent}
-                        muted={muted}
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    {items.map((it, iIdx) => (
+                      <PublicMenuItemCard
+                        key={String(it?.menu_item_id ?? it?.id ?? `${sIdx}-${iIdx}`)}
+                        density="classic"
+                        editorialRefresh={true}
+                        editorialColorScheme="light"
+                        it={it}
+                        sIdx={sIdx}
+                        iIdx={iIdx}
+                        language={language}
+                        t={t}
+                        data={data}
+                        restaurantName={restaurantName}
+                        currentRestaurantId={currentRestaurantId}
+                        dealMap={dealMap}
+                        activeCartItems={activeCartItems}
+                        hoveredItemId={hoveredItemId}
+                        setHoveredItemId={setHoveredItemId}
+                        removeItem={removeItem}
+                        navigate={navigate}
+                        setItemSheet={setItemSheet}
+                        setAddedConfirmation={setAddedConfirmation}
+                        commitMenuItemToBasket={commitMenuItemToBasket}
+                        fmtMoney={fmtMoney}
+                        getConsumerDisplayPrice={getConsumerDisplayPrice}
+                        brand={brand}
+                        menuThemeSettings={menuThemeSettings}
+                        showImage={showItemImages}
                       />
                     ))}
                   </div>

@@ -1,105 +1,18 @@
 import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
+import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
-import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
-import { getMenuSectionImageUrl, getMenuItemImageUrl } from "./menuImageUtils.js";
+import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
-
-function AsianItem({ item, ctx, accent }) {
-  const {
-    language,
-    dealMap,
-    setItemSheet,
-    fmtMoney,
-    showImage = true,
-  } = ctx;
-
-  const name = getDisplayMenuItemName(item, language, "Item");
-  const desc = String(
-    getLocalizedField(item, "description", language) ||
-      getLocalizedField(item, "notes", language) ||
-      item?.description ||
-      item?.notes ||
-      ""
-  ).trim();
-  const price = fmtMoney(item);
-  const imageUrl = getMenuItemImageUrl(item);
-  const canNavigate = item?.menu_item_id != null;
-  const deal = canNavigate ? dealMap.get(item.menu_item_id) : null;
-
-  function openItem() {
-    if (!canNavigate) return;
-    setItemSheet({
-      item,
-      name,
-      desc,
-      price,
-      hasDeal: !!deal,
-      dishShareData: null,
-      canNavigate: true,
-      indulgencePresentation: null,
-    });
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={openItem}
-      style={{
-        width: "100%",
-        display: "grid",
-        gridTemplateColumns: imageUrl ? "88px minmax(0, 1fr)" : "minmax(0, 1fr)",
-        gap: 14,
-        alignItems: "start",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 18,
-        background: "rgba(255,255,255,0.04)",
-        color: "#fff",
-        padding: 14,
-        textAlign: "left",
-        cursor: canNavigate ? "pointer" : "default",
-        fontFamily: "inherit",
-        boxShadow: "0 10px 28px rgba(0,0,0,0.16)",
-      }}
-    >
-      {showImage && imageUrl ? (
-        <div
-          aria-hidden="true"
-          style={{
-            width: 88,
-            height: 88,
-            borderRadius: 16,
-            overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.1)",
-            flexShrink: 0,
-            background: "#111",
-          }}
-        >
-          <img src={imageUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-        </div>
-      ) : null}
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
-          <div style={{ fontSize: 18, lineHeight: 1.12, fontWeight: 850, color: "#fff8ee" }}>
-            {name}
-          </div>
-          {price ? <div style={{ fontSize: 16, fontWeight: 900, color: accent, whiteSpace: "nowrap" }}>{price}</div> : null}
-        </div>
-        {desc ? (
-          <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1.45, color: "rgba(255,255,255,0.72)" }}>
-            {desc}
-          </div>
-        ) : null}
-      </div>
-    </button>
-  );
-}
+import { MenuDesignHeroSlot } from "./MenuDesignPhotoEditOverlay.jsx";
 
 export default function ModernAsianMenuTemplate(ctx) {
   const {
     isMobile,
+    language,
+    t,
     restaurantProfileHref,
     menuTypeLabel,
     logoUrl,
@@ -111,13 +24,21 @@ export default function ModernAsianMenuTemplate(ctx) {
     filtersActive,
     data,
     dealMap,
-    setItemSheet,
-    fmtMoney,
     brand,
     fontStack,
     menuThemeSettings = {},
     currentRestaurantId,
     restaurantName: ctxRestaurantName,
+    activeCartItems,
+    hoveredItemId,
+    setHoveredItemId,
+    removeItem,
+    navigate,
+    setItemSheet,
+    setAddedConfirmation,
+    commitMenuItemToBasket,
+    fmtMoney,
+    getConsumerDisplayPrice,
   } = ctx;
 
   const accent = brand?.accent ?? "#c9a35b";
@@ -146,17 +67,17 @@ export default function ModernAsianMenuTemplate(ctx) {
           position: "relative",
           boxShadow: "0 22px 56px rgba(0,0,0,0.3)",
           border: "1px solid rgba(255,255,255,0.08)",
+          minHeight: isMobile ? 160 : 200,
+          background: "linear-gradient(135deg, #0b0f14, #1d2530)",
         }}
       >
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: heroImage ? `url(${heroImage}) center/cover no-repeat` : "linear-gradient(135deg, #0b0f14, #1d2530)",
-          }}
+        <MenuDesignHeroSlot
+          heroImageUrl={heroImage}
+          isStock={Boolean(ctx?.designHeroIsStock)}
+          style={{ position: "absolute", inset: 0 }}
+          imgStyle={{ filter: "brightness(0.55)" }}
         />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(11,15,20,0.18), rgba(11,15,20,0.9))" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(11,15,20,0.18), rgba(11,15,20,0.9))", pointerEvents: "none" }} />
         <div style={{ position: "relative", padding: isMobile ? "18px 18px 20px" : "26px 28px 24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
@@ -215,7 +136,7 @@ export default function ModernAsianMenuTemplate(ctx) {
         ) : (
           <div style={{ display: "grid", gap: 18 }}>
             {displaySections.map((section, index) => {
-              const title = String(getLocalizedField(section, "title", ctx.language) || section?.title || "Menu").trim();
+              const title = String(getLocalizedField(section, "title", language) || section?.title || "Menu").trim();
               const sectionImage = getMenuSectionImageUrl(section);
               const items = Array.isArray(section?.items) ? section.items : [];
               return (
@@ -236,13 +157,35 @@ export default function ModernAsianMenuTemplate(ctx) {
                       </h2>
                       <div style={{ height: 1, flex: 1, background: "rgba(201,163,91,0.34)" }} />
                     </div>
-                    <div style={{ display: "grid", gap: 12, gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))" }}>
-                      {items.map((item) => (
-                        <AsianItem
-                          key={String(item?.menu_item_id || item?.name)}
-                          item={item}
-                          ctx={{ ...ctx, dealMap, setItemSheet, fmtMoney, showImage: showItemImages }}
-                          accent={accent}
+                    <div style={{ display: "grid", gap: 4 }}>
+                      {items.map((it, iIdx) => (
+                        <PublicMenuItemCard
+                          key={String(it?.menu_item_id ?? it?.id ?? `${index}-${iIdx}`)}
+                          density="classic"
+                          editorialRefresh={true}
+                          editorialColorScheme="dark"
+                          it={it}
+                          sIdx={index}
+                          iIdx={iIdx}
+                          language={language}
+                          t={t}
+                          data={data}
+                          restaurantName={restaurantName}
+                          currentRestaurantId={currentRestaurantId}
+                          dealMap={dealMap}
+                          activeCartItems={activeCartItems}
+                          hoveredItemId={hoveredItemId}
+                          setHoveredItemId={setHoveredItemId}
+                          removeItem={removeItem}
+                          navigate={navigate}
+                          setItemSheet={setItemSheet}
+                          setAddedConfirmation={setAddedConfirmation}
+                          commitMenuItemToBasket={commitMenuItemToBasket}
+                          fmtMoney={fmtMoney}
+                          getConsumerDisplayPrice={getConsumerDisplayPrice}
+                          brand={brand}
+                          menuThemeSettings={menuThemeSettings}
+                          showImage={showItemImages}
                         />
                       ))}
                     </div>

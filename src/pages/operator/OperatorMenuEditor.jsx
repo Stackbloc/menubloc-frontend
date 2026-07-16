@@ -13,7 +13,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
-import { API_BASE } from "../../lib/operatorApi.js";
 import {
   CURATED_MENU_DESIGN_LAB_THEMES,
   getMenuDesignLabTheme,
@@ -354,6 +353,9 @@ function MenuLabPanel({ rid, isEmailVerified }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [status, setStatus] = useState("");
+  const [heroUrl, setHeroUrl] = useState(null);
+  const [heroBusy, setHeroBusy] = useState(false);
+  const heroInputRef = useRef(null);
 
   const selectedTheme = getMenuDesignLabTheme(settings.menu_style || "v1");
 
@@ -364,7 +366,10 @@ function MenuLabPanel({ rid, isEmailVerified }) {
     }
     setLoading(true);
     try {
-      const data = await api.getDisplaySettings(rid);
+      const [data, brand] = await Promise.all([
+        api.getDisplaySettings(rid),
+        api.getBrandProfile(rid).catch(() => null),
+      ]);
       if (data?.ok && data?.settings) {
         const normalized = normalizeMenuThemeSettings(data.settings);
         setSettings((current) => ({
@@ -375,12 +380,48 @@ function MenuLabPanel({ rid, isEmailVerified }) {
           font_preset: data.settings.font_preset || "default",
         }));
       }
+      const nextHero =
+        brand?.profile?.hero_image_url ||
+        brand?.hero_image_url ||
+        null;
+      setHeroUrl(nextHero || null);
     } catch {
       // Keep defaults if loading fails.
     } finally {
       setLoading(false);
     }
   }, [rid]);
+
+  async function handleHeroFile(file) {
+    if (!rid || !file) return;
+    setHeroBusy(true);
+    setStatus("");
+    try {
+      const result = await api.uploadBrandHero(rid, file);
+      const url = result?.hero_image_url || null;
+      if (url) setHeroUrl(url);
+      setStatus("Hero image updated.");
+    } catch (err) {
+      setStatus(err.message || "Failed to upload hero image.");
+    } finally {
+      setHeroBusy(false);
+    }
+  }
+
+  async function handleHeroClear() {
+    if (!rid) return;
+    setHeroBusy(true);
+    setStatus("");
+    try {
+      await api.removeBrandHero(rid);
+      setHeroUrl(null);
+      setStatus("Hero image removed.");
+    } catch (err) {
+      setStatus(err.message || "Failed to remove hero image.");
+    } finally {
+      setHeroBusy(false);
+    }
+  }
 
   useEffect(() => {
     loadSettings();
@@ -450,7 +491,7 @@ function MenuLabPanel({ rid, isEmailVerified }) {
   function openStylePreview(style) {
     if (!rid) return;
     const resolved = encodeURIComponent(style || settings.menu_style || "v1");
-    window.open(`/restaurants/${rid}/menu?menuStyle=${resolved}`, "_blank", "noopener,noreferrer");
+    window.open(`/restaurants/${rid}/menu?menuStyle=${resolved}&designEdit=1`, "_blank", "noopener,noreferrer");
   }
 
   function openPreview() {
@@ -662,6 +703,59 @@ function MenuLabPanel({ rid, isEmailVerified }) {
               >
                 {settings.hero_enabled ? "Enabled" : "Disabled"}
               </button>
+              <input
+                ref={heroInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) handleHeroFile(file);
+                }}
+              />
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <button
+                  type="button"
+                  disabled={heroBusy}
+                  onClick={() => heroInputRef.current?.click()}
+                  style={{
+                    ...controlStyle,
+                    width: "auto",
+                    minHeight: 36,
+                    padding: "8px 12px",
+                    fontWeight: 700,
+                    cursor: heroBusy ? "wait" : "pointer",
+                  }}
+                >
+                  {heroBusy ? "Uploading…" : heroUrl ? "Replace hero" : "Upload hero"}
+                </button>
+                {heroUrl ? (
+                  <button
+                    type="button"
+                    disabled={heroBusy}
+                    onClick={handleHeroClear}
+                    style={{
+                      ...controlStyle,
+                      width: "auto",
+                      minHeight: 36,
+                      padding: "8px 12px",
+                      fontWeight: 700,
+                      color: "#9f1239",
+                      cursor: heroBusy ? "wait" : "pointer",
+                    }}
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+              {heroUrl ? (
+                <img
+                  src={heroUrl}
+                  alt=""
+                  style={{ width: "100%", maxHeight: 120, objectFit: "cover", borderRadius: 10, border: "1px solid #e4e9f0" }}
+                />
+              ) : null}
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
               Font style
@@ -789,13 +883,43 @@ export default function OperatorMenuEditor() {
     setLoadingItems(true);
     try {
       const d = await api.getMenuItems(rid, menuId);
-      setItems(d.items || []);
+      const nextItems = d.items || [];
+      setItems(nextItems);
+      const photoEntries = await Promise.all(
+        nextItems.map(async (item) => {
+          try {
+            const photos = await api.listMenuItemPhotos(item.id);
+            const primary =
+              (photos?.photos || []).find((p) => p.status === "active" && p.is_primary) ||
+              (photos?.photos || []).find((p) => p.status === "active");
+            return primary?.photo_url ? [item.id, primary.photo_url] : null;
+          } catch {
+            return null;
+          }
+        })
+      );
+      const nextPhotos = {};
+      for (const entry of photoEntries) {
+        if (entry) nextPhotos[entry[0]] = entry[1];
+      }
+      setItemPhotos(nextPhotos);
     } catch (e) {
       setError(e.message);
     } finally {
       setLoadingItems(false);
     }
   }, [rid]);
+
+  // Upload photo for an item
+  async function handlePhotoUpload(item, file) {
+    try {
+      const json = await api.uploadMenuItemPhoto(item.id, file, { isPrimary: true });
+      const url = json.photo?.photo_url;
+      if (url) setItemPhotos((prev) => ({ ...prev, [item.id]: url }));
+    } catch (e) {
+      setError(e.message);
+    }
+  }
 
   useEffect(() => {
     if (selectedMenuId) loadItems(selectedMenuId);
@@ -952,25 +1076,6 @@ export default function OperatorMenuEditor() {
       showFailure(msg);
     } finally {
       setActionBusy(false);
-    }
-  }
-
-  // Upload photo for an item
-  async function handlePhotoUpload(item, file) {
-    const fd = new FormData();
-    fd.append("photo", file);
-    try {
-      const res = await fetch(`${API_BASE}/operator/menu-items/${item.id}/photo`, {
-        method: "POST",
-        credentials: "include",
-        body: fd,
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || "Photo upload failed");
-      const url = json.photo?.photo_url;
-      if (url) setItemPhotos(prev => ({ ...prev, [item.id]: url }));
-    } catch (e) {
-      setError(e.message);
     }
   }
 

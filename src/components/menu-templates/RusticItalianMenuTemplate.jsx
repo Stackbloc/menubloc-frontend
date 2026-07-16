@@ -1,103 +1,18 @@
 import { Link } from "react-router-dom";
 import ShareButton from "../share/ShareButton.jsx";
+import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
-import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
-import { getMenuSectionImageUrl, getMenuItemImageUrl } from "./menuImageUtils.js";
+import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
 import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
-
-function SectionItem({ item, ctx, accent }) {
-  const {
-    language,
-    dealMap,
-    setItemSheet,
-    fmtMoney,
-    showImage = true,
-  } = ctx;
-
-  const name = getDisplayMenuItemName(item, language, "Item");
-  const desc = String(
-    getLocalizedField(item, "description", language) ||
-      getLocalizedField(item, "notes", language) ||
-      item?.description ||
-      item?.notes ||
-      ""
-  ).trim();
-  const price = fmtMoney(item);
-  const imageUrl = getMenuItemImageUrl(item);
-  const canNavigate = item?.menu_item_id != null;
-  const deal = canNavigate ? dealMap.get(item.menu_item_id) : null;
-
-  function openItem() {
-    if (!canNavigate) return;
-    setItemSheet({
-      item,
-      name,
-      desc,
-      price,
-      hasDeal: !!deal,
-      dishShareData: null,
-      canNavigate: true,
-      indulgencePresentation: null,
-    });
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={openItem}
-      style={{
-        width: "100%",
-        display: "grid",
-        gridTemplateColumns: imageUrl ? "72px minmax(0, 1fr)" : "minmax(0, 1fr)",
-        gap: 12,
-        alignItems: "start",
-        border: "none",
-        background: "transparent",
-        padding: "12px 0",
-        textAlign: "left",
-        cursor: canNavigate ? "pointer" : "default",
-        borderBottom: "1px solid rgba(107,114,128,0.16)",
-        color: "#241f1b",
-        fontFamily: "inherit",
-      }}
-    >
-      {showImage && imageUrl ? (
-        <div
-          aria-hidden="true"
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: 12,
-            overflow: "hidden",
-            border: "1px solid rgba(0,0,0,0.08)",
-            flexShrink: 0,
-          }}
-        >
-          <img src={imageUrl} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-        </div>
-      ) : null}
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
-          <div style={{ fontSize: 18, lineHeight: 1.12, fontWeight: 800, color: "#201914" }}>
-            {name}
-          </div>
-          {price ? <div style={{ fontSize: 16, fontWeight: 900, color: accent, whiteSpace: "nowrap" }}>{price}</div> : null}
-        </div>
-        {desc ? (
-          <div style={{ marginTop: 5, fontSize: 13, lineHeight: 1.42, color: "rgba(36,31,27,0.72)" }}>
-            {desc}
-          </div>
-        ) : null}
-      </div>
-    </button>
-  );
-}
+import { MenuDesignHeroSlot } from "./MenuDesignPhotoEditOverlay.jsx";
 
 export default function RusticItalianMenuTemplate(ctx) {
   const {
     isMobile,
+    language,
+    t,
     restaurantProfileHref,
     menuTypeLabel,
     logoUrl,
@@ -109,13 +24,21 @@ export default function RusticItalianMenuTemplate(ctx) {
     filtersActive,
     data,
     dealMap,
-    setItemSheet,
-    fmtMoney,
     brand,
     fontStack,
     menuThemeSettings = {},
     currentRestaurantId,
     restaurantName: ctxRestaurantName,
+    activeCartItems,
+    hoveredItemId,
+    setHoveredItemId,
+    removeItem,
+    navigate,
+    setItemSheet,
+    setAddedConfirmation,
+    commitMenuItemToBasket,
+    fmtMoney,
+    getConsumerDisplayPrice,
   } = ctx;
 
   const accent = brand?.accent ?? "#b63c2f";
@@ -142,11 +65,19 @@ export default function RusticItalianMenuTemplate(ctx) {
           borderRadius: 18,
           overflow: "hidden",
           boxShadow: "0 20px 44px rgba(15,23,42,0.08)",
-          background: heroImage ? `linear-gradient(180deg, rgba(36,31,27,0.26), rgba(36,31,27,0.86)), url(${heroImage}) center/cover no-repeat` : "#efe4d1",
+          background: "#efe4d1",
           border: "1px solid rgba(0,0,0,0.08)",
+          position: "relative",
+          minHeight: isMobile ? 140 : 180,
         }}
       >
-        <div style={{ padding: isMobile ? "18px 18px 20px" : "30px 32px 28px" }}>
+        <MenuDesignHeroSlot
+          heroImageUrl={heroImage}
+          isStock={Boolean(ctx?.designHeroIsStock)}
+          style={{ position: "absolute", inset: 0 }}
+          imgStyle={{ filter: "brightness(0.7)" }}
+        />
+        <div style={{ position: "relative", padding: isMobile ? "18px 18px 20px" : "30px 32px 28px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, justifyContent: logoPlacement === "center" ? "center" : undefined, textAlign: logoPlacement === "center" ? "center" : undefined }}>
               {showLogo && (logoUrl ? (
@@ -204,7 +135,7 @@ export default function RusticItalianMenuTemplate(ctx) {
         ) : (
           <div style={{ display: "grid", gap: 18 }}>
             {displaySections.map((section, index) => {
-              const title = String(getLocalizedField(section, "title", ctx.language) || section?.title || "Menu").trim();
+              const title = String(getLocalizedField(section, "title", language) || section?.title || "Menu").trim();
               const sectionImage = getMenuSectionImageUrl(section);
               const items = Array.isArray(section?.items) ? section.items : [];
               return (
@@ -227,12 +158,34 @@ export default function RusticItalianMenuTemplate(ctx) {
                       <div style={{ height: 1, flex: 1, background: "rgba(182,60,47,0.25)" }} />
                     </div>
                     <div style={{ display: "grid", gap: 0 }}>
-                      {items.map((item) => (
-                        <SectionItem
-                          key={String(item?.menu_item_id || item?.name)}
-                          item={item}
-                          ctx={{ ...ctx, dealMap, setItemSheet, fmtMoney, showImage: showItemImages }}
-                          accent={accent}
+                      {items.map((it, iIdx) => (
+                        <PublicMenuItemCard
+                          key={String(it?.menu_item_id ?? it?.id ?? `${index}-${iIdx}`)}
+                          density="classic"
+                          editorialRefresh={true}
+                          editorialColorScheme="light"
+                          it={it}
+                          sIdx={index}
+                          iIdx={iIdx}
+                          language={language}
+                          t={t}
+                          data={data}
+                          restaurantName={restaurantName}
+                          currentRestaurantId={currentRestaurantId}
+                          dealMap={dealMap}
+                          activeCartItems={activeCartItems}
+                          hoveredItemId={hoveredItemId}
+                          setHoveredItemId={setHoveredItemId}
+                          removeItem={removeItem}
+                          navigate={navigate}
+                          setItemSheet={setItemSheet}
+                          setAddedConfirmation={setAddedConfirmation}
+                          commitMenuItemToBasket={commitMenuItemToBasket}
+                          fmtMoney={fmtMoney}
+                          getConsumerDisplayPrice={getConsumerDisplayPrice}
+                          brand={brand}
+                          menuThemeSettings={menuThemeSettings}
+                          showImage={showItemImages}
                         />
                       ))}
                     </div>

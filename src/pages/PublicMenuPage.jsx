@@ -83,6 +83,12 @@ import { trackRestaurantView } from "../lib/analytics.js";
 import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import TasteIndexBadge from "../components/TasteIndexBadge.jsx";
+import { useOperator } from "../context/OperatorContext.jsx";
+import {
+  DesignEditUndoToast,
+  MenuDesignPhotoEditProvider,
+  useMenuDesignPhotoEditController,
+} from "../components/menu-templates/MenuDesignPhotoEditOverlay.jsx";
 
 const API = API_BASE;
 
@@ -783,6 +789,8 @@ export default function PublicMenuPage() {
   const preferenceBannerVisible = hasSavedPreferences;
   const { isFirstMenuView } = useMenuPreferenceBannerSession(preferenceBannerVisible);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isAuthenticated: isOperatorAuthenticated, restaurants: operatorRestaurants = [] } = useOperator();
+  const designEditRequested = searchParams.get("designEdit") === "1";
   const fromCluster = hasClusterReturnContext(searchParams);
   const clusterReturnTo = resolveReturnTarget(searchParams);
   const clusterBackLabel = fromCluster
@@ -1104,11 +1112,64 @@ export default function PublicMenuPage() {
 
   const data = pageState.status === "ok" ? pageState.data : null;
   const stylePreviewParam = searchParams.get("menuStyle") || searchParams.get("previewStyle");
+  const [heroOverrideUrl, setHeroOverrideUrl] = useState(undefined);
+  const [itemPhotoOverrides, setItemPhotoOverrides] = useState({});
+  const operatorOwnsRestaurant = useMemo(() => {
+    if (!isOperatorAuthenticated || !data?.restaurant_id) return false;
+    const rid = Number(data.restaurant_id);
+    return operatorRestaurants.some((r) => Number(r.id) === rid);
+  }, [isOperatorAuthenticated, operatorRestaurants, data?.restaurant_id]);
+  const designEditEnabled = designEditRequested && operatorOwnsRestaurant;
+
   const presentationData = useMemo(() => {
     if (!data) return null;
-    if (!stylePreviewParam) return data;
-    return enrichMenuPayloadWithStyleStockPhotos(data, stylePreviewParam);
-  }, [data, stylePreviewParam]);
+    let next = stylePreviewParam ? enrichMenuPayloadWithStyleStockPhotos(data, stylePreviewParam) : data;
+    if (heroOverrideUrl !== undefined) {
+      next = { ...next, hero_image_url: heroOverrideUrl };
+    }
+    if (Object.keys(itemPhotoOverrides).length > 0) {
+      next = {
+        ...next,
+        sections: (next.sections || []).map((section) => ({
+          ...section,
+          items: (section.items || []).map((item) => {
+            const key = String(item?.menu_item_id ?? item?.id ?? "");
+            const override = itemPhotoOverrides[key];
+            if (!override) return item;
+            return {
+              ...item,
+              image_url: override.imageUrl,
+              photo_url: override.imageUrl,
+              photo_id: override.photoId ?? null,
+              public_menu_item_id: override.publicMenuItemId ?? item.public_menu_item_id,
+            };
+          }),
+        })),
+      };
+    }
+    return next;
+  }, [data, stylePreviewParam, heroOverrideUrl, itemPhotoOverrides]);
+
+  const designHeroIsStock = Boolean(
+    stylePreviewParam &&
+      presentationData?.hero_image_url &&
+      presentationData.hero_image_url !== data?.hero_image_url
+  );
+
+  const designPhotoEdit = useMenuDesignPhotoEditController({
+    enabled: designEditEnabled,
+    restaurantId: data?.restaurant_id || null,
+    menuStyle: stylePreviewParam || data?.menu_style || "v1",
+    onHeroUrlChange: (url) => setHeroOverrideUrl(url),
+    onItemPhotoChange: ({ menuItemId, publicMenuItemId, imageUrl, photoId }) => {
+      const key = String(menuItemId ?? "");
+      if (!key) return;
+      setItemPhotoOverrides((prev) => ({
+        ...prev,
+        [key]: { imageUrl, photoId, publicMenuItemId },
+      }));
+    },
+  });
   const displaySettingsSource = data?.display_settings || data || {};
   const menuThemeSettingsBase = normalizeMenuThemeSettings(displaySettingsSource);
   const menuThemeSettings = stylePreviewParam
@@ -1398,6 +1459,7 @@ export default function PublicMenuPage() {
           tabLoading,
           tabError,
           menuPresentation: data?.menu_presentation || data?.presentation || {},
+          designHeroIsStock,
           ...buildRestaurantStatusLightProps(data),
         }
       : null;
@@ -1472,6 +1534,7 @@ export default function PublicMenuPage() {
   }
 
   return (
+    <MenuDesignPhotoEditProvider value={designPhotoEdit}>
     <div style={pageShellStyle}>
       <StickyPageHeader
         barBackground={resolvedPageBackground}
@@ -1488,6 +1551,22 @@ export default function PublicMenuPage() {
       }}>
         {fromCluster && clusterReturnTo ? (
           <ReturnToSourceBar to={clusterReturnTo} label={clusterBackLabel} />
+        ) : null}
+        {designEditEnabled ? (
+          <div
+            style={{
+              marginBottom: 14,
+              padding: "10px 12px",
+              borderRadius: 12,
+              background: "#0f172a",
+              border: "1px solid #334155",
+              color: "#e2e8f0",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            Design edit mode — hover photos to Delete, Replace, or set Fill/Fit.
+          </div>
         ) : null}
         {isMenuTemplatePreview ? (
           <div
@@ -1593,6 +1672,8 @@ export default function PublicMenuPage() {
       ) : null}
 
       <BottomNav />
+      <DesignEditUndoToast toast={designPhotoEdit.toast} onClose={designPhotoEdit.clearToast} />
     </div>
+    </MenuDesignPhotoEditProvider>
   );
 }

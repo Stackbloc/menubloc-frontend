@@ -11,6 +11,7 @@ import MenuRestaurantDistanceLine from "./MenuRestaurantDistanceLine.jsx";
 import RestaurantProfileLogoLink from "./RestaurantProfileLogoLink.jsx";
 import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
 import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
+import { MenuDesignHeroSlot } from "./MenuDesignPhotoEditOverlay.jsx";
 
 const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif';
 const INK = "#1D1D1F";
@@ -141,15 +142,11 @@ export default function ClassicMenuTemplate(ctx) {
 
   return (
     <div style={{ fontFamily: FONT_STACK, background: "#FFFFFF", marginLeft: edgeBleed, marginRight: edgeBleed }}>
-      {heroImageUrl ? (
-        <div aria-hidden style={{ height: isTablet ? 140 : isMobile ? 120 : 180, overflow: "hidden", position: "relative", flexShrink: 0 }}>
-          <img
-            src={heroImageUrl}
-            alt=""
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          />
-        </div>
-      ) : null}
+      <MenuDesignHeroSlot
+        heroImageUrl={heroImageUrl}
+        isStock={Boolean(ctx?.designHeroIsStock)}
+        style={{ height: isTablet ? 140 : isMobile ? 120 : 180, overflow: "hidden", position: "relative", flexShrink: 0 }}
+      />
 
       <div
         style={{
