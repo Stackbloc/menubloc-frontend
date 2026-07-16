@@ -1,114 +1,122 @@
 import { Link } from "react-router-dom";
 import { CURATED_MENU_DESIGN_LAB_THEMES } from "../data/menuDesignLabThemes.js";
 
-function collectPreviewImages(theme) {
-  const payload = theme?.previewPayload || {};
-  const images = [];
-  const push = (value) => {
-    const text = String(value || "").trim();
-    if (text && !images.includes(text)) images.push(text);
-  };
-
-  push(payload.hero_image_url);
-  push(payload.cover_image_url);
-
-  (Array.isArray(payload.sections) ? payload.sections : []).forEach((section) => {
-    push(section?.image_url);
-    (Array.isArray(section?.items) ? section.items : []).forEach((item) => push(item?.image_url));
-  });
-
-  return images.slice(0, 4);
+function collectDemoItems(theme, limit = 4) {
+  const sections = Array.isArray(theme?.previewPayload?.sections)
+    ? theme.previewPayload.sections
+    : [];
+  const items = [];
+  for (const section of sections) {
+    for (const item of section?.items || []) {
+      const name = String(item?.name || "").trim();
+      if (!name) continue;
+      const price =
+        item.price_minor_units != null
+          ? `$${(Number(item.price_minor_units) / 100).toFixed(2)}`
+          : item.price != null
+            ? `$${Number(item.price).toFixed(2)}`
+            : "";
+      items.push({
+        name,
+        description: String(item?.description || "").trim(),
+        price,
+      });
+      if (items.length >= limit) return items;
+    }
+  }
+  return items;
 }
 
-function formatDemoAddress(payload = {}) {
-  const line1 = String(payload.address_line1 || "").trim();
-  const city = String(payload.city || "").trim();
-  const state = String(payload.state || "").trim();
-  const zip = String(payload.zip || "").trim();
-  const cityState = [city, state].filter(Boolean).join(", ");
-  const locality = [cityState, zip].filter(Boolean).join(" ");
-  return [line1, locality].filter(Boolean).join(" · ");
+function primaryHeroImage(theme) {
+  const payload = theme?.previewPayload || {};
+  const candidates = [
+    payload.hero_image_url,
+    payload.cover_image_url,
+    ...(Array.isArray(payload.sections)
+      ? payload.sections.map((section) => section?.image_url)
+      : []),
+  ];
+  for (const value of candidates) {
+    const text = String(value || "").trim();
+    if (text) return text;
+  }
+  return null;
 }
 
 function buildSwatch(theme) {
   const bg = theme.preset.colorDefaults.background;
-  const light = String(bg || "").toLowerCase().startsWith("#f") || String(bg || "").toLowerCase() === "#ffffff";
+  const light =
+    String(bg || "").toLowerCase().startsWith("#f") ||
+    String(bg || "").toLowerCase() === "#ffffff";
+  const ink = light ? "#0f1720" : "rgba(255,255,255,0.92)";
+  const muted = light ? "rgba(15,23,42,0.55)" : "rgba(255,255,255,0.62)";
   return {
     bg,
     panel: theme.preset.colorDefaults.primary,
     accent: theme.preset.colorDefaults.accent,
-    lines: [
-      light ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.08)",
-      light ? "rgba(15,23,42,0.72)" : "rgba(255,255,255,0.72)",
-      light ? "rgba(15,23,42,0.48)" : "rgba(255,255,255,0.48)",
-    ],
+    ink,
+    muted,
+    rowBg: light ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.06)",
   };
 }
 
-function MenuWindow({ theme, featured = false }) {
+function MenuWindow({ theme }) {
   const swatch = buildSwatch(theme);
-  const previewImages = collectPreviewImages(theme);
-  const heroImage = previewImages[0] || null;
-  const thumbImages = previewImages.slice(1, 4);
-  const restaurantName = theme.previewPayload?.restaurant_name || theme.previewPayload?.name || theme.name;
-  const address = formatDemoAddress(theme.previewPayload);
-  const designLabel = theme.name === "Default" ? "Default menu" : theme.name;
+  const restaurantName =
+    theme.previewPayload?.restaurant_name || theme.previewPayload?.name || theme.name;
+  const heroImage = primaryHeroImage(theme);
+  const items = collectDemoItems(theme, 4);
+  const href = `/menu-template-preview?previewStyle=${theme.style}`;
 
   return (
-    <Link
-      to={`/menu-template-preview?previewStyle=${theme.style}`}
-      style={{
-        ...styles.windowLink,
-        ...(featured ? styles.windowLinkFeatured : null),
-      }}
-      aria-label={`Preview ${restaurantName}`}
-    >
-      <div style={styles.cardCopy}>
-        {featured ? <div style={styles.sampleLabel}>Default example</div> : null}
-        <h2 style={styles.cardTitle}>{restaurantName}</h2>
-        {address ? <p style={styles.addressLine}>{address}</p> : null}
-        <p style={styles.designMeta}>{designLabel}</p>
-        <span style={styles.previewCta}>View menu →</span>
-      </div>
-      <div style={{ ...styles.window, background: swatch.bg }}>
+    <article style={styles.card}>
+      <Link to={href} style={styles.nameLink} aria-label={`Open ${restaurantName} menu`}>
+        {restaurantName}
+      </Link>
+
+      <Link to={href} style={{ ...styles.window, background: swatch.bg }} tabIndex={-1}>
         <div style={styles.browserBar}>
           <span style={styles.dot} />
           <span style={styles.dot} />
           <span style={styles.dot} />
           <span style={styles.urlPill}>menuply.com/menu</span>
         </div>
+
         <div style={styles.windowBody}>
           <div style={{ ...styles.heroStrip, background: swatch.panel }}>
             <div style={{ ...styles.logoMark, background: swatch.accent }} />
-            <div style={styles.heroText}>
-              <span style={{ ...styles.heroLine, background: swatch.lines[0], width: "70%" }} />
-              <span style={{ ...styles.heroLine, background: swatch.lines[1], width: "46%" }} />
-            </div>
+            <div style={{ ...styles.heroName, color: "#fff" }}>{restaurantName}</div>
           </div>
+
           {heroImage ? (
-            <div style={styles.photoPanel}>
-              <div style={{ ...styles.heroPhoto, backgroundImage: `url(${heroImage})` }} />
-              {thumbImages.length ? (
-                <div style={styles.thumbRow}>
-                  {thumbImages.map((src, idx) => (
-                    <div key={`${src}-${idx}`} style={{ ...styles.thumb, backgroundImage: `url(${src})` }} />
-                  ))}
-                </div>
-              ) : null}
-            </div>
+            <div
+              style={{ ...styles.heroPhoto, backgroundImage: `url(${heroImage})` }}
+              aria-hidden
+            />
           ) : null}
-          <div style={styles.menuPreviewGrid}>
-            {[0, 1, 2, 3].map((idx) => (
-              <div key={idx} style={{ ...styles.itemRow, background: swatch.lines[idx % swatch.lines.length] }}>
-                <span style={{ ...styles.itemTitle, background: swatch.accent }} />
-                <span style={styles.itemCopy} />
-                <span style={styles.itemCopySmall} />
-              </div>
-            ))}
+
+          <div style={styles.menuList}>
+            {items.length ? (
+              items.map((item) => (
+                <div key={item.name} style={{ ...styles.itemRow, background: swatch.rowBg }}>
+                  <div style={styles.itemTop}>
+                    <span style={{ ...styles.itemName, color: swatch.ink }}>{item.name}</span>
+                    {item.price ? (
+                      <span style={{ ...styles.itemPrice, color: swatch.accent }}>{item.price}</span>
+                    ) : null}
+                  </div>
+                  {item.description ? (
+                    <div style={{ ...styles.itemDesc, color: swatch.muted }}>{item.description}</div>
+                  ) : null}
+                </div>
+              ))
+            ) : (
+              <div style={{ ...styles.itemDesc, color: swatch.muted }}>No items in this sample.</div>
+            )}
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </article>
   );
 }
 
@@ -118,8 +126,6 @@ const DEMO_STYLE_ORDER = ["v1", "v14", "v13", "v15", "v12", "v16"];
 export default function DemoPage() {
   const byStyle = new Map(CURATED_MENU_DESIGN_LAB_THEMES.map((theme) => [theme.style, theme]));
   const demoThemes = DEMO_STYLE_ORDER.map((style) => byStyle.get(style)).filter(Boolean);
-  const defaultTheme = demoThemes.find((theme) => theme.name === "Default") || demoThemes[0];
-  const otherThemes = demoThemes.filter((theme) => theme !== defaultTheme);
 
   return (
     <main style={styles.page}>
@@ -127,34 +133,13 @@ export default function DemoPage() {
         <div style={styles.demoMark}>Menuply Demo</div>
       </header>
 
-      <section style={styles.hero}>
-        <div style={styles.eyebrow}>Guest menus</div>
-        <h1 style={styles.title}>See how Menuply menus look to diners</h1>
-        <p style={styles.copy}>
-          These are fictional restaurants for preview only. After you upload and review items in the Menu
-          Worksheet, Update Menuply Menu publishes the guest menu — Default is the starting look.
-        </p>
+      <section style={styles.section}>
+        <div style={styles.grid} aria-label="Demo menus">
+          {demoThemes.map((theme) => (
+            <MenuWindow key={theme.style} theme={theme} />
+          ))}
+        </div>
       </section>
-
-      {defaultTheme ? (
-        <section style={styles.section}>
-          <div style={styles.sectionHeading}>Default menu</div>
-          <div style={styles.featuredGrid} aria-label="Default menu example">
-            <MenuWindow theme={defaultTheme} featured />
-          </div>
-        </section>
-      ) : null}
-
-      {otherThemes.length ? (
-        <section style={styles.section}>
-          <div style={styles.sectionHeading}>More menu looks</div>
-          <div style={styles.grid} aria-label="Additional menu demos">
-            {otherThemes.map((theme) => (
-              <MenuWindow key={theme.style} theme={theme} />
-            ))}
-          </div>
-        </section>
-      ) : null}
     </main>
   );
 }
@@ -170,10 +155,6 @@ const styles = {
     maxWidth: 1180,
     margin: "0 auto",
     padding: "18px 22px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
   },
   demoMark: {
     color: "#ffffff",
@@ -182,77 +163,40 @@ const styles = {
     fontWeight: 950,
     letterSpacing: 0,
   },
-  hero: {
-    maxWidth: 980,
-    margin: "0 auto",
-    padding: "42px 22px 26px",
-    boxSizing: "border-box",
-  },
-  eyebrow: {
-    color: "#3DD934",
-    fontSize: 12,
-    fontWeight: 850,
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    marginBottom: 12,
-  },
-  title: {
-    margin: 0,
-    maxWidth: 850,
-    fontSize: "clamp(2.2rem, 7vw, 4.9rem)",
-    lineHeight: 0.98,
-    fontWeight: 950,
-    letterSpacing: 0,
-  },
-  copy: {
-    margin: "18px 0 0",
-    maxWidth: 720,
-    color: "rgba(255,255,255,0.74)",
-    fontSize: 18,
-    lineHeight: 1.55,
-  },
   section: {
     maxWidth: 1180,
     margin: "0 auto",
-    padding: "0 22px 30px",
+    padding: "12px 22px 30px",
     boxSizing: "border-box",
-  },
-  sectionHeading: {
-    marginBottom: 16,
-    color: "#3DD934",
-    fontSize: 12,
-    fontWeight: 850,
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-  },
-  featuredGrid: {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr)",
-    maxWidth: 560,
   },
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-    gap: 18,
+    gap: 22,
   },
-  windowLink: {
-    display: "block",
+  card: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
     minWidth: 0,
+  },
+  nameLink: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: 900,
+    lineHeight: 1.2,
+    textDecoration: "underline",
+    textUnderlineOffset: 3,
+    textDecorationColor: "rgba(61,217,52,0.7)",
+  },
+  window: {
+    display: "block",
     borderRadius: 14,
     overflow: "hidden",
     textDecoration: "none",
-    color: "#ffffff",
-    background: "#121A14",
     border: "1px solid #1F2937",
     boxShadow: "0 18px 48px rgba(0,0,0,0.24)",
-  },
-  windowLinkFeatured: {
-    borderColor: "rgba(61,217,52,0.45)",
-    boxShadow: "0 22px 56px rgba(0,0,0,0.32)",
-  },
-  window: {
     minHeight: 248,
-    borderTop: "1px solid rgba(255,255,255,0.1)",
   },
   browserBar: {
     height: 36,
@@ -288,121 +232,69 @@ const styles = {
   windowBody: {
     padding: 14,
   },
-  photoPanel: {
-    padding: "0 14px 14px",
-    display: "grid",
-    gap: 10,
-  },
-  heroPhoto: {
-    height: 118,
-    borderRadius: 12,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    border: "1px solid rgba(255,255,255,0.1)",
-    boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
-  },
-  thumbRow: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 8,
-  },
-  thumb: {
-    aspectRatio: "1 / 0.72",
-    borderRadius: 10,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    border: "1px solid rgba(255,255,255,0.1)",
-  },
   heroStrip: {
-    minHeight: 76,
+    minHeight: 56,
     borderRadius: 10,
     display: "flex",
     alignItems: "center",
     gap: 12,
-    padding: 12,
+    padding: "10px 12px",
     boxSizing: "border-box",
+    marginBottom: 10,
   },
   logoMark: {
-    width: 42,
-    height: 42,
+    width: 34,
+    height: 34,
     borderRadius: 999,
     flexShrink: 0,
   },
-  heroText: {
-    flex: 1,
+  heroName: {
+    fontSize: 13,
+    fontWeight: 800,
+    lineHeight: 1.2,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  heroPhoto: {
+    height: 110,
+    borderRadius: 12,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    border: "1px solid rgba(255,255,255,0.1)",
+    marginBottom: 10,
+  },
+  menuList: {
     display: "grid",
     gap: 8,
   },
-  heroLine: {
-    height: 10,
-    borderRadius: 999,
-  },
-  menuPreviewGrid: {
-    display: "grid",
-    gap: 10,
-    marginTop: 12,
-  },
   itemRow: {
-    minHeight: 30,
     borderRadius: 8,
-    padding: "9px 10px",
-    display: "grid",
-    gap: 6,
+    padding: "8px 10px",
   },
-  itemTitle: {
-    width: "52%",
-    height: 8,
-    borderRadius: 999,
+  itemTop: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: 10,
   },
-  itemCopy: {
-    width: "84%",
-    height: 6,
-    borderRadius: 999,
-    background: "rgba(15,23,42,0.18)",
-  },
-  itemCopySmall: {
-    width: "38%",
-    height: 6,
-    borderRadius: 999,
-    background: "rgba(15,23,42,0.14)",
-  },
-  cardCopy: {
-    padding: "16px 16px 18px",
-  },
-  sampleLabel: {
-    color: "#3DD934",
-    fontSize: 10,
-    fontWeight: 850,
-    letterSpacing: "0.1em",
-    textTransform: "uppercase",
-    marginBottom: 8,
-  },
-  cardTitle: {
-    margin: 0,
-    color: "#ffffff",
-    fontSize: 19,
-    lineHeight: 1.15,
-    fontWeight: 900,
-  },
-  addressLine: {
-    margin: "8px 0 0",
-    color: "rgba(255,255,255,0.68)",
-    fontSize: 13,
-    lineHeight: 1.45,
-  },
-  designMeta: {
-    margin: "10px 0 0",
-    color: "rgba(255,255,255,0.5)",
+  itemName: {
     fontSize: 12,
-    fontWeight: 700,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
+    fontWeight: 800,
+    lineHeight: 1.25,
   },
-  previewCta: {
-    display: "inline-flex",
-    marginTop: 14,
-    color: "#3DD934",
-    fontSize: 14,
-    fontWeight: 900,
+  itemPrice: {
+    fontSize: 12,
+    fontWeight: 800,
+    flexShrink: 0,
+  },
+  itemDesc: {
+    marginTop: 4,
+    fontSize: 11,
+    lineHeight: 1.35,
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
   },
 };
