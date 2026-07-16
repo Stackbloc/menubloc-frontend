@@ -5,6 +5,9 @@ import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getMenuSectionImageUrl } from "./menuImageUtils.js";
 import { shouldShowItemImages, shouldShowSectionImages } from "./menuThemeSettings.js";
+import { MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
+import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
+import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
 
 function RestaurantLogoSlot({ logoUrl, restaurantName, size = 48, accentBorder = "rgba(34,197,94,0.22)" }) {
   if (logoUrl) {
@@ -91,6 +94,16 @@ export default function RefinedDarkMenuTemplate(ctx) {
     tabError,
     menuPresentation = {},
     menuThemeSettings = {},
+    tone,
+    claimStatus,
+    subscriptionPlan,
+    menuStatus,
+    profileTier,
+    listingStatus,
+    planSlug,
+    isPro,
+    isPaidSubscriber,
+    orderAcceptanceStatus,
   } = ctx;
 
   const showItemImages = shouldShowItemImages(menuThemeSettings);
@@ -153,9 +166,19 @@ export default function RefinedDarkMenuTemplate(ctx) {
             accentBorder={brand?.accentBorder ?? "rgba(34,197,94,0.22)"}
           />}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap", marginBottom: addressLine ? 2 : 0 }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                {restaurantProfileHref ? (
+            <MenuHeaderNameWithActions
+              tone={tone}
+              claimStatus={claimStatus}
+              subscriptionPlan={subscriptionPlan}
+              menuStatus={menuStatus}
+              profileTier={profileTier}
+              listingStatus={listingStatus}
+              planSlug={planSlug}
+              isPro={isPro}
+              isPaidSubscriber={isPaidSubscriber}
+              orderAcceptanceStatus={orderAcceptanceStatus}
+              nameSlot={
+                restaurantProfileHref ? (
                   <Link
                     to={restaurantProfileHref}
                     title={`Open ${restaurantName} profile`}
@@ -189,22 +212,22 @@ export default function RefinedDarkMenuTemplate(ctx) {
                   >
                     {restaurantName}
                   </div>
-                )}
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                <div onClick={(e) => e.stopPropagation()}>
+                )
+              }
+              onActionsClick={(e) => e.stopPropagation()}
+              actions={
+                <>
+                  <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} size={MENU_ROW_ICON_SIZE} />
                   <ShareButton
                     variant="menu"
-                    label="Share Menu"
-                    shareData={shareData}
-                    analyticsContext={shareAnalyticsContext}
                     iconOnly={true}
                     tone="ghost"
+                    shareData={shareData}
+                    analyticsContext={shareAnalyticsContext}
                   />
-                </div>
-              </div>
-            </div>
+                </>
+              }
+            />
 
             {addressLine ? (
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontWeight: 500, marginTop: 2 }}>

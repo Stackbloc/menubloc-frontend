@@ -1,28 +1,23 @@
 import ClassicMenuTemplate from "./ClassicMenuTemplate.jsx";
-import EditorialDarkMenuTemplate from "./EditorialDarkMenuTemplate.jsx";
-import EditorialSteakhouseMenuTemplate from "./EditorialSteakhouseMenuTemplate.jsx";
-import EditorialQSRMenuTemplate from "./EditorialQSRMenuTemplate.jsx";
-import EditorialCasualMenuTemplate from "./EditorialCasualMenuTemplate.jsx";
+import RefinedDarkMenuTemplate from "./RefinedDarkMenuTemplate.jsx";
+import PremiumBistroMenuTemplate from "./PremiumBistroMenuTemplate.jsx";
+import ModernFastCasualMenuTemplate from "./ModernFastCasualMenuTemplate.jsx";
+import FamilyDinerMenuTemplate from "./FamilyDinerMenuTemplate.jsx";
 import MenuVerificationFooter from "./MenuVerificationFooter.jsx";
 import { resolveTemplateMenuStyle } from "./menuPresentationUtils.js";
 
 /**
  * Presentation-only layer: same structured ctx object for every template.
  *
- * The Apple-inspired editorial layout (ClassicMenuTemplate) is the single
- * foundation for every restaurant menu. The only supported variation is
- * color scheme / concept, not layout:
- *   v1  Classic (light, neutral — default)
- *   v12 Modern Dark (iOS dark-mode tokens)
- *   v13 Steakhouse / Fine Dining (warm dark, brass accent)
- *   v14 QSR / Fast Casual (bright, bold, orange-red accent)
- *   v15 Casual / Family Dining (warm cream, terracotta accent)
- *   v16 Brand Tint (Classic layout + operator-set shell background color)
+ * Gallery styles map to distinct layouts (not color-only clones):
+ *   v1  Default / Classic (Apple-inspired — Yellow Browser foundation)
+ *   v12 Modern Dark → RefinedDarkMenuTemplate
+ *   v13 Steakhouse → PremiumBistroMenuTemplate
+ *   v14 Fast Casual → ModernFastCasualMenuTemplate
+ *   v15 Family Dining → FamilyDinerMenuTemplate
+ *   v16 Brand Tint → ClassicMenuTemplate + operator shell tint
  *
- * The former boutique layout templates (v2-v10: Modern Fast Casual, Takeout,
- * Dark Premium, Family Diner, Premium Bistro, Chalkboard, Rustic Italian,
- * Modern Asian, Refined Dark) are no longer routed to — their files remain
- * on disk for reference/rollback but are not imported here.
+ * Editorial* color skins remain on disk for rollback but are not routed here.
  */
 export default function PublicMenuMainContent({ menuStyle: rawStyle, templateContext: ctx }) {
   const menuStyle = resolveTemplateMenuStyle(rawStyle);
@@ -32,10 +27,10 @@ export default function PublicMenuMainContent({ menuStyle: rawStyle, templateCon
       : "#64748b";
 
   let content = null;
-  if (menuStyle === "v12") content = <EditorialDarkMenuTemplate {...ctx} />;
-  else if (menuStyle === "v13") content = <EditorialSteakhouseMenuTemplate {...ctx} />;
-  else if (menuStyle === "v14") content = <EditorialQSRMenuTemplate {...ctx} />;
-  else if (menuStyle === "v15") content = <EditorialCasualMenuTemplate {...ctx} />;
+  if (menuStyle === "v12") content = <RefinedDarkMenuTemplate {...ctx} />;
+  else if (menuStyle === "v13") content = <PremiumBistroMenuTemplate {...ctx} />;
+  else if (menuStyle === "v14") content = <ModernFastCasualMenuTemplate {...ctx} />;
+  else if (menuStyle === "v15") content = <FamilyDinerMenuTemplate {...ctx} />;
   else content = <ClassicMenuTemplate {...ctx} />;
 
   return (

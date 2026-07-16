@@ -48,17 +48,21 @@ export function normalizeMenuStyle(raw) {
 }
 
 /**
- * Map retired boutique style IDs (v2–v10) to the current editorial templates so
- * restaurants that still have legacy menu_style values render coherently.
+ * Map style IDs to the template routed by PublicMenuMainContent.
+ * Gallery IDs v12–v15 keep their own boutique layouts.
+ * v16 Brand Tint uses Classic layout (shell tint applied outside).
+ * Legacy boutique IDs (v2–v10) map onto the nearest gallery layout.
  */
 export function resolveTemplateMenuStyle(raw) {
   const style = normalizeMenuStyle(raw);
-  if (style === "v4" || style === "v10") return "v13";
-  if (style === "v6" || style === "v7") return "v12";
-  if (style === "v3") return "v14";
-  if (style === "v5") return "v15";
-  if (style === "v2" || style === "v8" || style === "v9") return "v1";
   if (style === "v16") return "v1";
+  // Legacy IDs → current gallery layouts
+  if (style === "v4" || style === "v6" || style === "v10") return "v13"; // upscale / bistro → Steakhouse
+  if (style === "v7") return "v12"; // chalkboard street → Modern Dark family
+  if (style === "v3") return "v14"; // food truck → Fast Casual
+  if (style === "v5") return "v15"; // family diner ID → Family Dining
+  if (style === "v2" || style === "v8" || style === "v9") return "v14"; // photo-forward casual → Fast Casual grid
+  if (style === "v11") return "v1";
   return style;
 }
 

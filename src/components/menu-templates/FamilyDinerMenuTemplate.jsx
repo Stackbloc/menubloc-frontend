@@ -3,6 +3,9 @@ import ShareButton from "../share/ShareButton.jsx";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { shouldShowItemImages } from "./menuThemeSettings.js";
+import { MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
+import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
+import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
 
 function DinerLogo({ logoUrl, restaurantName, accent }) {
   if (logoUrl) {
@@ -54,6 +57,16 @@ export default function FamilyDinerMenuTemplate(ctx) {
     brand,
     fontStack,
     menuThemeSettings = {},
+    tone,
+    claimStatus,
+    subscriptionPlan,
+    menuStatus,
+    profileTier,
+    listingStatus,
+    planSlug,
+    isPro,
+    isPaidSubscriber,
+    orderAcceptanceStatus,
   } = ctx;
 
   const accent = brand?.accent ?? "#2563eb";
@@ -92,15 +105,42 @@ export default function FamilyDinerMenuTemplate(ctx) {
           <div style={{ color: accent, fontSize: 11, fontWeight: 850, letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: 4 }}>
             {menuTypeLabel || "Sample menu design"}
           </div>
-          {restaurantProfileHref ? (
-            <Link to={restaurantProfileHref} style={{ color: "#172033", textDecoration: "none", fontSize: isMobile ? 26 : 34, lineHeight: 1.05, fontWeight: 900 }}>
-              {restaurantName}
-            </Link>
-          ) : (
-            <h1 style={{ margin: 0, color: "#172033", fontSize: isMobile ? 26 : 34, lineHeight: 1.05, fontWeight: 900 }}>
-              {restaurantName}
-            </h1>
-          )}
+          <MenuHeaderNameWithActions
+            tone={tone}
+            claimStatus={claimStatus}
+            subscriptionPlan={subscriptionPlan}
+            menuStatus={menuStatus}
+            profileTier={profileTier}
+            listingStatus={listingStatus}
+            planSlug={planSlug}
+            isPro={isPro}
+            isPaidSubscriber={isPaidSubscriber}
+            orderAcceptanceStatus={orderAcceptanceStatus}
+            nameSlot={
+              restaurantProfileHref ? (
+                <Link to={restaurantProfileHref} style={{ color: "#172033", textDecoration: "none", fontSize: isMobile ? 26 : 34, lineHeight: 1.05, fontWeight: 900 }}>
+                  {restaurantName}
+                </Link>
+              ) : (
+                <h1 style={{ margin: 0, color: "#172033", fontSize: isMobile ? 26 : 34, lineHeight: 1.05, fontWeight: 900 }}>
+                  {restaurantName}
+                </h1>
+              )
+            }
+            onActionsClick={(e) => e.stopPropagation()}
+            actions={
+              <>
+                <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} size={MENU_ROW_ICON_SIZE} />
+                <ShareButton
+                  variant="menu"
+                  iconOnly={true}
+                  tone="ghost"
+                  shareData={shareData}
+                  analyticsContext={shareAnalyticsContext}
+                />
+              </>
+            }
+          />
           {addressLine1 ? (
             <div style={{ marginTop: 7, color: "#667085", fontSize: 13, fontWeight: 650 }}>
               {directionsHref ? (
@@ -112,9 +152,6 @@ export default function FamilyDinerMenuTemplate(ctx) {
               )}
             </div>
           ) : null}
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <ShareButton variant="menu" label="Share" shareData={shareData} analyticsContext={shareAnalyticsContext} size="compact" tone="subtle" />
         </div>
       </header>
 

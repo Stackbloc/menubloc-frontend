@@ -7,6 +7,9 @@ import { itemHasInsightsData } from "../basket/ItemInsightsSheet.jsx";
 import { itemHasRequiredModifiers } from "../basket/modifierModel.js";
 import { buildDishShareData } from "../share/shareUtils.js";
 import { shouldShowSectionImages } from "./menuThemeSettings.js";
+import { MENU_ROW_HEADER_ICON_GAP, MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
+import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
+import RestaurantVerificationBadge from "../RestaurantVerificationBadge.jsx";
 
 function text(value) {
   return String(value || "").trim();
@@ -331,6 +334,17 @@ export default function PremiumBistroMenuTemplate(ctx) {
     tabError,
     cartLineCount,
     menuThemeSettings = {},
+    currentRestaurantId,
+    tone,
+    claimStatus,
+    subscriptionPlan,
+    menuStatus,
+    profileTier,
+    listingStatus,
+    planSlug,
+    isPro,
+    isPaidSubscriber,
+    orderAcceptanceStatus,
   } = ctx;
 
   const accent = brand?.accentStrong ?? brand?.accent ?? "#6b211c";
@@ -389,17 +403,6 @@ export default function PremiumBistroMenuTemplate(ctx) {
             : brand?.heroBackdrop || "linear-gradient(135deg, #17130f, #090b0a)",
         }}
       >
-        <div style={{ position: "absolute", top: 18, right: 18 }}>
-          <ShareButton
-            variant="menu"
-            label="Share"
-            shareData={shareData}
-            analyticsContext={shareAnalyticsContext}
-            size="compact"
-            tone="subtle"
-          />
-        </div>
-
         <div style={{ textAlign: "center", maxWidth: 720 }}>
           {statusLabel ? (
             <div
@@ -420,34 +423,68 @@ export default function PremiumBistroMenuTemplate(ctx) {
               <PremiumLogoSlot logoUrl={logoUrl} restaurantName={restaurantName} accent={accentFill} />
             </div>
           )}
-          {restaurantProfileHref ? (
-            <Link
-              to={restaurantProfileHref}
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-                fontFamily: "Georgia, Palatino, serif",
-                fontSize: isMobile ? 42 : 66,
-                fontWeight: 850,
-                lineHeight: 0.98,
-              }}
-            >
-              {restaurantName}
-            </Link>
-          ) : (
-            <h1
-              style={{
-                margin: 0,
-                color: "#fff",
-                fontFamily: "Georgia, Palatino, serif",
-                fontSize: isMobile ? 42 : 66,
-                fontWeight: 850,
-                lineHeight: 0.98,
-              }}
-            >
-              {restaurantName}
-            </h1>
-          )}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+            {restaurantProfileHref ? (
+              <Link
+                to={restaurantProfileHref}
+                style={{
+                  color: "#fff",
+                  textDecoration: "none",
+                  fontFamily: "Georgia, Palatino, serif",
+                  fontSize: isMobile ? 42 : 66,
+                  fontWeight: 850,
+                  lineHeight: 0.98,
+                }}
+              >
+                {restaurantName}
+              </Link>
+            ) : (
+              <h1
+                style={{
+                  margin: 0,
+                  color: "#fff",
+                  fontFamily: "Georgia, Palatino, serif",
+                  fontSize: isMobile ? 42 : 66,
+                  fontWeight: 850,
+                  lineHeight: 0.98,
+                }}
+              >
+                {restaurantName}
+              </h1>
+            )}
+            <RestaurantVerificationBadge
+              size="md"
+              tone={tone}
+              claimStatus={claimStatus}
+              subscriptionPlan={subscriptionPlan}
+              menuStatus={menuStatus}
+              profileTier={profileTier}
+              listingStatus={listingStatus}
+              planSlug={planSlug}
+              isPro={isPro}
+              isPaidSubscriber={isPaidSubscriber}
+              orderAcceptanceStatus={orderAcceptanceStatus}
+            />
+          </div>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              marginTop: 18,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: MENU_ROW_HEADER_ICON_GAP,
+            }}
+          >
+            <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} size={MENU_ROW_ICON_SIZE} />
+            <ShareButton
+              variant="menu"
+              iconOnly={true}
+              tone="ghost"
+              shareData={shareData}
+              analyticsContext={shareAnalyticsContext}
+            />
+          </div>
           {brand?.tagline ? (
             <div style={{ marginTop: 16, color: "rgba(255,255,255,0.78)", fontSize: 16, lineHeight: 1.5 }}>
               {brand.tagline}

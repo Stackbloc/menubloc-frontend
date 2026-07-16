@@ -194,9 +194,9 @@ const THEMES = [
     style: "v13",
     name: "Steakhouse",
     bestFit: "Steakhouses, cocktail lounges, upscale dinner, bourbon bars",
-    description: "Warm candlelit palette and brass accents on the same Apple-inspired layout as Default — colors and typography carry the upscale feel.",
+    description: "Full-bleed hero stage, serif title, and upscale section chrome — a distinct fine-dining layout, not just Default with brass colors.",
     visibleInGallery: true,
-    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v4, {
+    previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v6, {
       restaurant_name: "Aurum Steakhouse",
       name: "Aurum Steakhouse",
       slug: "aurum-steakhouse",
@@ -240,7 +240,7 @@ const THEMES = [
     style: "v15",
     name: "Family Dining",
     bestFit: "Diners, breakfast places, family-owned comfort food",
-    description: "Warm cream background, brown ink, and terracotta accents — friendly and approachable on the same Apple-inspired layout as Default.",
+    description: "Bright cream diner card header and classic-density item list — a warmer family layout distinct from Default’s Apple list.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
       restaurant_name: "Home Table Diner",
@@ -508,7 +508,7 @@ const THEMES = [
     style: "v12",
     name: "Modern Dark",
     bestFit: "Bars, lounges, late-night service, dark-mode preference",
-    description: "Near-black background with a cool blue accent — dark-mode look on the same Apple-inspired layout as Default.",
+    description: "Dark sticky header, optional hero strip, and quiet cards — a real dark layout, not Default painted black.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
       restaurant_name: "Refined Demo",
@@ -554,7 +554,7 @@ const THEMES = [
     style: "v14",
     name: "Fast Casual",
     bestFit: "Bowls, tacos, sandwiches, coffee, counter-service concepts",
-    description: "Bright, bold, quick-scan palette with a punchy orange-red accent — same Apple-inspired layout as Default, tuned for speed.",
+    description: "Section jump chips and a two-column item card grid for quick scanning — layout built for counter service, not Default recolored.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v7, {
       restaurant_name: "Fast Casual Sample",

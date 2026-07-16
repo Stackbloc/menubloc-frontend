@@ -3,6 +3,9 @@ import ShareButton from "../share/ShareButton.jsx";
 import PublicMenuItemCard from "./PublicMenuItemCard.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { shouldShowItemImages } from "./menuThemeSettings.js";
+import { MENU_ROW_ICON_SIZE } from "./menuPresentationUtils.js";
+import FollowRestaurantButton from "../FollowRestaurantButton.jsx";
+import MenuHeaderNameWithActions from "./MenuHeaderIconRail.jsx";
 
 export default function ModernFastCasualMenuTemplate(ctx) {
   const {
@@ -38,6 +41,16 @@ export default function ModernFastCasualMenuTemplate(ctx) {
     brand,
     fontStack,
     menuThemeSettings = {},
+    tone,
+    claimStatus,
+    subscriptionPlan,
+    menuStatus,
+    profileTier,
+    listingStatus,
+    planSlug,
+    isPro,
+    isPaidSubscriber,
+    orderAcceptanceStatus,
   } = ctx;
 
   const accent = brand?.accent ?? "#2f7d5b";
@@ -66,17 +79,43 @@ export default function ModernFastCasualMenuTemplate(ctx) {
             <div style={{ color: accent, fontSize: 11, fontWeight: 850, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
               {menuTypeLabel || "Sample menu design"}
             </div>
-            {restaurantProfileHref ? (
-              <Link to={restaurantProfileHref} style={{ color: "#111827", textDecoration: "none", fontSize: isMobile ? 27 : 36, lineHeight: 1.02, fontWeight: 950 }}>
-                {restaurantName}
-              </Link>
-            ) : (
-              <h1 style={{ margin: 0, color: "#111827", fontSize: isMobile ? 27 : 36, lineHeight: 1.02, fontWeight: 950 }}>
-                {restaurantName}
-              </h1>
-            )}
+            <MenuHeaderNameWithActions
+              tone={tone}
+              claimStatus={claimStatus}
+              subscriptionPlan={subscriptionPlan}
+              menuStatus={menuStatus}
+              profileTier={profileTier}
+              listingStatus={listingStatus}
+              planSlug={planSlug}
+              isPro={isPro}
+              isPaidSubscriber={isPaidSubscriber}
+              orderAcceptanceStatus={orderAcceptanceStatus}
+              nameSlot={
+                restaurantProfileHref ? (
+                  <Link to={restaurantProfileHref} style={{ color: "#111827", textDecoration: "none", fontSize: isMobile ? 27 : 36, lineHeight: 1.02, fontWeight: 950 }}>
+                    {restaurantName}
+                  </Link>
+                ) : (
+                  <h1 style={{ margin: 0, color: "#111827", fontSize: isMobile ? 27 : 36, lineHeight: 1.02, fontWeight: 950 }}>
+                    {restaurantName}
+                  </h1>
+                )
+              }
+              onActionsClick={(e) => e.stopPropagation()}
+              actions={
+                <>
+                  <FollowRestaurantButton restaurantId={currentRestaurantId} restaurantName={restaurantName} size={MENU_ROW_ICON_SIZE} />
+                  <ShareButton
+                    variant="menu"
+                    iconOnly={true}
+                    tone="ghost"
+                    shareData={shareData}
+                    analyticsContext={shareAnalyticsContext}
+                  />
+                </>
+              }
+            />
           </div>
-          <ShareButton variant="menu" label="Share" shareData={shareData} analyticsContext={shareAnalyticsContext} size="compact" tone="subtle" />
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, minmax(0, 1fr))", gap: 10 }}>
