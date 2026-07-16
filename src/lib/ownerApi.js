@@ -89,6 +89,15 @@ export const getOwnerIntelligenceSiteActivityCity = (params = {}) => {
 };
 export const getOwnerIntelligenceGeo = (params = {}) =>
   get(`/api/owner/intelligence/geo${intelligenceQueryString(params)}`);
+export const getOwnerIntelligenceGeoState = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.start_date) qs.set("start_date", params.start_date);
+  if (params.end_date) qs.set("end_date", params.end_date);
+  if (params.timezone) qs.set("timezone", params.timezone);
+  if (params.state) qs.set("state", params.state);
+  const serialized = qs.toString();
+  return get(`/api/owner/intelligence/geo/state${serialized ? `?${serialized}` : ""}`);
+};
 export const getOwnerIntelligenceMenu = (params = {}) =>
   get(`/api/owner/intelligence/menu${intelligenceQueryString(params)}`);
 export const getOwnerIntelligenceRestaurant = (params = {}) =>

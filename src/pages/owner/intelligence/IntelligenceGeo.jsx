@@ -5,11 +5,11 @@ import {
   ErrorBanner,
   IntelligenceSection,
   LoadingState,
-  MetricCard,
   SimpleTable,
   AnalyticsScopeNote,
   CityLinkButton,
   CityVisitorInsightPanel,
+  StateSearchInsightPanel,
   formatMetricValue,
   useIntelligenceData,
 } from "./intelligenceShared.jsx";
@@ -19,15 +19,19 @@ export default function IntelligenceGeo() {
   const { range } = usePlatformIntelligenceRange();
   const { data, error, loading } = useIntelligenceData(getOwnerIntelligenceGeo, range);
   const [selectedCity, setSelectedCity] = useState(null);
+  const [selectedState, setSelectedState] = useState(null);
 
   useEffect(() => {
     setSelectedCity(null);
+    setSelectedState(null);
   }, [range.start_date, range.end_date, range.timezone]);
 
   if (loading) return <LoadingState label="Loading geo intelligence…" />;
   if (error) return <ErrorBanner message={error} />;
   if (!data?.available) return <EmptyState>No geo data in this range.</EmptyState>;
 
+  const searchesByCountry = Array.isArray(data.searches_by_country) ? data.searches_by_country : [];
+  const visitsByCountry = Array.isArray(data.visits_by_country) ? data.visits_by_country : [];
   const searchesByState = Array.isArray(data.searches_by_state) ? data.searches_by_state : [];
   const visitsByState = Array.isArray(data.visits_by_state) ? data.visits_by_state : [];
   const languageByGeography = Array.isArray(data.language_preference_by_geography)
@@ -37,18 +41,69 @@ export default function IntelligenceGeo() {
   return (
     <div style={{ display: "grid", gap: 18 }}>
       <AnalyticsScopeNote note={data.analytics_scope} />
+      {data.country_attribution_note ? (
+        <AnalyticsScopeNote note={data.country_attribution_note} />
+      ) : null}
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-        <MetricCard label="Searches by Country" value={data.searches_by_country} />
-        <MetricCard label="Visits by Country" value={data.visits_by_country} />
+        <IntelligenceSection
+          title="Searches by Country"
+          subtitle="Derived from known US state codes on search requests (not IP geolocation)."
+        >
+          {Array.isArray(data.searches_by_country) ? (
+            <SimpleTable
+              rows={searchesByCountry}
+              columns={[
+                ["Country", "country"],
+                ["Searches", "searches"],
+              ]}
+              emptyLabel="No searches with a known US state in this range."
+            />
+          ) : (
+            <EmptyState>{formatMetricValue(data.searches_by_country)}</EmptyState>
+          )}
+        </IntelligenceSection>
+        <IntelligenceSection
+          title="Visitors by Country"
+          subtitle="Derived from market/restaurant US state on page visits (not IP geolocation)."
+        >
+          {Array.isArray(data.visits_by_country) ? (
+            <SimpleTable
+              rows={visitsByCountry}
+              columns={[
+                ["Country", "country"],
+                ["Visitors", "visitors"],
+                ["Page views", "visits"],
+              ]}
+              emptyLabel="No visits with a known US state in this range."
+            />
+          ) : (
+            <EmptyState>{formatMetricValue(data.visits_by_country)}</EmptyState>
+          )}
+        </IntelligenceSection>
       </div>
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-        <IntelligenceSection title="Searches by State" subtitle="Consumer searches rolled up by US state.">
+        <IntelligenceSection
+          title="Searches by State"
+          subtitle="Consumer searches rolled up by US state. Click a state to see search terms."
+        >
           <SimpleTable
             rows={searchesByState}
             columns={[
-              ["State", "state"],
+              [
+                "State",
+                "state",
+                (row) => (
+                  <CityLinkButton
+                    label={row.state}
+                    selected={selectedState === row.state}
+                    onClick={() =>
+                      setSelectedState((prev) => (prev === row.state ? null : row.state))
+                    }
+                  />
+                ),
+              ],
               ["Searches", "searches"],
             ]}
             emptyLabel="No searches with state in this range."
@@ -69,6 +124,14 @@ export default function IntelligenceGeo() {
           />
         </IntelligenceSection>
       </div>
+
+      {selectedState ? (
+        <StateSearchInsightPanel
+          state={selectedState}
+          range={range}
+          onClose={() => setSelectedState(null)}
+        />
+      ) : null}
 
       <IntelligenceSection
         title="Language by Geography"

@@ -2,7 +2,7 @@ import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import OwnerLayout, { OWNER_COLORS, PageCard, SectionTitle, EmptyState } from "../OwnerLayout.jsx";
 import { PlatformIntelligenceProvider, usePlatformIntelligenceRange } from "./PlatformIntelligenceContext.jsx";
-import { getOwnerIntelligenceSiteActivityCity } from "../../../lib/ownerApi.js";
+import { getOwnerIntelligenceSiteActivityCity, getOwnerIntelligenceGeoState } from "../../../lib/ownerApi.js";
 
 export const INTELLIGENCE_TABS = [
   { to: "/owner/intelligence", label: "Overview", end: true },
@@ -423,6 +423,139 @@ export function CityVisitorInsightPanel({ locationLabel, range, onClose }) {
                     wrapKeys={["path"]}
                     emptyLabel="No menu paths in these sessions."
                     maxHeight={280}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
+    </PageCard>
+  );
+}
+
+/**
+ * On-page state search drill-down for Geo "Searches by State".
+ */
+export function StateSearchInsightPanel({ state, range, onClose }) {
+  const [data, setData] = React.useState(null);
+  const [error, setError] = React.useState("");
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!state) return undefined;
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    setData(null);
+    getOwnerIntelligenceGeoState({
+      start_date: range.start_date,
+      end_date: range.end_date,
+      timezone: range.timezone,
+      state,
+    })
+      .then((payload) => {
+        if (!cancelled) setData(payload);
+      })
+      .catch(() => {
+        if (!cancelled) setError("State search insight is temporarily unavailable.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [state, range.start_date, range.end_date, range.timezone]);
+
+  return (
+    <PageCard
+      style={{
+        padding: 22,
+        minWidth: 0,
+        borderColor: OWNER_COLORS.accent,
+        background: "#fffaf6",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
+        <div>
+          <SectionTitle
+            title={`Searches in ${state}`}
+            subtitle="Search terms from consumer searches attributed to this state."
+          />
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            flexShrink: 0,
+            padding: "8px 12px",
+            borderRadius: 10,
+            border: `1px solid ${OWNER_COLORS.line}`,
+            background: "#fff",
+            color: OWNER_COLORS.ink,
+            fontWeight: 700,
+            cursor: "pointer",
+            fontSize: 13,
+          }}
+        >
+          Close
+        </button>
+      </div>
+
+      {loading ? <LoadingState label={`Loading searches for ${state}…`} /> : null}
+      {error ? <ErrorBanner message={error} /> : null}
+
+      {!loading && !error && data ? (
+        <div style={{ display: "grid", gap: 16 }}>
+          <div style={{ fontSize: 12, color: OWNER_COLORS.muted, lineHeight: 1.5 }}>
+            {data.attribution_note ||
+              "State is market attribution from search city/state context — not IP geolocation."}
+          </div>
+
+          {!data.available ? (
+            <EmptyState>No searches attributed to this state in the selected range.</EmptyState>
+          ) : (
+            <>
+              <div
+                className="owner-responsive-grid-3"
+                style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(120px, 1fr))", gap: 12 }}
+              >
+                <MetricCard label="Searches" value={data.summary?.searches ?? 0} />
+                <MetricCard label="Unique queries" value={data.summary?.unique_queries ?? 0} />
+                <MetricCard label="Zero-result searches" value={data.summary?.zero_result_searches ?? 0} />
+              </div>
+
+              <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, color: OWNER_COLORS.ink }}>
+                    Top search terms
+                  </div>
+                  <SimpleTable
+                    rows={data.top_searches || []}
+                    columns={[
+                      ["Query", "query"],
+                      ["Count", "count"],
+                      ["Zero results", "zero_results"],
+                    ]}
+                    wrapKeys={["query"]}
+                    emptyLabel="No search terms for this state."
+                    maxHeight={360}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, color: OWNER_COLORS.ink }}>
+                    Top zero-result terms
+                  </div>
+                  <SimpleTable
+                    rows={data.top_zero_result_searches || []}
+                    columns={[
+                      ["Query", "query"],
+                      ["Count", "count"],
+                    ]}
+                    wrapKeys={["query"]}
+                    emptyLabel="No zero-result searches for this state."
+                    maxHeight={360}
                   />
                 </div>
               </div>
