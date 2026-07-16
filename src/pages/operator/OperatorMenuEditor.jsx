@@ -313,7 +313,7 @@ function MenuLabPresetCard({ theme, selected, locked, onPreview, onEdit }) {
           disabled={locked}
           style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: "none", background: locked ? "#e5e7eb" : accent, color: locked ? "#9ca3af" : "#fff", fontSize: 12, fontWeight: 800, cursor: locked ? "not-allowed" : "pointer", fontFamily: "inherit" }}
         >
-          {locked ? "Locked" : "Edit"}
+          {locked ? "Locked" : "Use"}
         </button>
       </div>
     </div>
@@ -321,12 +321,11 @@ function MenuLabPresetCard({ theme, selected, locked, onPreview, onEdit }) {
 }
 
 function MenuLabPanel({ rid, isEmailVerified }) {
-  const navigate = useNavigate();
   const [settings, setSettings] = useState(() => ({
     menu_style: "v1",
     primary_color: null,
     accent_color: null,
-    background_style: "dark",
+    background_style: "light",
     hero_enabled: true,
     image_density: "all",
     logo_placement: "top-left",
@@ -401,7 +400,7 @@ function MenuLabPanel({ rid, isEmailVerified }) {
           menu_style: settings.menu_style || "v1",
           primary_color: settings.primary_color || null,
           accent_color: settings.accent_color || settings.primary_color || null,
-          background_style: settings.background_style || "dark",
+          background_style: settings.background_style || "light",
           hero_enabled: settings.hero_enabled !== false,
           image_density: settings.image_density || "all",
           section_heading_style: settings.section_heading_style || "default",
@@ -440,8 +439,18 @@ function MenuLabPanel({ rid, isEmailVerified }) {
     }
   }
 
+  function openStylePreview(style) {
+    if (!rid) return;
+    const resolved = encodeURIComponent(style || settings.menu_style || "v1");
+    window.open(`/restaurants/${rid}/menu?menuStyle=${resolved}`, "_blank", "noopener,noreferrer");
+  }
+
   function openPreview() {
-    window.open(`/menu-template-preview?previewStyle=${encodeURIComponent(settings.menu_style || "v1")}`, "_blank", "noopener,noreferrer");
+    openStylePreview(settings.menu_style || "v1");
+  }
+
+  function selectPreset(style) {
+    applyPreset(getMenuDesignLabTheme(style));
   }
 
   function openPublicMenu() {
@@ -473,7 +482,7 @@ function MenuLabPanel({ rid, isEmailVerified }) {
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>Menu Lab</div>
           <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4, lineHeight: 1.5, maxWidth: 760 }}>
-            Choose a preset menu design, tune the basic presentation, and save it to your public menu. The item and menu editing tools stay below this panel.
+            Menus start in Classic (the Menu Browser look). Preview any style with your real items, then Save Design to make it live. Item and menu editing tools stay below this panel.
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -519,8 +528,8 @@ function MenuLabPanel({ rid, isEmailVerified }) {
                 theme={theme}
                 selected={(settings.menu_style || "v1") === theme.style}
                 locked={!!(theme.subscriberOnly && !isEmailVerified)}
-                onPreview={(style) => window.open(`/menu-template-preview?previewStyle=${encodeURIComponent(style)}`, "_blank", "noopener,noreferrer")}
-                onEdit={(style) => navigate(`/operator/menudesign?style=${encodeURIComponent(style)}`)}
+                onPreview={openStylePreview}
+                onEdit={selectPreset}
               />
             ))}
           </div>
@@ -558,7 +567,7 @@ function MenuLabPanel({ rid, isEmailVerified }) {
             <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#475467" }}>
               Background style
               <select
-                value={settings.background_style || "dark"}
+                value={settings.background_style || "light"}
                 onChange={(e) => setSettings((current) => ({ ...current, background_style: e.target.value }))}
                 style={controlStyle}
               >
