@@ -409,7 +409,7 @@ export default function OperatorDisplaySettings() {
               </Field>
 
               {(settings.menu_style || "v1") === "v16" ? (
-                <Field label="Brand Tint shell color (v16)">
+                <Field label="Brand Tint shell color">
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <input
                       type="color"

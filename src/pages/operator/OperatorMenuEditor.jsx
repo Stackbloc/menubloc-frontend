@@ -267,6 +267,7 @@ function UploadCard({ icon, label, sub, onClick }) {
 
 function MenuLabPresetCard({ theme, selected, locked, onPreview, onEdit }) {
   const accent = theme?.preset?.colorDefaults?.accent || theme?.preset?.colorDefaults?.primary || "#1F4E3D";
+  const isSystemDefault = theme?.style === "v1";
   return (
     <div
       style={{
@@ -284,18 +285,25 @@ function MenuLabPresetCard({ theme, selected, locked, onPreview, onEdit }) {
         opacity: locked ? 0.72 : 1,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: "#0f1720" }}>{theme.name}</div>
-        {selected && (
-          <div style={{ fontSize: 11, fontWeight: 700, color: accent, padding: "3px 8px", borderRadius: 999, background: `${accent}14` }}>
-            Active
-          </div>
-        )}
-        {locked && !selected && (
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", padding: "3px 8px", borderRadius: 999, background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
-            Verified only
-          </div>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          {isSystemDefault && (
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#1F4E3D", padding: "3px 8px", borderRadius: 999, background: "#edf7f2", border: "1px solid #c6e9d9" }}>
+              Default
+            </div>
+          )}
+          {selected && (
+            <div style={{ fontSize: 11, fontWeight: 700, color: accent, padding: "3px 8px", borderRadius: 999, background: `${accent}14` }}>
+              Active
+            </div>
+          )}
+          {locked && !selected && (
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", padding: "3px 8px", borderRadius: 999, background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
+              Verified only
+            </div>
+          )}
+        </div>
       </div>
       <div style={{ fontSize: 12, fontWeight: 700, color: "#4b5563" }}>{theme.bestFit}</div>
       <div style={{ fontSize: 12, lineHeight: 1.45, color: "#6b7280", flex: 1 }}>{theme.description}</div>
@@ -303,9 +311,9 @@ function MenuLabPresetCard({ theme, selected, locked, onPreview, onEdit }) {
         <button
           type="button"
           onClick={() => onPreview(theme.style)}
-          style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: `1px solid ${accent}44`, background: "transparent", color: accent, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+          style={{ flex: 1, padding: "7px 6px", borderRadius: 8, border: `1px solid ${accent}44`, background: "transparent", color: accent, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.25 }}
         >
-          View
+          Preview my menu
         </button>
         <button
           type="button"
@@ -482,7 +490,7 @@ function MenuLabPanel({ rid, isEmailVerified }) {
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 24, fontWeight: 800, color: "#0f1720", letterSpacing: "-0.03em" }}>Menu Lab</div>
           <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4, lineHeight: 1.5, maxWidth: 760 }}>
-            Menus start in Classic (the Menu Browser look). Preview any style with your real items, then Save Design to make it live. Item and menu editing tools stay below this panel.
+            Default (Yellow Browser Apple look) is auto-selected for every menu. Preview any layout with your real restaurant and items, then Use + Save Design. This panel is for layout, photos, and colors — edit menu data in the tools below.
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -532,6 +540,9 @@ function MenuLabPanel({ rid, isEmailVerified }) {
                 onEdit={selectPreset}
               />
             ))}
+          </div>
+          <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 14, lineHeight: 1.45 }}>
+            Preview my menu opens your restaurant’s items in that layout — not sample data.
           </div>
 
           <div style={{

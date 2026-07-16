@@ -52,9 +52,9 @@ function makePreviewPayload(base, overrides = {}) {
 const THEMES = [
   {
     style: "v1",
-    name: "Classic",
-    bestFit: "Any restaurant — clean, versatile default",
-    description: "White space, hairline dividers, no card chrome. Typography-led hierarchy in the Apple-inspired system every concept variant shares.",
+    name: "Default",
+    bestFit: "Yellow Browser / Menu Browser — system starting design",
+    description: "Apple-inspired plain menu auto-applied on upload. White space, hairline dividers, no card chrome. Other presets only change layout, photos, and colors — not your menu data.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
       restaurant_name: "Iron Fork Demo House",
@@ -192,9 +192,9 @@ const THEMES = [
   },
   {
     style: "v13",
-    name: "Steakhouse / Fine Dining",
+    name: "Steakhouse",
     bestFit: "Steakhouses, cocktail lounges, upscale dinner, bourbon bars",
-    description: "Warm candlelit palette, brass accent, same Apple-inspired layout as every other concept — colors and typography carry the upscale feel.",
+    description: "Warm candlelit palette and brass accents on the same Apple-inspired layout as Default — colors and typography carry the upscale feel.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v4, {
       restaurant_name: "Aurum Steakhouse",
@@ -238,9 +238,9 @@ const THEMES = [
   },
   {
     style: "v15",
-    name: "Casual / Family Dining",
+    name: "Family Dining",
     bestFit: "Diners, breakfast places, family-owned comfort food",
-    description: "Warm cream background, warm brown ink, terracotta accent — friendly and approachable on the same Apple-inspired layout as every concept.",
+    description: "Warm cream background, brown ink, and terracotta accents — friendly and approachable on the same Apple-inspired layout as Default.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
       restaurant_name: "Home Table Diner",
@@ -461,7 +461,7 @@ const THEMES = [
     style: "v10",
     name: "Refined Dark",
     bestFit: "Any restaurant — polished product feel",
-    description: "A quieter take on Classic. Icon-only share, lighter card borders, refined header, and subtle section markers.",
+    description: "A quieter take on Default. Icon-only share, lighter card borders, refined header, and subtle section markers.",
     subscriberOnly: true,
     visibleInGallery: false,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
@@ -507,8 +507,8 @@ const THEMES = [
   {
     style: "v12",
     name: "Modern Dark",
-    bestFit: "Any restaurant — dark mode, bars, lounges, late-night service",
-    description: "True iOS dark-mode tokens (near-black background, cool blue accent) on the same Apple-inspired layout as every other concept.",
+    bestFit: "Bars, lounges, late-night service, dark-mode preference",
+    description: "Near-black background with a cool blue accent — dark-mode look on the same Apple-inspired layout as Default.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
       restaurant_name: "Refined Demo",
@@ -552,9 +552,9 @@ const THEMES = [
   },
   {
     style: "v14",
-    name: "QSR / Fast Casual",
+    name: "Fast Casual",
     bestFit: "Bowls, tacos, sandwiches, coffee, counter-service concepts",
-    description: "Bright, bold, quick-scan palette with a punchy orange-red accent and heavier type weight, on the same Apple-inspired layout as every concept.",
+    description: "Bright, bold, quick-scan palette with a punchy orange-red accent — same Apple-inspired layout as Default, tuned for speed.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v7, {
       restaurant_name: "Fast Casual Sample",
@@ -601,7 +601,7 @@ const THEMES = [
     style: "v16",
     name: "Brand Tint",
     bestFit: "Franchises and brands with a signature page color (e.g. golden QSR, café cream)",
-    description: "Same Apple-inspired Classic layout with a custom page shell tint you control — ideal for brand-color homage without changing the menu structure.",
+    description: "Same Apple-inspired Default layout with a custom page shell color you control — brand color without changing the menu structure.",
     visibleInGallery: true,
     previewPayload: makePreviewPayload(MENU_THEME_PREVIEW_PAYLOADS.v1, {
       restaurant_name: "Brand Tint Sample",
