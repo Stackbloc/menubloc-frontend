@@ -41,8 +41,6 @@ export default function IntelligenceGeo() {
   if (error) return <ErrorBanner message={error} />;
   if (!data?.available) return <EmptyState>No geo data in this range.</EmptyState>;
 
-  const searchesByCountry = Array.isArray(data.searches_by_country) ? data.searches_by_country : [];
-  const visitsByCountry = Array.isArray(data.visits_by_country) ? data.visits_by_country : [];
   const searchesByState = Array.isArray(data.searches_by_state) ? data.searches_by_state : [];
   const visitsByState = Array.isArray(data.visits_by_state) ? data.visits_by_state : [];
   const languageByGeography = Array.isArray(data.language_preference_by_geography)
@@ -52,47 +50,6 @@ export default function IntelligenceGeo() {
   return (
     <div style={{ display: "grid", gap: 18 }}>
       <AnalyticsScopeNote note={data.analytics_scope} />
-      {data.country_attribution_note ? (
-        <AnalyticsScopeNote note={data.country_attribution_note} />
-      ) : null}
-
-      <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-        <IntelligenceSection
-          title="Searches by Country"
-          subtitle="Market-attributed country from search state / country column. Not IP geolocation — international traffic without a market state stays Unattributed."
-        >
-          {Array.isArray(data.searches_by_country) ? (
-            <SimpleTable
-              rows={searchesByCountry}
-              columns={[
-                ["Country", "country"],
-                ["Searches", "searches"],
-              ]}
-              emptyLabel="No country-attributed searches in this range."
-            />
-          ) : (
-            <EmptyState>{formatMetricValue(data.searches_by_country)}</EmptyState>
-          )}
-        </IntelligenceSection>
-        <IntelligenceSection
-          title="Visitors by Country"
-          subtitle="Market/restaurant country on page visits. Not IP geolocation — visits without market or restaurant country stay Unattributed."
-        >
-          {Array.isArray(data.visits_by_country) ? (
-            <SimpleTable
-              rows={visitsByCountry}
-              columns={[
-                ["Country", "country"],
-                ["Visitors", "visitors"],
-                ["Page views", "visits"],
-              ]}
-              emptyLabel="No country-attributed visits in this range."
-            />
-          ) : (
-            <EmptyState>{formatMetricValue(data.visits_by_country)}</EmptyState>
-          )}
-        </IntelligenceSection>
-      </div>
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <IntelligenceSection
