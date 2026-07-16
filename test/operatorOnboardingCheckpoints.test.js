@@ -20,11 +20,16 @@ function read(rel) {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-test("incomplete after account+email+information resumes at Locations", () => {
+test("incomplete after account+email+organization+information resumes at Locations", () => {
   const restaurant = {
     id: 10,
     current_step_key: "locations",
-    completed_step_keys: ["account_created", "email_verified", "restaurant_information"],
+    completed_step_keys: [
+      "account_created",
+      "email_verified",
+      "business_organization",
+      "restaurant_information",
+    ],
     has_published_menu: false,
   };
   assert.equal(resolveNextOnboardingRoute(restaurant), "/restaurant/onboarding/locations");
@@ -38,6 +43,7 @@ test("incomplete after locations+payment resumes at public profile / design", ()
     completed_step_keys: [
       "account_created",
       "email_verified",
+      "business_organization",
       "restaurant_information",
       "locations",
       "choose_plan",
@@ -67,14 +73,14 @@ test("completed onboarding goes to Operator Dashboard", () => {
 test("login cannot bypass unfinished onboarding via preferredNextPath", () => {
   const mid = {
     id: 10,
-    current_step_key: "restaurant_information",
+    current_step_key: "business_organization",
     completed_step_keys: ["email_verified"],
     has_published_menu: false,
   };
-  assert.equal(resolveOperatorResumePath(mid, "/operator"), "/restaurant/onboarding/information");
+  assert.equal(resolveOperatorResumePath(mid, "/operator"), "/restaurant/onboarding/organization");
   assert.equal(
-    resolveOperatorResumePath(mid, "/restaurant/onboarding/information"),
-    "/restaurant/onboarding/information"
+    resolveOperatorResumePath(mid, "/restaurant/onboarding/organization"),
+    "/restaurant/onboarding/organization"
   );
 });
 
@@ -82,7 +88,12 @@ test("resume from completed_step_keys when current_step_key missing", () => {
   const restaurant = {
     id: 10,
     current_step_key: null,
-    completed_step_keys: ["create_operator_account", "email_verified", "restaurant_information"],
+    completed_step_keys: [
+      "create_operator_account",
+      "email_verified",
+      "business_organization",
+      "restaurant_information",
+    ],
     has_published_menu: false,
   };
   assert.equal(resolveNextOnboardingRoute(restaurant), "/restaurant/onboarding/locations");
@@ -92,7 +103,7 @@ test("does not resume to an earlier completed information step when next is loca
   const restaurant = {
     id: 10,
     current_step_key: "locations",
-    completed_step_keys: ["email_verified", "restaurant_information"],
+    completed_step_keys: ["email_verified", "business_organization", "restaurant_information"],
     has_published_menu: false,
   };
   assert.notEqual(resolveNextOnboardingRoute(restaurant), "/restaurant/onboarding/information");
@@ -116,6 +127,7 @@ test("free plan without recorded payment bypass prefers Locations complete path"
     completed_step_keys: [
       "account_created",
       "email_verified",
+      "business_organization",
       "restaurant_information",
       "locations",
     ],
@@ -133,6 +145,7 @@ test("free plan with recorded payment bypass skips subscription route", () => {
     completed_step_keys: [
       "account_created",
       "email_verified",
+      "business_organization",
       "restaurant_information",
       "locations",
       "payment",

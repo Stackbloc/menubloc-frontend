@@ -14,6 +14,7 @@ export const ONBOARDING_STAGE_ORDER = Object.freeze([
   "plan_selected",
   "account_created",
   "email_verified",
+  "business_organization",
   "restaurant_information",
   "locations",
   "payment",
@@ -30,6 +31,7 @@ export const ONBOARDING_STAGE_ORDER = Object.freeze([
 export const ONBOARDING_CHECKPOINT_ORDER = Object.freeze([
   "account_created",
   "email_verified",
+  "business_organization",
   "restaurant_information",
   "locations",
   "payment",
@@ -45,6 +47,7 @@ export const ONBOARDING_CHECKPOINT_ORDER = Object.freeze([
 export const ONBOARDING_STEP_ROUTES = Object.freeze({
   welcome: "/restaurant/onboarding/welcome",
   plan_selected: "/restaurant/subscription",
+  business_organization: "/restaurant/onboarding/organization",
   restaurant_information: "/restaurant/onboarding/information",
   restaurant_information_draft: "/restaurant/onboarding/information",
   locations: "/restaurant/onboarding/locations",
@@ -75,6 +78,8 @@ const COMPLETED_KEY_ALIASES = Object.freeze({
   public_restaurant_information: "restaurant_information",
   restaurant_information: "restaurant_information",
   email_verified: "email_verified",
+  business_organization: "business_organization",
+  organization: "business_organization",
   locations: "locations",
   locations_deferred: "locations",
   choose_plan: "payment",
@@ -105,7 +110,8 @@ export function isFreePlanPaymentBypassEligible(planCode) {
 /** Next route after a given canonical checkpoint completes. */
 export const NEXT_ROUTE_AFTER_CHECKPOINT = Object.freeze({
   account_created: "/operator/verify-email",
-  email_verified: "/restaurant/onboarding/information",
+  email_verified: "/restaurant/onboarding/organization",
+  business_organization: "/restaurant/onboarding/information",
   restaurant_information: "/restaurant/onboarding/locations",
   locations: null, // plan-dependent — resolved by resolvePostLocationsPath / server complete
   payment: "/restaurant/design-select",
@@ -202,24 +208,21 @@ export function resolveNextOnboardingRoute(restaurant = {}) {
   const reopen = revalidateCompletedStages(restaurant);
   if (reopen[0]) {
     const stage = reopen[0].stage;
+    if (stage === "business_organization") return "/restaurant/onboarding/organization";
     if (stage === "restaurant_information") return "/restaurant/onboarding/information";
     if (stage === "locations" || stage === "payment") return "/restaurant/onboarding/locations";
-  }
-
-  const step = String(restaurant.current_step_key || "").trim();
-  if (step && ONBOARDING_STEP_ROUTES[step]) {
-    const route = ONBOARDING_STEP_ROUTES[step];
-    if (route === "/operator") return "/operator";
-    return route;
   }
 
   const completed = normalizeCompletedKeys(restaurant.completed_step_keys);
   if (restaurant.id || restaurant.restaurant_id) completed.add("account_created");
 
+  // Never honor current_step_key if an earlier required checkpoint is still incomplete
+  // (prevents dashboard/deep-link bypass of business_organization).
   for (const checkpoint of ONBOARDING_CHECKPOINT_ORDER) {
     if (completed.has(checkpoint)) continue;
     if (checkpoint === "account_created") continue;
     if (checkpoint === "email_verified") return "/operator/verify-email";
+    if (checkpoint === "business_organization") return "/restaurant/onboarding/organization";
     if (checkpoint === "restaurant_information") return "/restaurant/onboarding/information";
     if (checkpoint === "locations") return "/restaurant/onboarding/locations";
     if (checkpoint === "payment") {
@@ -235,7 +238,6 @@ export function resolveNextOnboardingRoute(restaurant = {}) {
         continue;
       }
       if (isFreePlanPaymentBypassEligible(plan) && !paymentRec) {
-        // Explicit bypass not recorded yet — send through Locations complete
         return "/restaurant/onboarding/locations";
       }
       return "/restaurant/subscription";
@@ -248,8 +250,15 @@ export function resolveNextOnboardingRoute(restaurant = {}) {
     if (checkpoint === "launch_checklist") return "/restaurant/onboarding/launch-checklist";
   }
 
+  const step = String(restaurant.current_step_key || "").trim();
+  if (step && ONBOARDING_STEP_ROUTES[step]) {
+    const route = ONBOARDING_STEP_ROUTES[step];
+    if (route === "/operator") return "/operator";
+    return route;
+  }
+
   if (!restaurant.has_published_menu) {
-    return "/restaurant/onboarding/information";
+    return "/restaurant/onboarding/organization";
   }
   return "/operator";
 }

@@ -142,6 +142,15 @@ export const publishProfile = (rid) => post(`/operator/restaurants/${rid}/profil
 export const setFeaturedDish = (rid, menu_item_id) =>
   patch(`/operator/restaurants/${rid}/profile/featured-dish`, { menu_item_id });
 
+
+// ── Restaurant: Onboarding Business Organization ──────────────────────────
+export const getOwnedBusinessOrganization = (rid) =>
+  get(`/operator/restaurants/${rid}/onboarding/organization`);
+export const upsertOwnedBusinessOrganization = (rid, body) =>
+  put(`/operator/restaurants/${rid}/onboarding/organization`, body);
+export const completeOwnedBusinessOrganization = (rid, body = {}) =>
+  post(`/operator/restaurants/${rid}/onboarding/organization/complete`, body);
+
 // ── Restaurant: Onboarding Information (ownership-safe PATCH) ─────────────
 export const getOwnedRestaurantInformation = (rid) =>
   get(`/operator/restaurants/${rid}/onboarding/information`);

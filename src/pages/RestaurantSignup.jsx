@@ -24,6 +24,7 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").repla
 const PLAN_SELECTION_ROUTE = "/restaurant/subscription";
 const PLAN_ENTRY_ROUTE = "/restaurant/signup";
 const DESIGN_SELECTION_ROUTE = "/restaurant/design-select";
+const ORGANIZATION_ROUTE = "/restaurant/onboarding/organization";
 const INFORMATION_ROUTE = "/restaurant/onboarding/information";
 
 function planLabel(t, planCode) {
@@ -451,7 +452,7 @@ export default function RestaurantSignup() {
           replace: true,
           state: {
             ...draftState,
-            nextPath: INFORMATION_ROUTE,
+            nextPath: ORGANIZATION_ROUTE,
             autoSend: true,
             plan: selectedPlan,
             // Preserve prior plan destinations for Locations stub → continue

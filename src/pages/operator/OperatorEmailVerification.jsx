@@ -41,7 +41,7 @@ export default function OperatorEmailVerification() {
 
   const nextPath = useMemo(() => {
     if (location.state?.nextPath) return location.state.nextPath;
-    if (onboarding?.restaurant_id) return "/restaurant/onboarding/information";
+    if (onboarding?.restaurant_id) return "/restaurant/onboarding/organization";
     return restaurants?.length === 0 ? "/operator/claim" : "/operator";
   }, [location.state, onboarding, restaurants]);
 
@@ -87,7 +87,7 @@ export default function OperatorEmailVerification() {
       if (onboarding?.restaurant_id) {
         const nextOnboarding = {
           ...onboarding,
-          current_step_key: "restaurant_information",
+          current_step_key: "business_organization",
           completed_step_keys: Array.from(
             new Set([
               ...(onboarding.completed_step_keys || []),
@@ -99,7 +99,7 @@ export default function OperatorEmailVerification() {
         };
         try {
           await syncRestaurantOnboardingProgress(nextOnboarding, {
-            current_step_key: "restaurant_information",
+            current_step_key: "business_organization",
             completed_step_keys: nextOnboarding.completed_step_keys,
           });
         } catch {
