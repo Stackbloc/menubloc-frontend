@@ -31,44 +31,65 @@ import {
   syncRestaurantOnboardingProgress,
 } from "../lib/restaurantOnboardingState.js";
 
-const FONT = '"Instrument Sans", "Avenir Next", system-ui, sans-serif';
+/**
+ * Chrome must match `/restaurant/onboarding` (RestaurantOnboardingApproved):
+ * pure white page, BrandLogo height 48 / radius 14 / matchPageBackground false,
+ * max-width 640, logo block margin-bottom 20. Do not invent cream shells.
+ */
+const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
 
 const styles = {
-  page: {
+  pageWrap: {
     minHeight: "100vh",
-    background: "linear-gradient(180deg, #f7f4ef 0%, #efe8df 100%)",
-    fontFamily: FONT,
-  },
-  main: {
-    maxWidth: 720,
-    margin: "0 auto",
-    padding: "40px 20px 80px",
-  },
-  eyebrow: {
-    fontSize: 11,
-    fontWeight: 800,
-    color: "#1F4E3D",
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: "clamp(1.6rem, 3.5vw, 2.1rem)",
-    fontWeight: 900,
-    letterSpacing: "-0.03em",
+    backgroundColor: "#ffffff",
     color: "#0B0F0C",
-    margin: "0 0 8px",
+    fontFamily: FONT,
+    fontSize: 17,
+    lineHeight: 1.65,
+    WebkitFontSmoothing: "antialiased",
   },
-  subtitle: {
-    fontSize: 15,
-    color: "#4b5563",
-    lineHeight: 1.55,
-    margin: "0 0 24px",
+  pageMain: {
+    maxWidth: 640,
+    margin: "0 auto",
+    padding: "28px 24px calc(var(--bottom-nav-h, 72px) + 8px)",
+  },
+  logo: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 20,
+  },
+  sectionLabel: {
+    display: "inline-block",
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    color: "#6B7280",
+    background: "rgba(0,0,0,0.05)",
+    border: "1px solid rgba(0,0,0,0.1)",
+    borderRadius: 4,
+    padding: "3px 10px",
+    marginBottom: 20,
+  },
+  pageTitle: {
+    fontSize: "clamp(28px, 6vw, 36px)",
+    fontWeight: 700,
+    lineHeight: 1.25,
+    letterSpacing: "-0.35px",
+    color: "#0B0F0C",
+    margin: "0 0 12px",
+  },
+  pageSubtitle: {
+    fontSize: 17,
+    color: "#374151",
+    lineHeight: 1.65,
+    margin: "0 0 28px",
   },
   card: {
-    background: "#fff",
-    border: "1px solid #e8e4de",
-    borderRadius: 16,
+    background: "#F9FAFB",
+    border: "1px solid rgba(0,0,0,0.08)",
+    borderRadius: 12,
     padding: 22,
   },
   label: {
@@ -82,17 +103,18 @@ const styles = {
     width: "100%",
     height: 44,
     borderRadius: 10,
-    border: "1px solid #d6d0c8",
+    border: "1px solid #d1d5db",
     padding: "0 12px",
     fontSize: 15,
     marginBottom: 14,
+    background: "#fff",
     boxSizing: "border-box",
   },
   select: {
     width: "100%",
     height: 44,
     borderRadius: 10,
-    border: "1px solid #d6d0c8",
+    border: "1px solid #d1d5db",
     padding: "0 12px",
     fontSize: 15,
     marginBottom: 14,
@@ -133,21 +155,22 @@ const styles = {
     marginTop: 8,
   },
   primary: {
-    height: 46,
-    padding: "0 18px",
-    borderRadius: 12,
+    height: 48,
+    padding: "0 20px",
+    borderRadius: 10,
     border: 0,
-    background: "linear-gradient(135deg, #22C55E 0%, #16A34A 100%)",
+    background: "#4caf50",
     color: "#fff",
-    fontWeight: 800,
-    fontSize: 15,
+    fontWeight: 700,
+    fontSize: 16,
     cursor: "pointer",
+    fontFamily: "inherit",
   },
   secondary: {
-    height: 46,
-    padding: "0 18px",
-    borderRadius: 12,
-    border: "1px solid #d6d0c8",
+    height: 48,
+    padding: "0 20px",
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
     background: "#fff",
     color: "#1f2937",
     fontWeight: 700,
@@ -158,9 +181,9 @@ const styles = {
   },
   recovery: {
     padding: 20,
-    background: "#fff",
-    border: "1px solid #e8e4de",
-    borderRadius: 16,
+    background: "#F9FAFB",
+    border: "1px solid rgba(0,0,0,0.08)",
+    borderRadius: 12,
   },
 };
 
@@ -303,14 +326,17 @@ export default function RestaurantOnboardingOrganization() {
 
   if (!restaurantId && !loading) {
     return (
-      <div style={styles.page}>
-        <BrandLogo />
-        <main style={styles.main}>
+      <div style={styles.pageWrap}>
+        <main style={styles.pageMain}>
+          <div style={styles.logo}>
+            <BrandLogo height={48} radius={14} matchPageBackground={false} />
+          </div>
+          <div style={styles.sectionLabel}>Onboarding · Business organization</div>
+          <h1 style={styles.pageTitle}>Restaurant required</h1>
+          <p style={styles.pageSubtitle}>
+            Create or claim a restaurant before establishing the business organization.
+          </p>
           <div style={styles.recovery}>
-            <h1 style={styles.title}>Restaurant required</h1>
-            <p style={styles.subtitle}>
-              Create or claim a restaurant before establishing the business organization.
-            </p>
             <Link to="/operator/claim" style={styles.secondary}>
               Continue to claim
             </Link>
@@ -321,12 +347,14 @@ export default function RestaurantOnboardingOrganization() {
   }
 
   return (
-    <div style={styles.page}>
-      <BrandLogo />
-      <main style={styles.main}>
-        <div style={styles.eyebrow}>Onboarding · Business organization</div>
-        <h1 style={styles.title}>Who operates this restaurant?</h1>
-        <p style={styles.subtitle}>
+    <div style={styles.pageWrap}>
+      <main style={styles.pageMain}>
+        <div style={styles.logo}>
+          <BrandLogo height={48} radius={14} matchPageBackground={false} />
+        </div>
+        <div style={styles.sectionLabel}>Onboarding · Business organization</div>
+        <h1 style={styles.pageTitle}>Who operates this restaurant?</h1>
+        <p style={styles.pageSubtitle}>
           Enter the legal or operating entity that owns or operates the restaurant.
           This is separate from your login account and from each location address.
           We do not collect bank or tax ID details here.
@@ -335,7 +363,7 @@ export default function RestaurantOnboardingOrganization() {
         {error ? <div style={styles.err}>{error}</div> : null}
 
         {loading ? (
-          <p style={styles.subtitle}>Loading…</p>
+          <p style={styles.pageSubtitle}>Loading…</p>
         ) : (
           <form style={styles.card} onSubmit={handleContinue}>
             <label style={styles.label} htmlFor="legal_name">
@@ -468,7 +496,7 @@ export default function RestaurantOnboardingOrganization() {
 
             <div style={styles.actions}>
               <button type="submit" style={styles.primary} disabled={saving}>
-                {saving ? "Saving…" : "Continue to restaurant information"}
+                {saving ? "Saving…" : "Continue"}
               </button>
             </div>
           </form>
