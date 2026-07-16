@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "05a444a0fb3dde7b52c34d5871154e15ff559bb6",
-  "gitShortSha": "05a444a",
-  "branch": "stabilize/frontend-safe-baseline",
-  "buildTime": "2026-07-11T22:27:15.946Z",
+  "gitSha": "722a323b678e20d32f8057958c5578b3141baa0f",
+  "gitShortSha": "722a323",
+  "branch": "feature/mds-homepage-controls",
+  "buildTime": "2026-07-16T19:28:14.755Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "feat(clusters): complete Phase 1 LA Cluster City hub and cluster presentation."
+  "commitMessage": "fix(owner): remove country tables from Geo Intelligence"
 }

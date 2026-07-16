@@ -694,6 +694,22 @@ export default function PdfUploadPage() {
     }).catch(() => {});
   }, [result, isOperatorFlow, restaurant_id, state]);
 
+  // Operator Menu Lab: open Menu Worksheet immediately after successful parse.
+  useEffect(() => {
+    if (!result || !isOperatorFlow) return;
+    const publicRestaurantId =
+      Number(result.public_restaurant_id || result.restaurant_id || restaurant_id) || 0;
+    const publicMenuId = Number(result.public_menu_id) || 0;
+    if (!publicRestaurantId || !publicMenuId) return;
+    const uploadSessionId = result.upload_session_id || result.upload_id || "";
+    const qs = uploadSessionId
+      ? `?upload_session_id=${encodeURIComponent(uploadSessionId)}`
+      : "";
+    nav(`/operator/restaurants/${publicRestaurantId}/menus/${publicMenuId}/worksheet${qs}`, {
+      replace: true,
+    });
+  }, [result, isOperatorFlow, restaurant_id, nav]);
+
   useEffect(() => {
     let cancelled = false;
     const id = Number(restaurant_id);
@@ -1107,57 +1123,41 @@ export default function PdfUploadPage() {
 
   if (result) {
     if (isOperatorFlow) {
+      const publicRestaurantId =
+        Number(result.public_restaurant_id || result.restaurant_id || restaurant_id) || 0;
+      const publicMenuId = Number(result.public_menu_id) || 0;
+      const uploadSessionId = result.upload_session_id || result.upload_id || "";
+      const worksheetHref =
+        publicRestaurantId && publicMenuId
+          ? `/operator/restaurants/${publicRestaurantId}/menus/${publicMenuId}/worksheet${
+              uploadSessionId
+                ? `?upload_session_id=${encodeURIComponent(uploadSessionId)}`
+                : ""
+            }`
+          : null;
+
+      // Prefer auto-navigate; show brief fallback if IDs missing or navigation pending.
       return (
         <OperatorLayout title="Upload Menu">
           <div style={s.page}>
             <div style={s.successBox}>
               <div style={s.successIcon}>✓</div>
-              {(() => {
-                const pageCount = Number(result.page_count || result.pages || 0) || 0;
-                const itemsProcessed =
-                  (Number(result.inserted_items) || 0) + (Number(result.updated_items) || 0);
-                const summaryParts = [];
-                if (pageCount > 0) summaryParts.push(`${pageCount} page${pageCount === 1 ? "" : "s"}`);
-                if (itemsProcessed > 0) {
-                  summaryParts.push(`${itemsProcessed} menu item${itemsProcessed === 1 ? "" : "s"} successfully imported`);
-                }
-                const dash = summaryParts.length ? ` — ${summaryParts.join(", ")}` : "";
-                const publicRestaurantId =
-                  Number(result.public_restaurant_id || result.restaurant_id || restaurant_id) || 0;
-                const publicMenuId = Number(result.public_menu_id) || 0;
-                const uploadSessionId =
-                  result.upload_session_id || result.upload_id || "";
-                const editorHref =
-                  publicRestaurantId && publicMenuId
-                    ? `/operator/restaurants/${publicRestaurantId}/ck-menus/${publicMenuId}/edit${
-                        uploadSessionId
-                          ? `?upload_session_id=${encodeURIComponent(uploadSessionId)}`
-                          : ""
-                      }`
-                    : null;
-                return (
-                  <>
-                    <div style={s.successTitle}>{`Menu uploaded successfully${dash}.`}</div>
-                    <p style={s.successSub}>
-                      Review and correct the structured menu next to the original PDF, then publish when ready.
-                    </p>
-                    {editorHref ? (
-                      <Link to={editorHref} style={s.profileLink}>
-                        Open structured menu editor
-                      </Link>
-                    ) : null}
-                  </>
-                );
-              })()}
+              <div style={s.successTitle}>Menu parsed — opening worksheet…</div>
+              <p style={s.successSub}>
+                Review items and prices in the Menu Worksheet. Saving the worksheet does not publish.
+              </p>
+              {worksheetHref ? (
+                <Link to={worksheetHref} style={s.profileLink}>
+                  Open Menu Worksheet
+                </Link>
+              ) : (
+                <p style={s.successSub}>
+                  Upload finished but menu ids were missing. Return to Menu Lab and try again.
+                </p>
+              )}
               <Link to="/operator/menulab" style={{ ...s.profileLink, marginTop: 10 }}>
                 Back to Menu Lab
               </Link>
-              <CompletionNextSteps
-                isOperatorFlow
-                restaurantId={restaurant_id}
-                email={email}
-                restaurantName={restaurant_name}
-              />
             </div>
           </div>
         </OperatorLayout>

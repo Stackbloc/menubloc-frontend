@@ -20,22 +20,55 @@ function collectPreviewImages(theme) {
   return images.slice(0, 4);
 }
 
-function MenuWindow({ theme }) {
-  const swatch = theme.swatch;
+function formatDemoAddress(payload = {}) {
+  const line1 = String(payload.address_line1 || "").trim();
+  const city = String(payload.city || "").trim();
+  const state = String(payload.state || "").trim();
+  const zip = String(payload.zip || "").trim();
+  const cityState = [city, state].filter(Boolean).join(", ");
+  const locality = [cityState, zip].filter(Boolean).join(" ");
+  return [line1, locality].filter(Boolean).join(" · ");
+}
+
+function buildSwatch(theme) {
+  const bg = theme.preset.colorDefaults.background;
+  const light = String(bg || "").toLowerCase().startsWith("#f") || String(bg || "").toLowerCase() === "#ffffff";
+  return {
+    bg,
+    panel: theme.preset.colorDefaults.primary,
+    accent: theme.preset.colorDefaults.accent,
+    lines: [
+      light ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.08)",
+      light ? "rgba(15,23,42,0.72)" : "rgba(255,255,255,0.72)",
+      light ? "rgba(15,23,42,0.48)" : "rgba(255,255,255,0.48)",
+    ],
+  };
+}
+
+function MenuWindow({ theme, featured = false }) {
+  const swatch = buildSwatch(theme);
   const previewImages = collectPreviewImages(theme);
   const heroImage = previewImages[0] || null;
   const thumbImages = previewImages.slice(1, 4);
+  const restaurantName = theme.previewPayload?.restaurant_name || theme.previewPayload?.name || theme.name;
+  const address = formatDemoAddress(theme.previewPayload);
+  const designLabel = theme.name === "Default" ? "Default menu" : theme.name;
+
   return (
     <Link
       to={`/menu-template-preview?previewStyle=${theme.style}`}
-      style={styles.windowLink}
-      aria-label={`Preview ${theme.name}`}
+      style={{
+        ...styles.windowLink,
+        ...(featured ? styles.windowLinkFeatured : null),
+      }}
+      aria-label={`Preview ${restaurantName}`}
     >
       <div style={styles.cardCopy}>
-        <div style={styles.sampleLabel}>Sample menu design</div>
-        <h2 style={styles.cardTitle}>{theme.name}</h2>
-        <p style={styles.bestFit}>{theme.bestFit}</p>
-        <span style={styles.previewCta}>View actual menu →</span>
+        {featured ? <div style={styles.sampleLabel}>Default example</div> : null}
+        <h2 style={styles.cardTitle}>{restaurantName}</h2>
+        {address ? <p style={styles.addressLine}>{address}</p> : null}
+        <p style={styles.designMeta}>{designLabel}</p>
+        <span style={styles.previewCta}>View menu →</span>
       </div>
       <div style={{ ...styles.window, background: swatch.bg }}>
         <div style={styles.browserBar}>
@@ -79,9 +112,14 @@ function MenuWindow({ theme }) {
   );
 }
 
+/** Demo order: Default first, then other guest-facing layouts. Style ids stay internal only. */
+const DEMO_STYLE_ORDER = ["v1", "v14", "v13", "v15", "v12", "v16"];
+
 export default function DemoPage() {
-  const featuredThemes = CURATED_MENU_DESIGN_LAB_THEMES.filter((theme) => ["v1", "v13", "v14"].includes(theme.style));
-  const additionalThemes = CURATED_MENU_DESIGN_LAB_THEMES.filter((theme) => ["v15", "v12"].includes(theme.style));
+  const byStyle = new Map(CURATED_MENU_DESIGN_LAB_THEMES.map((theme) => [theme.style, theme]));
+  const demoThemes = DEMO_STYLE_ORDER.map((style) => byStyle.get(style)).filter(Boolean);
+  const defaultTheme = demoThemes.find((theme) => theme.name === "Default") || demoThemes[0];
+  const otherThemes = demoThemes.filter((theme) => theme !== defaultTheme);
 
   return (
     <main style={styles.page}>
@@ -90,70 +128,33 @@ export default function DemoPage() {
       </header>
 
       <section style={styles.hero}>
-        <div style={styles.eyebrow}>Menuply demo</div>
-        <h1 style={styles.title}>Choose a menu design to preview</h1>
+        <div style={styles.eyebrow}>Guest menus</div>
+        <h1 style={styles.title}>See how Menuply menus look to diners</h1>
         <p style={styles.copy}>
-          These sample windows open live Menuply menu theme previews from the design lab. They use demo data only and are not real restaurants accepting orders.
+          These are fictional restaurants for preview only. After you upload and review items in the Menu
+          Worksheet, Update Menuply Menu publishes the guest menu — Default is the starting look.
         </p>
       </section>
 
-      <section style={styles.section}>
-        <div style={styles.sectionHeading}>Featured menu designs</div>
-        <div style={styles.grid} aria-label="Featured menu design demos">
-          {featuredThemes.map((theme) => (
-            <MenuWindow
-              key={theme.style}
-              theme={{
-                ...theme,
-                swatch: {
-                  bg: theme.preset.colorDefaults.background,
-                  panel: theme.preset.colorDefaults.primary,
-                  accent: theme.preset.colorDefaults.accent,
-                  lines: [
-                    theme.preset.colorDefaults.background.startsWith("#f")
-                      ? "rgba(15,23,42,0.08)"
-                      : "rgba(255,255,255,0.08)",
-                    theme.preset.colorDefaults.background.startsWith("#f")
-                      ? "rgba(15,23,42,0.72)"
-                      : "rgba(255,255,255,0.72)",
-                    theme.preset.colorDefaults.background.startsWith("#f")
-                      ? "rgba(15,23,42,0.48)"
-                      : "rgba(255,255,255,0.48)",
-                  ],
-                },
-              }}
-            />
-          ))}
-        </div>
-      </section>
+      {defaultTheme ? (
+        <section style={styles.section}>
+          <div style={styles.sectionHeading}>Default menu</div>
+          <div style={styles.featuredGrid} aria-label="Default menu example">
+            <MenuWindow theme={defaultTheme} featured />
+          </div>
+        </section>
+      ) : null}
 
-      <section style={styles.section}>
-        <div style={styles.sectionHeading}>Additional design directions</div>
-        <div style={styles.grid} aria-label="Additional menu design demos">
-          {additionalThemes.map((theme) => (
-            <MenuWindow key={theme.style} theme={{
-              ...theme,
-              swatch: {
-                bg: theme.preset.colorDefaults.background,
-                panel: theme.preset.colorDefaults.primary,
-                accent: theme.preset.colorDefaults.accent,
-                lines: [
-                  theme.preset.colorDefaults.background.startsWith("#f")
-                    ? "rgba(15,23,42,0.08)"
-                    : "rgba(255,255,255,0.08)",
-                  theme.preset.colorDefaults.background.startsWith("#f")
-                    ? "rgba(15,23,42,0.72)"
-                    : "rgba(255,255,255,0.72)",
-                  theme.preset.colorDefaults.background.startsWith("#f")
-                    ? "rgba(15,23,42,0.48)"
-                    : "rgba(255,255,255,0.48)",
-                ],
-              },
-            }} />
-          ))}
-        </div>
-      </section>
-
+      {otherThemes.length ? (
+        <section style={styles.section}>
+          <div style={styles.sectionHeading}>More menu looks</div>
+          <div style={styles.grid} aria-label="Additional menu demos">
+            {otherThemes.map((theme) => (
+              <MenuWindow key={theme.style} theme={theme} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }
@@ -224,14 +225,15 @@ const styles = {
     letterSpacing: "0.12em",
     textTransform: "uppercase",
   },
+  featuredGrid: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr)",
+    maxWidth: 560,
+  },
   grid: {
-    maxWidth: 1180,
-    margin: "0 auto",
-    padding: "0 22px",
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
     gap: 18,
-    boxSizing: "border-box",
   },
   windowLink: {
     display: "block",
@@ -243,6 +245,10 @@ const styles = {
     background: "#121A14",
     border: "1px solid #1F2937",
     boxShadow: "0 18px 48px rgba(0,0,0,0.24)",
+  },
+  windowLinkFeatured: {
+    borderColor: "rgba(61,217,52,0.45)",
+    boxShadow: "0 22px 56px rgba(0,0,0,0.32)",
   },
   window: {
     minHeight: 248,
@@ -378,11 +384,19 @@ const styles = {
     lineHeight: 1.15,
     fontWeight: 900,
   },
-  bestFit: {
+  addressLine: {
     margin: "8px 0 0",
     color: "rgba(255,255,255,0.68)",
     fontSize: 13,
     lineHeight: 1.45,
+  },
+  designMeta: {
+    margin: "10px 0 0",
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
   },
   previewCta: {
     display: "inline-flex",
