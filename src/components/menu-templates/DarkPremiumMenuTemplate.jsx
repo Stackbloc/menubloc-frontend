@@ -71,7 +71,6 @@ export default function DarkPremiumMenuTemplate(ctx) {
     brand,
     fontStack,
     menuThemeSettings = {},
-    currentRestaurantId,
   } = ctx;
 
   const accent = brand?.accent ?? "#b68b45";
