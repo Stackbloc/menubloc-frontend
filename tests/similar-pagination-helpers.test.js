@@ -7,6 +7,8 @@ import {
   cacheSimilarState,
   getCachedSimilarState,
   getSimilarMoreButtonLabel,
+  groupSimilarResultsByMatchStrength,
+  humanizeSimilarMatchReasons,
   mergeSimilarItems,
   resolveSimilarEmptyStateMessage,
   searchCardSimilarCache,
@@ -23,8 +25,8 @@ test("zero similar results produce ready state with empty items", () => {
 });
 
 test("zero similar results show empty state copy", () => {
-  assert.equal(SEARCH_CARD_NO_SIMILAR_TEXT, "No similar items found.");
-  assert.equal(resolveSimilarEmptyStateMessage(), "No similar items found.");
+  assert.equal(SEARCH_CARD_NO_SIMILAR_TEXT, "No closely similar menu items were found.");
+  assert.equal(resolveSimilarEmptyStateMessage(), "No closely similar menu items were found.");
 });
 
 test("zero result response is cached and reused without refetch", () => {
@@ -120,4 +122,24 @@ test("load-more merge does not duplicate cards after More", () => {
 
   assert.deepEqual(secondPage.items.map(getItemId), ["a", "b", "c"]);
   assert.equal(shouldShowSimilarMoreButton(secondPage.pagination), false);
+});
+
+test("groupSimilarResultsByMatchStrength keeps exact ahead of close/related", () => {
+  const bands = groupSimilarResultsByMatchStrength(
+    [
+      { menu_item_id: "2", name: "Spicy Variant", restaurant_name: "B", match_strength: "close", distance_miles: 0.5 },
+      { menu_item_id: "1", name: "Classic", restaurant_name: "A", match_strength: "exact", distance_miles: 2 },
+      { menu_item_id: "3", name: "Loose", restaurant_name: "C", match_strength: "related", distance_miles: 0.2 },
+    ],
+    getItemId
+  );
+  assert.deepEqual(
+    bands.map((b) => b.strength),
+    ["exact", "close", "related"]
+  );
+  assert.equal(bands[0].restaurants[0].items[0].menu_item_id, "1");
+  assert.deepEqual(
+    humanizeSimilarMatchReasons({ codes: ["exact_food_form_match", "primary_protein_match"] }),
+    ["Same food type", "Same protein"]
+  );
 });

@@ -56,6 +56,7 @@ import { resolveIndulgencePresentation } from "../lib/indulgencePresentation.js"
 import { resolveCardVerdict, NOT_AVAILABLE_LABEL } from "../lib/cardVerdict.js";
 import { fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
+import { sortSimilarItemsByMatchStrength } from "../lib/searchCardSimilar.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
@@ -1070,7 +1071,8 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((json) => {
         if (!cancelled) {
-          setSimilar(Array.isArray(json?.similar) ? json.similar : []);
+          const rows = sortSimilarItemsByMatchStrength(Array.isArray(json?.similar) ? json.similar : []);
+          setSimilar(rows);
         }
       })
       .catch(() => {
@@ -1131,7 +1133,7 @@ function ExploreSimilarDishes({ itemId, itemName, currentSlug, geoLat, geoLng, a
             ) : similar === null ? (
               <div style={{ color: "#9CA3AF", fontSize: 14 }}>Loading similar items...</div>
             ) : similar.length === 0 ? (
-              <div style={{ color: "#9CA3AF", fontSize: 14 }}>No similar items found yet.</div>
+              <div style={{ color: "#9CA3AF", fontSize: 14 }}>No closely similar menu items were found.</div>
             ) : similar.map((entry) => (
               <div key={getNormalizedMenuItemId(entry)} style={{ borderRadius: 18, border: "1px solid var(--gb-color-border)", background: "var(--gb-color-surface-strong)", padding: 16 }}>
                 <div style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9CA3AF", marginBottom: 10 }}>

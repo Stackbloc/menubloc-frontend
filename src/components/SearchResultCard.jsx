@@ -42,15 +42,18 @@ import { fetchSimilarItems, fetchCompareItems, fetchMenuItemIntelligence, fetchF
 import CompareItemsModal from "./menu/CompareItemsModal.jsx";
 import { getNormalizedMenuItemId, normalizeMenuItemIdentity } from "../lib/menuItemIdentity.js";
 import {
-  SEARCH_CARD_NO_SIMILAR_TEXT,
   SIMILAR_INITIAL_LIMIT,
   SIMILAR_PAGE_SIZE,
   buildSimilarStateFromResponse,
   cacheSimilarState,
   getCachedSimilarState,
   getSimilarMoreButtonLabel,
+  groupSimilarResultsByMatchStrength,
+  humanizeSimilarMatchReasons,
   isShowSimilarChipVisible,
   mergeSimilarItems,
+  resolveSimilarEmptyStateMessage,
+  shouldExposeSimilarMatchReasons,
   shouldShowSimilarMoreButton,
 } from "../lib/searchCardSimilar.js";
 
@@ -278,9 +281,8 @@ function resolveSimilarAvailability(row) {
 }
 
 function buildSimilarItemsLabel(meta) {
+  // Precision over quantity — do not advertise broadened / loose matches.
   if (!meta) return null;
-  if (meta.used_broad_fallback) return "Showing broader matches because nearby similar dishes were limited";
-  if (meta.radius_used_miles != null && Number(meta.radius_used_miles) > 25) return "Expanded nearby search";
   return null;
 }
 
@@ -296,25 +298,6 @@ function buildSearchCardSimilarFilters(search) {
   if (city) filters.city = city;
   if (state) filters.state = state;
   return filters;
-}
-
-function groupSimilarResultsByRestaurant(items) {
-  const deduped = mergeSimilarItems([], items, (row) => row?.menu_item_id || row?.menuItemId || row?.id);
-  const grouped = new Map();
-  for (const item of Array.isArray(deduped) ? deduped : []) {
-    const restaurantId = asStr(item?.restaurant_id);
-    const restaurantName = asStr(item?.restaurant_name) || "Nearby restaurant";
-    const key = restaurantId || restaurantName;
-    if (!grouped.has(key)) {
-      grouped.set(key, {
-        restaurant_id: restaurantId || null,
-        restaurant_name: restaurantName,
-        items: [],
-      });
-    }
-    grouped.get(key).items.push(item);
-  }
-  return Array.from(grouped.values());
 }
 
 function escRe(s) {
@@ -985,10 +968,12 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
       );
     }
 
-    const groups = groupSimilarResultsByRestaurant(similarState?.items || []);
+    const matchBands = groupSimilarResultsByMatchStrength(similarState?.items || [], getItemId);
     const helperLabel = buildSimilarItemsLabel(similarState?.meta || null);
     const hasMoreSimilar = shouldShowSimilarMoreButton(similarState?.pagination);
     const loadingMoreSimilar = similarState?.status === "loading_more";
+    const showMatchReasons = shouldExposeSimilarMatchReasons();
+    const showBandHeaders = matchBands.length > 1;
     return (
       <div style={wrap}>
         {helperLabel ? (
@@ -996,10 +981,25 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
             {helperLabel}
           </div>
         ) : null}
-        {groups.length > 0 ? (
+        {matchBands.length > 0 ? (
           <div style={{ display: "grid", gap: 14 }}>
-            {groups.map(({ restaurant_id, restaurant_name, items: siItems }) => (
-              <div key={restaurant_id || restaurant_name}>
+            {matchBands.map((band) => (
+              <div key={band.strength} style={{ display: "grid", gap: 14 }}>
+                {showBandHeaders ? (
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 800,
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
+                      color: "#6B7280",
+                    }}
+                  >
+                    {band.label}
+                  </div>
+                ) : null}
+                {band.restaurants.map(({ restaurant_id, restaurant_name, items: siItems }) => (
+              <div key={`${band.strength}:${restaurant_id || restaurant_name}`}>
                 <div
                   style={{
                     fontSize: "12px",
@@ -1019,6 +1019,9 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                     const siId = getItemId(si);
                     const siHref = siId ? "/menu-items/" + siId : null;
                     const similarIndulgence = resolveIndulgencePresentation(si);
+                    const reasonPhrases = showMatchReasons
+                      ? humanizeSimilarMatchReasons(si.compatibility_explanation || si.explanation)
+                      : [];
                     return (
                       <div
                         key={siId || siName}
@@ -1062,6 +1065,20 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                               {abbreviateDisplayLabel(siName)}
                             </span>
                           )}
+                          {reasonPhrases.length > 0 ? (
+                            <div
+                              style={{
+                                marginTop: 3,
+                                fontSize: 11,
+                                color: "#9CA3AF",
+                                fontWeight: 600,
+                                ...SIMILAR_ROW_TRUNCATE_STYLE,
+                              }}
+                              title={reasonPhrases.join(" · ")}
+                            >
+                              {reasonPhrases.join(" · ")}
+                            </div>
+                          ) : null}
                           {similarIndulgence?.indulgence ? (
                             <div
                               title={`Indulgent · ${similarIndulgence.indulgence.score}`}
@@ -1115,6 +1132,8 @@ function DetailPanel({ tab, row, similarState, onFindSimilar, onCompare, onLoadM
                     );
                   })}
                 </div>
+              </div>
+                ))}
               </div>
             ))}
             {hasMoreSimilar ? (
@@ -1488,6 +1507,12 @@ function ItemRow({
   }, [mid]);
 
   useEffect(() => {
+    if (similarChipDisabled && openTab === "similar") {
+      setOpenTab(null);
+    }
+  }, [similarChipDisabled, openTab]);
+
+  useEffect(() => {
     if (!franchiseLocationCacheKey) {
       setFranchiseLocationState({ status: "idle", location: null });
       return;
@@ -1561,9 +1586,16 @@ function ItemRow({
 
   async function loadSimilarForRow() {
     if (!mid || !similarCacheKey) return;
+    if (similarChipDisabled) {
+      setOpenTab((prev) => (prev === "similar" ? null : prev));
+      return;
+    }
     const cached = getCachedSimilarState(similarCacheKey);
     if (cached) {
       setSimilarState(cached);
+      if (!cached.items?.length) {
+        setOpenTab((prev) => (prev === "similar" ? null : prev));
+      }
       return;
     }
 
@@ -1585,6 +1617,10 @@ function ItemRow({
       const nextState = buildSimilarStateFromResponse(json);
       cacheSimilarState(similarCacheKey, nextState);
       setSimilarState(nextState);
+      // Never leave an empty Similar panel open — precision over placeholder fills.
+      if (!nextState.items?.length) {
+        setOpenTab((prev) => (prev === "similar" ? null : prev));
+      }
     } catch {
       if (similarRequestRef.current !== requestId) return;
       const nextState = { status: "failed", items: [], meta: null, pagination: null };
@@ -1913,7 +1949,7 @@ function ItemRow({
             }}
             ariaLabel={
               similarChipDisabled
-                ? `${labels.showSimilar} — no similar items available`
+                ? `${labels.showSimilar} — none available`
                 : labels.showSimilar
             }
           />
@@ -2115,8 +2151,8 @@ export default function SearchResultCard({ restaurant, items, item, query, query
   const contextSearch = location.search || "";
   const labels = {
     nutrition: t("common.nutrition", "Nutrition"),
-    showSimilar: t("common.showSimilar", "Show Similar"),
-    noSimilar: t("common.noSimilarNearby", SEARCH_CARD_NO_SIMILAR_TEXT),
+    showSimilar: t("common.showSimilar", "Similar Items"),
+    noSimilar: t("common.noSimilarNearby", resolveSimilarEmptyStateMessage()),
     viewMenu: t("common.viewMenu"),
   };
   const grouped = Array.isArray(items) && items.length > 0;
