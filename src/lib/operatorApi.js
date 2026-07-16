@@ -142,6 +142,56 @@ export const publishProfile = (rid) => post(`/operator/restaurants/${rid}/profil
 export const setFeaturedDish = (rid, menu_item_id) =>
   patch(`/operator/restaurants/${rid}/profile/featured-dish`, { menu_item_id });
 
+// ── Restaurant: Onboarding Information (ownership-safe PATCH) ─────────────
+export const getOwnedRestaurantInformation = (rid) =>
+  get(`/operator/restaurants/${rid}/onboarding/information`);
+export const updateOwnedRestaurantInformation = (rid, body) =>
+  patch(`/operator/restaurants/${rid}/onboarding/information`, body);
+
+// ── Restaurant: Onboarding Locations ──────────────────────────────────────
+export const getOwnedLocations = (rid) =>
+  get(`/operator/restaurants/${rid}/onboarding/locations`);
+export const createOwnedLocation = (rid, body) =>
+  post(`/operator/restaurants/${rid}/onboarding/locations`, body);
+export const updateOwnedLocation = (rid, locationId, body) =>
+  patch(`/operator/restaurants/${rid}/onboarding/locations/${locationId}`, body);
+export const deleteOwnedLocation = (rid, locationId) =>
+  del(`/operator/restaurants/${rid}/onboarding/locations/${locationId}`);
+export const setPrimaryOwnedLocation = (rid, primary_location_id) =>
+  post(`/operator/restaurants/${rid}/onboarding/locations/primary`, {
+    primary_location_id,
+    // legacy alias accepted by backend during transition
+    location_id: primary_location_id,
+  });
+export const reorderOwnedLocations = (rid, location_ids) =>
+  post(`/operator/restaurants/${rid}/onboarding/locations/reorder`, { location_ids });
+export async function downloadLocationImportTemplate(rid) {
+  const language = readStoredLanguage();
+  const localizedPath = appendLanguageParam(
+    `/operator/restaurants/${rid}/onboarding/locations/import/template`,
+    language
+  );
+  const res = await fetch(`${API}${localizedPath}`, {
+    credentials: "include",
+    headers: withLanguageHeaders({}, language),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json.error || `Request failed (${res.status})`);
+  }
+  return res.text();
+}
+export const validateLocationImport = (rid, body) =>
+  post(`/operator/restaurants/${rid}/onboarding/locations/import/validate`, body);
+export const confirmLocationImport = (rid, preview_id) =>
+  post(`/operator/restaurants/${rid}/onboarding/locations/import/confirm`, { preview_id });
+export const completeOwnedLocationsCheckpoint = (rid, body = {}) =>
+  post(`/operator/restaurants/${rid}/onboarding/locations/complete`, body);
+export const getOnboardingCheckpoint = (rid) =>
+  get(`/operator/restaurants/${rid}/onboarding/checkpoint`);
+export const getLaunchReadiness = (rid) =>
+  get(`/operator/restaurants/${rid}/onboarding/launch-readiness`);
+
 // ── Restaurant: Menus ─────────────────────────────────────────────────────
 export const getMenus = (rid) => get(`/operator/restaurants/${rid}/menus`);
 export const createMenu = (rid, body) => post(`/operator/restaurants/${rid}/menus`, body);

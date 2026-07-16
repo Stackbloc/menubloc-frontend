@@ -24,6 +24,7 @@ const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").repla
 const PLAN_SELECTION_ROUTE = "/restaurant/subscription";
 const PLAN_ENTRY_ROUTE = "/restaurant/signup";
 const DESIGN_SELECTION_ROUTE = "/restaurant/design-select";
+const INFORMATION_ROUTE = "/restaurant/onboarding/information";
 
 function planLabel(t, planCode) {
   if (!planCode) return "";
@@ -443,21 +444,23 @@ export default function RestaurantSignup() {
         },
       });
 
-      // Capture nav state for after QR reveal step
+      // Capture nav state for after QR reveal step — Restaurant Information follows verify email
       const navTarget = {
         path: "/operator/verify-email",
         opts: {
           replace: true,
           state: {
             ...draftState,
-            nextPath:
+            nextPath: INFORMATION_ROUTE,
+            autoSend: true,
+            plan: selectedPlan,
+            // Preserve prior plan destinations for Locations stub → continue
+            post_locations_path:
               selectedPlan === "verified" ||
               selectedPlan === "published_free" ||
               selectedPlan === "published"
                 ? DESIGN_SELECTION_ROUTE
                 : PLAN_SELECTION_ROUTE,
-            autoSend: true,
-            plan: selectedPlan,
           },
         },
       };

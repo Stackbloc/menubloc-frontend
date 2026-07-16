@@ -2,6 +2,7 @@
  * ============================================================
  * Path: menubloc-frontend/src/pages/operator/OperatorLogin.jsx
  * Updated: 2026-04-07
+ * Resume: 2026-07-16 — automatic onboarding checkpoint resume (AuthPageFrame UI unchanged)
  * ============================================================
  */
 
@@ -15,20 +16,7 @@ import {
   PasswordField,
   styles,
 } from "../../components/consumer/ConsumerAuthShared.jsx";
-
-function resolveOnboardingDest(restaurant) {
-  if (!restaurant) return "/operator/claim";
-  const step = restaurant.current_step_key;
-  if (!step) return restaurant.has_published_menu ? "/operator" : "/restaurant/onboarding/welcome";
-  switch (step) {
-    case "menu_live": return "/operator";
-    case "import_menu": return "/restaurant/onboarding/welcome";
-    case "process_menu": return "/restaurant/onboarding/processing";
-    case "review_menu":
-    case "publish_menu": return "/operator/menulab";
-    default: return "/operator";
-  }
-}
+import { resolveOperatorResumePath } from "../../lib/operatorOnboardingCheckpoints.js";
 
 function onboardingStateForResume(restaurant, email, routeState) {
   if (!restaurant) return undefined;
@@ -36,13 +24,17 @@ function onboardingStateForResume(restaurant, email, routeState) {
     restaurant_id: routeState?.restaurant_id || restaurant.id,
     restaurant_name: routeState?.restaurant_name || restaurant.restaurant_name,
     email,
+    current_step_key: restaurant.current_step_key || null,
+    completed_step_keys: Array.isArray(restaurant.completed_step_keys)
+      ? restaurant.completed_step_keys
+      : [],
+    selected_plan: restaurant.selected_plan_code || routeState?.selected_plan || null,
+    selected_plan_code: restaurant.selected_plan_code || null,
   };
 }
 
 function resolvePostLoginDest(restaurant, preferredNextPath) {
-  const nextPath = String(preferredNextPath || "").trim();
-  if (nextPath.startsWith("/")) return nextPath;
-  return resolveOnboardingDest(restaurant);
+  return resolveOperatorResumePath(restaurant, preferredNextPath);
 }
 
 export default function OperatorLogin() {
