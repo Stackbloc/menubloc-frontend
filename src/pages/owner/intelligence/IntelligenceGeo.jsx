@@ -9,11 +9,16 @@ import {
   AnalyticsScopeNote,
   CityLinkButton,
   CityVisitorInsightPanel,
+  StateLinkButton,
   StateSearchInsightPanel,
   formatMetricValue,
   useIntelligenceData,
 } from "./intelligenceShared.jsx";
 import { getOwnerIntelligenceGeo } from "../../../lib/ownerApi.js";
+
+function normalizeStateCode(value) {
+  return String(value || "").trim().toUpperCase() || null;
+}
 
 export default function IntelligenceGeo() {
   const { range } = usePlatformIntelligenceRange();
@@ -25,6 +30,12 @@ export default function IntelligenceGeo() {
     setSelectedCity(null);
     setSelectedState(null);
   }, [range.start_date, range.end_date, range.timezone]);
+
+  const selectState = (raw) => {
+    const code = normalizeStateCode(raw);
+    if (!code) return;
+    setSelectedState((prev) => (prev === code ? null : code));
+  };
 
   if (loading) return <LoadingState label="Loading geo intelligence…" />;
   if (error) return <ErrorBanner message={error} />;
@@ -48,7 +59,7 @@ export default function IntelligenceGeo() {
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <IntelligenceSection
           title="Searches by Country"
-          subtitle="Derived from known US state codes on search requests (not IP geolocation)."
+          subtitle="Market-attributed country from search state / country column. Not IP geolocation — international traffic without a market state stays Unattributed."
         >
           {Array.isArray(data.searches_by_country) ? (
             <SimpleTable
@@ -57,7 +68,7 @@ export default function IntelligenceGeo() {
                 ["Country", "country"],
                 ["Searches", "searches"],
               ]}
-              emptyLabel="No searches with a known US state in this range."
+              emptyLabel="No country-attributed searches in this range."
             />
           ) : (
             <EmptyState>{formatMetricValue(data.searches_by_country)}</EmptyState>
@@ -65,7 +76,7 @@ export default function IntelligenceGeo() {
         </IntelligenceSection>
         <IntelligenceSection
           title="Visitors by Country"
-          subtitle="Derived from market/restaurant US state on page visits (not IP geolocation)."
+          subtitle="Market/restaurant country on page visits. Not IP geolocation — visits without market or restaurant country stay Unattributed."
         >
           {Array.isArray(data.visits_by_country) ? (
             <SimpleTable
@@ -75,7 +86,7 @@ export default function IntelligenceGeo() {
                 ["Visitors", "visitors"],
                 ["Page views", "visits"],
               ]}
-              emptyLabel="No visits with a known US state in this range."
+              emptyLabel="No country-attributed visits in this range."
             />
           ) : (
             <EmptyState>{formatMetricValue(data.visits_by_country)}</EmptyState>
@@ -86,7 +97,7 @@ export default function IntelligenceGeo() {
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <IntelligenceSection
           title="Searches by State"
-          subtitle="Consumer searches rolled up by US state. Click a state to see search terms."
+          subtitle="Click a state code (View terms →) to see the actual search queries."
         >
           <SimpleTable
             rows={searchesByState}
@@ -95,28 +106,36 @@ export default function IntelligenceGeo() {
                 "State",
                 "state",
                 (row) => (
-                  <CityLinkButton
-                    label={row.state}
-                    selected={selectedState === row.state}
-                    onClick={() =>
-                      setSelectedState((prev) => (prev === row.state ? null : row.state))
-                    }
+                  <StateLinkButton
+                    state={row.state}
+                    selected={selectedState === normalizeStateCode(row.state)}
+                    onClick={() => selectState(row.state)}
                   />
                 ),
               ],
               ["Searches", "searches"],
             ]}
-            emptyLabel="No searches with state in this range."
+            emptyLabel="No searches with state in this range — try a wider date range, or click a state under Visitors by State."
           />
         </IntelligenceSection>
         <IntelligenceSection
           title="Visitors by State"
-          subtitle="Distinct visitor sessions and page views by state (from market or restaurant)."
+          subtitle="Click a state to see search terms from that market (same drill-down)."
         >
           <SimpleTable
             rows={visitsByState}
             columns={[
-              ["State", "state"],
+              [
+                "State",
+                "state",
+                (row) => (
+                  <StateLinkButton
+                    state={row.state}
+                    selected={selectedState === normalizeStateCode(row.state)}
+                    onClick={() => selectState(row.state)}
+                  />
+                ),
+              ],
               ["Visitors", "visitors"],
               ["Page views", "visits"],
             ]}

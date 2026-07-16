@@ -217,10 +217,41 @@ export function CityLinkButton({ label, selected, onClick }) {
         fontWeight: selected ? 800 : 700,
         fontSize: 14,
         textAlign: "left",
-        textDecoration: selected ? "underline" : "none",
+        textDecoration: "underline",
+        textUnderlineOffset: 2,
       }}
     >
       {label}
+    </button>
+  );
+}
+
+/** Clickable state code that always looks interactive. */
+export function StateLinkButton({ state, selected, onClick }) {
+  const code = String(state || "").trim().toUpperCase();
+  if (!code) return "—";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`View search terms for ${code}`}
+      style={{
+        background: selected ? "rgba(34, 197, 94, 0.12)" : "none",
+        border: "none",
+        padding: "2px 4px",
+        margin: 0,
+        cursor: "pointer",
+        color: OWNER_COLORS.accent,
+        fontWeight: selected ? 800 : 700,
+        fontSize: 14,
+        textAlign: "left",
+        textDecoration: "underline",
+        textUnderlineOffset: 2,
+        borderRadius: 6,
+      }}
+    >
+      {code}
+      <span style={{ fontWeight: 600, marginLeft: 6, opacity: 0.75 }}>View terms →</span>
     </button>
   );
 }
@@ -441,9 +472,11 @@ export function StateSearchInsightPanel({ state, range, onClose }) {
   const [data, setData] = React.useState(null);
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(true);
+  const panelRef = React.useRef(null);
+  const stateCode = String(state || "").trim().toUpperCase();
 
   React.useEffect(() => {
-    if (!state) return undefined;
+    if (!stateCode) return undefined;
     let cancelled = false;
     setLoading(true);
     setError("");
@@ -452,7 +485,7 @@ export function StateSearchInsightPanel({ state, range, onClose }) {
       start_date: range.start_date,
       end_date: range.end_date,
       timezone: range.timezone,
-      state,
+      state: stateCode,
     })
       .then((payload) => {
         if (!cancelled) setData(payload);
@@ -466,9 +499,19 @@ export function StateSearchInsightPanel({ state, range, onClose }) {
     return () => {
       cancelled = true;
     };
-  }, [state, range.start_date, range.end_date, range.timezone]);
+  }, [stateCode, range.start_date, range.end_date, range.timezone]);
+
+  React.useEffect(() => {
+    if (!stateCode || !panelRef.current) return;
+    try {
+      panelRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch {
+      /* ignore */
+    }
+  }, [stateCode]);
 
   return (
+    <div ref={panelRef}>
     <PageCard
       style={{
         padding: 22,
@@ -480,7 +523,7 @@ export function StateSearchInsightPanel({ state, range, onClose }) {
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
         <div>
           <SectionTitle
-            title={`Searches in ${state}`}
+            title={`Searches in ${stateCode}`}
             subtitle="Search terms from consumer searches attributed to this state."
           />
         </div>
@@ -503,7 +546,7 @@ export function StateSearchInsightPanel({ state, range, onClose }) {
         </button>
       </div>
 
-      {loading ? <LoadingState label={`Loading searches for ${state}…`} /> : null}
+      {loading ? <LoadingState label={`Loading searches for ${stateCode}…`} /> : null}
       {error ? <ErrorBanner message={error} /> : null}
 
       {!loading && !error && data ? (
@@ -564,6 +607,7 @@ export function StateSearchInsightPanel({ state, range, onClose }) {
         </div>
       ) : null}
     </PageCard>
+    </div>
   );
 }
 
