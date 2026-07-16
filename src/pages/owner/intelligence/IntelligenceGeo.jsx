@@ -10,6 +10,7 @@ import {
   AnalyticsScopeNote,
   CityLinkButton,
   CityVisitorInsightPanel,
+  formatMetricValue,
   useIntelligenceData,
 } from "./intelligenceShared.jsx";
 import { getOwnerIntelligenceGeo } from "../../../lib/ownerApi.js";
@@ -27,6 +28,12 @@ export default function IntelligenceGeo() {
   if (error) return <ErrorBanner message={error} />;
   if (!data?.available) return <EmptyState>No geo data in this range.</EmptyState>;
 
+  const searchesByState = Array.isArray(data.searches_by_state) ? data.searches_by_state : [];
+  const visitsByState = Array.isArray(data.visits_by_state) ? data.visits_by_state : [];
+  const languageByGeography = Array.isArray(data.language_preference_by_geography)
+    ? data.language_preference_by_geography
+    : null;
+
   return (
     <div style={{ display: "grid", gap: 18 }}>
       <AnalyticsScopeNote note={data.analytics_scope} />
@@ -34,10 +41,53 @@ export default function IntelligenceGeo() {
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <MetricCard label="Searches by Country" value={data.searches_by_country} />
         <MetricCard label="Visits by Country" value={data.visits_by_country} />
-        <MetricCard label="Searches by State" value={data.searches_by_state} />
-        <MetricCard label="Visits by State" value={data.visits_by_state} />
-        <MetricCard label="Language by Geography" value={data.language_preference_by_geography} />
       </div>
+
+      <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        <IntelligenceSection title="Searches by State" subtitle="Consumer searches rolled up by US state.">
+          <SimpleTable
+            rows={searchesByState}
+            columns={[
+              ["State", "state"],
+              ["Searches", "searches"],
+            ]}
+            emptyLabel="No searches with state in this range."
+          />
+        </IntelligenceSection>
+        <IntelligenceSection
+          title="Visitors by State"
+          subtitle="Distinct visitor sessions and page views by state (from market or restaurant)."
+        >
+          <SimpleTable
+            rows={visitsByState}
+            columns={[
+              ["State", "state"],
+              ["Visitors", "visitors"],
+              ["Page views", "visits"],
+            ]}
+            emptyLabel="No visits with state in this range."
+          />
+        </IntelligenceSection>
+      </div>
+
+      <IntelligenceSection
+        title="Language by Geography"
+        subtitle="Menuply UI language preference from page visits with language metadata, by market."
+      >
+        {languageByGeography ? (
+          <SimpleTable
+            rows={languageByGeography}
+            columns={[
+              ["City", "location_label"],
+              ["Language", "language"],
+              ["Visits", "visits"],
+            ]}
+            emptyLabel="No language-by-city rows in this range."
+          />
+        ) : (
+          <EmptyState>{formatMetricValue(data.language_preference_by_geography)}</EmptyState>
+        )}
+      </IntelligenceSection>
 
       <div className="owner-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <IntelligenceSection title="Searches by City" subtitle="Consumer searches by market (city/state).">
