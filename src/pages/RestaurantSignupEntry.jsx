@@ -210,11 +210,13 @@ const styles = {
     lineHeight: 0.95,
     marginBottom: 10,
   },
+  // Match vertical gap used by paid plans: planName (10) + priceBlock paddingTop (14).
   price: {
     fontSize: 28,
     fontWeight: 900,
     letterSpacing: 0,
     lineHeight: 1.12,
+    paddingTop: 14,
     marginBottom: 14,
   },
   priceBlock: {
