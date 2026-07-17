@@ -645,7 +645,13 @@ export default function OwnerMenuUploadReviewItems() {
                         src={buildImageUrl(activePage.image_url)}
                         alt={`Page ${activePage.page_number}`}
                         style={{ maxWidth: "100%", maxHeight: 400, objectFit: "contain" }}
-                        onError={(e) => { e.target.parentNode.innerHTML = '<div style="padding:40px;color:#9ca3af;text-align:center">Photo unavailable</div>'; }}
+                        onError={(e) => {
+                          e.target.parentNode.innerHTML =
+                            '<div style="padding:40px;color:#9ca3af;text-align:center;line-height:1.45">' +
+                            "<div style=\"font-weight:700;margin-bottom:6px\">Photo unavailable</div>" +
+                            "<div style=\"font-size:12px\">Source file is no longer on the server (common for older uploads). OCR text on the right is still valid for review.</div>" +
+                            "</div>";
+                        }}
                       />
                     </div>
                   ) : (
