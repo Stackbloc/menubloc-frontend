@@ -139,6 +139,10 @@ export const getAdobeSocialPrompt = (rid, body) =>
 export const getProfile = (rid) => get(`/operator/restaurants/${rid}/profile`);
 export const updateProfile = (rid, body) => patch(`/operator/restaurants/${rid}/profile`, body);
 export const publishProfile = (rid) => post(`/operator/restaurants/${rid}/profile/publish`, {});
+export const updateStatusBanners = (rid, status_banners) =>
+  put(`/operator/restaurants/${rid}/profile/status-banners`, { status_banners });
+export const replaceStatusEvents = (rid, status_type, events) =>
+  put(`/operator/restaurants/${rid}/profile/status-events`, { status_type, events });
 export const setFeaturedDish = (rid, menu_item_id) =>
   patch(`/operator/restaurants/${rid}/profile/featured-dish`, { menu_item_id });
 

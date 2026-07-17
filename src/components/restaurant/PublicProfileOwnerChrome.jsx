@@ -1,10 +1,16 @@
 /**
  * Owner-only edit chrome for the public restaurant profile page.
  * Save = draft update + publish, then parent reloads public data.
+ * Status banners update live via PUT /profile/status-banners.
  */
 import { useEffect, useState } from "react";
 import * as operatorApi from "../../lib/operatorApi.js";
 import { API_BASE } from "../../lib/operatorApi.js";
+import {
+  RESTAURANT_STATUS_BANNERS,
+  normalizeStatusBannerIds,
+} from "../../lib/restaurantStatusBanners.js";
+import StatusEventScheduleEditor from "./StatusEventScheduleEditor.jsx";
 
 const INPUT = {
   width: "100%",
@@ -43,11 +49,18 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
   const rid = restaurant?.id;
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [bannerSaving, setBannerSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [benefits, setBenefits] = useState({});
   const [cuisineOptions, setCuisineOptions] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
+  const [activeBanners, setActiveBanners] = useState(() =>
+    normalizeStatusBannerIds(restaurant?.status_banners)
+  );
+  const [statusEvents, setStatusEvents] = useState([]);
+  const [restaurantTimezone, setRestaurantTimezone] = useState(null);
+  const [restaurantTimezoneValid, setRestaurantTimezoneValid] = useState(false);
   const [form, setForm] = useState({
     restaurant_name: "",
     cuisine: "",
@@ -59,6 +72,29 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
   const [baselineLogo, setBaselineLogo] = useState("");
 
   const hasBenefit = (key) => benefits[key]?.is_enabled === true;
+
+  useEffect(() => {
+    setActiveBanners(normalizeStatusBannerIds(restaurant?.status_banners));
+  }, [restaurant?.id, restaurant?.status_banners]);
+
+  useEffect(() => {
+    if (!rid) return;
+    let alive = true;
+    operatorApi
+      .getProfile(rid)
+      .then((profileData) => {
+        if (!alive) return;
+        setBenefits(profileData.benefits || {});
+        setActiveBanners(normalizeStatusBannerIds(profileData.profile?.status_banners));
+        setStatusEvents(Array.isArray(profileData.status_events) ? profileData.status_events : []);
+        setRestaurantTimezone(profileData.restaurant_timezone || null);
+        setRestaurantTimezoneValid(profileData.restaurant_timezone_valid === true);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [rid]);
 
   useEffect(() => {
     if (!editing) return;
@@ -83,6 +119,10 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
       const profileData = await operatorApi.getProfile(rid);
       const p = profileData.profile || {};
       setBenefits(profileData.benefits || {});
+      setActiveBanners(normalizeStatusBannerIds(p.status_banners));
+      setStatusEvents(Array.isArray(profileData.status_events) ? profileData.status_events : []);
+      setRestaurantTimezone(profileData.restaurant_timezone || null);
+      setRestaurantTimezoneValid(profileData.restaurant_timezone_valid === true);
       const next = {
         restaurant_name: p.restaurant_name || restaurant?.restaurant_name || "",
         cuisine: p.cuisine || restaurant?.cuisine || "",
@@ -106,6 +146,31 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
     setEditing(false);
     setError("");
     setNotice("");
+  }
+
+  async function handleBannerToggle(bannerId) {
+    if (!rid || bannerSaving) return;
+    const next = activeBanners.includes(bannerId)
+      ? activeBanners.filter((id) => id !== bannerId)
+      : normalizeStatusBannerIds([...activeBanners, bannerId]);
+    const prev = activeBanners;
+    setActiveBanners(next);
+    setBannerSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await operatorApi.updateStatusBanners(rid, next);
+      setActiveBanners(normalizeStatusBannerIds(result.status_banners));
+      setNotice("Status banners updated.");
+      if (typeof onPublished === "function") {
+        await onPublished();
+      }
+    } catch (e) {
+      setActiveBanners(prev);
+      setError(e.message || "Could not update status banners.");
+    } finally {
+      setBannerSaving(false);
+    }
   }
 
   async function handleSave() {
@@ -247,11 +312,104 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
           {error}
         </div>
       ) : null}
-      {notice && !editing ? (
+      {notice ? (
         <div style={{ marginTop: 10, fontSize: 12, color: "#166534", fontWeight: 600 }}>
           {notice}
         </div>
       ) : null}
+
+      <div
+        style={{
+          marginTop: 14,
+          paddingTop: 14,
+          borderTop: "1px solid #bbf7d0",
+        }}
+      >
+        <Label>Restaurant Status</Label>
+        <p style={{ margin: "0 0 10px", fontSize: 12, color: "#3f6212", lineHeight: 1.45 }}>
+          Toggle banners shown at the top of your public profile. Happy Hour and Live Music use
+          schedules (restaurant local time). Changes go live immediately.
+        </p>
+        <div style={{ display: "grid", gap: 8 }}>
+          {RESTAURANT_STATUS_BANNERS.map((banner) => {
+            const on = activeBanners.includes(banner.id);
+            return (
+              <div key={banner.id}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    border: on ? "1px solid #86efac" : "1px solid #d1d5db",
+                    background: on ? "#fff" : "#f8fafc",
+                    cursor: bannerSaving ? "wait" : "pointer",
+                    fontSize: 13,
+                    color: "#0f172a",
+                    fontWeight: banner.prominence === "primary" ? 700 : 500,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    disabled={bannerSaving}
+                    onChange={() => handleBannerToggle(banner.id)}
+                  />
+                  <span aria-hidden="true">{banner.emoji}</span>
+                  <span>{banner.label}</span>
+                  {banner.prominence === "primary" ? (
+                    <span style={{ marginLeft: "auto", fontSize: 11, color: "#15803d", fontWeight: 800 }}>
+                      Featured
+                    </span>
+                  ) : null}
+                  {banner.scheduled ? (
+                    <span style={{ marginLeft: "auto", fontSize: 11, color: "#64748b", fontWeight: 700 }}>
+                      Scheduled
+                    </span>
+                  ) : null}
+                </label>
+                {on && banner.id === "happy_hour" ? (
+                  <StatusEventScheduleEditor
+                    restaurantId={rid}
+                    statusType="happy_hour"
+                    initialEvents={statusEvents.filter((e) => e.status_type === "happy_hour")}
+                    timezoneLabel={restaurantTimezone}
+                    timezoneValid={restaurantTimezoneValid}
+                    onSaved={async (result) => {
+                      setStatusEvents((prev) => [
+                        ...prev.filter((e) => e.status_type !== "happy_hour"),
+                        ...(result.events || []),
+                      ]);
+                      setActiveBanners(normalizeStatusBannerIds(result.status_banners));
+                      setNotice("Happy Hour schedules updated.");
+                      if (typeof onPublished === "function") await onPublished();
+                    }}
+                  />
+                ) : null}
+                {on && banner.id === "live_music" ? (
+                  <StatusEventScheduleEditor
+                    restaurantId={rid}
+                    statusType="live_music"
+                    initialEvents={statusEvents.filter((e) => e.status_type === "live_music")}
+                    timezoneLabel={restaurantTimezone}
+                    timezoneValid={restaurantTimezoneValid}
+                    onSaved={async (result) => {
+                      setStatusEvents((prev) => [
+                        ...prev.filter((e) => e.status_type !== "live_music"),
+                        ...(result.events || []),
+                      ]);
+                      setActiveBanners(normalizeStatusBannerIds(result.status_banners));
+                      setNotice("Live Music events updated.");
+                      if (typeof onPublished === "function") await onPublished();
+                    }}
+                  />
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {editing ? (
         <div style={{ marginTop: 14, display: "grid", gap: 12 }}>

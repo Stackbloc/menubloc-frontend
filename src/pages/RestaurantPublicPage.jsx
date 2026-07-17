@@ -36,6 +36,7 @@ import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import RestaurantBillboardStrip from "../components/RestaurantBillboardStrip.jsx";
 import PublicProfileOwnerChrome from "../components/restaurant/PublicProfileOwnerChrome.jsx";
+import RestaurantStatusBannerStrip from "../components/restaurant/RestaurantStatusBannerStrip.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
@@ -57,7 +58,9 @@ import { buildRestaurantShareData } from "../components/share/shareUtils.js";
 import { clusterTypeLabel } from "../lib/clusterUrl.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-const THEME_KEY = "grubbid_theme";
+
+/** Public restaurant profile is always light — consumer-facing restaurant face. */
+const PUBLIC_PROFILE_IS_DARK = false;
 
 function useIsMobile(breakpoint = 640) {
   const [isMobile, setIsMobile] = useState(
@@ -70,24 +73,6 @@ function useIsMobile(breakpoint = 640) {
     return () => mq.removeEventListener("change", handler);
   }, [breakpoint]);
   return isMobile;
-}
-
-/* ---- Theme persistence ---- */
-
-function readTheme() {
-  try {
-    return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
-  } catch {
-    return "dark";
-  }
-}
-
-function saveTheme(t) {
-  try {
-    localStorage.setItem(THEME_KEY, t);
-  } catch {
-    /* ignore */
-  }
 }
 
 /* ---- Helpers ---- */
@@ -307,7 +292,7 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
     restaurant_id: data?.id || null,
   };
 
-  const pageBg = isDark ? "#0b0b0f" : "transparent";
+  const pageBg = isDark ? "#0b0b0f" : "#ffffff";
   const pageColor = isDark ? "#e2e8f0" : "#0f172a";
   const muted = isDark ? "rgba(255,255,255,0.55)" : "#64748b";
   const cardBg = isDark ? "#111218" : "#ffffff";
@@ -620,6 +605,16 @@ function applyPublicRestaurantPayload(json) {
     verification_badge_tone: json?.verification_badge_tone ?? json?.status_light_tone ?? null,
     menu_status: json?.menu_status ?? null,
     display_cluster: json?.display_cluster ?? null,
+    status_banners: Array.isArray(json?.status_banners)
+      ? json.status_banners
+      : Array.isArray(json?.restaurant?.status_banners)
+        ? json.restaurant.status_banners
+        : [],
+    status_event_presentations: Array.isArray(json?.status_event_presentations)
+      ? json.status_event_presentations
+      : Array.isArray(json?.restaurant?.status_event_presentations)
+        ? json.restaurant.status_event_presentations
+        : [],
   };
 }
 
@@ -637,7 +632,6 @@ export default function RestaurantPublicPage() {
   // (/restaurants/:state/:city/:restaurantSlug); slugOrId on legacy 1-segment routes
   const trackedRestaurantViewRef = useRef(new Set());
 
-  const [theme, setTheme] = useState(readTheme);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [data, setData] = useState(null);
@@ -648,7 +642,7 @@ export default function RestaurantPublicPage() {
   const [followError, setFollowError] = useState("");
   const [followNotice, setFollowNotice] = useState("");
 
-  const isDark = theme === "dark";
+  const isDark = PUBLIC_PROFILE_IS_DARK;
   const isMobile = useIsMobile();
   const resolvedSlug = canonicalRestaurantSlug || slugOrId;
   const dataUrl = useMemo(
@@ -671,10 +665,6 @@ export default function RestaurantPublicPage() {
     }
     setData(applyPublicRestaurantPayload(json));
   }, [dataUrl]);
-
-  useEffect(() => {
-    saveTheme(theme);
-  }, [theme]);
 
   useEffect(() => {
     let alive = true;
@@ -866,7 +856,7 @@ export default function RestaurantPublicPage() {
   const showLandmarks = isPro && !!landmarks;
   const showDeals = dealItems.length > 0;
 
-  const pageBg = isDark ? "#0b0b0f" : "transparent";
+  const pageBg = isDark ? "#0b0b0f" : "#ffffff";
   const pageColor = isDark ? "#e2e8f0" : "#0f172a";
   const muted = isDark ? "rgba(255,255,255,0.45)" : "#64748b";
   const linkColor = isDark ? "#93c5fd" : "#1d4ed8";
@@ -938,12 +928,21 @@ export default function RestaurantPublicPage() {
             />
           ) : null}
 
+          {!loading && !err && data ? (
+            <div style={{ paddingTop: t.accentBarColor ? 10 : 0 }}>
+              <RestaurantStatusBannerStrip
+                statusBanners={data.status_banners}
+                statusEventPresentations={data.status_event_presentations}
+              />
+            </div>
+          ) : null}
+
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: 16,
-              paddingTop: t.accentBarColor ? 10 : 0,
+              paddingTop: t.accentBarColor && (loading || err || !data?.status_banners?.length) ? 10 : 0,
               marginBottom: 16,
             }}
           >
