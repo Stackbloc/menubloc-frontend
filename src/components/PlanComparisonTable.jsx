@@ -197,7 +197,10 @@ export default function PlanComparisonTable() {
       </div>
       <p
         style={{
-          margin: "14px 4px 0",
+          margin: "14px 0 0",
+          // Align with Feature column text: card border (1) + cell padding (16)
+          paddingLeft: 17,
+          paddingRight: 16,
           fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
           fontSize: 13,
           color: "#374151",
