@@ -2,6 +2,7 @@
  * Market aggregator page contracts:
  * - fetch via api.js (Railway production fallback — never same-origin HTML)
  * - clusters effect depends on slugOrId string, not a fresh parseCityStateSlug object
+ * - city intro overlay via marketIntroContent (slug-keyed; other cities unaffected)
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -25,5 +26,9 @@ assert.match(src, /\}, \[slugOrId\]\)/);
 assert.match(src, /color:\s*["']#111827["']/);
 assert.match(src, /background:\s*["']#ffffff["']/);
 assert.match(src, /Try again/);
+
+// City-specific intro overlay (Dothan and future markets).
+assert.match(src, /from ["']\.\.\/lib\/marketIntroContent\.js["']/);
+assert.match(src, /resolveMarketIntro/);
 
 console.log("marketAggregatorPageContract: ok");

@@ -459,7 +459,7 @@ export default function ConsumerProfile() {
 
         <Section title="Foods I Avoid">
           <p style={styles.sectionDesc}>
-            Tell Waiter what you usually do not want recommended. These are not hard filters — items are de-prioritized, not removed. Searching for a food you avoid will still show it.
+            Tell Waiter what you usually do not want recommended. These are not hard filters — items stay on the menu and show a soft “may contain” notice when relevant. Searching for a food you avoid will still show it.
           </p>
           <div style={styles.prefGrid}>
             {FOODS_TO_AVOID_OPTIONS.map(({ key, label }) => (

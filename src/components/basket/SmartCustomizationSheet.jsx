@@ -12,27 +12,11 @@
 
 import { useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
+import {
+  detectCustomizableItemType,
+  findAvoidedInIngredientList,
+} from "../../lib/foodsToAvoidMatch.js";
 import { formatMenuItemName } from "../../utils/formatMenuItemName.js";
-
-// ── Customizable item type detection ─────────────────────────────────────────
-
-const CUSTOMIZABLE_TYPES = new Set([
-  "BURGERS", "SANDWICHES", "TACOS", "PIZZA", "BOWLS", "SALADS",
-]);
-
-const TYPE_KEYWORDS = [
-  { pattern: /\bburger\b/i,                       type: "BURGERS" },
-  { pattern: /\bcheeseburger\b/i,                 type: "BURGERS" },
-  { pattern: /\bsandwich|sub\b|hoagie|grinder/i,  type: "SANDWICHES" },
-  { pattern: /\bwrap\b/i,                         type: "SANDWICHES" },
-  { pattern: /\btaco\b/i,                         type: "TACOS" },
-  { pattern: /\bburrito\b/i,                      type: "TACOS" },
-  { pattern: /\bquesadilla\b/i,                   type: "TACOS" },
-  { pattern: /\bpizza\b/i,                        type: "PIZZA" },
-  { pattern: /\bowl\b/i,                          type: "BOWLS" },
-  { pattern: /\bsalad\b/i,                        type: "SALADS" },
-  { pattern: /\bhot dog\b/i,                      type: "SANDWICHES" },
-];
 
 // Default ingredient sets per type — used when MKS data is unavailable.
 // Future: replace with real MKS ingredient data per item.
@@ -45,35 +29,8 @@ const DEFAULT_INGREDIENTS = {
   SALADS:      ["Greens", "Toppings", "Dressing"],
 };
 
-// Map avoid_key → ingredient display name(s) — used to match avoided items to defaults.
-const AVOID_KEY_TO_INGREDIENTS = {
-  onions:        ["Onion", "Onions", "Caramelized Onions", "Red Onion"],
-  tomatoes:      ["Tomato", "Tomatoes"],
-  pickles:       ["Pickles", "Pickle"],
-  cilantro:      ["Cilantro"],
-  mushrooms:     ["Mushrooms", "Mushroom"],
-  olives:        ["Olives", "Olive"],
-  anchovies:     ["Anchovies", "Anchovy"],
-  blue_cheese:   ["Blue Cheese"],
-  coconut:       ["Coconut"],
-  seafood:       ["Seafood", "Shrimp", "Crab", "Lobster", "Clams"],
-  organ_meats:   ["Liver", "Kidneys", "Organ Meats"],
-  spicy_foods:   ["Jalapeño", "Hot Sauce", "Sriracha", "Chili", "Peppers"],
-  fried_foods:   [],
-};
-
 export function detectItemType(item) {
-  const name = String(item?.name || item?.item_name || "").toLowerCase();
-  const section = String(item?.section_name || item?.section_header || item?.category || "").toLowerCase();
-  const mksCode = String(item?.mks_category || item?.mksCategory || "").toUpperCase();
-
-  if (CUSTOMIZABLE_TYPES.has(mksCode)) return mksCode;
-
-  for (const { pattern, type } of TYPE_KEYWORDS) {
-    if (pattern.test(name) || pattern.test(section)) return type;
-  }
-
-  return null;
+  return detectCustomizableItemType(item);
 }
 
 export function isCustomizableItem(item) {
@@ -84,20 +41,6 @@ function getIngredients(item) {
   const type = detectItemType(item);
   if (!type) return [];
   return DEFAULT_INGREDIENTS[type] || [];
-}
-
-function findAvoidedInIngredients(ingredients, foodsToAvoid) {
-  const avoidedSet = new Set(foodsToAvoid);
-  const hits = [];
-  for (const key of avoidedSet) {
-    const matchNames = AVOID_KEY_TO_INGREDIENTS[key] || [];
-    for (const ingredient of ingredients) {
-      if (matchNames.some((m) => ingredient.toLowerCase().includes(m.toLowerCase()))) {
-        hits.push({ key, ingredient });
-      }
-    }
-  }
-  return hits;
 }
 
 function formatMoney(cents) {
@@ -124,7 +67,7 @@ export default function SmartCustomizationSheet({
   const description = item.description || null;
   const priceCents = item.consumer_display_price ?? item.price_cents ?? 0;
   const ingredients = getIngredients(item);
-  const avoidsInItem = findAvoidedInIngredients(ingredients, foodsToAvoid);
+  const avoidsInItem = findAvoidedInIngredientList(ingredients, foodsToAvoid);
 
   function toggleRemove(ingredient) {
     setRemovedIngredients((prev) => {

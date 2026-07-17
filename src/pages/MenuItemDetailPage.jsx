@@ -7,7 +7,7 @@
  *
  * Decision page hierarchy:
  *   1. Hero / item identity
- *   2. Compact allergen line (hero — subtle strip, not full banner)
+ *   2. Preference ingredient advisory (Foods I Avoid — soft notice, NOT allergens)
  *   3. Verdict block  (NO confidence here)
  *   4. Full nutrition block  (NO confidence here — shows ALL macros)
  *   5. Insights row  (signals + InsightCardDeck, always shown when nutrition exists)
@@ -58,6 +58,7 @@ import { fetchCompareItems } from "../lib/api.js";
 import { isSimilarRowCompareEligible } from "../lib/comparePolicy.js";
 import { sortSimilarItemsByMatchStrength } from "../lib/searchCardSimilar.js";
 import CompareItemsModal from "../components/menu/CompareItemsModal.jsx";
+import PreferenceIngredientAdvisory from "../components/menu/PreferenceIngredientAdvisory.jsx";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
 import { formatMenuItemName } from "../utils/formatMenuItemName.js";
@@ -1537,6 +1538,17 @@ export default function MenuItemDetailPage() {
                 {itemDescription}
               </div>
             ) : null}
+
+            {/* Foods I Avoid preference advisory — not allergen filtering */}
+            <PreferenceIngredientAdvisory
+              item={{
+                name: displayItemName,
+                description: itemDescription,
+                section_name: item?.section_name || item?.category || null,
+                mks_category: item?.mks_category || item?.mksCategory || null,
+              }}
+              tone="dark"
+            />
 
             {showStickyVerdict ? (
               <VerdictBlock detailSystem={detailSystem} isMobile={isMobile} t={t} compact />

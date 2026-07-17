@@ -1,5 +1,6 @@
 import ShareButton from "../share/ShareButton.jsx";
 import LikeMenuItemButton from "../LikeMenuItemButton.jsx";
+import PreferenceIngredientAdvisory from "../menu/PreferenceIngredientAdvisory.jsx";
 import { getLocalizedField } from "../../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../../utils/getDisplayMenuItemName.js";
 import { resolveIndulgencePresentation } from "../../lib/indulgencePresentation.js";
@@ -661,6 +662,12 @@ export default function PublicMenuItemCard({
           } : null),
         }}>{desc}</div>
       ) : null}
+
+      <PreferenceIngredientAdvisory
+        item={it}
+        tone={editorialRefresh && (editorialColorScheme === "light" || editorialColorScheme === "qsr") ? "light" : "dark"}
+        style={{ marginTop: editorialRefresh ? 6 : 5, fontSize: 12 }}
+      />
 
       {density !== "takeout" && (showNutritionInline || showAllergenInline || showIndulgenceInline) ? (
         <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: editorialRefresh ? 10 : 8, flexWrap: "wrap" }}>

@@ -5,6 +5,7 @@ import { parseCityStateSlug } from "../lib/cityStateSlug";
 import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../lib/canonicalUrl.js";
 import { fetchClustersDirectory } from "../lib/clusterApi.js";
 import { clusterPath } from "../lib/clusterUrl.js";
+import { resolveMarketIntro } from "../lib/marketIntroContent.js";
 
 const CANONICAL_BASE = "https://menuply.com";
 
@@ -144,15 +145,43 @@ export default function MarketAggregatorPage() {
   }
 
   const { market, restaurants } = state;
+  const marketIntro = resolveMarketIntro(slugOrId);
 
   return (
     <div style={PAGE}>
       <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.25rem", color: "#111827" }}>
         Restaurants in {market.city}, {market.state}
       </h1>
-      <p style={{ color: "#4b5563", marginBottom: "1.5rem" }}>
+      <p style={{ color: "#4b5563", marginBottom: marketIntro ? "0.75rem" : "1.5rem" }}>
         {market.restaurant_count} restaurant{market.restaurant_count !== 1 ? "s" : ""}
       </p>
+
+      {marketIntro ? (
+        <section
+          aria-label={`About restaurants in ${market.city}, ${market.state}`}
+          style={{ marginBottom: "1.5rem" }}
+        >
+          {marketIntro.paragraphs.map((runs, index) => (
+            <p
+              key={`market-intro-${index}`}
+              style={{
+                margin: index === 0 ? 0 : "0.75rem 0 0",
+                color: "#374151",
+                lineHeight: 1.55,
+                fontSize: "0.98rem",
+              }}
+            >
+              {runs.map((run, runIndex) =>
+                run.bold ? (
+                  <strong key={`run-${runIndex}`}>{run.text}</strong>
+                ) : (
+                  <React.Fragment key={`run-${runIndex}`}>{run.text}</React.Fragment>
+                ),
+              )}
+            </p>
+          ))}
+        </section>
+      ) : null}
 
       {clusters.length > 0 ? (
         <section style={{ marginBottom: "1.5rem" }}>
