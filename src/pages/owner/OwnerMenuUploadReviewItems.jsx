@@ -277,6 +277,11 @@ function SourceTextToggle({ text }) {
   );
 }
 
+function liveMenuHref(restaurantId) {
+  if (!restaurantId) return null;
+  return `/restaurants/${restaurantId}/menu`;
+}
+
 export default function OwnerMenuUploadReviewItems() {
   const { uploadId } = useParams();
   const [items, setItems] = useState([]);
@@ -290,6 +295,7 @@ export default function OwnerMenuUploadReviewItems() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
+  const [publicRestaurantId, setPublicRestaurantId] = useState(null);
   /** Rows that failed validation for missing section (show required styling). */
   const [sectionErrors, setSectionErrors] = useState(() => new Set());
 
@@ -306,6 +312,10 @@ export default function OwnerMenuUploadReviewItems() {
         const data = reviewData.value;
         setItems(data.items || []);
         setCounts(data.counts || { open: 0, edited: 0, approved: 0, rejected: 0 });
+        const fromReview = Number(data.public_restaurant_id);
+        if (Number.isFinite(fromReview) && fromReview > 0) {
+          setPublicRestaurantId(fromReview);
+        }
         const initEdits = {};
         for (const it of data.items || []) {
           initEdits[it.id] = {
@@ -323,6 +333,10 @@ export default function OwnerMenuUploadReviewItems() {
         const detail = uploadDetail.value;
         const detailPages = detail.pages || detail.upload?.pages || [];
         if (detailPages.length > 0) setPages(detailPages);
+        const fromUpload = Number(detail.upload?.restaurant_id || detail.public_restaurant_id);
+        if (Number.isFinite(fromUpload) && fromUpload > 0) {
+          setPublicRestaurantId((prev) => prev || fromUpload);
+        }
       }
     } catch {
       setError("Failed to load review items.");
@@ -394,7 +408,7 @@ export default function OwnerMenuUploadReviewItems() {
           section,
         };
       }));
-      setStatusMsg(`"${edit.name || item.parsed_name || item.proposed_item_name}" approved.`);
+      setStatusMsg(`"${edit.name || item.parsed_name || item.proposed_item_name}" approved — now live on the menu.`);
     } catch (e) {
       setError(`Approve failed: ${e?.message || "Server error"}`);
     } finally {
@@ -480,7 +494,7 @@ export default function OwnerMenuUploadReviewItems() {
         }
         setCounts(lastCounts);
         setSelected(new Set());
-        setStatusMsg(`Approved ${approved} item${approved === 1 ? "" : "s"}.`);
+        setStatusMsg(`Approved ${approved} item${approved === 1 ? "" : "s"} — now live on the menu.`);
         return;
       }
 
@@ -515,6 +529,8 @@ export default function OwnerMenuUploadReviewItems() {
 
   const needsReview = counts.open + counts.edited;
   const allDone = !loading && needsReview === 0 && items.length > 0;
+  const menuHref = liveMenuHref(publicRestaurantId);
+  const showLiveMenu = Boolean(menuHref) && counts.approved > 0;
 
   if (loading) {
     return (
@@ -526,14 +542,50 @@ export default function OwnerMenuUploadReviewItems() {
 
   return (
     <OwnerLayout title="OCR Review Queue">
-      <div style={{ marginBottom: 20 }}>
+      <div style={{ marginBottom: 20, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
         <Link
           to={`/owner/menu-manager/uploads/${uploadId}`}
           style={{ color: OWNER_COLORS.accent, fontSize: 13, textDecoration: "none" }}
         >
           ← Back to Upload Detail
         </Link>
+        {showLiveMenu && (
+          <a
+            href={menuHref}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              padding: "8px 14px",
+              borderRadius: 9,
+              background: "#16a34a",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 12,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            View live menu →
+          </a>
+        )}
       </div>
+
+      {counts.approved > 0 && !allDone && (
+        <div style={{ marginBottom: 14, padding: "10px 14px", borderRadius: 10, background: "#eff6ff", color: "#1d4ed8", fontSize: 12, fontWeight: 600 }}>
+          {counts.approved} approved item{counts.approved !== 1 ? "s" : ""} already appear on the live menu
+          {showLiveMenu ? (
+            <>
+              {" — "}
+              <a href={menuHref} target="_blank" rel="noreferrer" style={{ color: "#1d4ed8", fontWeight: 800 }}>
+                View live menu →
+              </a>
+            </>
+          ) : (
+            "."
+          )}
+          {" "}No separate Publish step is required for these approvals.
+        </div>
+      )}
 
       {error && (
         <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "#fef2f2", color: "#991b1b", fontSize: 13, fontWeight: 600 }}>
@@ -543,6 +595,14 @@ export default function OwnerMenuUploadReviewItems() {
       {statusMsg && !error && (
         <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 10, background: "#f0fdf4", color: "#15803d", fontSize: 13, fontWeight: 600 }}>
           {statusMsg}
+          {showLiveMenu && (
+            <>
+              {" "}
+              <a href={menuHref} target="_blank" rel="noreferrer" style={{ color: "#15803d", fontWeight: 800 }}>
+                View live menu →
+              </a>
+            </>
+          )}
         </div>
       )}
 
@@ -554,16 +614,36 @@ export default function OwnerMenuUploadReviewItems() {
           </div>
           <div style={{ fontSize: 13, marginBottom: 12 }}>
             {counts.approved > 0
-              ? `${counts.approved} item${counts.approved !== 1 ? "s" : ""} approved and published to the menu.`
+              ? `${counts.approved} item${counts.approved !== 1 ? "s" : ""} approved and now live on the public menu. No separate Publish step is required.`
               : "No items were approved."}
             {counts.rejected > 0 && ` ${counts.rejected} rejected.`}
           </div>
-          <Link
-            to={`/owner/menu-manager/uploads/${uploadId}`}
-            style={{ fontSize: 13, color: "#15803d", fontWeight: 700, textDecoration: "underline", marginRight: 16 }}
-          >
-            ← Back to Upload
-          </Link>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center" }}>
+            {showLiveMenu && (
+              <a
+                href={menuHref}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: 9,
+                  background: "#16a34a",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  textDecoration: "none",
+                }}
+              >
+                View live menu →
+              </a>
+            )}
+            <Link
+              to={`/owner/menu-manager/uploads/${uploadId}`}
+              style={{ fontSize: 13, color: "#15803d", fontWeight: 700, textDecoration: "underline" }}
+            >
+              ← Back to Upload
+            </Link>
+          </div>
         </div>
       )}
 

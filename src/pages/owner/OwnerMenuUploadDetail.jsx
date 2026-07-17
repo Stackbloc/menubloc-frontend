@@ -310,7 +310,10 @@ function ParsedItemsSection({ uploadId, upload }) {
   const totalShown = items.length;
 
   const isPublished = publishResult?.ok || meta.already_published > 0;
-  const publicRestaurantId = publishResult?.public_restaurant_id || meta.public_restaurant_id;
+  const publicRestaurantId =
+    publishResult?.public_restaurant_id || meta.public_restaurant_id || upload?.restaurant_id || null;
+  // Approved/promoted CK items already power the live public menu; Preview must not wait on public.menu_items copy.
+  const canPreviewLiveMenu = Boolean(publicRestaurantId) && (promotedItems.length > 0 || isPublished);
 
   return (
     <PageCard style={{ padding: 22, marginBottom: 18 }}>
@@ -320,12 +323,16 @@ function ParsedItemsSection({ uploadId, upload }) {
           subtitle={
             loading
               ? "Loading…"
-              : `${promotedItems.length} promoted · ${heldItems.length} held for review`
+              : `${promotedItems.length} promoted · ${heldItems.length} held for review${
+                  promotedItems.length > 0
+                    ? " — approved items are live on the public menu"
+                    : ""
+                }`
           }
         />
         {!loading && (
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
-            {isPublished && publicRestaurantId && (
+            {canPreviewLiveMenu && (
               <a
                 href={`/restaurants/${publicRestaurantId}/menu`}
                 target="_blank"
@@ -342,13 +349,14 @@ function ParsedItemsSection({ uploadId, upload }) {
                   whiteSpace: "nowrap",
                 }}
               >
-                Preview Menu →
+                View live menu →
               </a>
             )}
             {!isPublished && promotedItems.length > 0 && (
               <button
                 onClick={handlePublish}
                 disabled={publishing}
+                title="Optional: copies items into public.menu_items. Approve already makes dishes visible on the live menu."
                 style={{
                   padding: "8px 18px",
                   borderRadius: 9,
@@ -361,7 +369,7 @@ function ParsedItemsSection({ uploadId, upload }) {
                   whiteSpace: "nowrap",
                 }}
               >
-                {publishing ? "Publishing…" : "Publish to Menu"}
+                {publishing ? "Syncing…" : "Sync catalog copy"}
               </button>
             )}
           </div>
@@ -1114,13 +1122,15 @@ function StatusActions({ upload, displayStatus, uploadId, doAction, onRetryCompl
   if (displayStatus === "published") {
     if (upload.restaurant_id) {
       actions.push(
-        <Link
+        <a
           key="view-menu"
-          to={`/public/restaurants/${upload.restaurant_id}/menu`}
+          href={`/restaurants/${upload.restaurant_id}/menu`}
+          target="_blank"
+          rel="noreferrer"
           style={{ padding: "10px 18px", borderRadius: 10, border: `1px solid ${OWNER_COLORS.line}`, background: "#15803d", color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none" }}
         >
-          View Published Menu
-        </Link>
+          View live menu
+        </a>
       );
     }
     if (upload.status === "finished" && !upload.owner_review_flagged) {
