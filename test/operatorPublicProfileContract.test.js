@@ -67,7 +67,7 @@ function testPublicPageHasOwnerChrome() {
 function testClaimPendingAndOwnerSkipUnclaimedStub() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   assert.match(page, /status === "claimed" \|\| status === "claim_pending"/);
-  assert.match(page, /!isClaimedRestaurant\(localizedData\) && !isOwner/);
+  assert.match(page, /!isClaimedRestaurant\(data\) && !isOwner/);
 }
 
 function testProfileEditorHasSavePublishView() {
@@ -96,54 +96,63 @@ function testPublicProfileForcedLight() {
   assert.doesNotMatch(page, /THEME_KEY/);
   assert.doesNotMatch(page, /grubbid_theme/);
   assert.doesNotMatch(page, /localStorage\.getItem\(THEME_KEY\)/);
+  // Claimed + unclaimed both use solid white pageBg (two occurrences).
+  const whitePageBgMatches = page.match(/pageBg = isDark \? "#0b0b0f" : "#ffffff"/g) || [];
+  assert.equal(whitePageBgMatches.length, 2);
 }
 
-/** Profile header actions match menu: Like (thumb) then Share (via RestaurantProfileHero). */
+/** Profile header actions match menu: Like (thumb) then Share (claim + claimed). */
 function testPublicProfileMenuLikeShareRail() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
-  const hero = read("src/components/restaurant/RestaurantProfileHero.jsx");
-  assert.match(page, /RestaurantProfileHero/);
-  assert.match(hero, /FollowRestaurantButton/);
-  assert.match(hero, /MENU_ROW_ICON_SIZE/);
-  assert.match(hero, /MENU_ROW_HEADER_ICON_GAP/);
-  assert.match(hero, /source="restaurant_profile"/);
-  assert.match(hero, /variant="menu"/);
-  assert.doesNotMatch(hero, />\s*Follow\s*</);
-  assert.doesNotMatch(hero, /Following/);
+  const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
+  assert.match(page, /FollowRestaurantButton/);
+  assert.match(page, /MENU_ROW_ICON_SIZE/);
+  assert.match(page, /MENU_ROW_HEADER_ICON_GAP/);
+  assert.match(page, /source="restaurant_profile"/);
+  assert.match(page, /variant="menu"/);
+  assert.match(editorial, /FollowRestaurantButton/);
+  assert.match(editorial, /source="restaurant_profile"/);
+  assert.match(editorial, /variant="menu"/);
+  assert.doesNotMatch(page, />\s*Follow\s*</);
+  assert.doesNotMatch(page, /Following/);
 }
 
 /**
- * Consumer editorial profile: omit empty sections, demote claim CTA,
- * highlight/partial menu preview (no basket/Waiter), quiet status aside.
+ * Claimed restaurants use Option A editorial public profile.
+ * Claim Screen (FieldRow stub + Claim CTA) remains for unclaimed only.
  */
-function testClaimedProfileSharesFieldListSeoWithoutClaimCta() {
+function testClaimedProfileUsesEditorialPresentation() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
+  const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
   const preview = read("src/components/restaurant/RestaurantProfileMenuPreview.jsx");
-  assert.match(page, /RestaurantProfileHero/);
-  assert.match(page, /RestaurantProfileMenuPreview/);
-  assert.match(page, /Featured dish/);
-  assert.match(page, /About/);
-  assert.match(page, /Nearby/);
-  assert.match(page, /RestaurantStatusBannerStrip/);
+  assert.match(page, /RestaurantPublicEditorial/);
+  assert.match(page, /fetchRestaurantMenuPreview/);
+  assert.match(page, /function ProfileFieldList/);
+  assert.match(page, /Restaurant Name/);
+  assert.match(page, /City \/ Region \/ Postal Code/);
+  assert.match(page, /Story \/ About/);
+  assert.match(page, /Featured Dish/);
+  assert.match(page, /Landmarks \/ Nearby/);
+  assert.match(page, /Brand Presentation/);
   assert.match(page, /status_banners/);
   assert.match(page, /status_event_presentations/);
-  assert.match(page, /variant="aside"/);
-  assert.match(page, /fetchRestaurantMenuPreview/);
-  assert.doesNotMatch(page, /menu_items:\s/);
-  assert.doesNotMatch(page, /Your information appears here with a free Verified subscription/);
-  assert.doesNotMatch(page, /Your information appears here with Pro subscription/);
-  assert.doesNotMatch(page, /function ProfileFieldList/);
-  assert.doesNotMatch(page, /import\s+.*CatalogMenuRenderer/);
-  assert.doesNotMatch(preview, /import\s+.*CatalogMenuRenderer/);
-  assert.doesNotMatch(preview, /import\s+.*[Ww]aiter/);
-  assert.doesNotMatch(preview, /onClick=\{.*[Oo]rder|addToCart\(/);
+  assert.match(editorial, /RestaurantStatusBannerStrip/);
+  assert.match(editorial, /About/);
+  assert.match(editorial, /Featured dish/);
+  assert.match(editorial, /Announcements/);
+  assert.match(editorial, /background:\s*"#1c1917"/);
+  assert.doesNotMatch(editorial, /#1d4ed8/);
   assert.match(preview, /Menu highlights/);
-  assert.match(preview, /partial look at the menu/);
-  // Claim CTA only on unclaimed path (id=claim-profile).
+  assert.match(preview, /from "react-router-dom"/);
+  assert.doesNotMatch(preview, /import .*Basket|import .*Waiter|import .*CatalogMenu/);
+  assert.doesNotMatch(preview, /#1d4ed8/);
+  // Claim CTA only on unclaimed stub (id=claim-profile), not claimed path.
   assert.match(page, /id="claim-profile"/);
   assert.match(page, /Claim This Profile/);
-  assert.match(page, /Own this restaurant/);
-  assert.match(page, /!isClaimedRestaurant\(localizedData\) && !isOwner/);
+  assert.match(page, /!isClaimedRestaurant\(data\) && !isOwner/);
+  // Claim screen still uses subscription placeholders for empty FieldRows.
+  assert.match(page, /verifiedEmpty=\{verifiedMessage\}/);
+  assert.match(page, /proEmpty=\{proMessage\}/);
   // Canonical 3-segment route params preserved for SEO URLs.
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
@@ -158,6 +167,6 @@ testClaimPendingAndOwnerSkipUnclaimedStub();
 testProfileEditorHasSavePublishView();
 testPublicProfileForcedLight();
 testPublicProfileMenuLikeShareRail();
-testClaimedProfileSharesFieldListSeoWithoutClaimCta();
+testClaimedProfileUsesEditorialPresentation();
 
 console.log("operatorPublicProfileContract: ok");

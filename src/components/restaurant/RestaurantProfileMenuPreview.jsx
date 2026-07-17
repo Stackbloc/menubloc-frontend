@@ -1,37 +1,23 @@
 /**
- * Highlight / partial menu for the public restaurant profile.
- *
- * Read-only quick reference only:
- * - No basket / add-to-order
- * - No Waiter
- * - Does not mount CatalogMenuRenderer
- * - Does not fetch the full enriched menu endpoint
- *
- * Data source: GET /public/restaurants/:id/menu-preview
+ * Option A — menu highlights panel.
+ * Read-only partial menu for the public restaurant profile.
  */
 import { Link } from "react-router-dom";
 
 const MAX_ITEMS = 8;
 
-/**
- * Normalize preview API items (or a pre-shaped list) for display.
- * @param {object[]} items
- * @param {number} [limit=8]
- */
-function selectMenuPreviewItems(items, limit = MAX_ITEMS) {
+function selectItems(items, limit = MAX_ITEMS) {
   const rows = Array.isArray(items) ? items : [];
   const out = [];
   for (const item of rows) {
-    const name = String(item?.name || item?.item_name || "").trim();
+    const name = String(item?.name || "").trim();
     if (!name) continue;
-    const price = String(
-      item?.display_price || item?.price || ""
-    ).trim();
+    const price = String(item?.display_price || item?.price || "").trim();
     out.push({
       id: item?.id ?? item?.menu_item_id ?? `${name}-${out.length}`,
       name,
       price: price && price !== "0" && price !== "0.00" ? price : "",
-      section: String(item?.section || item?.section_name || "").trim(),
+      section: String(item?.section || "").trim(),
     });
     if (out.length >= limit) break;
   }
@@ -42,11 +28,10 @@ export default function RestaurantProfileMenuPreview({
   items = [],
   menuHref,
   search = "",
-  viewMenuLabel = "View Full Menu",
+  viewMenuLabel = "View full menu",
   isMobile = false,
-  heading = "Menu highlights",
 }) {
-  const previewItems = selectMenuPreviewItems(items, MAX_ITEMS);
+  const previewItems = selectItems(items);
   if (!previewItems.length || !menuHref) return null;
 
   const sections = [];
@@ -64,51 +49,34 @@ export default function RestaurantProfileMenuPreview({
     <aside
       aria-label="Menu highlights"
       style={{
-        borderRadius: 18,
-        border: "1px solid #e4e9f0",
-        background: "#ffffff",
-        boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
-        padding: isMobile ? 16 : 18,
-        alignSelf: "start",
-        width: "100%",
+        borderTop: isMobile ? "1px solid #e7e5e4" : "none",
+        borderLeft: isMobile ? "none" : "1px solid #e7e5e4",
+        padding: isMobile ? "20px 0 0" : "0 0 0 28px",
         minWidth: 0,
+        width: "100%",
       }}
     >
       <div
         style={{
           fontSize: 11,
-          fontWeight: 800,
-          letterSpacing: 0.9,
+          fontWeight: 700,
+          letterSpacing: 0.8,
           textTransform: "uppercase",
-          color: "#64748b",
-          marginBottom: 4,
+          color: "#78716c",
+          marginBottom: 6,
         }}
       >
-        {heading}
+        Menu highlights
       </div>
-      <p
-        style={{
-          margin: "0 0 12px",
-          fontSize: 12,
-          lineHeight: 1.45,
-          color: "#64748b",
-        }}
-      >
-        A partial look at the menu — open the full menu to browse everything.
+      <p style={{ margin: "0 0 14px", fontSize: 13, lineHeight: 1.45, color: "#78716c" }}>
+        A partial look at the menu.
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {sections.map((section) => (
           <div key={section || "__none"}>
             {section ? (
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#334155",
-                  marginBottom: 8,
-                }}
-              >
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#44403c", marginBottom: 6 }}>
                 {section}
               </div>
             ) : null}
@@ -118,36 +86,27 @@ export default function RestaurantProfileMenuPreview({
                   key={String(item.id)}
                   style={{
                     display: "flex",
-                    alignItems: "baseline",
                     justifyContent: "space-between",
                     gap: 12,
-                    padding: "7px 0",
-                    borderBottom: "1px solid #f1f5f9",
+                    padding: "8px 0",
+                    borderBottom: "1px solid #f5f5f4",
+                    alignItems: "baseline",
                   }}
                 >
                   <span
                     style={{
                       fontSize: 14,
                       fontWeight: 600,
-                      color: "#0f172a",
+                      color: "#1c1917",
                       lineHeight: 1.35,
-                      minWidth: 0,
                       wordBreak: "break-word",
+                      minWidth: 0,
                     }}
                   >
                     {item.name}
                   </span>
                   {item.price ? (
-                    <span
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "#475569",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {item.price}
-                    </span>
+                    <span style={{ fontSize: 13, color: "#57534e", flexShrink: 0 }}>{item.price}</span>
                   ) : null}
                 </li>
               ))}
@@ -162,16 +121,16 @@ export default function RestaurantProfileMenuPreview({
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          width: "100%",
-          marginTop: 16,
+          marginTop: 18,
           minHeight: 42,
           padding: "0 16px",
-          borderRadius: 10,
+          width: isMobile ? "100%" : "auto",
+          borderRadius: 8,
           textDecoration: "none",
           fontSize: 14,
-          fontWeight: 800,
-          background: "#1d4ed8",
-          color: "#ffffff",
+          fontWeight: 700,
+          background: "#1c1917",
+          color: "#fafaf9",
         }}
       >
         {viewMenuLabel}

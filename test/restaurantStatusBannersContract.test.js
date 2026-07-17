@@ -41,9 +41,10 @@ assert.match(panel, /RESTAURANT_STATUS_BANNERS/);
 assert.match(panel, /StatusEventScheduleEditor/);
 
 const page = read("src/pages/RestaurantPublicPage.jsx");
-assert.match(page, /RestaurantStatusBannerStrip/);
+const editorial = read("src/components/restaurant/RestaurantPublicEditorial.jsx");
 assert.match(page, /status_banners/);
 assert.match(page, /PUBLIC_PROFILE_IS_DARK/);
+assert.match(editorial, /RestaurantStatusBannerStrip/);
 assert.doesNotMatch(page, /function readTheme/);
 assert.doesNotMatch(page, /grubbid_theme/);
 
@@ -52,10 +53,10 @@ assert.match(editor, /RestaurantStatusSettingsPanel/);
 assert.match(editor, /Protected listing identity/);
 
 const strip = read("src/components/restaurant/RestaurantStatusBannerStrip.jsx");
-assert.match(strip, /variant/);
-assert.match(strip, /aside/);
+assert.match(strip, /Restaurant announcements/);
+assert.match(strip, /resolveStatusBanners/);
 assert.doesNotMatch(strip, /menuplyStatusBannerPulse/);
-assert.match(strip, /role="complementary"/);
+assert.doesNotMatch(strip, /#1d4ed8/);
 
 const api = read("src/lib/operatorApi.js");
 assert.match(api, /updateStatusBanners/);

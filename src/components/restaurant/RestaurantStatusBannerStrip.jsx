@@ -1,7 +1,6 @@
 /**
- * Public profile status announcements — quiet aside only.
- * Renders only active banner IDs and valid schedule presentations.
- * Not a hero element: no pulse, no permanent multicolor glow row.
+ * Quiet public announcements for Option A editorial profile.
+ * Only enabled / valid statuses. No pulse, no multicolor glow row.
  */
 import { resolveStatusBanners } from "../../lib/restaurantStatusBanners.js";
 
@@ -11,7 +10,7 @@ function normalizeHttpUrl(url) {
   return /^https?:\/\//i.test(s) ? s : "";
 }
 
-function ScheduledAsideCard({ presentation }) {
+function ScheduledNote({ presentation }) {
   const externalUrl = normalizeHttpUrl(presentation?.external_url);
   return (
     <div
@@ -22,17 +21,15 @@ function ScheduledAsideCard({ presentation }) {
         minWidth: 160,
         maxWidth: "100%",
         padding: "8px 10px",
-        borderRadius: 10,
-        border: "1px solid #e2e8f0",
-        background: "#f8fafc",
-        color: "#334155",
+        borderRadius: 8,
+        border: "1px solid #e5e7eb",
+        background: "#fafaf9",
+        color: "#1c1917",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 12, fontWeight: 700 }}>{presentation.headline}</span>
-      </div>
+      <div style={{ fontSize: 12, fontWeight: 700 }}>{presentation.headline}</div>
       {(presentation.sublines || []).slice(0, 3).map((line) => (
-        <div key={line} style={{ fontSize: 12, fontWeight: 500, lineHeight: 1.35, color: "#475569" }}>
+        <div key={line} style={{ fontSize: 12, lineHeight: 1.4, color: "#57534e" }}>
           {line}
         </div>
       ))}
@@ -41,13 +38,7 @@ function ScheduledAsideCard({ presentation }) {
           href={externalUrl}
           target="_blank"
           rel="noreferrer"
-          style={{
-            marginTop: 4,
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#1d4ed8",
-            textDecoration: "none",
-          }}
+          style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: "#166534", textDecoration: "none" }}
         >
           Details ↗
         </a>
@@ -56,12 +47,6 @@ function ScheduledAsideCard({ presentation }) {
   );
 }
 
-/**
- * @param {string[]} [statusBanners]
- * @param {object[]} [statusEventPresentations]
- * @param {string} [hiringExternalUrl] — only shown for Now Hiring when a real http(s) URL exists
- * @param {"aside"|"hero"} [variant="aside"]
- */
 export default function RestaurantStatusBannerStrip({
   statusBanners,
   statusEventPresentations = [],
@@ -73,22 +58,15 @@ export default function RestaurantStatusBannerStrip({
     ? statusEventPresentations
     : [];
   const hiringUrl = normalizeHttpUrl(hiringExternalUrl);
+  void variant;
 
   if (!simple.length && !presentations.length) return null;
-
-  // Product placement is aside; hero variant kept for contract/API compatibility only.
-  void variant;
 
   return (
     <div
       role="complementary"
       aria-label="Restaurant announcements"
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 6,
-        alignItems: "stretch",
-      }}
+      style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "stretch" }}
     >
       {simple.map((banner) => {
         const isHiring = banner.id === "now_hiring";
@@ -101,9 +79,9 @@ export default function RestaurantStatusBannerStrip({
               gap: 6,
               padding: "5px 10px",
               borderRadius: 999,
-              border: "1px solid #d1d5db",
-              background: "#f8fafc",
-              color: "#475569",
+              border: "1px solid #e5e7eb",
+              background: "#fafaf9",
+              color: "#44403c",
               fontSize: 12,
               fontWeight: 600,
               lineHeight: 1.2,
@@ -118,12 +96,7 @@ export default function RestaurantStatusBannerStrip({
                 href={hiringUrl}
                 target="_blank"
                 rel="noreferrer"
-                style={{
-                  marginLeft: 2,
-                  color: "#1d4ed8",
-                  fontWeight: 700,
-                  textDecoration: "none",
-                }}
+                style={{ marginLeft: 2, color: "#166534", fontWeight: 700, textDecoration: "none" }}
               >
                 Apply ↗
               </a>
@@ -132,7 +105,7 @@ export default function RestaurantStatusBannerStrip({
         );
       })}
       {presentations.map((p) => (
-        <ScheduledAsideCard
+        <ScheduledNote
           key={`${p.status_type}-${p.headline}-${(p.sublines || []).join("|")}`}
           presentation={p}
         />

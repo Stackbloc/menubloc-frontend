@@ -123,8 +123,7 @@ export async function getRestaurantMenu(restaurantId) {
 
 /**
  * Highlight / partial menu for public restaurant profiles.
- * Read-only preview — no basket, Waiter, or full-menu enrichment.
- * GET /public/restaurants/:id/menu-preview?limit=8
+ * Read-only — no basket, Waiter, or full-menu enrichment.
  */
 export async function fetchRestaurantMenuPreview(restaurantId, options = {}) {
   const id = encodeURIComponent(String(restaurantId || "").trim());

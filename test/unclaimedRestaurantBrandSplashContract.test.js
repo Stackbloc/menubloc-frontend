@@ -26,6 +26,6 @@ const page = read("src/pages/RestaurantPublicPage.jsx");
 assert.match(page, /UnclaimedRestaurantBrandSplash/);
 assert.match(page, /UNCLAIMED_BRAND_SPLASH_MS/);
 assert.match(page, /showBrandSplash/);
-assert.match(page, /!isClaimedRestaurant\(localizedData\) && !isOwner/);
+assert.match(page, /!isClaimedRestaurant\(data\) && !isOwner/);
 
 console.log("unclaimedRestaurantBrandSplashContract: ok");
