@@ -67,7 +67,7 @@ function testPublicPageHasOwnerChrome() {
 function testClaimPendingAndOwnerSkipUnclaimedStub() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
   assert.match(page, /status === "claimed" \|\| status === "claim_pending"/);
-  assert.match(page, /!isClaimedRestaurant\(data\) && !isOwner/);
+  assert.match(page, /!isClaimedRestaurant\(localizedData\) && !isOwner/);
 }
 
 function testProfileEditorHasSavePublishView() {
@@ -96,46 +96,54 @@ function testPublicProfileForcedLight() {
   assert.doesNotMatch(page, /THEME_KEY/);
   assert.doesNotMatch(page, /grubbid_theme/);
   assert.doesNotMatch(page, /localStorage\.getItem\(THEME_KEY\)/);
-  // Claimed + unclaimed both use solid white pageBg (two occurrences).
-  const whitePageBgMatches = page.match(/pageBg = isDark \? "#0b0b0f" : "#ffffff"/g) || [];
-  assert.equal(whitePageBgMatches.length, 2);
 }
 
-/** Profile header actions match menu: Like (thumb) then Share. */
+/** Profile header actions match menu: Like (thumb) then Share (via RestaurantProfileHero). */
 function testPublicProfileMenuLikeShareRail() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
-  assert.match(page, /FollowRestaurantButton/);
-  assert.match(page, /MENU_ROW_ICON_SIZE/);
-  assert.match(page, /MENU_ROW_HEADER_ICON_GAP/);
-  assert.match(page, /source="restaurant_profile"/);
-  assert.match(page, /variant="menu"/);
-  assert.doesNotMatch(page, />\s*Follow\s*</);
-  assert.doesNotMatch(page, /Following/);
+  const hero = read("src/components/restaurant/RestaurantProfileHero.jsx");
+  assert.match(page, /RestaurantProfileHero/);
+  assert.match(hero, /FollowRestaurantButton/);
+  assert.match(hero, /MENU_ROW_ICON_SIZE/);
+  assert.match(hero, /MENU_ROW_HEADER_ICON_GAP/);
+  assert.match(hero, /source="restaurant_profile"/);
+  assert.match(hero, /variant="menu"/);
+  assert.doesNotMatch(hero, />\s*Follow\s*</);
+  assert.doesNotMatch(hero, /Following/);
 }
 
 /**
- * Claimed profile keeps claim-screen FieldRow SEO body (same labels/URL surface)
- * without the Claim This Profile CTA. Status banners remain mounted.
+ * Consumer editorial profile: omit empty sections, demote claim CTA,
+ * highlight/partial menu preview (no basket/Waiter), quiet status aside.
  */
 function testClaimedProfileSharesFieldListSeoWithoutClaimCta() {
   const page = read("src/pages/RestaurantPublicPage.jsx");
-  assert.match(page, /function ProfileFieldList/);
-  assert.match(page, /Restaurant Name/);
-  assert.match(page, /City \/ Region \/ Postal Code/);
-  assert.match(page, /Story \/ About/);
-  assert.match(page, /Featured Dish/);
-  assert.match(page, /Landmarks \/ Nearby/);
-  assert.match(page, /Brand Presentation/);
+  const preview = read("src/components/restaurant/RestaurantProfileMenuPreview.jsx");
+  assert.match(page, /RestaurantProfileHero/);
+  assert.match(page, /RestaurantProfileMenuPreview/);
+  assert.match(page, /Featured dish/);
+  assert.match(page, /About/);
+  assert.match(page, /Nearby/);
   assert.match(page, /RestaurantStatusBannerStrip/);
   assert.match(page, /status_banners/);
   assert.match(page, /status_event_presentations/);
-  // Claim CTA only on unclaimed stub (id=claim-profile), not claimed path copy.
+  assert.match(page, /variant="aside"/);
+  assert.match(page, /fetchRestaurantMenuPreview/);
+  assert.doesNotMatch(page, /menu_items:\s/);
+  assert.doesNotMatch(page, /Your information appears here with a free Verified subscription/);
+  assert.doesNotMatch(page, /Your information appears here with Pro subscription/);
+  assert.doesNotMatch(page, /function ProfileFieldList/);
+  assert.doesNotMatch(page, /import\s+.*CatalogMenuRenderer/);
+  assert.doesNotMatch(preview, /import\s+.*CatalogMenuRenderer/);
+  assert.doesNotMatch(preview, /import\s+.*[Ww]aiter/);
+  assert.doesNotMatch(preview, /onClick=\{.*[Oo]rder|addToCart\(/);
+  assert.match(preview, /Menu highlights/);
+  assert.match(preview, /partial look at the menu/);
+  // Claim CTA only on unclaimed path (id=claim-profile).
   assert.match(page, /id="claim-profile"/);
   assert.match(page, /Claim This Profile/);
-  assert.match(page, /!isClaimedRestaurant\(data\) && !isOwner/);
-  // Claimed empty fields use em dash, not subscription upsell placeholders.
-  assert.match(page, /verifiedEmpty="—"/);
-  assert.match(page, /proEmpty="—"/);
+  assert.match(page, /Own this restaurant/);
+  assert.match(page, /!isClaimedRestaurant\(localizedData\) && !isOwner/);
   // Canonical 3-segment route params preserved for SEO URLs.
   assert.match(page, /canonicalRestaurantSlug/);
   assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);

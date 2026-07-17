@@ -121,6 +121,22 @@ export async function getRestaurantMenu(restaurantId) {
   return apiGet(`/public/restaurants/${encodeURIComponent(String(restaurantId))}/menu`);
 }
 
+/**
+ * Highlight / partial menu for public restaurant profiles.
+ * Read-only preview — no basket, Waiter, or full-menu enrichment.
+ * GET /public/restaurants/:id/menu-preview?limit=8
+ */
+export async function fetchRestaurantMenuPreview(restaurantId, options = {}) {
+  const id = encodeURIComponent(String(restaurantId || "").trim());
+  if (!id) throw new Error("restaurantId required");
+  const limit = Number(options.limit);
+  const qs =
+    Number.isFinite(limit) && limit > 0
+      ? `?limit=${Math.min(Math.trunc(limit), 10)}`
+      : "?limit=8";
+  return apiGet(`/public/restaurants/${id}/menu-preview${qs}`, options);
+}
+
 export async function getBrowseMenus(params = {}, options = {}) {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -280,6 +296,7 @@ export default {
   apiPatch,
   searchPublicMenu,
   getRestaurantMenu,
+  fetchRestaurantMenuPreview,
   getBrowseMenus,
   getBrowseItems,
   previewOrder,

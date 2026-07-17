@@ -52,8 +52,10 @@ assert.match(editor, /RestaurantStatusSettingsPanel/);
 assert.match(editor, /Protected listing identity/);
 
 const strip = read("src/components/restaurant/RestaurantStatusBannerStrip.jsx");
-assert.match(strip, /menuplyStatusBannerPulse/);
-assert.match(strip, /prominence === "primary"/);
+assert.match(strip, /variant/);
+assert.match(strip, /aside/);
+assert.doesNotMatch(strip, /menuplyStatusBannerPulse/);
+assert.match(strip, /role="complementary"/);
 
 const api = read("src/lib/operatorApi.js");
 assert.match(api, /updateStatusBanners/);

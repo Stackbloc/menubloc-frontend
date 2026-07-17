@@ -1,12 +1,12 @@
 {
   "app": "menuply-frontend",
-  "gitSha": "722a323b678e20d32f8057958c5578b3141baa0f",
-  "gitShortSha": "722a323",
+  "gitSha": "309eed1193947c1a59e2737903955b8253368e76",
+  "gitShortSha": "309eed1",
   "branch": "feature/mds-homepage-controls",
-  "buildTime": "2026-07-16T19:28:14.755Z",
+  "buildTime": "2026-07-17T18:42:39.666Z",
   "buildSource": "local-cli",
   "deploymentId": null,
   "vercelUrl": null,
   "nodeEnv": "production",
-  "commitMessage": "fix(owner): remove country tables from Geo Intelligence"
+  "commitMessage": "Add Foods I Avoid preference advisory and Dothan market intro."
 }
