@@ -41,17 +41,23 @@ None.
 
 # Commits
 
-Not committed in this session (unless requested separately).
+- Frontend `8430e89` — `fix(profile): claimed public profile uses claim-screen FieldRows` on `feature/mds-homepage-controls`
 
 # Deployment Status
 
-Local frontend only — not deployed.
+- Pushed: `origin/feature/mds-homepage-controls`
+- Vercel prod: `https://menubloc-frontend-5isgj1rn7-menuply.vercel.app`
+- Alias: `npx vercel alias set menubloc-frontend-5isgj1rn7-menuply.vercel.app menuply.com`
+- Bundle: `index-9Jdspg8r.js` on menuply.com
+- API in bundle: `menubloc-backend-production` 60 / `localhost:3001` 6
+- Smoke: `/restaurants/california/los-angeles/test2` 200; `/signup` 200
 
 # Verification Results
 
 - `node test/operatorPublicProfileContract.test.js` — ok
 - `node test/restaurantStatusBannersContract.test.js` — ok
 - `node test/restaurantStatusEventsContract.test.js` — ok
+- Production alias hash matches vite build output `index-9Jdspg8r.js`
 
 # Remaining Risks
 
