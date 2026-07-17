@@ -1,16 +1,12 @@
 /**
  * Owner-only edit chrome for the public restaurant profile page.
  * Save = draft update + publish, then parent reloads public data.
- * Status banners update live via PUT /profile/status-banners.
+ * Status banners update live via RestaurantStatusSettingsPanel.
  */
 import { useEffect, useState } from "react";
 import * as operatorApi from "../../lib/operatorApi.js";
 import { API_BASE } from "../../lib/operatorApi.js";
-import {
-  RESTAURANT_STATUS_BANNERS,
-  normalizeStatusBannerIds,
-} from "../../lib/restaurantStatusBanners.js";
-import StatusEventScheduleEditor from "./StatusEventScheduleEditor.jsx";
+import RestaurantStatusSettingsPanel from "./RestaurantStatusSettingsPanel.jsx";
 
 const INPUT = {
   width: "100%",
@@ -23,6 +19,13 @@ const INPUT = {
   background: "#fff",
   fontFamily: "inherit",
   boxSizing: "border-box",
+};
+
+const INPUT_LOCKED = {
+  ...INPUT,
+  background: "#f4f3ef",
+  color: "#5b6675",
+  cursor: "not-allowed",
 };
 
 const TEXTAREA = { ...INPUT, resize: "vertical", minHeight: 90 };
@@ -49,18 +52,11 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
   const rid = restaurant?.id;
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [bannerSaving, setBannerSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [benefits, setBenefits] = useState({});
   const [cuisineOptions, setCuisineOptions] = useState([]);
   const [categoryOptions, setCategoryOptions] = useState([]);
-  const [activeBanners, setActiveBanners] = useState(() =>
-    normalizeStatusBannerIds(restaurant?.status_banners)
-  );
-  const [statusEvents, setStatusEvents] = useState([]);
-  const [restaurantTimezone, setRestaurantTimezone] = useState(null);
-  const [restaurantTimezoneValid, setRestaurantTimezoneValid] = useState(false);
   const [form, setForm] = useState({
     restaurant_name: "",
     cuisine: "",
@@ -74,10 +70,6 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
   const hasBenefit = (key) => benefits[key]?.is_enabled === true;
 
   useEffect(() => {
-    setActiveBanners(normalizeStatusBannerIds(restaurant?.status_banners));
-  }, [restaurant?.id, restaurant?.status_banners]);
-
-  useEffect(() => {
     if (!rid) return;
     let alive = true;
     operatorApi
@@ -85,10 +77,6 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
       .then((profileData) => {
         if (!alive) return;
         setBenefits(profileData.benefits || {});
-        setActiveBanners(normalizeStatusBannerIds(profileData.profile?.status_banners));
-        setStatusEvents(Array.isArray(profileData.status_events) ? profileData.status_events : []);
-        setRestaurantTimezone(profileData.restaurant_timezone || null);
-        setRestaurantTimezoneValid(profileData.restaurant_timezone_valid === true);
       })
       .catch(() => {});
     return () => {
@@ -119,12 +107,8 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
       const profileData = await operatorApi.getProfile(rid);
       const p = profileData.profile || {};
       setBenefits(profileData.benefits || {});
-      setActiveBanners(normalizeStatusBannerIds(p.status_banners));
-      setStatusEvents(Array.isArray(profileData.status_events) ? profileData.status_events : []);
-      setRestaurantTimezone(profileData.restaurant_timezone || null);
-      setRestaurantTimezoneValid(profileData.restaurant_timezone_valid === true);
       const next = {
-        restaurant_name: p.restaurant_name || restaurant?.restaurant_name || "",
+        restaurant_name: p.restaurant_name || restaurant?.restaurant_name || restaurant?.name || "",
         cuisine: p.cuisine || restaurant?.cuisine || "",
         category:
           p.category === "restaurant"
@@ -148,39 +132,14 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
     setNotice("");
   }
 
-  async function handleBannerToggle(bannerId) {
-    if (!rid || bannerSaving) return;
-    const next = activeBanners.includes(bannerId)
-      ? activeBanners.filter((id) => id !== bannerId)
-      : normalizeStatusBannerIds([...activeBanners, bannerId]);
-    const prev = activeBanners;
-    setActiveBanners(next);
-    setBannerSaving(true);
-    setError("");
-    setNotice("");
-    try {
-      const result = await operatorApi.updateStatusBanners(rid, next);
-      setActiveBanners(normalizeStatusBannerIds(result.status_banners));
-      setNotice("Status banners updated.");
-      if (typeof onPublished === "function") {
-        await onPublished();
-      }
-    } catch (e) {
-      setActiveBanners(prev);
-      setError(e.message || "Could not update status banners.");
-    } finally {
-      setBannerSaving(false);
-    }
-  }
-
   async function handleSave() {
     if (!rid) return;
     setSaving(true);
     setError("");
     setNotice("");
     try {
+      // restaurant_name is identity-locked — never sent from owner chrome.
       const payload = {
-        restaurant_name: form.restaurant_name,
         cuisine: form.cuisine,
         category: form.category,
         phone: form.phone,
@@ -191,26 +150,25 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
       await operatorApi.updateProfile(rid, payload);
 
       if (hasBenefit("logo_upload") && form.logo_url !== baselineLogo) {
-        await fetch(`${API_BASE}/operator/restaurants/${rid}/profile/logo`, {
+        const res = await fetch(`${API_BASE}/operator/restaurants/${rid}/profile/logo`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ logo_url: form.logo_url }),
-        }).then(async (r) => {
-          const j = await r.json().catch(() => ({}));
-          if (!r.ok) throw new Error(j.error || "Logo update failed");
-          return j;
         });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || json?.ok === false) {
+          throw new Error(json?.error || "Could not update logo.");
+        }
+        setBaselineLogo(form.logo_url);
       }
 
       await operatorApi.publishProfile(rid);
       setEditing(false);
-      setNotice("Profile saved — changes are live.");
-      if (typeof onPublished === "function") {
-        await onPublished();
-      }
+      setNotice("Profile published.");
+      if (typeof onPublished === "function") await onPublished();
     } catch (e) {
-      setError(e.message || "Save failed.");
+      setError(e.message || "Could not save profile.");
     } finally {
       setSaving(false);
     }
@@ -221,45 +179,34 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
   return (
     <div
       style={{
-        maxWidth: 680,
-        margin: "0 auto 16px",
-        borderRadius: 14,
-        border: "1px solid #bbf7d0",
-        background: "#f0fdf4",
-        padding: "12px 14px",
+        marginBottom: 16,
+        padding: "14px 16px",
+        borderRadius: 12,
+        border: "1px solid #86efac",
+        background: "linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%)",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#166534" }}>
-          You own this listing — review or edit your public profile.
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "#166534" }}>Owner tools</div>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: "flex", gap: 8 }}>
           {!editing ? (
             <button
               type="button"
               onClick={startEdit}
               style={{
-                height: 36,
-                padding: "0 14px",
-                borderRadius: 9,
-                border: "none",
                 background: "#1F4E3D",
                 color: "#fff",
-                fontWeight: 700,
+                border: "none",
+                borderRadius: 9,
+                padding: "8px 14px",
                 fontSize: 13,
+                fontWeight: 700,
                 cursor: "pointer",
                 fontFamily: "inherit",
               }}
             >
-              Edit
+              Edit profile
             </button>
           ) : (
             <>
@@ -268,14 +215,13 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
                 onClick={cancelEdit}
                 disabled={saving}
                 style={{
-                  height: 36,
-                  padding: "0 14px",
-                  borderRadius: 9,
-                  border: "1px solid #cbd5e1",
-                  background: "#fff",
+                  background: "#f4f3ef",
                   color: "#0f1720",
-                  fontWeight: 600,
+                  border: "none",
+                  borderRadius: 9,
+                  padding: "8px 14px",
                   fontSize: 13,
+                  fontWeight: 600,
                   cursor: saving ? "not-allowed" : "pointer",
                   fontFamily: "inherit",
                 }}
@@ -287,14 +233,13 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
                 onClick={handleSave}
                 disabled={saving}
                 style={{
-                  height: 36,
-                  padding: "0 14px",
-                  borderRadius: 9,
-                  border: "none",
                   background: "#1F4E3D",
                   color: "#fff",
-                  fontWeight: 700,
+                  border: "none",
+                  borderRadius: 9,
+                  padding: "8px 14px",
                   fontSize: 13,
+                  fontWeight: 700,
                   cursor: saving ? "not-allowed" : "pointer",
                   opacity: saving ? 0.7 : 1,
                   fontFamily: "inherit",
@@ -325,167 +270,66 @@ export default function PublicProfileOwnerChrome({ restaurant, onPublished }) {
           borderTop: "1px solid #bbf7d0",
         }}
       >
-        <Label>Restaurant Status</Label>
-        <p style={{ margin: "0 0 10px", fontSize: 12, color: "#3f6212", lineHeight: 1.45 }}>
-          Toggle banners shown at the top of your public profile. Happy Hour and Live Music use
-          schedules (restaurant local time). Changes go live immediately.
-        </p>
-        <div style={{ display: "grid", gap: 8 }}>
-          {RESTAURANT_STATUS_BANNERS.map((banner) => {
-            const on = activeBanners.includes(banner.id);
-            return (
-              <div key={banner.id}>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "8px 10px",
-                    borderRadius: 10,
-                    border: on ? "1px solid #86efac" : "1px solid #d1d5db",
-                    background: on ? "#fff" : "#f8fafc",
-                    cursor: bannerSaving ? "wait" : "pointer",
-                    fontSize: 13,
-                    color: "#0f172a",
-                    fontWeight: banner.prominence === "primary" ? 700 : 500,
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    disabled={bannerSaving}
-                    onChange={() => handleBannerToggle(banner.id)}
-                  />
-                  <span aria-hidden="true">{banner.emoji}</span>
-                  <span>{banner.label}</span>
-                  {banner.prominence === "primary" ? (
-                    <span style={{ marginLeft: "auto", fontSize: 11, color: "#15803d", fontWeight: 800 }}>
-                      Featured
-                    </span>
-                  ) : null}
-                  {banner.scheduled ? (
-                    <span style={{ marginLeft: "auto", fontSize: 11, color: "#64748b", fontWeight: 700 }}>
-                      Scheduled
-                    </span>
-                  ) : null}
-                </label>
-                {on && banner.id === "happy_hour" ? (
-                  <StatusEventScheduleEditor
-                    restaurantId={rid}
-                    statusType="happy_hour"
-                    initialEvents={statusEvents.filter((e) => e.status_type === "happy_hour")}
-                    timezoneLabel={restaurantTimezone}
-                    timezoneValid={restaurantTimezoneValid}
-                    onSaved={async (result) => {
-                      setStatusEvents((prev) => [
-                        ...prev.filter((e) => e.status_type !== "happy_hour"),
-                        ...(result.events || []),
-                      ]);
-                      setActiveBanners(normalizeStatusBannerIds(result.status_banners));
-                      setNotice("Happy Hour schedules updated.");
-                      if (typeof onPublished === "function") await onPublished();
-                    }}
-                  />
-                ) : null}
-                {on && banner.id === "live_music" ? (
-                  <StatusEventScheduleEditor
-                    restaurantId={rid}
-                    statusType="live_music"
-                    initialEvents={statusEvents.filter((e) => e.status_type === "live_music")}
-                    timezoneLabel={restaurantTimezone}
-                    timezoneValid={restaurantTimezoneValid}
-                    onSaved={async (result) => {
-                      setStatusEvents((prev) => [
-                        ...prev.filter((e) => e.status_type !== "live_music"),
-                        ...(result.events || []),
-                      ]);
-                      setActiveBanners(normalizeStatusBannerIds(result.status_banners));
-                      setNotice("Live Music events updated.");
-                      if (typeof onPublished === "function") await onPublished();
-                    }}
-                  />
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
+        <RestaurantStatusSettingsPanel
+          restaurantId={rid}
+          initialBanners={restaurant?.status_banners}
+          compact
+          onChanged={async () => {
+            if (typeof onPublished === "function") await onPublished();
+          }}
+        />
       </div>
 
       {editing ? (
         <div style={{ marginTop: 14, display: "grid", gap: 12 }}>
           <div>
             <Label>Restaurant name</Label>
-            <input style={INPUT} value={form.restaurant_name} onChange={f("restaurant_name")} />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div>
-              <Label>Cuisine</Label>
-              <select
-                style={{ ...INPUT, cursor: "pointer", appearance: "auto" }}
-                value={form.cuisine || ""}
-                onChange={f("cuisine")}
-              >
-                <option value="">Select cuisine…</option>
-                {form.cuisine &&
-                  !cuisineOptions.some((o) => o.value === form.cuisine) && (
-                    <option value={form.cuisine}>{form.cuisine} (legacy)</option>
-                  )}
-                {cuisineOptions.map(({ value, label }) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label>Restaurant type</Label>
-              <select
-                style={{ ...INPUT, cursor: "pointer", appearance: "auto" }}
-                value={form.category || ""}
-                onChange={f("category")}
-              >
-                <option value="">Select type…</option>
-                {form.category &&
-                  !categoryOptions.some((o) => o.value === form.category) && (
-                    <option value={form.category}>{form.category} (legacy)</option>
-                  )}
-                {categoryOptions.map(({ value, label }) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+            <input
+              style={INPUT_LOCKED}
+              value={form.restaurant_name}
+              readOnly
+              aria-readonly="true"
+            />
+            <div style={{ marginTop: 5, fontSize: 11, color: "#8a9ab0" }}>
+              Protected listing identity — name cannot be changed here.
             </div>
           </div>
           <div>
+            <Label>Cuisine</Label>
+            <select style={{ ...INPUT, cursor: "pointer" }} value={form.cuisine} onChange={f("cuisine")}>
+              <option value="">Select cuisine…</option>
+              {cuisineOptions.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label>Category</Label>
+            <select style={{ ...INPUT, cursor: "pointer" }} value={form.category} onChange={f("category")}>
+              <option value="">Select type…</option>
+              {categoryOptions.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
             <Label>Phone</Label>
-            <input
-              style={INPUT}
-              value={form.phone}
-              onChange={f("phone")}
-              placeholder="(555) 555-5555"
-            />
+            <input style={INPUT} value={form.phone} onChange={f("phone")} />
           </div>
           {hasBenefit("about_us") ? (
             <div>
-              <Label>About</Label>
-              <textarea
-                style={TEXTAREA}
-                value={form.about_us}
-                onChange={f("about_us")}
-                placeholder="Tell guests about your restaurant."
-              />
+              <Label>About Us</Label>
+              <textarea style={TEXTAREA} value={form.about_us} onChange={f("about_us")} />
             </div>
           ) : null}
           {hasBenefit("logo_upload") ? (
             <div>
               <Label>Logo URL</Label>
-              <input
-                style={INPUT}
-                value={form.logo_url}
-                onChange={f("logo_url")}
-                placeholder="https://…"
-              />
+              <input style={INPUT} value={form.logo_url} onChange={f("logo_url")} />
             </div>
           ) : null}
         </div>

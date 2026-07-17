@@ -28,9 +28,14 @@ assert.deepEqual(
 assert.equal(resolveStatusBanners(["now_hiring"])[0].emoji, "🟢");
 
 const chrome = read("src/components/restaurant/PublicProfileOwnerChrome.jsx");
-assert.match(chrome, /Restaurant Status/);
-assert.match(chrome, /updateStatusBanners/);
-assert.match(chrome, /RESTAURANT_STATUS_BANNERS/);
+assert.match(chrome, /RestaurantStatusSettingsPanel/);
+assert.match(chrome, /Protected listing identity/);
+assert.doesNotMatch(chrome, /restaurant_name:\s*form\.restaurant_name/);
+
+const panel = read("src/components/restaurant/RestaurantStatusSettingsPanel.jsx");
+assert.match(panel, /Restaurant Status/);
+assert.match(panel, /updateStatusBanners/);
+assert.match(panel, /RESTAURANT_STATUS_BANNERS/);
 
 const page = read("src/pages/RestaurantPublicPage.jsx");
 assert.match(page, /RestaurantStatusBannerStrip/);
@@ -38,6 +43,10 @@ assert.match(page, /status_banners/);
 assert.match(page, /PUBLIC_PROFILE_IS_DARK/);
 assert.doesNotMatch(page, /function readTheme/);
 assert.doesNotMatch(page, /grubbid_theme/);
+
+const editor = read("src/pages/operator/OperatorProfileEditor.jsx");
+assert.match(editor, /RestaurantStatusSettingsPanel/);
+assert.match(editor, /Protected listing identity/);
 
 const strip = read("src/components/restaurant/RestaurantStatusBannerStrip.jsx");
 assert.match(strip, /menuplyStatusBannerPulse/);

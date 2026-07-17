@@ -76,6 +76,10 @@ function testProfileEditorHasSavePublishView() {
   assert.match(src, /website_url/);
   assert.match(src, /publicData\.restaurant \|\| publicData/);
   assert.match(src, /publicRestaurant\.name \|\| publicRestaurant\.restaurant_name/);
+  assert.match(src, /RestaurantStatusSettingsPanel/);
+  assert.match(src, /readOnly/);
+  assert.match(src, /Protected listing identity/);
+  assert.doesNotMatch(src, /restaurant_name:\s*form\.restaurant_name/);
 }
 
 /** Consumer public profile must always be light — never grubbid_theme dark default. */

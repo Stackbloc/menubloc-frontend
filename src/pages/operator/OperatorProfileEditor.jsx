@@ -25,6 +25,7 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { API_BASE } from "../../lib/operatorApi.js";
+import RestaurantStatusSettingsPanel from "../../components/restaurant/RestaurantStatusSettingsPanel.jsx";
 
 const INPUT = {
   width: "100%",
@@ -37,6 +38,13 @@ const INPUT = {
   background: "#fff",
   fontFamily: "inherit",
   boxSizing: "border-box",
+};
+
+const INPUT_LOCKED = {
+  ...INPUT,
+  background: "#f4f3ef",
+  color: "#5b6675",
+  cursor: "not-allowed",
 };
 
 const TEXTAREA = { ...INPUT, resize: "vertical", minHeight: 90 };
@@ -165,8 +173,8 @@ export default function OperatorProfileEditor() {
 
   async function saveProfileDraft() {
     try {
+      // restaurant_name is identity-locked — never include in draft/publish payload.
       const payload = {
-        restaurant_name: form.restaurant_name,
         cuisine:         form.cuisine,
         category:        form.category,
         phone:           form.phone,
@@ -323,7 +331,15 @@ export default function OperatorProfileEditor() {
           <div className="operator-responsive-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div style={{ gridColumn: "1 / -1" }}>
               <Label>Restaurant name</Label>
-              <input style={INPUT} value={form.restaurant_name} onChange={f("restaurant_name")} />
+              <input
+                style={INPUT_LOCKED}
+                value={form.restaurant_name || ""}
+                readOnly
+                aria-readonly="true"
+              />
+              <div style={{ marginTop: 5, fontSize: 11, color: "#b0bbc8" }}>
+                Protected listing identity — must match the Menuply / Common Knowledge restaurant name and cannot be edited here.
+              </div>
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <Label>Cuisine</Label>
@@ -379,6 +395,14 @@ export default function OperatorProfileEditor() {
               <textarea style={TEXTAREA} value={form.bio} onChange={f("bio")} placeholder="One or two sentences about your restaurant." />
             </div>
           </div>
+        </Section>
+
+        {/* ── Restaurant Status ───────────────────────────────────────── */}
+        <Section
+          title="Restaurant Status"
+          sub="Optional banners on your public profile (Now Hiring, Happy Hour, Live Music, and more). Changes go live immediately."
+        >
+          <RestaurantStatusSettingsPanel restaurantId={rid} />
         </Section>
 
         {/* ── About Us ────────────────────────────────────────────────── */}
