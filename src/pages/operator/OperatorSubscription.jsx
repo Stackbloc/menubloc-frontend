@@ -226,11 +226,11 @@ export default function OperatorSubscription() {
     }
     try {
       await api.cancelPlatformSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
-      setMessage("Published selected. Your menu and data are preserved.");
+      setMessage("Starter selected. Your menu and data are preserved.");
       await refreshSubscription();
       setTimeout(() => navigate("/operator/menulab"), 1500);
     } catch (err) {
-      setError(err.message || "Unable to switch to Published.");
+      setError(err.message || "Unable to switch to Starter.");
     }
   }
 
@@ -366,7 +366,7 @@ export default function OperatorSubscription() {
                 style={{ ...planCard("#f8faf9", "#d1e7dd", selectedPlanCode === FREE_PLAN_CODE), cursor: "pointer" }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Published</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Starter</span>
                   {hasPublishedAccess && <span style={currentBadge(GREEN)}>Current access</span>}
                 </div>
                 <div>
@@ -389,10 +389,10 @@ export default function OperatorSubscription() {
                   ))}
                 </ul>
                 <button type="button" style={hasPublishedAccess ? planBtn("primary", GREEN) : planBtn("muted", GREEN)} onClick={handleSelectPublished} disabled={isCheckingOut}>
-                  Select Published
+                  Select Starter
                 </button>
                 <p style={{ margin: 0, fontSize: 11, color: "#8a9ab0", textAlign: "center" }}>
-                  Published activates without Stripe checkout.
+                  Starter activates without Stripe checkout.
                 </p>
               </div>
 
@@ -484,7 +484,7 @@ export default function OperatorSubscription() {
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Starter</span>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Pro</span>
                     {currentTier === "starter"
                       ? <span style={currentBadge(GREEN)}>Current plan</span>
                       : <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", padding: "3px 8px", borderRadius: 999, background: "#d1fae5", color: "#065f46" }}>Most popular</span>}
@@ -557,7 +557,7 @@ export default function OperatorSubscription() {
                     </button>
                   ) : (
                     <div style={{ padding: "10px 12px", borderRadius: 10, background: "#f0f7f4", textAlign: "center", fontSize: 13, fontWeight: 700, color: GREEN }}>
-                      ✓ You're on Starter
+                      ✓ You're on Pro
                     </div>
                   )}
                 </div>

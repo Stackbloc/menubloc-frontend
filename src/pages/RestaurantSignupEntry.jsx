@@ -27,10 +27,10 @@ const SIGNUP_PLAN_OPTIONS = [
   {
     code: FREE_PLAN_CODE,
     family: "published",
-    name: "Published",
+    name: "Starter",
     price: CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE],
     description: "A simple published restaurant presence with public menu access on Menuply.",
-    cta: "Select Published",
+    cta: "Select Starter",
     tone: "default",
     features: [
       "100% Free Profile with Fully Searchable, Verified Menu",
@@ -44,19 +44,19 @@ const SIGNUP_PLAN_OPTIONS = [
   {
     code: "starter_annual",
     family: "starter",
-    name: "Starter",
+    name: "Pro",
     priceLines: [CHECKOUT_PRICE_LABELS.starter_monthly, `or ${CHECKOUT_PRICE_LABELS.starter_annual}`],
     price: `${CHECKOUT_PRICE_LABELS.starter_monthly} or ${CHECKOUT_PRICE_LABELS.starter_annual}`,
     description:
       "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, online ordering, and standard marketplace commission.",
-    cta: "Select Starter",
+    cta: "Select Pro",
     tone: "starter",
     intervals: [
       { key: "monthly", code: "starter_monthly", label: "Monthly", price: CHECKOUT_PRICE_LABELS.starter_monthly },
       { key: "annual", code: "starter_annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.starter_annual },
     ],
     features: [
-      "All Published benefits, plus logo and product photos",
+      "All Starter benefits, plus logo and product photos",
       "Unlimited menus and menu items",
       "QR Code and social sharing",
       "Online ordering",
@@ -79,7 +79,7 @@ const SIGNUP_PLAN_OPTIONS = [
       { key: "annual", code: "founders_annual", label: "Annual", price: CHECKOUT_PRICE_LABELS.founders_annual },
     ],
     features: [
-      "All Starter benefits, plus much more",
+      "All Pro benefits, plus much more",
       "Premium menu management tools",
       "Create deals and promotions free of charge",
       "Lowest marketplace commission",

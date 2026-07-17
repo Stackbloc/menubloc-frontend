@@ -21,9 +21,9 @@ function getPlanTier(planCode) {
 }
 
 function getPlanDisplayName(planCode) {
-  if (!planCode || planCode === "verified" || planCode === "published_free") return "Published";
-  if (planCode === "starter_monthly") return "Starter — Monthly";
-  if (planCode === "starter_annual") return "Starter — Annual";
+  if (!planCode || planCode === "verified" || planCode === "published_free") return "Starter";
+  if (planCode === "starter_monthly") return "Pro — Monthly";
+  if (planCode === "starter_annual") return "Pro — Annual";
   if (planCode === "pro_monthly") return "Pro Partner — Monthly";
   if (planCode === "pro_annual") return "Pro Partner — Annual";
   if (planCode === "founders_monthly") return "Founders — Monthly";
@@ -503,7 +503,7 @@ export default function OperatorMyAccount() {
                   borderRadius: 10, padding: "16px 18px",
                 }}>
                   <p style={{ margin: "0 0 14px", fontSize: 13, color: "#374151", lineHeight: 1.5 }}>
-                    Your plan will stay active until <strong>{renewalDate}</strong>, then switch to Verified (free). No charge after that.
+                    Your plan will stay active until <strong>{renewalDate}</strong>, then switch to Starter (free). No charge after that.
                   </p>
                   <div style={{ display: "flex", gap: 10 }}>
                     <button

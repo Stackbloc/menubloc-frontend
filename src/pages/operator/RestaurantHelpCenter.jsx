@@ -122,7 +122,7 @@ const OPERATIONS_SECTIONS = [
         title: "My Account",
         summary: "Subscription status and plan details for this restaurant location.",
         points: [
-          "Shows the active plan name (Verified, Pro Monthly, Pro Annual, or Founders), current status (Active, Trialing, Past Due), billing interval, next renewal date, and whether auto-renew is on.",
+          "Shows the active plan name (Starter, Pro Monthly, Pro Annual, or Founders), current status (Active, Trialing, Past Due), billing interval, next renewal date, and whether auto-renew is on.",
           "Use Change Plan to navigate to the full plan picker. Use Cancel Subscription to end the plan at the current billing period end — the Cancel button only appears for active paid subscriptions not already set to cancel.",
           "Subscription changes apply immediately on upgrade. Cancellations keep benefits active until the period end date shown.",
         ],
@@ -144,7 +144,7 @@ const OPERATIONS_SECTIONS = [
         summary: "Full plan comparison and upgrade flow — accessible to account owners.",
         points: [
           "Accessible from My Account → Change Plan, or from the Subscription item in the Business sidebar section (requires Owner PIN).",
-          "Shows the full feature comparison matrix across Verified (free), Pro Monthly, Pro Annual, and Founders plans.",
+          "Shows the full feature comparison matrix across Starter (free), Pro Monthly, Pro Annual, and Founders plans.",
           "Pro plans unlock advanced menu tools, unlimited menus, deal posting, billboard ads, and marketplace ordering. Founders plan is the best per-year value and has limited availability.",
           "The QR kit add-on callout appears above the feature table — order directly from the subscription screen.",
         ],
@@ -291,7 +291,7 @@ const OPERATIONS_SECTIONS = [
         points: [
           "Customers search by food type, cuisine, dish name, or dietary preference. Your restaurant appears in results when your menu items or profile match the query.",
           "Location matters: results are filtered by city and state, or by the customer's detected location. Accurate address data in your profile ensures you appear in the right market.",
-          "Verified and Pro restaurants receive a fully searchable listing. Pro plans add billboard display in search results for additional visibility.",
+          "Starter and Pro restaurants receive a fully searchable listing. Pro plans add billboard display in search results for additional visibility.",
           "Active deals and dietary tags (vegan, gluten-free, etc.) increase the chance of appearing in filtered searches.",
         ],
       },
@@ -301,7 +301,7 @@ const OPERATIONS_SECTIONS = [
         summary: "How the follower system works for customer retention.",
         points: [
           "Customers can follow your restaurant from your public profile page. Followers receive notifications when you post new deals.",
-          "The follow feature is available on Verified and Pro plans.",
+          "The follow feature is available on Starter and Pro plans.",
           "Follower count is visible on your public profile. Growing followers creates a direct channel to your repeat customers without requiring third-party marketing tools.",
           "Post deals proactively before peak periods to engage your follower base before they decide where to order.",
         ],

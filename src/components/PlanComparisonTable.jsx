@@ -29,14 +29,14 @@ const FEATURES = [
 const PLAN_COLUMNS = [
   {
     key: "published",
-    name: "Published",
+    name: "Starter",
     prices: ["Free"],
     nameColor: GREEN,
     highlight: false,
   },
   {
     key: "starter",
-    name: "Starter",
+    name: "Pro",
     prices: ["$20/month", "or $199/year"],
     nameColor: GREEN,
     highlight: false,

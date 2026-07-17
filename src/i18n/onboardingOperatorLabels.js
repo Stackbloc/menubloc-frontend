@@ -148,21 +148,21 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.comparePlans": "Compare plans",
     "signup.entry.alreadyAccount": "Already have a Menuply account?",
     "signup.entry.signIn": "Restaurant sign in",
-    "signup.entry.plan.published.name": "Published",
+    "signup.entry.plan.published.name": "Starter",
     "signup.entry.plan.published.price": "Free",
     "signup.entry.plan.published.description":
       "A simple published restaurant presence with public menu access on Menuply.",
-    "signup.entry.plan.published.cta": "Continue with Published",
-    "signup.entry.plan.verified.name": "Published",
+    "signup.entry.plan.published.cta": "Continue with Starter",
+    "signup.entry.plan.verified.name": "Starter",
     "signup.entry.plan.verified.price": "Free",
     "signup.entry.plan.verified.description":
       "A simple published restaurant presence with public menu access on Menuply.",
-    "signup.entry.plan.verified.cta": "Continue with Published",
-    "signup.entry.plan.pro.name": "Starter",
+    "signup.entry.plan.verified.cta": "Continue with Starter",
+    "signup.entry.plan.pro.name": "Pro",
     "signup.entry.plan.pro.price": "$20/month or $199/year",
     "signup.entry.plan.pro.description":
       "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, online ordering, and standard marketplace commission.",
-    "signup.entry.plan.pro.cta": "Continue with Starter",
+    "signup.entry.plan.pro.cta": "Continue with Pro",
     "signup.entry.plan.founder.name": "Founder's",
     "signup.entry.plan.founder.price": "$39/month or $319/year",
     "signup.entry.plan.founder.description":
@@ -197,7 +197,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.account.createAccountButton": "Create account",
     "signup.account.passwordsMatch": "Passwords match.",
     "signup.account.passwordsNoMatch": "Passwords do not match.",
-    "signup.account.plan.verified": "Verified",
+    "signup.account.plan.verified": "Starter",
     "signup.account.plan.pro_partner": "Pro Partner",
     "signup.account.plan.founders_annual": "Founder's",
     "signup.account.plan.pro_monthly": "Pro Partner",
@@ -234,7 +234,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "onboarding.faq.q1.a1":
       "Menuply charges a subscription fee because restaurants need more than just a listing. The platform provides restaurant profile pages, menu presentation, ordering tools, deal promotion, QR code support, customer discovery features, and self-service management tools.",
     "onboarding.faq.q1.a2":
-      "At the same time, Menuply was intentionally designed to remain affordable and accessible for independent restaurants and local businesses. Restaurants that want to establish a presence on the platform at no cost can choose the Verified plan, which is 100% free and includes a public restaurant profile, a single menu with unlimited menu items, and QR code support.",
+      "At the same time, Menuply was intentionally designed to remain affordable and accessible for independent restaurants and local businesses. Restaurants that want to establish a presence on the platform at no cost can choose the Starter plan, which is 100% free and includes a public restaurant profile, a single menu with unlimited menu items, and QR code support.",
     "onboarding.faq.q1.a3":
       "Many restaurants already pay more for website hosting alone. Menuply is designed to give restaurants a practical online commerce presence at a lower overall cost than relying only on traditional delivery marketplaces or expensive custom website solutions.",
     "onboarding.faq.q1.a4":
@@ -447,18 +447,18 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.comparePlans": "Comparar planes",
     "signup.entry.alreadyAccount": "¿Ya tienes cuenta en Menuply?",
     "signup.entry.signIn": "Inicio de sesión para restaurantes",
-    "signup.entry.plan.verified.name": "Verified",
+    "signup.entry.plan.verified.name": "Starter",
     "signup.entry.plan.verified.price": "Gratis",
-    "signup.entry.plan.published.name": "Published",
+    "signup.entry.plan.published.name": "Starter",
     "signup.entry.plan.published.price": "Gratis",
     "signup.entry.plan.verified.description":
       "Presencia verificada sencilla con menú público en Menuply.",
-    "signup.entry.plan.verified.cta": "Continuar con Verified",
-    "signup.entry.plan.pro.name": "Pro Partner",
+    "signup.entry.plan.verified.cta": "Continuar con Starter",
+    "signup.entry.plan.pro.name": "Pro",
     "signup.entry.plan.pro.price": "$49/mes o $399/año",
     "signup.entry.plan.pro.description":
       "Para restaurantes que quieren mejores precios, pedidos directos y más engagement.",
-    "signup.entry.plan.pro.cta": "Continuar con Pro Partner",
+    "signup.entry.plan.pro.cta": "Continuar con Pro",
     "signup.entry.plan.founder.name": "Founder's",
     "signup.entry.plan.founder.price": "$299/año",
     "signup.entry.plan.founder.description":
@@ -493,7 +493,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.account.createAccountButton": "Crear cuenta",
     "signup.account.passwordsMatch": "Las contraseñas coinciden.",
     "signup.account.passwordsNoMatch": "Las contraseñas no coinciden.",
-    "signup.account.plan.verified": "Verified",
+    "signup.account.plan.verified": "Starter",
     "signup.account.plan.pro_partner": "Pro Partner",
     "signup.account.plan.founders_annual": "Founder's",
     "signup.account.plan.pro_monthly": "Pro Partner",
@@ -530,7 +530,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "onboarding.faq.q1.a1":
       "Menuply cobra una suscripción porque los restaurantes necesitan más que un simple listado: perfiles, presentación de menú, pedidos, ofertas, códigos QR, descubrimiento y herramientas de autoservicio.",
     "onboarding.faq.q1.a2":
-      "Al mismo tiempo, Menuply se diseñó para seguir siendo asequible. El plan Verified es 100 % gratuito e incluye perfil público, un menú con artículos ilimitados y soporte QR.",
+      "Al mismo tiempo, Menuply se diseñó para seguir siendo asequible. El plan Starter es 100 % gratuito e incluye perfil público, un menú con artículos ilimitados y soporte QR.",
     "onboarding.faq.q1.a3":
       "Muchos restaurantes ya pagan más solo por alojar un sitio web. Menuply ofrece presencia comercial en línea a un coste total menor que depender solo de marketplaces tradicionales o sitios a medida caros.",
     "onboarding.faq.q1.a4":
@@ -737,16 +737,16 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.entry.comparePlans": "比较方案",
     "signup.entry.alreadyAccount": "已有 Menuply 账户？",
     "signup.entry.signIn": "餐厅登录",
-    "signup.entry.plan.verified.name": "Verified",
+    "signup.entry.plan.verified.name": "Starter",
     "signup.entry.plan.verified.price": "免费",
-    "signup.entry.plan.published.name": "Published",
+    "signup.entry.plan.published.name": "Starter",
     "signup.entry.plan.published.price": "免费",
     "signup.entry.plan.verified.description": "简单的认证餐厅展示与公开菜单。",
-    "signup.entry.plan.verified.cta": "继续使用 Verified",
-    "signup.entry.plan.pro.name": "Pro Partner",
+    "signup.entry.plan.verified.cta": "继续使用 Starter",
+    "signup.entry.plan.pro.name": "Pro",
     "signup.entry.plan.pro.price": "$49/月 或 $399/年",
     "signup.entry.plan.pro.description": "适合需要更强定价、直订工具和更深互动的餐厅。",
-    "signup.entry.plan.pro.cta": "继续使用 Pro Partner",
+    "signup.entry.plan.pro.cta": "继续使用 Pro",
     "signup.entry.plan.founder.name": "Founder's",
     "signup.entry.plan.founder.price": "$299/年",
     "signup.entry.plan.founder.description":
@@ -778,7 +778,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "signup.account.createAccountButton": "创建账户",
     "signup.account.passwordsMatch": "两次密码一致。",
     "signup.account.passwordsNoMatch": "两次密码不一致。",
-    "signup.account.plan.verified": "Verified",
+    "signup.account.plan.verified": "Starter",
     "signup.account.plan.pro_partner": "Pro Partner",
     "signup.account.plan.founders_annual": "Founder's",
     "signup.account.plan.pro_monthly": "Pro Partner",
@@ -814,7 +814,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "onboarding.faq.q1.a1":
       "Menuply 收取订阅费是因为餐厅需要的不仅是展示位：还包括资料页、菜单呈现、点餐工具、优惠推广、二维码、发现功能和自助管理工具。",
     "onboarding.faq.q1.a2":
-      "同时，Menuply 有意保持对独立餐厅和小型企业可负担。Verified 方案完全免费，包含公开资料、一个菜单（菜品不限）和二维码支持。",
+      "同时，Menuply 有意保持对独立餐厅和小型企业可负担。Starter 方案完全免费，包含公开资料、一个菜单（菜品不限）和二维码支持。",
     "onboarding.faq.q1.a3":
       "许多餐厅仅网站托管的费用就更高。Menuply 旨在以低于仅依赖传统外卖平台或昂贵定制网站的总成本，提供实用的在线经营能力。",
     "onboarding.faq.q1.a4":

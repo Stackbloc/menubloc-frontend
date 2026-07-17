@@ -5,7 +5,7 @@
  * Date:    2026-05-06
  * Purpose:
  *   Onboarding step 2 — choose a restaurant plan after account
- *   creation. Verified stays free, Pro Partner uses Stripe
+ *   creation. Starter stays free, Pro uses Stripe
  *   checkout, and the Founders plan uses annual Stripe checkout.
  * ============================================================
  */
@@ -35,13 +35,13 @@ const API = (
 ).replace(/\/$/, "");
 
 const PLAN_LABELS = {
-  [FREE_PLAN_CODE]: "Published",
-  verified: "Published",
-  published_free: "Published",
+  [FREE_PLAN_CODE]: "Starter",
+  verified: "Starter",
+  published_free: "Starter",
   founders_monthly: "Founder's",
   founders_annual: "Founder's",
-  starter_monthly: "Starter",
-  starter_annual: "Starter",
+  starter_monthly: "Pro",
+  starter_annual: "Pro",
   // Legacy display labels for in-progress historical onboarding only.
   pro_partner: "Pro Partner",
   pro_monthly: "Pro Partner",
@@ -73,7 +73,7 @@ const OPTIONAL_ONBOARDING_MODULES = [
 
 const PLAN_CARDS = {
   [FREE_PLAN_CODE]: {
-    title: "Published",
+    title: "Starter",
     price: CHECKOUT_PRICE_LABELS[FREE_PLAN_CODE],
     description: "A simple published restaurant presence with public menu access on Menuply.",
     features: [
@@ -85,12 +85,12 @@ const PLAN_CARDS = {
     ],
   },
   starter_annual: {
-    title: "Starter",
+    title: "Pro",
     price: `${CHECKOUT_PRICE_LABELS.starter_monthly} or ${CHECKOUT_PRICE_LABELS.starter_annual}`,
     description:
       "Professional Menuply tools for growing restaurants — profiles, menus, QR Code, online ordering, and standard marketplace commission.",
     features: [
-      "All Published benefits, plus logo and product photos",
+      "All Starter benefits, plus logo and product photos",
       "Unlimited menus and menu items",
       "QR Code and social sharing",
       "Online ordering",
@@ -104,7 +104,7 @@ const PLAN_CARDS = {
     description:
       "Founders are early adopters who want to take back their restaurant's independence. Lock in early-bird Founder's pricing while availability remains open.",
     features: [
-      "All Starter benefits, plus much more",
+      "All Pro benefits, plus much more",
       "Premium menu management tools",
       "Create deals and promotions free of charge",
       "Lowest marketplace commission",
@@ -851,8 +851,8 @@ export default function SubscriptionSelect() {
 
         <section style={s.cardsGrid}>
           <article style={s.planCard(false)}>
-            <div style={s.planEyebrow}>Published</div>
-            <div style={s.planName}>Published</div>
+            <div style={s.planEyebrow}>Starter</div>
+            <div style={s.planName}>Starter</div>
             <div style={s.planDesc}>
               {publishedCard.description}
             </div>
@@ -868,13 +868,13 @@ export default function SubscriptionSelect() {
             </ul>
 
             <button type="button" style={s.button(false, false)} onClick={choosePublished}>
-              {isPublishedSelected ? "Continue with Published" : "Choose Published"}
+              {isPublishedSelected ? "Continue with Starter" : "Choose Starter"}
             </button>
           </article>
 
           <article style={s.planCardStarter}>
-            <div style={s.planEyebrow}>Starter</div>
-            <div style={s.planName}>Starter</div>
+            <div style={s.planEyebrow}>Pro</div>
+            <div style={s.planName}>Pro</div>
             <div style={s.planDesc}>{starterCard.description}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
               {[
@@ -925,8 +925,8 @@ export default function SubscriptionSelect() {
               {isSubmittingPlan
                 ? "Preparing checkout..."
                 : isStarterSelected
-                  ? "Continue with Starter"
-                  : "Choose Starter"}
+                  ? "Continue with Pro"
+                  : "Choose Pro"}
             </button>
           </article>
 

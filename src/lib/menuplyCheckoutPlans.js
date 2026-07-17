@@ -41,13 +41,13 @@ export const CHECKOUT_PRICE_LABELS = Object.freeze({
 export const FALLBACK_CHECKOUT_PLANS = Object.freeze([
   {
     code: "starter_monthly",
-    checkout_label: "Starter Monthly",
+    checkout_label: "Pro Monthly",
     amount_cents: 2000,
     billing_interval: "month",
   },
   {
     code: "starter_annual",
-    checkout_label: "Starter Annual",
+    checkout_label: "Pro Annual",
     amount_cents: 19900,
     billing_interval: "year",
   },
