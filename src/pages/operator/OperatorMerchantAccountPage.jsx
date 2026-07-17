@@ -1,5 +1,5 @@
 /**
- * Operator Merchant Account — Stripe Connect onboarding and Express dashboard access.
+ * Operator Merchant Account — Stripe Connect onboarding and Stripe Dashboard access.
  * Route: /operator/merchant
  * Stripe is the source of truth; status is always re-fetched from the backend.
  */
@@ -352,7 +352,7 @@ export default function OperatorMerchantAccountPage() {
 
                 {state === "connected" && needsResolve === false && Number(status?.currently_due_count || 0) === 0 ? (
                   <p style={secondaryNoteStyle}>
-                    Opens the Stripe Express dashboard in a new session. Menuply never stores your
+                    Opens Stripe account management for this restaurant. Menuply never stores your
                     bank account details.
                   </p>
                 ) : null}
