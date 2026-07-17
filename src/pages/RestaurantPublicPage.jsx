@@ -92,9 +92,33 @@ function buildGoogleMapsDirectionsUrl(destination) {
 function normalizeTier(profileTier, listingStatus) {
   for (const v of [profileTier, listingStatus]) {
     const s = String(v || "").toLowerCase();
-    if (s.includes("pro")) return "pro";
+    if (s.includes("pro") || s.includes("founder")) return "pro";
     if (s.includes("verified")) return "verified";
   }
+  return "";
+}
+
+/** Resolve public profile visual tier from explicit tier or paid plan signals. */
+function resolvePublicProfileTier(data) {
+  const explicit = normalizeTier(data?.profile_tier, data?.listing_status);
+  if (explicit) return explicit;
+  if (data?.is_pro === true || data?.menu_presentation?.is_pro === true) return "pro";
+  const plan = String(
+    data?.menu_presentation?.plan_slug ||
+      data?.plan_slug ||
+      data?.subscription_plan ||
+      data?.subscription_plan_code ||
+      ""
+  ).toLowerCase();
+  if (
+    plan.includes("founder") ||
+    plan === "pro" ||
+    plan === "enterprise" ||
+    plan.startsWith("founders_")
+  ) {
+    return "pro";
+  }
+  if (plan.includes("verified") || plan.includes("starter")) return "verified";
   return "";
 }
 
@@ -599,6 +623,11 @@ function applyPublicRestaurantPayload(json) {
     claim_status: json?.claim_status ?? json?.restaurant?.claim_status ?? null,
     subscription_plan:
       json?.subscription_plan ?? json?.restaurant?.subscription_plan ?? null,
+    plan_slug: json?.plan_slug ?? json?.menu_presentation?.plan_slug ?? null,
+    is_pro: json?.is_pro === true || json?.menu_presentation?.is_pro === true,
+    is_paid_subscriber:
+      json?.is_paid_subscriber === true ||
+      json?.menu_presentation?.is_paid_subscriber === true,
     order_acceptance_status:
       json?.order_acceptance_status ?? json?.restaurant?.order_acceptance_status ?? null,
     menu_last_verified_at:
@@ -794,7 +823,7 @@ export default function RestaurantPublicPage() {
     }
   }
 
-  const tier = normalizeTier(data?.profile_tier, data?.listing_status);
+  const tier = resolvePublicProfileTier(data);
   const t = getTierTheme(tier, isDark);
   const isPro = tier === "pro";
   const isVerified = tier === "verified";
