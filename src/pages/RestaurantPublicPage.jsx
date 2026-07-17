@@ -103,7 +103,9 @@ function normalizeClaimStatus(v) {
 }
 
 function isClaimedRestaurant(data) {
-  return normalizeClaimStatus(data?.claim_status) === "claimed";
+  const status = normalizeClaimStatus(data?.claim_status);
+  // Owner signup leaves claim_pending until formal claim completion — still owned, not an open claim stub.
+  return status === "claimed" || status === "claim_pending";
 }
 
 function firstNonEmpty(...values) {
@@ -876,7 +878,8 @@ export default function RestaurantPublicPage() {
     : [];
   const discoveryLogo = null;
 
-  if (!loading && !err && data && !isClaimedRestaurant(data)) {
+  // Owning operators must never see the claim stub — they get the public profile + owner edit chrome.
+  if (!loading && !err && data && !isClaimedRestaurant(data) && !isOwner) {
     return <UnclaimedRestaurantPage data={data} isDark={isDark} slugOrId={resolvedSlug} />;
   }
 

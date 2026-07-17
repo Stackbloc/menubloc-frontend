@@ -1,5 +1,8 @@
 /**
- * Operator Public Profile links must open /restaurants/{slug}, not legacy /restaurant-profile/:id.
+ * Operator Public Profile:
+ * - Dashboard Quick Access → /operator/profile (edit: Save draft / Publish / View)
+ * - My Account "View Public Profile" → /restaurants/{slug}, not legacy /restaurant-profile/:id
+ * - claim_pending + owning operator must not hit UnclaimedRestaurantPage claim CTA
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -29,9 +32,10 @@ function testOperatorPublicProfilePathHelper() {
   assert.equal(operatorPublicProfilePath(null), null);
 }
 
-function testDashboardUsesOperatorPublicProfilePath() {
+function testDashboardOpensProfileEditor() {
   const src = read("src/pages/operator/OperatorDashboard.jsx");
-  assert.match(src, /operatorPublicProfilePath/);
+  assert.match(src, /navigate\("\/operator\/profile"\)/);
+  assert.doesNotMatch(src, /operatorPublicProfilePath/);
   assert.doesNotMatch(src, /\/restaurant-profile\/\$\{/);
   assert.doesNotMatch(src, /`\/restaurant-profile\//);
 }
@@ -57,10 +61,25 @@ function testPublicPageHasOwnerChrome() {
   assert.match(chrome, /updateProfile/);
 }
 
+function testClaimPendingAndOwnerSkipUnclaimedStub() {
+  const page = read("src/pages/RestaurantPublicPage.jsx");
+  assert.match(page, /status === "claimed" \|\| status === "claim_pending"/);
+  assert.match(page, /!isClaimedRestaurant\(data\) && !isOwner/);
+}
+
+function testProfileEditorHasSavePublishView() {
+  const src = read("src/pages/operator/OperatorProfileEditor.jsx");
+  assert.match(src, /Save draft/);
+  assert.match(src, /Publish changes/);
+  assert.match(src, /Preview Public Profile|View Public Profile/);
+}
+
 testOperatorPublicProfilePathHelper();
-testDashboardUsesOperatorPublicProfilePath();
+testDashboardOpensProfileEditor();
 testMyAccountUsesOperatorPublicProfilePath();
 testHelpCenterDocumentsRestaurantsSlug();
 testPublicPageHasOwnerChrome();
+testClaimPendingAndOwnerSkipUnclaimedStub();
+testProfileEditorHasSavePublishView();
 
 console.log("operatorPublicProfileContract: ok");

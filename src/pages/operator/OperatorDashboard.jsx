@@ -4,7 +4,6 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import * as api from "../../lib/operatorApi.js";
-import { operatorPublicProfilePath } from "../../lib/canonicalUrl.js";
 
 const GREEN = "#1F4E3D";
 const BORDER = "#e4e9f0";
@@ -591,10 +590,7 @@ export default function OperatorDashboard() {
             <QuickBtn
               icon="◷"
               label={t("operator.dashboard.publicProfile", "Public Profile")}
-              onClick={() => {
-                const href = operatorPublicProfilePath(selectedRestaurant);
-                if (href) window.open(href, "_blank");
-              }}
+              onClick={() => navigate("/operator/profile")}
             />
             <QuickBtn icon="▣" label={t("operator.dashboard.menuLab", "Menu Lab")} onClick={() => navigate("/operator/menulab")} />
             <QuickBtn icon="🔥" label={t("operator.dashboard.deals", "Deals")} onClick={() => navigate("/operator/deals")} />
