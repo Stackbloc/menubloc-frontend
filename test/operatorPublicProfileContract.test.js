@@ -57,8 +57,11 @@ function testPublicPageHasOwnerChrome() {
   const chrome = read("src/components/restaurant/PublicProfileOwnerChrome.jsx");
   assert.match(page, /PublicProfileOwnerChrome/);
   assert.match(page, /isOwner/);
-  assert.match(chrome, /publishProfile/);
-  assert.match(chrome, /updateProfile/);
+  // Public page is view-only for owners — Edit links to /operator/profile (no duplicate form).
+  assert.match(chrome, /\/operator\/profile/);
+  assert.doesNotMatch(chrome, /publishProfile/);
+  assert.doesNotMatch(chrome, /updateProfile/);
+  assert.doesNotMatch(chrome, /RestaurantStatusSettingsPanel/);
 }
 
 function testClaimPendingAndOwnerSkipUnclaimedStub() {

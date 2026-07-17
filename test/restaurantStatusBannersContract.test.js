@@ -1,5 +1,6 @@
 /**
- * Restaurant status banners — catalog + owner chrome + public strip contract.
+ * Restaurant status banners — operator profile settings + public strip contract.
+ * Status toggles live only on /operator/profile (not duplicated on public owner chrome).
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -28,14 +29,16 @@ assert.deepEqual(
 assert.equal(resolveStatusBanners(["now_hiring"])[0].emoji, "🟢");
 
 const chrome = read("src/components/restaurant/PublicProfileOwnerChrome.jsx");
-assert.match(chrome, /RestaurantStatusSettingsPanel/);
-assert.match(chrome, /Protected listing identity/);
-assert.doesNotMatch(chrome, /restaurant_name:\s*form\.restaurant_name/);
+assert.match(chrome, /\/operator\/profile/);
+assert.doesNotMatch(chrome, /RestaurantStatusSettingsPanel/);
+assert.doesNotMatch(chrome, /updateStatusBanners/);
+assert.doesNotMatch(chrome, /updateProfile/);
+assert.doesNotMatch(chrome, /publishProfile/);
 
 const panel = read("src/components/restaurant/RestaurantStatusSettingsPanel.jsx");
-assert.match(panel, /Restaurant Status/);
 assert.match(panel, /updateStatusBanners/);
 assert.match(panel, /RESTAURANT_STATUS_BANNERS/);
+assert.match(panel, /StatusEventScheduleEditor/);
 
 const page = read("src/pages/RestaurantPublicPage.jsx");
 assert.match(page, /RestaurantStatusBannerStrip/);

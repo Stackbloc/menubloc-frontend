@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { apiGet } from "../lib/api.js";
 import { parseCityStateSlug } from "../lib/cityStateSlug";
 import { restaurantMenuPathFromRow, restaurantPathFromRow } from "../lib/canonicalUrl.js";
 import { fetchClustersDirectory } from "../lib/clusterApi.js";
 import { clusterPath } from "../lib/clusterUrl.js";
 
-const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 const CANONICAL_BASE = "https://menuply.com";
 
 export default function MarketAggregatorPage() {
@@ -26,34 +26,53 @@ export default function MarketAggregatorPage() {
     link.href = `${CANONICAL_BASE}/restaurants/${slugOrId}`;
   }, [slugOrId]);
 
+  // Depend on slugOrId (string), never a freshly-parsed object — that caused an
+  // infinite /public/clusters refetch storm and rate-limited all market pages.
   useEffect(() => {
-    if (!parsed) return;
-    fetchClustersDirectory({ state: parsed.state, city: parsed.city, limit: 20 })
-      .then((json) => setClusters(Array.isArray(json?.clusters) ? json.clusters : []))
-      .catch(() => setClusters([]));
-  }, [parsed]);
+    const market = parseCityStateSlug(slugOrId);
+    if (!market) return undefined;
+    let cancelled = false;
+    fetchClustersDirectory({ state: market.state, city: market.city, limit: 20 })
+      .then((json) => {
+        if (!cancelled) setClusters(Array.isArray(json?.clusters) ? json.clusters : []);
+      })
+      .catch(() => {
+        if (!cancelled) setClusters([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slugOrId]);
 
   // Page title
   useEffect(() => {
-    if (parsed) {
-      document.title = `Restaurants in ${parsed.city}, ${parsed.state} — Menuply`;
+    const market = parseCityStateSlug(slugOrId);
+    if (market) {
+      document.title = `Restaurants in ${market.city}, ${market.state} — Menuply`;
     }
-  }, [parsed]);
+  }, [slugOrId]);
 
   useEffect(() => {
-    if (!slugOrId) return;
+    if (!slugOrId) return undefined;
+    let cancelled = false;
     setState({ status: "loading", market: null, restaurants: [] });
 
-    fetch(`${API}/public/market/${encodeURIComponent(slugOrId)}`, { credentials: "include" })
-      .then((r) => r.json())
+    apiGet(`/public/market/${encodeURIComponent(slugOrId)}`)
       .then((data) => {
-        if (data.ok) {
-          setState({ status: "ok", market: data.market, restaurants: data.restaurants });
+        if (cancelled) return;
+        if (data?.ok) {
+          setState({ status: "ok", market: data.market, restaurants: data.restaurants || [] });
         } else {
           setState({ status: "error", market: null, restaurants: [] });
         }
       })
-      .catch(() => setState({ status: "error", market: null, restaurants: [] }));
+      .catch(() => {
+        if (!cancelled) setState({ status: "error", market: null, restaurants: [] });
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [slugOrId]);
 
   if (!parsed) {

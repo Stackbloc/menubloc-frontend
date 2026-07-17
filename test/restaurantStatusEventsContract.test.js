@@ -20,10 +20,17 @@ assert.equal(RESTAURANT_STATUS_BANNERS.find((b) => b.id === "happy_hour")?.sched
 assert.deepEqual(normalizeStatusBannerIds(["live_music_tonight"]), ["live_music"]);
 assert.equal(RESTAURANT_STATUS_BANNERS.some((b) => b.id === "live_music_tonight"), false);
 
+const panel = read("src/components/restaurant/RestaurantStatusSettingsPanel.jsx");
+assert.match(panel, /StatusEventScheduleEditor/);
+assert.match(panel, /happy_hour/);
+assert.match(panel, /live_music/);
+
+const profileEditor = read("src/pages/operator/OperatorProfileEditor.jsx");
+assert.match(profileEditor, /RestaurantStatusSettingsPanel/);
+
 const chrome = read("src/components/restaurant/PublicProfileOwnerChrome.jsx");
-assert.match(chrome, /StatusEventScheduleEditor/);
-assert.match(chrome, /happy_hour/);
-assert.match(chrome, /live_music/);
+assert.doesNotMatch(chrome, /StatusEventScheduleEditor/);
+assert.doesNotMatch(chrome, /RestaurantStatusSettingsPanel/);
 
 const editor = read("src/components/restaurant/StatusEventScheduleEditor.jsx");
 assert.match(editor, /Days of the week/);

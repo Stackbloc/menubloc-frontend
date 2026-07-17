@@ -1,5 +1,6 @@
 /**
- * Shared owner controls for public-profile status banners.
+ * Operator profile controls for public-profile status banners.
+ * Mounted on /operator/profile only — not duplicated on the public page.
  * Simple banners toggle live; Happy Hour / Live Music use schedules.
  */
 import { useEffect, useState } from "react";
@@ -10,24 +11,6 @@ import {
 } from "../../lib/restaurantStatusBanners.js";
 import StatusEventScheduleEditor from "./StatusEventScheduleEditor.jsx";
 
-function Label({ children }) {
-  return (
-    <label
-      style={{
-        fontSize: 11,
-        fontWeight: 700,
-        color: "#5b6675",
-        display: "block",
-        marginBottom: 5,
-        textTransform: "uppercase",
-        letterSpacing: "0.5px",
-      }}
-    >
-      {children}
-    </label>
-  );
-}
-
 export default function RestaurantStatusSettingsPanel({
   restaurantId,
   initialBanners = [],
@@ -35,7 +18,6 @@ export default function RestaurantStatusSettingsPanel({
   timezoneLabel = null,
   timezoneValid = false,
   onChanged,
-  compact = false,
 }) {
   const rid = restaurantId;
   const [activeBanners, setActiveBanners] = useState(() =>
@@ -108,25 +90,9 @@ export default function RestaurantStatusSettingsPanel({
 
   if (!rid) return null;
 
+  // Parent (OperatorProfileEditor Section) owns the title/description — avoid a nested card.
   return (
-    <div
-      style={
-        compact
-          ? undefined
-          : {
-              padding: "14px 16px",
-              borderRadius: 12,
-              border: "1px solid #e4e9f0",
-              background: "#fff",
-            }
-      }
-    >
-      <Label>Restaurant Status</Label>
-      <p style={{ margin: "0 0 10px", fontSize: 12, color: compact ? "#3f6212" : "#8a9ab0", lineHeight: 1.45 }}>
-        Toggle banners shown on your public profile. Happy Hour and Live Music use schedules
-        (restaurant local time). Changes go live immediately.
-      </p>
-
+    <div>
       {error ? (
         <div style={{ marginBottom: 10, fontSize: 12, color: "#b91c1c", fontWeight: 600 }}>
           {error}

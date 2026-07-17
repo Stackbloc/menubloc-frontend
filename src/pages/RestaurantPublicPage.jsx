@@ -947,7 +947,7 @@ export default function RestaurantPublicPage() {
     >
 
       {!loading && !err && data && isOwner ? (
-        <PublicProfileOwnerChrome restaurant={data} onPublished={reloadPublicData} />
+        <PublicProfileOwnerChrome />
       ) : null}
 
       <div
