@@ -147,7 +147,7 @@ export default function OperatorProfileEditor() {
         setForm({
           restaurant_name: p.restaurant_name || "",
           cuisine:         p.cuisine || "",
-          category:        p.category === "restaurant" ? "" : (p.category || ""),
+          category:        p.category || "",
           phone:           p.phone || "",
           website_url:     p.website_url || "",
           instagram:       p.instagram || "",
@@ -170,6 +170,7 @@ export default function OperatorProfileEditor() {
         cuisine:         form.cuisine,
         category:        form.category,
         phone:           form.phone,
+        website_url:     form.website_url,
         instagram:       form.instagram,
         bio:             form.bio,
       };
@@ -226,21 +227,28 @@ export default function OperatorProfileEditor() {
       const slugOrId = refreshedProfile?.slug || rid;
       const publicRes = await fetch(`${API_BASE}/public/restaurants/${encodeURIComponent(String(slugOrId))}`);
       const publicData = await publicRes.json().catch(() => ({}));
-      if (!publicRes.ok) {
+      if (!publicRes.ok || publicData?.ok === false) {
         throw new Error(publicData.error || "Public profile could not be reloaded after publish.");
       }
 
+      // Public API nests fields under `restaurant` and uses `name` (not restaurant_name).
+      const publicRestaurant = publicData.restaurant || publicData;
+      const publicName = String(publicRestaurant.name || publicRestaurant.restaurant_name || "").trim();
+      const publicCategory = String(publicRestaurant.category || "").trim();
+      const publicPhone = String(publicRestaurant.phone || "").trim();
+      const publicWebsite = String(publicRestaurant.website || publicRestaurant.website_url || "").trim();
+
       const mismatches = [];
-      if ((refreshedProfile?.restaurant_name || "").trim() !== (publicData.restaurant_name || "").trim()) mismatches.push("name");
-      if ((refreshedProfile?.category || "").trim() !== (publicData.category || "").trim()) mismatches.push("type");
-      if ((refreshedProfile?.phone || "").trim() !== (publicData.phone || "").trim()) mismatches.push("phone");
-      if ((refreshedProfile?.bio || refreshedProfile?.about_us || "").trim() !== (publicData.bio || publicData.about_us || "").trim()) mismatches.push("bio");
-      if ((refreshedProfile?.instagram || "").trim() !== (publicData.instagram || "").trim()) mismatches.push("social");
+      if (String(refreshedProfile?.restaurant_name || "").trim() !== publicName) mismatches.push("name");
+      if (String(refreshedProfile?.category || "").trim() !== publicCategory) mismatches.push("type");
+      if (String(refreshedProfile?.phone || "").trim() !== publicPhone) mismatches.push("phone");
+      if (String(refreshedProfile?.website_url || "").trim() !== publicWebsite) mismatches.push("website");
+      // bio/instagram are not returned by operator GET profile (stubbed NULL) — skip verify
       if (mismatches.length) {
         console.error("[operator-profile] publish verification mismatch", {
           mismatches,
           draft: refreshedProfile,
-          public: publicData,
+          public: publicRestaurant,
         });
         throw new Error(`Publish completed, but the public profile did not update for: ${mismatches.join(", ")}.`);
       }
@@ -349,13 +357,15 @@ export default function OperatorProfileEditor() {
                 ))}
               </select>
             </div>
-            {/*
-              Website field intentionally omitted from the operator UI.
-              Menuply serves as the primary digital presence for most operators,
-              so requiring them to maintain a separate external website creates
-              unnecessary friction. The column remains in the DB and backend
-              for potential future advanced/integration use.
-            */}
+            <div>
+              <Label>Website</Label>
+              <input
+                style={INPUT}
+                value={form.website_url}
+                onChange={f("website_url")}
+                placeholder="https://your-restaurant.com"
+              />
+            </div>
             <div>
               <Label>Phone</Label>
               <input style={INPUT} value={form.phone} onChange={f("phone")} placeholder="(555) 555-5555" />

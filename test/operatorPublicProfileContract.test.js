@@ -72,6 +72,26 @@ function testProfileEditorHasSavePublishView() {
   assert.match(src, /Save draft/);
   assert.match(src, /Publish changes/);
   assert.match(src, /Preview Public Profile|View Public Profile/);
+  assert.match(src, /Website/);
+  assert.match(src, /website_url/);
+  assert.match(src, /publicData\.restaurant \|\| publicData/);
+  assert.match(src, /publicRestaurant\.name \|\| publicRestaurant\.restaurant_name/);
+}
+
+/** Consumer public profile must always be light — never grubbid_theme dark default. */
+function testPublicProfileForcedLight() {
+  const page = read("src/pages/RestaurantPublicPage.jsx");
+  assert.match(page, /PUBLIC_PROFILE_IS_DARK\s*=\s*false/);
+  assert.match(page, /const isDark = PUBLIC_PROFILE_IS_DARK/);
+  assert.match(page, /pageBg = isDark \? "#0b0b0f" : "#ffffff"/);
+  assert.doesNotMatch(page, /function readTheme/);
+  assert.doesNotMatch(page, /function saveTheme/);
+  assert.doesNotMatch(page, /THEME_KEY/);
+  assert.doesNotMatch(page, /grubbid_theme/);
+  assert.doesNotMatch(page, /localStorage\.getItem\(THEME_KEY\)/);
+  // Claimed + unclaimed both use solid white pageBg (two occurrences).
+  const whitePageBgMatches = page.match(/pageBg = isDark \? "#0b0b0f" : "#ffffff"/g) || [];
+  assert.equal(whitePageBgMatches.length, 2);
 }
 
 testOperatorPublicProfilePathHelper();
@@ -81,5 +101,6 @@ testHelpCenterDocumentsRestaurantsSlug();
 testPublicPageHasOwnerChrome();
 testClaimPendingAndOwnerSkipUnclaimedStub();
 testProfileEditorHasSavePublishView();
+testPublicProfileForcedLight();
 
 console.log("operatorPublicProfileContract: ok");
