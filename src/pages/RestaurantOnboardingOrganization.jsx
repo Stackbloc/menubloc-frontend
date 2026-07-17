@@ -200,6 +200,8 @@ export default function RestaurantOnboardingOrganization() {
     [location.state, location.search]
   );
   const restaurantId = onboarding?.restaurant_id || restaurants?.[0]?.id || null;
+  const restaurantDisplayName =
+    onboarding?.restaurant_name || restaurants?.[0]?.restaurant_name || "";
 
   const [form, setForm] = useState(() => emptyBusinessOrganizationForm());
   const [fieldErrors, setFieldErrors] = useState({});
@@ -243,7 +245,11 @@ export default function RestaurantOnboardingOrganization() {
         const data = await getOwnedBusinessOrganization(restaurantId);
         if (cancelled) return;
         if (data?.organization) {
-          setForm(organizationToForm(data.organization, data.relationship || {}));
+          setForm(
+            organizationToForm(data.organization, data.relationship || {}, {
+              restaurantDisplayName,
+            })
+          );
         } else if (operator?.email) {
           setForm((prev) => ({
             ...prev,
@@ -264,7 +270,13 @@ export default function RestaurantOnboardingOrganization() {
     return () => {
       cancelled = true;
     };
-  }, [restaurantId, operator?.email, operator?.full_name, operatorLoading]);
+  }, [
+    restaurantId,
+    restaurantDisplayName,
+    operator?.email,
+    operator?.full_name,
+    operatorLoading,
+  ]);
 
   function setField(key, value) {
     setForm((prev) => {
@@ -371,11 +383,12 @@ export default function RestaurantOnboardingOrganization() {
             </label>
             <input
               id="legal_name"
+              name="legal_entity_name"
               style={styles.input}
               value={form.legal_name}
               onChange={(e) => setField("legal_name", e.target.value)}
               placeholder="e.g. Jane Smith, sole proprietor"
-              autoComplete="organization"
+              autoComplete="off"
             />
             {fieldErrors.legal_name ? (
               <div style={styles.fieldErr}>{fieldErrors.legal_name}</div>

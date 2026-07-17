@@ -20,6 +20,9 @@ export const RELATIONSHIP_TYPE_OPTIONS = Object.freeze([
   { value: "management_company", label: "Management company" },
 ]);
 
+/** Neutral provisional backfill label — never show as typed legal name. */
+export const PENDING_ORGANIZATION_LEGAL_NAME = "Pending organization review";
+
 export function emptyBusinessOrganizationForm() {
   return {
     legal_name: "",
@@ -35,10 +38,25 @@ export function emptyBusinessOrganizationForm() {
   };
 }
 
-export function organizationToForm(org = {}, relationship = {}) {
+/**
+ * Legal entity name for the onboarding form.
+ * Blank when unconfirmed (provisional / pending placeholder / restaurant display name).
+ * Confirmed saved orgs still hydrate for resume/edit.
+ */
+export function resolveLegalNameForForm(org = {}, { restaurantDisplayName } = {}) {
+  const raw = String(org.legal_name || "").trim();
+  if (!raw) return "";
+  if (org.is_provisional === true) return "";
+  if (raw.toLowerCase() === PENDING_ORGANIZATION_LEGAL_NAME.toLowerCase()) return "";
+  const display = String(restaurantDisplayName || "").trim();
+  if (display && raw.toLowerCase() === display.toLowerCase()) return "";
+  return raw;
+}
+
+export function organizationToForm(org = {}, relationship = {}, options = {}) {
   const entityType = org.entity_type || "individual_sole_proprietor";
   return {
-    legal_name: org.legal_name || "",
+    legal_name: resolveLegalNameForForm(org, options),
     dba_trade_name: org.dba_trade_name || "",
     entity_type: entityType,
     country_code: org.country_code || "US",
