@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import {
@@ -419,6 +419,15 @@ export default function RestaurantOrdersPage() {
   const { selectedRestaurant } = useOperator();
   const rid = selectedRestaurant?.id;
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  // Legacy sidebar URL — Merchant Account replaced Order History nav.
+  // Keep in-page "Past Orders" tab; only redirect the old query entrypoint.
+  useEffect(() => {
+    if (searchParams.get("tab") === "history") {
+      navigate("/operator/merchant", { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   // Live queue state
   const [liveOrders, setLiveOrders] = useState([]);
@@ -433,8 +442,9 @@ export default function RestaurantOrdersPage() {
   const [completedOrders, setCompletedOrders] = useState([]);
   const [completedLoading, setCompletedLoading] = useState(false);
 
-  // UI tabs — support ?tab=history from sidebar link
+  // UI tabs — Past Orders remains an in-page tab (not the old sidebar Order History URL)
   const initialTab = ["pending", "completed", "cancelled", "history"].includes(searchParams.get("tab"))
+    && searchParams.get("tab") !== "history"
     ? searchParams.get("tab")
     : "pending";
   const [activeTab, setActiveTab] = useState(initialTab);

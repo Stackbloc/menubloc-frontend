@@ -201,6 +201,7 @@ const OPERATOR_PAGE_TITLE_KEYS = {
   "Adobe Studio": "operator.nav.adobeStudio",
   "Menu Studio": "operator.nav.menuStudio",
   "Brand Settings": "operator.nav.brandSettings",
+  "Merchant Account": "operator.nav.merchantAccount",
 };
 
 function resolveOperatorTitle(title, t) {
@@ -230,7 +231,7 @@ export default function OperatorLayout({ title, children }) {
   const operationsNav = useMemo(() => ([
     { to: "/operator", label: t("operator.nav.home", "Home"), icon: "⌂", end: true },
     { to: "/operator/orders", label: t("operator.nav.orders", "Orders"), icon: "☷", end: true },
-    { to: "/operator/orders?tab=history", label: t("operator.nav.orderHistory", "Order History"), icon: "⊡" },
+    { to: "/operator/merchant", label: t("operator.nav.merchantAccount", "Merchant Account"), icon: "$" },
   ]), [t]);
 
   const menuNavBase = useMemo(() => ([

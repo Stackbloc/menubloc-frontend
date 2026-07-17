@@ -397,6 +397,14 @@ export const cancelPlatformSubscription = (body) =>
 export const getPlatformSubscriptionStatus = (restaurantId) =>
   get(`/api/stripe/platform/subscriptions/${restaurantId}`);
 
+// ── Stripe Connect (marketplace restaurant payouts) ───────────────────────
+export const getStripeConnectStatus = (restaurantId) =>
+  get(`/api/stripe/connect/status/${restaurantId}`);
+export const startStripeConnectOnboarding = (restaurantId) =>
+  post("/api/stripe/connect/start", { restaurantId });
+export const createStripeConnectDashboardLink = (restaurantId) =>
+  post("/api/stripe/connect/dashboard-link", { restaurantId });
+
 // ── Restaurant: Hours ─────────────────────────────────────────────────────
 export const getHours = (rid) => get(`/operator/restaurants/${rid}/hours`);
 export const updateHours = (rid, schedule) => put(`/operator/restaurants/${rid}/hours`, { schedule });

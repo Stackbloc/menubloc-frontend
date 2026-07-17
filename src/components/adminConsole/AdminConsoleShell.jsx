@@ -70,18 +70,6 @@ function NavItem({ item, onNavigate }) {
           return `admin-console__link${queryActive ? " admin-console__link--active" : ""}`;
         }
         let active = isActive;
-        if (
-          active &&
-          typeof window !== "undefined" &&
-          window.location.search &&
-          // Prefer query-specific sibling links when URL has search params on same path
-          window.location.pathname === basePath
-        ) {
-          // Keep base link active only when search is empty/irrelevant
-          if (window.location.search.includes("tab=history") && to === "/operator/orders") {
-            active = false;
-          }
-        }
         return `admin-console__link${active ? " admin-console__link--active" : ""}`;
       }}
       onClick={() => onNavigate?.()}

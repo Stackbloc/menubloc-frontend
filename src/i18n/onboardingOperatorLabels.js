@@ -107,7 +107,7 @@ export const ONBOARDING_OPERATOR_LABELS = {
     "auth.continue": "Continue",
     "operator.nav.home": "Home",
     "operator.nav.orders": "Orders",
-    "operator.nav.orderHistory": "Order History",
+    "operator.nav.merchantAccount": "Merchant Account",
     "operator.nav.menuEditor": "Menu Editor",
     "operator.nav.deals": "Deals",
     "operator.nav.hours": "Hours",
