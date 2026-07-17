@@ -806,14 +806,19 @@ export default function RestaurantPublicPage() {
     fetchRestaurantMenuPreview(restaurantId, { limit: 8 })
       .then((json) => {
         if (!alive) return;
-        if (!json?.ok || !Array.isArray(json.items) || !json.items.length) {
+        const items = Array.isArray(json?.preview_items)
+          ? json.preview_items
+          : Array.isArray(json?.items)
+            ? json.items
+            : [];
+        if (!json?.ok || !items.length) {
           setMenuPreview(null);
           return;
         }
         setMenuPreview({
           menu_id: json.menu_id,
           menu_url: json.menu_url,
-          items: json.items,
+          items,
         });
       })
       .catch(() => {
