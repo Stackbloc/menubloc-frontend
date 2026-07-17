@@ -8,12 +8,33 @@ import { clusterPath } from "../lib/clusterUrl.js";
 
 const CANONICAL_BASE = "https://menuply.com";
 
+/**
+ * Market listing pages must set their own ink colors.
+ * Global `--gb-color-ink` is near-white (#F9FAFB) for dark surfaces; inheriting it
+ * on this white page made titles/names invisible (looked “broken” on refresh).
+ */
+const PAGE = {
+  maxWidth: 800,
+  margin: "0 auto",
+  padding: "1.5rem 1rem 5rem",
+  background: "#ffffff",
+  color: "#111827",
+  minHeight: "60vh",
+};
+
+const CENTER = {
+  ...PAGE,
+  textAlign: "center",
+  paddingTop: "3rem",
+};
+
 export default function MarketAggregatorPage() {
   const { slugOrId } = useParams();
   const parsed = parseCityStateSlug(slugOrId);
 
   const [state, setState] = useState({ status: "loading", market: null, restaurants: [] });
   const [clusters, setClusters] = useState([]);
+  const [reloadToken, setReloadToken] = useState(0);
 
   // Canonical URL
   useEffect(() => {
@@ -73,12 +94,12 @@ export default function MarketAggregatorPage() {
     return () => {
       cancelled = true;
     };
-  }, [slugOrId]);
+  }, [slugOrId, reloadToken]);
 
   if (!parsed) {
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        <p>Invalid market URL.</p>
+      <div style={CENTER}>
+        <p style={{ color: "#111827" }}>Invalid market URL.</p>
       </div>
     );
   }
@@ -87,16 +108,37 @@ export default function MarketAggregatorPage() {
 
   if (state.status === "loading") {
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        <p>Loading restaurants in {city}, {stateCode}…</p>
+      <div style={CENTER}>
+        <p style={{ color: "#374151" }}>
+          Loading restaurants in {city}, {stateCode}…
+        </p>
       </div>
     );
   }
 
   if (state.status === "error") {
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
-        <p>Could not load restaurants for this market.</p>
+      <div style={CENTER}>
+        <p style={{ color: "#111827", marginBottom: 12 }}>
+          Could not load restaurants for this market.
+        </p>
+        <button
+          type="button"
+          onClick={() => setReloadToken((n) => n + 1)}
+          style={{
+            background: "#1F4E3D",
+            color: "#fff",
+            border: "none",
+            borderRadius: 9,
+            padding: "8px 14px",
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+        >
+          Try again
+        </button>
       </div>
     );
   }
@@ -104,17 +146,19 @@ export default function MarketAggregatorPage() {
   const { market, restaurants } = state;
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: "1.5rem 1rem" }}>
-      <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.25rem" }}>
+    <div style={PAGE}>
+      <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.25rem", color: "#111827" }}>
         Restaurants in {market.city}, {market.state}
       </h1>
-      <p style={{ color: "#666", marginBottom: "1.5rem" }}>
+      <p style={{ color: "#4b5563", marginBottom: "1.5rem" }}>
         {market.restaurant_count} restaurant{market.restaurant_count !== 1 ? "s" : ""}
       </p>
 
       {clusters.length > 0 ? (
         <section style={{ marginBottom: "1.5rem" }}>
-          <h2 style={{ margin: "0 0 0.55rem", fontSize: "1.05rem" }}>Explore Nearby Clusters</h2>
+          <h2 style={{ margin: "0 0 0.55rem", fontSize: "1.05rem", color: "#111827" }}>
+            Explore Nearby Clusters
+          </h2>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             {clusters.map((cluster) => {
               const href = clusterPath({
@@ -135,6 +179,7 @@ export default function MarketAggregatorPage() {
                     color: "#111827",
                     fontSize: "0.86rem",
                     fontWeight: 600,
+                    background: "#fff",
                   }}
                 >
                   {cluster.area_name || cluster.name}
@@ -146,14 +191,14 @@ export default function MarketAggregatorPage() {
       ) : null}
 
       {restaurants.length === 0 ? (
-        <p style={{ color: "#888" }}>No restaurants found in this market yet.</p>
+        <p style={{ color: "#6b7280" }}>No restaurants found in this market yet.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {restaurants.map((r) => (
             <li
               key={r.restaurant_id}
               style={{
-                borderBottom: "1px solid #eee",
+                borderBottom: "1px solid #e5e7eb",
                 padding: "1rem 0",
                 display: "flex",
                 flexDirection: "column",
@@ -162,9 +207,11 @@ export default function MarketAggregatorPage() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                  <span style={{ fontWeight: 600, fontSize: "1rem" }}>{r.restaurant_name}</span>
+                  <span style={{ fontWeight: 600, fontSize: "1rem", color: "#111827" }}>
+                    {r.restaurant_name}
+                  </span>
                   {r.cuisine && (
-                    <span style={{ marginLeft: "0.5rem", fontSize: "0.8rem", color: "#888" }}>
+                    <span style={{ marginLeft: "0.5rem", fontSize: "0.8rem", color: "#6b7280" }}>
                       {r.cuisine}
                     </span>
                   )}
@@ -173,7 +220,7 @@ export default function MarketAggregatorPage() {
                   {restaurantPathFromRow(r) && (
                     <Link
                       to={restaurantPathFromRow(r)}
-                      style={{ fontSize: "0.8rem", color: "#555", textDecoration: "underline" }}
+                      style={{ fontSize: "0.8rem", color: "#374151", textDecoration: "underline" }}
                     >
                       Profile
                     </Link>
@@ -197,7 +244,7 @@ export default function MarketAggregatorPage() {
                 </div>
               </div>
               {r.address_line1 && (
-                <span style={{ fontSize: "0.8rem", color: "#777" }}>{r.address_line1}</span>
+                <span style={{ fontSize: "0.8rem", color: "#6b7280" }}>{r.address_line1}</span>
               )}
             </li>
           ))}

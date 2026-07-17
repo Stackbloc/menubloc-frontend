@@ -21,4 +21,9 @@ assert.doesNotMatch(src, /\}, \[parsed\]\)/);
 assert.match(src, /fetchClustersDirectory/);
 assert.match(src, /\}, \[slugOrId\]\)/);
 
+// Anti-regression: white page + global near-white ink made names invisible.
+assert.match(src, /color:\s*["']#111827["']/);
+assert.match(src, /background:\s*["']#ffffff["']/);
+assert.match(src, /Try again/);
+
 console.log("marketAggregatorPageContract: ok");
