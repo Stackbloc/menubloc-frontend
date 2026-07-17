@@ -94,6 +94,46 @@ function testPublicProfileForcedLight() {
   assert.equal(whitePageBgMatches.length, 2);
 }
 
+/** Profile header actions match menu: Like (thumb) then Share. */
+function testPublicProfileMenuLikeShareRail() {
+  const page = read("src/pages/RestaurantPublicPage.jsx");
+  assert.match(page, /FollowRestaurantButton/);
+  assert.match(page, /MENU_ROW_ICON_SIZE/);
+  assert.match(page, /MENU_ROW_HEADER_ICON_GAP/);
+  assert.match(page, /source="restaurant_profile"/);
+  assert.match(page, /variant="menu"/);
+  assert.doesNotMatch(page, />\s*Follow\s*</);
+  assert.doesNotMatch(page, /Following/);
+}
+
+/**
+ * Claimed profile keeps claim-screen FieldRow SEO body (same labels/URL surface)
+ * without the Claim This Profile CTA. Status banners remain mounted.
+ */
+function testClaimedProfileSharesFieldListSeoWithoutClaimCta() {
+  const page = read("src/pages/RestaurantPublicPage.jsx");
+  assert.match(page, /function ProfileFieldList/);
+  assert.match(page, /Restaurant Name/);
+  assert.match(page, /City \/ Region \/ Postal Code/);
+  assert.match(page, /Story \/ About/);
+  assert.match(page, /Featured Dish/);
+  assert.match(page, /Landmarks \/ Nearby/);
+  assert.match(page, /Brand Presentation/);
+  assert.match(page, /RestaurantStatusBannerStrip/);
+  assert.match(page, /status_banners/);
+  assert.match(page, /status_event_presentations/);
+  // Claim CTA only on unclaimed stub (id=claim-profile), not claimed path copy.
+  assert.match(page, /id="claim-profile"/);
+  assert.match(page, /Claim This Profile/);
+  assert.match(page, /!isClaimedRestaurant\(data\) && !isOwner/);
+  // Claimed empty fields use em dash, not subscription upsell placeholders.
+  assert.match(page, /verifiedEmpty="—"/);
+  assert.match(page, /proEmpty="—"/);
+  // Canonical 3-segment route params preserved for SEO URLs.
+  assert.match(page, /canonicalRestaurantSlug/);
+  assert.match(page, /\/restaurants\/:state\/:city\/:restaurantSlug/);
+}
+
 testOperatorPublicProfilePathHelper();
 testDashboardOpensProfileEditor();
 testMyAccountUsesOperatorPublicProfilePath();
@@ -102,5 +142,7 @@ testPublicPageHasOwnerChrome();
 testClaimPendingAndOwnerSkipUnclaimedStub();
 testProfileEditorHasSavePublishView();
 testPublicProfileForcedLight();
+testPublicProfileMenuLikeShareRail();
+testClaimedProfileSharesFieldListSeoWithoutClaimCta();
 
 console.log("operatorPublicProfileContract: ok");

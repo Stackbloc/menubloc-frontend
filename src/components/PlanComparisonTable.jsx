@@ -198,9 +198,10 @@ export default function PlanComparisonTable() {
       <p
         style={{
           margin: "14px 4px 0",
-          fontSize: 15,
+          fontFamily: '"Instrument Sans", "Avenir Next", system-ui, sans-serif',
+          fontSize: 13,
           color: "#374151",
-          lineHeight: 1.65,
+          lineHeight: 1.5,
           fontWeight: 500,
         }}
       >

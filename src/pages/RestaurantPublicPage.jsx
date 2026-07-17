@@ -16,11 +16,9 @@
  *     - Unclaimed / seeded restaurants render a stub sales page
  *     - Food trucks receive food-truck-aware unclaimed copy/labels
  *
- *   Tier-aware layout for claimed restaurants:
- *     Verified — name + "✓ Verified", address, category/cuisine,
- *                distance, active deals, View Menu
- *     Pro      — everything above + logo (left of name), bio, featured
- *                dish, landmarks
+ *   Claimed layout mirrors the unclaimed FieldRow profile list
+ *   (no Claim CTA): name + tier badge + status banners (Now Hiring,
+ *   Happy Hour / Live Music) + labeled fields + Billboard + View Menu.
  *
  *   Full menu is NOT shown here.
  *   "View Menu →" links to /restaurants/:slugOrId/menu (PublicMenuPage).
@@ -31,31 +29,30 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import StickyPageHeader from "../components/StickyPageHeader.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 import RestaurantBillboardStrip from "../components/RestaurantBillboardStrip.jsx";
 import PublicProfileOwnerChrome from "../components/restaurant/PublicProfileOwnerChrome.jsx";
 import RestaurantStatusBannerStrip from "../components/restaurant/RestaurantStatusBannerStrip.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
-import { useConsumer } from "../context/ConsumerContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
-import {
-  followRestaurant as followRestaurantRequest,
-  getRestaurantFollowStatus,
-  unfollowRestaurant as unfollowRestaurantRequest,
-} from "../lib/consumerApi.js";
 import { toConsumerErrorMessage } from "../lib/api.js";
-import { trackRestaurantFollow, trackRestaurantView } from "../lib/analytics.js";
+import { trackRestaurantView } from "../lib/analytics.js";
 import { sendPageVisit } from "../lib/analyticsPageVisitSend.js";
 import { getLocalizedField } from "../utils/getLocalizedField.js";
 import { getDisplayMenuItemName } from "../utils/getDisplayMenuItemName.js";
-import { restaurantMenuPath, restaurantPath } from "../lib/canonicalUrl.js";
+import { restaurantMenuPath } from "../lib/canonicalUrl.js";
 import RestaurantStatusLight from "../components/RestaurantStatusLight.jsx";
 import { buildRestaurantStatusLightProps } from "../lib/restaurantStatusLight.js";
 import ShareButton from "../components/share/ShareButton.jsx";
 import { buildRestaurantShareData } from "../components/share/shareUtils.js";
 import { clusterTypeLabel } from "../lib/clusterUrl.js";
+import FollowRestaurantButton from "../components/FollowRestaurantButton.jsx";
+import {
+  MENU_ROW_HEADER_ICON_GAP,
+  MENU_ROW_ICON_SIZE,
+} from "../components/menu-templates/menuPresentationUtils.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -244,8 +241,16 @@ function getTierTheme(tier, isDark) {
   };
 }
 
+function fieldHasValue(value) {
+  if (value == null || value === false) return false;
+  if (typeof value === "string" || typeof value === "number") {
+    return Boolean(String(value).trim());
+  }
+  return true;
+}
+
 function FieldRow({ label, value, placeholder, isDark }) {
-  const hasValue = Boolean(String(value || "").trim());
+  const hasValue = fieldHasValue(value);
 
   return (
     <div
@@ -282,8 +287,81 @@ function FieldRow({ label, value, placeholder, isDark }) {
         }}
       >
         {hasValue ? value : placeholder}
-        </div>
       </div>
+    </div>
+  );
+}
+
+/** Shared labeled profile fields — same order for claimed + unclaimed. */
+function ProfileFieldList({
+  isDark,
+  isFoodTruck = false,
+  name,
+  addressValue,
+  cityLine,
+  websiteValue,
+  cuisine,
+  category,
+  storyValue,
+  featuredValue,
+  landmarksValue,
+  brandValue,
+  verifiedEmpty = "—",
+  proEmpty = "—",
+}) {
+  return (
+    <>
+      <FieldRow
+        label={isFoodTruck ? "Food Truck Name" : "Restaurant Name"}
+        value={name}
+        placeholder=""
+        isDark={isDark}
+      />
+      <FieldRow
+        label={isFoodTruck ? "Primary Service Area" : "Address"}
+        value={addressValue}
+        placeholder={verifiedEmpty}
+        isDark={isDark}
+      />
+      <FieldRow
+        label="City / Region / Postal Code"
+        value={cityLine}
+        placeholder={verifiedEmpty}
+        isDark={isDark}
+      />
+      <FieldRow label="Website" value={websiteValue} placeholder={verifiedEmpty} isDark={isDark} />
+      <FieldRow label="Cuisine" value={cuisine} placeholder={verifiedEmpty} isDark={isDark} />
+      <FieldRow
+        label={isFoodTruck ? "Category / Format" : "Category"}
+        value={category}
+        placeholder={verifiedEmpty}
+        isDark={isDark}
+      />
+      <FieldRow
+        label={isFoodTruck ? "Truck Story / About" : "Story / About"}
+        value={storyValue}
+        placeholder={proEmpty}
+        isDark={isDark}
+      />
+      <FieldRow
+        label={isFoodTruck ? "Featured Menu Item" : "Featured Dish"}
+        value={featuredValue}
+        placeholder={proEmpty}
+        isDark={isDark}
+      />
+      <FieldRow
+        label={isFoodTruck ? "Regular Stops / Areas" : "Landmarks / Nearby"}
+        value={landmarksValue}
+        placeholder={proEmpty}
+        isDark={isDark}
+      />
+      <FieldRow
+        label="Brand Presentation"
+        value={brandValue}
+        placeholder={proEmpty}
+        isDark={isDark}
+      />
+    </>
   );
 }
 
@@ -419,19 +497,37 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
 
               <RestaurantStatusLight {...unclaimedStatusLightProps} size={7} />
 
-              {restaurantShareData ? (
-                <ShareButton
-                  shareData={restaurantShareData}
-                  analyticsContext={{
-                    restaurantId: data?.id,
-                    restaurantName: name,
-                    restaurantSlug: data?.slug || slugOrId,
+              {data?.id || restaurantShareData ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: MENU_ROW_HEADER_ICON_GAP,
+                    flexShrink: 0,
                   }}
-                  label="Share restaurant"
-                  iconOnly
-                  tone="ghost"
-                  size="compact"
-                />
+                >
+                  {data?.id ? (
+                    <FollowRestaurantButton
+                      restaurantId={data.id}
+                      restaurantName={name}
+                      source="restaurant_profile"
+                      size={MENU_ROW_ICON_SIZE}
+                    />
+                  ) : null}
+                  {restaurantShareData ? (
+                    <ShareButton
+                      variant="menu"
+                      iconOnly
+                      tone="ghost"
+                      shareData={restaurantShareData}
+                      analyticsContext={{
+                        restaurantId: data?.id,
+                        restaurantName: name,
+                        restaurantSlug: data?.slug || slugOrId,
+                      }}
+                    />
+                  ) : null}
+                </div>
               ) : null}
             </div>
 
@@ -451,57 +547,21 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
           </div>
 
           <div style={{ padding: isMobile ? "8px 16px 24px" : "8px 24px 24px" }}>
-            <FieldRow label={isFoodTruck ? "Food Truck Name" : "Restaurant Name"} value={name} placeholder="" isDark={isDark} />
-
-            <FieldRow
-              label={isFoodTruck ? "Primary Service Area" : "Address"}
-              value={addressLine1}
-              placeholder={verifiedMessage}
+            <ProfileFieldList
               isDark={isDark}
-            />
-
-            <FieldRow
-              label="City / Region / Postal Code"
-              value={[city, stateVal].filter(Boolean).join(", ") + (postalCode ? ` ${postalCode}` : "")}
-              placeholder={verifiedMessage}
-              isDark={isDark}
-            />
-
-            <FieldRow label="Website" value={websiteRaw || website} placeholder={verifiedMessage} isDark={isDark} />
-            <FieldRow label="Cuisine" value={cuisine} placeholder={verifiedMessage} isDark={isDark} />
-            <FieldRow
-              label={isFoodTruck ? "Category / Format" : "Category"}
-              value={category}
-              placeholder={verifiedMessage}
-              isDark={isDark}
-            />
-
-            <FieldRow
-              label={isFoodTruck ? "Truck Story / About" : "Story / About"}
-              value=""
-              placeholder={proMessage}
-              isDark={isDark}
-            />
-
-            <FieldRow
-              label={isFoodTruck ? "Featured Menu Item" : "Featured Dish"}
-              value=""
-              placeholder={proMessage}
-              isDark={isDark}
-            />
-
-            <FieldRow
-              label={isFoodTruck ? "Regular Stops / Areas" : "Landmarks / Nearby"}
-              value=""
-              placeholder={proMessage}
-              isDark={isDark}
-            />
-
-            <FieldRow
-              label="Brand Presentation"
-              value=""
-              placeholder={proMessage}
-              isDark={isDark}
+              isFoodTruck={isFoodTruck}
+              name={name}
+              addressValue={addressLine1}
+              cityLine={[city, stateVal].filter(Boolean).join(", ") + (postalCode ? ` ${postalCode}` : "")}
+              websiteValue={websiteRaw || website}
+              cuisine={cuisine}
+              category={category}
+              storyValue=""
+              featuredValue=""
+              landmarksValue=""
+              brandValue=""
+              verifiedEmpty={verifiedMessage}
+              proEmpty={proMessage}
             />
           </div>
         </div>
@@ -651,27 +711,20 @@ function applyPublicRestaurantPayload(json) {
 
 export default function RestaurantPublicPage() {
   const { language, t: translateUi } = useLanguage();
-  const { isAuthenticated } = useConsumer();
   const {
     isAuthenticated: isOperatorAuthenticated,
     restaurants: operatorRestaurants,
   } = useOperator();
   const location = useLocation();
-  const navigate = useNavigate();
   const { slugOrId, restaurantSlug: canonicalRestaurantSlug } = useParams();
   // canonicalRestaurantSlug is present on 3-segment canonical routes
   // (/restaurants/:state/:city/:restaurantSlug); slugOrId on legacy 1-segment routes
+  // Same SEO URL surface for claimed + unclaimed — do not drop labeled FieldRow body.
   const trackedRestaurantViewRef = useRef(new Set());
 
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [data, setData] = useState(null);
-  const [followed, setFollowed] = useState(false);
-  const [followerCount, setFollowerCount] = useState(0);
-  const [followStatusLoading, setFollowStatusLoading] = useState(true);
-  const [followActionLoading, setFollowActionLoading] = useState(false);
-  const [followError, setFollowError] = useState("");
-  const [followNotice, setFollowNotice] = useState("");
 
   const isDark = PUBLIC_PROFILE_IS_DARK;
   const isMobile = useIsMobile();
@@ -746,83 +799,6 @@ export default function RestaurantPublicPage() {
     });
   }, [data?.id, data?.restaurant_name, data?.name, data?.slug, resolvedSlug, loading, err]);
 
-  useEffect(() => {
-    let alive = true;
-    const restaurantId = Number(data?.id);
-
-    setFollowed(false);
-    setFollowerCount(0);
-    setFollowError("");
-    setFollowNotice("");
-
-    if (!Number.isInteger(restaurantId) || restaurantId <= 0) {
-      setFollowStatusLoading(false);
-      return () => {
-        alive = false;
-      };
-    }
-
-    setFollowStatusLoading(true);
-
-    getRestaurantFollowStatus(restaurantId)
-      .then((result) => {
-        if (!alive) return;
-        setFollowed(result?.followed === true);
-        setFollowerCount(Number(result?.follower_count || 0));
-      })
-      .catch((error) => {
-        if (!alive) return;
-        setFollowError(error.message || "Unable to load follow status.");
-      })
-      .finally(() => {
-        if (alive) setFollowStatusLoading(false);
-      });
-
-    return () => {
-      alive = false;
-    };
-  }, [data?.id, isAuthenticated]);
-
-  async function handleFollowToggle() {
-    const restaurantId = Number(data?.id);
-    if (!Number.isInteger(restaurantId) || restaurantId <= 0 || followActionLoading) return;
-
-    setFollowError("");
-    setFollowNotice("");
-
-    if (!isAuthenticated) {
-      const redirectTo = `${location.pathname}${location.search || ""}${location.hash || ""}`;
-      setFollowNotice("Log in to follow this restaurant.");
-      navigate("/account/login", { state: { redirectTo } });
-      return;
-    }
-
-    setFollowActionLoading(true);
-    try {
-      const wasFollowed = followed;
-      const result = followed
-        ? await unfollowRestaurantRequest(restaurantId)
-        : await followRestaurantRequest(restaurantId);
-      setFollowed(result?.followed === true);
-      setFollowerCount(Number(result?.follower_count || 0));
-      if (!wasFollowed && result?.followed === true) {
-        trackRestaurantFollow({
-          restaurantId,
-          restaurantName: data?.restaurant_name || data?.name || "",
-          source: "restaurant_profile",
-        });
-      }
-    } catch (error) {
-      if (error?.status === 401) {
-        setFollowNotice("Log in to follow this restaurant.");
-      } else {
-        setFollowError(error.message || "Unable to update follow status.");
-      }
-    } finally {
-      setFollowActionLoading(false);
-    }
-  }
-
   const tier = resolvePublicProfileTier(data);
   const t = getTierTheme(tier, isDark);
   const isPro = tier === "pro";
@@ -846,12 +822,10 @@ export default function RestaurantPublicPage() {
   const websiteRaw = data?.website || data?.website_url || "";
   const website = normalizeUrl(websiteRaw);
   const logoUrl = data?.logo_url || "";
-  const distanceMi = data?.distance_miles;
-  const distanceText = distanceMi != null ? `${Number(distanceMi).toFixed(1)} mi` : "";
 
   const cuisine = humanizeLabel(data?.cuisine || "");
   const category = humanizeLabel(data?.category || "");
-  const cuisineLine = [category, cuisine].filter(Boolean).join(" • ");
+  const isFoodTruck = detectFoodTruck(data);
 
   const restaurantShareData = data?.id
     ? buildRestaurantShareData({
@@ -877,37 +851,61 @@ export default function RestaurantPublicPage() {
           "",
       }
     : null;
+  const featuredFieldValue = featuredItem
+    ? [featuredItem.name, featuredItem.price].filter(Boolean).join(" · ")
+    : "";
   const dealItems = Array.isArray(data?.deal_items) ? data.deal_items : [];
   const billboardPreview = Array.isArray(data?.billboard_preview) ? data.billboard_preview : [];
   const billboardHref = buildRestaurantBillboardHref(data?.slug || data?.id || resolvedSlug);
-
-  const showLogo = isPro && !!logoUrl;
-  const showBio = isPro && !!bio;
-  const showFeatured = isPro && !!featuredItem;
-  const showLandmarks = isPro && !!landmarks;
   const showDeals = dealItems.length > 0;
 
   const pageBg = isDark ? "#0b0b0f" : "#ffffff";
   const pageColor = isDark ? "#e2e8f0" : "#0f172a";
   const muted = isDark ? "rgba(255,255,255,0.45)" : "#64748b";
   const linkColor = isDark ? "#93c5fd" : "#1d4ed8";
-  const followButtonLabel = followStatusLoading
-    ? "Loading..."
-    : followActionLoading
-    ? followed
-      ? "Updating..."
-      : "Updating..."
-    : followed
-    ? "Following"
-    : "Follow";
-  const followerCountLabel = followerCount === 1 ? "1 follower" : `${followerCount} followers`;
+  const cardBg = isDark ? "#111218" : "#ffffff";
+  const heroBg = t.heroBg || (isDark ? "#10151d" : "#f8fbff");
 
-  const landmarkLines = landmarks
-    ? landmarks.split(/\n/).map((l) => l.trim()).filter(Boolean)
-    : [];
-  const discoveryLogo = null;
+  const addressFieldValue = streetAddr
+    ? streetDirectionsUrl
+      ? (
+          <a
+            href={streetDirectionsUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`Get directions to ${name}`}
+            title="Open Google Maps directions"
+            style={{
+              color: "inherit",
+              textDecoration: "underline",
+              textUnderlineOffset: 2,
+            }}
+          >
+            {streetAddr}
+          </a>
+        )
+      : streetAddr
+    : "";
+
+  const websiteFieldValue = website
+    ? (
+        <a
+          href={website}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            color: linkColor,
+            textDecoration: "none",
+            fontWeight: 500,
+          }}
+        >
+          {websiteRaw || website} ↗
+        </a>
+      )
+    : "";
 
   // Owning operators must never see the claim stub — they get the public profile + owner edit chrome.
+  // Same canonical /restaurants/:state/:city/:slug URL + FieldRow SEO body as the claim screen.
   if (!loading && !err && data && !isClaimedRestaurant(data) && !isOwner) {
     return <UnclaimedRestaurantPage data={data} isDark={isDark} slugOrId={resolvedSlug} />;
   }
@@ -931,19 +929,19 @@ export default function RestaurantPublicPage() {
 
       <div
         style={{
-          maxWidth: 680,
+          maxWidth: 860,
           margin: "0 auto",
           borderRadius: 18,
           overflow: "hidden",
           border: t.cardBorder,
           boxShadow: t.cardShadow,
-          background: isDark ? "#111218" : "#ffffff",
+          background: cardBg,
         }}
       >
         <div
           style={{
             padding: isMobile ? "20px 16px 18px" : "24px 24px 22px",
-            background: t.heroBg,
+            background: heroBg,
             borderBottom: t.heroBorderBottom,
             position: "relative",
           }}
@@ -960,292 +958,102 @@ export default function RestaurantPublicPage() {
             />
           ) : null}
 
-          {!loading && !err && data ? (
-            <div style={{ paddingTop: t.accentBarColor ? 10 : 0 }}>
-              <RestaurantStatusBannerStrip
-                statusBanners={data.status_banners}
-                statusEventPresentations={data.status_event_presentations}
-              />
-            </div>
-          ) : null}
-
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 16,
-              paddingTop: t.accentBarColor && (loading || err || !data?.status_banners?.length) ? 10 : 0,
-              marginBottom: 16,
-            }}
-          >
-            {showLogo ? (
-              <img
-                src={logoUrl}
-                alt={`${name} logo`}
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 10,
-                  objectFit: "contain",
-                  flexShrink: 0,
-                  border: isDark
-                    ? "1px solid rgba(59,130,246,0.25)"
-                    : "1px solid #bfdbfe",
-                  background: isDark ? "rgba(255,255,255,0.05)" : "#f0f4ff",
-                }}
-              />
-            ) : null}
-
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {loading ? (
-                <Skel w={220} h={t.nameSize + 6} isDark={isDark} />
-              ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <h1
-                    style={{
-                      fontSize: isMobile ? Math.min(t.nameSize, 22) : t.nameSize,
-                      fontWeight: t.nameWeight,
-                      lineHeight: 1.1,
-                      color: t.nameColor,
-                      margin: 0,
-                      letterSpacing: "-0.02em",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {name}
-                  </h1>
-
-                  <RestaurantStatusLight {...restaurantStatusLightProps} size={7} />
-
-                  {isPro || isVerified ? (
-                    <span
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: t.badgeColor,
-                        whiteSpace: "nowrap",
-                        flexShrink: 0,
-                        letterSpacing: 0.1,
-                      }}
-                    >
-                      {isPro ? "◆ Pro" : "✓ Verified"}
-                    </span>
-                  ) : null}
-
-                  {restaurantShareData ? (
-                    <ShareButton
-                      shareData={restaurantShareData}
-                      analyticsContext={{
-                        restaurantId: data?.id,
-                        restaurantName: name,
-                        restaurantSlug: data?.slug || resolvedSlug,
-                      }}
-                      label="Share restaurant"
-                      iconOnly
-                      tone="ghost"
-                      size="compact"
-                    />
-                  ) : null}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 5,
-              fontSize: 14,
-              color: muted,
-              lineHeight: 1.5,
+              gap: 10,
+              flexWrap: "wrap",
+              paddingTop: t.accentBarColor ? 10 : 0,
             }}
           >
             {loading ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <Skel w={200} h={13} isDark={isDark} />
-                <Skel w={160} h={13} isDark={isDark} />
-                <Skel w={130} h={13} isDark={isDark} />
-              </div>
+              <Skel w={220} h={t.nameSize + 6} isDark={isDark} />
             ) : (
               <>
-                {streetAddr ? (
-                  <div>
-                    {streetDirectionsUrl ? (
-                      <a
-                        href={streetDirectionsUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={`Get directions to ${name}`}
-                        title="Open Google Maps directions"
-                        style={{
-                          color: "inherit",
-                          textDecoration: "underline",
-                          textUnderlineOffset: 2,
-                        }}
-                      >
-                        {streetAddr}
-                      </a>
-                    ) : (
-                      streetAddr
-                    )}
-                  </div>
-                ) : null}
-                {cityLine ? <div>{cityLine}</div> : null}
+                <h1
+                  style={{
+                    fontSize: isMobile ? Math.min(t.nameSize, 24) : Math.max(t.nameSize, 28),
+                    fontWeight: t.nameWeight,
+                    lineHeight: 1.1,
+                    color: t.nameColor,
+                    margin: 0,
+                    letterSpacing: "-0.02em",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {name}
+                </h1>
 
-                {cuisineLine ? (
-                  <div style={{ color: t.metaColor, fontWeight: 500 }}>{cuisineLine}</div>
-                ) : null}
+                <RestaurantStatusLight {...restaurantStatusLightProps} size={7} />
 
-                {data?.display_cluster?.name && data?.display_cluster?.public_url ? (
-                  <div style={{ marginTop: 4 }}>
-                    <span style={{ color: muted, fontWeight: 600, fontSize: 12, marginRight: 6 }}>
-                      Cluster
-                    </span>
-                    <Link
-                      to={data.display_cluster.public_url}
-                      style={{
-                        color: linkColor,
-                        textDecoration: "none",
-                        fontWeight: 600,
-                        fontSize: 13,
-                      }}
-                    >
-                      {data.display_cluster.name}
-                      {data.display_cluster.cluster_type
-                        ? ` · ${clusterTypeLabel(data.display_cluster.cluster_type)}`
-                        : ""}
-                    </Link>
-                  </div>
+                {isPro || isVerified ? (
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: t.badgeColor,
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
+                      letterSpacing: 0.1,
+                    }}
+                  >
+                    {isPro ? "◆ Pro" : "✓ Verified"}
+                  </span>
                 ) : null}
 
-                {distanceText ? <div>{distanceText}</div> : null}
-
-                {website ? (
-                  <div>
-                    <a
-                      href={website}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        color: linkColor,
-                        textDecoration: "none",
-                        fontWeight: 500,
-                        fontSize: 13,
-                      }}
-                    >
-                      {websiteRaw || website} ↗
-                    </a>
-                  </div>
-                ) : null}
-
-                {!loading && !err && data?.id ? (
-                  <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
-                    <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={handleFollowToggle}
-                      disabled={followStatusLoading || followActionLoading}
-                      style={{
-                        minWidth: 112,
-                        height: 38,
-                        padding: "0 16px",
-                        borderRadius: 999,
-                        border: followed
-                          ? isDark
-                            ? "1px solid rgba(74,222,128,0.35)"
-                            : "1px solid #86efac"
-                          : isDark
-                          ? "1px solid rgba(255,255,255,0.16)"
-                          : "1px solid #cbd5e1",
-                        background: followed
-                          ? isDark
-                            ? "rgba(74,222,128,0.08)"
-                            : "#f0fff4"
-                          : isDark
-                          ? "rgba(255,255,255,0.04)"
-                          : "#ffffff",
-                        color: followed
-                          ? isDark
-                            ? "#86efac"
-                            : "#166534"
-                          : isDark
-                          ? "#f8fafc"
-                          : "#0f172a",
-                        cursor:
-                          followStatusLoading || followActionLoading ? "wait" : "pointer",
-                        fontSize: 13,
-                        fontWeight: 800,
-                        letterSpacing: 0.1,
-                      }}
-                    >
-                      {followButtonLabel}
-                    </button>
-                    </div>
-
-                    {followerCount > 0 ? (
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: isDark ? "#cbd5e1" : "#475569",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {followerCountLabel}
-                      </div>
+                {data?.id || restaurantShareData ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: MENU_ROW_HEADER_ICON_GAP,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {data?.id ? (
+                      <FollowRestaurantButton
+                        restaurantId={data.id}
+                        restaurantName={name}
+                        source="restaurant_profile"
+                        size={MENU_ROW_ICON_SIZE}
+                      />
                     ) : null}
-
-                    {followNotice ? (
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: isDark ? "#cbd5e1" : "#475569",
+                    {restaurantShareData ? (
+                      <ShareButton
+                        variant="menu"
+                        iconOnly
+                        tone="ghost"
+                        shareData={restaurantShareData}
+                        analyticsContext={{
+                          restaurantId: data?.id,
+                          restaurantName: name,
+                          restaurantSlug: data?.slug || resolvedSlug,
                         }}
-                      >
-                        {followNotice}{" "}
-                        {!isAuthenticated ? (
-                          <Link
-                            to="/account/login"
-                            state={{
-                              redirectTo: `${location.pathname}${location.search || ""}${location.hash || ""}`,
-                            }}
-                            style={{ color: linkColor, fontWeight: 700, textDecoration: "none" }}
-                          >
-                            Log in
-                          </Link>
-                        ) : null}
-                      </div>
-                    ) : null}
-
-                    {followError ? (
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: isDark ? "#fca5a5" : "#b91c1c",
-                        }}
-                      >
-                        {followError}
-                      </div>
+                      />
                     ) : null}
                   </div>
                 ) : null}
               </>
             )}
           </div>
+
+          {!loading && !err && data ? (
+            <div style={{ marginTop: 14 }}>
+              <RestaurantStatusBannerStrip
+                statusBanners={data.status_banners}
+                statusEventPresentations={data.status_event_presentations}
+              />
+            </div>
+          ) : null}
         </div>
 
-        <div style={{ padding: isMobile ? "4px 16px 24px" : "4px 24px 28px" }}>
+        <div style={{ padding: isMobile ? "8px 16px 24px" : "8px 24px 28px" }}>
           {err && !loading ? (
             <div
               style={{
-                marginTop: 20,
+                marginTop: 12,
+                marginBottom: 8,
                 padding: "12px 14px",
                 borderRadius: 10,
                 fontSize: 13,
@@ -1259,83 +1067,55 @@ export default function RestaurantPublicPage() {
             </div>
           ) : null}
 
-          {!loading && showBio ? (
+          {loading ? (
+            <div style={{ paddingTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+              <Skel w="100%" h={13} isDark={isDark} />
+              <Skel w="75%" h={13} isDark={isDark} />
+              <Skel w="55%" h={13} isDark={isDark} />
+            </div>
+          ) : (
             <>
-              <Divider isDark={isDark} />
-              <SectionLabel color={t.sectionColor}>About</SectionLabel>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 14,
-                  lineHeight: 1.7,
-                  color: isDark ? "rgba(255,255,255,0.70)" : "#374151",
-                }}
-              >
-                {bio}
-              </p>
-            </>
-          ) : null}
+              <ProfileFieldList
+                isDark={isDark}
+                isFoodTruck={isFoodTruck}
+                name={name}
+                addressValue={addressFieldValue}
+                cityLine={cityLine}
+                websiteValue={websiteFieldValue}
+                cuisine={cuisine}
+                category={category}
+                storyValue={bio}
+                featuredValue={featuredFieldValue}
+                landmarksValue={landmarks}
+                brandValue={logoUrl}
+                verifiedEmpty="—"
+                proEmpty="—"
+              />
 
-          {!loading && showFeatured ? (
-            <>
-              <Divider isDark={isDark} />
-              <SectionLabel color={t.sectionColor}>Featured Dish</SectionLabel>
-              <div
-                style={{
-                  padding: "14px 16px",
-                  borderRadius: 12,
-                  background: t.featuredBg,
-                  border: `1px solid ${t.featuredBorder}`,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    gap: 12,
-                    marginBottom: featuredItem.description ? 6 : 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 700,
-                      color: isDark ? "#e0f2fe" : "#0f172a",
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {featuredItem.name}
-                  </div>
-                  {featuredItem.price ? (
-                    <div
+              {data?.display_cluster?.name && data?.display_cluster?.public_url ? (
+                <FieldRow
+                  label="Cluster"
+                  value={
+                    <Link
+                      to={data.display_cluster.public_url}
                       style={{
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: t.badgeColor || muted,
-                        flexShrink: 0,
-                        whiteSpace: "nowrap",
+                        color: linkColor,
+                        textDecoration: "none",
+                        fontWeight: 600,
                       }}
                     >
-                      {featuredItem.price}
-                    </div>
-                  ) : null}
-                </div>
-
-                {featuredItem.description ? (
-                  <div
-                    style={{
-                      fontSize: 13,
-                      color: isDark ? "rgba(255,255,255,0.50)" : "#64748b",
-                      lineHeight: 1.55,
-                    }}
-                  >
-                    {featuredItem.description}
-                  </div>
-                ) : null}
-              </div>
+                      {data.display_cluster.name}
+                      {data.display_cluster.cluster_type
+                        ? ` · ${clusterTypeLabel(data.display_cluster.cluster_type)}`
+                        : ""}
+                    </Link>
+                  }
+                  placeholder="—"
+                  isDark={isDark}
+                />
+              ) : null}
             </>
-          ) : null}
+          )}
 
           {!loading ? (
             <>
@@ -1437,42 +1217,6 @@ export default function RestaurantPublicPage() {
             </>
           ) : null}
 
-          {!loading && showLandmarks ? (
-            <>
-              <Divider isDark={isDark} />
-              <SectionLabel color={t.sectionColor}>Nearby</SectionLabel>
-              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                {landmarkLines.map((line, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      fontSize: 14,
-                      color: isDark ? "rgba(255,255,255,0.62)" : "#374151",
-                      lineHeight: 1.45,
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 8,
-                    }}
-                  >
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        display: "inline-block",
-                        width: 5,
-                        height: 5,
-                        borderRadius: "50%",
-                        background: isDark ? "rgba(255,255,255,0.22)" : "#cbd5e1",
-                        flexShrink: 0,
-                        marginTop: "0.5em",
-                      }}
-                    />
-                    {line}
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : null}
-
           {!loading && !err && data?.id ? (
             <>
               <Divider isDark={isDark} />
@@ -1507,14 +1251,6 @@ export default function RestaurantPublicPage() {
                 {translateUi("common.viewMenu")}
               </Link>
             </>
-          ) : null}
-
-          {loading ? (
-            <div style={{ paddingTop: 22, display: "flex", flexDirection: "column", gap: 10 }}>
-              <Skel w="100%" h={13} isDark={isDark} />
-              <Skel w="75%" h={13} isDark={isDark} />
-              <Skel w="55%" h={13} isDark={isDark} />
-            </div>
           ) : null}
         </div>
       </div>
