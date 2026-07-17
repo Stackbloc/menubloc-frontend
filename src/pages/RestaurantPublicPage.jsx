@@ -13,7 +13,8 @@
  *
  *   Behavior:
  *     - Claimed restaurants render the normal public profile
- *     - Unclaimed / seeded restaurants render a stub sales page
+ *     - Unclaimed / seeded restaurants show a brief brand splash
+ *       (name + "Your Billboard Goes Here"), then the stub sales page
  *     - Food trucks receive food-truck-aware unclaimed copy/labels
  *
  *   Claimed layout mirrors the unclaimed FieldRow profile list
@@ -35,6 +36,9 @@ import BottomNav from "../components/BottomNav.jsx";
 import RestaurantBillboardStrip from "../components/RestaurantBillboardStrip.jsx";
 import PublicProfileOwnerChrome from "../components/restaurant/PublicProfileOwnerChrome.jsx";
 import RestaurantStatusBannerStrip from "../components/restaurant/RestaurantStatusBannerStrip.jsx";
+import UnclaimedRestaurantBrandSplash, {
+  UNCLAIMED_BRAND_SPLASH_MS,
+} from "../components/restaurant/UnclaimedRestaurantBrandSplash.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useOperator } from "../context/OperatorContext.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
@@ -368,9 +372,24 @@ function ProfileFieldList({
 function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
   const isFoodTruck = detectFoodTruck(data);
   const isMobile = useIsMobile();
+  const [showBrandSplash, setShowBrandSplash] = useState(true);
 
   const name =
     firstNonEmpty(data?.restaurant_name, data?.name) || `Restaurant ${slugOrId}`;
+
+  useEffect(() => {
+    let delayMs = UNCLAIMED_BRAND_SPLASH_MS;
+    try {
+      if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+        // Keep a readable beat for the billboard preview line; skip long hold/animation.
+        delayMs = 400;
+      }
+    } catch {
+      /* ignore */
+    }
+    const timer = window.setTimeout(() => setShowBrandSplash(false), delayMs);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const addressLine1 = firstNonEmpty(data?.address, data?.address_line1);
   const city = firstNonEmpty(data?.city);
@@ -422,6 +441,10 @@ function UnclaimedRestaurantPage({ data, isDark, slugOrId }) {
       })
     : null;
   const unclaimedStatusLightProps = buildRestaurantStatusLightProps(data);
+
+  if (showBrandSplash) {
+    return <UnclaimedRestaurantBrandSplash name={name} isDark={isDark} />;
+  }
 
   return (
     <>
