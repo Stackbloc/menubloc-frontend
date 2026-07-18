@@ -102,6 +102,24 @@ const styles = {
     boxSizing: "border-box",
     fontFamily: "inherit",
   },
+  inputLocked: {
+    width: "100%",
+    height: 44,
+    borderRadius: 10,
+    border: "1px solid #E5E7EB",
+    padding: "0 12px",
+    fontSize: 14,
+    background: "#F3F4F6",
+    color: "#6B7280",
+    boxSizing: "border-box",
+    fontFamily: "inherit",
+    cursor: "not-allowed",
+  },
+  identityLockHint: {
+    marginTop: 5,
+    fontSize: 11,
+    color: "#9CA3AF",
+  },
   row2: { display: "flex", gap: 12, flexWrap: "wrap" },
   halfField: { flex: "1 1 220px", marginBottom: 14 },
   passwordWrap: {
@@ -270,15 +288,18 @@ export default function RestaurantSignup() {
   const { operator, isAuthenticated: isOperatorAuthenticated, loading: operatorLoading } = useOperator();
   const selectedPlan = location.state?.selected_plan || "";
   const selectedPlanLabel = planLabel(t, selectedPlan);
+  const claimRestaurantId = Number(location.state?.restaurant_id) || 0;
+  const isClaimIdentityLocked = claimRestaurantId > 0;
+  const CLAIM_LOCKED_FIELDS = new Set(["restaurant_name", "city", "state"]);
 
   const [form, setForm] = useState({
     email: operator?.email || "",
     password: "",
     confirmPassword: "",
-    restaurant_name: "",
-    city: "",
-    state: "",
-    phone: "",
+    restaurant_name: String(location.state?.restaurant_name || "").trim(),
+    city: String(location.state?.city || "").trim(),
+    state: String(location.state?.state || "").trim(),
+    phone: String(location.state?.phone || "").trim(),
   });
   const [agreements, setAgreements] = useState({ legalConsent: false });
 
@@ -303,6 +324,7 @@ export default function RestaurantSignup() {
 
   function handleChange(event) {
     const { name, value } = event.target;
+    if (isClaimIdentityLocked && CLAIM_LOCKED_FIELDS.has(name)) return;
     setForm((current) => ({ ...current, [name]: value }));
     setFieldErrors((current) => ({ ...current, [name]: "" }));
   }
@@ -394,6 +416,9 @@ export default function RestaurantSignup() {
         phone: form.phone.trim() || null,
         ...buildLegalConsentPayload(),
       };
+      if (isClaimIdentityLocked) {
+        payload.restaurant_id = claimRestaurantId;
+      }
       if (!isOperatorAuthenticated) {
         payload.password = form.password;
       }
@@ -729,9 +754,25 @@ export default function RestaurantSignup() {
               autoComplete="organization"
               value={form.restaurant_name}
               onChange={handleChange}
-              style={fieldErrors.restaurant_name ? styles.inputError : styles.input}
+              readOnly={isClaimIdentityLocked}
+              aria-readonly={isClaimIdentityLocked ? "true" : undefined}
+              style={
+                fieldErrors.restaurant_name
+                  ? styles.inputError
+                  : isClaimIdentityLocked
+                    ? styles.inputLocked
+                    : styles.input
+              }
             />
             {fieldErrors.restaurant_name ? <div style={styles.fieldError}>{fieldErrors.restaurant_name}</div> : null}
+            {isClaimIdentityLocked ? (
+              <div style={styles.identityLockHint}>
+                {t(
+                  "signup.account.identityLockedHint",
+                  "Protected listing identity — must match the Menuply / Common Knowledge restaurant and cannot be edited here."
+                )}
+              </div>
+            ) : null}
           </div>
 
           <div style={styles.row2}>
@@ -746,7 +787,15 @@ export default function RestaurantSignup() {
                 autoComplete="address-level2"
                 value={form.city}
                 onChange={handleChange}
-                style={fieldErrors.city ? styles.inputError : styles.input}
+                readOnly={isClaimIdentityLocked}
+                aria-readonly={isClaimIdentityLocked ? "true" : undefined}
+                style={
+                  fieldErrors.city
+                    ? styles.inputError
+                    : isClaimIdentityLocked
+                      ? styles.inputLocked
+                      : styles.input
+                }
               />
               {fieldErrors.city ? <div style={styles.fieldError}>{fieldErrors.city}</div> : null}
             </div>
@@ -763,7 +812,15 @@ export default function RestaurantSignup() {
                 maxLength={2}
                 value={form.state}
                 onChange={handleChange}
-                style={fieldErrors.state ? styles.inputError : styles.input}
+                readOnly={isClaimIdentityLocked}
+                aria-readonly={isClaimIdentityLocked ? "true" : undefined}
+                style={
+                  fieldErrors.state
+                    ? styles.inputError
+                    : isClaimIdentityLocked
+                      ? styles.inputLocked
+                      : styles.input
+                }
               />
               {fieldErrors.state ? <div style={styles.fieldError}>{fieldErrors.state}</div> : null}
             </div>

@@ -527,9 +527,29 @@ export default function RestaurantSignupEntry() {
   );
 
   function proceedWithPlanCode(selectedPlan) {
+    const claim = location.state || {};
+    const claimIdentity = {};
+    for (const key of [
+      "restaurant_id",
+      "restaurant_name",
+      "city",
+      "state",
+      "address_line1",
+      "postal_code",
+      "phone",
+      "website_url",
+      "claim_source",
+      "public_restaurant_slug_or_id",
+    ]) {
+      if (claim[key] != null && claim[key] !== "") {
+        claimIdentity[key] = claim[key];
+      }
+    }
+
     navigate(ACCOUNT_ROUTE, {
       state: {
         selected_plan: selectedPlan,
+        ...claimIdentity,
         ...(fromOperatorClaim
           ? { from: "operator_claim", create_listing: true }
           : {}),
