@@ -510,6 +510,7 @@ export default function RestaurantOnboardingLocations() {
   async function handleValidateImport() {
     setBusy(true);
     setActionError("");
+    setActionOk("");
     setPreview(null);
     try {
       const result = await validateLocationImport(restaurantId, {
@@ -518,9 +519,16 @@ export default function RestaurantOnboardingLocations() {
       });
       setPreview(result);
       if (!result.import_ready) {
-        setActionError("Resolve validation issues before confirming import.");
+        const detail =
+          result.message ||
+          result.issues?.[0]?.message ||
+          "Resolve validation issues before confirming import.";
+        setActionError(detail);
       } else {
-        setActionOk("Preview ready. Confirm to import — no locations are created until you confirm.");
+        setActionOk(
+          result.message ||
+            "Preview ready. Confirm to import — no locations are created until you confirm."
+        );
       }
     } catch (err) {
       setActionError(err.message || "Validation failed.");
@@ -881,7 +889,8 @@ export default function RestaurantOnboardingLocations() {
           </h2>
           <p style={styles.sectionHelp}>
             Optional at any size. Required when you need more than {effectiveMax} locations.
-            Supports CSV. Nothing is created until you confirm a validated preview.
+            Paste CSV with a header row (not a freeform street address). Nothing is created until
+            you confirm a validated preview.
           </p>
           <div style={styles.row}>
             <button type="button" style={styles.secondaryBtn} onClick={() => setShowBulk((v) => !v)}>
@@ -897,6 +906,15 @@ export default function RestaurantOnboardingLocations() {
               <label style={styles.label} htmlFor="loc_csv_paste">
                 Paste CSV contents
               </label>
+              <p style={{ ...styles.sectionHelp, marginBottom: 8 }}>
+                Example:
+                <br />
+                <code style={{ fontSize: 12 }}>
+                  display_name,address_line1,city,state,postal_code
+                  <br />
+                  Downtown,501 East Adams St,Chicago,IL,60661
+                </code>
+              </p>
               <textarea
                 id="loc_csv_paste"
                 value={csvText}
@@ -913,7 +931,9 @@ export default function RestaurantOnboardingLocations() {
                   background: "#fff",
                   boxSizing: "border-box",
                 }}
-                placeholder="restaurant_name,address_line1,address_line2,city,state,postal_code,country_code,phone"
+                placeholder={
+                  "display_name,address_line1,city,state,postal_code\nDowntown,501 East Adams St,Chicago,IL,60661"
+                }
               />
               <div style={{ ...styles.row, marginTop: 12 }}>
                 <button type="button" style={styles.secondaryBtn} disabled={busy} onClick={handleValidateImport}>
@@ -923,6 +943,11 @@ export default function RestaurantOnboardingLocations() {
                   type="button"
                   style={styles.primaryBtn}
                   disabled={busy || !preview?.import_ready}
+                  title={
+                    preview && !preview.import_ready
+                      ? "Fix validation issues, then Confirm becomes available"
+                      : undefined
+                  }
                   onClick={handleConfirmImport}
                 >
                   Confirm import
@@ -934,11 +959,17 @@ export default function RestaurantOnboardingLocations() {
                     Valid: {preview.valid_count} · Issues: {preview.issue_count} · Ready:{" "}
                     {preview.import_ready ? "yes" : "no"}
                   </div>
+                  {preview.message ? (
+                    <p style={{ margin: "8px 0 0", color: preview.import_ready ? "#14532d" : "#7f1d1d" }}>
+                      {preview.message}
+                    </p>
+                  ) : null}
                   {preview.issues?.length ? (
-                    <ul>
+                    <ul style={{ marginTop: 8 }}>
                       {preview.issues.slice(0, 10).map((issue, i) => (
                         <li key={i}>
-                          Row {issue.row_number}: {issue.message}
+                          {issue.row_number ? `Row ${issue.row_number}: ` : ""}
+                          {issue.message}
                         </li>
                       ))}
                     </ul>

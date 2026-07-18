@@ -106,6 +106,9 @@ test("Locations page wires validate → preview → confirm and never implies au
   assert.match(page, /no locations are created until you confirm/i);
   assert.match(page, /Download CSV template/);
   assert.match(page, /Manual Location Entry/);
+  assert.match(page, /does not look like CSV|header row|Example:/);
+  assert.match(page, /Downtown,501 East Adams St,Chicago,IL,60661/);
+  assert.match(page, /result\.message/);
 });
 
 test("App mounts Locations page (not stub)", () => {
