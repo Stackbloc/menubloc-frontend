@@ -22,6 +22,16 @@ describe("OCR edit split pane contract", () => {
     expect(src).toMatch(/ocr-source-evidence__thumbs/);
   });
 
+  it("source photo includes a toggleable magnifier lens", () => {
+    const src = read("OcrSourceEvidencePanel.jsx");
+    const css = read("ocrEditSplitLayout.css");
+    expect(src).toMatch(/OcrPhotoMagnifier/);
+    expect(src).toMatch(/Magnifier/);
+    expect(src).toMatch(/ocr-source-evidence__lens/);
+    expect(css).toMatch(/ocr-source-evidence__lens/);
+    expect(css).toMatch(/ocr-source-evidence__magnify-btn/);
+  });
+
   it("defines OcrEditSplitLayout with independent rail scroll and narrow collapse", () => {
     const layout = read("OcrEditSplitLayout.jsx");
     const css = read("ocrEditSplitLayout.css");

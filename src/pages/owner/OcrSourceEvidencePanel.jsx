@@ -1,11 +1,116 @@
-import React, { useEffect, useState } from "react";
-import { OWNER_COLORS } from "./OwnerLayout.jsx";
+import React, { useEffect, useRef, useState } from "react";
 import { OWNER_API_BASE } from "../../lib/ownerApi.js";
 
 export function buildOcrImageUrl(relativePath) {
   if (!relativePath) return null;
   if (/^https?:\/\//.test(relativePath)) return relativePath;
   return `${OWNER_API_BASE}${relativePath}`;
+}
+
+const MAGNIFIER_ZOOM = 2.75;
+const MAGNIFIER_LENS_PX = 148;
+
+/** Toggleable hover lens so operators can read small menu print on source photos. */
+function OcrPhotoMagnifier({ src, alt }) {
+  const wrapRef = useRef(null);
+  const imgRef = useRef(null);
+  const [enabled, setEnabled] = useState(false);
+  const [lens, setLens] = useState(null);
+
+  useEffect(() => {
+    setLens(null);
+  }, [src]);
+
+  useEffect(() => {
+    if (!enabled) setLens(null);
+  }, [enabled]);
+
+  function updateLens(clientX, clientY) {
+    const img = imgRef.current;
+    if (!img || !enabled) return;
+    const rect = img.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+      setLens(null);
+      return;
+    }
+    const half = MAGNIFIER_LENS_PX / 2;
+    setLens({
+      left: x - half,
+      top: y - half,
+      backgroundSize: `${rect.width * MAGNIFIER_ZOOM}px ${rect.height * MAGNIFIER_ZOOM}px`,
+      backgroundPosition: `-${x * MAGNIFIER_ZOOM - half}px -${y * MAGNIFIER_ZOOM - half}px`,
+    });
+  }
+
+  function handlePointerMove(e) {
+    updateLens(e.clientX, e.clientY);
+  }
+
+  function handlePointerLeave() {
+    setLens(null);
+  }
+
+  function handleImageError(e) {
+    const parent = e.target.closest(".ocr-source-evidence__image-wrap");
+    if (!parent) return;
+    parent.innerHTML =
+      '<div class="ocr-source-evidence__image-missing">' +
+      '<div style="font-weight:700;margin-bottom:6px">Photo unavailable</div>' +
+      '<div style="font-size:12px">Source file is no longer on the server. OCR text below is still valid for review.</div>' +
+      "</div>";
+  }
+
+  return (
+    <div className="ocr-source-evidence__photo">
+      <div className="ocr-source-evidence__photo-tools">
+        <button
+          type="button"
+          className={`ocr-source-evidence__magnify-btn${enabled ? " ocr-source-evidence__magnify-btn--active" : ""}`}
+          onClick={() => setEnabled((v) => !v)}
+          aria-pressed={enabled}
+          title={enabled ? "Turn off magnifier" : "Turn on magnifier — hover the photo to zoom"}
+        >
+          {enabled ? "Magnifier on" : "Magnifier"}
+        </button>
+        {enabled ? (
+          <span className="ocr-source-evidence__magnify-hint">Hover photo to zoom · {MAGNIFIER_ZOOM}×</span>
+        ) : null}
+      </div>
+      <div
+        ref={wrapRef}
+        className={`ocr-source-evidence__image-wrap${enabled ? " ocr-source-evidence__image-wrap--magnify" : ""}`}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
+      >
+        <img
+          ref={imgRef}
+          src={src}
+          alt={alt}
+          className="ocr-source-evidence__image"
+          draggable={false}
+          onError={handleImageError}
+        />
+        {enabled && lens ? (
+          <div
+            className="ocr-source-evidence__lens"
+            style={{
+              width: MAGNIFIER_LENS_PX,
+              height: MAGNIFIER_LENS_PX,
+              left: lens.left,
+              top: lens.top,
+              backgroundImage: `url(${src})`,
+              backgroundRepeat: "no-repeat",
+              backgroundSize: lens.backgroundSize,
+              backgroundPosition: lens.backgroundPosition,
+            }}
+            aria-hidden="true"
+          />
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 function OcrQualityBadge({ score, flags }) {
@@ -149,20 +254,7 @@ export default function OcrSourceEvidencePanel({
           </div>
 
           {imageUrl ? (
-            <div className="ocr-source-evidence__image-wrap">
-              <img
-                src={imageUrl}
-                alt={`Page ${activePage.page_number}`}
-                className="ocr-source-evidence__image"
-                onError={(e) => {
-                  e.target.parentNode.innerHTML =
-                    '<div class="ocr-source-evidence__image-missing">' +
-                    "<div style=\"font-weight:700;margin-bottom:6px\">Photo unavailable</div>" +
-                    "<div style=\"font-size:12px\">Source file is no longer on the server. OCR text below is still valid for review.</div>" +
-                    "</div>";
-                }}
-              />
-            </div>
+            <OcrPhotoMagnifier src={imageUrl} alt={`Page ${activePage.page_number}`} />
           ) : (
             <div className="ocr-source-evidence__image-missing">No photo for this page</div>
           )}
