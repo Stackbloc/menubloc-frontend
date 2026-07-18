@@ -48,7 +48,9 @@ describe("OCR edit split pane contract", () => {
     expect(css).toMatch(/@media \(max-width: 1479px\)/);
     expect(css).toMatch(/minmax\(0,\s*1fr\)/);
     expect(shell).toMatch(/overflow-x:\s*clip/);
-    expect(shell).toMatch(/calc\(100% - var\(--admin-sidebar-w/);
+    expect(shell).toMatch(/display:\s*grid/);
+    expect(shell).toMatch(/grid-template-columns:\s*var\(--admin-sidebar-w/);
+    expect(shell).not.toMatch(/width:\s*calc\(100% - var\(--admin-sidebar-w/);
   });
 
   it("Review Queue uses split layout instead of top 50/50 image|OCR grid", () => {

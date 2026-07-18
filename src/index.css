@@ -57,9 +57,11 @@
   --gb-color-success-bg: rgba(34, 197, 94, 0.08);
   --gb-color-success-border: rgba(34, 197, 94, 0.25);
   --gb-color-success-text: #22C55E;
-  --gb-color-warning-bg: rgba(234, 179, 8, 0.08);
-  --gb-color-warning-border: rgba(234, 179, 8, 0.25);
-  --gb-color-warning-text: #FCD34D;
+  /* Soft amber wash + dark amber ink — readable on white page chrome (search notices).
+     Do not use pale yellow text (#FCD34D) on light backgrounds (yellow-on-yellow). */
+  --gb-color-warning-bg: #FFFBEB;
+  --gb-color-warning-border: #F59E0B;
+  --gb-color-warning-text: #92400E;
 
   --gb-shadow-card: 0 8px 28px rgba(0, 0, 0, 0.35);
   --gb-shadow-card-hover: 0 14px 34px rgba(0, 0, 0, 0.5);
@@ -348,6 +350,7 @@ textarea:focus-visible {
   border-color: var(--gb-color-warning-border);
   background: var(--gb-color-warning-bg);
   color: var(--gb-color-warning-text);
+  box-shadow: inset 3px 0 0 #D97706;
 }
 
 .gb-status-message--success {

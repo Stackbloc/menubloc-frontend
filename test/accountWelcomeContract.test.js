@@ -1,5 +1,5 @@
 /**
- * Contract: diner welcome onboarding — spacing, Zip Code label, post-continue confirmation.
+ * Contract: diner welcome onboarding — signup-matched hierarchy, Zip Code, ready confirm.
  */
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
@@ -13,16 +13,20 @@ const src = fs.readFileSync(
 );
 
 describe("AccountWelcome contract", () => {
-  it("keeps eyebrow close to the logo", () => {
-    expect(src).toMatch(/Your Diner Account/);
-    expect(src).toMatch(/marginBottom:\s*18/);
-    expect(src).not.toMatch(/marginBottom:\s*40/);
+  it("matches Diner Signup title hierarchy under the logo", () => {
+    expect(src).toMatch(/PAGE_TITLE/);
+    expect(src).toMatch(/fontSize:\s*28/);
+    expect(src).toMatch(/fontWeight:\s*800/);
+    expect(src).toMatch(/marginTop:\s*16/);
+    expect(src).toMatch(/height=\{48\}/);
+    expect(src).toMatch(/Welcome to Menuply/);
+    expect(src).not.toMatch(/textTransform:\s*"uppercase"/);
   });
 
-  it("uses consistent body copy size for both intro paragraphs", () => {
-    expect(src).toMatch(/fontSize:\s*16/);
+  it("uses signup-matched body copy size", () => {
     expect(src).toMatch(/BODY_COPY/);
-    expect(src).not.toMatch(/fontSize:\s*15,\s*color:\s*"#6B7280"/);
+    expect(src).toMatch(/fontSize:\s*15/);
+    expect(src).toMatch(/LEAD_LINE/);
   });
 
   it("labels the field Zip Code", () => {

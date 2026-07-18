@@ -9,9 +9,27 @@ const API = (
   (VITE_ENV.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
 ).replace(/\/$/, "");
 
-const FONT = '"Instrument Sans", "Avenir Next", system-ui, sans-serif';
+const FONT = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial";
+
+/** Match Diner Signup hierarchy: logo → 28px title → 15px body. */
+const PAGE_TITLE = {
+  fontSize: 28,
+  fontWeight: 800,
+  marginTop: 16,
+  marginBottom: 10,
+  letterSpacing: "-0.03em",
+  color: "#0B0F0C",
+  lineHeight: 1.15,
+};
+const LEAD_LINE = {
+  fontSize: 15,
+  color: "#374151",
+  lineHeight: 1.65,
+  margin: "0 0 12px",
+  fontWeight: 600,
+};
 const BODY_COPY = {
-  fontSize: 16,
+  fontSize: 15,
   color: "#374151",
   lineHeight: 1.65,
   margin: 0,
@@ -122,39 +140,11 @@ export default function AccountWelcome() {
 
   if (showReady) {
     return (
-      <div style={{ minHeight: "100vh", background: "#fff", fontFamily: FONT }}>
-        <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 24px 80px" }}>
-          <BrandLogo
-            height={44}
-            radius={12}
-            matchPageBackground={false}
-            linkStyle={{ display: "block", marginBottom: 18 }}
-          />
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 800,
-              color: "#1F4E3D",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              marginBottom: 10,
-            }}
-          >
-            Your Diner Account
-          </div>
-          <h1
-            style={{
-              fontSize: "clamp(1.7rem, 4vw, 2.4rem)",
-              fontWeight: 900,
-              letterSpacing: "-0.03em",
-              color: "#0B0F0C",
-              lineHeight: 1.1,
-              marginBottom: 16,
-            }}
-          >
-            You&apos;re all set
-          </h1>
-          <p style={{ ...BODY_COPY, marginBottom: 12 }}>
+      <div style={{ minHeight: "100vh", background: "#fff", fontFamily: FONT, color: "#0B0F0C" }}>
+        <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 20px 80px", boxSizing: "border-box" }}>
+          <BrandLogo height={48} radius={14} matchPageBackground={false} />
+          <h1 style={PAGE_TITLE}>You&apos;re all set</h1>
+          <p style={{ ...LEAD_LINE, fontWeight: 400 }}>
             Your account is all set up. You can add additional preferences using the Waiter.
           </p>
           <p style={{ ...BODY_COPY, marginBottom: 28 }}>
@@ -181,40 +171,12 @@ export default function AccountWelcome() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff", fontFamily: FONT }}>
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 24px 80px" }}>
-        <BrandLogo
-          height={44}
-          radius={12}
-          matchPageBackground={false}
-          linkStyle={{ display: "block", marginBottom: 18 }}
-        />
+    <div style={{ minHeight: "100vh", background: "#fff", fontFamily: FONT, color: "#0B0F0C" }}>
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "40px 20px 80px", boxSizing: "border-box" }}>
+        <BrandLogo height={48} radius={14} matchPageBackground={false} />
 
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 800,
-            color: "#1F4E3D",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            marginBottom: 10,
-          }}
-        >
-          Your Diner Account
-        </div>
-
-        <h1
-          style={{
-            fontSize: "clamp(1.7rem, 4vw, 2.4rem)",
-            fontWeight: 900,
-            letterSpacing: "-0.03em",
-            color: "#0B0F0C",
-            lineHeight: 1.1,
-            marginBottom: 14,
-          }}
-        >
-          Welcome to Menuply
-        </h1>
+        <h1 style={PAGE_TITLE}>Welcome to Menuply</h1>
+        <p style={LEAD_LINE}>Your Diner Account</p>
 
         <p style={{ ...BODY_COPY, marginBottom: 12 }}>
           We&apos;re excited to have you. We&apos;re setting up your new account and want to
