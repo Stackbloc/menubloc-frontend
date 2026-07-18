@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { BrandLogo } from "../../components/BrandLogo.jsx";
 
@@ -10,6 +10,12 @@ const API = (
 ).replace(/\/$/, "");
 
 const FONT = '"Instrument Sans", "Avenir Next", system-ui, sans-serif';
+const BODY_COPY = {
+  fontSize: 16,
+  color: "#374151",
+  lineHeight: 1.65,
+  margin: 0,
+};
 
 const CUISINE_OPTIONS = [
   "American", "Mexican", "Italian", "Chinese", "Japanese", "Thai",
@@ -30,6 +36,8 @@ const DIETARY_OPTIONS = [
   { key: "keto", label: "Keto" },
 ];
 
+const HOME_REDIRECT_MS = 3200;
+
 export default function AccountWelcome() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,6 +49,15 @@ export default function AccountWelcome() {
   const [selectedDietary, setSelectedDietary] = useState([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [showReady, setShowReady] = useState(false);
+
+  useEffect(() => {
+    if (!showReady) return undefined;
+    const timer = window.setTimeout(() => {
+      navigate(redirectTo, { replace: true });
+    }, HOME_REDIRECT_MS);
+    return () => window.clearTimeout(timer);
+  }, [showReady, navigate, redirectTo]);
 
   function toggleCuisine(cuisine) {
     setSelectedCuisines((prev) =>
@@ -56,8 +73,8 @@ export default function AccountWelcome() {
 
   function validateZip(value) {
     const trimmed = String(value || "").trim();
-    if (!trimmed) return "ZIP code is required";
-    if (!/^\d{5}(-\d{4})?$/.test(trimmed)) return "Enter a valid 5-digit ZIP code";
+    if (!trimmed) return "Zip Code is required";
+    if (!/^\d{5}(-\d{4})?$/.test(trimmed)) return "Enter a valid 5-digit Zip Code";
     return "";
   }
 
@@ -81,7 +98,7 @@ export default function AccountWelcome() {
       });
       if (!zipRes.ok) {
         const data = await zipRes.json().catch(() => ({}));
-        throw new Error(data.error || "Could not save ZIP code");
+        throw new Error(data.error || "Could not save Zip Code");
       }
 
       if (selectedDietary.length > 0) {
@@ -95,7 +112,7 @@ export default function AccountWelcome() {
         }).catch(() => {});
       }
 
-      navigate(redirectTo, { replace: true });
+      setShowReady(true);
     } catch (err) {
       setFormError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -103,14 +120,74 @@ export default function AccountWelcome() {
     }
   }
 
+  if (showReady) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#fff", fontFamily: FONT }}>
+        <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 24px 80px" }}>
+          <BrandLogo
+            height={44}
+            radius={12}
+            matchPageBackground={false}
+            linkStyle={{ display: "block", marginBottom: 18 }}
+          />
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              color: "#1F4E3D",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              marginBottom: 10,
+            }}
+          >
+            Your Diner Account
+          </div>
+          <h1
+            style={{
+              fontSize: "clamp(1.7rem, 4vw, 2.4rem)",
+              fontWeight: 900,
+              letterSpacing: "-0.03em",
+              color: "#0B0F0C",
+              lineHeight: 1.1,
+              marginBottom: 16,
+            }}
+          >
+            You&apos;re all set
+          </h1>
+          <p style={{ ...BODY_COPY, marginBottom: 12 }}>
+            Your account is all set up. You can add additional preferences using the Waiter.
+          </p>
+          <p style={{ ...BODY_COPY, marginBottom: 28 }}>
+            We are taking you to the home screen.
+          </p>
+          <div
+            style={{
+              padding: "14px 16px",
+              borderRadius: 12,
+              background: "#F0FDF4",
+              border: "1px solid #BBF7D0",
+              color: "#15803D",
+              fontSize: 15,
+              fontWeight: 700,
+            }}
+            role="status"
+            aria-live="polite"
+          >
+            Redirecting…
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "#fff", fontFamily: FONT }}>
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "48px 24px 80px" }}>
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 24px 80px" }}>
         <BrandLogo
           height={44}
           radius={12}
           matchPageBackground={false}
-          linkStyle={{ display: "block", marginBottom: 40 }}
+          linkStyle={{ display: "block", marginBottom: 18 }}
         />
 
         <div
@@ -123,7 +200,7 @@ export default function AccountWelcome() {
             marginBottom: 10,
           }}
         >
-          Your diner account
+          Your Diner Account
         </div>
 
         <h1
@@ -139,11 +216,11 @@ export default function AccountWelcome() {
           Welcome to Menuply
         </h1>
 
-        <p style={{ fontSize: 16, color: "#374151", lineHeight: 1.65, marginBottom: 12 }}>
+        <p style={{ ...BODY_COPY, marginBottom: 12 }}>
           We&apos;re excited to have you. We&apos;re setting up your new account and want to
           customize your experience so you see menus, recommendations, and deals that fit how you eat.
         </p>
-        <p style={{ fontSize: 15, color: "#6B7280", lineHeight: 1.6, marginBottom: 36 }}>
+        <p style={{ ...BODY_COPY, marginBottom: 36 }}>
           A few optional preferences help Waiter and discovery feel like they know you — starting with where you are.
         </p>
 
@@ -158,13 +235,13 @@ export default function AccountWelcome() {
                 color: "#0B0F0C",
               }}
             >
-              ZIP code{" "}
+              Zip Code{" "}
               <span style={{ color: "#B91C1C", fontWeight: 700 }}>(required)</span>
             </label>
             <input
               type="text"
               inputMode="numeric"
-              placeholder="Enter your ZIP code"
+              placeholder="Enter your Zip Code"
               value={zip}
               onChange={(e) => {
                 setZip(e.target.value);
