@@ -4,7 +4,7 @@ Retire operator Menu Design into Menu Lab and add an explicit return to operator
 
 # Current Status
 
-**LOCAL COMPLETE** — sidebar Menu Design removed; `/operator/menudesign` redirects to Menu Lab; Menu Lab panel has **← Operator Home**. Not CPD’d.
+**CPD COMPLETE** — FE `1341efa` / bundle `index-D6V7N289.js` on menuply.com; BE `9a87d596` on Railway.
 
 # Files Changed
 
