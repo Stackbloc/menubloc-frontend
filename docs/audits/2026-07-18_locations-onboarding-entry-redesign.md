@@ -1,7 +1,10 @@
 # Locations Onboarding Entry Box Redesign
 
 **Date:** 2026-07-18  
-**Status:** Implemented locally — not committed / not deployed  
+**Status:** CPD complete — live on menuply.com  
+**Commit:** `ac476d6` (`feature/mds-homepage-controls`)  
+**Deploy:** `menubloc-frontend-ebtcqu09e-menuply.vercel.app` → aliased to `menuply.com`  
+**Bundle:** `index-B3sdHgsz.js` (matches vite build; placeholders + Select state present; API Railway 58 / localhost ≤6)  
 
 ---
 
@@ -60,36 +63,41 @@ None.
 
 ## Commits
 
-None (per restrictions).
+- `ac476d6` — fix(onboarding): redesign Locations entry to white shell with field cues
 
 ---
 
 ## Deployment Status
 
-Not deployed.
+- Pushed `feature/mds-homepage-controls`
+- `npx vercel --prod` → `https://menubloc-frontend-ebtcqu09e-menuply.vercel.app`
+- `npx vercel alias set … menuply.com` — success
+- Live bundle `index-B3sdHgsz.js` contains Locations placeholders + State select
 
 ---
 
 ## Verification Results
 
 - `node --test test/onboardingLocationsContract.test.js` — 12 pass
+- menuply.com HTML → `index-B3sdHgsz.js`
+- Bundle: `Downtown patio or Main Street`, `Select state`, `menubloc-backend-production` ≫ `localhost:3001` (6)
 
 ---
 
 ## Remaining Risks
 
-- Production still serves cream shell until FE deploy + `menuply.com` alias
 - Non-US countries not selectable yet (US-only by product decision)
+- Residual `#f7f4ef` / `#efe8df` strings may still exist elsewhere in the bundle (not Locations page)
 
 ---
 
 ## Follow-Up Work
 
-- Deploy frontend + alias verify
 - Optional: ship pending Organization entity-type / jurisdiction dropdown plan separately
+- Human verify on `/restaurant/onboarding/locations`
 
 ---
 
 ## Final Verdict
 
-Local redesign complete and contract-tested. Ready for commit/deploy when requested.
+CPD complete. Locations redesign is live on menuply.com; human should confirm the form UI.
