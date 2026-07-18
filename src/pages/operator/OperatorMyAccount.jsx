@@ -1,12 +1,16 @@
 /**
- * Operator My Account — public restaurant profile editor + account settings.
- * Route: /operator/my-account
+ * Operator My Account — tabbed account hub.
+ * Route: /operator/my-account?tab=profile|menu|settings|password
+ * Menu sub: ?tab=menu&menuPanel=view|edit
  *
- * Profile form is primary. Password, plan, and utilities are secondary.
+ * Profile Editor — public restaurant listing fields
+ * Menu — view public menu + Edit menu content (Menu Worksheet)
+ * Settings — account type, open date, next billing, change, cancel
+ * Password — operator password
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -14,6 +18,28 @@ import { getSubscriptionStatusLabel, formatMoney } from "../../components/paymen
 import PrimaryQrCard from "../../components/qr/PrimaryQrCard.jsx";
 import { operatorPublicProfilePath } from "../../lib/canonicalUrl.js";
 import { OperatorRestaurantProfileForm } from "./OperatorProfileEditor.jsx";
+
+const TABS = [
+  { id: "profile", label: "Profile Editor" },
+  { id: "menu", label: "Menu" },
+  { id: "settings", label: "Settings" },
+  { id: "password", label: "Password" },
+];
+
+const MENU_PANELS = [
+  { id: "view", label: "View menu" },
+  { id: "edit", label: "Edit menu content" },
+];
+
+function normalizeTab(raw) {
+  const id = String(raw || "").toLowerCase();
+  return TABS.some((t) => t.id === id) ? id : "profile";
+}
+
+function normalizeMenuPanel(raw) {
+  const id = String(raw || "").toLowerCase();
+  return MENU_PANELS.some((p) => p.id === id) ? id : "view";
+}
 
 function getPlanTier(planCode) {
   if (!planCode) return "published";
@@ -41,15 +67,15 @@ function getPlanDisplayName(planCode) {
   return planCode;
 }
 
-function getBillingIntervalLabel(planCode) {
-  if (!planCode || planCode === "verified" || planCode === "published_free") return "Free";
-  if (planCode.includes("annual")) return "Annual";
-  if (planCode.includes("monthly")) return "Monthly";
-  return "—";
-}
-
-function getAutoRenewLabel(sub) {
-  return sub?.cancel_at_period_end ? "No" : "Yes";
+function formatLongDate(value) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 function Row({ label, value, last }) {
@@ -155,14 +181,119 @@ function SectionCard({ title, children, style }) {
   );
 }
 
+function TabBar({ tabs, activeId, onChange }) {
+  return (
+    <div
+      role="tablist"
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 4,
+        marginBottom: 20,
+        borderBottom: "1px solid #e7e5e4",
+        paddingBottom: 0,
+      }}
+    >
+      {tabs.map((tab) => {
+        const on = tab.id === activeId;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            onClick={() => onChange(tab.id)}
+            style={{
+              background: "none",
+              border: "none",
+              borderBottom: on ? "2px solid #1F4E3D" : "2px solid transparent",
+              marginBottom: -1,
+              padding: "10px 14px",
+              fontSize: 13,
+              fontWeight: on ? 750 : 600,
+              color: on ? "#1F4E3D" : "#78716c",
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function SubNav({ panels, activeId, onChange }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+      {panels.map((panel) => {
+        const on = panel.id === activeId;
+        return (
+          <button
+            key={panel.id}
+            type="button"
+            onClick={() => onChange(panel.id)}
+            style={{
+              background: on ? "#1c1917" : "#fff",
+              color: on ? "#fff" : "#44403c",
+              border: on ? "1px solid #1c1917" : "1px solid #d6d3d1",
+              borderRadius: 999,
+              padding: "7px 14px",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {panel.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+const BTN_PRIMARY = {
+  background: "#1c1917",
+  color: "#fff",
+  border: "none",
+  borderRadius: 8,
+  padding: "10px 16px",
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
+const BTN_SECONDARY = {
+  background: "#fff",
+  color: "#1c1917",
+  border: "1px solid #d6d3d1",
+  borderRadius: 8,
+  padding: "10px 16px",
+  fontSize: 13,
+  fontWeight: 650,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
 export default function OperatorMyAccount() {
   const { t } = useLanguage();
   const { selectedRestaurant, subscription: contextSubscription } = useOperator();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const tab = normalizeTab(searchParams.get("tab"));
+  const menuPanel = normalizeMenuPanel(searchParams.get("menuPanel"));
 
   const [subscription, setSubscription] = useState(null);
   const [billingOverview, setBillingOverview] = useState(null);
   const [primaryQr, setPrimaryQr] = useState(null);
+  const [accountOpenedAt, setAccountOpenedAt] = useState(null);
+  const [menus, setMenus] = useState([]);
+  const [menusLoading, setMenusLoading] = useState(false);
+  const [menusError, setMenusError] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cancelConfirm, setCancelConfirm] = useState(false);
@@ -175,33 +306,73 @@ export default function OperatorMyAccount() {
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  async function loadData(rid) {
+  function setTab(nextTab) {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", nextTab);
+    if (nextTab !== "menu") next.delete("menuPanel");
+    else if (!next.get("menuPanel")) next.set("menuPanel", "view");
+    setSearchParams(next, { replace: true });
+  }
+
+  function setMenuPanel(nextPanel) {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", "menu");
+    next.set("menuPanel", nextPanel);
+    setSearchParams(next, { replace: true });
+  }
+
+  async function loadAccountData(rid) {
     setLoading(true);
     setError("");
     try {
-      const [subData, billingData, qrData] = await Promise.allSettled([
+      const [subData, billingData, qrData, profileData] = await Promise.allSettled([
         api.getPlatformSubscriptionStatus(rid),
         api.getBillingOverview(rid),
         api.getPrimaryQr(rid),
+        api.getProfile(rid),
       ]);
       setSubscription(subData.status === "fulfilled" ? subData.value : null);
       setBillingOverview(billingData.status === "fulfilled" ? billingData.value : null);
       setPrimaryQr(qrData.status === "fulfilled" ? qrData.value?.qr || null : null);
+      const profile = profileData.status === "fulfilled" ? profileData.value?.profile : null;
+      setAccountOpenedAt(profile?.created_at || selectedRestaurant?.created_at || null);
       if (subData.status === "rejected") setError("Unable to load subscription details.");
     } finally {
       setLoading(false);
     }
   }
 
+  async function loadMenus(rid) {
+    setMenusLoading(true);
+    setMenusError("");
+    try {
+      const data = await api.getMenus(rid);
+      setMenus(Array.isArray(data?.menus) ? data.menus : []);
+    } catch (err) {
+      setMenus([]);
+      setMenusError(err.message || "Unable to load menus.");
+    } finally {
+      setMenusLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (selectedRestaurant?.id) {
-      loadData(selectedRestaurant.id);
+      loadAccountData(selectedRestaurant.id);
     } else {
       setSubscription(null);
       setBillingOverview(null);
       setPrimaryQr(null);
+      setAccountOpenedAt(null);
+      setMenus([]);
     }
   }, [selectedRestaurant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (selectedRestaurant?.id && tab === "menu") {
+      loadMenus(selectedRestaurant.id);
+    }
+  }, [selectedRestaurant?.id, tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const planCode = subscription?.plan_code || contextSubscription?.plan_slug || null;
   const planDisplayOverride =
@@ -215,13 +386,23 @@ export default function OperatorMyAccount() {
     ["active", "trialing", "past_due"].includes(normalizedStatus) &&
     !subscription?.cancel_at_period_end;
 
-  const renewalDate = subscription?.current_period_end
-    ? new Date(subscription.current_period_end).toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "—";
+  const nextBillingDate = isFreeTier
+    ? "—"
+    : formatLongDate(subscription?.current_period_end);
+
+  const publicProfileHref = selectedRestaurant ? operatorPublicProfilePath(selectedRestaurant) : null;
+  const publicMenuHref = selectedRestaurant?.id
+    ? `/restaurants/${selectedRestaurant.id}/menu`
+    : null;
+
+  const primaryMenu = useMemo(() => {
+    if (!menus.length) return null;
+    return menus.find((m) => m.is_primary || m.is_active) || menus[0];
+  }, [menus]);
+
+  function worksheetPath(menuId) {
+    return `/operator/restaurants/${selectedRestaurant.id}/menus/${menuId}/worksheet`;
+  }
 
   async function handleCancel() {
     if (!selectedRestaurant?.id) return;
@@ -230,15 +411,13 @@ export default function OperatorMyAccount() {
       await api.cancelPlatformSubscription({ restaurantId: selectedRestaurant.id, atPeriodEnd: true });
       setCancelMessage("Cancellation scheduled. Your plan remains active until the end of the billing period.");
       setCancelConfirm(false);
-      await loadData(selectedRestaurant.id);
+      await loadAccountData(selectedRestaurant.id);
     } catch {
       setCancelMessage("Unable to process cancellation. Please try again.");
     } finally {
       setCancelBusy(false);
     }
   }
-
-  const publicProfileHref = selectedRestaurant ? operatorPublicProfilePath(selectedRestaurant) : null;
 
   async function handleChangePassword() {
     setPasswordError("");
@@ -274,47 +453,157 @@ export default function OperatorMyAccount() {
   return (
     <OperatorLayout title="My Account">
       <div style={{ maxWidth: 960, paddingBottom: 48 }}>
-        {/* Restaurant name lives in the sidebar — do not repeat it here */}
-        {selectedRestaurant?.id ? (
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 16,
-              marginBottom: 20,
-              alignItems: "center",
-            }}
-          >
-            {publicProfileHref ? (
-              <QuietLink href={publicProfileHref}>View public profile ↗</QuietLink>
-            ) : null}
-            <QuietLink
-              onClick={() =>
-                window.open(`/public/restaurants/${selectedRestaurant.id}/menu`, "_blank")
-              }
-            >
-              View public menu ↗
-            </QuietLink>
-            <QuietLink onClick={() => navigate("/operator/menulab")}>Menu Lab →</QuietLink>
-          </div>
-        ) : null}
+        <TabBar tabs={TABS} activeId={tab} onChange={setTab} />
 
-        {!selectedRestaurant?.id ? (
+        {!selectedRestaurant?.id && tab !== "password" ? (
           <p style={{ fontSize: 14, color: "#78716c", marginBottom: 16 }}>
             {t("operator.selectRestaurantProfile", "Select a restaurant to edit its profile.")}
           </p>
-        ) : (
-          <>
-            {/* PRIMARY — public profile editor */}
-            <SectionCard title="Public restaurant profile">
-              <p style={{ margin: "-4px 0 16px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
-                These fields appear on your public Menuply listing. Save a draft, then publish to go live.
-              </p>
-              <OperatorRestaurantProfileForm embedded />
-            </SectionCard>
+        ) : null}
 
-            {/* SECONDARY — plan */}
-            <SectionCard title="Plan">
+        {tab === "profile" && selectedRestaurant?.id ? (
+          <SectionCard title="Public restaurant profile">
+            <p style={{ margin: "-4px 0 16px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
+              These fields appear on your public Menuply listing. Save a draft, then publish to go live.
+            </p>
+            {publicProfileHref ? (
+              <div style={{ marginBottom: 14 }}>
+                <QuietLink href={publicProfileHref}>View public profile ↗</QuietLink>
+              </div>
+            ) : null}
+            <OperatorRestaurantProfileForm embedded />
+          </SectionCard>
+        ) : null}
+
+        {tab === "menu" && selectedRestaurant?.id ? (
+          <SectionCard title="Menu">
+            <SubNav panels={MENU_PANELS} activeId={menuPanel} onChange={setMenuPanel} />
+
+            {menuPanel === "view" ? (
+              <>
+                <p style={{ margin: "0 0 14px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
+                  Open the live diner menu your guests see on Menuply.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
+                  <button
+                    type="button"
+                    style={BTN_PRIMARY}
+                    disabled={!publicMenuHref}
+                    onClick={() => window.open(publicMenuHref, "_blank", "noopener,noreferrer")}
+                  >
+                    View public menu ↗
+                  </button>
+                  <button type="button" style={BTN_SECONDARY} onClick={() => setMenuPanel("edit")}>
+                    Edit menu content →
+                  </button>
+                </div>
+                {menusLoading ? (
+                  <p style={{ margin: 0, fontSize: 13, color: "#78716c" }}>Loading menus…</p>
+                ) : menusError ? (
+                  <p style={{ margin: 0, fontSize: 13, color: "#92400e" }}>{menusError}</p>
+                ) : menus.length === 0 ? (
+                  <p style={{ margin: 0, fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
+                    No menus yet. Upload a PDF or photo from Menu Lab, then return here to edit content.
+                  </p>
+                ) : (
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {menus.map((menu) => (
+                      <div
+                        key={menu.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 12,
+                          padding: "10px 12px",
+                          border: "1px solid #e7e5e4",
+                          borderRadius: 10,
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1720" }}>
+                            {menu.name || menu.title || `Menu ${menu.id}`}
+                          </div>
+                          <div style={{ fontSize: 12, color: "#78716c", marginTop: 2 }}>
+                            {[menu.status, menu.is_primary ? "Primary" : null].filter(Boolean).join(" · ") ||
+                              "Menu"}
+                          </div>
+                        </div>
+                        <QuietLink href={publicMenuHref}>View ↗</QuietLink>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <p style={{ margin: "0 0 14px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
+                  Edit dish names, sections, descriptions, and Menuply prices in the Menu Worksheet — content
+                  only (not layout or photos).
+                </p>
+                {menusLoading ? (
+                  <p style={{ margin: 0, fontSize: 13, color: "#78716c" }}>Loading menus…</p>
+                ) : menusError ? (
+                  <p style={{ margin: 0, fontSize: 13, color: "#92400e" }}>{menusError}</p>
+                ) : menus.length === 0 ? (
+                  <p style={{ margin: 0, fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
+                    No menus to edit yet. After a PDF or photo upload finishes, open the worksheet from here.
+                  </p>
+                ) : (
+                  <>
+                    {primaryMenu ? (
+                      <div style={{ marginBottom: 14 }}>
+                        <button
+                          type="button"
+                          style={BTN_PRIMARY}
+                          onClick={() => navigate(worksheetPath(primaryMenu.id))}
+                        >
+                          Open Menu Worksheet
+                        </button>
+                      </div>
+                    ) : null}
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {menus.map((menu) => (
+                        <div
+                          key={menu.id}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: 12,
+                            padding: "10px 12px",
+                            border: "1px solid #e7e5e4",
+                            borderRadius: 10,
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f1720" }}>
+                              {menu.name || menu.title || `Menu ${menu.id}`}
+                            </div>
+                            <div style={{ fontSize: 12, color: "#78716c", marginTop: 2 }}>
+                              Content editor · names, prices, sections
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            style={{ ...BTN_SECONDARY, padding: "8px 12px" }}
+                            onClick={() => navigate(worksheetPath(menu.id))}
+                          >
+                            Edit content
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </SectionCard>
+        ) : null}
+
+        {tab === "settings" && selectedRestaurant?.id ? (
+          <>
+            <SectionCard title="Account settings">
               {loading ? (
                 <p style={{ margin: 0, fontSize: 13, color: "#78716c" }}>Loading…</p>
               ) : error ? (
@@ -322,9 +611,10 @@ export default function OperatorMyAccount() {
               ) : (
                 <>
                   <Row
-                    label="Current plan"
+                    label="Account type"
                     value={planDisplayOverride || getPlanDisplayName(planCode)}
                   />
+                  <Row label="Account opened" value={formatLongDate(accountOpenedAt)} />
                   <Row
                     label="Status"
                     value={
@@ -337,13 +627,7 @@ export default function OperatorMyAccount() {
                       />
                     }
                   />
-                  <Row label="Billing" value={getBillingIntervalLabel(planCode)} />
-                  <Row label="Renewal" value={isFreeTier ? "—" : renewalDate} />
-                  <Row
-                    label="Auto-renew"
-                    value={isFreeTier ? "—" : getAutoRenewLabel(subscription)}
-                    last={!billingOverview}
-                  />
+                  <Row label="Next billing date" value={nextBillingDate} last={!billingOverview} />
 
                   {billingOverview ? (
                     <>
@@ -361,21 +645,17 @@ export default function OperatorMyAccount() {
                               ? `${billingOverview.payment_method.brand.charAt(0).toUpperCase()}${billingOverview.payment_method.brand.slice(1)} ···· ${billingOverview.payment_method.last4}`
                               : "On file"
                           }
+                          last
                         />
-                      ) : null}
-                      <Row
-                        label="Marketplace setup"
-                        value={
-                          billingOverview.stripe_connect?.onboarding_complete ? "Complete" : "Not complete"
-                        }
-                        last
-                      />
+                      ) : (
+                        <div style={{ height: 0 }} />
+                      )}
                     </>
                   ) : null}
 
                   {!isFreeTier && subscription?.cancel_at_period_end && !cancelMessage ? (
                     <p style={{ margin: "12px 0 0", fontSize: 13, color: "#92400e" }}>
-                      Your plan will not renew. Access continues until {renewalDate}.
+                      Your plan will not renew. Access continues until {nextBillingDate}.
                     </p>
                   ) : null}
                   {cancelMessage ? (
@@ -386,36 +666,9 @@ export default function OperatorMyAccount() {
                     <button
                       type="button"
                       onClick={() => navigate("/operator/subscription")}
-                      style={{
-                        background: "#1c1917",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 8,
-                        padding: "10px 16px",
-                        fontSize: 13,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        fontFamily: "inherit",
-                      }}
+                      style={BTN_PRIMARY}
                     >
-                      Change plan
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => navigate("/operator/delivery")}
-                      style={{
-                        background: "#fff",
-                        color: "#1c1917",
-                        border: "1px solid #d6d3d1",
-                        borderRadius: 8,
-                        padding: "10px 16px",
-                        fontSize: 13,
-                        fontWeight: 650,
-                        cursor: "pointer",
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      Delivery settings
+                      Change account type
                     </button>
                     {canCancel && !cancelConfirm ? (
                       <button
@@ -432,7 +685,7 @@ export default function OperatorMyAccount() {
                           fontFamily: "inherit",
                         }}
                       >
-                        Cancel subscription
+                        Cancel
                       </button>
                     ) : null}
                   </div>
@@ -440,8 +693,8 @@ export default function OperatorMyAccount() {
                   {cancelConfirm ? (
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #f0f4f8" }}>
                       <p style={{ margin: "0 0 12px", fontSize: 13, color: "#374151", lineHeight: 1.5 }}>
-                        Your plan stays active until <strong>{renewalDate}</strong>, then switches to Starter
-                        (free).
+                        Your plan stays active until <strong>{nextBillingDate}</strong>, then switches to
+                        Starter (free).
                       </p>
                       <div style={{ display: "flex", gap: 10 }}>
                         <button
@@ -467,17 +720,7 @@ export default function OperatorMyAccount() {
                           type="button"
                           onClick={() => setCancelConfirm(false)}
                           disabled={cancelBusy}
-                          style={{
-                            background: "none",
-                            color: "#57534e",
-                            border: "1px solid #e7e5e4",
-                            borderRadius: 8,
-                            padding: "9px 14px",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            fontFamily: "inherit",
-                          }}
+                          style={BTN_SECONDARY}
                         >
                           Keep plan
                         </button>
@@ -488,7 +731,6 @@ export default function OperatorMyAccount() {
               )}
             </SectionCard>
 
-            {/* QR — keep, quieter */}
             <SectionCard title="Primary QR">
               <PrimaryQrCard qr={primaryQr} restaurantId={selectedRestaurant?.id} />
               <div style={{ marginTop: 10 }}>
@@ -496,69 +738,63 @@ export default function OperatorMyAccount() {
               </div>
             </SectionCard>
           </>
-        )}
+        ) : null}
 
-        {/* Password — separate account-level panel (not restaurant-scoped) */}
-        <SectionCard title="Password">
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Current password"
-              autoComplete="current-password"
-              style={inputStyle}
-            />
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="New password"
-              autoComplete="new-password"
-              style={inputStyle}
-            />
-            <input
-              type="password"
-              value={confirmNewPassword}
-              onChange={(e) => setConfirmNewPassword(e.target.value)}
-              placeholder="Confirm new password"
-              autoComplete="new-password"
-              style={inputStyle}
-            />
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <button
-                type="button"
-                onClick={handleChangePassword}
-                disabled={passwordSaving}
-                style={{
-                  background: "#1c1917",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 8,
-                  padding: "9px 14px",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: passwordSaving ? "default" : "pointer",
-                  opacity: passwordSaving ? 0.7 : 1,
-                  fontFamily: "inherit",
-                }}
-              >
-                {passwordSaving ? "Updating…" : "Update password"}
-              </button>
-              {(passwordError || passwordMessage) && (
-                <span
+        {tab === "password" ? (
+          <SectionCard title="Password">
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Current password"
+                autoComplete="current-password"
+                style={inputStyle}
+              />
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="New password"
+                autoComplete="new-password"
+                style={inputStyle}
+              />
+              <input
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="Confirm new password"
+                autoComplete="new-password"
+                style={inputStyle}
+              />
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={handleChangePassword}
+                  disabled={passwordSaving}
                   style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: passwordError ? "#dc2626" : "#16a34a",
+                    ...BTN_PRIMARY,
+                    opacity: passwordSaving ? 0.7 : 1,
+                    cursor: passwordSaving ? "default" : "pointer",
                   }}
                 >
-                  {passwordError || passwordMessage}
-                </span>
-              )}
+                  {passwordSaving ? "Updating…" : "Update password"}
+                </button>
+                {(passwordError || passwordMessage) && (
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: passwordError ? "#dc2626" : "#16a34a",
+                    }}
+                  >
+                    {passwordError || passwordMessage}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        </SectionCard>
+          </SectionCard>
+        ) : null}
       </div>
     </OperatorLayout>
   );
