@@ -3,8 +3,10 @@
  * Private legal/billing fields — never expose on public restaurant pages.
  */
 
+import { US_STATE_OPTIONS } from "./locationEntryPolicy.js";
+
 export const ENTITY_TYPE_OPTIONS = Object.freeze([
-  { value: "individual_sole_proprietor", label: "Individual / sole proprietor" },
+  { value: "individual_sole_proprietor", label: "Sole proprietor" },
   { value: "llc", label: "LLC" },
   { value: "corporation", label: "Corporation" },
   { value: "partnership", label: "Partnership" },
@@ -20,6 +22,13 @@ export const RELATIONSHIP_TYPE_OPTIONS = Object.freeze([
   { value: "management_company", label: "Management company" },
 ]);
 
+/** US states + DC for optional State of formation (jurisdiction). */
+export const JURISDICTION_STATE_OPTIONS = US_STATE_OPTIONS;
+
+const JURISDICTION_STATE_CODES = new Set(
+  JURISDICTION_STATE_OPTIONS.map((o) => o.value)
+);
+
 /** Neutral provisional backfill label — never show as typed legal name. */
 export const PENDING_ORGANIZATION_LEGAL_NAME = "Pending organization review";
 
@@ -34,7 +43,6 @@ export function emptyBusinessOrganizationForm() {
     billing_email: "",
     billing_phone: "",
     relationship_to_restaurant: "owner",
-    is_sole_proprietor: true,
   };
 }
 
@@ -53,6 +61,15 @@ export function resolveLegalNameForForm(org = {}, { restaurantDisplayName } = {}
   return raw;
 }
 
+function normalizeJurisdictionCode(raw) {
+  const code = String(raw || "")
+    .trim()
+    .toUpperCase()
+    .slice(0, 2);
+  if (!code) return "";
+  return JURISDICTION_STATE_CODES.has(code) ? code : "";
+}
+
 export function organizationToForm(org = {}, relationship = {}, options = {}) {
   const entityType = org.entity_type || "individual_sole_proprietor";
   return {
@@ -60,12 +77,11 @@ export function organizationToForm(org = {}, relationship = {}, options = {}) {
     dba_trade_name: org.dba_trade_name || "",
     entity_type: entityType,
     country_code: org.country_code || "US",
-    jurisdiction: org.jurisdiction || org.tax_jurisdiction || "",
+    jurisdiction: normalizeJurisdictionCode(org.jurisdiction || org.tax_jurisdiction || ""),
     primary_contact_name: org.primary_contact_name || "",
     billing_email: org.billing_email || "",
     billing_phone: org.billing_phone || "",
     relationship_to_restaurant: relationship.relationship_type || "owner",
-    is_sole_proprietor: entityType === "individual_sole_proprietor",
   };
 }
 
@@ -79,6 +95,13 @@ export function validateBusinessOrganizationForm(form = {}) {
   }
   if (!String(form.country_code || "").trim()) {
     errors.country_code = "Country / jurisdiction is required.";
+  }
+  const jurisdictionRaw = String(form.jurisdiction || "").trim();
+  if (jurisdictionRaw) {
+    const code = jurisdictionRaw.toUpperCase().slice(0, 2);
+    if (!JURISDICTION_STATE_CODES.has(code)) {
+      errors.jurisdiction = "Select a valid US state of formation.";
+    }
   }
   const email = String(form.billing_email || "").trim();
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -94,16 +117,13 @@ export function validateBusinessOrganizationForm(form = {}) {
 }
 
 export function buildBusinessOrganizationPayload(form = {}) {
-  let entityType = form.entity_type;
-  if (form.is_sole_proprietor === true) {
-    entityType = "individual_sole_proprietor";
-  }
+  const jurisdiction = normalizeJurisdictionCode(form.jurisdiction || form.tax_jurisdiction || "");
   return {
     legal_name: String(form.legal_name || "").trim(),
     dba_trade_name: String(form.dba_trade_name || "").trim() || null,
-    entity_type: entityType,
+    entity_type: form.entity_type || "individual_sole_proprietor",
     country_code: String(form.country_code || "US").trim().toUpperCase().slice(0, 2),
-    jurisdiction: String(form.jurisdiction || form.tax_jurisdiction || "").trim() || null,
+    jurisdiction: jurisdiction || null,
     primary_contact_name: String(form.primary_contact_name || "").trim() || null,
     billing_email: String(form.billing_email || "").trim() || null,
     billing_phone: String(form.billing_phone || "").trim() || null,

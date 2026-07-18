@@ -36,10 +36,8 @@ test("checkpoint order places business_organization before restaurant_informatio
     NEXT_ROUTE_AFTER_CHECKPOINT.email_verified,
     "/restaurant/onboarding/organization"
   );
-  assert.equal(
-    NEXT_ROUTE_AFTER_CHECKPOINT.business_organization,
-    "/restaurant/onboarding/information"
-  );
+  // After org, next path is plan-dependent (payment vs information) — not a fixed route.
+  assert.equal(NEXT_ROUTE_AFTER_CHECKPOINT.business_organization, null);
 });
 
 test("resume after email routes to organization stage", () => {
@@ -77,8 +75,8 @@ test("form validation and payload exclude bank/tax fields", () => {
     ...emptyBusinessOrganizationForm(),
     legal_name: "ABC Food Holdings LLC",
     entity_type: "llc",
-    is_sole_proprietor: false,
     country_code: "US",
+    jurisdiction: "de",
     billing_email: "finance@abc.example",
     relationship_to_restaurant: "owner",
   };
@@ -87,13 +85,33 @@ test("form validation and payload exclude bank/tax fields", () => {
   const payload = buildBusinessOrganizationPayload(form);
   assert.equal(payload.legal_name, "ABC Food Holdings LLC");
   assert.equal(payload.entity_type, "llc");
+  assert.equal(payload.jurisdiction, "DE");
   assert.equal(payload.tax_id, undefined);
   assert.equal(payload.bank_account, undefined);
+  assert.equal(payload.is_sole_proprietor, undefined);
 });
 
-test("empty form starts with blank legal_name", () => {
+test("empty form starts with blank legal_name and no sole-proprietor flag", () => {
   const form = emptyBusinessOrganizationForm();
   assert.equal(form.legal_name, "");
+  assert.equal(form.is_sole_proprietor, undefined);
+  assert.equal(form.entity_type, "individual_sole_proprietor");
+});
+
+test("jurisdiction must be a known US state when set", () => {
+  const bad = validateBusinessOrganizationForm({
+    ...emptyBusinessOrganizationForm(),
+    legal_name: "Test Co",
+    jurisdiction: "XX",
+  });
+  assert.equal(bad.ok, false);
+  assert.ok(bad.errors.jurisdiction);
+  const ok = validateBusinessOrganizationForm({
+    ...emptyBusinessOrganizationForm(),
+    legal_name: "Test Co",
+    jurisdiction: "CA",
+  });
+  assert.equal(ok.ok, true);
 });
 
 test("organizationToForm blanks unconfirmed legal names", () => {
@@ -173,11 +191,32 @@ test("organization page does not collect Stripe payout fields", () => {
 
 test("organization page legal_name avoids signup autocomplete collision", () => {
   const page = read("src/pages/RestaurantOnboardingOrganization.jsx");
-  assert.match(page, /placeholder="e\.g\. Jane Smith, sole proprietor"/);
+  assert.match(page, /placeholder="e\.g\. Jane Smith or Acme Holdings LLC"/);
+  assert.match(page, /for example an LLC or a corporation/);
   assert.match(page, /name="legal_entity_name"/);
   assert.match(page, /autoComplete="off"/);
   assert.doesNotMatch(page, /autoComplete="organization"/);
   assert.match(page, /restaurantDisplayName/);
+});
+
+test("organization page entity type and state of formation are always-enabled selects", () => {
+  const page = read("src/pages/RestaurantOnboardingOrganization.jsx");
+  const schema = read("src/lib/businessOrganizationSchema.js");
+  assert.match(page, /id="entity_type"/);
+  assert.match(page, /id="jurisdiction"/);
+  assert.match(page, /JURISDICTION_STATE_OPTIONS/);
+  assert.match(page, /Not specified/);
+  assert.doesNotMatch(page, /is_sole_proprietor/);
+  assert.doesNotMatch(page, /This business is an individual/);
+  assert.doesNotMatch(page, /disabled=\{form\.is_sole_proprietor/);
+  assert.match(schema, /label: "Sole proprietor"/);
+  assert.doesNotMatch(schema, /is_sole_proprietor/);
+  assert.match(
+    page,
+    /<select[\s\S]*?id="jurisdiction"[\s\S]*?Not specified[\s\S]*?JURISDICTION_STATE_OPTIONS/
+  );
+  assert.doesNotMatch(page, /id="jurisdiction"[\s\S]{0,80}<input/);
+  assert.doesNotMatch(page, /placeholder="e\.g\. CA, DE"/);
 });
 
 test("organization page resolves onboarding state safely (no blank-screen destructure crash)", () => {

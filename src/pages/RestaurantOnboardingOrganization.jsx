@@ -17,6 +17,7 @@ import {
 } from "../lib/operatorApi.js";
 import {
   ENTITY_TYPE_OPTIONS,
+  JURISDICTION_STATE_OPTIONS,
   RELATIONSHIP_TYPE_OPTIONS,
   buildBusinessOrganizationPayload,
   emptyBusinessOrganizationForm,
@@ -174,14 +175,6 @@ const styles = {
     color: "#b91c1c",
     fontSize: 12,
     margin: "-10px 0 12px",
-  },
-  checkRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 16,
-    fontSize: 14,
-    color: "#374151",
   },
   actions: {
     display: "flex",
@@ -341,16 +334,7 @@ export default function RestaurantOnboardingOrganization() {
   ]);
 
   function setField(key, value) {
-    setForm((prev) => {
-      const next = { ...prev, [key]: value };
-      if (key === "is_sole_proprietor" && value === true) {
-        next.entity_type = "individual_sole_proprietor";
-      }
-      if (key === "entity_type") {
-        next.is_sole_proprietor = value === "individual_sole_proprietor";
-      }
-      return next;
-    });
+    setForm((prev) => ({ ...prev, [key]: value }));
   }
 
   async function handleContinue(e) {
@@ -482,7 +466,7 @@ export default function RestaurantOnboardingOrganization() {
             <h1 style={styles.pageTitle}>Who operates this restaurant?</h1>
             <p style={styles.pageSubtitle}>
               Enter the <strong>legal or operating entity</strong> that owns or operates
-              this restaurant — for example a sole proprietor name or LLC. This is{" "}
+              this restaurant — for example an LLC or a corporation. This is{" "}
               <strong>not</strong> the public restaurant brand name, city, or state
               (those are already linked). We do not collect bank or tax ID details here.
             </p>
@@ -511,21 +495,12 @@ export default function RestaurantOnboardingOrganization() {
               style={styles.input}
               value={form.legal_name}
               onChange={(e) => setField("legal_name", e.target.value)}
-              placeholder="e.g. Jane Smith, sole proprietor"
+              placeholder="e.g. Jane Smith or Acme Holdings LLC"
               autoComplete="off"
             />
             {fieldErrors.legal_name ? (
               <div style={styles.fieldErr}>{fieldErrors.legal_name}</div>
             ) : null}
-
-            <label style={styles.checkRow}>
-              <input
-                type="checkbox"
-                checked={form.is_sole_proprietor === true}
-                onChange={(e) => setField("is_sole_proprietor", e.target.checked)}
-              />
-              This business is an individual / sole proprietor
-            </label>
 
             <label style={styles.label} htmlFor="entity_type">
               Entity type
@@ -534,7 +509,6 @@ export default function RestaurantOnboardingOrganization() {
               id="entity_type"
               style={styles.select}
               value={form.entity_type}
-              disabled={form.is_sole_proprietor === true}
               onChange={(e) => setField("entity_type", e.target.value)}
             >
               {ENTITY_TYPE_OPTIONS.map((opt) => (
@@ -543,6 +517,9 @@ export default function RestaurantOnboardingOrganization() {
                 </option>
               ))}
             </select>
+            {fieldErrors.entity_type ? (
+              <div style={styles.fieldErr}>{fieldErrors.entity_type}</div>
+            ) : null}
 
             <label style={styles.label} htmlFor="dba_trade_name">
               DBA / trade name (optional)
@@ -574,15 +551,24 @@ export default function RestaurantOnboardingOrganization() {
             <label style={styles.label} htmlFor="jurisdiction">
               State of formation (optional)
             </label>
-            <input
+            <select
               id="jurisdiction"
-              style={styles.input}
+              style={styles.select}
               value={form.jurisdiction || ""}
               onChange={(e) => setField("jurisdiction", e.target.value)}
-              placeholder="e.g. CA, DE"
-            />
+            >
+              <option value="">Not specified</option>
+              {JURISDICTION_STATE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.jurisdiction ? (
+              <div style={styles.fieldErr}>{fieldErrors.jurisdiction}</div>
+            ) : null}
             <p style={styles.hint}>
-              The state or province where this legal entity was formed or registered — not the
+              The state where this legal entity was formed or registered — not the
               restaurant&apos;s city.
             </p>
 
