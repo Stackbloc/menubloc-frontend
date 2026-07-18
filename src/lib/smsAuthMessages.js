@@ -59,4 +59,8 @@ export const SMS_AUTH_MODAL_COPY = Object.freeze({
     title: "Verify your phone",
     body: "Enter your mobile number and we'll text a one-time code to continue.",
   },
+  changePhone: {
+    title: "Change your phone",
+    body: "Enter your new mobile number. We'll text a one-time code to verify it before updating your account.",
+  },
 });

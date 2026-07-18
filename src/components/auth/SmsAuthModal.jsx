@@ -7,8 +7,20 @@ import {
   SMS_AUTH_MODAL_COPY,
 } from "../../lib/smsAuthMessages.js";
 
-export default function SmsAuthModal({ open, onClose, onSuccess, purpose = "signup" }) {
-  const { sendSmsCode, verifySmsCode } = useConsumer();
+export default function SmsAuthModal({
+  open,
+  onClose,
+  onSuccess,
+  purpose = "signup",
+  sendSmsCode: sendSmsCodeOverride = null,
+  verifySmsCode: verifySmsCodeOverride = null,
+}) {
+  const {
+    sendSmsCode: sendSmsCodeDefault,
+    verifySmsCode: verifySmsCodeDefault,
+  } = useConsumer();
+  const sendSmsCode = sendSmsCodeOverride || sendSmsCodeDefault;
+  const verifySmsCode = verifySmsCodeOverride || verifySmsCodeDefault;
   const [step, setStep] = useState("phone");
   const [phoneInput, setPhoneInput] = useState("");
   const [verifiedPhone, setVerifiedPhone] = useState("");

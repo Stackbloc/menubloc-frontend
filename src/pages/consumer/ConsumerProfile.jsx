@@ -26,6 +26,7 @@ import {
 import { resetMenuPreferenceSessionForLogin } from "../../lib/menuCatalogBrowsePreferences.js";
 import { fetchMyClusters } from "../../lib/clusterApi.js";
 import { useLanguage } from "../../context/LanguageContext.jsx";
+import SmsAuthModal from "../../components/auth/SmsAuthModal.jsx";
 
 const DIETARY_OPTIONS = [
   { key: "vegetarian", label: "Vegetarian" },
@@ -109,7 +110,15 @@ function formatMoney(cents) {
 
 export default function ConsumerProfile() {
   const { t } = useLanguage();
-  const { consumer, logout, isAuthenticated, loading: authLoading, refreshSession } = useConsumer();
+  const {
+    consumer,
+    logout,
+    isAuthenticated,
+    loading: authLoading,
+    refreshSession,
+    sendPhoneChangeCode,
+    verifyPhoneChangeCode,
+  } = useConsumer();
   const navigate = useNavigate();
 
   const [pageLoading, setPageLoading] = useState(true);
@@ -118,7 +127,8 @@ export default function ConsumerProfile() {
   const [displayName, setDisplayName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [changePhoneOpen, setChangePhoneOpen] = useState(false);
+  const [phoneChangeNotice, setPhoneChangeNotice] = useState("");
 
   const [dietPrefs, setDietPrefs] = useState({});
   const [allergenPrefs, setAllergenPrefs] = useState({});
@@ -167,7 +177,6 @@ export default function ConsumerProfile() {
       setDisplayName(profile.display_name || "");
       setFirstName(profile.first_name || "");
       setLastName(profile.last_name || "");
-      setPhone(profile.phone || "");
 
       const dietMap = {};
       for (const pref of dietary_preferences || []) {
@@ -258,7 +267,6 @@ export default function ConsumerProfile() {
           display_name: displayName.trim() || null,
           first_name: firstName.trim() || null,
           last_name: lastName.trim() || null,
-          phone: phone.trim() || null,
         }),
         updatePreferences({
           dietary_preferences,
@@ -430,14 +438,34 @@ export default function ConsumerProfile() {
           </div>
 
           <div style={styles.field}>
-            <label style={styles.fieldLabel}>Phone <span style={styles.optText}>(optional)</span></label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              style={styles.input}
-              placeholder="+1 (555) 000-0000"
-            />
+            <label style={styles.fieldLabel}>
+              Phone <span style={styles.optText}>(verified)</span>
+            </label>
+            <div style={styles.phoneRow}>
+              <input
+                type="tel"
+                value={consumer?.phone_number || ""}
+                readOnly
+                style={{ ...styles.input, ...styles.inputReadonly }}
+                placeholder="No verified phone"
+                aria-label="Verified phone number"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setPhoneChangeNotice("");
+                  setChangePhoneOpen(true);
+                }}
+                style={styles.changePhoneBtn}
+              >
+                Change phone
+              </button>
+            </div>
+            {phoneChangeNotice ? (
+              <div style={{ marginTop: 8, fontSize: 13, color: "#14532d", fontWeight: 700 }}>
+                {phoneChangeNotice}
+              </div>
+            ) : null}
           </div>
         </Section>
 
@@ -661,6 +689,17 @@ export default function ConsumerProfile() {
         initialEmail={consumer?.email || ""}
       />
     ) : null}
+    <SmsAuthModal
+      open={changePhoneOpen}
+      purpose="changePhone"
+      sendSmsCode={sendPhoneChangeCode}
+      verifySmsCode={verifyPhoneChangeCode}
+      onClose={() => setChangePhoneOpen(false)}
+      onSuccess={async () => {
+        setPhoneChangeNotice("Phone number updated.");
+        await refreshSession().catch(() => {});
+      }}
+    />
     </>
   );
 }
@@ -769,6 +808,31 @@ const styles = {
     fontFamily: "inherit",
     width: "100%",
     boxSizing: "border-box",
+  },
+  phoneRow: {
+    display: "flex",
+    gap: "10px",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  inputReadonly: {
+    background: "#0B0F0C",
+    borderColor: "#1F2937",
+    color: "#D1D5DB",
+    cursor: "default",
+    flex: "1 1 180px",
+  },
+  changePhoneBtn: {
+    border: "1.5px solid #374151",
+    borderRadius: "8px",
+    background: "#11211a",
+    color: "#fff",
+    padding: "10px 14px",
+    fontSize: "14px",
+    fontWeight: 700,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    whiteSpace: "nowrap",
   },
   saveRow: {
     display: "flex",

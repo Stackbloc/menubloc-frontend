@@ -17,9 +17,11 @@ import {
   loginConsumerWithApple,
   loginConsumerWithGoogle,
   sendSmsCode as sendConsumerSmsCode,
+  sendPhoneChangeCode as sendConsumerPhoneChangeCode,
   signupConsumer,
   logoutConsumer,
   verifySmsCode as verifyConsumerSmsCode,
+  verifyPhoneChangeCode as verifyConsumerPhoneChangeCode,
 } from "../lib/consumerApi.js";
 import {
   clearAllergenExclusionSessionToastMarker,
@@ -200,6 +202,19 @@ export function ConsumerProvider({ children }) {
     return data;
   }, [applySession, loadMe, maybeResetMenuPreferenceSession]);
 
+  const sendPhoneChangeCode = useCallback(async (phoneNumber) => {
+    return sendConsumerPhoneChangeCode(phoneNumber);
+  }, []);
+
+  const verifyPhoneChangeCode = useCallback(async (phoneNumber, code, verificationSid = null) => {
+    const verified = await verifyConsumerPhoneChangeCode(phoneNumber, code, verificationSid);
+    if (verified?.consumer) {
+      applySession(verified);
+      return verified;
+    }
+    return loadMe();
+  }, [applySession, loadMe]);
+
   const clearAuthToast = useCallback(() => {
     setAuthToast("");
   }, []);
@@ -219,6 +234,8 @@ export function ConsumerProvider({ children }) {
     signup,
     sendSmsCode,
     verifySmsCode,
+    sendPhoneChangeCode,
+    verifyPhoneChangeCode,
     authToast,
     clearAuthToast,
     logout,
