@@ -852,7 +852,7 @@ export default function SubscriptionSelect() {
             Payment received
           </div>
           <div style={{ fontSize: 15, color: "#667085" }}>
-            Confirming your subscription with Stripe. Continuing onboarding while status updates…
+            Activating your Menuply plan. Continuing setup in a moment…
           </div>
         </div>
       </div>
@@ -865,10 +865,11 @@ export default function SubscriptionSelect() {
         <div style={{ ...s.shell, textAlign: "center", paddingTop: 80 }}>
           <BrandLogo height={48} radius={14} matchPageBackground={false} linkStyle={{ marginBottom: 18 }} />
           <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>
-            Preparing checkout…
+            Taking you to checkout…
           </div>
           <div style={{ fontSize: 15, color: "#667085" }}>
-            Opening Stripe for your selected Menuply plan. Optional QR merchandise is not charged here.
+            Confirm your Menuply plan, then we&apos;ll bring you back to finish setting up your
+            restaurant.
           </div>
           {planError ? (
             <div style={{ ...s.banner("error"), marginTop: 24, textAlign: "left" }}>{planError}</div>
