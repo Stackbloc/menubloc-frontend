@@ -69,15 +69,15 @@ test("shared form has no PDF upload or menu processing", () => {
   assert.match(form, /manager_name/);
 });
 
-test("signup verify nextPath goes to restaurant information", () => {
+test("signup verify nextPath goes to business organization", () => {
   const signup = read("src/pages/RestaurantSignup.jsx");
-  assert.match(signup, /INFORMATION_ROUTE/);
-  assert.match(signup, /nextPath:\s*INFORMATION_ROUTE/);
+  assert.match(signup, /ORGANIZATION_ROUTE/);
+  assert.match(signup, /nextPath:\s*ORGANIZATION_ROUTE/);
 });
 
-test("email verification default onboarding nextPath is information", () => {
+test("email verification default onboarding nextPath is organization", () => {
   const verify = read("src/pages/operator/OperatorEmailVerification.jsx");
-  assert.match(verify, /\/restaurant\/onboarding\/information/);
+  assert.match(verify, /\/restaurant\/onboarding\/organization/);
 });
 
 test("schema validates continue requirements and strips to editable payload", () => {
@@ -137,18 +137,18 @@ test("information form no longer collects address fields", () => {
   assert.match(form, /Locations/);
 });
 
-test("post-information navigation targets locations stub", () => {
+test("post-information navigation targets locations; locations go to menu upload", () => {
   assert.equal(resolvePostInformationPath({}), "/restaurant/onboarding/locations");
   assert.equal(
     resolvePostLocationsPath({ selected_plan: "verified" }),
-    "/restaurant/design-select"
+    "/restaurant/menu-upload-choice"
   );
   assert.equal(
     resolvePostLocationsPath({ selected_plan: "growth" }),
-    "/restaurant/subscription"
+    "/restaurant/menu-upload-choice"
   );
   assert.equal(
     resolvePostLocationsPath({ post_locations_path: "/restaurant/subscription" }),
-    "/restaurant/subscription"
+    "/restaurant/menu-upload-choice"
   );
 });

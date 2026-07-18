@@ -20,9 +20,7 @@ const KNOWN_EMPTY_PROD_FALLBACK_FILES = new Set([
   "src/components/menuCatalog/CatalogDrinksMenuRenderer.jsx",
   "src/components/TasteIndexBadge.jsx",
   "src/lib/menuVerificationApi.js",
-  "src/pages/PublicMenuPage.jsx",
   "src/pages/RestaurantQrUpsell.jsx",
-  "src/pages/SubscriptionSelect.jsx",
 ]);
 
 /** Matches empty prod fallback via import.meta.env or VITE_ENV alias */

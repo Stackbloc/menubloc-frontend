@@ -21,11 +21,8 @@ import {
 } from "../lib/restaurantOnboardingState.js";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
-const PLAN_SELECTION_ROUTE = "/restaurant/subscription";
 const PLAN_ENTRY_ROUTE = "/restaurant/signup";
-const DESIGN_SELECTION_ROUTE = "/restaurant/design-select";
 const ORGANIZATION_ROUTE = "/restaurant/onboarding/organization";
-const INFORMATION_ROUTE = "/restaurant/onboarding/information";
 
 function planLabel(t, planCode) {
   if (!planCode) return "";
@@ -482,13 +479,8 @@ export default function RestaurantSignup() {
             nextPath: ORGANIZATION_ROUTE,
             autoSend: true,
             plan: selectedPlan,
-            // Preserve prior plan destinations for Locations stub → continue
-            post_locations_path:
-              selectedPlan === "verified" ||
-              selectedPlan === "published_free" ||
-              selectedPlan === "published"
-                ? DESIGN_SELECTION_ROUTE
-                : PLAN_SELECTION_ROUTE,
+            // Locations never reopen plan chooser — payment is earlier in the flow.
+            post_locations_path: "/restaurant/menu-upload-choice",
           },
         },
       };

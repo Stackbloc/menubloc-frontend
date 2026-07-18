@@ -689,22 +689,29 @@ export default function PdfUploadPage() {
     if (!result || isOperatorFlow || !restaurant_id || menuUploadProgressSyncedRef.current) return;
     menuUploadProgressSyncedRef.current = true;
     syncRestaurantOnboardingProgress(state, {
-      current_step_key: "review_menu",
-      completed_step_keys: ["account_created", "email_verified", "import_menu", "process_menu"],
+      current_step_key: "menu_worksheet",
+      completed_step_keys: [
+        "account_created",
+        "email_verified",
+        "import_menu",
+        "menu_upload",
+        "process_menu",
+      ],
     }).catch(() => {});
   }, [result, isOperatorFlow, restaurant_id, state]);
 
-  // Operator Menu Lab: open Menu Worksheet immediately after successful parse.
+  // Operator Menu Lab + onboarding upload: open Menu Worksheet immediately after successful parse.
   useEffect(() => {
-    if (!result || !isOperatorFlow) return;
+    if (!result) return;
     const publicRestaurantId =
       Number(result.public_restaurant_id || result.restaurant_id || restaurant_id) || 0;
     const publicMenuId = Number(result.public_menu_id) || 0;
     if (!publicRestaurantId || !publicMenuId) return;
+    const params = new URLSearchParams();
     const uploadSessionId = result.upload_session_id || result.upload_id || "";
-    const qs = uploadSessionId
-      ? `?upload_session_id=${encodeURIComponent(uploadSessionId)}`
-      : "";
+    if (uploadSessionId) params.set("upload_session_id", uploadSessionId);
+    if (!isOperatorFlow) params.set("onboarding", "1");
+    const qs = params.toString() ? `?${params.toString()}` : "";
     nav(`/operator/restaurants/${publicRestaurantId}/menus/${publicMenuId}/worksheet${qs}`, {
       replace: true,
     });

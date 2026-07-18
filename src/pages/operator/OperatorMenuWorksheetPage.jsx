@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import MenuWorksheet from "../../components/menuEditor/MenuWorksheet.jsx";
 import {
@@ -7,15 +7,25 @@ import {
   publishMenuWorksheet,
   saveMenuWorksheet,
 } from "../../lib/operatorApi.js";
+import {
+  profileEditOnboardingPath,
+} from "../../lib/operatorOnboardingCheckpoints.js";
+import {
+  resolveRestaurantOnboardingState,
+  syncRestaurantOnboardingProgress,
+} from "../../lib/restaurantOnboardingState.js";
 
 /**
  * Operator Menu Worksheet page.
  * Route: /operator/restaurants/:restaurantId/menus/:menuId/worksheet
+ * After "Update Menuply Menu" during onboarding → public profile edit.
  */
 export default function OperatorMenuWorksheetPage() {
   const { restaurantId, menuId } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const uploadSessionId = searchParams.get("upload_session_id") || null;
+  const isOnboarding = searchParams.get("onboarding") === "1";
 
   const rid = Number(restaurantId);
   const mid = Number(menuId);
@@ -106,6 +116,47 @@ export default function OperatorMenuWorksheetPage() {
       }));
       setDirty(false);
       setFlash("Menuply menu updated.");
+
+      const onboarding = resolveRestaurantOnboardingState({
+        search: window.location.search,
+      }).state;
+      const progressBase = {
+        restaurant_id: rid,
+        ...(onboarding || {}),
+      };
+      try {
+        await syncRestaurantOnboardingProgress(progressBase, {
+          current_step_key: "public_profile_edit",
+          completed_step_keys: Array.from(
+            new Set([
+              ...((onboarding && onboarding.completed_step_keys) || []),
+              "menu_upload",
+              "menu_worksheet",
+              "default_menu_ready",
+            ])
+          ),
+          draft_payload: {
+            ...(onboarding?.draft_payload || {}),
+            stage_records: {
+              ...(onboarding?.draft_payload?.stage_records || {}),
+              menu_worksheet: { status: "completed" },
+              default_menu_ready: {
+                status: "completed",
+                menu_id: mid,
+              },
+            },
+            worksheet_menu_id: mid,
+          },
+        });
+      } catch {
+        /* best-effort checkpoint */
+      }
+
+      if (isOnboarding) {
+        navigate(profileEditOnboardingPath(), { replace: true });
+        return;
+      }
+
       await load();
     } catch (err) {
       setError(err?.payload?.error || err?.message || "Update Menuply Menu failed");

@@ -111,6 +111,27 @@ export function buildBusinessOrganizationPayload(form = {}) {
   };
 }
 
-export function resolvePostOrganizationPath() {
-  return "/restaurant/onboarding/information";
+/**
+ * After organization: free plans → information (payment skip on server);
+ * paid / unknown paid codes → Menuply plan Stripe checkout.
+ * QR merchandise is reserved later — not charged from this path.
+ */
+export function resolvePostOrganizationPath(onboarding = {}) {
+  const plan = String(
+    onboarding.selected_plan_code ||
+      onboarding.selected_plan ||
+      onboarding.plan ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+  if (
+    !plan ||
+    plan === "verified" ||
+    plan === "published_free" ||
+    plan === "published"
+  ) {
+    return "/restaurant/onboarding/information";
+  }
+  return "/restaurant/subscription";
 }

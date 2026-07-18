@@ -20,13 +20,17 @@
 // Hardcoding options here silently diverges from backend validation rules.
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
 import { API_BASE } from "../../lib/operatorApi.js";
 import RestaurantStatusSettingsPanel from "../../components/restaurant/RestaurantStatusSettingsPanel.jsx";
+import {
+  resolveRestaurantOnboardingState,
+  syncRestaurantOnboardingProgress,
+} from "../../lib/restaurantOnboardingState.js";
 
 const INPUT = {
   width: "100%",
@@ -97,8 +101,11 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
   const { t } = useLanguage();
   const { selectedRestaurant } = useOperator();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const rid = selectedRestaurant?.id;
   const setup = location.search.includes("setup=");
+  const isOnboardingProfile = searchParams.get("onboarding") === "1";
 
   const [profile, setProfile]   = useState(null);
   const [benefits, setBenefits] = useState({});
@@ -332,6 +339,45 @@ export function OperatorRestaurantProfileForm({ embedded = false } = {}) {
 
       setProfile(refreshedProfile);
       setPublished(true);
+
+      if (isOnboardingProfile && rid) {
+        const onboarding = resolveRestaurantOnboardingState({
+          search: location.search,
+        }).state;
+        try {
+          await syncRestaurantOnboardingProgress(
+            { restaurant_id: rid, ...(onboarding || {}) },
+            {
+              current_step_key: "profile_complete_gate",
+              completed_step_keys: Array.from(
+                new Set([
+                  ...((onboarding && onboarding.completed_step_keys) || []),
+                  "default_menu_ready",
+                  "public_profile_edit",
+                ])
+              ),
+              draft_payload: {
+                ...(onboarding?.draft_payload || {}),
+                stage_records: {
+                  ...(onboarding?.draft_payload?.stage_records || {}),
+                  public_profile_edit: {
+                    status: "completed",
+                    confirmed: true,
+                    slug: refreshedProfile?.slug || null,
+                  },
+                },
+              },
+            }
+          );
+        } catch {
+          /* best-effort */
+        }
+        const slug = refreshedProfile?.slug || rid;
+        navigate(
+          `/restaurant/onboarding/profile-complete?restaurant_id=${encodeURIComponent(String(rid))}&slug=${encodeURIComponent(String(slug))}`,
+          { replace: true }
+        );
+      }
     } catch (e) {
       console.error("[operator-profile] publish failed", e);
       setError(e.message);

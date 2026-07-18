@@ -130,17 +130,9 @@ export function resolvePostInformationPath() {
   return "/restaurant/onboarding/locations";
 }
 
-export function resolvePostLocationsPath(onboarding = {}) {
-  const preferred = String(onboarding.post_locations_path || "").trim();
-  if (preferred.startsWith("/")) return preferred;
-
-  const plan = String(
-    onboarding.selected_plan || onboarding.plan || onboarding.selected_plan_code || ""
-  ).toLowerCase();
-  if (plan === "verified" || plan === "published_free" || plan === "published") {
-    return "/restaurant/design-select";
-  }
-  return "/restaurant/subscription";
+/** After locations: menu upload (Worksheet next) — never design-select or subscription. */
+export function resolvePostLocationsPath(_onboarding = {}) {
+  return "/restaurant/menu-upload-choice";
 }
 
 /** Plans that explicitly bypass Payment (must be recorded server-side, not inferred only). */

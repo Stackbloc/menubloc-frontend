@@ -2,46 +2,64 @@
  * Automatic onboarding checkpoints + login resume.
  *
  * Principle: operators never manually "save & exit". A checkpoint is created only
- * after a stage validates and the server confirms the update. On login, resume at
- * the first incomplete stage — never ask where to resume.
+ * after a stage validates and the server confirms the update.
+ *
+ * Core path (blocks dashboard until done or Continue later at gate):
+ *   … → locations → menu_upload → menu_worksheet → default_menu_ready
+ *   → public_profile_edit → profile_complete_gate
+ *
+ * Deferred optional (Finish setup; do not force login redirect):
+ *   merchant_onboarding → delivery_onboarding → menu_design (last)
  *
  * Server SoT: restaurant_onboarding_progress (+ stage_records). localStorage is assist-only.
  */
 
-/** Approved product sequence (canonical). */
+/** Full product sequence (canonical). */
 export const ONBOARDING_STAGE_ORDER = Object.freeze([
   "welcome",
   "plan_selected",
   "account_created",
   "email_verified",
   "business_organization",
+  "payment",
+  // Reserved: qr_merchandise — not Stripe-live yet
   "restaurant_information",
   "locations",
-  "payment",
-  "public_profile_review",
-  "menu_design",
   "menu_upload",
-  "menu_review",
-  "launch_checklist",
-  "published",
+  "menu_worksheet",
+  "default_menu_ready",
+  "public_profile_edit",
+  "profile_complete_gate",
+  "merchant_onboarding",
+  "delivery_onboarding",
+  "menu_design",
   "complete",
 ]);
 
-/** Ordered completion keys (aliases normalized via COMPLETED_KEY_ALIASES). */
-export const ONBOARDING_CHECKPOINT_ORDER = Object.freeze([
+/** Core stages that block dashboard resume until done / gate continue_later. */
+export const CORE_ONBOARDING_CHECKPOINT_ORDER = Object.freeze([
   "account_created",
   "email_verified",
   "business_organization",
+  "payment",
   "restaurant_information",
   "locations",
-  "payment",
-  "public_profile_review",
-  "menu_design",
   "menu_upload",
-  "menu_review",
-  "launch_checklist",
-  "published",
+  "menu_worksheet",
+  "default_menu_ready",
+  "public_profile_edit",
+  "profile_complete_gate",
 ]);
+
+/** Deferred Finish-setup tracks (optional; design last). */
+export const DEFERRED_ONBOARDING_STAGES = Object.freeze([
+  "merchant_onboarding",
+  "delivery_onboarding",
+  "menu_design",
+]);
+
+/** Ordered completion keys used for forced resume (core only). */
+export const ONBOARDING_CHECKPOINT_ORDER = CORE_ONBOARDING_CHECKPOINT_ORDER;
 
 /** Map stored progress / current_step_key values → resume route. */
 export const ONBOARDING_STEP_ROUTES = Object.freeze({
@@ -55,18 +73,23 @@ export const ONBOARDING_STEP_ROUTES = Object.freeze({
   choose_plan: "/restaurant/subscription",
   subscription_checkout: "/restaurant/subscription",
   payment: "/restaurant/subscription",
-  basic_public_profile: "/restaurant/design-select",
-  public_profile_review: "/restaurant/design-select",
-  menu_design: "/restaurant/design-select",
-  import_menu: "/restaurant/onboarding/welcome",
+  qr_merchandise: "/restaurant/qr-upsell",
   menu_upload: "/restaurant/menu-upload-choice",
-  process_menu: "/restaurant/onboarding/processing",
-  review_menu: "/operator/menulab",
-  menu_review: "/operator/menulab",
-  publish_menu: "/operator/menulab",
-  publish: "/operator/menulab",
+  import_menu: "/restaurant/menu-upload-choice",
+  process_menu: "/restaurant/menu-upload-choice",
+  menu_worksheet: null, // needs restaurantId+menuId — resolved via progress / worksheet entry
+  review_menu: null,
+  menu_review: null,
+  default_menu_ready: "/operator/my-account?tab=profile&onboarding=1",
+  public_profile_edit: "/operator/my-account?tab=profile&onboarding=1",
+  public_profile_review: "/operator/my-account?tab=profile&onboarding=1",
+  basic_public_profile: "/operator/my-account?tab=profile&onboarding=1",
+  profile_complete_gate: "/restaurant/onboarding/profile-complete",
+  merchant_onboarding: "/operator/merchant",
+  delivery_onboarding: "/operator/delivery",
+  menu_design: "/restaurant/design-select",
+  launch_checklist: "/operator",
   published: "/operator",
-  launch_checklist: "/restaurant/onboarding/launch-checklist",
   menu_live: "/operator",
   complete: "/operator",
 });
@@ -85,18 +108,24 @@ const COMPLETED_KEY_ALIASES = Object.freeze({
   choose_plan: "payment",
   subscription_checkout: "payment",
   payment: "payment",
-  basic_public_profile: "public_profile_review",
-  public_profile_review: "public_profile_review",
-  menu_design: "menu_design",
+  qr_merchandise: "qr_merchandise",
   import_menu: "menu_upload",
   menu_upload: "menu_upload",
   process_menu: "menu_upload",
-  review_menu: "menu_review",
-  menu_review: "menu_review",
-  publish_menu: "published",
-  publish: "published",
-  published: "published",
-  launch_checklist: "launch_checklist",
+  review_menu: "menu_worksheet",
+  menu_review: "menu_worksheet",
+  menu_worksheet: "menu_worksheet",
+  default_menu_ready: "default_menu_ready",
+  publish_menu: "default_menu_ready",
+  published: "default_menu_ready",
+  basic_public_profile: "public_profile_edit",
+  public_profile_review: "public_profile_edit",
+  public_profile_edit: "public_profile_edit",
+  profile_complete_gate: "profile_complete_gate",
+  merchant_onboarding: "merchant_onboarding",
+  delivery_onboarding: "delivery_onboarding",
+  menu_design: "menu_design",
+  launch_checklist: "complete",
   menu_live: "complete",
   complete: "complete",
 });
@@ -111,17 +140,41 @@ export function isFreePlanPaymentBypassEligible(planCode) {
 export const NEXT_ROUTE_AFTER_CHECKPOINT = Object.freeze({
   account_created: "/operator/verify-email",
   email_verified: "/restaurant/onboarding/organization",
-  business_organization: "/restaurant/onboarding/information",
+  business_organization: null, // plan-dependent — payment or information
+  payment: "/restaurant/onboarding/information",
   restaurant_information: "/restaurant/onboarding/locations",
-  locations: null, // plan-dependent — resolved by resolvePostLocationsPath / server complete
-  payment: "/restaurant/design-select",
-  public_profile_review: "/restaurant/design-select",
-  menu_design: "/restaurant/menu-upload-choice",
-  menu_upload: "/restaurant/onboarding/processing",
-  menu_review: "/restaurant/onboarding/success",
-  launch_checklist: "/operator",
-  published: "/operator",
+  locations: "/restaurant/menu-upload-choice",
+  menu_upload: null, // worksheet path is id-specific
+  menu_worksheet: "/operator/my-account?tab=profile&onboarding=1",
+  default_menu_ready: "/operator/my-account?tab=profile&onboarding=1",
+  public_profile_edit: "/restaurant/onboarding/profile-complete",
+  profile_complete_gate: "/operator",
+  merchant_onboarding: "/operator",
+  delivery_onboarding: "/operator",
+  menu_design: "/operator",
 });
+
+/** Finish-setup card definitions for Operator Dashboard (design last). */
+export const FINISH_SETUP_STEPS = Object.freeze([
+  {
+    id: "merchant_onboarding",
+    title: "Set up payments",
+    body: "Connect your merchant account so you can accept orders on Menuply.",
+    href: "/operator/merchant",
+  },
+  {
+    id: "delivery_onboarding",
+    title: "Set up delivery",
+    body: "Connect delivery providers when you are ready to offer delivery.",
+    href: "/operator/delivery",
+  },
+  {
+    id: "menu_design",
+    title: "Customize menu design",
+    body: "Pick a menu look and layout — available after your content is live.",
+    href: "/restaurant/design-select",
+  },
+]);
 
 function normalizeCompletedKeys(raw) {
   const list = Array.isArray(raw)
@@ -144,12 +197,69 @@ function normalizeCompletedKeys(raw) {
   return set;
 }
 
-export function isOnboardingComplete(restaurant = {}) {
-  if (restaurant?.has_published_menu === true) return true;
-  const step = String(restaurant?.current_step_key || "").trim();
-  if (step === "menu_live" || step === "complete") return true;
+export function getStageRecords(restaurant = {}) {
+  return restaurant.draft_payload?.stage_records || restaurant.stage_records || {};
+}
+
+/** Core onboarding done: gate completed or continue_later recorded (or legacy live). */
+export function isCoreOnboardingComplete(restaurant = {}) {
   const completed = normalizeCompletedKeys(restaurant?.completed_step_keys);
-  return completed.has("published") || (completed.has("publish") && completed.has("menu_review"));
+  const stageRecords = getStageRecords(restaurant);
+  const gate = stageRecords.profile_complete_gate;
+  const step = String(restaurant?.current_step_key || "").trim();
+
+  if (completed.has("complete") || completed.has("menu_live")) return true;
+  if (step === "menu_live" || step === "complete") return true;
+
+  if (
+    completed.has("profile_complete_gate") ||
+    gate?.status === "completed" ||
+    gate?.status === "skipped" ||
+    gate?.skip_reason === "continue_later"
+  ) {
+    return true;
+  }
+
+  // Legacy restaurants already live before post-locations reorder
+  if (restaurant?.has_published_menu === true) {
+    if (
+      !step ||
+      step === "published" ||
+      step === "launch_checklist" ||
+      step === "merchant_onboarding" ||
+      step === "delivery_onboarding" ||
+      step === "menu_design" ||
+      step === "basic_public_profile"
+    ) {
+      return true;
+    }
+    // Mid core path with a published menu still needs gate if profile edit pending
+    if (completed.has("default_menu_ready") && completed.has("public_profile_edit")) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Login / dashboard eligibility. Core complete → dashboard even if deferred stages remain.
+ * Legacy: has_published_menu + old published keys still count once gate-equivalent exists.
+ */
+export function isOnboardingComplete(restaurant = {}) {
+  return isCoreOnboardingComplete(restaurant);
+}
+
+/** Incomplete deferred Finish-setup steps (preserves order; design last). */
+export function getIncompleteFinishSetupSteps(restaurant = {}) {
+  const completed = normalizeCompletedKeys(restaurant?.completed_step_keys);
+  const stageRecords = getStageRecords(restaurant);
+  return FINISH_SETUP_STEPS.filter((step) => {
+    if (completed.has(step.id)) return false;
+    const rec = stageRecords[step.id];
+    if (rec?.status === "completed" || rec?.status === "skipped") return false;
+    return true;
+  });
 }
 
 /**
@@ -182,11 +292,10 @@ export function revalidateCompletedStages(restaurant = {}) {
     const plan = String(
       restaurant.selected_plan_code || restaurant.selected_plan || restaurant.plan || ""
     ).toLowerCase();
-    const stageRecords = restaurant.draft_payload?.stage_records || restaurant.stage_records || {};
+    const stageRecords = getStageRecords(restaurant);
     const paymentRec = stageRecords.payment;
     const free = isFreePlanPaymentBypassEligible(plan);
     if (free && !(paymentRec?.status === "skipped" || paymentRec?.skip_reason === "free_plan")) {
-      // Prefer server complete path — if keys say payment done without skip record, reopen locations complete
       if (restaurant.require_payment_bypass_record === true) {
         reopen.push({ stage: "payment", reason: "free_plan_bypass_not_recorded" });
       }
@@ -197,39 +306,35 @@ export function revalidateCompletedStages(restaurant = {}) {
 }
 
 /**
- * Resolve the route for the first incomplete stage.
- * Prefers server `current_step_key` (already points at next/in-progress stage).
- * Falls back to completed_step_keys order.
+ * Resolve the route for the first incomplete *core* stage.
+ * Deferred merchant/delivery/design never force login away from dashboard once core is done.
  */
 export function resolveNextOnboardingRoute(restaurant = {}) {
   if (!restaurant) return "/operator/claim";
-  if (isOnboardingComplete(restaurant)) return "/operator";
+  if (isCoreOnboardingComplete(restaurant)) return "/operator";
 
   const reopen = revalidateCompletedStages(restaurant);
   if (reopen[0]) {
     const stage = reopen[0].stage;
     if (stage === "business_organization") return "/restaurant/onboarding/organization";
+    if (stage === "payment") return "/restaurant/subscription";
     if (stage === "restaurant_information") return "/restaurant/onboarding/information";
-    if (stage === "locations" || stage === "payment") return "/restaurant/onboarding/locations";
+    if (stage === "locations") return "/restaurant/onboarding/locations";
   }
 
   const completed = normalizeCompletedKeys(restaurant.completed_step_keys);
   if (restaurant.id || restaurant.restaurant_id) completed.add("account_created");
 
-  // Never honor current_step_key if an earlier required checkpoint is still incomplete
-  // (prevents dashboard/deep-link bypass of business_organization).
-  for (const checkpoint of ONBOARDING_CHECKPOINT_ORDER) {
+  for (const checkpoint of CORE_ONBOARDING_CHECKPOINT_ORDER) {
     if (completed.has(checkpoint)) continue;
     if (checkpoint === "account_created") continue;
     if (checkpoint === "email_verified") return "/operator/verify-email";
     if (checkpoint === "business_organization") return "/restaurant/onboarding/organization";
-    if (checkpoint === "restaurant_information") return "/restaurant/onboarding/information";
-    if (checkpoint === "locations") return "/restaurant/onboarding/locations";
     if (checkpoint === "payment") {
       const plan = String(
         restaurant.selected_plan_code || restaurant.selected_plan || restaurant.plan || ""
       ).toLowerCase();
-      const stageRecords = restaurant.draft_payload?.stage_records || restaurant.stage_records || {};
+      const stageRecords = getStageRecords(restaurant);
       const paymentRec = stageRecords.payment;
       if (
         isFreePlanPaymentBypassEligible(plan) &&
@@ -237,23 +342,30 @@ export function resolveNextOnboardingRoute(restaurant = {}) {
       ) {
         continue;
       }
-      if (isFreePlanPaymentBypassEligible(plan) && !paymentRec) {
-        return "/restaurant/onboarding/locations";
-      }
       return "/restaurant/subscription";
     }
-    if (checkpoint === "public_profile_review" || checkpoint === "menu_design") {
-      return "/restaurant/design-select";
-    }
+    if (checkpoint === "restaurant_information") return "/restaurant/onboarding/information";
+    if (checkpoint === "locations") return "/restaurant/onboarding/locations";
     if (checkpoint === "menu_upload") return "/restaurant/menu-upload-choice";
-    if (checkpoint === "menu_review" || checkpoint === "published") return "/operator/menulab";
-    if (checkpoint === "launch_checklist") return "/restaurant/onboarding/launch-checklist";
+    if (checkpoint === "menu_worksheet") {
+      // Prefer upload choice if worksheet ids unknown; PdfUpload auto-routes after parse.
+      return "/restaurant/menu-upload-choice";
+    }
+    if (checkpoint === "default_menu_ready") {
+      return "/operator/my-account?tab=profile&onboarding=1";
+    }
+    if (checkpoint === "public_profile_edit") {
+      return "/operator/my-account?tab=profile&onboarding=1";
+    }
+    if (checkpoint === "profile_complete_gate") {
+      return "/restaurant/onboarding/profile-complete";
+    }
   }
 
   const step = String(restaurant.current_step_key || "").trim();
   if (step && ONBOARDING_STEP_ROUTES[step]) {
     const route = ONBOARDING_STEP_ROUTES[step];
-    if (route === "/operator") return "/operator";
+    if (route === "/operator" || route == null) return "/operator";
     return route;
   }
 
@@ -265,12 +377,12 @@ export function resolveNextOnboardingRoute(restaurant = {}) {
 
 /**
  * Login / session resume destination.
- * Incomplete onboarding always wins over preferredNextPath (no dashboard bypass).
+ * Core incomplete → force resume. Core complete → dashboard (deferred never blocks).
  */
 export function resolveOperatorResumePath(restaurant, preferredNextPath) {
   if (!restaurant) return "/operator/claim";
 
-  if (isOnboardingComplete(restaurant)) {
+  if (isCoreOnboardingComplete(restaurant)) {
     const preferred = String(preferredNextPath || "").trim();
     if (preferred.startsWith("/") && !preferred.startsWith("/operator/login")) {
       if (preferred === "/operator" || preferred.startsWith("/operator/")) {
@@ -290,4 +402,18 @@ export function buildCheckpointProgressPatch(completedCheckpointKey, nextStepKey
     completed_step_keys_append: completedCheckpointKey,
     ...extra,
   };
+}
+
+export function worksheetPath(restaurantId, menuId, uploadSessionId = null) {
+  const rid = Number(restaurantId);
+  const mid = Number(menuId);
+  if (!rid || !mid) return null;
+  const qs = uploadSessionId
+    ? `?upload_session_id=${encodeURIComponent(String(uploadSessionId))}`
+    : "";
+  return `/operator/restaurants/${rid}/menus/${mid}/worksheet${qs}`;
+}
+
+export function profileEditOnboardingPath() {
+  return "/operator/my-account?tab=profile&onboarding=1";
 }

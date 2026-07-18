@@ -10,7 +10,7 @@
  * ============================================================
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BrandLogo } from "../components/BrandLogo.jsx";
 import { toConsumerErrorMessage } from "../lib/api.js";
@@ -25,14 +25,22 @@ import {
   CHECKOUT_PRICE_LABELS,
   FREE_PLAN_CODE,
   buildOwnerStripeCheckoutBody,
+  clearIntendedCheckoutPlanCode,
   isFreePlanCode,
+  isSelectablePaidPlanCode,
+  readIntendedCheckoutPlanCode,
   resolveReturnedCheckoutPlanCode,
 } from "../lib/menuplyCheckoutPlans.js";
 
+/** Per Frontend API Base URL guardrail — never fall back to same-origin "" in production. */
+const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
 const API = (
   import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? "http://localhost:3001" : "")
+  (import.meta.env.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
 ).replace(/\/$/, "");
+
+/** After Menuply plan payment (or free skip): Information. QR merchandise reserved until Stripe catalog. */
+const POST_PLAN_PAYMENT_ROUTE = "/restaurant/onboarding/information";
 
 const PLAN_LABELS = {
   [FREE_PLAN_CODE]: "Starter",
@@ -475,6 +483,8 @@ export default function SubscriptionSelect() {
 
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
   const [planError, setPlanError] = useState("");
+  const [autoCheckoutStarted, setAutoCheckoutStarted] = useState(false);
+  const autoCheckoutRef = useRef(false);
   const [starterInterval, setStarterInterval] = useState(
     recovered.state?.selected_plan === "starter_monthly" ? "monthly" : "annual"
   );
@@ -531,11 +541,13 @@ export default function SubscriptionSelect() {
 
     (async () => {
       const planCode = resolveReturnedCheckoutPlanCode(returnedPlanCode, FOUNDERS_PLAN.planCode);
+      clearIntendedCheckoutPlanCode();
       // Success URL alone must not imply the paid subscription is already active.
       // Sync selected plan for onboarding continuity; paid status remains backend-authoritative.
+      // QR merchandise reserved — skip qr-upsell purchase until Stripe catalog exists.
       const nextState = await syncRestaurantOnboardingProgress(onboardingState, {
-        current_step_key: "basic_public_profile",
-        completed_step_keys: ["choose_plan", "subscription_checkout"],
+        current_step_key: "restaurant_information",
+        completed_step_keys: ["choose_plan", "subscription_checkout", "payment"],
         intake_path: intake_path || "independent_single_location",
         requested_location_count: requested_location_count || 1,
         selected_plan_code: planCode,
@@ -549,9 +561,10 @@ export default function SubscriptionSelect() {
       });
       if (cancelled) return;
       setOnboardingState(nextState);
-      navigateWithRestaurantOnboardingState(nav, "/restaurant/qr-upsell", {
+      navigateWithRestaurantOnboardingState(nav, POST_PLAN_PAYMENT_ROUTE, {
         ...nextState,
         plan: planCode,
+        selected_plan: planCode,
         subscription_status: "processing",
       });
     })().catch((err) => {
@@ -609,7 +622,8 @@ export default function SubscriptionSelect() {
       // QR failure is non-blocking — onboarding continues regardless
     }
 
-    navigateWithRestaurantOnboardingState(nav, "/restaurant/qr-upsell", {
+    clearIntendedCheckoutPlanCode();
+    navigateWithRestaurantOnboardingState(nav, POST_PLAN_PAYMENT_ROUTE, {
       ...nextState,
       qr_token,
     });
@@ -617,12 +631,12 @@ export default function SubscriptionSelect() {
 
   function choosePublished() {
     if (!hasOnboardingContext) {
-      nav("/restaurant/signup");
+      nav("/restaurant/signup/account");
       return;
     }
     syncRestaurantOnboardingProgress(onboardingState, {
-      current_step_key: "basic_public_profile",
-      completed_step_keys: ["choose_plan", "subscription_checkout"],
+      current_step_key: "restaurant_information",
+      completed_step_keys: ["choose_plan", "subscription_checkout", "payment"],
       intake_path: intake_path || "independent_single_location",
       requested_location_count: requested_location_count || 1,
       selected_plan_code: FREE_PLAN_CODE,
@@ -640,9 +654,26 @@ export default function SubscriptionSelect() {
       });
   }
 
+  function rememberPlanAndRedirectToAccount(planCode) {
+    const code = String(planCode || "").trim().toLowerCase();
+    if (code) {
+      try {
+        sessionStorage.setItem("menuply.intended_checkout_plan_code", code);
+      } catch {
+        /* ignore */
+      }
+    }
+    nav(`/restaurant/signup/account${code ? `?plan=${encodeURIComponent(code)}` : ""}`);
+  }
+
   async function submitRestaurantPlan(planCode) {
     if (!hasOnboardingContext) {
-      nav("/restaurant/signup");
+      const intended = planCode || readIntendedCheckoutPlanCode() || selected_plan;
+      if (intended) {
+        rememberPlanAndRedirectToAccount(intended);
+        return;
+      }
+      nav("/restaurant/signup/account");
       return;
     }
 
@@ -674,6 +705,10 @@ export default function SubscriptionSelect() {
         plan_code: planCode,
       });
       const cancelParams = new URLSearchParams({ checkout_cancelled: "1" });
+      if (restaurant_id) {
+        successParams.set("restaurant_id", String(restaurant_id));
+        cancelParams.set("restaurant_id", String(restaurant_id));
+      }
       const successUrl = `${origin}/restaurant/subscription?${successParams.toString()}`;
       const cancelUrl = `${origin}/restaurant/subscription?${cancelParams.toString()}`;
 
@@ -703,8 +738,8 @@ export default function SubscriptionSelect() {
 
       if (json.no_checkout_plan === true) {
         const nextState = await syncRestaurantOnboardingProgress(syncedState, {
-          current_step_key: "basic_public_profile",
-          completed_step_keys: ["choose_plan", "subscription_checkout"],
+          current_step_key: "restaurant_information",
+          completed_step_keys: ["choose_plan", "subscription_checkout", "payment"],
           intake_path: intake_path || "independent_single_location",
           requested_location_count: requested_location_count || 1,
           selected_plan_code: planCode,
@@ -729,8 +764,8 @@ export default function SubscriptionSelect() {
 
       if (json.already_active) {
         const nextState = await syncRestaurantOnboardingProgress(syncedState, {
-          current_step_key: "basic_public_profile",
-          completed_step_keys: ["choose_plan", "subscription_checkout"],
+          current_step_key: "restaurant_information",
+          completed_step_keys: ["choose_plan", "subscription_checkout", "payment"],
           intake_path: intake_path || "independent_single_location",
           requested_location_count: requested_location_count || 1,
           selected_plan_code: planCode,
@@ -740,7 +775,7 @@ export default function SubscriptionSelect() {
           },
         });
         setOnboardingState(nextState);
-        continueToDesign(planCode, {}, nextState);
+        continueToDesign(planCode, { subscription_status: "active" }, nextState);
         return;
       }
 
@@ -752,16 +787,53 @@ export default function SubscriptionSelect() {
       throw new Error("No checkout URL returned. Please try again.");
     } catch (err) {
       setIsSubmittingPlan(false);
+      setAutoCheckoutStarted(false);
+      autoCheckoutRef.current = false;
       setPlanError(
         toConsumerErrorMessage(
           err,
-          API
-            ? "Unable to continue with this plan. Please try again."
+          err?.message && !String(err.message).includes("Failed to fetch")
+            ? err.message
             : "Restaurant plan checkout is not configured on this site yet."
         )
       );
     }
   }
+
+  useEffect(() => {
+    if (checkoutSuccess || checkoutCancelled) return undefined;
+    if (autoCheckoutRef.current || isSubmittingPlan) return undefined;
+
+    const fromState = String(selected_plan || "").trim().toLowerCase();
+    const fromIntended = String(readIntendedCheckoutPlanCode() || "").trim().toLowerCase();
+    const fromQuery = String(searchParams.get("plan") || searchParams.get("selected_plan") || "")
+      .trim()
+      .toLowerCase();
+    const presetPlan = [fromState, fromIntended, fromQuery].find(
+      (code) => code && isSelectablePaidPlanCode(code)
+    );
+
+    if (!presetPlan) return undefined;
+
+    if (!hasOnboardingContext) {
+      rememberPlanAndRedirectToAccount(presetPlan);
+      return undefined;
+    }
+
+    autoCheckoutRef.current = true;
+    setAutoCheckoutStarted(true);
+    submitRestaurantPlan(presetPlan);
+    return undefined;
+    // Intentionally once when preset paid plan + context are ready.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    checkoutSuccess,
+    checkoutCancelled,
+    hasOnboardingContext,
+    selected_plan,
+    restaurant_id,
+    owner_token,
+  ]);
 
   async function handleStarter() {
     await submitRestaurantPlan(starterCheckoutCode);
@@ -782,6 +854,25 @@ export default function SubscriptionSelect() {
           <div style={{ fontSize: 15, color: "#667085" }}>
             Confirming your subscription with Stripe. Continuing onboarding while status updates…
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (autoCheckoutStarted || isSubmittingPlan) {
+    return (
+      <div style={s.page}>
+        <div style={{ ...s.shell, textAlign: "center", paddingTop: 80 }}>
+          <BrandLogo height={48} radius={14} matchPageBackground={false} linkStyle={{ marginBottom: 18 }} />
+          <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>
+            Preparing checkout…
+          </div>
+          <div style={{ fontSize: 15, color: "#667085" }}>
+            Opening Stripe for your selected Menuply plan. Optional QR merchandise is not charged here.
+          </div>
+          {planError ? (
+            <div style={{ ...s.banner("error"), marginTop: 24, textAlign: "left" }}>{planError}</div>
+          ) : null}
         </div>
       </div>
     );

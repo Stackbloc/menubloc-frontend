@@ -110,6 +110,7 @@ import RestaurantOnboardingProcessing from "./pages/RestaurantOnboardingProcessi
 import RestaurantOnboardingOrganization from "./pages/RestaurantOnboardingOrganization.jsx";
 import RestaurantOnboardingInformation from "./pages/RestaurantOnboardingInformation.jsx";
 import RestaurantOnboardingLocations from "./pages/RestaurantOnboardingLocations.jsx";
+import RestaurantOnboardingProfileComplete from "./pages/RestaurantOnboardingProfileComplete.jsx";
 import RestaurantMenuLive from "./pages/RestaurantMenuLive.jsx";
 import FranchisesPage from "./pages/FranchisesPage.jsx";
 import RestaurantFreeProfileSignup from "./pages/RestaurantFreeProfileSignup.jsx";
@@ -631,6 +632,7 @@ function AppShell({ easyMenu, crmHost }) {
         <Route path="/restaurant/onboarding/organization" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOnboardingOrganization />} />
         <Route path="/restaurant/onboarding/information" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOnboardingInformation />} />
         <Route path="/restaurant/onboarding/locations" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOnboardingLocations />} />
+        <Route path="/restaurant/onboarding/profile-complete" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOnboardingProfileComplete />} />
         <Route path="/restaurant/onboarding/processing" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantOnboardingProcessing />} />
         <Route path="/restaurant/onboarding/success" element={crmHost ? <HostRouteRedirect to="/crm" /> : <RestaurantMenuLive />} />
         <Route path="/join" element={crmHost ? <HostRouteRedirect to="/crm" /> : <JoinPage />} />

@@ -4,6 +4,10 @@ import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 import * as api from "../../lib/operatorApi.js";
+import {
+  getIncompleteFinishSetupSteps,
+  isCoreOnboardingComplete,
+} from "../../lib/operatorOnboardingCheckpoints.js";
 
 const GREEN = "#1F4E3D";
 const BORDER = "#e4e9f0";
@@ -161,6 +165,8 @@ export default function OperatorDashboard() {
   const [historyOrders, setHistoryOrders] = useState([]);
   const [hoursSchedule, setHoursSchedule] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [finishSetupSteps, setFinishSetupSteps] = useState([]);
+  const [coreComplete, setCoreComplete] = useState(false);
 
   // Pause UI
   const [pauseOpen, setPauseOpen] = useState(false);
@@ -189,16 +195,33 @@ export default function OperatorDashboard() {
 
   const loadData = useCallback(async (restaurantId) => {
     setLoading(true);
-    const [avail, live, history, hours] = await Promise.allSettled([
+    const [avail, live, history, hours, checkpoint] = await Promise.allSettled([
       api.getOrderAvailability(restaurantId),
       api.getLiveOrders(restaurantId),
       api.getOrderHistory(restaurantId, { days: 35 }),
       api.getHours(restaurantId),
+      api.getOnboardingCheckpoint(restaurantId),
     ]);
     if (avail.status === "fulfilled") setAvailability(avail.value?.availability ?? avail.value);
     if (live.status === "fulfilled") setLiveOrders(live.value?.orders || []);
     if (history.status === "fulfilled") setHistoryOrders(history.value?.orders || []);
     if (hours.status === "fulfilled") setHoursSchedule(hours.value?.schedule || null);
+    if (checkpoint.status === "fulfilled") {
+      const payload = checkpoint.value || {};
+      const restaurantShape = {
+        id: restaurantId,
+        completed_step_keys: payload.completed_step_keys || [],
+        current_step_key: payload.current_step_key || payload.first_incomplete_stage || null,
+        draft_payload: payload.draft_payload || { stage_records: payload.stage_records || {} },
+        stage_records: payload.stage_records || payload.draft_payload?.stage_records || {},
+        has_published_menu: payload.has_published_menu,
+      };
+      setCoreComplete(isCoreOnboardingComplete(restaurantShape));
+      setFinishSetupSteps(getIncompleteFinishSetupSteps(restaurantShape));
+    } else {
+      setCoreComplete(false);
+      setFinishSetupSteps([]);
+    }
     setLoading(false);
   }, []);
 
@@ -385,6 +408,61 @@ export default function OperatorDashboard() {
             </div>
           </div>
         </div>
+
+        {coreComplete && finishSetupSteps.length > 0 ? (
+          <div
+            style={{
+              background: "#fff",
+              border: `1px solid ${BORDER}`,
+              borderRadius: 14,
+              padding: "16px 18px 18px",
+              marginBottom: 20,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                color: "#8a9ab0",
+                marginBottom: 6,
+              }}
+            >
+              Finish setup
+            </div>
+            <div style={{ fontSize: 13, color: "#5b6675", marginBottom: 14, lineHeight: 1.5 }}>
+              Complete one optional step at a time. Menu design is available last.
+            </div>
+            <div style={{ display: "grid", gap: 10 }}>
+              {finishSetupSteps.map((step, index) => {
+                const recommended = index === 0;
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    onClick={() => navigate(step.href)}
+                    style={{
+                      textAlign: "left",
+                      padding: "12px 14px",
+                      borderRadius: 12,
+                      border: recommended ? `1.5px solid ${GREEN}` : `1px solid ${BORDER}`,
+                      background: recommended ? "#f0fdf4" : "#f8fafc",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "#0f1720", marginBottom: 4 }}>
+                      {recommended ? "Recommended: " : ""}
+                      {step.title}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#5b6675", lineHeight: 1.45 }}>{step.body}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
 
         {/* ── Store Status + Pause ────────────────────────────── */}
         {isFoodTruck && (

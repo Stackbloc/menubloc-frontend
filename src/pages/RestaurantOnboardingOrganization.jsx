@@ -371,26 +371,33 @@ export default function RestaurantOnboardingOrganization() {
     try {
       const payload = buildBusinessOrganizationPayload(form);
       const result = await completeOwnedBusinessOrganization(restaurantId, payload);
+      const nextPath =
+        result?.next_path ||
+        resolvePostOrganizationPath(onboarding || {});
+      const nextStepKey =
+        nextPath.includes("/subscription") ? "payment" : "restaurant_information";
+      const completedKeys = Array.from(
+        new Set([
+          ...((onboarding && onboarding.completed_step_keys) || []),
+          "business_organization",
+          ...(result?.payment_bypass?.recorded ? ["payment"] : []),
+        ])
+      );
       const nextOnboarding = persistRestaurantOnboardingState({
         ...(onboarding || {}),
         restaurant_id: restaurantId,
         organization_id: result?.organization?.organization_id || null,
-        current_step_key: "restaurant_information",
+        current_step_key: nextStepKey,
+        completed_step_keys: completedKeys,
       });
       await syncRestaurantOnboardingProgress(nextOnboarding || { restaurant_id: restaurantId }, {
-        current_step_key: "restaurant_information",
-        completed_step_keys: Array.from(
-          new Set([
-            ...((onboarding && onboarding.completed_step_keys) || []),
-            "business_organization",
-          ])
-        ),
+        current_step_key: nextStepKey,
+        completed_step_keys: completedKeys,
       });
-      navigateWithRestaurantOnboardingState(
-        navigate,
-        resolvePostOrganizationPath(),
-        { restaurant_id: restaurantId }
-      );
+      navigateWithRestaurantOnboardingState(navigate, nextPath, {
+        restaurant_id: restaurantId,
+        ...(nextOnboarding || {}),
+      });
     } catch (err) {
       setError(err?.message || "Unable to save business organization.");
     } finally {
