@@ -4,7 +4,7 @@ Lock restaurant name/city/state on `/restaurant/signup/account` when claiming an
 
 # Current Status
 
-**LOCAL COMPLETE** — FE + BE implemented; contract tests added; not committed/deployed.
+**CPD COMPLETE** — FE `8db345b` / `index-BXE_RkWv.js` on `menuply.com`; BE `81a76b8a` on Railway. Awaiting human claim-path confirmation.
 
 # Files Changed
 
@@ -62,4 +62,6 @@ None.
 
 # Git Status
 
-Uncommitted local changes (this session). Not pushed.
+- FE committed + pushed: `8db345b` on `feature/mds-homepage-controls`
+- BE committed + pushed: `81a76b8a` on `main`
+- Deployed: Vercel + `menuply.com` alias; Railway production health reports `81a76b8a`

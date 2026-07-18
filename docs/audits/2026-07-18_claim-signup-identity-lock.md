@@ -52,16 +52,23 @@ None (code + contract tests only).
 
 # Commits
 
-Not committed in this session (await user request).
+- Frontend: `8db345b` on `feature/mds-homepage-controls`
+- Backend: `81a76b8a` on `main`
 
 # Deployment Status
 
-Local only — not deployed.
+**CPD COMPLETE**
+
+- FE: `npx vercel --prod` → `menubloc-frontend-qc790vjsu-menuply.vercel.app` → aliased `menuply.com`
+- Bundle: `index-BXE_RkWv.js` (contains Protected listing identity)
+- BE: Railway production online; health `commit_hash=81a76b8a08c3f36d0b67320c6c16f3051349d8f5`
 
 # Verification Results
 
-- `node --test test/claimSignupIdentityLockContract.test.js` (frontend)
-- `node --test test/ownerProfileClaimBindContract.test.js` (backend)
+- FE contract: `claimSignupIdentityLockContract.test.js` — pass
+- BE contract: `ownerProfileClaimBindContract.test.js` — pass
+- Bundle API scan: Railway 58 / localhost 6
+- Manual browser claim path: **awaiting user confirmation**
 
 # Remaining Risks
 
@@ -71,8 +78,9 @@ Local only — not deployed.
 # Follow-Up Work
 
 - Optional: persist claim identity in sessionStorage across refresh.
-- Deploy FE + BE together so claim-bind and locked UI land in the same release.
+- User confirms claim path on production.
 
 # Final Verdict
 
-**LOCAL COMPLETE.** Claim signup now keeps name/city/state aligned with the claimed listing and binds ownership without identity overwrite. Awaiting commit/deploy.
+**CPD COMPLETE** — FE `8db345b` / `index-BXE_RkWv.js` + BE `81a76b8a` live. Awaiting human claim-path confirmation on `menuply.com`.
+
