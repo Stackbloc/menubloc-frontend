@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import StickyPageHeader from "../../components/StickyPageHeader.jsx";
-import BottomNav from "../../components/BottomNav.jsx";
+import { BrandLogo } from "../../components/BrandLogo.jsx";
 
 const VITE_ENV = import.meta.env || {};
 const DEFAULT_PROD_API_BASE = "https://menubloc-backend-production.up.railway.app";
@@ -9,6 +8,8 @@ const API = (
   VITE_ENV.VITE_API_BASE_URL ||
   (VITE_ENV.DEV ? "http://localhost:3001" : DEFAULT_PROD_API_BASE)
 ).replace(/\/$/, "");
+
+const FONT = '"Instrument Sans", "Avenir Next", system-ui, sans-serif';
 
 const CUISINE_OPTIONS = [
   "American", "Mexican", "Italian", "Chinese", "Japanese", "Thai",
@@ -72,7 +73,6 @@ export default function AccountWelcome() {
     setSaving(true);
 
     try {
-      // Save ZIP
       const zipRes = await fetch(`${API}/api/consumer/profile/zip`, {
         method: "POST",
         credentials: "include",
@@ -84,7 +84,6 @@ export default function AccountWelcome() {
         throw new Error(data.error || "Could not save ZIP code");
       }
 
-      // Save dietary preferences (best-effort)
       if (selectedDietary.length > 0) {
         await fetch(`${API}/api/consumer/profile/preferences`, {
           method: "PUT",
@@ -105,138 +104,215 @@ export default function AccountWelcome() {
   }
 
   return (
-    <>
-      <StickyPageHeader />
-      <div style={{ minHeight: "100vh", background: "#faf9f6", display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: 80 }}>
-        <div style={{ width: "100%", maxWidth: 500, padding: "48px 24px 32px" }}>
-          <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>Welcome to Menuply</div>
-            <p style={{ color: "#5a5a5a", fontSize: 15, lineHeight: 1.6, margin: 0 }}>
-              Help us personalize your experience. This only takes a moment.
-            </p>
+    <div style={{ minHeight: "100vh", background: "#fff", fontFamily: FONT }}>
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "48px 24px 80px" }}>
+        <BrandLogo
+          height={44}
+          radius={12}
+          matchPageBackground={false}
+          linkStyle={{ display: "block", marginBottom: 40 }}
+        />
+
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 800,
+            color: "#1F4E3D",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            marginBottom: 10,
+          }}
+        >
+          Your diner account
+        </div>
+
+        <h1
+          style={{
+            fontSize: "clamp(1.7rem, 4vw, 2.4rem)",
+            fontWeight: 900,
+            letterSpacing: "-0.03em",
+            color: "#0B0F0C",
+            lineHeight: 1.1,
+            marginBottom: 14,
+          }}
+        >
+          Welcome to Menuply
+        </h1>
+
+        <p style={{ fontSize: 16, color: "#374151", lineHeight: 1.65, marginBottom: 12 }}>
+          We&apos;re excited to have you. We&apos;re setting up your new account and want to
+          customize your experience so you see menus, recommendations, and deals that fit how you eat.
+        </p>
+        <p style={{ fontSize: 15, color: "#6B7280", lineHeight: 1.6, marginBottom: 36 }}>
+          A few optional preferences help Waiter and discovery feel like they know you — starting with where you are.
+        </p>
+
+        <form onSubmit={handleSubmit} noValidate>
+          <div style={{ marginBottom: 28 }}>
+            <label
+              style={{
+                display: "block",
+                fontWeight: 800,
+                marginBottom: 8,
+                fontSize: 14,
+                color: "#0B0F0C",
+              }}
+            >
+              ZIP code{" "}
+              <span style={{ color: "#B91C1C", fontWeight: 700 }}>(required)</span>
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="Enter your ZIP code"
+              value={zip}
+              onChange={(e) => {
+                setZip(e.target.value);
+                if (zipError) setZipError(validateZip(e.target.value));
+              }}
+              maxLength={10}
+              style={{
+                width: "100%",
+                padding: "14px 16px",
+                borderRadius: 12,
+                border: `1.5px solid ${zipError ? "#B91C1C" : "#E5E7EB"}`,
+                fontSize: 16,
+                outline: "none",
+                boxSizing: "border-box",
+                fontFamily: FONT,
+                background: "#fff",
+                color: "#0B0F0C",
+              }}
+            />
+            {zipError ? (
+              <div style={{ color: "#B91C1C", fontSize: 13, marginTop: 8, fontWeight: 600 }}>
+                {zipError}
+              </div>
+            ) : (
+              <div style={{ color: "#6B7280", fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
+                Used for local restaurant recommendations and market tracking.
+              </div>
+            )}
           </div>
 
-          <form onSubmit={handleSubmit} noValidate>
-            {/* ZIP Code — required */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 14 }}>
-                ZIP Code <span style={{ color: "#c0392b" }}>(required)</span>
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="Enter your ZIP code"
-                value={zip}
-                onChange={(e) => {
-                  setZip(e.target.value);
-                  if (zipError) setZipError(validateZip(e.target.value));
-                }}
-                maxLength={10}
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  borderRadius: 10,
-                  border: `1.5px solid ${zipError ? "#c0392b" : "#ddd"}`,
-                  fontSize: 16,
-                  outline: "none",
-                  boxSizing: "border-box",
-                }}
-              />
-              {zipError ? (
-                <div style={{ color: "#c0392b", fontSize: 13, marginTop: 6 }}>{zipError}</div>
-              ) : (
-                <div style={{ color: "#888", fontSize: 13, marginTop: 6 }}>
-                  Used for local restaurant recommendations and market tracking.
-                </div>
-              )}
-            </div>
-
-            {/* Dietary preferences — optional */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 14 }}>
-                Dietary Preferences <span style={{ color: "#aaa", fontWeight: 400 }}>(optional)</span>
-              </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {DIETARY_OPTIONS.map(({ key, label }) => (
+          <div style={{ marginBottom: 28 }}>
+            <label
+              style={{
+                display: "block",
+                fontWeight: 800,
+                marginBottom: 8,
+                fontSize: 14,
+                color: "#0B0F0C",
+              }}
+            >
+              Dietary preferences{" "}
+              <span style={{ color: "#9CA3AF", fontWeight: 600 }}>(optional)</span>
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {DIETARY_OPTIONS.map(({ key, label }) => {
+                const on = selectedDietary.includes(key);
+                return (
                   <button
                     key={key}
                     type="button"
                     onClick={() => toggleDietary(key)}
                     style={{
-                      padding: "8px 14px",
+                      padding: "9px 14px",
                       borderRadius: 99,
-                      border: `1.5px solid ${selectedDietary.includes(key) ? "#1F4E3D" : "#ddd"}`,
-                      background: selectedDietary.includes(key) ? "#1F4E3D" : "#fff",
-                      color: selectedDietary.includes(key) ? "#fff" : "#333",
+                      border: `1.5px solid ${on ? "#1F4E3D" : "#E5E7EB"}`,
+                      background: on ? "#1F4E3D" : "#fff",
+                      color: on ? "#fff" : "#374151",
                       fontSize: 13,
-                      fontWeight: 600,
+                      fontWeight: 700,
                       cursor: "pointer",
+                      fontFamily: FONT,
                     }}
                   >
                     {label}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
+          </div>
 
-            {/* Favorite cuisines — optional */}
-            <div style={{ marginBottom: 32 }}>
-              <label style={{ display: "block", fontWeight: 700, marginBottom: 8, fontSize: 14 }}>
-                Favorite Cuisines <span style={{ color: "#aaa", fontWeight: 400 }}>(optional)</span>
-              </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {CUISINE_OPTIONS.map((cuisine) => (
+          <div style={{ marginBottom: 36 }}>
+            <label
+              style={{
+                display: "block",
+                fontWeight: 800,
+                marginBottom: 8,
+                fontSize: 14,
+                color: "#0B0F0C",
+              }}
+            >
+              Favorite cuisines{" "}
+              <span style={{ color: "#9CA3AF", fontWeight: 600 }}>(optional)</span>
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {CUISINE_OPTIONS.map((cuisine) => {
+                const on = selectedCuisines.includes(cuisine);
+                return (
                   <button
                     key={cuisine}
                     type="button"
                     onClick={() => toggleCuisine(cuisine)}
                     style={{
-                      padding: "8px 14px",
+                      padding: "9px 14px",
                       borderRadius: 99,
-                      border: `1.5px solid ${selectedCuisines.includes(cuisine) ? "#1F4E3D" : "#ddd"}`,
-                      background: selectedCuisines.includes(cuisine) ? "#1F4E3D" : "#fff",
-                      color: selectedCuisines.includes(cuisine) ? "#fff" : "#333",
+                      border: `1.5px solid ${on ? "#1F4E3D" : "#E5E7EB"}`,
+                      background: on ? "#1F4E3D" : "#fff",
+                      color: on ? "#fff" : "#374151",
                       fontSize: 13,
-                      fontWeight: 600,
+                      fontWeight: 700,
                       cursor: "pointer",
+                      fontFamily: FONT,
                     }}
                   >
                     {cuisine}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
+          </div>
 
-            {formError ? (
-              <div style={{ color: "#c0392b", fontSize: 14, marginBottom: 16, padding: "10px 14px", background: "#fff1ef", borderRadius: 8 }}>
-                {formError}
-              </div>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={saving}
+          {formError ? (
+            <div
               style={{
-                width: "100%",
-                padding: "14px",
+                color: "#B91C1C",
+                fontSize: 14,
+                marginBottom: 16,
+                padding: "12px 14px",
+                background: "#FEF2F2",
                 borderRadius: 12,
-                background: "#1F4E3D",
-                color: "#fff",
-                fontSize: 16,
-                fontWeight: 700,
-                border: "none",
-                cursor: saving ? "not-allowed" : "pointer",
-                opacity: saving ? 0.7 : 1,
-                marginBottom: 12,
+                fontWeight: 600,
               }}
             >
-              {saving ? "Saving..." : "Get Started"}
-            </button>
+              {formError}
+            </div>
+          ) : null}
 
-          </form>
-        </div>
+          <button
+            type="submit"
+            disabled={saving}
+            style={{
+              width: "100%",
+              height: 52,
+              borderRadius: 14,
+              border: 0,
+              background: "#1F4E3D",
+              color: "#fff",
+              fontSize: 16,
+              fontWeight: 900,
+              cursor: saving ? "not-allowed" : "pointer",
+              opacity: saving ? 0.7 : 1,
+              fontFamily: FONT,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {saving ? "Saving..." : "Continue"}
+          </button>
+        </form>
       </div>
-      <BottomNav />
-    </>
+    </div>
   );
 }
