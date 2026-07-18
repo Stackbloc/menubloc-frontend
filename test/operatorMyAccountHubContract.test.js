@@ -22,6 +22,12 @@ function testMyAccountTabs() {
   assert.match(src, /tab=profile\|menu\|settings\|password/);
   assert.match(src, /OperatorRestaurantProfileForm/);
   assert.doesNotMatch(src, /Menu Lab →/);
+  // Tabs must drive local panel state + navigate (not URL-only setSearchParams)
+  assert.match(src, /function selectTab\(/);
+  assert.match(src, /function myAccountHref\(/);
+  assert.match(src, /onSelect=\{selectTab\}/);
+  assert.match(src, /data-testid="my-account-tabs"/);
+  assert.match(src, /navigate\(myAccountHref/);
 }
 
 function testMenuSubPanels() {
@@ -32,6 +38,7 @@ function testMenuSubPanels() {
   assert.match(src, /Open Menu Worksheet/);
   assert.match(src, /\/menus\/\$\{menuId\}\/worksheet/);
   assert.match(src, /View public menu/);
+  assert.match(src, /selectMenuPanel/);
 }
 
 function testSettingsAccountFields() {

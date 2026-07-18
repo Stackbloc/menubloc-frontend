@@ -10,7 +10,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../../context/LanguageContext.jsx";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import OperatorLayout from "./OperatorLayout.jsx";
 import { useOperator } from "../../context/OperatorContext.jsx";
 import * as api from "../../lib/operatorApi.js";
@@ -39,6 +39,15 @@ function normalizeTab(raw) {
 function normalizeMenuPanel(raw) {
   const id = String(raw || "").toLowerCase();
   return MENU_PANELS.some((p) => p.id === id) ? id : "view";
+}
+
+/** Build My Account tab / panel hrefs — real links so tabs work without setSearchParams quirks. */
+export function myAccountHref(tabId, menuPanelId = "view") {
+  const tab = normalizeTab(tabId);
+  if (tab === "menu") {
+    return `/operator/my-account?tab=menu&menuPanel=${encodeURIComponent(normalizeMenuPanel(menuPanelId))}`;
+  }
+  return `/operator/my-account?tab=${encodeURIComponent(tab)}`;
 }
 
 function getPlanTier(planCode) {
@@ -150,9 +159,10 @@ function QuietLink({ onClick, href, children }) {
   );
 }
 
-function SectionCard({ title, children, style }) {
+function SectionCard({ title, children, style, "data-testid": testId }) {
   return (
     <section
+      data-testid={testId}
       style={{
         background: "#fff",
         border: "1px solid #e7e5e4",
@@ -181,10 +191,12 @@ function SectionCard({ title, children, style }) {
   );
 }
 
-function TabBar({ tabs, activeId, onChange }) {
+function TabBar({ tabs, activeId, onSelect }) {
   return (
     <div
       role="tablist"
+      aria-label="My Account sections"
+      data-testid="my-account-tabs"
       style={{
         display: "flex",
         flexWrap: "wrap",
@@ -196,13 +208,20 @@ function TabBar({ tabs, activeId, onChange }) {
     >
       {tabs.map((tab) => {
         const on = tab.id === activeId;
+        const href = myAccountHref(tab.id);
         return (
-          <button
+          <Link
             key={tab.id}
-            type="button"
             role="tab"
             aria-selected={on}
-            onClick={() => onChange(tab.id)}
+            data-testid={`my-account-tab-${tab.id}`}
+            to={href}
+            replace
+            onClick={(event) => {
+              // Drive UI from local state immediately; keep URL in sync via Link.
+              event.preventDefault();
+              onSelect(tab.id);
+            }}
             style={{
               background: "none",
               border: "none",
@@ -214,26 +233,32 @@ function TabBar({ tabs, activeId, onChange }) {
               color: on ? "#1F4E3D" : "#78716c",
               cursor: "pointer",
               fontFamily: "inherit",
+              textDecoration: "none",
             }}
           >
             {tab.label}
-          </button>
+          </Link>
         );
       })}
     </div>
   );
 }
 
-function SubNav({ panels, activeId, onChange }) {
+function SubNav({ panels, activeId, onSelect }) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }} data-testid="my-account-menu-panels">
       {panels.map((panel) => {
         const on = panel.id === activeId;
         return (
-          <button
+          <Link
             key={panel.id}
-            type="button"
-            onClick={() => onChange(panel.id)}
+            data-testid={`my-account-menu-panel-${panel.id}`}
+            to={myAccountHref("menu", panel.id)}
+            replace
+            onClick={(event) => {
+              event.preventDefault();
+              onSelect(panel.id);
+            }}
             style={{
               background: on ? "#1c1917" : "#fff",
               color: on ? "#fff" : "#44403c",
@@ -244,10 +269,11 @@ function SubNav({ panels, activeId, onChange }) {
               fontWeight: 700,
               cursor: "pointer",
               fontFamily: "inherit",
+              textDecoration: "none",
             }}
           >
             {panel.label}
-          </button>
+          </Link>
         );
       })}
     </div>
@@ -282,10 +308,32 @@ export default function OperatorMyAccount() {
   const { t } = useLanguage();
   const { selectedRestaurant, subscription: contextSubscription } = useOperator();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
-  const tab = normalizeTab(searchParams.get("tab"));
-  const menuPanel = normalizeMenuPanel(searchParams.get("menuPanel"));
+  const urlTab = normalizeTab(searchParams.get("tab"));
+  const urlMenuPanel = normalizeMenuPanel(searchParams.get("menuPanel"));
+  // Local state is source of truth for which panel is shown (URL can lag / fail to sync).
+  const [tab, setTab] = useState(urlTab);
+  const [menuPanel, setMenuPanel] = useState(urlMenuPanel);
+
+  useEffect(() => {
+    setTab(urlTab);
+    setMenuPanel(urlMenuPanel);
+  }, [urlTab, urlMenuPanel]);
+
+  function selectTab(nextTab) {
+    const normalized = normalizeTab(nextTab);
+    setTab(normalized);
+    if (normalized !== "menu") setMenuPanel("view");
+    navigate(myAccountHref(normalized), { replace: true });
+  }
+
+  function selectMenuPanel(nextPanel) {
+    const normalized = normalizeMenuPanel(nextPanel);
+    setTab("menu");
+    setMenuPanel(normalized);
+    navigate(myAccountHref("menu", normalized), { replace: true });
+  }
 
   const [subscription, setSubscription] = useState(null);
   const [billingOverview, setBillingOverview] = useState(null);
@@ -305,21 +353,6 @@ export default function OperatorMyAccount() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
-
-  function setTab(nextTab) {
-    const next = new URLSearchParams(searchParams);
-    next.set("tab", nextTab);
-    if (nextTab !== "menu") next.delete("menuPanel");
-    else if (!next.get("menuPanel")) next.set("menuPanel", "view");
-    setSearchParams(next, { replace: true });
-  }
-
-  function setMenuPanel(nextPanel) {
-    const next = new URLSearchParams(searchParams);
-    next.set("tab", "menu");
-    next.set("menuPanel", nextPanel);
-    setSearchParams(next, { replace: true });
-  }
 
   async function loadAccountData(rid) {
     setLoading(true);
@@ -453,7 +486,7 @@ export default function OperatorMyAccount() {
   return (
     <OperatorLayout title="My Account">
       <div style={{ maxWidth: 960, paddingBottom: 48 }}>
-        <TabBar tabs={TABS} activeId={tab} onChange={setTab} />
+        <TabBar tabs={TABS} activeId={tab} onSelect={selectTab} />
 
         {!selectedRestaurant?.id && tab !== "password" ? (
           <p style={{ fontSize: 14, color: "#78716c", marginBottom: 16 }}>
@@ -462,7 +495,7 @@ export default function OperatorMyAccount() {
         ) : null}
 
         {tab === "profile" && selectedRestaurant?.id ? (
-          <SectionCard title="Public restaurant profile">
+          <SectionCard title="Public restaurant profile" data-testid="my-account-panel-profile">
             <p style={{ margin: "-4px 0 16px", fontSize: 13, color: "#78716c", lineHeight: 1.5 }}>
               These fields appear on your public Menuply listing. Save a draft, then publish to go live.
             </p>
@@ -476,8 +509,8 @@ export default function OperatorMyAccount() {
         ) : null}
 
         {tab === "menu" && selectedRestaurant?.id ? (
-          <SectionCard title="Menu">
-            <SubNav panels={MENU_PANELS} activeId={menuPanel} onChange={setMenuPanel} />
+          <SectionCard title="Menu" data-testid="my-account-panel-menu">
+            <SubNav panels={MENU_PANELS} activeId={menuPanel} onSelect={selectMenuPanel} />
 
             {menuPanel === "view" ? (
               <>
@@ -493,7 +526,11 @@ export default function OperatorMyAccount() {
                   >
                     View public menu ↗
                   </button>
-                  <button type="button" style={BTN_SECONDARY} onClick={() => setMenuPanel("edit")}>
+                  <button
+                    type="button"
+                    style={BTN_SECONDARY}
+                    onClick={() => selectMenuPanel("edit")}
+                  >
                     Edit menu content →
                   </button>
                 </div>
@@ -603,7 +640,7 @@ export default function OperatorMyAccount() {
 
         {tab === "settings" && selectedRestaurant?.id ? (
           <>
-            <SectionCard title="Account settings">
+            <SectionCard title="Account settings" data-testid="my-account-panel-settings">
               {loading ? (
                 <p style={{ margin: 0, fontSize: 13, color: "#78716c" }}>Loading…</p>
               ) : error ? (
@@ -741,7 +778,7 @@ export default function OperatorMyAccount() {
         ) : null}
 
         {tab === "password" ? (
-          <SectionCard title="Password">
+          <SectionCard title="Password" data-testid="my-account-panel-password">
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <input
                 type="password"
