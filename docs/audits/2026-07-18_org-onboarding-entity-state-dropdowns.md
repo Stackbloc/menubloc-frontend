@@ -1,7 +1,10 @@
 # Organization Onboarding Entity + State Dropdowns
 
 **Date:** 2026-07-18  
-**Status:** Implemented locally — not committed / not deployed  
+**Status:** CPD complete — live on menuply.com  
+**Commit:** `d078972` (`feature/mds-homepage-controls`)  
+**Deploy:** `menubloc-frontend-bjxktet9u-menuply.vercel.app` → aliased to `menuply.com`  
+**Bundle:** `index-D0uR9gfu.js`  
 **Route:** `/restaurant/onboarding/organization`  
 
 ---
