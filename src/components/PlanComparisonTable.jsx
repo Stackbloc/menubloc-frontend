@@ -12,7 +12,6 @@ const FEATURES = [
   { label: "Professional restaurant profile", published: "Limited", starter: true, founders: true },
   { label: "Restaurant logo on profile", published: false, starter: true, founders: true },
   { label: "Logo and product photos", published: false, starter: true, founders: true },
-  { label: "Claim restaurant listing", published: true, starter: true, founders: true },
   { label: "QR Code", published: false, starter: true, founders: true },
   { label: "Unlimited menus and menu items", published: false, starter: true, founders: true },
   { label: "Edit menus and menu items", published: false, starter: true, founders: true },
